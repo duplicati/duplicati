@@ -24,10 +24,12 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Main;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.SQLiteHelper;
 using Duplicati.Library.Utility;
@@ -358,6 +360,10 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
 
             try
             {
+                // Update progress to show sync is in progress
+                if (result is not null)
+                    UpdateProgressPhase(result, OperationPhase.Backup_RemoteSynchronization);
+
                 var config = dest.Config with { Src = m_source! };
                 var exitCode = RemoteSynchronizationRunner.Run(config, CancellationToken.None).ConfigureAwait(false).GetAwaiter().GetResult();
 
@@ -370,6 +376,34 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
             {
                 Logging.Log.WriteErrorMessage(LOGTAG, "RemoteSyncFailed", ex, "Remote synchronization to {0} failed: {1}", dest, ex.Message);
             }
+        }
+    }
+
+    /// <summary>
+    /// Updates the operation progress phase using reflection to access the internal updater.
+    /// </summary>
+    /// <param name="result">The results object containing the progress updater.</param>
+    /// <param name="phase">The operation phase to set.</param>
+    private static void UpdateProgressPhase(IBasicResults result, OperationPhase phase)
+    {
+        try
+        {
+            // Use reflection to access the internal OperationProgressUpdater
+            var resultType = result.GetType();
+            var property = resultType.GetProperty("OperationProgressUpdater", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+            if (property is not null)
+            {
+                var updater = property.GetValue(result);
+                if (updater is not null)
+                {
+                    var updatePhaseMethod = updater.GetType().GetMethod("UpdatePhase", [typeof(OperationPhase)]);
+                    updatePhaseMethod?.Invoke(updater, [phase]);
+                }
+            }
+        }
+        catch
+        {
+            // Silently ignore - progress update is not critical
         }
     }
 
