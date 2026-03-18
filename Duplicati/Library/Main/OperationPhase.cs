@@ -37,6 +37,7 @@ namespace Duplicati.Library.Main
         Backup_VerificationUpload,
         Backup_PostBackupVerify,
         Backup_Complete,
+        Backup_RemoteSynchronization,
 
         Restore_Begin,
         Restore_RecreateDatabase,
