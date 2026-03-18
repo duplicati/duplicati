@@ -382,19 +382,20 @@ namespace RemoteSynchronization
                     }
                     else
                     {
-                        sw_put_dst.Start();
-                        await b_dst.PutAsync(f.Name, s_src, token).ConfigureAwait(false);
-                        s_src.Position = 0;
-                        sw_put_dst.Stop();
+                        // Compute hash BEFORE uploading, so we don't need to seek back after PutAsync
+                        byte[]? sourceHash = null;
                         if (config.VerifyGetAfterPut)
                         {
-                            // Start calculating the hash of the source file while we are downloading
-                            var srchashtask = Task.Run(() =>
-                            {
-                                using var hasher = HashFactory.CreateHasher("SHA256");
-                                return Convert.ToBase64String(hasher.ComputeHash(s_src));
-                            });
+                            using var hasher = HashFactory.CreateHasher("SHA256");
+                            sourceHash = hasher.ComputeHash(s_src);
+                        }
 
+                        sw_put_dst.Start();
+                        await b_dst.PutAsync(f.Name, s_src, token).ConfigureAwait(false);
+                        sw_put_dst.Stop();
+
+                        if (config.VerifyGetAfterPut)
+                        {
                             using var s_dst = Duplicati.Library.Utility.TempFileStream.Create();
 
                             sw_get_dst.Start();
@@ -412,7 +413,7 @@ namespace RemoteSynchronization
                             using var hasher = HashFactory.CreateHasher("SHA256");
                             var dsthash = Convert.ToBase64String(hasher.ComputeHash(s_dst));
 
-                            if (await srchashtask.ConfigureAwait(false) != dsthash)
+                            if (sourceHash != null && Convert.ToBase64String(sourceHash) != dsthash)
                             {
                                 err_string = (err_string is null ? "" : err_string + " ") + "The contents of the files do not match.";
                             }
