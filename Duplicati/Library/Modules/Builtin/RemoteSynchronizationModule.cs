@@ -370,11 +370,19 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
                 if (exitCode == 0)
                     RecordSyncOperation(i);
                 else
-                    Logging.Log.WriteErrorMessage(LOGTAG, "RemoteSyncFailed", null, "Remote synchronization to {0} failed with exit code {1}.", dest, exitCode);
+                {
+                    var errorMessage = string.Format("Remote synchronization to {0} failed with exit code {1}.", dest, exitCode);
+                    Logging.Log.WriteErrorMessage(LOGTAG, "RemoteSyncFailed", null, errorMessage);
+                    if (result is not null)
+                        AddErrorToResult(result, errorMessage);
+                }
             }
             catch (Exception ex)
             {
-                Logging.Log.WriteErrorMessage(LOGTAG, "RemoteSyncFailed", ex, "Remote synchronization to {0} failed: {1}", dest, ex.Message);
+                var errorMessage = string.Format("Remote synchronization to {0} failed: {1}", dest, ex.Message);
+                Logging.Log.WriteErrorMessage(LOGTAG, "RemoteSyncFailed", ex, errorMessage);
+                if (result is not null)
+                    AddErrorToResult(result, errorMessage);
             }
         }
     }
@@ -404,6 +412,47 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
         catch
         {
             // Silently ignore - progress update is not critical
+        }
+    }
+
+    /// <summary>
+    /// Adds an error message to the result's Errors collection using reflection.
+    /// </summary>
+    /// <param name="result">The results object containing the errors collection.</param>
+    /// <param name="errorMessage">The error message to add.</param>
+    private static void AddErrorToResult(IBasicResults result, string errorMessage)
+    {
+        try
+        {
+            var resultType = result.GetType();
+
+            // Try to find the m_errors field directly (in BasicResults or derived classes)
+            var errorsField = resultType.GetField("m_errors", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+            if (errorsField is not null)
+            {
+                var errorsCollection = errorsField.GetValue(result);
+                if (errorsCollection is not null)
+                {
+                    var addMethod = errorsCollection.GetType().GetMethod("Add", [typeof(string)]);
+                    addMethod?.Invoke(errorsCollection, [errorMessage]);
+                    return;
+                }
+            }
+
+            // Fallback: try to access via parent reference
+            var parentField = resultType.GetField("m_parent", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+            if (parentField is not null)
+            {
+                var parent = parentField.GetValue(result);
+                if (parent is not null)
+                {
+                    AddErrorToResult((IBasicResults)parent, errorMessage);
+                }
+            }
+        }
+        catch
+        {
+            // Silently ignore - adding to errors collection is not critical
         }
     }
 
