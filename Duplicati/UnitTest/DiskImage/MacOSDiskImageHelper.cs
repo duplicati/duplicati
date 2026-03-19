@@ -250,7 +250,7 @@ namespace Duplicati.UnitTest.DiskImage
         }
 
         /// <inheritdoc />
-        public string[] Mount(string diskIdentifier, string? baseMountPath = null, bool readOnly = false)
+        public string[] Mount(string diskIdentifier, string? baseMountPath = null, bool readOnly = false, FileSystemType[]? fileSystemTypes = null)
         {
             // Check if already mounted
             try
@@ -605,7 +605,7 @@ namespace Duplicati.UnitTest.DiskImage
                 {
                     Number = partitionNumber,
                     Type = PartitionType.Unknown,
-                    StartOffset = PlistHelper.GetLongValue(dict, "PartitionOffset"),
+                    StartOffset = PlistHelper.GetLongValue(dict, "PartitionMapPartitionOffset"),
                     Size = PlistHelper.GetLongValue(dict, "TotalSize"),
                     Name = PlistHelper.GetStringValue(dict, "VolumeName"),
                     FilesystemType = filesystemType,

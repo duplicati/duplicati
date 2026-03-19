@@ -144,6 +144,8 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
             _targetDisk = new Windows(_devicePath);
         else if (OperatingSystem.IsMacOS())
             _targetDisk = new Mac(_devicePath);
+        else if (OperatingSystem.IsLinux())
+            _targetDisk = new Linux(_devicePath);
         else
             throw new PlatformNotSupportedException(Strings.PlatformNotSupported);
 
@@ -287,10 +289,13 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
         // Normalize path separators
         path = NormalizePath(path);
 
+        // On Windows, both / and \ are path separators. On other platforms, only / is.
+        var separators = OperatingSystem.IsWindows() ? new[] { '/', '\\' } : new[] { '/' };
+
         if (IsGeometryFile(path))
             return ("geometry", null, null);
 
-        var segments = path.Split(System.IO.Path.DirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries) ??
+        var segments = path.Split(separators, StringSplitOptions.RemoveEmptyEntries) ??
             throw new InvalidOperationException($"Unable to parse path: {path}");
 
 

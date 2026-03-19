@@ -147,7 +147,7 @@ internal class UnknownFilesystem : IFilesystem
     {
         // Path format: root/part_{PartitionTableType}_{PartitionNumber}/fs_{FileSystemType}/{Address}
         // We need to extract the part after the last slash
-        var parts = path.Split(System.IO.Path.DirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries);
+        var parts = path.Split(['/', '\\'], StringSplitOptions.RemoveEmptyEntries);
         if (parts.Length < 4)
             throw new ArgumentException("Invalid path format.", nameof(path));
 
