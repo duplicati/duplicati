@@ -1,8 +1,7 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
-#include <sys/fcntl.h>
 
-// TODO This C wrapper is required since P/Invoke cannot correctly pass variadic
+// This C wrapper is required since P/Invoke cannot correctly pass variadic
 // arguments to ioctl on non-Windows platforms.
 // May be fixed in the future:
 // https://github.com/dotnet/runtime/issues/10478
@@ -16,7 +15,8 @@ int ioctl_uint32(int fd, unsigned long request, unsigned int *value)
 }
 
 // Wrapper for ioctl that takes a pointer to uint64
-int ioctl_uint64(int fd, unsigned long request, unsigned long *value)
+// Note: Using unsigned long long to ensure 8-byte size on all architectures
+int ioctl_uint64(int fd, unsigned long request, unsigned long long *value)
 {
     return ioctl(fd, request, value);
 }
@@ -25,10 +25,4 @@ int ioctl_uint64(int fd, unsigned long request, unsigned long *value)
 int ioctl_no_arg(int fd, unsigned long request)
 {
     return ioctl(fd, request);
-}
-
-// Wrapper for fcntl to set F_NOCACHE (equivalent to O_DIRECT on Linux)
-int fcntl_nocache(int fd)
-{
-    return fcntl(fd, F_NOCACHE, 1);
 }
