@@ -399,7 +399,7 @@ namespace RemoteSynchronization
                         {
                             backendProgressUpdater?.UpdateProgress(f.Name, pg);
                             progressUpdater?.UpdateFileProgress(pg);
-                        }, disposeBaseStream: false);
+                        });
 
                     sw_get_src.Start();
                     await b_src.GetAsync(f.Name, s_src_download_progress, token).ConfigureAwait(false);
@@ -435,7 +435,7 @@ namespace RemoteSynchronization
                         {
                             backendProgressUpdater?.UpdateProgress(f.Name, pg);
                             progressUpdater?.UpdateFileProgress(pg);
-                        }, disposeBaseStream: false);
+                        });
 
                         sw_put_dst.Start();
                         await b_dst.PutAsync(f.Name, s_src_upload_progress, token).ConfigureAwait(false);
