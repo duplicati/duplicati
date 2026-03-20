@@ -696,10 +696,22 @@ namespace Duplicati.Library.Main
         {
             if (m_options?.LoadedModules != null)
             {
+                // Get the progress updater from the result, if available
+                var progressUpdater = (result as BasicResults)?.OperationProgressUpdater as IOperationProgressUpdater;
+
                 foreach (var mx in m_options.LoadedModules)
-                    if (mx is IGenericCallbackModule module)
+                {
+                    if (mx is IGenericCallbackModuleWithProgress moduleWithProgress)
+                    {
+                        try { moduleWithProgress.OnFinish(result, exception, progressUpdater); }
+                        catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, $"OnFinishError{mx.Key}", ex, "OnFinish callback {0} failed: {1}", mx.Key, ex.Message); }
+                    }
+                    else if (mx is IGenericCallbackModule module)
+                    {
                         try { module.OnFinish(result, exception); }
                         catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, $"OnFinishError{mx.Key}", ex, "OnFinish callback {0} failed: {1}", mx.Key, ex.Message); }
+                    }
+                }
 
                 foreach (var mx in m_options.LoadedModules)
                     if (mx is IDisposable disposable)

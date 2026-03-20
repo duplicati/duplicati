@@ -24,7 +24,6 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -105,7 +104,7 @@ public record TopLevelRemoteSyncConfig(
 /// <summary>
 /// Module for synchronizing backup data to remote destinations after a successful backup operation.
 /// </summary>
-public class RemoteSynchronizationModule : IGenericCallbackModule
+public class RemoteSynchronizationModule : IGenericCallbackModuleWithProgress
 {
     private static readonly string LOGTAG = Logging.Log.LogTagFromType<RemoteSynchronizationModule>();
 
@@ -304,11 +303,23 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
     }
 
     /// <summary>
-    /// Called when an operation finishes.
+    /// Called when an operation finishes (without progress updater).
+    /// Delegates to the overload with a null progress updater.
     /// </summary>
     /// <param name="result">The results of the operation.</param>
     /// <param name="exception">Any exception that occurred during the operation.</param>
     public void OnFinish(IBasicResults result, Exception exception)
+    {
+        OnFinish(result, exception, null);
+    }
+
+    /// <summary>
+    /// Called when an operation finishes, with access to the progress updater.
+    /// </summary>
+    /// <param name="result">The results of the operation.</param>
+    /// <param name="exception">Any exception that occurred during the operation.</param>
+    /// <param name="progressUpdater">The progress updater for reporting operation phase changes, or null if not available.</param>
+    public void OnFinish(IBasicResults result, Exception exception, IOperationProgressUpdater? progressUpdater)
     {
         if (!m_enabled)
             return;
@@ -361,8 +372,7 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
             try
             {
                 // Update progress to show sync is in progress
-                if (result is not null)
-                    UpdateProgressPhase(result, OperationPhase.Backup_RemoteSynchronization);
+                progressUpdater?.UpdatePhase(OperationPhase.Backup_RemoteSynchronization);
 
                 var config = dest.Config with { Src = m_source! };
                 var exitCode = RemoteSynchronizationRunner.Run(config, CancellationToken.None).ConfigureAwait(false).GetAwaiter().GetResult();
