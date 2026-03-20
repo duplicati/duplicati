@@ -381,88 +381,15 @@ public class RemoteSynchronizationModule : IGenericCallbackModuleWithProgress
                     RecordSyncOperation(i);
                 else
                 {
-                    var errorMessage = string.Format("Remote synchronization to {0} failed with exit code {1}.", dest, exitCode);
-                    Logging.Log.WriteErrorMessage(LOGTAG, "RemoteSyncFailed", null, errorMessage);
-                    if (result is not null)
-                        AddErrorToResult(result, errorMessage);
+                    // Error is captured into the result's Errors collection via the active log scope
+                    Logging.Log.WriteErrorMessage(LOGTAG, "RemoteSyncFailed", null, "Remote synchronization to {0} failed with exit code {1}.", dest, exitCode);
                 }
             }
             catch (Exception ex)
             {
-                var errorMessage = string.Format("Remote synchronization to {0} failed: {1}", dest, ex.Message);
-                Logging.Log.WriteErrorMessage(LOGTAG, "RemoteSyncFailed", ex, errorMessage);
-                if (result is not null)
-                    AddErrorToResult(result, errorMessage);
+                // Error is captured into the result's Errors collection via the active log scope
+                Logging.Log.WriteErrorMessage(LOGTAG, "RemoteSyncFailed", ex, "Remote synchronization to {0} failed: {1}", dest, ex.Message);
             }
-        }
-    }
-
-    /// <summary>
-    /// Updates the operation progress phase using reflection to access the internal updater.
-    /// </summary>
-    /// <param name="result">The results object containing the progress updater.</param>
-    /// <param name="phase">The operation phase to set.</param>
-    private static void UpdateProgressPhase(IBasicResults result, OperationPhase phase)
-    {
-        try
-        {
-            // Use reflection to access the internal OperationProgressUpdater
-            var resultType = result.GetType();
-            var property = resultType.GetProperty("OperationProgressUpdater", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-            if (property is not null)
-            {
-                var updater = property.GetValue(result);
-                if (updater is not null)
-                {
-                    var updatePhaseMethod = updater.GetType().GetMethod("UpdatePhase", [typeof(OperationPhase)]);
-                    updatePhaseMethod?.Invoke(updater, [phase]);
-                }
-            }
-        }
-        catch
-        {
-            // Silently ignore - progress update is not critical
-        }
-    }
-
-    /// <summary>
-    /// Adds an error message to the result's Errors collection using reflection.
-    /// </summary>
-    /// <param name="result">The results object containing the errors collection.</param>
-    /// <param name="errorMessage">The error message to add.</param>
-    private static void AddErrorToResult(IBasicResults result, string errorMessage)
-    {
-        try
-        {
-            var resultType = result.GetType();
-
-            // Try to find the m_errors field directly (in BasicResults or derived classes)
-            var errorsField = resultType.GetField("m_errors", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-            if (errorsField is not null)
-            {
-                var errorsCollection = errorsField.GetValue(result);
-                if (errorsCollection is not null)
-                {
-                    var addMethod = errorsCollection.GetType().GetMethod("Add", [typeof(string)]);
-                    addMethod?.Invoke(errorsCollection, [errorMessage]);
-                    return;
-                }
-            }
-
-            // Fallback: try to access via parent reference
-            var parentField = resultType.GetField("m_parent", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-            if (parentField is not null)
-            {
-                var parent = parentField.GetValue(result);
-                if (parent is not null)
-                {
-                    AddErrorToResult((IBasicResults)parent, errorMessage);
-                }
-            }
-        }
-        catch
-        {
-            // Silently ignore - adding to errors collection is not critical
         }
     }
 

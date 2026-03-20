@@ -630,6 +630,22 @@ namespace Duplicati.Library.Main
 
                     OperationComplete(result, null);
 
+                    // Re-write results to database after module callbacks,
+                    // so that any errors/warnings added by modules (e.g., remote synchronization)
+                    // are persisted and visible in the log viewer
+                    if (File.Exists(m_options.Dbpath) && !m_options.Dryrun)
+                    {
+                        try
+                        {
+                            using var db2 = LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, null, true, null, CancellationToken.None).Await();
+                            db2.WriteResultsAndCommit(result, CancellationToken.None).Await();
+                        }
+                        catch (Exception ex)
+                        {
+                            Logging.Log.WriteWarningMessage(LOGTAG, "FailedWritePostModuleResults", ex, "Failed to write post-module results to database: {0}", ex.Message);
+                        }
+                    }
+
                     Logging.Log.WriteInformationMessage(LOGTAG, "CompletedOperation", Strings.Controller.CompletedOperationMessage(m_options.MainAction));
 
                     return result;
