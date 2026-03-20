@@ -375,7 +375,7 @@ public class RemoteSynchronizationModule : IGenericCallbackModuleWithProgress
                 progressUpdater?.UpdatePhase(OperationPhase.Backup_RemoteSynchronization);
 
                 var config = dest.Config with { Src = m_source! };
-                var exitCode = RemoteSynchronizationRunner.Run(config, CancellationToken.None).ConfigureAwait(false).GetAwaiter().GetResult();
+                var exitCode = RemoteSynchronizationRunner.Run(config, CancellationToken.None, progressUpdater).ConfigureAwait(false).GetAwaiter().GetResult();
 
                 if (exitCode == 0)
                     RecordSyncOperation(i);
