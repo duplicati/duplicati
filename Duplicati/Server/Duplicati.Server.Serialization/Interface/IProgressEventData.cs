@@ -67,5 +67,17 @@ namespace Duplicati.Server.Serialization.Interface
         bool StillCounting { get; }
 
         ActiveTransfer[]? ActiveTransfers { get; }
+
+        /// <summary>
+        /// The 1-based index of the current remote sync destination being processed.
+        /// 0 when not in a remote sync phase.
+        /// </summary>
+        int RemoteSyncDestinationIndex { get; }
+
+        /// <summary>
+        /// The total number of remote sync destinations to process.
+        /// 0 when not in a remote sync phase.
+        /// </summary>
+        int RemoteSyncDestinationCount { get; }
     }
 }

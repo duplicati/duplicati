@@ -374,6 +374,7 @@ public class RemoteSynchronizationModule : IGenericCallbackModuleWithProgress
             {
                 // Update progress to show sync is in progress
                 progressUpdater?.UpdatePhase(OperationPhase.Backup_RemoteSynchronization);
+                progressUpdater?.UpdateRemoteSyncDestination(i + 1, m_destinations.Count);
 
                 var config = dest.Config with { Src = m_source! };
                 var exitCode = RemoteSynchronizationRunner.Run(config, CancellationToken.None, progressUpdater, backendProgressUpdater).ConfigureAwait(false).GetAwaiter().GetResult();
