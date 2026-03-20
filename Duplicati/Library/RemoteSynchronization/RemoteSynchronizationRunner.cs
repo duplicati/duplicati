@@ -273,25 +273,25 @@ namespace RemoteSynchronization
 
             // Delete or rename the files that are not needed
             long renamed = 0, deleted = 0;
+            var deleteCount = to_delete.Count();
             if (config.Retention)
             {
-                renamed = await RenameAsync(b2m, to_delete, config, token).ConfigureAwait(false);
+                renamed = await RenameAsync(b2m, to_delete, config, token, 0, totalFileCount, progressUpdater, backendProgressUpdater).ConfigureAwait(false);
                 Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
                     "Renamed {0} files in {1}", renamed, b2m.DisplayName);
             }
             else
             {
-                deleted = await DeleteAsync(b2m, to_delete, config, token).ConfigureAwait(false);
+                deleted = await DeleteAsync(b2m, to_delete, config, token, 0, totalFileCount, progressUpdater, backendProgressUpdater).ConfigureAwait(false);
                 Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
                     "Deleted {0} files from {1}", deleted, b2m.DisplayName);
             }
 
-            // Update progress after delete/rename phase
+            // The delete/rename phase now reports progress incrementally, so we don't need a separate update here
             var deletedOrRenamed = Math.Max(deleted, renamed);
-            progressUpdater?.UpdatefilesProcessed(deletedOrRenamed, 0);
 
             // Copy the files
-            var (copied, copy_errors) = await CopyAsync(b1m, b2m, to_copy, config, deletedOrRenamed, token, progressUpdater, backendProgressUpdater).ConfigureAwait(false);
+            var (copied, copy_errors) = await CopyAsync(b1m, b2m, to_copy, config, deletedOrRenamed, totalFileCount, token, progressUpdater, backendProgressUpdater).ConfigureAwait(false);
             Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
                 "Copied {0} files from {1} to {2}", copied, b1m.DisplayName, b2m.DisplayName);
 
@@ -308,7 +308,7 @@ namespace RemoteSynchronization
                     for (int i = 0; i < config.Retry; i++)
                     {
                         await Task.Delay(5000).ConfigureAwait(false); // Wait 5 seconds before retrying
-                        (copied, copy_errors) = await CopyAsync(b1m, b2m, copy_errors, config, deletedOrRenamed, token, progressUpdater, backendProgressUpdater).ConfigureAwait(false);
+                        (copied, copy_errors) = await CopyAsync(b1m, b2m, copy_errors, config, deletedOrRenamed, totalFileCount, token, progressUpdater, backendProgressUpdater).ConfigureAwait(false);
                         Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
                             "Copied {0} files from {1} to {2}", copied, b1m.DisplayName, b2m.DisplayName);
                         if (!copy_errors.Any())
@@ -364,10 +364,12 @@ namespace RemoteSynchronization
         /// <param name="files">The files that will be copied.</param>
         /// <param name="config">The parsed configuration for the tool.</param>
         /// <param name="filesProcessedOffset">The number of files already processed before this copy phase (e.g., from delete/rename), used for progress reporting.</param>
+        /// <param name="totalFiles">The total number of files to be processed in the entire operation (delete + copy), used for progress reporting.</param>
         /// <param name="token">The cancellation token to use for the asynchronous operations.</param>
         /// <param name="progressUpdater">Optional progress updater for reporting file-level progress to the UI.</param>
+        /// <param name="backendProgressUpdater">Optional backend progress updater for reporting transfer speed to the UI.</param>
         /// <returns>A tuple holding the number of succesful copies and a List of the files that failed.</returns>
-        private static async Task<(long, IEnumerable<IFileEntry>)> CopyAsync(LightWeightBackendManager b_src, LightWeightBackendManager b_dst, IEnumerable<IFileEntry> files, Config config, long filesProcessedOffset, CancellationToken token, IOperationProgressUpdater? progressUpdater = null, IBackendProgressUpdater? backendProgressUpdater = null)
+        private static async Task<(long, IEnumerable<IFileEntry>)> CopyAsync(LightWeightBackendManager b_src, LightWeightBackendManager b_dst, IEnumerable<IFileEntry> files, Config config, long filesProcessedOffset, long totalFiles, CancellationToken token, IOperationProgressUpdater? progressUpdater = null, IBackendProgressUpdater? backendProgressUpdater = null)
         {
             long successful_copies = 0;
             long sizeProcessed = 0;
@@ -463,6 +465,11 @@ namespace RemoteSynchronization
 
                     successful_copies++;
                     sizeProcessed += s_src_length;
+
+                    // Report overall progress: files processed so far (offset + current index)
+                    var total_progress = filesProcessedOffset + successful_copies;
+                    progressUpdater?.UpdatefilesProcessed(total_progress, sizeProcessed);
+                    progressUpdater?.UpdateProgress(totalFiles > 0 ? (float)total_progress / totalFiles : 1.0f);
                 }
                 catch (Exception e)
                 {
@@ -473,10 +480,6 @@ namespace RemoteSynchronization
                 finally
                 {
                     i++;
-
-                    // Report overall progress: files processed so far (offset + current index)
-                    progressUpdater?.UpdatefilesProcessed(filesProcessedOffset + i, sizeProcessed);
-                    progressUpdater?.UpdateProgress(n > 0 ? (float)i / n : 1.0f);
 
                     // Stop any running timers
                     sw_get_src.Stop();
@@ -506,8 +509,12 @@ namespace RemoteSynchronization
         /// <param name="files">The files to delete.</param>
         /// <param name="config">The parsed configuration for the tool.</param>
         /// <param name="token">The cancellation token to use for the asynchronous operations.</param>
+        /// <param name="filesProcessedOffset">The number of files already processed before this delete phase, used for overall progress reporting.</param>
+        /// <param name="totalFiles">The total number of files to be processed in the entire operation (delete + copy), used for overall progress reporting.</param>
+        /// <param name="progressUpdater">Optional progress updater for reporting file-level progress to the UI.</param>
+        /// <param name="backendProgressUpdater">Optional backend progress updater for reporting delete speed to the UI.</param>
         /// <returns>The number of successful deletions.</returns>
-        private static async Task<long> DeleteAsync(LightWeightBackendManager b, IEnumerable<IFileEntry> files, Config config, CancellationToken token)
+        private static async Task<long> DeleteAsync(LightWeightBackendManager b, IEnumerable<IFileEntry> files, Config config, CancellationToken token, long filesProcessedOffset, long totalFiles, IOperationProgressUpdater? progressUpdater = null, IBackendProgressUpdater? backendProgressUpdater = null)
         {
             long successful_deletes = 0;
             long i = 0, n = files.Count();
@@ -525,6 +532,11 @@ namespace RemoteSynchronization
 
                 try
                 {
+                    // Report delete operation with progress
+                    var fileSize = Math.Max(f.Size, 0);
+                    progressUpdater?.StartFile($"Deleting {f.Name}", fileSize);
+                    backendProgressUpdater?.StartAction(BackendActionType.Delete, f.Name, fileSize);
+
                     if (config.DryRun)
                     {
                         Duplicati.Library.Logging.Log.WriteDryrunMessage(LOGTAG, "rsync",
@@ -535,14 +547,23 @@ namespace RemoteSynchronization
                         await b.DeleteAsync(f.Name, token).ConfigureAwait(false);
                     }
                     successful_deletes++;
+
+                    backendProgressUpdater?.EndAction(BackendActionType.Delete, f.Name);
+
+                    // Report overall progress: files processed so far (with offset for overall progress)
+                    var total_progress = filesProcessedOffset + successful_deletes;
+                    progressUpdater?.UpdatefilesProcessed(total_progress, 0);
+                    progressUpdater?.UpdateProgress(totalFiles > 0 ? (float)total_progress / totalFiles : 1.0f);
                 }
                 catch (Exception e)
                 {
                     Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "rsync", e,
                         "Error deleting {0}: {1}", f.Name, e.Message);
                 }
-
-                i++;
+                finally
+                {
+                    i++;
+                }
             }
 
             if (config.Progress)
@@ -727,8 +748,12 @@ namespace RemoteSynchronization
         /// <param name="files">The files to rename.</param>
         /// <param name="config">The parsed configuration for the tool.</param>
         /// <param name="token">The cancellation token to use for the asynchronous operations.</param>
+        /// <param name="filesProcessedOffset">The number of files already processed before this rename phase, used for overall progress reporting.</param>
+        /// <param name="totalFiles">The total number of files to be processed in the entire operation (delete + copy), used for progress reporting.</param>
+        /// <param name="progressUpdater">Optional progress updater for reporting file-level progress to the UI.</param>
+        /// <param name="backendProgressUpdater">Optional backend progress updater for reporting transfer speed to the UI.</param>
         /// <returns>The number of successful renames.</returns>
-        private static async Task<long> RenameAsync(LightWeightBackendManager bm, IEnumerable<IFileEntry> files, Config config, CancellationToken token)
+        private static async Task<long> RenameAsync(LightWeightBackendManager bm, IEnumerable<IFileEntry> files, Config config, CancellationToken token, long filesProcessedOffset, long totalFiles, IOperationProgressUpdater? progressUpdater = null, IBackendProgressUpdater? backendProgressUpdater = null)
         {
             long successful_renames = 0;
             string prefix = $"{System.DateTime.UtcNow:yyyyMMddHHmmss}.old";
@@ -748,6 +773,12 @@ namespace RemoteSynchronization
 
                 try
                 {
+                    // Report rename operation with progress
+                    var fileSize = Math.Max(f.Size, 0);
+                    progressUpdater?.StartFile($"Renaming {f.Name}", fileSize);
+                    // Use Delete action type since rename typically involves delete operation
+                    backendProgressUpdater?.StartAction(BackendActionType.Delete, f.Name, fileSize);
+
                     if (config.DryRun)
                     {
                         Duplicati.Library.Logging.Log.WriteDryrunMessage(LOGTAG, "rsync",
@@ -761,6 +792,13 @@ namespace RemoteSynchronization
                         sw.Stop();
                     }
                     successful_renames++;
+
+                    backendProgressUpdater?.EndAction(BackendActionType.Delete, f.Name);
+
+                    // Report overall progress: files processed so far (with offset for overall progress)
+                    var total_progress = filesProcessedOffset + successful_renames;
+                    progressUpdater?.UpdatefilesProcessed(total_progress, 0);
+                    progressUpdater?.UpdateProgress(totalFiles > 0 ? (float)total_progress / totalFiles : 1.0f);
                 }
                 catch (Exception e)
                 {
@@ -771,9 +809,9 @@ namespace RemoteSynchronization
                 {
                     // Ensure the timer is stopped
                     sw.Stop();
-                }
 
-                i++;
+                    i++;
+                }
             }
 
             Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync",
