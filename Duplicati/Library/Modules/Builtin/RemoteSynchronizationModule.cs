@@ -67,6 +67,9 @@ public record RemoteSyncDestinationConfig(
     int? Count = null
 );
 
+/// <summary>
+/// Raw configuration for a remote synchronization destination, as deserialized from JSON.
+/// </summary>
 public record RemoteSyncDestinationConfigRaw(
     bool AutoCreateFolders = true,
     int BackendRetries = 3,
@@ -94,6 +97,9 @@ public record RemoteSyncDestinationConfigRaw(
     public int? Count { get; init; }
 };
 
+/// <summary>
+/// Top-level configuration for remote synchronization, containing the destinations array and global settings.
+/// </summary>
 public record TopLevelRemoteSyncConfig(
     bool SyncOnWarnings = true
 )
