@@ -304,22 +304,23 @@ public class RemoteSynchronizationModule : IGenericCallbackModuleWithProgress
 
     /// <summary>
     /// Called when an operation finishes (without progress updater).
-    /// Delegates to the overload with a null progress updater.
+    /// Delegates to the overload with null updaters.
     /// </summary>
     /// <param name="result">The results of the operation.</param>
     /// <param name="exception">Any exception that occurred during the operation.</param>
     public void OnFinish(IBasicResults result, Exception exception)
     {
-        OnFinish(result, exception, null);
+        OnFinish(result, exception, null, null);
     }
 
     /// <summary>
-    /// Called when an operation finishes, with access to the progress updater.
+    /// Called when an operation finishes, with access to the progress and backend updaters.
     /// </summary>
     /// <param name="result">The results of the operation.</param>
     /// <param name="exception">Any exception that occurred during the operation.</param>
     /// <param name="progressUpdater">The progress updater for reporting operation phase changes, or null if not available.</param>
-    public void OnFinish(IBasicResults result, Exception exception, IOperationProgressUpdater? progressUpdater)
+    /// <param name="backendProgressUpdater">The backend progress updater for reporting transfer speed, or null if not available.</param>
+    public void OnFinish(IBasicResults result, Exception exception, IOperationProgressUpdater? progressUpdater, IBackendProgressUpdater? backendProgressUpdater)
     {
         if (!m_enabled)
             return;
@@ -371,11 +372,14 @@ public class RemoteSynchronizationModule : IGenericCallbackModuleWithProgress
 
             try
             {
-                // Update progress to show sync is in progress
+                // Update progress to show sync is in progress, including destination index
                 progressUpdater?.UpdatePhase(OperationPhase.Backup_RemoteSynchronization);
+                progressUpdater?.StartFile(
+                    string.Format("Destination {0}/{1}", i + 1, m_destinations.Count),
+                    0);
 
                 var config = dest.Config with { Src = m_source! };
-                var exitCode = RemoteSynchronizationRunner.Run(config, CancellationToken.None, progressUpdater).ConfigureAwait(false).GetAwaiter().GetResult();
+                var exitCode = RemoteSynchronizationRunner.Run(config, CancellationToken.None, progressUpdater, backendProgressUpdater).ConfigureAwait(false).GetAwaiter().GetResult();
 
                 if (exitCode == 0)
                     RecordSyncOperation(i);

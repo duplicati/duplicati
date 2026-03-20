@@ -45,6 +45,7 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
             'Backup_VerificationUpload': gettextCatalog.getString('Uploading verification file …'),
             'Backup_PostBackupVerify': gettextCatalog.getString('Verifying backend data …'),
             'Backup_Complete': gettextCatalog.getString('Backup complete!'),
+            'Backup_RemoteSynchronization': gettextCatalog.getString('Synchronizing to remote destinations …'),
             'Restore_Begin': gettextCatalog.getString('Starting restore …'),
             'Restore_RecreateDatabase': gettextCatalog.getString('Rebuilding local database …'),
             'Restore_PreRestoreVerify': gettextCatalog.getString('Verifying remote data …'),

@@ -34,12 +34,13 @@ namespace Duplicati.Library.Main;
 public interface IGenericCallbackModuleWithProgress : IGenericCallbackModule
 {
     /// <summary>
-    /// Called when the operation finishes, with access to the progress updater.
+    /// Called when the operation finishes, with access to the progress and backend updaters.
     /// This is called instead of <see cref="IGenericCallbackModule.OnFinish"/> when
-    /// the progress updater is available.
+    /// the updaters are available.
     /// </summary>
     /// <param name="result">The result object for the operation.</param>
     /// <param name="exception">The exception that stopped the operation, or null.</param>
     /// <param name="progressUpdater">The progress updater for reporting operation phase changes, or null if not available.</param>
-    void OnFinish(IBasicResults result, Exception exception, IOperationProgressUpdater? progressUpdater);
+    /// <param name="backendProgressUpdater">The backend progress updater for reporting transfer speed, or null if not available.</param>
+    void OnFinish(IBasicResults result, Exception exception, IOperationProgressUpdater? progressUpdater, IBackendProgressUpdater? backendProgressUpdater);
 }

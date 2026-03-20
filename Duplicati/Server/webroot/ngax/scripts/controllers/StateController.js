@@ -69,6 +69,20 @@ backupApp.controller('StateController', function($scope, $timeout, ServerStatus,
             {
                 pg = 1;
             }
+            else if ($scope.state.lastPgEvent.Phase == 'Backup_RemoteSynchronization')
+            {
+                var dest_txt = $scope.state.lastPgEvent.CurrentFilename || '';
+                if ($scope.state.lastPgEvent.TotalFileCount > 0) {
+                    var filesleft = $scope.state.lastPgEvent.TotalFileCount - $scope.state.lastPgEvent.ProcessedFileCount;
+                    var sizeleft = $scope.state.lastPgEvent.TotalFileSize - $scope.state.lastPgEvent.ProcessedFileSize;
+                    pg = $scope.state.lastPgEvent.OverallProgress > 0 ? $scope.state.lastPgEvent.OverallProgress : 0;
+
+                    var speed_txt = ($scope.state.lastPgEvent.BackendSpeed < 0) ? "" : " at "+AppUtils.formatSizeString($scope.state.lastPgEvent.BackendSpeed)+"/s";
+                    text = gettextCatalog.getString('Synchronizing ({{dest}}): {{files}} files ({{size}}) to go{{speed_txt}}', { dest: dest_txt, files: filesleft, size: AppUtils.formatSizeString(sizeleft), speed_txt: speed_txt});
+                } else if (dest_txt) {
+                    text = gettextCatalog.getString('Synchronizing ({{dest}}) …', { dest: dest_txt });
+                }
+            }
             else if ($scope.state.lastPgEvent.OverallProgress > 0) {
                 pg = $scope.state.lastPgEvent.OverallProgress;
             }

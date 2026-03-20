@@ -137,8 +137,9 @@ namespace RemoteSynchronization
         /// <param name="config">The parsed configuration for the tool.</param>
         /// <param name="token">The cancellation token to use for the asynchronous operations.</param>
         /// <param name="progressUpdater">Optional progress updater for reporting file count and transfer progress to the UI.</param>
+        /// <param name="backendProgressUpdater">Optional backend progress updater for reporting transfer speed to the UI.</param>
         /// <returns>The return code for the main entry; 0 on success.</returns>
-        public static async Task<int> Run(Config config, CancellationToken token, IOperationProgressUpdater? progressUpdater = null)
+        public static async Task<int> Run(Config config, CancellationToken token, IOperationProgressUpdater? progressUpdater = null, IBackendProgressUpdater? backendProgressUpdater = null)
         {
             // Parse the log level
             var log_level_parsed = Enum.TryParse<Duplicati.Library.Logging.LogMessageType>(config.LogLevel, true, out var log_level_enum);
@@ -162,11 +163,11 @@ namespace RemoteSynchronization
                 // Start the logging scope
                 using var _ = Duplicati.Library.Logging.Log.StartScope(multi_sink, log_level_enum);
 
-                return await RunCore(config, token, progressUpdater).ConfigureAwait(false);
+                return await RunCore(config, token, progressUpdater, backendProgressUpdater).ConfigureAwait(false);
             }
             else
             {
-                return await RunCore(config, token, progressUpdater).ConfigureAwait(false);
+                return await RunCore(config, token, progressUpdater, backendProgressUpdater).ConfigureAwait(false);
             }
         }
 
@@ -176,8 +177,9 @@ namespace RemoteSynchronization
         /// <param name="config">The parsed configuration for the tool.</param>
         /// <param name="token">The cancellation token to use for the asynchronous operations.</param>
         /// <param name="progressUpdater">Optional progress updater for reporting file count and transfer progress to the UI.</param>
+        /// <param name="backendProgressUpdater">Optional backend progress updater for reporting transfer speed to the UI.</param>
         /// <returns>The return code for the main entry; 0 on success.</returns>
-        private static async Task<int> RunCore(Config config, CancellationToken token, IOperationProgressUpdater? progressUpdater = null)
+        private static async Task<int> RunCore(Config config, CancellationToken token, IOperationProgressUpdater? progressUpdater = null, IBackendProgressUpdater? backendProgressUpdater = null)
         {
             // Unpack and parse the multi token options
             var global_options = ParseOptions(config.GlobalOptions);
@@ -262,7 +264,7 @@ namespace RemoteSynchronization
 
             // Report total file count to the progress updater (delete + copy operations)
             var totalFileCount = to_delete.Count() + to_copy.Count();
-            var totalFileSize = to_copy.Sum(f => f.Size);
+            var totalFileSize = to_copy.Sum(f => Math.Max(f.Size, 0));
             if (progressUpdater != null)
             {
                 progressUpdater.UpdatefileCount(totalFileCount, totalFileSize, true);
@@ -289,7 +291,7 @@ namespace RemoteSynchronization
             progressUpdater?.UpdatefilesProcessed(deletedOrRenamed, 0);
 
             // Copy the files
-            var (copied, copy_errors) = await CopyAsync(b1m, b2m, to_copy, config, deletedOrRenamed, token, progressUpdater).ConfigureAwait(false);
+            var (copied, copy_errors) = await CopyAsync(b1m, b2m, to_copy, config, deletedOrRenamed, token, progressUpdater, backendProgressUpdater).ConfigureAwait(false);
             Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
                 "Copied {0} files from {1} to {2}", copied, b1m.DisplayName, b2m.DisplayName);
 
@@ -306,7 +308,7 @@ namespace RemoteSynchronization
                     for (int i = 0; i < config.Retry; i++)
                     {
                         await Task.Delay(5000).ConfigureAwait(false); // Wait 5 seconds before retrying
-                        (copied, copy_errors) = await CopyAsync(b1m, b2m, copy_errors, config, deletedOrRenamed, token, progressUpdater).ConfigureAwait(false);
+                        (copied, copy_errors) = await CopyAsync(b1m, b2m, copy_errors, config, deletedOrRenamed, token, progressUpdater, backendProgressUpdater).ConfigureAwait(false);
                         Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
                             "Copied {0} files from {1} to {2}", copied, b1m.DisplayName, b2m.DisplayName);
                         if (!copy_errors.Any())
@@ -365,16 +367,26 @@ namespace RemoteSynchronization
         /// <param name="token">The cancellation token to use for the asynchronous operations.</param>
         /// <param name="progressUpdater">Optional progress updater for reporting file-level progress to the UI.</param>
         /// <returns>A tuple holding the number of succesful copies and a List of the files that failed.</returns>
-        private static async Task<(long, IEnumerable<IFileEntry>)> CopyAsync(LightWeightBackendManager b_src, LightWeightBackendManager b_dst, IEnumerable<IFileEntry> files, Config config, long filesProcessedOffset, CancellationToken token, IOperationProgressUpdater? progressUpdater = null)
+        /// <summary>
+        /// Synthetic path used for tracking overall sync transfer speed via the backend progress updater.
+        /// </summary>
+        private const string SYNC_TRANSFER_PATH = "__remote_sync_transfer__";
+
+        private static async Task<(long, IEnumerable<IFileEntry>)> CopyAsync(LightWeightBackendManager b_src, LightWeightBackendManager b_dst, IEnumerable<IFileEntry> files, Config config, long filesProcessedOffset, CancellationToken token, IOperationProgressUpdater? progressUpdater = null, IBackendProgressUpdater? backendProgressUpdater = null)
         {
             long successful_copies = 0;
             long sizeProcessed = 0;
             List<IFileEntry> errors = [];
             long i = 0, n = files.Count();
+            var totalSize = files.Sum(f => Math.Max(f.Size, 0));
             var sw_get_src = new System.Diagnostics.Stopwatch();
             var sw_put_dst = new System.Diagnostics.Stopwatch();
             var sw_get_dst = new System.Diagnostics.Stopwatch();
             var sw_get_cmp = new System.Diagnostics.Stopwatch();
+
+            // Start a single synthetic transfer to track overall speed across all files
+            backendProgressUpdater?.StartAction(BackendActionType.Put, SYNC_TRANSFER_PATH, totalSize);
+            backendProgressUpdater?.UpdateProgress(SYNC_TRANSFER_PATH, 0);
 
             foreach (var f in files)
             {
@@ -382,11 +394,12 @@ namespace RemoteSynchronization
                     Console.Write($"\rCopying: {i}/{n}");
 
                 // Report current file to the progress updater
-                progressUpdater?.StartFile(f.Name, f.Size);
+                progressUpdater?.StartFile(f.Name, Math.Max(f.Size, 0));
 
                 Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "rsync",
                     "Copying {0} from {1} to {2}", f.Name, b_src.DisplayName, b_dst.DisplayName);
 
+                var s_src_length = 0L;
                 using var s_src = Duplicati.Library.Utility.TempFileStream.Create();
 
                 try
@@ -396,14 +409,14 @@ namespace RemoteSynchronization
                     s_src.Position = 0;
                     sw_get_src.Stop();
 
-                    // Report download progress (half of the file transfer)
-                    progressUpdater?.UpdateFileProgress(f.Size / 2);
+                    // Report download complete (half of the file transfer)
+                    progressUpdater?.UpdateFileProgress(s_src_length / 2);
 
                     if (config.DryRun)
                     {
                         Duplicati.Library.Logging.Log.WriteDryrunMessage(LOGTAG, "rsync",
                             "Would write {0} bytes of {1} to {2}",
-                            Duplicati.Library.Utility.Utility.FormatSizeString(s_src.Length),
+                            Duplicati.Library.Utility.Utility.FormatSizeString(s_src_length),
                             f.Name, b_dst.DisplayName);
                     }
                     else
@@ -416,12 +429,15 @@ namespace RemoteSynchronization
                             sourceHash = hasher.ComputeHash(s_src);
                         }
 
+                        // Store the size BEFORE uploading, as we cannot access it after PutAsync
+                        s_src_length = s_src.Length;
+
                         sw_put_dst.Start();
                         await b_dst.PutAsync(f.Name, s_src, token).ConfigureAwait(false);
                         sw_put_dst.Stop();
 
                         // Report upload complete (full file transfer done)
-                        progressUpdater?.UpdateFileProgress(f.Size);
+                        progressUpdater?.UpdateFileProgress(s_src_length);
 
                         if (config.VerifyGetAfterPut)
                         {
@@ -434,9 +450,9 @@ namespace RemoteSynchronization
 
                             sw_get_cmp.Start();
                             string? err_string = null;
-                            if (s_src.Length != s_dst.Length)
+                            if (s_src_length != s_dst.Length)
                             {
-                                err_string = $"The sizes of the files do not match: {s_src.Length} != {s_dst.Length}.";
+                                err_string = $"The sizes of the files do not match: {s_src_length} != {s_dst.Length}.";
                             }
 
                             using var hasher = HashFactory.CreateHasher("SHA256");
@@ -456,7 +472,7 @@ namespace RemoteSynchronization
                     }
 
                     successful_copies++;
-                    sizeProcessed += f.Size;
+                    sizeProcessed += s_src_length;
                 }
                 catch (Exception e)
                 {
@@ -472,6 +488,9 @@ namespace RemoteSynchronization
                     progressUpdater?.UpdatefilesProcessed(filesProcessedOffset + i, sizeProcessed);
                     progressUpdater?.UpdateProgress(n > 0 ? (float)i / n : 1.0f);
 
+                    // Update the synthetic transfer progress for speed calculation
+                    backendProgressUpdater?.UpdateProgress(SYNC_TRANSFER_PATH, sizeProcessed);
+
                     // Stop any running timers
                     sw_get_src.Stop();
                     sw_put_dst.Stop();
@@ -479,6 +498,9 @@ namespace RemoteSynchronization
                     sw_get_cmp.Stop();
                 }
             }
+
+            // End the synthetic transfer
+            backendProgressUpdater?.EndAction(BackendActionType.Put, SYNC_TRANSFER_PATH);
 
             if (config.Progress)
                 Console.WriteLine($"\rCopying: {n}/{n}");

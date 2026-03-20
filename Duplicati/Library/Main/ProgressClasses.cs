@@ -148,7 +148,7 @@ namespace Duplicati.Library.Main
     /// <summary>
     /// Interface for updating the backend progress
     /// </summary>
-    internal interface IBackendProgressUpdater
+    public interface IBackendProgressUpdater
     {
         /// <summary>
         /// Register the start of a new action
