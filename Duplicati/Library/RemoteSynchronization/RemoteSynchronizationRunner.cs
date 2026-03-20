@@ -203,8 +203,8 @@ namespace RemoteSynchronization
                 return 0;
             }
 
-            using var b1m = new LightWeightBackendManager(config.Src, src_opts, config.BackendRetries, config.BackendRetryDelay, config.BackendRetryWithExponentialBackoff);
-            using var b2m = new LightWeightBackendManager(config.Dst, dst_opts, config.BackendRetries, config.BackendRetryDelay, config.BackendRetryWithExponentialBackoff);
+            using var b1m = new LightWeightBackendManager(config.Src, src_opts, config.BackendRetries, config.BackendRetryDelay, config.BackendRetryWithExponentialBackoff, progressUpdater: progressUpdater, backendProgressUpdater: backendProgressUpdater);
+            using var b2m = new LightWeightBackendManager(config.Dst, dst_opts, config.BackendRetries, config.BackendRetryDelay, config.BackendRetryWithExponentialBackoff, progressUpdater: progressUpdater, backendProgressUpdater: backendProgressUpdater);
 
             // Prepare the operations
             var (to_copy, to_delete, to_verify) = await PrepareFileLists(b1m, b2m, config, token).ConfigureAwait(false);
@@ -388,31 +388,24 @@ namespace RemoteSynchronization
 
                 try
                 {
-                    var s_src_length = 0L;
-                    using var s_src = Duplicati.Library.Utility.TempFileStream.Create();
-
                     // Report downloading current file with real-time progress
                     var fileSize = Math.Max(f.Size, 0);
                     progressUpdater?.StartFile($"Downloading {f.Name}", fileSize);
                     backendProgressUpdater?.StartAction(BackendActionType.Get, f.Name, fileSize);
-                    using var s_src_download_progress = new ProgressReportingStream(s_src, pg =>
-                        {
-                            backendProgressUpdater?.UpdateProgress(f.Name, pg);
-                            progressUpdater?.UpdateFileProgress(pg);
-                        });
 
                     sw_get_src.Start();
-                    await b_src.GetAsync(f.Name, s_src_download_progress, token).ConfigureAwait(false);
-                    s_src.Position = 0;
+                    using var tmp_src = await b_src.GetAsync(f.Name, token).ConfigureAwait(false);
                     sw_get_src.Stop();
 
                     backendProgressUpdater?.EndAction(BackendActionType.Get, f.Name);
+
+                    var s_src_length = SystemIO.IO_OS.FileLength(tmp_src);
 
                     if (config.DryRun)
                     {
                         Duplicati.Library.Logging.Log.WriteDryrunMessage(LOGTAG, "rsync",
                             "Would write {0} bytes of {1} to {2}",
-                            Duplicati.Library.Utility.Utility.FormatSizeString(s_src.Length),
+                            Duplicati.Library.Utility.Utility.FormatSizeString(s_src_length),
                             f.Name, b_dst.DisplayName);
                     }
                     else
@@ -422,23 +415,16 @@ namespace RemoteSynchronization
                         if (config.VerifyGetAfterPut)
                         {
                             using var hasher = HashFactory.CreateHasher("SHA256");
-                            sourceHash = hasher.ComputeHash(s_src);
+                            using var s = SystemIO.IO_OS.FileOpenRead(tmp_src);
+                            sourceHash = hasher.ComputeHash(s);
                         }
-
-                        // Store the size BEFORE uploading, as we cannot access it after PutAsync
-                        s_src_length = s_src.Length;
 
                         // Report uploading current file with real-time progress
                         progressUpdater?.StartFile($"Uploading {f.Name}", s_src_length);
                         backendProgressUpdater?.StartAction(BackendActionType.Put, f.Name, s_src_length);
-                        using var s_src_upload_progress = new ProgressReportingStream(s_src, pg =>
-                        {
-                            backendProgressUpdater?.UpdateProgress(f.Name, pg);
-                            progressUpdater?.UpdateFileProgress(pg);
-                        });
 
                         sw_put_dst.Start();
-                        await b_dst.PutAsync(f.Name, s_src_upload_progress, token).ConfigureAwait(false);
+                        await b_dst.PutAsync(f.Name, tmp_src, token).ConfigureAwait(false);
                         sw_put_dst.Stop();
 
                         backendProgressUpdater?.EndAction(BackendActionType.Put, f.Name);
