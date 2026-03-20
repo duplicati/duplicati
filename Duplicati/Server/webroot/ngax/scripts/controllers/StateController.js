@@ -43,10 +43,10 @@ backupApp.controller('StateController', function($scope, $timeout, ServerStatus,
                         pg = 0;
                     else if (pg >= 0.90)
                         pg = 0.90;
-                    
+
                     // If we have a speed append it
                     var speed_txt = ($scope.state.lastPgEvent.BackendSpeed < 0) ? "" : " at "+AppUtils.formatSizeString($scope.state.lastPgEvent.BackendSpeed)+"/s";
-                    
+
                     var restoring_text = $scope.state.lastPgEvent.Phase == 'Restore_DownloadingRemoteFiles' ? 'Restoring: ' : '';
 
                     // Finally construct the whole text
@@ -56,15 +56,15 @@ backupApp.controller('StateController', function($scope, $timeout, ServerStatus,
             else if ($scope.state.lastPgEvent.Phase == 'Backup_Finalize' || $scope.state.lastPgEvent.Phase == 'Backup_WaitForUpload')
             {
                 pg = 0.90;
-            } 
+            }
             else if ($scope.state.lastPgEvent.Phase == 'Backup_Delete' || $scope.state.lastPgEvent.Phase == 'Backup_Compact')
             {
                 pg = 0.95;
-            } 
+            }
             else if ($scope.state.lastPgEvent.Phase == 'Backup_VerificationUpload' || $scope.state.lastPgEvent.Phase == 'Backup_PostBackupVerify')
             {
                 pg = 0.98;
-            } 
+            }
             else if ($scope.state.lastPgEvent.Phase == 'Backup_Complete' || $scope.state.lastPgEvent.Phase == 'Backup_WaitForUpload')
             {
                 pg = 1;
@@ -103,7 +103,7 @@ backupApp.controller('StateController', function($scope, $timeout, ServerStatus,
         var txt = $scope.state.lastPgEvent == null ? '' : ($scope.state.lastPgEvent.Phase || '');
 
         function handleClick(ix) {
-            if (ix == 0) 
+            if (ix == 0)
             {
                 AppService.post('/task/' + taskId + '/stop');
                 $scope.StopReqId = taskId;

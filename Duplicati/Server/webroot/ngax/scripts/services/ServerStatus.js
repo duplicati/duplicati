@@ -147,7 +147,7 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
 
                     return;
                 }
-                
+
                 checkTaskState(taskid);
             }, 1000);
         }
@@ -163,7 +163,7 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
 
     //     if (lastTaskId != null && currentTaskId != lastTaskId && waitingfortask[lastTaskId] != null)
     //         checkTaskState(lastTaskId);
-        
+
     //     lastTaskId = currentTaskId;
     // });
 
@@ -327,7 +327,7 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
         // First failure, we ignore
         if (state.connectionState == 'connected' && state.failedConnectionAttempts == 1) {
             updateServerState();
-        } else if (state.failedAuthAttempts > 1 && (response.status === webSocketUnauthorizedCode || response.status === unauthorizedCode)) { 
+        } else if (state.failedAuthAttempts > 1 && (response.status === webSocketUnauthorizedCode || response.status === unauthorizedCode)) {
             state.connectionState = 'unauthorized';
             $rootScope.$broadcast('serverstatechanged');
         } else {
@@ -373,7 +373,7 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
 
     }
 
-    this.reconnect = function (fastcall) {        
+    this.reconnect = function (fastcall) {
         if (websocketReconnectTimer != null) {
             window.clearInterval(websocketReconnectTimer);
             websocketReconnectTimer = null;
