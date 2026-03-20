@@ -367,56 +367,52 @@ namespace RemoteSynchronization
         /// <param name="token">The cancellation token to use for the asynchronous operations.</param>
         /// <param name="progressUpdater">Optional progress updater for reporting file-level progress to the UI.</param>
         /// <returns>A tuple holding the number of succesful copies and a List of the files that failed.</returns>
-        /// <summary>
-        /// Synthetic path used for tracking overall sync transfer speed via the backend progress updater.
-        /// </summary>
-        private const string SYNC_TRANSFER_PATH = "__remote_sync_transfer__";
-
         private static async Task<(long, IEnumerable<IFileEntry>)> CopyAsync(LightWeightBackendManager b_src, LightWeightBackendManager b_dst, IEnumerable<IFileEntry> files, Config config, long filesProcessedOffset, CancellationToken token, IOperationProgressUpdater? progressUpdater = null, IBackendProgressUpdater? backendProgressUpdater = null)
         {
             long successful_copies = 0;
             long sizeProcessed = 0;
             List<IFileEntry> errors = [];
             long i = 0, n = files.Count();
-            var totalSize = files.Sum(f => Math.Max(f.Size, 0));
             var sw_get_src = new System.Diagnostics.Stopwatch();
             var sw_put_dst = new System.Diagnostics.Stopwatch();
             var sw_get_dst = new System.Diagnostics.Stopwatch();
             var sw_get_cmp = new System.Diagnostics.Stopwatch();
-
-            // Start a single synthetic transfer to track overall speed across all files
-            backendProgressUpdater?.StartAction(BackendActionType.Put, SYNC_TRANSFER_PATH, totalSize);
-            backendProgressUpdater?.UpdateProgress(SYNC_TRANSFER_PATH, 0);
 
             foreach (var f in files)
             {
                 if (config.Progress)
                     Console.Write($"\rCopying: {i}/{n}");
 
-                // Report current file to the progress updater
-                progressUpdater?.StartFile(f.Name, Math.Max(f.Size, 0));
-
                 Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "rsync",
                     "Copying {0} from {1} to {2}", f.Name, b_src.DisplayName, b_dst.DisplayName);
 
-                var s_src_length = 0L;
-                using var s_src = Duplicati.Library.Utility.TempFileStream.Create();
-
                 try
                 {
+                    var s_src_length = 0L;
+                    using var s_src = Duplicati.Library.Utility.TempFileStream.Create();
+
+                    // Report downloading current file with real-time progress
+                    var fileSize = Math.Max(f.Size, 0);
+                    progressUpdater?.StartFile($"Downloading {f.Name}", fileSize);
+                    backendProgressUpdater?.StartAction(BackendActionType.Get, f.Name, fileSize);
+                    using var s_src_download_progress = new ProgressReportingStream(s_src, pg =>
+                        {
+                            backendProgressUpdater?.UpdateProgress(f.Name, pg);
+                            progressUpdater?.UpdateFileProgress(pg);
+                        }, disposeBaseStream: false);
+
                     sw_get_src.Start();
-                    await b_src.GetAsync(f.Name, s_src, token).ConfigureAwait(false);
+                    await b_src.GetAsync(f.Name, s_src_download_progress, token).ConfigureAwait(false);
                     s_src.Position = 0;
                     sw_get_src.Stop();
 
-                    // Report download complete (half of the file transfer)
-                    progressUpdater?.UpdateFileProgress(s_src_length / 2);
+                    backendProgressUpdater?.EndAction(BackendActionType.Get, f.Name);
 
                     if (config.DryRun)
                     {
                         Duplicati.Library.Logging.Log.WriteDryrunMessage(LOGTAG, "rsync",
                             "Would write {0} bytes of {1} to {2}",
-                            Duplicati.Library.Utility.Utility.FormatSizeString(s_src_length),
+                            Duplicati.Library.Utility.Utility.FormatSizeString(s_src.Length),
                             f.Name, b_dst.DisplayName);
                     }
                     else
@@ -432,12 +428,20 @@ namespace RemoteSynchronization
                         // Store the size BEFORE uploading, as we cannot access it after PutAsync
                         s_src_length = s_src.Length;
 
+                        // Report uploading current file with real-time progress
+                        progressUpdater?.StartFile($"Uploading {f.Name}", s_src_length);
+                        backendProgressUpdater?.StartAction(BackendActionType.Put, f.Name, s_src_length);
+                        using var s_src_upload_progress = new ProgressReportingStream(s_src, pg =>
+                        {
+                            backendProgressUpdater?.UpdateProgress(f.Name, pg);
+                            progressUpdater?.UpdateFileProgress(pg);
+                        }, disposeBaseStream: false);
+
                         sw_put_dst.Start();
-                        await b_dst.PutAsync(f.Name, s_src, token).ConfigureAwait(false);
+                        await b_dst.PutAsync(f.Name, s_src_upload_progress, token).ConfigureAwait(false);
                         sw_put_dst.Stop();
 
-                        // Report upload complete (full file transfer done)
-                        progressUpdater?.UpdateFileProgress(s_src_length);
+                        backendProgressUpdater?.EndAction(BackendActionType.Put, f.Name);
 
                         if (config.VerifyGetAfterPut)
                         {
@@ -488,9 +492,6 @@ namespace RemoteSynchronization
                     progressUpdater?.UpdatefilesProcessed(filesProcessedOffset + i, sizeProcessed);
                     progressUpdater?.UpdateProgress(n > 0 ? (float)i / n : 1.0f);
 
-                    // Update the synthetic transfer progress for speed calculation
-                    backendProgressUpdater?.UpdateProgress(SYNC_TRANSFER_PATH, sizeProcessed);
-
                     // Stop any running timers
                     sw_get_src.Stop();
                     sw_put_dst.Stop();
@@ -498,9 +499,6 @@ namespace RemoteSynchronization
                     sw_get_cmp.Stop();
                 }
             }
-
-            // End the synthetic transfer
-            backendProgressUpdater?.EndAction(BackendActionType.Put, SYNC_TRANSFER_PATH);
 
             if (config.Progress)
                 Console.WriteLine($"\rCopying: {n}/{n}");
