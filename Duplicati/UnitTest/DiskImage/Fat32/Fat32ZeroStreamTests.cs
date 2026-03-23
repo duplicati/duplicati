@@ -110,8 +110,8 @@ public class Fat32ZeroStreamTests
         var buffer1 = new byte[1024];
         var buffer2 = new byte[1024];
 
-        stream1.Read(buffer1, 0, buffer1.Length);
-        stream2.Read(buffer2, 0, buffer2.Length);
+        stream1.ReadExactly(buffer1);
+        stream2.ReadExactly(buffer2);
 
         // Verify both have zeros
         for (int i = 0; i < buffer1.Length; i++)
@@ -235,7 +235,7 @@ public class Fat32ZeroStreamTests
         using var stream = new Fat32Filesystem.Fat32ZeroStream(blockSize);
 
 #pragma warning disable CS8600, CS8625
-        Assert.Throws<ArgumentNullException>(() => stream.Read(null, 0, 1024));
+        Assert.Throws<ArgumentNullException>(() => stream.ReadExactly(null, 0, 1024));
 #pragma warning restore CS8600, CS8625
     }
 
@@ -246,8 +246,8 @@ public class Fat32ZeroStreamTests
         using var stream = new Fat32Filesystem.Fat32ZeroStream(blockSize);
 
         var buffer = new byte[1024];
-        Assert.Throws<ArgumentOutOfRangeException>(() => stream.Read(buffer, -1, 1024));
-        Assert.Throws<ArgumentException>(() => stream.Read(buffer, buffer.Length + 1, 1024));
+        Assert.Throws<ArgumentOutOfRangeException>(() => stream.ReadExactly(buffer, -1, 1024));
+        Assert.Throws<ArgumentException>(() => stream.ReadExactly(buffer, buffer.Length + 1, 1024));
     }
 
     [Test]
@@ -257,7 +257,7 @@ public class Fat32ZeroStreamTests
         using var stream = new Fat32Filesystem.Fat32ZeroStream(blockSize);
 
         var buffer = new byte[1024];
-        Assert.Throws<ArgumentOutOfRangeException>(() => stream.Read(buffer, 0, -1));
-        Assert.Throws<ArgumentException>(() => stream.Read(buffer, 512, 1024)); // Exceeds buffer length
+        Assert.Throws<ArgumentOutOfRangeException>(() => stream.ReadExactly(buffer, 0, -1));
+        Assert.Throws<ArgumentException>(() => stream.ReadExactly(buffer, 512, 1024)); // Exceeds buffer length
     }
 }
