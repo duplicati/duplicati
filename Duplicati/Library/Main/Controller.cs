@@ -596,6 +596,12 @@ namespace Duplicati.Library.Main
                         resultSetter.EndTime = DateTime.UtcNow;
                     resultSetter.Interrupted = false;
 
+                    // Run modules before emitting the results to the database,
+                    // so that any messages from the modules are included in the
+                    // database logs, and the modules can modify the results that
+                    // are stored in the database.
+                    OperationComplete(result, null);
+
                     if (File.Exists(m_options.Dbpath) && !m_options.Dryrun)
                     {
                         try
@@ -625,24 +631,6 @@ namespace Duplicati.Library.Main
                         catch (Exception ex)
                         {
                             Logging.Log.WriteWarningMessage(LOGTAG, "FailedWriteOperation", ex, "Failed to write operation results to database: {0}", ex.Message);
-                        }
-                    }
-
-                    OperationComplete(result, null);
-
-                    // Re-write results to database after module callbacks,
-                    // so that any errors/warnings added by modules (e.g., remote synchronization)
-                    // are persisted and visible in the log viewer
-                    if (File.Exists(m_options.Dbpath) && !m_options.Dryrun)
-                    {
-                        try
-                        {
-                            using var db2 = LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, null, true, null, CancellationToken.None).Await();
-                            db2.WriteResultsAndCommit(result, CancellationToken.None).Await();
-                        }
-                        catch (Exception ex)
-                        {
-                            Logging.Log.WriteWarningMessage(LOGTAG, "FailedWritePostModuleResults", ex, "Failed to write post-module results to database: {0}", ex.Message);
                         }
                     }
 
