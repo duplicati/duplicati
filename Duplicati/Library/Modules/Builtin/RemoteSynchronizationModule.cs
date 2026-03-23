@@ -364,6 +364,9 @@ public class RemoteSynchronizationModule : IGenericCallbackModuleWithProgress
             return;
         }
 
+        // Store remote sync results to be added to backup results
+        var syncResultsList = new List<IRemoteSynchronizationResults>();
+
         for (int i = 0; i < m_destinations.Count; i++)
         {
             var dest = m_destinations[i];
@@ -383,7 +386,24 @@ public class RemoteSynchronizationModule : IGenericCallbackModuleWithProgress
                 progressUpdater?.UpdateRemoteSyncDestination(i + 1, m_destinations.Count);
 
                 var config = dest.Config with { Src = m_source! };
-                var exitCode = RemoteSynchronizationRunner.Run(config, CancellationToken.None, progressUpdater, backendProgressUpdater).ConfigureAwait(false).GetAwaiter().GetResult();
+                var date_start = DateTime.UtcNow;
+                var (exitCode, syncResults) = RemoteSynchronizationRunner.Run(config, CancellationToken.None, progressUpdater, backendProgressUpdater).ConfigureAwait(false).GetAwaiter().GetResult();
+                var date_end = DateTime.UtcNow;
+
+                // Create result object for this destination
+                var syncResult = new RemoteSynchronizationResults
+                {
+                    Destination = Duplicati.Library.Utility.Utility.GetUrlWithoutCredentials(config.Dst),
+                    DeletedFileCount = syncResults.DeletedFileCount,
+                    RenamedFileCount = syncResults.RenamedFileCount,
+                    CopiedFileCount = syncResults.CopiedFileCount,
+                    VerifiedFileCount = syncResults.VerifiedFileCount,
+                    FailedVerificationCount = syncResults.FailedVerificationCount,
+                    CopiedFileSize = syncResults.CopiedFileSize,
+                    BeginTime = date_start,
+                    EndTime = date_end
+                };
+                syncResultsList.Add(syncResult);
 
                 if (exitCode == 0)
                     RecordSyncOperation(i);
@@ -399,6 +419,10 @@ public class RemoteSynchronizationModule : IGenericCallbackModuleWithProgress
                 Logging.Log.WriteErrorMessage(LOGTAG, "RemoteSyncFailed", ex, "Remote synchronization to {0} failed: {1}", dest, ex.Message);
             }
         }
+
+        // Add remote synchronization results to the backup results for reporting
+        if (syncResultsList.Count > 0 && result is BackupResults backupResults)
+            backupResults.RemoteSynchronizationResults = [.. syncResultsList];
     }
 
     /// <summary>

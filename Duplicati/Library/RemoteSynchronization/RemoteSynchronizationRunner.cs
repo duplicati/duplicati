@@ -76,6 +76,19 @@ namespace RemoteSynchronization
     };
 
     /// <summary>
+    /// Results from a remote synchronization operation.
+    /// </summary>
+    public sealed record SyncResults
+    (
+        long DeletedFileCount,
+        long RenamedFileCount,
+        long CopiedFileCount,
+        long VerifiedFileCount,
+        long FailedVerificationCount,
+        long CopiedFileSize
+    );
+
+    /// <summary>
     /// Remote synchronization tool.
     /// </summary>
     public static class RemoteSynchronizationRunner
@@ -138,8 +151,8 @@ namespace RemoteSynchronization
         /// <param name="token">The cancellation token to use for the asynchronous operations.</param>
         /// <param name="progressUpdater">Optional progress updater for reporting file count and transfer progress to the UI.</param>
         /// <param name="backendProgressUpdater">Optional backend progress updater for reporting transfer speed to the UI.</param>
-        /// <returns>The return code for the main entry; 0 on success.</returns>
-        public static async Task<int> Run(Config config, CancellationToken token, IOperationProgressUpdater? progressUpdater = null, IBackendProgressUpdater? backendProgressUpdater = null)
+        /// <returns>A tuple containing the return code (0 on success) and the synchronization results.</returns>
+        public static async Task<(int, SyncResults)> Run(Config config, CancellationToken token, IOperationProgressUpdater? progressUpdater = null, IBackendProgressUpdater? backendProgressUpdater = null)
         {
             // Parse the log level
             var log_level_parsed = Enum.TryParse<Duplicati.Library.Logging.LogMessageType>(config.LogLevel, true, out var log_level_enum);
@@ -178,8 +191,8 @@ namespace RemoteSynchronization
         /// <param name="token">The cancellation token to use for the asynchronous operations.</param>
         /// <param name="progressUpdater">Optional progress updater for reporting file count and transfer progress to the UI.</param>
         /// <param name="backendProgressUpdater">Optional backend progress updater for reporting transfer speed to the UI.</param>
-        /// <returns>The return code for the main entry; 0 on success.</returns>
-        private static async Task<int> RunCore(Config config, CancellationToken token, IOperationProgressUpdater? progressUpdater = null, IBackendProgressUpdater? backendProgressUpdater = null)
+        /// <returns>A tuple containing the return code (0 on success) and the synchronization results.</returns>
+        private static async Task<(int, SyncResults)> RunCore(Config config, CancellationToken token, IOperationProgressUpdater? progressUpdater = null, IBackendProgressUpdater? backendProgressUpdater = null)
         {
             // Unpack and parse the multi token options
             var global_options = ParseOptions(config.GlobalOptions);
@@ -200,7 +213,7 @@ namespace RemoteSynchronization
             if (config.ParseArgumentsOnly)
             {
                 Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync", "Arguments parsed successfully; {0}; exiting.", config);
-                return 0;
+                return (0, new SyncResults(0, 0, 0, 0, 0, 0));
             }
 
             using var b1m = new LightWeightBackendManager(config.Src, src_opts, config.BackendRetries, config.BackendRetryDelay, config.BackendRetryWithExponentialBackoff, progressUpdater: progressUpdater, backendProgressUpdater: backendProgressUpdater);
@@ -221,7 +234,7 @@ namespace RemoteSynchronization
                     if (!response?.Equals("y", StringComparison.CurrentCultureIgnoreCase) ?? true)
                     {
                         Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync", "Aborted");
-                        return -1;
+                        return (-1, new SyncResults(0, 0, 0, 0, 0, 0));
                     }
                 }
 
@@ -258,7 +271,7 @@ namespace RemoteSynchronization
                 if (!response?.Equals("y", StringComparison.CurrentCultureIgnoreCase) ?? true)
                 {
                     Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync", "Aborted");
-                    return -1;
+                    return (-1, new SyncResults(0, 0, 0, 0, 0, 0));
                 }
             }
 
@@ -320,7 +333,7 @@ namespace RemoteSynchronization
                 {
                     Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "rsync", null,
                         "Could not copy {0} files. Not retrying any more.", copy_errors.Count());
-                    return copy_errors.Count();
+                    return (copy_errors.Count(), new SyncResults(deleted, renamed, 0, verified, failed_verify, totalFileSize));
                 }
             }
 
@@ -346,7 +359,7 @@ namespace RemoteSynchronization
             Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
                 "Remote synchronization completed successfully");
 
-            return 0;
+            return (0, new SyncResults(deleted, renamed, copied, verified, failed_verify, totalFileSize));
         }
 
         // TODO have concurrency parameters: uploaders, downloaders

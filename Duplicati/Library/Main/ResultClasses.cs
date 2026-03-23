@@ -31,6 +31,9 @@ using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Operation.Common;
 using Newtonsoft.Json;
 
+// Expose internal classes to Builtin modules, so they can create result objects
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Duplicati.Library.Modules.Builtin")]
+
 namespace Duplicati.Library.Main
 {
     internal interface IBackendWriter : IParsedBackendStatistics
@@ -476,6 +479,7 @@ namespace Duplicati.Library.Main
         public IRepairResults RepairResults { get; internal set; }
         public ITestResults TestResults { get; internal set; }
         public ISetLockResults LockResults { get; internal set; }
+        public IRemoteSynchronizationResults[] RemoteSynchronizationResults { get; internal set; } = [];
 
         public override ParsedResultType ParsedResult
         {
@@ -826,6 +830,52 @@ namespace Duplicati.Library.Main
 
         public CompactResults() : base() { }
         public CompactResults(BasicResults p) : base(p) { }
+    }
+
+    /// <summary>
+    /// Results from a remote synchronization operation to a single destination.
+    /// </summary>
+    internal class RemoteSynchronizationResults : BasicResults, IRemoteSynchronizationResults
+    {
+        /// <summary>
+        /// The destination URL or identifier.
+        /// </summary>
+        public string Destination { get; internal set; } = "";
+
+        /// <summary>
+        /// Number of files deleted from the destination.
+        /// </summary>
+        public long DeletedFileCount { get; internal set; }
+
+        /// <summary>
+        /// Number of files renamed at the destination (retention mode).
+        /// </summary>
+        public long RenamedFileCount { get; internal set; }
+
+        /// <summary>
+        /// Number of files copied to the destination.
+        /// </summary>
+        public long CopiedFileCount { get; internal set; }
+
+        /// <summary>
+        /// Number of files verified at the destination.
+        /// </summary>
+        public long VerifiedFileCount { get; internal set; }
+
+        /// <summary>
+        /// Number of files that failed verification.
+        /// </summary>
+        public long FailedVerificationCount { get; internal set; }
+
+        /// <summary>
+        /// Total size of files copied in bytes.
+        /// </summary>
+        public long CopiedFileSize { get; internal set; }
+
+        public override OperationMode MainOperation { get { return OperationMode.RemoteSynchronization; } }
+
+        public RemoteSynchronizationResults() : base() { }
+        public RemoteSynchronizationResults(BasicResults p) : base(p) { }
     }
 
     internal class ListChangesResults : BasicResults, IListChangesResults

@@ -343,6 +343,11 @@ namespace Duplicati.Library.Interface
         IDeleteResults DeleteResults { get; }
         IRepairResults RepairResults { get; }
         ISetLockResults LockResults { get; }
+
+        /// <summary>
+        /// Results from remote synchronization operations to multiple destinations.
+        /// </summary>
+        IRemoteSynchronizationResults[] RemoteSynchronizationResults { get; }
     }
 
     public interface IRestoreResults : IBasicResults
@@ -378,6 +383,47 @@ namespace Duplicati.Library.Interface
         long DownloadedFileSize { get; }
         long UploadedFileSize { get; }
         bool Dryrun { get; }
+    }
+
+    /// <summary>
+    /// Results from a remote synchronization operation to a single destination.
+    /// </summary>
+    public interface IRemoteSynchronizationResults : IBasicResults
+    {
+        /// <summary>
+        /// The destination URL or identifier.
+        /// </summary>
+        string Destination { get; }
+
+        /// <summary>
+        /// Number of files deleted from the destination.
+        /// </summary>
+        long DeletedFileCount { get; }
+
+        /// <summary>
+        /// Number of files renamed at the destination (retention mode).
+        /// </summary>
+        long RenamedFileCount { get; }
+
+        /// <summary>
+        /// Number of files copied to the destination.
+        /// </summary>
+        long CopiedFileCount { get; }
+
+        /// <summary>
+        /// Number of files verified at the destination.
+        /// </summary>
+        long VerifiedFileCount { get; }
+
+        /// <summary>
+        /// Number of files that failed verification.
+        /// </summary>
+        long FailedVerificationCount { get; }
+
+        /// <summary>
+        /// Total size of files copied in bytes.
+        /// </summary>
+        long CopiedFileSize { get; }
     }
 
     public interface ICreateLogDatabaseResults : IBasicResults
