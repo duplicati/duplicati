@@ -317,13 +317,13 @@ namespace RemoteSynchronization
             if (config.Retention)
             {
                 renamed = await RenameAsync(b2m, to_delete, config, token, 0, totalFileCount, progressUpdater, backendProgressUpdater).ConfigureAwait(false);
-                Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
+                Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "rsync",
                     "Renamed {0} files in {1}", renamed, b2m.DisplayName);
             }
             else
             {
                 deleted = await DeleteAsync(b2m, to_delete, config, token, 0, totalFileCount, progressUpdater, backendProgressUpdater).ConfigureAwait(false);
-                Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
+                Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "rsync",
                     "Deleted {0} files from {1}", deleted, b2m.DisplayName);
             }
 
@@ -332,7 +332,7 @@ namespace RemoteSynchronization
 
             // Copy the files
             var (copied, copy_errors) = await CopyAsync(b1m, b2m, to_copy, config, deletedOrRenamed, totalFileCount, token, progressUpdater, backendProgressUpdater).ConfigureAwait(false);
-            Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
+            Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "rsync",
                 "Copied {0} files from {1} to {2}", copied, b1m.DisplayName, b2m.DisplayName);
 
             // If there are still errors, retry a few times
@@ -342,14 +342,14 @@ namespace RemoteSynchronization
                     "Could not copy {0} files.", copy_errors.Count());
                 if (config.Retry > 0)
                 {
-                    Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
+                    Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "rsync",
                         "Retrying {0} more times to copy the {1} files that failed",
                         config.Retry, copy_errors.Count());
                     for (int i = 0; i < config.Retry; i++)
                     {
                         await Task.Delay(5000).ConfigureAwait(false); // Wait 5 seconds before retrying
                         (copied, copy_errors) = await CopyAsync(b1m, b2m, copy_errors, config, deletedOrRenamed, totalFileCount, token, progressUpdater, backendProgressUpdater).ConfigureAwait(false);
-                        Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
+                        Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "rsync",
                             "Copied {0} files from {1} to {2}", copied, b1m.DisplayName, b2m.DisplayName);
                         if (!copy_errors.Any())
                             break;
@@ -599,7 +599,8 @@ namespace RemoteSynchronization
                     }
                     else
                     {
-                        await b.DeleteAsync(f.Name, token).ConfigureAwait(false);
+                        using (var timer_delete = new Duplicati.Library.Logging.Timer(LOGTAG, "rsync", $"Delete {f.Name}"))
+                            await b.DeleteAsync(f.Name, token).ConfigureAwait(false);
                     }
                     successful_deletes++;
 
