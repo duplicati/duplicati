@@ -151,12 +151,13 @@ namespace RemoteSynchronization
         /// <param name="token">The cancellation token to use for the asynchronous operations.</param>
         /// <param name="progressUpdater">Optional progress updater for reporting file count and transfer progress to the UI.</param>
         /// <param name="backendProgressUpdater">Optional backend progress updater for reporting transfer speed to the UI.</param>
-        /// <returns>A tuple containing the return code (0 on success) and the synchronization results.</returns>
-        public static async Task<(int, SyncResults)> Run(Config config, CancellationToken token, IOperationProgressUpdater? progressUpdater = null, IBackendProgressUpdater? backendProgressUpdater = null)
+        /// <returns>The return code (0 on success).</returns>
+        public static async Task<int> Run(Config config, CancellationToken token, IOperationProgressUpdater? progressUpdater = null, IBackendProgressUpdater? backendProgressUpdater = null, IBasicResults? results = null)
         {
             // Parse the log level
             var log_level_parsed = Enum.TryParse<Duplicati.Library.Logging.LogMessageType>(config.LogLevel, true, out var log_level_enum);
             log_level_enum = log_level_parsed ? log_level_enum : Duplicati.Library.Logging.LogMessageType.Information;
+            var rsyncResults = results as RemoteSynchronizationResults;
 
             if (!string.IsNullOrEmpty(config.LogFile))
             {
@@ -171,16 +172,42 @@ namespace RemoteSynchronization
                         SystemIO.IO_OS.DirectoryCreate(log_file_dir);
                     log_file_sink = new StreamLogDestination(config.LogFile);
                 }
-                using var multi_sink = new MultiLogDestination([console_sink, log_file_sink]);
 
-                // Start the logging scope
-                using var _ = Duplicati.Library.Logging.Log.StartScope(multi_sink, log_level_enum);
+                if (rsyncResults is not null)
+                {
+                    using var multi_log_target = new ControllerMultiLogTarget(rsyncResults, log_level_enum, null, null);
+                    multi_log_target.AddTarget(console_sink, log_level_enum, null);
+                    multi_log_target.AddTarget(log_file_sink, log_level_enum, null);
 
-                return await RunCore(config, token, progressUpdater, backendProgressUpdater).ConfigureAwait(false);
+                    // Start the logging scope with both file logging and message capture
+                    using var scope = Duplicati.Library.Logging.Log.StartScope(multi_log_target.WriteMessage);
+
+                    return await RunCore(config, token, progressUpdater, backendProgressUpdater, rsyncResults).ConfigureAwait(false);
+                }
+                else
+                {
+                    using var multi_sink = new MultiLogDestination([console_sink, log_file_sink]);
+
+                    // Start the logging scope
+                    using var _ = Duplicati.Library.Logging.Log.StartScope(multi_sink, log_level_enum);
+
+                    return await RunCore(config, token, progressUpdater, backendProgressUpdater).ConfigureAwait(false);
+                }
             }
             else
             {
-                return await RunCore(config, token, progressUpdater, backendProgressUpdater).ConfigureAwait(false);
+                if (rsyncResults is not null)
+                {
+                    // Set up logging to capture messages to the results even without a log file
+                    using var log_target = new ControllerMultiLogTarget(rsyncResults, log_level_enum, null, null);
+                    using var scope = Duplicati.Library.Logging.Log.StartScope(log_target.WriteMessage);
+
+                    return await RunCore(config, token, progressUpdater, backendProgressUpdater, rsyncResults).ConfigureAwait(false);
+                }
+                else
+                {
+                    return await RunCore(config, token, progressUpdater, backendProgressUpdater).ConfigureAwait(false);
+                }
             }
         }
 
@@ -191,8 +218,8 @@ namespace RemoteSynchronization
         /// <param name="token">The cancellation token to use for the asynchronous operations.</param>
         /// <param name="progressUpdater">Optional progress updater for reporting file count and transfer progress to the UI.</param>
         /// <param name="backendProgressUpdater">Optional backend progress updater for reporting transfer speed to the UI.</param>
-        /// <returns>A tuple containing the return code (0 on success) and the synchronization results.</returns>
-        private static async Task<(int, SyncResults)> RunCore(Config config, CancellationToken token, IOperationProgressUpdater? progressUpdater = null, IBackendProgressUpdater? backendProgressUpdater = null)
+        /// <returns>The return code (0 on success).</returns>
+        private static async Task<int> RunCore(Config config, CancellationToken token, IOperationProgressUpdater? progressUpdater = null, IBackendProgressUpdater? backendProgressUpdater = null, RemoteSynchronizationResults? results = null)
         {
             // Unpack and parse the multi token options
             var global_options = ParseOptions(config.GlobalOptions);
@@ -213,7 +240,7 @@ namespace RemoteSynchronization
             if (config.ParseArgumentsOnly)
             {
                 Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync", "Arguments parsed successfully; {0}; exiting.", config);
-                return (0, new SyncResults(0, 0, 0, 0, 0, 0));
+                return 0;
             }
 
             using var b1m = new LightWeightBackendManager(config.Src, src_opts, config.BackendRetries, config.BackendRetryDelay, config.BackendRetryWithExponentialBackoff, progressUpdater: progressUpdater, backendProgressUpdater: backendProgressUpdater);
@@ -234,7 +261,7 @@ namespace RemoteSynchronization
                     if (!response?.Equals("y", StringComparison.CurrentCultureIgnoreCase) ?? true)
                     {
                         Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync", "Aborted");
-                        return (-1, new SyncResults(0, 0, 0, 0, 0, 0));
+                        return -1;
                     }
                 }
 
@@ -271,7 +298,7 @@ namespace RemoteSynchronization
                 if (!response?.Equals("y", StringComparison.CurrentCultureIgnoreCase) ?? true)
                 {
                     Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync", "Aborted");
-                    return (-1, new SyncResults(0, 0, 0, 0, 0, 0));
+                    return -1;
                 }
             }
 
@@ -333,40 +360,55 @@ namespace RemoteSynchronization
                 {
                     Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "rsync", null,
                         "Could not copy {0} files. Not retrying any more.", copy_errors.Count());
-                    return (copy_errors.Count(), new SyncResults(deleted, renamed, 0, verified, failed_verify, totalFileSize));
+                    results?.DeletedFileCount = deleted;
+                    results?.RenamedFileCount = renamed;
+                    results?.CopiedFileCount = copied;
+                    results?.VerifiedFileCount = verified;
+                    results?.FailedVerificationCount = failed_verify;
+                    results?.CopiedFileSize = totalFileSize;
+                    return copy_errors.Count();
                 }
             }
 
             // Results reporting
-            if (verified > 0)
-                Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
-                    "Verified {0} files in {1} that didn't need to be copied",
-                    verified, b2m.DisplayName);
-            if (failed_verify > 0)
-                Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
-                    "Failed to verify {0} files in {1}, which were then attempted to be copied",
-                    failed_verify, b2m.DisplayName);
-            if (copied > 0)
-                Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
-                    "Copied {0} files from {1} to {2}", copied, b1m.DisplayName, b2m.DisplayName);
-            if (deleted > 0)
-                Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
-                    "Deleted {0} files from {1}", deleted, b2m.DisplayName);
-            if (renamed > 0)
-                Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
-                    "Renamed {0} files in {1}", renamed, b2m.DisplayName);
+            if (results is not null)
+            {
+                if (verified > 0)
+                    Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
+                        "Verified {0} files in {1} that didn't need to be copied",
+                        verified, b2m.DisplayName);
+                if (failed_verify > 0)
+                    Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
+                        "Failed to verify {0} files in {1}, which were then attempted to be copied",
+                        failed_verify, b2m.DisplayName);
+                if (copied > 0)
+                    Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
+                        "Copied {0} files from {1} to {2}", copied, b1m.DisplayName, b2m.DisplayName);
+                if (deleted > 0)
+                    Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
+                        "Deleted {0} files from {1}", deleted, b2m.DisplayName);
+                if (renamed > 0)
+                    Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
+                        "Renamed {0} files in {1}", renamed, b2m.DisplayName);
+            }
 
             Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
                 "Remote synchronization completed successfully");
 
-            return (0, new SyncResults(deleted, renamed, copied, verified, failed_verify, totalFileSize));
+            results?.DeletedFileCount = deleted;
+            results?.RenamedFileCount = renamed;
+            results?.CopiedFileCount = copied;
+            results?.VerifiedFileCount = verified;
+            results?.FailedVerificationCount = failed_verify;
+            results?.CopiedFileSize = totalFileSize;
+
+            return 0;
         }
 
         // TODO have concurrency parameters: uploaders, downloaders
         // TODO low memory mode, where things aren't kept in memory. Maybe utilize SQLite?
         // TODO For convenience, have the option to launch a "duplicati test" on the destination backend after the synchronization
         // TODO Save hash to minimize redownload
-        // TODO Duplicati Results
 
         /// <summary>
         /// Copies the files from one backend to another.

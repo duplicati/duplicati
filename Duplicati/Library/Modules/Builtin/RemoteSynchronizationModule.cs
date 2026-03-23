@@ -388,22 +388,14 @@ public class RemoteSynchronizationModule : IGenericCallbackModuleWithProgress
 
                 var config = dest.Config with { Src = m_source! };
                 var date_start = DateTime.UtcNow;
-                var (exitCode, syncResults) = RemoteSynchronizationRunner.Run(config, CancellationToken.None, progressUpdater, backendProgressUpdater).ConfigureAwait(false).GetAwaiter().GetResult();
-                var date_end = DateTime.UtcNow;
-
-                // Create result object for this destination
                 var syncResult = new RemoteSynchronizationResults
                 {
                     Destination = Duplicati.Library.Utility.Utility.GetUrlWithoutCredentials(config.Dst),
-                    DeletedFileCount = syncResults.DeletedFileCount,
-                    RenamedFileCount = syncResults.RenamedFileCount,
-                    CopiedFileCount = syncResults.CopiedFileCount,
-                    VerifiedFileCount = syncResults.VerifiedFileCount,
-                    FailedVerificationCount = syncResults.FailedVerificationCount,
-                    CopiedFileSize = syncResults.CopiedFileSize,
-                    BeginTime = date_start,
-                    EndTime = date_end
                 };
+                var exitCode = RemoteSynchronizationRunner.Run(config, CancellationToken.None, progressUpdater, backendProgressUpdater, syncResult).ConfigureAwait(false).GetAwaiter().GetResult();
+                var date_end = DateTime.UtcNow;
+                syncResult.BeginTime = date_start;
+                syncResult.EndTime = date_end;
                 syncResultsList.Add(syncResult);
 
                 if (exitCode == 0)

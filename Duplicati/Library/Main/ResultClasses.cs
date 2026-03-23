@@ -33,6 +33,7 @@ using Newtonsoft.Json;
 
 // Expose internal classes to Builtin modules, so they can create result objects
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Duplicati.Library.Modules.Builtin")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Duplicati.Library.RemoteSynchronization")]
 
 namespace Duplicati.Library.Main
 {
