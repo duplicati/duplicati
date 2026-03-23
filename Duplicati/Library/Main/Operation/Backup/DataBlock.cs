@@ -23,13 +23,14 @@ using System;
 using Duplicati.Library.Interface;
 using System.Threading.Tasks;
 using CoCoL;
+using System.Buffers;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
     /// <summary>
     /// The data block represents a single blob of data read from a file
     /// </summary>
-    internal struct DataBlock
+    internal struct DataBlock : IDisposable
     {
         public string HashKey;
         public byte[] Data;
@@ -43,7 +44,8 @@ namespace Duplicati.Library.Main.Operation.Backup
         {
             var tcs = new TaskCompletionSource<bool>();
 
-            await channel.WriteAsync(new DataBlock() {
+            await channel.WriteAsync(new DataBlock()
+            {
                 HashKey = hash,
                 Data = data,
                 Offset = offset,
@@ -55,6 +57,15 @@ namespace Duplicati.Library.Main.Operation.Backup
 
             var r = await tcs.Task.ConfigureAwait(false);
             return r;
+        }
+
+        public void Dispose()
+        {
+            if (Data != null)
+            {
+                ArrayPool<byte>.Shared.Return(Data);
+                Data = null;
+            }
         }
     }
 }

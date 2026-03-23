@@ -27,6 +27,7 @@ using System.Collections.Generic;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Interface;
 using System.IO;
+using System.Buffers;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
@@ -53,6 +54,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 var blocksize = options.Blocksize;
                 var emptymetadata = Utility.WrapMetadata(new Dictionary<string, string>(), options);
                 var maxmetadatasize = (options.Blocksize / (long)options.BlockhashSize) * options.Blocksize;
+                var empty_block = Array.Empty<byte>();
 
                 using (var filehasher = HashFactory.CreateHasher(options.FileHashAlgorithm))
                 using (var blockhasher = HashFactory.CreateHasher(options.BlockHashAlgorithm))
@@ -75,7 +77,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                             using (var blocklisthashes = new Library.Utility.FileBackedStringList())
                             using (var hashcollector = new Library.Utility.FileBackedStringList())
                             {
-                                var blocklistbuffer = new byte[blocksize];
+                                var blocklistbuffer = ArrayPool<byte>.Shared.Rent(blocksize);
                                 var blocklistoffset = 0L;
 
                                 long fslen = -1;
@@ -111,7 +113,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                                 filehasher.Initialize();
                                 var lastread = 0;
-                                var buf = new byte[blocksize];
+                                var buf = ArrayPool<byte>.Shared.Rent(blocksize);
                                 var lastupdate = DateTime.Now;
 
                                 // Core processing loop, read blocks of data and hash individually
@@ -130,7 +132,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                                         blocklisthashes.Add(blkey);
                                         await DataBlock.AddBlockToOutputAsync(self.BlockOutput, blkey, blocklistbuffer, 0, blocklistoffset, CompressionHint.Noncompressible, true);
                                         blocklistoffset = 0;
-                                        blocklistbuffer = new byte[blocksize];
+                                        blocklistbuffer = ArrayPool<byte>.Shared.Rent(blocksize);
                                     }
 
                                     // Store the current hash in the blocklist
@@ -149,7 +151,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                                     // Make sure the filehasher is done with the buf instance before we pass it on
                                     await pftask.ConfigureAwait(false);
                                     await DataBlock.AddBlockToOutputAsync(self.BlockOutput, hashkey, buf, 0, lastread, e.Hint, false);
-                                    buf = new byte[blocksize];
+                                    buf = ArrayPool<byte>.Shared.Rent(blocksize);
                                 }
 
                                 // If we have more than a single block of data, output the (trailing) blocklist
@@ -160,7 +162,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                                     await DataBlock.AddBlockToOutputAsync(self.BlockOutput, blkey, blocklistbuffer, 0, blocklistoffset, CompressionHint.Noncompressible, true);
                                 }
 
-                                filehasher.TransformFinalBlock(new byte[0], 0, 0);
+                                filehasher.TransformFinalBlock(empty_block, 0, 0);
                                 var filehash = Convert.ToBase64String(filehasher.Hash);
                                 var blocksetid = await database.AddBlocksetAsync(filehash, filesize, blocksize, hashcollector, blocklisthashes, taskreader.ProgressToken);
                                 cur.SetResult(new StreamProcessResult() { Streamlength = filesize, Streamhash = filehash, Blocksetid = blocksetid });
