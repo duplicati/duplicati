@@ -247,7 +247,7 @@ public class Fat32ZeroStreamTests
 
         var buffer = new byte[1024];
         Assert.Throws<ArgumentOutOfRangeException>(() => stream.ReadExactly(buffer, -1, 1024));
-        Assert.Throws<ArgumentException>(() => stream.ReadExactly(buffer, buffer.Length + 1, 1024));
+        Assert.Throws<ArgumentOutOfRangeException>(() => stream.ReadExactly(buffer, buffer.Length + 1, 1024));
     }
 
     [Test]
@@ -258,6 +258,6 @@ public class Fat32ZeroStreamTests
 
         var buffer = new byte[1024];
         Assert.Throws<ArgumentOutOfRangeException>(() => stream.ReadExactly(buffer, 0, -1));
-        Assert.Throws<ArgumentException>(() => stream.ReadExactly(buffer, 512, 1024)); // Exceeds buffer length
+        Assert.Throws<ArgumentOutOfRangeException>(() => stream.ReadExactly(buffer, 512, 1024)); // Exceeds buffer length
     }
 }
