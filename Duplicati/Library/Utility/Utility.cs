@@ -1683,7 +1683,8 @@ namespace Duplicati.Library.Utility
                 return url;
 
             // Use a reportable url without credentials
-            var sepIndex = Math.Max(0, url.IndexOf('|')) + 1;
+            var pipeIndex = url.IndexOf('|');
+            var sepIndex = pipeIndex >= 0 ? pipeIndex + 1 : 0;
             var length = url.Length - sepIndex;
             var shown = Math.Min(length, maxShown);
             var hidden = length - shown;
