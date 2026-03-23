@@ -384,6 +384,7 @@ public class RemoteSynchronizationModule : IGenericCallbackModuleWithProgress
                 // Update progress to show sync is in progress
                 progressUpdater?.UpdatePhase(OperationPhase.Backup_RemoteSynchronization);
                 progressUpdater?.UpdateRemoteSyncDestination(i + 1, m_destinations.Count);
+                progressUpdater?.UpdateProgress(0);
 
                 var config = dest.Config with { Src = m_source! };
                 var date_start = DateTime.UtcNow;
