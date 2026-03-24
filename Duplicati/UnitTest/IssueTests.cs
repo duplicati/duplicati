@@ -698,8 +698,8 @@ namespace Duplicati.UnitTest
                 {
                     var original_dir_info = new DirectoryInfo(os_special_dir);
                     var restored_dir_info = new DirectoryInfo(os_special_dir.Replace(DATAFOLDER, RESTOREFOLDER));
-                    var original_dir_rules = original_dir_info.GetAccessControl().GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount));
-                    var restored_dir_rules = restored_dir_info.GetAccessControl().GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount));
+                    var original_dir_rules = original_dir_info.GetAccessControl().GetAccessRules(true, false, typeof(System.Security.Principal.NTAccount));
+                    var restored_dir_rules = restored_dir_info.GetAccessControl().GetAccessRules(true, false, typeof(System.Security.Principal.NTAccount));
 
                     if (skip_metadata && original_dir_info.Attributes != default_dir_attrs)
                         Assert.That(original_dir_info.Attributes, Is.Not.EqualTo(restored_dir_info.Attributes), "Directory attributes should not be equal");
@@ -714,8 +714,8 @@ namespace Duplicati.UnitTest
 
                     var original_file_info = new FileInfo(os_special_file);
                     var restored_file_info = new FileInfo(os_special_file.Replace(DATAFOLDER, RESTOREFOLDER));
-                    var original_file_rules = original_file_info.GetAccessControl().GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount));
-                    var restored_file_rules = restored_file_info.GetAccessControl().GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount));
+                    var original_file_rules = original_file_info.GetAccessControl().GetAccessRules(true, false, typeof(System.Security.Principal.NTAccount));
+                    var restored_file_rules = restored_file_info.GetAccessControl().GetAccessRules(true, false, typeof(System.Security.Principal.NTAccount));
 
                     if (skip_metadata && original_file_info.Attributes != default_file_attrs)
                         Assert.That(original_file_info.Attributes, Is.Not.EqualTo(restored_file_info.Attributes), "File attributes should not be equal");
