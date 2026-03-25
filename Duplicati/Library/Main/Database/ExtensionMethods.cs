@@ -780,8 +780,11 @@ public static partial class ExtensionMethods
             else
                 v = Library.Utility.Utility.FormatInvariantValue(p.Value);
 
+            paramName = Regex.Escape(paramName);
+            v = v.Replace("$", "$$");
+
             // Replace all occurrences of the parameter (with word boundary)
-            txt = Regex.Replace(txt, $@"\B{Regex.Escape(paramName)}\b", v, RegexOptions.IgnoreCase);
+            txt = Regex.Replace(txt, $@"\B{paramName}\b", v, RegexOptions.IgnoreCase);
         }
 
         return txt;
