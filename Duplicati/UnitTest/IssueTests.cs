@@ -971,7 +971,7 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
-        public void DollarSignNumberInFilenameBreaksRegex()
+        public void Issue6817DollarSignNumberInFilenameBreaksRegex()
         {
             var filename = "~$1234567891011121314151617181920.txt";
             var content = RandomNumberGenerator.GetBytes(1024);
