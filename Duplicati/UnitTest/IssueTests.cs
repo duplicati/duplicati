@@ -969,5 +969,23 @@ namespace Duplicati.UnitTest
                     "Blocklist download pass was required");
             }
         }
+
+        [Test]
+        public void Issue6817DollarSignNumberInFilenameBreaksRegex()
+        {
+            var filename = "~$1234567891011121314151617181920.txt";
+            var content = RandomNumberGenerator.GetBytes(1024);
+            TestUtils.WriteFile(Path.Combine(DATAFOLDER, filename), content);
+
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, TestOptions, null))
+                TestUtils.AssertResults(c.Backup([DATAFOLDER]));
+
+            // Delete the database
+            File.Delete(DBFILE);
+
+            // Recreate the database, which would fail if the filename is not handled correctly
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, TestOptions, null))
+                TestUtils.AssertResults(c.Repair());
+        }
     }
 }
