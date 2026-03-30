@@ -86,10 +86,10 @@ namespace Duplicati.Library.Backend.MovistarCloud
             "Backend not initialized. This instance was created using the default constructor for metadata only."
         );
 
-        // Default ctor required by Duplicati loader for metadata. [1](https://github.com/iterate-ch/cyberduck/issues/11137)[2](http://webmail.movistarcloud.cl/cp/login/tips/dvmap.pdf)
+        // Default ctor required by Duplicati loader for metadata. 
         public MovistarCloudBackend() { }
 
-        // Main ctor required by Duplicati loader. [1](https://github.com/iterate-ch/cyberduck/issues/11137)[2](http://webmail.movistarcloud.cl/cp/login/tips/dvmap.pdf)
+        // Main ctor required by Duplicati loader. 
         public MovistarCloudBackend(string url, Dictionary<string, string> options)
         {
             var email = Require(options, "email");
@@ -341,7 +341,7 @@ namespace Duplicati.Library.Backend.MovistarCloud
 
         private static void ValidateRemoteName(string name)
         {
-            // Duplicati remote filenames are usually safe; keep strict. [2](http://webmail.movistarcloud.cl/cp/login/tips/dvmap.pdf)
+            // Duplicati remote filenames are usually safe; keep strict. 
             foreach (var c in name)
                 if (!(char.IsLetterOrDigit(c) || c == '.' || c == '-' || c == '_'))
                     throw new ArgumentException($"Unsupported remote filename char '{c}' in '{name}'");
@@ -369,7 +369,7 @@ namespace Duplicati.Library.Backend.MovistarCloud
 
             public bool IsFolder { get; }
 
-            // Propiedades “clásicas” del IFileEntry (se ven en la interfaz pública) [1](https://github.com/duplicati/duplicati/blob/master/Duplicati/Library/Interface/IFileEntry.cs)
+            // Propiedades “clásicas” del IFileEntry 
             public DateTime LastAccess { get; }
             public DateTime LastModification { get; }
                         

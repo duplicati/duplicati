@@ -438,7 +438,7 @@ namespace Duplicati.Library.Backend.MovistarCloud
             var body = await ReadJsonOrThrowAsync(resp, ct).ConfigureAwait(false);
 
             using var doc = JsonDocument.Parse(body);
-            // Suele devolver { "data": { "folder": { "id": 13649..., "name": "...", ... } }, ... }
+            // Suele devolver { "data": { "folder": { "id": xxxx..., "name": "...", ... } }, ... }
             var createdFolder = doc.RootElement.GetProperty("data").GetProperty("folder");
             var id = createdFolder.GetProperty("id").GetInt64();
 
@@ -452,7 +452,7 @@ namespace Duplicati.Library.Backend.MovistarCloud
             var body = await ReadJsonOrThrowAsync(resp, ct).ConfigureAwait(false);
 
             using var doc = JsonDocument.Parse(body);
-            // Respuesta típica: {"data":{"folders":[{"name":"/","id":136494549,...}]}, ...}
+            // Respuesta típica: {"data":{"folders":[{"name":"/","id":xxxxxx,...}]}, ...}
             var folders = doc.RootElement.GetProperty("data").GetProperty("folders");
             return folders[0].GetProperty("id").GetInt64();
         }
