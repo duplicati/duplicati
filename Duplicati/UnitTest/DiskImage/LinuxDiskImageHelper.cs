@@ -20,7 +20,15 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
+using System.Threading;
+using Duplicati.Proprietary.DiskImage;
+using NUnit.Framework;
+using Duplicati.Proprietary.DiskImage.General;
 
 #nullable enable
 
@@ -28,111 +36,326 @@ namespace Duplicati.UnitTest.DiskImage
 {
     /// <summary>
     /// Linux implementation of <see cref="IDiskImageHelper"/> using loop devices and standard Linux tools.
-    /// This is a stub implementation that throws <see cref="NotImplementedException"/> for all operations.
     /// </summary>
     internal class LinuxDiskImageHelper : IDiskImageHelper
     {
+        /// <summary>
+        /// Tracks loop devices created by this helper for cleanup.
+        /// </summary>
+        private readonly List<string> _trackedLoopDevices = new();
+
+        /// <summary>
+        /// Maps image paths to their associated loop devices.
+        /// </summary>
+        private readonly Dictionary<string, string> _imageToLoopDevice = new();
+
+        /// <summary>
+        /// Tracks any mount directories that were automatically created for cleanup.
+        /// </summary>
+        private readonly List<string> _autoCreatedMntDirectories = new();
+
         /// <inheritdoc />
-        /// <exception cref="NotImplementedException">Always thrown as Linux support is not yet implemented.</exception>
-        public string CreateAndAttachDisk(string imagePath, long sizeMB)
+        public string CreateDisk(string imagePath, long sizeB)
         {
-            throw new NotImplementedException("Linux disk image operations are not yet implemented.");
+            // Ensure the directory exists
+            var directory = Path.GetDirectoryName(imagePath);
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+                Directory.CreateDirectory(directory);
+
+            // Delete existing image if it exists
+            if (File.Exists(imagePath))
+            {
+                try
+                {
+                    CleanupDisk(imagePath);
+                }
+                catch
+                {
+                    // Ignore errors during cleanup
+                }
+            }
+
+            // Create a sparse disk image file using truncate
+            RunProcess("truncate", $"-s {sizeB} \"{imagePath}\"");
+
+            // Attach it as a loop device
+            var loopDevice = RunProcess("losetup", $"--find --show --partscan \"{imagePath}\"").Trim();
+
+            if (string.IsNullOrEmpty(loopDevice) || !loopDevice.StartsWith("/dev/loop"))
+                throw new InvalidOperationException($"Failed to attach loop device for {imagePath}");
+
+            // Track the loop device
+            _trackedLoopDevices.Add(loopDevice);
+            _imageToLoopDevice[imagePath] = loopDevice;
+
+            return loopDevice;
         }
 
         /// <inheritdoc />
-        /// <exception cref="NotImplementedException">Always thrown as Linux support is not yet implemented.</exception>
-        public int GetDiskNumber(string imagePath)
+        public string[] InitializeDisk(string diskIdentifier, PartitionTableType tableType, (FileSystemType, long)[] partitions)
         {
-            throw new NotImplementedException("Linux disk image operations are not yet implemented.");
+            if (tableType == PartitionTableType.Unknown)
+                return []; // No partition table, so nothing to initialize
+
+            // Create partition table using parted
+            var label = tableType == PartitionTableType.GPT ? "gpt" : "msdos";
+            RunProcess("parted", $"-s {diskIdentifier} mklabel {label}");
+
+            // Get disk size for calculating partition sizes
+            var diskSize = GetDiskSize(diskIdentifier);
+            var sectorSize = GetSectorSize(diskIdentifier);
+            var mbrSize = 1 * sectorSize; // MBR requires 1 sector for the partition table
+            var gptSize = mbrSize + 33 * sectorSize; // GPT requires 34 sectors reserved at the beginning (1 for protective MBR + 33 for GPT header and partition entries)
+            long nextFreeSector = tableType == PartitionTableType.GPT ? gptSize : mbrSize;
+
+            // Create partitions
+            for (int i = 0; i < partitions.Length; i++)
+            {
+                var (fsType, size) = partitions[i];
+                var partitionNumber = i + 1;
+
+                // Calculate partition size
+                long endOffset;
+                if (size <= 0)
+                {
+                    if (i != partitions.Length - 1)
+                        throw new InvalidOperationException("Only the last partition can be sized to fill the remaining space");
+                    endOffset = diskSize - sectorSize;
+                }
+                else
+                    endOffset = nextFreeSector + size - sectorSize;
+
+                // Check if we should clamp
+                if (tableType == PartitionTableType.GPT && endOffset > diskSize - gptSize)
+                    if (size <= 0)
+                        endOffset = diskSize - gptSize;
+                    else
+                        throw new InvalidOperationException($"Partition {partitionNumber} exceeds available space. Max size for this partition is {diskSize - gptSize - nextFreeSector} bytes.");
+
+                // Create partition
+                RunProcess("parted", $"-s {diskIdentifier} mkpart primary {nextFreeSector}B {endOffset}B");
+
+                // For MBR, set the boot flag on the first partition (some filesystems need this)
+                if (tableType == PartitionTableType.MBR && i == 0)
+                {
+                    try
+                    {
+                        RunProcess("parted", $"-s {diskIdentifier} set {partitionNumber} boot on");
+                    }
+                    catch
+                    {
+                        // Ignore errors setting boot flag
+                    }
+                }
+
+                nextFreeSector = endOffset + sectorSize;
+            }
+
+            // Re-read partition table
+            RunProcess("partprobe", $"{diskIdentifier}");
+
+            // Small delay to allow kernel to create partition devices
+            System.Threading.Thread.Sleep(200);
+
+            // Format each partition
+            for (int i = 0; i < partitions.Length; i++)
+            {
+                var (fsType, _) = partitions[i];
+                var partitionNumber = i + 1;
+                var partitionDevice = GetPartitionDevice(diskIdentifier, partitionNumber);
+
+                // Wait for partition device to exist
+                var retryCount = 0;
+                while (!File.Exists(partitionDevice) && retryCount < 10)
+                {
+                    System.Threading.Thread.Sleep(100);
+                    retryCount++;
+                }
+
+                if (!File.Exists(partitionDevice))
+                    throw new InvalidOperationException($"Partition device {partitionDevice} did not appear after creation");
+
+                // Format the partition
+                FormatPartition(partitionDevice, fsType);
+            }
+
+            return partitions.Length == 0 ? [] : Mount(diskIdentifier, null, false, null);
         }
 
         /// <inheritdoc />
-        /// <exception cref="NotImplementedException">Always thrown as Linux support is not yet implemented.</exception>
-        public void InitializeDisk(int diskNumber, Duplicati.Proprietary.DiskImage.PartitionTableType tableType)
+        public string[] Mount(string diskIdentifier, string? baseMountPath = null, bool readOnly = false, FileSystemType[]? fileSystemTypes = null)
         {
-            throw new NotImplementedException("Linux disk image operations are not yet implemented.");
+            var mountPoints = new List<string>();
+            var partitions = GetPartitionNames(diskIdentifier);
+
+            if (partitions.Count == 0)
+                throw new InvalidOperationException($"No partitions found for disk {diskIdentifier}");
+            if (fileSystemTypes is not null && fileSystemTypes.Length != partitions.Count)
+                throw new ArgumentException($"Length of fileSystemTypes array ({fileSystemTypes.Length}) must match the number of partitions ({partitions.Count})");
+
+            for (int i = 0; i < partitions.Count; i++)
+            {
+                var partitionDevice = partitions[i];
+
+                // Get filesystem type to handle special cases
+                FileSystemType? fsType = null;
+                if (fileSystemTypes is not null)
+                    fsType = fileSystemTypes[i];
+
+                // Create mount point
+                string mountPoint;
+                if (!string.IsNullOrEmpty(baseMountPath))
+                {
+                    var partitionName = Path.GetFileName(partitionDevice);
+                    mountPoint = Path.Combine(baseMountPath, partitionName);
+                }
+                else
+                {
+                    mountPoint = $"/mnt/duplicati_{Path.GetFileName(partitionDevice)}_{Guid.NewGuid():N}";
+                    _autoCreatedMntDirectories.Add(mountPoint);
+                }
+
+                Directory.CreateDirectory(mountPoint);
+
+                // Mount the partition
+                List<string> options = [];
+                if (readOnly)
+                    options.Add("ro");
+                if (fsType == FileSystemType.XFS)
+                    options.Add("nouuid"); // XFS does not allow mounting with duplicate UUIDs, so we ignore UUIDs for testing
+                var optionsArg = options.Count > 0 ? $"-o {string.Join(",", options)}" : "";
+                var mountArgs = $"{optionsArg} {partitionDevice} \"{mountPoint}\"".Trim();
+                RunProcess("mount", mountArgs);
+
+                mountPoints.Add(mountPoint);
+            }
+
+            return mountPoints.ToArray();
         }
 
         /// <inheritdoc />
-        /// <exception cref="NotImplementedException">Always thrown as Linux support is not yet implemented.</exception>
-        public char CreateAndFormatPartition(int diskNumber, Duplicati.Proprietary.DiskImage.FileSystemType fsType, long sizeMB = 0)
+        public void Unmount(string diskIdentifier)
         {
-            throw new NotImplementedException("Linux disk image operations are not yet implemented.");
+            // Find all mounted partitions of this device
+            var partitions = GetPartitionNames(diskIdentifier);
+
+            foreach (var partitionDevice in partitions)
+            {
+                // Check if mounted
+                var mountInfo = GetMountPoint(partitionDevice);
+                if (!string.IsNullOrEmpty(mountInfo))
+                {
+                    RunProcess("umount", partitionDevice);
+                }
+            }
         }
 
         /// <inheritdoc />
-        /// <exception cref="NotImplementedException">Always thrown as Linux support is not yet implemented.</exception>
-        public void FlushVolume(char driveLetter)
+        public void CleanupDisk(string imagePath, string? diskIdentifier = null)
         {
-            throw new NotImplementedException("Linux disk image operations are not yet implemented.");
+            // Determine the loop device if not provided
+            if (string.IsNullOrEmpty(diskIdentifier))
+            {
+                if (_imageToLoopDevice.TryGetValue(imagePath, out var trackedDevice))
+                {
+                    diskIdentifier = trackedDevice;
+                }
+                else
+                {
+                    // Try to find the loop device using losetup -j
+                    try
+                    {
+                        var output = RunProcess("losetup", $"-j \"{imagePath}\"");
+                        if (!string.IsNullOrEmpty(output))
+                        {
+                            // Output format: /dev/loop0: [0005]:123456 (/path/to/image)
+                            var match = Regex.Match(output, @"^(\S+):");
+                            if (match.Success)
+                                diskIdentifier = match.Groups[1].Value;
+                        }
+                    }
+                    catch
+                    {
+                        // Ignore errors
+                    }
+                }
+            }
+
+            // Unmount partitions
+            if (!string.IsNullOrEmpty(diskIdentifier))
+            {
+                bool unmounted = false;
+                for (int i = 0; i < 5; i++)
+                {
+                    try
+                    {
+                        Unmount(diskIdentifier);
+                        unmounted = true;
+                        break;
+                    }
+                    catch
+                    {
+                        // Try to wait
+                        Thread.Sleep(1000);
+                    }
+                }
+                if (!unmounted)
+                {
+                    TestContext.Progress.WriteLine($"Warning: Failed to unmount partitions for {diskIdentifier} after multiple attempts.");
+                }
+
+                // Detach loop device
+                try
+                {
+                    RunProcess("losetup", $"-d {diskIdentifier}");
+                }
+                catch (Exception ex)
+                {
+                    TestContext.Progress.WriteLine($"Warning: Failed to detach loop device {diskIdentifier}: {ex.Message}");
+                }
+
+                _trackedLoopDevices.Remove(diskIdentifier);
+            }
+
+            // Delete the image file
+            if (File.Exists(imagePath))
+            {
+                try
+                {
+                    File.Delete(imagePath);
+                }
+                catch (Exception ex)
+                {
+                    TestContext.Progress.WriteLine($"Warning: Failed to delete image file {imagePath}: {ex.Message}");
+                }
+            }
+
+            _imageToLoopDevice.Remove(imagePath);
+
+            // Clean up any auto-created mount directories
+            foreach (var mntDir in _autoCreatedMntDirectories)
+            {
+                try
+                {
+                    if (Directory.Exists(mntDir))
+                        Directory.Delete(mntDir);
+                }
+                catch (Exception ex)
+                {
+                    TestContext.Progress.WriteLine($"Warning: Failed to delete mount directory {mntDir}: {ex.Message}");
+                }
+            }
+            _autoCreatedMntDirectories.Clear();
         }
 
         /// <inheritdoc />
-        /// <exception cref="NotImplementedException">Always thrown as Linux support is not yet implemented.</exception>
-        public void PopulateTestData(char driveLetter, int fileCount = 10, int fileSizeKB = 10)
-        {
-            throw new NotImplementedException("Linux disk image operations are not yet implemented.");
-        }
-
-        /// <inheritdoc />
-        /// <exception cref="NotImplementedException">Always thrown as Linux support is not yet implemented.</exception>
-        public void DetachDisk(string imagePath)
-        {
-            throw new NotImplementedException("Linux disk image operations are not yet implemented.");
-        }
-
-        /// <inheritdoc />
-        /// <exception cref="NotImplementedException">Always thrown as Linux support is not yet implemented.</exception>
-        public void UnmountForWriting(string imagePath, char? driveLetter = null)
-        {
-            throw new NotImplementedException("Linux disk image operations are not yet implemented.");
-        }
-
-        /// <inheritdoc />
-        /// <exception cref="NotImplementedException">Always thrown as Linux support is not yet implemented.</exception>
-        public void BringOnline(string imagePath)
-        {
-            throw new NotImplementedException("Linux disk image operations are not yet implemented.");
-        }
-
-        /// <inheritdoc />
-        /// <exception cref="NotImplementedException">Always thrown as Linux support is not yet implemented.</exception>
-        public char MountForReading(string imagePath, char? driveLetter = null)
-        {
-            throw new NotImplementedException("Linux disk image operations are not yet implemented.");
-        }
-
-        /// <inheritdoc />
-        /// <exception cref="NotImplementedException">Always thrown as Linux support is not yet implemented.</exception>
-        public void CleanupDisk(string imagePath)
-        {
-            throw new NotImplementedException("Linux disk image operations are not yet implemented.");
-        }
-
-        /// <inheritdoc />
-        /// <exception cref="NotImplementedException">Always thrown as Linux support is not yet implemented.</exception>
-        public string GetDiskDetails(int diskNumber)
-        {
-            throw new NotImplementedException("Linux disk image operations are not yet implemented.");
-        }
-
-        /// <inheritdoc />
-        /// <exception cref="NotImplementedException">Always thrown as Linux support is not yet implemented.</exception>
-        public string GetVolumeInfo(char driveLetter)
-        {
-            throw new NotImplementedException("Linux disk image operations are not yet implemented.");
-        }
-
-        /// <inheritdoc />
-        /// <remarks>
-        /// On Linux, checks if running as root (UID 0).
-        /// </remarks>
         public bool HasRequiredPrivileges()
         {
-            // On Linux, check if running as root (UID 0)
+            // Check if running as root (uid 0)
             try
             {
-                return Environment.UserName == "root" || System.Diagnostics.Process.GetCurrentProcess().Id == 0;
+                var uid = RunProcess("id", "-u").Trim();
+                return uid == "0";
             }
             catch
             {
@@ -141,10 +364,396 @@ namespace Duplicati.UnitTest.DiskImage
         }
 
         /// <inheritdoc />
+        public PartitionTableGeometry GetPartitionTable(string diskIdentifier)
+        {
+            var deviceName = Path.GetFileName(diskIdentifier);
+            var tableType = PartitionTableType.Unknown;
+
+            // Use blkid to get partition table type
+            try
+            {
+                var output = RunProcess("blkid", $"-p -o value -s PTTYPE {diskIdentifier}").Trim();
+                tableType = output.ToLower() switch
+                {
+                    "gpt" => PartitionTableType.GPT,
+                    "dos" => PartitionTableType.MBR,
+                    "msdos" => PartitionTableType.MBR,
+                    _ => PartitionTableType.Unknown
+                };
+            }
+            catch
+            {
+                // Ignore errors
+            }
+
+            var size = GetDiskSize(diskIdentifier);
+            var sectorSize = GetSectorSize(diskIdentifier);
+
+            return new PartitionTableGeometry
+            {
+                Type = tableType,
+                Size = size,
+                SectorSize = sectorSize
+            };
+        }
+
+        /// <inheritdoc />
+        public PartitionGeometry[] GetPartitions(string diskIdentifier)
+        {
+            var partitions = new List<PartitionGeometry>();
+            var partitionNames = GetPartitionNames(diskIdentifier);
+
+            for (int i = 0; i < partitionNames.Count; i++)
+            {
+                var partitionDevice = partitionNames[i];
+                var partitionNumber = i + 1;
+
+                try
+                {
+                    // Get partition info using blockdev
+                    var start = 0L;
+                    var size = 0L;
+
+                    try
+                    {
+                        var devName = Path.GetFileName(partitionDevice);
+                        var startFile = $"/sys/class/block/{devName}/start";
+                        if (File.Exists(startFile))
+                        {
+                            var startStr = File.ReadAllText(startFile).Trim();
+                            if (long.TryParse(startStr, out var startSector))
+                            {
+                                start = startSector * 512;
+                            }
+                        }
+                        else
+                        {
+                            var startStr = RunProcess("blockdev", $"--getstart {partitionDevice}").Trim();
+                            if (long.TryParse(startStr, out var startSector))
+                            {
+                                // blockdev --getstart always returns the start sector in 512-byte units
+                                start = startSector * 512;
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        TestContext.Progress.WriteLine($"Warning: Failed to get start for {partitionDevice}: {ex.Message}");
+                    }
+
+                    try
+                    {
+                        size = GetDiskSize(partitionDevice);
+                    }
+                    catch { }
+
+                    // Get filesystem type
+                    var fsType = FileSystemType.Unknown;
+                    try
+                    {
+                        var fsStr = RunProcess("blkid", $"-o value -s TYPE {partitionDevice}").Trim();
+                        fsType = ParseFilesystemType(fsStr);
+                    }
+                    catch { }
+
+                    partitions.Add(new PartitionGeometry
+                    {
+                        Number = partitionNumber,
+                        Type = PartitionType.Unknown,
+                        StartOffset = start,
+                        Size = size,
+                        FilesystemType = fsType,
+                        TableType = PartitionTableType.Unknown
+                    });
+                }
+                catch (Exception ex)
+                {
+                    TestContext.Progress.WriteLine($"Warning: Failed to get info for partition {partitionDevice}: {ex.Message}");
+                }
+            }
+
+            return partitions.ToArray();
+        }
+
+        /// <inheritdoc />
+        public void FlushDisk(string diskIdentifier)
+        {
+            // Sync all filesystems
+            RunProcess("sync", "");
+
+            // Flush buffers for the specific device
+            try
+            {
+                RunProcess("blockdev", $"--flushbufs {diskIdentifier}");
+            }
+            catch
+            {
+                // Ignore errors
+            }
+        }
+
+        /// <inheritdoc />
+        public string ReAttach(string imagePath, string diskIdentifier, PartitionTableType tableType, bool readOnly = false)
+        {
+            // Unmount and detach
+            try
+            {
+                Unmount(diskIdentifier);
+            }
+            catch { }
+
+            try
+            {
+                RunProcess("losetup", $"-d {diskIdentifier}");
+            }
+            catch { }
+
+            // Re-attach the loop device
+            var readOnlyArg = readOnly ? "--read-only" : "";
+            var newLoopDevice = RunProcess("losetup", $"--find --show --partscan {readOnlyArg} \"{imagePath}\"").Trim();
+
+            if (string.IsNullOrEmpty(newLoopDevice) || !newLoopDevice.StartsWith("/dev/loop"))
+                throw new InvalidOperationException($"Failed to re-attach loop device for {imagePath}");
+
+            // Update tracking
+            _trackedLoopDevices.Remove(diskIdentifier);
+            _trackedLoopDevices.Add(newLoopDevice);
+            _imageToLoopDevice[imagePath] = newLoopDevice;
+
+            // Allow time for partition discovery
+            System.Threading.Thread.Sleep(200);
+
+            return newLoopDevice;
+        }
+
+        /// <inheritdoc />
         public void Dispose()
         {
-            // Nothing to dispose in the stub implementation
+            // Clean up any remaining tracked loop devices
+            foreach (var loopDevice in _trackedLoopDevices.ToList())
+            {
+                try
+                {
+                    // Find associated image
+                    var imagePath = _imageToLoopDevice.FirstOrDefault(x => x.Value == loopDevice).Key;
+                    if (!string.IsNullOrEmpty(imagePath))
+                    {
+                        CleanupDisk(imagePath, loopDevice);
+                    }
+                    else
+                    {
+                        // Just try to detach the loop device
+                        RunProcess("losetup", $"-d {loopDevice}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    TestContext.Progress.WriteLine($"Warning: Failed to dispose loop device {loopDevice}: {ex.Message}");
+                }
+            }
+
+            _trackedLoopDevices.Clear();
+            _imageToLoopDevice.Clear();
             GC.SuppressFinalize(this);
         }
+
+        #region Helper Methods
+
+        /// <summary>
+        /// Runs a process and returns the output.
+        /// </summary>
+        private static string RunProcess(string fileName, string arguments)
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = fileName,
+                Arguments = arguments,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            using var process = new Process { StartInfo = psi };
+            process.Start();
+            string output = process.StandardOutput.ReadToEnd();
+            string error = process.StandardError.ReadToEnd();
+            process.WaitForExit();
+
+            if (process.ExitCode != 0)
+            {
+                throw new InvalidOperationException($"Process {fileName} exited with code {process.ExitCode}: {error}");
+            }
+
+            return output;
+        }
+
+        /// <summary>
+        /// Gets the partition device path for a given disk and partition number.
+        /// </summary>
+        private static string GetPartitionDevice(string diskIdentifier, int partitionNumber)
+        {
+            // For loop devices, partitions are named /dev/loop0p1, /dev/loop0p2, etc.
+            if (diskIdentifier.StartsWith("/dev/loop"))
+            {
+                return $"{diskIdentifier}p{partitionNumber}";
+            }
+
+            // For NVMe devices, partitions are named /dev/nvme0n1p1, etc.
+            if (diskIdentifier.Contains("nvme"))
+            {
+                return $"{diskIdentifier}p{partitionNumber}";
+            }
+
+            // For standard SCSI/SATA devices, partitions are named /dev/sda1, /dev/sda2, etc.
+            return $"{diskIdentifier}{partitionNumber}";
+        }
+
+        /// <summary>
+        /// Gets the list of partition device paths for a disk.
+        /// </summary>
+        private static List<string> GetPartitionNames(string diskIdentifier)
+        {
+            var partitions = new List<string>();
+            var deviceName = Path.GetFileName(diskIdentifier);
+
+            // Check for partition devices
+            if (diskIdentifier.StartsWith("/dev/loop"))
+            {
+                // Loop device partitions: /dev/loop0p1, /dev/loop0p2, etc.
+                for (int i = 1; i <= 16; i++)
+                {
+                    var partitionDevice = $"{diskIdentifier}p{i}";
+                    if (File.Exists(partitionDevice))
+                        partitions.Add(partitionDevice);
+                    else if (i > 1)
+                        break; // Stop after first missing partition
+                }
+            }
+            else if (diskIdentifier.Contains("nvme"))
+            {
+                // NVMe partitions: /dev/nvme0n1p1, etc.
+                for (int i = 1; i <= 16; i++)
+                {
+                    var partitionDevice = $"{diskIdentifier}p{i}";
+                    if (File.Exists(partitionDevice))
+                        partitions.Add(partitionDevice);
+                    else if (i > 1)
+                        break;
+                }
+            }
+            else
+            {
+                // Standard partitions: /dev/sda1, /dev/sda2, etc.
+                for (int i = 1; i <= 16; i++)
+                {
+                    var partitionDevice = $"{diskIdentifier}{i}";
+                    if (File.Exists(partitionDevice))
+                        partitions.Add(partitionDevice);
+                    else if (i > 1)
+                        break;
+                }
+            }
+
+            return partitions;
+        }
+
+        /// <summary>
+        /// Gets the mount point for a partition device.
+        /// </summary>
+        private static string? GetMountPoint(string partitionDevice)
+        {
+            try
+            {
+                var output = RunProcess("findmnt", $"--raw --noheadings -o TARGET {partitionDevice}").Trim();
+                return string.IsNullOrEmpty(output) ? null : output;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Gets the filesystem type of a partition.
+        /// </summary>
+        private static string GetFilesystemType(string partitionDevice)
+        {
+            try
+            {
+                return RunProcess("blkid", $"-o value -s TYPE {partitionDevice}").Trim();
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
+
+        /// <summary>
+        /// Formats a partition with the specified filesystem type.
+        /// </summary>
+        private static void FormatPartition(string partitionDevice, FileSystemType fsType)
+        {
+            var (command, args) = fsType switch
+            {
+                FileSystemType.FAT12 => ("mkfs.vfat", $"-F 12 {partitionDevice}"),
+                FileSystemType.FAT16 => ("mkfs.vfat", $"-F 16 {partitionDevice}"),
+                FileSystemType.FAT32 => ("mkfs.vfat", $"-F 32 {partitionDevice}"),
+                FileSystemType.ExFAT => ("mkfs.exfat", $"{partitionDevice}"),
+                FileSystemType.Ext2 => ("mkfs.ext2", $"-F {partitionDevice}"),
+                FileSystemType.Ext3 => ("mkfs.ext3", $"-F {partitionDevice}"),
+                FileSystemType.Ext4 => ("mkfs.ext4", $"-F {partitionDevice}"),
+                FileSystemType.XFS => ("mkfs.xfs", $"-f {partitionDevice}"),
+                FileSystemType.Btrfs => ("mkfs.btrfs", $"-f {partitionDevice}"),
+                FileSystemType.NTFS => ("mkfs.ntfs", $"-F {partitionDevice}"),
+                FileSystemType.ZFS => throw new NotSupportedException("ZFS is not supported for testing. ZFS requires pool creation which is incompatible with standard partition-based testing."),
+                _ => throw new NotSupportedException($"Unsupported filesystem type on Linux: {fsType}")
+            };
+
+            RunProcess(command, args);
+        }
+
+        /// <summary>
+        /// Gets the size of a disk or partition in bytes.
+        /// </summary>
+        private static long GetDiskSize(string devicePath)
+        {
+            var output = RunProcess("blockdev", $"--getsize64 {devicePath}").Trim();
+            return long.TryParse(output, out var size) ? size : 0;
+        }
+
+        /// <summary>
+        /// Gets the sector size of a disk.
+        /// </summary>
+        private static int GetSectorSize(string devicePath)
+        {
+            var output = RunProcess("blockdev", $"--getss {devicePath}").Trim();
+            return int.TryParse(output, out var size) ? size : 512;
+        }
+
+        /// <summary>
+        /// Parses a filesystem type string to the FileSystemType enum.
+        /// </summary>
+        private static FileSystemType ParseFilesystemType(string fsType)
+        {
+            return fsType.ToLower() switch
+            {
+                "ntfs" => FileSystemType.NTFS,
+                "vfat" or "fat" => FileSystemType.FAT32, // Could be FAT12/16/32
+                "exfat" => FileSystemType.ExFAT,
+                "hfsplus" or "hfs+" => FileSystemType.HFSPlus,
+                "apfs" => FileSystemType.APFS,
+                "ext2" => FileSystemType.Ext2,
+                "ext3" => FileSystemType.Ext3,
+                "ext4" => FileSystemType.Ext4,
+                "xfs" => FileSystemType.XFS,
+                "btrfs" => FileSystemType.Btrfs,
+                "zfs" => FileSystemType.ZFS,
+                "refs" => FileSystemType.ReFS,
+                _ => FileSystemType.Unknown
+            };
+        }
+
+        #endregion
     }
 }

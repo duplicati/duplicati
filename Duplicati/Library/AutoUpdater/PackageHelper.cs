@@ -101,6 +101,10 @@ namespace Duplicati.Library.AutoUpdater
             /// The database tool
             /// </summary>
             DatabaseTool,
+            /// <summary>
+            /// The configure tool
+            /// </summary>
+            ConfigureTool,
         }
 
         /// <summary>
@@ -129,6 +133,7 @@ namespace Duplicati.Library.AutoUpdater
                 NamedExecutable.SyncTool => OperatingSystem.IsWindows() ? "Duplicati.CommandLine.SyncTool.exe" : "duplicati-sync-tool",
                 NamedExecutable.SourceTool => OperatingSystem.IsWindows() ? "Duplicati.CommandLine.Sourcetool.exe" : "duplicati-source-tool",
                 NamedExecutable.DatabaseTool => OperatingSystem.IsWindows() ? "Duplicati.CommandLine.DatabaseTool.exe" : "duplicati-database-tool",
+                NamedExecutable.ConfigureTool => OperatingSystem.IsWindows() ? "Duplicati.CommandLine.ConfigureTool.exe" : "duplicati-configure",
                 _ => throw new ArgumentException($"Named executable not known: {exe}", nameof(exe))
             };
 

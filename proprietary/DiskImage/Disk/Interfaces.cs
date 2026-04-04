@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Duplicati.Proprietary.DiskImage.General;
 
 namespace Duplicati.Proprietary.DiskImage.Disk;
 
@@ -10,6 +12,11 @@ namespace Duplicati.Proprietary.DiskImage.Disk;
 /// </summary>
 internal interface IRawDisk : IDisposable
 {
+    /// <summary>
+    /// Gets the platform-specific prefix for disk entries (e.g., "\\.\" on Windows, "/dev/" on Unix).
+    /// </summary>
+    static abstract string Prefix { get; }
+
     /// <summary>
     /// Gets the disk identifier (e.g., "\\.\PhysicalDrive0" or "/dev/sda")
     /// </summary>
@@ -83,6 +90,15 @@ internal interface IRawDisk : IDisposable
     Task<Stream> ReadBytesAsync(long offset, int length, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Reads a specific byte range from the disk into a caller-provided buffer.
+    /// </summary>
+    /// <param name="offset">The byte offset.</param>
+    /// <param name="destination">The buffer to read data into.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The number of bytes read.</returns>
+    Task<int> ReadBytesAsync(long offset, Memory<byte> destination, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Writes raw sectors to the disk.
     /// </summary>
     /// <param name="startSector">The starting sector number.</param>
@@ -101,15 +117,6 @@ internal interface IRawDisk : IDisposable
     Task<int> WriteBytesAsync(long offset, byte[] data, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Reads a specific byte range from the disk into a caller-provided buffer.
-    /// </summary>
-    /// <param name="offset">The byte offset.</param>
-    /// <param name="destination">The buffer to read data into.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The number of bytes read.</returns>
-    Task<int> ReadBytesAsync(long offset, Memory<byte> destination, CancellationToken cancellationToken);
-
-    /// <summary>
     /// Writes a specific byte range to the disk from a caller-provided buffer.
     /// </summary>
     /// <param name="offset">The byte offset.</param>
@@ -117,4 +124,11 @@ internal interface IRawDisk : IDisposable
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The number of bytes written.</returns>
     Task<int> WriteBytesAsync(long offset, ReadOnlyMemory<byte> data, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Lists available physical drives on the system, returning a mapping of device paths to friendly names.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A list of physical drive information.</returns>
+    static abstract IAsyncEnumerable<PhysicalDriveInfo> ListPhysicalDrivesAsync(CancellationToken cancellationToken);
 }

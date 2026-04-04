@@ -238,8 +238,7 @@ namespace Duplicati.Library.Main.Operation
                               where p != null && p.FileType == RemoteVolumeType.Files
                               orderby p.Time descending
                               select p).ToArray();
-            var filelistFilter = RestoreHandler.FilterNumberedFilelist(options.Time, options.Version);
-            return filelistFilter(parsedlist).ToList();
+            return RestoreHandler.FilterNumberedFilelist(parsedlist, options.Time, options.Version).ToList();
         }
 
         private class RemoteVolumeMapper(IParsedVolume Volume) : IRemoteVolume

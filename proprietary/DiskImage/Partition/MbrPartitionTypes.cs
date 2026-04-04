@@ -1,5 +1,7 @@
 // Copyright (c) 2026 Duplicati Inc. All rights reserved.
 
+using Duplicati.Proprietary.DiskImage.General;
+
 namespace Duplicati.Proprietary.DiskImage.Partition;
 
 /// <summary>
@@ -29,6 +31,7 @@ internal static class MbrPartitionTypes
     public const byte GptProtective = 0xEE;
     public const byte EfiSystem = 0xEF;
     public const byte LinuxRaid = 0xFD;
+    public const byte AppleHfs = 0xAF;
 
     /// <summary>
     /// Maps an MBR partition type byte to the corresponding <see cref="PartitionType"/>.
@@ -60,6 +63,7 @@ internal static class MbrPartitionTypes
             GptProtective => PartitionType.Protective,
             EfiSystem => PartitionType.EFI,
             LinuxRaid => PartitionType.Primary,
+            AppleHfs => PartitionType.AppleHFS,
             _ => PartitionType.Unknown
         };
     }
@@ -78,6 +82,7 @@ internal static class MbrPartitionTypes
             Fat32Chs or Fat32Lba or HiddenFat32Chs or HiddenFat32Lba => FileSystemType.FAT32,
             Ntfs or HiddenNtfs => FileSystemType.NTFS,
             EfiSystem => FileSystemType.Unknown, // EFI System Partition, actual FS unknown
+            AppleHfs => FileSystemType.HFSPlus,
             _ => FileSystemType.Unknown
         };
     }
@@ -98,6 +103,7 @@ internal static class MbrPartitionTypes
             FileSystemType.FAT16 => Fat16,
             FileSystemType.FAT32 => Fat32Lba,  // LBA
             FileSystemType.ExFAT => Ntfs,      // Same as NTFS
+            FileSystemType.HFSPlus => AppleHfs,
             _ => partitionType switch
             {
                 PartitionType.EFI => EfiSystem,

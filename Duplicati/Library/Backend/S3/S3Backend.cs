@@ -149,6 +149,23 @@ namespace Duplicati.Library.Backend
             { "EU", "eu-west-1" }
         };
 
+        public static readonly Dictionary<string, string?> DIGITALOCEAN_REGIONS = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "New York (nyc3)", "nyc3" },
+            { "Amsterdam (ams3)", "ams3" },
+            { "Singapore (sgp1)", "sgp1" },
+            { "Frankfurt (fra1)", "fra1" },
+            { "Sydney (syd1)", "syd1" }
+        };
+
+        public static readonly Dictionary<string, string?> HETZNER_REGIONS = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "Falkenstein (fsn1)", "fsn1" },
+            { "Nuremberg (nbg1)", "nbg1" },
+            { "Helsinki (hel1)", "hel1" },
+            { "Ashburn, VA (ash)", "ash" }
+        };
+
         public static readonly Dictionary<string, string?> DEFAULT_S3_LOCATION_BASED_HOSTS;
 
         public static readonly Dictionary<string, string?> KNOWN_S3_STORAGE_CLASSES;
