@@ -133,9 +133,9 @@ namespace Duplicati.Library.Main.Operation.Restore
                         cache.Remove(volume_id, out var volume);
                         if (volume != null)
                         {
-                            cache_size -= volume.Size;
+                            if (cache_last_touched.Remove(volume_id))
+                                cache_size -= volume.Size;
                             volume.Dispose();
-                            cache_last_touched.Remove(volume_id);
                         }
                         sw_cache_evict?.Stop();
                     }
@@ -147,7 +147,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                         {
                             // Pop the last element of cache_last_touched
                             var volume_id = cache_last_touched[0];
-                            cache_last_touched.RemoveAt(0);
                             handle_evict(volume_id);
                         }
                         sw_cache_lru?.Stop();
@@ -180,8 +179,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                                                 sw_request?.Start();
                                                 if (cache.TryGetValue(request.VolumeID, out var volume))
                                                 {
-                                                    cache_last_touched.Remove(request.VolumeID);
-                                                    cache_last_touched.Add(request.VolumeID);
+                                                    if (cache_last_touched.Remove(request.VolumeID))
+                                                        cache_last_touched.Add(request.VolumeID);
                                                     Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Block {0} found in cache", request.BlockID);
                                                     volume.Reference();
                                                     await self.DecompressRequest.WriteAsync((request, volume)).ConfigureAwait(false);
@@ -211,7 +210,13 @@ namespace Duplicati.Library.Main.Operation.Restore
                                     {
                                         sw_cache_set?.Start();
                                         volume.Reference(in_flight_downloads[volume_id].Count);
-                                        if (cache_max > 0)
+                                        if (cache_max == 0)
+                                        {
+                                            // Caching disabled — keep the volume only while blocks still reference it.
+                                            Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Keeping active volume {0} available until all pending blocks are processed (caching disabled)", volume_id);
+                                            cache[volume_id] = volume;
+                                        }
+                                        else if (cache_max > 0)
                                         {
                                             // Check if adding another volume would exceed cache limits.
                                             while (cache_size > 0 && (cache_size + volume.Size) > cache_max)
@@ -233,7 +238,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                                             Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Not caching volume {0} ({1} + {2} > {3})", volume_id, cache_size, volume.Size, cache_max);
                                             volume.Dispose();
                                         }
-                                        cache_last_touched.Add(volume_id);
+                                        if (cache_max != 0)
+                                            cache_last_touched.Add(volume_id);
                                         sw_cache_set?.Stop();
                                         sw_wakeup?.Start();
                                         foreach (var request in in_flight_downloads[volume_id])
