@@ -52,6 +52,7 @@ namespace Duplicati.CommandLine.RecoveryTool
             }
 
             var m_Options = new Options(options);
+            RestoreOptionsFromLocalDatabaseIfAvailable(args[2], m_Options);
 
             using (var backend = Library.DynamicLoader.BackendLoader.GetBackend(args[2], options))
             {
@@ -77,6 +78,7 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                 var i = 0;
                 var downloaded = 0;
+                var reuploaded = 0;
                 var errors = 0;
                 var needspass = 0;
 
@@ -113,6 +115,7 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                 bool reencrypt = Library.Utility.Utility.ParseBoolOption(options, "reencrypt");
                 bool reupload = Library.Utility.Utility.ParseBoolOption(options, "reupload");
+                var fullyRewroteRemoteSet = reupload;
 
                 // Needs order (Files or Blocks) and Indexes as last because indexes content will be adjusted based on recompressed blocks
                 var files = remotefiles.Where(a => a.FileType == RemoteVolumeType.Files).ToArray();
@@ -120,6 +123,12 @@ namespace Duplicati.CommandLine.RecoveryTool
                 var indexes = remotefiles.Where(a => a.FileType == RemoteVolumeType.Index).ToArray();
 
                 remotefiles = files.Concat(blocks).ToArray().Concat(indexes).ToArray();
+
+                Options updatedLocalDatabaseOptions = null;
+                if (reupload)
+                    updatedLocalDatabaseOptions = new Options(BuildUpdatedRawOptions(m_Options, remotefiles, target_compr_module, reencrypt));
+
+                var retainedReuploadedBlockFiles = new List<string>();
 
                 Console.WriteLine("Found {0} files which belongs to backup with prefix {1}", remotefiles.Count(), m_Options.Prefix);
 
@@ -153,12 +162,14 @@ namespace Duplicati.CommandLine.RecoveryTool
                         else
                         {
                             Console.WriteLine(" - cannot detect compression type");
+                            fullyRewroteRemoteSet = false;
                             continue;
                         }
 
                         if ((!reencrypt && File.Exists(localFileTarget)) || (reencrypt && File.Exists(localFileTarget + "." + localFileSourceEncryption)))
                         {
                             Console.WriteLine(" - target file already exist");
+                            fullyRewroteRemoteSet = false;
                             continue;
                         }
 
@@ -278,7 +289,13 @@ namespace Duplicati.CommandLine.RecoveryTool
                             Console.Write(" reuploading ...");
                             backend.PutAsync((new FileInfo(localFileTarget)).Name, localFileTarget, CancellationToken.None).Await();
                             backend.DeleteAsync(remoteFile.File.Name, CancellationToken.None).Await();
-                            File.Delete(localFileTarget);
+
+                            if (remoteFile.FileType == RemoteVolumeType.Blocks && indexes.Length > 0)
+                                retainedReuploadedBlockFiles.Add(localFileTarget);
+                            else
+                                File.Delete(localFileTarget);
+
+                            reuploaded++;
                         }
 
                         Console.WriteLine(" done!");
@@ -288,6 +305,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                     {
                         Console.WriteLine(" error: {0}", ex);
                         errors++;
+                        fullyRewroteRemoteSet = false;
                     }
                 }
 
@@ -302,6 +320,10 @@ namespace Duplicati.CommandLine.RecoveryTool
                     }
                 }
 
+                foreach (var retainedFile in retainedReuploadedBlockFiles)
+                    if (File.Exists(retainedFile))
+                        File.Delete(retainedFile);
+
                 if (needspass > 0 && downloaded == 0)
                 {
                     Console.WriteLine("No files downloaded, try adding --passphrase to decrypt files");
@@ -310,7 +332,10 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                 Console.WriteLine("Download complete, of {0} remote files, {1} were downloaded with {2} errors", remotefiles.Count(), downloaded, errors);
                 if (needspass > 0)
+                {
                     Console.WriteLine("Additonally {0} remote files were skipped because of encryption, supply --passphrase to download those", needspass);
+                    fullyRewroteRemoteSet = false;
+                }
 
                 if (errors > 0)
                 {
@@ -318,8 +343,71 @@ namespace Duplicati.CommandLine.RecoveryTool
                     return 200;
                 }
 
+                if (reupload && reuploaded > 0)
+                {
+                    if (fullyRewroteRemoteSet && reuploaded == remotefiles.Length)
+                        UpdateLocalDatabase(args[2], m_Options, updatedLocalDatabaseOptions);
+                    else
+                        Console.WriteLine("The local database was not updated because the reupload did not rewrite the full remote set.");
+                }
+
                 return 0;
             }
+        }
+
+        private static void UpdateLocalDatabase(string backendUrl, Options originalOptions, Options updatedOptions)
+        {
+            var dbpath = CLIDatabaseLocator.GetDatabasePathForCLI(backendUrl, originalOptions, false, true);
+            if (string.IsNullOrWhiteSpace(dbpath) || !File.Exists(dbpath))
+            {
+                Console.WriteLine("The local database was not updated because no matching database file was found. Supply --dbpath to update it explicitly.");
+                return;
+            }
+
+            Duplicati.Library.Main.Utility.PersistOptionsToDatabase(dbpath, updatedOptions, "RecoveryTool Recompress", CancellationToken.None).Await();
+            Console.WriteLine("Updated stored backup options in local database: {0}", dbpath);
+        }
+
+        private static void RestoreOptionsFromLocalDatabaseIfAvailable(string backendUrl, Options options)
+        {
+            var dbpath = CLIDatabaseLocator.GetDatabasePathForCLI(backendUrl, options, false, true);
+            if (string.IsNullOrWhiteSpace(dbpath) || !File.Exists(dbpath))
+                return;
+
+            Duplicati.Library.Main.Utility.UpdateOptionsFromDatabase(dbpath, options, "RecoveryTool Recompress", CancellationToken.None).Await();
+        }
+
+        private static Dictionary<string, string> BuildUpdatedRawOptions(Options originalOptions, IEnumerable<IParsedVolume> remoteFiles, string targetCompressionModule, bool reencrypt)
+        {
+            var updatedOptions = new Dictionary<string, string>(originalOptions.RawOptions);
+            updatedOptions["compression-module"] = targetCompressionModule;
+
+            var encryptionModules = remoteFiles
+                .Select(volume => volume.EncryptionModule)
+                .Where(module => !string.IsNullOrWhiteSpace(module))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+
+            if (reencrypt && encryptionModules.Length > 0)
+            {
+                if (encryptionModules.Length != 1)
+                    throw new UserInformationException("Unable to update the local database because the rewritten remote set contains multiple encryption modules.", "RecoveryToolMultipleEncryptionModules");
+
+                updatedOptions.Remove("no-encryption");
+                updatedOptions["encryption-module"] = encryptionModules[0];
+                updatedOptions["passphrase"] = string.IsNullOrWhiteSpace(originalOptions.NewPassphrase)
+                    ? originalOptions.Passphrase
+                    : originalOptions.NewPassphrase;
+            }
+            else
+            {
+                updatedOptions["no-encryption"] = bool.TrueString;
+                updatedOptions.Remove("encryption-module");
+                updatedOptions.Remove("passphrase");
+            }
+
+            updatedOptions.Remove("new-passphrase");
+            return updatedOptions;
         }
     }
 }

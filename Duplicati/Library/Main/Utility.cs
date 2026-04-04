@@ -34,6 +34,26 @@ namespace Duplicati.Library.Main
 {
     public class Utility
     {
+        private const string NoEncryptionSentinel = "no-encryption";
+
+        private static readonly (string DatabaseKey, string OptionKey, Func<Options, string> GetValue, Func<string, string> RestoreValue)[] PersistedOptionMappings =
+        [
+            ("prefix", "prefix", options => options.Prefix, value => value),
+            ("blocksize", "blocksize", options => options.Blocksize.ToString(), value => value + "b"),
+            ("blockhash", "block-hash-algorithm", options => options.BlockHashAlgorithm, value => value),
+            ("filehash", "file-hash-algorithm", options => options.FileHashAlgorithm, value => value),
+            ("dblock-size", "dblock-size", options => options.VolumeSize.ToString(), value => value + "b"),
+            ("compression-module", "compression-module", options => options.CompressionModule, value => value),
+            ("encryption-module", "encryption-module", options => options.NoEncryption ? null : options.EncryptionModule, value => value)
+        ];
+
+        private static readonly string[] PersistedOptionKeys =
+        [
+            .. PersistedOptionMappings.Select(option => option.DatabaseKey),
+            "passphrase",
+            "passphrase-salt"
+        ];
+
         /// <summary>
         /// Implementation of the IMetahash interface
         /// </summary>
@@ -108,15 +128,16 @@ namespace Duplicati.Library.Main
         /// <returns>A task that completes when the options have been updated.</returns>
         internal static async Task UpdateOptionsFromDb(LocalDatabase db, Options options, CancellationToken cancellationToken)
         {
-            string n = null;
             var opts = await db.GetDbOptions(cancellationToken).ConfigureAwait(false);
-            if (opts.ContainsKey("blocksize") && (!options.RawOptions.TryGetValue("blocksize", out n) || string.IsNullOrEmpty(n)))
-                options.RawOptions["blocksize"] = opts["blocksize"] + "b";
 
-            if (opts.ContainsKey("blockhash") && (!options.RawOptions.TryGetValue("block-hash-algorithm", out n) || string.IsNullOrEmpty(n)))
-                options.RawOptions["block-hash-algorithm"] = opts["blockhash"];
-            if (opts.ContainsKey("filehash") && (!options.RawOptions.TryGetValue("file-hash-algorithm", out n) || string.IsNullOrEmpty(n)))
-                options.RawOptions["file-hash-algorithm"] = opts["filehash"];
+            foreach (var option in PersistedOptionMappings)
+                RestoreOptionFromDb(opts, options, option.DatabaseKey, option.OptionKey, option.RestoreValue);
+
+            if (opts.TryGetValue("passphrase", out var passphraseState)
+                && passphraseState == NoEncryptionSentinel
+                && !HasExplicitOptionValue(options, "no-encryption")
+                && !HasExplicitOptionValue(options, "passphrase"))
+                options.RawOptions["no-encryption"] = "true";
         }
 
         /// <summary>
@@ -129,12 +150,9 @@ namespace Duplicati.Library.Main
         {
             var opts = await db.GetDbOptions(cancellationToken).ConfigureAwait(false);
             await db.Transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
-            return new[] {
-                "blocksize",
-                "blockhash",
-                "filehash",
-                "passphrase"
-            }
+            return PersistedOptionMappings
+                .Select(option => option.DatabaseKey)
+                .Concat(["passphrase"])
                 .Any(opts.ContainsKey);
         }
 
@@ -147,17 +165,12 @@ namespace Duplicati.Library.Main
         /// <returns>A task that completes when the options have been verified and the database has been updated if needed.</returns>
         internal static async Task VerifyOptionsAndUpdateDatabase(LocalDatabase db, Options options, CancellationToken cancellationToken)
         {
-            var newDict = new Dictionary<string, string>
-            {
-                { "blocksize", options.Blocksize.ToString() },
-                { "blockhash", options.BlockHashAlgorithm },
-                { "filehash", options.FileHashAlgorithm }
-            };
+            var newDict = GetPersistedOptionValues(options);
             var opts = await db.GetDbOptions(cancellationToken).ConfigureAwait(false);
 
             if (options.NoEncryption)
             {
-                newDict.Add("passphrase", "no-encryption");
+                newDict["passphrase"] = NoEncryptionSentinel;
             }
             else
             {
@@ -176,7 +189,7 @@ namespace Duplicati.Library.Main
 
                 // We avoid storing the passphrase directly,
                 // instead we salt and rehash repeatedly
-                newDict.Add("passphrase", Library.Utility.Utility.ByteArrayAsHexString(Library.Utility.Utility.RepeatedHashWithSalt(options.Passphrase, salt, 1200)));
+                newDict["passphrase"] = Library.Utility.Utility.ByteArrayAsHexString(Library.Utility.Utility.RepeatedHashWithSalt(options.Passphrase, salt, 1200));
             }
 
             var needsUpdate = false;
@@ -189,9 +202,9 @@ namespace Duplicati.Library.Main
                     {
                         if (!options.AllowPassphraseChange)
                         {
-                            if (newDict[k.Key] == "no-encryption")
+                            if (newDict[k.Key] == NoEncryptionSentinel)
                                 throw new Duplicati.Library.Interface.UserInformationException("You have attempted to remove the passphrase on an existing backup, which is not supported. Please configure a new clean backup if you want to remove the passphrase.", "PassphraseRemovalNotSupported");
-                            else if (opts[k.Key] == "no-encryption")
+                            else if (opts[k.Key] == NoEncryptionSentinel)
                                 throw new Duplicati.Library.Interface.UserInformationException("You have attempted to add a passphrase to an existing backup, which is not supported. Please configure a new clean backup if you want to add a passphrase.", "PassphraseAdditionNotSupported");
                             else
                                 throw new Duplicati.Library.Interface.UserInformationException("You have attempted to change a passphrase to an existing backup, which is not supported. Please configure a new clean backup if you want to change the passphrase.", "PassphraseChangeNotSupported");
@@ -207,15 +220,98 @@ namespace Duplicati.Library.Main
                 throw new Duplicati.Library.Interface.UserInformationException("You have attempted to change the block-size on an existing backup, which is not supported. Please configure a new clean backup if you want to change the block-size.", "BlockSizeChangeNotSupported");
 
             if (needsUpdate)
-            {
-                // Make sure we do not lose values
-                foreach (var k in opts)
-                    if (!newDict.ContainsKey(k.Key))
-                        newDict[k.Key] = k.Value;
-
-                await db.SetDbOptions(newDict, cancellationToken).ConfigureAwait(false);
-            }
+                await PersistOptionsToDb(db, options, opts, cancellationToken).ConfigureAwait(false);
         }
+
+        /// <summary>
+        /// Persists the current write-path options to the local database and removes stale persisted values.
+        /// </summary>
+        /// <param name="dbpath">The path to the local database.</param>
+        /// <param name="options">The options to persist.</param>
+        /// <param name="operation">The operation description to record in the database.</param>
+        /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
+        /// <returns>A task that completes when the options have been stored.</returns>
+        public static async Task PersistOptionsToDatabase(string dbpath, Options options, string operation, CancellationToken cancellationToken)
+        {
+            await using var db = await LocalDatabase.CreateLocalDatabaseAsync(dbpath, operation, true, null, cancellationToken).ConfigureAwait(false);
+            await PersistOptionsToDb(db, options, null, cancellationToken).ConfigureAwait(false);
+            await db.Transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Restores persisted write-path options from the local database into the supplied options instance.
+        /// Explicit CLI/raw options continue to take precedence over stored values.
+        /// </summary>
+        /// <param name="dbpath">The path to the local database.</param>
+        /// <param name="options">The options to update.</param>
+        /// <param name="operation">The operation description to record in the database.</param>
+        /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
+        /// <returns>A task that completes when the options have been restored.</returns>
+        public static async Task UpdateOptionsFromDatabase(string dbpath, Options options, string operation, CancellationToken cancellationToken)
+        {
+            await using var db = await LocalDatabase.CreateLocalDatabaseAsync(dbpath, operation, true, null, cancellationToken).ConfigureAwait(false);
+            await UpdateOptionsFromDb(db, options, cancellationToken).ConfigureAwait(false);
+            await db.Transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        private static Dictionary<string, string> GetPersistedOptionValues(Options options)
+        {
+            var result = new Dictionary<string, string>();
+
+            foreach (var option in PersistedOptionMappings)
+            {
+                var value = option.GetValue(options);
+                if (!string.IsNullOrWhiteSpace(value))
+                    result[option.DatabaseKey] = value;
+            }
+
+            return result;
+        }
+
+        private static async Task PersistOptionsToDb(LocalDatabase db, Options options, IDictionary<string, string> existingOptions, CancellationToken cancellationToken)
+        {
+            existingOptions ??= await db.GetDbOptions(cancellationToken).ConfigureAwait(false);
+            await db.SetDbOptions(BuildStoredOptions(existingOptions, options), cancellationToken).ConfigureAwait(false);
+        }
+
+        private static Dictionary<string, string> BuildStoredOptions(IDictionary<string, string> existingOptions, Options options)
+        {
+            var result = existingOptions
+                .Where(entry => !PersistedOptionKeys.Contains(entry.Key))
+                .ToDictionary(entry => entry.Key, entry => entry.Value);
+
+            foreach (var entry in GetPersistedOptionValues(options))
+                result[entry.Key] = entry.Value;
+
+            if (options.NoEncryption)
+            {
+                result["passphrase"] = NoEncryptionSentinel;
+            }
+            else
+            {
+                existingOptions.TryGetValue("passphrase-salt", out var salt);
+                if (string.IsNullOrEmpty(salt))
+                {
+                    var buf = new byte[32];
+                    new Random().NextBytes(buf);
+                    salt = "v1:" + Library.Utility.Utility.ByteArrayAsHexString(buf);
+                }
+
+                result["passphrase-salt"] = salt;
+                result["passphrase"] = Library.Utility.Utility.ByteArrayAsHexString(Library.Utility.Utility.RepeatedHashWithSalt(options.Passphrase, salt, 1200));
+            }
+
+            return result;
+        }
+
+        private static void RestoreOptionFromDb(IDictionary<string, string> persistedOptions, Options options, string databaseKey, string optionKey, Func<string, string> restoreValue)
+        {
+            if (persistedOptions.TryGetValue(databaseKey, out var value) && !string.IsNullOrWhiteSpace(value) && !HasExplicitOptionValue(options, optionKey))
+                options.RawOptions[optionKey] = restoreValue(value);
+        }
+
+        private static bool HasExplicitOptionValue(Options options, string optionKey)
+            => options.RawOptions.TryGetValue(optionKey, out var value) && !string.IsNullOrWhiteSpace(value);
     }
 }
 

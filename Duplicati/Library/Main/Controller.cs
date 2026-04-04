@@ -734,6 +734,11 @@ namespace Duplicati.Library.Main
                     break;
             }
 
+            if (string.IsNullOrEmpty(m_options.Dbpath))
+                m_options.Dbpath = CLIDatabaseLocator.GetDatabasePathForCLI(m_backendUrl, m_options);
+
+            RestoreOptionsFromExistingDatabase(result.MainOperation);
+
             //Load generic modules
             m_options.ClearLoadedModules();
 
@@ -815,10 +820,17 @@ namespace Duplicati.Library.Main
                 }
             }
 
-            if (string.IsNullOrEmpty(m_options.Dbpath))
-                m_options.Dbpath = CLIDatabaseLocator.GetDatabasePathForCLI(m_backendUrl, m_options);
-
             ValidateOptions();
+        }
+
+
+        private void RestoreOptionsFromExistingDatabase(OperationMode operation)
+        {
+            if (m_options.NoLocalDb || string.IsNullOrWhiteSpace(m_options.Dbpath) || !File.Exists(m_options.Dbpath))
+                return;
+
+            using var db = LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, operation.ToString(), true, null, CancellationToken.None).Await();
+            Utility.UpdateOptionsFromDb(db, m_options, CancellationToken.None).Await();
         }
 
         private async Task ApplySecretProvider(CancellationToken cancellationToken)
