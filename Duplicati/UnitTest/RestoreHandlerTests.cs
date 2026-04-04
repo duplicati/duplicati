@@ -220,6 +220,40 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("RestoreHandler")]
+        public void RestoreInternalProfilingLogsCacheUsageAndDataFlow()
+        {
+            var sourceFilePath = Path.Combine(this.DATAFOLDER, "profiled-restore.bin");
+            File.WriteAllBytes(sourceFilePath, new byte[256 * 1024]);
+
+            var backupOptions = new Dictionary<string, string>(this.TestOptions)
+            {
+                ["dblock-size"] = "100kb",
+                ["blocksize"] = "10kb"
+            };
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, backupOptions, null))
+                TestUtils.AssertResults(c.Backup(new[] { this.DATAFOLDER }));
+
+            var restoreOptions = new Dictionary<string, string>(this.TestOptions)
+            {
+                ["restore-path"] = this.RESTOREFOLDER,
+                ["restore-legacy"] = "false",
+                ["restore-with-local-blocks"] = "false",
+                ["restore-volume-cache-hint"] = "1mb",
+                ["internal-profiling"] = "true"
+            };
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
+                TestUtils.AssertResults(c.Restore(new[] { "*" }));
+
+            var logContents = File.ReadAllText(this.LOGFILE);
+            Assert.That(logContents, Does.Contain("Max used cache size:"));
+            Assert.That(logContents, Does.Contain("Restore downloaded"));
+            Assert.That(logContents, Does.Contain("and restored"));
+        }
+
+        [Test]
+        [Category("RestoreHandler")]
         public void RestoreWithoutLocalData([Values("true", "false")] string noLocalDb, [Values("true", "false")] string patchWithLocalBlocks)
         {
             var file1Path = Path.Combine(this.DATAFOLDER, "file1");

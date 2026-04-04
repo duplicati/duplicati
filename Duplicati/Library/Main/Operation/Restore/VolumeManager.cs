@@ -124,6 +124,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                     Dictionary<long, VolumeWrapper> cache = [];
                     // Current size of the cache in bytes.
                     long cache_size = 0;
+                    // Maximum cache size reached during this restore run.
+                    long cache_size_max_consumed = 0;
                     // List of which volume was accessed last. Used for cache eviction.
                     List<long> cache_last_touched = [];
                     // Dictionary to keep track of active downloads. Used for grouping requests to the same volume.
@@ -255,6 +257,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                             Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Caching volume {0} ({1} + {2} <= {3})", volume_id, cache_size, volume.Size, cache_max);
                                             cache[volume_id] = volume;
                                             cache_size += volume.Size;
+                                            cache_size_max_consumed = Math.Max(cache_size_max_consumed, cache_size);
                                         }
                                         else
                                         {
@@ -308,6 +311,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         if (options.InternalProfiling)
                         {
                             Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"CacheSet: {sw_cache_set?.ElapsedMilliseconds}ms, CacheEvict: {sw_cache_evict?.ElapsedMilliseconds}ms, Query: {sw_query?.ElapsedMilliseconds}ms, Backend: {sw_backend?.ElapsedMilliseconds}ms, Request: {sw_request?.ElapsedMilliseconds}ms, Wakeup: {sw_wakeup?.ElapsedMilliseconds}ms");
+                            Logging.Log.WriteProfilingMessage(LOGTAG, "CacheUsage", $"Max used cache size: {Duplicati.Library.Utility.Utility.FormatSizeString(cache_size_max_consumed)}");
                         }
                     }
                     catch (Exception ex)
