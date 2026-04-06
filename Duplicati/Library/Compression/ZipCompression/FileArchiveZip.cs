@@ -198,6 +198,7 @@ namespace Duplicati.Library.Compression.ZipCompression
                     CompressionType.GZip.ToString(),
                     CompressionType.Xz.ToString(),
                     CompressionType.Deflate64.ToString(),
+                    CompressionType.ZStandard.ToString()
                 };
 
                 return new List<ICommandLineArgument>([

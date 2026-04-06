@@ -115,14 +115,13 @@ public class SharpCompressZipArchive : IZipArchive
 
         if (mode == ArchiveMode.Write)
         {
-            var compression = new ZipWriterOptions(CompressionType.Deflate)
+            var compression = new ZipWriterOptions(m_compressionType)
             {
-                CompressionType = m_compressionType,
-                DeflateCompressionLevel = m_defaultCompressionLevel,
+                CompressionLevel = (int)m_defaultCompressionLevel,
                 UseZip64 = USE_ZIP64
             };
 
-            m_writer = WriterFactory.Open(m_stream, ArchiveType.Zip, compression);
+            m_writer = WriterFactory.OpenWriter(m_stream, ArchiveType.Zip, compression);
             m_flushBufferSize = Constants.END_OF_CENTRAL_DIRECTORY_SIZE;
         }
     }
@@ -134,7 +133,7 @@ public class SharpCompressZipArchive : IZipArchive
             if (m_archive == null)
             {
                 m_stream.Position = 0;
-                m_archive = ArchiveFactory.Open(m_stream);
+                m_archive = ArchiveFactory.OpenArchive(m_stream, new ReaderOptions());
             }
             return m_archive;
         }
@@ -155,12 +154,8 @@ public class SharpCompressZipArchive : IZipArchive
 
     public Stream GetStreamFromReader(IEntry entry)
     {
-        SharpCompress.Readers.Zip.ZipReader? rd = null;
 
-        try
-        {
-            rd = SharpCompress.Readers.Zip.ZipReader.Open(m_stream);
-
+        using (var rd = SharpCompress.Readers.Zip.ZipReader.OpenReader(m_stream, new ReaderOptions()))
             while (rd.MoveToNextEntry())
                 if (entry.Key == rd.Entry.Key)
                     return new StreamWrapper(rd.OpenEntryStream(), stream =>
@@ -168,15 +163,7 @@ public class SharpCompressZipArchive : IZipArchive
                         rd.Dispose();
                     });
 
-            throw new Exception(string.Format("Stream not found: {0}", entry.Key));
-        }
-        catch
-        {
-            if (rd != null)
-                rd.Dispose();
-
-            throw;
-        }
+        throw new Exception(string.Format("Stream not found: {0}", entry.Key));
     }
 
     /// <summary>
@@ -294,7 +281,7 @@ public class SharpCompressZipArchive : IZipArchive
 
                 try
                 {
-                    using (var rd = SharpCompress.Readers.Zip.ZipReader.Open(m_stream, new ReaderOptions() { LookForHeader = false }))
+                    using (var rd = SharpCompress.Readers.Zip.ZipReader.OpenReader(m_stream, new ReaderOptions() { LookForHeader = false }))
                         while (rd.MoveToNextEntry())
                         {
                             if (string.IsNullOrWhiteSpace(rd.Entry.Key))
@@ -362,7 +349,7 @@ public class SharpCompressZipArchive : IZipArchive
 
         return ((ZipWriter)m_writer!).WriteToStream(file, new ZipWriterEntryOptions()
         {
-            DeflateCompressionLevel = hint == CompressionHint.Noncompressible ? SharpCompress.Compressors.Deflate.CompressionLevel.None : m_defaultCompressionLevel,
+            CompressionLevel = hint == CompressionHint.Noncompressible ? (int)CompressionLevel.None : (int)m_defaultCompressionLevel,
             ModificationDateTime = lastWrite,
             CompressionType = m_compressionType
         });
