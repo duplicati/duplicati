@@ -28,12 +28,6 @@ namespace Duplicati.Library.Encryption
 {
     public static class GPGLocator
     {
-        public static IEnumerable<string> GetGpgExecutableNames()
-            => [
-                OperatingSystem.IsWindows() ? "gpg2.exe" : "gpg2",
-                OperatingSystem.IsWindows() ? "gpg.exe" : "gpg",
-            ];
-
         public static string GetGpgExecutablePath()
         {
             var searchPaths = new List<string>();

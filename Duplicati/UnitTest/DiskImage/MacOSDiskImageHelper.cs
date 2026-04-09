@@ -20,7 +20,16 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Xml.Linq;
+using Duplicati.Library.Utility;
+using Duplicati.Proprietary.DiskImage;
+using Duplicati.Proprietary.DiskImage.General;
+using NUnit.Framework;
 
 #nullable enable
 
@@ -28,123 +37,638 @@ namespace Duplicati.UnitTest.DiskImage
 {
     /// <summary>
     /// macOS implementation of <see cref="IDiskImageHelper"/> using hdiutil and standard macOS tools.
-    /// This is a stub implementation that throws <see cref="NotImplementedException"/> for all operations.
     /// </summary>
     internal class MacOSDiskImageHelper : IDiskImageHelper
     {
         /// <inheritdoc />
-        /// <exception cref="NotImplementedException">Always thrown as macOS support is not yet implemented.</exception>
-        public string CreateAndAttachDisk(string imagePath, long sizeMB)
+        public string CreateDisk(string imagePath, long sizeB)
         {
-            throw new NotImplementedException("macOS disk image operations are not yet implemented.");
+            // Ensure the directory exists
+            var directory = Path.GetDirectoryName(imagePath);
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+                Directory.CreateDirectory(directory);
+
+            // Delete existing image if it exists
+            if (File.Exists(imagePath))
+                try
+                {
+                    CleanupDisk(imagePath);
+                }
+                catch
+                {
+                    // Ignore errors during cleanup
+                }
+
+            // Create a raw disk image using hdiutil
+            // Use UDIF format with "Free Space" filesystem (unformatted)
+            RunProcess("hdiutil", $"create -size {sizeB} -type UDIF -layout NONE -o \"{imagePath}\"");
+
+            var output = RunProcess("hdiutil", $"attach -nomount -noautofsck \"{imagePath}\"");
+
+            // Parse the disk device from output (e.g., "/dev/disk4")
+            var diskDevice = output.Trim().Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim()
+                ?? throw new InvalidOperationException("Failed to get disk device from hdiutil attach output");
+
+            // Return the raw device path for direct I/O
+            return diskDevice.Replace("/dev/disk", "/dev/rdisk");
+        }
+
+        private string[] GetPartitionNames(string diskIdentifier)
+        {
+            var output = RunProcess("diskutil", $"list -plist {diskIdentifier}");
+
+            var plist = XDocument.Parse(output);
+            var rootDict = plist.Element("plist")?.Element("dict");
+            if (rootDict == null)
+                return [];
+
+            // Find the disk in AllDisksAndPartitions
+            var allDisksAndPartitions = PlistHelper.GetArrayElement(rootDict, "AllDisksAndPartitions");
+            if (allDisksAndPartitions == null)
+                return [];
+
+            // Normalize disk identifier - plist stores just "disk4" but we might have "/dev/disk4" or "/dev/rdisk4"
+            var normalizedId = diskIdentifier.Replace("/dev/rdisk", "disk").Replace("/dev/disk", "disk");
+
+            var diskElement = allDisksAndPartitions.Elements("dict")
+                .FirstOrDefault(d => PlistHelper.GetStringValue(d, "DeviceIdentifier") == normalizedId);
+
+            if (diskElement == null)
+                return [];
+
+            var partitions = new List<string>();
+
+            // Check for regular partitions
+            var partitionsArray = PlistHelper.GetArrayElement(diskElement, "Partitions");
+            if (partitionsArray != null)
+            {
+                foreach (var partition in partitionsArray.Elements("dict"))
+                {
+                    var deviceIdentifier = PlistHelper.GetStringValue(partition, "DeviceIdentifier");
+                    if (!string.IsNullOrWhiteSpace(deviceIdentifier))
+                        partitions.Add(deviceIdentifier);
+                }
+            }
+
+            // Check for APFS volumes
+            var apfsVolumes = PlistHelper.GetArrayElement(diskElement, "APFSVolumes");
+            if (apfsVolumes != null)
+            {
+                foreach (var volume in apfsVolumes.Elements("dict"))
+                {
+                    var deviceIdentifier = PlistHelper.GetStringValue(volume, "DeviceIdentifier");
+                    if (!string.IsNullOrWhiteSpace(deviceIdentifier))
+                        partitions.Add(deviceIdentifier);
+                }
+            }
+
+            return [.. partitions];
+        }
+
+        private string[] GetMountPoints(string diskIdentifier)
+        {
+            var partitions = GetPartitionNames(diskIdentifier);
+            var mountPoints = new System.Collections.Generic.List<string>();
+
+            foreach (var partition in partitions)
+            {
+                var output = RunProcess("diskutil", $"info -plist /dev/{partition}");
+                var plist = XDocument.Parse(output);
+                var dict = plist.Element("plist")?.Element("dict");
+                if (dict == null)
+                    continue;
+
+                // Check if this is an APFS Physical Store
+                var contentType = PlistHelper.GetStringValue(dict, "Content");
+                var isApfsPhysicalStore = contentType == "Apple_APFS";
+
+                if (isApfsPhysicalStore)
+                {
+                    // For APFS, get the container and then get volumes from it
+                    var containerId = PlistHelper.GetStringValue(dict, "APFSContainerReference");
+                    if (!string.IsNullOrEmpty(containerId))
+                    {
+                        // Get volumes from the container (they are like disk5s1, disk5s2, etc.)
+                        var containerVolumes = GetApfsContainerVolumes(containerId);
+                        foreach (var volume in containerVolumes)
+                        {
+                            var volumeOutput = RunProcess("diskutil", $"info -plist {volume}");
+                            var volumePlist = XDocument.Parse(volumeOutput);
+                            var volumeDict = volumePlist.Element("plist")?.Element("dict");
+                            if (volumeDict != null)
+                            {
+                                var mountPoint = PlistHelper.GetStringValue(volumeDict, "MountPoint");
+                                if (!string.IsNullOrEmpty(mountPoint))
+                                    mountPoints.Add(mountPoint);
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    // Regular partition - extract mount point directly
+                    var mountPoint = PlistHelper.GetStringValue(dict, "MountPoint");
+                    if (!string.IsNullOrEmpty(mountPoint))
+                        mountPoints.Add(mountPoint);
+                }
+            }
+
+            return [.. mountPoints];
+        }
+
+        private string[] GetApfsContainerVolumes(string containerId)
+        {
+            var output = RunProcess("diskutil", $"list -plist {containerId}");
+
+            var plist = XDocument.Parse(output);
+            var rootDict = plist.Element("plist")?.Element("dict");
+            if (rootDict == null)
+                return [];
+
+            var allDisksAndPartitions = PlistHelper.GetArrayElement(rootDict, "AllDisksAndPartitions");
+            if (allDisksAndPartitions == null)
+                return [];
+
+            // Normalize container id - plist stores just "disk4" but we might have "/dev/disk4" or "/dev/rdisk4"
+            var normalizedId = containerId.Replace("/dev/rdisk", "disk").Replace("/dev/disk", "disk");
+
+            var container = allDisksAndPartitions.Elements("dict")
+                .FirstOrDefault(d => PlistHelper.GetStringValue(d, "DeviceIdentifier") == normalizedId);
+
+            if (container == null)
+                return [];
+
+            var volumes = new List<string>();
+            var apfsVolumes = PlistHelper.GetArrayElement(container, "APFSVolumes");
+            if (apfsVolumes != null)
+            {
+                foreach (var volume in apfsVolumes.Elements("dict"))
+                {
+                    var deviceIdentifier = PlistHelper.GetStringValue(volume, "DeviceIdentifier");
+                    if (!string.IsNullOrWhiteSpace(deviceIdentifier))
+                        volumes.Add(deviceIdentifier);
+                }
+            }
+
+            return [.. volumes];
         }
 
         /// <inheritdoc />
-        /// <exception cref="NotImplementedException">Always thrown as macOS support is not yet implemented.</exception>
-        public int GetDiskNumber(string imagePath)
+        public string[] InitializeDisk(string diskIdentifier, PartitionTableType tableType, (FileSystemType, long)[] partitions)
         {
-            throw new NotImplementedException("macOS disk image operations are not yet implemented.");
+            if (tableType == PartitionTableType.Unknown)
+                return []; // No partition table, so nothing to initialize
+
+            // Use diskutil to partition the disk with the specified scheme
+            // "Free Space" means no filesystem, just the partition table
+            var partitionStrings = partitions.Length > 0 ? partitions.Select((p, i) =>
+            {
+                var fsType = p.Item1 switch
+                {
+                    FileSystemType.NTFS => throw new NotSupportedException("NTFS is not natively supported on macOS for creating partitions. Use ExFAT or FAT32 instead."),
+                    FileSystemType.FAT32 => "\"MS-DOS FAT32\"",
+                    FileSystemType.ExFAT => "ExFAT",
+                    FileSystemType.HFSPlus => "HFS+",
+                    FileSystemType.APFS => "APFS",
+                    _ => throw new ArgumentException($"Unsupported filesystem type on macOS: {p.Item1}", nameof(partitions))
+                };
+
+                var sizeArg = p.Item2 > 0 ? $"{p.Item2}" : "0";
+                return $"{fsType} \"Partition {i + 1}\" {sizeArg}";
+            })
+            : ["\"Free Space\" \"\" 0"];
+            var partitionArgs = string.Join(" ", partitionStrings);
+
+            // Normalize disk identifier for diskutil command (it expects "disk4", not "/dev/rdisk4")
+            var normalizedDiskId = diskIdentifier.Replace("/dev/rdisk", "disk").Replace("/dev/disk", "disk");
+            RunProcess("diskutil", $"partitionDisk {normalizedDiskId} {tableType.ToString().ToUpperInvariant()} {partitionArgs}");
+
+            if (partitions.Length == 0)
+                return [];
+
+            return GetMountPoints(diskIdentifier);
         }
 
         /// <inheritdoc />
-        /// <exception cref="NotImplementedException">Always thrown as macOS support is not yet implemented.</exception>
-        public void InitializeDisk(int diskNumber, Duplicati.Proprietary.DiskImage.PartitionTableType tableType)
+        public string[] Mount(string diskIdentifier, string? baseMountPath = null, bool readOnly = false, FileSystemType[]? fileSystemTypes = null)
         {
-            throw new NotImplementedException("macOS disk image operations are not yet implemented.");
-        }
-
-        /// <inheritdoc />
-        /// <exception cref="NotImplementedException">Always thrown as macOS support is not yet implemented.</exception>
-        public char CreateAndFormatPartition(int diskNumber, Duplicati.Proprietary.DiskImage.FileSystemType fsType, long sizeMB = 0)
-        {
-            throw new NotImplementedException("macOS disk image operations are not yet implemented.");
-        }
-
-        /// <inheritdoc />
-        /// <exception cref="NotImplementedException">Always thrown as macOS support is not yet implemented.</exception>
-        public void FlushVolume(char driveLetter)
-        {
-            throw new NotImplementedException("macOS disk image operations are not yet implemented.");
-        }
-
-        /// <inheritdoc />
-        /// <exception cref="NotImplementedException">Always thrown as macOS support is not yet implemented.</exception>
-        public void PopulateTestData(char driveLetter, int fileCount = 10, int fileSizeKB = 10)
-        {
-            throw new NotImplementedException("macOS disk image operations are not yet implemented.");
-        }
-
-        /// <inheritdoc />
-        /// <exception cref="NotImplementedException">Always thrown as macOS support is not yet implemented.</exception>
-        public void DetachDisk(string imagePath)
-        {
-            throw new NotImplementedException("macOS disk image operations are not yet implemented.");
-        }
-
-        /// <inheritdoc />
-        /// <exception cref="NotImplementedException">Always thrown as macOS support is not yet implemented.</exception>
-        public void UnmountForWriting(string imagePath, char? driveLetter = null)
-        {
-            throw new NotImplementedException("macOS disk image operations are not yet implemented.");
-        }
-
-        /// <inheritdoc />
-        /// <exception cref="NotImplementedException">Always thrown as macOS support is not yet implemented.</exception>
-        public void BringOnline(string imagePath)
-        {
-            throw new NotImplementedException("macOS disk image operations are not yet implemented.");
-        }
-
-        /// <inheritdoc />
-        /// <exception cref="NotImplementedException">Always thrown as macOS support is not yet implemented.</exception>
-        public char MountForReading(string imagePath, char? driveLetter = null)
-        {
-            throw new NotImplementedException("macOS disk image operations are not yet implemented.");
-        }
-
-        /// <inheritdoc />
-        /// <exception cref="NotImplementedException">Always thrown as macOS support is not yet implemented.</exception>
-        public void CleanupDisk(string imagePath)
-        {
-            throw new NotImplementedException("macOS disk image operations are not yet implemented.");
-        }
-
-        /// <inheritdoc />
-        /// <exception cref="NotImplementedException">Always thrown as macOS support is not yet implemented.</exception>
-        public string GetDiskDetails(int diskNumber)
-        {
-            throw new NotImplementedException("macOS disk image operations are not yet implemented.");
-        }
-
-        /// <inheritdoc />
-        /// <exception cref="NotImplementedException">Always thrown as macOS support is not yet implemented.</exception>
-        public string GetVolumeInfo(char driveLetter)
-        {
-            throw new NotImplementedException("macOS disk image operations are not yet implemented.");
-        }
-
-        /// <inheritdoc />
-        /// <remarks>
-        /// On macOS, checks if running as root.
-        /// </remarks>
-        public bool HasRequiredPrivileges()
-        {
-            // On macOS, check if running as root (UID 0)
+            // Check if already mounted
             try
             {
-                return Environment.UserName == "root";
+                var existingMountPoints = GetMountPoints(diskIdentifier);
+                if (existingMountPoints.Length > 0 && existingMountPoints.All(mp => mp.StartsWith(baseMountPath ?? "/Volumes/")))
+                {
+                    return existingMountPoints;
+                }
             }
             catch
             {
-                return false;
+                // Ignore errors and try mounting
             }
+
+            // Get the list of partitions first to ensure we target the correct disk
+            var partitions = GetPartitionNames(diskIdentifier);
+
+            List<string> mountPoints = [];
+            foreach (var partition in partitions)
+            {
+                var output = RunProcess("diskutil", $"info -plist /dev/{partition}");
+                var plist = XDocument.Parse(output);
+                var dict = plist.Element("plist")?.Element("dict");
+                if (dict == null)
+                    continue;
+
+                // Check if this is an APFS Physical Store
+                var contentType = PlistHelper.GetStringValue(dict, "Content");
+                var isApfsPhysicalStore = contentType == "Apple_APFS";
+
+                if (isApfsPhysicalStore)
+                {
+                    // For APFS, get the container and mount volumes from it
+                    var containerId = PlistHelper.GetStringValue(dict, "APFSContainerReference");
+                    if (!string.IsNullOrEmpty(containerId))
+                    {
+                        // Get volumes from the container (they are like disk5s1, disk5s2, etc.)
+                        var containerVolumes = GetApfsContainerVolumes(containerId);
+                        foreach (var volume in containerVolumes)
+                        {
+                            MountVolume(volume, baseMountPath, mountPoints, readOnly);
+                        }
+                    }
+                }
+                else
+                {
+                    // Regular partition - mount directly
+                    MountVolume(partition, baseMountPath, mountPoints, readOnly);
+                }
+            }
+
+            return mountPoints.Count == 0 ? WaitForMountPoints(diskIdentifier) : [.. mountPoints];
+        }
+
+        /// <summary>
+        /// Mounts a single volume/partition with optional custom mount point.
+        /// </summary>
+        /// <param name="volume">The volume identifier (e.g., "disk4s1").</param>
+        /// <param name="baseMountPath">Optional base path for mounting.</param>
+        /// <param name="mountPoints">List to collect mount points.</param>
+        /// <param name="readOnly">Indicates whether the volume should be mounted as read-only.</param>
+        private void MountVolume(string volume, string? baseMountPath, List<string> mountPoints, bool readOnly)
+        {
+            var dir = "";
+            var mountArgs = readOnly ? "-readOnly" : "";
+            if (baseMountPath is not null)
+            {
+                dir = Path.Combine(baseMountPath, volume);
+                Directory.CreateDirectory(dir); // diskutil will mount to this directory instead of /Volumes/ if it exists, so create it ahead of time
+                var readOnlyArg = readOnly ? " -readOnly" : "";
+                mountArgs = $"{readOnlyArg} -mountPoint \"{dir}\"";
+            }
+
+            // Unmount first in case it's already mounted somewhere else, to ensure it gets mounted to the correct location
+            var oldMp = GetMountPointFromPlist(RunProcess("diskutil", $"info -plist /dev/{volume}"));
+            if (oldMp is not null && !oldMp.StartsWith(baseMountPath ?? "/Volumes/"))
+                RunProcess("diskutil", $"unmount force /dev/{volume}");
+
+            RunProcess("diskutil", $"mount -nobrowse {mountArgs} /dev/{volume}");
+
+            // Verify the mount
+            var mp = RunProcess("diskutil", $"info -plist /dev/{volume}");
+            var mountPoint = GetMountPointFromPlist(mp);
+            if (!string.IsNullOrEmpty(mountPoint))
+            {
+                mountPoints.Add(mountPoint);
+
+                if (!mountPoint.StartsWith(baseMountPath ?? "/Volumes/"))
+                {
+                    Console.WriteLine($"Warning: Volume /dev/{volume} did not mount to expected location. Output: {mp}");
+                }
+            }
+            else
+            {
+                Console.WriteLine($"Warning: Volume /dev/{volume} did not report a mount point after mounting. Output: {mp}");
+            }
+        }
+
+        /// <summary>
+        /// Extracts the mount point from diskutil info -plist output.
+        /// </summary>
+        private string? GetMountPointFromPlist(string plistOutput)
+        {
+            try
+            {
+                var plist = XDocument.Parse(plistOutput);
+                var dict = plist.Element("plist")?.Element("dict");
+                if (dict == null)
+                    return null;
+
+                var mountPoint = PlistHelper.GetStringValue(dict, "MountPoint");
+                // Return null if not mounted (empty string indicates not mounted)
+                return string.IsNullOrWhiteSpace(mountPoint) ? null : mountPoint;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Waits for mount points to be fully established after a mount operation.
+        /// Uses exponential backoff starting from a short delay to minimize wait time
+        /// in the common case while still handling slow mounts.
+        ///
+        /// After mounting (especially after raw partition table writes during restore),
+        /// macOS may need time to fully recognize filesystems and establish mount points
+        /// in /Volumes/. Without this retry loop, mount points may be:
+        /// - Not yet available (empty array)
+        /// - In a transient location like /private/var/ instead of /Volumes/
+        /// - Mounted but with empty directories (filesystem not yet recognized)
+        /// </summary>
+        /// <param name="diskIdentifier">The disk identifier to check mount points for.</param>
+        /// <returns>An array of mount point paths.</returns>
+        private string[] WaitForMountPoints(string diskIdentifier)
+        {
+            const int maxRetries = 10;
+            const int initialDelayMs = 100;
+            const int maxDelayMs = 1000;
+
+            var delayMs = initialDelayMs;
+            for (int i = 0; i < maxRetries; i++)
+            {
+                var mountPoints = GetMountPoints(diskIdentifier);
+
+                if (mountPoints.Length > 0)
+                {
+                    // Check if any mount points are in a transient location (not under /Volumes/)
+                    if (mountPoints.Any(mp => !mp.StartsWith("/Volumes/")))
+                    {
+                        Thread.Sleep(delayMs);
+                        delayMs = Math.Min(delayMs * 2, maxDelayMs);
+                        continue;
+                    }
+
+                    // Check if all mount points have filesystem entries (not empty)
+                    var allNonEmpty = mountPoints.All(mp =>
+                    {
+                        try { return Directory.GetFileSystemEntries(mp).Length > 0; }
+                        catch { return false; }
+                    });
+
+                    if (allNonEmpty || i == maxRetries - 1)
+                        return mountPoints;
+                }
+
+                Thread.Sleep(delayMs);
+                delayMs = Math.Min(delayMs * 2, maxDelayMs);
+            }
+
+            // Final attempt - return whatever we have
+            return GetMountPoints(diskIdentifier);
+        }
+
+        public void Unmount(string diskIdentifier)
+        {
+            int retryCount = 3;
+            for (int i = 0; i < retryCount; i++)
+            {
+                try
+                {
+                    // Unmount all volumes on the disk
+                    RunProcess("diskutil", $"unmountDisk {diskIdentifier}");
+                }
+                catch
+                {
+                    // Sometimes an unmount is issued too fast after writing data, which makes diskutil throw an errory.
+                    Thread.Sleep(500);
+                }
+            }
+        }
+
+        /// <inheritdoc />
+        public void FlushDisk(string diskIdentifier)
+        {
+            // On macOS, use sync to flush all filesystem buffers
+            RunProcess("sync", "");
+        }
+
+        /// <inheritdoc />
+        public void CleanupDisk(string imagePath, string? diskIdentifier = null)
+        {
+            if (diskIdentifier is null)
+            {
+                var output = RunProcess("hdiutil", $"info");
+
+                diskIdentifier = output
+                    .Split("================================================")
+                    .Skip(1) // Skip the header
+                    .Select(d =>
+                    {
+                        var lines = d
+                            .Split('\n')
+                            .Select(l => l.Trim())
+                            .Where(l => l.Length > 0)
+                            .ToList();
+                        var imagePathLine = lines.FirstOrDefault(l => l.StartsWith("image-path"));
+                        if (imagePathLine == null)
+                            return null;
+
+                        var path = imagePathLine.Split([':'], 2)[1].Trim();
+                        if (!string.Equals(path, imagePath, StringComparison.OrdinalIgnoreCase))
+                            return null;
+
+                        var deviceLine = lines.FirstOrDefault(l => l.StartsWith("/dev/"));
+                        if (deviceLine == null)
+                            return null;
+
+                        var device = deviceLine
+                            .Split(['\t'], 2)[0]
+                            .Trim();
+
+                        return device;
+                    })
+                    .FirstOrDefault(d => d != null);
+            }
+
+            if (diskIdentifier is null)
+                throw new InvalidOperationException($"Failed to determine disk identifier for {imagePath} during cleanup");
+
+            try
+            {
+                RunProcess("diskutil", $"eject {diskIdentifier}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Warning: Failed to detach disk image: {ex.Message}");
+            }
+
+            try
+            {
+                if (File.Exists(imagePath))
+                    File.Delete(imagePath);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Warning: Failed to delete disk image file: {ex.Message}");
+            }
+        }
+
+        /// <inheritdoc />
+        public bool HasRequiredPrivileges()
+        {
+            // Root is not required for virtual disks.
+            return true;
+        }
+
+        /// <inheritdoc />
+        public PartitionTableGeometry GetPartitionTable(string diskIdentifier)
+        {
+            var output = RunProcess("diskutil", $"info -plist {diskIdentifier}");
+
+            var plist = XDocument.Parse(output);
+            var dict = plist.Element("plist")?.Element("dict");
+            if (dict == null)
+                throw new InvalidOperationException($"Failed to parse diskutil info plist for {diskIdentifier}");
+
+            // Verify disk identifier
+            var deviceIdentifier = PlistHelper.GetStringValue(dict, "DeviceIdentifier");
+            if (!diskIdentifier.EndsWith(deviceIdentifier ?? "", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException($"Disk identifier mismatch in diskutil info output: {diskIdentifier} doesn't end with {deviceIdentifier}");
+
+            // Determine partition table type
+            var contentType = PlistHelper.GetStringValue(dict, "Content");
+            var tableType = contentType switch
+            {
+                "GUID_partition_scheme" => PartitionTableType.GPT,
+                "FDisk_partition_scheme" => PartitionTableType.MBR,
+                _ => PartitionTableType.Unknown
+            };
+
+            // Get size and sector size
+            var size = PlistHelper.GetLongValue(dict, "TotalSize");
+            var sectorSize = (int)PlistHelper.GetLongValue(dict, "DeviceBlockSize");
+
+            if (size == 0 || sectorSize == 0)
+                throw new InvalidOperationException($"Failed to retrieve partition table information for disk {diskIdentifier}");
+
+            return new PartitionTableGeometry
+            {
+                Type = tableType,
+                Size = size,
+                SectorSize = sectorSize
+                // Ignore the rest for now.
+            };
+        }
+
+        /// <inheritdoc />
+        public PartitionGeometry[] GetPartitions(string diskIdentifier)
+        {
+            var names = GetPartitionNames(diskIdentifier);
+
+            var partitions = new List<PartitionGeometry>();
+            foreach (var name in names)
+            {
+                var output = RunProcess("diskutil", $"info -plist /dev/{name}");
+
+                var plist = XDocument.Parse(output);
+                var dict = plist.Element("plist")?.Element("dict");
+                if (dict == null)
+                    continue;
+
+                // Verify device node
+                var deviceNode = PlistHelper.GetStringValue(dict, "DeviceNode");
+                if (!string.Equals(deviceNode, $"/dev/{name}", StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException($"Partition identifier mismatch in diskutil info output: expected /dev/{name}, got {deviceNode}");
+
+                // Extract partition number from name (e.g., "disk4s1" -> 1)
+                var partitionNumber = int.TryParse(
+                    name.LastIndexOf('s') >= 0 ? name[(name.LastIndexOf('s') + 1)..] : "",
+                    out int num) ? num : -1;
+
+                // Parse filesystem type
+                var fsPersonality = PlistHelper.GetStringValue(dict, "FilesystemPersonality");
+                var filesystemType = fsPersonality switch
+                {
+                    "MS-DOS FAT32" => FileSystemType.FAT32,
+                    "ExFAT" => FileSystemType.ExFAT,
+                    "HFS+" => FileSystemType.HFSPlus,
+                    "APFS" => FileSystemType.APFS,
+                    _ => FileSystemType.Unknown
+                };
+
+                // Parse volume UUID
+                Guid? volumeGuid = null;
+                var volumeUuid = PlistHelper.GetStringValue(dict, "VolumeUUID");
+                if (Guid.TryParse(volumeUuid, out Guid parsedGuid))
+                    volumeGuid = parsedGuid;
+
+                PartitionGeometry partition = new()
+                {
+                    Number = partitionNumber,
+                    Type = PartitionType.Unknown,
+                    StartOffset = PlistHelper.GetLongValue(dict, "PartitionMapPartitionOffset"),
+                    Size = PlistHelper.GetLongValue(dict, "TotalSize"),
+                    Name = PlistHelper.GetStringValue(dict, "VolumeName"),
+                    FilesystemType = filesystemType,
+                    VolumeGuid = volumeGuid,
+                    TableType = PartitionTableType.Unknown
+                };
+
+                partitions.Add(partition);
+            }
+
+            return partitions.ToArray();
+        }
+
+        public string ReAttach(string imagePath, string diskIdentifier, PartitionTableType tableType, bool readOnly = false)
+        {
+            // Eject can fail if issued too fast after writing data, which makes diskutil throw an error. Retry a few times with a delay to mitigate this.
+            RunProcess("diskutil", $"eject {diskIdentifier}", retryCount: 3);
+            var reattachoutput = RunProcess("hdiutil", $"attach -nomount -noautofsck -readonly \"{imagePath}\"");
+            if (tableType == PartitionTableType.Unknown)
+                return reattachoutput.Split('\n').First().Trim();
+            else
+                return reattachoutput
+                    .Split('\n')
+                    .Select(x => x.Trim()
+                        .Split(' ')
+                        .Where(y => !string.IsNullOrEmpty(y))
+                        .Select(y => y.Trim())
+                        .ToArray()
+                    )
+                    .Where(x => x.Length > 0 && x[^1].EndsWith("_partition_scheme"))
+                    .First().First();
+        }
+
+        public static string RunProcess(string fileName, string arguments, int retryCount = 0)
+        {
+            for (int i = 0; i <= retryCount; i++)
+            {
+                var result = ProcessRunner.RunProcessAsync(fileName, arguments, 30_000).Await();
+
+
+                if (result.ExitCode != 0)
+                    if (i < retryCount)
+                    {
+                        Console.WriteLine($"Warning: Process {fileName} with arguments {arguments} exited with code {result.ExitCode}. Retrying... Attempt {i + 1} of {retryCount}");
+                        Thread.Sleep(500);
+                        continue;
+                    }
+                    else
+                        throw new InvalidOperationException($"Process {fileName} with arguments {arguments} exited with code {result.ExitCode}: {result.Error}. Output: {result.Output}");
+
+                return result.Output;
+            }
+
+            // This should never be hit due to the retry loop logic, but is required to satisfy the compiler.
+            throw new InvalidOperationException($"Failed to run process {fileName} with arguments {arguments} after retries. This should not happen.");
         }
 
         /// <inheritdoc />
         public void Dispose()
         {
-            // Nothing to dispose in the stub implementation
+            // Nothing to dispose
             GC.SuppressFinalize(this);
         }
+
     }
 }

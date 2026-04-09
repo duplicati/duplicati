@@ -18,6 +18,9 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
+using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using Duplicati.CommandLine.DatabaseTool;
 using Duplicati.Library.SQLiteHelper;
@@ -336,5 +339,211 @@ CREATE TABLE ""ChangeJournalData"" (
 INSERT INTO ""Version"" (""Version"") VALUES (12);
 
 ";
+
+        [Test]
+        [Category("DatabaseTool")]
+        public async Task TestVerifyCommand()
+        {
+            using var tempFolder = new Library.Utility.TempFolder();
+            string tempDir = tempFolder;
+
+            var serverDb = Path.Combine(tempDir, "server.sqlite");
+            var localDb1 = Path.Combine(tempDir, "local1.sqlite");
+            var localDb2 = Path.Combine(tempDir, "local2.sqlite"); // Referenced but won't exist = Missing
+            var orphanDb = Path.Combine(tempDir, "ABCDEFGHIJ.sqlite"); // Random name = Orphaned
+
+            // Create server database
+            using (var db = SQLiteLoader.LoadConnection(serverDb))
+            using (var cmd = db.CreateCommand())
+            {
+                cmd.CommandText = ServerSchemaV6;
+                cmd.ExecuteNonQuery();
+
+                // Insert a backup referencing localDb1
+                cmd.CommandText = $@"
+                    INSERT INTO ""Backup"" (""Name"", ""Tags"", ""TargetURL"", ""DBPath"")
+                    VALUES ('Test Backup', '', 'file:///test', '{localDb1.Replace("'", "''")}');
+                ";
+                cmd.ExecuteNonQuery();
+            }
+
+            // Create local database
+            using (var db = SQLiteLoader.LoadConnection(localDb1))
+            using (var cmd = db.CreateCommand())
+            {
+                cmd.CommandText = LocalSchemaV12;
+                cmd.ExecuteNonQuery();
+            }
+
+            // Create orphan database (exists but not referenced)
+            using (var db = SQLiteLoader.LoadConnection(orphanDb))
+            using (var cmd = db.CreateCommand())
+            {
+                cmd.CommandText = LocalSchemaV12;
+                cmd.ExecuteNonQuery();
+            }
+
+            // Copy server database to expected location
+            var serverTargetPath = Path.Combine(tempDir, "Duplicati-server.sqlite");
+            File.Copy(serverDb, serverTargetPath);
+
+            // Create dbconfig.json with localDb2 (which won't exist)
+            var dbConfigPath = Path.Combine(tempDir, "dbconfig.json");
+            var dbConfig = new List<Duplicati.Library.Main.CLIDatabaseLocator.BackendEntry>
+            {
+                new()
+                {
+                    Type = "file",
+                    Server = "localhost",
+                    Path = "/backup1",
+                    Prefix = "dup",
+                    Username = "user",
+                    Port = 0,
+                    Databasepath = localDb2, // This file won't exist = Missing
+                    ParameterFile = null
+                },
+                new()
+                {
+                    Type = "file",
+                    Server = "localhost",
+                    Path = "/backup2",
+                    Prefix = "dup",
+                    Username = "user",
+                    Port = 0,
+                    Databasepath = localDb1, // This file exists = Found
+                    ParameterFile = null
+                }
+            };
+            await File.WriteAllTextAsync(dbConfigPath, Newtonsoft.Json.JsonConvert.SerializeObject(dbConfig));
+
+            // Test verify command with JSON output
+            var output = new StringWriter();
+            var originalOut = Console.Out;
+            Console.SetOut(output);
+
+            try
+            {
+                Assert.AreEqual(0, await Program.Main(["verify", "--datafolder", tempDir, "--output-json"]));
+            }
+            finally
+            {
+                Console.SetOut(originalOut);
+            }
+
+            var result = output.ToString();
+
+            // Should report localDb1 as Found (in both server and dbconfig)
+            Assert.That(result, Does.Contain("\"Status\": \"Found\""));
+            // Should report localDb2 as Missing (referenced in dbconfig but file doesn't exist)
+            Assert.That(result, Does.Contain("\"Status\": \"Missing\""));
+            // Should report orphanDb as Orphaned (exists but not referenced)
+            Assert.That(result, Does.Contain("\"Status\": \"Orphaned\""));
+        }
+
+        [Test]
+        [Category("DatabaseTool")]
+        [TestCase(true)]  // Dry run - no files should be deleted
+        [TestCase(false)] // Force - only orphaned files should be deleted
+        public async Task TestCleanupCommand(bool dryRun)
+        {
+            using var tempFolder = new Library.Utility.TempFolder();
+            var tempDir = (string)tempFolder;
+
+            // Create three types of databases:
+            // 1. FOUND: Referenced in server DB and exists
+            var foundDb = Path.Combine(tempDir, "FOUNDDB.sqlite");
+            // 2. MISSING: Referenced in dbconfig but doesn't exist
+            var missingDb = Path.Combine(tempDir, "MISSINGDB.sqlite");
+            // 3. ORPHANED: Exists but not referenced anywhere
+            var orphanDb = Path.Combine(tempDir, "ORPHANXYZ.sqlite");
+
+            var serverDb = Path.Combine(tempDir, "Duplicati-server.sqlite");
+
+            // Create server database with a backup referencing foundDb
+            using (var db = SQLiteLoader.LoadConnection(serverDb))
+            using (var cmd = db.CreateCommand())
+            {
+                cmd.CommandText = ServerSchemaV6;
+                cmd.ExecuteNonQuery();
+
+                cmd.CommandText = $@"
+                    INSERT INTO ""Backup"" (""Name"", ""Tags"", ""TargetURL"", ""DBPath"")
+                    VALUES ('Test Backup', '', 'file:///test', '{foundDb.Replace("'", "''")}');
+                ";
+                cmd.ExecuteNonQuery();
+            }
+
+            // Create "Found" database (referenced in server DB and exists)
+            using (var db = SQLiteLoader.LoadConnection(foundDb))
+            using (var cmd = db.CreateCommand())
+            {
+                cmd.CommandText = LocalSchemaV12;
+                cmd.ExecuteNonQuery();
+            }
+
+            // Create "Orphaned" database (exists but not referenced)
+            using (var db = SQLiteLoader.LoadConnection(orphanDb))
+            using (var cmd = db.CreateCommand())
+            {
+                cmd.CommandText = LocalSchemaV12;
+                cmd.ExecuteNonQuery();
+            }
+
+            // Create dbconfig.json with missingDb reference (file won't exist = Missing)
+            var dbConfigPath = Path.Combine(tempDir, "dbconfig.json");
+            var dbConfig = new List<Duplicati.Library.Main.CLIDatabaseLocator.BackendEntry>
+            {
+                new()
+                {
+                    Type = "file",
+                    Server = "localhost",
+                    Path = "/backup1",
+                    Prefix = "dup",
+                    Username = "user",
+                    Port = 0,
+                    Databasepath = missingDb, // This file won't exist = Missing
+                    ParameterFile = null
+                },
+                new()
+                {
+                    Type = "file",
+                    Server = "localhost",
+                    Path = "/backup2",
+                    Prefix = "dup",
+                    Username = "user",
+                    Port = 0,
+                    Databasepath = foundDb, // This file exists = Found
+                    ParameterFile = null
+                }
+            };
+            await File.WriteAllTextAsync(dbConfigPath, Newtonsoft.Json.JsonConvert.SerializeObject(dbConfig));
+
+            // Verify pre-cleanup state
+            Assert.That(File.Exists(foundDb), Is.True, "Found DB should exist before cleanup");
+            Assert.That(File.Exists(orphanDb), Is.True, "Orphan DB should exist before cleanup");
+            Assert.That(File.Exists(missingDb), Is.False, "Missing DB should not exist before cleanup");
+
+            // Run cleanup with appropriate flag
+            string[] args = dryRun
+                ? ["cleanup", "--datafolder", tempDir, "--dry-run"]
+                : ["cleanup", "--datafolder", tempDir, "--force"];
+
+            Assert.AreEqual(0, await Program.Main(args));
+
+            if (dryRun)
+            {
+                // Dry run: No files should be deleted
+                Assert.That(File.Exists(foundDb), Is.True, "Found DB should still exist after dry-run");
+                Assert.That(File.Exists(orphanDb), Is.True, "Orphan DB should still exist after dry-run");
+                Assert.That(File.Exists(missingDb), Is.False, "Missing DB should still not exist after dry-run");
+            }
+            else
+            {
+                // Force cleanup: Only orphaned file should be deleted
+                Assert.That(File.Exists(foundDb), Is.True, "Found DB should still exist after cleanup");
+                Assert.That(File.Exists(orphanDb), Is.False, "Orphan DB should be deleted after cleanup");
+                Assert.That(File.Exists(missingDb), Is.False, "Missing DB should still not exist after cleanup");
+            }
+        }
     }
 }

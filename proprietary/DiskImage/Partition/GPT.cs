@@ -5,8 +5,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Duplicati.Proprietary.DiskImage;
 using Duplicati.Proprietary.DiskImage.Disk;
+using Duplicati.Proprietary.DiskImage.General;
 
 namespace Duplicati.Proprietary.DiskImage.Partition;
 
@@ -103,8 +103,6 @@ internal class GPT : IPartitionTable
 
         if (!parsedHeader)
             return false;
-
-        m_numPartitionEntries = 4;
 
         // Calculate the byte offset for the partition entries
         int partitionEntriesOffset = (int)(m_partitionEntryLba * m_bytesPerSector);
@@ -320,7 +318,7 @@ internal class GPT : IPartitionTable
         m_partitions = [];
 
         // Parse each partition entry
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < m_numPartitionEntries; i++)
         {
             token.ThrowIfCancellationRequested();
 

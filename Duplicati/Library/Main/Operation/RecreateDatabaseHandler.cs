@@ -137,6 +137,12 @@ namespace Duplicati.Library.Main.Operation
                 await LocalRecreateDatabase.CreateAsync(dbparent, m_options, null, m_result.TaskControl.ProgressToken)
                     .ConfigureAwait(false);
             await restoredb.RepairInProgress(m_result.TaskControl.ProgressToken, true).ConfigureAwait(false);
+
+            // If a filelist filter is applied, we're only recreating a partial database (e.g., for a specific version restore).
+            // Mark it as partially recreated so it cannot be used for backups or other operations that require a complete database.
+            if (filelistfilter != null)
+                await restoredb.PartiallyRecreated(m_result.TaskControl.ProgressToken, true).ConfigureAwait(false);
+
             var expRecreateDb = false; // experimental recreate db code flag
             var volumeIds = new Dictionary<string, long>();
 
@@ -675,9 +681,22 @@ namespace Duplicati.Library.Main.Operation
                         throw new UserInformationException(string.Format("Recreated database has missing blocks and {0} broken filelists. Consider using \"{1}\" and \"{2}\" to purge broken data from the remote store and the database.", broken, "list-broken-files", "purge-broken-files"), "DatabaseIsBrokenConsiderPurge");
                 }
 
-                await restoredb
-                    .VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, true, m_result.TaskControl.ProgressToken)
-                    .ConfigureAwait(false);
+                // When a filelist filter is applied, we are intentionally only recreating a subset
+                // of the database (e.g., restoring a specific version with --no-local-db).
+                // In this case, we need to use the lax consistency check that allows volumes
+                // without filesets, as only the selected filesets are being recreated.
+                if (filelistfilter != null)
+                {
+                    await restoredb
+                        .VerifyConsistencyForRepair(m_options.Blocksize, m_options.BlockhashSize, true, m_result.TaskControl.ProgressToken)
+                        .ConfigureAwait(false);
+                }
+                else
+                {
+                    await restoredb
+                        .VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, true, m_result.TaskControl.ProgressToken)
+                        .ConfigureAwait(false);
+                }
 
                 Logging.Log.WriteInformationMessage(LOGTAG, "RecreateCompleted", "Recreate completed, and consistency checks completed, marking database as complete");
 

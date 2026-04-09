@@ -60,7 +60,7 @@ public static class PermissionHelper
     {
         if (OperatingSystem.IsWindows())
             return IsRunningAsAdministrator() || IsRunningAsLocalSystem();
-        if (OperatingSystem.IsLinux())
+        if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
             return IsRunningAsRoot();
 
         return false;
@@ -94,6 +94,7 @@ public static class PermissionHelper
     /// </summary>
     /// <returns>The effective user ID of the calling process.</returns>
     [SupportedOSPlatform("linux")]
+    [SupportedOSPlatform("macos")]
     [DllImport("libc")]
     public static extern uint geteuid();
 
@@ -102,6 +103,7 @@ public static class PermissionHelper
     /// </summary>
     /// <returns>True if running as root, false otherwise.</returns>
     [SupportedOSPlatform("linux")]
+    [SupportedOSPlatform("macos")]
     private static bool IsRunningAsRoot()
     {
         return geteuid() == 0;

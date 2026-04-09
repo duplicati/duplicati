@@ -16,9 +16,41 @@
     <ProjectReference Include="..\..\Duplicati\Library\Logging\Duplicati.Library.Logging.csproj" />
   </ItemGroup>
 
+  <!-- Native libraries -->
   <ItemGroup>
+    <!-- Windows -->
     <PackageReference Include="Vanara.PInvoke.Kernel32" Version="5.0.0" />
     <PackageReference Include="Vanara.PInvoke.Shared" Version="5.0.0" />
+    <!-- Mac -->
+    <ContentWithTargetPath Include="$(ProjectDir)NativeLibraryWrappers/libSystem_wrapper.dylib">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>runtimes/osx/native/libSystem_wrapper.dylib</TargetPath>
+    </ContentWithTargetPath>
+    <!-- x86 Linux -->
+    <ContentWithTargetPath Include="$(ProjectDir)NativeLibraryWrappers/libc_wrapper_x86.so">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>runtimes/linux-x86/native/libc_wrapper.so</TargetPath>
+    </ContentWithTargetPath>
+    <!-- x64 Linux -->
+    <ContentWithTargetPath Include="$(ProjectDir)NativeLibraryWrappers/libc_wrapper_x86_64.so">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>runtimes/linux-x64/native/libc_wrapper.so</TargetPath>
+    </ContentWithTargetPath>
+    <!-- ARM32 Linux -->
+    <ContentWithTargetPath Include="$(ProjectDir)NativeLibraryWrappers/libc_wrapper_arm32.so">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>runtimes/linux-arm/native/libc_wrapper.so</TargetPath>
+    </ContentWithTargetPath>
+    <!-- ARM64 Linux -->
+    <ContentWithTargetPath Include="$(ProjectDir)NativeLibraryWrappers/libc_wrapper_arm64.so">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>runtimes/linux-arm64/native/libc_wrapper.so</TargetPath>
+    </ContentWithTargetPath>
+  </ItemGroup>
+
+  <!-- Allow the Unit tests to be able to see internal types. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="Duplicati.UnitTest" />
   </ItemGroup>
 
 </Project>

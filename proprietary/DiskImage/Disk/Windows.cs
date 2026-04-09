@@ -1,12 +1,16 @@
 
 using System;
 using System.Buffers;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Duplicati.Proprietary.DiskImage.General;
 using Vanara.InteropServices;
 using Vanara.PInvoke;
 using static Vanara.PInvoke.Kernel32;
@@ -30,11 +34,15 @@ namespace Duplicati.Proprietary.DiskImage.Disk
         private uint m_sectorSize = 0;
         private long m_size = 0;
         private bool m_shouldFlush = false;
+        private const string DEVICE_PREFIX = @"\\.\PHYSICALDRIVE";
 
         // Reusable aligned native buffer for zero-copy I/O
         private SafeHGlobalHandle? m_alignedBuffer;
         private int m_alignedBufferSize = 0;
         private readonly SemaphoreSlim m_ioLock = new(1, 1);
+
+        /// <inheritdoc />
+        public static string Prefix => @"\\.\";
 
         /// <inheritdoc />
         public string DevicePath { get { return m_devicePath; } }
@@ -266,51 +274,54 @@ namespace Duplicati.Proprietary.DiskImage.Disk
 
             int length = destination.Length;
 
-            if (offset % SectorSize != 0)
-                throw new InvalidOperationException($"Address {offset:X016} is not a multiple of the sector size {SectorSize}");
-
-            if (length % SectorSize != 0)
-                throw new InvalidOperationException($"The requested length of {length} is not a multiple of sector size {SectorSize}");
-
             if (offset + length > Size)
                 throw new InvalidOperationException($"The requested read would read beyond disk size: {offset} + {length} > {Size}");
+
+            if (length == 0)
+                return 0;
+
+            // Calculate aligned offset and length for unbuffered I/O (FILE_FLAG_NO_BUFFERING)
+            long alignedOffset = (offset / SectorSize) * SectorSize;
+            long offsetDelta = offset - alignedOffset;
+            long alignedLength = ((offsetDelta + length + SectorSize - 1) / SectorSize) * SectorSize;
 
             await m_ioLock.WaitAsync(cancellationToken);
             try
             {
                 // Ensure reusable buffer is large enough
-                EnsureAlignedBuffer(length);
+                EnsureAlignedBuffer((int)alignedLength);
 
-                // Move file pointer to the desired offset
-                var seeked = SetFilePointerEx(m_deviceHandle, offset, out _, SeekOrigin.Begin);
+                // Move file pointer to the aligned offset
+                var seeked = SetFilePointerEx(m_deviceHandle, alignedOffset, out _, SeekOrigin.Begin);
                 if (!seeked)
                 {
                     var error = Marshal.GetLastWin32Error();
                     var msg = new System.ComponentModel.Win32Exception(error).Message;
-                    throw new IOException($"Failed to seek to offset. Win32 Error Code: {error}. Message: {msg}");
+                    throw new IOException($"Failed to seek to offset {alignedOffset}. Win32 Error Code: {error}. Message: {msg}");
                 }
 
-                bool result = ReadFile(m_deviceHandle, m_alignedBuffer!, (uint)length, out uint bytesRead, IntPtr.Zero);
+                bool result = ReadFile(m_deviceHandle, m_alignedBuffer!, (uint)alignedLength, out uint bytesRead, IntPtr.Zero);
 
-                if (!result || bytesRead != length)
+                if (!result || bytesRead < offsetDelta + length)
                 {
                     var error = Marshal.GetLastWin32Error();
                     var msg = new System.ComponentModel.Win32Exception(error).Message;
-                    throw new IOException($"Failed to read from disk. Win32 Error Code: {error}. Message: {msg}");
+                    throw new IOException($"Failed to read from disk at aligned offset {alignedOffset}. Win32 Error Code: {error}. Message: {msg}");
                 }
 
-                // Copy from native buffer to destination
+                // Copy only the requested portion from the aligned buffer
                 unsafe
                 {
                     var srcPtr = (byte*)m_alignedBuffer!.DangerousGetHandle().ToPointer();
                     var destSpan = destination.Span;
-                    for (int i = 0; i < bytesRead; i++)
+                    int bytesToCopy = Math.Min(length, (int)(bytesRead - offsetDelta));
+                    for (int i = 0; i < bytesToCopy; i++)
                     {
-                        destSpan[i] = srcPtr[i];
+                        destSpan[i] = srcPtr[offsetDelta + i];
                     }
                 }
 
-                return (int)bytesRead;
+                return Math.Min(length, (int)(bytesRead - offsetDelta));
             }
             finally
             {
@@ -349,56 +360,65 @@ namespace Duplicati.Proprietary.DiskImage.Disk
 
             int dataLength = data.Length;
 
-            // Pad to sector size if necessary
-            int remainder = dataLength % (int)m_sectorSize;
-            int alignedLength = remainder == 0
-                ? dataLength
-                : dataLength + ((int)m_sectorSize - remainder);
+            if (offset + dataLength > Size)
+                throw new InvalidOperationException($"The requested write would write beyond disk size: {offset} + {dataLength} > {Size}");
+
+            if (dataLength == 0)
+                return 0;
+
+            // Calculate aligned offset and length for unbuffered I/O (FILE_FLAG_NO_BUFFERING)
+            long alignedOffset = (offset / SectorSize) * SectorSize;
+            long offsetDelta = offset - alignedOffset;
+            long alignedLength = ((offsetDelta + dataLength + SectorSize - 1) / SectorSize) * SectorSize;
 
             await m_ioLock.WaitAsync(cancellationToken);
             try
             {
                 // Ensure reusable buffer is large enough
-                EnsureAlignedBuffer(alignedLength);
+                EnsureAlignedBuffer((int)alignedLength);
 
-                // Move file pointer to the desired offset
-                var seeked = SetFilePointerEx(m_deviceHandle, offset, out _, SeekOrigin.Begin);
-                if (!seeked)
-                {
-                    var error = Marshal.GetLastWin32Error();
-                    var msg = new System.ComponentModel.Win32Exception(error).Message;
-                    throw new IOException($"Failed to seek to offset. Win32 Error Code: {error}. Message: {msg}");
-                }
+                // Check if this is an unaligned write (needs read-modify-write)
+                bool isUnaligned = offsetDelta != 0 || dataLength != alignedLength;
 
-                if (remainder != 0)
+                if (isUnaligned)
                 {
-                    // Read existing data to fill the remainder
+                    // Move file pointer to the aligned offset
+                    var seeked = SetFilePointerEx(m_deviceHandle, alignedOffset, out _, SeekOrigin.Begin);
+                    if (!seeked)
+                    {
+                        var error = Marshal.GetLastWin32Error();
+                        var msg = new System.ComponentModel.Win32Exception(error).Message;
+                        throw new IOException($"Failed to seek to aligned offset {alignedOffset}. Win32 Error Code: {error}. Message: {msg}");
+                    }
+
+                    // Read existing data first (read-modify-write)
                     bool readResult = ReadFile(m_deviceHandle, m_alignedBuffer!, (uint)alignedLength, out uint bytesRead, IntPtr.Zero);
                     if (!readResult)
                     {
                         var error = Marshal.GetLastWin32Error();
                         var msg = new System.ComponentModel.Win32Exception(error).Message;
-                        throw new IOException($"Failed to read existing data for padding. Win32 Error Code: {error}. Message: {msg}");
-                    }
-                    // Seek back to the original offset after reading
-                    var seekedBack = SetFilePointerEx(m_deviceHandle, offset, out _, SeekOrigin.Begin);
-                    if (!seekedBack)
-                    {
-                        var error = Marshal.GetLastWin32Error();
-                        var msg = new System.ComponentModel.Win32Exception(error).Message;
-                        throw new IOException($"Failed to seek back to offset after reading. Win32 Error Code: {error}. Message: {msg}");
+                        throw new IOException($"Failed to read existing data for unaligned write at offset {alignedOffset}. Win32 Error Code: {error}. Message: {msg}");
                     }
                 }
 
-                // Copy data from managed buffer to native buffer
+                // Copy data from managed buffer to native buffer at the correct offset
                 unsafe
                 {
                     var destPtr = (byte*)m_alignedBuffer!.DangerousGetHandle().ToPointer();
                     var srcSpan = data.Span;
                     for (int i = 0; i < dataLength; i++)
                     {
-                        destPtr[i] = srcSpan[i];
+                        destPtr[offsetDelta + i] = srcSpan[i];
                     }
+                }
+
+                // Move file pointer to the aligned offset for writing
+                var seekedForWrite = SetFilePointerEx(m_deviceHandle, alignedOffset, out _, SeekOrigin.Begin);
+                if (!seekedForWrite)
+                {
+                    var error = Marshal.GetLastWin32Error();
+                    var msg = new System.ComponentModel.Win32Exception(error).Message;
+                    throw new IOException($"Failed to seek to aligned offset {alignedOffset} for writing. Win32 Error Code: {error}. Message: {msg}");
                 }
 
                 bool result = WriteFile(m_deviceHandle, m_alignedBuffer!, (uint)alignedLength, out uint bytesWritten, IntPtr.Zero);
@@ -421,12 +441,34 @@ namespace Duplicati.Proprietary.DiskImage.Disk
 
                 m_shouldFlush = true;
 
-                return (int)bytesWritten;
+                return dataLength;
             }
             finally
             {
                 m_ioLock.Release();
             }
+        }
+
+        /// <summary>
+        /// Runs a PowerShell script and returns the standard output. Throws an exception if the script fails.
+        /// </summary>
+        /// <param name="script">The PowerShell script to run.</param>
+        /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
+        /// <returns>The standard output of the PowerShell script.</returns>
+        /// <exception cref="IOException">Thrown if the PowerShell script fails.</exception>
+        private static async Task<string> RunPowerShellAsync(string script, CancellationToken cancellationToken)
+        {
+            var program = "powershell.exe";
+            var args = $"-NoProfile -NonInteractive -ExecutionPolicy Bypass -Command \"{script.Replace("\"", "\\\"")}\"";
+
+            var result = await ProcessRunner.RunProcessAsync(program, args, 60_000, cancellationToken);
+            if (result.ExitCode != 0)
+            {
+                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "RunPowerShellAsync", null, $"PowerShell script failed with exit code {result.ExitCode}. Output: {result.Output}. Error: {result.Error}");
+                throw new IOException($"PowerShell script failed with exit code {result.ExitCode}. Error: {result.Error}");
+            }
+
+            return result.Output;
         }
 
         /// <summary>
@@ -441,6 +483,113 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             m_alignedBuffer?.Dispose();
             m_alignedBuffer = new SafeHGlobalHandle(requiredSize);
             m_alignedBufferSize = requiredSize;
+        }
+
+        /// <inheritdoc />
+        public static async IAsyncEnumerable<PhysicalDriveInfo> ListPhysicalDrivesAsync([EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            var script = @"
+$diskInfo =
+    Get-CimInstance Win32_DiskDrive |
+    ForEach-Object {
+        $wmi = $_
+        $diskNumber = [int]$wmi.Index
+        $disk = Get-Disk -Number $diskNumber -ErrorAction SilentlyContinue
+
+        $driveLetters = @(
+            Get-Partition -DiskNumber $diskNumber -ErrorAction SilentlyContinue |
+            Where-Object { $_.DriveLetter } |
+            ForEach-Object { $_.DriveLetter.ToString() } |
+            Sort-Object -Unique
+        )
+
+        [pscustomobject]@{
+            Path         = $wmi.DeviceID
+            Size         = [uint64]$wmi.Size
+            DisplayName  = if ($disk) { $disk.FriendlyName } else { $wmi.Model }
+            Guid         = if ($disk) { $disk.Guid } else { $null }
+            DriveLetters = $driveLetters   # Always an array
+            Online       = if ($disk) { -not $disk.IsOffline } else { $null }
+        }
+    }
+
+$diskInfo | ConvertTo-Json -Depth 4
+";
+            var output = await RunPowerShellAsync(script, cancellationToken);
+
+            if (string.IsNullOrWhiteSpace(output))
+                yield break;
+
+            JsonDocument doc;
+            try
+            {
+                doc = JsonDocument.Parse(output);
+            }
+            catch (JsonException ex)
+            {
+                Duplicati.Library.Logging.Log.WriteWarningMessage(LOGTAG, "FailedDriveOutputParsing", ex, "Failed to parse output");
+                yield break;
+            }
+            using (doc)
+            {
+
+
+
+                // PowerShell ConvertTo-Json returns a single object for 1 item, array for multiple
+                if (doc.RootElement.ValueKind == JsonValueKind.Array)
+                {
+                    PhysicalDriveInfo[]? drives = null;
+                    try
+                    {
+                        drives = JsonSerializer.Deserialize<PhysicalDriveInfo[]>(output);
+                    }
+                    catch (JsonException ex)
+                    {
+                        Duplicati.Library.Logging.Log.WriteWarningMessage(LOGTAG, "FailedDriveOutputParsing", ex, "Failed to parse output as array");
+                    }
+
+                    if (drives != null)
+                    {
+                        foreach (var drive in drives)
+                        {
+                            var number = -1;
+                            if (drive.Path.StartsWith(DEVICE_PREFIX, StringComparison.OrdinalIgnoreCase))
+                            {
+                                int.TryParse(drive.Path.AsSpan(DEVICE_PREFIX.Length), out number);
+                            }
+                            drive.Number = number.ToString();
+
+                            yield return drive;
+                        }
+                    }
+                }
+                else if (doc.RootElement.ValueKind == JsonValueKind.Object)
+                {
+                    PhysicalDriveInfo? drive = null;
+                    try
+                    {
+                        drive = JsonSerializer.Deserialize<PhysicalDriveInfo>(output);
+                    }
+                    catch (JsonException ex)
+                    {
+                        Duplicati.Library.Logging.Log.WriteWarningMessage(LOGTAG, "FailedDriveOutputParsing", ex, "Failed to parse output as single object");
+                    }
+
+                    if (drive != null)
+                    {
+                        // Extract drive number from path (e.g., \\.\PHYSICALDRIVE0 -> 0)
+                        var number = -1;
+                        if (drive.Path.StartsWith(DEVICE_PREFIX, StringComparison.OrdinalIgnoreCase))
+                        {
+                            int.TryParse(drive.Path.AsSpan(DEVICE_PREFIX.Length), out number);
+                        }
+                        drive.Number = number.ToString();
+                        yield return drive;
+                    }
+                }
+
+
+            }
         }
     }
 }

@@ -369,7 +369,7 @@ namespace Duplicati.Library.Main
 
         public IRecreateDatabaseResults UpdateDatabaseWithVersions(IFilter filter = null)
         {
-            var filelistfilter = Operation.RestoreHandler.FilterNumberedFilelist(m_options.Time, m_options.Version, singleTimeMatch: true);
+            var filelistfilter = Operation.RestoreHandler.GetNumberedFilelistFilterDelegate(m_options.Time, m_options.Version, singleTimeMatch: true);
 
             return RunAction(new RecreateDatabaseResults(), ref filter, async (result, backendManager) =>
             {

@@ -1,3 +1,94 @@
+2026-03-20 - 2.2.0.107_canary_2026-03-20
+==========
+This release is a canary release intended to be used for testing.
+
+# Changes in this version
+
+## Linux full disk backup support
+
+This version extends the full disk backup feature to include Linux support.
+You can now backup and restore entire disks on Linux, including partition tables.
+This is a proprietary module (source available) that requires a license to use in production.
+
+## Database tool improvements
+
+The database tool now includes `verify` and `cleanup` commands.
+The `verify` command can be used to check if databases exist or are orphaned.
+The `cleanup` command can be used to remove orphaned entries and reclaim space.
+
+## Bug fixes and improvements
+
+- Fixed restore without local database for partial restores
+- Fixed an issue with loading certificate bundles on Windows
+- Fixed Docker image tagging to not push with naked version
+- Added Hetzner and DigitalOcean regions to S3 backend
+- Updated AWS SecretManager dependency
+
+## Detailed list of changes:
+
+- Added Linux support for full disk backup and restore
+- Added verify command to database tool
+- Added cleanup command to database tool
+- Fixed restore without local database
+- Fixed certificate bundle loading on Windows
+- Fixed Docker naked version tagging
+- Added Hetzner S3 regions
+- Added DigitalOcean S3 regions
+- Updated AWS SecretManager dependency
+
+## ngclient changes:
+
+### Features
+
+- Added button to suppress warnings
+- Added focus styles for most elements
+- Updated ShipUI, added keyboard navigation
+- Added new provider logos for upcoming storage providers
+
+### Bug Fixes
+
+- Fixed issue with Firefox asking to save passwordds
+- Fixed issue with proxy configuration
+- Datepicker start of week
+- Fixed issue with server ip and port mangling input
+- Fixed refreshToken race condition that caused logout
+- Fixed honeypot using exported type causing login issues
+
+### Improvements
+
+- Improved live logs display
+
+2026-03-06 - 2.2.0.106_canary_2026-03-06
+==========
+# 2026-03-06 - 2.2.0.106_canary_2026-03-06
+
+This release is a canary release intended to be used for testing.
+
+# Changes in this version
+
+## MacOS full disk backup support
+
+This version extends the full disk backup feature to include basic MacOS support.
+You can now backup and restore entire disks on MacOS, including partition tables.
+This is a proprietary module (source available) that requires a license to use in production.
+
+## Automatic HTTPS support
+
+This version adds support for managed TLS certificates, making it easier to run Duplicati with HTTPS enabled.
+The feature includes automatic certificate generation and management for secure connections.
+
+This release contains a new `Duplicati.CommandLine.ConfigureTool.exe` / `duplicati-configure` tool that can be used to configure the server and generate certificates. See documentation/help for more details.
+
+## Detailed list of changes:
+
+- Added basic MacOS support for full disk backup and restore
+- Added support for managed TLS/HTTPS certificates
+- Fixed agent commandline argument names
+- Improved link detection on Windows
+- Fixed race condition with source provider disposal
+- Fixed Windows full-disk reattach scripts
+- Updated nuget dependencies for Mime
+
 2026-02-20 - 2.2.0.105_canary_2026-02-20
 ==========
 This release is a canary release intended to be used for testing.

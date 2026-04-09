@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using Duplicati.Proprietary.DiskImage.General;
 
 namespace Duplicati.Proprietary.DiskImage.Partition;
 
@@ -68,6 +69,9 @@ internal static class GptPartitionTypeGuids
             PartitionType.LinuxSwap => LinuxSwapGuid,
             PartitionType.LinuxLVM => LinuxLvmGuid,
             PartitionType.LinuxRAID => LinuxRaidGuid,
+            PartitionType.AppleHFS => AppleHfsGuid,
+            PartitionType.AppleAPFS => AppleApfsGuid,
+            PartitionType.AppleBoot => AppleBootGuid,
             PartitionType.BIOSBoot => BiosBootGuid,
             _ => MicrosoftBasicDataGuid  // Microsoft Basic Data (default for Primary and others)
         };
