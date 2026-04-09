@@ -281,6 +281,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                             Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Caching volume {0} in unlimited mode (free space: {1})", volume_id, available_free_space);
                                             cache[volume_id] = volume;
                                             cache_size += volume.Size;
+                                            cache_size_max_consumed = Math.Max(cache_size_max_consumed, cache_size);
                                         }
                                         cache_last_touched.Add(volume_id);
                                         sw_cache_set?.Stop();

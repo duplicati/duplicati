@@ -169,14 +169,6 @@ namespace Duplicati.Library.Main
                 result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_Complete);
                 result.EndTime = DateTime.UtcNow;
 
-                if (m_options.InternalProfiling)
-                {
-                    Logging.Log.WriteProfilingMessage(LOGTAG, "RestoreDataFlow",
-                        "Restore downloaded {0} and restored {1}",
-                        Duplicati.Library.Utility.Utility.FormatSizeString(result.BackendStatistics.BytesDownloaded),
-                        Duplicati.Library.Utility.Utility.FormatSizeString(result.SizeOfRestoredFiles));
-                }
-
                 UsageReporter.Reporter.Report("RESTORE_FILECOUNT", result.RestoredFiles);
                 UsageReporter.Reporter.Report("RESTORE_FILESIZE", result.SizeOfRestoredFiles);
                 UsageReporter.Reporter.Report("RESTORE_DURATION", (long)result.Duration.TotalSeconds);
