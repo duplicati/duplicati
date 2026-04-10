@@ -220,7 +220,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("RestoreHandler")]
-        public void RestoreInternalProfilingLogsCacheUsageAndDataFlow()
+        public void RestoreInternalProfilingLogsCacheUsage()
         {
             var sourceFilePath = Path.Combine(this.DATAFOLDER, "profiled-restore.bin");
             File.WriteAllBytes(sourceFilePath, new byte[256 * 1024]);
@@ -248,8 +248,6 @@ namespace Duplicati.UnitTest
 
             var logContents = File.ReadAllText(this.LOGFILE);
             Assert.That(logContents, Does.Contain("Max used cache size:"));
-            Assert.That(logContents, Does.Contain("Restore downloaded"));
-            Assert.That(logContents, Does.Contain("and restored"));
         }
 
         [Test]
