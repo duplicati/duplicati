@@ -46,6 +46,7 @@ public static class Program
             {
                 Pause.Create(),
                 Resume.Create(),
+                DeleteBackup.Create(),
                 ListBackups.Create(),
                 RunBackup.Create(),
                 Login.Create(),
