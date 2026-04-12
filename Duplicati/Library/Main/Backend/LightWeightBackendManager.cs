@@ -28,7 +28,7 @@ namespace Duplicati.Library.Main.Backend
     /// <param name="retryWithExponentialBackoff">Whether to use exponential backoff for retries.</param>
     /// <param name="progressUpdater">An optional progress updater for file operations.</param>
     /// <param name="backendProgressUpdater">An optional progress updater for backend operations.</param>
-    public class LightWeightBackendManager(string backendUrl, Dictionary<string, string> options, int maxRetries = 3, int retryDelay = 1000, bool autoCreateFolders = false, bool retryWithExponentialBackoff = false, IOperationProgressUpdater? progressUpdater = null, IBackendProgressUpdater? backendProgressUpdater = null) : IDisposable
+    internal class LightWeightBackendManager(string backendUrl, Dictionary<string, string> options, int maxRetries = 3, int retryDelay = 1000, bool autoCreateFolders = false, bool retryWithExponentialBackoff = false, IOperationProgressUpdater? progressUpdater = null, IBackendProgressUpdater? backendProgressUpdater = null) : IDisposable
     {
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<LightWeightBackendManager>();
 

@@ -101,7 +101,7 @@ public static class RemoteSynchronizationRunner
     /// <param name="progressUpdater">Optional progress updater for reporting file count and transfer progress to the UI.</param>
     /// <param name="backendProgressUpdater">Optional backend progress updater for reporting transfer speed to the UI.</param>
     /// <returns>The return code (0 on success).</returns>
-    public static async Task<int> Run(RemoteSynchronizationConfig config, CancellationToken token, IOperationProgressUpdater? progressUpdater = null, IBackendProgressUpdater? backendProgressUpdater = null, IBasicResults? results = null)
+    internal static async Task<int> Run(RemoteSynchronizationConfig config, CancellationToken token, IOperationProgressUpdater? progressUpdater = null, IBackendProgressUpdater? backendProgressUpdater = null, IBasicResults? results = null)
     {
         // Parse the log level
         var log_level_parsed = Enum.TryParse<Duplicati.Library.Logging.LogMessageType>(config.LogLevel, true, out var log_level_enum);

@@ -148,7 +148,7 @@ namespace Duplicati.Library.Main
     /// <summary>
     /// Interface for updating the backend progress
     /// </summary>
-    public interface IBackendProgressUpdater
+    internal interface IBackendProgressUpdater
     {
         /// <summary>
         /// Register the start of a new action
@@ -377,7 +377,7 @@ namespace Duplicati.Library.Main
     /// <summary>
     /// Interface for updating the operation progress
     /// </summary>
-    public interface IOperationProgressUpdater
+    internal interface IOperationProgressUpdater
     {
         void UpdatePhase(OperationPhase phase);
         void UpdateProgress(float progress);

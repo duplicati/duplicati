@@ -600,12 +600,6 @@ namespace Duplicati.Library.Main
                         resultSetter.EndTime = DateTime.UtcNow;
                     resultSetter.Interrupted = false;
 
-                    // Run modules before emitting the results to the database,
-                    // so that any messages from the modules are included in the
-                    // database logs, and the modules can modify the results that
-                    // are stored in the database.
-                    OperationComplete(result, null);
-
                     if (File.Exists(m_options.Dbpath) && !m_options.Dryrun)
                     {
                         try
@@ -637,6 +631,8 @@ namespace Duplicati.Library.Main
                             Logging.Log.WriteWarningMessage(LOGTAG, "FailedWriteOperation", ex, "Failed to write operation results to database: {0}", ex.Message);
                         }
                     }
+
+                    OperationComplete(result, null);
 
                     Logging.Log.WriteInformationMessage(LOGTAG, "CompletedOperation", Strings.Controller.CompletedOperationMessage(m_options.MainAction));
 
@@ -704,23 +700,10 @@ namespace Duplicati.Library.Main
         {
             if (m_options?.LoadedModules != null)
             {
-                // Get the progress and backend updaters from the result, if available
-                var progressUpdater = (result as BasicResults)?.OperationProgressUpdater as IOperationProgressUpdater;
-                var backendProgressUpdater = (result as BasicResults)?.BackendProgressUpdater as IBackendProgressUpdater;
-
                 foreach (var mx in m_options.LoadedModules)
-                {
-                    if (mx is IGenericCallbackModuleWithProgress moduleWithProgress)
-                    {
-                        try { moduleWithProgress.OnFinish(result, exception, progressUpdater, backendProgressUpdater); }
-                        catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, $"OnFinishError{mx.Key}", ex, "OnFinish callback {0} failed: {1}", mx.Key, ex.Message); }
-                    }
-                    else if (mx is IGenericCallbackModule module)
-                    {
+                    if (mx is IGenericCallbackModule module)
                         try { module.OnFinish(result, exception); }
                         catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, $"OnFinishError{mx.Key}", ex, "OnFinish callback {0} failed: {1}", mx.Key, ex.Message); }
-                    }
-                }
 
                 foreach (var mx in m_options.LoadedModules)
                     if (mx is IDisposable disposable)
