@@ -27,15 +27,16 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
+using Duplicati.Library.Main.Operation.RemoteSynchronization;
 using Duplicati.Library.SQLiteHelper;
 using Duplicati.Library.Utility;
-using RemoteSynchronization;
 
 #nullable enable
 
-namespace Duplicati.Library.Modules.Builtin;
+namespace Duplicati.Library.Main.Operation;
 
 /// <summary>
 /// Trigger modes for remote synchronization.
@@ -60,12 +61,15 @@ public enum RemoteSyncTriggerMode
 /// Configuration for a single remote synchronization destination.
 /// </summary>
 public record RemoteSyncDestinationConfig(
-    RemoteSynchronization.Config Config,
+    RemoteSynchronizationConfig Config,
     RemoteSyncTriggerMode Mode = RemoteSyncTriggerMode.Inline,
     TimeSpan? Interval = null,
     int? Count = null
 );
 
+/// <summary>
+/// Raw configuration for a remote synchronization destination, as deserialized from JSON.
+/// </summary>
 public record RemoteSyncDestinationConfigRaw(
     bool AutoCreateFolders = true,
     int BackendRetries = 3,
@@ -93,6 +97,9 @@ public record RemoteSyncDestinationConfigRaw(
     public int? Count { get; init; }
 };
 
+/// <summary>
+/// Top-level configuration for remote synchronization, containing the destinations array and global settings.
+/// </summary>
 public record TopLevelRemoteSyncConfig(
     bool SyncOnWarnings = true
 )
@@ -103,76 +110,52 @@ public record TopLevelRemoteSyncConfig(
 /// <summary>
 /// Module for synchronizing backup data to remote destinations after a successful backup operation.
 /// </summary>
-public class RemoteSynchronizationModule : IGenericCallbackModule
+internal class RemoteSynchronizationHandler : IDisposable
 {
-    private static readonly string LOGTAG = Logging.Log.LogTagFromType<RemoteSynchronizationModule>();
-
-    private const string OPTION_JSON_CONFIG = "remote-sync-json-config";
+    private static readonly string LOGTAG = Logging.Log.LogTagFromType<RemoteSynchronizationHandler>();
 
     private string? m_dbpath;
+    private bool m_enabled = false;
     private List<RemoteSyncDestinationConfig> m_destinations = [];
-    private bool m_enabled;
-    private string? m_operationName;
-    private string? m_source;
+    private string m_source;
     private bool m_syncOnWarnings = true;
-
-    /// <summary>
-    /// Gets the key identifier for this module.
-    /// </summary>
-    public string Key => "remotesync";
-    /// <summary>
-    /// Gets the display name for this module.
-    /// </summary>
-    public string DisplayName => Strings.RemoteSynchronization.DisplayName;
-    /// <summary>
-    /// Gets the description of this module.
-    /// </summary>
-    public string Description => Strings.RemoteSynchronization.Description;
-    /// <summary>
-    /// Gets whether this module should be loaded by default.
-    /// </summary>
-    public bool LoadAsDefault => true;
-
-    /// <summary>
-    /// Gets the list of supported command line arguments.
-    /// </summary>
-    public IList<ICommandLineArgument> SupportedCommands =>
-    [
-        new CommandLineArgument(OPTION_JSON_CONFIG, CommandLineArgument.ArgumentType.String, "JSON configuration for remote synchronization", "JSON string or file path containing remote synchronization configuration"),
-    ];
+    private BackupResults m_results;
 
     /// <summary>
     /// Configures the module with the provided command line options.
     /// </summary>
-    /// <param name="commandlineOptions">The command line options dictionary.</param>
-    public void Configure(IDictionary<string, string> commandlineOptions)
+    /// <param name="backendUrl">The URL of the source backend.</param>
+    /// <param name="options">The command line options dictionary.</param>
+    /// <param name="results">The backup results object, used to determine whether to run the synchronization and to report results.</param>
+    public RemoteSynchronizationHandler(string backendUrl, Options options, BackupResults results)
     {
+        m_results = results;
+        m_source = backendUrl;
+
         // Default is no valid JSON config provided, which disables the module
         m_enabled = false;
         m_destinations = [];
-
-        if (commandlineOptions.TryGetValue("dbpath", out var dbpath))
-            m_dbpath = dbpath;
+        m_dbpath = options.Dbpath;
 
         // Check if JSON config is provided
-        if (commandlineOptions.TryGetValue(OPTION_JSON_CONFIG, out var jsonConfigStr) && !string.IsNullOrWhiteSpace(jsonConfigStr))
+        if (!string.IsNullOrWhiteSpace(options.RemoteSyncJsonConfig))
         {
             string jsonContent;
-            if (jsonConfigStr.TrimStart().StartsWith("{"))
+            if (options.RemoteSyncJsonConfig.TrimStart().StartsWith("{"))
             {
                 // It's a JSON string
-                jsonContent = jsonConfigStr;
+                jsonContent = options.RemoteSyncJsonConfig;
             }
             else
             {
                 // It's a file path
                 try
                 {
-                    jsonContent = File.ReadAllText(jsonConfigStr);
+                    jsonContent = File.ReadAllText(options.RemoteSyncJsonConfig);
                 }
                 catch (Exception ex)
                 {
-                    Logging.Log.WriteErrorMessage(LOGTAG, "RemoteSyncJsonFileReadError", ex, "Failed to read JSON configuration file '{0}': {1}", jsonConfigStr, ex.Message);
+                    Logging.Log.WriteErrorMessage(LOGTAG, "RemoteSyncJsonFileReadError", ex, "Failed to read JSON configuration file '{0}': {1}", options.RemoteSyncJsonConfig, ex.Message);
                     return;
                 }
             }
@@ -198,9 +181,7 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
                 {
                     foreach (var destination in toplevel.Destinations)
                     {
-                        var loglevel = string.IsNullOrWhiteSpace(destination.LogLevel) ?
-                            (commandlineOptions.TryGetValue("log-file-log-level", out var logLevel) ? logLevel : "Information")
-                            : destination.LogLevel;
+                        var loglevel = options.LogFileLoglevel;
                         var mode = !string.IsNullOrWhiteSpace(destination.Mode) && Enum.TryParse<RemoteSyncTriggerMode>(destination.Mode, true, out var parsedMode) ? parsedMode : RemoteSyncTriggerMode.Inline;
 
                         TimeSpan? interval_parsed;
@@ -252,12 +233,12 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
                                 Force: destination.Force,
                                 GlobalOptions: destination.GlobalOptions,
                                 LogFile: destination.LogFile,
-                                LogLevel: loglevel,
+                                LogLevel: loglevel.ToString(),
                                 ParseArgumentsOnly: destination.ParseArgumentsOnly,
                                 Progress: destination.Progress,
                                 Retention: destination.Retention,
                                 Retry: destination.Retry,
-                                SrcOptions: [.. commandlineOptions.Select((k, v) => $"{k}={v}")],
+                                SrcOptions: [.. options.RawOptions.Select((k, v) => $"{k}={v}")],
                                 VerifyContents: destination.VerifyContents,
                                 VerifyGetAfterPut: destination.VerifyGetAfterPut
                             ),
@@ -284,49 +265,28 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
 
     }
 
-    /// <summary>
-    /// Called when an operation starts.
-    /// </summary>
-    /// <param name="operationname">The name of the operation.</param>
-    /// <param name="remoteurl">The remote URL.</param>
-    /// <param name="localpath">The local paths.</param>
-    public void OnStart(string operationname, ref string remoteurl, ref string[] localpath)
+    /// <inheritdoc />
+    public void Dispose()
     {
-        if (!m_enabled)
-            return;
-
-        m_operationName = operationname;
-
-        if (string.IsNullOrWhiteSpace(m_source))
-            m_source = remoteurl;
+        // Nothing to dispose currently, but implement IDisposable in case we need it in the future
     }
 
     /// <summary>
-    /// Called when an operation finishes.
+    /// Runs the remote synchronization operations based on the configured destinations and the results of the backup operation.
+    /// The synchronization will only be triggered for destinations whose conditions are met (e.g. interval has passed, backup count reached, etc.).
     /// </summary>
-    /// <param name="result">The results of the operation.</param>
-    /// <param name="exception">Any exception that occurred during the operation.</param>
-    public void OnFinish(IBasicResults result, Exception exception)
+    public async Task RunAsync()
     {
         if (!m_enabled)
             return;
 
-        if (!string.Equals(m_operationName, "Backup", StringComparison.OrdinalIgnoreCase))
-            return;
-
-        if (exception != null)
-        {
-            Logging.Log.WriteWarningMessage(LOGTAG, "RemoteSyncSkipped", exception, "Remote synchronization skipped due to operation failure.");
-            return;
-        }
-
-        if (result != null && (result.ParsedResult == ParsedResultType.Error || result.ParsedResult == ParsedResultType.Fatal))
+        if (m_results.ParsedResult == ParsedResultType.Error || m_results.ParsedResult == ParsedResultType.Fatal)
         {
             Logging.Log.WriteWarningMessage(LOGTAG, "RemoteSyncSkipped", null, "Remote synchronization skipped because backup reported errors.");
             return;
         }
 
-        if (result != null && result.ParsedResult == ParsedResultType.Warning && !m_syncOnWarnings)
+        if (m_results.ParsedResult == ParsedResultType.Warning && !m_syncOnWarnings)
         {
             Logging.Log.WriteInformationMessage(LOGTAG, "RemoteSyncSkipped", "Remote synchronization skipped because backup reported warnings and sync on warnings is disabled.");
             return;
@@ -344,6 +304,9 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
             return;
         }
 
+        // Store remote sync results to be added to backup results
+        var syncResultsList = new List<IRemoteSynchronizationResults>();
+
         for (int i = 0; i < m_destinations.Count; i++)
         {
             var dest = m_destinations[i];
@@ -358,19 +321,41 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
 
             try
             {
+                // Update progress to show sync is in progress
+                m_results.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_RemoteSynchronization);
+                m_results.OperationProgressUpdater.UpdateRemoteSyncDestination(i + 1, m_destinations.Count);
+                m_results.OperationProgressUpdater.UpdateProgress(0);
+
                 var config = dest.Config with { Src = m_source! };
-                var exitCode = RemoteSynchronizationRunner.Run(config, CancellationToken.None).ConfigureAwait(false).GetAwaiter().GetResult();
+                var date_start = DateTime.UtcNow;
+                var syncResult = new RemoteSynchronizationResults
+                {
+                    Destination = Duplicati.Library.Utility.Utility.GetUrlWithoutCredentials(config.Dst),
+                };
+                var exitCode = RemoteSynchronizationRunner.Run(config, CancellationToken.None, m_results.OperationProgressUpdater, m_results.BackendProgressUpdater, syncResult).ConfigureAwait(false).GetAwaiter().GetResult();
+                var date_end = DateTime.UtcNow;
+                syncResult.BeginTime = date_start;
+                syncResult.EndTime = date_end;
+                syncResultsList.Add(syncResult);
 
                 if (exitCode == 0)
                     RecordSyncOperation(i);
                 else
+                {
+                    // Error is captured into the result's Errors collection via the active log scope
                     Logging.Log.WriteErrorMessage(LOGTAG, "RemoteSyncFailed", null, "Remote synchronization to {0} failed with exit code {1}.", dest, exitCode);
+                }
             }
             catch (Exception ex)
             {
+                // Error is captured into the result's Errors collection via the active log scope
                 Logging.Log.WriteErrorMessage(LOGTAG, "RemoteSyncFailed", ex, "Remote synchronization to {0} failed: {1}", dest, ex.Message);
             }
         }
+
+        // Add remote synchronization results to the backup results for reporting
+        if (syncResultsList.Count > 0)
+            m_results.RemoteSynchronizationResults = [.. syncResultsList];
     }
 
     /// <summary>
@@ -406,7 +391,7 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
                     var lastSync = cmd.ExecuteScalar();
                     if (lastSync is null)
                         return true;
-                    var lastSyncTime = Utility.Utility.EPOCH.AddSeconds((long)lastSync);
+                    var lastSyncTime = Duplicati.Library.Utility.Utility.EPOCH.AddSeconds((long)lastSync);
                     var now = DateTime.UtcNow;
                     return (now - lastSyncTime) >= dest.Interval;
                 }
@@ -477,7 +462,7 @@ public class RemoteSynchronizationModule : IGenericCallbackModule
             )";
         cmd.SetTransaction(transaction);
         cmd.AddNamedParameter("@description", $"Rsync {index}");
-        cmd.AddNamedParameter("@timestamp", Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow));
+        cmd.AddNamedParameter("@timestamp", Duplicati.Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow));
         cmd.ExecuteNonQuery();
         transaction.Commit();
     }
