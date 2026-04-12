@@ -363,6 +363,9 @@ namespace Duplicati.Library.Main.Strings
         public static string CPUIntensityShort { get { return LC.L("CPU intensity level"); } }
         public static string CPUIntensityLong { get { return LC.L("Set the CPU intensity level to limit CPU resource utilization. A higher number translates into a higher utilization budget. E.g. 10 would mean no restrictions. Must be an integer between 1-10."); } }
 
+        public static string RemoteSyncJsonConfigShort { get { return LC.L("Remote synchronization configuration"); } }
+        public static string RemoteSyncJsonConfigLong { get { return LC.L("JSON string or file path containing remote synchronization configuration"); } }
+
         public static string RestoreCacheMaxShort { get { return LC.L("Maximum cache size for restoring files"); } }
         public static string RestoreCacheMaxLong { get { return LC.L($"Use this option to set the maximum size of the cache used for restoring files. The cache is used to store the data blocks that are downloaded from the remote storage. It assumes that the value is divisable by the block size, except for when it is 0, which disables the block cache."); } }
         public static string RestoreCacheEvictShort { get { return LC.L("Eviction ratio of the data block cache during restore"); } }

@@ -569,6 +569,8 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("secret-provider-cache", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SecretProviderCacheShort, Strings.Options.SecretProviderCacheLong, Enum.GetName(SecretProviderHelper.CachingLevel.None), null, Enum.GetNames(typeof(SecretProviderHelper.CachingLevel))),
             new CommandLineArgument("cpu-intensity", CommandLineArgument.ArgumentType.Integer, Strings.Options.CPUIntensityShort, Strings.Options.CPUIntensityLong, "10", null, ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]),
 
+            new CommandLineArgument("remote-sync-json-config", CommandLineArgument.ArgumentType.String, Strings.Options.RemoteSyncJsonConfigShort, Strings.Options.RemoteSyncJsonConfigLong),
+
             new CommandLineArgument("restore-cache-max", CommandLineArgument.ArgumentType.Size, Strings.Options.RestoreCacheMaxShort, Strings.Options.RestoreCacheMaxLong, DEFAULT_RESTORE_CACHE_MAX),
             new CommandLineArgument("restore-cache-evict", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreCacheEvictShort, Strings.Options.RestoreCacheEvictLong, DEFAULT_RESTORE_CACHE_EVICT.ToString()),
             new CommandLineArgument("restore-file-processors", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreFileprocessorsShort, Strings.Options.RestoreFileprocessorsLong, DEFAULT_RESTORE_FILE_PROCESSORS.ToString()),
@@ -1734,6 +1736,8 @@ namespace Duplicati.Library.Main
         /// <returns>The value of the option, or the default value if the option is not present or empty</returns>
         private long GetSize(string name, string unit, string @default)
             => Library.Utility.Utility.ParseSizeOption(m_options, name, unit, @default);
+
+        public string? RemoteSyncJsonConfig => GetString("remote-sync-json-config", null);
 
         /// <summary>
         /// Gets the maximum number of data blocks to keep in the cache. If set to 0, the cache is effictively disabled, but some is still kept for bookkeeping.

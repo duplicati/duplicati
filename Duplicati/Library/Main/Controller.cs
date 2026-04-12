@@ -135,6 +135,10 @@ namespace Duplicati.Library.Main
                 UsageReporter.Reporter.Report("BACKUP_FILECOUNT", result.ExaminedFiles);
                 UsageReporter.Reporter.Report("BACKUP_FILESIZE", result.SizeOfExaminedFiles);
                 UsageReporter.Reporter.Report("BACKUP_DURATION", (long)result.Duration.TotalSeconds);
+
+                using (var h = new Operation.RemoteSynchronizationHandler(m_backendUrl, m_options, result))
+                    await h.RunAsync()
+                        .ConfigureAwait(false);
             });
         }
 
