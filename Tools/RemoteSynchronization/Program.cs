@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System.Threading.Tasks;
+using Duplicati.Library.Main.Operation.RemoteSynchronization;
 
 namespace RemoteSynchronization
 {
