@@ -100,7 +100,6 @@
   <Project Path="Duplicati/Library/Main/Duplicati.Library.Main.csproj" />
   <Project Path="Duplicati/Library/Modules/Builtin/Duplicati.Library.Modules.Builtin.csproj" />
   <Project Path="Duplicati/Library/RemoteControl/Duplicati.Library.RemoteControl.csproj" />
-  <Project Path="Duplicati/Library/RemoteSynchronization/Duplicati.Library.RemoteSynchronization.csproj" />
   <Project Path="Duplicati/Library/RestAPI/Duplicati.Library.RestAPI.csproj" />
   <Project Path="Duplicati/Library/SecretProvider/Duplicati.Library.SecretProvider.csproj" />
   <Project Path="Duplicati/Library/Snapshots/Duplicati.Library.Snapshots.csproj" />
