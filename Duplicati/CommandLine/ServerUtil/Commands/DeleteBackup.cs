@@ -34,7 +34,7 @@ public static class DeleteBackup
             },
             new Option<bool>(name: "--delete-remote-files", description: "Delete remote files associated with the backup", getDefaultValue: () => false),
             new Option<bool>(name: "--delete-local-db", description: "Delete local database associated with the backup", getDefaultValue: () => false),
-            new Option<bool>(name: "--force", description: "Force deletion even if the backup is running at the moment", getDefaultValue: () => false),,
+            new Option<bool>(name: "--force", description: "Force deletion even if the backup is running at the moment", getDefaultValue: () => false),
             new Option<bool>("--quiet", "Do not print progress messages") {
                 IsRequired = false
             }
