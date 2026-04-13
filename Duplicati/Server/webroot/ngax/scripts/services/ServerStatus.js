@@ -316,7 +316,24 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
     const webSocketUnauthorizedCode = 4401;
     const unauthorizedCode = 401;
 
+    function isTerminalRefreshFailure(response) {
+        return (response && response.refreshAuthFailure === true)
+            || (AppService.isRefreshFailureResponse && AppService.isRefreshFailureResponse(response));
+    }
+
     function handleConnectionError(response) {
+        if (isTerminalRefreshFailure(response)) {
+            if (websocketReconnectTimer != null) {
+                window.clearInterval(websocketReconnectTimer);
+                websocketReconnectTimer = null;
+            }
+
+            state.failedAuthAttempts++;
+            state.connectionState = 'unauthorized';
+            $rootScope.$broadcast('serverstatechanged');
+            return;
+        }
+
         state.failedConnectionAttempts++;
         if (response.status === webSocketUnauthorizedCode || response.status === unauthorizedCode)
         {
