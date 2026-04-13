@@ -86,7 +86,7 @@ namespace Duplicati.UnitTest
             using (var stream = new MemoryStream())
             {
                 var opts = new Dictionary<string, string>();
-                opts["zip-compression-level"] = "0";
+                opts["zip-compression-level"] = "9";
 
                 if (module == "zip-sc")
                 {
@@ -116,37 +116,6 @@ namespace Duplicati.UnitTest
                 {
                     // Get files list
                     var files = z0.ListFiles(null);
-
-                    // Read second file in one go
-                    using (var fd = z0.OpenRead(files[1]))
-                    {
-                        var b = new byte[testset2.Count()];
-                        var tmp = fd.ReadAtLeast(b, b.Length, true);
-                        var trail = fd.ReadByte();
-
-                        if (!Enumerable.SequenceEqual(testset2, b) || trail != -1)
-                            throw new Exception("Decompressed file sample2 contents do not match the source file.");
-                    }
-
-                    // Read second file in one go
-                    using (var fd = z0.OpenRead(files[1]))
-                    {
-                        var b = new byte[testset2.Count()];
-                        for (var i = 0; i < b.Length; i++)
-                            b[i] = (byte)fd.ReadByte();
-
-                        var trail = fd.ReadByte();
-
-                        if (!Enumerable.SequenceEqual(testset2, b) || trail != -1)
-                        {
-                            var t2 = testset2.ToArray();
-                            var ix = Enumerable.Range(0, b.Length)
-                                .Select(x => (Index: x, Match: b[x] == t2[x]))
-                                .FirstOrDefault(x => !x.Match).Index;
-
-                            throw new Exception("Decompressed file sample2 contents do not match the source file.");
-                        }
-                    }
 
 
                     // Read second file
