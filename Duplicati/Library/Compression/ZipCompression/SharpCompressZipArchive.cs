@@ -117,7 +117,7 @@ public class SharpCompressZipArchive : IZipArchive
         {
             var compression = new ZipWriterOptions(m_compressionType)
             {
-                CompressionLevel = (int)m_defaultCompressionLevel,
+                CompressionLevel = GetCompressionLevel(m_compressionType, m_defaultCompressionLevel),
                 UseZip64 = USE_ZIP64
             };
 
@@ -125,6 +125,34 @@ public class SharpCompressZipArchive : IZipArchive
             m_flushBufferSize = Constants.END_OF_CENTRAL_DIRECTORY_SIZE;
         }
     }
+
+    /// <summary>
+    /// Returns the compression level for the algorithm
+    /// </summary>
+    /// <param name="compressionType">The compression algorithm</param>
+    /// <param name="compressionLevel">The desired compression level</param>
+    /// <returns>The matching compression level</returns>
+    private static int GetCompressionLevel(CompressionType compressionType, CompressionLevel compressionLevel)
+        => compressionType switch
+        {
+            CompressionType.GZip or CompressionType.Deflate or CompressionType.Deflate64
+                => (int)compressionLevel,
+
+            CompressionType.ZStandard
+                => MapDeflateCompressionLevelToZStandard((int)compressionLevel),
+
+            // No compression setting on other types
+            _ => 0
+        };
+
+    /// <summary>
+    /// Map deflate compression [0-9] levels to zstd [1-22]
+    /// </summary>
+    /// <param name="level">The deflate compression leve</param>
+    /// <returns>The Zstd compression level</returns>
+    private static int MapDeflateCompressionLevelToZStandard(int level)
+        => (int)Math.Max(1, Math.Min(22, Math.Round(level * 2.33) + 1));
+
 
     private IArchive Archive
     {
@@ -349,7 +377,7 @@ public class SharpCompressZipArchive : IZipArchive
 
         return ((ZipWriter)m_writer!).WriteToStream(file, new ZipWriterEntryOptions()
         {
-            CompressionLevel = hint == CompressionHint.Noncompressible ? (int)CompressionLevel.None : (int)m_defaultCompressionLevel,
+            CompressionLevel = GetCompressionLevel(m_compressionType, hint == CompressionHint.Noncompressible ? CompressionLevel.None : m_defaultCompressionLevel),
             ModificationDateTime = lastWrite,
             CompressionType = m_compressionType
         });
