@@ -160,17 +160,20 @@ namespace Duplicati.Library.Main.Operation.Restore
                         sw_cache_evict?.Stop();
                     }
 
-                    void evict_lru()
+                    long evict_lru()
                     {
                         sw_cache_lru?.Start();
+                        long volume_id = -1;
                         if (cache_last_touched.Count > 0)
                         {
                             // Pop the last element of cache_last_touched
-                            var volume_id = cache_last_touched[0];
+                            volume_id = cache_last_touched[0];
                             cache_last_touched.RemoveAt(0);
                             handle_evict(volume_id);
                         }
                         sw_cache_lru?.Stop();
+
+                        return volume_id;
                     }
 
                     await results.TaskControl.ProgressRendevouz().ConfigureAwait(false);
@@ -265,8 +268,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                             var available_free_space = new DriveInfo(temp_dir).AvailableFreeSpace;
                                             while (available_free_space < cache_min_free && cache_last_touched.Count > 0)
                                             {
-                                                var evict_id = cache_last_touched[0];
-                                                evict_lru();
+                                                var evict_id = evict_lru();
                                                 previously_evicted_volume_ids.Add(evict_id);
                                                 disk_pressure_evictions++;
                                                 if (disk_pressure_evictions == CACHE_PRESSURE_WARNING_THRESHOLD)
