@@ -277,7 +277,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                         {
                                             // Unlimited mode (cache_max < 0): evict LRU while free space is below the minimum.
                                             var available_free_space = new DriveInfo(temp_dir).AvailableFreeSpace;
-                                            while (available_free_space < cache_min_free && cache_last_touched.Count > 0)
+                                            while (available_free_space < cache_min_free && cache_size > 0)
                                             {
                                                 var evict_id = evict_lru();
                                                 previously_evicted_volume_ids.Add(evict_id);
@@ -287,7 +287,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                                 available_free_space = new DriveInfo(temp_dir).AvailableFreeSpace;
                                             }
 
-                                            if (!cache_exhausted_warned && cache_last_touched.Count == 0 && available_free_space < cache_min_free)
+                                            if (!cache_exhausted_warned && cache_size == 0 && available_free_space < cache_min_free)
                                             {
                                                 cache_exhausted_warned = true;
                                                 Logging.Log.WriteWarningMessage(LOGTAG, "CacheExhausted", null, "Restore volume cache is empty but disk space in '{0}' is still below the configured minimum. Performance impact is likely.", temp_dir);
