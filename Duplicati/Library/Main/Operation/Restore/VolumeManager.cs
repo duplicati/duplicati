@@ -211,12 +211,15 @@ namespace Duplicati.Library.Main.Operation.Restore
                                                 sw_request?.Start();
                                                 if (cache.TryGetValue(request.VolumeID, out var volume))
                                                 {
+                                                    Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Block {0} found in cache", request.BlockID);
+
+                                                    // Move the accessed volume to the end of the LRU list.
                                                     cache_last_touched.Remove(request.VolumeID);
                                                     cache_last_touched.Add(request.VolumeID);
-                                                    Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Block {0} found in cache", request.BlockID);
                                                     volume.Reference();
-                                                    await self.DecompressRequest.WriteAsync((request, volume)).ConfigureAwait(false);
+
                                                     Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Requesting decompression of block {0} from cached volume {1}", request.BlockID, request.VolumeID);
+                                                    await self.DecompressRequest.WriteAsync((request, volume)).ConfigureAwait(false);
                                                 }
                                                 else
                                                 {
@@ -266,6 +269,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                                 Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Cache full ({0} + {1} > {2}), evicting LRU", cache_size, volume.Size, cache_max);
                                                 evict_lru();
                                             }
+
                                             Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Caching volume {0} ({1} + {2} <= {3})", volume_id, cache_size, volume.Size, cache_max);
                                             handle_add(volume_id, volume);
                                         }
@@ -282,16 +286,19 @@ namespace Duplicati.Library.Main.Operation.Restore
                                                     Logging.Log.WriteWarningMessage(LOGTAG, "CachePressure", null, "Restore volume cache has begun evicting cached volumes due to low disk space in '{0}'. Restore performance may be degraded.", temp_dir);
                                                 available_free_space = new DriveInfo(temp_dir).AvailableFreeSpace;
                                             }
+
                                             if (!cache_exhausted_warned && cache_last_touched.Count == 0 && available_free_space < cache_min_free)
                                             {
                                                 cache_exhausted_warned = true;
                                                 Logging.Log.WriteWarningMessage(LOGTAG, "CacheExhausted", null, "Restore volume cache is empty but disk space in '{0}' is still below the configured minimum. Performance impact is likely.", temp_dir);
                                             }
+
                                             Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Caching volume {0} in unlimited mode (free space: {1})", volume_id, available_free_space);
                                             handle_add(volume_id, volume);
                                         }
                                         sw_cache_set?.Stop();
                                         sw_wakeup?.Start();
+
                                         foreach (var request in in_flight_downloads[volume_id])
                                         {
                                             // Request the decompressions
