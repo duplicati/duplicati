@@ -146,6 +146,14 @@ namespace Duplicati.Library.Main.Operation.Restore
                     Stopwatch? sw_request = options.InternalProfiling ? new() : null;
                     Stopwatch? sw_wakeup = options.InternalProfiling ? new() : null;
 
+                    void handle_add(long volume_id, VolumeWrapper volume)
+                    {
+                        cache[volume_id] = volume;
+                        cache_size += volume.Size;
+                        cache_size_max_consumed = Math.Max(cache_size_max_consumed, cache_size);
+                        cache_last_touched.Add(volume_id);
+                    }
+
                     void handle_evict(long volume_id)
                     {
                         Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Evicting volume {0} from cache", volume_id);
@@ -259,9 +267,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                                 evict_lru();
                                             }
                                             Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Caching volume {0} ({1} + {2} <= {3})", volume_id, cache_size, volume.Size, cache_max);
-                                            cache[volume_id] = volume;
-                                            cache_size += volume.Size;
-                                            cache_size_max_consumed = Math.Max(cache_size_max_consumed, cache_size);
+                                            handle_add(volume_id, volume);
                                         }
                                         else
                                         {
@@ -282,11 +288,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                                                 Logging.Log.WriteWarningMessage(LOGTAG, "CacheExhausted", null, "Restore volume cache is empty but disk space in '{0}' is still below the configured minimum. Performance impact is likely.", temp_dir);
                                             }
                                             Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Caching volume {0} in unlimited mode (free space: {1})", volume_id, available_free_space);
-                                            cache[volume_id] = volume;
-                                            cache_size += volume.Size;
-                                            cache_size_max_consumed = Math.Max(cache_size_max_consumed, cache_size);
+                                            handle_add(volume_id, volume);
                                         }
-                                        cache_last_touched.Add(volume_id);
                                         sw_cache_set?.Stop();
                                         sw_wakeup?.Start();
                                         foreach (var request in in_flight_downloads[volume_id])
