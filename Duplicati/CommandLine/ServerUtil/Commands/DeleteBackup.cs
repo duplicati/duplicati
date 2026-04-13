@@ -50,12 +50,12 @@ public static class DeleteBackup
                 throw new UserReportedException("No backup found with supplied ID or name");
 
             if (!quiet)
-                output.AppendConsoleMessage($"Deleting backup {matchingBackup.Name} (ID: {matchingBackup.ID})");
+                output.AppendConsoleMessage($"Queueing delete for backup {matchingBackup.Name} (ID: {matchingBackup.ID})");
 
             await connection.DeleteBackup(matchingBackup.ID, deleteRemoteFiles: deleteRemoteFiles, deleteLocalDb: deleteLocalDb, force: force);
 
             if (!quiet)
-                output.AppendConsoleMessage($"Deleted");
+                output.AppendConsoleMessage("Delete task queued");
 
             output.SetResult(true);
         }));
