@@ -253,6 +253,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                                 // fifo / lifo based on both when they were downloaded and when they were used
                                                 // random
                                                 // Heuristic based of accesses and recency
+
                                                 // Cache would overflow if we request another; we have to evict something, or store the request for later.
                                                 Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Cache full ({0} + {1} > {2}), evicting LRU", cache_size, volume.Size, cache_max);
                                                 evict_lru();
