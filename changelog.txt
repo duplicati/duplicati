@@ -1,3 +1,130 @@
+2026-04-14 - 2.3.0.0_stable_2026-04-14
+==========
+# About this release
+
+This is the next stable release for Duplicati 2.3, building on the 2.2 release with new features and bug fixes.
+
+A big thanks to the supportive Duplicati user base who continues to contribute with fixes, issue reports and feature requests.
+
+If you have already been using the beta release, this release is the same as v2.2.1.0, but includes a bugfix and two library updates.
+
+## Database Schema Update
+
+**Note:** This update changes the Server database schema to version 11. The database tool can perform downgrades if needed.
+
+## Multiple Backup Destinations
+
+This version adds support for configuring multiple destinations for a single backup job.
+This allows you to backup to multiple locations simultaneously, such as a local drive and a cloud storage provider.
+With multiple destinations, you can now configure a complete 3-2-1 backup strategy in a single job.
+After each completed backup, Duplicati will ensure that data is available on all destinations.
+
+A 3-2-1 backup strategy is where you have 3 copies of your data, 2 of which are on different media, and 1 of which is offsite/immutable.
+
+## Remote Sources
+
+Remote sources are now easier to use with UI support and a prominent button on the source page.
+This version also adds support for using Box, Dropbox, OneDrive, and Google Drive as remote sources.
+
+## Windows Folder Status Indicator
+
+Thanks to @AndyBodnar, this version adds a Windows shell extension that shows the backup status of folders with icon overlays.
+The feature is disabled by default but can be enabled with the option `--enable-folder-status-service` on either Server or TrayIcon.
+Once enabled, run the `RegisterFolderStatusExtension.ps1` script to register the extension and see backup status in Windows Explorer.
+
+## Google Workspace Backup
+
+This version adds support for backing up Google Workspace, including Gmail, Google Drive, Contacts, Calendar, and Chat.
+This is a proprietary module (source available) that requires a license to use in production.
+Without a license, testing is possible with up to 5 users.
+
+To prevent proprietary modules from loading, set the environment variable `DUPLICATI_DISABLE_PROPRIETARY_MODULES=1` or delete files named `Duplicati.Proprietary.*` from your installation.
+
+## Office 365 Backup
+
+This version adds support for backing up Office 365 tenants, including mailboxes, calendars, contacts, OneDrive, Planner, Tasks, Teams, Sites, and more.
+This is a proprietary module (source available) that requires a license to use in production.
+Without a license, testing is possible with up to 5 users + 5 sites + 5 groups.
+
+## Full Disk Backup
+
+This version adds simple support for backup and restore of entire disks, including the MBR/GPT partition table.
+In this initial version, only Windows is supported, and the backup accesses the disk directly (no VSS).
+Support for Linux and macOS, as well as VSS support for Windows, is planned for future releases.
+
+Like the Office 365 / Google Workspace features, this is a proprietary module (source available).
+Full disk backup requires administrative privileges to access the disk directly.
+Full disk restore requires administrative privileges and requires that the disk is unmounted and not write-protected.
+
+## Remote File Locking
+
+This release adds support for remote locking of files on supported storage providers (S3, Azure Blob Storage, Backblaze B2, iDrive e2, Google Cloud Storage).
+Locking protects backup files from being deleted or overwritten during a configurable retention period.
+
+To use the feature, set the advanced option `--remote-file-lock-duration` (e.g., `30D` for 30 days).
+Each backend supports `governance` (lock can be removed in admin console) or `compliance` (lock cannot be removed) modes.
+
+## Templating Engine for Reporting
+
+Thanks to @AndyBodnar, it is now possible to use a Handlebars template to format the report output, which is especially useful for crafting custom email reports.
+
+## Synology Native Package
+
+The Synology native package has been re-developed to support Synology DSM 7.2 and above.
+The package installs as any other Synology package and uses integrated DSM authentication.
+
+## Soft Delete Support
+
+A new option `--soft-delete-prefix` enables the soft-delete feature.
+When enabled, files are renamed/moved instead of being deleted, allowing lifecycle management rules to handle actual deletion after a retention period.
+
+## Platform Updates
+
+- **.NET 10**: The application now runs on .NET 10 for improved performance
+- **SQLite**: Updated to use `Microsoft.Data.Sqlite` for better performance and async query support
+- **VSS Provider**: Default VSS provider on Windows is now Vanara (AlphaVSS is no longer maintained)
+
+## Database Encryption Changes
+
+This release adds a "default secret provider" for the current OS:
+
+- Windows: Windows Credential Manager
+- macOS: Keychain
+- Linux: libSecret (Gnome Keyring), or commandline `pass` if available
+
+If no secret provider is configured, and a default secret provider is available, the database will be encrypted with a random password stored in the default secret provider.
+To opt-out, use `--disable-db-encryption` when starting the Server/TrayIcon.
+
+If database encryption is already configured, or no default secret provider is available, nothing will change.
+
+## Simplified S3 Provider Configuration
+
+The S3 provider configuration has been simplified by providing fewer options and only showing relevant endpoints.
+A whitelist of public S3 providers is included, and hostnames are shown in backup reports if in the whitelist.
+
+## New Languages
+
+Added support for Hungarian, Czech, and Polish languages. Thanks to all translators!
+
+## Quality of Life Improvements
+
+- The commandline-inside-the-UI feature now saves its state when navigating back
+- Added "Edit as text" option for source paths and filters
+- Linux AppImage builds are now available
+- Auto VSS on Windows when user has Administrator privileges (`SeBackupPrivilege`)
+- SSH-Agent support for SSH backend
+- Support for macOS Photos backup with `--photos-handling` option
+- New UI is more small-screen friendly
+
+## Notable Bugfixes
+
+- Fixed issue with invariant formatting causing crashes during backup
+- Fixed dry-run to strictly not touch data
+- Fixed `--changed-files` option to not introduce extra dangling file entries
+- Fixed purge operation size calculation and added `--reduced-purge-statistics` option
+- Fixed index file corruption issue where index files could become incomplete over time
+- Fixed restore flow to reduce temporary space usage (configurable with `--restore-volume-cache-hint`)
+
 2026-03-05 - 2.2.1.0_beta_2026-03-05
 ==========
 # 2026-03-05 - 2.2.1.0_beta_2026-03-05
