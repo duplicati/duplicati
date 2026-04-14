@@ -213,9 +213,12 @@ namespace Duplicati.Library.Main.Operation.Restore
                                                 {
                                                     Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Block {0} found in cache", request.BlockID);
 
-                                                    // Move the accessed volume to the end of the LRU list.
-                                                    cache_last_touched.Remove(request.VolumeID);
-                                                    cache_last_touched.Add(request.VolumeID);
+                                                    if (cache_max != 0)
+                                                    {
+                                                        // Move the accessed volume to the end of the LRU list.
+                                                        cache_last_touched.Remove(request.VolumeID);
+                                                        cache_last_touched.Add(request.VolumeID);
+                                                    }
                                                     volume.Reference();
 
                                                     Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Requesting decompression of block {0} from cached volume {1}", request.BlockID, request.VolumeID);
