@@ -26,9 +26,15 @@ internal class GeometrySourceEntry : DiskImageEntryBase
         _metadata = metadata;
     }
 
+    /// <inheritdoc />
     public override bool IsFolder => false;
+    /// <inheritdoc />
     public override bool IsMetaEntry => false;
+    /// <inheritdoc />
     public override long Size => Encoding.UTF8.GetByteCount(_metadata.ToJson());
+    /// Geometry should always be backed up, as this captures re-partitionings.
+    /// <inheritdoc />
+    public override DateTime LastModificationUtc => DateTime.UtcNow;
 
     public GeometryMetadata Metadata => _metadata;
 

@@ -102,7 +102,7 @@ internal class DiskSourceEntry(SourceProvider provider, IRawDisk disk)
                 });
 
                 // Create partition source entry which will add filesystem geometry
-                var partitionEntry = new PartitionSourceEntry(this.Path, partition);
+                var partitionEntry = new PartitionSourceEntry(this.Path, partition, provider.TreatFilesystemAsUnknown);
 
                 // Pre-enumerate to collect filesystem geometry
                 await foreach (var child in partitionEntry.Enumerate(cancellationToken))
@@ -124,7 +124,7 @@ internal class DiskSourceEntry(SourceProvider provider, IRawDisk disk)
 
             // Then yield the actual partition and filesystem entries
             foreach (var partition in partitions)
-                yield return new PartitionSourceEntry(this.Path, partition);
+                yield return new PartitionSourceEntry(this.Path, partition, provider.TreatFilesystemAsUnknown);
         }
         else
         {
