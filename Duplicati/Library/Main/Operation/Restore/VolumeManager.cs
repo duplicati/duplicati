@@ -176,7 +176,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                         {
                             // Pop the last element of cache_last_touched
                             volume_id = cache_last_touched[0];
-                            cache_last_touched.RemoveAt(0);
                             handle_evict(volume_id);
                         }
                         sw_cache_lru?.Stop();
