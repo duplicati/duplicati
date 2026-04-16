@@ -98,7 +98,7 @@ public class SecretCollection : IDisposable
     /// <returns>The created secret collection</returns>
     public static async Task<SecretCollection> CreateAsync(string collectionName, bool autoCreateCollection, CancellationToken cancellationToken)
     {
-        var connection = Connection.Session;
+        var connection = DBusConnection.Session;
         var secretsService = new secretsService(connection, "org.freedesktop.secrets");
         var service = secretsService.CreateService("/org/freedesktop/secrets");
         var (_, sessionPath) = await service.OpenSessionAsync("plain", "").ConfigureAwait(false);
@@ -205,7 +205,7 @@ public class SecretCollection : IDisposable
 
         try
         {
-            var connection = Connection.Session;
+            var connection = DBusConnection.Session;
             var secretsService = new secretsService(connection, "org.freedesktop.secrets");
             var service = secretsService.CreateService("/org/freedesktop/secrets");
             var task = service.GetCollectionsAsync();
@@ -236,7 +236,7 @@ public class SecretCollection : IDisposable
     {
         try
         {
-            var connection = Connection.Session;
+            var connection = DBusConnection.Session;
             var secretsService = new secretsService(connection, "org.freedesktop.secrets");
             var service = secretsService.CreateService("/org/freedesktop/secrets");
 

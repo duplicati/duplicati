@@ -26,7 +26,9 @@ namespace Duplicati.Library.Main.Backend
     /// <param name="retryDelay">The delay between retries, in milliseconds.</param>
     /// <param name="autoCreateFolders">Whether to automatically create folders if they do not exist.</param>
     /// <param name="retryWithExponentialBackoff">Whether to use exponential backoff for retries.</param>
-    public class LightWeightBackendManager(string backendUrl, Dictionary<string, string> options, int maxRetries = 3, int retryDelay = 1000, bool autoCreateFolders = false, bool retryWithExponentialBackoff = false) : IDisposable
+    /// <param name="progressUpdater">An optional progress updater for file operations.</param>
+    /// <param name="backendProgressUpdater">An optional progress updater for backend operations.</param>
+    internal class LightWeightBackendManager(string backendUrl, Dictionary<string, string> options, int maxRetries = 3, int retryDelay = 1000, bool autoCreateFolders = false, bool retryWithExponentialBackoff = false, IOperationProgressUpdater? progressUpdater = null, IBackendProgressUpdater? backendProgressUpdater = null) : IDisposable
     {
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<LightWeightBackendManager>();
 
@@ -116,6 +118,46 @@ namespace Duplicati.Library.Main.Backend
         }
 
         /// <summary>
+        /// Gets a file from the remote backend and saves it to a temporary file.
+        /// This method retries the operation with a delay if it fails.
+        /// </summary>
+        /// <param name="remotename">The name of the remote file to get.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task representing the asynchronous get operation. The task result is the path to the temporary file containing the downloaded data.</returns>
+        public async Task<TempFile> GetAsync(string remotename, CancellationToken token)
+        {
+            var temp = new TempFile();
+
+            try
+            {
+                await RetryWithDelay(
+                    $"Get {remotename} to TempFile",
+                    async () =>
+                    {
+                        using var fileStream = System.IO.File.OpenWrite(temp);
+                        using var progressStream = new ProgressReportingStream(fileStream, pg =>
+                            {
+                                backendProgressUpdater?.UpdateProgress(remotename, pg);
+                                progressUpdater?.UpdateFileProgress(pg);
+                            });
+                        await _streamingBackend!.GetAsync(remotename, progressStream, token).ConfigureAwait(false);
+                        _anyDownloaded = true;
+                    },
+                    null,
+                    false,
+                    token
+                ).ConfigureAwait(false);
+
+                return temp;
+            }
+            catch
+            {
+                temp.Dispose();
+                throw;
+            }
+        }
+
+        /// <summary>
         /// Instantiates the backend if it has not been instantiated yet.
         /// If the backend is already instantiated, it simply returns.
         /// If the maximum number of retries has been reached, it throws an InvalidOperationException.
@@ -188,6 +230,35 @@ namespace Duplicati.Library.Main.Backend
         }
 
         /// <summary>
+        /// Puts a file to the remote backend from a temporary file.
+        /// This method retries the operation with a delay if it fails.
+        /// </summary>
+        /// <param name="remotename">The name of the remote file to put.</param>
+        /// <param name="temp">The temporary file containing the data to upload.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task representing the asynchronous put operation.</returns>
+        public Task PutAsync(string remotename, TempFile temp, CancellationToken token)
+        {
+            return RetryWithDelay(
+                $"Put {remotename}",
+                async () =>
+                {
+                    using var fileStream = System.IO.File.OpenRead(temp);
+                    using var progressStream = new ProgressReportingStream(fileStream, pg =>
+                        {
+                            backendProgressUpdater?.UpdateProgress(remotename, pg);
+                            progressUpdater?.UpdateFileProgress(pg);
+                        });
+                    await _streamingBackend!.PutAsync(remotename, progressStream, token).ConfigureAwait(false);
+                    _anyUploaded = true;
+                },
+                null,
+                false,
+                token
+            );
+        }
+
+        /// <summary>
         /// Renames a file in the remote backend.
         /// If the backend supports renaming, it uses the RenameAsync method.
         /// If the backend does not support renaming, it downloads the file, renames it, and deletes the old one.
@@ -237,6 +308,11 @@ namespace Duplicati.Library.Main.Backend
             };
         }
 
+        /// <summary>
+        /// Resets the state of the backend manager.
+        /// This method resets the download and upload flags and resets the retry delay to its initial value.
+        /// </summary>
+        /// <returns>A task representing the asynchronous reset operation.</returns>
         public async Task Reset()
         {
             _anyDownloaded = false;

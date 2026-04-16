@@ -95,6 +95,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     return target;
                 }
 
+                var buffer = new byte[options.Blocksize];
 
                 while (lst.Count > 1)
                 {
@@ -109,8 +110,6 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                     // Remove it from the list of active operations
                     lst.RemoveAt(0);
-
-                    var buffer = new byte[options.Blocksize];
 
                     using (var rd = new BlockVolumeReader(options.CompressionModule, source.BlockVolume.LocalFilename, options))
                     {

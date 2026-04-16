@@ -18,7 +18,6 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-using Duplicati.Library.Crashlog;
 
 namespace Duplicati.GUI.TrayIcon.Net10
 {
@@ -26,6 +25,6 @@ namespace Duplicati.GUI.TrayIcon.Net10
     public static class Program
     {
         public static int Main(string[] args)
-            => CrashlogHelper.WrapWithCrashLog(() => Duplicati.GUI.TrayIcon.Program.Main(args));
+            => Duplicati.GUI.TrayIcon.Program.Main(args);
     }
 }

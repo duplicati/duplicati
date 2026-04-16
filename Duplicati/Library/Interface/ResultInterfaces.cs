@@ -1,22 +1,22 @@
 // Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
 using System;
@@ -343,6 +343,11 @@ namespace Duplicati.Library.Interface
         IDeleteResults DeleteResults { get; }
         IRepairResults RepairResults { get; }
         ISetLockResults LockResults { get; }
+
+        /// <summary>
+        /// Results from remote synchronization operations to multiple destinations.
+        /// </summary>
+        IRemoteSynchronizationResults[] RemoteSynchronizationResults { get; }
     }
 
     public interface IRestoreResults : IBasicResults
@@ -378,6 +383,47 @@ namespace Duplicati.Library.Interface
         long DownloadedFileSize { get; }
         long UploadedFileSize { get; }
         bool Dryrun { get; }
+    }
+
+    /// <summary>
+    /// Results from a remote synchronization operation to a single destination.
+    /// </summary>
+    public interface IRemoteSynchronizationResults : IBasicResults
+    {
+        /// <summary>
+        /// The destination URL or identifier.
+        /// </summary>
+        string Destination { get; }
+
+        /// <summary>
+        /// Number of files deleted from the destination.
+        /// </summary>
+        long DeletedFileCount { get; }
+
+        /// <summary>
+        /// Number of files renamed at the destination (retention mode).
+        /// </summary>
+        long RenamedFileCount { get; }
+
+        /// <summary>
+        /// Number of files copied to the destination.
+        /// </summary>
+        long CopiedFileCount { get; }
+
+        /// <summary>
+        /// Number of files verified at the destination.
+        /// </summary>
+        long VerifiedFileCount { get; }
+
+        /// <summary>
+        /// Number of files that failed verification.
+        /// </summary>
+        long FailedVerificationCount { get; }
+
+        /// <summary>
+        /// Total size of files copied in bytes.
+        /// </summary>
+        long CopiedFileSize { get; }
     }
 
     public interface ICreateLogDatabaseResults : IBasicResults
@@ -463,7 +509,7 @@ namespace Duplicati.Library.Interface
     }
 
     /// <summary>
-    /// The status of a change in a test entry 
+    /// The status of a change in a test entry
     /// </summary>
     public enum TestEntryStatus
     {

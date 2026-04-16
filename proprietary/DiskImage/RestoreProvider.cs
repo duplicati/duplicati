@@ -12,6 +12,7 @@ using Duplicati.Library.Logging;
 using Duplicati.Library.Utility;
 using Duplicati.Proprietary.DiskImage.Disk;
 using Duplicati.Proprietary.DiskImage.Filesystem;
+using Duplicati.Proprietary.DiskImage.Filesystem.Fat32;
 using Duplicati.Proprietary.DiskImage.General;
 using Duplicati.Proprietary.DiskImage.Partition;
 
@@ -577,24 +578,19 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     /// <summary>
     /// Checks if a file path is the geometry metadata file.
     /// </summary>
-    /// <param name="path">The file path to check.</param>
+    /// <remarks>Assumes the path has already been normalized by ParsePath.</remarks>
+    /// <param name="path">The file path to check (already normalized by ParsePath).</param>
     /// <returns><c>true</c> if the path is the geometry file; otherwise, <c>false</c>.</returns>
-    private static bool IsGeometryFile(string path)
+    private bool IsGeometryFile(string path)
     {
-        // Check for geometry.json (must be at root or top level)
-        // Valid paths: "geometry.json", "root/geometry.json"
-        if (!path.EndsWith("geometry.json", StringComparison.OrdinalIgnoreCase))
+        if (_targetDisk == null)
             return false;
 
-        // TODO only check the last path for now.
-        return true;
+        string geometryDevicePath = NormalizePath(_targetDisk.DevicePath);
 
-        // Normalize path separators
-        var normalized = path.Replace('\\', '/').TrimStart('/');
-        var segments = normalized.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        string expectedGeometryPath = $"{geometryDevicePath}{Path.DirectorySeparatorChar}geometry.json";
 
-        // Should be at most 2 segments (e.g. "root/geometry.json")
-        return segments.Length <= 2;
+        return string.Equals(path, expectedGeometryPath, StringComparison.OrdinalIgnoreCase);
     }
 
     /// <inheritdoc />
@@ -777,12 +773,21 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     /// <returns>An IFilesystem instance, or null if the filesystem type is not supported.</returns>
     private IFilesystem? CreateFilesystemFromGeometry(IPartition partition, FilesystemGeometry fsGeom)
     {
-        return fsGeom.Type switch
+        try
         {
-            // For now, we use UnknownFilesystem as the base implementation
-            // Specific filesystem implementations can be added later
-            _ => new UnknownFilesystem(partition, fsGeom.BlockSize)
-        };
+            return fsGeom.Type switch
+            {
+                FileSystemType.FAT32 => new Fat32Filesystem(partition, fsGeom.BlockSize),
+                _ => new UnknownFilesystem(partition, fsGeom.BlockSize)
+            };
+        }
+        catch
+        {
+            // If creating the filesystem fails (e.g., invalid boot sector on blank disk),
+            // fall back to UnknownFilesystem for raw block access but report the original type
+            // so that path lookup works correctly
+            return new UnknownFilesystem(partition, fsGeom.BlockSize, fsGeom.Type);
+        }
     }
 
     /// <summary>
