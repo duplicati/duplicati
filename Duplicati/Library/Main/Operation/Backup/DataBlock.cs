@@ -53,7 +53,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 Hint = hint,
                 IsBlocklistHashes = isBlocklistHashes,
                 TaskCompletion = tcs
-            });
+            }).ConfigureAwait(false);
 
             var r = await tcs.Task.ConfigureAwait(false);
             return r;
