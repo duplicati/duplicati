@@ -422,6 +422,20 @@ public class Connection
     }
 
     /// <summary>
+    /// Deletes a backup
+    /// </summary>
+    /// <param name="backupId">The ID of the backup</param>
+    /// <param name="deleteRemoteFiles">Whether to delete remote files</param>
+    /// <param name="deleteLocalDb">Whether to delete the local database</param>
+    /// <param name="force">Whether to force the deletion even if the backup is running at the moment</param>
+    /// <returns>The task</returns>
+    public async Task DeleteBackup(string backupId, bool deleteRemoteFiles, bool deleteLocalDb, bool force)
+    {
+        var response = await client.DeleteAsync($"backup/{Uri.EscapeDataString(backupId)}?delete-remote-files={deleteRemoteFiles}&delete-local-db={deleteLocalDb}&force={force}");
+        await EnsureSuccessStatusCodeWithParsing(response);
+    }
+
+    /// <summary>
     /// Gets the server state
     /// </summary>
     /// <returns>The server state</returns>
