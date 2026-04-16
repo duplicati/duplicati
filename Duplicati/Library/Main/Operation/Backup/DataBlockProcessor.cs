@@ -61,7 +61,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 {
                     while (true)
                     {
-                        var b = await self.Input.ReadAsync();
+                        using var b = await self.Input.ReadAsync();
 
                         // Check if the process has spent more than allowed workload time
                         if (options.CPUIntensity < 10 && sw_workload.ElapsedMilliseconds > allowed_workload_ms)
