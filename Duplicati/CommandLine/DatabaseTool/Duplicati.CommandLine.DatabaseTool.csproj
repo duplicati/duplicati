@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AssemblyName>Duplicati.CommandLine.DatabaseTool.Implementation</AssemblyName>
-    <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
+    <Copyright>Copyright © 2026 Team Duplicati, MIT license</Copyright>
     <RootNamespace>Duplicati.CommandLine.DatabaseTool</RootNamespace>
   </PropertyGroup>
 
