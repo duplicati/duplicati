@@ -15,13 +15,17 @@ namespace Duplicati.Proprietary.DiskImage.SourceItems;
 /// Represents a file within a filesystem as a source entry for backup operations.
 /// </summary>
 internal class FileSourceEntry(string parentPath, IFilesystem filesystem, IFile file)
-    : DiskImageEntryBase(System.IO.Path.Combine(parentPath, file.Path ?? file.Address?.ToString("X016") ?? "unknown"))
+    : DiskImageEntryBase(System.IO.Path.Combine(parentPath, file.Address?.ToString("X016") ?? file.Path ?? "unknown"))
 {
     /// <inheritdoc />
     public override bool IsFolder => file.IsDirectory;
 
     /// <inheritdoc />
     public override long Size => file.Size;
+
+    /// If the file doesn't report a last modified time, use the current time as a fallback to always back it up.
+    /// <inheritdoc />
+    public override DateTime LastModificationUtc => file.LastModified ?? DateTime.UtcNow;
 
     /// <inheritdoc />
     public override Task<Stream> OpenRead(CancellationToken cancellationToken)

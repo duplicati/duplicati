@@ -1,7 +1,7 @@
 using System;
 using System.Buffers;
 
-namespace Duplicati.Proprietary.DiskImage.Disk;
+namespace Duplicati.Proprietary.DiskImage.General;
 
 /// <summary>
 /// A disposable struct that rents a byte array from the shared ArrayPool and returns it when disposed.

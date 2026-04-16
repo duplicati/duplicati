@@ -37,7 +37,6 @@ public static class GenericModules
         new CommonOptions(),
         new HyperVOptions(),
         new MSSQLOptions(),
-        new RemoteSynchronizationModule(),
         new RunScript(),
         new SendHttpMessage(),
         new SendJabberMessage(),
