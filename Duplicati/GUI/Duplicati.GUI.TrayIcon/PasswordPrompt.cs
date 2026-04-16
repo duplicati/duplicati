@@ -130,7 +130,7 @@ internal class PasswordPromptWindow : Window
 
         passwordBox = new TextBox
         {
-            Watermark = "Server password",
+            PlaceholderText = "Server password",
             PasswordChar = '•',
             Text = Program.PasswordStorage.Password ?? string.Empty,
             HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -147,7 +147,7 @@ internal class PasswordPromptWindow : Window
         hostUrlBox = new TextBox
         {
             Text = Program.PasswordStorage.HostUrl ?? string.Empty,
-            Watermark = "http://localhost:8200",
+            PlaceholderText = "http://localhost:8200",
             HorizontalAlignment = HorizontalAlignment.Stretch,
             Margin = new Thickness(0, 0, 0, 10)
         };
