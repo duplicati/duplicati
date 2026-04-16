@@ -117,6 +117,7 @@ namespace Duplicati.UnitTest
                     // Get files list
                     var files = z0.ListFiles(null);
 
+
                     // Read second file
                     using (var fd = z0.OpenRead(files[1]))
                     {
