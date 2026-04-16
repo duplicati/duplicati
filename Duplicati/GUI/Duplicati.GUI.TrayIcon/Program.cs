@@ -99,6 +99,22 @@ namespace Duplicati.GUI.TrayIcon
         [STAThread]
         public static int Main(string[] _args)
         {
+            try
+            {
+                return RunMain(_args);
+            }
+            catch (Exception ex)
+            {
+                Library.Crashlog.CrashlogHelper.LogCrashException(ex);
+                ErrorDialog.ShowErrorDialog(ex);
+
+                Environment.Exit(1);
+                return 1;
+            }
+        }
+
+        private static int RunMain(string[] _args)
+        {
             PreloadSettingsLoader.ConfigurePreloadSettings(ref _args, PackageHelper.NamedExecutable.TrayIcon);
             var args = new List<string>(_args);
             var options = CommandLineParser.ExtractOptions(args);
