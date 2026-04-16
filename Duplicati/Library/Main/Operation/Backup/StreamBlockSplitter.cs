@@ -126,7 +126,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                                     var hashkey = Convert.ToBase64String(hashdata);
 
                                     // If we have too many hashes, flush the blocklist
-                                    if (blocklistbuffer.Length - blocklistoffset < hashdata.Length)
+                                    if (blocksize - blocklistoffset < hashdata.Length)
                                     {
                                         var blkey = Convert.ToBase64String(blockhasher.ComputeHash(blocklistbuffer, 0, (int)blocklistoffset));
                                         blocklisthashes.Add(blkey);
