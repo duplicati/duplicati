@@ -1,4 +1,4 @@
-// Copyright (C) 2025, The Duplicati Team
+// Copyright (C) 2026, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -18,7 +18,6 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-using Duplicati.Library.Crashlog;
 
 namespace Duplicati.GUI.TrayIcon.Net10
 {
@@ -26,6 +25,6 @@ namespace Duplicati.GUI.TrayIcon.Net10
     public static class Program
     {
         public static int Main(string[] args)
-            => CrashlogHelper.WrapWithCrashLog(() => Duplicati.GUI.TrayIcon.Program.Main(args));
+            => Duplicati.GUI.TrayIcon.Program.Main(args);
     }
 }

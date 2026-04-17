@@ -1,4 +1,4 @@
-// Copyright (C) 2025, The Duplicati Team
+// Copyright (C) 2026, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -418,6 +418,20 @@ public class Connection
     public async Task RunBackup(string backupId, bool skipQueue)
     {
         var response = await client.PostAsync($"backup/{Uri.EscapeDataString(backupId)}/run?skipqueue={skipQueue}", null);
+        await EnsureSuccessStatusCodeWithParsing(response);
+    }
+
+    /// <summary>
+    /// Deletes a backup
+    /// </summary>
+    /// <param name="backupId">The ID of the backup</param>
+    /// <param name="deleteRemoteFiles">Whether to delete remote files</param>
+    /// <param name="deleteLocalDb">Whether to delete the local database</param>
+    /// <param name="force">Whether to force the deletion even if the backup is running at the moment</param>
+    /// <returns>The task</returns>
+    public async Task DeleteBackup(string backupId, bool deleteRemoteFiles, bool deleteLocalDb, bool force)
+    {
+        var response = await client.DeleteAsync($"backup/{Uri.EscapeDataString(backupId)}?delete-remote-files={deleteRemoteFiles}&delete-local-db={deleteLocalDb}&force={force}");
         await EnsureSuccessStatusCodeWithParsing(response);
     }
 

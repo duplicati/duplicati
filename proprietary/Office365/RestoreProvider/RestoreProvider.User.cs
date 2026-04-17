@@ -206,7 +206,7 @@ partial class RestoreProvider
 
         private async Task UploadAttachmentAsync(string userId, string messageId, MimeEntity attachment, CancellationToken ct)
         {
-            if (attachment is MessagePart msgPart)
+            if (attachment is MessagePart msgPart && msgPart.Message != null)
             {
                 // Handle attached message as .eml file
                 using var ms = new MemoryStream();
@@ -224,7 +224,7 @@ partial class RestoreProvider
                 return;
             }
 
-            if (attachment is not MimePart part) return;
+            if (attachment is not MimePart part || part.Content == null) return;
 
             // Check size
             long size = 0;
@@ -248,6 +248,8 @@ partial class RestoreProvider
 
         private async Task UploadSmallAttachmentAsync(string userId, string messageId, MimePart part, long size, CancellationToken ct)
         {
+            if (part.Content == null) return;
+
             var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
             var user = Uri.EscapeDataString(userId);
             var msg = Uri.EscapeDataString(messageId);
@@ -282,6 +284,8 @@ partial class RestoreProvider
 
         private async Task UploadLargeAttachmentAsync(string userId, string messageId, MimePart part, long size, CancellationToken ct)
         {
+            if (part.Content == null) return;
+
             var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
             var user = Uri.EscapeDataString(userId);
             var msg = Uri.EscapeDataString(messageId);

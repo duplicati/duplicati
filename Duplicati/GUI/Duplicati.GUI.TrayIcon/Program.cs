@@ -1,4 +1,4 @@
-// Copyright (C) 2025, The Duplicati Team
+// Copyright (C) 2026, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -98,6 +98,22 @@ namespace Duplicati.GUI.TrayIcon
         /// </summary>
         [STAThread]
         public static int Main(string[] _args)
+        {
+            try
+            {
+                return RunMain(_args);
+            }
+            catch (Exception ex)
+            {
+                Library.Crashlog.CrashlogHelper.LogCrashException(ex);
+                ErrorDialog.ShowErrorDialog(ex);
+
+                Environment.Exit(1);
+                return 1;
+            }
+        }
+
+        private static int RunMain(string[] _args)
         {
             PreloadSettingsLoader.ConfigurePreloadSettings(ref _args, PackageHelper.NamedExecutable.TrayIcon);
             var args = new List<string>(_args);

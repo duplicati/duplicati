@@ -4,7 +4,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Duplicati.Library.Utility;
 using Duplicati.Proprietary.DiskImage.Disk;
+using Duplicati.Proprietary.DiskImage.Filesystem.Fat32;
 using Duplicati.Proprietary.DiskImage.General;
 
 namespace Duplicati.Proprietary.DiskImage.Partition;
@@ -135,7 +137,7 @@ internal class MBR : IPartitionTable
                     StartOffset = entry.StartLBA * m_bytesPerSector,
                     Size = entry.SizeInSectors * m_bytesPerSector,
                     Name = $"Partition {i + 1}",
-                    FilesystemType = DetermineFilesystemType(entry),
+                    FilesystemType = entry.FilesystemType,
                     VolumeGuid = null,
                     RawDisk = m_rawDisk,
                     StartingLba = entry.StartLBA,
@@ -185,6 +187,7 @@ internal class MBR : IPartitionTable
         {
             EntryNumber = entryNumber,
             PartitionType = DeterminePartitionType(partitionType),
+            FilesystemType = DetermineFilesystemType(partitionType, startLBA * m_bytesPerSector, (int)(sizeInSectors * m_bytesPerSector)),
             PartitionTypeByte = partitionType,
             StartLBA = startLBA,
             SizeInSectors = sizeInSectors,
@@ -210,11 +213,21 @@ internal class MBR : IPartitionTable
     /// <summary>
     /// Determines the filesystem type based on the partition type byte.
     /// </summary>
-    /// <param name="entry">The MBR partition entry.</param>
+    /// <param name="typeByte">The partition type byte from the MBR.</param>
+    /// <param name="offset">The offset of the partition within the disk.</param>
+    /// <param name="size">The size of the partition in bytes.</param>
     /// <returns>The determined filesystem type.</returns>
-    private static FileSystemType DetermineFilesystemType(MBRPartitionEntry entry)
+    private FileSystemType DetermineFilesystemType(byte typeByte, long offset, int size)
     {
-        return MbrPartitionTypes.ToFilesystemType(entry.PartitionTypeByte);
+        var typeByByte = MbrPartitionTypes.ToFilesystemType(typeByte);
+        if (typeByByte is FileSystemType.Unknown && m_rawDisk != null)
+        {
+            // If the partition type byte is unknown, attempt to detect the filesystem by reading the partition data
+            if (Fat32Filesystem.DetectAsync(m_rawDisk, offset, size, CancellationToken.None).Await())
+                return FileSystemType.FAT32;
+        }
+
+        return typeByByte;
     }
 
     // MBR-specific properties
@@ -317,6 +330,9 @@ internal class MBR : IPartitionTable
 
         /// <summary>Gets the partition type.</summary>
         public PartitionType PartitionType { get; init; }
+
+        /// <summary>Gets the filesystem type.</summary>
+        public FileSystemType FilesystemType { get; init; }
 
         /// <summary>Gets the raw partition type byte.</summary>
         public byte PartitionTypeByte { get; init; }
