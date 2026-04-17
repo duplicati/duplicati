@@ -19,6 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -32,6 +34,23 @@ namespace Duplicati.Library.Encryption
     public class AESEncryption : EncryptionBase
     {
         /// <summary>
+        /// Toggles ignoring AES padding bytes; NOTE: this is not exposed as an option, but can be set using the environment variable DUPLICATI__AES_IGNORE_PADDING_BYTES
+        /// </summary>
+        private const string KEY_AES_IGNORE_PADDING_BYTES = "aes-ignore-padding-bytes";
+        /// <summary>
+        /// The key used to define the AES stream format
+        /// </summary>
+        private const string KEY_AES_VERSION = "aes-version";
+        /// <summary>
+        /// The key used to define the number of iterations used for the AES stream format v3
+        /// </summary>
+        private const string KEY_AES_V3_ITERATIONS = "aes-v3-iterations";
+        /// <summary>
+        /// The key used to define if the AES output should use a minimal header
+        /// </summary>
+        private const string KEY_AES_MINIMAL_HEADER = "aes-minimal-header";
+
+        /// <summary>
         /// The key used to encrypt the data
         /// </summary>
         private readonly string m_key;
@@ -42,14 +61,9 @@ namespace Duplicati.Library.Encryption
         private static long m_cachedsizeoverhead = -1;
 
         /// <summary>
-        /// Cached set of options for minimal header
-        /// </summary>
-        private static readonly SharpAESCrypt.EncryptionOptions m_minimalHeaderOptions = new(InsertCreatedByIdentifier: false, InsertTimeStamp: false, InsertPlaceholder: false);
-
-        /// <summary>
         /// Cached set of options for decryption
         /// </summary>
-        private static readonly SharpAESCrypt.DecryptionOptions m_decryptionOptions = new(IgnorePaddingBytes: Environment.GetEnvironmentVariable("AES_IGNORE_PADDING_BYTES") == "1");
+        private readonly SharpAESCrypt.DecryptionOptions m_decryptionOptions;
 
         /// <summary>
         /// Options to use for encryption
@@ -61,6 +75,9 @@ namespace Duplicati.Library.Encryption
         /// </summary>
         public AESEncryption()
         {
+            m_key = null!;
+            m_encryptionOptions = default!;
+            m_decryptionOptions = default!;
         }
 
         /// <summary>
@@ -69,21 +86,78 @@ namespace Duplicati.Library.Encryption
         /// <param name="passphrase">The passphrase to use</param>
         /// <param name="minimalheader">Flag controlling if the encryption is done with a minimal header</param>
         public AESEncryption(string passphrase, bool minimalheader)
+            : this(passphrase, new Dictionary<string, string>() { { KEY_AES_MINIMAL_HEADER, minimalheader.ToString() } })
         {
-            if (string.IsNullOrEmpty(passphrase))
-                throw new ArgumentException(Strings.AESEncryption.EmptyKeyError, nameof(passphrase));
-
-            m_key = passphrase;
-            m_encryptionOptions = minimalheader ? m_minimalHeaderOptions : default;
         }
 
         /// <summary>
         /// Constructs a new AES encryption/decyption instance
         /// </summary>
-        public AESEncryption(string passphrase, Dictionary<string, string> options)
-            : this(passphrase, false)
+        public AESEncryption(string passphrase, IReadOnlyDictionary<string, string> options)
         {
+            if (string.IsNullOrEmpty(passphrase))
+                throw new ArgumentException(Strings.AESEncryption.EmptyKeyError, nameof(passphrase));
+
+            m_key = passphrase;
+            var encOpts = SharpAESCrypt.EncryptionOptions.Default;
+            var decOpts = SharpAESCrypt.DecryptionOptions.Default;
+
+            int? version = null;
+            int? iterations = null;
+
+            var minimalHeader = Utility.Utility.ParseBool(
+                options.GetValueOrDefault(KEY_AES_MINIMAL_HEADER),
+                Utility.Utility.ParseBool(
+                    GetEnvValue(KEY_AES_MINIMAL_HEADER),
+                    false
+                )
+            );
+
+            var ignorePaddingBytes = Utility.Utility.ParseBool(
+                options.GetValueOrDefault(KEY_AES_IGNORE_PADDING_BYTES),
+                Utility.Utility.ParseBool(
+                    GetEnvValue(KEY_AES_IGNORE_PADDING_BYTES),
+                    false
+                )
+            );
+
+            if (int.TryParse(GetEnvValue(KEY_AES_VERSION), out var tempInt))
+                version = tempInt;
+            if (int.TryParse(options.GetValueOrDefault(KEY_AES_VERSION), out tempInt))
+                version = tempInt;
+
+            if (int.TryParse(GetEnvValue(KEY_AES_V3_ITERATIONS), out tempInt))
+                iterations = tempInt;
+            if (int.TryParse(options.GetValueOrDefault(KEY_AES_V3_ITERATIONS), out tempInt))
+                iterations = tempInt;
+
+
+            if (minimalHeader)
+                encOpts = encOpts with
+                {
+                    InsertCreatedByIdentifier = false,
+                    InsertTimeStamp = false,
+                    InsertPlaceholder = false
+                };
+
+            if (version.HasValue)
+                encOpts = encOpts with { FileVersion = (byte)version.Value };
+            if (iterations.HasValue)
+                encOpts = encOpts with { KdfIterations = iterations.Value };
+            if (ignorePaddingBytes)
+                decOpts = decOpts with { IgnorePaddingBytes = true };
+
+            m_encryptionOptions = encOpts;
+            m_decryptionOptions = decOpts;
         }
+
+        /// <summary>
+        /// Gets the environment variable value for an option
+        /// </summary>
+        /// <param name="key">The key to get the value for</param>
+        /// <returns>The value</returns>
+        private static string? GetEnvValue(string key)
+            => Environment.GetEnvironmentVariable("DUPLICATI__" + key.ToUpperInvariant().Replace('-', '_'));
 
         #region IEncryption Members
 
@@ -145,19 +219,31 @@ namespace Duplicati.Library.Encryption
         /// Gets a list of supported commandline arguments
         /// </summary>
         /// <value>The supported commands.</value>
-        public override IList<ICommandLineArgument> SupportedCommands
-            => new List<ICommandLineArgument>([
-                new CommandLineArgument(
-                    "aes-set-threadlevel",
-                    CommandLineArgument.ArgumentType.String,
-                    Strings.AESEncryption.AessetthreadlevelShort,
-                    Strings.AESEncryption.AessetthreadlevelLong,
-                    "",
-                    null,
-                    null,
-                    Strings.AESEncryption.AessetthreadlevelDeprecated
-                    ),
-            ]);
+        public override IList<ICommandLineArgument> SupportedCommands => [
+            new CommandLineArgument(
+                KEY_AES_VERSION,
+                CommandLineArgument.ArgumentType.Enumeration,
+                Strings.AESEncryption.AesversionShort,
+                Strings.AESEncryption.AesversionLong,
+                SharpAESCrypt.EncryptionOptions.Default.FileVersion.ToString(),
+                null,
+                ["2", "3"]
+            ),
+            new CommandLineArgument(
+                KEY_AES_V3_ITERATIONS,
+                CommandLineArgument.ArgumentType.Integer,
+                Strings.AESEncryption.Aesv3iterationsShort,
+                Strings.AESEncryption.Aesv3iterationsLong,
+                SharpAESCrypt.EncryptionOptions.Default.KdfIterations.ToString()
+            ),
+            new CommandLineArgument(
+                KEY_AES_MINIMAL_HEADER,
+                CommandLineArgument.ArgumentType.Boolean,
+                Strings.AESEncryption.AesminimalheaderShort,
+                Strings.AESEncryption.AesminimalheaderLong,
+                "false"
+            )
+        ];
 
         #endregion
     }
