@@ -22,6 +22,7 @@
     <ProjectReference Include="..\Backend\Idrivee2\Duplicati.Library.Backend.Idrivee2.csproj" />
     <ProjectReference Include="..\Backend\Jottacloud\Duplicati.Library.Backend.Jottacloud.csproj" />
     <ProjectReference Include="..\Backend\Mega\Duplicati.Library.Backend.Mega.csproj" />
+    <ProjectReference Include="..\Backend\MovistarCloud\Duplicati.Library.Backend.MovistarCloud.csproj" />
     <ProjectReference Include="..\Backend\OneDrive\Duplicati.Library.Backend.OneDrive.csproj" />
     <ProjectReference Include="..\Backend\OpenStack\Duplicati.Library.Backend.OpenStack.csproj" />
     <ProjectReference Include="..\Backend\pCloud\Duplicati.Library.Backend.pCloud.csproj" />

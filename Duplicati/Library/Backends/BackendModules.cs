@@ -54,6 +54,7 @@ public static class BackendModules
         new Backend.Jottacloud(),
         new Backend.Mega.MegaBackend(),
         new Backend.MicrosoftGroup(),
+        new Backend.MovistarCloud.MovistarCloudBackend(),
         new Backend.OneDrive(),
         new Backend.OpenStack.OpenStackStorage(),
         new Backend.Rclone(),
