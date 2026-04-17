@@ -1,4 +1,4 @@
-// Copyright (C) 2025, The Duplicati Team
+// Copyright (C) 2026, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -780,8 +780,11 @@ public static partial class ExtensionMethods
             else
                 v = Library.Utility.Utility.FormatInvariantValue(p.Value);
 
+            paramName = Regex.Escape(paramName);
+            v = v.Replace("$", "$$");
+
             // Replace all occurrences of the parameter (with word boundary)
-            txt = Regex.Replace(txt, $@"\B{Regex.Escape(paramName)}\b", v, RegexOptions.IgnoreCase);
+            txt = Regex.Replace(txt, $@"\B{paramName}\b", v, RegexOptions.IgnoreCase);
         }
 
         return txt;

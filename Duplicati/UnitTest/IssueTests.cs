@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2025, The Duplicati Team
+﻿// Copyright (C) 2026, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -698,8 +698,8 @@ namespace Duplicati.UnitTest
                 {
                     var original_dir_info = new DirectoryInfo(os_special_dir);
                     var restored_dir_info = new DirectoryInfo(os_special_dir.Replace(DATAFOLDER, RESTOREFOLDER));
-                    var original_dir_rules = original_dir_info.GetAccessControl().GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount));
-                    var restored_dir_rules = restored_dir_info.GetAccessControl().GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount));
+                    var original_dir_rules = original_dir_info.GetAccessControl().GetAccessRules(true, false, typeof(System.Security.Principal.NTAccount));
+                    var restored_dir_rules = restored_dir_info.GetAccessControl().GetAccessRules(true, false, typeof(System.Security.Principal.NTAccount));
 
                     if (skip_metadata && original_dir_info.Attributes != default_dir_attrs)
                         Assert.That(original_dir_info.Attributes, Is.Not.EqualTo(restored_dir_info.Attributes), "Directory attributes should not be equal");
@@ -714,8 +714,8 @@ namespace Duplicati.UnitTest
 
                     var original_file_info = new FileInfo(os_special_file);
                     var restored_file_info = new FileInfo(os_special_file.Replace(DATAFOLDER, RESTOREFOLDER));
-                    var original_file_rules = original_file_info.GetAccessControl().GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount));
-                    var restored_file_rules = restored_file_info.GetAccessControl().GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount));
+                    var original_file_rules = original_file_info.GetAccessControl().GetAccessRules(true, false, typeof(System.Security.Principal.NTAccount));
+                    var restored_file_rules = restored_file_info.GetAccessControl().GetAccessRules(true, false, typeof(System.Security.Principal.NTAccount));
 
                     if (skip_metadata && original_file_info.Attributes != default_file_attrs)
                         Assert.That(original_file_info.Attributes, Is.Not.EqualTo(restored_file_info.Attributes), "File attributes should not be equal");
@@ -968,6 +968,24 @@ namespace Duplicati.UnitTest
                 Assert.IsNull(repairResults.Messages.FirstOrDefault(v => v.Contains("ProcessingRequiredBlocklistVolumes")),
                     "Blocklist download pass was required");
             }
+        }
+
+        [Test]
+        public void Issue6817DollarSignNumberInFilenameBreaksRegex()
+        {
+            var filename = "~$1234567891011121314151617181920.txt";
+            var content = RandomNumberGenerator.GetBytes(1024);
+            TestUtils.WriteFile(Path.Combine(DATAFOLDER, filename), content);
+
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, TestOptions, null))
+                TestUtils.AssertResults(c.Backup([DATAFOLDER]));
+
+            // Delete the database
+            File.Delete(DBFILE);
+
+            // Recreate the database, which would fail if the filename is not handled correctly
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, TestOptions, null))
+                TestUtils.AssertResults(c.Repair());
         }
     }
 }

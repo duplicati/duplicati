@@ -30,7 +30,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
         private const ulong DKIOCGETBLOCKCOUNT = 0x4008_6419; // _IOR('d', 25, uint64_t)
         private const ulong DKIOCSYNCHRONIZECACHE = 0x2000_6416; // _IO('d', 22)
 
-        // File open flags
+        // File open flags from <fcntl.h>
         private const int O_RDONLY = 0x0000;
         private const int O_RDWR = 0x0002;
         private const int O_SYNC = 0x0080;
@@ -45,6 +45,10 @@ namespace Duplicati.Proprietary.DiskImage.Disk
         private bool m_shouldFlush = false;
         private const string DEVICE_PREFIX = "/dev/";
         private readonly SemaphoreSlim m_ioLock = new(1, 1);
+
+        // Aligned buffers for O_DIRECT I/O (must be sector-aligned and a multiple of sector size)
+        private long m_allignedBufferSize = 0;
+        unsafe private byte* m_allignedBufferPtr = null;
 
         /// <inheritdoc />
         public static string Prefix => "/dev/";
@@ -146,15 +150,26 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             if (m_initialized)
                 return Task.FromResult(true);
 
-            // Open the device
-            int flags = enableWrite ? O_RDWR | O_SYNC : O_RDONLY;
+            // Open the device without O_DIRECT initially
+            int flags = enableWrite ? O_RDWR : O_RDONLY;
             m_fileDescriptor = open(m_devicePath, flags);
 
             if (m_fileDescriptor < 0)
             {
                 int errorCode = Marshal.GetLastWin32Error();
-                string errorMessage = System.Runtime.InteropServices.Marshal.GetPInvokeErrorMessage(errorCode);
+                string errorMessage = Marshal.GetPInvokeErrorMessage(errorCode);
                 Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "initialize", null, $"Failed to open device {m_devicePath}: {errorMessage} (errno: {errorCode})");
+                return Task.FromResult(false);
+            }
+
+            // Use F_NOCACHE to bypass kernel cache (equivalent to O_DIRECT on Linux)
+            if (fcntl_nocache(m_fileDescriptor) < 0)
+            {
+                int errorCode = Marshal.GetLastWin32Error();
+                string errorMessage = Marshal.GetPInvokeErrorMessage(errorCode);
+                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "initialize", null, $"Failed to set F_NOCACHE on device {m_devicePath}: {errorMessage} (errno: {errorCode})");
+                close(m_fileDescriptor);
+                m_fileDescriptor = -1;
                 return Task.FromResult(false);
             }
 
@@ -168,7 +183,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                     int errorCode = Marshal.GetLastWin32Error();
                     close(m_fileDescriptor);
                     m_fileDescriptor = -1;
-                    Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "initialize", null, $"Failed to get block size: errno {errorCode}");
+                    Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "initialize", null, $"Failed to get block size: {Marshal.GetPInvokeErrorMessage(errorCode)} (errno: {errorCode})");
                     return Task.FromResult(false);
                 }
                 m_sectorSize = blockSize;
@@ -180,7 +195,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                     int errorCode = Marshal.GetLastWin32Error();
                     close(m_fileDescriptor);
                     m_fileDescriptor = -1;
-                    Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "initialize", null, $"Failed to get block count: errno {errorCode}");
+                    Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "initialize", null, $"Failed to get block count: {Marshal.GetPInvokeErrorMessage(errorCode)} (errno: {errorCode})");
                     return Task.FromResult(false);
                 }
 
@@ -212,7 +227,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                 if (ioctl_no_arg(m_fileDescriptor, DKIOCSYNCHRONIZECACHE) < 0)
                 {
                     int errorCode = Marshal.GetLastWin32Error();
-                    string errorMessage = System.Runtime.InteropServices.Marshal.GetPInvokeErrorMessage(errorCode);
+                    string errorMessage = Marshal.GetPInvokeErrorMessage(errorCode);
                     Duplicati.Library.Logging.Log.WriteWarningMessage(LOGTAG, "dispose", null, $"Failed to flush data: {errorMessage} (errno: {errorCode})");
                 }
             }
@@ -221,6 +236,16 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             {
                 close(m_fileDescriptor);
                 m_fileDescriptor = -1;
+            }
+
+            unsafe
+            {
+                if (m_allignedBufferPtr is not null)
+                {
+                    NativeMemory.AlignedFree(m_allignedBufferPtr);
+                    m_allignedBufferPtr = null;
+                    m_allignedBufferSize = 0;
+                }
             }
 
             m_ioLock.Dispose();
@@ -275,14 +300,16 @@ namespace Duplicati.Proprietary.DiskImage.Disk
 
             int length = destination.Length;
 
-            if (offset % SectorSize != 0)
-                throw new InvalidOperationException($"Address {offset:X016} is not a multiple of the sector size {SectorSize}");
-
-            if (length % SectorSize != 0)
-                throw new InvalidOperationException($"The requested length of {length} is not a multiple of sector size {SectorSize}");
-
             if (offset + length > Size)
                 throw new InvalidOperationException($"The requested read would read beyond disk size: {offset} + {length} > {Size}");
+
+            if (length == 0)
+                return 0;
+
+            // Calculate aligned offset and length for O_DIRECT I/O
+            long alignedOffset = (offset / SectorSize) * SectorSize;
+            long offsetDelta = offset - alignedOffset;
+            long alignedLength = ((offsetDelta + length + SectorSize - 1) / SectorSize) * SectorSize;
 
             await m_ioLock.WaitAsync(cancellationToken);
             try
@@ -291,25 +318,25 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                 int totalBytesRead = 0;
                 unsafe
                 {
-                    fixed (byte* bufferPtr = destination.Span)
+                    EnsureAllignedBuffer((int)alignedLength);
+
+                    var bytesRead = pread(m_fileDescriptor, m_allignedBufferPtr, (nint)alignedLength, alignedOffset);
+
+                    if (bytesRead.ToInt64() < 0)
                     {
-                        while (totalBytesRead < length)
-                        {
-                            IntPtr bytesRead = pread(m_fileDescriptor, bufferPtr + totalBytesRead, (IntPtr)(length - totalBytesRead), offset + totalBytesRead);
-                            if (bytesRead.ToInt64() < 0)
-                            {
-                                int errorCode = Marshal.GetLastWin32Error();
-                                string errorMessage = System.Runtime.InteropServices.Marshal.GetPInvokeErrorMessage(errorCode);
-                                throw new IOException($"Failed to read from disk at offset {offset + totalBytesRead}: {errorMessage} (errno: {errorCode})");
-                            }
-                            if (bytesRead.ToInt64() == 0)
-                            {
-                                // End of file/device
-                                break;
-                            }
-                            totalBytesRead += (int)bytesRead.ToInt64();
-                        }
+                        int errorCode = Marshal.GetLastWin32Error();
+                        string errorMessage = Marshal.GetPInvokeErrorMessage(errorCode);
+                        throw new IOException($"Failed to read {alignedLength} bytes from disk at offset {alignedOffset}: {errorMessage} (errno: {errorCode})");
                     }
+
+                    // Copy only the requested portion from the aligned buffer
+                    int bytesToCopy = Math.Min(length, (int)(bytesRead.ToInt64() - offsetDelta));
+                    if (bytesToCopy > 0)
+                    {
+                        var srcSpan = new ReadOnlySpan<byte>(m_allignedBufferPtr + offsetDelta, bytesToCopy);
+                        srcSpan.CopyTo(destination.Span);
+                    }
+                    totalBytesRead = bytesToCopy;
                 }
 
                 return totalBytesRead;
@@ -351,84 +378,59 @@ namespace Duplicati.Proprietary.DiskImage.Disk
 
             int dataLength = data.Length;
 
-            // Pad to sector size if necessary
-            int remainder = dataLength % (int)m_sectorSize;
-            int alignedLength = remainder == 0
-                ? dataLength
-                : dataLength + ((int)m_sectorSize - remainder);
+            if (offset + dataLength > Size)
+                throw new InvalidOperationException($"The requested write would write beyond disk size: {offset} + {dataLength} > {Size}");
+
+            if (dataLength == 0)
+                return 0;
+
+            // Calculate aligned offset and length for O_DIRECT I/O
+            long alignedOffset = (offset / SectorSize) * SectorSize;
+            long offsetDelta = offset - alignedOffset;
+            long alignedLength = ((offsetDelta + dataLength + SectorSize - 1) / SectorSize) * SectorSize;
 
             await m_ioLock.WaitAsync(cancellationToken);
             try
             {
-                byte[]? rentedBuffer = null;
-                try
+                // Ensure we have an aligned buffer for O_DIRECT writes
+                EnsureAllignedBuffer((int)alignedLength);
+
+                int totalBytesWritten = 0;
+                unsafe
                 {
-                    ReadOnlyMemory<byte> writeData;
+                    // Check if this is an unaligned write (needs read-modify-write)
+                    bool isUnaligned = offsetDelta != 0 || dataLength != alignedLength;
 
-                    if (remainder != 0)
+                    if (isUnaligned)
                     {
-                        // Need to read-modify-write for partial sector
-                        rentedBuffer = ArrayPool<byte>.Shared.Rent(alignedLength);
-
-                        // Read existing data
-                        unsafe
+                        // Read existing data first (read-modify-write)
+                        var bytesRead = pread(m_fileDescriptor, m_allignedBufferPtr, (nint)alignedLength, alignedOffset);
+                        if (bytesRead.ToInt64() < 0)
                         {
-                            fixed (byte* bufferPtr = rentedBuffer)
-                            {
-                                IntPtr bytesRead = pread(m_fileDescriptor, bufferPtr, (IntPtr)alignedLength, offset);
-                                if (bytesRead.ToInt64() < 0)
-                                {
-                                    int errorCode = Marshal.GetLastWin32Error();
-                                    string errorMessage = System.Runtime.InteropServices.Marshal.GetPInvokeErrorMessage(errorCode);
-                                    throw new IOException($"Failed to read existing data for padding at offset {offset}: {errorMessage} (errno: {errorCode})");
-                                }
-                            }
-                        }
-
-                        // Copy new data over existing data
-                        data.CopyTo(rentedBuffer);
-                        writeData = rentedBuffer.AsMemory(0, alignedLength);
-                    }
-                    else
-                    {
-                        writeData = data;
-                    }
-
-                    // Write data using pwrite
-                    int totalBytesWritten = 0;
-                    unsafe
-                    {
-                        fixed (byte* bufferPtr = writeData.Span)
-                        {
-                            while (totalBytesWritten < alignedLength)
-                            {
-                                IntPtr bytesWritten = pwrite(m_fileDescriptor, bufferPtr + totalBytesWritten, (IntPtr)(alignedLength - totalBytesWritten), offset + totalBytesWritten);
-                                if (bytesWritten.ToInt64() < 0)
-                                {
-                                    int errorCode = Marshal.GetLastWin32Error();
-                                    string errorMessage = System.Runtime.InteropServices.Marshal.GetPInvokeErrorMessage(errorCode);
-                                    string hint = errorCode == 13  // EACCES
-                                        ? "The disk may be mounted or you don't have sufficient permissions. Try unmounting the disk before writing."
-                                        : errorCode == 30  // EROFS
-                                            ? "The disk is read-only."
-                                            : "Check the error code for more details.";
-                                    throw new IOException($"Failed to write to disk at offset {offset + totalBytesWritten}: {errorMessage} (errno: {errorCode}). {hint}");
-                                }
-                                totalBytesWritten += (int)bytesWritten.ToInt64();
-                            }
+                            int errorCode = Marshal.GetLastWin32Error();
+                            string errorMessage = Marshal.GetPInvokeErrorMessage(errorCode);
+                            throw new IOException($"Failed to read existing data for unaligned write at offset {alignedOffset}: {errorMessage} (errno: {errorCode})");
                         }
                     }
 
-                    m_shouldFlush = true;
-                    return totalBytesWritten;
+                    // Copy new data into the aligned buffer at the correct offset
+                    var destSpan = new Span<byte>(m_allignedBufferPtr + offsetDelta, dataLength);
+                    data.Span.CopyTo(destSpan);
+
+                    // Write the aligned buffer
+                    var bytesWritten = pwrite(m_fileDescriptor, m_allignedBufferPtr, (nint)alignedLength, alignedOffset);
+                    totalBytesWritten = (int)bytesWritten.ToInt64();
                 }
-                finally
+
+                if (totalBytesWritten < 0)
                 {
-                    if (rentedBuffer != null)
-                    {
-                        ArrayPool<byte>.Shared.Return(rentedBuffer);
-                    }
+                    int errorCode = Marshal.GetLastWin32Error();
+                    string errorMessage = Marshal.GetPInvokeErrorMessage(errorCode);
+                    throw new IOException($"Failed to write {dataLength} bytes to disk at offset {offset}: {errorMessage} (errno: {errorCode})");
                 }
+
+                m_shouldFlush = true;
+                return dataLength;
             }
             finally
             {
@@ -447,6 +449,9 @@ namespace Duplicati.Proprietary.DiskImage.Disk
         [LibraryImport("runtimes/osx/native/libSystem_wrapper.dylib", SetLastError = true)]
         internal static partial int ioctl_no_arg(int fd, ulong request);
 
+        [LibraryImport("runtimes/osx/native/libSystem_wrapper.dylib", SetLastError = true)]
+        internal static partial int fcntl_nocache(int fd);
+
         [LibraryImport("libSystem", SetLastError = true)]
         private static partial int open([MarshalAs(UnmanagedType.LPStr)] string pathname, int flags);
 
@@ -460,6 +465,25 @@ namespace Duplicati.Proprietary.DiskImage.Disk
         private static unsafe partial IntPtr pwrite(int fd, byte* buf, IntPtr count, long offset);
 
         #endregion
+
+        unsafe
+        private void EnsureAllignedBuffer(int requiredSize)
+        {
+            if (m_allignedBufferSize >= requiredSize)
+                return;
+
+            nuint alignedSize = (nuint)((requiredSize + SectorSize - 1) / SectorSize * SectorSize);
+            // Free existing buffer if it exists
+            if (m_allignedBufferPtr is not null)
+            {
+                m_allignedBufferPtr = (byte*)NativeMemory.AlignedRealloc(m_allignedBufferPtr, alignedSize, (nuint)m_sectorSize);
+            }
+            else
+            {
+                m_allignedBufferPtr = (byte*)NativeMemory.AlignedAlloc(alignedSize, (nuint)m_sectorSize);
+            }
+            m_allignedBufferSize = (long)alignedSize;
+        }
 
         /// <inheritdoc />
         public static async IAsyncEnumerable<PhysicalDriveInfo> ListPhysicalDrivesAsync([EnumeratorCancellation] CancellationToken cancellationToken)

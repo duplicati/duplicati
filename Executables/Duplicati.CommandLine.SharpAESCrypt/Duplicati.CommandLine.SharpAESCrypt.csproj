@@ -5,7 +5,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <Description>The Server SharpAESCrypt implementation</Description>
     <AssemblyName>Duplicati.CommandLine.SharpAESCrypt</AssemblyName>
-    <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
+    <Copyright>Copyright © 2026 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
 
   <ItemGroup>

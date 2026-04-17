@@ -1,4 +1,4 @@
-// Copyright (C) 2025, The Duplicati Team
+// Copyright (C) 2026, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -224,7 +224,7 @@ namespace Duplicati.Library.Modules.Builtin
         protected override void SendMessage(string subject, string body)
         {
             var message = new MimeMessage();
-            MailboxAddress mailbox;
+            MailboxAddress? mailbox;
             foreach (var s in (m_to ?? "").Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries))
                 if (MailboxAddress.TryParse(s.Replace("\"", ""), out mailbox))
                     message.To.Add(mailbox);

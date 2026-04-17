@@ -4,7 +4,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <OutputType>Library</OutputType>
     <RootNamespace>Duplicati.Library.Modules.Builtin</RootNamespace>
-    <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
+    <Copyright>Copyright © 2026 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
 
   <ItemGroup>
@@ -27,7 +27,6 @@
     <ProjectReference Include="..\..\Localization\Duplicati.Library.Localization.csproj" />
     <ProjectReference Include="..\..\ResultSerialization\Duplicati.Library.ResultSerialization.csproj" />
     <ProjectReference Include="..\..\Backend\OAuthHelper\Duplicati.Library.OAuthHelper.csproj" />
-    <ProjectReference Include="..\..\RemoteSynchronization\Duplicati.Library.RemoteSynchronization.csproj" />
   </ItemGroup>
 
   <ItemGroup Condition=" $([System.Text.RegularExpressions.Regex]::IsMatch('$(RuntimeIdentifier)', '^win-')) Or '$(RuntimeIdentifier)' == '' ">

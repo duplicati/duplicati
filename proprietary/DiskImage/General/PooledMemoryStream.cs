@@ -2,7 +2,7 @@ using System;
 using System.Buffers;
 using System.IO;
 
-namespace Duplicati.Proprietary.DiskImage.Disk;
+namespace Duplicati.Proprietary.DiskImage.General;
 
 /// <summary>
 /// A read-only stream that wraps a pooled byte array and returns it to the pool when disposed.

@@ -1,4 +1,4 @@
-// Copyright (C) 2025, The Duplicati Team
+// Copyright (C) 2026, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -164,9 +164,14 @@ namespace Duplicati.Library.Main
         private static readonly int DEFAULT_RESTORE_FILE_PROCESSORS = Math.Max(1, Environment.ProcessorCount / 2);
 
         /// <summary>
-        /// The default value for the maximum size of the restore volume cache is 100 times the volume size. E.g. for 50MB volumes, the default cache size is 5GB.
+        /// The default value for the restore volume cache hint. When empty, the cache is unlimited (disk-space-aware eviction via <see cref="RestoreVolumeCacheMinFree"/>).
         /// </summary>
         private const string DEFAULT_RESTORE_VOLUME_CACHE_HINT = "";
+
+        /// <summary>
+        /// The default minimum free disk space to maintain in the temp directory during restore (1 GB).
+        /// </summary>
+        private const string DEFAULT_RESTORE_VOLUME_CACHE_MIN_FREE = "1gb";
 
         /// <summary>
         /// The default value for the number of volume decryptors during restore
@@ -569,12 +574,15 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("secret-provider-cache", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SecretProviderCacheShort, Strings.Options.SecretProviderCacheLong, Enum.GetName(SecretProviderHelper.CachingLevel.None), null, Enum.GetNames(typeof(SecretProviderHelper.CachingLevel))),
             new CommandLineArgument("cpu-intensity", CommandLineArgument.ArgumentType.Integer, Strings.Options.CPUIntensityShort, Strings.Options.CPUIntensityLong, "10", null, ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]),
 
+            new CommandLineArgument("remote-sync-json-config", CommandLineArgument.ArgumentType.String, Strings.Options.RemoteSyncJsonConfigShort, Strings.Options.RemoteSyncJsonConfigLong),
+
             new CommandLineArgument("restore-cache-max", CommandLineArgument.ArgumentType.Size, Strings.Options.RestoreCacheMaxShort, Strings.Options.RestoreCacheMaxLong, DEFAULT_RESTORE_CACHE_MAX),
             new CommandLineArgument("restore-cache-evict", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreCacheEvictShort, Strings.Options.RestoreCacheEvictLong, DEFAULT_RESTORE_CACHE_EVICT.ToString()),
             new CommandLineArgument("restore-file-processors", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreFileprocessorsShort, Strings.Options.RestoreFileprocessorsLong, DEFAULT_RESTORE_FILE_PROCESSORS.ToString()),
             new CommandLineArgument("restore-legacy", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestoreLegacyShort, Strings.Options.RestoreLegacyLong, "false"),
             new CommandLineArgument("restore-preallocate-size", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestorePreallocateSizeShort, Strings.Options.RestorePreallocateSizeLong, "false"),
             new CommandLineArgument("restore-volume-cache-hint", CommandLineArgument.ArgumentType.Size, Strings.Options.RestoreVolumeCacheHintShort, Strings.Options.RestoreVolumeCacheHintLong, DEFAULT_RESTORE_VOLUME_CACHE_HINT),
+            new CommandLineArgument("restore-volume-cache-min-free", CommandLineArgument.ArgumentType.Size, Strings.Options.RestoreVolumeCacheMinFreeShort, Strings.Options.RestoreVolumeCacheMinFreeLong, DEFAULT_RESTORE_VOLUME_CACHE_MIN_FREE),
             new CommandLineArgument("restore-volume-decompressors", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreVolumeDecompressorsShort, Strings.Options.RestoreVolumeDecompressorsLong, DEFAULT_RESTORE_VOLUME_DECOMPRESSORS.ToString()),
             new CommandLineArgument("restore-volume-decryptors", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreVolumeDecryptorsShort, Strings.Options.RestoreVolumeDecryptorsLong, DEFAULT_RESTORE_VOLUME_DECRYPTORS.ToString()),
             new CommandLineArgument("restore-volume-downloaders", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreVolumeDownloadersShort, Strings.Options.RestoreVolumeDownloadersLong, DEFAULT_RESTORE_VOLUME_DOWNLOADERS.ToString()),
@@ -1735,6 +1743,8 @@ namespace Duplicati.Library.Main
         private long GetSize(string name, string unit, string @default)
             => Library.Utility.Utility.ParseSizeOption(m_options, name, unit, @default);
 
+        public string? RemoteSyncJsonConfig => GetString("remote-sync-json-config", null);
+
         /// <summary>
         /// Gets the maximum number of data blocks to keep in the cache. If set to 0, the cache is effictively disabled, but some is still kept for bookkeeping.
         /// </summary>
@@ -1805,9 +1815,10 @@ namespace Duplicati.Library.Main
         /// </summary>
         public string? MacOSPhotoLibraryPath => GetString("photos-library-path", null);
 
-        // <summary>
-        // Gets the size of the volume cache used during restore, in MB.
-        // </summary>
+        /// <summary>
+        /// Gets the maximum size of the restore volume cache in bytes.
+        /// Returns -1 when unset (unlimited/disk-space-aware mode), 0 to disable caching, or a positive byte count for a hard cap.
+        /// </summary>
         public long RestoreVolumeCacheHint
         {
             get
@@ -1815,11 +1826,18 @@ namespace Duplicati.Library.Main
                 m_options.TryGetValue("restore-volume-cache-hint", out var s);
 
                 if (string.IsNullOrEmpty(s))
-                    return VolumeSize * 100; // Default to 100 times the volume size
+                    return -1L; // Unlimited: disk-space-aware eviction bounded by RestoreVolumeCacheMinFree
 
                 return GetSize("restore-volume-cache-hint", "mb", $"{VolumeSize * 100}b");
             }
         }
+
+        /// <summary>
+        /// Gets the minimum free disk space (in bytes) to maintain in the temp directory during restore.
+        /// Only used when <see cref="RestoreVolumeCacheHint"/> returns -1 (unlimited mode).
+        /// </summary>
+        public long RestoreVolumeCacheMinFree
+            => GetSize("restore-volume-cache-min-free", "gb", DEFAULT_RESTORE_VOLUME_CACHE_MIN_FREE);
 
         /// <summary>
         /// Gets the number of volume decryptors to use in the restore process

@@ -40,6 +40,9 @@ public class UnknownFilesystemFile : IFile
 
     /// <inheritdoc />
     public bool IsDirectory => false;
+
+    /// <inheritdoc />
+    public DateTime? LastModified => DateTime.UtcNow;
 }
 
 /// <summary>
@@ -49,7 +52,7 @@ public class UnknownFilesystemFile : IFile
 internal class UnknownFilesystem : IFilesystem
 {
     /// <inheritdoc />
-    public FileSystemType Type => FileSystemType.Unknown;
+    public FileSystemType Type { get; }
 
     /// <inheritdoc />
     public IPartition Partition { get => m_partition; }
@@ -74,13 +77,15 @@ internal class UnknownFilesystem : IFilesystem
     /// </summary>
     /// <param name="partition">The parent partition.</param>
     /// <param name="blockSize">The block size for reading/writing (default is 1MB).</param>
+    /// <param name="overrideType">Optional filesystem type to report (defaults to Unknown). Used when falling back from a specific filesystem type.</param>
     /// <exception cref="ArgumentException">Thrown if block size is invalid.</exception>
-    public UnknownFilesystem(IPartition partition, int blockSize = 1024 * 1024)
+    public UnknownFilesystem(IPartition partition, int blockSize = 1024 * 1024, FileSystemType overrideType = FileSystemType.Unknown)
     {
         m_partition = partition;
         if (blockSize < 0 || blockSize % partition.PartitionTable.RawDisk?.SectorSize != 0)
             throw new ArgumentException("Block size must be non-negative and a multiple of the partition sector size.", nameof(blockSize));
         m_blockSize = blockSize;
+        Type = overrideType;
     }
 
     /// <inheritdoc />
@@ -147,7 +152,7 @@ internal class UnknownFilesystem : IFilesystem
     {
         // Path format: root/part_{PartitionTableType}_{PartitionNumber}/fs_{FileSystemType}/{Address}
         // We need to extract the part after the last slash
-        var parts = path.Split(System.IO.Path.DirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries);
+        var parts = path.Split(['/', '\\'], StringSplitOptions.RemoveEmptyEntries);
         if (parts.Length < 4)
             throw new ArgumentException("Invalid path format.", nameof(path));
 
@@ -211,11 +216,19 @@ internal class UnknownFilesystem : IFilesystem
             throw new ArgumentException("The specified file is a directory.", nameof(file));
 
         long address = unknownFile.Address ?? throw new ArgumentException("File address is required.", nameof(file));
-        long size = unknownFile.Size;
+        long requestedSize = unknownFile.Size;
 
-        BoundsCheck(address, size);
+        BoundsCheck(address, requestedSize);
 
-        return new UnknownFilesystemStream(m_partition.PartitionTable.RawDisk!, m_partition.StartOffset + address, size, readEnabled: false, writeEnabled: true);
+        // Calculate actual available size based on target partition
+        // This ensures we fail fast if the target is too small
+        long actualSize = Math.Min(requestedSize, m_partition.Size - address);
+        if (actualSize < requestedSize)
+            throw new IOException($"Target partition is too small to write block at address 0x{address:X}. " +
+                $"Requested size: {requestedSize} bytes, Available: {actualSize} bytes. " +
+                $"The target disk may be smaller than the source disk.");
+
+        return new UnknownFilesystemStream(m_partition.PartitionTable.RawDisk!, m_partition.StartOffset + address, actualSize, readEnabled: false, writeEnabled: true);
     }
 
     /// <inheritdoc />
@@ -237,11 +250,19 @@ internal class UnknownFilesystem : IFilesystem
             throw new ArgumentException("The specified file is a directory.", nameof(file));
 
         long address = unknownFile.Address ?? throw new ArgumentException("File address is required.", nameof(file));
-        long size = unknownFile.Size;
+        long requestedSize = unknownFile.Size;
 
-        BoundsCheck(address, size);
+        BoundsCheck(address, requestedSize);
 
-        return new UnknownFilesystemStream(m_partition.PartitionTable.RawDisk!, m_partition.StartOffset + address, size, readEnabled: true, writeEnabled: true);
+        // Calculate actual available size based on target partition
+        // This ensures we fail fast if the target is too small
+        long actualSize = Math.Min(requestedSize, m_partition.Size - address);
+        if (actualSize < requestedSize)
+            throw new IOException($"Target partition is too small to write block at address 0x{address:X}. " +
+                $"Requested size: {requestedSize} bytes, Available: {actualSize} bytes. " +
+                $"The target disk may be smaller than the source disk.");
+
+        return new UnknownFilesystemStream(m_partition.PartitionTable.RawDisk!, m_partition.StartOffset + address, actualSize, readEnabled: true, writeEnabled: true);
     }
 
     /// <inheritdoc />
@@ -447,8 +468,8 @@ internal class UnknownFilesystem : IFilesystem
             if (buffer.Length - offset < count)
                 throw new ArgumentException("Invalid offset and count for buffer length");
 
-            if (_position + count > _size)
-                throw new ArgumentException("Write would exceed stream size");
+            if (_position >= _size)
+                throw new IOException($"Cannot write at position {_position}: stream has ended (size: {_size}). The target partition may be smaller than the source.");
 
             Buffer.BlockCopy(buffer, offset, _buffer, (int)_position, count);
             _position += count;
@@ -501,8 +522,8 @@ internal class UnknownFilesystem : IFilesystem
             if (buffer.Length - offset < count)
                 throw new ArgumentException("Invalid offset and count for buffer length");
 
-            if (_position + count > _size)
-                throw new ArgumentException("Write would exceed stream size");
+            if (_position >= _size)
+                throw new IOException($"Cannot write at position {_position}: stream has ended (size: {_size}). The target partition may be smaller than the source.");
 
             Buffer.BlockCopy(buffer, offset, _buffer, (int)_position, count);
             _position += count;

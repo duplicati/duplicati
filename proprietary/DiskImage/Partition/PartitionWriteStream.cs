@@ -1,4 +1,4 @@
-// Copyright (C) 2025, The Duplicati Team
+// Copyright (C) 2026, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -53,6 +53,8 @@ internal class PartitionWriteStream : Stream
         _bufferRented = true;
         _position = 0;
         _length = 0;
+        // Zero the buffer to ensure we don't write garbage data if nothing is written
+        Array.Clear(_buffer, 0, (int)maxSize);
     }
 
     public override bool CanRead => false;
