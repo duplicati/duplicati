@@ -79,7 +79,9 @@ namespace Duplicati.UnitTest
             }
 
             // Configure and run a second backup with a different prefix. This should run without error.
+            File.Delete(secondOptions["dbpath"]);
             secondOptions["prefix"] = new Options(firstOptions).Prefix + "2";
+            secondOptions["dbpath"] = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, secondOptions, null))
             {
                 IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
