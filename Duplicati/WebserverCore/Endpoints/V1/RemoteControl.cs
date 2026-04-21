@@ -106,7 +106,7 @@ public class RemoteControl : IEndpointV1
 
     private static Dto.RemoteControlStatusOutput EnableRemoteControl(IRemoteControllerRegistration registration, IRemoteController remoteController)
     {
-        remoteController.Enable();
+        remoteController.Enable(true);
         return GetStatus(registration, remoteController);
     }
 
