@@ -124,6 +124,10 @@ public sealed record ControlRequestMessage(string Command, Dictionary<string, st
     /// The key that contains the applied settings version
     /// </summary>
     public const string SettingsVersionKey = "settingsversion";
+    /// <summary>
+    /// The key that contains the refresh settings by key
+    /// </summary>
+    public const string RefreshSettingsByKey = "refreshsettingsby";
 
 }
 /// <summary>

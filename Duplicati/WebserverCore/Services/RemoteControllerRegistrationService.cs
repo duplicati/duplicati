@@ -48,6 +48,10 @@ public sealed record RemoteControlConfig
     /// The trusted server certificates.
     /// </summary>
     public required IEnumerable<MiniServerCertificate> ServerCertificates { get; init; }
+    /// <summary>
+    /// The time when the settings should be refreshed.
+    /// </summary>
+    public DateTimeOffset? RefreshSettingsBy { get; init; }
 }
 
 /// <summary>
@@ -55,7 +59,9 @@ public sealed record RemoteControlConfig
 /// </summary>
 /// <param name="connection">The database connection</param>
 /// <param name="httpClientFactory">The HTTP client factory</param>
-public class RemoteControllerRegistrationService(Connection connection, IHttpClientFactory httpClientFactory, IRemoteController remoteController) : IRemoteControllerRegistration
+/// <param name="remoteController">The remote controller</param>
+/// <param name="controllerHandler">The controller handler</param>
+public class RemoteControllerRegistrationService(Connection connection, IHttpClientFactory httpClientFactory, IRemoteController remoteController, IRemoteControllerHandler controllerHandler) : IRemoteControllerRegistration
 {
     /// <summary>
     /// The registration process controller this service is wrapping.
@@ -117,9 +123,13 @@ public class RemoteControllerRegistrationService(Connection connection, IHttpCli
                 ServerUrl = claimData.ServerUrl
             });
 
+            // If settings are present in the claim data, apply them via the control handler
+            if (claimData.Settings != null && claimData.Settings.Count > 0)
+                await controllerHandler.OnControl(KeepRemoteConnection.ControlMessage.CreateSettingsControlMessage(claimData.Settings));
+
             // Automatically connect after we are registered
             if (remoteController.CanEnable)
-                remoteController.Enable();
+                remoteController.Enable(false);
 
         });
     }
@@ -141,5 +151,6 @@ public class RemoteControllerRegistrationService(Connection connection, IHttpCli
         _operationCancellation?.Dispose();
         _registerForRemote = null;
         _operationCancellation = null;
+        RegistrationUrl = null;
     }
 }

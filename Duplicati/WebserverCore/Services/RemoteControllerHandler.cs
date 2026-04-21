@@ -81,6 +81,7 @@ public class RemoteControllerHandler(Connection connection, IHttpClientFactory h
         await Task.CompletedTask;
 
         Dictionary<string, string?>? result = null;
+        var refreshSettingsBy = DateTimeOffset.MinValue;
 
         Log.WriteMessage(LogMessageType.Verbose, LOGTAG, "OnControl", "Received control message: {0}", message);
         try
@@ -141,6 +142,36 @@ public class RemoteControllerHandler(Connection connection, IHttpClientFactory h
 
                     connection.AddOrUpdateBackupAndSchedule(importData.Backup, importData.Schedule);
                 }
+
+                try
+                {
+                    // Check if we need to delay the next reconnection
+                    var refreshSettingsByValue = message.ControlRequestMessage.Parameters.GetValueOrDefault(ControlRequestMessage.RefreshSettingsByKey);
+                    if (!string.IsNullOrWhiteSpace(refreshSettingsByValue) && long.TryParse(refreshSettingsByValue, out var refreshSettingsByLong) && refreshSettingsByLong > 0)
+                    {
+                        var target = DateTimeOffset.FromUnixTimeSeconds(refreshSettingsByLong);
+                        if (target > DateTimeOffset.UtcNow)
+                            refreshSettingsBy = target;
+
+                        // Agent keeps its own config, and does not support connection delays
+                        if (applicationSettings.Origin != "Agent")
+                        {
+                            var connstr = connection.ApplicationSettings.RemoteControlConfig;
+                            if (!string.IsNullOrWhiteSpace(connstr))
+                            {
+                                var prevCfg = JsonConvert.DeserializeObject<RemoteControlConfig>(connstr);
+                                if (prevCfg != null)
+                                    connection.ApplicationSettings.RemoteControlConfig = JsonConvert.SerializeObject(
+                                        prevCfg with { RefreshSettingsBy = target }
+                                    );
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.WriteMessage(LogMessageType.Error, LOGTAG, "OnControl", ex, "Failed to update refreshSettingsBy");
+                }
             }
         }
         catch (Exception ex)
@@ -150,7 +181,14 @@ public class RemoteControllerHandler(Connection connection, IHttpClientFactory h
             return;
         }
 
+        // Respond first, then disconnect if needed
         message.Respond(new ControlResponseMessage(true, result, null));
+
+        if (refreshSettingsBy > DateTimeOffset.UtcNow)
+        {
+            Log.WriteMessage(LogMessageType.Information, LOGTAG, "OnControl", "Requesting disconnect after responding to control message");
+            message.RequestDisconnect(refreshSettingsBy);
+        }
     }
 
 

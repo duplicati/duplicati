@@ -319,6 +319,8 @@ public static class Program
                     settings.JWT,
                     settings.CertificateUrl,
                     settings.ServerCertificates,
+                    refreshSettingsBy: null,
+                    forceConnect: true,
                     cts.Token,
                     OnConnect,
                     m => ReKey(applicationSettings, m, agentConfig),
@@ -450,6 +452,10 @@ public static class Program
                 };
 
                 settings.Save();
+
+                // If settings are present in the claim data, apply them via the control handler
+                if (claimedClientData.Settings != null && claimedClientData.Settings.Count > 0)
+                    await OnControl(KeepRemoteConnection.ControlMessage.CreateSettingsControlMessage(claimedClientData.Settings));
             }
         }
 

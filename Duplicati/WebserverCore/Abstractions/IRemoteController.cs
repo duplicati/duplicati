@@ -41,7 +41,8 @@ public interface IRemoteController
     /// <summary>
     /// Enable the remote controller
     /// </summary>
-    public void Enable();
+    /// <param name="forceConnect">If the connection should be force enabled, ignoring re-connect delays</param>
+    public void Enable(bool forceConnect);
 
     /// <summary>
     /// Disable the remote controller

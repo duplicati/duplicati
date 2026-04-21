@@ -399,7 +399,7 @@ public class DuplicatiWebserver
         });
 
         if (connection.ApplicationSettings.RemoteControlEnabled)
-            app.Services.GetRequiredService<IRemoteController>().Enable();
+            app.Services.GetRequiredService<IRemoteController>().Enable(false);
 
         // Preload static system info, for better first-load experience
         _ = Task.Run(() => app.Services.GetRequiredService<ISystemInfoProvider>().GetSystemInfo(null));

@@ -174,6 +174,10 @@ public class KeepRemoteConnection : IDisposable
     /// The last time a message was received
     /// </summary>
     private DateTimeOffset _lastMessageReceived = DateTimeOffset.MinValue;
+    /// <summary>
+    /// The time to refresh the settings by, or null if keeping a persistent connection
+    /// </summary>
+    private DateTimeOffset _refreshSettingsBy = DateTimeOffset.MinValue;
 
     /// <summary>
     /// Creates a new connection to the remote server
@@ -182,6 +186,8 @@ public class KeepRemoteConnection : IDisposable
     /// <param name="JWT">The JWT token to use</param>
     /// <param name="certificateUrl">The certificate url to use</param>
     /// <param name="serverKeys">The server keys to use</param>
+    /// <param name="refreshSettingsBy">The time to refresh the settings by, or null if keeping a persistent connection</param>
+    /// <param name="forceConnect">If the connection should be force enabled, ignoring re-connect delays</param>
     /// <param name="cancellationToken">The token to cancel the connection</param>
     /// <param name="onConnect">The callback to call when connecting</param>
     /// <param name="onReKey">The callback to call when rekeying</param>
@@ -192,6 +198,8 @@ public class KeepRemoteConnection : IDisposable
         string JWT,
         string certificateUrl,
         IEnumerable<MiniServerCertificate> serverKeys,
+        DateTimeOffset? refreshSettingsBy,
+        bool forceConnect,
         CancellationToken cancellationToken,
         Func<Dictionary<string, string?>, Task<Dictionary<string, string?>>> onConnect,
         Func<ClaimedClientData, Task> onReKey,
@@ -207,15 +215,17 @@ public class KeepRemoteConnection : IDisposable
         _onReKey = onReKey;
         _onControl = onControl;
         _onMessage = onMessage;
+        _refreshSettingsBy = refreshSettingsBy ?? DateTimeOffset.MinValue;
 
         _client = new Websocket.Client.WebsocketClient(new Uri(serverUrl));
-        _runnerTask = RunMainLoop();
+        _runnerTask = RunMainLoop(forceConnect);
     }
 
     /// <summary>
     /// Runs the inner loop of the connection
     /// </summary>
-    private async Task RunMainLoop()
+    /// <param name="forceConnect">If the connection should be force enabled, ignoring re-connect delays</param>
+    private async Task RunMainLoop(bool forceConnect)
     {
         _client.ReconnectTimeout = NoResponseTimeout;
         _client.LostReconnectTimeout = ReconnectInterval;
@@ -236,8 +246,8 @@ public class KeepRemoteConnection : IDisposable
             TimeSpan.FromSeconds(1),
             _ =>
             {
-                // Reconnect if we have disconnected
-                if (!_client.IsRunning)
+                // Reconnect if we have disconnected (but not if auto-reconnect is disabled)
+                if (!_client.IsRunning && !IsAutoReconnectDisabled())
                 {
                     reconnectHelper.Signal();
                 }
@@ -274,8 +284,15 @@ public class KeepRemoteConnection : IDisposable
             _state = ConnectionState.NotConnected;
             _serverCertificate = null;
             _serverPublicKey = null;
-            reconnectHelper.Signal();
-            Log.WriteMessage(LogMessageType.Warning, LogTag, "WebsocketDisconnect", "Disconnected from the server");
+            if (!IsAutoReconnectDisabled())
+            {
+                reconnectHelper.Signal();
+                Log.WriteMessage(LogMessageType.Warning, LogTag, "WebsocketDisconnect", "Disconnected from the server");
+            }
+            else
+            {
+                Log.WriteMessage(LogMessageType.Information, LogTag, "WebsocketDisconnect", "Disconnected from the server. Auto-reconnect disabled until {0}", _refreshSettingsBy.ToLocalTime());
+            }
         });
 
         _client.MessageReceived.Subscribe(async msg =>
@@ -402,7 +419,12 @@ public class KeepRemoteConnection : IDisposable
                         case MessageType.Control:
                             await _onControl(new ControlMessage(
                                 envelope.GetPayload<ControlRequestMessage>(),
-                                response => SendEnvelope(envelope.RespondWith(response))
+                                response => SendEnvelope(envelope.RespondWith(response)),
+                                refreshSettingsBy =>
+                                {
+                                    _refreshSettingsBy = DateTimeOffset.FromUnixTimeMilliseconds(Math.Max(refreshSettingsBy.ToUnixTimeMilliseconds(), DateTimeOffset.UtcNow.AddSeconds(30).ToUnixTimeMilliseconds()));
+                                    _client.Stop(System.Net.WebSockets.WebSocketCloseStatus.NormalClosure, "Disconnect requested");
+                                }
                             ));
                             break;
 
@@ -428,7 +450,8 @@ public class KeepRemoteConnection : IDisposable
         });
 
         // Start the connection
-        reconnectHelper.Signal();
+        if (forceConnect || !IsAutoReconnectDisabled())
+            reconnectHelper.Signal();
 
         var t = await Task.WhenAny(
             heartbeatHelper.RunLoopAsync(),
@@ -456,6 +479,8 @@ public class KeepRemoteConnection : IDisposable
     /// <param name="JWT">The JWT to use</param>
     /// <param name="certificateUrl">The certificate url to use</param>
     /// <param name="serverKeys">The server keys to use</param>
+    /// <param name="refreshSettingsBy">The time to refresh settings by</param>
+    /// <param name="forceConnect">If the connection should be force enabled, ignoring re-connect delays</param>
     /// <param name="cancellationToken">The token to cancel the connection</param>
     /// <param name="onConnect">The callback to call when connecting</param>
     /// <param name="onReKey">The callback to call when rekeying</param>
@@ -467,6 +492,8 @@ public class KeepRemoteConnection : IDisposable
         string JWT,
         string certificateUrl,
         IEnumerable<MiniServerCertificate> serverKeys,
+        DateTimeOffset? refreshSettingsBy,
+        bool forceConnect,
         CancellationToken cancellationToken,
         Func<Dictionary<string, string?>, Task<Dictionary<string, string?>>> onConnect,
         Func<ClaimedClientData, Task> onReKey,
@@ -474,7 +501,7 @@ public class KeepRemoteConnection : IDisposable
         Func<CommandMessage, Task> onMessage)
         => Task.Run(async () =>
         {
-            using var connection = new KeepRemoteConnection(serverUrl, JWT, certificateUrl, serverKeys, cancellationToken, onConnect, onReKey, onControl, onMessage);
+            using var connection = new KeepRemoteConnection(serverUrl, JWT, certificateUrl, serverKeys, refreshSettingsBy, forceConnect, cancellationToken, onConnect, onReKey, onControl, onMessage);
             await connection._runnerTask;
         });
 
@@ -538,12 +565,22 @@ public class KeepRemoteConnection : IDisposable
     public ConnectionState State => _state;
 
     /// <summary>
+    /// Checks if automatic reconnection should be disabled based on the RefreshSettingsBy timestamp.
+    /// </summary>
+    /// <returns>True if automatic reconnect is disabled; otherwise, false.</returns>
+    public bool IsAutoReconnectDisabled()
+        => DateTimeOffset.UtcNow < _refreshSettingsBy;
+
+    /// <summary>
     /// Creates a new connection to the remote server
     /// </summary>
     /// <param name="serverUrl">The url to use</param>
     /// <param name="JWT">The JWT token to use</param>
     /// <param name="certificateUrl">The certificate url to use</param>
     /// <param name="serverKeys">The server keys to use</param>
+    /// <param name="refreshSettingsBy">The timestamp to disable automatic reconnect</param>
+    /// <param name="forceConnect">If the connection should be force enabled, ignoring re-connect delays</param>
+    /// <param name="cancellationToken">The cancellation token to use</param>
     /// <param name="onConnect">The callback to call when connecting</param>
     /// <param name="onReKey">The callback to call when rekeying</param>
     /// <param name="onControl">The callback to call when a control message is received</param>
@@ -554,12 +591,14 @@ public class KeepRemoteConnection : IDisposable
         string JWT,
         string certificateUrl,
         IEnumerable<MiniServerCertificate> serverKeys,
+        DateTimeOffset? refreshSettingsBy,
+        bool forceConnect,
         CancellationToken cancellationToken,
         Func<Dictionary<string, string?>, Task<Dictionary<string, string?>>> onConnect,
         Func<ClaimedClientData, Task> onReKey,
         Func<ControlMessage, Task> onControl,
         Func<CommandMessage, Task> onMessage)
-        => new KeepRemoteConnection(serverUrl, JWT, certificateUrl, serverKeys, cancellationToken, onConnect, onReKey, onControl, onMessage);
+        => new KeepRemoteConnection(serverUrl, JWT, certificateUrl, serverKeys, refreshSettingsBy, forceConnect, cancellationToken, onConnect, onReKey, onControl, onMessage);
 
     /// <summary>
     /// Requests a certificate refresh
@@ -678,6 +717,10 @@ public class KeepRemoteConnection : IDisposable
         /// </summary>
         private readonly Func<ControlResponseMessage, bool> _respondCommand;
         /// <summary>
+        /// The callback method to request disconnect after responding
+        /// </summary>
+        private readonly Action<DateTimeOffset>? _requestDisconnect;
+        /// <summary>
         /// The command request message
         /// </summary>
         public ControlRequestMessage ControlRequestMessage { get; }
@@ -687,10 +730,12 @@ public class KeepRemoteConnection : IDisposable
         /// </summary>
         /// <param name="controlRequestMessage">The command request message</param>
         /// <param name="respondCommand">The callback method that will receive the response</param>
-        public ControlMessage(ControlRequestMessage controlRequestMessage, Func<ControlResponseMessage, bool> respondCommand)
+        /// <param name="requestDisconnect">Optional callback to request disconnect after responding</param>
+        public ControlMessage(ControlRequestMessage controlRequestMessage, Func<ControlResponseMessage, bool> respondCommand, Action<DateTimeOffset>? requestDisconnect)
         {
             ControlRequestMessage = controlRequestMessage;
             _respondCommand = respondCommand;
+            _requestDisconnect = requestDisconnect;
         }
 
         /// <summary>
@@ -700,5 +745,26 @@ public class KeepRemoteConnection : IDisposable
         /// <returns>True if the response was sent</returns>
         public bool Respond(ControlResponseMessage response)
             => _respondCommand(response);
+
+        /// <summary>
+        /// Requests the connection to be closed after responding.
+        /// This is used when the server indicates the client should disconnect
+        /// </summary>
+        /// <param name="refreshSettingsBy">The time to refresh settings by</param>
+        public void RequestDisconnect(DateTimeOffset refreshSettingsBy)
+            => _requestDisconnect?.Invoke(refreshSettingsBy);
+
+        /// <summary>
+        /// Creates a control message for initial settings from ClaimedClientData.
+        /// This is used to apply settings that are returned when the machine is claimed.
+        /// </summary>
+        /// <param name="settings">The settings dictionary from ClaimedClientData.Settings</param>
+        /// <returns>A control message with the settings as parameters</returns>
+        public static ControlMessage CreateSettingsControlMessage(Dictionary<string, string?> settings)
+            => new(
+                new ControlRequestMessage(ControlRequestMessage.UpdateSettingsCommand, settings),
+                _ => true, // No-op response handler since there's no websocket connection for this
+                _ => { } // No-op disconnect handler since there's no websocket connection for this
+            );
     }
 }
