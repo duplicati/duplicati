@@ -133,6 +133,7 @@ public class RegisterForRemote : IDisposable
     /// <param name="CertificateUrl">The URL for getting new server certificates</param>
     /// <param name="ServerCertificates">The certificates for the remote server</param>
     /// <param name="LocalEncryptionKey">The encryption key for the local settings</param>
+    /// <param name="Settings">The settings for the machine</param>
     private sealed record EnvelopedClaimedClientData(
         bool Success,
         string StatusMessage,
@@ -140,7 +141,8 @@ public class RegisterForRemote : IDisposable
         string ServerUrl,
         string CertificateUrl,
         IEnumerable<MiniServerCertificate> ServerCertificates,
-        string? LocalEncryptionKey
+        string? LocalEncryptionKey,
+        Dictionary<string, string?>? Settings
     );
 
     /// <summary>
@@ -338,7 +340,7 @@ public class RegisterForRemote : IDisposable
         if (!result.Success)
             throw new Exception($"Failed to claim machine: {result.StatusMessage}");
 
-        return new ClaimedClientData(result.JWT, result.ServerUrl, result.CertificateUrl, result.ServerCertificates, result.LocalEncryptionKey);
+        return new ClaimedClientData(result.JWT, result.ServerUrl, result.CertificateUrl, result.ServerCertificates, result.LocalEncryptionKey, result.Settings);
     }
 
     /// </inheritdoc>
