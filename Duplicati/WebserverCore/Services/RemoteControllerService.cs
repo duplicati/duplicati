@@ -63,7 +63,7 @@ public class RemoteControllerService(Connection connection, IRemoteControllerHan
     private KeepRemoteConnection? _keepRemoteConnection;
 
     /// </inheritdoc>
-    public void Enable()
+    public void Enable(bool forceConnect)
     {
         if (_keepRemoteConnection != null)
             return;
@@ -79,6 +79,8 @@ public class RemoteControllerService(Connection connection, IRemoteControllerHan
             config.Token,
             config.CertificateUrl,
             config.ServerCertificates,
+            config.RefreshSettingsBy,
+            forceConnect,
             CancellationToken.None,
             controllerHandler.OnConnect,
             controllerHandler.ReKey,
