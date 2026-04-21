@@ -264,21 +264,26 @@ namespace Duplicati.Server.Database
             lock (m_lock)
             {
                 var tr = transaction ?? m_connection.BeginTransaction();
-                OverwriteAndUpdateDb(
-                    tr,
-                    cmd => cmd.SetCommandAndParameters(@"DELETE FROM ""Metadata"" WHERE ""BackupID"" = @Id")
-                        .SetParameterValue("@Id", id),
-                    values ?? new Dictionary<string, string>(),
-                    cmd => cmd.SetCommandAndParameters(@"INSERT INTO ""Metadata"" (""BackupID"", ""Name"", ""Value"") VALUES (@BackupId, @Name, @Value)"),
-                    (cmd, f) => cmd.SetParameterValue("@BackupId", id)
-                        .SetParameterValue("@Name", f.Key)
-                        .SetParameterValue("@Value", f.Value)
-                );
-
-                if (transaction == null)
+                try
                 {
-                    tr.Commit();
-                    tr.Dispose();
+                    OverwriteAndUpdateDb(
+                        tr,
+                        cmd => cmd.SetCommandAndParameters(@"DELETE FROM ""Metadata"" WHERE ""BackupID"" = @Id")
+                            .SetParameterValue("@Id", id),
+                        values ?? new Dictionary<string, string>(),
+                        cmd => cmd.SetCommandAndParameters(@"INSERT INTO ""Metadata"" (""BackupID"", ""Name"", ""Value"") VALUES (@BackupId, @Name, @Value)"),
+                        (cmd, f) => cmd.SetParameterValue("@BackupId", id)
+                            .SetParameterValue("@Name", f.Key)
+                            .SetParameterValue("@Value", f.Value)
+                    );
+
+                    if (transaction == null)
+                        tr.Commit();
+                }
+                finally
+                {
+                    if (transaction == null)
+                        tr.Dispose();
                 }
             }
         }
@@ -303,22 +308,27 @@ namespace Duplicati.Server.Database
             lock (m_lock)
             {
                 var tr = transaction ?? m_connection.BeginTransaction();
-                OverwriteAndUpdateDb(
-                    tr,
-                    cmd => cmd.SetCommandAndParameters(@"DELETE FROM ""Filter"" WHERE ""BackupID"" = @Id")
-                        .SetParameterValue("@Id", id),
-                    values,
-                    cmd => cmd.SetCommandAndParameters(@"INSERT INTO ""Filter"" (""BackupID"", ""Order"", ""Include"", ""Expression"") VALUES (@Id, @Order, @Include, @Expression)"),
-                    (cmd, f) => cmd.SetParameterValue("@Id", id)
-                        .SetParameterValue("@Order", f.Order)
-                        .SetParameterValue("@Include", f.Include)
-                        .SetParameterValue("@Expression", f.Expression)
-                );
-
-                if (transaction == null)
+                try
                 {
-                    tr.Commit();
-                    tr.Dispose();
+                    OverwriteAndUpdateDb(
+                        tr,
+                        cmd => cmd.SetCommandAndParameters(@"DELETE FROM ""Filter"" WHERE ""BackupID"" = @Id")
+                            .SetParameterValue("@Id", id),
+                        values,
+                        cmd => cmd.SetCommandAndParameters(@"INSERT INTO ""Filter"" (""BackupID"", ""Order"", ""Include"", ""Expression"") VALUES (@Id, @Order, @Include, @Expression)"),
+                        (cmd, f) => cmd.SetParameterValue("@Id", id)
+                            .SetParameterValue("@Order", f.Order)
+                            .SetParameterValue("@Include", f.Include)
+                            .SetParameterValue("@Expression", f.Expression)
+                    );
+
+                    if (transaction == null)
+                        tr.Commit();
+                }
+                finally
+                {
+                    if (transaction == null)
+                        tr.Dispose();
                 }
             }
         }
@@ -367,36 +377,41 @@ namespace Duplicati.Server.Database
             lock (m_lock)
             {
                 var tr = transaction ?? m_connection.BeginTransaction();
-                if (m_encryptSensitiveFields)
-                    values = values.Select(x => new Setting
-                    {
-                        Filter = x.Filter,
-                        Name = x.Name,
-                        Value = EncryptSensitiveFields(x.Name, x.Value, m_key)
-                    }).ToList();
-
-                OverwriteAndUpdateDb(
-                    tr,
-                    cmd => cmd.SetCommandAndParameters(@"DELETE FROM ""Option"" WHERE ""BackupID"" = @Id")
-                        .SetParameterValue("@Id", id),
-                    values,
-                    cmd => cmd.SetCommandAndParameters(@"INSERT INTO ""Option"" (""BackupID"", ""Filter"", ""Name"", ""Value"") VALUES (@BackupId, @Filter, @Name, @Value)"),
-                    (cmd, f) =>
-                    {
-                        if (IsPasswordPlaceholder(f.Value))
-                            throw new Exception("Attempted to save a property with the placeholder password");
-
-                        cmd.SetParameterValue("@BackupId", id)
-                            .SetParameterValue("@Filter", f.Filter ?? "")
-                            .SetParameterValue("@Name", f.Name ?? "")
-                            .SetParameterValue("@Value", f.Value ?? "");
-                    }
-                );
-
-                if (transaction == null)
+                try
                 {
-                    tr.Commit();
-                    tr.Dispose();
+                    if (m_encryptSensitiveFields)
+                        values = values.Select(x => new Setting
+                        {
+                            Filter = x.Filter,
+                            Name = x.Name,
+                            Value = EncryptSensitiveFields(x.Name, x.Value, m_key)
+                        }).ToList();
+
+                    OverwriteAndUpdateDb(
+                        tr,
+                        cmd => cmd.SetCommandAndParameters(@"DELETE FROM ""Option"" WHERE ""BackupID"" = @Id")
+                            .SetParameterValue("@Id", id),
+                        values,
+                        cmd => cmd.SetCommandAndParameters(@"INSERT INTO ""Option"" (""BackupID"", ""Filter"", ""Name"", ""Value"") VALUES (@BackupId, @Filter, @Name, @Value)"),
+                        (cmd, f) =>
+                        {
+                            if (IsPasswordPlaceholder(f.Value))
+                                throw new Exception("Attempted to save a property with the placeholder password");
+
+                            cmd.SetParameterValue("@BackupId", id)
+                                .SetParameterValue("@Filter", f.Filter ?? "")
+                                .SetParameterValue("@Name", f.Name ?? "")
+                                .SetParameterValue("@Value", f.Value ?? "");
+                        }
+                    );
+
+                    if (transaction == null)
+                        tr.Commit();
+                }
+                finally
+                {
+                    if (transaction == null)
+                        tr.Dispose();
                 }
             }
 
@@ -443,29 +458,34 @@ namespace Duplicati.Server.Database
             lock (m_lock)
             {
                 var tr = transaction ?? m_connection.BeginTransaction();
-                OverwriteAndUpdateDb(
-                    tr,
-                    cmd => cmd.SetCommandAndParameters(@"DELETE FROM ""Source"" WHERE ""BackupID"" = @Id")
-                        .SetParameterValue("@Id", id),
-                    values,
-                    cmd => cmd.SetCommandAndParameters(@"INSERT INTO ""Source"" (""BackupID"", ""Path"") VALUES (@BackupId, @Path)"),
-                    (cmd, f) =>
-                    {
-                        if (SourceMasking.IsSpecialSource(f) && UrlContainsPasswordPlaceholder(SourceMasking.ExtractUrl(f)))
-                            throw new Exception("Attempted to save a source with a placeholder password");
-
-                        cmd.SetParameterValue("@BackupId", id)
-                        .SetParameterValue("@Path",
-                            m_encryptSensitiveFields && SourceMasking.IsSpecialSource(f)
-                                ? EncryptedFieldHelper.Encrypt(f, m_key)
-                                : f);
-                    }
-                );
-
-                if (transaction == null)
+                try
                 {
-                    tr.Commit();
-                    tr.Dispose();
+                    OverwriteAndUpdateDb(
+                        tr,
+                        cmd => cmd.SetCommandAndParameters(@"DELETE FROM ""Source"" WHERE ""BackupID"" = @Id")
+                            .SetParameterValue("@Id", id),
+                        values,
+                        cmd => cmd.SetCommandAndParameters(@"INSERT INTO ""Source"" (""BackupID"", ""Path"") VALUES (@BackupId, @Path)"),
+                        (cmd, f) =>
+                        {
+                            if (SourceMasking.IsSpecialSource(f) && UrlContainsPasswordPlaceholder(SourceMasking.ExtractUrl(f)))
+                                throw new Exception("Attempted to save a source with a placeholder password");
+
+                            cmd.SetParameterValue("@BackupId", id)
+                            .SetParameterValue("@Path",
+                                m_encryptSensitiveFields && SourceMasking.IsSpecialSource(f)
+                                    ? EncryptedFieldHelper.Encrypt(f, m_key)
+                                    : f);
+                        }
+                    );
+
+                    if (transaction == null)
+                        tr.Commit();
+                }
+                finally
+                {
+                    if (transaction == null)
+                        tr.Dispose();
                 }
             }
         }
