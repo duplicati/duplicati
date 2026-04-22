@@ -13,7 +13,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-18 13:48+0100\n"
+"POT-Creation-Date: 2026-04-22 15:17+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: Milan Marinković <xaoc994@gmail.com>, 2025\n"
 "Language-Team: Serbian (Serbia) (https://app.transifex.com/duplicati/teams/67655/sr_RS/)\n"
@@ -1240,12 +1240,12 @@ msgstr ""
 msgid "Temporary storage folder"
 msgstr "Fascikla privremenog skladišta"
 
-#: Library/RestAPI/Strings.cs:92 Library/RestAPI/Strings.cs:129
+#: Library/RestAPI/Strings.cs:93 Library/RestAPI/Strings.cs:134
 #, csharp-format
 msgid "Server has started and is listening on {0}, port {1}"
 msgstr "Server je pokrenut i osluškuje na {0}, port {1}"
 
-#: Library/RestAPI/Strings.cs:125
+#: Library/RestAPI/Strings.cs:130
 #, csharp-format
 msgid ""
 "Unable to find a valid date, given the start date {0}, the repetition "
@@ -1254,7 +1254,7 @@ msgstr ""
 "Nije moguće pronaći važeći datum, s obzirom na datum početka {0}, "
 "interval ponavljanja {1} i dozvoljene dane {2}"
 
-#: Library/RestAPI/Strings.cs:131
+#: Library/RestAPI/Strings.cs:136
 #, csharp-format
 msgid "Unable to open a socket for listening, tried ports: {0}"
 msgstr ""
@@ -2237,7 +2237,7 @@ msgstr ""
 "evidentirali sve upite baze podataka i ne zaboravite da podesite --{0}={2} "
 "ili --{1}={2} da biste prijavili dodatne podatke evidencije"
 
-#: Library/Main/Strings.cs:404
+#: Library/Main/Strings.cs:409
 #, csharp-format
 msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
@@ -2246,16 +2246,16 @@ msgstr ""
 "Kriptoteka ne podržava transformacije koje se mogu ponovo koristiti za heš "
 "algoritam {0}"
 
-#: Library/Main/Strings.cs:405
+#: Library/Main/Strings.cs:410
 #, csharp-format
 msgid "The cryptolibrary does not support the hash algorithm {0}"
 msgstr "Kriptoteka ne podržava heš algoritam {0}"
 
-#: Library/Main/Strings.cs:406
+#: Library/Main/Strings.cs:411
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr "Pristupna fraza se ne može promeniti za postojeću rezervnu kopiju"
 
-#: Library/Main/Strings.cs:407
+#: Library/Main/Strings.cs:412
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
 msgstr "Pravljenje snimka nije uspelo: {0}"

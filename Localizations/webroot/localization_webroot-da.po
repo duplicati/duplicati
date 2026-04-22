@@ -309,7 +309,7 @@ msgstr "Bucketnavn"
 msgid "Bucket storage class"
 msgstr "Bucket storage class"
 
-#: scripts/services/ServerStatus.js:51
+#: scripts/services/ServerStatus.js:52
 msgid "Building list of files to restore …"
 msgstr "Opbygger liste af filer til gendannelse ..."
 
@@ -364,8 +364,8 @@ msgstr "Canary"
 #: scripts/controllers/LocalDatabaseController.js:72
 #: scripts/controllers/LocalDatabaseController.js:88
 #: scripts/controllers/RestoreDirectController.js:24
-#: scripts/controllers/StateController.js:108
-#: scripts/controllers/StateController.js:117
+#: scripts/controllers/StateController.js:119
+#: scripts/controllers/StateController.js:128
 #: scripts/services/DialogService.js:50
 #: scripts/services/EditUriBuiltins.js:1215
 #: scripts/services/EditUriBuiltins.js:1231
@@ -433,7 +433,7 @@ msgstr "Komprimeringsfase"
 msgid "Compact now"
 msgstr "Komprimer nu"
 
-#: scripts/services/ServerStatus.js:44 scripts/services/ServerStatus.js:68
+#: scripts/services/ServerStatus.js:44 scripts/services/ServerStatus.js:69
 msgid "Compacting remote data …"
 msgstr "Komprimerer data på destinationen ..."
 
@@ -561,7 +561,7 @@ msgstr "Opret mappe?"
 msgid "Created new limited user"
 msgstr "Opret en ny begrænset bruger"
 
-#: scripts/services/ServerStatus.js:63
+#: scripts/services/ServerStatus.js:64
 msgid "Creating bug report …"
 msgstr "Opretter fejlrapport ..."
 
@@ -569,7 +569,7 @@ msgstr "Opretter fejlrapport ..."
 msgid "Creating new user with limited access …"
 msgstr "Opretter en ny bruger med begrænset adgang ..."
 
-#: scripts/services/ServerStatus.js:52
+#: scripts/services/ServerStatus.js:53
 msgid "Creating target folders …"
 msgstr "Opretter destinationsmapper ..."
 
@@ -685,7 +685,7 @@ msgstr "Slettede versioner"
 msgid "Deleted files"
 msgstr "Slettede filer"
 
-#: scripts/services/ServerStatus.js:65
+#: scripts/services/ServerStatus.js:66
 msgid "Deleting remote files …"
 msgstr "Sletter filer fra destinationen ..."
 
@@ -763,7 +763,7 @@ msgstr "Download"
 msgid "Downloaded files"
 msgstr "Downloadede filer"
 
-#: scripts/services/ServerStatus.js:56
+#: scripts/services/ServerStatus.js:57
 msgid "Downloading files …"
 msgstr "Downloader filer ..."
 
@@ -928,7 +928,7 @@ msgstr "Indtast destinationsstien"
 msgid "Error"
 msgstr "Fejl"
 
-#: scripts/services/ServerStatus.js:70
+#: scripts/services/ServerStatus.js:71
 msgid "Error!"
 msgstr "Fejl!"
 
@@ -1321,11 +1321,11 @@ msgstr "Biblioteker"
 msgid "Listing backup dates …"
 msgstr "Danner en liste over backupdatoer..."
 
-#: scripts/services/ServerStatus.js:66
+#: scripts/services/ServerStatus.js:67
 msgid "Listing remote files for purge …"
 msgstr "Danner en liste over filer til fjernelse fra destinationen ..."
 
-#: scripts/services/ServerStatus.js:64
+#: scripts/services/ServerStatus.js:65
 msgid "Listing remote files …"
 msgstr "Danner en liste over filer på destinationen ..."
 
@@ -1689,7 +1689,7 @@ msgstr "Adgangssætninger er ikke identiske"
 msgid "Password"
 msgstr "Adgangskode"
 
-#: scripts/services/ServerStatus.js:55
+#: scripts/services/ServerStatus.js:56
 msgid "Patching files with local blocks …"
 msgstr "Opdaterer filer med lokale blokke ..."
 
@@ -1768,15 +1768,15 @@ msgstr "Proprietære"
 msgid "Purge Phase"
 msgstr "Rensningsfase"
 
-#: scripts/services/ServerStatus.js:69
+#: scripts/services/ServerStatus.js:70
 msgid "Purging files complete!"
 msgstr "Rensning af filer gennemført!"
 
-#: scripts/services/ServerStatus.js:67
+#: scripts/services/ServerStatus.js:68
 msgid "Purging files …"
 msgstr "Fjerner filer ..."
 
-#: scripts/services/ServerStatus.js:49
+#: scripts/services/ServerStatus.js:50
 msgid "Rebuilding local database …"
 msgstr "Genopbygger lokal database ..."
 
@@ -1788,7 +1788,7 @@ msgstr "Gendan (slet og reparer)"
 msgid "Recreate Database Phase"
 msgstr "Database gendannelsesfase ..."
 
-#: scripts/services/ServerStatus.js:59
+#: scripts/services/ServerStatus.js:60
 msgid "Recreating database …"
 msgstr "Gendanner database ..."
 
@@ -1848,7 +1848,7 @@ msgstr "Reparer"
 msgid "Repair Phase"
 msgstr "Reparationsfase"
 
-#: scripts/services/ServerStatus.js:61
+#: scripts/services/ServerStatus.js:62
 msgid "Repairing database …"
 msgstr "Reparerer database ..."
 
@@ -1868,7 +1868,7 @@ msgstr "Nulstil"
 msgid "Restore"
 msgstr "Gendan"
 
-#: scripts/services/ServerStatus.js:58
+#: scripts/services/ServerStatus.js:59
 msgid "Restore complete!"
 msgstr "Gendannelse fuldført!"
 
@@ -1978,11 +1978,11 @@ msgstr "Gem forskellige versioner med tidsstempel i filnavnet"
 msgid "Save immediately"
 msgstr "Gem med det samme"
 
-#: scripts/services/ServerStatus.js:53
+#: scripts/services/ServerStatus.js:54
 msgid "Scanning existing files …"
 msgstr "Skanner eksisterende filer ..."
 
-#: scripts/services/ServerStatus.js:54
+#: scripts/services/ServerStatus.js:55
 msgid "Scanning for local blocks …"
 msgstr "Skanner for lokale blokke ..."
 
@@ -2120,7 +2120,7 @@ msgstr "Start"
 msgid "Starting backup …"
 msgstr "Starter backup ..."
 
-#: scripts/services/ServerStatus.js:48
+#: scripts/services/ServerStatus.js:49
 msgid "Starting restore …"
 msgstr "Starter gendannelse ..."
 
@@ -2129,16 +2129,16 @@ msgstr "Starter gendannelse ..."
 msgid "Starting the restore process …"
 msgstr "Starter gendannelsesprocessen ..."
 
-#: scripts/controllers/StateController.js:108
-#: scripts/controllers/StateController.js:117
+#: scripts/controllers/StateController.js:119
+#: scripts/controllers/StateController.js:128
 msgid "Stop after the current file"
 msgstr "Stop efter den nuværende fil"
 
-#: scripts/controllers/StateController.js:106
+#: scripts/controllers/StateController.js:117
 msgid "Stop running backup"
 msgstr "Stop den kørende backup"
 
-#: scripts/controllers/StateController.js:115
+#: scripts/controllers/StateController.js:126
 msgid "Stop running task"
 msgstr "Stop den kørende opgave"
 
@@ -2522,7 +2522,7 @@ msgstr "Indstillinger til brugergrænseflade"
 msgid "Username"
 msgstr "Brugernavn"
 
-#: scripts/services/ServerStatus.js:60
+#: scripts/services/ServerStatus.js:61
 msgid "Vacuuming database …"
 msgstr "Støvsuger databasen ..."
 
@@ -2543,7 +2543,7 @@ msgstr "Verificer filer"
 msgid "Verifying backend data …"
 msgstr "Verificerer backenddata ..."
 
-#: scripts/services/ServerStatus.js:62
+#: scripts/services/ServerStatus.js:63
 msgid "Verifying files …"
 msgstr "Verificerer filer ..."
 

@@ -3,12 +3,12 @@
 # TAKAHASHI Shuuji <shuuji3@gmail.com>, 2018
 # yu hi <yuhisa@gmail.com>, 2019
 # あわしろいくや <ikunya@gmail.com>, 2020
-# Suguru Hirahara, 2024
+# 90ad3e7e6620e74f12dc711534d1972a_619c894, 2024
 # 
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"Last-Translator: Suguru Hirahara, 2024\n"
+"Last-Translator: 90ad3e7e6620e74f12dc711534d1972a_619c894, 2024\n"
 "Language-Team: Japanese (Japan) (https://app.transifex.com/duplicati/teams/67655/ja_JP/)\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -391,7 +391,7 @@ msgstr "バケットのストレージクラス"
 msgid "Bucket, format: BucketName-APPID"
 msgstr "バケット名。形式：BucketName-APPID"
 
-#: scripts/services/ServerStatus.js:51
+#: scripts/services/ServerStatus.js:52
 msgid "Building list of files to restore …"
 msgstr "復元するファイルの一覧を作成しています…"
 
@@ -460,8 +460,8 @@ msgstr "実験的（カナリア）"
 #: scripts/controllers/LocalDatabaseController.js:72
 #: scripts/controllers/LocalDatabaseController.js:88
 #: scripts/controllers/RestoreDirectController.js:24
-#: scripts/controllers/StateController.js:108
-#: scripts/controllers/StateController.js:117
+#: scripts/controllers/StateController.js:119
+#: scripts/controllers/StateController.js:128
 #: scripts/services/DialogService.js:50
 #: scripts/services/EditUriBuiltins.js:1215
 #: scripts/services/EditUriBuiltins.js:1231
@@ -557,7 +557,7 @@ msgstr "圧縮化の段階"
 msgid "Compact now"
 msgstr "圧縮"
 
-#: scripts/services/ServerStatus.js:44 scripts/services/ServerStatus.js:68
+#: scripts/services/ServerStatus.js:44 scripts/services/ServerStatus.js:69
 msgid "Compacting remote data …"
 msgstr "リモートデータを圧縮しています…"
 
@@ -714,7 +714,7 @@ msgstr "フォルダーを作成しますか？"
 msgid "Created new limited user"
 msgstr "新規の制限ユーザーを作成しました"
 
-#: scripts/services/ServerStatus.js:63
+#: scripts/services/ServerStatus.js:64
 msgid "Creating bug report …"
 msgstr "バグレポートを作成しています…"
 
@@ -722,7 +722,7 @@ msgstr "バグレポートを作成しています…"
 msgid "Creating new user with limited access …"
 msgstr "アクセスが制限されている新規ユーザーを作成しています…"
 
-#: scripts/services/ServerStatus.js:52
+#: scripts/services/ServerStatus.js:53
 msgid "Creating target folders …"
 msgstr "バックアップ先のフォルダーを作成しています…"
 
@@ -854,7 +854,7 @@ msgstr "削除されたバージョン"
 msgid "Deleted files"
 msgstr "削除されたファイル"
 
-#: scripts/services/ServerStatus.js:65
+#: scripts/services/ServerStatus.js:66
 msgid "Deleting remote files …"
 msgstr "リモートファイルを削除しています…"
 
@@ -936,7 +936,7 @@ msgstr "ダウンロード"
 msgid "Downloaded files"
 msgstr "ダウンロードされたファイル"
 
-#: scripts/services/ServerStatus.js:56
+#: scripts/services/ServerStatus.js:57
 msgid "Downloading files …"
 msgstr "ファイルをダウンロードしています…"
 
@@ -1148,7 +1148,7 @@ msgstr "バックアップ先のパスを入力してください"
 msgid "Error"
 msgstr "エラー"
 
-#: scripts/services/ServerStatus.js:70
+#: scripts/services/ServerStatus.js:71
 msgid "Error!"
 msgstr "エラー！"
 
@@ -1617,11 +1617,11 @@ msgstr "ライブラリー"
 msgid "Listing backup dates …"
 msgstr "バックアップの日付を一覧表示しています…"
 
-#: scripts/services/ServerStatus.js:66
+#: scripts/services/ServerStatus.js:67
 msgid "Listing remote files for purge …"
 msgstr "削除するリモートファイルの一覧を作成しています…"
 
-#: scripts/services/ServerStatus.js:64
+#: scripts/services/ServerStatus.js:65
 msgid "Listing remote files …"
 msgstr "リモートファイルの一覧を作成しています…"
 
@@ -2082,7 +2082,7 @@ msgstr "パスフレーズが一致しません"
 msgid "Password"
 msgstr "パスワード"
 
-#: scripts/services/ServerStatus.js:55
+#: scripts/services/ServerStatus.js:56
 msgid "Patching files with local blocks …"
 msgstr "ファイルをローカルのブロックで修復しています…"
 
@@ -2165,15 +2165,15 @@ msgstr "独自プロトコル"
 msgid "Purge Phase"
 msgstr "削除の段階"
 
-#: scripts/services/ServerStatus.js:69
+#: scripts/services/ServerStatus.js:70
 msgid "Purging files complete!"
 msgstr "ファイルを削除しました！"
 
-#: scripts/services/ServerStatus.js:67
+#: scripts/services/ServerStatus.js:68
 msgid "Purging files …"
 msgstr "ファイルを削除しています…"
 
-#: scripts/services/ServerStatus.js:49
+#: scripts/services/ServerStatus.js:50
 msgid "Rebuilding local database …"
 msgstr "ローカルデータベースを再構築しています…"
 
@@ -2185,7 +2185,7 @@ msgstr "改めて作成（削除して修復）"
 msgid "Recreate Database Phase"
 msgstr "データベースの再構築の段階"
 
-#: scripts/services/ServerStatus.js:59
+#: scripts/services/ServerStatus.js:60
 msgid "Recreating database …"
 msgstr "データベースを改めて作成しています…"
 
@@ -2249,7 +2249,7 @@ msgstr "修復"
 msgid "Repair Phase"
 msgstr "修復の段階"
 
-#: scripts/services/ServerStatus.js:61
+#: scripts/services/ServerStatus.js:62
 msgid "Repairing database …"
 msgstr "データベースを修復しています…"
 
@@ -2269,7 +2269,7 @@ msgstr "リセット"
 msgid "Restore"
 msgstr "復元"
 
-#: scripts/services/ServerStatus.js:58
+#: scripts/services/ServerStatus.js:59
 msgid "Restore complete!"
 msgstr "復元しました！"
 
@@ -2387,11 +2387,11 @@ msgstr "ファイル名にタイムスタンプを入れて、異なるバージ
 msgid "Save immediately"
 msgstr "即座に保存"
 
-#: scripts/services/ServerStatus.js:53
+#: scripts/services/ServerStatus.js:54
 msgid "Scanning existing files …"
 msgstr "ファイルをスキャンしています…"
 
-#: scripts/services/ServerStatus.js:54
+#: scripts/services/ServerStatus.js:55
 msgid "Scanning for local blocks …"
 msgstr "ローカルのブロックをスキャンしています…"
 
@@ -2543,7 +2543,7 @@ msgstr "開始"
 msgid "Starting backup …"
 msgstr "バックアップを開始しています…"
 
-#: scripts/services/ServerStatus.js:48
+#: scripts/services/ServerStatus.js:49
 msgid "Starting restore …"
 msgstr "復元を開始しています…"
 
@@ -2552,16 +2552,16 @@ msgstr "復元を開始しています…"
 msgid "Starting the restore process …"
 msgstr "復元プロセスを開始しています…"
 
-#: scripts/controllers/StateController.js:108
-#: scripts/controllers/StateController.js:117
+#: scripts/controllers/StateController.js:119
+#: scripts/controllers/StateController.js:128
 msgid "Stop after the current file"
 msgstr "現在のファイルの後で停止"
 
-#: scripts/controllers/StateController.js:106
+#: scripts/controllers/StateController.js:117
 msgid "Stop running backup"
 msgstr "実行中のバックアップを停止"
 
-#: scripts/controllers/StateController.js:115
+#: scripts/controllers/StateController.js:126
 msgid "Stop running task"
 msgstr "実行中のタスクを停止"
 
@@ -2986,7 +2986,7 @@ msgstr "インターフェースの設定"
 msgid "Username"
 msgstr "ユーザー名"
 
-#: scripts/services/ServerStatus.js:60
+#: scripts/services/ServerStatus.js:61
 msgid "Vacuuming database …"
 msgstr "データベースのバキュームを行っています…"
 
@@ -3011,15 +3011,15 @@ msgstr "ファイルを検証"
 msgid "Verifying backend data …"
 msgstr "バックエンドのデータを検証しています…"
 
-#: scripts/services/ServerStatus.js:62
+#: scripts/services/ServerStatus.js:63
 msgid "Verifying files …"
 msgstr "ファイルを検証しています…"
 
-#: scripts/services/ServerStatus.js:38 scripts/services/ServerStatus.js:50
+#: scripts/services/ServerStatus.js:38 scripts/services/ServerStatus.js:51
 msgid "Verifying remote data …"
 msgstr "リモートデータを検証しています…"
 
-#: scripts/services/ServerStatus.js:57
+#: scripts/services/ServerStatus.js:58
 msgid "Verifying restored files …"
 msgstr "復元したファイルを検証しています…"
 

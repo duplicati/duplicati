@@ -302,7 +302,7 @@ msgstr "Säilön alue"
 msgid "Bucket storage class"
 msgstr "Säilön tallennusluokka"
 
-#: scripts/services/ServerStatus.js:51
+#: scripts/services/ServerStatus.js:52
 msgid "Building list of files to restore …"
 msgstr "Koostetaan listaa palautettavista tiedostoista …"
 
@@ -361,8 +361,8 @@ msgstr "Canary"
 #: scripts/controllers/LocalDatabaseController.js:72
 #: scripts/controllers/LocalDatabaseController.js:88
 #: scripts/controllers/RestoreDirectController.js:24
-#: scripts/controllers/StateController.js:108
-#: scripts/controllers/StateController.js:117
+#: scripts/controllers/StateController.js:119
+#: scripts/controllers/StateController.js:128
 #: scripts/services/DialogService.js:50
 #: scripts/services/EditUriBuiltins.js:1215
 #: scripts/services/EditUriBuiltins.js:1231
@@ -422,7 +422,7 @@ msgstr "Tiivistys-vaihe"
 msgid "Compact now"
 msgstr "Tiivistä nyt"
 
-#: scripts/services/ServerStatus.js:44 scripts/services/ServerStatus.js:68
+#: scripts/services/ServerStatus.js:44 scripts/services/ServerStatus.js:69
 msgid "Compacting remote data …"
 msgstr "Tiiistetään kohteen tiedostoja ..."
 
@@ -558,7 +558,7 @@ msgstr "Luo kansio?"
 msgid "Created new limited user"
 msgstr "Luotiin uusi rajoitettu käyttäjä"
 
-#: scripts/services/ServerStatus.js:63
+#: scripts/services/ServerStatus.js:64
 msgid "Creating bug report …"
 msgstr "Luodaan virheraporttia ..."
 
@@ -566,7 +566,7 @@ msgstr "Luodaan virheraporttia ..."
 msgid "Creating new user with limited access …"
 msgstr "Luodaan uusi rajoitettu käyttäjä"
 
-#: scripts/services/ServerStatus.js:52
+#: scripts/services/ServerStatus.js:53
 msgid "Creating target folders …"
 msgstr "Luodaan kohdekansiot ..."
 
@@ -678,7 +678,7 @@ msgstr "Poistetut versiot"
 msgid "Deleted files"
 msgstr "Poistetut tiedostot"
 
-#: scripts/services/ServerStatus.js:65
+#: scripts/services/ServerStatus.js:66
 msgid "Deleting remote files …"
 msgstr "Poistetaan kohteen tiedostoja ..."
 
@@ -749,7 +749,7 @@ msgstr "Lataa"
 msgid "Downloaded files"
 msgstr "Ladatut tiedostot"
 
-#: scripts/services/ServerStatus.js:56
+#: scripts/services/ServerStatus.js:57
 msgid "Downloading files …"
 msgstr "Ladataan tiedostoja ..."
 
@@ -884,7 +884,7 @@ msgstr "Anna kohdekansion polku"
 msgid "Error"
 msgstr "Virhe"
 
-#: scripts/services/ServerStatus.js:70
+#: scripts/services/ServerStatus.js:71
 msgid "Error!"
 msgstr "Virhe!"
 
@@ -1264,7 +1264,7 @@ msgstr "Kirjastot"
 msgid "Listing backup dates …"
 msgstr "Listataan varmuuskopioiden päivämääriä ..."
 
-#: scripts/services/ServerStatus.js:64
+#: scripts/services/ServerStatus.js:65
 msgid "Listing remote files …"
 msgstr "Listataan kohteen tiedostoja ..."
 
@@ -1678,7 +1678,7 @@ msgstr "Tunniste ProjectID on valinnainen, jos säilö on jo olemassa"
 msgid "Proprietary"
 msgstr "Suljettu"
 
-#: scripts/services/ServerStatus.js:49
+#: scripts/services/ServerStatus.js:50
 msgid "Rebuilding local database …"
 msgstr "Rakennetaan paikallinen tietokanta uudelleen ..."
 
@@ -1686,7 +1686,7 @@ msgstr "Rakennetaan paikallinen tietokanta uudelleen ..."
 msgid "Recreate (delete and repair)"
 msgstr "Luo uudelleen (poista ja korjaa)"
 
-#: scripts/services/ServerStatus.js:59
+#: scripts/services/ServerStatus.js:60
 msgid "Recreating database …"
 msgstr "Luodaan tietokanta uudelleen ..."
 
@@ -1730,7 +1730,7 @@ msgstr "Korjaa"
 msgid "Repair Phase"
 msgstr "Korjausvaihe"
 
-#: scripts/services/ServerStatus.js:61
+#: scripts/services/ServerStatus.js:62
 msgid "Repairing database …"
 msgstr "Korjataan tietokantaa ..."
 
@@ -1750,7 +1750,7 @@ msgstr "Palauta edelliset asetukset"
 msgid "Restore"
 msgstr "Palauta"
 
-#: scripts/services/ServerStatus.js:58
+#: scripts/services/ServerStatus.js:59
 msgid "Restore complete!"
 msgstr "Palautus valmis!"
 
@@ -1943,12 +1943,12 @@ msgstr "Varmuuskopioitavat tiedostot:"
 msgid "Standard protocols"
 msgstr "Standardinmukaiset protokollat"
 
-#: scripts/controllers/StateController.js:108
-#: scripts/controllers/StateController.js:117
+#: scripts/controllers/StateController.js:119
+#: scripts/controllers/StateController.js:128
 msgid "Stop after the current file"
 msgstr "Keskeytä nykyisen tiedoston jälkeen"
 
-#: scripts/controllers/StateController.js:106
+#: scripts/controllers/StateController.js:117
 msgid "Stop running backup"
 msgstr "Keskeytä käynnissä oleva varmuuskopiointi"
 
@@ -2265,7 +2265,7 @@ msgstr "Käyttöliittymän asetukset"
 msgid "Username"
 msgstr "Käyttäjätunnus"
 
-#: scripts/services/ServerStatus.js:60
+#: scripts/services/ServerStatus.js:61
 msgid "Vacuuming database …"
 msgstr "Puhdistetaan tietokanta ..."
 
