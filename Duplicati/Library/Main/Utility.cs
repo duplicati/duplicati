@@ -34,8 +34,21 @@ namespace Duplicati.Library.Main
 {
     public class Utility
     {
+        /// <summary>
+        /// The sentinel value used to indicate that encryption is disabled
+        /// </summary>
         private const string NoEncryptionSentinel = "no-encryption";
 
+        /// <summary>
+        /// The mapping between the options and the database keys
+        /// </summary>
+        /// <remarks>
+        /// The tuple contains the following elements:
+        /// 1. The key used in the database
+        /// 2. The key used in the options
+        /// 3. A function to read the value from the parsed options
+        /// 4. A function to write the value to the parsed options
+        /// </remarks>
         private static readonly (string DatabaseKey, string OptionKey, Func<Options, string> GetValue, Func<string, string> RestoreValue)[] PersistedOptionMappings =
         [
             ("prefix", "prefix", options => options.Prefix, value => value),
@@ -47,6 +60,9 @@ namespace Duplicati.Library.Main
             ("encryption-module", "encryption-module", options => options.NoEncryption ? null : options.EncryptionModule, value => value)
         ];
 
+        /// <summary>
+        /// Keys that are persisted in the database
+        /// </summary>
         private static readonly string[] PersistedOptionKeys =
         [
             .. PersistedOptionMappings.Select(option => option.DatabaseKey),
@@ -72,6 +88,11 @@ namespace Duplicati.Library.Main
             /// </summary>
             private readonly Dictionary<string, string> m_values;
 
+            /// <summary>
+            /// Constructs a new metahash instance
+            /// </summary>
+            /// <param name="values">The values to include in the metahash</param>
+            /// <param name="options">The options to use for hashing</param>
             public Metahash(Dictionary<string, string> values, Options options)
             {
                 m_values = values;
@@ -93,20 +114,14 @@ namespace Duplicati.Library.Main
                 }
             }
 
-            public string FileHash
-            {
-                get { return m_filehash; }
-            }
+            /// <inheritdoc />
+            public string FileHash => m_filehash;
 
-            public byte[] Blob
-            {
-                get { return m_blob; }
-            }
+            /// <inheritdoc />
+            public byte[] Blob => m_blob;
 
-            public Dictionary<string, string> Values
-            {
-                get { return m_values; }
-            }
+            /// <inheritdoc />
+            public Dictionary<string, string> Values => m_values;
         }
 
         /// <summary>
@@ -115,9 +130,7 @@ namespace Duplicati.Library.Main
         /// <param name="values">The metadata values to wrap</param>
         /// <returns>A IMetahash instance</returns>
         public static IMetahash WrapMetadata(Dictionary<string, string> values, Options options)
-        {
-            return new Metahash(values, options);
-        }
+            => new Metahash(values, options);
 
         /// <summary>
         /// Updates the options with settings from the data, if any.
@@ -231,7 +244,7 @@ namespace Duplicati.Library.Main
         /// <param name="operation">The operation description to record in the database.</param>
         /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
         /// <returns>A task that completes when the options have been stored.</returns>
-        public static async Task PersistOptionsToDatabase(string dbpath, Options options, string operation, CancellationToken cancellationToken)
+        public static async Task PersistOptionsToDatabaseWithoutValidation(string dbpath, Options options, string operation, CancellationToken cancellationToken)
         {
             await using var db = await LocalDatabase.CreateLocalDatabaseAsync(dbpath, operation, true, null, cancellationToken).ConfigureAwait(false);
             await PersistOptionsToDb(db, options, null, cancellationToken).ConfigureAwait(false);
@@ -254,6 +267,11 @@ namespace Duplicati.Library.Main
             await db.Transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Reads the options from the given options set and returns them in a dictionary with the database keys as keys.
+        /// </summary>
+        /// <param name="options">The parsed options to translate</param>
+        /// <returns>A dictionary with the database keys as keys</returns>
         private static Dictionary<string, string> GetPersistedOptionValues(Options options)
         {
             var result = new Dictionary<string, string>();
@@ -268,12 +286,26 @@ namespace Duplicati.Library.Main
             return result;
         }
 
+        /// <summary>
+        /// Updates the options with settings from the data, if any.
+        /// </summary>
+        /// <param name="db">The database to update</param>
+        /// <param name="options">The parsed options to update</param>
+        /// <param name="existingOptions">The existing options to merge with, or null</param>
+        /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
+        /// <returns>An awaitable task</returns>
         private static async Task PersistOptionsToDb(LocalDatabase db, Options options, IDictionary<string, string> existingOptions, CancellationToken cancellationToken)
         {
             existingOptions ??= await db.GetDbOptions(cancellationToken).ConfigureAwait(false);
             await db.SetDbOptions(BuildStoredOptions(existingOptions, options), cancellationToken).ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Builds a dictionary of options to store in the database, merging existing options with the new ones.
+        /// </summary>
+        /// <param name="existingOptions">The existing options to merge with</param>
+        /// <param name="options">The parsed options</param>
+        /// <returns>A dictionary with the database keys as keys</returns>
         private static Dictionary<string, string> BuildStoredOptions(IDictionary<string, string> existingOptions, Options options)
         {
             var result = existingOptions
@@ -304,12 +336,26 @@ namespace Duplicati.Library.Main
             return result;
         }
 
+        /// <summary>
+        /// Restores an option from the database if it is not already set in the options.
+        /// </summary>
+        /// <param name="persistedOptions">The options stored in the database</param>
+        /// <param name="options">The parsed options to update</param>
+        /// <param name="databaseKey">The database key to look for</param>
+        /// <param name="optionKey">The option key to set</param>
+        /// <param name="restoreValue">The value to restore</param>
         private static void RestoreOptionFromDb(IDictionary<string, string> persistedOptions, Options options, string databaseKey, string optionKey, Func<string, string> restoreValue)
         {
             if (persistedOptions.TryGetValue(databaseKey, out var value) && !string.IsNullOrWhiteSpace(value) && !HasExplicitOptionValue(options, optionKey))
                 options.RawOptions[optionKey] = restoreValue(value);
         }
 
+        /// <summary>
+        /// Checks if the given option key has an explicit value in the options.
+        /// </summary>
+        /// <param name="options">The parsed options</param>
+        /// <param name="optionKey">The option key to check</param>
+        /// <returns>True if the option has an explicit value, false otherwise</returns>
         private static bool HasExplicitOptionValue(Options options, string optionKey)
             => options.RawOptions.TryGetValue(optionKey, out var value) && !string.IsNullOrWhiteSpace(value);
     }

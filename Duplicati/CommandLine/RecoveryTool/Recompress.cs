@@ -364,7 +364,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                 return;
             }
 
-            Duplicati.Library.Main.Utility.PersistOptionsToDatabase(dbpath, updatedOptions, "RecoveryTool Recompress", CancellationToken.None).Await();
+            Duplicati.Library.Main.Utility.PersistOptionsToDatabaseWithoutValidation(dbpath, updatedOptions, "RecoveryTool Recompress", CancellationToken.None).Await();
             Console.WriteLine("Updated stored backup options in local database: {0}", dbpath);
         }
 

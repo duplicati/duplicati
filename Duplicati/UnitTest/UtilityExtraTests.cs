@@ -270,7 +270,7 @@ namespace Duplicati.UnitTest
                 { "no-encryption", bool.TrueString }
             });
 
-            await Utility.PersistOptionsToDatabase(tempDb, options, "UnitTestPersistOptions", CancellationToken.None);
+            await Utility.PersistOptionsToDatabaseWithoutValidation(tempDb, options, "UnitTestPersistOptions", CancellationToken.None);
 
             await using var reopened = await LocalDatabase.CreateLocalDatabaseAsync(tempDb, "verify", true, null, CancellationToken.None);
             var storedOptions = await reopened.GetDbOptions(CancellationToken.None);
