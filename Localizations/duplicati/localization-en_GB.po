@@ -12,7 +12,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-18 13:48+0100\n"
+"POT-Creation-Date: 2026-04-22 15:17+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: Andi Chandler <andi@gowling.com>, 2026\n"
 "Language-Team: English (United Kingdom) (https://app.transifex.com/duplicati/teams/67655/en_GB/)\n"
@@ -1477,16 +1477,16 @@ msgstr ""
 msgid "Temporary storage folder"
 msgstr "Temporary storage folder"
 
-#: Library/RestAPI/Strings.cs:92 Library/RestAPI/Strings.cs:129
+#: Library/RestAPI/Strings.cs:93 Library/RestAPI/Strings.cs:134
 #, csharp-format
 msgid "Server has started and is listening on {0}, port {1}"
 msgstr "Server has started and is listening on {0}, port {1}"
 
-#: Library/RestAPI/Strings.cs:107
+#: Library/RestAPI/Strings.cs:108
 msgid "Register for remote control"
 msgstr "Register for remote control"
 
-#: Library/RestAPI/Strings.cs:125
+#: Library/RestAPI/Strings.cs:130
 #, csharp-format
 msgid ""
 "Unable to find a valid date, given the start date {0}, the repetition "
@@ -1495,7 +1495,7 @@ msgstr ""
 "Unable to find a valid date, given the start date {0}, the repetition "
 "interval {1} and the allowed days {2}"
 
-#: Library/RestAPI/Strings.cs:131
+#: Library/RestAPI/Strings.cs:136
 #, csharp-format
 msgid "Unable to open a socket for listening, tried ports: {0}"
 msgstr "Unable to open a socket for listening, tried ports: {0}"
@@ -2457,7 +2457,7 @@ msgstr ""
 "remember to set either --{0}={2} or --{1}={2} to report the additional log "
 "data"
 
-#: Library/Main/Strings.cs:404
+#: Library/Main/Strings.cs:409
 #, csharp-format
 msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
@@ -2466,16 +2466,16 @@ msgstr ""
 "The cryptolibrary does not support re-usable transforms for the hash "
 "algorithm {0}"
 
-#: Library/Main/Strings.cs:405
+#: Library/Main/Strings.cs:410
 #, csharp-format
 msgid "The cryptolibrary does not support the hash algorithm {0}"
 msgstr "The cryptolibrary does not support the hash algorithm {0}"
 
-#: Library/Main/Strings.cs:406
+#: Library/Main/Strings.cs:411
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr "The passphrase cannot be changed for an existing backup"
 
-#: Library/Main/Strings.cs:407
+#: Library/Main/Strings.cs:412
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
 msgstr "Failed to create a snapshot: {0}"

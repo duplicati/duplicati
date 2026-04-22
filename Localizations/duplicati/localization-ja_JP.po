@@ -7,16 +7,16 @@
 # あわしろいくや <ikunya@gmail.com>, 2024
 # AlbireoGT, 2024
 # yu hi <yuhisa@gmail.com>, 2025
-# Suguru Hirahara, 2026
+# 90ad3e7e6620e74f12dc711534d1972a_619c894, 2026
 # 
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-18 13:48+0100\n"
+"POT-Creation-Date: 2026-04-22 15:17+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
-"Last-Translator: Suguru Hirahara, 2026\n"
+"Last-Translator: 90ad3e7e6620e74f12dc711534d1972a_619c894, 2026\n"
 "Language-Team: Japanese (Japan) (https://app.transifex.com/duplicati/teams/67655/ja_JP/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -2114,7 +2114,7 @@ msgstr ""
 "開始できませんでした。他のプロセスが既に起動している可能性があります。\n"
 "エラーメッセージ：{0}"
 
-#: Library/RestAPI/Strings.cs:50 Library/RestAPI/Strings.cs:84
+#: Library/RestAPI/Strings.cs:50 Library/RestAPI/Strings.cs:85
 msgid "Disable database encryption"
 msgstr "データベースの暗号化を無効にする"
 
@@ -2214,42 +2214,42 @@ msgstr "一時的な保存フォルダー"
 msgid "Reset the JWT configuration, invalidating any issued login tokens"
 msgstr "JWTの設定をリセットします。発行済のログイントークンはすべて無効になります。"
 
-#: Library/RestAPI/Strings.cs:83
+#: Library/RestAPI/Strings.cs:84
 msgid "Use this option to disable database encryption of sensitive fields"
 msgstr "機密データの領域のデータベース暗号化を無効にします。"
 
-#: Library/RestAPI/Strings.cs:86
+#: Library/RestAPI/Strings.cs:87
 msgid "Log to the Windows event log"
 msgstr "Windowsイベントログに記録"
 
-#: Library/RestAPI/Strings.cs:88
+#: Library/RestAPI/Strings.cs:89
 msgid "Set the log level for the Windows event log"
 msgstr "Windowsのイベントログに含むメッセージに関するログの水準を設定"
 
-#: Library/RestAPI/Strings.cs:91
+#: Library/RestAPI/Strings.cs:92
 msgid "The Windows event log is not supported on this platform"
 msgstr "Windowsのイベントログはこのプラットフォームではサポートされていません"
 
-#: Library/RestAPI/Strings.cs:92 Library/RestAPI/Strings.cs:129
+#: Library/RestAPI/Strings.cs:93 Library/RestAPI/Strings.cs:134
 #, csharp-format
 msgid "Server has started and is listening on {0}, port {1}"
 msgstr "サーバーが起動しました。{0}のポート{1}でリクエストを待ち受けています"
 
-#: Library/RestAPI/Strings.cs:93
+#: Library/RestAPI/Strings.cs:94
 #, csharp-format
 msgid "Use the following link to sign in: {0}"
 msgstr "次のリンクからログインできます：{0}"
 
-#: Library/RestAPI/Strings.cs:94
+#: Library/RestAPI/Strings.cs:95
 #, csharp-format
 msgid "The server crashed: {0}"
 msgstr "サーバーがクラッシュしました：{0}"
 
-#: Library/RestAPI/Strings.cs:98
+#: Library/RestAPI/Strings.cs:99
 msgid "Require database encryption"
 msgstr "データベースの暗号化が必要です"
 
-#: Library/RestAPI/Strings.cs:99
+#: Library/RestAPI/Strings.cs:100
 #, csharp-format
 msgid ""
 "Database encryption key is required. Supply an encryption key via the "
@@ -2258,14 +2258,14 @@ msgid ""
 msgstr ""
 "データベースの暗号化用の鍵が必要です。環境変数の{0}で暗号化用の鍵を指定するか、--{1}のオプションでデータベースの暗号化を無効にしてください。"
 
-#: Library/RestAPI/Strings.cs:125
+#: Library/RestAPI/Strings.cs:130
 #, csharp-format
 msgid ""
 "Unable to find a valid date, given the start date {0}, the repetition "
 "interval {1} and the allowed days {2}"
 msgstr "正しい日付が見つかりません。開始日に{0}、繰り返しの間隔に{1}、許容日に{2}が指定されています。"
 
-#: Library/RestAPI/Strings.cs:131
+#: Library/RestAPI/Strings.cs:136
 #, csharp-format
 msgid "Unable to open a socket for listening, tried ports: {0}"
 msgstr "待ち受け用のソケットを設定できません。試したポート番号：{0}"
@@ -3805,23 +3805,23 @@ msgstr ""
 msgid "Minimum time between auto vacuums"
 msgstr "自動的にデータベースのVACUUMを行う最短の間隔"
 
-#: Library/Main/Strings.cs:404
+#: Library/Main/Strings.cs:409
 #, csharp-format
 msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
 "algorithm {0}"
 msgstr "この暗号化ライブラリーは、ハッシュ化アルゴリズムの{0}の再利用可能な変換をサポートしていません"
 
-#: Library/Main/Strings.cs:405
+#: Library/Main/Strings.cs:410
 #, csharp-format
 msgid "The cryptolibrary does not support the hash algorithm {0}"
 msgstr "この暗号化ライブラリーは、ハッシュ化アルゴリズムの{0}をサポートしていません"
 
-#: Library/Main/Strings.cs:406
+#: Library/Main/Strings.cs:411
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr "既存のバックアップのパスフレーズは変更できません"
 
-#: Library/Main/Strings.cs:407
+#: Library/Main/Strings.cs:412
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
 msgstr "スナップショットを作成できませんでした: {0}"

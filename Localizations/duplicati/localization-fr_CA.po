@@ -17,7 +17,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-18 13:48+0100\n"
+"POT-Creation-Date: 2026-04-22 15:17+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: Fabrice Verrac, 2026\n"
 "Language-Team: French (Canada) (https://app.transifex.com/duplicati/teams/67655/fr_CA/)\n"
@@ -3798,7 +3798,7 @@ msgstr ""
 "Impossible de démarrer. Un autre processus est peut-être déjà en cours d'exécution.\n"
 "Message d'erreur : {0}"
 
-#: Library/RestAPI/Strings.cs:50 Library/RestAPI/Strings.cs:84
+#: Library/RestAPI/Strings.cs:50 Library/RestAPI/Strings.cs:85
 msgid "Disable database encryption"
 msgstr "Désactiver le chiffrement de la base de donnée"
 
@@ -4042,12 +4042,12 @@ msgstr ""
 " à se reconnecter. La valeur doit être supérieure à 0 et inférieure ou égale"
 " à 30 jours."
 
-#: Library/RestAPI/Strings.cs:83
+#: Library/RestAPI/Strings.cs:84
 msgid "Use this option to disable database encryption of sensitive fields"
 msgstr ""
 "Désactiver le chiffrement des champs confidentiels de la base de données"
 
-#: Library/RestAPI/Strings.cs:85
+#: Library/RestAPI/Strings.cs:86
 msgid ""
 "Use this option to log to the Windows event log. The provided name is in the"
 " format Log:Source. If no log name is provided, \"Duplicati 2\" is used."
@@ -4056,30 +4056,30 @@ msgstr ""
 " au format Log:Source. Si aucun nom n'est indiqué, \"Duplicati 2\" sera "
 "utilisé."
 
-#: Library/RestAPI/Strings.cs:86
+#: Library/RestAPI/Strings.cs:87
 msgid "Log to the Windows event log"
 msgstr "Journaliser vers le Journal d'évènements de Windows"
 
-#: Library/RestAPI/Strings.cs:87
+#: Library/RestAPI/Strings.cs:88
 msgid "Use this option to set the log level for the Windows event log."
 msgstr ""
 "Option de définition du niveau de journalisation pour le Journal "
 "d'évènements de Windows."
 
-#: Library/RestAPI/Strings.cs:88
+#: Library/RestAPI/Strings.cs:89
 msgid "Set the log level for the Windows event log"
 msgstr ""
 "Indiquez le niveau de journalisation pour le Journal d'évènements de "
 "Windows."
 
-#: Library/RestAPI/Strings.cs:89
+#: Library/RestAPI/Strings.cs:90
 #, csharp-format
 msgid "The Windows event log source {0} was not found. Attempting to create."
 msgstr ""
 "Source {0} du Journal d'évènements de Windows introuvable. Tentative de "
 "création."
 
-#: Library/RestAPI/Strings.cs:90
+#: Library/RestAPI/Strings.cs:91
 #, csharp-format
 msgid ""
 "The Windows Event Log was not created for: {0}, not logging to eventlog."
@@ -4087,34 +4087,34 @@ msgstr ""
 "Journal d'évènements de Windows non créé pour : {0}. Pas d'enregistrement "
 "dans le journal."
 
-#: Library/RestAPI/Strings.cs:91
+#: Library/RestAPI/Strings.cs:92
 msgid "The Windows event log is not supported on this platform"
 msgstr "Journal d'évènements de Windows no supporté sur cette plateforme."
 
-#: Library/RestAPI/Strings.cs:92 Library/RestAPI/Strings.cs:129
+#: Library/RestAPI/Strings.cs:93 Library/RestAPI/Strings.cs:134
 #, csharp-format
 msgid "Server has started and is listening on {0}, port {1}"
 msgstr "Le serveur a démarré et écoute sur {0}, le port {1}"
 
-#: Library/RestAPI/Strings.cs:93
+#: Library/RestAPI/Strings.cs:94
 #, csharp-format
 msgid "Use the following link to sign in: {0}"
 msgstr "Utilisez le lien suivant pour vous inscrire : {0}"
 
-#: Library/RestAPI/Strings.cs:94
+#: Library/RestAPI/Strings.cs:95
 #, csharp-format
 msgid "The server crashed: {0}"
 msgstr "Le serveur s'est vautré : {0}"
 
-#: Library/RestAPI/Strings.cs:95
+#: Library/RestAPI/Strings.cs:96
 msgid "Server is stopping, tearing down handlers"
 msgstr "Serveur en cours d'arrêt, extinction des handlers"
 
-#: Library/RestAPI/Strings.cs:96
+#: Library/RestAPI/Strings.cs:97
 msgid "Server has stopped"
 msgstr "Serveur arrêté"
 
-#: Library/RestAPI/Strings.cs:97
+#: Library/RestAPI/Strings.cs:98
 msgid ""
 "Use this option to require a custom provided key for database encryption of "
 "sensitive fields and not rely on the serial number."
@@ -4123,11 +4123,11 @@ msgstr ""
 "chiffrement des champs confidentiels de la base de données, et ne pas "
 "s'appuyer sur le numéro de série."
 
-#: Library/RestAPI/Strings.cs:98
+#: Library/RestAPI/Strings.cs:99
 msgid "Require database encryption"
 msgstr "Exigez le chiffrement de la base de données"
 
-#: Library/RestAPI/Strings.cs:99
+#: Library/RestAPI/Strings.cs:100
 #, csharp-format
 msgid ""
 "Database encryption key is required. Supply an encryption key via the "
@@ -4138,7 +4138,7 @@ msgstr ""
 "variable d'environnement {0} ou désactivez le chiffrement de la base de "
 "données avec l'option --{1}"
 
-#: Library/RestAPI/Strings.cs:100
+#: Library/RestAPI/Strings.cs:101
 #, csharp-format
 msgid ""
 "The database encryption key is blacklisted and cannot be used. The database "
@@ -4150,7 +4150,7 @@ msgstr ""
 "nouvelle clé de chiffrement via la variable d'environnement {0} ou "
 "désactivez le chiffrement de la base de données avec l'option --{1}"
 
-#: Library/RestAPI/Strings.cs:101
+#: Library/RestAPI/Strings.cs:102
 #, csharp-format
 msgid ""
 "No database encryption key was found. The database will be stored "
@@ -4162,7 +4162,7 @@ msgstr ""
 "variable d'environnement {0} ou désactivez le chiffrement de la base de "
 "données avec l'option --{1}"
 
-#: Library/RestAPI/Strings.cs:102
+#: Library/RestAPI/Strings.cs:103
 #, csharp-format
 msgid ""
 "The database appears to be encrypted, but no key was specified. Opening the "
@@ -4173,16 +4173,16 @@ msgstr ""
 "L'ouverture de la base de données va échouer. Utilisez la variable "
 "d'environnement {0} pour passer la clé."
 
-#: Library/RestAPI/Strings.cs:103
+#: Library/RestAPI/Strings.cs:104
 #, csharp-format
 msgid "The timezone {0} is not valid"
 msgstr "Fuseau horaire {0} invalide"
 
-#: Library/RestAPI/Strings.cs:104
+#: Library/RestAPI/Strings.cs:105
 msgid "Set the encryption key for the settings database"
 msgstr "Indiquez la clé de chiffrement de la base de données des paramètres"
 
-#: Library/RestAPI/Strings.cs:105
+#: Library/RestAPI/Strings.cs:106
 #, csharp-format
 msgid ""
 "Use this option to set the encryption key for the settings database. This "
@@ -4191,16 +4191,16 @@ msgstr ""
 "Option de définition de la clé de chiffrement de la base de données des "
 "paramètres. Peut également être passée via la variable d'environnement {0}."
 
-#: Library/RestAPI/Strings.cs:106
+#: Library/RestAPI/Strings.cs:107
 #, csharp-format
 msgid "Invalid pause/resume state: {0}"
 msgstr "État Pause/Reprise invalide : {0}"
 
-#: Library/RestAPI/Strings.cs:107
+#: Library/RestAPI/Strings.cs:108
 msgid "Register for remote control"
 msgstr "Inscription pour le contrôle à distance"
 
-#: Library/RestAPI/Strings.cs:108
+#: Library/RestAPI/Strings.cs:109
 msgid ""
 "Register for remote control using the pre-authenticated url. If the server "
 "is already registered, this option has no effect"
@@ -4208,11 +4208,11 @@ msgstr ""
 "Inscription pour le contrôle à distance en utilisant l'url pré-authentifiée."
 " Si le serveur est déjà inscrit cette option est sans effet"
 
-#: Library/RestAPI/Strings.cs:109
+#: Library/RestAPI/Strings.cs:110
 msgid "Force register for remote control"
 msgstr "Forcer l'inscription pour le contrôle à distance"
 
-#: Library/RestAPI/Strings.cs:110
+#: Library/RestAPI/Strings.cs:111
 msgid ""
 "Forces a re-registration if the server is already registered. If the server "
 "is not already registered, this option has no effect."
@@ -4220,7 +4220,7 @@ msgstr ""
 "Force une réinscription si le serveur est déjà inscrit. Si le serveur n'est "
 "pas déjà inscrit cette option est sans effet."
 
-#: Library/RestAPI/Strings.cs:111
+#: Library/RestAPI/Strings.cs:112
 msgid ""
 "The server is already registered for remote control, ignoring registration "
 "request"
@@ -4228,22 +4228,22 @@ msgstr ""
 "Le serveur est déjà inscrit au contrôle à distance. Requête d'inscription "
 "ignorée "
 
-#: Library/RestAPI/Strings.cs:112
+#: Library/RestAPI/Strings.cs:113
 #, csharp-format
 msgid "The server is registered, use the following link to claim it: {0}"
 msgstr ""
 "LE serveur est inscrit, utiliser le lien suivant pour le revendiquer : {0}"
 
-#: Library/RestAPI/Strings.cs:113
+#: Library/RestAPI/Strings.cs:114
 #, csharp-format
 msgid "The server registration failed: {0}"
 msgstr "Échec de l'inscription du serveur : {0}"
 
-#: Library/RestAPI/Strings.cs:114
+#: Library/RestAPI/Strings.cs:115
 msgid "Set the allowed backends for remote control"
 msgstr "Destinations autorisées pour le contrôle à distance"
 
-#: Library/RestAPI/Strings.cs:115
+#: Library/RestAPI/Strings.cs:116
 msgid ""
 "Set the allowed backends for remote control. The value is a comma-separated "
 "list of backend names. If this option is not set, all backends are allowed. "
@@ -4254,11 +4254,11 @@ msgstr ""
 "option n'est pas déclarée toutes les destinations sont autorisées. Utilisez-"
 "la pour restreindre les destinations de sauvegardes possibles."
 
-#: Library/RestAPI/Strings.cs:116
+#: Library/RestAPI/Strings.cs:117
 msgid "Set the allowed encryption modules for remote control"
 msgstr "Modules de chiffrement autorisés pour le contrôle à distance"
 
-#: Library/RestAPI/Strings.cs:117
+#: Library/RestAPI/Strings.cs:118
 msgid ""
 "Set the allowed encryption modules for remote control. The value is a comma-"
 "separated list of encryption module names. If this option is not set, all "
@@ -4271,11 +4271,11 @@ msgstr ""
 "chiffrement sont autorisés. Utilisez-la pour restreindre les modules de "
 "chiffrement des données sauvegardées utilisables."
 
-#: Library/RestAPI/Strings.cs:118
+#: Library/RestAPI/Strings.cs:119
 msgid "Set the allowed compression modules for remote control"
 msgstr "Modules de compression autorisés pour le contrôle à distance"
 
-#: Library/RestAPI/Strings.cs:119
+#: Library/RestAPI/Strings.cs:120
 msgid ""
 "Set the allowed compression modules for remote control. The value is a "
 "comma-separated list of compression module names. If this option is not set,"
@@ -4288,18 +4288,18 @@ msgstr ""
 "chiffrement sont autorisés. Utilisez-la pour restreindre les modules de "
 "compression des données sauvegardées utilisables."
 
-#: Library/RestAPI/Strings.cs:120
+#: Library/RestAPI/Strings.cs:121
 msgid "Failed to get encryption key from secret provider"
 msgstr ""
 "Échec de récupération de la clé de chiffrement depuis le fournisseur de "
 "secret"
 
-#: Library/RestAPI/Strings.cs:121
+#: Library/RestAPI/Strings.cs:122
 msgid "Failed to set encryption key in secret provider"
 msgstr ""
 "Échec de définition de la clé de chiffrement dans le fournisseur de secret"
 
-#: Library/RestAPI/Strings.cs:125
+#: Library/RestAPI/Strings.cs:130
 #, csharp-format
 msgid ""
 "Unable to find a valid date, given the start date {0}, the repetition "
@@ -4308,7 +4308,7 @@ msgstr ""
 "Impossible de trouver une date valide, compte tenu de la date de début {0}, "
 "de l'intervalle de répétition {1} et des jours autorisés {2}"
 
-#: Library/RestAPI/Strings.cs:130
+#: Library/RestAPI/Strings.cs:135
 msgid ""
 "SSL certificate password option has no meaning when provided without SSL "
 "certificate file option!"
@@ -4316,7 +4316,7 @@ msgstr ""
 "Option de mot de passe de certificat TLS. N'a aucun sens hors de "
 "l'indication de l'option de fichier de certificat TLS !"
 
-#: Library/RestAPI/Strings.cs:131
+#: Library/RestAPI/Strings.cs:136
 #, csharp-format
 msgid "Unable to open a socket for listening, tried ports: {0}"
 msgstr "Impossible d'ouvrir une socket pour l'écoute, les ports essayés: {0}"
@@ -4546,6 +4546,193 @@ msgstr "Il faudrait remplacer le fichier index défectueux {0} par {1}"
 #, csharp-format
 msgid "Failed to replace faulty index file {0}"
 msgstr "Échec de remplacement du fichier d'index défectueux {0}"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:34
+msgid ""
+"Remote Synchronization Tool\n"
+"\n"
+"This tool synchronizes two remote backends. The tool assumes that the intent is\n"
+"to have the destination match the source.\n"
+"\n"
+"If the destination has files that are not in the source, they will be deleted\n"
+"(or renamed if the retention option is set).\n"
+"\n"
+"If the destination has files that are also present in the source, but the files\n"
+"differ in size, or if the source files have a newer (more recent) timestamp,\n"
+"the destination files will be overwritten by the source files. Given that some\n"
+"backends do not allow for metadata or timestamp modification, and that the tool\n"
+"is run after backup, the destination files should always have a timestamp that\n"
+"is newer (or the same if run promptly) compared to the source files.\n"
+"\n"
+"If the force option is set, the destination will be overwritten by the source,\n"
+"regardless of the state of the files. It will also skip the initial comparison,\n"
+"and delete (or rename) all files in the destination.\n"
+"\n"
+"If the verify option is set, the files will be downloaded and compared after\n"
+"uploading to ensure that the files are correct. Files that already exist in the\n"
+"destination will be verified before being overwritten (if they seemingly match).\n"
+msgstr ""
+"Outil de synchronisation distante\n"
+"\n"
+"Cet outil synchronise deux plateformes distantes. Il présume que l'objectif est\n"
+"d'obtenir la correspondance de la destination par rapport à la source.\n"
+"\n"
+"Si la destination contient des fichiers absents de la source, ils seront supprimés\n"
+"(ou renommés si l'option de préservation est activée).\n"
+"\n"
+"Si la destination contient des fichier présents dans la source mais de taille différente \n"
+"ou plus anciens (selon horodatage), ils seront écrasés par les fichiers source. \n"
+"Étant donné que certaines plateformes ne permettent pas la modification de \n"
+"métadonnées ou d'horodatages, et que l'outil est exécuté après la sauvegarde, \n"
+"les fichiers de destination devraient toujours avoir un horodatage supérieur ou \n"
+"égal à celui du fichier source.\n"
+"\n"
+"Si l'option force est activée, la destination est écrasée par la source, sans égard \n"
+"à l'état des fichiers. Ceci inhibe également la comparaison initiale, et supprime \n"
+"(ou renomme) tous les fichiers de la destination.\n"
+"\n"
+"Si l'option de vérification est activée, les fichiers seront téléchargés pour comparaison \n"
+"après l'envoi pour vérifier leur conformité. Les fichiers existant déjà dans la \n"
+"destination seront vérifiés avant d'être écrasés (s'ils semblent correspondre).\n"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:61
+#: Library/Modules/Builtin/Strings.cs:58
+msgid ""
+"This module runs remote synchronization after a successful backup to create "
+"a secondary copy (3-2-1)."
+msgstr ""
+"Ce module demande une synchronisation distante après une sauvegarde réussie "
+"pour en effectuer une copie secondaire (3-2-1)."
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:63
+#: Library/Modules/Builtin/Strings.cs:59
+msgid "Remote synchronization (3-2-1)"
+msgstr "Synchronisation distante (3-2-1)"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:68
+msgid "The source backend string"
+msgstr "Chaîne de plateforme de sources"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:73
+msgid "The destination backend string"
+msgstr "Chaîne de plateforme de destination"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:78
+msgid ""
+"Automatically create folders in the destination backend if they do not exist"
+msgstr ""
+"Créer automatiquement les répertoires de destination s'ils n'existent pas"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:83
+msgid "Number of times to recreate a backend on backend errors"
+msgstr "Nombre de de tentatives de récréation de plateforme en cas d'erreurs"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:88
+msgid "Delay in milliseconds between backend retries"
+msgstr "Délai en millisecondes entre tentatives d'accès à la plateforme"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:93
+msgid ""
+"Use exponential backoff for backend retries, multiplying the delay by two "
+"for each failure."
+msgstr ""
+"Délai exponentiel de nouvelle tentative d'accès à l'infrastructure, "
+"multipliant le délai par deux à chaque échec."
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:98
+msgid "Automatically confirm the operation"
+msgstr "Confirmer automatiquement l'opération"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:103
+msgid ""
+"Do not actually write or delete files. If not set here, the global options "
+"will be checked"
+msgstr ""
+"Ne pas réellement écrire ou supprimer les fichiers. Si rien n'est indiqué "
+"ici l'option globale sera utilisée"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:108
+msgid ""
+"Options for the destination backend. Each option is a key-value pair "
+"separated by an equals sign, e.g. --dst-options key1=value1 key2=value2 "
+"[default: empty]"
+msgstr ""
+"Options pour l'infrastructure de destination. Chaque option est une paire "
+"clé-valeur séparée par le signe égale, p.ex. --dst-options clé1=valeur1 "
+"clé2=valeur2 [défaut : vide]"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:113
+msgid "Force the synchronization"
+msgstr "Forcer la synchronisation"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:118
+msgid ""
+"Global options all backends. May be overridden by backend specific options "
+"(src-options, dst-options). Each option is a key-value pair separated by an "
+"equals sign, e.g. --global-options key1=value1 key2=value2 [default: empty]"
+msgstr ""
+"Options globales pour toutes infrastructures. Elles peuvent être remplacées "
+"par l'option correspondante spécifique à une infrastructure particulière "
+"(src-options, dst-options). Chaque option Each option is a key-value pair "
+"separated by an equals sign, e.g. --global-options key1=value1 key2=value2 "
+"[default: empty]"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:123
+msgid ""
+"The log file to write to. If not set here, global options will be checked "
+"[default: \"\"]"
+msgstr ""
+"Fichier journal à utiliser. If not set here, global options will be checked "
+"[default: \"\"]"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:128
+msgid "The log level to use. If not set here, global options will be checked"
+msgstr ""
+"Niveau de journalisation. Si rien n'est indiqué ici l'option globale sera "
+"utilisée"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:133
+msgid "Only parse the arguments and then exit"
+msgstr "Seulement parcourir les arguments puis sortir"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:138
+msgid "Print progress to STDOUT"
+msgstr "Imprimer l'avancement vers STDOUT"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:143
+msgid "Toggles whether to keep old files. Any deletes will be renames instead"
+msgstr ""
+"Choisir de conserver les vieux fichiers. Sinon, toutes les suppressions "
+"seront des renommages"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:148
+msgid "Number of times to retry on errors"
+msgstr "Nombre de tentatives en cas d'erreurs"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:153
+msgid ""
+"Options for the source backend. Each option is a key-value pair separated by"
+" an equals sign, e.g. --src-options key1=value1 key2=value2 [default: empty]"
+msgstr ""
+"Options pour l'infrastructure des sources. Chaque option est une paire clé-"
+"valeur séparée par le signe  égale, p.ex. --src-options clé1=valeur1 "
+"clé2=valeur2 [défaut: vide]"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:158
+msgid ""
+"Verify the contents of the files to decide whether the pre-existing "
+"destination files should be overwritten"
+msgstr ""
+"Vérifier les contenus des fichiers pour décider si la destination pré-"
+"existante doit être écrasée"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:163
+msgid ""
+"Verify the files after uploading them to ensure that they were uploaded "
+"correctly"
+msgstr ""
+"Vérifier les fichiers après leur envoi pour s'assurer de la conformité de "
+"l'opération"
 
 #: Library/Main/Strings.cs:28
 #, csharp-format
@@ -6905,11 +7092,11 @@ msgstr ""
 "nombre plus élevé se traduit en un budget plus plus élevé. P.ex. 10 indique "
 "aucune restriction. Format : entier entre 1 et 10."
 
-#: Library/Main/Strings.cs:366
+#: Library/Main/Strings.cs:369
 msgid "Maximum cache size for restoring files"
 msgstr "Taille maximum du tampon de restauration"
 
-#: Library/Main/Strings.cs:367
+#: Library/Main/Strings.cs:370
 msgid ""
 "Use this option to set the maximum size of the cache used for restoring "
 "files. The cache is used to store the data blocks that are downloaded from "
@@ -6921,11 +7108,11 @@ msgstr ""
 "présume que la valeur est un multiple de la taille de bloc, sauf quand c'est"
 " 0 auquel cas le tampon est désactivé."
 
-#: Library/Main/Strings.cs:368
+#: Library/Main/Strings.cs:371
 msgid "Eviction ratio of the data block cache during restore"
 msgstr "Rapport d'éviction du tampon de blocs de données en restauration"
 
-#: Library/Main/Strings.cs:369
+#: Library/Main/Strings.cs:372
 msgid ""
 "Use this option to set the eviction ratio of the data block cache during "
 "restore. The eviction ratio is the percentage of the cache that is evicted "
@@ -6937,12 +7124,12 @@ msgstr ""
 "devient plein. Valeur par défaut : 50, c'est à dire que 50% du tampon est "
 "purgé quand la taille du cache est atteinte."
 
-#: Library/Main/Strings.cs:370
+#: Library/Main/Strings.cs:373
 msgid "Number of concurrent FileProcessors processes used during restore"
 msgstr ""
 "Nombre de processus de traitement de fichier simultanés en restauration"
 
-#: Library/Main/Strings.cs:371
+#: Library/Main/Strings.cs:374
 msgid ""
 "Use this option to set the number of concurrent FileProcessors processes "
 "used during restore. A FileProcessor processes one file at a time, and "
@@ -6953,11 +7140,11 @@ msgstr ""
 "L'augmentation du nombre de ces processus pourrait améliorer les "
 "performances de restauration."
 
-#: Library/Main/Strings.cs:372
+#: Library/Main/Strings.cs:375
 msgid "Use legacy restore method"
 msgstr "Ancienne méthode de restauration"
 
-#: Library/Main/Strings.cs:373
+#: Library/Main/Strings.cs:376
 msgid ""
 "Use this option to use the legacy restore method. The legacy restore method "
 "is slower than the new method, but may be more reliable in some cases."
@@ -6965,11 +7152,11 @@ msgstr ""
 "Utilisation de l'ancienne méthode de restauration. Plus lente que la "
 "nouvelle mais plus fiable dans certains cas."
 
-#: Library/Main/Strings.cs:374
+#: Library/Main/Strings.cs:377
 msgid "Preallocate size of restored files"
 msgstr "Pré-allocation de la taille des fichiers restaurés"
 
-#: Library/Main/Strings.cs:375
+#: Library/Main/Strings.cs:378
 msgid ""
 "Use this option to toggle whether to set the size of the restored files "
 "before they are written to disk. This can help to reduce fragmentation and "
@@ -6979,35 +7166,18 @@ msgstr ""
 " qu'il ne soient écrits sur disque. Peut réduire la fragmentation et "
 "améliorer les performances sur certains systèmes de fichiers."
 
-#: Library/Main/Strings.cs:376
+#: Library/Main/Strings.cs:379
 msgid "Hints to the desired maximum size of the restore volume cache"
 msgstr ""
 "Estimation de la taille maximum optimale du tampon de volumes en "
 "restauration"
 
-#: Library/Main/Strings.cs:377
-msgid ""
-"Use this option to hint the maximum desired size of the restore volume "
-"cache. The restore volume cache is used to store the volumes from the remote"
-" storage on local disk. When this number is exceeded, the client tries to "
-"evict the least recently used volume(s). This means that the number of "
-"volumes kept on disk can exceed this value if they are still being "
-"downloaded or are in use."
-msgstr ""
-"Utilisez cette option pour estimer la taille maximum optimale du tampon de "
-"restauration de volumes. Le tampon de restauration de volumes est utilisé "
-"pour enregistrer les volumes depuis les destinations vers le disque local. "
-"Quand ce nombre est dépassé, essaye d'en évincer les volumes traités le plus"
-" anciennement. Cela signifie que le nombre de volumes conservés sur disque "
-"local peut dépasser cette valeur s'ils sont toujours encours de "
-"téléchargement ou d'utilisation."
-
-#: Library/Main/Strings.cs:378
+#: Library/Main/Strings.cs:383
 msgid "Number of concurrent FileDecompressor processes used during restore"
 msgstr ""
 "Nombre de processus de décompression de fichier simultanés en restauration"
 
-#: Library/Main/Strings.cs:379
+#: Library/Main/Strings.cs:384
 msgid ""
 "Use this option to set the number of concurrent FileDecompressor processes "
 "used during restore. A FileDecompressor processes one volume at a time, and "
@@ -7020,11 +7190,11 @@ msgstr ""
 "performances de restauration si le goulot d'étranglement est la "
 "décompression."
 
-#: Library/Main/Strings.cs:380
+#: Library/Main/Strings.cs:385
 msgid "Number of concurrent FileDecryptor processes used during restore"
 msgstr "Nombre de processus descripteur de fichier simultanés en restauration"
 
-#: Library/Main/Strings.cs:381
+#: Library/Main/Strings.cs:386
 msgid ""
 "Use this option to set the number of concurrent FileDecryptor processes used"
 " during restore. A FileDecryptor processes one volume at a time, and "
@@ -7036,11 +7206,11 @@ msgstr ""
 "de ces processus pourrait améliorer les performances de restauration si le "
 "goulot d'étranglement est le déchiffrement."
 
-#: Library/Main/Strings.cs:382
+#: Library/Main/Strings.cs:387
 msgid "Number of concurrent FileDownloader processes used during restore"
 msgstr "Nombre de processus de téléchargement simultanés en restauration"
 
-#: Library/Main/Strings.cs:383
+#: Library/Main/Strings.cs:388
 msgid ""
 "Use this option to set the number of concurrent FileDownloader processes "
 "used during restore. A FileDownloader processes one volume at a time, and "
@@ -7053,11 +7223,11 @@ msgstr ""
 "performances de restauration si le goulot d'étranglement est le "
 "téléchargement."
 
-#: Library/Main/Strings.cs:384
+#: Library/Main/Strings.cs:389
 msgid "Size of buffers of the channels used during restore"
 msgstr "Taille de tampons de restauration"
 
-#: Library/Main/Strings.cs:385
+#: Library/Main/Strings.cs:390
 msgid ""
 "Use this option to set the size of the buffers of the channels used during "
 "restore. The buffers are used to allow for better asynchronous communication"
@@ -7069,11 +7239,11 @@ msgstr ""
 "processus dans le flux de restauration. L'augmentation de la taille des "
 "tampons peut améliorer les performances de restauration."
 
-#: Library/Main/Strings.cs:386
+#: Library/Main/Strings.cs:391
 msgid "Allow restore outside target directory"
 msgstr "Autoriser les restaurations hors du répertoire cible"
 
-#: Library/Main/Strings.cs:387
+#: Library/Main/Strings.cs:392
 msgid ""
 "Use this option to allow the restore process to write files outside the "
 "target directory. This is normally disabled to prevent path traversal "
@@ -7086,11 +7256,11 @@ msgstr ""
 "restaurer des fichiers vers un endroit en dehors du répertoire cible(p.ex. "
 "via des liens symboliques/raccourcis)."
 
-#: Library/Main/Strings.cs:388
+#: Library/Main/Strings.cs:393
 msgid "Enable internal profiling"
 msgstr "Activer le profilage interne"
 
-#: Library/Main/Strings.cs:389
+#: Library/Main/Strings.cs:394
 msgid ""
 "Use this option to enable internal profiling. Profiling is used to measure "
 "the performance of the internal code. The profiling data is written to the "
@@ -7101,11 +7271,11 @@ msgstr ""
 "écrites dans le journal et peuvent servir à identifier des goulots "
 "d'étranglement."
 
-#: Library/Main/Strings.cs:390
+#: Library/Main/Strings.cs:395
 msgid "Ignore update if version exists"
 msgstr "Ignorer la mise à jour si la version existe"
 
-#: Library/Main/Strings.cs:391
+#: Library/Main/Strings.cs:396
 msgid ""
 "Use this option to ignore the update if the version already exists. This can"
 " be used to avoid errors if asking to update the database with a version "
@@ -7115,11 +7285,11 @@ msgstr ""
 " erreurs en demandant de mettre à jour la base de données vers une version "
 "qui existe déjà."
 
-#: Library/Main/Strings.cs:392
+#: Library/Main/Strings.cs:397
 msgid "Disable special handling for photo libraries on MacOS"
 msgstr "Désactiver le traitement spécial des galeries de photo sur MacOS"
 
-#: Library/Main/Strings.cs:393
+#: Library/Main/Strings.cs:398
 msgid ""
 "Use this option to disable special handling for photo libraries on MacOS. By"
 " default, Duplicati will attempt to read the contents of photo libraries and"
@@ -7133,11 +7303,11 @@ msgstr ""
 "elles-mêmes. Cette option désactive ce comportement et sauvegarde les "
 "galeries comme si elles étaient des répertoires normaux."
 
-#: Library/Main/Strings.cs:394
+#: Library/Main/Strings.cs:399
 msgid "Path to the Photos library"
 msgstr "Chemin de la galerie de photos macOS"
 
-#: Library/Main/Strings.cs:395
+#: Library/Main/Strings.cs:400
 msgid ""
 "Use this option to specify the path to the Photos library on MacOS. This "
 "option is only relevant if the Photos library is not in the default "
@@ -7147,11 +7317,11 @@ msgstr ""
 "Cette option n'a d'effet que si la galerie ne se trouve pas dans son "
 "emplacement par défaut."
 
-#: Library/Main/Strings.cs:396
+#: Library/Main/Strings.cs:401
 msgid "Refresh lock information during repair"
 msgstr "Actualiser les informations de verrouillage pendant la réparation"
 
-#: Library/Main/Strings.cs:397
+#: Library/Main/Strings.cs:402
 msgid ""
 "Use this option to refresh the object lock expiration information from the "
 "backend during a repair operation. This will query the backend for the "
@@ -7165,7 +7335,25 @@ msgstr ""
 "volume distant et on met à jour la base de données en conséquence. Si la "
 "plateforme ne prend pas en charge le verrouillage, l'option est ignorée."
 
+#: Library/Main/Strings.cs:403
+msgid "Perform a complete refresh of lock information"
+msgstr "Effectuer une actualisation complète de l'état des verrouillages"
+
 #: Library/Main/Strings.cs:404
+msgid ""
+"Use this option to perform a complete refresh of lock information from the "
+"backend. This will query the backend for the current lock status of each "
+"remote volume and update the local database accordingly. If this option is "
+"not specified, only the lock information for the remote volumes with no lock"
+" information will be refreshed."
+msgstr ""
+"Option destinée à demander une actualisation complète de l'état des "
+"verrouillages de la plateforme. On demande à celle-ci l'état actuel des "
+"verrous de chaque volume et on met à jour la base de données avec les "
+"réponses. Si l'option n'est pas définie, seules les informations de "
+"verrouillage des volumes sans information de verrouillage sont actualisées."
+
+#: Library/Main/Strings.cs:409
 #, csharp-format
 msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
@@ -7174,22 +7362,22 @@ msgstr ""
 "La crypto-bibliothèque ne prend pas en charge les transformations "
 "réutilisables pour l'algorithme de hachage {0}"
 
-#: Library/Main/Strings.cs:405
+#: Library/Main/Strings.cs:410
 #, csharp-format
 msgid "The cryptolibrary does not support the hash algorithm {0}"
 msgstr "La crypto-bibliothèque ne supporte pas l'algorithme de hachage {0}"
 
-#: Library/Main/Strings.cs:406
+#: Library/Main/Strings.cs:411
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr ""
 "La phrase de passe ne peut pas être modifiée pour une sauvegarde existante"
 
-#: Library/Main/Strings.cs:407
+#: Library/Main/Strings.cs:412
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
 msgstr "Échec de la création d'un instantané: {0}"
 
-#: Library/Main/Strings.cs:408
+#: Library/Main/Strings.cs:413
 msgid ""
 "Failed to activate BackupRead as the current process does not have "
 "sufficient permissions"
@@ -7197,7 +7385,7 @@ msgstr ""
 "Échec d'activation de BackupRead car le processus courant ne dispose pas des"
 " permissions suffisantes"
 
-#: Library/Main/Strings.cs:413
+#: Library/Main/Strings.cs:418
 #, csharp-format
 msgid "The encryption module {0} was not found"
 msgstr "Module de chiffrement {0} non trouvé"
@@ -7301,9 +7489,9 @@ msgstr ""
 msgid "Configure Microsoft SQL Server module"
 msgstr "Configurer le module Microsoft SQL Server"
 
-#: Library/Modules/Builtin/Strings.cs:59
-msgid "Remote synchronization (3-2-1)"
-msgstr "Synchronisation distante (3-2-1)"
+#: Library/Modules/Builtin/Strings.cs:60
+msgid "Remote sync source backend"
+msgstr "Plateforme source de synchro"
 
 #: Library/Modules/Builtin/Strings.cs:61
 msgid ""
@@ -8174,179 +8362,6 @@ msgstr "Limiter les lignes de journaux"
 #, csharp-format
 msgid "The format is not supported: {0}"
 msgstr "Le format n'est pas pris en charge: {0}"
-
-#: Library/RemoteSynchronization/Strings.cs:34
-msgid ""
-"Remote Synchronization Tool\n"
-"\n"
-"This tool synchronizes two remote backends. The tool assumes that the intent is\n"
-"to have the destination match the source.\n"
-"\n"
-"If the destination has files that are not in the source, they will be deleted\n"
-"(or renamed if the retention option is set).\n"
-"\n"
-"If the destination has files that are also present in the source, but the files\n"
-"differ in size, or if the source files have a newer (more recent) timestamp,\n"
-"the destination files will be overwritten by the source files. Given that some\n"
-"backends do not allow for metadata or timestamp modification, and that the tool\n"
-"is run after backup, the destination files should always have a timestamp that\n"
-"is newer (or the same if run promptly) compared to the source files.\n"
-"\n"
-"If the force option is set, the destination will be overwritten by the source,\n"
-"regardless of the state of the files. It will also skip the initial comparison,\n"
-"and delete (or rename) all files in the destination.\n"
-"\n"
-"If the verify option is set, the files will be downloaded and compared after\n"
-"uploading to ensure that the files are correct. Files that already exist in the\n"
-"destination will be verified before being overwritten (if they seemingly match).\n"
-msgstr ""
-"Outil de synchronisation distante\n"
-"\n"
-"Cet outil synchronise deux plateformes distantes. Il présume que l'objectif est\n"
-"d'obtenir la correspondance de la destination par rapport à la source.\n"
-"\n"
-"Si la destination contient des fichiers absents de la source, ils seront supprimés\n"
-"(ou renommés si l'option de préservation est activée).\n"
-"\n"
-"Si la destination contient des fichier présents dans la source mais de taille différente \n"
-"ou plus anciens (selon horodatage), ils seront écrasés par les fichiers source. \n"
-"Étant donné que certaines plateformes ne permettent pas la modification de \n"
-"métadonnées ou d'horodatages, et que l'outil est exécuté après la sauvegarde, \n"
-"les fichiers de destination devraient toujours avoir un horodatage supérieur ou \n"
-"égal à celui du fichier source.\n"
-"\n"
-"Si l'option force est activée, la destination est écrasée par la source, sans égard \n"
-"à l'état des fichiers. Ceci inhibe également la comparaison initiale, et supprime \n"
-"(ou renomme) tous les fichiers de la destination.\n"
-"\n"
-"Si l'option de vérification est activée, les fichiers seront téléchargés pour comparaison \n"
-"après l'envoi pour vérifier leur conformité. Les fichiers existant déjà dans la \n"
-"destination seront vérifiés avant d'être écrasés (s'ils semblent correspondre).\n"
-
-#: Library/RemoteSynchronization/Strings.cs:61
-msgid "The source backend string"
-msgstr "Chaîne de plateforme de sources"
-
-#: Library/RemoteSynchronization/Strings.cs:66
-msgid "The destination backend string"
-msgstr "Chaîne de plateforme de destination"
-
-#: Library/RemoteSynchronization/Strings.cs:71
-msgid ""
-"Automatically create folders in the destination backend if they do not exist"
-msgstr ""
-"Créer automatiquement les répertoires de destination s'ils n'existent pas"
-
-#: Library/RemoteSynchronization/Strings.cs:76
-msgid "Number of times to recreate a backend on backend errors"
-msgstr "Nombre de de tentatives de récréation de plateforme en cas d'erreurs"
-
-#: Library/RemoteSynchronization/Strings.cs:81
-msgid "Delay in milliseconds between backend retries"
-msgstr "Délai en millisecondes entre tentatives d'accès à la plateforme"
-
-#: Library/RemoteSynchronization/Strings.cs:86
-msgid ""
-"Use exponential backoff for backend retries, multiplying the delay by two "
-"for each failure."
-msgstr ""
-"Délai exponentiel de nouvelle tentative d'accès à l'infrastructure, "
-"multipliant le délai par deux à chaque échec."
-
-#: Library/RemoteSynchronization/Strings.cs:91
-msgid "Automatically confirm the operation"
-msgstr "Confirmer automatiquement l'opération"
-
-#: Library/RemoteSynchronization/Strings.cs:96
-msgid ""
-"Do not actually write or delete files. If not set here, the global options "
-"will be checked"
-msgstr ""
-"Ne pas réellement écrire ou supprimer les fichiers. Si rien n'est indiqué "
-"ici l'option globale sera utilisée"
-
-#: Library/RemoteSynchronization/Strings.cs:101
-msgid ""
-"Options for the destination backend. Each option is a key-value pair "
-"separated by an equals sign, e.g. --dst-options key1=value1 key2=value2 "
-"[default: empty]"
-msgstr ""
-"Options pour l'infrastructure de destination. Chaque option est une paire "
-"clé-valeur séparée par le signe égale, p.ex. --dst-options clé1=valeur1 "
-"clé2=valeur2 [défaut : vide]"
-
-#: Library/RemoteSynchronization/Strings.cs:106
-msgid "Force the synchronization"
-msgstr "Forcer la synchronisation"
-
-#: Library/RemoteSynchronization/Strings.cs:111
-msgid ""
-"Global options all backends. May be overridden by backend specific options "
-"(src-options, dst-options). Each option is a key-value pair separated by an "
-"equals sign, e.g. --global-options key1=value1 key2=value2 [default: empty]"
-msgstr ""
-"Options globales pour toutes infrastructures. Elles peuvent être remplacées "
-"par l'option correspondante spécifique à une infrastructure particulière "
-"(src-options, dst-options). Chaque option Each option is a key-value pair "
-"separated by an equals sign, e.g. --global-options key1=value1 key2=value2 "
-"[default: empty]"
-
-#: Library/RemoteSynchronization/Strings.cs:116
-msgid ""
-"The log file to write to. If not set here, global options will be checked "
-"[default: \"\"]"
-msgstr ""
-"Fichier journal à utiliser. If not set here, global options will be checked "
-"[default: \"\"]"
-
-#: Library/RemoteSynchronization/Strings.cs:121
-msgid "The log level to use. If not set here, global options will be checked"
-msgstr ""
-"Niveau de journalisation. Si rien n'est indiqué ici l'option globale sera "
-"utilisée"
-
-#: Library/RemoteSynchronization/Strings.cs:126
-msgid "Only parse the arguments and then exit"
-msgstr "Seulement parcourir les arguments puis sortir"
-
-#: Library/RemoteSynchronization/Strings.cs:131
-msgid "Print progress to STDOUT"
-msgstr "Imprimer l'avancement vers STDOUT"
-
-#: Library/RemoteSynchronization/Strings.cs:136
-msgid "Toggles whether to keep old files. Any deletes will be renames instead"
-msgstr ""
-"Choisir de conserver les vieux fichiers. Sinon, toutes les suppressions "
-"seront des renommages"
-
-#: Library/RemoteSynchronization/Strings.cs:141
-msgid "Number of times to retry on errors"
-msgstr "Nombre de tentatives en cas d'erreurs"
-
-#: Library/RemoteSynchronization/Strings.cs:146
-msgid ""
-"Options for the source backend. Each option is a key-value pair separated by"
-" an equals sign, e.g. --src-options key1=value1 key2=value2 [default: empty]"
-msgstr ""
-"Options pour l'infrastructure des sources. Chaque option est une paire clé-"
-"valeur séparée par le signe  égale, p.ex. --src-options clé1=valeur1 "
-"clé2=valeur2 [défaut: vide]"
-
-#: Library/RemoteSynchronization/Strings.cs:151
-msgid ""
-"Verify the contents of the files to decide whether the pre-existing "
-"destination files should be overwritten"
-msgstr ""
-"Vérifier les contenus des fichiers pour décider si la destination pré-"
-"existante doit être écrasée"
-
-#: Library/RemoteSynchronization/Strings.cs:156
-msgid ""
-"Verify the files after uploading them to ensure that they were uploaded "
-"correctly"
-msgstr ""
-"Vérifier les fichiers après leur envoi pour s'assurer de la conformité de "
-"l'opération"
 
 #: Library/Utility/Strings.cs:29
 #, csharp-format

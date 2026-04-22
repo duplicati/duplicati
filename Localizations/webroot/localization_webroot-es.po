@@ -313,7 +313,7 @@ msgstr "Nombre del depósito"
 msgid "Bucket storage class"
 msgstr "Categoría de almacenamiento del depósito"
 
-#: scripts/services/ServerStatus.js:51
+#: scripts/services/ServerStatus.js:52
 msgid "Building list of files to restore …"
 msgstr "Creando una lista de archivos para restaurar ..."
 
@@ -369,8 +369,8 @@ msgstr "Experimental e inestable (Canary)"
 #: scripts/controllers/LocalDatabaseController.js:72
 #: scripts/controllers/LocalDatabaseController.js:88
 #: scripts/controllers/RestoreDirectController.js:24
-#: scripts/controllers/StateController.js:108
-#: scripts/controllers/StateController.js:117
+#: scripts/controllers/StateController.js:119
+#: scripts/controllers/StateController.js:128
 #: scripts/services/DialogService.js:50
 #: scripts/services/EditUriBuiltins.js:1215
 #: scripts/services/EditUriBuiltins.js:1231
@@ -438,7 +438,7 @@ msgstr "Fase de compactación"
 msgid "Compact now"
 msgstr "Compactar ahora"
 
-#: scripts/services/ServerStatus.js:44 scripts/services/ServerStatus.js:68
+#: scripts/services/ServerStatus.js:44 scripts/services/ServerStatus.js:69
 msgid "Compacting remote data …"
 msgstr "Compactando datos remotos ..."
 
@@ -566,7 +566,7 @@ msgstr "¿Crear carpeta?"
 msgid "Created new limited user"
 msgstr "Creó un nuevo usuario limitado"
 
-#: scripts/services/ServerStatus.js:63
+#: scripts/services/ServerStatus.js:64
 msgid "Creating bug report …"
 msgstr "Creando informe de errores ..."
 
@@ -574,7 +574,7 @@ msgstr "Creando informe de errores ..."
 msgid "Creating new user with limited access …"
 msgstr "Creando nuevo usuario con acceso limitado ..."
 
-#: scripts/services/ServerStatus.js:52
+#: scripts/services/ServerStatus.js:53
 msgid "Creating target folders …"
 msgstr "Creando carpetas de destino …"
 
@@ -692,7 +692,7 @@ msgstr "Versiones eliminadas"
 msgid "Deleted files"
 msgstr "Archivos eliminados"
 
-#: scripts/services/ServerStatus.js:65
+#: scripts/services/ServerStatus.js:66
 msgid "Deleting remote files …"
 msgstr "Eliminando archivos remotos ..."
 
@@ -762,7 +762,7 @@ msgstr "Descargar"
 msgid "Downloaded files"
 msgstr "Ficheros descargados"
 
-#: scripts/services/ServerStatus.js:56
+#: scripts/services/ServerStatus.js:57
 msgid "Downloading files …"
 msgstr "Descargando archivos ..."
 
@@ -922,7 +922,7 @@ msgstr "Introduzca la ruta de destino"
 msgid "Error"
 msgstr "Error"
 
-#: scripts/services/ServerStatus.js:70
+#: scripts/services/ServerStatus.js:71
 msgid "Error!"
 msgstr "¡Error!"
 
@@ -1324,11 +1324,11 @@ msgstr "Librerías"
 msgid "Listing backup dates …"
 msgstr "Listando fechas de las copias de seguridad"
 
-#: scripts/services/ServerStatus.js:66
+#: scripts/services/ServerStatus.js:67
 msgid "Listing remote files for purge …"
 msgstr "Listando archivos remotos para purgar ..."
 
-#: scripts/services/ServerStatus.js:64
+#: scripts/services/ServerStatus.js:65
 msgid "Listing remote files …"
 msgstr "Listando archivos remotos ..."
 
@@ -1706,7 +1706,7 @@ msgstr "Las frases de seguridad no coinciden"
 msgid "Password"
 msgstr "Contraseña"
 
-#: scripts/services/ServerStatus.js:55
+#: scripts/services/ServerStatus.js:56
 msgid "Patching files with local blocks …"
 msgstr "Parchear archivos con bloques locales"
 
@@ -1785,15 +1785,15 @@ msgstr "Propietario"
 msgid "Purge Phase"
 msgstr "Fase de purgado"
 
-#: scripts/services/ServerStatus.js:69
+#: scripts/services/ServerStatus.js:70
 msgid "Purging files complete!"
 msgstr "¡Purgado de ficheros finalizado!"
 
-#: scripts/services/ServerStatus.js:67
+#: scripts/services/ServerStatus.js:68
 msgid "Purging files …"
 msgstr "Purgando archivos ..."
 
-#: scripts/services/ServerStatus.js:49
+#: scripts/services/ServerStatus.js:50
 msgid "Rebuilding local database …"
 msgstr "Reconstruyendo base de datos local ..."
 
@@ -1805,7 +1805,7 @@ msgstr "Recrear (borrar y reparar)"
 msgid "Recreate Database Phase"
 msgstr "Fase de recreación de base de datos"
 
-#: scripts/services/ServerStatus.js:59
+#: scripts/services/ServerStatus.js:60
 msgid "Recreating database …"
 msgstr "Recreando base de datos …"
 
@@ -1865,7 +1865,7 @@ msgstr "Reparar"
 msgid "Repair Phase"
 msgstr "Fase de reparación"
 
-#: scripts/services/ServerStatus.js:61
+#: scripts/services/ServerStatus.js:62
 msgid "Repairing database …"
 msgstr "Reparando base de datos…"
 
@@ -1885,7 +1885,7 @@ msgstr "Resetear"
 msgid "Restore"
 msgstr "Restaurar"
 
-#: scripts/services/ServerStatus.js:58
+#: scripts/services/ServerStatus.js:59
 msgid "Restore complete!"
 msgstr "¡Restauración finalizada!"
 
@@ -1991,11 +1991,11 @@ msgstr "Guardar diferentes versiones con fecha y hora en el nombre de archivo"
 msgid "Save immediately"
 msgstr "Guardar inmediatamente"
 
-#: scripts/services/ServerStatus.js:53
+#: scripts/services/ServerStatus.js:54
 msgid "Scanning existing files …"
 msgstr "Escaneando archivos existentes ..."
 
-#: scripts/services/ServerStatus.js:54
+#: scripts/services/ServerStatus.js:55
 msgid "Scanning for local blocks …"
 msgstr "Buscando bloques locales…"
 
@@ -2142,7 +2142,7 @@ msgstr "Comenzar"
 msgid "Starting backup …"
 msgstr "Comenzando copia de seguridad"
 
-#: scripts/services/ServerStatus.js:48
+#: scripts/services/ServerStatus.js:49
 msgid "Starting restore …"
 msgstr "Comenzando restauración ..."
 
@@ -2151,16 +2151,16 @@ msgstr "Comenzando restauración ..."
 msgid "Starting the restore process …"
 msgstr "Comenzando el proceso de restauración ..."
 
-#: scripts/controllers/StateController.js:108
-#: scripts/controllers/StateController.js:117
+#: scripts/controllers/StateController.js:119
+#: scripts/controllers/StateController.js:128
 msgid "Stop after the current file"
 msgstr "Detener después del archivo actual"
 
-#: scripts/controllers/StateController.js:106
+#: scripts/controllers/StateController.js:117
 msgid "Stop running backup"
 msgstr "Detener respaldo en curso"
 
-#: scripts/controllers/StateController.js:115
+#: scripts/controllers/StateController.js:126
 msgid "Stop running task"
 msgstr "Detener tarea en ejecución"
 
@@ -2550,7 +2550,7 @@ msgstr "Preferencias de la interfaz de usuario"
 msgid "Username"
 msgstr "Nombre de usuario"
 
-#: scripts/services/ServerStatus.js:60
+#: scripts/services/ServerStatus.js:61
 msgid "Vacuuming database …"
 msgstr "Limpiando la base de datos ..."
 
@@ -2571,15 +2571,15 @@ msgstr "Verificar archivos"
 msgid "Verifying backend data …"
 msgstr "Verificando datos del servidor ..."
 
-#: scripts/services/ServerStatus.js:62
+#: scripts/services/ServerStatus.js:63
 msgid "Verifying files …"
 msgstr "Verificando archivos ..."
 
-#: scripts/services/ServerStatus.js:38 scripts/services/ServerStatus.js:50
+#: scripts/services/ServerStatus.js:38 scripts/services/ServerStatus.js:51
 msgid "Verifying remote data …"
 msgstr "Verificando datos remotos ..."
 
-#: scripts/services/ServerStatus.js:57
+#: scripts/services/ServerStatus.js:58
 msgid "Verifying restored files …"
 msgstr "Verificando archivos restaurados ..."
 

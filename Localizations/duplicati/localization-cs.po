@@ -9,15 +9,16 @@
 # Jakub Loucký <jakub.loucky@outlook.cz>, 2024
 # Lukáš Tyrychtr <lukastyrychtr@mail.muni.cz>, 2024
 # Pavel Borecki <pavel.borecki@gmail.com>, 2025
+# J Nezbeda, 2026
 # 
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-18 13:48+0100\n"
+"POT-Creation-Date: 2026-04-22 15:17+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
-"Last-Translator: Pavel Borecki <pavel.borecki@gmail.com>, 2025\n"
+"Last-Translator: J Nezbeda, 2026\n"
 "Language-Team: Czech (https://app.transifex.com/duplicati/teams/67655/cs/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -126,6 +127,18 @@ msgstr "Nepodařilo se vyvolat nástroj GnuPG – program nevypíše výstup"
 msgid "Failure while invoking GnuPG, program won't terminate"
 msgstr "Nezdar při volání GnuPG, program neskončí"
 
+#: Library/Encryption/Strings.cs:65
+msgid "Key must be at least 8 characters long"
+msgstr "Klíč musí být alespoň 8 znaků dlouhý"
+
+#: Library/Encryption/Strings.cs:66
+msgid "Key must not be empty"
+msgstr "Klíč nesmí být prázdný"
+
+#: Library/Encryption/Strings.cs:67
+msgid "Refusing to encrypt with blacklisted key"
+msgstr "Odmítnuto zašifrovat s klíčem, který je na seznamu zakázaných"
+
 #: Library/Interface/Strings.cs:26
 msgid "aliases"
 msgstr "alternativní názvy"
@@ -193,6 +206,10 @@ msgstr "Požadovaná složka neexistuje"
 #: Library/Interface/Strings.cs:50
 msgid "Cancelled"
 msgstr "Stornováno"
+
+#: Library/Interface/Strings.cs:52
+msgid "Encryption key is missing."
+msgstr "Chybí šifrovací klíč."
 
 #: Library/Interface/CustomExceptions.cs:85
 #: Library/Interface/CustomExceptions.cs:93
@@ -308,6 +325,11 @@ msgstr "OpenStack Simple Storage"
 msgid "Missing required option: {0}"
 msgstr "Chybějící vyžadovaná volba: {0}"
 
+#: Library/Backend/OpenStack/Strings.cs:31 Library/Backend/S3/Strings.cs:33
+#: Library/Backend/Mega/Strings.cs:27 Library/Utility/Strings.cs:94
+msgid "Supply the password used to connect to the server"
+msgstr "Poskytnout heslo používané pro připojení k serveru"
+
 #: Library/Backend/OpenStack/Strings.cs:32
 msgid "The domain name of the user used to connect to the server."
 msgstr "Doménové jméno uživatele kterým se připojit k serveru."
@@ -324,6 +346,11 @@ msgid ""
 msgstr ""
 "Uživatelské jméno sloužící pro připojení se k serveru. Je možné ho zadat "
 "také prostřednictvím proměnné prostředí „AUTH_USERNAME“."
+
+#: Library/Backend/OpenStack/Strings.cs:35 Library/Backend/S3/Strings.cs:35
+#: Library/Backend/Mega/Strings.cs:29 Library/Utility/Strings.cs:96
+msgid "Supply the username used to connect to the server"
+msgstr "Poskytnout uživatelské jméno používané pro připojení k serveru"
 
 #: Library/Backend/OpenStack/Strings.cs:36
 msgid ""
@@ -344,6 +371,15 @@ msgstr ""
 "možné použít k připojení bez nutnosti zadávání hesla a identifikátoru "
 "nájemníka (tenant)."
 
+#: Library/Backend/OpenStack/Strings.cs:39
+msgid "Supply the API key used to connect to the server"
+msgstr "Poskytněte API klíč sloužící pro připojení k serveru"
+
+#: Library/Backend/OpenStack/Strings.cs:42
+msgid "The keystone API version to use. Valid values are 'v2' and 'v3'."
+msgstr ""
+"Verze API stavebního bloku kterou použít. Platné hodnoty jsou 'v2' a 'v3'."
+
 #: Library/Backend/OpenStack/Strings.cs:43
 msgid "The keystone API version to use"
 msgstr "Verze API stavebního bloku kterou použít"
@@ -355,6 +391,10 @@ msgstr "FTP"
 #: Library/Backend/FTP/Strings.cs:33
 msgid "Alternative FTP"
 msgstr "Alternativní FTP"
+
+#: Library/Backend/FTP/Strings.cs:38
+msgid "Log diagnostics information"
+msgstr "Zaznamenávat diagnostické informace"
 
 #: Library/Backend/FTP/Strings.cs:40
 #, csharp-format
@@ -432,6 +472,15 @@ msgstr ""
 msgid "Add a delay after uploading a file"
 msgstr "Přidat prodlevu pro nahrání souboru"
 
+#: Library/Backend/FTP/Strings.cs:62
+#, csharp-format
+msgid "The file {0} was not found. Message: {1}"
+msgstr "Soubor {0} nebyl nalezen. Zpráva: {1}"
+
+#: Library/Backend/FTP/Strings.cs:71
+msgid "Ignore PureFTPd limit warnings"
+msgstr "Ignorovat PureFTPd varování o limitech"
+
 #: Library/Backend/GoogleServices/Strings.cs:29
 msgid "Google Cloud Storage"
 msgstr "Cloudové úložiště Google"
@@ -487,6 +536,11 @@ msgstr "Modul nastavení pro úložiště Google Cloud"
 #: Library/Backend/S3/Strings.cs:27
 msgid "S3 compatible"
 msgstr "Kompatibilní s S3"
+
+#: Library/Backend/S3/Strings.cs:31 Library/Backend/AliyunOSS/Strings.cs:30
+#: Library/Backend/Idrivee2/Strings.cs:31
+msgid "Access Key ID"
+msgstr "ID přístupového klíče"
 
 #: Library/Backend/S3/Strings.cs:32 Library/Backend/Mega/Strings.cs:26
 #: Library/Utility/Strings.cs:93
@@ -869,6 +923,10 @@ msgstr "Název účtu na úložišti"
 #: Library/Backend/AzureBlob/Strings.cs:36
 msgid "The access key"
 msgstr "Přístupový klíč"
+
+#: Library/Backend/Filen/Strings.cs:30
+msgid "Optional API key"
+msgstr "Volitelný API klíč"
 
 #: Library/Backend/Jottacloud/Strings.cs:29
 msgid "Jottacloud"
@@ -1263,12 +1321,12 @@ msgstr ""
 msgid "Temporary storage folder"
 msgstr "Složka pro dočasné ukládání"
 
-#: Library/RestAPI/Strings.cs:92 Library/RestAPI/Strings.cs:129
+#: Library/RestAPI/Strings.cs:93 Library/RestAPI/Strings.cs:134
 #, csharp-format
 msgid "Server has started and is listening on {0}, port {1}"
 msgstr "Server je spuštěn a očekává spojení na {0}, portu {1}"
 
-#: Library/RestAPI/Strings.cs:125
+#: Library/RestAPI/Strings.cs:130
 #, csharp-format
 msgid ""
 "Unable to find a valid date, given the start date {0}, the repetition "
@@ -1277,7 +1335,7 @@ msgstr ""
 "Nedaří se nalézt platné datum pro dané počáteční datum {0}, interval "
 "opakování {1} a dny, kdy je umožněno {2}"
 
-#: Library/RestAPI/Strings.cs:131
+#: Library/RestAPI/Strings.cs:136
 #, csharp-format
 msgid "Unable to open a socket for listening, tried ports: {0}"
 msgstr "Nedaří se otevřít soket pro očekávání spojení, vyzkoušené porty: {0}"
@@ -2248,7 +2306,7 @@ msgstr ""
 " tuto volbu. Dále nezapomeňte pro vykazování dalších dat nastavit buď "
 "--{0}={2} nebo --{1}={2}"
 
-#: Library/Main/Strings.cs:404
+#: Library/Main/Strings.cs:409
 #, csharp-format
 msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
@@ -2257,18 +2315,18 @@ msgstr ""
 "Kryptografická knihovna nepodporuje znovupoužitelné transformace pro "
 "hashovací algoritmus {0}"
 
-#: Library/Main/Strings.cs:405
+#: Library/Main/Strings.cs:410
 #, csharp-format
 msgid "The cryptolibrary does not support the hash algorithm {0}"
 msgstr ""
 "Kryptografická knihovna nepodporuje tento algoritmus tvorby otisku (hash) "
 "{0}"
 
-#: Library/Main/Strings.cs:406
+#: Library/Main/Strings.cs:411
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr "Heslo existující zálohy nemůže být změněno"
 
-#: Library/Main/Strings.cs:407
+#: Library/Main/Strings.cs:412
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
 msgstr "Zachycený stav se nepodařilo vytvořit: {0}"
@@ -2812,6 +2870,26 @@ msgid ""
 msgstr ""
 "Tuto volbu nastavte pokud chcete aby byl klient pro příkazový řádek "
 "aktualizovaný automaticky"
+
+#: CommandLine/CLI/Strings.cs:59
+msgid "Use portable mode"
+msgstr "Použít přenosný režim"
+
+#: CommandLine/CLI/Strings.cs:61
+msgid "Data folder"
+msgstr "Datový adresář"
+
+#: CommandLine/CLI/Strings.cs:63
+msgid "Allowed backends"
+msgstr "Povolená zázemí"
+
+#: CommandLine/CLI/Strings.cs:65
+msgid "Allowed encryption modules"
+msgstr "Povolené šifrovací moduly"
+
+#: CommandLine/CLI/Strings.cs:67
+msgid "Allowed compression modules"
+msgstr "Povolené kompresní moduly"
 
 #: CommandLine/CLI/Strings.cs:75
 #, csharp-format

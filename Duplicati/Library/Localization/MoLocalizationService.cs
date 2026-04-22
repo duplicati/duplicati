@@ -27,6 +27,7 @@ using System.Globalization;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using NGettext;
+using Duplicati.Library.Logging;
 
 namespace Duplicati.Library.Localization
 {
@@ -35,6 +36,11 @@ namespace Duplicati.Library.Localization
     /// </summary>
     public class MoLocalizationService : ILocalizationService
     {
+        /// <summary>
+        /// The log tag used for logging from this class
+        /// </summary>
+        private static readonly string LOGTAG = Log.LogTagFromType<MoLocalizationService>();
+
         /// <summary>
         /// The catalog containing the translations
         /// </summary>
@@ -138,7 +144,15 @@ namespace Duplicati.Library.Localization
         /// <returns>The localized string</returns>
         public string Localize(string message)
         {
-            return catalog.GetString(PreFormat(message));
+            try
+            {
+                return catalog.GetString(PreFormat(message));
+            }
+            catch (Exception ex)
+            {
+                Log.WriteWarningMessage(LOGTAG, "StringTranslationError", ex, "Failed to translate string: {0}", message);
+            }
+            return message;
         }
 
         /// <summary>
@@ -149,7 +163,16 @@ namespace Duplicati.Library.Localization
         /// <returns>The localized string</returns>
         public string Localize(string message, object arg0)
         {
-            return catalog.GetString(PreFormat(message), arg0);
+            try
+            {
+                return catalog.GetString(PreFormat(message), arg0);
+            }
+            catch (Exception ex)
+            {
+                Log.WriteWarningMessage(LOGTAG, "StringTranslationError", ex, "Failed to translate string: {0}", message);
+            }
+
+            return string.Format(PreFormat(message), arg0);
         }
 
         /// <summary>
@@ -161,7 +184,16 @@ namespace Duplicati.Library.Localization
         /// <returns>The localized string</returns>
         public string Localize(string message, object arg0, object arg1)
         {
-            return catalog.GetString(PreFormat(message), arg0, arg1);
+            try
+            {
+                return catalog.GetString(PreFormat(message), arg0, arg1);
+            }
+            catch (Exception ex)
+            {
+                Log.WriteWarningMessage(LOGTAG, "StringTranslationError", ex, "Failed to translate string: {0}", message);
+            }
+
+            return string.Format(PreFormat(message), arg0, arg1);
         }
 
         /// <summary>
@@ -174,7 +206,16 @@ namespace Duplicati.Library.Localization
         /// <returns>The localized string</returns>
         public string Localize(string message, object arg0, object arg1, object arg2)
         {
-            return catalog.GetString(PreFormat(message), arg0, arg1, arg2);
+            try
+            {
+                return catalog.GetString(PreFormat(message), arg0, arg1, arg2);
+            }
+            catch (Exception ex)
+            {
+                Log.WriteWarningMessage(LOGTAG, "StringTranslationError", ex, "Failed to translate string: {0}", message);
+            }
+
+            return string.Format(PreFormat(message), arg0, arg1, arg2);
         }
 
         /// <summary>
@@ -184,7 +225,16 @@ namespace Duplicati.Library.Localization
         /// <param name="args">The arguments</param>
         public string Localize(string message, params object[] args)
         {
-            return catalog.GetString(PreFormat(message), args);
+            try
+            {
+                return catalog.GetString(PreFormat(message), args);
+            }
+            catch (Exception ex)
+            {
+                Log.WriteWarningMessage(LOGTAG, "StringTranslationError", ex, "Failed to translate string: {0}", message);
+            }
+
+            return string.Format(PreFormat(message), args);
         }
 
         private static IEnumerable<CultureInfo> m_supportedcultures = null;
