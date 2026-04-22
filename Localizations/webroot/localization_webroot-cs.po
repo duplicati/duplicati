@@ -4,16 +4,21 @@
 # M D, 2021
 # Filip Maleček, 2022
 # Pavel Borecki <pavel.borecki@gmail.com>, 2024
+# J Nezbeda, 2026
 # 
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"Last-Translator: Pavel Borecki <pavel.borecki@gmail.com>, 2024\n"
+"Last-Translator: J Nezbeda, 2026\n"
 "Language-Team: Czech (https://app.transifex.com/duplicati/teams/67655/cs/)\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Language: cs\n"
 "Plural-Forms: nplurals=4; plural=(n == 1 && n % 1 == 0) ? 0 : (n >= 2 && n <= 4 && n % 1 == 0) ? 1: (n % 1 != 0 ) ? 2 : 3;\n"
+
+#: templates/backup-result/entryline.html:15
+msgid "(interrupted)"
+msgstr "(přerušené)"
 
 #: templates/advancedoptionseditor.html:50
 msgid "- pick an option -"
@@ -22,6 +27,14 @@ msgstr "- vyberte jednu z možností -"
 #: scripts/controllers/SystemSettingsController.js:217 templates/delete.html:7
 msgid "...loading..."
 msgstr "…načítání…"
+
+#: templates/commandline.html:25
+msgid "<i class=\"fa fa-check\"></i> Edit as text"
+msgstr "<i class=\"fa fa-check\"></i> Upravit jako text"
+
+#: templates/commandline.html:32
+msgid "<i class=\"fa\"></i> Edit as text"
+msgstr "<i class=\"fa\"></i> Upravit jako text"
 
 #: scripts/services/EditUriBuiltins.js:1314
 #: templates/backends/openstack.html:44 templates/backends/storj.html:21
@@ -55,6 +68,10 @@ msgstr "O aplikaci {{appname}}"
 msgid "Access Key"
 msgstr "Přístupový klíč"
 
+#: templates/backends/e2.html:2
+msgid "Access Key ID"
+msgstr "ID přístupového klíče"
+
 #: scripts/services/AppUtils.js:76
 msgid "Access denied"
 msgstr "Přístup odepřen"
@@ -62,6 +79,10 @@ msgstr "Přístup odepřen"
 #: templates/backends/storj.html:33 templates/backends/storj.html:34
 msgid "Access grant"
 msgstr "Udělení přístupu"
+
+#: templates/backends/azure.html:11 templates/backends/azure.html:12
+msgid "Access key"
+msgstr "Přístupový klíč"
 
 #: templates/settings.html:5
 msgid "Access to user interface"
@@ -122,6 +143,10 @@ msgstr "Pokročilé:"
 msgid "All Hyper-V Machines"
 msgstr "Všechny Hyper-V stroje"
 
+#: scripts/directives/sourceFolderPicker.js:319
+msgid "All Microsoft SQL Servers"
+msgstr "Všechny Microsoft SQL servery"
+
 #: templates/settings.html:175
 msgid ""
 "All usage reports are sent anonymously and do not contain any personal "
@@ -140,6 +165,10 @@ msgstr "Umožnit přístup na dálku (vyžaduje restart)"
 #: templates/addoredit.html:278
 msgid "Allowed days"
 msgstr "Dny, ve které je přístup umožněn"
+
+#: templates/pause.html:52
+msgid "Also pause transfers"
+msgstr "Také pozastaví přenosy"
 
 #: scripts/controllers/LocalDatabaseController.js:103
 msgid "An existing file was found at the new location"
@@ -297,13 +326,17 @@ msgstr "Název „nádoby“ (bucket)"
 msgid "Bucket storage class"
 msgstr "Třída úložiště nesoucí „nádobu“ (bucket)"
 
-#: scripts/services/ServerStatus.js:51
+#: scripts/services/ServerStatus.js:52
 msgid "Building list of files to restore …"
 msgstr "Vytváření seznamu souborů k obnovení…"
 
 #: scripts/controllers/RestoreController.js:373
 msgid "Building partial temporary database …"
 msgstr "Vytváření částečné dočasné databáze…"
+
+#: templates/restore.html:59
+msgid "Busy …"
+msgstr "Zaneprázdněný..."
 
 #: templates/settings.html:21
 msgid ""
@@ -352,8 +385,8 @@ msgstr "Kanárek"
 #: scripts/controllers/LocalDatabaseController.js:72
 #: scripts/controllers/LocalDatabaseController.js:88
 #: scripts/controllers/RestoreDirectController.js:24
-#: scripts/controllers/StateController.js:108
-#: scripts/controllers/StateController.js:117
+#: scripts/controllers/StateController.js:119
+#: scripts/controllers/StateController.js:128
 #: scripts/services/DialogService.js:50
 #: scripts/services/EditUriBuiltins.js:1215
 #: scripts/services/EditUriBuiltins.js:1231
@@ -361,7 +394,15 @@ msgstr "Kanárek"
 #: templates/export.html:34 templates/settings.html:205
 #: templates/waitarea.html:19
 msgid "Cancel"
-msgstr "Storno"
+msgstr "Zrušit"
+
+#: templates/settings.html:56
+msgid "Cancel registration"
+msgstr "Zrušit registraci"
+
+#: scripts/directives/sourceFolderPicker.js:460
+msgid "Cannot include \"{{text}}\""
+msgstr "Nelze zahrnout „{{text}}“"
 
 #: scripts/controllers/LocalDatabaseController.js:103
 msgid "Cannot move to existing file"
@@ -417,7 +458,7 @@ msgstr "Fáze zkompaktňování"
 msgid "Compact now"
 msgstr "Zkompaktnit nyní"
 
-#: scripts/services/ServerStatus.js:44 scripts/services/ServerStatus.js:68
+#: scripts/services/ServerStatus.js:44 scripts/services/ServerStatus.js:69
 msgid "Compacting remote data …"
 msgstr "Zkompaktňování dat na protějšku…"
 
@@ -517,6 +558,11 @@ msgstr "Kopírovat"
 msgid "Copy Destination URL to Clipboard"
 msgstr "Zkopírovat URL adresu cíle do schránky"
 
+#: scripts/controllers/EditBackupController.js:111
+#: scripts/controllers/RestoreDirectController.js:33
+msgid "Copy URL"
+msgstr "Zkopírovat URL"
+
 #: scripts/controllers/DialogController.js:20
 msgid "Copy failed. Please manually copy the URL"
 msgstr "Kopie se nezdařila. Zkopírujte URL adresu ručně"
@@ -545,7 +591,7 @@ msgstr "Vytvořit složku?"
 msgid "Created new limited user"
 msgstr "Vytvořen nový uživatelský účet s omezenými oprávněními"
 
-#: scripts/services/ServerStatus.js:63
+#: scripts/services/ServerStatus.js:64
 msgid "Creating bug report …"
 msgstr "Vytvořit hlášení chyby…"
 
@@ -553,13 +599,17 @@ msgstr "Vytvořit hlášení chyby…"
 msgid "Creating new user with limited access …"
 msgstr "Vytváření nového uživatele s omezeným přístupem…"
 
-#: scripts/services/ServerStatus.js:52
+#: scripts/services/ServerStatus.js:53
 msgid "Creating target folders …"
 msgstr "Vytváření cílových složek…"
 
 #: scripts/controllers/RestoreController.js:368
 msgid "Creating temporary backup …"
 msgstr "Vytváření dočasné zálohy…"
+
+#: scripts/services/EditUriBuiltins.js:126
+msgid "Creating user …"
+msgstr "Vytváření uživatele..."
 
 #: templates/home.html:105
 msgid "Current action:"
@@ -603,7 +653,7 @@ msgstr "Databáze…"
 
 #: scripts/services/AppUtils.js:97 templates/addoredit.html:353
 msgid "Days"
-msgstr "Dnů"
+msgstr "Dny/ů"
 
 #: scripts/controllers/SystemSettingsController.js:40
 msgid "Default"
@@ -643,7 +693,7 @@ msgstr "Smazat místní databázi"
 
 #: templates/delete.html:38 templates/delete.html:47
 msgid "Delete remote files"
-msgstr "Smazat soubory na protějšku"
+msgstr "Smazat vzdálené soubory"
 
 #: templates/delete.html:26
 msgid "Delete the local database"
@@ -669,7 +719,7 @@ msgstr "Smazané verze"
 msgid "Deleted files"
 msgstr "Smazané soubory"
 
-#: scripts/services/ServerStatus.js:65
+#: scripts/services/ServerStatus.js:66
 msgid "Deleting remote files …"
 msgstr "Mazání souborů na protějšku…"
 
@@ -701,9 +751,17 @@ msgstr "Cíl"
 msgid "Destination path"
 msgstr "Cílové umístění"
 
+#: templates/home.html:18
+msgid "Destination size"
+msgstr "Velikost v cíli"
+
+#: templates/settings.html:60
+msgid "Disable remote control"
+msgstr "Zakázat vzdálené ovládání"
+
 #: templates/log.html:32
 msgid "Disabled"
-msgstr "Vypnuto"
+msgstr "Zakázáno"
 
 #: templates/notificationarea.html:10 templates/notificationarea.html:29
 #: templates/notificationarea.html:40
@@ -726,6 +784,14 @@ msgstr "Opravdu chcete smazat zálohu: „{{name}}“?"
 msgid "Do you really want to delete the local database for: {{name}}"
 msgstr "Opravdu chcete smazat místní databázi pro: {{name}}"
 
+#: templates/backends/smb.html:33
+msgid "Domain"
+msgstr "Doména"
+
+#: templates/backends/openstack.html:26
+msgid "Domain name"
+msgstr "Doménové jméno"
+
 #: templates/export.html:53
 msgid "Done"
 msgstr "Hotovo"
@@ -739,7 +805,7 @@ msgstr "Stáhnout"
 msgid "Downloaded files"
 msgstr "Stažené soubory"
 
-#: scripts/services/ServerStatus.js:56
+#: scripts/services/ServerStatus.js:57
 msgid "Downloading files …"
 msgstr "Stahování souborů…"
 
@@ -803,6 +869,14 @@ msgstr "Upravit jako text"
 msgid "Edit …"
 msgstr "Upravit…"
 
+#: templates/backends/msgroup.html:3
+msgid "Email address of the Office 365 group"
+msgstr "E-mailová adresa Office 365 skupiny"
+
+#: templates/settings.html:64
+msgid "Enable remote control"
+msgstr "Povolit vzdálené ovládání"
+
 #: templates/export.html:22
 msgid "Encrypt file"
 msgstr "Zašifrovat soubor"
@@ -816,10 +890,22 @@ msgstr "Šifrování"
 msgid "Encryption changed"
 msgstr "Šifrování změněno"
 
+#: templates/about.html:68
+msgid ""
+"Encryption modules: <p style=\"display: inline\" ng-repeat=\"item in "
+"sysinfo.EncryptionModules\">{{item.Key}} </p>"
+msgstr ""
+"Šifrovací moduly: <p style=\"display: inline\" ng-repeat=\"item in "
+"sysinfo.EncryptionModules\">{{item.Key}} </p>"
+
 #: scripts/services/EditUriBuiltins.js:1315 templates/backends/storj.html:25
 #: templates/backends/storj.html:26
 msgid "Encryption passphrase"
 msgstr "Šifrovací heslová fráze"
+
+#: templates/backends/storj.html:30
+msgid "Encryption passphrase (for verification)"
+msgstr "Šifrovací heslová fráze (pro ověření)"
 
 #: templates/backup-result/phases/compact.html:12
 #: templates/backup-result/phases/delete.html:12
@@ -835,6 +921,11 @@ msgstr "Konec"
 #: scripts/controllers/RestoreDirectController.js:24
 msgid "Enter URL"
 msgstr "Zadejte URL adresu"
+
+#: scripts/controllers/EditBackupController.js:103
+#: scripts/controllers/RestoreDirectController.js:24
+msgid "Enter a backup destination URL:"
+msgstr "Zadejte vzdálenou URL pro zálohy:"
 
 #: templates/addoredit.html:341
 msgid ""
@@ -900,7 +991,7 @@ msgstr "Zadejte popis cílového umístění "
 msgid "Error"
 msgstr "Chyba"
 
-#: scripts/services/ServerStatus.js:70
+#: scripts/services/ServerStatus.js:71
 msgid "Error!"
 msgstr "Chyba!"
 
@@ -1025,9 +1116,22 @@ msgstr "Nepodařilo se stáhnout informaci o popisu umístění: {{message}}"
 msgid "Failed to find backup:"
 msgstr "Zálohu se nepodařilo nalézt:"
 
+#: scripts/directives/notificationArea.js:68
+msgid "Failed to get bug report URL: {{message}}"
+msgstr "Chyba získání URL pro nahlášení chyb: {{message}}"
+
+#: scripts/controllers/ImportController.js:39
+#: scripts/controllers/ImportController.js:43
+msgid "Failed to import: {{message}}"
+msgstr "Chyba importu: {{message}}"
+
 #: scripts/controllers/EditBackupController.js:714
 msgid "Failed to read backup defaults:"
 msgstr "Nepodařilo se načíst výchozí parametry zálohy:"
+
+#: scripts/controllers/ImportController.js:49
+msgid "Failed to read file: {{message}}"
+msgstr "Chyba čtení souboru: {{message}}"
 
 #: scripts/controllers/RestoreController.js:423
 msgid "Failed to restore files: {{message}}"
@@ -1120,6 +1224,10 @@ msgstr "Získávání verzí souboru…"
 msgid "Group email"
 msgstr "E-mail skupiny"
 
+#: index.html:311
+msgid "Help"
+msgstr "Nápověda"
+
 #: scripts/controllers/EditBackupController.js:20
 msgid "Hidden files"
 msgstr "Skryté soubory"
@@ -1127,6 +1235,10 @@ msgstr "Skryté soubory"
 #: templates/addoredit.html:68
 msgid "Hide"
 msgstr "Skrýt"
+
+#: templates/backends/file.html:15 templates/restore.html:98
+msgid "Hide hidden items"
+msgstr "Skrýt skryté soubory"
 
 #: index.html:208 scripts/services/AppUtils.js:62
 msgid "Home"
@@ -1139,7 +1251,7 @@ msgstr "Názvy strojů"
 #: scripts/services/AppUtils.js:106 scripts/services/AppUtils.js:96
 #: templates/settings.html:91
 msgid "Hours"
-msgstr "Hodin"
+msgstr "Hodin/y"
 
 #: templates/restore.html:111
 msgid "How do you want to handle existing files?"
@@ -1148,6 +1260,10 @@ msgstr "Jak chcete zacházet s existujícími soubory?"
 #: scripts/services/AppUtils.js:70
 msgid "Hyper-V Machine"
 msgstr "Hyper-V stroj"
+
+#: scripts/directives/sourceFolderPicker.js:279
+msgid "Hyper-V Machine: {{name}}"
+msgstr "Hyper-V stroj: {{name}}"
 
 #: scripts/services/AppUtils.js:72
 msgid "Hyper-V Machines"
@@ -1184,11 +1300,16 @@ msgstr "Pokud nezadáte klíč k API, je vyžadováno jméno nájemníka (tenant
 
 #: templates/import.html:29
 msgid "Import"
-msgstr "Import"
+msgstr "Importovat"
 
 #: templates/addoredit.html:100 templates/restoredirect.html:39
 msgid "Import Destination URL"
 msgstr "Importovat URL adresu cíle"
+
+#: scripts/controllers/EditBackupController.js:103
+#: scripts/controllers/RestoreDirectController.js:24
+msgid "Import URL"
+msgstr "Importovat URL"
 
 #: templates/import.html:3
 msgid "Import backup configuration"
@@ -1228,6 +1349,10 @@ msgstr ""
 #: scripts/services/DialogService.js:27
 msgid "Information"
 msgstr "Informace"
+
+#: templates/backup-result/top-right-box.html:3
+msgid "Interrupted, no statistics collected"
+msgstr "Přerušeno, žádné statistiky nebyly posbírány"
 
 #: scripts/controllers/EditBackupController.js:296
 #: scripts/controllers/EditBackupController.js:303
@@ -1291,11 +1416,11 @@ msgstr "Knihovny"
 msgid "Listing backup dates …"
 msgstr "Vypisování datumů záloh…"
 
-#: scripts/services/ServerStatus.js:66
+#: scripts/services/ServerStatus.js:67
 msgid "Listing remote files for purge …"
 msgstr "Vypisování souborů na protějšku, které trvale vymazat…"
 
-#: scripts/services/ServerStatus.js:64
+#: scripts/services/ServerStatus.js:65
 msgid "Listing remote files …"
 msgstr "Vypisování souborů na protějšku…"
 
@@ -1315,6 +1440,10 @@ msgstr "Načíst cíl z exportované úlohy nebo poskytovatele úložiště"
 #: templates/log.html:24
 msgid "Load older data"
 msgstr "Načíst starší data"
+
+#: templates/delete.html:40
+msgid "Loading remote storage usage …"
+msgstr "Načítání využití vzdáleného úložiště..."
 
 #: templates/about.html:43 templates/about.html:49 templates/about.html:55
 #: templates/backuplog.html:12 templates/backuplog.html:22
@@ -1427,17 +1556,25 @@ msgstr "Přesun se nezdařil:"
 msgid "My Documents"
 msgstr "Moje dokumenty"
 
+#: scripts/services/AppUtils.js:66
+msgid "My Downloads"
+msgstr "Moje stažené"
+
+#: scripts/services/AppUtils.js:64
+msgid "My Movies"
+msgstr "Moje filmy"
+
 #: scripts/services/AppUtils.js:56
 msgid "My Music"
-msgstr "Hudba"
+msgstr "Má hudba"
 
 #: templates/addoredit.html:40
 msgid "My Photos"
-msgstr "Fotografie"
+msgstr "Mé fotografie"
 
 #: scripts/services/AppUtils.js:58
 msgid "My Pictures"
-msgstr "Obrázky"
+msgstr "Mé obrázky"
 
 #: templates/addoredit.html:39 templates/home.html:15
 msgid "Name"
@@ -1446,6 +1583,10 @@ msgstr "Název"
 #: templates/home.html:87
 msgid "Never"
 msgstr "Nikdy"
+
+#: templates/changepassword.html:5 templates/settings.html:11
+msgid "New Password"
+msgstr "Nové heslo"
 
 #: scripts/services/EditUriBuiltins.js:140
 msgid ""
@@ -1561,6 +1702,10 @@ msgstr "Nic nebude smazáno. Velikost zálohy naroste při každé změně."
 msgid "OK"
 msgstr "OK"
 
+#: templates/settings.html:136
+msgid "Official releases"
+msgstr "Oficiální vydání"
+
 #: templates/addoredit.html:348
 msgid ""
 "Once there are more backups than the specified number, the oldest backups "
@@ -1592,6 +1737,10 @@ msgstr "Operace"
 msgid "Operations:"
 msgstr "Operace:"
 
+#: templates/backends/openstack.html:45
+msgid "Optional API key"
+msgstr "Volitelný API klíč"
+
 #: templates/backends/file.html:34
 msgid "Optional authentication password"
 msgstr "Volitelné ověřovací heslo"
@@ -1604,6 +1753,10 @@ msgstr "Volitelné uživatelské jméno pro ověření"
 #: templates/settings.html:193 templates/settings.html:199
 msgid "Options"
 msgstr "Předvolby"
+
+#: templates/home.html:7
+msgid "Order by"
+msgstr "Třídit podle"
 
 #: templates/restore.html:81
 msgid "Original location"
@@ -1658,7 +1811,7 @@ msgstr "Zadání heslové fráze se neshodují"
 msgid "Password"
 msgstr "Heslo"
 
-#: scripts/services/ServerStatus.js:55
+#: scripts/services/ServerStatus.js:56
 msgid "Patching files with local blocks …"
 msgstr "Opravování souborů pomocí místních bloků…"
 
@@ -1739,15 +1892,15 @@ msgstr "Proprietární"
 msgid "Purge Phase"
 msgstr "Fáze trvalého mazání"
 
-#: scripts/services/ServerStatus.js:69
+#: scripts/services/ServerStatus.js:70
 msgid "Purging files complete!"
 msgstr "Trvalé smazání souborů dokončeno!"
 
-#: scripts/services/ServerStatus.js:67
+#: scripts/services/ServerStatus.js:68
 msgid "Purging files …"
 msgstr "Trvalé vymazávání souborů…"
 
-#: scripts/services/ServerStatus.js:49
+#: scripts/services/ServerStatus.js:50
 msgid "Rebuilding local database …"
 msgstr "Znovuvytváření místní databáze…"
 
@@ -1759,7 +1912,7 @@ msgstr "Vytvořit znovu (smazat a opravit)"
 msgid "Recreate Database Phase"
 msgstr "Fáze znovuvytváření databáze"
 
-#: scripts/services/ServerStatus.js:59
+#: scripts/services/ServerStatus.js:60
 msgid "Recreating database …"
 msgstr "Znovuvytváření databáze…"
 
@@ -1819,7 +1972,7 @@ msgstr "Opravit"
 msgid "Repair Phase"
 msgstr "Fáze oprav"
 
-#: scripts/services/ServerStatus.js:61
+#: scripts/services/ServerStatus.js:62
 msgid "Repairing database …"
 msgstr "Oprava databáze…"
 
@@ -1839,7 +1992,7 @@ msgstr "Resetovat"
 msgid "Restore"
 msgstr "Obnovit"
 
-#: scripts/services/ServerStatus.js:58
+#: scripts/services/ServerStatus.js:59
 msgid "Restore complete!"
 msgstr "Obnovení dokončeno!"
 
@@ -1945,11 +2098,11 @@ msgstr "Uložit různé verze odlišené časovou značkou v názvu souboru"
 msgid "Save immediately"
 msgstr "Okamžitě uložit"
 
-#: scripts/services/ServerStatus.js:53
+#: scripts/services/ServerStatus.js:54
 msgid "Scanning existing files …"
 msgstr "Skenování existujících souborů…"
 
-#: scripts/services/ServerStatus.js:54
+#: scripts/services/ServerStatus.js:55
 msgid "Scanning for local blocks …"
 msgstr "Skenování místních bloků…"
 
@@ -2096,7 +2249,7 @@ msgstr "Začátek"
 msgid "Starting backup …"
 msgstr "Spouštění zálohy…"
 
-#: scripts/services/ServerStatus.js:48
+#: scripts/services/ServerStatus.js:49
 msgid "Starting restore …"
 msgstr "Spouštění obnovení…"
 
@@ -2105,16 +2258,16 @@ msgstr "Spouštění obnovení…"
 msgid "Starting the restore process …"
 msgstr "Spouštění procesu obnovení…"
 
-#: scripts/controllers/StateController.js:108
-#: scripts/controllers/StateController.js:117
+#: scripts/controllers/StateController.js:119
+#: scripts/controllers/StateController.js:128
 msgid "Stop after the current file"
 msgstr "Zastavit po stávajícím souboru"
 
-#: scripts/controllers/StateController.js:106
+#: scripts/controllers/StateController.js:117
 msgid "Stop running backup"
 msgstr "Zastavit probíhající zálohu"
 
-#: scripts/controllers/StateController.js:115
+#: scripts/controllers/StateController.js:126
 msgid "Stop running task"
 msgstr "Zastavit probíhající úlohu"
 
@@ -2495,7 +2648,7 @@ msgstr "Nastavení uživatelského rozhraní"
 msgid "Username"
 msgstr "Uživatelské jméno"
 
-#: scripts/services/ServerStatus.js:60
+#: scripts/services/ServerStatus.js:61
 msgid "Vacuuming database …"
 msgstr "Úklid v databázi…"
 
@@ -2516,15 +2669,15 @@ msgstr "Ověřit soubory"
 msgid "Verifying backend data …"
 msgstr "Ověřování dat podpůrné vrstvy (backend)…"
 
-#: scripts/services/ServerStatus.js:62
+#: scripts/services/ServerStatus.js:63
 msgid "Verifying files …"
 msgstr "Ověřování správnosti souborů…"
 
-#: scripts/services/ServerStatus.js:38 scripts/services/ServerStatus.js:50
+#: scripts/services/ServerStatus.js:38 scripts/services/ServerStatus.js:51
 msgid "Verifying remote data …"
 msgstr "Ověřování správnosti dat na protějšku…"
 
-#: scripts/services/ServerStatus.js:57
+#: scripts/services/ServerStatus.js:58
 msgid "Verifying restored files …"
 msgstr "Ověřování obnovených souborů…"
 
