@@ -158,6 +158,28 @@ namespace Duplicati.Library.Main.Backend
         }
 
         /// <summary>
+        /// Gets quota information from the backend if it supports quota operations.
+        /// </summary>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task representing the asynchronous operation. The task result is the quota information, or null if the backend does not support quota operations or an error occurs.</returns>
+        public async Task<IQuotaInfo?> GetQuotaInfoAsync(CancellationToken token)
+        {
+            if (_backend is IQuotaEnabledBackend qeb)
+            {
+                try
+                {
+                    return await qeb.GetQuotaInfoAsync(token).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "rsync", ex, "Error getting quota info", null);
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
         /// Instantiates the backend if it has not been instantiated yet.
         /// If the backend is already instantiated, it simply returns.
         /// If the maximum number of retries has been reached, it throws an InvalidOperationException.
