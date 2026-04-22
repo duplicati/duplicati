@@ -948,7 +948,7 @@ namespace Duplicati.Library.Main.Operation
                                     .AddFileEntry(filesetid, prefixid, split.Value, fe.Time, blocksetid, metadataid, cancellationToken)
                                     .ConfigureAwait(false);
 
-                                if (fe.Size <= blocksize)
+                                if (fe.Size <= blocksize && fe.Size > 0)
                                 {
                                     if (!string.IsNullOrWhiteSpace(fe.Blockhash))
                                         await restoredb
@@ -958,7 +958,7 @@ namespace Duplicati.Library.Main.Operation
                                         await restoredb
                                             .AddSmallBlocksetLink(fe.Hash, fe.Hash, fe.Size, cancellationToken)
                                             .ConfigureAwait(false);
-                                    else if (fe.Size > 0)
+                                    else
                                         Logging.Log.WriteWarningMessage(LOGTAG, "MissingBlockHash", null, "No block hash found for file: {0}", fe.Path);
                                 }
 
