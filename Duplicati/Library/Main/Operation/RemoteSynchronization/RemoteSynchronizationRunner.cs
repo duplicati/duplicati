@@ -198,6 +198,22 @@ public static class RemoteSynchronizationRunner
         // Prepare the operations
         var (to_copy, to_delete, to_verify) = await PrepareFileLists(b1m, b2m, config, token).ConfigureAwait(false);
 
+        // Check if we have enough free space in the destination to perform the synchronization.
+        var dst_quota = await b2m.GetQuotaInfoAsync(token).ConfigureAwait(false);
+        if (dst_quota is not null)
+        {
+            var total_delete_size = to_delete.Sum(x => Math.Max(x.Size, 0));
+            var total_copy_size = to_copy.Sum(x => Math.Max(x.Size, 0));
+            if (dst_quota.FreeQuotaSpace < total_copy_size - total_delete_size)
+            {
+                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "rsync", null,
+                    "Not enough free space in destination to perform the synchronization. Required: {0}, Available: {1}. Aborting.",
+                    Duplicati.Library.Utility.Utility.FormatSizeString(total_copy_size - total_delete_size),
+                    Duplicati.Library.Utility.Utility.FormatSizeString(dst_quota.FreeQuotaSpace));
+                throw new Exception("Not enough free space in destination to perform the synchronization.");
+            }
+        }
+
         // Verify the files if requested. If the files are not verified, they will be deleted and copied again.
         long verified = 0, failed_verify = 0;
         if (config.VerifyContents)
