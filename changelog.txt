@@ -1,3 +1,58 @@
+2026-04-23 - 2.3.0.100_canary_2026-04-23
+==========
+This release is a canary release intended to be used for testing.
+
+# Changes in this version
+
+## FAT32 Support for Full Disk Backup
+
+Added FAT32 file system support for the full disk backup feature, including boot sector parser, table reader, streams, and directory walker.
+
+## Remote Synchronization Improvements
+
+Integrated remote synchronization feature (aka 3-2-1 backups) from a separate module into the Main library for better integration, with improved error handling, progress tracking, and reliability.
+
+## Crash Dialog
+
+Added a crash dialog window that appears when the application encounters an unhandled exception.
+
+## DeleteBackup Command
+
+Added a DeleteBackup command to ServerUtil for deleting backups from the command line, thanks to @WouterTinus.
+
+## Avalonia 12 Update
+
+Updated Avalonia UI framework to version 12.
+
+## Performance Improvements
+
+Changed DataBlock and StreamBlockSplitter to use ArrayPool instead of new byte[] allocations, reducing memory pressure during backup operations, and speeding up backups.
+
+Improved the disk-usage logic for improved performance on restores, thanks to @aureliandevel.
+
+# Detailed Changes
+
+- Improved localization resilience and updated all translations, thanks to all translators
+- Fixed empty file db-recreate issue
+- Improved configuration speed from console
+- Updated MailKit, MimeKit, Avalonia
+- Fixed remote sync ShouldTrigger error handling
+- Fixed a settings save bug
+- Performance improvement using ArrayPool for backup operations
+- Updated SharpCompress library
+- Added crash dialog window
+- Added DeleteBackup command to ServerUtil, thanks @WouterTinus
+- Refactored volume manager LRU cache, thanks @aureliandevel
+- Added FAT32 file system support for full disk backup
+- Fixed auth refresh infinite loop in ngax, thnaks @adnit
+- Moved remote synchronization to Main library with improved progress tracking
+- Fixed dollar sign in filename regex issue
+
+# Updates to ngclient
+
+- Fixed an issue with `dblock-size` not being saved correctly
+- Fixed an issue where the notification buttons were hidden
+
 2026-03-20 - 2.2.0.107_canary_2026-03-20
 ==========
 This release is a canary release intended to be used for testing.
