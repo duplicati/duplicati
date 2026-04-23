@@ -150,23 +150,15 @@ namespace Duplicati.Library.Main.Backend
 
             try
             {
-                await RetryWithDelay(
-                    $"Get {remotename} to TempFile",
-                    async () =>
+                using var fileStream = System.IO.File.OpenWrite(temp);
+                using var progressStream = new ProgressReportingStream(fileStream, pg =>
                     {
-                        using var fileStream = System.IO.File.OpenWrite(temp);
-                        using var progressStream = new ProgressReportingStream(fileStream, pg =>
-                            {
-                                _backendProgressUpdater?.UpdateProgress(remotename, pg);
-                                _progressUpdater?.UpdateFileProgress(pg);
-                            });
-                        await _streamingBackend!.GetAsync(remotename, progressStream, token).ConfigureAwait(false);
-                        _anyDownloaded = true;
-                    },
-                    null,
-                    false,
-                    token
-                ).ConfigureAwait(false);
+                        _backendProgressUpdater?.UpdateProgress(remotename, pg);
+                        _progressUpdater?.UpdateFileProgress(pg);
+                    });
+
+                await GetAsync(remotename, progressStream, token)
+                    .ConfigureAwait(false);
 
                 return temp;
             }
@@ -280,25 +272,17 @@ namespace Duplicati.Library.Main.Backend
         /// <param name="temp">The temporary file containing the data to upload.</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>A task representing the asynchronous put operation.</returns>
-        public Task PutAsync(string remotename, TempFile temp, CancellationToken token)
+        public async Task PutAsync(string remotename, TempFile temp, CancellationToken token)
         {
-            return RetryWithDelay(
-                $"Put {remotename}",
-                async () =>
+            using var fileStream = System.IO.File.OpenRead(temp);
+            using var progressStream = new ProgressReportingStream(fileStream, pg =>
                 {
-                    using var fileStream = System.IO.File.OpenRead(temp);
-                    using var progressStream = new ProgressReportingStream(fileStream, pg =>
-                        {
-                            _backendProgressUpdater?.UpdateProgress(remotename, pg);
-                            _progressUpdater?.UpdateFileProgress(pg);
-                        });
-                    await _streamingBackend!.PutAsync(remotename, progressStream, token).ConfigureAwait(false);
-                    _anyUploaded = true;
-                },
-                null,
-                false,
-                token
-            );
+                    _backendProgressUpdater?.UpdateProgress(remotename, pg);
+                    _progressUpdater?.UpdateFileProgress(pg);
+                });
+
+            await PutAsync(remotename, progressStream, token)
+                .ConfigureAwait(false);
         }
 
         /// <summary>
