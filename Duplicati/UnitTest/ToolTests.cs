@@ -24,8 +24,10 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using NUnit.Framework;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
 
@@ -641,6 +643,80 @@ namespace Duplicati.UnitTest
             var data = new byte[size];
             rnd.NextBytes(data);
             await File.WriteAllBytesAsync(file, data);
+        }
+
+        /// <summary>
+        /// A test backend that simulates a quota of 1KB for testing quota checks in the remote synchronization tool.
+        /// </summary>
+        public class FileBackendWith1Kb : Library.Backend.File
+        {
+            public FileBackendWith1Kb() { }
+
+            public FileBackendWith1Kb(string url, Dictionary<string, string?> options) : base(url.Replace("quotatest://", "file://"), options) { }
+
+            public override string ProtocolKey => "quotatest";
+
+            public override Task<IQuotaInfo?> GetQuotaInfoAsync(CancellationToken token)
+            {
+                return Task.FromResult<IQuotaInfo?>(new QuotaInfo(1024 * 1024, 1024));
+            }
+        }
+
+        /// <summary>
+        /// Tests that the remote synchronization tool checks quota and fails if insufficient.
+        /// </summary>
+        [Test]
+        [Category("Tools/RemoteSynchronization")]
+        public void TestRemoteSynchronizationQuotaCheckFails()
+        {
+            var l1 = Path.Combine(TARGETFOLDER, "quota_src");
+            var l2 = Path.Combine(TARGETFOLDER, "quota_dst");
+
+            Directory.CreateDirectory(l1);
+            Directory.CreateDirectory(l2);
+
+            // Generate test data: 5 files of ~1KB each, total ~5KB
+            GenerateTestData(l1, 5, 0, 0, 2048).Wait();
+
+            // Register the test backend
+            Library.DynamicLoader.BackendLoader.AddBackend(new FileBackendWith1Kb());
+
+            // Use the test backend for destination with only 1KB free quota
+            var args = new string[] { $"file://{l1}", $"quotatest://{l2}", "--confirm" };
+
+            var async_call = RemoteSynchronization.Program.Main(args);
+            var return_code = async_call.ConfigureAwait(false).GetAwaiter().GetResult();
+
+            Assert.AreNotEqual(0, return_code, "Remote synchronization should fail due to insufficient quota.");
+        }
+
+        /// <summary>
+        /// Tests that the remote synchronization tool succeeds when quota is sufficient.
+        /// </summary>
+        [Test]
+        [Category("Tools/RemoteSynchronization")]
+        public void TestRemoteSynchronizationQuotaCheckSucceeds()
+        {
+            var l1 = Path.Combine(TARGETFOLDER, "quota_src2");
+            var l2 = Path.Combine(TARGETFOLDER, "quota_dst2");
+
+            Directory.CreateDirectory(l1);
+            Directory.CreateDirectory(l2);
+
+            // Generate small test data: 1 file of ~500B
+            GenerateTestData(l1, 1, 0, 0, 512).Wait();
+
+            // Register the test backend
+            Library.DynamicLoader.BackendLoader.AddBackend(new FileBackendWith1Kb());
+
+            // Use the test backend for destination with 1KB free quota (sufficient)
+            var args = new string[] { $"file://{l1}", $"quotatest://{l2}", "--confirm", "--dst-options", "freequota=1024" };
+
+            var async_call = RemoteSynchronization.Program.Main(args);
+            var return_code = async_call.ConfigureAwait(false).GetAwaiter().GetResult();
+
+            Assert.AreEqual(0, return_code, "Remote synchronization should succeed with sufficient quota.");
+            Assert.IsTrue(DirectoriesAndContentsAreEqual(l1, l2), "Directories should be synchronized.");
         }
 
     }
