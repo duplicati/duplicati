@@ -241,7 +241,7 @@ namespace Duplicati.Library.Backend
         public string DisplayName => Strings.FileBackend.DisplayName;
 
         /// <inheritdoc />
-        public string ProtocolKey => "file";
+        public virtual string ProtocolKey => "file";
 
         public bool SupportsStreaming => !m_moveFile;
 
@@ -450,7 +450,7 @@ namespace Duplicati.Library.Backend
         }
 
         /// <inheritdoc />
-        public Task<IQuotaInfo?> GetQuotaInfoAsync(CancellationToken cancelToken)
+        public virtual Task<IQuotaInfo?> GetQuotaInfoAsync(CancellationToken cancelToken)
         {
             var spaceInfo = Utility.Utility.GetFreeSpaceForPath(m_path);
             if (spaceInfo != null)
