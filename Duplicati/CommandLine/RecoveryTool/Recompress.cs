@@ -115,7 +115,6 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                 bool reencrypt = Library.Utility.Utility.ParseBoolOption(options, "reencrypt");
                 bool reupload = Library.Utility.Utility.ParseBoolOption(options, "reupload");
-                var fullyRewroteRemoteSet = reupload;
 
                 // Needs order (Files or Blocks) and Indexes as last because indexes content will be adjusted based on recompressed blocks
                 var files = remotefiles.Where(a => a.FileType == RemoteVolumeType.Files).ToArray();
@@ -123,10 +122,6 @@ namespace Duplicati.CommandLine.RecoveryTool
                 var indexes = remotefiles.Where(a => a.FileType == RemoteVolumeType.Index).ToArray();
 
                 remotefiles = files.Concat(blocks).ToArray().Concat(indexes).ToArray();
-
-                Options updatedLocalDatabaseOptions = null;
-                if (reupload)
-                    updatedLocalDatabaseOptions = new Options(BuildUpdatedRawOptions(m_Options, remotefiles, target_compr_module, reencrypt));
 
                 var retainedReuploadedBlockFiles = new List<string>();
 
@@ -162,14 +157,12 @@ namespace Duplicati.CommandLine.RecoveryTool
                         else
                         {
                             Console.WriteLine(" - cannot detect compression type");
-                            fullyRewroteRemoteSet = false;
                             continue;
                         }
 
                         if ((!reencrypt && File.Exists(localFileTarget)) || (reencrypt && File.Exists(localFileTarget + "." + localFileSourceEncryption)))
                         {
                             Console.WriteLine(" - target file already exist");
-                            fullyRewroteRemoteSet = false;
                             continue;
                         }
 
@@ -305,7 +298,6 @@ namespace Duplicati.CommandLine.RecoveryTool
                     {
                         Console.WriteLine(" error: {0}", ex);
                         errors++;
-                        fullyRewroteRemoteSet = false;
                     }
                 }
 
@@ -332,10 +324,7 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                 Console.WriteLine("Download complete, of {0} remote files, {1} were downloaded with {2} errors", remotefiles.Count(), downloaded, errors);
                 if (needspass > 0)
-                {
                     Console.WriteLine("Additonally {0} remote files were skipped because of encryption, supply --passphrase to download those", needspass);
-                    fullyRewroteRemoteSet = false;
-                }
 
                 if (errors > 0)
                 {
@@ -343,29 +332,8 @@ namespace Duplicati.CommandLine.RecoveryTool
                     return 200;
                 }
 
-                if (reupload && reuploaded > 0)
-                {
-                    if (fullyRewroteRemoteSet && reuploaded == remotefiles.Length)
-                        UpdateLocalDatabase(args[2], m_Options, updatedLocalDatabaseOptions);
-                    else
-                        Console.WriteLine("The local database was not updated because the reupload did not rewrite the full remote set.");
-                }
-
                 return 0;
             }
-        }
-
-        private static void UpdateLocalDatabase(string backendUrl, Options originalOptions, Options updatedOptions)
-        {
-            var dbpath = CLIDatabaseLocator.GetDatabasePathForCLI(backendUrl, originalOptions, false, true);
-            if (string.IsNullOrWhiteSpace(dbpath) || !File.Exists(dbpath))
-            {
-                Console.WriteLine("The local database was not updated because no matching database file was found. Supply --dbpath to update it explicitly.");
-                return;
-            }
-
-            Duplicati.Library.Main.Utility.PersistOptionsToDatabaseWithoutValidation(dbpath, updatedOptions, "RecoveryTool Recompress", CancellationToken.None).Await();
-            Console.WriteLine("Updated stored backup options in local database: {0}", dbpath);
         }
 
         private static void RestoreOptionsFromLocalDatabaseIfAvailable(string backendUrl, Options options)
@@ -375,39 +343,6 @@ namespace Duplicati.CommandLine.RecoveryTool
                 return;
 
             Duplicati.Library.Main.Utility.UpdateOptionsFromDatabase(dbpath, options, "RecoveryTool Recompress", CancellationToken.None).Await();
-        }
-
-        private static Dictionary<string, string> BuildUpdatedRawOptions(Options originalOptions, IEnumerable<IParsedVolume> remoteFiles, string targetCompressionModule, bool reencrypt)
-        {
-            var updatedOptions = new Dictionary<string, string>(originalOptions.RawOptions);
-            updatedOptions["compression-module"] = targetCompressionModule;
-
-            var encryptionModules = remoteFiles
-                .Select(volume => volume.EncryptionModule)
-                .Where(module => !string.IsNullOrWhiteSpace(module))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToArray();
-
-            if (reencrypt && encryptionModules.Length > 0)
-            {
-                if (encryptionModules.Length != 1)
-                    throw new UserInformationException("Unable to update the local database because the rewritten remote set contains multiple encryption modules.", "RecoveryToolMultipleEncryptionModules");
-
-                updatedOptions.Remove("no-encryption");
-                updatedOptions["encryption-module"] = encryptionModules[0];
-                updatedOptions["passphrase"] = string.IsNullOrWhiteSpace(originalOptions.NewPassphrase)
-                    ? originalOptions.Passphrase
-                    : originalOptions.NewPassphrase;
-            }
-            else
-            {
-                updatedOptions["no-encryption"] = bool.TrueString;
-                updatedOptions.Remove("encryption-module");
-                updatedOptions.Remove("passphrase");
-            }
-
-            updatedOptions.Remove("new-passphrase");
-            return updatedOptions;
         }
     }
 }
