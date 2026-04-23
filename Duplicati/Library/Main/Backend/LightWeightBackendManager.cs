@@ -194,7 +194,8 @@ namespace Duplicati.Library.Main.Backend
                 return;
             }
 
-            _backend = DynamicLoader.BackendLoader.GetBackend(_backendUrl, _options);
+            _backend = DynamicLoader.BackendLoader.GetBackend(_backendUrl, _options)
+                ?? throw new InvalidOperationException("Failed to instantiate backend.");
             _streamingBackend = _backend as IStreamingBackend;
             if (_streamingBackend == null || !_streamingBackend.SupportsStreaming)
             {
