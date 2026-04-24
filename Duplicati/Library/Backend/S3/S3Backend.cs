@@ -356,14 +356,15 @@ namespace Duplicati.Library.Backend
         /// </summary>
         /// <param name="remotename">The remote filename, relative to the URL.</param>
         /// <param name="input">The stream to read from.</param>
-        /// <param name="hashes">The precomputed hashes of the file.</param>
+        /// <param name="md5">The precomputed MD5 hash of the file.</param>
+        /// <param name="sha256">The precomputed SHA256 hash of the file.</param>
         /// <param name="length">The length of the file.</param>
         /// <param name="cancelToken">Token to cancel the operation.</param>
         /// <returns></returns>
-        public async Task PutWithHashAsync(string remotename, Stream input, string[] hashes, long length, CancellationToken cancelToken)
+        public async Task PutWithHashAsync(string remotename, Stream input, string md5, string sha256, long length, CancellationToken cancelToken)
         {
             if (Connection is S3AwsClient awsClient)
-                await awsClient.AddFileStreamAsync(m_bucket, GetFullKey(remotename), input, hashes, length, cancelToken).ConfigureAwait(false);
+                await awsClient.AddFileStreamAsync(m_bucket, GetFullKey(remotename), input, md5, sha256, length, cancelToken).ConfigureAwait(false);
             else
                 await PutAsync(remotename, input, cancelToken).ConfigureAwait(false);
         }

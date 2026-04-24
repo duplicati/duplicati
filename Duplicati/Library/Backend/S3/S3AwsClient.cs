@@ -248,7 +248,7 @@ namespace Duplicati.Library.Backend
             var md5 = Convert.ToBase64String(Utility.Utility.HexStringAsByteArray(hashes[0]));
             var sha256 = Convert.ToBase64String(Utility.Utility.HexStringAsByteArray(hashes[1]));
 
-            await AddFileStreamAsync(bucketName, keyName, source, [md5, sha256], source.Length, cancelToken).ConfigureAwait(false);
+            await AddFileStreamAsync(bucketName, keyName, source, md5, sha256, source.Length, cancelToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -257,18 +257,13 @@ namespace Duplicati.Library.Backend
         /// <param name="bucketName">The name of the bucket</param>
         /// <param name="keyName">The name of the object to create</param>
         /// <param name="source">The source stream to upload</param>
-        /// <param name="hashes">The hashes of the content, in the order of MD5 and SHA256 as hex strings</param>
+        /// <param name="md5">The MD5 hash of the content as a hex string</param>
+        /// <param name="sha256">The SHA256 hash of the content as a hex string</param>
         /// <param name="contentLength">The content length of the stream</param>
         /// <param name="cancelToken">The cancellation token</param>
         /// <returns>>A task representing the asynchronous operation</returns>
-        public virtual async Task AddFileStreamAsync(string bucketName, string keyName, Stream source, string[] hashes, long contentLength, CancellationToken cancelToken)
+        public virtual async Task AddFileStreamAsync(string bucketName, string keyName, Stream source, string md5, string sha256, long contentLength, CancellationToken cancelToken)
         {
-            if (hashes.Length != 2)
-                throw new ArgumentException("Hashes array must contain exactly two elements: MD5 and SHA256", nameof(hashes));
-
-            var md5 = hashes[0];
-            var sha256 = hashes[1];
-
             using var ts = source.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false);
             var objectAddRequest = new PutObjectRequest
             {
@@ -290,7 +285,7 @@ namespace Duplicati.Library.Backend
             // - If chunked streaming is ON, the SDK uses the streaming literal.
             // - If payload signing is disabled, the SDK uses the UNSIGNED-PAYLOAD literal.
             if (!m_useChunkEncoding && !m_disablePayloadSigning)
-                objectAddRequest.Headers["x-amz-content-sha256"] = hashes[1].ToLowerInvariant();
+                objectAddRequest.Headers["x-amz-content-sha256"] = sha256.ToLowerInvariant();
 
             try
             {

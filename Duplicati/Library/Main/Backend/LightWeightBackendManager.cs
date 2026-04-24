@@ -249,17 +249,19 @@ namespace Duplicati.Library.Main.Backend
         /// <param name="remotename">The name of the remote file to put.</param>
         /// <param name="stream">The stream containing the file data to put.</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
-        /// <param name="hashes">Optional array of precomputed hashes to forward to the backend.</param>
+        /// <param name="md5">Optional precomputed MD5 hash of the file.</param>
+        /// <param name="sha256">Optional precomputed SHA256 hash of the file.</param>
         /// <param name="length">The length of the stream data. Required if hashes are provided.</param>
         /// <returns>A task representing the asynchronous put operation.</returns>
-        public Task PutAsync(string remotename, Stream stream, CancellationToken token, string[]? hashes = null, long? length = null)
+        public Task PutAsync(string remotename, Stream stream, CancellationToken token, string? md5 = null, string? sha256 = null, long? length = null)
         {
             return RetryWithDelay(
                 $"Put {remotename}",
                 async () =>
                 {
-                    if (hashes is not null && length is not null && _streamingBackend is Duplicati.Library.Backend.S3 s3backend)
-                        await s3backend.PutWithHashAsync(remotename, stream, hashes, length!.Value, token).ConfigureAwait(false);
+                    var hashes_length_not_null = md5 is not null && sha256 is not null && length is not null;
+                    if (hashes_length_not_null && _streamingBackend is Duplicati.Library.Backend.S3 s3backend)
+                        await s3backend.PutWithHashAsync(remotename, stream, md5!, sha256!, length!.Value, token).ConfigureAwait(false);
                     else
                         await _streamingBackend!.PutAsync(remotename, stream, token).ConfigureAwait(false);
 
