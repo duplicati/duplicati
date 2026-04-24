@@ -16,6 +16,7 @@
     </Project>
     <Project Path="Duplicati/Library/Backend/Jottacloud/Duplicati.Library.Backend.Jottacloud.csproj" />
     <Project Path="Duplicati/Library/Backend/Mega/Duplicati.Library.Backend.Mega.csproj" />
+    <Project Path="Duplicati/Library/Backend/MovistarCloud/Duplicati.Library.Backend.MovistarCloud.csproj" />
     <Project Path="Duplicati/Library/Backend/OneDrive/Duplicati.Library.Backend.OneDrive.csproj" />
     <Project Path="Duplicati/Library/Backend/OpenStack/Duplicati.Library.Backend.OpenStack.csproj" />
     <Project Path="Duplicati/Library/Backend/pCloud/Duplicati.Library.Backend.pCloud.csproj" />
