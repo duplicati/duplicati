@@ -282,6 +282,7 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
 
         using var request = new HttpRequestMessage(HttpMethod.Post, $"/put/{remotename}");
         request.Content = new StreamContent(timeoutStream);
+        request.Content.Headers.ContentLength = source.Length;
         request.Headers.Add("X-Content-MD5", md5 ?? string.Empty);
         request.Headers.Add("X-Content-SHA256", sha256 ?? string.Empty);
 

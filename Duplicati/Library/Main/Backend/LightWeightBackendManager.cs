@@ -250,19 +250,16 @@ namespace Duplicati.Library.Main.Backend
         /// <param name="stream">The stream containing the file data to put.</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <param name="hashes">Optional array of precomputed hashes to forward to the backend.</param>
+        /// <param name="length">The length of the stream data. Required if hashes are provided.</param>
         /// <returns>A task representing the asynchronous put operation.</returns>
-        public Task PutAsync(string remotename, Stream stream, CancellationToken token, string[]? hashes = null)
+        public Task PutAsync(string remotename, Stream stream, CancellationToken token, string[]? hashes = null, long? length = null)
         {
             return RetryWithDelay(
                 $"Put {remotename}",
                 async () =>
                 {
-                    if (hashes is not null && _streamingBackend is S3AwsClient s3client)
-                    {
-                        var bucketname = Directory.GetParent(remotename)!.Name;
-                        var keyname = Path.GetFileName(remotename);
-                        await s3client.AddFileStreamAsync(bucketname, keyname, stream, hashes, token).ConfigureAwait(false);
-                    }
+                    if (hashes is not null && length is not null && _streamingBackend is Duplicati.Library.Backend.S3 s3backend)
+                        await s3backend.PutWithHashAsync(remotename, stream, hashes, length!.Value, token).ConfigureAwait(false);
                     else
                         await _streamingBackend!.PutAsync(remotename, stream, token).ConfigureAwait(false);
 

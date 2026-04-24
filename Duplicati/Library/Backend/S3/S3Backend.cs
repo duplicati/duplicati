@@ -351,6 +351,23 @@ namespace Duplicati.Library.Backend
             await Connection.AddFileStreamAsync(m_bucket, GetFullKey(remotename), input, cancelToken);
         }
 
+        /// <summary>
+        /// Puts a file with the provided hashes and content length, if supported by the client. This allows for optimized uploads where the hashes are already known and for put'ing files with non-seekable streams. If the client does not support this method, it will fall back to a normal PutAsync without the hashes and length.
+        /// </summary>
+        /// <param name="remotename">The remote filename, relative to the URL.</param>
+        /// <param name="input">The stream to read from.</param>
+        /// <param name="hashes">The precomputed hashes of the file.</param>
+        /// <param name="length">The length of the file.</param>
+        /// <param name="cancelToken">Token to cancel the operation.</param>
+        /// <returns></returns>
+        public async Task PutWithHashAsync(string remotename, Stream input, string[] hashes, long length, CancellationToken cancelToken)
+        {
+            if (Connection is S3AwsClient awsClient)
+                await awsClient.AddFileStreamAsync(m_bucket, GetFullKey(remotename), input, hashes, length, cancelToken).ConfigureAwait(false);
+            else
+                await PutAsync(remotename, input, cancelToken).ConfigureAwait(false);
+        }
+
         /// <inheritdoc/>
         public async Task GetAsync(string remotename, string localname, CancellationToken cancelToken)
         {

@@ -248,10 +248,20 @@ namespace Duplicati.Library.Backend
             var md5 = Convert.ToBase64String(Utility.Utility.HexStringAsByteArray(hashes[0]));
             var sha256 = Convert.ToBase64String(Utility.Utility.HexStringAsByteArray(hashes[1]));
 
-            await AddFileStreamAsync(bucketName, keyName, source, [md5, sha256], cancelToken).ConfigureAwait(false);
+            await AddFileStreamAsync(bucketName, keyName, source, [md5, sha256], source.Length, cancelToken).ConfigureAwait(false);
         }
 
-        public virtual async Task AddFileStreamAsync(string bucketName, string keyName, Stream source, string[] hashes, CancellationToken cancelToken)
+        /// <summary>
+        /// Adds a file stream to the bucket with the specified hashes and content length
+        /// </summary>
+        /// <param name="bucketName">The name of the bucket</param>
+        /// <param name="keyName">The name of the object to create</param>
+        /// <param name="source">The source stream to upload</param>
+        /// <param name="hashes">The hashes of the content, in the order of MD5 and SHA256 as hex strings</param>
+        /// <param name="contentLength">The content length of the stream</param>
+        /// <param name="cancelToken">The cancellation token</param>
+        /// <returns>>A task representing the asynchronous operation</returns>
+        public virtual async Task AddFileStreamAsync(string bucketName, string keyName, Stream source, string[] hashes, long contentLength, CancellationToken cancelToken)
         {
             if (hashes.Length != 2)
                 throw new ArgumentException("Hashes array must contain exactly two elements: MD5 and SHA256", nameof(hashes));
@@ -271,6 +281,8 @@ namespace Duplicati.Library.Backend
                 ChecksumSHA256 = sha256,
                 DisablePayloadSigning = m_disablePayloadSigning
             };
+            objectAddRequest.Headers["Content-Length"] = contentLength.ToString();
+
             if (!string.IsNullOrWhiteSpace(m_storageClass))
                 objectAddRequest.StorageClass = new S3StorageClass(m_storageClass);
 
