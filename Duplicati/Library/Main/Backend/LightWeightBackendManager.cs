@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Duplicati.Library.Backend;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 
@@ -150,23 +151,15 @@ namespace Duplicati.Library.Main.Backend
 
             try
             {
-                await RetryWithDelay(
-                    $"Get {remotename} to TempFile",
-                    async () =>
+                using var fileStream = System.IO.File.OpenWrite(temp);
+                using var progressStream = new ProgressReportingStream(fileStream, pg =>
                     {
-                        using var fileStream = System.IO.File.OpenWrite(temp);
-                        using var progressStream = new ProgressReportingStream(fileStream, pg =>
-                            {
-                                _backendProgressUpdater?.UpdateProgress(remotename, pg);
-                                _progressUpdater?.UpdateFileProgress(pg);
-                            });
-                        await _streamingBackend!.GetAsync(remotename, progressStream, token).ConfigureAwait(false);
-                        _anyDownloaded = true;
-                    },
-                    null,
-                    false,
-                    token
-                ).ConfigureAwait(false);
+                        _backendProgressUpdater?.UpdateProgress(remotename, pg);
+                        _progressUpdater?.UpdateFileProgress(pg);
+                    });
+
+                await GetAsync(remotename, progressStream, token)
+                    .ConfigureAwait(false);
 
                 return temp;
             }
@@ -256,14 +249,22 @@ namespace Duplicati.Library.Main.Backend
         /// <param name="remotename">The name of the remote file to put.</param>
         /// <param name="stream">The stream containing the file data to put.</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <param name="md5">Optional precomputed MD5 hash of the file.</param>
+        /// <param name="sha256">Optional precomputed SHA256 hash of the file.</param>
+        /// <param name="length">The length of the stream data. Required if hashes are provided.</param>
         /// <returns>A task representing the asynchronous put operation.</returns>
-        public Task PutAsync(string remotename, Stream stream, CancellationToken token)
+        public Task PutAsync(string remotename, Stream stream, CancellationToken token, string? md5 = null, string? sha256 = null, long? length = null)
         {
             return RetryWithDelay(
                 $"Put {remotename}",
                 async () =>
                 {
-                    await _streamingBackend!.PutAsync(remotename, stream, token).ConfigureAwait(false);
+                    var hashes_length_not_null = md5 is not null && sha256 is not null && length is not null;
+                    if (hashes_length_not_null && _streamingBackend is Duplicati.Library.Backend.S3 s3backend)
+                        await s3backend.PutWithHashAsync(remotename, stream, md5!, sha256!, length!.Value, token).ConfigureAwait(false);
+                    else
+                        await _streamingBackend!.PutAsync(remotename, stream, token).ConfigureAwait(false);
+
                     _anyUploaded = true;
                 },
                 stream,
@@ -280,25 +281,17 @@ namespace Duplicati.Library.Main.Backend
         /// <param name="temp">The temporary file containing the data to upload.</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>A task representing the asynchronous put operation.</returns>
-        public Task PutAsync(string remotename, TempFile temp, CancellationToken token)
+        public async Task PutAsync(string remotename, TempFile temp, CancellationToken token)
         {
-            return RetryWithDelay(
-                $"Put {remotename}",
-                async () =>
+            using var fileStream = System.IO.File.OpenRead(temp);
+            using var progressStream = new ProgressReportingStream(fileStream, pg =>
                 {
-                    using var fileStream = System.IO.File.OpenRead(temp);
-                    using var progressStream = new ProgressReportingStream(fileStream, pg =>
-                        {
-                            _backendProgressUpdater?.UpdateProgress(remotename, pg);
-                            _progressUpdater?.UpdateFileProgress(pg);
-                        });
-                    await _streamingBackend!.PutAsync(remotename, progressStream, token).ConfigureAwait(false);
-                    _anyUploaded = true;
-                },
-                null,
-                false,
-                token
-            );
+                    _backendProgressUpdater?.UpdateProgress(remotename, pg);
+                    _progressUpdater?.UpdateFileProgress(pg);
+                });
+
+            await PutAsync(remotename, progressStream, token)
+                .ConfigureAwait(false);
         }
 
         /// <summary>
