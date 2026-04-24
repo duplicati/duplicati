@@ -28,7 +28,7 @@ namespace Duplicati.Library.Main.Backend
     /// <param name="retryWithExponentialBackoff">Whether to use exponential backoff for retries.</param>
     /// <param name="progressUpdater">An optional progress updater for file operations.</param>
     /// <param name="backendProgressUpdater">An optional progress updater for backend operations.</param>
-    internal class LightWeightBackendManager(string backendUrl, Dictionary<string, string> options, int maxRetries = 3, int retryDelay = 1000, bool autoCreateFolders = false, bool retryWithExponentialBackoff = false, IOperationProgressUpdater? progressUpdater = null, IBackendProgressUpdater? backendProgressUpdater = null) : IDisposable
+    public class LightWeightBackendManager : IDisposable
     {
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<LightWeightBackendManager>();
 
@@ -36,13 +36,33 @@ namespace Duplicati.Library.Main.Backend
 
         private bool _anyDownloaded = false;
         private bool _anyUploaded = false;
-        private readonly string _backendUrl = backendUrl;
-        //private int _instantiations = 0;
-        private readonly int _maxRetries = maxRetries;
-        private readonly Dictionary<string, string> _options = options;
-        private readonly int _retryDelay = retryDelay;
-        private int _currentRetryDelay = retryDelay;
+        private readonly bool _autoCreateFolders;
+        private readonly string _backendUrl;
+        private readonly int _maxRetries;
+        private readonly Dictionary<string, string> _options;
+        private readonly int _retryDelay;
+        private readonly bool _retryWithExponentialBackoff;
+        private int _currentRetryDelay;
         private IStreamingBackend? _streamingBackend = null;
+        private readonly IOperationProgressUpdater? _progressUpdater;
+        private readonly IBackendProgressUpdater? _backendProgressUpdater;
+
+        public LightWeightBackendManager(string backendUrl, Dictionary<string, string> options, int maxRetries = 3, int retryDelay = 1000, bool autoCreateFolders = false, bool retryWithExponentialBackoff = false)
+            : this(backendUrl, options, maxRetries, retryDelay, autoCreateFolders, retryWithExponentialBackoff, null, null)
+        { }
+
+        internal LightWeightBackendManager(string backendUrl, Dictionary<string, string> options, int maxRetries = 3, int retryDelay = 1000, bool autoCreateFolders = false, bool retryWithExponentialBackoff = false, IOperationProgressUpdater? progressUpdater = null, IBackendProgressUpdater? backendProgressUpdater = null)
+        {
+            _backendUrl = backendUrl;
+            _maxRetries = maxRetries;
+            _options = options;
+            _retryDelay = retryDelay;
+            _currentRetryDelay = retryDelay;
+            _autoCreateFolders = autoCreateFolders;
+            _retryWithExponentialBackoff = retryWithExponentialBackoff;
+            _progressUpdater = progressUpdater;
+            _backendProgressUpdater = backendProgressUpdater;
+        }
 
         /// <summary>
         /// Deletes a file from the remote backend.
@@ -137,8 +157,8 @@ namespace Duplicati.Library.Main.Backend
                         using var fileStream = System.IO.File.OpenWrite(temp);
                         using var progressStream = new ProgressReportingStream(fileStream, pg =>
                             {
-                                backendProgressUpdater?.UpdateProgress(remotename, pg);
-                                progressUpdater?.UpdateFileProgress(pg);
+                                _backendProgressUpdater?.UpdateProgress(remotename, pg);
+                                _progressUpdater?.UpdateFileProgress(pg);
                             });
                         await _streamingBackend!.GetAsync(remotename, progressStream, token).ConfigureAwait(false);
                         _anyDownloaded = true;
@@ -269,8 +289,8 @@ namespace Duplicati.Library.Main.Backend
                     using var fileStream = System.IO.File.OpenRead(temp);
                     using var progressStream = new ProgressReportingStream(fileStream, pg =>
                         {
-                            backendProgressUpdater?.UpdateProgress(remotename, pg);
-                            progressUpdater?.UpdateFileProgress(pg);
+                            _backendProgressUpdater?.UpdateProgress(remotename, pg);
+                            _progressUpdater?.UpdateFileProgress(pg);
                         });
                     await _streamingBackend!.PutAsync(remotename, progressStream, token).ConfigureAwait(false);
                     _anyUploaded = true;
@@ -460,7 +480,7 @@ namespace Duplicati.Library.Main.Backend
             var recovered = false;
 
             // Check if this was a folder missing exception and we are allowed to autocreate folders
-            if (!(_anyDownloaded || _anyUploaded) && autoCreateFolders && ExceptionExtensions.FlattenException(ex).Any(x => x is FolderMissingException))
+            if (!(_anyDownloaded || _anyUploaded) && _autoCreateFolders && ExceptionExtensions.FlattenException(ex).Any(x => x is FolderMissingException))
             {
                 if (await TryCreateFolder(token).ConfigureAwait(false))
                     recovered = true;
@@ -471,7 +491,7 @@ namespace Duplicati.Library.Main.Backend
             {
                 await Task.Delay(_currentRetryDelay, token).ConfigureAwait(false);
 
-                if (retryWithExponentialBackoff)
+                if (_retryWithExponentialBackoff)
                     _currentRetryDelay <<= 1; // Double the delay for exponential backoff
             }
         }
