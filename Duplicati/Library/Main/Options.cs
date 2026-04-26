@@ -490,7 +490,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("next-scheduled-run", CommandLineArgument.ArgumentType.String, Strings.Options.NextscheduledrunShort, Strings.Options.NextscheduledrunLong),
 
             new CommandLineArgument("verbose", CommandLineArgument.ArgumentType.Boolean, Strings.Options.VerboseShort, Strings.Options.VerboseLong, "false", null, null, Strings.Options.VerboseDeprecated),
-            new CommandLineArgument("full-result", CommandLineArgument.ArgumentType.Boolean, Strings.Options.FullresultShort, Strings.Options.FullresultLong, "false"),
+            new CommandLineArgument("full-result", CommandLineArgument.ArgumentType.Boolean, Strings.Options.FullresultShort, Strings.Options.FullresultLong, "false", new string[] { "full-results" }),
 
             new CommandLineArgument("overwrite", CommandLineArgument.ArgumentType.Boolean, Strings.Options.OverwriteShort, Strings.Options.OverwriteLong, "false"),
 

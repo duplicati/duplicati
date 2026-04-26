@@ -40,7 +40,8 @@ namespace Duplicati.CommandLine
             this.Output = output;
             this.QuietConsole = Library.Utility.Utility.ParseBoolOption(options, "quiet-console");
             this.VerboseErrors = Library.Utility.Utility.ParseBoolOption(options, "debug-output");
-            this.FullResults = Library.Utility.Utility.ParseBoolOption(options, "full-results");
+            this.FullResults = Library.Utility.Utility.ParseBoolOption(options, "full-result")
+                || Library.Utility.Utility.ParseBoolOption(options, "full-results");
         }
 
         #region IMessageSink implementation
