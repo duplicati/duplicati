@@ -5,12 +5,12 @@
 # Andrea De Lunardi <a.delunardi@arca.com>, 2018
 # albanobattistella <albanobattistella@gmail.com>, 2019
 # Antonio Galiero, 2024
-# Folgore101 <andrea.gramegna@gmail.com>, 2025
+# Folgore101, 2026
 # 
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"Last-Translator: Folgore101 <andrea.gramegna@gmail.com>, 2025\n"
+"Last-Translator: Folgore101, 2026\n"
 "Language-Team: Italian (https://app.transifex.com/duplicati/teams/67655/it/)\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -454,7 +454,7 @@ msgstr "Classe archiviazione del bucket"
 msgid "Bucket, format: BucketName-APPID"
 msgstr "Bucket, formato: BucketName-APPID"
 
-#: scripts/services/ServerStatus.js:51
+#: scripts/services/ServerStatus.js:52
 msgid "Building list of files to restore …"
 msgstr "Creazione di un elenco di file da ripristinare..."
 
@@ -530,8 +530,8 @@ msgstr "Canary"
 #: scripts/controllers/LocalDatabaseController.js:72
 #: scripts/controllers/LocalDatabaseController.js:88
 #: scripts/controllers/RestoreDirectController.js:24
-#: scripts/controllers/StateController.js:108
-#: scripts/controllers/StateController.js:117
+#: scripts/controllers/StateController.js:119
+#: scripts/controllers/StateController.js:128
 #: scripts/services/DialogService.js:50
 #: scripts/services/EditUriBuiltins.js:1215
 #: scripts/services/EditUriBuiltins.js:1231
@@ -636,7 +636,7 @@ msgstr "Fase compattazione"
 msgid "Compact now"
 msgstr "Comprimi adesso"
 
-#: scripts/services/ServerStatus.js:44 scripts/services/ServerStatus.js:68
+#: scripts/services/ServerStatus.js:44 scripts/services/ServerStatus.js:69
 msgid "Compacting remote data …"
 msgstr "Compressione dei dati remoti..."
 
@@ -801,7 +801,7 @@ msgstr "Creare una cartella?"
 msgid "Created new limited user"
 msgstr "Creato nuovo utente limitato"
 
-#: scripts/services/ServerStatus.js:63
+#: scripts/services/ServerStatus.js:64
 msgid "Creating bug report …"
 msgstr "Creazione segnalazione bug..."
 
@@ -809,7 +809,7 @@ msgstr "Creazione segnalazione bug..."
 msgid "Creating new user with limited access …"
 msgstr "Creazione di un nuovo utente con accesso limitato..."
 
-#: scripts/services/ServerStatus.js:52
+#: scripts/services/ServerStatus.js:53
 msgid "Creating target folders …"
 msgstr "Creazione delle cartelle di destinazione..."
 
@@ -961,7 +961,7 @@ msgstr "Versioni eliminate"
 msgid "Deleted files"
 msgstr "File eliminati"
 
-#: scripts/services/ServerStatus.js:65
+#: scripts/services/ServerStatus.js:66
 msgid "Deleting remote files …"
 msgstr "Eliminazione dei file remoti..."
 
@@ -1071,7 +1071,7 @@ msgstr "Scarica"
 msgid "Downloaded files"
 msgstr "File scaricati"
 
-#: scripts/services/ServerStatus.js:56
+#: scripts/services/ServerStatus.js:57
 msgid "Downloading files …"
 msgstr "Sto scaricando i file…"
 
@@ -1302,7 +1302,7 @@ msgstr "Inserisci percorso destinazione"
 msgid "Error"
 msgstr "Errore"
 
-#: scripts/services/ServerStatus.js:70
+#: scripts/services/ServerStatus.js:71
 msgid "Error!"
 msgstr "Errore!"
 
@@ -1682,7 +1682,7 @@ msgstr ""
 
 #: templates/backends/openstack.html:40
 msgid "If you do not enter an API Key, the tenant name is required"
-msgstr "Se non inserisci una chiave API, è richiesto il nome del detentore"
+msgstr "Se non inserisci una chiave API, è richiesto il nome del tenant"
 
 #: templates/pause.html:53
 msgid ""
@@ -1826,11 +1826,11 @@ msgstr "Librerie"
 msgid "Listing backup dates …"
 msgstr "Elenco date di backup..."
 
-#: scripts/services/ServerStatus.js:66
+#: scripts/services/ServerStatus.js:67
 msgid "Listing remote files for purge …"
 msgstr "Elenco dei file remoti da eliminare…"
 
-#: scripts/services/ServerStatus.js:64
+#: scripts/services/ServerStatus.js:65
 msgid "Listing remote files …"
 msgstr "Elenco dei file remoti..."
 
@@ -1952,11 +1952,11 @@ msgstr "Digita manualmente il percorso"
 
 #: templates/throttle.html:15
 msgid "Max download speed"
-msgstr "Velocità massima per scaricare"
+msgstr "Velocità massima mentre scarichi"
 
 #: templates/throttle.html:5
 msgid "Max upload speed"
-msgstr "Velocità massima per caricare"
+msgstr "Velocità massima mentre carichi"
 
 #: index.html:144 templates/addoredit.html:127 templates/addoredit.html:169
 #: templates/addoredit.html:384 templates/addoredit.html:95
@@ -2023,7 +2023,7 @@ msgstr "Documenti"
 
 #: scripts/services/AppUtils.js:66
 msgid "My Downloads"
-msgstr "Download"
+msgstr "I mie file scaricati"
 
 #: scripts/services/AppUtils.js:64
 msgid "My Movies"
@@ -2287,7 +2287,7 @@ msgstr "Regione opzionale"
 
 #: templates/backends/openstack.html:40
 msgid "Optional tenant name"
-msgstr "Nome detentore opzionale"
+msgstr "Nome tenant opzionale"
 
 #: templates/addoredit.html:28 templates/edituri.html:51
 #: templates/settings.html:193 templates/settings.html:199
@@ -2359,7 +2359,7 @@ msgstr "Le passphrase non corrispondono"
 msgid "Password"
 msgstr "Password"
 
-#: scripts/services/ServerStatus.js:55
+#: scripts/services/ServerStatus.js:56
 msgid "Patching files with local blocks …"
 msgstr "Aggiornamento dei file con blocchi locali..."
 
@@ -2451,15 +2451,15 @@ msgstr "Pubblico"
 msgid "Purge Phase"
 msgstr "Fase eliminazione"
 
-#: scripts/services/ServerStatus.js:69
+#: scripts/services/ServerStatus.js:70
 msgid "Purging files complete!"
 msgstr "Eliminazione dei file completata!"
 
-#: scripts/services/ServerStatus.js:67
+#: scripts/services/ServerStatus.js:68
 msgid "Purging files …"
 msgstr "Eliminazione dei file..."
 
-#: scripts/services/ServerStatus.js:49
+#: scripts/services/ServerStatus.js:50
 msgid "Rebuilding local database …"
 msgstr "Ricostruzione del database locale..."
 
@@ -2471,7 +2471,7 @@ msgstr "Ricrea (elimina e ripara)"
 msgid "Recreate Database Phase"
 msgstr "Fase ricreazione database"
 
-#: scripts/services/ServerStatus.js:59
+#: scripts/services/ServerStatus.js:60
 msgid "Recreating database …"
 msgstr "Ricreazione del database..."
 
@@ -2575,7 +2575,7 @@ msgstr "Ripara"
 msgid "Repair Phase"
 msgstr "Fase riparazione"
 
-#: scripts/services/ServerStatus.js:61
+#: scripts/services/ServerStatus.js:62
 msgid "Repairing database …"
 msgstr "Riparazione del database..."
 
@@ -2595,7 +2595,7 @@ msgstr "Reset"
 msgid "Restore"
 msgstr "Ripristina"
 
-#: scripts/services/ServerStatus.js:58
+#: scripts/services/ServerStatus.js:59
 msgid "Restore complete!"
 msgstr "Ripristino completato!"
 
@@ -2719,11 +2719,11 @@ msgstr "Salva versioni diverse con marca temporale nel nome del file"
 msgid "Save immediately"
 msgstr "Salva immediatamente"
 
-#: scripts/services/ServerStatus.js:53
+#: scripts/services/ServerStatus.js:54
 msgid "Scanning existing files …"
 msgstr "Scansione dei file esistenti..."
 
-#: scripts/services/ServerStatus.js:54
+#: scripts/services/ServerStatus.js:55
 msgid "Scanning for local blocks …"
 msgstr "Scansione dei blocchi locali..."
 
@@ -2846,7 +2846,7 @@ msgid ""
 "name"
 msgstr ""
 "Alcuni provider OpenStack consentono una chiave API anziché una password e "
-"un nome detentore"
+"un nome tenant"
 
 #: templates/backends/s3.html:82
 msgid ""
@@ -2911,7 +2911,7 @@ msgstr "Avvio"
 msgid "Starting backup …"
 msgstr "Avvio backup..."
 
-#: scripts/services/ServerStatus.js:48
+#: scripts/services/ServerStatus.js:49
 msgid "Starting restore …"
 msgstr "Avvio ripristino..."
 
@@ -2924,16 +2924,16 @@ msgstr "Avvio del processo di ripristino..."
 msgid "Status: {{getRemoteControlStatusText()}}"
 msgstr "Stato: {{getRemoteControlStatusText()}}"
 
-#: scripts/controllers/StateController.js:108
-#: scripts/controllers/StateController.js:117
+#: scripts/controllers/StateController.js:119
+#: scripts/controllers/StateController.js:128
 msgid "Stop after the current file"
 msgstr "Ferma dopo il file corrente"
 
-#: scripts/controllers/StateController.js:106
+#: scripts/controllers/StateController.js:117
 msgid "Stop running backup"
 msgstr "Ferma esecuzione backup"
 
-#: scripts/controllers/StateController.js:115
+#: scripts/controllers/StateController.js:126
 msgid "Stop running task"
 msgstr "Ferma esecuzione attività"
 
@@ -3024,7 +3024,7 @@ msgstr "File temporanei"
 
 #: templates/backends/openstack.html:39
 msgid "Tenant name"
-msgstr "Nome detentore"
+msgstr "Nome tenant"
 
 #: templates/backends/cos.html:4
 msgid "Tencent Cloud Account APPID"
@@ -3034,8 +3034,8 @@ msgstr "Tencent Cloud Account APPID"
 msgid "Tencent Cloud COS documents and resources"
 msgstr "Documenti e risorse di Tencent Cloud COS"
 
-#: scripts/controllers/StateController.js:108
-#: scripts/controllers/StateController.js:117
+#: scripts/controllers/StateController.js:119
+#: scripts/controllers/StateController.js:128
 msgid "Terminate"
 msgstr "Termina"
 
@@ -3448,7 +3448,7 @@ msgstr ""
 "L'autenticazione con nome utente e password non è consigliata e non funziona con gli account abilitati a MFA/2FA.\n"
 "        Se possibile, usa il token API."
 
-#: scripts/services/ServerStatus.js:60
+#: scripts/services/ServerStatus.js:61
 msgid "Vacuuming database …"
 msgstr "Pulizia del database..."
 
@@ -3473,15 +3473,15 @@ msgstr "Verifica file"
 msgid "Verifying backend data …"
 msgstr "Verifica dei dati del backend..."
 
-#: scripts/services/ServerStatus.js:62
+#: scripts/services/ServerStatus.js:63
 msgid "Verifying files …"
 msgstr "Verifica dei file..."
 
-#: scripts/services/ServerStatus.js:38 scripts/services/ServerStatus.js:50
+#: scripts/services/ServerStatus.js:38 scripts/services/ServerStatus.js:51
 msgid "Verifying remote data …"
 msgstr "Verifica dei dati remoti..."
 
-#: scripts/services/ServerStatus.js:57
+#: scripts/services/ServerStatus.js:58
 msgid "Verifying restored files …"
 msgstr "Verifica dei file ripristinati..."
 
@@ -3614,7 +3614,7 @@ msgstr ""
 msgid "You are currently running {{appname}} {{version}}"
 msgstr "Attualmente stai eseguendo {{appname}} {{version}}"
 
-#: scripts/controllers/StateController.js:107
+#: scripts/controllers/StateController.js:118
 msgid ""
 "You can stop the backup after any file uploads currently in progress have "
 "finished. If you terminate the backup, the next run will need to recover "
@@ -3624,7 +3624,7 @@ msgstr ""
 "corso. Se interrompi il backup, l'esecuzione successiva dovrà ripristinare "
 "un backup non riuscito."
 
-#: scripts/controllers/StateController.js:116
+#: scripts/controllers/StateController.js:127
 msgid ""
 "You can stop the task immediately, or allow the process to continue its "
 "current file and then stop. If you terminate the task, the backup could be "
@@ -3701,12 +3701,11 @@ msgstr "Devi inserire un numero positivo di backup da conservare"
 #: scripts/services/EditUriBuiltins.js:1176
 msgid "You must enter a tenant (aka project) name to use v3 API"
 msgstr ""
-"Devi inserire un nome detentore (detto anche progetto) per utilizzare l'API "
-"v3"
+"Devi inserire un nome tenant (detto anche progetto) per usare l'API v3"
 
 #: scripts/services/EditUriBuiltins.js:1190
 msgid "You must enter a tenant name if you do not provide an API key"
-msgstr "Devi inserire un nome detentore se non fornisci una chiave API"
+msgstr "Devi inserire un nome tenant se non fornisci una chiave API"
 
 #: scripts/controllers/EditBackupController.js:296
 msgid "You must enter a valid duration for the time to keep backups"

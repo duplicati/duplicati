@@ -1,22 +1,22 @@
 // Copyright (C) 2026, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
 using Duplicati.Library.Common.IO;
@@ -349,6 +349,24 @@ namespace Duplicati.Library.Backend
         public async Task PutAsync(string remotename, Stream input, CancellationToken cancelToken)
         {
             await Connection.AddFileStreamAsync(m_bucket, GetFullKey(remotename), input, cancelToken);
+        }
+
+        /// <summary>
+        /// Puts a file with the provided hashes and content length, if supported by the client. This allows for optimized uploads where the hashes are already known and for put'ing files with non-seekable streams. If the client does not support this method, it will fall back to a normal PutAsync without the hashes and length.
+        /// </summary>
+        /// <param name="remotename">The remote filename, relative to the URL.</param>
+        /// <param name="input">The stream to read from.</param>
+        /// <param name="md5">The precomputed MD5 hash of the file.</param>
+        /// <param name="sha256">The precomputed SHA256 hash of the file.</param>
+        /// <param name="length">The length of the file.</param>
+        /// <param name="cancelToken">Token to cancel the operation.</param>
+        /// <returns></returns>
+        public async Task PutWithHashAsync(string remotename, Stream input, string md5, string sha256, long length, CancellationToken cancelToken)
+        {
+            if (Connection is S3AwsClient awsClient)
+                await awsClient.AddFileStreamAsync(m_bucket, GetFullKey(remotename), input, md5, sha256, length, cancelToken).ConfigureAwait(false);
+            else
+                await PutAsync(remotename, input, cancelToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>

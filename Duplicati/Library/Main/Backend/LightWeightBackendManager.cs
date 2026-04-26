@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Duplicati.Library.Backend;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 
@@ -28,7 +29,7 @@ namespace Duplicati.Library.Main.Backend
     /// <param name="retryWithExponentialBackoff">Whether to use exponential backoff for retries.</param>
     /// <param name="progressUpdater">An optional progress updater for file operations.</param>
     /// <param name="backendProgressUpdater">An optional progress updater for backend operations.</param>
-    internal class LightWeightBackendManager(string backendUrl, Dictionary<string, string> options, int maxRetries = 3, int retryDelay = 1000, bool autoCreateFolders = false, bool retryWithExponentialBackoff = false, IOperationProgressUpdater? progressUpdater = null, IBackendProgressUpdater? backendProgressUpdater = null) : IDisposable
+    public class LightWeightBackendManager : IDisposable
     {
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<LightWeightBackendManager>();
 
@@ -36,13 +37,33 @@ namespace Duplicati.Library.Main.Backend
 
         private bool _anyDownloaded = false;
         private bool _anyUploaded = false;
-        private readonly string _backendUrl = backendUrl;
-        //private int _instantiations = 0;
-        private readonly int _maxRetries = maxRetries;
-        private readonly Dictionary<string, string> _options = options;
-        private readonly int _retryDelay = retryDelay;
-        private int _currentRetryDelay = retryDelay;
+        private readonly bool _autoCreateFolders;
+        private readonly string _backendUrl;
+        private readonly int _maxRetries;
+        private readonly Dictionary<string, string> _options;
+        private readonly int _retryDelay;
+        private readonly bool _retryWithExponentialBackoff;
+        private int _currentRetryDelay;
         private IStreamingBackend? _streamingBackend = null;
+        private readonly IOperationProgressUpdater? _progressUpdater;
+        private readonly IBackendProgressUpdater? _backendProgressUpdater;
+
+        public LightWeightBackendManager(string backendUrl, Dictionary<string, string> options, int maxRetries = 3, int retryDelay = 1000, bool autoCreateFolders = false, bool retryWithExponentialBackoff = false)
+            : this(backendUrl, options, maxRetries, retryDelay, autoCreateFolders, retryWithExponentialBackoff, null, null)
+        { }
+
+        internal LightWeightBackendManager(string backendUrl, Dictionary<string, string> options, int maxRetries = 3, int retryDelay = 1000, bool autoCreateFolders = false, bool retryWithExponentialBackoff = false, IOperationProgressUpdater? progressUpdater = null, IBackendProgressUpdater? backendProgressUpdater = null)
+        {
+            _backendUrl = backendUrl;
+            _maxRetries = maxRetries;
+            _options = options;
+            _retryDelay = retryDelay;
+            _currentRetryDelay = retryDelay;
+            _autoCreateFolders = autoCreateFolders;
+            _retryWithExponentialBackoff = retryWithExponentialBackoff;
+            _progressUpdater = progressUpdater;
+            _backendProgressUpdater = backendProgressUpdater;
+        }
 
         /// <summary>
         /// Deletes a file from the remote backend.
@@ -130,23 +151,15 @@ namespace Duplicati.Library.Main.Backend
 
             try
             {
-                await RetryWithDelay(
-                    $"Get {remotename} to TempFile",
-                    async () =>
+                using var fileStream = System.IO.File.OpenWrite(temp);
+                using var progressStream = new ProgressReportingStream(fileStream, pg =>
                     {
-                        using var fileStream = System.IO.File.OpenWrite(temp);
-                        using var progressStream = new ProgressReportingStream(fileStream, pg =>
-                            {
-                                backendProgressUpdater?.UpdateProgress(remotename, pg);
-                                progressUpdater?.UpdateFileProgress(pg);
-                            });
-                        await _streamingBackend!.GetAsync(remotename, progressStream, token).ConfigureAwait(false);
-                        _anyDownloaded = true;
-                    },
-                    null,
-                    false,
-                    token
-                ).ConfigureAwait(false);
+                        _backendProgressUpdater?.UpdateProgress(remotename, pg);
+                        _progressUpdater?.UpdateFileProgress(pg);
+                    });
+
+                await GetAsync(remotename, progressStream, token)
+                    .ConfigureAwait(false);
 
                 return temp;
             }
@@ -155,6 +168,28 @@ namespace Duplicati.Library.Main.Backend
                 temp.Dispose();
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Gets quota information from the backend if it supports quota operations.
+        /// </summary>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task representing the asynchronous operation. The task result is the quota information, or null if the backend does not support quota operations or an error occurs.</returns>
+        public async Task<IQuotaInfo?> GetQuotaInfoAsync(CancellationToken token)
+        {
+            if (_backend is IQuotaEnabledBackend qeb)
+            {
+                try
+                {
+                    return await qeb.GetQuotaInfoAsync(token).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "rsync", ex, "Error getting quota info", null);
+                }
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -172,7 +207,8 @@ namespace Duplicati.Library.Main.Backend
                 return;
             }
 
-            _backend = DynamicLoader.BackendLoader.GetBackend(_backendUrl, _options);
+            _backend = DynamicLoader.BackendLoader.GetBackend(_backendUrl, _options)
+                ?? throw new InvalidOperationException("Failed to instantiate backend.");
             _streamingBackend = _backend as IStreamingBackend;
             if (_streamingBackend == null || !_streamingBackend.SupportsStreaming)
             {
@@ -213,14 +249,22 @@ namespace Duplicati.Library.Main.Backend
         /// <param name="remotename">The name of the remote file to put.</param>
         /// <param name="stream">The stream containing the file data to put.</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <param name="md5">Optional precomputed MD5 hash of the file.</param>
+        /// <param name="sha256">Optional precomputed SHA256 hash of the file.</param>
+        /// <param name="length">The length of the stream data. Required if hashes are provided.</param>
         /// <returns>A task representing the asynchronous put operation.</returns>
-        public Task PutAsync(string remotename, Stream stream, CancellationToken token)
+        public Task PutAsync(string remotename, Stream stream, CancellationToken token, string? md5 = null, string? sha256 = null, long? length = null)
         {
             return RetryWithDelay(
                 $"Put {remotename}",
                 async () =>
                 {
-                    await _streamingBackend!.PutAsync(remotename, stream, token).ConfigureAwait(false);
+                    var hashes_length_not_null = md5 is not null && sha256 is not null && length is not null;
+                    if (hashes_length_not_null && _streamingBackend is Duplicati.Library.Backend.S3 s3backend)
+                        await s3backend.PutWithHashAsync(remotename, stream, md5!, sha256!, length!.Value, token).ConfigureAwait(false);
+                    else
+                        await _streamingBackend!.PutAsync(remotename, stream, token).ConfigureAwait(false);
+
                     _anyUploaded = true;
                 },
                 stream,
@@ -237,25 +281,17 @@ namespace Duplicati.Library.Main.Backend
         /// <param name="temp">The temporary file containing the data to upload.</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>A task representing the asynchronous put operation.</returns>
-        public Task PutAsync(string remotename, TempFile temp, CancellationToken token)
+        public async Task PutAsync(string remotename, TempFile temp, CancellationToken token)
         {
-            return RetryWithDelay(
-                $"Put {remotename}",
-                async () =>
+            using var fileStream = System.IO.File.OpenRead(temp);
+            using var progressStream = new ProgressReportingStream(fileStream, pg =>
                 {
-                    using var fileStream = System.IO.File.OpenRead(temp);
-                    using var progressStream = new ProgressReportingStream(fileStream, pg =>
-                        {
-                            backendProgressUpdater?.UpdateProgress(remotename, pg);
-                            progressUpdater?.UpdateFileProgress(pg);
-                        });
-                    await _streamingBackend!.PutAsync(remotename, progressStream, token).ConfigureAwait(false);
-                    _anyUploaded = true;
-                },
-                null,
-                false,
-                token
-            );
+                    _backendProgressUpdater?.UpdateProgress(remotename, pg);
+                    _progressUpdater?.UpdateFileProgress(pg);
+                });
+
+            await PutAsync(remotename, progressStream, token)
+                .ConfigureAwait(false);
         }
 
         /// <summary>
@@ -437,7 +473,7 @@ namespace Duplicati.Library.Main.Backend
             var recovered = false;
 
             // Check if this was a folder missing exception and we are allowed to autocreate folders
-            if (!(_anyDownloaded || _anyUploaded) && autoCreateFolders && ExceptionExtensions.FlattenException(ex).Any(x => x is FolderMissingException))
+            if (!(_anyDownloaded || _anyUploaded) && _autoCreateFolders && ExceptionExtensions.FlattenException(ex).Any(x => x is FolderMissingException))
             {
                 if (await TryCreateFolder(token).ConfigureAwait(false))
                     recovered = true;
@@ -448,7 +484,7 @@ namespace Duplicati.Library.Main.Backend
             {
                 await Task.Delay(_currentRetryDelay, token).ConfigureAwait(false);
 
-                if (retryWithExponentialBackoff)
+                if (_retryWithExponentialBackoff)
                     _currentRetryDelay <<= 1; // Double the delay for exponential backoff
             }
         }
