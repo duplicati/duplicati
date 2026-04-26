@@ -155,6 +155,22 @@ namespace Duplicati.UnitTest
             }
         }
 
+        [Test]
+        public void TestFullResultOptionSupportsAliasAndConsoleOutput()
+        {
+            var option = new Options(new Dictionary<string, string?>()).SupportedCommands.FirstOrDefault(x => x.Name == "full-result");
+
+            Assert.IsNotNull(option, "The full-result option was not registered.");
+            Assert.IsTrue(option!.Aliases.Contains("full-results"), "The full-results alias was not registered.");
+
+            using var writer = new StringWriter();
+            using var singularConsole = new CommandLine.ConsoleOutput(writer, new Dictionary<string, string> { ["full-result"] = "true" });
+            using var pluralConsole = new CommandLine.ConsoleOutput(writer, new Dictionary<string, string> { ["full-results"] = "true" });
+
+            Assert.IsTrue(singularConsole.FullResults, "Console output did not honor the full-result option.");
+            Assert.IsTrue(pluralConsole.FullResults, "Console output did not honor the full-results alias.");
+        }
+
         /// <summary>
         /// Tests passing all arguments to the main method of the remote synchronization tool.
         /// </summary>
