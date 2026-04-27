@@ -47,7 +47,7 @@ public sealed class MovistarCloudBackend : IBackend
     /// <summary>
     /// The client ID option name
     /// </summary>
-    private const string ClientIdOption = "clientID";
+    private const string DeviceIdOption = "deviceID";
     /// <summary>
     /// The root folder path option name
     /// </summary>
@@ -212,7 +212,7 @@ public sealed class MovistarCloudBackend : IBackend
     [
         new CommandLineArgument(EmailOption, CommandLineArgument.ArgumentType.String, Strings.MovistarCloudBackend.EmailShort, Strings.MovistarCloudBackend.EmailLong),
         new CommandLineArgument(PasswordOption, CommandLineArgument.ArgumentType.Password, Strings.MovistarCloudBackend.PasswordShort, Strings.MovistarCloudBackend.PasswordLong),
-        new CommandLineArgument(ClientIdOption, CommandLineArgument.ArgumentType.String, Strings.MovistarCloudBackend.ClientIdShort, Strings.MovistarCloudBackend.ClientIdLong),
+        new CommandLineArgument(DeviceIdOption, CommandLineArgument.ArgumentType.String, Strings.MovistarCloudBackend.DeviceIdShort, Strings.MovistarCloudBackend.DeviceIdLong),
         new CommandLineArgument(RootFolderPathOption, CommandLineArgument.ArgumentType.String, Strings.MovistarCloudBackend.RootFolderPathShort, Strings.MovistarCloudBackend.RootFolderPathLong),
         new CommandLineArgument(ListLimitOption, CommandLineArgument.ArgumentType.Integer, Strings.MovistarCloudBackend.ListLimitShort, Strings.MovistarCloudBackend.ListLimitLong, DefaultListLimit.ToString()),
         new CommandLineArgument(WaitForValidationOption, CommandLineArgument.ArgumentType.Boolean, Strings.MovistarCloudBackend.WaitForValidationShort, Strings.MovistarCloudBackend.WaitForValidationLong, DefaultWaitForValidation.ToString()),
@@ -249,7 +249,7 @@ public sealed class MovistarCloudBackend : IBackend
     {
         var email = RequireOption(options, EmailOption);
         var password = RequireOption(options, PasswordOption);
-        var clientID = RequireOption(options, ClientIdOption);
+        var device_id = RequireOption(options, DeviceIdOption);
 
         _rootFolderPathOpt = options.GetValueOrDefault(RootFolderPathOption)?.Trim();
         _listLimit = Library.Utility.Utility.ParseIntOption(options, ListLimitOption, DefaultListLimit);
@@ -261,7 +261,7 @@ public sealed class MovistarCloudBackend : IBackend
         _trashPageSize = Math.Clamp(Library.Utility.Utility.ParseIntOption(options, TrashPageSizeOption, DefaultTrashPageSize), 1, 200);
 
         _timeouts = TimeoutOptionsHelper.Parse(options);
-        _client = MovistarCloudApiClient.CreateAsync(email, password, clientID, CancellationToken.None).GetAwaiter().GetResult();
+        _client = MovistarCloudApiClient.CreateAsync(email, password, device_id, CancellationToken.None).GetAwaiter().GetResult();
     }
 
     /// <inheritdoc/>

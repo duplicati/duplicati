@@ -29,8 +29,8 @@ namespace Duplicati.Library.Backend.MovistarCloud.Strings
         public static string EmailLong => LC.L(@"The email address for the MiCloud account used for login.");
         public static string PasswordShort => LC.L(@"MiCloud account password");
         public static string PasswordLong => LC.L(@"The password for the MiCloud account used for login.");
-        public static string ClientIdShort => LC.L(@"MiCloud client ID");
-        public static string ClientIdLong => LC.L(@"The MiCloud client ID. Obtain this from a web session by checking the developer tools in your browser.");
+        public static string DeviceIdShort => LC.L(@"MiCloud Device ID");
+        public static string DeviceIdLong => LC.L(@"The MiCloud Device ID. Obtain this from a web session by checking the developer tools in your browser. Header X-Deviceid");
         public static string RootFolderPathShort => LC.L(@"Root folder path");
         public static string RootFolderPathLong => LC.L(@"The path where to store the backup (e.g., /Duplicati/Backups/Computer).");
         public static string ListLimitShort => LC.L(@"List limit");

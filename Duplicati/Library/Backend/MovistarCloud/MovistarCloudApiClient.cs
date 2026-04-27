@@ -120,7 +120,7 @@ internal sealed class MovistarCloudApiClient : IDisposable
     /// <summary>
     /// The device ID for authentication
     /// </summary>
-    private readonly string _deviceId;
+    private readonly string _device_id;
 
     /// <summary>
     /// The HTTP client instance
@@ -159,12 +159,12 @@ internal sealed class MovistarCloudApiClient : IDisposable
     /// </summary>
     /// <param name="email">The email address for authentication</param>
     /// <param name="password">The password for authentication</param>
-    /// <param name="deviceID">The device ID for authentication</param>
-    private MovistarCloudApiClient(string email, string password, string deviceID)
+    /// <param name="device_id">The device ID for authentication</param>
+    private MovistarCloudApiClient(string email, string password, string device_id)
     {
         _email = email ?? throw new ArgumentNullException(nameof(email));
         _password = password ?? throw new ArgumentNullException(nameof(password));
-        _deviceId = deviceID;
+        _device_id = device_id;
     }
 
     /// <summary>
@@ -172,12 +172,12 @@ internal sealed class MovistarCloudApiClient : IDisposable
     /// </summary>
     /// <param name="email">The email address for authentication</param>
     /// <param name="password">The password for authentication</param>
-    /// <param name="deviceID">The device ID for authentication</param>
+    /// <param name="device_id">The device ID for authentication</param>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>The initialized API client</returns>
-    public static async Task<MovistarCloudApiClient> CreateAsync(string email, string password, string deviceID, CancellationToken cancellationToken = default)
+    public static async Task<MovistarCloudApiClient> CreateAsync(string email, string password, string device_id, CancellationToken cancellationToken = default)
     {
-        var client = new MovistarCloudApiClient(email, password, deviceID);
+        var client = new MovistarCloudApiClient(email, password, device_id);
         await client.EnsureLoggedInAsync(cancellationToken).ConfigureAwait(false);
         return client;
     }
@@ -330,7 +330,7 @@ internal sealed class MovistarCloudApiClient : IDisposable
 
         using var req = new HttpRequestMessage(HttpMethod.Post, url);
         req.Content = content;
-        req.Headers.Add("X-deviceid", _deviceId);
+        req.Headers.Add("X-Deviceid", _device_id);
 
         using var resp = await http.SendAsync(req, ct);
         var body = await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
