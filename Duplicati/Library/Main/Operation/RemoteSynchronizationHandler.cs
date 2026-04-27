@@ -1,4 +1,4 @@
-// Copyright (C) 2025, The Duplicati Team
+// Copyright (C) 2026, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -313,14 +313,14 @@ internal class RemoteSynchronizationHandler : IDisposable
             if (string.IsNullOrWhiteSpace(dest.Config.Dst))
                 continue;
 
-            if (!ShouldTriggerSync(i, dest))
-            {
-                Logging.Log.WriteInformationMessage(LOGTAG, "RemoteSyncSkipped", "Remote synchronization to {0} skipped due to trigger mode conditions not met.", dest);
-                continue;
-            }
-
             try
             {
+                if (!ShouldTriggerSync(i, dest))
+                {
+                    Logging.Log.WriteInformationMessage(LOGTAG, "RemoteSyncSkipped", "Remote synchronization to {0} skipped due to trigger mode conditions not met.", dest);
+                    continue;
+                }
+
                 // Update progress to show sync is in progress
                 m_results.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_RemoteSynchronization);
                 m_results.OperationProgressUpdater.UpdateRemoteSyncDestination(i + 1, m_destinations.Count);

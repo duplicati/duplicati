@@ -7,7 +7,7 @@
     <Nullable>enable</Nullable>
     <NoDefaultLaunchSettingsFile>true</NoDefaultLaunchSettingsFile>
     <RootNamespace>Duplicati.WebserverCore</RootNamespace>
-    <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
+    <Copyright>Copyright © 2026 Team Duplicati, MIT license</Copyright>
     <NoWarn>$(NoWarn);NU1510</NoWarn>
   </PropertyGroup>
 

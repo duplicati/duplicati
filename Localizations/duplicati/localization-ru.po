@@ -22,7 +22,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-18 13:48+0100\n"
+"POT-Creation-Date: 2026-04-22 15:17+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: Vadim P <kladzey@gmail.com>, 2025\n"
 "Language-Team: Russian (https://app.transifex.com/duplicati/teams/67655/ru/)\n"
@@ -1248,12 +1248,12 @@ msgstr ""
 msgid "Temporary storage folder"
 msgstr "Папка для временного хранения"
 
-#: Library/RestAPI/Strings.cs:92 Library/RestAPI/Strings.cs:129
+#: Library/RestAPI/Strings.cs:93 Library/RestAPI/Strings.cs:134
 #, csharp-format
 msgid "Server has started and is listening on {0}, port {1}"
 msgstr "Сервер запущен и слушает на {0}, порт {1}"
 
-#: Library/RestAPI/Strings.cs:125
+#: Library/RestAPI/Strings.cs:130
 #, csharp-format
 msgid ""
 "Unable to find a valid date, given the start date {0}, the repetition "
@@ -1262,7 +1262,7 @@ msgstr ""
 "Невозможно найти допустимую дату с учетом даты начала {0}, интервала "
 "повторения {1} и разрешенных дней {2}"
 
-#: Library/RestAPI/Strings.cs:131
+#: Library/RestAPI/Strings.cs:136
 #, csharp-format
 msgid "Unable to open a socket for listening, tried ports: {0}"
 msgstr "Невозможно открыть сокет для входящих соединений, порты: {0}"
@@ -2273,7 +2273,7 @@ msgstr ""
 "регистрировать все запросы к базе данных, и не забудьте установить либо "
 "--{0}={2}, либо --{1}={2}, чтобы сообщать дополнительные данные журнала."
 
-#: Library/Main/Strings.cs:404
+#: Library/Main/Strings.cs:409
 #, csharp-format
 msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
@@ -2282,16 +2282,16 @@ msgstr ""
 "Криптографическая библиотека не поддерживает многоразовые преобразования для"
 " алгоритма хеширования {0}"
 
-#: Library/Main/Strings.cs:405
+#: Library/Main/Strings.cs:410
 #, csharp-format
 msgid "The cryptolibrary does not support the hash algorithm {0}"
 msgstr "Криптографическая библиотека не поддерживает алгоритм хэширования {0}"
 
-#: Library/Main/Strings.cs:406
+#: Library/Main/Strings.cs:411
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr "Кодовая фраза не может быть изменена для существующей резервной копии"
 
-#: Library/Main/Strings.cs:407
+#: Library/Main/Strings.cs:412
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
 msgstr "Не удалось создать снимок: {0}"

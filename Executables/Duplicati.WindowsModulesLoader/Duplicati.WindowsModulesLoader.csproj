@@ -5,7 +5,7 @@
     <TargetFramework>net10.0-windows7.0</TargetFramework>
     <Description>WindowsModulesLoader for Duplicati</Description>
     <AssemblyName>Duplicati.WindowsModulesLoader</AssemblyName>
-    <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
+    <Copyright>Copyright © 2026 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
 
   <ItemGroup>

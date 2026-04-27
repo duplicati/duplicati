@@ -1,4 +1,4 @@
-// Copyright (C) 2025, The Duplicati Team
+// Copyright (C) 2026, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -124,6 +124,10 @@ public sealed record ControlRequestMessage(string Command, Dictionary<string, st
     /// The key that contains the applied settings version
     /// </summary>
     public const string SettingsVersionKey = "settingsversion";
+    /// <summary>
+    /// The key that contains the refresh settings by key
+    /// </summary>
+    public const string RefreshSettingsByKey = "refreshsettingsby";
 
 }
 /// <summary>

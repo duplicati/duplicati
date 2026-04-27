@@ -20,7 +20,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-18 13:48+0100\n"
+"POT-Creation-Date: 2026-04-22 15:17+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: vishun, 2026\n"
 "Language-Team: Chinese (China) (https://app.transifex.com/duplicati/teams/67655/zh_CN/)\n"
@@ -726,6 +726,12 @@ msgstr "Google Cloud Storage"
 msgid "You must supply a project ID with --{0} for creating a bucket."
 msgstr "您必须使用 --{0}提供一个项目ID来创建bucket。"
 
+#: Library/Backend/GoogleServices/Strings.cs:31
+msgid ""
+"The supplied credentials are missing the full control scope. Please use a "
+"service account with full control access."
+msgstr "所提供的凭证缺少完全控制范围。请使用具有完全控制权限的服务账户。"
+
 #: Library/Backend/GoogleServices/Strings.cs:32
 #, csharp-format
 msgid ""
@@ -781,6 +787,16 @@ msgid ""
 "When set, AuthID is not required."
 msgstr "包含 Google Cloud 服务帐号 JSON 凭据的文件的路径。 设置后，不需要 AuthID。"
 
+#: Library/Backend/GoogleServices/Strings.cs:44
+msgid "Specify retention policy mode"
+msgstr "指定保留策略模式"
+
+#: Library/Backend/GoogleServices/Strings.cs:45
+msgid ""
+"This option specifies the retention policy mode to use when setting object "
+"lock. Possible values are 'Locked' and 'Unlocked'."
+msgstr "该选项指定设置对象锁时使用的保留策略模式。可能的值是 \"锁定 \"和 \"解锁\"。"
+
 #: Library/Backend/GoogleServices/Strings.cs:50
 msgid ""
 "This backend can read and write data to Google Drive. Allowed format is "
@@ -832,6 +848,72 @@ msgstr "Google Cloud Storage配置模块"
 msgid "Expose Google Cloud Storage configuration as a web module"
 msgstr "将Google Cloud Storage配置作为web模块暴露"
 
+#: Library/Backend/Duplicati/Strings.cs:28
+msgid "This backend can read and write data to Duplicati Storage."
+msgstr "该后台可以读写数据到 Duplicati 存储。"
+
+#: Library/Backend/Duplicati/Strings.cs:29
+msgid "Duplicati Storage Backend"
+msgstr "Duplicati 存储后台"
+
+#: Library/Backend/Duplicati/Strings.cs:31
+msgid "The API ID for authenticating with the Duplicati storage server."
+msgstr "用于与 Duplicati 存储服务器进行身份验证的 API ID。"
+
+#: Library/Backend/Duplicati/Strings.cs:32
+msgid ""
+"Specifies the API ID to use when authenticating with the Duplicati storage "
+"server."
+msgstr "指定与 Duplicati 存储服务器进行身份验证时使用的 API ID。"
+
+#: Library/Backend/Duplicati/Strings.cs:33
+msgid "The API Key for authenticating with the Duplicati storage server."
+msgstr "用于与 Duplicati 存储服务器进行身份验证的 API 密钥。"
+
+#: Library/Backend/Duplicati/Strings.cs:34
+msgid ""
+"Specifies the API Key to use when authenticating with the Duplicati storage "
+"server."
+msgstr "指定与 Duplicati 存储服务器进行身份验证时使用的 API 密钥。"
+
+#: Library/Backend/Duplicati/Strings.cs:35
+msgid "The Backup ID to use on the Duplicati storage server."
+msgstr "要在 Duplicati 存储服务器上使用的备份 ID。"
+
+#: Library/Backend/Duplicati/Strings.cs:36
+msgid ""
+"Each backupID identifies a separate backup set on the Duplicati storage "
+"server."
+msgstr "每个 备份ID 标识 Duplicati 存储服务器上的一个独立备份集。"
+
+#: Library/Backend/Duplicati/Strings.cs:37
+msgid "A unique backup id must be specified"
+msgstr "必须指定唯一的备份 ID"
+
+#: Library/Backend/Duplicati/Strings.cs:42
+msgid "Lists the backup folders on a Duplicati storage server."
+msgstr "列出 Duplicati 存储服务器上的备份文件夹。"
+
+#: Library/Backend/Duplicati/Strings.cs:43
+msgid "List Duplicati Backup Folders"
+msgstr "列出 Duplicati 备份文件夹"
+
+#: Library/Backend/Duplicati/Strings.cs:45
+msgid "The action to perform."
+msgstr "要执行的操作。"
+
+#: Library/Backend/Duplicati/Strings.cs:46
+msgid "Specifies the action to perform."
+msgstr "指定要执行的操作。"
+
+#: Library/Backend/Duplicati/Strings.cs:48
+msgid "The URL of the Duplicati storage server."
+msgstr "Duplicati 存储服务器的 URL。"
+
+#: Library/Backend/Duplicati/Strings.cs:49
+msgid "Specifies the URL of the Duplicati storage server."
+msgstr "指定 Duplicati 存储服务器的 URL。"
+
 #: Library/Backend/S3/Strings.cs:26
 msgid ""
 "This backend can read and write data to an S3 compatible server. Allowed "
@@ -841,6 +923,24 @@ msgstr "此后端可以读写与S3兼容的服务器上的数据。允许的格�
 #: Library/Backend/S3/Strings.cs:27
 msgid "S3 compatible"
 msgstr "兼容 S3"
+
+#: Library/Backend/S3/Strings.cs:28
+#, csharp-format
+msgid ""
+"Secret Access Key can be obtained after logging into your account. This can "
+"also be supplied through the option --{0}."
+msgstr "Secret Access Key 可在登录账户后获取。也可通过选项 --{0} 提供。"
+
+#: Library/Backend/S3/Strings.cs:29
+msgid "Secret Access Key"
+msgstr "Secret Access Key "
+
+#: Library/Backend/S3/Strings.cs:30
+#, csharp-format
+msgid ""
+"Access Key ID can be obtained after logging into your account. This can also"
+" be supplied through the option --{0}."
+msgstr "Access Key ID  可在登录账户后获取。也可通过选项 --{0} 提供。"
 
 #: Library/Backend/S3/Strings.cs:31 Library/Backend/AliyunOSS/Strings.cs:30
 #: Library/Backend/Idrivee2/Strings.cs:31
@@ -973,6 +1073,28 @@ msgid ""
 "To reduce the number of objects listed, the default is to only list the "
 "first level of objects. Use this option to list all objects in the bucket."
 msgstr "为了减少列出的对象数量，默认情况下仅列出第一级对象。 使用此选项可以列出存储桶中的所有对象。"
+
+#: Library/Backend/S3/Strings.cs:60 Library/Backend/Idrivee2/Strings.cs:34
+msgid "Specify the S3 object lock mode"
+msgstr "指定 S3 对象锁定模式"
+
+#: Library/Backend/S3/Strings.cs:61 Library/Backend/Idrivee2/Strings.cs:35
+msgid ""
+"Use this option to specify the S3 object lock mode. Governance mode allows "
+"users with special permissions to bypass the lock, while Compliance mode "
+"enforces strict immutability."
+msgstr "使用该选项可指定 S3 对象锁模式。治理模式允许拥有特殊权限的用户绕过锁定，而合规模式则强制执行严格的不变性。"
+
+#: Library/Backend/S3/Strings.cs:62
+msgid "Specify the authentication region"
+msgstr "指定验证区域"
+
+#: Library/Backend/S3/Strings.cs:63
+msgid ""
+"Use this option to specify the region used when signing requests. "
+"Authentication will use this value or fall back to the location constraint "
+"region if not supplied."
+msgstr "使用此选项可指定签署请求时使用的区域。如果不提供该值，身份验证将使用该值，或退回到位置限制区域。"
 
 #: Library/Backend/S3/Strings.cs:64
 #, csharp-format
@@ -1483,12 +1605,30 @@ msgstr ""
 msgid "The base URL to use for downloading files"
 msgstr "用于下载文件的基础地址"
 
+#: Library/Backend/Backblaze/Strings.cs:41
+msgid ""
+"Sets the lock mode for B2 object retention. Governance mode allows "
+"privileged users to bypass retention, while Compliance mode enforces strict "
+"retention that cannot be bypassed."
+msgstr "设置 B2 对象保留的锁定模式。治理模式允许特权用户绕过保留，而合规模式则强制执行无法绕过的严格保留。"
+
+#: Library/Backend/Backblaze/Strings.cs:42
+msgid "The lock mode for B2 object retention (Governance or Compliance)"
+msgstr "B2 对象保留的锁定模式（治理或合规性）"
+
 #: Library/Backend/Backblaze/Strings.cs:43
 #, csharp-format
 msgid ""
 "The setting \"{0}\" is invalid for \"{1}\". It must be an integer larger "
 "than zero."
 msgstr "设置\"{0}\"对于\"{1}\"是无效的。它必须是一个大于零的整数。"
+
+#: Library/Backend/Backblaze/Strings.cs:44
+#, csharp-format
+msgid ""
+"The setting \"{0}\" is invalid for \"{1}\". It must be either \"Governance\""
+" or \"Compliance\"."
+msgstr "设置\"{0}\"对\"{1}\"无效。必须是 \"治理 \"或 \"合规\"。"
 
 #: Library/Backend/OneDrive/Strings.cs:26
 msgid ""
@@ -1835,6 +1975,16 @@ msgid ""
 "Set to 0 to disable retries."
 msgstr "使用此选项指定 Azure Blob 操作的重试次数。 设置为 0 以禁用重试。"
 
+#: Library/Backend/AzureBlob/Strings.cs:46
+msgid "The immutability policy mode"
+msgstr "不变性策略模式"
+
+#: Library/Backend/AzureBlob/Strings.cs:47
+msgid ""
+"Use this option to specify the immutability policy mode. The default is "
+"'Unlocked'."
+msgstr "使用该选项可指定不变性策略模式。默认为 \"未锁定\"。"
+
 #: Library/Backend/Filen/Strings.cs:26
 msgid ""
 "This backend can read and write data to Filen.io using its REST protocol. "
@@ -1859,6 +2009,12 @@ msgstr "用于身份验证的双重身份验证（2FA）代码；如果账户未
 #: Library/Backend/Filen/Strings.cs:30
 msgid "Optional API key"
 msgstr "API key（可选）"
+
+#: Library/Backend/Filen/Strings.cs:31
+msgid ""
+"The API key to use for authentication, which will work even if the account "
+"is MFA protected. Obtain the API key via the Filen CLI tool."
+msgstr "用于身份验证的 API 密钥，即使账户受 MFA 保护也有效。通过 Filen CLI 工具获取 API 密钥。"
 
 #: Library/Backend/Filen/Strings.cs:32
 msgid "Move to trash"
@@ -2244,6 +2400,14 @@ msgstr "在执行 PutAsync 关闭文件句柄时失败"
 msgid "Failed to create file for writing"
 msgstr "创建用于写入的文件失败"
 
+#: Library/Backend/SMB/SMBShareConnection.cs:550
+msgid "Failed to rename file on RenameAsync"
+msgstr "无法在 RenameAsync 上重命名文件"
+
+#: Library/Backend/SMB/SMBShareConnection.cs:553
+msgid "Failed to close file on RenameAsync"
+msgstr "无法在  RenameAsync 上关闭文件"
+
 #: Library/Backend/SMB/Strings.cs:29
 msgid ""
 "The domain used to connect to the server. This may also be supplied as the "
@@ -2588,6 +2752,30 @@ msgstr ""
 msgid "Secrets from a file"
 msgstr "文件中的Secrets "
 
+#: Library/SecretProvider/Strings.cs:41
+msgid ""
+"Secret provider that reads secrets from a file\n"
+"Example use:\n"
+"    file://path/to/file?passphrase=secret\n"
+"\n"
+"The file should be a JSON-encoded object with the secrets as key-value pairs.\n"
+"If the file is not encrypted with a passphrase, the passphrase parameter can be omitted.\n"
+"The file must be encrypted with AESCrypt if encryption is desired.\n"
+"For file-based secrets, the lookup is case-insensitive.\n"
+"\n"
+"If the file is encrypted, this provider can also write secrets back to the file.\n"
+msgstr ""
+"从文件中读取密钥的密钥提供程序\n"
+"使用实例：\n"
+"    file://path/to/file?passphrase=secret\n"
+"\n"
+"该文件应是一个 JSON 编码对象，密钥内容为键值对。\n"
+"如果文件未使用口令加密，则可以省略口令参数。\n"
+"如果需要加密，文件必须使用 AESCrypt 加密。\n"
+"对于基于文件的加密，查询不区分大小写。\n"
+"\n"
+"如果文件已加密，该提供程序还可以将机密写回文件。\n"
+
 #: Library/SecretProvider/Strings.cs:53
 msgid "The decryption passphrase"
 msgstr "解密passphrase"
@@ -2599,6 +2787,24 @@ msgstr "passphrase用于解密secrets文件"
 #: Library/SecretProvider/Strings.cs:59
 msgid "Secrets from AWS Secrets Manager"
 msgstr "来自 AWS Secrets Manager 的Secrets "
+
+#: Library/SecretProvider/Strings.cs:61
+msgid ""
+"Secret provider that reads and writes secrets from AWS Secrets Manager\n"
+"Example use:\n"
+"    aws://?access-key=...&secret-key=...&region-endpoint=us-east-1&secrets=secret1,secret2\n"
+"\n"
+"Either the region endpoint or the service URL must be provided.\n"
+"Each secret is retrieved in the order specified until all requested keys are found.\n"
+"Each secret must be a key-value pair type secret.\n"
+msgstr ""
+"从 AWS Secrets Manager 读取和写入密钥的密钥提供程序\n"
+"Example use:  使用实例：\n"
+"    aws://?access-key=...&secret-key=...&region-endpoint=us-east-1&secrets=secret1,secret2\n"
+"\n"
+"必须提供区域端点或服务 URL。\n"
+"每个密钥都按照指定的顺序进行检索，直到找到所有请求的密钥。\n"
+"每个密钥必须是键值对类型的密钥。\n"
 
 #: Library/SecretProvider/Strings.cs:69
 msgid "The AWS access key"
@@ -2665,6 +2871,22 @@ msgstr "是否对秘密名称使用大小写敏感匹配"
 msgid "Secrets from HashiCorp Vault"
 msgstr "HashiCorp Vault Secrets"
 
+#: Library/SecretProvider/Strings.cs:87
+msgid ""
+"Secret provider that reads and writes secrets from HashiCorp Vault\n"
+"Example use:\n"
+"    hcv://localhost:1234?token=...&mount=secret&secrets=secret1,secret2\n"
+"\n"
+"The secrets parameter should be a comma- or semicolon-separated list of secret names to retrieve from the Vault.\n"
+"Each vault secret is retrieved in the order specified until all requested keys are found.\n"
+msgstr ""
+"从 HashiCorp Vault 读写秘密的秘密提供者\n"
+"使用示例：\n"
+"    hcv://localhost:1234?token=...&mount=secret&secrets=secret1,secret2\n"
+"\n"
+"密钥参数应该是一个以逗号或分号分隔的列表，包含要从保险库检索的密钥名称。\n"
+"每个保险库密钥都按照指定的顺序进行检索，直到找到所有请求的密钥。\n"
+
 #: Library/SecretProvider/Strings.cs:94
 msgid "The Vault token"
 msgstr "Vault token"
@@ -2724,6 +2946,26 @@ msgstr " HashiCorp Vault 中的密钥挂载点"
 msgid "Secrets from Google Cloud Storage Secret Manager"
 msgstr "Google Cloud Storage Secret Manager Secrets"
 
+#: Library/SecretProvider/Strings.cs:114
+msgid ""
+"Secret provider that reads and writes secrets from Google Cloud Storage Secret Manager\n"
+"Example use:\n"
+"    gcs://?project-id=...&version=latest\n"
+"\n"
+"If the access token is not supplied, the default GCS credentials from the machine will be used.\n"
+"Use the accesstoken property to specify a custom access token.\n"
+"Alternatively, you can supply service-account-json or service-account-file with Google Cloud service account credentials.\n"
+"\n"
+msgstr ""
+"从 Google 云存储密钥管理器 读取和写入秘密的密钥提供程序\n"
+"使用示例：\n"
+"    gcs://?project-id=...&version=latest\n"
+"\n"
+"如果未提供访问令牌，则将使用机器的默认 GCS 凭据。\n"
+"使用 accesstoken 属性指定自定义访问令牌。\n"
+"或者，您也可以提供包含 Google 云服务帐户凭据的 service-account-json 或 service-account-file 文件。\n"
+"\n"
+
 #: Library/SecretProvider/Strings.cs:123
 msgid "The API type to use"
 msgstr "要使用的 API 类型"
@@ -2750,6 +2992,22 @@ msgid ""
 " supplied, the default GCS credentials from the machine will be used."
 msgstr "用于 Google Cloud Storage 身份验证的访问令牌。如果未提供，将使用机器的默认 GCS 凭据。"
 
+#: Library/SecretProvider/Strings.cs:130
+msgid ""
+"String with JSON credentials for a Google Cloud service account. When set, "
+"access-token is not required."
+msgstr "包含 Google 云服务帐户 JSON 凭据的字符串。设置后，不需要访问令牌。"
+
+#: Library/SecretProvider/Strings.cs:131
+msgid "Service account JSON file"
+msgstr "服务帐户 JSON 文件"
+
+#: Library/SecretProvider/Strings.cs:132
+msgid ""
+"Path to a file with JSON credentials for a Google Cloud service account. "
+"When set, access-token is not required."
+msgstr "包含 Google 云服务帐户 JSON 凭据的文件路径。设置后，不需要访问令牌。"
+
 #: Library/SecretProvider/Strings.cs:133
 msgid "The secret version to get (or alias)"
 msgstr "要获取的secret版本（或别名）"
@@ -2763,6 +3021,32 @@ msgstr "要从 Google 云存储中获取的密文版本。如果未提供，将�
 #: Library/SecretProvider/Strings.cs:139
 msgid "Secrets from Azure Key Vault"
 msgstr "Azure Key Vault Secrets"
+
+#: Library/SecretProvider/Strings.cs:141
+msgid ""
+"Secret provider that reads and writes secrets from Azure Key Vault\n"
+"Example use:\n"
+"    az://?keyvault-name=...&auth-type=ManagedIdentity\n"
+"\n"
+"If a client ID and secret are provided, use the auth type ClientSecret:\n"
+"    az://?keyvault-name=...&auth-type=ClientSecret&tenant-id=...&client-id=...&client-secret=...\n"
+"\n"
+"If a username and password are provided, use the auth type UsernamePassword:\n"
+"    az://?keyvault-name=...&auth-type=UsernamePassword&tenant-id=...&clientid=...&username=...&password=...\n"
+"\n"
+"If the vault-uri parameter is not provided, the keyvault-name parameter will be used to construct the URI.\n"
+msgstr ""
+"从 Azure 密钥库 读写密钥的密钥提供程序\n"
+"使用示例：\n"
+"    az://?keyvault-name=...&auth-type=ManagedIdentity\n"
+"\n"
+"如果提供了客户端 ID 和密钥，请使用授权类型 ClientSecret:\n"
+"    az://?keyvault-name=...&auth-type=ClientSecret&tenant-id=...&client-id=...&client-secret=...\n"
+"\n"
+"如果提供了用户名和密码，则使用认证类型 UsernamePassword:\n"
+"    az://?keyvault-name=...&auth-type=UsernamePassword&tenant-id=...&clientid=...&username=...&password=...\n"
+"\n"
+"如果没有提供 vault-uri 参数，将使用 keyvault-name 参数来构建 URI。\n"
 
 #: Library/SecretProvider/Strings.cs:153
 msgid "The name of the Azure Key Vault"
@@ -2841,6 +3125,10 @@ msgstr "与 Azure 密钥库通信时使用的身份验证类型"
 msgid "Secrets from macOS Keychain"
 msgstr "MacOS Keychain Secrets "
 
+#: Library/SecretProvider/Strings.cs:176
+msgid "Secret provider that reads and writes secrets from the macOS Keychain"
+msgstr "可从 macOS 钥匙串读写密钥的密钥提供程序"
+
 #: Library/SecretProvider/Strings.cs:177
 msgid "The service name"
 msgstr "服务名"
@@ -2869,6 +3157,12 @@ msgstr "从 macOS 钥匙串中获取的密码类型"
 msgid "Secrets from Unix pass"
 msgstr "Unix pass Secrets "
 
+#: Library/SecretProvider/Strings.cs:188
+msgid ""
+"Secret provider that reads and writes secrets from the Unix pass password "
+"manager"
+msgstr "从 Unix 通行证密码管理器读写秘密的密钥提供程序"
+
 #: Library/SecretProvider/Strings.cs:189
 msgid "The pass command"
 msgstr "pass command"
@@ -2883,13 +3177,45 @@ msgstr "从 Unix 通行证密码管理器中检索密钥时使用的命令"
 msgid "Secrets from Windows Credential Manager"
 msgstr "Windows Credential Manager Secrets"
 
+#: Library/SecretProvider/Strings.cs:196
+msgid ""
+"Secret provider that reads and writes secrets from the Windows Credential "
+"Manager"
+msgstr "从 Windows 证书管理器读写密钥的密钥提供程序"
+
 #: Library/SecretProvider/Strings.cs:201
 msgid "Secrets from libsecret"
 msgstr "Libsecret Secrets "
 
+#: Library/SecretProvider/Strings.cs:202
+msgid ""
+"Secret provider that reads and writes secrets from the libsecret password "
+"manager"
+msgstr "从 libsecret 密码管理器读写密钥的密钥提供程序"
+
 #: Library/SecretProvider/Strings.cs:203
 msgid "The collection name"
 msgstr "集合名称"
+
+#: Library/SecretProvider/Strings.cs:204
+msgid ""
+"The collection name to use for retrieving secrets from the libsecret "
+"password manager. The value \"default\" can be used to access the default "
+"collection, and will resolve to \"login\" if the system does not have a "
+"default collection."
+msgstr ""
+"用于从 libsecret 密码管理器中获取秘密的集合名称。值 \"default \"可用于访问默认集合，如果系统没有默认集合，则会解析为 "
+"\"login\"。"
+
+#: Library/SecretProvider/Strings.cs:207
+msgid "Disable auto-create collection"
+msgstr "禁用自动创建收藏集"
+
+#: Library/SecretProvider/Strings.cs:208
+msgid ""
+"Disables the automatic creation of the collection if it does not exist when "
+"accessing libsecret"
+msgstr "访问 libsecret 时，如果集合不存在，则禁止自动创建集合"
 
 #: Library/RestAPI/Strings.cs:29
 msgid "Another instance is running, and was notified"
@@ -2995,7 +3321,7 @@ msgid ""
 "Error message: {0}"
 msgstr "无法启动。可能是另一个进程已经在运行？错误信息：{0}"
 
-#: Library/RestAPI/Strings.cs:50 Library/RestAPI/Strings.cs:84
+#: Library/RestAPI/Strings.cs:50 Library/RestAPI/Strings.cs:85
 msgid "Disable database encryption"
 msgstr "禁用数据库加密"
 
@@ -3184,71 +3510,79 @@ msgid ""
 "days."
 msgstr "服务器签发的刷新令牌有效期。该值表示在要求用户重新登录前，允许处于非活跃状态的最长时间。该值必须大于零，上限为 30 天。"
 
-#: Library/RestAPI/Strings.cs:83
+#: Library/RestAPI/Strings.cs:84
 msgid "Use this option to disable database encryption of sensitive fields"
 msgstr "使用此选项禁用敏感字段的数据库加密"
 
 #: Library/RestAPI/Strings.cs:86
+msgid ""
+"Use this option to log to the Windows event log. The provided name is in the"
+" format Log:Source. If no log name is provided, \"Duplicati 2\" is used."
+msgstr ""
+"使用此选项可将日志记录到 Windows 事件日志中。提供的名称格式为 Log:Source。如果未提供日志名称，则使用 \"Duplicati "
+"2\"。"
+
+#: Library/RestAPI/Strings.cs:87
 msgid "Log to the Windows event log"
 msgstr "记录到Windows事件日志"
 
-#: Library/RestAPI/Strings.cs:87
+#: Library/RestAPI/Strings.cs:88
 msgid "Use this option to set the log level for the Windows event log."
 msgstr "使用此选项可设置 Windows 事件日志的日志级别。"
 
-#: Library/RestAPI/Strings.cs:88
+#: Library/RestAPI/Strings.cs:89
 msgid "Set the log level for the Windows event log"
 msgstr "为Windows事件日志设置日志级别"
 
-#: Library/RestAPI/Strings.cs:89
+#: Library/RestAPI/Strings.cs:90
 #, csharp-format
 msgid "The Windows event log source {0} was not found. Attempting to create."
 msgstr "未找到 Windows 事件日志源 {0}。试图创建。"
 
-#: Library/RestAPI/Strings.cs:90
+#: Library/RestAPI/Strings.cs:91
 #, csharp-format
 msgid ""
 "The Windows Event Log was not created for: {0}, not logging to eventlog."
 msgstr "未创建 Windows 事件日志：{0}，未记录到事件日志。"
 
-#: Library/RestAPI/Strings.cs:91
+#: Library/RestAPI/Strings.cs:92
 msgid "The Windows event log is not supported on this platform"
 msgstr "此平台上不支持Windows事件日志"
 
-#: Library/RestAPI/Strings.cs:92 Library/RestAPI/Strings.cs:129
+#: Library/RestAPI/Strings.cs:93 Library/RestAPI/Strings.cs:134
 #, csharp-format
 msgid "Server has started and is listening on {0}, port {1}"
 msgstr "服务器已启动，正在监听 {0} 端口 {1}"
 
-#: Library/RestAPI/Strings.cs:93
+#: Library/RestAPI/Strings.cs:94
 #, csharp-format
 msgid "Use the following link to sign in: {0}"
 msgstr "使用以下链接登录：{0}"
 
-#: Library/RestAPI/Strings.cs:94
+#: Library/RestAPI/Strings.cs:95
 #, csharp-format
 msgid "The server crashed: {0}"
 msgstr "服务崩溃了：{0}"
 
-#: Library/RestAPI/Strings.cs:95
+#: Library/RestAPI/Strings.cs:96
 msgid "Server is stopping, tearing down handlers"
 msgstr "服务器正在停止，删除处理程序"
 
-#: Library/RestAPI/Strings.cs:96
+#: Library/RestAPI/Strings.cs:97
 msgid "Server has stopped"
 msgstr "服务已停止"
 
-#: Library/RestAPI/Strings.cs:97
+#: Library/RestAPI/Strings.cs:98
 msgid ""
 "Use this option to require a custom provided key for database encryption of "
 "sensitive fields and not rely on the serial number."
 msgstr "使用此选项可要求为敏感字段的数据库加密提供自定义密钥，而不是依赖序列号。"
 
-#: Library/RestAPI/Strings.cs:98
+#: Library/RestAPI/Strings.cs:99
 msgid "Require database encryption"
 msgstr "要求数据库加密"
 
-#: Library/RestAPI/Strings.cs:99
+#: Library/RestAPI/Strings.cs:100
 #, csharp-format
 msgid ""
 "Database encryption key is required. Supply an encryption key via the "
@@ -3256,7 +3590,7 @@ msgid ""
 "--{1}"
 msgstr "需要数据库加密密钥。通过环境变量 {0} 提供加密密钥，或者使用选项 --{1} 禁用数据库加密"
 
-#: Library/RestAPI/Strings.cs:100
+#: Library/RestAPI/Strings.cs:101
 #, csharp-format
 msgid ""
 "The database encryption key is blacklisted and cannot be used. The database "
@@ -3264,7 +3598,7 @@ msgid ""
 " {0} or disable database encryption with the option --{1}"
 msgstr "数据库加密密钥已列入黑名单，无法使用。数据库已解密。请通过环境变量 {0} 提供新的加密密钥，或使用选项 --{1} 关闭数据库加密。"
 
-#: Library/RestAPI/Strings.cs:101
+#: Library/RestAPI/Strings.cs:102
 #, csharp-format
 msgid ""
 "No database encryption key was found. The database will be stored "
@@ -3272,7 +3606,7 @@ msgid ""
 "disable database encryption with the option --{1}"
 msgstr "未找到数据库加密密钥。数据库将不加密存储。请通过环境变量 {0} 提供加密密钥，或使用选项 --{1} 关闭数据库加密。"
 
-#: Library/RestAPI/Strings.cs:102
+#: Library/RestAPI/Strings.cs:103
 #, csharp-format
 msgid ""
 "The database appears to be encrypted, but no key was specified. Opening the "
@@ -3280,79 +3614,79 @@ msgid ""
 "key."
 msgstr "数据库似乎已加密，但未指定密钥。打开数据库可能会失败。使用环境变量 {0} 指定密钥。"
 
-#: Library/RestAPI/Strings.cs:103
+#: Library/RestAPI/Strings.cs:104
 #, csharp-format
 msgid "The timezone {0} is not valid"
 msgstr "时区 {0} 无效"
 
-#: Library/RestAPI/Strings.cs:104
+#: Library/RestAPI/Strings.cs:105
 msgid "Set the encryption key for the settings database"
 msgstr "为设置数据库设置加密密钥"
 
-#: Library/RestAPI/Strings.cs:105
+#: Library/RestAPI/Strings.cs:106
 #, csharp-format
 msgid ""
 "Use this option to set the encryption key for the settings database. This "
 "option can also be set with the environment variable {0}."
 msgstr "使用此选项可设置设置数据库的加密密钥。该选项也可通过环境变量 {0} 设置。"
 
-#: Library/RestAPI/Strings.cs:106
+#: Library/RestAPI/Strings.cs:107
 #, csharp-format
 msgid "Invalid pause/resume state: {0}"
 msgstr "无效的暂停/恢复状态：{0}"
 
-#: Library/RestAPI/Strings.cs:107
+#: Library/RestAPI/Strings.cs:108
 msgid "Register for remote control"
 msgstr "注册远程控制"
 
-#: Library/RestAPI/Strings.cs:108
+#: Library/RestAPI/Strings.cs:109
 msgid ""
 "Register for remote control using the pre-authenticated url. If the server "
 "is already registered, this option has no effect"
 msgstr "使用预认证 URL 注册远程控制。如果服务器已注册，则此选项无效。"
 
-#: Library/RestAPI/Strings.cs:109
+#: Library/RestAPI/Strings.cs:110
 msgid "Force register for remote control"
 msgstr "强制注册远程控制"
 
-#: Library/RestAPI/Strings.cs:110
+#: Library/RestAPI/Strings.cs:111
 msgid ""
 "Forces a re-registration if the server is already registered. If the server "
 "is not already registered, this option has no effect."
 msgstr "如果服务器已注册，则强制重新注册。如果服务器尚未注册，则此选项无效。"
 
-#: Library/RestAPI/Strings.cs:111
+#: Library/RestAPI/Strings.cs:112
 msgid ""
 "The server is already registered for remote control, ignoring registration "
 "request"
 msgstr "服务器已注册远程控制，忽略注册请求"
 
-#: Library/RestAPI/Strings.cs:112
+#: Library/RestAPI/Strings.cs:113
 #, csharp-format
 msgid "The server is registered, use the following link to claim it: {0}"
 msgstr "服务器已注册，请使用以下链接进行申领：{0}"
 
-#: Library/RestAPI/Strings.cs:113
+#: Library/RestAPI/Strings.cs:114
 #, csharp-format
 msgid "The server registration failed: {0}"
 msgstr "服务器注册失败：{0}"
 
-#: Library/RestAPI/Strings.cs:114
+#: Library/RestAPI/Strings.cs:115
 msgid "Set the allowed backends for remote control"
 msgstr "设置允许远程控制使用的后端"
 
-#: Library/RestAPI/Strings.cs:115
+#: Library/RestAPI/Strings.cs:116
 msgid ""
 "Set the allowed backends for remote control. The value is a comma-separated "
 "list of backend names. If this option is not set, all backends are allowed. "
 "Use this option to restrict the backends that can be used to store data."
 msgstr "设置允许远程控制使用的后端。其值为以逗号分隔的后端名称列表。如果未设置此选项，则允许使用所有后端。使用此选项可限制用于存储数据的后端。"
 
-#: Library/RestAPI/Strings.cs:116
+#: Library/RestAPI/Strings.cs:117
 msgid "Set the allowed encryption modules for remote control"
 msgstr "设置允许远程控制使用的加密模块"
 
-#: Library/RestAPI/Strings.cs:117
+#: Library/RestAPI/Strings.cs:118
 msgid ""
 "Set the allowed encryption modules for remote control. The value is a comma-"
 "separated list of encryption module names. If this option is not set, all "
@@ -3361,11 +3695,11 @@ msgid ""
 msgstr ""
 "设置允许远程控制使用的加密模块。其值为以逗号分隔的加密模块名称列表。如果未设置此选项，则允许使用所有加密模块。使用此选项可限制用于加密数据的模块。"
 
-#: Library/RestAPI/Strings.cs:118
+#: Library/RestAPI/Strings.cs:119
 msgid "Set the allowed compression modules for remote control"
 msgstr "设置允许远程控制使用的压缩模块"
 
-#: Library/RestAPI/Strings.cs:119
+#: Library/RestAPI/Strings.cs:120
 msgid ""
 "Set the allowed compression modules for remote control. The value is a "
 "comma-separated list of compression module names. If this option is not set,"
@@ -3374,20 +3708,28 @@ msgid ""
 msgstr ""
 "设置允许远程控制使用的压缩模块。其值为以逗号分隔的压缩模块名称列表。如果未设置此选项，则允许使用所有压缩模块。使用此选项可限制用于压缩数据的模块。"
 
-#: Library/RestAPI/Strings.cs:125
+#: Library/RestAPI/Strings.cs:121
+msgid "Failed to get encryption key from secret provider"
+msgstr "无法从密钥提供者处获取加密密钥"
+
+#: Library/RestAPI/Strings.cs:122
+msgid "Failed to set encryption key in secret provider"
+msgstr "在密钥提供程序中设置加密密钥失败"
+
+#: Library/RestAPI/Strings.cs:130
 #, csharp-format
 msgid ""
 "Unable to find a valid date, given the start date {0}, the repetition "
 "interval {1} and the allowed days {2}"
 msgstr "未找到有效日期。给定的起始日期 {0}，重复间隔 {1}，规划日期 {2}"
 
-#: Library/RestAPI/Strings.cs:130
+#: Library/RestAPI/Strings.cs:135
 msgid ""
 "SSL certificate password option has no meaning when provided without SSL "
 "certificate file option!"
 msgstr "如果不提供 SSL 证书文件选项，则 SSL 证书密码选项没有意义！"
 
-#: Library/RestAPI/Strings.cs:131
+#: Library/RestAPI/Strings.cs:136
 #, csharp-format
 msgid "Unable to open a socket for listening, tried ports: {0}"
 msgstr "打开监听端口失败，尝试过的端口：{0}"
@@ -3589,6 +3931,169 @@ msgstr "将用 {1} 替换损坏的索引文件 {0}"
 #, csharp-format
 msgid "Failed to replace faulty index file {0}"
 msgstr "替换损坏的索引文件 {0} 失败"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:34
+msgid ""
+"Remote Synchronization Tool\n"
+"\n"
+"This tool synchronizes two remote backends. The tool assumes that the intent is\n"
+"to have the destination match the source.\n"
+"\n"
+"If the destination has files that are not in the source, they will be deleted\n"
+"(or renamed if the retention option is set).\n"
+"\n"
+"If the destination has files that are also present in the source, but the files\n"
+"differ in size, or if the source files have a newer (more recent) timestamp,\n"
+"the destination files will be overwritten by the source files. Given that some\n"
+"backends do not allow for metadata or timestamp modification, and that the tool\n"
+"is run after backup, the destination files should always have a timestamp that\n"
+"is newer (or the same if run promptly) compared to the source files.\n"
+"\n"
+"If the force option is set, the destination will be overwritten by the source,\n"
+"regardless of the state of the files. It will also skip the initial comparison,\n"
+"and delete (or rename) all files in the destination.\n"
+"\n"
+"If the verify option is set, the files will be downloaded and compared after\n"
+"uploading to ensure that the files are correct. Files that already exist in the\n"
+"destination will be verified before being overwritten (if they seemingly match).\n"
+msgstr ""
+"远程同步工具l\n"
+"\n"
+"该工具可同步两个远程后端。该工具假定\n"
+"使目的地与源匹配。\n"
+"\n"
+"如果目的地有源文件中没有的文件，它们将被删除\n"
+"(如果设置了保留选项，则重命名）。\n"
+"\n"
+"如果目标文件中也有源文件，但这些文件\n"
+"大小不同，或者源文件的时间戳较新（最近）、,\n"
+"目标文件将被源文件覆盖。鉴于某些\n"
+"后端不允许修改元数据或时间戳，而且工具\n"
+"在备份后运行时，目标文件的时间戳应始终是\n"
+"与源文件相比是新的（如果立即运行则是相同的）。.\n"
+"\n"
+"如果设置了强制选项，目的地将被源覆盖、\n"
+"无论文件的状态如何。它还会跳过初始比较、,\n"
+"并删除（或重命名）目的地中的所有文件。.\n"
+"\n"
+"如果设置了验证选项，文件将在下载后进行比较。\n"
+"确保文件正确无误。已存在于\n"
+"目标地址在被覆盖前将被验证（如果它们似乎匹配）。.\n"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:61
+#: Library/Modules/Builtin/Strings.cs:58
+msgid ""
+"This module runs remote synchronization after a successful backup to create "
+"a secondary copy (3-2-1)."
+msgstr "该模块在备份成功后运行远程同步，以创建辅助副本 (3-2-1)。"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:63
+#: Library/Modules/Builtin/Strings.cs:59
+msgid "Remote synchronization (3-2-1)"
+msgstr "远程同步 (3-2-1)"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:68
+msgid "The source backend string"
+msgstr "源后台字符串"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:73
+msgid "The destination backend string"
+msgstr "目的地后台字符串"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:78
+msgid ""
+"Automatically create folders in the destination backend if they do not exist"
+msgstr "如果目的地后台不存在文件夹，则自动创建文件夹"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:83
+msgid "Number of times to recreate a backend on backend errors"
+msgstr "后台出错时重新创建后台的次数"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:88
+msgid "Delay in milliseconds between backend retries"
+msgstr "后台重试之间的延迟，以毫秒为单位"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:93
+msgid ""
+"Use exponential backoff for backend retries, multiplying the delay by two "
+"for each failure."
+msgstr "对后台重试使用指数退避策略，每次失败后将延迟时间乘以2。"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:98
+msgid "Automatically confirm the operation"
+msgstr "自动确认操作"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:103
+msgid ""
+"Do not actually write or delete files. If not set here, the global options "
+"will be checked"
+msgstr "不实际写入或删除文件。如果不在此处设置，将检查全局选项"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:108
+msgid ""
+"Options for the destination backend. Each option is a key-value pair "
+"separated by an equals sign, e.g. --dst-options key1=value1 key2=value2 "
+"[default: empty]"
+msgstr ""
+"目标后端的选项。每个选项都是由等号分隔的键值对，例如 --dst-options key1=value1 key2=value2 [默认：空]"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:113
+msgid "Force the synchronization"
+msgstr "强制同步"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:118
+msgid ""
+"Global options all backends. May be overridden by backend specific options "
+"(src-options, dst-options). Each option is a key-value pair separated by an "
+"equals sign, e.g. --global-options key1=value1 key2=value2 [default: empty]"
+msgstr ""
+"所有后台的全局选项。可被后端特定选项（src-options、dst-options）覆盖。每个选项都是由等号分隔的键值对，例如 --global-"
+"options key1=value1 key2=value2 [默认：空]"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:123
+msgid ""
+"The log file to write to. If not set here, global options will be checked "
+"[default: \"\"]"
+msgstr "要写入的日志文件。如果未在此处设置，将检查全局选项[默认：\"\"]"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:128
+msgid "The log level to use. If not set here, global options will be checked"
+msgstr "要使用的日志级别。如果未在此处设置，将检查全局选项"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:133
+msgid "Only parse the arguments and then exit"
+msgstr "只解析参数，然后退出"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:138
+msgid "Print progress to STDOUT"
+msgstr "将进度打印到 STDOUT"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:143
+msgid "Toggles whether to keep old files. Any deletes will be renames instead"
+msgstr "切换是否保留旧文件。删除的文件将重命名"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:148
+msgid "Number of times to retry on errors"
+msgstr "出错时重试的次数"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:153
+msgid ""
+"Options for the source backend. Each option is a key-value pair separated by"
+" an equals sign, e.g. --src-options key1=value1 key2=value2 [default: empty]"
+msgstr ""
+"源后端的选项。每个选项都是由等号分隔的键值对，例如：--src-options key1=value1 key2=value2 [默认：空]"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:158
+msgid ""
+"Verify the contents of the files to decide whether the pre-existing "
+"destination files should be overwritten"
+msgstr "核实文件内容，决定是否要覆盖已有的目标文件"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:163
+msgid ""
+"Verify the files after uploading them to ensure that they were uploaded "
+"correctly"
+msgstr "上传文件后进行验证，确保上传正确无误"
 
 #: Library/Main/Strings.cs:28
 #, csharp-format
@@ -3887,6 +4392,31 @@ msgstr "搜索文件时，一般返回所有匹配的文件。使用该选项可
 msgid "Show largest prefix"
 msgstr "显示最长前缀"
 
+#: Library/Main/Strings.cs:84
+msgid ""
+"Use this option to rename files instead of deleting them. The value is the "
+"prefix to add to the filename. If the backend supports renaming, the file is"
+" renamed. Otherwise, the file is downloaded, re-uploaded with the new name, "
+"and then deleted. If the prefix contains a folder separator, the target "
+"folder must exist."
+msgstr ""
+"使用该选项可重命名文件，而不是删除文件。该值是要添加到文件名中的前缀。如果后端支持重命名，文件将被重命名。否则，将下载文件，用新名称重新上传，然后删除。如果前缀包含文件夹分隔符，则目标文件夹必须存在。"
+
+#: Library/Main/Strings.cs:85
+msgid "Prefix for soft-deleted files"
+msgstr "软删除文件的前缀"
+
+#: Library/Main/Strings.cs:86
+msgid ""
+"Use this option to prevent the backend from renaming files, even if the "
+"backend supports it. This will force the soft-delete operation to download, "
+"re-upload with the new name, and then delete the original file."
+msgstr "使用该选项可防止后端重命名文件，即使后端支持重命名。这将迫使软删除操作下载文件，用新名称重新上传，然后删除原始文件。"
+
+#: Library/Main/Strings.cs:87
+msgid "Prevent backend rename"
+msgstr "防止后台重命名"
+
 #: Library/Main/Strings.cs:88
 msgid ""
 "When searching for files, all matching files are returned. Use this option "
@@ -4055,6 +4585,27 @@ msgstr "提供一个或多个模块名称，用逗号分隔以加载它们。"
 #: Library/Main/Strings.cs:120
 msgid "Enable one or more modules"
 msgstr "启用一个或多个模块"
+
+#: Library/Main/Strings.cs:121
+msgid ""
+"This setting controls the usage of snapshots, which allows Duplicati to "
+"backup files that are locked by other programs. If this is set to \"off\", "
+"Duplicati will not attempt to create a disk snapshot. Setting this to "
+"\"auto\" makes Duplicati attempt to create a snapshot, and fail silently if "
+"that was not allowed or supported (note that the OS may still log system "
+"warnings). A setting of \"on\" will also make Duplicati attempt to create a "
+"snapshot, but will produce a warning message in the log if it fails. Setting"
+" it to \"required\" will make Duplicati abort the backup if the snapshot "
+"creation fails. On windows this uses the Volume Shadow Copy Services (VSS) "
+"and requires administrative privileges. On Linux this uses Logical Volume "
+"Management (LVM) and requires root privileges. On macOS this uses Apple File"
+" System (APFS) snapshots and requires root privileges."
+msgstr ""
+"该设置控制快照的使用，允许 Duplicati 备份被其他程序锁定的文件。如果设置为 \"关闭\"，Duplicati 不会尝试创建磁盘快照。设置为 "
+"\"自动 \"后，Duplicati 会尝试创建快照，如果不允许或不支持，则会无声地失败（注意操作系统仍可能记录系统警告）。如果设置为 "
+"\"on\"，Duplicati 也会尝试创建快照，但如果失败，则会在日志中显示警告信息。设置为 \"需要 \"时，如果快照创建失败，Duplicati"
+" 会中止备份。在 Windows 上，该选项使用卷影复制服务 (VSS)，需要管理员权限。在 Linux 上，它会使用逻辑卷管理 (LVM)，需要 "
+"root 权限。在 macOS 上，该功能使用 Apple File System (APFS) 快照，需要 root 权限。"
 
 #: Library/Main/Strings.cs:122
 msgid "Control the use of disk snapshots"
@@ -4239,6 +4790,20 @@ msgid ""
 "another application to ensure consistency. This flag can disable the check "
 "and perform optimistic reads of locked files."
 msgstr "读取文件时，Duplicati 会跳过被其他应用程序标记为锁定的文件，以确保一致性。此标记可禁用检查，并对锁定文件执行乐观读取。"
+
+#: Library/Main/Strings.cs:152
+msgid "Ignore backup exclusion attributes"
+msgstr "忽略备份排除属性"
+
+#: Library/Main/Strings.cs:153
+msgid ""
+"By default, Duplicati will skip files marked with backup exclusion extended "
+"attributes, such as the macOS com.apple.backupd flag or a Linux "
+"duplicati.exclude marker. Enable this option to ignore any extended "
+"attributes."
+msgstr ""
+"默认情况下，Duplicati 会跳过标有备份排除扩展属性的文件，如 macOS com.apple.backupd 标记或 Linux "
+"duplicati.exclude 标记。启用此选项可忽略任何扩展属性。"
 
 #: Library/Main/Strings.cs:154
 #, csharp-format
@@ -4681,6 +5246,18 @@ msgstr "使用该选项设置保留备份的时间间隔"
 #: Library/Main/Strings.cs:229
 msgid "Keep all versions within a timespan"
 msgstr "保留指定时间间隔内的所有版本"
+
+#: Library/Main/Strings.cs:230
+msgid ""
+"Sets how long uploaded backup files should be protected with an immutable "
+"object lock (for example, 30d). If this option is not set, the files will "
+"not be protected with an object lock. Not all destinations support object "
+"locking."
+msgstr "设置上传的备份文件应使用不可变对象锁保护多长时间（例如 30d）。如果不设置该选项，文件将不会使用对象锁保护。并非所有目的地都支持对象锁。"
+
+#: Library/Main/Strings.cs:231
+msgid "Lock duration for remote backup files"
+msgstr "远程备份文件的锁定时间"
 
 #: Library/Main/Strings.cs:232
 msgid ""
@@ -5247,6 +5824,18 @@ msgstr ""
 msgid "Activate logging of all database queries"
 msgstr "激活所有数据库查询的日志记录"
 
+#: Library/Main/Strings.cs:341
+msgid "Store metadata content in the database"
+msgstr "在数据库中存储元数据内容"
+
+#: Library/Main/Strings.cs:342
+msgid ""
+"By default, metadata content is only stored in the remote volumes. Use this "
+"option to also store metadata content in the local database, which can speed"
+" up certain operations at the cost of increased database size."
+msgstr ""
+"默认情况下，元数据内容只存储在远程卷中。使用该选项也可将元数据内容存储在本地数据库中，这样可以加快某些操作的速度，但代价是增加数据库的大小。"
+
 #: Library/Main/Strings.cs:343
 msgid ""
 "If dblock files are missing from the destination, you can attempt to rebuild"
@@ -5283,6 +5872,17 @@ msgstr "列出损坏的文件"
 #: Library/Main/Strings.cs:348
 msgid "Disable replacement of missing metadata"
 msgstr "禁用缺失元数据的替换"
+
+#: Library/Main/Strings.cs:349
+msgid ""
+"If this option is enabled, the purge-broken-files command will skip "
+"calculating the size of the removed files. This can speed up the operation "
+"on large datasets."
+msgstr "如果启用了该选项，清除破碎文件命令将跳过计算删除文件的大小。这可以加快大型数据集的操作速度。"
+
+#: Library/Main/Strings.cs:350
+msgid "Skip calculating removed file size"
+msgstr "跳过计算删除的文件大小"
 
 #: Library/Main/Strings.cs:352
 msgid ""
@@ -5356,11 +5956,11 @@ msgid ""
 "restrictions. Must be an integer between 1-10."
 msgstr "设置 CPU 强度级别以限制 CPU 资源使用。数字越大，使用预算越高。例如，10 表示无限制。必须是 1-10 之间的整数。"
 
-#: Library/Main/Strings.cs:366
+#: Library/Main/Strings.cs:369
 msgid "Maximum cache size for restoring files"
 msgstr "恢复文件的最大缓存大小"
 
-#: Library/Main/Strings.cs:367
+#: Library/Main/Strings.cs:370
 msgid ""
 "Use this option to set the maximum size of the cache used for restoring "
 "files. The cache is used to store the data blocks that are downloaded from "
@@ -5369,11 +5969,11 @@ msgid ""
 msgstr ""
 "使用此选项可设置用于恢复文件的缓存的最大大小。缓存用于存储从远程存储器下载的数据块。它假定该值可被数据块大小整除，除非该值为 0 时禁用数据块缓存。"
 
-#: Library/Main/Strings.cs:368
+#: Library/Main/Strings.cs:371
 msgid "Eviction ratio of the data block cache during restore"
 msgstr "恢复期间数据块缓存的驱逐率"
 
-#: Library/Main/Strings.cs:369
+#: Library/Main/Strings.cs:372
 msgid ""
 "Use this option to set the eviction ratio of the data block cache during "
 "restore. The eviction ratio is the percentage of the cache that is evicted "
@@ -5382,11 +5982,11 @@ msgid ""
 msgstr ""
 "使用此选项可设置恢复过程中数据块缓存的驱逐率。驱逐率是指缓存满时驱逐缓存的百分比。默认值为 50，这意味着当缓存满时，50% 的缓存会被驱逐。"
 
-#: Library/Main/Strings.cs:370
+#: Library/Main/Strings.cs:373
 msgid "Number of concurrent FileProcessors processes used during restore"
 msgstr "恢复过程中使用的并发 FileProcessors 进程数"
 
-#: Library/Main/Strings.cs:371
+#: Library/Main/Strings.cs:374
 msgid ""
 "Use this option to set the number of concurrent FileProcessors processes "
 "used during restore. A FileProcessor processes one file at a time, and "
@@ -5395,47 +5995,36 @@ msgstr ""
 "使用此选项可设置恢复过程中使用的并发 FileProcessor 进程数。FileProcessor 一次处理一个文件，增加 FileProcessor"
 " 的数量可提高恢复性能。"
 
-#: Library/Main/Strings.cs:372
+#: Library/Main/Strings.cs:375
 msgid "Use legacy restore method"
 msgstr "使用传统恢复方法"
 
-#: Library/Main/Strings.cs:373
+#: Library/Main/Strings.cs:376
 msgid ""
 "Use this option to use the legacy restore method. The legacy restore method "
 "is slower than the new method, but may be more reliable in some cases."
 msgstr "使用此选项可使用传统恢复方法。传统恢复方法比新方法慢，但在某些情况下可能更可靠。"
 
-#: Library/Main/Strings.cs:374
+#: Library/Main/Strings.cs:377
 msgid "Preallocate size of restored files"
 msgstr "预先分配恢复文件的大小"
 
-#: Library/Main/Strings.cs:375
+#: Library/Main/Strings.cs:378
 msgid ""
 "Use this option to toggle whether to set the size of the restored files "
 "before they are written to disk. This can help to reduce fragmentation and "
 "improve performance on some filesystems."
 msgstr "使用此选项可切换是否在将恢复的文件写入磁盘前设置其大小。这有助于减少碎片并提高某些文件系统的性能。"
 
-#: Library/Main/Strings.cs:376
+#: Library/Main/Strings.cs:379
 msgid "Hints to the desired maximum size of the restore volume cache"
 msgstr "设置恢复卷缓存的期望最大值建议"
 
-#: Library/Main/Strings.cs:377
-msgid ""
-"Use this option to hint the maximum desired size of the restore volume "
-"cache. The restore volume cache is used to store the volumes from the remote"
-" storage on local disk. When this number is exceeded, the client tries to "
-"evict the least recently used volume(s). This means that the number of "
-"volumes kept on disk can exceed this value if they are still being "
-"downloaded or are in use."
-msgstr ""
-"设置恢复卷缓存的最大期望建议值。缓存用于在本地存储远程卷。超过此值时将移除最久未使用的卷。如果卷正在下载或使用中，实际占用的磁盘空间可能会暂时超过此值。"
-
-#: Library/Main/Strings.cs:378
+#: Library/Main/Strings.cs:383
 msgid "Number of concurrent FileDecompressor processes used during restore"
 msgstr "恢复过程中使用的并发文件解压程序数量"
 
-#: Library/Main/Strings.cs:379
+#: Library/Main/Strings.cs:384
 msgid ""
 "Use this option to set the number of concurrent FileDecompressor processes "
 "used during restore. A FileDecompressor processes one volume at a time, and "
@@ -5445,11 +6034,11 @@ msgstr ""
 "使用此选项可设置恢复过程中使用的并发 FileDecompressor 进程的数量。FileDecompressor "
 "一次处理一个卷，如果瓶颈在于解压缩，增加 FileDecompressor 的数量可能会提高恢复性能。"
 
-#: Library/Main/Strings.cs:380
+#: Library/Main/Strings.cs:385
 msgid "Number of concurrent FileDecryptor processes used during restore"
 msgstr "恢复过程中使用的并发 FileDecryptor 进程数"
 
-#: Library/Main/Strings.cs:381
+#: Library/Main/Strings.cs:386
 msgid ""
 "Use this option to set the number of concurrent FileDecryptor processes used"
 " during restore. A FileDecryptor processes one volume at a time, and "
@@ -5459,11 +6048,11 @@ msgstr ""
 "使用此选项可设置恢复过程中使用的并发 FileDecryptor 进程数。FileDecryptor 一次处理一个卷，如果瓶颈是解密，增加 "
 "FileDecryptor 的数量可能会提高恢复性能。"
 
-#: Library/Main/Strings.cs:382
+#: Library/Main/Strings.cs:387
 msgid "Number of concurrent FileDownloader processes used during restore"
 msgstr "恢复过程中使用的并发 FileDownloader 进程数"
 
-#: Library/Main/Strings.cs:383
+#: Library/Main/Strings.cs:388
 msgid ""
 "Use this option to set the number of concurrent FileDownloader processes "
 "used during restore. A FileDownloader processes one volume at a time, and "
@@ -5473,11 +6062,11 @@ msgstr ""
 "使用此选项可设置恢复过程中使用的并发 FileDownloader 进程数。FileDownloader 一次处理一个卷，如果瓶颈是下载，增加 "
 "FileDownloader 的数量可能会提高恢复性能。"
 
-#: Library/Main/Strings.cs:384
+#: Library/Main/Strings.cs:389
 msgid "Size of buffers of the channels used during restore"
 msgstr "还原期间使用的通道缓冲区大小"
 
-#: Library/Main/Strings.cs:385
+#: Library/Main/Strings.cs:390
 msgid ""
 "Use this option to set the size of the buffers of the channels used during "
 "restore. The buffers are used to allow for better asynchronous communication"
@@ -5485,33 +6074,46 @@ msgid ""
 "improve restore performance."
 msgstr "设置还原流程中各进程间异步通信的通道缓冲区大小。增加缓冲区大小可能会提升还原性能。"
 
-#: Library/Main/Strings.cs:388
+#: Library/Main/Strings.cs:391
+msgid "Allow restore outside target directory"
+msgstr "允许在目标目录外还原"
+
+#: Library/Main/Strings.cs:392
+msgid ""
+"Use this option to allow the restore process to write files outside the "
+"target directory. This is normally disabled to prevent path traversal "
+"attacks, but can be enabled if you need to restore files to a location "
+"outside the target directory (e.g. via symlinks)."
+msgstr ""
+"使用该选项允许还原进程写入目标目录之外的文件。通常禁用此选项是为了防止路径遍历攻击，但如果需要将文件还原到目标目录以外的位置（如通过符号链接），则可以启用此选项。"
+
+#: Library/Main/Strings.cs:393
 msgid "Enable internal profiling"
 msgstr "启用内部剖析"
 
-#: Library/Main/Strings.cs:389
+#: Library/Main/Strings.cs:394
 msgid ""
 "Use this option to enable internal profiling. Profiling is used to measure "
 "the performance of the internal code. The profiling data is written to the "
 "log file and can be used to identify performance bottlenecks."
 msgstr "使用该选项可启用内部剖析。剖析用于测量内部代码的性能。剖析数据会写入日志文件，可用于识别性能瓶颈。"
 
-#: Library/Main/Strings.cs:390
+#: Library/Main/Strings.cs:395
 msgid "Ignore update if version exists"
 msgstr "如果版本已存在则忽略更新"
 
-#: Library/Main/Strings.cs:391
+#: Library/Main/Strings.cs:396
 msgid ""
 "Use this option to ignore the update if the version already exists. This can"
 " be used to avoid errors if asking to update the database with a version "
 "that already exists."
 msgstr "如果版本已存在，则忽略更新。可用于避免在尝试更新已存在的数据库版本时报错。"
 
-#: Library/Main/Strings.cs:392
+#: Library/Main/Strings.cs:397
 msgid "Disable special handling for photo libraries on MacOS"
 msgstr "禁用 macOS 照片库的特殊处理"
 
-#: Library/Main/Strings.cs:393
+#: Library/Main/Strings.cs:398
 msgid ""
 "Use this option to disable special handling for photo libraries on MacOS. By"
 " default, Duplicati will attempt to read the contents of photo libraries and"
@@ -5520,45 +6122,73 @@ msgid ""
 "regular folder."
 msgstr "禁用 macOS 照片库特殊处理。默认情况下程序会尝试备份照片库内的单个照片而非整个库文件。启用此选项后，将把照片库视为普通文件夹备份。"
 
-#: Library/Main/Strings.cs:394
+#: Library/Main/Strings.cs:399
 msgid "Path to the Photos library"
 msgstr "照片库路径"
 
-#: Library/Main/Strings.cs:395
+#: Library/Main/Strings.cs:400
 msgid ""
 "Use this option to specify the path to the Photos library on MacOS. This "
 "option is only relevant if the Photos library is not in the default "
 "location."
 msgstr "指定 macOS 照片库的路径。仅在照片库不在默认位置时有效。"
 
+#: Library/Main/Strings.cs:401
+msgid "Refresh lock information during repair"
+msgstr "修复过程中刷新锁定信息"
+
+#: Library/Main/Strings.cs:402
+msgid ""
+"Use this option to refresh the object lock expiration information from the "
+"backend during a repair operation. This will query the backend for the "
+"current lock status of each remote volume and update the local database "
+"accordingly. If the backend does not support locking, this option will be "
+"ignored."
+msgstr ""
+"使用该选项可在修复操作期间从后台刷新对象锁过期信息。这将向后端查询每个远程卷的当前锁定状态，并相应地更新本地数据库。如果后端不支持锁定，该选项将被忽略。"
+
+#: Library/Main/Strings.cs:403
+msgid "Perform a complete refresh of lock information"
+msgstr "全面刷新锁定信息"
+
 #: Library/Main/Strings.cs:404
+msgid ""
+"Use this option to perform a complete refresh of lock information from the "
+"backend. This will query the backend for the current lock status of each "
+"remote volume and update the local database accordingly. If this option is "
+"not specified, only the lock information for the remote volumes with no lock"
+" information will be refreshed."
+msgstr ""
+"使用该选项可从后台全面刷新锁信息。这将向后台查询每个远程加密卷的当前锁定状态，并相应更新本地数据库。如果未指定该选项，则只会刷新没有锁定信息的远程加密卷的锁定信息。"
+
+#: Library/Main/Strings.cs:409
 #, csharp-format
 msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
 "algorithm {0}"
 msgstr "加密库不支持哈希算法 {0} 的重用变换"
 
-#: Library/Main/Strings.cs:405
+#: Library/Main/Strings.cs:410
 #, csharp-format
 msgid "The cryptolibrary does not support the hash algorithm {0}"
 msgstr "加密库不支持哈希算法 {0}"
 
-#: Library/Main/Strings.cs:406
+#: Library/Main/Strings.cs:411
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr "不能更改已有备份的加密密码"
 
-#: Library/Main/Strings.cs:407
+#: Library/Main/Strings.cs:412
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
 msgstr "创建快照失败：{0}"
 
-#: Library/Main/Strings.cs:408
+#: Library/Main/Strings.cs:413
 msgid ""
 "Failed to activate BackupRead as the current process does not have "
 "sufficient permissions"
 msgstr "激活 BackupRead 失败，因为当前进程权限不足"
 
-#: Library/Main/Strings.cs:413
+#: Library/Main/Strings.cs:418
 #, csharp-format
 msgid "The encryption module {0} was not found"
 msgstr "未找到加密模块 {0}"
@@ -5648,6 +6278,220 @@ msgstr "该内置模块解析源参数来备份 Microsoft SQL 服务器的数据
 #: Library/Modules/Builtin/Strings.cs:54
 msgid "Configure Microsoft SQL Server module"
 msgstr "配置 Microsoft SQL 服务器模块"
+
+#: Library/Modules/Builtin/Strings.cs:60
+msgid "Remote sync source backend"
+msgstr "远程同步源后台"
+
+#: Library/Modules/Builtin/Strings.cs:61
+msgid ""
+"Specify the source backend string for remote synchronization. If not set, "
+"the current backup destination is used."
+msgstr "指定远程同步的源后台字符串。如果未设置，则使用当前备份目标。"
+
+#: Library/Modules/Builtin/Strings.cs:62
+msgid "Remote sync destination backend"
+msgstr "远程同步目的地后台"
+
+#: Library/Modules/Builtin/Strings.cs:63
+msgid ""
+"Specify the destination backend strings for remote synchronization, comma-"
+"separated."
+msgstr "指定用于远程同步的目标后台字符串，以逗号分隔。"
+
+#: Library/Modules/Builtin/Strings.cs:64
+msgid "Create destination folders"
+msgstr "创建目的地文件夹"
+
+#: Library/Modules/Builtin/Strings.cs:65
+msgid ""
+"Automatically create folders in the destination backend if they do not "
+"exist."
+msgstr "如果目的地后台不存在文件夹，则自动创建文件夹"
+
+#: Library/Modules/Builtin/Strings.cs:66
+msgid "Backend retries"
+msgstr "后台重试"
+
+#: Library/Modules/Builtin/Strings.cs:67
+msgid "Number of times to recreate a backend on backend errors."
+msgstr "后台出错时重新创建后台的次数"
+
+#: Library/Modules/Builtin/Strings.cs:68
+msgid "Backend retry delay"
+msgstr "后台重试延迟"
+
+#: Library/Modules/Builtin/Strings.cs:69
+msgid "Delay in milliseconds between backend retries."
+msgstr "后台重试之间的延迟，以毫秒为单位"
+
+#: Library/Modules/Builtin/Strings.cs:70
+msgid "Exponential retry backoff"
+msgstr "指数退避重试"
+
+#: Library/Modules/Builtin/Strings.cs:71
+msgid "Use exponential backoff for backend retries."
+msgstr "对后台重试使用指数退避策略。"
+
+#: Library/Modules/Builtin/Strings.cs:72
+msgid "Auto confirm remote sync"
+msgstr "自动确认远程同步"
+
+#: Library/Modules/Builtin/Strings.cs:73
+msgid ""
+"Automatically confirm the remote synchronization plan to avoid interactive "
+"prompts."
+msgstr "自动确认远程同步计划，避免交互式提示。"
+
+#: Library/Modules/Builtin/Strings.cs:74
+msgid "Remote sync dry run"
+msgstr "远程同步试运行"
+
+#: Library/Modules/Builtin/Strings.cs:75
+msgid "Do not write or delete files during remote synchronization."
+msgstr "远程同步期间不要写入或删除文件。"
+
+#: Library/Modules/Builtin/Strings.cs:76
+msgid "Destination backend options"
+msgstr "目标后台选项"
+
+#: Library/Modules/Builtin/Strings.cs:77
+msgid ""
+"Space-separated key=value pairs for the destination backend, e.g. "
+"\"key1=value1 key2=value2\"."
+msgstr "以空格分隔的目标后台 key=value 对，例如 \"key1=value1 key2=value2\"。"
+
+#: Library/Modules/Builtin/Strings.cs:78
+msgid "Force remote sync"
+msgstr "强制远程同步"
+
+#: Library/Modules/Builtin/Strings.cs:79
+msgid ""
+"Force synchronization, skipping comparisons and overwriting the destination."
+msgstr "强制同步，跳过比较并覆盖目标。"
+
+#: Library/Modules/Builtin/Strings.cs:80
+msgid "Global backend options"
+msgstr "全局后台选项"
+
+#: Library/Modules/Builtin/Strings.cs:81
+msgid ""
+"Space-separated key=value pairs applied to both backends unless overridden."
+msgstr "空格分隔的 key=value 对适用于两个后台，除非被覆盖。"
+
+#: Library/Modules/Builtin/Strings.cs:82
+msgid "Remote sync log file"
+msgstr "远程同步日志文件"
+
+#: Library/Modules/Builtin/Strings.cs:83
+msgid ""
+"The log file to write to. If not set here, the global options are checked."
+msgstr "要写入的日志文件。如果未在此处设置，则会检查全局选项"
+
+#: Library/Modules/Builtin/Strings.cs:84
+msgid "Remote sync log level"
+msgstr "远程同步日志级别"
+
+#: Library/Modules/Builtin/Strings.cs:85
+msgid "The log level to use. If not set here, the global options are checked."
+msgstr "要使用的日志级别。如果未在此处设置，将检查全局选项"
+
+#: Library/Modules/Builtin/Strings.cs:86
+msgid "Parse arguments only"
+msgstr " 只解析参数"
+
+#: Library/Modules/Builtin/Strings.cs:87
+msgid "Only parse the arguments and then exit."
+msgstr "只解析参数，然后退出。"
+
+#: Library/Modules/Builtin/Strings.cs:88
+msgid "Show progress"
+msgstr "显示进度"
+
+#: Library/Modules/Builtin/Strings.cs:89
+msgid "Print progress to STDOUT."
+msgstr "将进度打印到 STDOUT。"
+
+#: Library/Modules/Builtin/Strings.cs:90
+msgid "Retention mode"
+msgstr "保留模式"
+
+#: Library/Modules/Builtin/Strings.cs:91
+msgid "Keep old files by renaming instead of deleting them."
+msgstr "通过重命名而不是删除来保留旧文件。"
+
+#: Library/Modules/Builtin/Strings.cs:92
+msgid "Operation retries"
+msgstr "操作重试"
+
+#: Library/Modules/Builtin/Strings.cs:93
+msgid "Number of times to retry on errors."
+msgstr "出错时重试的次数"
+
+#: Library/Modules/Builtin/Strings.cs:94
+msgid "Source backend options"
+msgstr " 源后台选项"
+
+#: Library/Modules/Builtin/Strings.cs:95
+msgid ""
+"Space-separated key=value pairs for the source backend, e.g. \"key1=value1 "
+"key2=value2\"."
+msgstr "以空格分隔的源后台 key=value 对，例如 \"key1=value1 key2=value2\"。"
+
+#: Library/Modules/Builtin/Strings.cs:96
+msgid "Verify contents"
+msgstr "验证内容"
+
+#: Library/Modules/Builtin/Strings.cs:97
+msgid "Verify file contents before overwriting destination files."
+msgstr "在覆盖目标文件前，先验证文件内容。"
+
+#: Library/Modules/Builtin/Strings.cs:98
+msgid "Verify after upload"
+msgstr "上传后验证"
+
+#: Library/Modules/Builtin/Strings.cs:99
+msgid "Verify files after uploading them."
+msgstr "上传文件后进行验证。"
+
+#: Library/Modules/Builtin/Strings.cs:100
+msgid "Remote sync trigger mode"
+msgstr "远程同步触发模式"
+
+#: Library/Modules/Builtin/Strings.cs:101
+msgid ""
+"Specify the trigger modes for remote synchronization, comma-separated: "
+"inline (default, after every backup), scheduled (after schedule has passed),"
+" counting (after N backups)."
+msgstr "指定远程同步的触发模式，以逗号分隔：内联（默认，每次备份后）、计划（计划通过后）、计数（N 次备份后）。"
+
+#: Library/Modules/Builtin/Strings.cs:102
+msgid "Remote sync schedule"
+msgstr "远程同步计划"
+
+#: Library/Modules/Builtin/Strings.cs:103
+msgid ""
+"Specify the schedule intervals for remote synchronization, comma-separated, "
+"e.g. '7.00:00:00,14.00:00:00'."
+msgstr "指定远程同步的计划间隔，以逗号分隔，例如 \"7.00:00:00,14.00:00:00\"。"
+
+#: Library/Modules/Builtin/Strings.cs:104
+msgid "Remote sync backup count"
+msgstr "远程同步备份计数"
+
+#: Library/Modules/Builtin/Strings.cs:105
+msgid ""
+"Specify the numbers of backups after which to trigger remote "
+"synchronization, comma-separated."
+msgstr "指定触发远程同步的备份次数，以逗号分隔。"
+
+#: Library/Modules/Builtin/Strings.cs:106
+msgid "Sync on warnings"
+msgstr "警告时同步"
+
+#: Library/Modules/Builtin/Strings.cs:107
+msgid "Enable synchronization when the backup completes with warnings."
+msgstr "当备份完成并发出警告时，启用同步。"
 
 #: Library/Modules/Builtin/Strings.cs:111
 msgid "Execute a script before starting an operation, and again on completion"
@@ -5798,6 +6642,18 @@ msgstr "使用此选项设置用于与SMTP服务器进行身份验证的密码�
 #: Library/Modules/Builtin/Strings.cs:147
 msgid "SMTP Password"
 msgstr "SMTP 密码"
+
+#: Library/Modules/Builtin/Strings.cs:148
+msgid ""
+"This setting is required if mail should be sent, all other settings have default values. You can supply multiple email addresses separated with commas, and you can use the normal address format as specified by RFC2822 section 3.4.\n"
+"Example with 3 recipients:\n"
+"\n"
+"Peter Sample <peter@example.com>, John Sample <john@example.com>, admin@example.com"
+msgstr ""
+"如果要发送邮件，则必须进行此设置，所有其他设置均为默认值。您可以提供多个用逗号分隔的电子邮件地址，也可以使用 RFC2822 第 3.4 节规定的普通地址格式。\n"
+"有 3 个收件人的示例：\n"
+"\n"
+"Peter Sample <peter@example.com>, John Sample <john@example.com>, admin@example.com"
 
 #: Library/Modules/Builtin/Strings.cs:152
 msgid "Email recipient(s)"
@@ -5990,6 +6846,17 @@ msgstr "使用此选项为将要发送消息的账户设置密码。"
 #: Library/Modules/Builtin/Strings.cs:199
 msgid "The XMPP password"
 msgstr "XMPP 密码"
+
+#: Library/Modules/Builtin/Strings.cs:200
+#: Library/Modules/Builtin/Strings.cs:234
+#: Library/Modules/Builtin/Strings.cs:263
+#, csharp-format
+msgid ""
+"You can specify one of \"{0}\", \"{1}\", \"{2}\", \"{3}\".\n"
+"You can supply multiple options with a comma separator, e.g. \"{0},{1}\". The special value \"{4}\" is a shorthand for \"{0},{1},{2},{3}\" and will cause all backup operations to send a message."
+msgstr ""
+"您可以指定\"{0}\"、\"{1}\"、\"{2}\"、\"{3}\"中的一个。\n"
+"您可以使用逗号分隔符提供多个选项，例如\"{0},{1}\"。特殊值\"{4}\"是\"{0},{1},{2},{3}\"的简写，会导致所有备份操作都发送一条信息。"
 
 #: Library/Modules/Builtin/Strings.cs:203
 #: Library/Modules/Builtin/Strings.cs:237

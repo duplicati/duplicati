@@ -1,4 +1,4 @@
-// Copyright (C) 2025, The Duplicati Team
+// Copyright (C) 2026, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -106,7 +106,7 @@ public class RemoteControl : IEndpointV1
 
     private static Dto.RemoteControlStatusOutput EnableRemoteControl(IRemoteControllerRegistration registration, IRemoteController remoteController)
     {
-        remoteController.Enable();
+        remoteController.Enable(true);
         return GetStatus(registration, remoteController);
     }
 
