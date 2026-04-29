@@ -81,7 +81,7 @@ internal class PartitionReadStream : Stream
             throw new ArgumentOutOfRangeException(nameof(offset));
         if (count < 0 || offset + count > buffer.Length)
             throw new ArgumentOutOfRangeException(nameof(count));
-        if (_startOffset + _position >= _length)
+        if (_position >= _length)
             return 0; // EOF
 
         long bytesToRead = Math.Min(count, _length - _position);
