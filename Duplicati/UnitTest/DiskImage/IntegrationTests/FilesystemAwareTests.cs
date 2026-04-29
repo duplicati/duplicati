@@ -1,6 +1,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -24,11 +25,16 @@ public class FilesystemAwareTests : DiskImageTests
     [Category("DiskImageFileSystem")]
     public async Task Test_FileSystem_IncrementalBackup_UnchangedBlocks_Skipped(int size, PartitionTableType tableType, FileSystemType fsType)
     {
+        var stopwatch = new Stopwatch();
+        stopwatch.Start();
+
         var (isSupported, reason) = _diskHelper.IsFileSystemTypeSupported(fsType);
         if (!isSupported)
             Assert.Ignore(reason);
 
-        await TestContext.Progress.WriteLineAsync($"Test: {fsType} Incremental Backup - Unchanged Blocks Skipped");
+        stopwatch.Stop();
+        await TestContext.Progress.WriteLineAsync($"Test: {fsType} Incremental Backup - Unchanged Blocks Skipped ({stopwatch.ElapsedMilliseconds}ms)");
+        stopwatch.Restart();
 
         // When testing Unknown filesystem, format source as FAT32 to allow test data generation,
         // but treat it as unknown during backup
@@ -38,13 +44,17 @@ public class FilesystemAwareTests : DiskImageTests
         // Create source disk with specified partition
         var sourceDrivePath = _diskHelper.CreateDisk(_sourceImagePath, size);
         var sourcePartitions = _diskHelper.InitializeDisk(sourceDrivePath, tableType, [(sourceFsType, 0)]);
-        await TestContext.Progress.WriteLineAsync($"Source disk created at: {_sourceImagePath}");
+        stopwatch.Stop();
+        await TestContext.Progress.WriteLineAsync($"Source disk created at: {_sourceImagePath} ({stopwatch.ElapsedMilliseconds}ms)");
+        stopwatch.Restart();
 
         // Generate initial test data
         await ToolTests.GenerateTestData(sourcePartitions.First(), 10, 3, 1, 1024);
         _diskHelper.FlushDisk(sourceDrivePath);
         _diskHelper.Unmount(sourceDrivePath);
-        await TestContext.Progress.WriteLineAsync("Initial test data generated");
+        stopwatch.Stop();
+        await TestContext.Progress.WriteLineAsync($"Initial test data generated ({stopwatch.ElapsedMilliseconds}ms)");
+        stopwatch.Restart();
 
         // First backup
         var firstBackupResults = RunBackup(sourceDrivePath, treatFilesystemAsUnknown);
@@ -62,7 +72,9 @@ public class FilesystemAwareTests : DiskImageTests
         }
 
         var firstBackupSize = firstBackupResults.SizeOfOpenedFiles;
-        await TestContext.Progress.WriteLineAsync($"First backup completed: {firstBackupResults.OpenedFiles} files opened, {firstBackupSize} bytes");
+        stopwatch.Stop();
+        await TestContext.Progress.WriteLineAsync($"First backup completed: {firstBackupResults.OpenedFiles} files opened, {firstBackupSize} bytes ({stopwatch.ElapsedMilliseconds}ms)");
+        stopwatch.Restart();
 
         // Verify first backup processed the expected amount of data
         // With FAT32 awareness, unallocated blocks are returned as zeros (no disk read)
@@ -73,11 +85,15 @@ public class FilesystemAwareTests : DiskImageTests
         var restoreDrivePath = _diskHelper.CreateDisk(_restoreImagePath, size);
         _diskHelper.InitializeDisk(restoreDrivePath, tableType, []);
         _diskHelper.Unmount(restoreDrivePath);
-        await TestContext.Progress.WriteLineAsync($"Restore disk created at: {_restoreImagePath}");
+        stopwatch.Stop();
+        await TestContext.Progress.WriteLineAsync($"Restore disk created at: {_restoreImagePath} ({stopwatch.ElapsedMilliseconds}ms)");
+        stopwatch.Restart();
 
         var restoreResults = RunRestore(restoreDrivePath);
         TestUtils.AssertResults(restoreResults);
-        await TestContext.Progress.WriteLineAsync("Initial restore completed successfully");
+        stopwatch.Stop();
+        await TestContext.Progress.WriteLineAsync($"Initial restore completed successfully ({stopwatch.ElapsedMilliseconds}ms)");
+        stopwatch.Restart();
 
         // Reattach and verify initial restore
         sourceDrivePath = _diskHelper.ReAttach(_sourceImagePath, sourceDrivePath, tableType, readOnly: true);
@@ -88,17 +104,23 @@ public class FilesystemAwareTests : DiskImageTests
         var restoreMounted = _diskHelper.Mount(restoreDrivePath, _restoreMountPath, readOnly: true, fileSystemTypes: fsTypes);
 
         CompareDirectories(sourceMounted.First(), restoreMounted.First());
-        await TestContext.Progress.WriteLineAsync("Initial restore verified successfully");
+        stopwatch.Stop();
+        await TestContext.Progress.WriteLineAsync($"Initial restore verified successfully ({stopwatch.ElapsedMilliseconds}ms)");
+        stopwatch.Restart();
 
         // Unmount both disks to prepare for modification
         _diskHelper.Unmount(sourceDrivePath);
         _diskHelper.Unmount(restoreDrivePath);
-        await TestContext.Progress.WriteLineAsync("Both disks unmounted");
+        stopwatch.Stop();
+        await TestContext.Progress.WriteLineAsync($"Both disks unmounted ({stopwatch.ElapsedMilliseconds}ms)");
+        stopwatch.Restart();
 
         // Remount source drive in write-enabled mode
         sourceDrivePath = _diskHelper.ReAttach(_sourceImagePath, sourceDrivePath, tableType, readOnly: false);
         sourceMounted = _diskHelper.Mount(sourceDrivePath, _sourceMountPath, readOnly: false, fileSystemTypes: fsTypes);
-        await TestContext.Progress.WriteLineAsync("Source disk remounted in write mode");
+        stopwatch.Stop();
+        await TestContext.Progress.WriteLineAsync($"Source disk remounted in write mode ({stopwatch.ElapsedMilliseconds}ms)");
+        stopwatch.Restart();
 
         // Modify a few files on the source - create new files and modify existing ones
         var sourcePartitionPath = sourceMounted.First();
@@ -118,7 +140,9 @@ public class FilesystemAwareTests : DiskImageTests
         }
         // Also update directory timestamp
         Directory.SetLastWriteTimeUtc(newDirPath, DateTime.UtcNow);
-        await TestContext.Progress.WriteLineAsync($"Created {modifiedFiles.Count} new files in {newDirPath}");
+        stopwatch.Stop();
+        await TestContext.Progress.WriteLineAsync($"Created {modifiedFiles.Count} new files in {newDirPath} ({stopwatch.ElapsedMilliseconds}ms)");
+        stopwatch.Restart();
 
         // Modify an existing file if one exists
         var existingFiles = GetNonSystemFiles(sourcePartitionPath)
@@ -134,17 +158,23 @@ public class FilesystemAwareTests : DiskImageTests
             // Update modification time to ensure backup detects the change
             File.SetLastWriteTimeUtc(fileToModify, DateTime.UtcNow.AddSeconds(1));
             modifiedFiles.Add(fileToModify);
-            await TestContext.Progress.WriteLineAsync($"Modified existing file: {fileToModify}");
+            stopwatch.Stop();
+            await TestContext.Progress.WriteLineAsync($"Modified existing file: {fileToModify} ({stopwatch.ElapsedMilliseconds}ms)");
+            stopwatch.Restart();
         }
 
         // Flush and unmount source after modifications
         _diskHelper.FlushDisk(sourceDrivePath);
         _diskHelper.Unmount(sourceDrivePath);
-        await TestContext.Progress.WriteLineAsync("Modifications complete, source disk unmounted");
+        stopwatch.Stop();
+        await TestContext.Progress.WriteLineAsync($"Modifications complete, source disk unmounted ({stopwatch.ElapsedMilliseconds}ms)");
+        stopwatch.Restart();
 
         // Re-attach the source disk for backup (disk needs to be attached for backup to access it)
         sourceDrivePath = _diskHelper.ReAttach(_sourceImagePath, sourceDrivePath, tableType, readOnly: true);
-        await TestContext.Progress.WriteLineAsync($"Source disk re-attached for second backup at: {sourceDrivePath}");
+        stopwatch.Stop();
+        await TestContext.Progress.WriteLineAsync($"Source disk re-attached for second backup at: {sourceDrivePath} ({stopwatch.ElapsedMilliseconds}ms)");
+        stopwatch.Restart();
 
         // Second backup (incremental)
         var secondBackupResults = RunBackup(sourceDrivePath, treatFilesystemAsUnknown);
@@ -162,7 +192,9 @@ public class FilesystemAwareTests : DiskImageTests
         }
 
         var secondBackupSize = secondBackupResults.SizeOfOpenedFiles;
-        await TestContext.Progress.WriteLineAsync($"Second backup completed: {secondBackupResults.OpenedFiles} files opened, {secondBackupSize} bytes examined, {secondBackupResults.SizeOfAddedFiles} bytes added");
+        stopwatch.Stop();
+        await TestContext.Progress.WriteLineAsync($"Second backup completed: {secondBackupResults.OpenedFiles} files opened, {secondBackupSize} bytes examined, {secondBackupResults.SizeOfAddedFiles} bytes added ({stopwatch.ElapsedMilliseconds}ms)");
+        stopwatch.Restart();
 
         if (fsType is not FileSystemType.Unknown)
         {
@@ -181,8 +213,11 @@ public class FilesystemAwareTests : DiskImageTests
         // Calculate and log the reduction ratio
         var fileReductionRatio = (double)secondBackupResults.OpenedFiles / firstBackupResults.OpenedFiles;
         var sizeReductionRatio = (double)secondBackupResults.SizeOfOpenedFiles / firstBackupResults.SizeOfOpenedFiles;
-        await TestContext.Progress.WriteLineAsync($"File reduction: {fileReductionRatio:P2} ({secondBackupResults.OpenedFiles}/{firstBackupResults.OpenedFiles})");
-        await TestContext.Progress.WriteLineAsync($"Size reduction: {sizeReductionRatio:P2} ({secondBackupResults.SizeOfOpenedFiles}/{firstBackupResults.SizeOfOpenedFiles})");
+        stopwatch.Stop();
+        await TestContext.Progress.WriteLineAsync($"File reduction: {fileReductionRatio:P2} ({secondBackupResults.OpenedFiles}/{firstBackupResults.OpenedFiles}) ({stopwatch.ElapsedMilliseconds}ms)");
+        stopwatch.Restart();
+        await TestContext.Progress.WriteLineAsync($"Size reduction: {sizeReductionRatio:P2} ({secondBackupResults.SizeOfOpenedFiles}/{firstBackupResults.SizeOfOpenedFiles}) ({stopwatch.ElapsedMilliseconds}ms)");
+        stopwatch.Restart();
 
         // Restore the incremental backup to a fresh disk
         _diskHelper.CleanupDisk(_restoreImagePath);
@@ -191,11 +226,15 @@ public class FilesystemAwareTests : DiskImageTests
         restoreDrivePath = _diskHelper.CreateDisk(_restoreImagePath, size);
         _diskHelper.InitializeDisk(restoreDrivePath, tableType, []);
         _diskHelper.Unmount(restoreDrivePath);
-        await TestContext.Progress.WriteLineAsync($"Fresh restore disk created for incremental restore");
+        stopwatch.Stop();
+        await TestContext.Progress.WriteLineAsync($"Fresh restore disk created for incremental restore ({stopwatch.ElapsedMilliseconds}ms)");
+        stopwatch.Restart();
 
         var incrementalRestoreResults = RunRestore(restoreDrivePath);
         TestUtils.AssertResults(incrementalRestoreResults);
-        await TestContext.Progress.WriteLineAsync("Incremental restore completed successfully");
+        stopwatch.Stop();
+        await TestContext.Progress.WriteLineAsync($"Incremental restore completed successfully ({stopwatch.ElapsedMilliseconds}ms)");
+        stopwatch.Restart();
 
         // Reattach and verify the incremental restore matches the modified source
         sourceDrivePath = _diskHelper.ReAttach(_sourceImagePath, sourceDrivePath, tableType, readOnly: true);
@@ -206,7 +245,9 @@ public class FilesystemAwareTests : DiskImageTests
 
         CompareDirectories(sourceMounted.First(), restoreMounted.First());
 
-        await TestContext.Progress.WriteLineAsync($"{fsType} incremental backup and restore verified successfully");
+        stopwatch.Stop();
+        await TestContext.Progress.WriteLineAsync($"{fsType} incremental backup and restore verified successfully ({stopwatch.ElapsedMilliseconds}ms)");
+        stopwatch.Restart();
     }
 
     /// <summary>
