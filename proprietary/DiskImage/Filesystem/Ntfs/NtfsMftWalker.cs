@@ -93,6 +93,21 @@ internal class NtfsMftWalker
     public bool HasWalked { get; private set; }
 
     /// <summary>
+    /// The modification timestamp of the MFT file (record 0).
+    /// </summary>
+    private DateTime m_mftTimestamp;
+
+    /// <summary>
+    /// The data runs of the MFT file.
+    /// </summary>
+    private List<(long startCluster, long clusterCount)> m_mftDataRuns;
+
+    /// <summary>
+    /// Flag indicating if the MFT has been modified (any record has a newer timestamp).
+    /// </summary>
+    private bool m_mftModified;
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="NtfsMftWalker"/> class.
     /// Call <see cref="WalkAsync"/> to perform the MFT walk and populate the cluster map.
     /// </summary>
@@ -111,6 +126,9 @@ internal class NtfsMftWalker
         m_clusterToTimestampMap = [];
         m_mftRecordDataFunc = null;
         HasWalked = false;
+        m_mftTimestamp = DateTime.MinValue;
+        m_mftDataRuns = [];
+        m_mftModified = false;
     }
 
     /// <summary>
@@ -133,6 +151,9 @@ internal class NtfsMftWalker
         m_partition = null;
         m_mftRecordDataFunc = mftRecordData;
         HasWalked = false;
+        m_mftTimestamp = DateTime.MinValue;
+        m_mftDataRuns = [];
+        m_mftModified = false;
     }
 
     /// <summary>
@@ -158,6 +179,23 @@ internal class NtfsMftWalker
             {
                 // Production mode - read from partition
                 await WalkMftAsync(m_partition, cancellationToken).ConfigureAwait(false);
+            }
+
+            // If the MFT has been modified, mark all its clusters as changed
+            if (m_mftModified)
+            {
+                var currentTimestamp = DateTime.UtcNow;
+                foreach (var (startCluster, clusterCount) in m_mftDataRuns)
+                {
+                    if (startCluster == 0)
+                        continue; // Skip sparse runs
+
+                    for (var i = 0; i < clusterCount; i++)
+                    {
+                        var cluster = startCluster + i;
+                        m_clusterToTimestampMap[cluster] = currentTimestamp;
+                    }
+                }
             }
 
             // Mark system metafiles (records 0-23) as allocated with current timestamp
@@ -244,6 +282,23 @@ internal class NtfsMftWalker
                 ProcessMftRecordData(recordNumber, recordData);
         }
 
+        // If the MFT has been modified, mark all its clusters as changed
+        if (m_mftModified)
+        {
+            var currentTimestamp = DateTime.UtcNow;
+            foreach (var (startCluster, clusterCount) in m_mftDataRuns)
+            {
+                if (startCluster == 0)
+                    continue; // Skip sparse runs
+
+                for (var i = 0; i < clusterCount; i++)
+                {
+                    var cluster = startCluster + i;
+                    m_clusterToTimestampMap[cluster] = currentTimestamp;
+                }
+            }
+        }
+
         return Task.CompletedTask;
     }
 
@@ -312,6 +367,21 @@ internal class NtfsMftWalker
 
         // Get data runs from $DATA attribute
         var dataRuns = GetDataRunsFromRecord(recordData);
+
+        if (recordNumber == 0)
+        {
+            // For the MFT file itself, store its timestamp and data runs
+            m_mftTimestamp = modificationTime;
+            m_mftDataRuns = dataRuns;
+        }
+        else
+        {
+            // For other records, check if they are newer than the MFT's timestamp
+            if (modificationTime > m_mftTimestamp)
+            {
+                m_mftModified = true;
+            }
+        }
 
         // Map each cluster to the modification timestamp
         foreach (var (startCluster, clusterCount) in dataRuns)
