@@ -1,4 +1,4 @@
-// Copyright (C) 2025, The Duplicati Team
+// Copyright (C) 2026, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -228,6 +228,36 @@ namespace Duplicati.UnitTest
             });
 
             Assert.That(options.IndexfilePolicy, Is.EqualTo(Options.IndexFileStrategy.Lookup));
+        }
+
+        [Test]
+        [Category("Options")]
+        public void RestoreVolumeCacheHintDefaultsToUnlimited()
+        {
+            var options = CreateOptions();
+
+            Assert.That(options.RestoreVolumeCacheHint, Is.EqualTo(-1L));
+        }
+
+        [Test]
+        [Category("Options")]
+        public void RestoreVolumeCacheMinFreeDefaultsToOneGigabyte()
+        {
+            var options = CreateOptions();
+
+            Assert.That(options.RestoreVolumeCacheMinFree, Is.EqualTo(1L * 1024 * 1024 * 1024));
+        }
+
+        [Test]
+        [Category("Options")]
+        public void RestoreVolumeCacheMinFreeBareNumberTreatedAsGigabytes()
+        {
+            var options = CreateOptions(new Dictionary<string, string?>
+            {
+                { "restore-volume-cache-min-free", "2" }
+            });
+
+            Assert.That(options.RestoreVolumeCacheMinFree, Is.EqualTo(2L * 1024 * 1024 * 1024));
         }
     }
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2025, The Duplicati Team
+// Copyright (C) 2026, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -948,7 +948,7 @@ namespace Duplicati.Library.Main.Operation
                                     .AddFileEntry(filesetid, prefixid, split.Value, fe.Time, blocksetid, metadataid, cancellationToken)
                                     .ConfigureAwait(false);
 
-                                if (fe.Size <= blocksize)
+                                if (fe.Size <= blocksize && fe.Size > 0)
                                 {
                                     if (!string.IsNullOrWhiteSpace(fe.Blockhash))
                                         await restoredb
@@ -958,7 +958,7 @@ namespace Duplicati.Library.Main.Operation
                                         await restoredb
                                             .AddSmallBlocksetLink(fe.Hash, fe.Hash, fe.Size, cancellationToken)
                                             .ConfigureAwait(false);
-                                    else if (fe.Size > 0)
+                                    else
                                         Logging.Log.WriteWarningMessage(LOGTAG, "MissingBlockHash", null, "No block hash found for file: {0}", fe.Path);
                                 }
 

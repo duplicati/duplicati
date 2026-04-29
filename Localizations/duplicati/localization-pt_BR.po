@@ -29,15 +29,17 @@
 # Leone Cesca, 2025
 # Caic Rangel, 2025
 # DeLinuxCo, 2026
+# Eduardo Moreira, 2026
+# Kenneth Skovhede <kenneth@hexad.dk>, 2026
 # 
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-18 13:48+0100\n"
+"POT-Creation-Date: 2026-04-22 15:17+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
-"Last-Translator: DeLinuxCo, 2026\n"
+"Last-Translator: Kenneth Skovhede <kenneth@hexad.dk>, 2026\n"
 "Language-Team: Portuguese (Brazil) (https://app.transifex.com/duplicati/teams/67655/pt_BR/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -842,6 +844,14 @@ msgstr "Google Cloud Storage"
 msgid "You must supply a project ID with --{0} for creating a bucket."
 msgstr "Você deve fornecer um ID de projeto com --{0} para criar um bucket."
 
+#: Library/Backend/GoogleServices/Strings.cs:31
+msgid ""
+"The supplied credentials are missing the full control scope. Please use a "
+"service account with full control access."
+msgstr ""
+"As credenciais fornecidas não possuem o escopo de controle completo. Utilize"
+" uma conta de serviço com acesso de controle total."
+
 #: Library/Backend/GoogleServices/Strings.cs:32
 #, csharp-format
 msgid ""
@@ -907,6 +917,19 @@ msgstr ""
 "Caminho para um arquivo com as credenciais JSON de uma conta de serviço do "
 "Google Cloud. Quando definido, o AuthID não é obrigatório."
 
+#: Library/Backend/GoogleServices/Strings.cs:44
+msgid "Specify retention policy mode"
+msgstr "Especifique o modo de política de retenção"
+
+#: Library/Backend/GoogleServices/Strings.cs:45
+msgid ""
+"This option specifies the retention policy mode to use when setting object "
+"lock. Possible values are 'Locked' and 'Unlocked'."
+msgstr ""
+"Esta opção especifica o modo de política de retenção a ser usado ao definir "
+"o bloqueio de objetos. Os valores possíveis são 'Locked' (Bloqueado) e "
+"'UnLocked' (Desbloqueado)."
+
 #: Library/Backend/GoogleServices/Strings.cs:50
 msgid ""
 "This backend can read and write data to Google Drive. Allowed format is "
@@ -961,6 +984,19 @@ msgstr "Módulo de configuração do Google Cloud Storage"
 #: Library/Backend/GoogleServices/Strings.cs:64
 msgid "Expose Google Cloud Storage configuration as a web module"
 msgstr "Expor a configuração do Google Cloud Storage como um módulo web"
+
+#: Library/Backend/Duplicati/Strings.cs:28
+msgid "This backend can read and write data to Duplicati Storage."
+msgstr "Este backend pode ler e gravar dados no Duplicati Storage."
+
+#: Library/Backend/Duplicati/Strings.cs:29
+msgid "Duplicati Storage Backend"
+msgstr "Backend de armazenamento Duplicati"
+
+#: Library/Backend/Duplicati/Strings.cs:31
+msgid "The API ID for authenticating with the Duplicati storage server."
+msgstr ""
+" ID da API para autenticação com o servidor de armazenamento Duplicati."
 
 #: Library/Backend/S3/Strings.cs:26
 msgid ""
@@ -1859,12 +1895,12 @@ msgid ""
 msgstr ""
 "Armazene ficheiros em um Grupo Microsoft Office 365 através da API do "
 "Microsoft Graph. Os formatos permitidos são "
-"\"sharepoint://tenant.sharepoint.com/{{CaminhoParaWeb}}//{{Documentos}/subdirectorio\""
+"\"sharepoint://tenant.sharepoint.com/{{CaminhoParaWeb}}//{{Documentos}}/subdirectorio\""
 " (com \"//\" sendo opcionalmente usado para indicar a pasta do documento "
 "raiz) e \"sharepoint://subdirectorio\" (neste caso, você também deve "
 "especificar explicitamente o ID do site SharePoint via --{0}). O uso desta "
 "infraestrutura requer que você concorde com os termos em {1} ({2}) e {3} "
-"({4}."
+"({4})."
 
 #: Library/Backend/OneDrive/Strings.cs:58
 msgid "Microsoft Office 365 Group"
@@ -2387,12 +2423,12 @@ msgstr ""
 msgid "Temporary storage folder"
 msgstr "Pasta de armazenamento temporário"
 
-#: Library/RestAPI/Strings.cs:92 Library/RestAPI/Strings.cs:129
+#: Library/RestAPI/Strings.cs:93 Library/RestAPI/Strings.cs:134
 #, csharp-format
 msgid "Server has started and is listening on {0}, port {1}"
 msgstr "Servidor foi iniciado e está ouvindo em {0}, porta {1}"
 
-#: Library/RestAPI/Strings.cs:125
+#: Library/RestAPI/Strings.cs:130
 #, csharp-format
 msgid ""
 "Unable to find a valid date, given the start date {0}, the repetition "
@@ -2401,7 +2437,7 @@ msgstr ""
 "Não é possível encontrar uma data válida, dada a data de início {0}, o "
 "intervalo de repetição {1} e os dias permitidos {2}"
 
-#: Library/RestAPI/Strings.cs:131
+#: Library/RestAPI/Strings.cs:136
 #, csharp-format
 msgid "Unable to open a socket for listening, tried ports: {0}"
 msgstr "Impossível abrir um socket para comunicação, tentar portas: {0}"
@@ -3380,7 +3416,7 @@ msgstr ""
 "as consultas ao banco de dados e lembre-se de definir --{0}={2} ou --{1}={2}"
 " para relatar os dados de log adicionais"
 
-#: Library/Main/Strings.cs:404
+#: Library/Main/Strings.cs:409
 #, csharp-format
 msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
@@ -3389,16 +3425,16 @@ msgstr ""
 "A biblioteca de criptografia não suporta transformações reutilizáveis ​​para"
 " o algoritmo hash {0}"
 
-#: Library/Main/Strings.cs:405
+#: Library/Main/Strings.cs:410
 #, csharp-format
 msgid "The cryptolibrary does not support the hash algorithm {0}"
 msgstr "A biblioteca de criptografia não suporta o algoritmo hash {0}"
 
-#: Library/Main/Strings.cs:406
+#: Library/Main/Strings.cs:411
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr "A frase de acesso não pode ser inserida em uma cópia existente"
 
-#: Library/Main/Strings.cs:407
+#: Library/Main/Strings.cs:412
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
 msgstr "Falha na criação de um snapshot: {0}"

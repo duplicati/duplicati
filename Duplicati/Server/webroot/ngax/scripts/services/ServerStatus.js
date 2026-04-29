@@ -45,6 +45,7 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
             'Backup_VerificationUpload': gettextCatalog.getString('Uploading verification file …'),
             'Backup_PostBackupVerify': gettextCatalog.getString('Verifying backend data …'),
             'Backup_Complete': gettextCatalog.getString('Backup complete!'),
+            'Backup_RemoteSynchronization': gettextCatalog.getString('Synchronizing secondary destination …'),
             'Restore_Begin': gettextCatalog.getString('Starting restore …'),
             'Restore_RecreateDatabase': gettextCatalog.getString('Rebuilding local database …'),
             'Restore_PreRestoreVerify': gettextCatalog.getString('Verifying remote data …'),
@@ -146,7 +147,7 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
 
                     return;
                 }
-                
+
                 checkTaskState(taskid);
             }, 1000);
         }
@@ -162,7 +163,7 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
 
     //     if (lastTaskId != null && currentTaskId != lastTaskId && waitingfortask[lastTaskId] != null)
     //         checkTaskState(lastTaskId);
-        
+
     //     lastTaskId = currentTaskId;
     // });
 
@@ -315,7 +316,24 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
     const webSocketUnauthorizedCode = 4401;
     const unauthorizedCode = 401;
 
+    function isTerminalRefreshFailure(response) {
+        return (response && response.refreshAuthFailure === true)
+            || (AppService.isRefreshFailureResponse && AppService.isRefreshFailureResponse(response));
+    }
+
     function handleConnectionError(response) {
+        if (isTerminalRefreshFailure(response)) {
+            if (websocketReconnectTimer != null) {
+                window.clearInterval(websocketReconnectTimer);
+                websocketReconnectTimer = null;
+            }
+
+            state.failedAuthAttempts++;
+            state.connectionState = 'unauthorized';
+            $rootScope.$broadcast('serverstatechanged');
+            return;
+        }
+
         state.failedConnectionAttempts++;
         if (response.status === webSocketUnauthorizedCode || response.status === unauthorizedCode)
         {
@@ -326,7 +344,7 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
         // First failure, we ignore
         if (state.connectionState == 'connected' && state.failedConnectionAttempts == 1) {
             updateServerState();
-        } else if (state.failedAuthAttempts > 1 && (response.status === webSocketUnauthorizedCode || response.status === unauthorizedCode)) { 
+        } else if (state.failedAuthAttempts > 1 && (response.status === webSocketUnauthorizedCode || response.status === unauthorizedCode)) {
             state.connectionState = 'unauthorized';
             $rootScope.$broadcast('serverstatechanged');
         } else {
@@ -372,7 +390,7 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
 
     }
 
-    this.reconnect = function (fastcall) {        
+    this.reconnect = function (fastcall) {
         if (websocketReconnectTimer != null) {
             window.clearInterval(websocketReconnectTimer);
             websocketReconnectTimer = null;
@@ -391,3 +409,4 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
     this.reconnect();
 
 });
+

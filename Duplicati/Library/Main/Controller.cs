@@ -1,4 +1,4 @@
-// Copyright (C) 2025, The Duplicati Team
+// Copyright (C) 2026, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -135,6 +135,10 @@ namespace Duplicati.Library.Main
                 UsageReporter.Reporter.Report("BACKUP_FILECOUNT", result.ExaminedFiles);
                 UsageReporter.Reporter.Report("BACKUP_FILESIZE", result.SizeOfExaminedFiles);
                 UsageReporter.Reporter.Report("BACKUP_DURATION", (long)result.Duration.TotalSeconds);
+
+                using (var h = new Operation.RemoteSynchronizationHandler(m_backendUrl, m_options, result))
+                    await h.RunAsync()
+                        .ConfigureAwait(false);
             });
         }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2025, The Duplicati Team
+// Copyright (C) 2026, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -47,12 +47,14 @@ public sealed record RegisterClientData(
 /// <param name="CertificateUrl">The URL for getting new server certificates</param>
 /// <param name="ServerCertificates">The certificates for the remote server</param>
 /// <param name="LocalEncryptionKey">The encryption key for the local settings</param>
+/// <param name="Settings">The settings for the machine, same as in ControlRequestMessage.Parameters</param>
 public sealed record ClaimedClientData(
     string JWT,
     string ServerUrl,
     string CertificateUrl,
     IEnumerable<MiniServerCertificate> ServerCertificates,
-    string? LocalEncryptionKey
+    string? LocalEncryptionKey,
+    Dictionary<string, string?>? Settings = null
 );
 
 /// <summary>

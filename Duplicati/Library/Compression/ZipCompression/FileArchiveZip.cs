@@ -1,4 +1,4 @@
-// Copyright (C) 2025, The Duplicati Team
+// Copyright (C) 2026, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -198,6 +198,7 @@ namespace Duplicati.Library.Compression.ZipCompression
                     CompressionType.GZip.ToString(),
                     CompressionType.Xz.ToString(),
                     CompressionType.Deflate64.ToString(),
+                    CompressionType.ZStandard.ToString()
                 };
 
                 return new List<ICommandLineArgument>([

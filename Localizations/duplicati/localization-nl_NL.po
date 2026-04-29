@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-18 13:48+0100\n"
+"POT-Creation-Date: 2026-04-22 15:17+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: Kees Zaaijer, 2026\n"
 "Language-Team: Dutch (Netherlands) (https://app.transifex.com/duplicati/teams/67655/nl_NL/)\n"
@@ -3850,7 +3850,7 @@ msgstr ""
 "Opstarten niet mogelijk. Er loopt wellicht al een ander proces?\n"
 "Foutmelding: {0}"
 
-#: Library/RestAPI/Strings.cs:50 Library/RestAPI/Strings.cs:84
+#: Library/RestAPI/Strings.cs:50 Library/RestAPI/Strings.cs:85
 msgid "Disable database encryption"
 msgstr "Schakel database-versleuteling uit"
 
@@ -4098,13 +4098,13 @@ msgstr ""
 "gebruiker opnieuw wordt gevraagd in te loggen. De waarde moet groter zijn "
 "dan nul en is beperkt tot 30 dagen."
 
-#: Library/RestAPI/Strings.cs:83
+#: Library/RestAPI/Strings.cs:84
 msgid "Use this option to disable database encryption of sensitive fields"
 msgstr ""
 "Gebruik deze optie om database-codering van gevoelige velden uit te "
 "schakelen"
 
-#: Library/RestAPI/Strings.cs:85
+#: Library/RestAPI/Strings.cs:86
 msgid ""
 "Use this option to log to the Windows event log. The provided name is in the"
 " format Log:Source. If no log name is provided, \"Duplicati 2\" is used."
@@ -4113,28 +4113,28 @@ msgstr ""
 "Gebeurtenislogboek. De opgegeven naam is in de indeling Log:Source. Als geen"
 " logboeknaam is opgegeven, zal \"Duplicati 2\" worden gebruikt."
 
-#: Library/RestAPI/Strings.cs:86
+#: Library/RestAPI/Strings.cs:87
 msgid "Log to the Windows event log"
 msgstr "Schrijf logboekvermeldingen naar het Windows-gebeurtenislogboek"
 
-#: Library/RestAPI/Strings.cs:87
+#: Library/RestAPI/Strings.cs:88
 msgid "Use this option to set the log level for the Windows event log."
 msgstr ""
 "Gebruik deze optie om het logniveau in te stellen voor het Windows "
 "Gebeurtenislogboek."
 
-#: Library/RestAPI/Strings.cs:88
+#: Library/RestAPI/Strings.cs:89
 msgid "Set the log level for the Windows event log"
 msgstr "Stel het log-niveau in voor het Windows gebeurtenislogboek"
 
-#: Library/RestAPI/Strings.cs:89
+#: Library/RestAPI/Strings.cs:90
 #, csharp-format
 msgid "The Windows event log source {0} was not found. Attempting to create."
 msgstr ""
 "De Windows Gebeurtenislogboek-bron {0} is niet gevonden. Poging tot "
 "aanmaken."
 
-#: Library/RestAPI/Strings.cs:90
+#: Library/RestAPI/Strings.cs:91
 #, csharp-format
 msgid ""
 "The Windows Event Log was not created for: {0}, not logging to eventlog."
@@ -4142,34 +4142,34 @@ msgstr ""
 "Het Windows Gebeurtenislogboek was niet aangemaakt voor: {0}, er wordt niet "
 "gelogd naar het gebeurtenislog."
 
-#: Library/RestAPI/Strings.cs:91
+#: Library/RestAPI/Strings.cs:92
 msgid "The Windows event log is not supported on this platform"
 msgstr "Het Windows gebeurtenislogboek wordt niet ondersteund op dit platform"
 
-#: Library/RestAPI/Strings.cs:92 Library/RestAPI/Strings.cs:129
+#: Library/RestAPI/Strings.cs:93 Library/RestAPI/Strings.cs:134
 #, csharp-format
 msgid "Server has started and is listening on {0}, port {1}"
 msgstr "Server is gestart en luistert op {0}, poort {1}"
 
-#: Library/RestAPI/Strings.cs:93
+#: Library/RestAPI/Strings.cs:94
 #, csharp-format
 msgid "Use the following link to sign in: {0}"
 msgstr "Gebruik de volgende link om in te loggen: {0}"
 
-#: Library/RestAPI/Strings.cs:94
+#: Library/RestAPI/Strings.cs:95
 #, csharp-format
 msgid "The server crashed: {0}"
 msgstr "De server is gecrasht: {0}"
 
-#: Library/RestAPI/Strings.cs:95
+#: Library/RestAPI/Strings.cs:96
 msgid "Server is stopping, tearing down handlers"
 msgstr "Server stopt, verwijdert handlers"
 
-#: Library/RestAPI/Strings.cs:96
+#: Library/RestAPI/Strings.cs:97
 msgid "Server has stopped"
 msgstr "Server is gestopt"
 
-#: Library/RestAPI/Strings.cs:97
+#: Library/RestAPI/Strings.cs:98
 msgid ""
 "Use this option to require a custom provided key for database encryption of "
 "sensitive fields and not rely on the serial number."
@@ -4178,11 +4178,11 @@ msgstr ""
 "encryptie van gevoelige velden de database en deze niet af te leiden van het"
 " serienummer."
 
-#: Library/RestAPI/Strings.cs:98
+#: Library/RestAPI/Strings.cs:99
 msgid "Require database encryption"
 msgstr "Vereis databasecodering"
 
-#: Library/RestAPI/Strings.cs:99
+#: Library/RestAPI/Strings.cs:100
 #, csharp-format
 msgid ""
 "Database encryption key is required. Supply an encryption key via the "
@@ -4192,7 +4192,7 @@ msgstr ""
 "Database-coderingssleutel is vereist. Geef een coderingssleutel op via de "
 "omgevingsvariabele {0} of schakel database-codering uit met de optie --{1}"
 
-#: Library/RestAPI/Strings.cs:100
+#: Library/RestAPI/Strings.cs:101
 #, csharp-format
 msgid ""
 "The database encryption key is blacklisted and cannot be used. The database "
@@ -4204,7 +4204,7 @@ msgstr ""
 "encryptiesleutel op met de omgevingsvariabele {0} of schakel "
 "databaseversleuteling uit met de optie --{1}"
 
-#: Library/RestAPI/Strings.cs:101
+#: Library/RestAPI/Strings.cs:102
 #, csharp-format
 msgid ""
 "No database encryption key was found. The database will be stored "
@@ -4215,7 +4215,7 @@ msgstr ""
 " worden opgeslagen. Geef een encryptiesleutel op met de omgevingsvariabele "
 "{0} of schakel databaseversleuteling uit met de optie --{1}"
 
-#: Library/RestAPI/Strings.cs:102
+#: Library/RestAPI/Strings.cs:103
 #, csharp-format
 msgid ""
 "The database appears to be encrypted, but no key was specified. Opening the "
@@ -4226,16 +4226,16 @@ msgstr ""
 " openen van de database zal waarschijnlijk mislukken. Gebruik de "
 "omgevingsvariabele {0} om de sleutel op te geven."
 
-#: Library/RestAPI/Strings.cs:103
+#: Library/RestAPI/Strings.cs:104
 #, csharp-format
 msgid "The timezone {0} is not valid"
 msgstr "De tijdzone {0} is ongeldig"
 
-#: Library/RestAPI/Strings.cs:104
+#: Library/RestAPI/Strings.cs:105
 msgid "Set the encryption key for the settings database"
 msgstr "Stelt de encryptiesleutel in voor de instellingendatabase"
 
-#: Library/RestAPI/Strings.cs:105
+#: Library/RestAPI/Strings.cs:106
 #, csharp-format
 msgid ""
 "Use this option to set the encryption key for the settings database. This "
@@ -4244,16 +4244,16 @@ msgstr ""
 "Gebruik deze optie om de encryptiesleutel voor de instellingendatabase in te"
 " stellen. Deze optie kan ook worden ingesteld met de omgevingsvariabele {0}."
 
-#: Library/RestAPI/Strings.cs:106
+#: Library/RestAPI/Strings.cs:107
 #, csharp-format
 msgid "Invalid pause/resume state: {0}"
 msgstr "Ongeldige pauze/hervat-status: {0}"
 
-#: Library/RestAPI/Strings.cs:107
+#: Library/RestAPI/Strings.cs:108
 msgid "Register for remote control"
 msgstr "Registreer voor afstandsbediening"
 
-#: Library/RestAPI/Strings.cs:108
+#: Library/RestAPI/Strings.cs:109
 msgid ""
 "Register for remote control using the pre-authenticated url. If the server "
 "is already registered, this option has no effect"
@@ -4262,11 +4262,11 @@ msgstr ""
 "geauthenticeerde URL. Als de server al geregistreerd is, heeft deze optie "
 "geen effect."
 
-#: Library/RestAPI/Strings.cs:109
+#: Library/RestAPI/Strings.cs:110
 msgid "Force register for remote control"
 msgstr "Dwing registreren voor bediening op afstand af"
 
-#: Library/RestAPI/Strings.cs:110
+#: Library/RestAPI/Strings.cs:111
 msgid ""
 "Forces a re-registration if the server is already registered. If the server "
 "is not already registered, this option has no effect."
@@ -4274,7 +4274,7 @@ msgstr ""
 "Dwingt een herregistratie af als de server al is geregistreerd. Als de "
 "server nog niet geregistreerd is, heeft deze optie geen effect."
 
-#: Library/RestAPI/Strings.cs:111
+#: Library/RestAPI/Strings.cs:112
 msgid ""
 "The server is already registered for remote control, ignoring registration "
 "request"
@@ -4282,22 +4282,22 @@ msgstr ""
 "De server is al geregistreerd voor bediening op afstand, registratieverzoek "
 "genegeerd"
 
-#: Library/RestAPI/Strings.cs:112
+#: Library/RestAPI/Strings.cs:113
 #, csharp-format
 msgid "The server is registered, use the following link to claim it: {0}"
 msgstr ""
 "De server is geregistreerd, gebruik de volgende link om het te claimen: {0}"
 
-#: Library/RestAPI/Strings.cs:113
+#: Library/RestAPI/Strings.cs:114
 #, csharp-format
 msgid "The server registration failed: {0}"
 msgstr "De serverregistratie is mislukt: {0}"
 
-#: Library/RestAPI/Strings.cs:114
+#: Library/RestAPI/Strings.cs:115
 msgid "Set the allowed backends for remote control"
 msgstr "De toegestane backends voor externe besturing instellen"
 
-#: Library/RestAPI/Strings.cs:115
+#: Library/RestAPI/Strings.cs:116
 msgid ""
 "Set the allowed backends for remote control. The value is a comma-separated "
 "list of backend names. If this option is not set, all backends are allowed. "
@@ -4308,11 +4308,11 @@ msgstr ""
 "ingesteld, zijn alle backends toegestaan. Gebruik deze optie om de backends "
 "te beperken die kunnen worden gebruikt voor gegevensopslag."
 
-#: Library/RestAPI/Strings.cs:116
+#: Library/RestAPI/Strings.cs:117
 msgid "Set the allowed encryption modules for remote control"
 msgstr "De toegestane encryptiemodules voor externe besturing instellen"
 
-#: Library/RestAPI/Strings.cs:117
+#: Library/RestAPI/Strings.cs:118
 msgid ""
 "Set the allowed encryption modules for remote control. The value is a comma-"
 "separated list of encryption module names. If this option is not set, all "
@@ -4325,11 +4325,11 @@ msgstr ""
 " deze optie om de encryptiemodules te beperken die kunnen worden gebruikt om"
 " gegevens te versleutelen."
 
-#: Library/RestAPI/Strings.cs:118
+#: Library/RestAPI/Strings.cs:119
 msgid "Set the allowed compression modules for remote control"
 msgstr "De toegestane compressiemodules voor besturing op afstand instellen"
 
-#: Library/RestAPI/Strings.cs:119
+#: Library/RestAPI/Strings.cs:120
 msgid ""
 "Set the allowed compression modules for remote control. The value is a "
 "comma-separated list of compression module names. If this option is not set,"
@@ -4342,17 +4342,17 @@ msgstr ""
 "Gebruik deze optie om de compressiemodules te beperken die kunnen worden "
 "gebruikt om gegevens te comprimeren."
 
-#: Library/RestAPI/Strings.cs:120
+#: Library/RestAPI/Strings.cs:121
 msgid "Failed to get encryption key from secret provider"
 msgstr ""
 "Encryptiesleutel bij provider voor geheime referenties opvragen is mislukt."
 
-#: Library/RestAPI/Strings.cs:121
+#: Library/RestAPI/Strings.cs:122
 msgid "Failed to set encryption key in secret provider"
 msgstr ""
 "Encryptiesleutel in provider voor geheime referenties instellen is mislukt."
 
-#: Library/RestAPI/Strings.cs:125
+#: Library/RestAPI/Strings.cs:130
 #, csharp-format
 msgid ""
 "Unable to find a valid date, given the start date {0}, the repetition "
@@ -4361,7 +4361,7 @@ msgstr ""
 "Kan geen geldige datum vinden, rekening houdend met de start-datum {0}, de "
 "herhalingsinterval {1} en de toegestane dagen {2}"
 
-#: Library/RestAPI/Strings.cs:130
+#: Library/RestAPI/Strings.cs:135
 msgid ""
 "SSL certificate password option has no meaning when provided without SSL "
 "certificate file option!"
@@ -4369,7 +4369,7 @@ msgstr ""
 "De optie SSL-certificaatwachtwoord heeft geen zin als deze wordt opgegeven "
 "zonder de optie SSL-certificaatbestand!"
 
-#: Library/RestAPI/Strings.cs:131
+#: Library/RestAPI/Strings.cs:136
 #, csharp-format
 msgid "Unable to open a socket for listening, tried ports: {0}"
 msgstr "Kan geen socket openen om te luisteren, geprobeerd op poorten: {0}"
@@ -4598,6 +4598,190 @@ msgstr "Defect indexbestand {0} zou vervangen worden door {1}"
 #, csharp-format
 msgid "Failed to replace faulty index file {0}"
 msgstr "Vervangen van defect indexbestand {0} is mislukt"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:34
+msgid ""
+"Remote Synchronization Tool\n"
+"\n"
+"This tool synchronizes two remote backends. The tool assumes that the intent is\n"
+"to have the destination match the source.\n"
+"\n"
+"If the destination has files that are not in the source, they will be deleted\n"
+"(or renamed if the retention option is set).\n"
+"\n"
+"If the destination has files that are also present in the source, but the files\n"
+"differ in size, or if the source files have a newer (more recent) timestamp,\n"
+"the destination files will be overwritten by the source files. Given that some\n"
+"backends do not allow for metadata or timestamp modification, and that the tool\n"
+"is run after backup, the destination files should always have a timestamp that\n"
+"is newer (or the same if run promptly) compared to the source files.\n"
+"\n"
+"If the force option is set, the destination will be overwritten by the source,\n"
+"regardless of the state of the files. It will also skip the initial comparison,\n"
+"and delete (or rename) all files in the destination.\n"
+"\n"
+"If the verify option is set, the files will be downloaded and compared after\n"
+"uploading to ensure that the files are correct. Files that already exist in the\n"
+"destination will be verified before being overwritten (if they seemingly match).\n"
+msgstr ""
+"Externe synchronisatieool\n"
+"\n"
+"Deze tool synchroniseert twee externe back-ends. De tool gaat ervan uit dat het de bedoeling is\n"
+"dat de bestemming overeenkomt met de bron.\n"
+"\n"
+"Als de bestemming bestanden bevat die niet in de bron aanwezig zijn, worden deze verwijderd\n"
+"(of hernoemd als de bewaaroptie is ingesteld).\n"
+"\n"
+"Als de bestemming bestanden bevat die ook in de bron aanwezig zijn, maar de bestanden\n"
+"verschillen in grootte, of als de bronbestanden een nieuwere (recentere) tijdstempel hebben,\n"
+"worden de bestanden in de bestemming overschreven door de bronbestanden. Aangezien sommige\n"
+"backends geen wijziging van metadata of tijdstempels toestaan ​​en de tool\n"
+"na een back-up wordt uitgevoerd, zouden de bestanden in de\n"
+"bestemming altijd een tijdstempel moeten hebben die nieuwer is (of gelijk als het direct wordt uitgevoerd) dan die van de bronbestanden.\n"
+"\n"
+"Als de optie 'forceren' is ingesteld, worden de bestanden in de bestemming overschreven door de bron,\n"
+"ongeacht de status van de bestanden. De initiële vergelijking wordt overgeslagen,\n"
+"en alle bestanden in de bestemming worden verwijderd (of hernoemd).\n"
+"\n"
+"Als de verificatieoptie is ingeschakeld, worden de bestanden na het uploaden gedownload en vergeleken om te controleren of ze correct zijn. Bestanden die al op de bestemming aanwezig zijn, worden geverifieerd voordat ze worden overschreven (als ze overeenkomen).\n"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:61
+#: Library/Modules/Builtin/Strings.cs:58
+msgid ""
+"This module runs remote synchronization after a successful backup to create "
+"a secondary copy (3-2-1)."
+msgstr ""
+"Deze module voert na een succesvolle back-up een externe synchronisatie uit "
+"om een ​​secundaire kopie te maken (3-2-1)."
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:63
+#: Library/Modules/Builtin/Strings.cs:59
+msgid "Remote synchronization (3-2-1)"
+msgstr "Externe synchronisatie (3-2-1)"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:68
+msgid "The source backend string"
+msgstr "De brondbackendtekenreeks"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:73
+msgid "The destination backend string"
+msgstr "De bestemmingsbackendtekenreeks"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:78
+msgid ""
+"Automatically create folders in the destination backend if they do not exist"
+msgstr ""
+"Maak automatisch mappen aan in de bestemmingsbackend als deze niet bestaan."
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:83
+msgid "Number of times to recreate a backend on backend errors"
+msgstr "Aantal keren opnieuw aanmaken van een backend bij backendfouten"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:88
+msgid "Delay in milliseconds between backend retries"
+msgstr "Vertraging in milliseconden tussen nieuwe backendpogingen"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:93
+msgid ""
+"Use exponential backoff for backend retries, multiplying the delay by two "
+"for each failure."
+msgstr ""
+"Gebruik exponentiële terugval voor backend-herhalingspogingen, waarbij de "
+"vertraging bij elke mislukking met twee wordt vermenigvuldigd."
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:98
+msgid "Automatically confirm the operation"
+msgstr "Automatisch de bewerking bevestigen"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:103
+msgid ""
+"Do not actually write or delete files. If not set here, the global options "
+"will be checked"
+msgstr ""
+"Schrijf of verwijder bestanden niet daadwerkelijk. Indien hier niet "
+"ingesteld, zullen de algemene opties worden geselecteerd"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:108
+msgid ""
+"Options for the destination backend. Each option is a key-value pair "
+"separated by an equals sign, e.g. --dst-options key1=value1 key2=value2 "
+"[default: empty]"
+msgstr ""
+"Opties voor de bestemmingsbackend. Elke optie is een sleutel-waardepaar, "
+"gescheiden door een gelijkteken, bijv. --dst-options sleutel1=waarde1 "
+"sleutel2=waarde2 [standaard: leeg]"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:113
+msgid "Force the synchronization"
+msgstr "Dwing de synchronisatie af"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:118
+msgid ""
+"Global options all backends. May be overridden by backend specific options "
+"(src-options, dst-options). Each option is a key-value pair separated by an "
+"equals sign, e.g. --global-options key1=value1 key2=value2 [default: empty]"
+msgstr ""
+"Globale opties voor alle backends. Deze kunnen worden overschreven door "
+"backend-specifieke opties (src-options, dst-options). Elke optie is een "
+"sleutel-waardepaar, gescheiden door een gelijkteken, bijvoorbeeld: --global-"
+"options key1=value1 key2=value2 [standaard: leeg]"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:123
+msgid ""
+"The log file to write to. If not set here, global options will be checked "
+"[default: \"\"]"
+msgstr ""
+"Het logbestand waarnaar geschreven moet worden. Indien hier niet ingesteld, "
+"worden de algemene opties gecontroleerd [standaard: \"\"]"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:128
+msgid "The log level to use. If not set here, global options will be checked"
+msgstr ""
+"Het logniveau dat gebruikt moet worden. Indien hier niet ingesteld, worden "
+"de algemene opties geselecteerd"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:133
+msgid "Only parse the arguments and then exit"
+msgstr "Verwerk alleen de argumenten en sluit vervolgens af"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:138
+msgid "Print progress to STDOUT"
+msgstr "Print voortgang naar STDOUT"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:143
+msgid "Toggles whether to keep old files. Any deletes will be renames instead"
+msgstr ""
+"Hiermee kunt u instellen of oude bestanden bewaard moeten blijven. "
+"Verwijderde bestanden worden in plaats daarvan hernoemd."
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:148
+msgid "Number of times to retry on errors"
+msgstr "Aantal keren opnieuw proberen bij fouten"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:153
+msgid ""
+"Options for the source backend. Each option is a key-value pair separated by"
+" an equals sign, e.g. --src-options key1=value1 key2=value2 [default: empty]"
+msgstr ""
+"Bewerkingen voor de bronbackend. Elke optie is een sleutel-waardepaar, "
+"gescheiden door een gelijkteken, bijv. --src-options sleutel1=waarde1 "
+"sleutel2=waarde2 [standaard: leeg]"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:158
+msgid ""
+"Verify the contents of the files to decide whether the pre-existing "
+"destination files should be overwritten"
+msgstr ""
+"Controleer de inhoud van de bestanden om te beslissen of de al bestaande "
+"bestemmingsbestanden moeten worden overschreven"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:163
+msgid ""
+"Verify the files after uploading them to ensure that they were uploaded "
+"correctly"
+msgstr ""
+"Controleer de bestanden nadat ze zijn geüpload om er zeker van te zijn dat "
+"ze correct zijn geüpload"
 
 #: Library/Main/Strings.cs:28
 #, csharp-format
@@ -6986,11 +7170,11 @@ msgstr ""
 "hoger getal vertaalt zich in een hoger gebruiksbudget. Bijvoorbeeld, 10 "
 "betekent geen beperkingen. Moet een geheel getal zijn tussen 1-10."
 
-#: Library/Main/Strings.cs:366
+#: Library/Main/Strings.cs:369
 msgid "Maximum cache size for restoring files"
 msgstr "Maximale cachegrootte voor het herstellen van bestanden"
 
-#: Library/Main/Strings.cs:367
+#: Library/Main/Strings.cs:370
 msgid ""
 "Use this option to set the maximum size of the cache used for restoring "
 "files. The cache is used to store the data blocks that are downloaded from "
@@ -7003,11 +7187,11 @@ msgstr ""
 "Hierbij wordt ervan uitgegaan dat de waarde deelbaar is door de blokgrootte,"
 " behalve wanneer deze 0 is, wat de blokcache uitschakelt."
 
-#: Library/Main/Strings.cs:368
+#: Library/Main/Strings.cs:371
 msgid "Eviction ratio of the data block cache during restore"
 msgstr "vrijmaakverhouding van de datablokcache tijdens herstel"
 
-#: Library/Main/Strings.cs:369
+#: Library/Main/Strings.cs:372
 msgid ""
 "Use this option to set the eviction ratio of the data block cache during "
 "restore. The eviction ratio is the percentage of the cache that is evicted "
@@ -7020,13 +7204,13 @@ msgstr ""
 "is 50, wat betekent dat 50% van de cache wordt vrijgemaakt wanneer de cache "
 "vol is."
 
-#: Library/Main/Strings.cs:370
+#: Library/Main/Strings.cs:373
 msgid "Number of concurrent FileProcessors processes used during restore"
 msgstr ""
 "Aantal gelijktijdige FileProcessors-processen die gebruikt worden tijdens "
 "herstel"
 
-#: Library/Main/Strings.cs:371
+#: Library/Main/Strings.cs:374
 msgid ""
 "Use this option to set the number of concurrent FileProcessors processes "
 "used during restore. A FileProcessor processes one file at a time, and "
@@ -7037,11 +7221,11 @@ msgstr ""
 "één bestand tegelijk. Door het aantal FileProcessors te verhogen, kunnen de "
 "herstelprestaties worden verbeterd."
 
-#: Library/Main/Strings.cs:372
+#: Library/Main/Strings.cs:375
 msgid "Use legacy restore method"
 msgstr "Gebruik de oude herstelmethode"
 
-#: Library/Main/Strings.cs:373
+#: Library/Main/Strings.cs:376
 msgid ""
 "Use this option to use the legacy restore method. The legacy restore method "
 "is slower than the new method, but may be more reliable in some cases."
@@ -7050,11 +7234,11 @@ msgstr ""
 "herstelmethode is langzamer dan de nieuwe methode, maar kan in sommige "
 "gevallen betrouwbaarder zijn."
 
-#: Library/Main/Strings.cs:374
+#: Library/Main/Strings.cs:377
 msgid "Preallocate size of restored files"
 msgstr "Vooraf de grootte van herstelde bestanden toewijzen"
 
-#: Library/Main/Strings.cs:375
+#: Library/Main/Strings.cs:378
 msgid ""
 "Use this option to toggle whether to set the size of the restored files "
 "before they are written to disk. This can help to reduce fragmentation and "
@@ -7065,34 +7249,17 @@ msgstr ""
 "helpen fragmentatie te verminderen en de prestaties op sommige "
 "bestandssystemen te verbeteren."
 
-#: Library/Main/Strings.cs:376
+#: Library/Main/Strings.cs:379
 msgid "Hints to the desired maximum size of the restore volume cache"
 msgstr "Aanwijzing voor de gewenste grootte van de cache voor herstelvolumes"
 
-#: Library/Main/Strings.cs:377
-msgid ""
-"Use this option to hint the maximum desired size of the restore volume "
-"cache. The restore volume cache is used to store the volumes from the remote"
-" storage on local disk. When this number is exceeded, the client tries to "
-"evict the least recently used volume(s). This means that the number of "
-"volumes kept on disk can exceed this value if they are still being "
-"downloaded or are in use."
-msgstr ""
-"Gebruik deze optie om de maximaal gewenste grootte van de cache voor het "
-"herstelvolume aan te geven. De cache voor het herstelvolume wordt gebruikt "
-"om de volumes van de externe opslag op de lokale schijf op te slaan. Wanneer"
-" dit aantal wordt overschreden, probeert de client de volumes die het langst"
-" geleden gebruikt zijn te verwijderen. Dit betekent dat het aantal volumes "
-"op schijf deze waarde kan overschrijden als ze nog worden gedownload of in "
-"gebruik zijn."
-
-#: Library/Main/Strings.cs:378
+#: Library/Main/Strings.cs:383
 msgid "Number of concurrent FileDecompressor processes used during restore"
 msgstr ""
 "Aantal gelijktijdige FileDecompressor-processen die gebruikt worden tijdens "
 "herstel"
 
-#: Library/Main/Strings.cs:379
+#: Library/Main/Strings.cs:384
 msgid ""
 "Use this option to set the number of concurrent FileDecompressor processes "
 "used during restore. A FileDecompressor processes one volume at a time, and "
@@ -7105,13 +7272,13 @@ msgstr ""
 " kunnen de herstelprestaties worden verbeterd als decompressie de bottleneck"
 " is."
 
-#: Library/Main/Strings.cs:380
+#: Library/Main/Strings.cs:385
 msgid "Number of concurrent FileDecryptor processes used during restore"
 msgstr ""
 "Aantal gelijktijdige FileDecryptor-processen die gebruikt worden tijdens "
 "herstel"
 
-#: Library/Main/Strings.cs:381
+#: Library/Main/Strings.cs:386
 msgid ""
 "Use this option to set the number of concurrent FileDecryptor processes used"
 " during restore. A FileDecryptor processes one volume at a time, and "
@@ -7123,13 +7290,13 @@ msgstr ""
 " volume tegelijk. Door het aantal FileDecryptors te verhogen, kunnen de "
 "herstelprestaties worden verbeterd als decryptie de bottleneck is."
 
-#: Library/Main/Strings.cs:382
+#: Library/Main/Strings.cs:387
 msgid "Number of concurrent FileDownloader processes used during restore"
 msgstr ""
 "Aantal gelijktijdige FileDownloader-processen die gebruikt worden tijdens "
 "herstel"
 
-#: Library/Main/Strings.cs:383
+#: Library/Main/Strings.cs:388
 msgid ""
 "Use this option to set the number of concurrent FileDownloader processes "
 "used during restore. A FileDownloader processes one volume at a time, and "
@@ -7141,13 +7308,13 @@ msgstr ""
 "één volume tegelijk. Door het aantal FileDownloaders te verhogen, kunnen de "
 "herstelprestaties worden verbeterd als downloaden de bottleneck is."
 
-#: Library/Main/Strings.cs:384
+#: Library/Main/Strings.cs:389
 msgid "Size of buffers of the channels used during restore"
 msgstr ""
 "Grootte van de buffers van de kanalen die tijdens het herstel worden "
 "gebruikt"
 
-#: Library/Main/Strings.cs:385
+#: Library/Main/Strings.cs:390
 msgid ""
 "Use this option to set the size of the buffers of the channels used during "
 "restore. The buffers are used to allow for better asynchronous communication"
@@ -7159,15 +7326,28 @@ msgstr ""
 "betere asynchrone communicatie tussen de processen in de herstelactiviteit. "
 "Het vergroten van de buffergrootte kan de herstelprestaties verbeteren."
 
-#: Library/Main/Strings.cs:386
+#: Library/Main/Strings.cs:391
 msgid "Allow restore outside target directory"
 msgstr "Herstellen buiten de doelmap toestaan"
 
-#: Library/Main/Strings.cs:388
+#: Library/Main/Strings.cs:392
+msgid ""
+"Use this option to allow the restore process to write files outside the "
+"target directory. This is normally disabled to prevent path traversal "
+"attacks, but can be enabled if you need to restore files to a location "
+"outside the target directory (e.g. via symlinks)."
+msgstr ""
+"Gebruik deze optie om het herstelproces toe te staan ​​bestanden buiten de "
+"doelmap te schrijven. Deze optie is normaal gesproken uitgeschakeld om path "
+"traversal-aanvallen te voorkomen, maar kan worden ingeschakeld als u "
+"bestanden naar een locatie buiten de doelmap moet herstellen (bijvoorbeeld "
+"via symbolische links)."
+
+#: Library/Main/Strings.cs:393
 msgid "Enable internal profiling"
 msgstr "Schakel interne profilering in"
 
-#: Library/Main/Strings.cs:389
+#: Library/Main/Strings.cs:394
 msgid ""
 "Use this option to enable internal profiling. Profiling is used to measure "
 "the performance of the internal code. The profiling data is written to the "
@@ -7178,11 +7358,11 @@ msgstr ""
 "profileringsgegevens worden naar het logbestand geschreven en kunnen worden "
 "gebruikt om prestatieknelpunten te identificeren."
 
-#: Library/Main/Strings.cs:390
+#: Library/Main/Strings.cs:395
 msgid "Ignore update if version exists"
 msgstr "Negeer update als versie bestaat"
 
-#: Library/Main/Strings.cs:391
+#: Library/Main/Strings.cs:396
 msgid ""
 "Use this option to ignore the update if the version already exists. This can"
 " be used to avoid errors if asking to update the database with a version "
@@ -7192,11 +7372,11 @@ msgstr ""
 " gebruikt worden om fouten te voorkomen als gevraagd wordt de database te "
 "updaten met een versie die al bestaat."
 
-#: Library/Main/Strings.cs:392
+#: Library/Main/Strings.cs:397
 msgid "Disable special handling for photo libraries on MacOS"
 msgstr "Speciale verwerking voor fotobibliotheken op MacOS uitschakelen"
 
-#: Library/Main/Strings.cs:393
+#: Library/Main/Strings.cs:398
 msgid ""
 "Use this option to disable special handling for photo libraries on MacOS. By"
 " default, Duplicati will attempt to read the contents of photo libraries and"
@@ -7210,11 +7390,11 @@ msgstr ""
 "de inhoud van de bibliotheek op schijf zelf. Met deze optie schakelt u dit "
 "gedrag uit en maakt u een back-up van de bibliotheek als een gewone map."
 
-#: Library/Main/Strings.cs:394
+#: Library/Main/Strings.cs:399
 msgid "Path to the Photos library"
 msgstr "Pad naar de Foto's-bibliotheek"
 
-#: Library/Main/Strings.cs:395
+#: Library/Main/Strings.cs:400
 msgid ""
 "Use this option to specify the path to the Photos library on MacOS. This "
 "option is only relevant if the Photos library is not in the default "
@@ -7224,7 +7404,45 @@ msgstr ""
 "geven. Deze optie is alleen relevant als de Foto's-bibliotheek zich niet op "
 "de standaardlocatie bevindt."
 
+#: Library/Main/Strings.cs:401
+msgid "Refresh lock information during repair"
+msgstr "Ververs vergrendelingsinformatie tijdens repareren"
+
+#: Library/Main/Strings.cs:402
+msgid ""
+"Use this option to refresh the object lock expiration information from the "
+"backend during a repair operation. This will query the backend for the "
+"current lock status of each remote volume and update the local database "
+"accordingly. If the backend does not support locking, this option will be "
+"ignored."
+msgstr ""
+"Gebruik deze optie om de informatie over de vervaldatum van "
+"objectvergrendelingen vanuit de backend te vernieuwen tijdens een "
+"reparatiebewerking. Hiermee wordt de huidige vergrendelingsstatus van elk "
+"extern volume bij de backend opgevraagd en de lokale database "
+"dienovereenkomstig bijgewerkt. Als de backend geen vergrendeling "
+"ondersteunt, wordt deze optie genegeerd."
+
+#: Library/Main/Strings.cs:403
+msgid "Perform a complete refresh of lock information"
+msgstr "Voer een volledige vernieuwing van de vergrendelingsinformatie uit."
+
 #: Library/Main/Strings.cs:404
+msgid ""
+"Use this option to perform a complete refresh of lock information from the "
+"backend. This will query the backend for the current lock status of each "
+"remote volume and update the local database accordingly. If this option is "
+"not specified, only the lock information for the remote volumes with no lock"
+" information will be refreshed."
+msgstr ""
+"Gebruik deze optie om alle vergrendelingsinformatie vanuit de backend "
+"volledig te vernieuwen. De backend wordt dan geraadpleegd voor de huidige "
+"vergrendelingsstatus van elk extern volume en de lokale database wordt "
+"dienovereenkomstig bijgewerkt. Als deze optie niet is opgegeven, wordt "
+"alleen de vergrendelingsinformatie vernieuwd voor de externe volumes "
+"waarvoor geen vergrendelingsinformatie beschikbaar is."
+
+#: Library/Main/Strings.cs:409
 #, csharp-format
 msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
@@ -7233,22 +7451,22 @@ msgstr ""
 "De cryptobibliotheek ondersteunt geen herbruikbare transformaties voor het "
 "hash algoritme {0}"
 
-#: Library/Main/Strings.cs:405
+#: Library/Main/Strings.cs:410
 #, csharp-format
 msgid "The cryptolibrary does not support the hash algorithm {0}"
 msgstr "De cryptobibliotheek ondersteunt het hash algoritme {0} niet"
 
-#: Library/Main/Strings.cs:406
+#: Library/Main/Strings.cs:411
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr ""
 "De wachtwoordzin kan niet veranderd worden voor een al bestaande back-up"
 
-#: Library/Main/Strings.cs:407
+#: Library/Main/Strings.cs:412
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
 msgstr "Het maken van een momentopname is mislukt: {0}"
 
-#: Library/Main/Strings.cs:408
+#: Library/Main/Strings.cs:413
 msgid ""
 "Failed to activate BackupRead as the current process does not have "
 "sufficient permissions"
@@ -7256,7 +7474,7 @@ msgstr ""
 "BackupRead activeren is mislukt omdat het huidige proces niet over voldoende"
 " machtigingen beschikt"
 
-#: Library/Main/Strings.cs:413
+#: Library/Main/Strings.cs:418
 #, csharp-format
 msgid "The encryption module {0} was not found"
 msgstr "De encryptiemodule {0} is niet gevonden"
@@ -7360,6 +7578,252 @@ msgstr ""
 #: Library/Modules/Builtin/Strings.cs:54
 msgid "Configure Microsoft SQL Server module"
 msgstr "Configureer Microsoft SQL Server module"
+
+#: Library/Modules/Builtin/Strings.cs:60
+msgid "Remote sync source backend"
+msgstr "Externe sync bronbackend"
+
+#: Library/Modules/Builtin/Strings.cs:61
+msgid ""
+"Specify the source backend string for remote synchronization. If not set, "
+"the current backup destination is used."
+msgstr ""
+"Geef de bron-backend tekenreeks op voor externe synchronisatie. Indien niet "
+"ingesteld, zal het huidige back-updoel worden gebruikt."
+
+#: Library/Modules/Builtin/Strings.cs:62
+msgid "Remote sync destination backend"
+msgstr "Externe sync bestemmingsbackend"
+
+#: Library/Modules/Builtin/Strings.cs:63
+msgid ""
+"Specify the destination backend strings for remote synchronization, comma-"
+"separated."
+msgstr ""
+"Geef de doelbackend tekenreeksen op voor externe synchronisatie, komma-"
+"gescheiden."
+
+#: Library/Modules/Builtin/Strings.cs:64
+msgid "Create destination folders"
+msgstr "Maak doelmappen aan"
+
+#: Library/Modules/Builtin/Strings.cs:65
+msgid ""
+"Automatically create folders in the destination backend if they do not "
+"exist."
+msgstr ""
+"Maak automatisch mappen aan in de bestemmingsbackend als deze niet bestaan."
+
+#: Library/Modules/Builtin/Strings.cs:66
+msgid "Backend retries"
+msgstr "Backend nieuwe pogingen"
+
+#: Library/Modules/Builtin/Strings.cs:67
+msgid "Number of times to recreate a backend on backend errors."
+msgstr ""
+"Aantal keren voor het opnieuw aanmaken van een backend bij backend-fouten."
+
+#: Library/Modules/Builtin/Strings.cs:68
+msgid "Backend retry delay"
+msgstr "Backend nieuwe poging wachttijd"
+
+#: Library/Modules/Builtin/Strings.cs:69
+msgid "Delay in milliseconds between backend retries."
+msgstr ""
+"Wachttijd in milliseconden tussen backend-bewerkingen opnieuw proberen"
+
+#: Library/Modules/Builtin/Strings.cs:70
+msgid "Exponential retry backoff"
+msgstr "Exponentiële terugval na meerdere pogingen"
+
+#: Library/Modules/Builtin/Strings.cs:71
+msgid "Use exponential backoff for backend retries."
+msgstr ""
+"Gebruik exponentiële terugval voor het opnieuw proberen aan de backend-kant."
+
+#: Library/Modules/Builtin/Strings.cs:72
+msgid "Auto confirm remote sync"
+msgstr "Automatisch bevestigen externe sync"
+
+#: Library/Modules/Builtin/Strings.cs:73
+msgid ""
+"Automatically confirm the remote synchronization plan to avoid interactive "
+"prompts."
+msgstr ""
+"Bevestig automatisch het externe synchronisatieplan om interactieve prompts "
+"te voorkomen."
+
+#: Library/Modules/Builtin/Strings.cs:74
+msgid "Remote sync dry run"
+msgstr "Externe sync testen"
+
+#: Library/Modules/Builtin/Strings.cs:75
+msgid "Do not write or delete files during remote synchronization."
+msgstr "Schrijf of verwijder geen bestanden tijdens externe synchronisatie."
+
+#: Library/Modules/Builtin/Strings.cs:76
+msgid "Destination backend options"
+msgstr "Bestemmingsbackendopties"
+
+#: Library/Modules/Builtin/Strings.cs:77
+msgid ""
+"Space-separated key=value pairs for the destination backend, e.g. "
+"\"key1=value1 key2=value2\"."
+msgstr ""
+"Door spaties gescheiden sleutel-waardeparen voor de bestemmingsbackend, "
+"bijv. \"sleutel1=waarde1 sleutel2=waarde2\"."
+
+#: Library/Modules/Builtin/Strings.cs:78
+msgid "Force remote sync"
+msgstr "Dwing externe sync af"
+
+#: Library/Modules/Builtin/Strings.cs:79
+msgid ""
+"Force synchronization, skipping comparisons and overwriting the destination."
+msgstr ""
+"Synchronisatie afdwingen, vergelijkingen overslaan en de bestemming "
+"overschrijven."
+
+#: Library/Modules/Builtin/Strings.cs:80
+msgid "Global backend options"
+msgstr "Globale backendopties"
+
+#: Library/Modules/Builtin/Strings.cs:81
+msgid ""
+"Space-separated key=value pairs applied to both backends unless overridden."
+msgstr ""
+"Door spaties gescheiden sleutel-waardeparen, toegepast op beide backends, "
+"tenzij anders opgegeven."
+
+#: Library/Modules/Builtin/Strings.cs:82
+msgid "Remote sync log file"
+msgstr "Externe sync-logbestand"
+
+#: Library/Modules/Builtin/Strings.cs:83
+msgid ""
+"The log file to write to. If not set here, the global options are checked."
+msgstr ""
+"Het logbestand waarnaar geschreven moet worden. Indien hier niet ingesteld, "
+"worden de algemene opties geselecteerd."
+
+#: Library/Modules/Builtin/Strings.cs:84
+msgid "Remote sync log level"
+msgstr "Externe sync-logniveau"
+
+#: Library/Modules/Builtin/Strings.cs:85
+msgid "The log level to use. If not set here, the global options are checked."
+msgstr ""
+"Het logniveau dat gebruikt moet worden. Indien hier niet ingesteld, worden "
+"de algemene opties geselecteerd."
+
+#: Library/Modules/Builtin/Strings.cs:86
+msgid "Parse arguments only"
+msgstr "Verwerk alleen argumenten"
+
+#: Library/Modules/Builtin/Strings.cs:87
+msgid "Only parse the arguments and then exit."
+msgstr "Verwerk alleen de argumenten en sluit vervolgens af."
+
+#: Library/Modules/Builtin/Strings.cs:88
+msgid "Show progress"
+msgstr "Toon voortgang"
+
+#: Library/Modules/Builtin/Strings.cs:89
+msgid "Print progress to STDOUT."
+msgstr "Print de voortgang naar STDOUT."
+
+#: Library/Modules/Builtin/Strings.cs:90
+msgid "Retention mode"
+msgstr "Retentiemodus"
+
+#: Library/Modules/Builtin/Strings.cs:91
+msgid "Keep old files by renaming instead of deleting them."
+msgstr ""
+"Behoud oude bestanden door ze te hernoemen in plaats van ze te verwijderen."
+
+#: Library/Modules/Builtin/Strings.cs:92
+msgid "Operation retries"
+msgstr "Herhaalpogingen voor bewerkingen"
+
+#: Library/Modules/Builtin/Strings.cs:93
+msgid "Number of times to retry on errors."
+msgstr "Aantal keren opnieuw proberen bij fouten."
+
+#: Library/Modules/Builtin/Strings.cs:94
+msgid "Source backend options"
+msgstr "Bronbackendopties"
+
+#: Library/Modules/Builtin/Strings.cs:95
+msgid ""
+"Space-separated key=value pairs for the source backend, e.g. \"key1=value1 "
+"key2=value2\"."
+msgstr ""
+"Door spaties gescheiden sleutel-waardeparen voor de bronbackend, bijv. "
+"\"sleutel1=waarde1 sleutel2=waarde2\"."
+
+#: Library/Modules/Builtin/Strings.cs:96
+msgid "Verify contents"
+msgstr "Controleer inhoud"
+
+#: Library/Modules/Builtin/Strings.cs:97
+msgid "Verify file contents before overwriting destination files."
+msgstr ""
+"Verifieer bestandsinhoud voordat bestemmingsbestanden worden overschreven."
+
+#: Library/Modules/Builtin/Strings.cs:98
+msgid "Verify after upload"
+msgstr "Controleer na upload"
+
+#: Library/Modules/Builtin/Strings.cs:99
+msgid "Verify files after uploading them."
+msgstr "Verifieer bestanden nadat ze zijn geüpload."
+
+#: Library/Modules/Builtin/Strings.cs:100
+msgid "Remote sync trigger mode"
+msgstr "Externe sync triggermodus"
+
+#: Library/Modules/Builtin/Strings.cs:101
+msgid ""
+"Specify the trigger modes for remote synchronization, comma-separated: "
+"inline (default, after every backup), scheduled (after schedule has passed),"
+" counting (after N backups)."
+msgstr ""
+"Geef de triggermodi voor externe synchronisatie op, gescheiden door komma's:"
+" inline (standaard, na elke back-up), gepland (nadat het schema is "
+"verstreken), tellend (na N back-ups)."
+
+#: Library/Modules/Builtin/Strings.cs:102
+msgid "Remote sync schedule"
+msgstr "Externe sync planning"
+
+#: Library/Modules/Builtin/Strings.cs:103
+msgid ""
+"Specify the schedule intervals for remote synchronization, comma-separated, "
+"e.g. '7.00:00:00,14.00:00:00'."
+msgstr ""
+"Geef de geplande intervallen voor externe synchronisatie op, gescheiden door"
+" komma's, bijvoorbeeld '7.00:00:00,14.00:00:00'."
+
+#: Library/Modules/Builtin/Strings.cs:104
+msgid "Remote sync backup count"
+msgstr "Externe sync back-up-aantal"
+
+#: Library/Modules/Builtin/Strings.cs:105
+msgid ""
+"Specify the numbers of backups after which to trigger remote "
+"synchronization, comma-separated."
+msgstr ""
+"Geef het aantal back-ups op waarna de externe synchronisatie moet worden "
+"geactiveerd, gescheiden door komma's."
+
+#: Library/Modules/Builtin/Strings.cs:106
+msgid "Sync on warnings"
+msgstr "Sync bij waarschuwingen"
+
+#: Library/Modules/Builtin/Strings.cs:107
+msgid "Enable synchronization when the backup completes with warnings."
+msgstr ""
+"Voer synchronisatie uit wanneer de back-up eindigt met waarschuwingen."
 
 #: Library/Modules/Builtin/Strings.cs:111
 msgid "Execute a script before starting an operation, and again on completion"
@@ -7535,6 +7999,18 @@ msgstr ""
 #: Library/Modules/Builtin/Strings.cs:147
 msgid "SMTP Password"
 msgstr "SMTP wachtwoord"
+
+#: Library/Modules/Builtin/Strings.cs:148
+msgid ""
+"This setting is required if mail should be sent, all other settings have default values. You can supply multiple email addresses separated with commas, and you can use the normal address format as specified by RFC2822 section 3.4.\n"
+"Example with 3 recipients:\n"
+"\n"
+"Peter Sample <peter@example.com>, John Sample <john@example.com>, admin@example.com"
+msgstr ""
+"This setting is required if mail should be sent, all other settings have default values. You can supply multiple email addresses separated with commas, and you can use the normal address format as specified by RFC2822 section 3.4.\n"
+"Voorbeeld met 3 ontvangers:\n"
+"\n"
+"Peter Sample <peter@example.com>, John Sample <john@example.com>, admin@example.com"
 
 #: Library/Modules/Builtin/Strings.cs:152
 msgid "Email recipient(s)"
@@ -7752,6 +8228,17 @@ msgstr ""
 #: Library/Modules/Builtin/Strings.cs:199
 msgid "The XMPP password"
 msgstr "Het XMPP wachtwoord"
+
+#: Library/Modules/Builtin/Strings.cs:200
+#: Library/Modules/Builtin/Strings.cs:234
+#: Library/Modules/Builtin/Strings.cs:263
+#, csharp-format
+msgid ""
+"You can specify one of \"{0}\", \"{1}\", \"{2}\", \"{3}\".\n"
+"You can supply multiple options with a comma separator, e.g. \"{0},{1}\". The special value \"{4}\" is a shorthand for \"{0},{1},{2},{3}\" and will cause all backup operations to send a message."
+msgstr ""
+"U kunt één van de volgende waarden opgeven: \"{0}\", \"{1}\", \"{2}\", \"{3}\".\n"
+"U kunt meerdere opties opgeven, gescheiden door een komma, bijvoorbeeld \"{0},{1}\". De speciale waarde \"{4}\" is een afkorting voor \"{0},{1},{2},{3}\" en zorgt ervoor dat alle back-upbewerkingen een bericht verzenden."
 
 #: Library/Modules/Builtin/Strings.cs:203
 #: Library/Modules/Builtin/Strings.cs:237

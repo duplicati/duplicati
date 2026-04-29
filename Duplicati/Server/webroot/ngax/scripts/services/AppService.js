@@ -2,6 +2,7 @@ backupApp.service('AppService', function ($http, $cookies, $q, $cookies, DialogS
     this.apiurl = '../api/v1';
     this.access_token = null;
     this.access_token_promise = null;
+    this.redirecting_to_login = false;
 
     const self = this;
 
@@ -10,6 +11,50 @@ backupApp.service('AppService', function ($http, $cookies, $q, $cookies, DialogS
         DialogService.accept('Not logged in', function () {
             window.location = appConfig.login_url;
         });
+    }
+
+    function isRefreshStatusCode(status) {
+        return status === 400 || status === 401 || status === 415;
+    }
+
+    function isRefreshUrl(url) {
+        if (!url)
+            return false;
+
+        if (url.indexOf('/auth/refresh/logout') >= 0)
+            return false;
+
+        if (url.indexOf('/api/v1/auth/refresh') >= 0 || url.indexOf('/auth/refresh') >= 0)
+            return true;
+
+        return false;
+    }
+
+    this.isRefreshFailureResponse = function(response) {
+        return response != null
+            && isRefreshStatusCode(response.status)
+            && isRefreshUrl(response.config && response.config.url);
+    };
+
+    function clearAuthState() {
+        self.clearAccessToken();
+        localStorage.removeItem('v1:persist:duplicati:refreshNonce');
+    }
+
+    function redirectToLogin() {
+        if (self.redirecting_to_login)
+            return;
+
+        self.redirecting_to_login = true;
+        window.location.href = '/login.html';
+    }
+
+    function handleRefreshFailure(response) {
+        if (response != null)
+            response.refreshAuthFailure = true;
+
+        clearAuthState();
+        redirectToLogin();
     }
 
 
@@ -66,9 +111,15 @@ backupApp.service('AppService', function ($http, $cookies, $q, $cookies, DialogS
                                 }
                             ); 
                         }, 
-                        () => { 
-                            // Fail, but report the original failed response, not the refresh response
-                            deferred.reject(response);
+                        refreshResponse => {
+                            // If the refresh endpoint itself failed in a terminal auth state,
+                            // do not hide it behind the original response.
+                            if (self.isRefreshFailureResponse(refreshResponse)) {
+                                deferred.reject(refreshResponse);
+                            } else {
+                                // Fail, but report the original failed response, not the refresh response
+                                deferred.reject(response);
+                            }
                         }
                     );
 
@@ -101,9 +152,11 @@ backupApp.service('AppService', function ($http, $cookies, $q, $cookies, DialogS
             self.access_token_promise = deferred.promise;
 
             const storedNonce = localStorage.getItem('v1:persist:duplicati:refreshNonce');
-            const body = storedNonce ? { Nonce: storedNonce } : undefined;
+            const body = storedNonce ? { Nonce: storedNonce } : {};
+            const refreshUrl = self.apiurl + '/auth/refresh';
+            const refreshConfig = setupConfig('POST', {}, body, refreshUrl);
 
-            $http.post(self.apiurl + '/auth/refresh', body)
+            $http.post(refreshUrl, body, refreshConfig)
                 .then(function (response) {
                     self.access_token = response.data.AccessToken;
                     self.access_token_promise = null;
@@ -115,8 +168,12 @@ backupApp.service('AppService', function ($http, $cookies, $q, $cookies, DialogS
                     self.access_token = null;
                     self.access_token_promise = null;
                     
+                    // Explicit terminal auth failures for /auth/refresh should not be retried.
+                    if (self.isRefreshFailureResponse(response)) {
+                        handleRefreshFailure(response);
+                    }
                     // Auth error, refresh token invalid
-                    if (response.status == 401)
+                    else if (response.status == 401)
                         loginRequired();
 
                     deferred.reject(response);

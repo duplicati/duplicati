@@ -247,7 +247,7 @@ msgstr "Bucket létrehozásának helye"
 msgid "Bucket name"
 msgstr "Bucket neve"
 
-#: scripts/services/ServerStatus.js:51
+#: scripts/services/ServerStatus.js:52
 msgid "Building list of files to restore …"
 msgstr "Fájl lista összeállítás a visszaállításhoz..."
 
@@ -299,8 +299,8 @@ msgstr "Gyorsítótás Fájlok"
 #: scripts/controllers/LocalDatabaseController.js:72
 #: scripts/controllers/LocalDatabaseController.js:88
 #: scripts/controllers/RestoreDirectController.js:24
-#: scripts/controllers/StateController.js:108
-#: scripts/controllers/StateController.js:117
+#: scripts/controllers/StateController.js:119
+#: scripts/controllers/StateController.js:128
 #: scripts/services/DialogService.js:50
 #: scripts/services/EditUriBuiltins.js:1215
 #: scripts/services/EditUriBuiltins.js:1231
@@ -354,7 +354,7 @@ msgstr "Tömörített állapot"
 msgid "Compact now"
 msgstr "Tömörítés most"
 
-#: scripts/services/ServerStatus.js:44 scripts/services/ServerStatus.js:68
+#: scripts/services/ServerStatus.js:44 scripts/services/ServerStatus.js:69
 msgid "Compacting remote data …"
 msgstr "Távoli adatok tömörítése..."
 
@@ -482,7 +482,7 @@ msgstr "Mappa készítés?"
 msgid "Created new limited user"
 msgstr "Új korlátozott felhasználó létrehozva"
 
-#: scripts/services/ServerStatus.js:63
+#: scripts/services/ServerStatus.js:64
 msgid "Creating bug report …"
 msgstr "Hibajelentés készítés..."
 
@@ -490,7 +490,7 @@ msgstr "Hibajelentés készítés..."
 msgid "Creating new user with limited access …"
 msgstr "Új felhasználó létrehozása korlátozott hozzáféréssel..."
 
-#: scripts/services/ServerStatus.js:52
+#: scripts/services/ServerStatus.js:53
 msgid "Creating target folders …"
 msgstr "Cél mappák létrehozása..."
 
@@ -594,7 +594,7 @@ msgstr "Törölt verziók"
 msgid "Deleted files"
 msgstr "Törölt fájlok"
 
-#: scripts/services/ServerStatus.js:65
+#: scripts/services/ServerStatus.js:66
 msgid "Deleting remote files …"
 msgstr "Távoli fájlok törlése"
 
@@ -664,7 +664,7 @@ msgstr "Letöltés"
 msgid "Downloaded files"
 msgstr "Letöltött fájlok"
 
-#: scripts/services/ServerStatus.js:56
+#: scripts/services/ServerStatus.js:57
 msgid "Downloading files …"
 msgstr "Fájlok letöltése..."
 
@@ -823,7 +823,7 @@ msgstr "Cél útvonal megadása"
 msgid "Error"
 msgstr "Hiba"
 
-#: scripts/services/ServerStatus.js:70
+#: scripts/services/ServerStatus.js:71
 msgid "Error!"
 msgstr "Hiba!"
 
@@ -1169,11 +1169,11 @@ msgstr "Könyvtárak"
 msgid "Listing backup dates …"
 msgstr "Mentési dátumok felsorolása…"
 
-#: scripts/services/ServerStatus.js:66
+#: scripts/services/ServerStatus.js:67
 msgid "Listing remote files for purge …"
 msgstr "Távoli fájlok felsorolása a tisztításhoz…"
 
-#: scripts/services/ServerStatus.js:64
+#: scripts/services/ServerStatus.js:65
 msgid "Listing remote files …"
 msgstr "Távoli fájlok felsorolása..."
 
@@ -1540,15 +1540,15 @@ msgstr "Tulajdonosi"
 msgid "Purge Phase"
 msgstr "Tisztítási fázis"
 
-#: scripts/services/ServerStatus.js:69
+#: scripts/services/ServerStatus.js:70
 msgid "Purging files complete!"
 msgstr "Fájlok tisztítása befejezve!"
 
-#: scripts/services/ServerStatus.js:67
+#: scripts/services/ServerStatus.js:68
 msgid "Purging files …"
 msgstr "Fájlok tisztítása..."
 
-#: scripts/services/ServerStatus.js:49
+#: scripts/services/ServerStatus.js:50
 msgid "Rebuilding local database …"
 msgstr "Helyi adatbázis újraépítése..."
 
@@ -1560,7 +1560,7 @@ msgstr "Újraépítés (törlés és javítás)"
 msgid "Recreate Database Phase"
 msgstr "Adatbázis újraépítési fázis"
 
-#: scripts/services/ServerStatus.js:59
+#: scripts/services/ServerStatus.js:60
 msgid "Recreating database …"
 msgstr "Adatbázis újraépítése..."
 
@@ -1620,7 +1620,7 @@ msgstr "Javítás"
 msgid "Repair Phase"
 msgstr "Javítási fázis"
 
-#: scripts/services/ServerStatus.js:61
+#: scripts/services/ServerStatus.js:62
 msgid "Repairing database …"
 msgstr "Adatbázis javítás..."
 
@@ -1640,7 +1640,7 @@ msgstr "Visszaállítás"
 msgid "Restore"
 msgstr "Visszaállítás"
 
-#: scripts/services/ServerStatus.js:58
+#: scripts/services/ServerStatus.js:59
 msgid "Restore complete!"
 msgstr "Visszaállítás sikeres!"
 
@@ -1742,11 +1742,11 @@ msgstr "Eltérő verziók mentése időbélyeggel a fájlnévben"
 msgid "Save immediately"
 msgstr "Mentés azonnal"
 
-#: scripts/services/ServerStatus.js:53
+#: scripts/services/ServerStatus.js:54
 msgid "Scanning existing files …"
 msgstr "Létező fájlok szkennelése..."
 
-#: scripts/services/ServerStatus.js:54
+#: scripts/services/ServerStatus.js:55
 msgid "Scanning for local blocks …"
 msgstr "Helyi blokkok szkennelése..."
 
@@ -1871,7 +1871,7 @@ msgstr "Start"
 msgid "Starting backup …"
 msgstr "Mentés indítása..."
 
-#: scripts/services/ServerStatus.js:48
+#: scripts/services/ServerStatus.js:49
 msgid "Starting restore …"
 msgstr "Visszaállítás indítása..."
 
@@ -1880,16 +1880,16 @@ msgstr "Visszaállítás indítása..."
 msgid "Starting the restore process …"
 msgstr "Visszaállítási folyamat indítása..."
 
-#: scripts/controllers/StateController.js:108
-#: scripts/controllers/StateController.js:117
+#: scripts/controllers/StateController.js:119
+#: scripts/controllers/StateController.js:128
 msgid "Stop after the current file"
 msgstr "Leállítás az aktuális fájl után"
 
-#: scripts/controllers/StateController.js:106
+#: scripts/controllers/StateController.js:117
 msgid "Stop running backup"
 msgstr "Mentés futtatásának leállítása"
 
-#: scripts/controllers/StateController.js:115
+#: scripts/controllers/StateController.js:126
 msgid "Stop running task"
 msgstr "Feladat futtatásának leállítása"
 
@@ -2157,15 +2157,15 @@ msgstr "Fájlok ellenőrzése"
 msgid "Verifying backend data …"
 msgstr "Háttér adat ellenőrzése..."
 
-#: scripts/services/ServerStatus.js:62
+#: scripts/services/ServerStatus.js:63
 msgid "Verifying files …"
 msgstr "Fájlok ellenőrzése..."
 
-#: scripts/services/ServerStatus.js:38 scripts/services/ServerStatus.js:50
+#: scripts/services/ServerStatus.js:38 scripts/services/ServerStatus.js:51
 msgid "Verifying remote data …"
 msgstr "Távoli adatok ellenőrzése..."
 
-#: scripts/services/ServerStatus.js:57
+#: scripts/services/ServerStatus.js:58
 msgid "Verifying restored files …"
 msgstr "Visszaállított fájlok ellenőrzése..."
 

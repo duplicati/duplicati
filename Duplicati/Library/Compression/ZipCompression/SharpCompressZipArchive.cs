@@ -1,4 +1,4 @@
-// Copyright (C) 2025, The Duplicati Team
+// Copyright (C) 2026, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -115,17 +115,44 @@ public class SharpCompressZipArchive : IZipArchive
 
         if (mode == ArchiveMode.Write)
         {
-            var compression = new ZipWriterOptions(CompressionType.Deflate)
+            var compression = new ZipWriterOptions(m_compressionType)
             {
-                CompressionType = m_compressionType,
-                DeflateCompressionLevel = m_defaultCompressionLevel,
+                CompressionLevel = GetCompressionLevel(m_compressionType, m_defaultCompressionLevel),
                 UseZip64 = USE_ZIP64
             };
 
-            m_writer = WriterFactory.Open(m_stream, ArchiveType.Zip, compression);
+            m_writer = WriterFactory.OpenWriter(m_stream, ArchiveType.Zip, compression);
             m_flushBufferSize = Constants.END_OF_CENTRAL_DIRECTORY_SIZE;
         }
     }
+
+    /// <summary>
+    /// Returns the compression level for the algorithm
+    /// </summary>
+    /// <param name="compressionType">The compression algorithm</param>
+    /// <param name="compressionLevel">The desired compression level</param>
+    /// <returns>The matching compression level</returns>
+    private static int GetCompressionLevel(CompressionType compressionType, CompressionLevel compressionLevel)
+        => compressionType switch
+        {
+            CompressionType.GZip or CompressionType.Deflate or CompressionType.Deflate64
+                => (int)compressionLevel,
+
+            CompressionType.ZStandard
+                => MapDeflateCompressionLevelToZStandard((int)compressionLevel),
+
+            // No compression setting on other types
+            _ => 0
+        };
+
+    /// <summary>
+    /// Map deflate compression [0-9] levels to zstd [1-22]
+    /// </summary>
+    /// <param name="level">The deflate compression leve</param>
+    /// <returns>The Zstd compression level</returns>
+    private static int MapDeflateCompressionLevelToZStandard(int level)
+        => (int)Math.Max(1, Math.Min(22, Math.Round(level * 2.33) + 1));
+
 
     private IArchive Archive
     {
@@ -134,7 +161,7 @@ public class SharpCompressZipArchive : IZipArchive
             if (m_archive == null)
             {
                 m_stream.Position = 0;
-                m_archive = ArchiveFactory.Open(m_stream);
+                m_archive = ArchiveFactory.OpenArchive(m_stream, new ReaderOptions());
             }
             return m_archive;
         }
@@ -155,12 +182,8 @@ public class SharpCompressZipArchive : IZipArchive
 
     public Stream GetStreamFromReader(IEntry entry)
     {
-        SharpCompress.Readers.Zip.ZipReader? rd = null;
 
-        try
-        {
-            rd = SharpCompress.Readers.Zip.ZipReader.Open(m_stream);
-
+        using (var rd = SharpCompress.Readers.Zip.ZipReader.OpenReader(m_stream, new ReaderOptions()))
             while (rd.MoveToNextEntry())
                 if (entry.Key == rd.Entry.Key)
                     return new StreamWrapper(rd.OpenEntryStream(), stream =>
@@ -168,15 +191,7 @@ public class SharpCompressZipArchive : IZipArchive
                         rd.Dispose();
                     });
 
-            throw new Exception(string.Format("Stream not found: {0}", entry.Key));
-        }
-        catch
-        {
-            if (rd != null)
-                rd.Dispose();
-
-            throw;
-        }
+        throw new Exception(string.Format("Stream not found: {0}", entry.Key));
     }
 
     /// <summary>
@@ -294,7 +309,7 @@ public class SharpCompressZipArchive : IZipArchive
 
                 try
                 {
-                    using (var rd = SharpCompress.Readers.Zip.ZipReader.Open(m_stream, new ReaderOptions() { LookForHeader = false }))
+                    using (var rd = SharpCompress.Readers.Zip.ZipReader.OpenReader(m_stream, new ReaderOptions() { LookForHeader = false }))
                         while (rd.MoveToNextEntry())
                         {
                             if (string.IsNullOrWhiteSpace(rd.Entry.Key))
@@ -362,7 +377,7 @@ public class SharpCompressZipArchive : IZipArchive
 
         return ((ZipWriter)m_writer!).WriteToStream(file, new ZipWriterEntryOptions()
         {
-            DeflateCompressionLevel = hint == CompressionHint.Noncompressible ? SharpCompress.Compressors.Deflate.CompressionLevel.None : m_defaultCompressionLevel,
+            CompressionLevel = GetCompressionLevel(m_compressionType, hint == CompressionHint.Noncompressible ? CompressionLevel.None : m_defaultCompressionLevel),
             ModificationDateTime = lastWrite,
             CompressionType = m_compressionType
         });

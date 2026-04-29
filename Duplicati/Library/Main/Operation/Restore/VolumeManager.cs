@@ -1,4 +1,4 @@
-// Copyright (C) 2025, The Duplicati Team
+// Copyright (C) 2026, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -25,6 +25,7 @@ using Duplicati.Library.Utility;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -44,6 +45,11 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// The log tag for this class.
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<VolumeManager>();
+
+        /// <summary>
+        /// Number of disk-pressure evictions that must occur before a mid-run warning is emitted.
+        /// </summary>
+        private const int CACHE_PRESSURE_WARNING_THRESHOLD = 5;
 
         /// <summary>
         /// Helper class to read from either of two channels.
@@ -108,15 +114,29 @@ namespace Duplicati.Library.Main.Operation.Restore
                 async self =>
                 {
                     // The maximum number of volumes to have in cache at once. If this is exceeded, we'll try to evict the least recently used volume that is not actively in use.
+                    // -1 = unlimited (disk-space-aware), 0 = disabled, >0 = hard cap in bytes.
                     long cache_max = options.RestoreVolumeCacheHint;
+                    // Minimum free space (bytes) to maintain in temp dir — used only in unlimited mode.
+                    long cache_min_free = options.RestoreVolumeCacheMinFree;
+                    // Temp directory path used for DriveInfo queries in unlimited mode.
+                    string temp_dir = options.TempDir;
                     // Cache of volume readers.
                     Dictionary<long, VolumeWrapper> cache = [];
                     // Current size of the cache in bytes.
                     long cache_size = 0;
+                    // Maximum cache size reached during this restore run.
+                    long cache_size_max_consumed = 0;
                     // List of which volume was accessed last. Used for cache eviction.
                     List<long> cache_last_touched = [];
                     // Dictionary to keep track of active downloads. Used for grouping requests to the same volume.
                     Dictionary<long, List<BlockRequest>> in_flight_downloads = [];
+                    // Disk-pressure counters (unlimited cache mode only).
+                    HashSet<long> previously_evicted_volume_ids = [];
+                    HashSet<long> all_accessed_volume_ids = [];
+                    long disk_pressure_evictions = 0;
+                    long disk_pressure_redownloads = 0;
+                    long total_volumes_accessed = 0;
+                    bool cache_exhausted_warned = false;
 
                     Stopwatch? sw_cache_set = options.InternalProfiling ? new() : null;
                     Stopwatch? sw_cache_evict = options.InternalProfiling ? new() : null;
@@ -125,6 +145,14 @@ namespace Duplicati.Library.Main.Operation.Restore
                     Stopwatch? sw_backend = options.InternalProfiling ? new() : null;
                     Stopwatch? sw_request = options.InternalProfiling ? new() : null;
                     Stopwatch? sw_wakeup = options.InternalProfiling ? new() : null;
+
+                    void handle_add(long volume_id, VolumeWrapper volume)
+                    {
+                        cache[volume_id] = volume;
+                        cache_size += volume.Size;
+                        cache_size_max_consumed = Math.Max(cache_size_max_consumed, cache_size);
+                        cache_last_touched.Add(volume_id);
+                    }
 
                     void handle_evict(long volume_id)
                     {
@@ -140,17 +168,19 @@ namespace Duplicati.Library.Main.Operation.Restore
                         sw_cache_evict?.Stop();
                     }
 
-                    void evict_lru()
+                    long evict_lru()
                     {
                         sw_cache_lru?.Start();
+                        long volume_id = -1;
                         if (cache_last_touched.Count > 0)
                         {
                             // Pop the last element of cache_last_touched
-                            var volume_id = cache_last_touched[0];
-                            cache_last_touched.RemoveAt(0);
+                            volume_id = cache_last_touched[0];
                             handle_evict(volume_id);
                         }
                         sw_cache_lru?.Stop();
+
+                        return volume_id;
                     }
 
                     await results.TaskControl.ProgressRendevouz().ConfigureAwait(false);
@@ -180,12 +210,18 @@ namespace Duplicati.Library.Main.Operation.Restore
                                                 sw_request?.Start();
                                                 if (cache.TryGetValue(request.VolumeID, out var volume))
                                                 {
-                                                    cache_last_touched.Remove(request.VolumeID);
-                                                    cache_last_touched.Add(request.VolumeID);
                                                     Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Block {0} found in cache", request.BlockID);
+
+                                                    if (cache_max != 0)
+                                                    {
+                                                        // Move the accessed volume to the end of the LRU list.
+                                                        cache_last_touched.Remove(request.VolumeID);
+                                                        cache_last_touched.Add(request.VolumeID);
+                                                    }
                                                     volume.Reference();
-                                                    await self.DecompressRequest.WriteAsync((request, volume)).ConfigureAwait(false);
+
                                                     Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Requesting decompression of block {0} from cached volume {1}", request.BlockID, request.VolumeID);
+                                                    await self.DecompressRequest.WriteAsync((request, volume)).ConfigureAwait(false);
                                                 }
                                                 else
                                                 {
@@ -196,6 +232,10 @@ namespace Duplicati.Library.Main.Operation.Restore
                                                     }
                                                     else
                                                     {
+                                                        if (all_accessed_volume_ids.Add(request.VolumeID))
+                                                            total_volumes_accessed++;
+                                                        if (previously_evicted_volume_ids.Contains(request.VolumeID))
+                                                            disk_pressure_redownloads++;
                                                         await self.DownloadRequest.WriteAsync(request.VolumeID).ConfigureAwait(false);
                                                         in_flight_downloads[request.VolumeID] = [request];
                                                     }
@@ -211,31 +251,56 @@ namespace Duplicati.Library.Main.Operation.Restore
                                     {
                                         sw_cache_set?.Start();
                                         volume.Reference(in_flight_downloads[volume_id].Count);
-                                        if (cache_max > 0)
+                                        if (cache_max == 0)
                                         {
-                                            // Check if adding another volume would exceed cache limits.
+                                            // Caching disabled — dispose immediately.
+                                            Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Not caching volume {0} (caching disabled)", volume_id);
+                                            volume.Dispose();
+                                        }
+                                        else if (cache_max > 0)
+                                        {
+                                            // Hard-cap LRU: evict until the new volume fits.
                                             while (cache_size > 0 && (cache_size + volume.Size) > cache_max)
                                             {
                                                 // TODO switch based of the eviction strategy.
                                                 // fifo / lifo based on both when they were downloaded and when they were used
                                                 // random
                                                 // Heuristic based of accesses and recency
+
                                                 // Cache would overflow if we request another; we have to evict something, or store the request for later.
                                                 Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Cache full ({0} + {1} > {2}), evicting LRU", cache_size, volume.Size, cache_max);
                                                 evict_lru();
                                             }
+
                                             Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Caching volume {0} ({1} + {2} <= {3})", volume_id, cache_size, volume.Size, cache_max);
-                                            cache[volume_id] = volume;
-                                            cache_size += volume.Size;
+                                            handle_add(volume_id, volume);
                                         }
                                         else
                                         {
-                                            Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Not caching volume {0} ({1} + {2} > {3})", volume_id, cache_size, volume.Size, cache_max);
-                                            volume.Dispose();
+                                            // Unlimited mode (cache_max < 0): evict LRU while free space is below the minimum.
+                                            var available_free_space = new DriveInfo(temp_dir).AvailableFreeSpace;
+                                            while (available_free_space < cache_min_free && cache_size > 0)
+                                            {
+                                                var evict_id = evict_lru();
+                                                previously_evicted_volume_ids.Add(evict_id);
+                                                disk_pressure_evictions++;
+                                                if (disk_pressure_evictions == CACHE_PRESSURE_WARNING_THRESHOLD)
+                                                    Logging.Log.WriteWarningMessage(LOGTAG, "CachePressure", null, "Restore volume cache has begun evicting cached volumes due to low disk space in '{0}'. Restore performance may be degraded.", temp_dir);
+                                                available_free_space = new DriveInfo(temp_dir).AvailableFreeSpace;
+                                            }
+
+                                            if (!cache_exhausted_warned && cache_size == 0 && available_free_space < cache_min_free)
+                                            {
+                                                cache_exhausted_warned = true;
+                                                Logging.Log.WriteWarningMessage(LOGTAG, "CacheExhausted", null, "Restore volume cache is empty but disk space in '{0}' is still below the configured minimum. Performance impact is likely.", temp_dir);
+                                            }
+
+                                            Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Caching volume {0} in unlimited mode (free space: {1})", volume_id, available_free_space);
+                                            handle_add(volume_id, volume);
                                         }
-                                        cache_last_touched.Add(volume_id);
                                         sw_cache_set?.Stop();
                                         sw_wakeup?.Start();
+
                                         foreach (var request in in_flight_downloads[volume_id])
                                         {
                                             // Request the decompressions
@@ -255,9 +320,14 @@ namespace Duplicati.Library.Main.Operation.Restore
                     {
                         Logging.Log.WriteVerboseMessage(LOGTAG, "RetiredProcess", null, "Volume manager retired");
 
+                        results.CachePressureEvictions = disk_pressure_evictions;
+                        results.CachePressureRedownloads = disk_pressure_redownloads;
+                        results.TotalVolumesAccessed = total_volumes_accessed;
+
                         if (options.InternalProfiling)
                         {
-                            Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"CacheSet: {sw_cache_set?.ElapsedMilliseconds}ms, CacheEvict: {sw_cache_evict?.ElapsedMilliseconds}ms, Query: {sw_query?.ElapsedMilliseconds}ms, Backend: {sw_backend?.ElapsedMilliseconds}ms, Request: {sw_request?.ElapsedMilliseconds}ms, Wakeup: {sw_wakeup?.ElapsedMilliseconds}ms");
+                            Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"CacheSet: {sw_cache_set?.ElapsedMilliseconds}ms, CacheEvict: {sw_cache_evict?.ElapsedMilliseconds}ms, CacheLRU: {sw_cache_lru?.ElapsedMilliseconds}ms, Query: {sw_query?.ElapsedMilliseconds}ms, Backend: {sw_backend?.ElapsedMilliseconds}ms, Request: {sw_request?.ElapsedMilliseconds}ms, Wakeup: {sw_wakeup?.ElapsedMilliseconds}ms");
+                            Logging.Log.WriteProfilingMessage(LOGTAG, "CacheUsage", $"Max used cache size: {Duplicati.Library.Utility.Utility.FormatSizeString(cache_size_max_consumed)}");
                         }
                     }
                     catch (Exception ex)

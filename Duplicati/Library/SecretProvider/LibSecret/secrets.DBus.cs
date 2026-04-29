@@ -1063,9 +1063,9 @@ namespace secrets.DBus
     }
     partial class secretsService
     {
-        public Tmds.DBus.Protocol.Connection Connection { get; }
+        public Tmds.DBus.Protocol.DBusConnection Connection { get; }
         public string Destination { get; }
-        public secretsService(Tmds.DBus.Protocol.Connection connection, string destination)
+        public secretsService(Tmds.DBus.Protocol.DBusConnection connection, string destination)
             => (Connection, Destination) = (connection, destination);
         public Daemon CreateDaemon(string path) => new Daemon(this, path);
         public Secret CreateSecret(string path) => new Secret(this, path);
@@ -1080,7 +1080,7 @@ namespace secrets.DBus
     {
         public secretsService Service { get; }
         public ObjectPath Path { get; }
-        protected Tmds.DBus.Protocol.Connection Connection => Service.Connection;
+        protected Tmds.DBus.Protocol.DBusConnection Connection => Service.Connection;
         protected secretsObject(secretsService service, ObjectPath path)
             => (Service, Path) = (service, path);
         protected MessageBuffer CreateGetPropertyMessage(string @interface, string property)

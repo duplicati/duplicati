@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2025, The Duplicati Team
+﻿// Copyright (C) 2026, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -968,6 +968,24 @@ namespace Duplicati.UnitTest
                 Assert.IsNull(repairResults.Messages.FirstOrDefault(v => v.Contains("ProcessingRequiredBlocklistVolumes")),
                     "Blocklist download pass was required");
             }
+        }
+
+        [Test]
+        public void Issue6817DollarSignNumberInFilenameBreaksRegex()
+        {
+            var filename = "~$1234567891011121314151617181920.txt";
+            var content = RandomNumberGenerator.GetBytes(1024);
+            TestUtils.WriteFile(Path.Combine(DATAFOLDER, filename), content);
+
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, TestOptions, null))
+                TestUtils.AssertResults(c.Backup([DATAFOLDER]));
+
+            // Delete the database
+            File.Delete(DBFILE);
+
+            // Recreate the database, which would fail if the filename is not handled correctly
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, TestOptions, null))
+                TestUtils.AssertResults(c.Repair());
         }
     }
 }

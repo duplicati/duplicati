@@ -298,7 +298,7 @@ msgstr "Ime segmenta"
 msgid "Bucket storage class"
 msgstr "Klasa skladištenja segment-a"
 
-#: scripts/services/ServerStatus.js:51
+#: scripts/services/ServerStatus.js:52
 msgid "Building list of files to restore …"
 msgstr "Pravljnje liste fajlova za vraćanje ..."
 
@@ -353,8 +353,8 @@ msgstr "Canary"
 #: scripts/controllers/LocalDatabaseController.js:72
 #: scripts/controllers/LocalDatabaseController.js:88
 #: scripts/controllers/RestoreDirectController.js:24
-#: scripts/controllers/StateController.js:108
-#: scripts/controllers/StateController.js:117
+#: scripts/controllers/StateController.js:119
+#: scripts/controllers/StateController.js:128
 #: scripts/services/DialogService.js:50
 #: scripts/services/EditUriBuiltins.js:1215
 #: scripts/services/EditUriBuiltins.js:1231
@@ -418,7 +418,7 @@ msgstr "Faza sažimanja"
 msgid "Compact now"
 msgstr "Sažmi sada"
 
-#: scripts/services/ServerStatus.js:44 scripts/services/ServerStatus.js:68
+#: scripts/services/ServerStatus.js:44 scripts/services/ServerStatus.js:69
 msgid "Compacting remote data …"
 msgstr "Sažimanje udaljenih podataka ..."
 
@@ -546,7 +546,7 @@ msgstr "Napraviti fasciklu?"
 msgid "Created new limited user"
 msgstr "Napravljen novi korisnik sa ograničenjima"
 
-#: scripts/services/ServerStatus.js:63
+#: scripts/services/ServerStatus.js:64
 msgid "Creating bug report …"
 msgstr "Kreira se izveštaj o greškama ..."
 
@@ -554,7 +554,7 @@ msgstr "Kreira se izveštaj o greškama ..."
 msgid "Creating new user with limited access …"
 msgstr "Pravljenje novog korisnika sa ograničenim pristupom …"
 
-#: scripts/services/ServerStatus.js:52
+#: scripts/services/ServerStatus.js:53
 msgid "Creating target folders …"
 msgstr "Pravljenje ciljnih foldera ..."
 
@@ -671,7 +671,7 @@ msgstr "Izbrisane verzije"
 msgid "Deleted files"
 msgstr "Izbrisani fajlovi"
 
-#: scripts/services/ServerStatus.js:65
+#: scripts/services/ServerStatus.js:66
 msgid "Deleting remote files …"
 msgstr "Brisanje udaljenih fajlova …"
 
@@ -741,7 +741,7 @@ msgstr "Preuzmi"
 msgid "Downloaded files"
 msgstr "Preuzeti fajlovi"
 
-#: scripts/services/ServerStatus.js:56
+#: scripts/services/ServerStatus.js:57
 msgid "Downloading files …"
 msgstr "Preuzimanje fajlova …"
 
@@ -902,7 +902,7 @@ msgstr "Unesite odredišnu putanju"
 msgid "Error"
 msgstr "Greška"
 
-#: scripts/services/ServerStatus.js:70
+#: scripts/services/ServerStatus.js:71
 msgid "Error!"
 msgstr "Greška!"
 
@@ -1291,11 +1291,11 @@ msgstr "Biblioteke"
 msgid "Listing backup dates …"
 msgstr "Navođenje datuma rezervnih kopija …"
 
-#: scripts/services/ServerStatus.js:66
+#: scripts/services/ServerStatus.js:67
 msgid "Listing remote files for purge …"
 msgstr "Lista udaljenih fajlova za čišćenje …"
 
-#: scripts/services/ServerStatus.js:64
+#: scripts/services/ServerStatus.js:65
 msgid "Listing remote files …"
 msgstr "Lista udaljenih fajlova ..."
 
@@ -1662,7 +1662,7 @@ msgstr "Pristupne fraze se ne podudaraju"
 msgid "Password"
 msgstr "Lozinka"
 
-#: scripts/services/ServerStatus.js:55
+#: scripts/services/ServerStatus.js:56
 msgid "Patching files with local blocks …"
 msgstr "Zakrpa fajlova sa lokalnim blokovima …"
 
@@ -1742,15 +1742,15 @@ msgstr "Vlasnički"
 msgid "Purge Phase"
 msgstr "Faza čišćenja"
 
-#: scripts/services/ServerStatus.js:69
+#: scripts/services/ServerStatus.js:70
 msgid "Purging files complete!"
 msgstr "Čišćenje fajlova je završeno!"
 
-#: scripts/services/ServerStatus.js:67
+#: scripts/services/ServerStatus.js:68
 msgid "Purging files …"
 msgstr "Čišćenje fajlova …"
 
-#: scripts/services/ServerStatus.js:49
+#: scripts/services/ServerStatus.js:50
 msgid "Rebuilding local database …"
 msgstr "Ponovno kreiranje lokalne baze podataka …"
 
@@ -1762,7 +1762,7 @@ msgstr "Ponovo kreirajte (izbrišite i popravite)"
 msgid "Recreate Database Phase"
 msgstr "Ponovo kreirajte fazu baze podataka"
 
-#: scripts/services/ServerStatus.js:59
+#: scripts/services/ServerStatus.js:60
 msgid "Recreating database …"
 msgstr "Ponovo kreiranje baze podataka …"
 
@@ -1822,7 +1822,7 @@ msgstr "Popravi"
 msgid "Repair Phase"
 msgstr "Popravi fazu"
 
-#: scripts/services/ServerStatus.js:61
+#: scripts/services/ServerStatus.js:62
 msgid "Repairing database …"
 msgstr "Popravljanje baze podataka …"
 
@@ -1842,7 +1842,7 @@ msgstr "Resetovanje"
 msgid "Restore"
 msgstr "Vrati"
 
-#: scripts/services/ServerStatus.js:58
+#: scripts/services/ServerStatus.js:59
 msgid "Restore complete!"
 msgstr "Vraćanje je završeno!"
 
@@ -1948,11 +1948,11 @@ msgstr "Sačuvaj drugu verziju sa vremenom u nazivu fajla"
 msgid "Save immediately"
 msgstr "Sačuvaj odmah"
 
-#: scripts/services/ServerStatus.js:53
+#: scripts/services/ServerStatus.js:54
 msgid "Scanning existing files …"
 msgstr "Skeniranje postojećih fajlova …"
 
-#: scripts/services/ServerStatus.js:54
+#: scripts/services/ServerStatus.js:55
 msgid "Scanning for local blocks …"
 msgstr "Skeniranje lokalnih blokova ..."
 
@@ -2097,7 +2097,7 @@ msgstr "Start"
 msgid "Starting backup …"
 msgstr "Startujem rezervnu kopiju ..."
 
-#: scripts/services/ServerStatus.js:48
+#: scripts/services/ServerStatus.js:49
 msgid "Starting restore …"
 msgstr "Startujem obnavljanje ..."
 
@@ -2106,16 +2106,16 @@ msgstr "Startujem obnavljanje ..."
 msgid "Starting the restore process …"
 msgstr "Startujem proces obnavljanja ..."
 
-#: scripts/controllers/StateController.js:108
-#: scripts/controllers/StateController.js:117
+#: scripts/controllers/StateController.js:119
+#: scripts/controllers/StateController.js:128
 msgid "Stop after the current file"
 msgstr "Zaustavi nakon trenutnog fajla"
 
-#: scripts/controllers/StateController.js:106
+#: scripts/controllers/StateController.js:117
 msgid "Stop running backup"
 msgstr "Zaustavi pokrenutu rezervnu kopiju"
 
-#: scripts/controllers/StateController.js:115
+#: scripts/controllers/StateController.js:126
 msgid "Stop running task"
 msgstr "Zaustavi pokrenuti zadatak"
 
@@ -2500,7 +2500,7 @@ msgstr "Podešavanja korisničkog interfejsa"
 msgid "Username"
 msgstr "Korisničko ime"
 
-#: scripts/services/ServerStatus.js:60
+#: scripts/services/ServerStatus.js:61
 msgid "Vacuuming database …"
 msgstr "Usisavanje baze podataka …"
 
@@ -2521,15 +2521,15 @@ msgstr "Proveri datoteke"
 msgid "Verifying backend data …"
 msgstr "Provra pozadinskih podataka ..."
 
-#: scripts/services/ServerStatus.js:62
+#: scripts/services/ServerStatus.js:63
 msgid "Verifying files …"
 msgstr "Provera fajlova ..."
 
-#: scripts/services/ServerStatus.js:38 scripts/services/ServerStatus.js:50
+#: scripts/services/ServerStatus.js:38 scripts/services/ServerStatus.js:51
 msgid "Verifying remote data …"
 msgstr "Provera udaljenih podataka ..."
 
-#: scripts/services/ServerStatus.js:57
+#: scripts/services/ServerStatus.js:58
 msgid "Verifying restored files …"
 msgstr "Provera vraćenih fajlova ..."
 

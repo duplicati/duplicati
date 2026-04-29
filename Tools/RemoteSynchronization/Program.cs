@@ -1,4 +1,4 @@
-// Copyright (C) 2025, The Duplicati Team
+// Copyright (C) 2026, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System.Threading.Tasks;
+using Duplicati.Library.Main.Operation.RemoteSynchronization;
 
 namespace RemoteSynchronization
 {

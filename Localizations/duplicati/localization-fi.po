@@ -13,7 +13,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-18 13:48+0100\n"
+"POT-Creation-Date: 2026-04-22 15:17+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: Kari Koskinen <kakoskin@gmail.com>, 2025\n"
 "Language-Team: Finnish (https://app.transifex.com/duplicati/teams/67655/fi/)\n"
@@ -944,12 +944,12 @@ msgstr ""
 msgid "Temporary storage folder"
 msgstr "Kansio tilapäistiedotoille"
 
-#: Library/RestAPI/Strings.cs:92 Library/RestAPI/Strings.cs:129
+#: Library/RestAPI/Strings.cs:93 Library/RestAPI/Strings.cs:134
 #, csharp-format
 msgid "Server has started and is listening on {0}, port {1}"
 msgstr "Palvelin käynnistyi ja kuntelee verkkorajapintaa {0} ja porttia {1}"
 
-#: Library/RestAPI/Strings.cs:125
+#: Library/RestAPI/Strings.cs:130
 #, csharp-format
 msgid ""
 "Unable to find a valid date, given the start date {0}, the repetition "
@@ -958,7 +958,7 @@ msgstr ""
 "Aloituspäivällä {0}, varmuuskopioiden välillä {1} ja sallituilla päivillä "
 "{2} ei löydy sopivaa päivää."
 
-#: Library/RestAPI/Strings.cs:131
+#: Library/RestAPI/Strings.cs:136
 #, csharp-format
 msgid "Unable to open a socket for listening, tried ports: {0}"
 msgstr ""
@@ -1665,7 +1665,7 @@ msgstr "Kommunikoi taustamoduulin kanssa käyttäen säieturvallisia putkia"
 msgid "Allow removing all filesets"
 msgstr "Salli kaikkien tiedostojen poisto"
 
-#: Library/Main/Strings.cs:404
+#: Library/Main/Strings.cs:409
 #, csharp-format
 msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
@@ -1673,16 +1673,16 @@ msgid ""
 msgstr ""
 "Salauskirjasto ei tue uudelleenkäytettäviä muunnoksia tiivistefunktiolle {0}"
 
-#: Library/Main/Strings.cs:405
+#: Library/Main/Strings.cs:410
 #, csharp-format
 msgid "The cryptolibrary does not support the hash algorithm {0}"
 msgstr "Salauskirjasto ei tue tiivistefunktiota {0}"
 
-#: Library/Main/Strings.cs:406
+#: Library/Main/Strings.cs:411
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr "Olemassaolevan varmuuskopion salauslauseketta ei voi vaihtaa"
 
-#: Library/Main/Strings.cs:407
+#: Library/Main/Strings.cs:412
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
 msgstr "Vedoksen luominen epäonnistui: {0}"

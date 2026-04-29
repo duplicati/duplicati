@@ -433,7 +433,7 @@ msgstr "Classe de stockage du bucket"
 msgid "Bucket, format: BucketName-APPID"
 msgstr "Seau, format : NomDeSeau-APPID"
 
-#: scripts/services/ServerStatus.js:51
+#: scripts/services/ServerStatus.js:52
 msgid "Building list of files to restore …"
 msgstr "Création d'une liste de fichiers à restaurer..."
 
@@ -510,8 +510,8 @@ msgstr "Canary"
 #: scripts/controllers/LocalDatabaseController.js:72
 #: scripts/controllers/LocalDatabaseController.js:88
 #: scripts/controllers/RestoreDirectController.js:24
-#: scripts/controllers/StateController.js:108
-#: scripts/controllers/StateController.js:117
+#: scripts/controllers/StateController.js:119
+#: scripts/controllers/StateController.js:128
 #: scripts/services/DialogService.js:50
 #: scripts/services/EditUriBuiltins.js:1215
 #: scripts/services/EditUriBuiltins.js:1231
@@ -617,7 +617,7 @@ msgstr "Étape de compression"
 msgid "Compact now"
 msgstr "Compacter maintenant"
 
-#: scripts/services/ServerStatus.js:44 scripts/services/ServerStatus.js:68
+#: scripts/services/ServerStatus.js:44 scripts/services/ServerStatus.js:69
 msgid "Compacting remote data …"
 msgstr "Compression des données distantes..."
 
@@ -782,7 +782,7 @@ msgstr "Créer un dossier ?"
 msgid "Created new limited user"
 msgstr "Nouvel utilisateur limité créé"
 
-#: scripts/services/ServerStatus.js:63
+#: scripts/services/ServerStatus.js:64
 msgid "Creating bug report …"
 msgstr "Création du rapport d'erreur..."
 
@@ -790,7 +790,7 @@ msgstr "Création du rapport d'erreur..."
 msgid "Creating new user with limited access …"
 msgstr "Création d'un nouvel utilisateur avec un accès limité..."
 
-#: scripts/services/ServerStatus.js:52
+#: scripts/services/ServerStatus.js:53
 msgid "Creating target folders …"
 msgstr "Création des dossiers de destination..."
 
@@ -942,7 +942,7 @@ msgstr "Versions supprimées"
 msgid "Deleted files"
 msgstr "Fichiers supprimés"
 
-#: scripts/services/ServerStatus.js:65
+#: scripts/services/ServerStatus.js:66
 msgid "Deleting remote files …"
 msgstr "Suppression des fichiers distants..."
 
@@ -1053,7 +1053,7 @@ msgstr "Téléchargement"
 msgid "Downloaded files"
 msgstr "Fichiers téléchargés"
 
-#: scripts/services/ServerStatus.js:56
+#: scripts/services/ServerStatus.js:57
 msgid "Downloading files …"
 msgstr "Téléchargement des fichiers..."
 
@@ -1285,7 +1285,7 @@ msgstr "Saisir le chemin de destination"
 msgid "Error"
 msgstr "Erreur"
 
-#: scripts/services/ServerStatus.js:70
+#: scripts/services/ServerStatus.js:71
 msgid "Error!"
 msgstr "Erreur !"
 
@@ -1809,11 +1809,11 @@ msgstr "Bibliothèques"
 msgid "Listing backup dates …"
 msgstr "Énumération des dates de sauvegarde..."
 
-#: scripts/services/ServerStatus.js:66
+#: scripts/services/ServerStatus.js:67
 msgid "Listing remote files for purge …"
 msgstr "Énumération des fichiers distants à purger..."
 
-#: scripts/services/ServerStatus.js:64
+#: scripts/services/ServerStatus.js:65
 msgid "Listing remote files …"
 msgstr "Énumération des fichiers distants..."
 
@@ -2340,7 +2340,7 @@ msgstr "La phrase secrète ne correspond pas"
 msgid "Password"
 msgstr "Mot de passe"
 
-#: scripts/services/ServerStatus.js:55
+#: scripts/services/ServerStatus.js:56
 msgid "Patching files with local blocks …"
 msgstr "Correction des fichiers avec les blocs locaux..."
 
@@ -2431,15 +2431,15 @@ msgstr "Public"
 msgid "Purge Phase"
 msgstr "Étape de purge"
 
-#: scripts/services/ServerStatus.js:69
+#: scripts/services/ServerStatus.js:70
 msgid "Purging files complete!"
 msgstr "Nettoyage des fichiers terminé !"
 
-#: scripts/services/ServerStatus.js:67
+#: scripts/services/ServerStatus.js:68
 msgid "Purging files …"
 msgstr "Nettoyage des fichiers…"
 
-#: scripts/services/ServerStatus.js:49
+#: scripts/services/ServerStatus.js:50
 msgid "Rebuilding local database …"
 msgstr "Reconstruction de la base de données locale..."
 
@@ -2451,7 +2451,7 @@ msgstr "Régénération (supprimer et réparer)"
 msgid "Recreate Database Phase"
 msgstr "Etape de la régénération de la bases de données"
 
-#: scripts/services/ServerStatus.js:59
+#: scripts/services/ServerStatus.js:60
 msgid "Recreating database …"
 msgstr "Régénération de la base de données..."
 
@@ -2555,7 +2555,7 @@ msgstr "Réparer"
 msgid "Repair Phase"
 msgstr "Étape de réparation"
 
-#: scripts/services/ServerStatus.js:61
+#: scripts/services/ServerStatus.js:62
 msgid "Repairing database …"
 msgstr "Réparation de la base de données..."
 
@@ -2575,7 +2575,7 @@ msgstr "Réinitialiser"
 msgid "Restore"
 msgstr "Restaurer"
 
-#: scripts/services/ServerStatus.js:58
+#: scripts/services/ServerStatus.js:59
 msgid "Restore complete!"
 msgstr "Restauration terminée !"
 
@@ -2701,11 +2701,11 @@ msgstr ""
 msgid "Save immediately"
 msgstr "Enregistrer immédiatement "
 
-#: scripts/services/ServerStatus.js:53
+#: scripts/services/ServerStatus.js:54
 msgid "Scanning existing files …"
 msgstr "Analyse des fichiers existants..."
 
-#: scripts/services/ServerStatus.js:54
+#: scripts/services/ServerStatus.js:55
 msgid "Scanning for local blocks …"
 msgstr "Analyse des blocs locaux..."
 
@@ -2895,7 +2895,7 @@ msgstr "Démarrer"
 msgid "Starting backup …"
 msgstr "Démarrage de la sauvegarde..."
 
-#: scripts/services/ServerStatus.js:48
+#: scripts/services/ServerStatus.js:49
 msgid "Starting restore …"
 msgstr "Démarrage de la restauration..."
 
@@ -2908,16 +2908,16 @@ msgstr "Démarrage du processus de restauration..."
 msgid "Status: {{getRemoteControlStatusText()}}"
 msgstr "État : {{getRemoteControlStatusText()}}"
 
-#: scripts/controllers/StateController.js:108
-#: scripts/controllers/StateController.js:117
+#: scripts/controllers/StateController.js:119
+#: scripts/controllers/StateController.js:128
 msgid "Stop after the current file"
 msgstr "Arrêter après le fichier en cours"
 
-#: scripts/controllers/StateController.js:106
+#: scripts/controllers/StateController.js:117
 msgid "Stop running backup"
 msgstr "Arrêter la sauvegarde en cours"
 
-#: scripts/controllers/StateController.js:115
+#: scripts/controllers/StateController.js:126
 msgid "Stop running task"
 msgstr "Arrêter la tâche en cours"
 
@@ -3018,8 +3018,8 @@ msgstr "APPID de compte Tencent Cloud"
 msgid "Tencent Cloud COS documents and resources"
 msgstr "Documents et ressources Tencent Cloud COS"
 
-#: scripts/controllers/StateController.js:108
-#: scripts/controllers/StateController.js:117
+#: scripts/controllers/StateController.js:119
+#: scripts/controllers/StateController.js:128
 msgid "Terminate"
 msgstr "Terminer"
 
@@ -3435,7 +3435,7 @@ msgstr ""
 "L'authentification par nom d'utilisateur et mot de passe n'est pas recommandée et ne fonctionne pas avec les comptes ayant activé MFA/2FA.\n"
 "        Utilisez la clé d'API si possible."
 
-#: scripts/services/ServerStatus.js:60
+#: scripts/services/ServerStatus.js:61
 msgid "Vacuuming database …"
 msgstr "Nettoyage de la base de données..."
 
@@ -3460,15 +3460,15 @@ msgstr "Vérifier fichier"
 msgid "Verifying backend data …"
 msgstr "Vérification des données du backend..."
 
-#: scripts/services/ServerStatus.js:62
+#: scripts/services/ServerStatus.js:63
 msgid "Verifying files …"
 msgstr "Vérification des fichiers..."
 
-#: scripts/services/ServerStatus.js:38 scripts/services/ServerStatus.js:50
+#: scripts/services/ServerStatus.js:38 scripts/services/ServerStatus.js:51
 msgid "Verifying remote data …"
 msgstr "Vérification des données distantes..."
 
-#: scripts/services/ServerStatus.js:57
+#: scripts/services/ServerStatus.js:58
 msgid "Verifying restored files …"
 msgstr "Vérification des fichiers restaurés..."
 
@@ -3602,7 +3602,7 @@ msgstr ""
 msgid "You are currently running {{appname}} {{version}}"
 msgstr "Version installée : {{appname}} {{version}}"
 
-#: scripts/controllers/StateController.js:107
+#: scripts/controllers/StateController.js:118
 msgid ""
 "You can stop the backup after any file uploads currently in progress have "
 "finished. If you terminate the backup, the next run will need to recover "
@@ -3613,7 +3613,7 @@ msgstr ""
 "sauvegarde, l'exécution suivante devra récupérer depuis une sauvegarde en "
 "état d'échec."
 
-#: scripts/controllers/StateController.js:116
+#: scripts/controllers/StateController.js:127
 msgid ""
 "You can stop the task immediately, or allow the process to continue its "
 "current file and then stop. If you terminate the task, the backup could be "

@@ -1,4 +1,4 @@
-// Copyright (C) 2025, The Duplicati Team
+// Copyright (C) 2026, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -19,10 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-using Duplicati.Library.Modules.Builtin;
-using Duplicati.Library.Modules.Builtin.Strings;
+using Duplicati.Library.Main.Operation;
 using Duplicati.Library.Interface;
-using Duplicati.Library.Utility;
 using Duplicati.Library.Main;
 using NUnit.Framework;
 using System;
@@ -37,12 +35,10 @@ using System.IO;
 namespace Duplicati.UnitTest
 {
     [TestFixture]
-    public class RemoteSynchronizationModuleTests : BasicSetupHelper
+    public class RemoteSynchronizationHandlerTests : BasicSetupHelper
     {
         const System.Reflection.BindingFlags BINDING_FLAGS = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
 
-
-        RemoteSynchronizationModule module;
         string source = "";
         string dest1 = "";
         string dest2 = "";
@@ -51,7 +47,6 @@ namespace Duplicati.UnitTest
         [SetUp]
         public void Setup()
         {
-            module = new RemoteSynchronizationModule();
             // On Windows, we have to escape backslashes in paths for JSON strings
             source = Path.Combine(TARGETFOLDER, "source").Replace("\\", "\\\\");
             dest1 = Path.Combine(TARGETFOLDER, "dest1").Replace("\\", "\\\\");
@@ -75,12 +70,14 @@ namespace Duplicati.UnitTest
         {
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-json-config"] = @$"{{""destinations"": [{{""url"": ""file://{dest1}""}}]}}"
+                ["remote-sync-json-config"] = @$"{{""destinations"": [
+                    {{""url"": ""file://{dest1}""}}
+                ]}}"
             };
 
-            module.Configure(options);
+            var handler = new RemoteSynchronizationHandler($"file://{source}", new Options(options), new BackupResults());
 
-            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
+            var destinations = handler.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(handler) as List<RemoteSyncDestinationConfig>;
             Assert.AreEqual(1, destinations.Count);
             // Convert the escaped backslashes to single backslashes for comparison on Windows
             Assert.AreEqual($"file://{dest1.Replace("\\\\", "\\")}", destinations[0].Config.Dst);
@@ -92,12 +89,16 @@ namespace Duplicati.UnitTest
         {
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-json-config"] = @$"{{""destinations"": [{{""url"": ""file://{dest1}""}}, {{""url"": ""file://{dest2}""}}]}}"
+                ["remote-sync-json-config"] = @$"{{""destinations"": [
+                    {{""url"": ""file://{dest1}""}},
+                    {{""url"": ""file://{dest2}""}}
+                ]}}"
             };
 
-            module.Configure(options);
+            var handler = new RemoteSynchronizationHandler($"file://{source}", new Options(options), new BackupResults());
 
-            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
+            var destinations = handler.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(handler) as List<RemoteSyncDestinationConfig>;
+
             Assert.AreEqual(2, destinations.Count);
             // Convert the escaped backslashes to single backslashes for comparison on Windows
             Assert.AreEqual($"file://{dest1.Replace("\\\\", "\\")}", destinations[0].Config.Dst);
@@ -110,12 +111,16 @@ namespace Duplicati.UnitTest
         {
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-json-config"] = @$"{{""destinations"": [{{""url"": ""file://{dest1}"", ""mode"": ""inline""}}, {{""url"": ""file://{dest2}"", ""mode"": ""interval""}}]}}"
+                ["remote-sync-json-config"] = @$"{{""destinations"": [
+                    {{""url"": ""file://{dest1}"", ""mode"": ""inline""}},
+                    {{""url"": ""file://{dest2}"", ""mode"": ""interval""}}
+                ]}}"
             };
 
-            module.Configure(options);
+            var handler = new RemoteSynchronizationHandler($"file://{source}", new Options(options), new BackupResults());
 
-            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
+            var destinations = handler.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(handler) as List<RemoteSyncDestinationConfig>;
+
             Assert.AreEqual(2, destinations.Count);
             Assert.AreEqual(RemoteSyncTriggerMode.Inline, destinations[0].Mode);
             Assert.AreEqual(RemoteSyncTriggerMode.Interval, destinations[1].Mode);
@@ -127,12 +132,16 @@ namespace Duplicati.UnitTest
         {
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-json-config"] = @$"{{""destinations"": [{{""url"": ""file://{dest1}"", ""interval"": ""1h""}}, {{""url"": ""file://{dest2}"", ""interval"": ""2h""}}]}}"
+                ["remote-sync-json-config"] = @$"{{""destinations"": [
+                    {{""url"": ""file://{dest1}"", ""interval"": ""1h""}},
+                    {{""url"": ""file://{dest2}"", ""interval"": ""2h""}}
+                ]}}"
             };
 
-            module.Configure(options);
+            var handler = new RemoteSynchronizationHandler($"file://{source}", new Options(options), new BackupResults());
 
-            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
+            var destinations = handler.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(handler) as List<RemoteSyncDestinationConfig>;
+
             Assert.AreEqual(2, destinations.Count);
             Assert.AreEqual(TimeSpan.FromHours(1), destinations[0].Interval);
             Assert.AreEqual(TimeSpan.FromHours(2), destinations[1].Interval);
@@ -144,12 +153,16 @@ namespace Duplicati.UnitTest
         {
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-json-config"] = @$"{{""destinations"": [{{""url"": ""file://{dest1}"", ""count"": 5}}, {{""url"": ""file://{dest2}"", ""count"": 10}}]}}"
+                ["remote-sync-json-config"] = @$"{{""destinations"": [
+                    {{""url"": ""file://{dest1}"", ""count"": 5}},
+                    {{""url"": ""file://{dest2}"", ""count"": 10}}
+                ]}}"
             };
 
-            module.Configure(options);
+            var handler = new RemoteSynchronizationHandler($"file://{source}", new Options(options), new BackupResults());
 
-            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
+            var destinations = handler.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(handler) as List<RemoteSyncDestinationConfig>;
+
             Assert.AreEqual(2, destinations.Count);
             Assert.AreEqual(5, destinations[0].Count);
             Assert.AreEqual(10, destinations[1].Count);
@@ -157,20 +170,21 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("RemoteSync")]
-        public void TestOnStart_SetsSource()
+        public void TestConfigure_SetsSource()
         {
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-json-config"] = @$"{{""destinations"": [{{""url"": ""file://{dest1}""}}]}}"
+                ["remote-sync-json-config"] = @$"{{""destinations"": [
+                    {{""url"": ""file://{dest1}""}}
+                ]}}"
             };
-            module.Configure(options);
 
             string remoteurl = $"file://{source}";
-            string[] localpath = [];
-            module.OnStart("Backup", ref remoteurl, ref localpath);
+            var handler = new RemoteSynchronizationHandler(remoteurl, new Options(options), new BackupResults());
 
-            var stored_source = module.GetType().GetField("m_source", BINDING_FLAGS).GetValue(module) as string;
-            Assert.AreEqual($"file://{source}", stored_source);
+            var stored_source = handler.GetType().GetField("m_source", BINDING_FLAGS).GetValue(handler) as string;
+
+            Assert.AreEqual(remoteurl, stored_source);
         }
 
         [Test]
@@ -179,13 +193,17 @@ namespace Duplicati.UnitTest
         {
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-json-config"] = $@"{{""destinations"": [{{""url"": ""file://{dest1}"", ""mode"": ""inline""}}]}}",
+                ["remote-sync-json-config"] = $@"{{""destinations"": [
+                    {{""url"": ""file://{dest1}"", ""mode"": ""inline""}}
+                ]}}",
                 ["dbpath"] = DBFILE
             };
-            module.Configure(options);
 
-            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
-            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(module, [0, destinations[0]]);
+            var handler = new RemoteSynchronizationHandler($"file://{source}", new Options(options), new BackupResults());
+
+            var destinations = handler.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(handler) as List<RemoteSyncDestinationConfig>;
+            var shouldTrigger = (bool)handler.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(handler, [0, destinations[0]]);
+
             Assert.IsTrue(shouldTrigger);
         }
 
@@ -195,18 +213,22 @@ namespace Duplicati.UnitTest
         {
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-json-config"] = $@"{{""destinations"": [{{""url"": ""file://{dest1}"", ""mode"": ""interval"", ""interval"": ""1h""}}]}}",
+                ["remote-sync-json-config"] = $@"{{""destinations"": [
+                    {{""url"": ""file://{dest1}"", ""mode"": ""interval"", ""interval"": ""1h""}}
+                ]}}",
                 ["dbpath"] = DBFILE
             };
-            module.Configure(options);
+
+            var handler = new RemoteSynchronizationHandler($"file://{source}", new Options(options), new BackupResults());
 
             // Create Operation table as we're now calling outside of the Controller
             using var db = SQLiteLoader.LoadConnection(DBFILE);
             using var cmd = db.CreateCommand();
             EnsureOperationTableCreated(cmd);
 
-            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
-            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(module, [0, destinations[0]]);
+            var destinations = handler.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(handler) as List<RemoteSyncDestinationConfig>;
+            var shouldTrigger = (bool)handler.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(handler, [0, destinations[0]]);
+
             Assert.IsTrue(shouldTrigger);
         }
 
@@ -216,10 +238,13 @@ namespace Duplicati.UnitTest
         {
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-json-config"] = $@"{{""destinations"": [{{""url"": ""file://{dest1}"", ""mode"": ""counting"", ""count"": 2}}]}}",
+                ["remote-sync-json-config"] = $@"{{""destinations"": [
+                    {{""url"": ""file://{dest1}"", ""mode"": ""counting"", ""count"": 2}}
+                ]}}",
                 ["dbpath"] = DBFILE
             };
-            module.Configure(options);
+
+            var handler = new RemoteSynchronizationHandler($"file://{source}", new Options(options), new BackupResults());
 
             // Create Operation table and simulate 2 backups
             using var db = SQLiteLoader.LoadConnection(DBFILE);
@@ -237,8 +262,9 @@ namespace Duplicati.UnitTest
             cmd.ExecuteNonQuery();
             cmd.ExecuteNonQuery();
 
-            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
-            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(module, [0, destinations[0]]);
+            var destinations = handler.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(handler) as List<RemoteSyncDestinationConfig>;
+            var shouldTrigger = (bool)handler.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(handler, [0, destinations[0]]);
+
             Assert.IsTrue(shouldTrigger);
         }
 
@@ -248,10 +274,13 @@ namespace Duplicati.UnitTest
         {
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-json-config"] = $@"{{""destinations"": [{{""url"": ""file://{dest1}""}}]}}",
+                ["remote-sync-json-config"] = $@"{{""destinations"": [
+                    {{""url"": ""file://{dest1}""}}
+                ]}}",
                 ["dbpath"] = DBFILE
             };
-            module.Configure(options);
+
+            var handler = new RemoteSynchronizationHandler($"file://{source}", new Options(options), new BackupResults());
 
             // Create Operation table
             using var db = SQLiteLoader.LoadConnection(DBFILE);
@@ -259,7 +288,7 @@ namespace Duplicati.UnitTest
             EnsureOperationTableCreated(cmd);
             cmd.ExecuteNonQuery();
 
-            module.GetType().GetMethod("RecordSyncOperation", BINDING_FLAGS).Invoke(module, [0]);
+            handler.GetType().GetMethod("RecordSyncOperation", BINDING_FLAGS).Invoke(handler, [0]);
 
             cmd.CommandText = @"
                 SELECT COUNT(*)
@@ -270,10 +299,9 @@ namespace Duplicati.UnitTest
             Assert.AreEqual(1, count);
         }
 
-
         [Test]
         [Category("RemoteSync")]
-        public void TestOnFinish_SuccessfulBackup_TriggersSync()
+        public void TestRunAsync_SuccessfulBackup_TriggersSync()
         {
             // Create some test files
             System.IO.File.WriteAllText(System.IO.Path.Combine(DATAFOLDER, "testfile.txt"), "test content");
@@ -287,8 +315,8 @@ namespace Duplicati.UnitTest
             using var controller = new Controller($"file://{TARGETFOLDER}", options, console);
             var result = controller.Backup([DATAFOLDER]);
 
-            // Now check if sync was triggered (assuming module was loaded)
-            // But since we can't easily get the module instance, check if Operation table has sync entry
+            // Now check if sync was triggered by checking if Operation table
+            // has sync entry
             using var db = SQLiteLoader.LoadConnection(DBFILE);
             using var cmd = db.CreateCommand();
             cmd.CommandText = @"
@@ -297,30 +325,30 @@ namespace Duplicati.UnitTest
                 WHERE ""Description"" LIKE 'Rsync %'
             ";
             var count = (long)cmd.ExecuteScalar();
+
             Assert.AreEqual(1, count);
         }
 
         [Test]
         [Category("RemoteSync")]
-        public void TestOnFinish_FailedBackup_SkipsSync()
+        public async Task TestRunAsync_FailedBackup_SkipsSync()
         {
             var options = new Dictionary<string, string>
             {
                 ["remote-sync-json-config"] = $@"{{""destinations"": [{{""url"": ""file://{dest1}""}}]}}",
                 ["dbpath"] = DBFILE
             };
-            module.Configure(options);
+
             string remoteurl = $"file://{source}";
-            string[] localpath = [];
-            module.OnStart("Backup", ref remoteurl, ref localpath);
+            var results = new BasicBackupResults(ParsedResultType.Error);
+            var handler = new RemoteSynchronizationHandler(remoteurl, new Options(options), results);
 
             // Create Operation table
             using var db = SQLiteLoader.LoadConnection(DBFILE);
             using var cmd = db.CreateCommand();
             EnsureOperationTableCreated(cmd);
 
-            var result = new TestBasicResults(ParsedResultType.Error);
-            module.OnFinish(result, null);
+            await handler.RunAsync();
 
             // Check if sync was not recorded
             cmd.CommandText = @"
@@ -329,6 +357,7 @@ namespace Duplicati.UnitTest
                 WHERE ""Description"" = 'Rsync 0'
             ";
             var count = (long)cmd.ExecuteScalar();
+
             Assert.AreEqual(0, count);
         }
 
@@ -338,12 +367,16 @@ namespace Duplicati.UnitTest
         {
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-json-config"] = $@"{{""destinations"": [{{""url"": ""file://{dest1}"", ""mode"": ""inline""}}, {{""url"": ""file://{dest2}"", ""mode"": ""invalidmode""}}]}}"
+                ["remote-sync-json-config"] = $@"{{""destinations"": [
+                    {{""url"": ""file://{dest1}"", ""mode"": ""inline""}},
+                    {{""url"": ""file://{dest2}"", ""mode"": ""invalidmode""}}
+                ]}}"
             };
 
-            module.Configure(options);
+            var handler = new RemoteSynchronizationHandler($"file://{source}", new Options(options), new BackupResults());
 
-            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
+            var destinations = handler.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(handler) as List<RemoteSyncDestinationConfig>;
+
             Assert.AreEqual(2, destinations.Count);
             Assert.AreEqual(RemoteSyncTriggerMode.Inline, destinations[0].Mode);
             Assert.AreEqual(RemoteSyncTriggerMode.Inline, destinations[1].Mode); // Invalid defaults to Inline
@@ -355,12 +388,16 @@ namespace Duplicati.UnitTest
         {
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-json-config"] = $@"{{""destinations"": [{{""url"": ""file://{dest1}"", ""interval"": ""1h""}}, {{""url"": ""file://{dest2}"", ""interval"": ""invalid""}}]}}"
+                ["remote-sync-json-config"] = $@"{{""destinations"": [
+                    {{""url"": ""file://{dest1}"", ""interval"": ""1h""}},
+                    {{""url"": ""file://{dest2}"", ""interval"": ""invalid""}}
+                ]}}"
             };
 
-            module.Configure(options);
+            var handler = new RemoteSynchronizationHandler($"file://{source}", new Options(options), new BackupResults());
 
-            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
+            var destinations = handler.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(handler) as List<RemoteSyncDestinationConfig>;
+
             Assert.AreEqual(2, destinations.Count);
             Assert.AreEqual(TimeSpan.FromHours(1), destinations[0].Interval);
             Assert.AreEqual(null, destinations[1].Interval); // Invalid defaults to null
@@ -372,12 +409,16 @@ namespace Duplicati.UnitTest
         {
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-json-config"] = $@"{{""destinations"": [{{""url"": ""file://{dest1}"", ""count"": 5}}, {{""url"": ""file://{dest2}"", ""count"": ""invalid""}}]}}"
+                ["remote-sync-json-config"] = $@"{{""destinations"": [
+                    {{""url"": ""file://{dest1}"", ""count"": 5}},
+                    {{""url"": ""file://{dest2}"", ""count"": ""invalid""}}
+                ]}}"
             };
 
-            module.Configure(options);
+            var handler = new RemoteSynchronizationHandler($"file://{source}", new Options(options), new BackupResults());
 
-            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
+            var destinations = handler.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(handler) as List<RemoteSyncDestinationConfig>;
+
             // Deserializing the json should fail for the invalid count, resulting in no destinations being configured
             Assert.AreEqual(0, destinations.Count);
         }
@@ -388,12 +429,14 @@ namespace Duplicati.UnitTest
         {
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-json-config"] = $"{{\"sync-on-warnings\": false, \"destinations\": [{{\"url\": \"file://{dest1}\"}}]}}"
+                ["remote-sync-json-config"] = $@"{{""sync-on-warnings"": false, ""destinations"": [
+                    {{""url"": ""file://{dest1}""}}
+                ]}}"
             };
 
-            module.Configure(options);
+            var handler = new RemoteSynchronizationHandler($"file://{source}", new Options(options), new BackupResults());
 
-            var syncOnWarnings = module.GetType().GetField("m_syncOnWarnings", BINDING_FLAGS).GetValue(module);
+            var syncOnWarnings = handler.GetType().GetField("m_syncOnWarnings", BINDING_FLAGS).GetValue(handler);
             Assert.IsFalse((bool)syncOnWarnings);
         }
 
@@ -403,18 +446,22 @@ namespace Duplicati.UnitTest
         {
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-json-config"] = $@"{{""destinations"": [{{""url"": ""file://{dest1}"", ""mode"": ""interval"", ""interval"": ""1h""}}]}}",
+                ["remote-sync-json-config"] = $@"{{""destinations"": [
+                    {{""url"": ""file://{dest1}"", ""mode"": ""interval"", ""interval"": ""1h""}}
+                ]}}",
                 ["dbpath"] = DBFILE
             };
-            module.Configure(options);
+
+            var handler = new RemoteSynchronizationHandler($"file://{source}", new Options(options), new BackupResults());
 
             // Create Operation table with no prior syncs
             using var db = SQLiteLoader.LoadConnection(DBFILE);
             using var cmd = db.CreateCommand();
             EnsureOperationTableCreated(cmd);
 
-            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
-            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(module, [0, destinations[0]]);
+            var destinations = handler.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(handler) as List<RemoteSyncDestinationConfig>;
+            var shouldTrigger = (bool)handler.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(handler, [0, destinations[0]]);
+
             Assert.IsTrue(shouldTrigger);
         }
 
@@ -424,10 +471,13 @@ namespace Duplicati.UnitTest
         {
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-json-config"] = $@"{{""destinations"": [{{""url"": ""file://{dest1}"", ""mode"": ""interval"", ""interval"": ""1h""}}]}}",
+                ["remote-sync-json-config"] = $@"{{""destinations"": [
+                    {{""url"": ""file://{dest1}"", ""mode"": ""interval"", ""interval"": ""1h""}}
+                ]}}",
                 ["dbpath"] = DBFILE
             };
-            module.Configure(options);
+
+            var handler = new RemoteSynchronizationHandler($"file://{source}", new Options(options), new BackupResults());
 
             // Create Operation table and insert recent sync
             using var db = SQLiteLoader.LoadConnection(DBFILE);
@@ -444,8 +494,9 @@ namespace Duplicati.UnitTest
             cmd.AddNamedParameter("@ts", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow));
             cmd.ExecuteNonQuery();
 
-            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
-            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(module, [0, destinations[0]]);
+            var destinations = handler.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(handler) as List<RemoteSyncDestinationConfig>;
+            var shouldTrigger = (bool)handler.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(handler, [0, destinations[0]]);
+
             Assert.IsFalse(shouldTrigger);
         }
 
@@ -455,10 +506,13 @@ namespace Duplicati.UnitTest
         {
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-json-config"] = $@"{{""destinations"": [{{""url"": ""file://{dest1}"", ""mode"": ""interval"", ""interval"": ""1h""}}]}}",
+                ["remote-sync-json-config"] = $@"{{""destinations"": [
+                    {{""url"": ""file://{dest1}"", ""mode"": ""interval"", ""interval"": ""1h""}}
+                ]}}",
                 ["dbpath"] = DBFILE
             };
-            module.Configure(options);
+
+            var handler = new RemoteSynchronizationHandler($"file://{source}", new Options(options), new BackupResults());
 
             // Create Operation table and insert recent sync
             using var db = SQLiteLoader.LoadConnection(DBFILE);
@@ -475,8 +529,9 @@ namespace Duplicati.UnitTest
             cmd.AddNamedParameter("@ts", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow - TimeSpan.FromHours(2)));
             cmd.ExecuteNonQuery();
 
-            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
-            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(module, [0, destinations[0]]);
+            var destinations = handler.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(handler) as List<RemoteSyncDestinationConfig>;
+            var shouldTrigger = (bool)handler.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(handler, [0, destinations[0]]);
+
             Assert.IsTrue(shouldTrigger);
         }
 
@@ -486,18 +541,22 @@ namespace Duplicati.UnitTest
         {
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-json-config"] = $@"{{""destinations"": [{{""url"": ""file://{dest1}"", ""mode"": ""counting"", ""count"": 5}}]}}",
+                ["remote-sync-json-config"] = $@"{{""destinations"": [
+                    {{""url"": ""file://{dest1}"", ""mode"": ""counting"", ""count"": 5}}
+                ]}}",
                 ["dbpath"] = DBFILE
             };
-            module.Configure(options);
+
+            var handler = new RemoteSynchronizationHandler($"file://{source}", new Options(options), new BackupResults());
 
             // Create Operation table and simulate 0 backups, which should trigger sync
             using var db = SQLiteLoader.LoadConnection(DBFILE);
             using var cmd = db.CreateCommand();
             EnsureOperationTableCreated(cmd);
 
-            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
-            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(module, [0, destinations[0]]);
+            var destinations = handler.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(handler) as List<RemoteSyncDestinationConfig>;
+            var shouldTrigger = (bool)handler.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(handler, [0, destinations[0]]);
+
             Assert.IsTrue(shouldTrigger);
         }
 
@@ -507,10 +566,13 @@ namespace Duplicati.UnitTest
         {
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-json-config"] = $@"{{""destinations"": [{{""url"": ""file://{dest1}"", ""mode"": ""counting"", ""count"": 5}}]}}",
+                ["remote-sync-json-config"] = $@"{{""destinations"": [
+                    {{""url"": ""file://{dest1}"", ""mode"": ""counting"", ""count"": 5}}
+                ]}}",
                 ["dbpath"] = DBFILE
             };
-            module.Configure(options);
+
+            var handler = new RemoteSynchronizationHandler($"file://{source}", new Options(options), new BackupResults());
 
             // Create Operation table and simulate 2 backups (less than 5)
             using var db = SQLiteLoader.LoadConnection(DBFILE);
@@ -548,8 +610,9 @@ namespace Duplicati.UnitTest
             cmd_backup.SetParameterValue("@ts", curtime - 2);
             cmd_backup.ExecuteNonQuery();
 
-            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
-            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(module, [0, destinations[0]]);
+            var destinations = handler.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(handler) as List<RemoteSyncDestinationConfig>;
+            var shouldTrigger = (bool)handler.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(handler, [0, destinations[0]]);
+
             Assert.IsFalse(shouldTrigger);
         }
 
@@ -559,10 +622,13 @@ namespace Duplicati.UnitTest
         {
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-json-config"] = $@"{{""destinations"": [{{""url"": ""file://{dest1}"", ""mode"": ""counting"", ""count"": 2}}]}}",
+                ["remote-sync-json-config"] = $@"{{""destinations"": [
+                    {{""url"": ""file://{dest1}"", ""mode"": ""counting"", ""count"": 2}}
+                ]}}",
                 ["dbpath"] = DBFILE
             };
-            module.Configure(options);
+
+            var handler = new RemoteSynchronizationHandler($"file://{source}", new Options(options), new BackupResults());
 
             // Create Operation table and simulate 2 backups (less than 5)
             using var db = SQLiteLoader.LoadConnection(DBFILE);
@@ -600,8 +666,9 @@ namespace Duplicati.UnitTest
             cmd_backup.SetParameterValue("@ts", curtime - 2);
             cmd_backup.ExecuteNonQuery();
 
-            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
-            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(module, [0, destinations[0]]);
+            var destinations = handler.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(handler) as List<RemoteSyncDestinationConfig>;
+            var shouldTrigger = (bool)handler.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(handler, [0, destinations[0]]);
+
             Assert.IsTrue(shouldTrigger);
         }
 
@@ -611,36 +678,40 @@ namespace Duplicati.UnitTest
         {
             // This case shouldn't occur in normal operation, as a backup will
             // always have an associated database. However, if such a state
-            // should occur, we want to ensure the module doesn't trigger a sync,
-            // as the state is likely errornous.
+            // should occur, we want to ensure the handler doesn't trigger a
+            // sync, as the state is likely errornous.
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-json-config"] = $@"{{""destinations"": [{{""url"": ""file://{dest1}"", ""mode"": ""inline""}}]}}"
+                ["remote-sync-json-config"] = $@"{{""destinations"": [
+                    {{""url"": ""file://{dest1}"", ""mode"": ""inline""}}
+                ]}}"
                 // No dbpath
             };
-            module.Configure(options);
+            var handler = new RemoteSynchronizationHandler($"file://{source}", new Options(options), new BackupResults());
 
-            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
-            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(module, [0, destinations[0]]);
+            var destinations = handler.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(handler) as List<RemoteSyncDestinationConfig>;
+            var shouldTrigger = (bool)handler.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(handler, [0, destinations[0]]);
+
             Assert.IsTrue(shouldTrigger); // Inline always returns true
         }
 
         [Test]
         [Category("RemoteSync")]
-        public void TestOnFinish_NonBackupOperation_SkipsSync()
+        public async Task TestRunAsync_NonBackupOperation_SkipsSync()
         {
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-json-config"] = $@"{{""destinations"": [{{""url"": ""file://{dest1}""}}]}}",
+                ["remote-sync-json-config"] = $@"{{""destinations"": [
+                    {{""url"": ""file://{dest1}""}}
+                ]}}",
                 ["dbpath"] = DBFILE
             };
-            module.Configure(options);
-            string remoteurl = $"file://{source}";
-            string[] localpath = [];
-            module.OnStart("Restore", ref remoteurl, ref localpath); // Non-backup operation
 
-            var result = new TestBasicResults(ParsedResultType.Success);
-            module.OnFinish(result, null);
+            string remoteurl = $"file://{source}";
+            var results = new BasicBackupResults(ParsedResultType.Success);
+            var handler = new RemoteSynchronizationHandler(remoteurl, new Options(options), results);
+
+            await handler.RunAsync();
 
             // Check if sync was not recorded
             using var db = SQLiteLoader.LoadConnection(DBFILE);
@@ -652,26 +723,26 @@ namespace Duplicati.UnitTest
                 WHERE ""Description"" = 'Rsync 0'
             ";
             var count = (long)cmd.ExecuteScalar();
+
             Assert.AreEqual(0, count);
         }
 
         [Test]
         [Category("RemoteSync")]
-        public void TestOnFinish_ExceptionDuringBackup_SkipsSync()
+        public async Task TestRunAsync_FatalResult_SkipsSync()
         {
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-json-config"] = $@"{{""destinations"": [{{""url"": ""file://{dest1}""}}]}}",
+                ["remote-sync-json-config"] = $@"{{""destinations"": [
+                    {{""url"": ""file://{dest1}""}}
+                ]}}",
                 ["dbpath"] = DBFILE
             };
-            module.Configure(options);
             string remoteurl = $"file://{source}";
-            string[] localpath = [];
-            module.OnStart("Backup", ref remoteurl, ref localpath);
+            var results = new BasicBackupResults(ParsedResultType.Fatal);
+            var handler = new RemoteSynchronizationHandler(remoteurl, new Options(options), results);
 
-            var result = new TestBasicResults(ParsedResultType.Success);
-            var exception = new Exception("Test exception");
-            module.OnFinish(result, exception);
+            await handler.RunAsync();
 
             // Check if sync was not recorded
             using var db = SQLiteLoader.LoadConnection(DBFILE);
@@ -683,36 +754,7 @@ namespace Duplicati.UnitTest
                 WHERE ""Description"" = 'Rsync 0'
             ";
             var count = (long)cmd.ExecuteScalar();
-            Assert.AreEqual(0, count);
-        }
 
-        [Test]
-        [Category("RemoteSync")]
-        public void TestOnFinish_FatalResult_SkipsSync()
-        {
-            var options = new Dictionary<string, string>
-            {
-                ["remote-sync-json-config"] = $@"{{""destinations"": [{{""url"": ""file://{dest1}""}}]}}",
-                ["dbpath"] = DBFILE
-            };
-            module.Configure(options);
-            string remoteurl = $"file://{source}";
-            string[] localpath = [];
-            module.OnStart("Backup", ref remoteurl, ref localpath);
-
-            var result = new TestBasicResults(ParsedResultType.Fatal);
-            module.OnFinish(result, null);
-
-            // Check if sync was not recorded
-            using var db = SQLiteLoader.LoadConnection(DBFILE);
-            using var cmd = db.CreateCommand();
-            EnsureOperationTableCreated(cmd);
-            cmd.CommandText = @"
-                SELECT COUNT(*)
-                FROM ""Operation""
-                WHERE ""Description"" = 'Rsync 0'
-            ";
-            var count = (long)cmd.ExecuteScalar();
             Assert.AreEqual(0, count);
         }
 
@@ -723,13 +765,16 @@ namespace Duplicati.UnitTest
         {
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-json-config"] = $@"{{""destinations"": [{{""url"": ""file://{dest1}""}}]}}"
+                ["remote-sync-json-config"] = $@"{{""destinations"": [
+                    {{""url"": ""file://{dest1}""}}
+                ]}}"
                 // No dbpath
             };
-            module.Configure(options);
+
+            var handler = new RemoteSynchronizationHandler($"file://{source}", new Options(options), new BackupResults());
 
             // Should not throw exception
-            Assert.DoesNotThrow(() => module.GetType().GetMethod("RecordSyncOperation", BINDING_FLAGS).Invoke(module, [0]));
+            Assert.DoesNotThrow(() => handler.GetType().GetMethod("RecordSyncOperation", BINDING_FLAGS).Invoke(handler, [0]));
         }
 
         [Test]
@@ -738,12 +783,15 @@ namespace Duplicati.UnitTest
         {
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-json-config"] = $@"{{""destinations"": [{{""url"": ""file://{dest1}""}}, {{""url"": ""file://{dest2}"", ""mode"": ""interval""}}]}}"
+                ["remote-sync-json-config"] = $@"{{""destinations"": [
+                    {{""url"": ""file://{dest1}""}},
+                    {{""url"": ""file://{dest2}"", ""mode"": ""interval""}}
+                ]}}"
             };
 
-            module.Configure(options);
+            var handler = new RemoteSynchronizationHandler($"file://{source}", new Options(options), new BackupResults());
 
-            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
+            var destinations = handler.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(handler) as List<RemoteSyncDestinationConfig>;
 
             Assert.AreEqual(2, destinations.Count);
             Assert.AreEqual(RemoteSyncTriggerMode.Inline, destinations[0].Mode); // Default
@@ -752,46 +800,28 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("RemoteSync")]
-        public void TestModuleProperties()
-        {
-
-            Assert.AreEqual("remotesync", module.Key);
-            Assert.IsNotNull(module.DisplayName);
-            Assert.IsNotEmpty(module.DisplayName);
-            Assert.IsNotNull(module.Description);
-            Assert.IsNotEmpty(module.Description);
-            Assert.IsTrue(module.LoadAsDefault);
-
-            // Check the number of supported commands. Count should be updated
-            // if commands are added or removed.
-            var supportedCommands = module.SupportedCommands;
-            Assert.IsNotNull(supportedCommands);
-            Assert.AreEqual(1, supportedCommands.Count);
-        }
-
-        [Test]
-        [Category("RemoteSync")]
-        public void TestOnFinish_WithEmptyDestinations_SkipsSync()
+        public async Task TestRunAsync_WithEmptyDestinations_SkipsSync()
         {
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-json-config"] = @$"{{""destinations"": [{{""url"": ""file://{dest1}""}}, {{""url"": """"}}, {{""url"": ""file://{dest2}""}}]}}",
+                ["remote-sync-json-config"] = @$"{{""destinations"": [
+                    {{""url"": ""file://{dest1}""}},
+                    {{""url"": """"}},
+                    {{""url"": ""file://{dest2}""}}
+                ]}}",
                 ["dbpath"] = DBFILE
             };
-            module.Configure(options);
 
-            string source = Path.Combine(TARGETFOLDER, "sourcefolder"); ;
             string remoteurl = $"file://{source}/";
-            string[] localpath = [];
-            module.OnStart("Backup", ref remoteurl, ref localpath);
+            var results = new BasicBackupResults(ParsedResultType.Success);
+            var handler = new RemoteSynchronizationHandler(remoteurl, new Options(options), results);
 
             // Create Operation table
             using var db = SQLiteLoader.LoadConnection(DBFILE);
             using var cmd = db.CreateCommand();
             EnsureOperationTableCreated(cmd);
 
-            var result = new TestBasicResults(ParsedResultType.Success);
-            module.OnFinish(result, null);
+            await handler.RunAsync();
 
             // Check that two syncs were recorded (skipping the empty one)
             cmd.CommandText = @"
@@ -801,6 +831,7 @@ namespace Duplicati.UnitTest
                 LIKE 'Rsync %'
             ";
             var count = (long)cmd.ExecuteScalar();
+
             Assert.AreEqual(2, count); // Two valid destinations, empty skipped
         }
 
@@ -810,56 +841,40 @@ namespace Duplicati.UnitTest
         {
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-json-config"] = $@"{{""destinations"": [{{""url"": ""file://{dest1}"", ""mode"": ""interval""}}]}}",
+                ["remote-sync-json-config"] = $@"{{""destinations"": [
+                    {{""url"": ""file://{dest1}"", ""mode"": ""interval""}}
+                ]}}",
                 ["dbpath"] = DBFILE
             };
-            module.Configure(options);
+
+            var handler = new RemoteSynchronizationHandler($"file://{source}", new Options(options), new BackupResults());
 
             // Create Operation table
             using var db = SQLiteLoader.LoadConnection(DBFILE);
             using var cmd = db.CreateCommand();
             EnsureOperationTableCreated(cmd);
 
-            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
-            var shouldTrigger = (bool)module.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(module, [1, destinations[0]]); // Index 1, but only 1 destination
+            var destinations = handler.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(handler) as List<RemoteSyncDestinationConfig>;
+            var shouldTrigger = (bool)handler.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(handler, [1, destinations[0]]); // Index 1, but only 1 destination
+
             Assert.IsFalse(shouldTrigger); // Out of range
         }
 
-
         [Test]
         [Category("RemoteSync")]
-        public void TestOnStart_SourceHandling_DoesNotOverwriteExisting()
+        public async Task TestRunAsync_WithMultipleDestinations_SelectiveSync()
         {
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-json-config"] = $@"{{""destinations"": [{{""url"": ""file://{dest1}""}}]}}"
-            };
-            module.Configure(options);
-
-            // Set m_source manually
-            module.GetType().GetField("m_source", BINDING_FLAGS).SetValue(module, $"file://{source}");
-
-            string remoteurl = "file://newsource";
-            string[] localpath = [];
-            module.OnStart("Backup", ref remoteurl, ref localpath);
-
-            var stored_source = module.GetType().GetField("m_source", BINDING_FLAGS).GetValue(module) as string;
-            Assert.AreEqual($"file://{source}", stored_source); // Should not overwrite
-        }
-
-        [Test]
-        [Category("RemoteSync")]
-        public void TestOnFinish_WithMultipleDestinations_SelectiveSync()
-        {
-            var options = new Dictionary<string, string>
-            {
-                ["remote-sync-json-config"] = @$"{{""destinations"": [{{""url"": ""file://{dest1}"", ""mode"": ""inline""}}, {{""url"": ""file://{dest2}"", ""mode"": ""interval"", ""interval"": ""1h""}}]}}",
+                ["remote-sync-json-config"] = @$"{{""destinations"": [
+                    {{""url"": ""file://{dest1}"", ""mode"": ""inline""}},
+                    {{""url"": ""file://{dest2}"", ""mode"": ""interval"", ""interval"": ""1h""}}
+                ]}}",
                 ["dbpath"] = DBFILE
             };
-            module.Configure(options);
             string remoteurl = $"file://{source}";
-            string[] localpath = [];
-            module.OnStart("Backup", ref remoteurl, ref localpath);
+            var results = new BasicBackupResults(ParsedResultType.Success);
+            var handler = new RemoteSynchronizationHandler(remoteurl, new Options(options), results);
 
             // Create Operation table and insert recent sync for dest2
             using var db = SQLiteLoader.LoadConnection(DBFILE);
@@ -876,8 +891,7 @@ namespace Duplicati.UnitTest
             cmd.AddNamedParameter("@ts", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow));
             cmd.ExecuteNonQuery();
 
-            var result = new TestBasicResults(ParsedResultType.Success);
-            module.OnFinish(result, null);
+            await handler.RunAsync();
 
             // Check that one additional sync was recorded (dest1 inline, dest2 interval not due)
             cmd.CommandText = @"
@@ -886,30 +900,32 @@ namespace Duplicati.UnitTest
                 WHERE ""Description"" LIKE 'Rsync %'
             ";
             var count = (long)cmd.ExecuteScalar();
+
             Assert.AreEqual(2, count); // Initial 1 + 1 new = 2
         }
 
         [Test]
         [Category("RemoteSync")]
-        public void TestOnFinish_WithWarningResult_TriggersSync()
+        public async Task TestRunAsync_WithWarningResult_TriggersSync()
         {
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-json-config"] = @$"{{""destinations"": [{{""url"": ""file://{dest1}""}}]}}",
+                ["remote-sync-json-config"] = @$"{{""destinations"": [
+                    {{""url"": ""file://{dest1}""}}
+                ]}}",
                 ["dbpath"] = DBFILE
             };
-            module.Configure(options);
+
             string remoteurl = $"file://{source}";
-            string[] localpath = [];
-            module.OnStart("Backup", ref remoteurl, ref localpath);
+            var result = new BasicBackupResults(ParsedResultType.Warning);
+            var handler = new RemoteSynchronizationHandler(remoteurl, new Options(options), result);
 
             // Create Operation table
             using var db = SQLiteLoader.LoadConnection(DBFILE);
             using var cmd = db.CreateCommand();
             EnsureOperationTableCreated(cmd);
 
-            var result = new TestBasicResults(ParsedResultType.Warning);
-            module.OnFinish(result, null);
+            await handler.RunAsync();
 
             // Check that sync was recorded
             cmd.CommandText = @"
@@ -918,30 +934,31 @@ namespace Duplicati.UnitTest
                 WHERE ""Description"" = 'Rsync 0'
             ";
             var count = (long)cmd.ExecuteScalar();
+
             Assert.AreEqual(1, count);
         }
 
         [Test]
         [Category("RemoteSync")]
-        public void TestOnFinish_WithWarningResult_SkipsSync_WhenDisabled()
+        public async Task TestRunAsync_WithWarningResult_SkipsSync_WhenDisabled()
         {
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-json-config"] = $@"{{""sync-on-warnings"": false, ""destinations"": [{{""url"": ""file://{dest1}""}}]}}",
+                ["remote-sync-json-config"] = $@"{{""sync-on-warnings"": false, ""destinations"": [
+                    {{""url"": ""file://{dest1}""}}
+                ]}}",
                 ["dbpath"] = DBFILE
             };
-            module.Configure(options);
             string remoteurl = $"file://{source}";
-            string[] localpath = [];
-            module.OnStart("Backup", ref remoteurl, ref localpath);
+            var result = new BasicBackupResults(ParsedResultType.Warning);
+            var handler = new RemoteSynchronizationHandler(remoteurl, new Options(options), result);
 
             // Create Operation table
             using var db = SQLiteLoader.LoadConnection(DBFILE);
             using var cmd = db.CreateCommand();
             EnsureOperationTableCreated(cmd);
 
-            var result = new TestBasicResults(ParsedResultType.Warning);
-            module.OnFinish(result, null);
+            await handler.RunAsync();
 
             // Check that sync was not recorded
             cmd.CommandText = @"
@@ -950,8 +967,11 @@ namespace Duplicati.UnitTest
                 WHERE ""Description"" = 'Rsync 0'
             ";
             var count = (long)cmd.ExecuteScalar();
+
             Assert.AreEqual(0, count);
         }
+
+        //TODO format destinations
 
         [Test]
         [Category("RemoteSync")]
@@ -959,12 +979,16 @@ namespace Duplicati.UnitTest
         {
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-json-config"] = @$"{{""destinations"": [{{""url"": ""  file://{dest1}  ""}}, {{""url"": ""  file://{dest2}  ""}}]}}"
+                ["remote-sync-json-config"] = @$"{{""destinations"": [
+                    {{""url"": ""  file://{dest1}  ""}},
+                    {{""url"": ""  file://{dest2}  ""}}
+                ]}}"
             };
 
-            module.Configure(options);
+            var handler = new RemoteSynchronizationHandler($"file://{source}", new Options(options), new BackupResults());
 
-            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
+            var destinations = handler.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(handler) as List<RemoteSyncDestinationConfig>;
+
             Assert.AreEqual(2, destinations.Count);
             // Convert the escaped backslashes to single backslashes for comparison on Windows
             Assert.AreEqual($"  file://{dest1.Replace("\\\\", "\\")}  ", destinations[0].Config.Dst);
@@ -977,13 +1001,18 @@ namespace Duplicati.UnitTest
         {
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-json-config"] = $@"{{""destinations"": [{{""url"": ""file://{dest1}""}}, {{}}, {{""url"": ""file://{dest2}""}}]}}"
+                ["remote-sync-json-config"] = $@"{{""destinations"": [
+                    {{""url"": ""file://{dest1}""}},
+                    {{}},
+                    {{""url"": ""file://{dest2}""}}
+                ]}}"
             };
 
-            module.Configure(options);
+            var handler = new RemoteSynchronizationHandler($"file://{source}", new Options(options), new BackupResults());
 
-            var destinations = module.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(module) as List<RemoteSyncDestinationConfig>;
-            Assert.AreEqual(3, destinations.Count); // All are included, empty ones skipped in OnFinish
+            var destinations = handler.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(handler) as List<RemoteSyncDestinationConfig>;
+
+            Assert.AreEqual(3, destinations.Count); // All are included, empty ones skipped in RunAsync
             // Convert the escaped backslashes to single backslashes for comparison on Windows
             Assert.AreEqual($"file://{dest1.Replace("\\\\", "\\")}", destinations[0].Config.Dst);
             Assert.AreEqual("", destinations[1].Config.Dst);
@@ -997,17 +1026,20 @@ namespace Duplicati.UnitTest
             // Incorrect index should not record, but throw a warning.
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-json-config"] = $@"{{""destinations"": [{{""url"": ""file://{dest1}""}}]}}",
+                ["remote-sync-json-config"] = $@"{{""destinations"": [
+                    {{""url"": ""file://{dest1}""}}
+                ]}}",
                 ["dbpath"] = DBFILE
             };
-            module.Configure(options);
+
+            var handler = new RemoteSynchronizationHandler($"file://{source}", new Options(options), new BackupResults());
 
             // Create Operation table
             using var db = SQLiteLoader.LoadConnection(DBFILE);
             using var cmd = db.CreateCommand();
             EnsureOperationTableCreated(cmd);
 
-            module.GetType().GetMethod("RecordSyncOperation", BINDING_FLAGS).Invoke(module, [2]);
+            handler.GetType().GetMethod("RecordSyncOperation", BINDING_FLAGS).Invoke(handler, [2]);
 
             cmd.CommandText = @"
                 SELECT COUNT(*)
@@ -1027,12 +1059,13 @@ namespace Duplicati.UnitTest
                 ["remote-sync-json-config"] = $@"{{""destinations"": [{{""url"": ""file://{dest1}""}}]}}",
                 ["dbpath"] = DBFILE
             };
-            module.Configure(options);
+
+            var handler = new RemoteSynchronizationHandler($"file://{source}", new Options(options), new BackupResults());
 
             // Do not create Operation table
 
             Assert.Throws<System.Reflection.TargetInvocationException>(() =>
-                module.GetType().GetMethod("RecordSyncOperation", BINDING_FLAGS).Invoke(module, [0]));
+                handler.GetType().GetMethod("RecordSyncOperation", BINDING_FLAGS).Invoke(handler, [0]));
         }
 
         [Test]
@@ -1043,37 +1076,36 @@ namespace Duplicati.UnitTest
             {
                 ["remote-sync-json-config"] = @"invalid json"
             };
-            module.Configure(options);
 
-            var enabled = module.GetType().GetField("m_enabled", BINDING_FLAGS).GetValue(module);
+            var handler = new RemoteSynchronizationHandler($"file://{source}", new Options(options), new BackupResults());
+
+            var enabled = handler.GetType().GetField("m_enabled", BINDING_FLAGS).GetValue(handler);
             Assert.IsFalse((bool)enabled);
         }
 
         [Test]
         [Category("RemoteSync")]
-        public void TestConfigure_WithNoDestinations_DoesNotActivate()
+        public async Task TestRunAsync_WithNoDestinations_DoesNotActivate()
         {
             var options = new Dictionary<string, string>
             {
                 // No remote-sync-json-config
                 ["dbpath"] = DBFILE
             };
-            module.Configure(options);
-
-            var enabled = module.GetType().GetField("m_enabled", BINDING_FLAGS).GetValue(module);
-            Assert.IsFalse((bool)enabled);
 
             string remoteurl = $"file://{source}";
-            string[] localpath = [];
-            module.OnStart("Backup", ref remoteurl, ref localpath);
+            var results = new BasicBackupResults(ParsedResultType.Success);
+            var handler = new RemoteSynchronizationHandler(remoteurl, new Options(options), results);
+
+            var enabled = handler.GetType().GetField("m_enabled", BINDING_FLAGS).GetValue(handler);
+            Assert.IsFalse((bool)enabled);
 
             // Create Operation table
             using var db = SQLiteLoader.LoadConnection(DBFILE);
             using var cmd = db.CreateCommand();
             EnsureOperationTableCreated(cmd);
 
-            var result = new TestBasicResults(ParsedResultType.Success);
-            module.OnFinish(result, null);
+            await handler.RunAsync();
 
             // Check that no sync was recorded
             cmd.CommandText = @"
@@ -1083,26 +1115,28 @@ namespace Duplicati.UnitTest
                 LIKE 'Rsync %'
             ";
             var count = (long)cmd.ExecuteScalar();
+
             Assert.AreEqual(0, count);
         }
 
 
         [Test]
         [Category("RemoteSync")]
-        public void TestOnFinish_ForNonBackupOperations_SkipsSync()
+        public async Task TestRunAsync_ForNonBackupOperations_SkipsSync()
         {
             var options = new Dictionary<string, string>
             {
-                ["remote-sync-json-config"] = $@"{{""destinations"": [{{""url"": ""file://{dest1}""}}]}}",
+                ["remote-sync-json-config"] = $@"{{""destinations"": [
+                    {{""url"": ""file://{dest1}""}}
+                ]}}",
                 ["dbpath"] = DBFILE
             };
-            module.Configure(options);
-            string remoteurl = $"file://{source}";
-            string[] localpath = [];
-            module.OnStart("List", ref remoteurl, ref localpath); // Non-backup operation
 
-            var result = new TestBasicResults(ParsedResultType.Success);
-            module.OnFinish(result, null);
+            string remoteurl = $"file://{source}";
+            var results = new BasicBackupResults(ParsedResultType.Success);
+            var handler = new RemoteSynchronizationHandler(remoteurl, new Options(options), results);
+
+            await handler.RunAsync();
 
             // Check if sync was not recorded
             using var db = SQLiteLoader.LoadConnection(DBFILE);
@@ -1114,6 +1148,7 @@ namespace Duplicati.UnitTest
                 WHERE ""Description"" = 'Rsync 0'
             ";
             var count = (long)cmd.ExecuteScalar();
+
             Assert.AreEqual(0, count);
         }
 
@@ -1311,22 +1346,17 @@ namespace Duplicati.UnitTest
     }
 
     /// <summary>
-    /// Simple implementation of IBasicResults for testing.
+    /// Simple implementation of BackupResults for testing.
     /// </summary>
-    public class TestBasicResults : IBasicResults
+    internal class BasicBackupResults : BackupResults
     {
-        public TestBasicResults(ParsedResultType parsedResult)
+        public BasicBackupResults(ParsedResultType parsedResult)
         {
-            ParsedResult = parsedResult;
+            _parsedResult = parsedResult;
         }
 
-        public DateTime BeginTime => DateTime.UtcNow;
-        public DateTime EndTime => DateTime.UtcNow;
-        public TimeSpan Duration => TimeSpan.Zero;
-        public IEnumerable<string> Errors => [];
-        public IEnumerable<string> Warnings => [];
-        public IEnumerable<string> Messages => [];
-        public ParsedResultType ParsedResult { get; }
-        public bool Interrupted => false;
+        private ParsedResultType _parsedResult;
+
+        public override ParsedResultType ParsedResult => _parsedResult;
     }
 }

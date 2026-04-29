@@ -1,4 +1,4 @@
-// Copyright (C) 2025, The Duplicati Team
+// Copyright (C) 2026, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -117,10 +117,11 @@ namespace Duplicati.UnitTest
                     // Get files list
                     var files = z0.ListFiles(null);
 
+
                     // Read second file
                     using (var fd = z0.OpenRead(files[1]))
                     {
-                        bool match = testset2.All(b => b == fd.ReadByte()) && fd.ReadByte() == -1;
+                        var match = CompareStreamToContent(fd, testset2);
                         if (!match)
                             throw new Exception("Decompressed file sample2 contents do not match the source file.");
                     }
@@ -128,12 +129,26 @@ namespace Duplicati.UnitTest
                     // Read first file
                     using (var fd = z0.OpenRead(files[0]))
                     {
-                        bool match = testset1.All(b => b == fd.ReadByte()) && fd.ReadByte() == -1;
+                        var match = CompareStreamToContent(fd, testset1);
                         if (!match)
                             throw new Exception("Decompressed file sample1 contents do not match the source file.");
                     }
                 }
             }
+        }
+
+        private static bool CompareStreamToContent(Stream stream, IEnumerable<byte> content)
+        {
+            // Previous slower version relies on ReadByte() which is not representative of common use
+            //return content.All(b => b == stream.ReadByte()) && stream.ReadByte() == -1;
+
+            using var ms = new MemoryStream();
+            stream.CopyTo(ms);
+            var result = ms.ToArray();
+            var expected = content.ToArray();
+
+            return result.SequenceEqual(expected);
+
         }
 
         /// <summary>

@@ -40,15 +40,16 @@
 # agrajaghh <agrajaghh@gmail.com>, 2025
 # Michael, 2026
 # ghChrisHe, 2026
+# Mugros, 2026
 # 
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-18 13:48+0100\n"
+"POT-Creation-Date: 2026-04-22 15:17+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
-"Last-Translator: ghChrisHe, 2026\n"
+"Last-Translator: Mugros, 2026\n"
 "Language-Team: German (https://app.transifex.com/duplicati/teams/67655/de/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -66,7 +67,7 @@ msgstr ""
 
 #: Library/Encryption/Strings.cs:29
 msgid "AES-256 encryption, built in"
-msgstr "AES-256 Verschlüsselung, integriert"
+msgstr "AES-256-Verschlüsselung, integriert"
 
 #: Library/Encryption/Strings.cs:30
 msgid "Empty passphrase not allowed"
@@ -867,6 +868,14 @@ msgid "You must supply a project ID with --{0} for creating a bucket."
 msgstr ""
 "Die Projekt-ID muss mit --{0} angeben werden, um einen Bucket zu erstellen."
 
+#: Library/Backend/GoogleServices/Strings.cs:31
+msgid ""
+"The supplied credentials are missing the full control scope. Please use a "
+"service account with full control access."
+msgstr ""
+"Die angegebenen Zugangsdaten reichen für einen vollständigen Zugriff nicht "
+"aus. Bitte benutzen Sie einen Account mit vollständigem Zugriff."
+
 #: Library/Backend/GoogleServices/Strings.cs:32
 #, csharp-format
 msgid ""
@@ -985,6 +994,75 @@ msgstr "Google Cloud Storage Konfiguration Modul"
 msgid "Expose Google Cloud Storage configuration as a web module"
 msgstr "Google Cloud Storage-Konfiguration als Webmodul zur Verfügung stellen"
 
+#: Library/Backend/Duplicati/Strings.cs:28
+msgid "This backend can read and write data to Duplicati Storage."
+msgstr "Dieses Backend kann Daten zum Duplicati Speicher lesen und schreiben."
+
+#: Library/Backend/Duplicati/Strings.cs:29
+msgid "Duplicati Storage Backend"
+msgstr "Duplicati Speicher Backend"
+
+#: Library/Backend/Duplicati/Strings.cs:31
+msgid "The API ID for authenticating with the Duplicati storage server."
+msgstr "Die API ID zur Authentifizierung am Duplicati Speicherserver."
+
+#: Library/Backend/Duplicati/Strings.cs:32
+msgid ""
+"Specifies the API ID to use when authenticating with the Duplicati storage "
+"server."
+msgstr "Gibt die API ID zur Authentifizierung am Duplicati Speicherserver an."
+
+#: Library/Backend/Duplicati/Strings.cs:33
+msgid "The API Key for authenticating with the Duplicati storage server."
+msgstr "Der API Key zur Authentifizierung am Duplicati Speicherserver."
+
+#: Library/Backend/Duplicati/Strings.cs:34
+msgid ""
+"Specifies the API Key to use when authenticating with the Duplicati storage "
+"server."
+msgstr ""
+"Gibt den API Key zur Authentifizierung am Duplicati Speicherserver an."
+
+#: Library/Backend/Duplicati/Strings.cs:35
+msgid "The Backup ID to use on the Duplicati storage server."
+msgstr "Die Backup ID zur Authentifizierung am Duplicati Speicherserver."
+
+#: Library/Backend/Duplicati/Strings.cs:36
+msgid ""
+"Each backupID identifies a separate backup set on the Duplicati storage "
+"server."
+msgstr ""
+"Jede  Backup ID identifiziert einen separaten Sicherungssatz auf dem "
+"Duplicati Speicherserver."
+
+#: Library/Backend/Duplicati/Strings.cs:37
+msgid "A unique backup id must be specified"
+msgstr "Eine eindeutige Backup ID muss angegeben werden."
+
+#: Library/Backend/Duplicati/Strings.cs:42
+msgid "Lists the backup folders on a Duplicati storage server."
+msgstr "Listet die Sicherungordner auf einem Duplicati Speicherserver auf."
+
+#: Library/Backend/Duplicati/Strings.cs:43
+msgid "List Duplicati Backup Folders"
+msgstr "Duplicati-Sicherungsordner auflisten"
+
+#: Library/Backend/Duplicati/Strings.cs:45
+msgid "The action to perform."
+msgstr "Die auszuführende Aktion."
+
+#: Library/Backend/Duplicati/Strings.cs:46
+msgid "Specifies the action to perform."
+msgstr "Gibt die auszuführende Aktion an."
+
+#: Library/Backend/Duplicati/Strings.cs:48
+msgid "The URL of the Duplicati storage server."
+msgstr "Die URL des Duplicati-Speicherservers."
+
+#: Library/Backend/Duplicati/Strings.cs:49
+msgid "Specifies the URL of the Duplicati storage server."
+msgstr "Gibt die URL des Duplicati-Speicherservers an."
+
 #: Library/Backend/S3/Strings.cs:26
 msgid ""
 "This backend can read and write data to an S3 compatible server. Allowed "
@@ -996,6 +1074,28 @@ msgstr ""
 #: Library/Backend/S3/Strings.cs:27
 msgid "S3 compatible"
 msgstr "S3 kompatibel"
+
+#: Library/Backend/S3/Strings.cs:28
+#, csharp-format
+msgid ""
+"Secret Access Key can be obtained after logging into your account. This can "
+"also be supplied through the option --{0}."
+msgstr ""
+"Der Secret Access Key kann nach der Anmeldung in Ihrem Account eingesehen "
+"werden. Alternativ kann dies auch über die Option --{0} erfolgen."
+
+#: Library/Backend/S3/Strings.cs:29
+msgid "Secret Access Key"
+msgstr "Secret Access Key"
+
+#: Library/Backend/S3/Strings.cs:30
+#, csharp-format
+msgid ""
+"Access Key ID can be obtained after logging into your account. This can also"
+" be supplied through the option --{0}."
+msgstr ""
+"Die Access Key ID kann nach der Anmeldung in Ihrem Account eingesehen "
+"werden. Alternativ kann dies auch über die Option --{0} erfolgen."
 
 #: Library/Backend/S3/Strings.cs:31 Library/Backend/AliyunOSS/Strings.cs:30
 #: Library/Backend/Idrivee2/Strings.cs:31
@@ -1129,7 +1229,7 @@ msgstr ""
 #: Library/Backend/S3/Strings.cs:64
 #, csharp-format
 msgid "Unknown S3 client: {0}"
-msgstr "Unbekannter S3 Client: {0}"
+msgstr "Unbekannter S3-Client: {0}"
 
 #: Library/Backend/S3/Strings.cs:65
 msgid "No path allowed in endpoint"
@@ -1197,38 +1297,38 @@ msgstr "Bestimmt den Typ des zu generierenden Schlüssels."
 
 #: Library/Backend/SSHv2/Strings.cs:31
 msgid "The key type"
-msgstr "Der Schlüssel-Typ"
+msgstr "Der Schlüsseltyp"
 
 #: Library/Backend/SSHv2/Strings.cs:32
 msgid "The length of the key in bits."
-msgstr "Die Schlüssel-Länge in bits."
+msgstr "Die Schlüssellänge in Bits."
 
 #: Library/Backend/SSHv2/Strings.cs:33
 msgid "The key length"
-msgstr "Die Schlüssel-Länge"
+msgstr "Die Schlüssellänge"
 
 #: Library/Backend/SSHv2/Strings.cs:37
 msgid "Module for uploading SSH public keys"
-msgstr "Modul zum hochladen des öffentlichen SSH Schlüssel"
+msgstr "Modul zum Hochladen des öffentlichen SSH-Schlüssels"
 
 #: Library/Backend/SSHv2/Strings.cs:38
 msgid "SSH Key Uploader"
-msgstr "SSH Schlüssel Uploader"
+msgstr "SSH-Schlüssel-Uploader"
 
 #: Library/Backend/SSHv2/Strings.cs:39
 msgid "The SSH connection URL used to establish the connection."
-msgstr "Die SSH Verbindungs-URL die für den Verbindungsaufbau verwendet wird."
+msgstr "Die SSH-Verbindungs-URL die für den Verbindungsaufbau verwendet wird."
 
 #: Library/Backend/SSHv2/Strings.cs:40
 msgid "The SSH connection URL"
-msgstr "Die SSH Verbindungs-URL"
+msgstr "Die SSH-Verbindungs-URL"
 
 #: Library/Backend/SSHv2/Strings.cs:41
 msgid ""
 "The SSH public key must be a valid SSH string, which is appended to the "
 ".ssh/authorized_keys file."
 msgstr ""
-"Der öffentliche SSH Schlüssel muss eine valide SSH-Zeichenkette sein,  die "
+"Der öffentliche SSH-Schlüssel muss eine valide SSH-Zeichenkette sein,  die "
 "an die .ssh/authorized_keys-Datei angehängt wird."
 
 #: Library/Backend/SSHv2/Strings.cs:42
@@ -1865,26 +1965,26 @@ msgstr "ID von der Gruppe"
 
 #: Library/Backend/OneDrive/Strings.cs:61
 msgid "Email address of the group to store data in."
-msgstr "E-Mail Adresse der Gruppe zum Speichern der Daten."
+msgstr "E-Mail-Adresse der Gruppe zum Speichern der Daten."
 
 #: Library/Backend/OneDrive/Strings.cs:62
 msgid "Email address of the group"
-msgstr "E-Mail Adresse der Gruppe"
+msgstr "E-Mail-Adresse der Gruppe"
 
 #: Library/Backend/OneDrive/Strings.cs:63
 msgid "No group ID or group email address was provided."
-msgstr "Es wurde keine Gruppen-ID oder Gruppen-E-Mail Adresse bereitgestellt."
+msgstr "Es wurde keine Gruppen-ID oder Gruppen-E-Mail-Adresse bereitgestellt."
 
 #: Library/Backend/OneDrive/Strings.cs:64
 #, csharp-format
 msgid "No groups were found with the given email address: {0}"
-msgstr "Keine Gruppe mit der gegebenen E-Mail Adresse wurde gefunden: {0}"
+msgstr "Keine Gruppe mit der angegebenen E-Mail-Adresse gefunden: {0}"
 
 #: Library/Backend/OneDrive/Strings.cs:65
 #, csharp-format
 msgid "Multiple groups were found with the given email address: {0}"
 msgstr ""
-"Es wurden mehrere Gruppen mit der gegebenen E-Mail Adresse gefunden: {0}"
+"Es wurden mehrere Gruppen mit der angegebenen E-Mail-Adresse gefunden: {0}"
 
 #: Library/Backend/OneDrive/Strings.cs:66
 #, csharp-format
@@ -2077,6 +2177,18 @@ msgid ""
 msgstr ""
 "Verwenden Sie diese Option, um die Anzahl der erneuten Versuche für Azure "
 "Blob Operationen festzulegen. Wird durch Setzen auf 0 deaktiviert."
+
+#: Library/Backend/AzureBlob/Strings.cs:46
+msgid "The immutability policy mode"
+msgstr "Die Unveränderbarkeits-Regel"
+
+#: Library/Backend/AzureBlob/Strings.cs:47
+msgid ""
+"Use this option to specify the immutability policy mode. The default is "
+"'Unlocked'."
+msgstr ""
+"Verwenden Sie diese Option, um die Unveränderbarkeits-Regel festzulegen. "
+"Standard ist \"Unlocked\""
 
 #: Library/Backend/Filen/Strings.cs:26
 msgid ""
@@ -2469,23 +2581,23 @@ msgstr "Verbindung zur Freigabe fehlgeschlagen"
 
 #: Library/Backend/SMB/SMBShareConnection.cs:155
 msgid "Failed to delete file on DeleteAsync"
-msgstr "Datei Löschen mittels DeleteAsync fehlgeschlagen"
+msgstr "Löschen der Datei mittels DeleteAsync fehlgeschlagen"
 
 #: Library/Backend/SMB/SMBShareConnection.cs:158
 msgid "Failed to close file on DeleteAsync"
-msgstr "Datei Schließen mittels DeleteAsync fehlgeschlagen"
+msgstr "Schließen der Datei mittels DeleteAsync fehlgeschlagen"
 
 #: Library/Backend/SMB/SMBShareConnection.cs:207
 msgid "Failed to create directory"
-msgstr "Ordner erstellen fehlgeschlagen"
+msgstr "Erstellen des Ordners fehlgeschlagen"
 
 #: Library/Backend/SMB/SMBShareConnection.cs:216
 msgid "Failed to close file handle on CreateFolderAsync"
-msgstr "Dateihandle Schließen mittels CreateFolderAsync fehlgeschlagen"
+msgstr "Schließen des Dateihandles mittels CreateFolderAsync fehlgeschlagen"
 
 #: Library/Backend/SMB/SMBShareConnection.cs:260
 msgid "Failed to open directory"
-msgstr "Ordner Öffnen fehlgeschlagen"
+msgstr "Öffnen des Ordners fehlgeschlagen"
 
 #: Library/Backend/SMB/SMBShareConnection.cs:270
 msgid "Failed to query directory contents"
@@ -2525,6 +2637,14 @@ msgstr "Dateihandle Schließen mittels PutAsync fehlgeschlagen"
 #: Library/Backend/SMB/SMBShareConnection.cs:496
 msgid "Failed to create file for writing"
 msgstr "Erstellen der Datei zum Schreiben fehlgeschlagen"
+
+#: Library/Backend/SMB/SMBShareConnection.cs:550
+msgid "Failed to rename file on RenameAsync"
+msgstr "Umbenennen mittels RenameAsync fehlgeschlagen"
+
+#: Library/Backend/SMB/SMBShareConnection.cs:553
+msgid "Failed to close file on RenameAsync"
+msgstr "Datei Schließen mittels DeleteAsync fehlgeschlagen"
 
 #: Library/Backend/SMB/Strings.cs:29
 msgid ""
@@ -2908,7 +3028,7 @@ msgstr "Secrets vom AWS Secrets Manager"
 
 #: Library/SecretProvider/Strings.cs:69
 msgid "The AWS access key"
-msgstr "Der AWS Zugriffsschlüssel"
+msgstr "Der AWS-Zugriffsschlüssel"
 
 #: Library/SecretProvider/Strings.cs:70
 msgid ""
@@ -2932,14 +3052,14 @@ msgstr ""
 
 #: Library/SecretProvider/Strings.cs:73
 msgid "The AWS region endpoint"
-msgstr "Der AWS Region Endpunkt"
+msgstr "Der AWS-Region-Endpunkt"
 
 #: Library/SecretProvider/Strings.cs:74
 msgid ""
 "The region endpoint to use for communication with AWS. Can also be supplied "
 "via the environment variable {envname}"
 msgstr ""
-"Der Region Endpunkt zur Authentifikation mit AWS. Kann auch über die "
+"Der Region-Endpunkt zur Authentifikation mit AWS. Kann auch über die "
 "Umgebungsvariable {envname} gesetzt werden."
 
 #: Library/SecretProvider/Strings.cs:75
@@ -3241,7 +3361,7 @@ msgstr ""
 "Nicht möglich zu starten, vielleicht läuft bereits ein anderer Prozess?\n"
 "Fehlermeldung: {0}"
 
-#: Library/RestAPI/Strings.cs:50 Library/RestAPI/Strings.cs:84
+#: Library/RestAPI/Strings.cs:50 Library/RestAPI/Strings.cs:85
 msgid "Disable database encryption"
 msgstr "Datenbankverschlüsselung deaktivieren"
 
@@ -3421,34 +3541,34 @@ msgstr ""
 "3-Buchstabenabkürzungen wie \"CET\" werden unterstützt, könnten aber in "
 "einigen Fällen mehrdeutig sein."
 
-#: Library/RestAPI/Strings.cs:83
+#: Library/RestAPI/Strings.cs:84
 msgid "Use this option to disable database encryption of sensitive fields"
 msgstr ""
 "Verwenden Sie diese Option, um die Datenbankverschlüsselung sensibler Felder"
 " zu deaktivieren"
 
-#: Library/RestAPI/Strings.cs:86
+#: Library/RestAPI/Strings.cs:87
 msgid "Log to the Windows event log"
 msgstr "In die Windows Ereignisanzeige protokollieren"
 
-#: Library/RestAPI/Strings.cs:87
+#: Library/RestAPI/Strings.cs:88
 msgid "Use this option to set the log level for the Windows event log."
 msgstr ""
 "Verwenden Sie diese Option, um den Protokollierungsgrad für die Windows "
 "Ereignisanzeige festzulegen."
 
-#: Library/RestAPI/Strings.cs:88
+#: Library/RestAPI/Strings.cs:89
 msgid "Set the log level for the Windows event log"
 msgstr "Protokollierungsgrad für die Windows Ereignisanzeige festlegen"
 
-#: Library/RestAPI/Strings.cs:89
+#: Library/RestAPI/Strings.cs:90
 #, csharp-format
 msgid "The Windows event log source {0} was not found. Attempting to create."
 msgstr ""
 "Die Windows Ereignisanzeige Quelle {0} wurde nicht gefunden. Versuche sie zu"
 " erstellen."
 
-#: Library/RestAPI/Strings.cs:90
+#: Library/RestAPI/Strings.cs:91
 #, csharp-format
 msgid ""
 "The Windows Event Log was not created for: {0}, not logging to eventlog."
@@ -3456,44 +3576,44 @@ msgstr ""
 "Die Windows Ereignisanzeige wurde nicht erstellt für: {0}, keine "
 "Protokollierung in die Ereignisanzeige."
 
-#: Library/RestAPI/Strings.cs:91
+#: Library/RestAPI/Strings.cs:92
 msgid "The Windows event log is not supported on this platform"
 msgstr ""
 "Die Windows Ereignisanzeige wird auf dieser Platform nicht unterstützt"
 
-#: Library/RestAPI/Strings.cs:92 Library/RestAPI/Strings.cs:129
+#: Library/RestAPI/Strings.cs:93 Library/RestAPI/Strings.cs:134
 #, csharp-format
 msgid "Server has started and is listening on {0}, port {1}"
 msgstr "Server gestartet und hört auf {0}, Port {1}"
 
-#: Library/RestAPI/Strings.cs:93
+#: Library/RestAPI/Strings.cs:94
 #, csharp-format
 msgid "Use the following link to sign in: {0}"
 msgstr "Benutzen Sie folgenden Link zum Anmelden: {0}"
 
-#: Library/RestAPI/Strings.cs:94
+#: Library/RestAPI/Strings.cs:95
 #, csharp-format
 msgid "The server crashed: {0}"
 msgstr "Der Server ist abgestürzt: {0}"
 
-#: Library/RestAPI/Strings.cs:95
-msgid "Server is stopping, tearing down handlers"
-msgstr "Der Server stoppt, Händler werden beendet"
-
 #: Library/RestAPI/Strings.cs:96
-msgid "Server has stopped"
-msgstr "Der Server hat gestoppt"
+msgid "Server is stopping, tearing down handlers"
+msgstr "Der Server hält an, Handler werden beendet"
 
-#: Library/RestAPI/Strings.cs:103
+#: Library/RestAPI/Strings.cs:97
+msgid "Server has stopped"
+msgstr "Der Server ist angehalten"
+
+#: Library/RestAPI/Strings.cs:104
 #, csharp-format
 msgid "The timezone {0} is not valid"
 msgstr "Die Zeitzone {0} ist nicht gültig"
 
-#: Library/RestAPI/Strings.cs:104
+#: Library/RestAPI/Strings.cs:105
 msgid "Set the encryption key for the settings database"
 msgstr "Verschlüsselungsschlüssel für die Einstellungsdatenbank eingeben"
 
-#: Library/RestAPI/Strings.cs:105
+#: Library/RestAPI/Strings.cs:106
 #, csharp-format
 msgid ""
 "Use this option to set the encryption key for the settings database. This "
@@ -3503,20 +3623,20 @@ msgstr ""
 "Einstellungsdatenbank zu setzen. Diese Option kann auch mit der "
 "Umgebungsvariablen {0} gesetzt werden."
 
-#: Library/RestAPI/Strings.cs:106
+#: Library/RestAPI/Strings.cs:107
 #, csharp-format
 msgid "Invalid pause/resume state: {0}"
 msgstr "Ungültiger Pause/Wiederaufnahme-Status: {0}"
 
-#: Library/RestAPI/Strings.cs:107
+#: Library/RestAPI/Strings.cs:108
 msgid "Register for remote control"
 msgstr "Registrierung für Fernzugriff"
 
-#: Library/RestAPI/Strings.cs:109
+#: Library/RestAPI/Strings.cs:110
 msgid "Force register for remote control"
 msgstr "Registrierung für Fernzugriff erzwingen"
 
-#: Library/RestAPI/Strings.cs:110
+#: Library/RestAPI/Strings.cs:111
 msgid ""
 "Forces a re-registration if the server is already registered. If the server "
 "is not already registered, this option has no effect."
@@ -3524,7 +3644,7 @@ msgstr ""
 "Neu-Registrierung erzwingen, wenn der Server bereits registriert ist. Wenn "
 "der Server noch nicht registriert ist, hat die Option keinen Effekt."
 
-#: Library/RestAPI/Strings.cs:111
+#: Library/RestAPI/Strings.cs:112
 msgid ""
 "The server is already registered for remote control, ignoring registration "
 "request"
@@ -3532,16 +3652,16 @@ msgstr ""
 "Der Server ist bereits für den Fernzugriff registriert, Registrierungs-"
 "Anforderung wird ignoriert"
 
-#: Library/RestAPI/Strings.cs:113
+#: Library/RestAPI/Strings.cs:114
 #, csharp-format
 msgid "The server registration failed: {0}"
-msgstr "Die Server-Registrierung ist fehlgeschlagen: {0}"
+msgstr "Die Serverregistrierung ist fehlgeschlagen: {0}"
 
-#: Library/RestAPI/Strings.cs:114
+#: Library/RestAPI/Strings.cs:115
 msgid "Set the allowed backends for remote control"
 msgstr "Erlaubte Backends für Fernzugriff einstellen"
 
-#: Library/RestAPI/Strings.cs:115
+#: Library/RestAPI/Strings.cs:116
 msgid ""
 "Set the allowed backends for remote control. The value is a comma-separated "
 "list of backend names. If this option is not set, all backends are allowed. "
@@ -3552,11 +3672,11 @@ msgstr ""
 " alle Backends erlaubt. Verwenden Sie diese Option, um die Backends zu "
 "begrenzen, die zum Speichern von Daten benutzt werden können."
 
-#: Library/RestAPI/Strings.cs:116
+#: Library/RestAPI/Strings.cs:117
 msgid "Set the allowed encryption modules for remote control"
 msgstr "Erlaubte Verschlüsselungsmodule für Fernzugriff einstellen"
 
-#: Library/RestAPI/Strings.cs:117
+#: Library/RestAPI/Strings.cs:118
 msgid ""
 "Set the allowed encryption modules for remote control. The value is a comma-"
 "separated list of encryption module names. If this option is not set, all "
@@ -3569,11 +3689,11 @@ msgstr ""
 "Verwenden Sie diese Option, um die Verschlüsselungsmodule zu begrenzen, die "
 "zum Verschlüsseln von Daten benutzt werden können."
 
-#: Library/RestAPI/Strings.cs:118
+#: Library/RestAPI/Strings.cs:119
 msgid "Set the allowed compression modules for remote control"
 msgstr "Erlaubte Kompressionsmodule für Fernzugriff einstellen"
 
-#: Library/RestAPI/Strings.cs:119
+#: Library/RestAPI/Strings.cs:120
 msgid ""
 "Set the allowed compression modules for remote control. The value is a "
 "comma-separated list of compression module names. If this option is not set,"
@@ -3586,7 +3706,7 @@ msgstr ""
 "Option, um die Kompressionsmodule zu begrenzen, die zum Komprimieren von "
 "Daten benutzt werden können."
 
-#: Library/RestAPI/Strings.cs:125
+#: Library/RestAPI/Strings.cs:130
 #, csharp-format
 msgid ""
 "Unable to find a valid date, given the start date {0}, the repetition "
@@ -3595,7 +3715,7 @@ msgstr ""
 "Mit den Eingaben zu Anfangsdatum {0}, Wiederholungsintervall {1} und "
 "erlaubte Tage {2} konnte kein gültiges Datum gefunden werden."
 
-#: Library/RestAPI/Strings.cs:131
+#: Library/RestAPI/Strings.cs:136
 #, csharp-format
 msgid "Unable to open a socket for listening, tried ports: {0}"
 msgstr "Öffnen von Socket nicht möglich, geprüfte Ports: {0}"
@@ -5750,16 +5870,16 @@ msgstr ""
 "Zahl bedeutet eine höhere CPU-Last. Z.B. 10 würde keine Einschränkung "
 "bedeuten. Muss eine Ganzzahl zwischen 1-10 sein."
 
-#: Library/Main/Strings.cs:366
+#: Library/Main/Strings.cs:369
 msgid "Maximum cache size for restoring files"
 msgstr "Maximale Cachegröße für die Wiederherstellung von Dateien"
 
-#: Library/Main/Strings.cs:370
+#: Library/Main/Strings.cs:373
 msgid "Number of concurrent FileProcessors processes used during restore"
 msgstr ""
 "Anzahl der konkurrierenden FileProcessor-Prozesse bei der Wiederherstellung"
 
-#: Library/Main/Strings.cs:371
+#: Library/Main/Strings.cs:374
 msgid ""
 "Use this option to set the number of concurrent FileProcessors processes "
 "used during restore. A FileProcessor processes one file at a time, and "
@@ -5770,11 +5890,11 @@ msgstr ""
 "verarbeitet ein Volume zur gleichen Zeit und eine Erhöhung der "
 "FileProcessor-Anzahl kann die Leistung erhöhen."
 
-#: Library/Main/Strings.cs:372
+#: Library/Main/Strings.cs:375
 msgid "Use legacy restore method"
 msgstr "Alte Wiederherstellungsmethode verwenden"
 
-#: Library/Main/Strings.cs:373
+#: Library/Main/Strings.cs:376
 msgid ""
 "Use this option to use the legacy restore method. The legacy restore method "
 "is slower than the new method, but may be more reliable in some cases."
@@ -5783,11 +5903,11 @@ msgstr ""
 " Die alte Wiederherstellungsmethode ist langsamer als die neue Methode, kann"
 " aber in einigen Fällen zuverlässiger sein."
 
-#: Library/Main/Strings.cs:374
+#: Library/Main/Strings.cs:377
 msgid "Preallocate size of restored files"
 msgstr "Größe der heruntergeladenen Dateien voreinstellen"
 
-#: Library/Main/Strings.cs:375
+#: Library/Main/Strings.cs:378
 msgid ""
 "Use this option to toggle whether to set the size of the restored files "
 "before they are written to disk. This can help to reduce fragmentation and "
@@ -5798,13 +5918,13 @@ msgstr ""
 "geschrieben werden. Dies kann helfen, die Fragmentation zu verringern und "
 "die Leistung auf einigen Dateisystemen zu erhöhen."
 
-#: Library/Main/Strings.cs:378
+#: Library/Main/Strings.cs:383
 msgid "Number of concurrent FileDecompressor processes used during restore"
 msgstr ""
 "Anzahl der konkurrierenden FileDecompressor-Prozesse bei der "
 "Wiederherstellung"
 
-#: Library/Main/Strings.cs:379
+#: Library/Main/Strings.cs:384
 msgid ""
 "Use this option to set the number of concurrent FileDecompressor processes "
 "used during restore. A FileDecompressor processes one volume at a time, and "
@@ -5817,12 +5937,12 @@ msgstr ""
 "der FileDecompressor-Anzahl kann die Leistung erhöhen, wenn die "
 "Dekompression der Flaschenhals ist."
 
-#: Library/Main/Strings.cs:380
+#: Library/Main/Strings.cs:385
 msgid "Number of concurrent FileDecryptor processes used during restore"
 msgstr ""
 "Anzahl der konkurrierenden FileDecryptor-Prozesse bei der Wiederherstellung"
 
-#: Library/Main/Strings.cs:381
+#: Library/Main/Strings.cs:386
 msgid ""
 "Use this option to set the number of concurrent FileDecryptor processes used"
 " during restore. A FileDecryptor processes one volume at a time, and "
@@ -5835,12 +5955,12 @@ msgstr ""
 "FileDecryptor-Anzahl kann die Leistung erhöhen, wenn die Entschlüsselung der"
 " Flaschenhals ist."
 
-#: Library/Main/Strings.cs:382
+#: Library/Main/Strings.cs:387
 msgid "Number of concurrent FileDownloader processes used during restore"
 msgstr ""
 "Anzahl der konkurrierenden FileDownloader-Prozesse bei der Wiederherstellung"
 
-#: Library/Main/Strings.cs:383
+#: Library/Main/Strings.cs:388
 msgid ""
 "Use this option to set the number of concurrent FileDownloader processes "
 "used during restore. A FileDownloader processes one volume at a time, and "
@@ -5853,11 +5973,11 @@ msgstr ""
 "der FileDownloader-Anzahl kann die Leistung erhöhen, wenn das Herunterladen "
 "der Flaschenhals ist."
 
-#: Library/Main/Strings.cs:384
+#: Library/Main/Strings.cs:389
 msgid "Size of buffers of the channels used during restore"
 msgstr "Puffergröße der Kanäle bei der Wiederherstellung"
 
-#: Library/Main/Strings.cs:385
+#: Library/Main/Strings.cs:390
 msgid ""
 "Use this option to set the size of the buffers of the channels used during "
 "restore. The buffers are used to allow for better asynchronous communication"
@@ -5869,11 +5989,11 @@ msgstr ""
 "Kommunikation der Prozesse im Wiederherstellungsfluss. Eine Erhöhung der "
 "Puffergröße kann die Leistungfähigkeit der Wiederherstellung verbessern."
 
-#: Library/Main/Strings.cs:388
+#: Library/Main/Strings.cs:393
 msgid "Enable internal profiling"
 msgstr "Interne Datenprofilerstellung aktivieren"
 
-#: Library/Main/Strings.cs:389
+#: Library/Main/Strings.cs:394
 msgid ""
 "Use this option to enable internal profiling. Profiling is used to measure "
 "the performance of the internal code. The profiling data is written to the "
@@ -5884,11 +6004,11 @@ msgstr ""
 " Codes verwendet. Die Daten werden in die Protokolldatei geschrieben und "
 "können zur Erkennung von Leistungseinbußen verwendet werden."
 
-#: Library/Main/Strings.cs:390
+#: Library/Main/Strings.cs:395
 msgid "Ignore update if version exists"
 msgstr "Ignoriert Update wenn Version existiert"
 
-#: Library/Main/Strings.cs:391
+#: Library/Main/Strings.cs:396
 msgid ""
 "Use this option to ignore the update if the version already exists. This can"
 " be used to avoid errors if asking to update the database with a version "
@@ -5898,11 +6018,11 @@ msgstr ""
 " bereits existiert. Dies soll Fehler zu vermeiden, falls eine Datenbank "
 "aktualisiert werden soll, die bereits existiert."
 
-#: Library/Main/Strings.cs:394
+#: Library/Main/Strings.cs:399
 msgid "Path to the Photos library"
 msgstr "Pfad zur Foto-Bibliothek"
 
-#: Library/Main/Strings.cs:395
+#: Library/Main/Strings.cs:400
 msgid ""
 "Use this option to specify the path to the Photos library on MacOS. This "
 "option is only relevant if the Photos library is not in the default "
@@ -5912,7 +6032,7 @@ msgstr ""
 "anzugeben. Diese Option ist nur relevant, wenn sich die Foto-Bibliothek "
 "nicht an ihrem Standard-Ort befindet."
 
-#: Library/Main/Strings.cs:404
+#: Library/Main/Strings.cs:409
 #, csharp-format
 msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
@@ -5921,23 +6041,23 @@ msgstr ""
 "Die Verschlüsselungs-Bibliothek unterstützt wiederverwendbare "
 "Transformationen für den Hash-Algorithmus {0} nicht"
 
-#: Library/Main/Strings.cs:405
+#: Library/Main/Strings.cs:410
 #, csharp-format
 msgid "The cryptolibrary does not support the hash algorithm {0}"
 msgstr ""
 "Die Verschlüsselungs-Bibliothek unterstützt den Hash-Algorithmus {0} nicht"
 
-#: Library/Main/Strings.cs:406
+#: Library/Main/Strings.cs:411
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr ""
 "Die Passphrase für eine existierende Sicherung kann nicht geändert werden"
 
-#: Library/Main/Strings.cs:407
+#: Library/Main/Strings.cs:412
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
 msgstr "Fehler beim Erstellen des Snapshots: {0}"
 
-#: Library/Main/Strings.cs:408
+#: Library/Main/Strings.cs:413
 msgid ""
 "Failed to activate BackupRead as the current process does not have "
 "sufficient permissions"
@@ -5945,7 +6065,7 @@ msgstr ""
 "Aktivierung von BackupRead fehlgeschlagen, da der laufende Prozess keine "
 "ausreichenden Berechtigungen hat"
 
-#: Library/Main/Strings.cs:413
+#: Library/Main/Strings.cs:418
 #, csharp-format
 msgid "The encryption module {0} was not found"
 msgstr "Das Verschlüsselungs-Modul {0} wurde nicht gefunden"
