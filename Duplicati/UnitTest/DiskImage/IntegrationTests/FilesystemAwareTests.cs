@@ -121,8 +121,9 @@ public class FilesystemAwareTests : DiskImageTests
         await TestContext.Progress.WriteLineAsync($"Created {modifiedFiles.Count} new files in {newDirPath}");
 
         // Modify an existing file if one exists
-        var existingFiles = Directory.GetFiles(sourcePartitionPath, "*.txt", SearchOption.AllDirectories)
-            .Where(f => !f.Contains("incremental_new_files"))
+        var existingFiles = GetNonSystemFiles(sourcePartitionPath)
+            .Where(f => f.EndsWith(".txt") && !f.Contains("incremental_new_files"))
+            .Select(f => Path.Combine(sourcePartitionPath, f))
             .ToArray();
         if (existingFiles.Length > 0)
         {

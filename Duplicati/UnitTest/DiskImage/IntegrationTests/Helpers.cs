@@ -51,12 +51,7 @@ public partial class DiskImageTests : BasicSetupHelper
         return results;
     }
 
-    /// <summary>
-    /// Recursively compares two directories for structural and content equality.
-    /// </summary>
-    /// <param name="sourcePath">The source directory path.</param>
-    /// <param name="restorePath">The restored directory path.</param>
-    protected void CompareDirectories(string sourcePath, string restorePath)
+    protected static IEnumerable<string> GetNonSystemFiles(string directoryPath)
     {
         var options = new EnumerationOptions
         {
@@ -65,17 +60,22 @@ public partial class DiskImageTests : BasicSetupHelper
             AttributesToSkip = FileAttributes.System | FileAttributes.ReparsePoint
         };
 
+        return Directory.EnumerateFiles(directoryPath, "*", options)
+            .Where(f => !string.IsNullOrEmpty(f))
+            .Select(f => Path.GetRelativePath(directoryPath, f))
+            .OrderBy(f => f);
+    }
+
+    /// <summary>
+    /// Recursively compares two directories for structural and content equality.
+    /// </summary>
+    /// <param name="sourcePath">The source directory path.</param>
+    /// <param name="restorePath">The restored directory path.</param>
+    protected void CompareDirectories(string sourcePath, string restorePath)
+    {
         // Get all files in source, except for system files, which cannot be read directly
-        var sourceFiles = Directory.EnumerateFiles(sourcePath, "*", options)
-            .Select(f => Path.GetRelativePath(sourcePath, f))
-            .Where(f => !string.IsNullOrEmpty(f))
-            .OrderBy(f => f)
-            .ToList();
-        var restoreFiles = Directory.EnumerateFiles(restorePath, "*", options)
-            .Select(f => Path.GetRelativePath(restorePath, f))
-            .Where(f => !string.IsNullOrEmpty(f))
-            .OrderBy(f => f)
-            .ToList();
+        var sourceFiles = GetNonSystemFiles(sourcePath).ToList();
+        var restoreFiles = GetNonSystemFiles(restorePath).ToList();
 
         Assert.That(sourceFiles.Count, Is.EqualTo(restoreFiles.Count),
             $"Number of files in source and restore should match. Source: {sourceFiles.Count}, Restore: {restoreFiles.Count}");
