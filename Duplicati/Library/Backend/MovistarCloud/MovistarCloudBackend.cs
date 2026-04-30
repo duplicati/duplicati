@@ -470,8 +470,10 @@ public sealed class MovistarCloudBackend : IBackend
             _destinationResolved = true;
             return;
         }
-
-        throw new MissingMethodException("CreateFolderAsync not supported. Provide --root-folder-path to allow creation.");
+                
+        throw new UserInformationException(
+            "Unable to create the destination folder because no destination path was provided. Specify --root-folder-path so the Movistar Cloud backend knows which remote folder to create or use.",
+            "MovistarCloudMissingRootFolderPath");
     }
 
     /// <inheritdoc/>
