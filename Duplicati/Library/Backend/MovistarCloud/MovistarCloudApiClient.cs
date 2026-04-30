@@ -516,10 +516,11 @@ internal sealed class MovistarCloudApiClient : IDisposable
         using var resp = await Http.GetAsync(signedUrl, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
 
-        await using var rs = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
-        await using var timeoutStream = rs.ObserveWriteTimeout(timeout, false);
+        await using var rs = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);        
+        await using var timeoutReadStream = rs.ObserveReadTimeout(timeout, false);
         await using var fs = File.Create(localFilePath);
-        await timeoutStream.CopyToAsync(fs, ct).ConfigureAwait(false);
+        await using var timeoutWriteStream = fs.ObserveWriteTimeout(timeout, false);
+        await timeoutReadStream.CopyToAsync(timeoutWriteStream, ct).ConfigureAwait(false);
     }
 
     /// <summary>
