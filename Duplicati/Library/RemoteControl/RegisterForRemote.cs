@@ -273,11 +273,13 @@ public class RegisterForRemote : IDisposable
         var doc = JsonDocument.Parse(raw);
         if (doc.RootElement.TryGetProperty("jwt", out var _) && doc.RootElement.TryGetProperty("serverUrl", out var _))
         {
-            return JsonSerializer.Deserialize<ClaimedClientData>(raw, JsonOptions) switch
-            {
-                { } data => (null, data),
-                null => throw new Exception("Failed to read client claimed data")
-            };
+            var res = JsonSerializer.Deserialize<ClaimedClientData>(raw, JsonOptions)
+                ?? throw new Exception("Failed to read client claimed data");
+
+            if (string.IsNullOrWhiteSpace(res.JWT) || string.IsNullOrWhiteSpace(res.ServerUrl))
+                throw new Exception($"Failed to obtain registration data, status message: {res.StatusMessage}");
+
+            return (null, res);
         }
 
         if (doc.RootElement.TryGetProperty("claimLink", out var _) && doc.RootElement.TryGetProperty("statusLink", out var _))
@@ -340,7 +342,14 @@ public class RegisterForRemote : IDisposable
         if (!result.Success)
             throw new Exception($"Failed to claim machine: {result.StatusMessage}");
 
-        return new ClaimedClientData(result.JWT, result.ServerUrl, result.CertificateUrl, result.ServerCertificates, result.LocalEncryptionKey, result.Settings);
+        return new ClaimedClientData(
+            result.JWT,
+            result.ServerUrl,
+            result.CertificateUrl,
+            result.ServerCertificates,
+            result.LocalEncryptionKey,
+            result.StatusMessage,
+            result.Settings);
     }
 
     /// </inheritdoc>
