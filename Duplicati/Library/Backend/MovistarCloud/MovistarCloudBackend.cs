@@ -265,18 +265,7 @@ public sealed class MovistarCloudBackend : IBackend
     }
 
     /// <inheritdoc/>
-    public IEnumerable<IFileEntry> List()
-    {
-        var files = Client.WithAutoRelogin(ct => Client.ListFilesAsync(_rootFolderId, _listLimit, _timeouts.ListTimeout, ct), CancellationToken.None)
-                           .GetAwaiter().GetResult();
-
-        _nameToId.Clear();
-        foreach (var f in files)
-            _nameToId[f.Name] = f.Id;
-
-        return files.Select(f => new BasicFileEntry(f.Name, f.Size, f.IsFolder, f.LastWriteUtc));
-    }
-
+    
     /// <summary>
     /// Ensures the destination folder is resolved, creating it if necessary.
     /// </summary>
