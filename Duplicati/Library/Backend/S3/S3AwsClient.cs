@@ -1,22 +1,22 @@
 // Copyright (C) 2026, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
 
@@ -248,6 +248,22 @@ namespace Duplicati.Library.Backend
             var md5 = Convert.ToBase64String(Utility.Utility.HexStringAsByteArray(hashes[0]));
             var sha256 = Convert.ToBase64String(Utility.Utility.HexStringAsByteArray(hashes[1]));
 
+            await AddFileStreamAsync(bucketName, keyName, source, md5, sha256, source.Length, cancelToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Adds a file stream to the bucket with the specified hashes and content length
+        /// </summary>
+        /// <param name="bucketName">The name of the bucket</param>
+        /// <param name="keyName">The name of the object to create</param>
+        /// <param name="source">The source stream to upload</param>
+        /// <param name="md5">The MD5 hash of the content as a hex string</param>
+        /// <param name="sha256">The SHA256 hash of the content as a hex string</param>
+        /// <param name="contentLength">The content length of the stream</param>
+        /// <param name="cancelToken">The cancellation token</param>
+        /// <returns>>A task representing the asynchronous operation</returns>
+        public virtual async Task AddFileStreamAsync(string bucketName, string keyName, Stream source, string md5, string sha256, long contentLength, CancellationToken cancelToken)
+        {
             using var ts = source.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false);
             var objectAddRequest = new PutObjectRequest
             {
@@ -260,6 +276,8 @@ namespace Duplicati.Library.Backend
                 ChecksumSHA256 = sha256,
                 DisablePayloadSigning = m_disablePayloadSigning
             };
+            objectAddRequest.Headers["Content-Length"] = contentLength.ToString();
+
             if (!string.IsNullOrWhiteSpace(m_storageClass))
                 objectAddRequest.StorageClass = new S3StorageClass(m_storageClass);
 
@@ -267,7 +285,7 @@ namespace Duplicati.Library.Backend
             // - If chunked streaming is ON, the SDK uses the streaming literal.
             // - If payload signing is disabled, the SDK uses the UNSIGNED-PAYLOAD literal.
             if (!m_useChunkEncoding && !m_disablePayloadSigning)
-                objectAddRequest.Headers["x-amz-content-sha256"] = hashes[1].ToLowerInvariant();
+                objectAddRequest.Headers["x-amz-content-sha256"] = sha256.ToLowerInvariant();
 
             try
             {

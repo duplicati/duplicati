@@ -52,6 +52,7 @@ namespace Duplicati.CommandLine.RecoveryTool
             }
 
             var m_Options = new Options(options);
+            RestoreOptionsFromLocalDatabaseIfAvailable(args[2], m_Options);
 
             using (var backend = Library.DynamicLoader.BackendLoader.GetBackend(args[2], options))
             {
@@ -77,6 +78,7 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                 var i = 0;
                 var downloaded = 0;
+                var reuploaded = 0;
                 var errors = 0;
                 var needspass = 0;
 
@@ -120,6 +122,8 @@ namespace Duplicati.CommandLine.RecoveryTool
                 var indexes = remotefiles.Where(a => a.FileType == RemoteVolumeType.Index).ToArray();
 
                 remotefiles = files.Concat(blocks).ToArray().Concat(indexes).ToArray();
+
+                var retainedReuploadedBlockFiles = new List<string>();
 
                 Console.WriteLine("Found {0} files which belongs to backup with prefix {1}", remotefiles.Count(), m_Options.Prefix);
 
@@ -278,7 +282,13 @@ namespace Duplicati.CommandLine.RecoveryTool
                             Console.Write(" reuploading ...");
                             backend.PutAsync((new FileInfo(localFileTarget)).Name, localFileTarget, CancellationToken.None).Await();
                             backend.DeleteAsync(remoteFile.File.Name, CancellationToken.None).Await();
-                            File.Delete(localFileTarget);
+
+                            if (remoteFile.FileType == RemoteVolumeType.Blocks && indexes.Length > 0)
+                                retainedReuploadedBlockFiles.Add(localFileTarget);
+                            else
+                                File.Delete(localFileTarget);
+
+                            reuploaded++;
                         }
 
                         Console.WriteLine(" done!");
@@ -302,6 +312,10 @@ namespace Duplicati.CommandLine.RecoveryTool
                     }
                 }
 
+                foreach (var retainedFile in retainedReuploadedBlockFiles)
+                    if (File.Exists(retainedFile))
+                        File.Delete(retainedFile);
+
                 if (needspass > 0 && downloaded == 0)
                 {
                     Console.WriteLine("No files downloaded, try adding --passphrase to decrypt files");
@@ -320,6 +334,15 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                 return 0;
             }
+        }
+
+        private static void RestoreOptionsFromLocalDatabaseIfAvailable(string backendUrl, Options options)
+        {
+            var dbpath = CLIDatabaseLocator.GetDatabasePathForCLI(backendUrl, options, false, false);
+            if (string.IsNullOrWhiteSpace(dbpath) || !File.Exists(dbpath))
+                return;
+
+            Duplicati.Library.Main.Utility.UpdateOptionsFromDatabase(dbpath, options, "RecoveryTool Recompress", CancellationToken.None).Await();
         }
     }
 }

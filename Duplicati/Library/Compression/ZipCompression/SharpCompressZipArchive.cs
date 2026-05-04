@@ -151,7 +151,7 @@ public class SharpCompressZipArchive : IZipArchive
     /// <param name="level">The deflate compression leve</param>
     /// <returns>The Zstd compression level</returns>
     private static int MapDeflateCompressionLevelToZStandard(int level)
-        => (int)Math.Max(1, Math.Min(22, Math.Round(level * 2.33) + 1));
+        => (int)Math.Clamp(Math.Round(level * 2.33), 1, 22);
 
 
     private IArchive Archive

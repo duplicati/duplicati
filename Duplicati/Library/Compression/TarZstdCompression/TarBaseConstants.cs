@@ -18,35 +18,36 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-namespace Duplicati.WebserverCore.Dto.V2;
+
+namespace Duplicati.Library.Compression.TarZstdCompression;
 
 /// <summary>
-/// The fileset DTO
+/// Constants for the Tar-based file formats
 /// </summary>
-public sealed record SearchEntriesRequestDto : PaginatedRequest
+public static class TarBaseConstants
 {
     /// <summary>
-    /// The backup ID
+    /// EOF header file name
     /// </summary>
-    public required string BackupId { get; init; }
+    public const string EofHeaderFileName = ".eof-header";
+
     /// <summary>
-    /// The path to the files to list versions for
+    /// Magic string at the end of the EOF header (6 bytes)
     /// </summary>
-    public required string[]? Paths { get; init; }
+    public const string EofHeaderMagic = "EOFHD1";
+
     /// <summary>
-    /// The filters to apply for searching
+    /// Size of the EOF header magic string
     /// </summary>
-    public required string[]? Filters { get; init; }
+    public const int EofHeaderMagicSize = 6;
+
     /// <summary>
-    /// The time to search in
+    /// Size of the offset field (8 bytes, long)
     /// </summary>
-    public string? Time { get; init; }
+    public const int EofHeaderOffsetSize = 8;
+
     /// <summary>
-    /// If true, return extended information
+    /// Total size of the EOF header trailer (magic + offset)
     /// </summary>
-    public bool? ReturnExtended { get; init; }
-    /// <summary>
-    /// The version(s) to search in
-    /// </summary>
-    public long[]? Version { get; init; }
+    public const int EofHeaderTrailerSize = EofHeaderMagicSize + EofHeaderOffsetSize;
 }

@@ -384,5 +384,103 @@ namespace Duplicati.UnitTest
                     "Expected warning about compacting a locked volume");
             }
         }
+
+        [Test]
+        [Category("Compact")]
+        public async Task CompactRestoresStoredWritePathOptionsWhenCliOmitsThem()
+        {
+            var backupOpts = TestOptions;
+            backupOpts["prefix"] = "compactprefix";
+            backupOpts["backup-test-samples"] = "0";
+            backupOpts["number-of-retries"] = "0";
+            backupOpts["dblock-size"] = "20KB";
+            backupOpts["blocksize"] = "1KB";
+            backupOpts["threshold"] = "5";
+            backupOpts["no-auto-compact"] = "true";
+            backupOpts["small-file-size"] = "1TB";
+            backupOpts["small-file-max-count"] = "0";
+            backupOpts["no-encryption"] = "true";
+
+            var target = "file://" + TARGETFOLDER;
+            var file1 = Path.Combine(DATAFOLDER, "f1");
+            var file2 = Path.Combine(DATAFOLDER, "f2");
+            var file3 = Path.Combine(DATAFOLDER, "f3");
+            var file4 = Path.Combine(DATAFOLDER, "f4");
+            var file5 = Path.Combine(DATAFOLDER, "f5");
+            var file6 = Path.Combine(DATAFOLDER, "f6");
+
+            const long fileSize = 45 * 1024;
+
+            using (var c = new Controller(target, backupOpts, null))
+            {
+                TestUtils.WriteTestFile(file1, fileSize);
+                TestUtils.WriteTestFile(file2, fileSize);
+                var b1 = c.Backup(new[] { DATAFOLDER });
+                Assert.That(b1.Errors, Is.Empty, "Backup 1 had errors");
+
+                SleepUntilNextSecond(b1.BeginTime);
+                TestUtils.WriteTestFile(file3, fileSize);
+                TestUtils.WriteTestFile(file4, fileSize);
+
+                var b2 = c.Backup(new[] { DATAFOLDER });
+                Assert.That(b2.Errors, Is.Empty, "Backup 2 had errors");
+
+                SleepUntilNextSecond(b2.BeginTime);
+                TestUtils.WriteTestFile(file5, fileSize);
+                TestUtils.WriteTestFile(file6, fileSize);
+
+                var b3 = c.Backup(new[] { DATAFOLDER });
+                Assert.That(b3.Errors, Is.Empty, "Backup 3 had errors");
+
+                SleepUntilNextSecond(b3.BeginTime);
+                File.Delete(file1);
+                File.Delete(file3);
+                File.Delete(file5);
+
+                var b4 = c.Backup(new[] { DATAFOLDER });
+                Assert.That(b4.Errors, Is.Empty, "Backup 4 had errors");
+            }
+
+            var token = CancellationToken.None;
+            await using (var db = await LocalDatabase.CreateLocalDatabaseAsync(DBFILE, null, true, null, token).ConfigureAwait(false))
+            {
+                var storedOptions = await db.GetDbOptions(token).ConfigureAwait(false);
+                Assert.That(storedOptions["prefix"], Is.EqualTo("compactprefix"));
+                Assert.That(storedOptions["dblock-size"], Is.EqualTo((20 * 1024).ToString()));
+                Assert.That(storedOptions["compression-module"], Is.EqualTo("zip"));
+                Assert.That(storedOptions["passphrase"], Is.EqualTo("no-encryption"));
+            }
+
+            var dblockFilesBeforeCompact = Directory.GetFiles(TARGETFOLDER, "*.dblock.*")
+                .Select(Path.GetFileName)
+                .ToArray();
+
+            var compactOpts = new System.Collections.Generic.Dictionary<string, string>
+            {
+                ["dbpath"] = DBFILE,
+                ["backup-test-samples"] = "0",
+                ["number-of-retries"] = "0",
+                ["threshold"] = "5",
+                ["no-auto-compact"] = "true",
+                ["small-file-size"] = "1TB",
+                ["small-file-max-count"] = "0"
+            };
+
+            using (var c = new Controller(target, compactOpts, null))
+            {
+                var compactResults = c.Compact();
+                Assert.That(compactResults.Errors, Is.Empty, "Compact had errors");
+                Assert.That(compactResults.DownloadedFileCount, Is.GreaterThan(0), "No compact operation was performed");
+            }
+
+            var newDblockFiles = Directory.GetFiles(TARGETFOLDER, "*.dblock.*")
+                .Select(Path.GetFileName)
+                .Except(dblockFilesBeforeCompact, StringComparer.Ordinal)
+                .ToArray();
+
+            Assert.That(newDblockFiles.Length, Is.GreaterThan(1), "Expected compact to create multiple dblock files using the stored 20KB dblock-size");
+            Assert.That(newDblockFiles.All(name => name is not null && name.StartsWith("compactprefix-", StringComparison.Ordinal) && name.EndsWith(".dblock.zip", StringComparison.Ordinal)), Is.True,
+                $"Expected compact to preserve the stored unencrypted zip write-path, got: {string.Join(", ", newDblockFiles)}");
+        }
     }
 }

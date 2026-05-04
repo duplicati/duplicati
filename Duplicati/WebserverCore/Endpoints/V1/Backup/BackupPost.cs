@@ -54,11 +54,11 @@ public class BackupPost : IEndpointV1
             .RequireAuthorization();
 
         group.MapPost("/backup/{id}/repair", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromRoute] string id, Dto.RepairInputDto? input)
-            => ExecuteRepair(GetBackup(connection, id), queueRunnerService, input))
+            => ExecuteRepair(connection, GetBackup(connection, id), queueRunnerService, input))
             .RequireAuthorization();
 
         group.MapPost("/backup/{id}/repairupdate", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromRoute] string id, Dto.RepairInputDto? input)
-            => ExecuteRepairUpdate(GetBackup(connection, id), queueRunnerService, input))
+            => ExecuteRepairUpdate(connection, GetBackup(connection, id), queueRunnerService, input))
             .RequireAuthorization();
 
         group.MapPost("/backup/{id}/vacuum", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromRoute] string id)
@@ -142,11 +142,11 @@ public class BackupPost : IEndpointV1
     private static Dto.TaskStartedDto ExecuteReportRemoteSize(IBackup backup, IQueueRunnerService queueRunnerService)
         => new Dto.TaskStartedDto("OK", queueRunnerService.AddTask(Runner.CreateTask(DuplicatiOperation.ListRemote, backup)));
 
-    private static Dto.TaskStartedDto ExecuteRepair(IBackup backup, IQueueRunnerService queueRunnerService, Dto.RepairInputDto? input)
-        => DoRepair(backup, false, queueRunnerService, input);
+    private static Dto.TaskStartedDto ExecuteRepair(Connection connection, IBackup backup, IQueueRunnerService queueRunnerService, Dto.RepairInputDto? input)
+        => DoRepair(connection, backup, false, queueRunnerService, input);
 
-    private static Dto.TaskStartedDto ExecuteRepairUpdate(IBackup backup, IQueueRunnerService queueRunnerService, Dto.RepairInputDto? input)
-        => DoRepair(backup, true, queueRunnerService, input);
+    private static Dto.TaskStartedDto ExecuteRepairUpdate(Connection connection, IBackup backup, IQueueRunnerService queueRunnerService, Dto.RepairInputDto? input)
+        => DoRepair(connection, backup, true, queueRunnerService, input);
 
     private static Dto.TaskStartedDto ExecuteVacuum(IBackup backup, IQueueRunnerService queueRunnerService)
         => new Dto.TaskStartedDto("OK", queueRunnerService.AddTask(Runner.CreateTask(DuplicatiOperation.Vacuum, backup)));
@@ -157,7 +157,7 @@ public class BackupPost : IEndpointV1
     private static Dto.TaskStartedDto ExecuteCompact(IBackup backup, IQueueRunnerService queueRunnerService)
         => new Dto.TaskStartedDto("OK", queueRunnerService.AddTask(Runner.CreateTask(DuplicatiOperation.Compact, backup)));
 
-    private static Dto.TaskStartedDto DoRepair(IBackup backup, bool repairUpdate, IQueueRunnerService queueRunnerService, Dto.RepairInputDto? input)
+    private static Dto.TaskStartedDto DoRepair(Connection connection, IBackup backup, bool repairUpdate, IQueueRunnerService queueRunnerService, Dto.RepairInputDto? input)
     {
         // These are all props on the input object
         var extra = new Dictionary<string, string?>();
@@ -175,13 +175,47 @@ public class BackupPost : IEndpointV1
                 extra["version"] = input.version;
                 extra["ignore-update-if-version-exists"] = "true";
             }
-            if (input.refresh_lock_info ?? false)
-                extra["repair-refresh-lock-info"] = "true";
+
+            // If the call explicitly asks for a refresh lock info, we use that
+            if (input.refresh_lock_info != null)
+                extra["repair-refresh-lock-info"] = input.refresh_lock_info.Value.ToString();
+        }
+
+        if (!extra.ContainsKey("repair-refresh-lock-info"))
+        {
+            var refresh = DetermineLockRefresh(backup.Settings) ?? DetermineLockRefresh(connection.Settings);
+            if (!string.IsNullOrWhiteSpace(refresh))
+                extra["repair-refresh-lock-info"] = refresh;
         }
 
         var filters = input?.paths ?? [];
 
         return new Dto.TaskStartedDto("OK", queueRunnerService.AddTask(Runner.CreateTask(repairUpdate ? DuplicatiOperation.RepairUpdate : DuplicatiOperation.Repair, backup, extra, filters)));
+    }
+
+    private static string? DetermineLockRefresh(IEnumerable<ISetting> settings)
+    {
+        var refresh = settings.FirstOrDefault(x => string.Equals(x.Name.TrimStart('-'), "repair-refresh-lock-info"));
+        if (refresh != null)
+            return refresh.Value ?? "true";
+
+        var lock_duration = settings.FirstOrDefault(x => string.Equals(x.Name.TrimStart('-'), "remote-file-lock-duration"));
+        if (lock_duration != null)
+        {
+            try
+            {
+                var ts = Library.Utility.Timeparser.ParseTimeSpan(lock_duration.Value);
+                if (ts.Ticks > 0)
+                    return "true";
+            }
+            catch
+            {
+                // We don't know what the lock duration is, but assume it is non-zero
+                return "true";
+            }
+        }
+
+        return null;
     }
 
     private static Dto.TaskStartedDto ExecuteRunBackup(IBackup backup, bool skipQueue, IQueueRunnerService queueRunnerService)

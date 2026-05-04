@@ -470,7 +470,7 @@ public class KeepRemoteConnection : IDisposable
     /// </summary>
     /// <returns>An awaitable task</returns>
     private Task InvokeReKey()
-        => _onReKey(new ClaimedClientData(_token, _serverUrl, _certificateUrl, _serverKeys, null));
+        => _onReKey(new ClaimedClientData(_token, _serverUrl, _certificateUrl, _serverKeys, null, null));
 
     /// <summary>
     /// Creates a new connection to the remote server

@@ -66,21 +66,33 @@ namespace Duplicati.UnitTest
             await using var db = await LocalDatabase.CreateLocalDatabaseAsync(tempDb, "test", true, null, CancellationToken.None);
             await db.SetDbOptions(new Dictionary<string, string>
             {
+                { "prefix", "custom-prefix" },
                 { "blocksize", "16384" },
                 { "blockhash", Library.Utility.HashFactory.MD5 },
-                { "filehash", "SHA512" }
+                { "filehash", "SHA512" },
+                { "dblock-size", "1048576" },
+                { "compression-module", "zip" },
+                { "encryption-module", "gpg" }
             }, CancellationToken.None);
 
             var options = new Options(new Dictionary<string, string?>());
 
             await Utility.UpdateOptionsFromDb(db, options, CancellationToken.None);
 
+            Assert.That(options.RawOptions.TryGetValue("prefix", out var prefix), Is.True);
+            Assert.That(prefix, Is.EqualTo("custom-prefix"));
             Assert.That(options.RawOptions.TryGetValue("blocksize", out var blocksize), Is.True);
             Assert.That(blocksize, Is.EqualTo("16384b"));
             Assert.That(options.RawOptions.TryGetValue("block-hash-algorithm", out var blockHash), Is.True);
             Assert.That(blockHash, Is.EqualTo(Library.Utility.HashFactory.MD5));
             Assert.That(options.RawOptions.TryGetValue("file-hash-algorithm", out var fileHash), Is.True);
             Assert.That(fileHash, Is.EqualTo("SHA512"));
+            Assert.That(options.RawOptions.TryGetValue("dblock-size", out var dblockSize), Is.True);
+            Assert.That(dblockSize, Is.EqualTo("1048576b"));
+            Assert.That(options.RawOptions.TryGetValue("compression-module", out var compressionModule), Is.True);
+            Assert.That(compressionModule, Is.EqualTo("zip"));
+            Assert.That(options.RawOptions.TryGetValue("encryption-module", out var encryptionModule), Is.True);
+            Assert.That(encryptionModule, Is.EqualTo("gpg"));
         }
 
         [Test]
@@ -91,23 +103,54 @@ namespace Duplicati.UnitTest
             await using var db = await LocalDatabase.CreateLocalDatabaseAsync(tempDb, "test", true, null, CancellationToken.None);
             await db.SetDbOptions(new Dictionary<string, string>
             {
+                { "prefix", "stored-prefix" },
                 { "blocksize", "4096" },
                 { "blockhash", Library.Utility.HashFactory.SHA1 },
-                { "filehash", "SHA256" }
+                { "filehash", "SHA256" },
+                { "dblock-size", "1048576" },
+                { "compression-module", "zip" },
+                { "encryption-module", "aes" }
             }, CancellationToken.None);
 
             var options = new Options(new Dictionary<string, string?>
             {
+                { "prefix", "cli-prefix" },
                 { "blocksize", "32kb" },
                 { "block-hash-algorithm", Library.Utility.HashFactory.SHA512 },
-                { "file-hash-algorithm", "RIPEMD160" }
+                { "file-hash-algorithm", "RIPEMD160" },
+                { "dblock-size", "2mb" },
+                { "compression-module", "zip" },
+                { "encryption-module", "gpg" }
             });
 
             await Utility.UpdateOptionsFromDb(db, options, CancellationToken.None);
 
+            Assert.That(options.RawOptions["prefix"], Is.EqualTo("cli-prefix"));
             Assert.That(options.RawOptions["blocksize"], Is.EqualTo("32kb"));
             Assert.That(options.RawOptions["block-hash-algorithm"], Is.EqualTo(Library.Utility.HashFactory.SHA512));
             Assert.That(options.RawOptions["file-hash-algorithm"], Is.EqualTo("RIPEMD160"));
+            Assert.That(options.RawOptions["dblock-size"], Is.EqualTo("2mb"));
+            Assert.That(options.RawOptions["compression-module"], Is.EqualTo("zip"));
+            Assert.That(options.RawOptions["encryption-module"], Is.EqualTo("gpg"));
+        }
+
+        [Test]
+        [Category("Utility")]
+        public async Task UpdateOptionsFromDbRestoresNoEncryptionWhenStoredBackupIsUnencrypted()
+        {
+            using var tempDb = new TempFile();
+            await using var db = await LocalDatabase.CreateLocalDatabaseAsync(tempDb, "test", true, null, CancellationToken.None);
+            await db.SetDbOptions(new Dictionary<string, string>
+            {
+                { "passphrase", "no-encryption" }
+            }, CancellationToken.None);
+
+            var options = new Options(new Dictionary<string, string?>());
+
+            await Utility.UpdateOptionsFromDb(db, options, CancellationToken.None);
+
+            Assert.That(options.RawOptions.TryGetValue("no-encryption", out var noEncryption), Is.True);
+            Assert.That(noEncryption, Is.EqualTo("true"));
         }
 
         [Test]
@@ -118,7 +161,7 @@ namespace Duplicati.UnitTest
             await using var db = await LocalDatabase.CreateLocalDatabaseAsync(tempDb, "test", true, null, CancellationToken.None);
             await db.SetDbOptions(new Dictionary<string, string>
             {
-                { "filehash", "SHA1" }
+                { "compression-module", "zip" }
             }, CancellationToken.None);
 
             var result = await Utility.ContainsOptionsForVerification(db, CancellationToken.None);
@@ -169,6 +212,74 @@ namespace Duplicati.UnitTest
 
             var storedOptions = await db.GetDbOptions(CancellationToken.None);
             Assert.That(storedOptions["passphrase"], Is.EqualTo("no-encryption"));
+        }
+
+        [Test]
+        [Category("Utility")]
+        public async Task VerifyOptionsAndUpdateDatabasePersistsWritePathValues()
+        {
+            using var tempDb = new TempFile();
+            await using var db = await LocalDatabase.CreateLocalDatabaseAsync(tempDb, "test", true, null, CancellationToken.None);
+
+            var options = new Options(new Dictionary<string, string?>
+            {
+                { "prefix", "persisted-prefix" },
+                { "blocksize", "16kb" },
+                { "block-hash-algorithm", Library.Utility.HashFactory.SHA256 },
+                { "file-hash-algorithm", Library.Utility.HashFactory.SHA512 },
+                { "dblock-size", "25mb" },
+                { "compression-module", "zip" },
+                { "encryption-module", "gpg" },
+                { "passphrase", "secret" }
+            });
+
+            await Utility.VerifyOptionsAndUpdateDatabase(db, options, CancellationToken.None);
+
+            var storedOptions = await db.GetDbOptions(CancellationToken.None);
+            Assert.That(storedOptions["prefix"], Is.EqualTo("persisted-prefix"));
+            Assert.That(storedOptions["blocksize"], Is.EqualTo(options.Blocksize.ToString()));
+            Assert.That(storedOptions["blockhash"], Is.EqualTo(Library.Utility.HashFactory.SHA256));
+            Assert.That(storedOptions["filehash"], Is.EqualTo(Library.Utility.HashFactory.SHA512));
+            Assert.That(storedOptions["dblock-size"], Is.EqualTo(options.VolumeSize.ToString()));
+            Assert.That(storedOptions["compression-module"], Is.EqualTo("zip"));
+            Assert.That(storedOptions["encryption-module"], Is.EqualTo("gpg"));
+            Assert.That(storedOptions.ContainsKey("passphrase"), Is.True);
+            Assert.That(storedOptions.ContainsKey("passphrase-salt"), Is.True);
+        }
+
+        [Test]
+        [Category("Utility")]
+        public async Task PersistOptionsToDatabaseRemovesStaleEncryptionMarkersForUnencryptedBackup()
+        {
+            using var tempDb = new TempFile();
+            await using var db = await LocalDatabase.CreateLocalDatabaseAsync(tempDb, "test", true, null, CancellationToken.None);
+            await db.SetDbOptions(new Dictionary<string, string>
+            {
+                { "compression-module", "zip" },
+                { "encryption-module", "aes" },
+                { "passphrase", "old-hash" },
+                { "passphrase-salt", "v1:oldsalt" },
+                { "unrelated-key", "keep-me" }
+            }, CancellationToken.None);
+            await db.Transaction.CommitAsync(CancellationToken.None);
+
+            var options = new Options(new Dictionary<string, string?>
+            {
+                { "dbpath", tempDb },
+                { "compression-module", "zip" },
+                { "no-encryption", bool.TrueString }
+            });
+
+            await Utility.PersistOptionsToDatabaseWithoutValidation(tempDb, options, "UnitTestPersistOptions", CancellationToken.None);
+
+            await using var reopened = await LocalDatabase.CreateLocalDatabaseAsync(tempDb, "verify", true, null, CancellationToken.None);
+            var storedOptions = await reopened.GetDbOptions(CancellationToken.None);
+
+            Assert.That(storedOptions["compression-module"], Is.EqualTo("zip"));
+            Assert.That(storedOptions["passphrase"], Is.EqualTo("no-encryption"));
+            Assert.That(storedOptions.ContainsKey("encryption-module"), Is.False);
+            Assert.That(storedOptions.ContainsKey("passphrase-salt"), Is.False);
+            Assert.That(storedOptions["unrelated-key"], Is.EqualTo("keep-me"));
         }
     }
 }

@@ -198,6 +198,26 @@ namespace Duplicati.UnitTest
             });
         }
 
+        [Test]
+        [Category("Border")]
+        public void Run10kTgzCompression()
+        {
+            RunCommands(1024 * 10, modifyOptions: opts =>
+            {
+                opts["compression-module"] = "tgz";
+            });
+        }
+
+        [Test]
+        [Category("Border")]
+        public void Run10kTzstdCompression()
+        {
+            RunCommands(1024 * 10, modifyOptions: opts =>
+            {
+                opts["compression-module"] = "tzstd";
+            });
+        }
+
         public static Dictionary<string, int> WriteTestFilesToFolder(string targetfolder, int blocksize, int basedatasize = 0)
         {
             if (basedatasize <= 0)

@@ -35,7 +35,7 @@ namespace Duplicati.Library.Modules.Builtin
     /// <summary>
     /// Module for running scripts before and after operations.
     /// </summary>
-    public class RunScript : IGenericCallbackModule, IGenericPriorityModule
+    public class RunScript : IGenericCallbackModule, IBackupCallbackModule, IGenericPriorityModule
     {
         /// <summary>
         /// The tag used for logging
@@ -57,6 +57,7 @@ namespace Duplicati.Library.Modules.Builtin
 
         private const string STARTUP_OPTION = "run-script-before";
         private const string FINISH_OPTION = "run-script-after";
+        private const string FINISH_BACKUP_OPTION = "run-script-post-backup";
         private const string REQUIRED_OPTION = "run-script-before-required";
         private const string TIMEOUT_OPTION = "run-script-timeout";
         private const string ENABLE_ARGUMENTS_OPTION = "run-script-with-arguments";
@@ -76,6 +77,7 @@ namespace Duplicati.Library.Modules.Builtin
         private string m_requiredScript = null;
         private string m_startScript = null;
         private string m_finishScript = null;
+        private string m_finishBackupScript = null;
         private int m_timeout = 0;
         private bool m_enableArguments = false;
 
@@ -109,6 +111,7 @@ namespace Duplicati.Library.Modules.Builtin
             commandlineOptions.TryGetValue(STARTUP_OPTION, out m_startScript);
             commandlineOptions.TryGetValue(REQUIRED_OPTION, out m_requiredScript);
             commandlineOptions.TryGetValue(FINISH_OPTION, out m_finishScript);
+            commandlineOptions.TryGetValue(FINISH_BACKUP_OPTION, out m_finishBackupScript);
             m_enableArguments = Utility.Utility.ParseBoolOption(commandlineOptions.AsReadOnly(), ENABLE_ARGUMENTS_OPTION);
 
             ResultExportFormat resultFormat;
@@ -175,6 +178,7 @@ namespace Duplicati.Library.Modules.Builtin
                 return new List<ICommandLineArgument>([
                     new CommandLineArgument(STARTUP_OPTION, CommandLineArgument.ArgumentType.Path, Strings.RunScript.StartupoptionShort, Strings.RunScript.StartupoptionLong),
                     new CommandLineArgument(FINISH_OPTION, CommandLineArgument.ArgumentType.Path, Strings.RunScript.FinishoptionShort, Strings.RunScript.FinishoptionLong),
+                    new CommandLineArgument(FINISH_BACKUP_OPTION, CommandLineArgument.ArgumentType.Path, Strings.RunScript.FinishBackupOptionShort, Strings.RunScript.FinishBackupOptionLong),
                     new CommandLineArgument(REQUIRED_OPTION, CommandLineArgument.ArgumentType.Path, Strings.RunScript.RequiredoptionShort, Strings.RunScript.RequiredoptionLong),
                     new CommandLineArgument(ENABLE_ARGUMENTS_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.RunScript.EnableArgumentsShort, Strings.RunScript.EnableArgumentsLong),
                     new CommandLineArgument(RESULT_FORMAT_OPTION,
@@ -268,6 +272,50 @@ namespace Duplicati.Library.Modules.Builtin
 
                 Execute(m_finishScript, "AFTER", m_operationName, ref m_remoteurl, ref m_localpath, m_timeout, false, m_enableArguments, m_options, tmpfile, level);
             }
+        }
+
+        /// <summary>
+        /// Called when the backup operation has completed uploading data,
+        /// but before the remote verification is performed.
+        /// </summary>
+        /// <param name="result">The result object containing backup operation results</param>
+        /// <param name="exception">Any exception that occurred during backup, or null</param>
+        public void OnFinishBackup(IBasicResults result, Exception exception)
+        {
+            if (string.IsNullOrEmpty(m_finishBackupScript))
+                return;
+
+            ParsedResultType level;
+            if (exception is OperationAbortException oae)
+            {
+                switch (oae.AbortReason)
+                {
+                    case OperationAbortReason.Error:
+                        level = ParsedResultType.Error;
+                        break;
+                    case OperationAbortReason.Normal:
+                        level = ParsedResultType.Success;
+                        break;
+                    case OperationAbortReason.Warning:
+                        level = ParsedResultType.Warning;
+                        break;
+                    default:
+                        level = ParsedResultType.Unknown;
+                        break;
+                }
+            }
+            else if (exception != null)
+                level = ParsedResultType.Fatal;
+            else if (result != null)
+                level = result.ParsedResult;
+            else
+                level = ParsedResultType.Error;
+
+            using var tmpfile = new TempFile();
+            using (var streamWriter = new StreamWriter(tmpfile))
+                streamWriter.Write(resultFormatSerializer.Serialize(result, exception, m_logstorage, null));
+
+            Execute(m_finishBackupScript, "POST-BACKUP", m_operationName, ref m_remoteurl, ref m_localpath, m_timeout, false, m_enableArguments, m_options, tmpfile, level);
         }
         #endregion
 

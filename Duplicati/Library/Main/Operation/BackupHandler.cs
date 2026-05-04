@@ -893,6 +893,18 @@ namespace Duplicati.Library.Main.Operation
                     await db.RemoveDuplicatePathsFromFilesetAsync(filesetid, m_taskReader.ProgressToken)
                         .ConfigureAwait(false);
 
+
+                    // Invoke the after-backup callback, after the backup is complete
+                    // and sources are disposed, but before verification
+                    if (await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false) && m_options.LoadedModules != null)
+                    {
+                        foreach (var mx in m_options.LoadedModules)
+                            if (mx is IBackupCallbackModule module)
+                                try { module.OnFinishBackup(m_result, null); }
+                                catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, $"OnFinishBackupError{mx.Key}", ex, "OnFinishBackup callback {0} failed: {1}", mx.Key, ex.Message); }
+                    }
+
+
                     // If this throws, we should roll back the transaction
                     if (await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                     {

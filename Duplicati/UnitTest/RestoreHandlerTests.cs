@@ -234,7 +234,7 @@ namespace Duplicati.UnitTest
             using (var c = new Controller("file://" + this.TARGETFOLDER, backupOptions, null))
                 TestUtils.AssertResults(c.Backup(new[] { this.DATAFOLDER }));
 
-            var restoreOptions = new Dictionary<string, string>(this.TestOptions)
+            var restoreOptions = new Dictionary<string, string>(backupOptions)
             {
                 ["restore-path"] = this.RESTOREFOLDER,
                 ["restore-legacy"] = "false",

@@ -981,6 +981,7 @@ namespace Duplicati.Library.Main.Database
                                 AND ""Block"".""VolumeID"" = @VolumeId
                         )
                         WHERE ""Block"".""VolumeID"" = @VolumeId
+                        AND ""Block"".""ID"" IN (SELECT ""BlockID"" FROM ""{replacementBlocks}"")
                     ")
                     .SetParameterValue("@VolumeId", deletedVolume.ID)
                     .ExecuteNonQueryAsync(token)

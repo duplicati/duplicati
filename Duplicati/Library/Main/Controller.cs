@@ -122,6 +122,13 @@ namespace Duplicati.Library.Main
             UsageReporter.Reporter.Report("USE_COMPRESSION", m_options.CompressionModule);
             UsageReporter.Reporter.Report("USE_ENCRYPTION", m_options.EncryptionModule);
 
+            // Warn about experimental tar-based compression modules
+            if (m_options.CompressionModule.Equals("tzstd", StringComparison.OrdinalIgnoreCase) ||
+                m_options.CompressionModule.Equals("tgz", StringComparison.OrdinalIgnoreCase))
+            {
+                Logging.Log.WriteWarningMessage(LOGTAG, "ExperimentalCompressionModule", null, $"The compression module '{m_options.CompressionModule}' is experimental and for testing only.");
+            }
+
             CheckAutoCompactInterval();
             CheckAutoVacuumInterval();
 
@@ -738,6 +745,11 @@ namespace Duplicati.Library.Main
                     break;
             }
 
+            if (string.IsNullOrEmpty(m_options.Dbpath))
+                m_options.Dbpath = CLIDatabaseLocator.GetDatabasePathForCLI(m_backendUrl, m_options);
+
+            RestoreOptionsFromExistingDatabase(result.MainOperation);
+
             //Load generic modules
             m_options.ClearLoadedModules();
 
@@ -819,10 +831,17 @@ namespace Duplicati.Library.Main
                 }
             }
 
-            if (string.IsNullOrEmpty(m_options.Dbpath))
-                m_options.Dbpath = CLIDatabaseLocator.GetDatabasePathForCLI(m_backendUrl, m_options);
-
             ValidateOptions();
+        }
+
+
+        private void RestoreOptionsFromExistingDatabase(OperationMode operation)
+        {
+            if (m_options.NoLocalDb || string.IsNullOrWhiteSpace(m_options.Dbpath) || !File.Exists(m_options.Dbpath))
+                return;
+
+            using var db = LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, operation.ToString(), true, null, CancellationToken.None).Await();
+            Utility.UpdateOptionsFromDb(db, m_options, CancellationToken.None).Await();
         }
 
         private async Task ApplySecretProvider(CancellationToken cancellationToken)

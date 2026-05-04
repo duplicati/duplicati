@@ -18,35 +18,26 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-namespace Duplicati.WebserverCore.Dto.V2;
 
-/// <summary>
-/// The fileset DTO
-/// </summary>
-public sealed record SearchEntriesRequestDto : PaginatedRequest
+using System;
+
+namespace Duplicati.Library.Interface
 {
     /// <summary>
-    /// The backup ID
+    /// Interface for implementing backup-specific callback modules
     /// </summary>
-    public required string BackupId { get; init; }
-    /// <summary>
-    /// The path to the files to list versions for
-    /// </summary>
-    public required string[]? Paths { get; init; }
-    /// <summary>
-    /// The filters to apply for searching
-    /// </summary>
-    public required string[]? Filters { get; init; }
-    /// <summary>
-    /// The time to search in
-    /// </summary>
-    public string? Time { get; init; }
-    /// <summary>
-    /// If true, return extended information
-    /// </summary>
-    public bool? ReturnExtended { get; init; }
-    /// <summary>
-    /// The version(s) to search in
-    /// </summary>
-    public long[]? Version { get; init; }
+    public interface IBackupCallbackModule : IGenericModule
+    {
+        /// <summary>
+        /// Called when the backup operation has completed uploading data,
+        /// but before the remote verification is performed.
+        /// This allows scripts to run after the backup data is written
+        /// and source resources (like VSS snapshots) are released,
+        /// but before the potentially lengthy verification or synchronization
+        /// processes run.
+        /// </summary>
+        /// <param name="result">The result object containing backup operation results</param>
+        /// <param name="exception">Any exception that occurred during backup, or null</param>
+        void OnFinishBackup(IBasicResults result, Exception exception);
+    }
 }

@@ -18,35 +18,17 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-namespace Duplicati.WebserverCore.Dto.V2;
+
+using System;
+
+namespace Duplicati.Library.Compression.TarZstdCompression;
 
 /// <summary>
-/// The fileset DTO
+/// Represents a file entry in the tar archive with its metadata
 /// </summary>
-public sealed record SearchEntriesRequestDto : PaginatedRequest
-{
-    /// <summary>
-    /// The backup ID
-    /// </summary>
-    public required string BackupId { get; init; }
-    /// <summary>
-    /// The path to the files to list versions for
-    /// </summary>
-    public required string[]? Paths { get; init; }
-    /// <summary>
-    /// The filters to apply for searching
-    /// </summary>
-    public required string[]? Filters { get; init; }
-    /// <summary>
-    /// The time to search in
-    /// </summary>
-    public string? Time { get; init; }
-    /// <summary>
-    /// If true, return extended information
-    /// </summary>
-    public bool? ReturnExtended { get; init; }
-    /// <summary>
-    /// The version(s) to search in
-    /// </summary>
-    public long[]? Version { get; init; }
-}
+public sealed record FileEntry(
+    string Name,
+    long Offset,
+    long Size,
+    DateTime LastWriteTime
+);
