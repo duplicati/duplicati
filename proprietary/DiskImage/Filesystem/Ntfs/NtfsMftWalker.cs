@@ -248,7 +248,7 @@ internal class NtfsMftWalker
         var totalMftRecords = CalculateTotalMftRecords(mftDataRuns);
 
         // Read all MFT records and build the cluster map
-        for (long recordNumber = 0; recordNumber < totalMftRecords; recordNumber++)
+        for (var recordNumber = 0L; recordNumber < totalMftRecords; recordNumber++)
         {
             cancellationToken.ThrowIfCancellationRequested();
             await ProcessMftRecordAsync(recordNumber, partition, cancellationToken).ConfigureAwait(false);
@@ -273,7 +273,7 @@ internal class NtfsMftWalker
         var totalMftRecords = CalculateTotalMftRecords(mftDataRuns);
 
         // Read all MFT records and build the cluster map
-        for (long recordNumber = 0; recordNumber < totalMftRecords; recordNumber++)
+        for (var recordNumber = 0L; recordNumber < totalMftRecords; recordNumber++)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -409,9 +409,7 @@ internal class NtfsMftWalker
     /// <param name="mftRecordData">The MFT record 0 data.</param>
     /// <returns>List of data runs describing the full MFT extent.</returns>
     private List<(long startCluster, long clusterCount)> GetMftDataRuns(byte[] mftRecordData)
-    {
-        return GetDataRunsFromRecord(mftRecordData);
-    }
+        => GetDataRunsFromRecord(mftRecordData);
 
     /// <summary>
     /// Calculates the total number of MFT records from the data runs.
@@ -436,7 +434,7 @@ internal class NtfsMftWalker
     {
         var firstAttributeOffset = BinaryPrimitives.ReadUInt16LittleEndian(recordData.AsSpan(FIRST_ATTRIBUTE_OFFSET, 2));
 
-        int attributeOffset = firstAttributeOffset;
+        var attributeOffset = (int)firstAttributeOffset;
         while (attributeOffset < recordData.Length)
         {
             var attrType = BinaryPrimitives.ReadUInt32LittleEndian(recordData.AsSpan(attributeOffset, 4));
@@ -490,7 +488,7 @@ internal class NtfsMftWalker
     {
         var firstAttributeOffset = BinaryPrimitives.ReadUInt16LittleEndian(recordData.AsSpan(FIRST_ATTRIBUTE_OFFSET, 2));
 
-        int attributeOffset = firstAttributeOffset;
+        var attributeOffset = (int)firstAttributeOffset;
         while (attributeOffset < recordData.Length)
         {
             var attrType = BinaryPrimitives.ReadUInt32LittleEndian(recordData.AsSpan(attributeOffset, 4));
@@ -539,7 +537,7 @@ internal class NtfsMftWalker
 
         // For each cluster that belongs to system metafiles, mark it with current timestamp
         // System metafiles are records 0-23
-        for (long recordNumber = 0; recordNumber < 24 && recordNumber < m_bitmap.TotalClusters; recordNumber++)
+        for (var recordNumber = 0L; recordNumber < 24 && recordNumber < m_bitmap.TotalClusters; recordNumber++)
         {
             // Mark the MFT record's own location
             var recordCluster = (m_bootSector.MftByteOffset + recordNumber * m_bootSector.MftRecordSize) / m_bootSector.ClusterSize;

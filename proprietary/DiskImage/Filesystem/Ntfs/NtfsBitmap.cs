@@ -126,8 +126,8 @@ internal class NtfsBitmap
         get
         {
             var count = 0;
-            foreach (bool bit in m_allocationBitmap)
-                if (bit)
+            for (var i = 0; i < m_allocationBitmap.Length; i++)
+                if (m_allocationBitmap[i])
                     count++;
 
             return count;
@@ -196,7 +196,7 @@ internal class NtfsBitmap
         var firstAttributeOffset = BinaryPrimitives.ReadUInt16LittleEndian(recordData.AsSpan(0x14, 2));
 
         // Find the $DATA attribute (type 0x80)
-        int attributeOffset = firstAttributeOffset;
+        var attributeOffset = (int)firstAttributeOffset;
         while (attributeOffset < recordData.Length)
         {
             var attrType = BinaryPrimitives.ReadUInt32LittleEndian(recordData.AsSpan(attributeOffset, 4));
@@ -393,7 +393,7 @@ internal class NtfsBitmap
     internal static List<(long startCluster, long clusterCount)> ParseDataRuns(ReadOnlySpan<byte> data, int runsOffset)
     {
         var runs = new List<(long startCluster, long clusterCount)>();
-        long currentCluster = 0;
+        var currentCluster = 0L;
         var offset = runsOffset;
 
         while (offset < data.Length)
@@ -412,12 +412,12 @@ internal class NtfsBitmap
                 throw new InvalidDataException($"Invalid data run header: 0x{header:X2}");
 
             // Read the run length (number of clusters)
-            long runLength = 0;
+            var runLength = 0L;
             for (var i = 0; i < lengthBytes; i++)
                 runLength |= (long)data[offset++] << (i * 8);
 
             // Read the run offset (signed, relative to previous run)
-            long runOffsetValue = 0;
+            var runOffsetValue = 0L;
             if (offsetBytes > 0)
             {
                 // Check if the offset is negative (sign bit is set in the last byte)

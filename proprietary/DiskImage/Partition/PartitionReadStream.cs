@@ -20,10 +20,10 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
-using System.Buffers;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Duplicati.Library.Utility;
 using Duplicati.Proprietary.DiskImage.Disk;
 
 namespace Duplicati.Proprietary.DiskImage.Partition;
@@ -68,9 +68,7 @@ internal class PartitionReadStream : Stream
 
     public override void Flush() { }
     public override int Read(byte[] buffer, int offset, int count)
-    {
-        return ReadAsync(buffer, offset, count, CancellationToken.None).GetAwaiter().GetResult();
-    }
+        => ReadAsync(buffer, offset, count, CancellationToken.None).Await();
     public async override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken token)
     {
         if (_disposed)
@@ -84,7 +82,7 @@ internal class PartitionReadStream : Stream
         if (_position >= _length)
             return 0; // EOF
 
-        long bytesToRead = Math.Min(count, _length - _position);
+        var bytesToRead = Math.Min(count, _length - _position);
         if (bytesToRead > 0)
         {
             return await _disk.ReadBytesAsync(_startOffset + _position, buffer.AsMemory(offset, (int)bytesToRead), token).ConfigureAwait(false);
@@ -93,7 +91,7 @@ internal class PartitionReadStream : Stream
     }
     public override long Seek(long offset, SeekOrigin origin)
     {
-        long newPosition = origin switch
+        var newPosition = origin switch
         {
             SeekOrigin.Begin => offset,
             SeekOrigin.Current => _position + offset,
@@ -106,13 +104,9 @@ internal class PartitionReadStream : Stream
         return _position;
     }
     public override void SetLength(long value)
-    {
-        throw new NotSupportedException("SetLength is not supported on PartitionReadStream.");
-    }
+        => throw new NotSupportedException("SetLength is not supported on PartitionReadStream.");
     public override void Write(byte[] buffer, int offset, int count)
-    {
-        throw new NotSupportedException("Write is not supported on PartitionReadStream.");
-    }
+        => throw new NotSupportedException("Write is not supported on PartitionReadStream.");
 
     protected override void Dispose(bool disposing)
     {

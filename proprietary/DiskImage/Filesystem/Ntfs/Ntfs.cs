@@ -212,10 +212,10 @@ internal class NtfsFilesystem : IFilesystem
         // In NTFS, data starts at cluster 0 which is immediately after the boot sector
         var bootSectorEnd = m_bootSector.BytesPerSector * m_bootSector.SectorsPerCluster; // End of first cluster
 
-        for (long blockIndex = 0; blockIndex < m_blockCount; blockIndex++)
+        for (var blockIndex = 0L; blockIndex < m_blockCount; blockIndex++)
         {
-            long blockStart = blockIndex * m_blockSize;
-            long blockEnd = Math.Min(blockStart + m_blockSize, Partition.Size);
+            var blockStart = blockIndex * m_blockSize;
+            var blockEnd = Math.Min(blockStart + m_blockSize, Partition.Size);
 
             // Check if block is in the boot sector area (first cluster)
             if (blockStart < bootSectorEnd)
@@ -242,18 +242,18 @@ internal class NtfsFilesystem : IFilesystem
             }
 
             // Block is in the volume - check which clusters fall within it
-            DateTime maxTimestamp = DateTime.UnixEpoch;
-            bool hasAllocatedClusters = false;
+            var maxTimestamp = DateTime.UnixEpoch;
+            var hasAllocatedClusters = false;
 
             // Calculate which clusters are in this block
-            long firstClusterInBlock = blockStart / clusterSize;
-            long lastClusterInBlock = (blockEnd - 1) / clusterSize;
+            var firstClusterInBlock = blockStart / clusterSize;
+            var lastClusterInBlock = (blockEnd - 1) / clusterSize;
 
             // Clamp to valid cluster range
             firstClusterInBlock = Math.Max(0, firstClusterInBlock);
             lastClusterInBlock = Math.Min(lastClusterInBlock, totalClusters - 1);
 
-            for (long cluster = firstClusterInBlock; cluster <= lastClusterInBlock; cluster++)
+            for (var cluster = firstClusterInBlock; cluster <= lastClusterInBlock; cluster++)
             {
                 if (m_bitmap.IsClusterAllocated(cluster))
                 {
@@ -346,8 +346,8 @@ internal class NtfsFilesystem : IFilesystem
     {
         for (long i = 0; i < m_blockCount; i++)
         {
-            long address = i * m_blockSize;
-            long size = Math.Min(m_blockSize, Partition.Size - i * m_blockSize);
+            var address = i * m_blockSize;
+            var size = Math.Min(m_blockSize, Partition.Size - i * m_blockSize);
             var blockMeta = m_blockMetadata[i];
 
             if (size > 0)
@@ -386,8 +386,8 @@ internal class NtfsFilesystem : IFilesystem
         if (file.IsDirectory)
             throw new ArgumentException("The specified file is a directory.", nameof(file));
 
-        long address = ntfsFile.Address ?? throw new ArgumentException("File address is required.", nameof(file));
-        long size = ntfsFile.Size;
+        var address = ntfsFile.Address ?? throw new ArgumentException("File address is required.", nameof(file));
+        var size = ntfsFile.Size;
 
         BoundsCheck(address, size);
 
@@ -400,8 +400,8 @@ internal class NtfsFilesystem : IFilesystem
     /// <inheritdoc />
     public async Task<Stream> OpenReadStreamAsync(string path, CancellationToken cancellationToken)
     {
-        long address = ParsePathToAddress(path);
-        long size = Math.Min((long)m_blockSize, Partition.Size - address);
+        var address = ParsePathToAddress(path);
+        var size = Math.Min((long)m_blockSize, Partition.Size - address);
 
         return await OpenReadStreamAsync(new NtfsFile { Address = address, Size = size, IsAllocated = true }, cancellationToken);
     }
@@ -415,8 +415,8 @@ internal class NtfsFilesystem : IFilesystem
         if (file.IsDirectory)
             throw new ArgumentException("The specified file is a directory.", nameof(file));
 
-        long address = ntfsFile.Address ?? throw new ArgumentException("File address is required.", nameof(file));
-        long requestedSize = ntfsFile.Size;
+        var address = ntfsFile.Address ?? throw new ArgumentException("File address is required.", nameof(file));
+        var requestedSize = ntfsFile.Size;
 
         BoundsCheck(address, requestedSize);
 
@@ -435,8 +435,8 @@ internal class NtfsFilesystem : IFilesystem
     /// <inheritdoc />
     public async Task<Stream> OpenWriteStreamAsync(string path, CancellationToken cancellationToken)
     {
-        long address = ParsePathToAddress(path);
-        long size = Math.Min((long)m_blockSize, Partition.Size - address);
+        var address = ParsePathToAddress(path);
+        var size = Math.Min(m_blockSize, Partition.Size - address);
 
         return await OpenWriteStreamAsync(new NtfsFile { Address = address, Size = size, IsAllocated = true }, cancellationToken);
     }
@@ -450,14 +450,14 @@ internal class NtfsFilesystem : IFilesystem
         if (file.IsDirectory)
             throw new ArgumentException("The specified file is a directory.", nameof(file));
 
-        long address = ntfsFile.Address ?? throw new ArgumentException("File address is required.", nameof(file));
-        long requestedSize = ntfsFile.Size;
+        var address = ntfsFile.Address ?? throw new ArgumentException("File address is required.", nameof(file));
+        var requestedSize = ntfsFile.Size;
 
         BoundsCheck(address, requestedSize);
 
         // Calculate actual available size based on target partition
         // This ensures we fail fast if the target is too small
-        long actualSize = Math.Min(requestedSize, Partition.Size - address);
+        var actualSize = Math.Min(requestedSize, Partition.Size - address);
         if (actualSize < requestedSize)
             throw new IOException($"Target partition is too small to write block at address 0x{address:X}. " +
                 $"Requested size: {requestedSize} bytes, Available: {actualSize} bytes. " +
@@ -469,8 +469,8 @@ internal class NtfsFilesystem : IFilesystem
     /// <inheritdoc />
     public async Task<Stream> OpenReadWriteStreamAsync(string path, CancellationToken cancellationToken)
     {
-        long address = ParsePathToAddress(path);
-        long size = Math.Min((long)m_blockSize, Partition.Size - address);
+        var address = ParsePathToAddress(path);
+        var size = Math.Min(m_blockSize, Partition.Size - address);
 
         return await OpenReadWriteStreamAsync(new NtfsFile { Address = address, Size = size, IsAllocated = true }, cancellationToken);
     }
@@ -490,8 +490,8 @@ internal class NtfsFilesystem : IFilesystem
     /// <inheritdoc />
     public Task<long> GetFileLengthAsync(string path, CancellationToken cancellationToken)
     {
-        long address = ParsePathToAddress(path);
-        long size = Math.Min((long)m_blockSize, Partition.Size - address);
+        var address = ParsePathToAddress(path);
+        var size = Math.Min((long)m_blockSize, Partition.Size - address);
 
         return Task.FromResult(size);
     }
@@ -657,9 +657,7 @@ internal class NtfsFilesystem : IFilesystem
         }
 
         public override void SetLength(long value)
-        {
-            throw new NotSupportedException("Cannot change the length of this stream.");
-        }
+            => throw new NotSupportedException("Cannot change the length of this stream.");
 
         public override int Read(byte[] buffer, int offset, int count)
         {
@@ -680,7 +678,7 @@ internal class NtfsFilesystem : IFilesystem
                 _validData = true;
             }
 
-            int bytesToRead = (int)Math.Min(count, _size - _position);
+            var bytesToRead = (int)Math.Min(count, _size - _position);
             if (bytesToRead <= 0)
                 return 0;
 
@@ -729,7 +727,7 @@ internal class NtfsFilesystem : IFilesystem
                 _validData = true;
             }
 
-            int bytesToRead = (int)Math.Min(count, _size - _position);
+            var bytesToRead = (int)Math.Min(count, _size - _position);
             if (bytesToRead <= 0)
                 return 0;
 
@@ -900,7 +898,7 @@ internal class NtfsFilesystem : IFilesystem
             if (buffer.Length - offset < count)
                 throw new ArgumentException("Invalid offset and count for buffer length");
 
-            int bytesToRead = (int)Math.Min(count, _size - _position);
+            var bytesToRead = (int)Math.Min(count, _size - _position);
             if (bytesToRead <= 0)
                 return 0;
 
@@ -911,19 +909,13 @@ internal class NtfsFilesystem : IFilesystem
         }
 
         public override void Write(byte[] buffer, int offset, int count)
-        {
-            throw new NotSupportedException("Write is not supported on this stream.");
-        }
+            => throw new NotSupportedException("Write is not supported on this stream.");
 
         public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
-        {
-            return Task.FromResult(Read(buffer, offset, count));
-        }
+            => Task.FromResult(Read(buffer, offset, count));
 
         public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
-        {
-            throw new NotSupportedException("Write is not supported on this stream.");
-        }
+            => throw new NotSupportedException("Write is not supported on this stream.");
 
         protected override void Dispose(bool disposing)
         {
