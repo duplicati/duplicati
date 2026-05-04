@@ -145,7 +145,7 @@ public class BackupListing : IEndpointV2
             ? new DateTime(0)
             : Library.Utility.Timeparser.ParseTimeInterval(input.Time, DateTime.Now);
 
-        var r = queueRunnerService.RunImmediately(Runner.CreateSearchEntriesTask(bk, input.Filters, input.Paths, time, input.PageSize ?? 1000, input.Page ?? 0, input.ReturnExtended ?? false)) as ISearchFilesResults;
+        var r = queueRunnerService.RunImmediately(Runner.CreateSearchEntriesTask(bk, input.Filters, input.Paths, time, input.Version, input.PageSize ?? 1000, input.Page ?? 0, input.ReturnExtended ?? false)) as ISearchFilesResults;
         if (r == null)
             throw new ServerErrorException("No result from list operation");
 

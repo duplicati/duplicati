@@ -34,6 +34,7 @@ using Duplicati.Server.Serialization.Interface;
 using Duplicati.WebserverCore.Abstractions;
 using System.Threading;
 using System.Text.Json;
+using System.Globalization;
 
 namespace Duplicati.Server
 {
@@ -256,11 +257,13 @@ namespace Duplicati.Server
                 pageOffset: pageOffset);
         }
 
-        public static IRunnerData CreateSearchEntriesTask(IBackup backup, string[]? filters, string[]? folders, DateTime time, int pageSize, int pageOffset, bool returnExtended)
+        public static IRunnerData CreateSearchEntriesTask(IBackup backup, string[]? filters, string[]? folders, DateTime time, long[]? version, int pageSize, int pageOffset, bool returnExtended)
         {
             var dict = new Dictionary<string, string?>();
             if (time.Ticks > 0)
                 dict["time"] = Utility.SerializeDateTime(time.ToUniversalTime());
+            if (version != null)
+                dict["version"] = string.Join(",", version.Select(v => v.ToString(CultureInfo.InvariantCulture)));
 
             return CreateTask(
                 DuplicatiOperation.SearchEntries,
