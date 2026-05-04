@@ -391,6 +391,8 @@ public class DuplicatiWebserver
                     app.ApplicationServices.GetRequiredService<ILogger<DuplicatiWebserver>>()
                         .LogError(thrownException, "Unhandled exception");
 
+                    Library.Logging.Log.WriteErrorMessage(LOGTAG, "UnhandledException", thrownException, "Unhandled exception in webserver request to {0}", context.Request.Path);
+
                     context.Response.StatusCode = 500;
                     context.Response.ContentType = "application/json";
                     await context.Response.WriteAsync(JsonSerializer.Serialize(new { Error = "An error occurred", Code = 500 }));
