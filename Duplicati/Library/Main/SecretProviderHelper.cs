@@ -109,7 +109,7 @@ public static class SecretProviderHelper
     /// </summary>
     /// <param name="options">The options passed</param>
     /// <param name="cancellationToken">The cancellation token</param>
-    /// <returns></returns>
+    /// <returns>The default secret provider, or null if none is available</returns>
     public static async Task<ISecretProvider?> GetDefaultSecretProvider(Dictionary<string, string?> options, CancellationToken cancellationToken)
     {
         var providerConfig = options.GetValueOrDefault("secret-provider");
@@ -120,7 +120,15 @@ public static class SecretProviderHelper
                 return provider;
         }
 
-        return await SecretProviderLoader.GetDefaultSecretProviderForOperatingSystem(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            return await SecretProviderLoader.GetDefaultSecretProviderForOperatingSystem(cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            Log.WriteErrorMessage(LOGTAG, "FailedToGetDefaultSecretProvider", ex, "Failed to get default secret provider");
+            return null;
+        }
     }
 
     /// <summary>
