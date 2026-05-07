@@ -1432,60 +1432,132 @@ namespace Duplicati.Library.Main.Database
         {
             await using var cmd = m_connection.CreateCommand();
             await using var cmdDelete = m_connection.CreateCommand();
-            long lastFilesetId = prevId < 0 ?
-                await GetPreviousFilesetID(cmd, timestamp, filesetid, token)
+            long lastFilesetId = prevId < 0
+                ? await GetPreviousFilesetID(cmd, timestamp, filesetid, token)
                     .ConfigureAwait(false)
-                :
-                prevId;
+                : prevId;
 
-            await cmd.SetTransaction(m_rtr)
-                .SetCommandAndParameters(@"
-                        INSERT INTO ""FilesetEntry"" (
-                            ""FilesetID"",
-                            ""FileID"",
-                            ""Lastmodified""
-                        )
-                        SELECT
-                            @CurrentFilesetId AS ""FilesetID"",
-                            COALESCE(
-                                (SELECT ""ID"" FROM ""File"" ""NewFile""
-                                 WHERE ""NewFile"".""Path"" = ""OldFile"".""Path""
-                                 AND ""NewFile"".""ID"" != ""OldEntry"".""FileID""
-                                 ORDER BY ""NewFile"".""ID"" DESC LIMIT 1),
-                                ""OldEntry"".""FileID""
-                            ) AS ""FileID"",
-                            ""OldEntry"".""Lastmodified""
-                        FROM (
-                            SELECT DISTINCT
-                                ""FilesetID"",
-                                ""FileID"",
-                                ""Lastmodified""
-                            FROM ""FilesetEntry""
-                            WHERE
-                                ""FilesetID"" = @PreviousFilesetId
-                                AND ""FileID"" NOT IN (
-                                    SELECT ""FileID""
-                                    FROM ""FilesetEntry""
-                                    WHERE ""FilesetID"" = @CurrentFilesetId
-                                )
-                        ) ""OldEntry""
-                        INNER JOIN ""File"" ""OldFile"" ON ""OldEntry"".""FileID"" = ""OldFile"".""ID""
-                        /* 
-                           Filter out files that are already in the current fileset (e.g. via --changed-files).
-                           We check by Path because the FileID might be different (new version of the file).
-                        */
-                        WHERE ""OldFile"".""Path"" NOT IN (
-                            SELECT ""Path"" FROM ""File""
-                            WHERE ""ID"" IN (
-                                SELECT ""FileID"" FROM ""FilesetEntry""
-                                WHERE ""FilesetID"" = @CurrentFilesetId
-                            )
+
+            var guid = Library.Utility.Utility.GetHexGuid();
+            var skipTable = $"AppendFromPrev-Skip-{guid}";
+            var candTable = $"AppendFromPrev-Cand-{guid}";
+
+            try
+            {
+                // 1. Build the "skip" set: (PrefixID, Path) already in current fileset.
+                await cmd.SetTransaction(m_rtr)
+                    .SetCommandAndParameters($@"
+                        CREATE TEMPORARY TABLE ""{skipTable}"" (
+                            ""PrefixID"" INTEGER NOT NULL,
+                            ""Path"" TEXT NOT NULL
                         )
                     ")
-                .SetParameterValue("@CurrentFilesetId", filesetid)
-                .SetParameterValue("@PreviousFilesetId", lastFilesetId)
-                .ExecuteNonQueryAsync(m_logQueries, token)
-                .ConfigureAwait(false);
+                    .ExecuteNonQueryAsync(true, token)
+                    .ConfigureAwait(false);
+
+                await cmd.SetTransaction(m_rtr)
+                    .SetCommandAndParameters($@"
+                        INSERT INTO ""{skipTable}"" (""PrefixID"", ""Path"")
+                        SELECT ""fl"".""PrefixID"", ""fl"".""Path""
+                        FROM ""FilesetEntry"" ""fe""
+                        INNER JOIN ""FileLookup"" ""fl"" ON ""fl"".""ID"" = ""fe"".""FileID""
+                        WHERE ""fe"".""FilesetID"" = @CurrentFilesetId
+                    ")
+                    .SetParameterValue("@CurrentFilesetId", filesetid)
+                    .ExecuteNonQueryAsync(m_logQueries, token)
+                    .ConfigureAwait(false);
+
+                await cmd.SetTransaction(m_rtr)
+                    .SetCommandAndParameters($@"
+                        CREATE INDEX ""{skipTable}-idx""
+                            ON ""{skipTable}"" (""PrefixID"", ""Path"")
+                    ")
+                    .ExecuteNonQueryAsync(true, token)
+                    .ConfigureAwait(false);
+
+                // 2. Build the candidate set: prior-fileset entries that aren't
+                //    already in the current fileset (by FileID) and whose path
+                //    isn't already represented in the current fileset (by
+                //    (PrefixID, Path)). Materialize the path columns so step 3
+                //    doesn't have to re-join PathPrefix per row.
+                await cmd.SetTransaction(m_rtr)
+                    .SetCommandAndParameters($@"
+                        CREATE TEMPORARY TABLE ""{candTable}"" (
+                            ""FileID"" INTEGER NOT NULL,
+                            ""PrefixID"" INTEGER NOT NULL,
+                            ""Path"" TEXT NOT NULL,
+                            ""Lastmodified"" INTEGER NOT NULL
+                        )
+                    ")
+                    .ExecuteNonQueryAsync(true, token)
+                    .ConfigureAwait(false);
+
+                await cmd.SetTransaction(m_rtr)
+                    .SetCommandAndParameters($@"
+                        INSERT INTO ""{candTable}"" (""FileID"", ""PrefixID"", ""Path"", ""Lastmodified"")
+                        SELECT
+                            ""fe"".""FileID"",
+                            ""fl"".""PrefixID"",
+                            ""fl"".""Path"",
+                            ""fe"".""Lastmodified""
+                        FROM ""FilesetEntry"" ""fe""
+                        INNER JOIN ""FileLookup"" ""fl"" ON ""fl"".""ID"" = ""fe"".""FileID""
+                        LEFT JOIN ""FilesetEntry"" ""cur""
+                            ON ""cur"".""FilesetID"" = @CurrentFilesetId
+                            AND ""cur"".""FileID"" = ""fe"".""FileID""
+                        LEFT JOIN ""{skipTable}"" ""sk""
+                            ON ""sk"".""PrefixID"" = ""fl"".""PrefixID""
+                            AND ""sk"".""Path"" = ""fl"".""Path""
+                        WHERE ""fe"".""FilesetID"" = @PreviousFilesetId
+                            AND ""cur"".""FileID"" IS NULL
+                            AND ""sk"".""PrefixID"" IS NULL
+                    ")
+                    .SetParameterValue("@CurrentFilesetId", filesetid)
+                    .SetParameterValue("@PreviousFilesetId", lastFilesetId)
+                    .ExecuteNonQueryAsync(true, token)
+                    .ConfigureAwait(false);
+
+                // 3. Final INSERT. For each candidate, pick the FileLookup row
+                //    with the same (PrefixID, Path) and the largest ID; the
+                //    correlated subquery is cheap because it is a covering
+                //    range scan on the FileLookupPath index.
+                await cmd.SetTransaction(m_rtr)
+                    .SetCommandAndParameters($@"
+                        INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"")
+                        SELECT
+                            @CurrentFilesetId,
+                            COALESCE(
+                                (SELECT MAX(""fl2"".""ID"")
+                                 FROM ""FileLookup"" ""fl2""
+                                 WHERE ""fl2"".""PrefixID"" = ""c"".""PrefixID""
+                                   AND ""fl2"".""Path"" = ""c"".""Path""
+                                   AND ""fl2"".""ID"" != ""c"".""FileID""),
+                                ""c"".""FileID""
+                            ),
+                            ""c"".""Lastmodified""
+                        FROM ""{candTable}"" ""c""
+                    ")
+                    .SetParameterValue("@CurrentFilesetId", filesetid)
+                    .ExecuteNonQueryAsync(true, token)
+                    .ConfigureAwait(false);
+            }
+            finally
+            {
+                try
+                {
+                    await cmd.SetTransaction(m_rtr)
+                        .ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{candTable}""", default)
+                        .ConfigureAwait(false);
+                }
+                catch { /* best-effort cleanup */ }
+                try
+                {
+                    await cmd.SetTransaction(m_rtr)
+                        .ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{skipTable}""", default)
+                        .ConfigureAwait(false);
+                }
+                catch { /* best-effort cleanup */ }
+            }
 
             if (deleted != null)
             {
@@ -1509,7 +1581,7 @@ namespace Duplicati.Library.Main.Database
                         .ExpandInClauseParameterMssqliteAsync("@Paths", tmplist, token)
                         .ConfigureAwait(false)
                 )
-                    .ExecuteNonQueryAsync(m_logQueries, token)
+                    .ExecuteNonQueryAsync(true, token)
                     .ConfigureAwait(false);
             }
 
