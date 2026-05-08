@@ -1,7 +1,6 @@
 ﻿using System.CommandLine;
 using System.CommandLine.NamingConventionBinder;
 using Duplicati.Library.Main;
-using Google.Api;
 
 #nullable enable
 
@@ -12,15 +11,24 @@ namespace AutoTune;
 // TODO data sizes
 public record ConfigRestore
 {
-    int ChannelDepth { get; set; }
-    int FileProcessors { get; set; }
-    int VolumeDownloaders { get; set; }
-    int VolumeDecryptors { get; set; }
-    int VolumeDecompressors { get; set; }
+    public int ChannelDepth { get; init; }
+    public int FileProcessors { get; init; }
+    public int VolumeDownloaders { get; init; }
+    public int VolumeDecryptors { get; init; }
+    public int VolumeDecompressors { get; init; }
 }
 
 public class Program
 {
+    private readonly ConfigRestore DefaultConfigRestore = new()
+    {
+        ChannelDepth = Duplicati.Library.Main.Options.DEFAULT_RESTORE_CHANNEL_BUFFER_SIZE,
+        FileProcessors = Duplicati.Library.Main.Options.DEFAULT_RESTORE_FILE_PROCESSORS,
+        VolumeDownloaders = Duplicati.Library.Main.Options.DEFAULT_RESTORE_VOLUME_DOWNLOADERS,
+        VolumeDecryptors = Duplicati.Library.Main.Options.DEFAULT_RESTORE_VOLUME_DECRYPTORS,
+        VolumeDecompressors = Duplicati.Library.Main.Options.DEFAULT_RESTORE_VOLUME_DECOMPRESSORS,
+    };
+
     /// <summary>
     /// The log tag for this tool.
     /// </summary>
