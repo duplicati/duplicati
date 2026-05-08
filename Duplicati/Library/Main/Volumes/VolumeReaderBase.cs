@@ -164,14 +164,14 @@ namespace Duplicati.Library.Main.Volumes
                 if (d.Version > ManifestData.VERSION)
                     throw new InvalidManifestException("Version", d.Version.ToString(), ManifestData.VERSION.ToString());
 
-                string n;
-
-                if (!options.RawOptions.TryGetValue("blocksize", out n) || string.IsNullOrEmpty(n))
+                if (string.IsNullOrWhiteSpace(options.RawOptions.GetValueOrDefault("blocksize")))
                     options.RawOptions["blocksize"] = d.Blocksize + "b";
-                if (!options.RawOptions.TryGetValue("block-hash-algorithm", out n) || string.IsNullOrEmpty(n))
+                if (string.IsNullOrWhiteSpace(options.RawOptions.GetValueOrDefault("block-hash-algorithm")))
                     options.RawOptions["block-hash-algorithm"] = d.BlockHash;
-                if (!options.RawOptions.TryGetValue("file-hash-algorithm", out n) || string.IsNullOrEmpty(n))
+                if (string.IsNullOrWhiteSpace(options.RawOptions.GetValueOrDefault("file-hash-algorithm")))
                     options.RawOptions["file-hash-algorithm"] = d.FileHash;
+                if (string.IsNullOrWhiteSpace(options.RawOptions.GetValueOrDefault("compression-module")))
+                    options.RawOptions["compression-module"] = compressor.FilenameExtension;
             }
         }
 

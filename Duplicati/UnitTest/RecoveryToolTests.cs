@@ -24,6 +24,8 @@ using System.IO;
 using System.Linq;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
+using Duplicati.Library.Main.Database;
+using Duplicati.Library.Utility;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
 
@@ -294,6 +296,62 @@ namespace Duplicati.UnitTest
             Directory.CreateDirectory(downloadFolder);
             int status = CommandLine.RecoveryTool.Program.Main(new[] { "recompress", "zip", $"{backendURL}", this.RESTOREFOLDER, $"--passphrase={options["passphrase"]}" });
             Assert.AreEqual(0, status);
+        }
+
+        [Test]
+        [Category("RecoveryTool")]
+        [TestCase(false)]
+        [TestCase(true)]
+        public void RecompressAndRecreateDatabase(bool noEncryption)
+        {
+            // Create a small dataset.
+            File.WriteAllBytes(Path.Combine(this.DATAFOLDER, "file.txt"), new byte[] { 1, 2, 3 });
+
+            // Run a backup with default zip compression.
+            Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions)
+            {
+                ["no-encryption"] = noEncryption.ToString()
+            };
+            string backendURL = "file://" + this.TARGETFOLDER;
+            using (Controller c = new Controller(backendURL, options, null))
+            {
+                IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
+                Assert.AreEqual(0, backupResults.Errors.Count());
+                Assert.AreEqual(0, backupResults.Warnings.Count());
+            }
+
+            // Delete the local database.
+            File.Delete(options["dbpath"]);
+
+            // Recompress remote files from zip to tzstd and reupload.
+            string recompressFolder = Path.Combine(this.RESTOREFOLDER, "recompressed");
+            Directory.CreateDirectory(recompressFolder);
+            int status = CommandLine.RecoveryTool.Program.Main(new[] { "recompress", "tzstd", backendURL, recompressFolder, "--reupload", $"--passphrase={options["passphrase"]}" });
+            Assert.AreEqual(0, status);
+
+            // Verify that the remote now contains tzstd files and no zip files.
+            var remoteFiles = Directory.GetFiles(this.TARGETFOLDER);
+            Assert.That(remoteFiles.Any(f => f.EndsWith(".tzstd", StringComparison.OrdinalIgnoreCase)), Is.True, "Remote should contain tzstd files after recompress.");
+            Assert.That(remoteFiles.Any(f => f.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)), Is.False, "Remote should not contain zip files after recompress.");
+
+            // Recreate the local database via Repair.
+            using (Controller c = new Controller(backendURL, options, null))
+            {
+                IRepairResults repairResults = c.Repair();
+                Assert.AreEqual(0, repairResults.Errors.Count());
+                Assert.AreEqual(0, repairResults.Warnings.Count());
+            }
+
+            // The recreated database should have compression-module set to tzstd,
+            // because that is the actual compression format now used on the remote.
+            using (var db = Duplicati.Library.Main.Database.LocalDatabase.CreateLocalDatabaseAsync(options["dbpath"], "Test", true, null, System.Threading.CancellationToken.None).Await())
+            {
+                var dbOptions = db.GetDbOptions(System.Threading.CancellationToken.None).Await();
+                Assert.That(dbOptions.ContainsKey("compression-module"), Is.True, "Database should contain compression-module option.");
+                // This assertion replicates the reported issue: after recreate the database
+                // still stores the old compression module (zip) instead of the actual one (tzstd).
+                Assert.That(dbOptions["compression-module"], Is.EqualTo("tzstd"), "Recreated database should reflect the actual compression module used by remote files.");
+            }
         }
 
     }
