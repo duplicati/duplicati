@@ -86,6 +86,7 @@
   </Folder>
   <Folder Name="/Tools/">
     <Project Path="Tools/RemoteSynchronization/RemoteSynchronization.csproj" />
+    <Project Path="Tools/AutoTune/AutoTune.csproj" />
     <Project Path="WebserverCore.Client.UsageExample/WebserverCore.Client.UsageExample.csproj" />
   </Folder>
   <Project Path="Duplicati/Library/AutoUpdater/Duplicati.Library.AutoUpdater.csproj" />
