@@ -245,6 +245,8 @@ namespace Duplicati.Server
                 CreateApplicationInstance(applicationSettings.DataFolder, writeToConsoleOnException);
 
                 applicationSettings.StartOrStopUsageReporter = () => StartOrStopUsageReporter(connection);
+                // Bit messy, but the callback needs the connection, and the connection needs the callback
+                connection.UpdateUsageReporterCallback(applicationSettings.StartOrStopUsageReporter);
                 applicationSettings.StartOrStopUsageReporter?.Invoke();
 
                 AdjustApplicationSettings(connection, commandlineOptions);

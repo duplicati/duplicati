@@ -100,6 +100,9 @@ namespace Duplicati.Server.Database
             this.ApplicationSettings = new ServerSettings(this);
         }
 
+        public void UpdateUsageReporterCallback(Action startOrStopUsageReporter)
+            => m_startOrStopUsageReporter = startOrStopUsageReporter;
+
         /// <summary>
         /// The service provider is used to resolve dependencies
         /// </summary>
