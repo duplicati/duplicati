@@ -40,6 +40,8 @@ public class WebsocketAccessor : IWebsocketAccessor
     private readonly ISettingsService _settingsService;
     private readonly INotificationService _notificationService;
     private readonly IBackupListService _backupListService;
+    private readonly IRemoteController _remoteController;
+    private readonly IRemoteControllerRegistration _remoteControllerRegistration;
 
     private const int APIVersion = 1;
 
@@ -60,7 +62,9 @@ public class WebsocketAccessor : IWebsocketAccessor
         ITaskQueueService taskQueueService,
         ISettingsService settingsService,
         INotificationService notificationService,
-        IBackupListService backupListService)
+        IBackupListService backupListService,
+        IRemoteController remoteController,
+        IRemoteControllerRegistration remoteControllerRegistration)
     {
         _jsonSettings = jsonSettings;
         _statusService = statusService;
@@ -68,6 +72,8 @@ public class WebsocketAccessor : IWebsocketAccessor
         _taskQueueService = taskQueueService;
         _settingsService = settingsService;
         _notificationService = notificationService;
+        _remoteController = remoteController;
+        _remoteControllerRegistration = remoteControllerRegistration;
 
         eventPollNotify.NewEvent += async (_, _) => { await Send(SubscriptionService.LegacyStatus); };
         eventPollNotify.ServerSettingsUpdate += async (_, _) => { await Send(SubscriptionService.ServerSettings); };
@@ -75,6 +81,7 @@ public class WebsocketAccessor : IWebsocketAccessor
         eventPollNotify.NotificationsUpdated += async (_, _) => { await Send(SubscriptionService.Notifications); };
         eventPollNotify.TaskQueueUpdate += async (_, _) => { await Send(SubscriptionService.TaskQueue); };
         eventPollNotify.TaskCompleted += async (_, taskId) => { await SendTaskCompleted(taskId, GetConnections()); };
+        eventPollNotify.RemoteControlUpdate += async (_, _) => { await Send(SubscriptionService.RemoteControl); };
         eventPollNotify.ProgressUpdate += async (_, progress) =>
         {
             if (progress == null)
@@ -163,6 +170,23 @@ public class WebsocketAccessor : IWebsocketAccessor
         return _connections;
     }
 
+    private Dto.RemoteControlStatusOutput GetRemoteControlStatus()
+    {
+        var registrationTask = _remoteControllerRegistration.IsRegistering
+            ? _remoteControllerRegistration.WaitForRegistration()
+            : null;
+
+        return new Dto.RemoteControlStatusOutput(
+            CanEnable: _remoteController.CanEnable,
+            IsEnabled: _remoteController.IsEnabled,
+            IsConnected: _remoteController.Connected,
+            IsRegistering: _remoteControllerRegistration.IsRegistering,
+            IsRegisteringFaulted: registrationTask?.IsFaulted ?? false,
+            IsRegisteringCompleted: registrationTask?.IsCompleted ?? false,
+            RegistrationUrl: _remoteControllerRegistration.RegistrationUrl
+        );
+    }
+
     private ArraySegment<byte> GetBytes<T>(T Data)
     {
         var json = JsonConvert.SerializeObject(Data, _jsonSettings);
@@ -237,6 +261,9 @@ public class WebsocketAccessor : IWebsocketAccessor
                 break;
             case SubscriptionService.Progress:
                 // Progress updates are sent via the event system, so we cannot send information in advance
+                break;
+            case SubscriptionService.RemoteControl:
+                await SendData(SubscriptionService.RemoteControl, GetRemoteControlStatus(), connections);
                 break;
             default:
                 Log.WriteWarningMessage(LOGTAG, "WebsocketUnknownSubscription", null, $"Unknown subscription service: {key}");

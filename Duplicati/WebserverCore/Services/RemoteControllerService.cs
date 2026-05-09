@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using Duplicati.Library.RemoteControl;
+using Duplicati.Server;
 using Duplicati.Server.Database;
 using Duplicati.WebserverCore.Abstractions;
 using Newtonsoft.Json;
@@ -31,7 +32,8 @@ namespace Duplicati.WebserverCore.Services;
 /// </summary>
 /// <param name="connection">The connection to the database</param>
 /// <param name="controllerHandler">The remote controller handler</param>
-public class RemoteControllerService(Connection connection, IRemoteControllerHandler controllerHandler) : IRemoteController
+/// <param name="eventPollNotify">The event poll notifier</param>
+public class RemoteControllerService(Connection connection, IRemoteControllerHandler controllerHandler, EventPollNotify eventPollNotify) : IRemoteController
 {
     /// <summary>
     /// Gets a value indicating whether remote control is enabled.
@@ -88,7 +90,10 @@ public class RemoteControllerService(Connection connection, IRemoteControllerHan
             controllerHandler.OnMessage
         );
 
+        _keepRemoteConnection.StateChanged += (_, _) => eventPollNotify.SignalRemoteControlUpdate();
+
         connection.ApplicationSettings.RemoteControlEnabled = true;
+        eventPollNotify.SignalRemoteControlUpdate();
     }
 
     /// </inheritdoc>
@@ -97,6 +102,7 @@ public class RemoteControllerService(Connection connection, IRemoteControllerHan
         _keepRemoteConnection?.Dispose();
         _keepRemoteConnection = null;
         connection.ApplicationSettings.RemoteControlEnabled = false;
+        eventPollNotify.SignalRemoteControlUpdate();
     }
 
     /// </inheritdoc>
@@ -123,5 +129,7 @@ public class RemoteControllerService(Connection connection, IRemoteControllerHan
 
         foreach (var id in remoteBackupIds)
             connection.DeleteBackup(id);
+
+        eventPollNotify.SignalRemoteControlUpdate();
     }
 }

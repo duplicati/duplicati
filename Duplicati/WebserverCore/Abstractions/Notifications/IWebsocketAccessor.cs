@@ -58,7 +58,11 @@ public enum SubscriptionService
     /// <summary>
     /// Scheduler updates, such as when scheduled tasks are added, removed, or changed.
     /// </summary>
-    Scheduler
+    Scheduler,
+    /// <summary>
+    /// Remote control status updates, such as when enabled, disabled, or connected state changes.
+    /// </summary>
+    RemoteControl
 }
 
 

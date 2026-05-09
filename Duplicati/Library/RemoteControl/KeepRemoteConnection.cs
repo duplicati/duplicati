@@ -124,6 +124,24 @@ public class KeepRemoteConnection : IDisposable
     /// The current state of the connection
     /// </summary>
     private ConnectionState _state = ConnectionState.NotConnected;
+
+    /// <summary>
+    /// Event raised when the connection state changes
+    /// </summary>
+    public event EventHandler<ConnectionState>? StateChanged;
+
+    /// <summary>
+    /// Sets the connection state and raises the StateChanged event if it changed
+    /// </summary>
+    /// <param name="newState">The new state</param>
+    private void SetState(ConnectionState newState)
+    {
+        if (_state == newState)
+            return;
+
+        _state = newState;
+        StateChanged?.Invoke(this, newState);
+    }
     /// <summary>
     /// The task that runs the connection
     /// </summary>
@@ -254,7 +272,7 @@ public class KeepRemoteConnection : IDisposable
                 // If we do not get any response from the server, we should reconnect
                 else if ((_state == ConnectionState.Authenticated || _state == ConnectionState.WelcomeReceived) && _lastMessageReceived.Add(NoResponseTimeout) < DateTimeOffset.Now)
                 {
-                    _state = ConnectionState.Error;
+                    SetState(ConnectionState.Error);
                     Log.WriteMessage(LogMessageType.Warning, LogTag, "WebsocketDisconnect", "No response from server");
                     _client.Stop(System.Net.WebSockets.WebSocketCloseStatus.NormalClosure, "No response");
                 }
@@ -281,7 +299,7 @@ public class KeepRemoteConnection : IDisposable
 
         _client.DisconnectionHappened.Subscribe(info =>
         {
-            _state = ConnectionState.NotConnected;
+            SetState(ConnectionState.NotConnected);
             _serverCertificate = null;
             _serverPublicKey = null;
             if (!IsAutoReconnectDisabled())
@@ -347,7 +365,7 @@ public class KeepRemoteConnection : IDisposable
                         throw new ProtocolViolationException("Invalid server certificate");
                     }
 
-                    _state = ConnectionState.WelcomeReceived;
+                    SetState(ConnectionState.WelcomeReceived);
 
                     // Prepare basic metadata and allow additional metadata to be added
                     var metadata = await _onConnect(new Dictionary<string, string?>() {
@@ -393,7 +411,7 @@ public class KeepRemoteConnection : IDisposable
                     if (!authMessage.Accepted ?? false)
                         throw new ProtocolViolationException("Authentication failed");
 
-                    _state = ConnectionState.Authenticated;
+                    SetState(ConnectionState.Authenticated);
 
                     if ((authMessage.WillReplaceToken ?? false) && authMessage.NewToken != null)
                     {
@@ -441,7 +459,7 @@ public class KeepRemoteConnection : IDisposable
             }
             catch (Exception ex)
             {
-                _state = ConnectionState.Error;
+                SetState(ConnectionState.Error);
                 Log.WriteMessage(LogMessageType.Error, LogTag, "WebsocketMessage", ex, "Failed to process message: {0}", msg);
 
                 await _client.Stop(System.Net.WebSockets.WebSocketCloseStatus.NormalClosure, "Error");

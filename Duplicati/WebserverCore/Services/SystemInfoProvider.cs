@@ -57,6 +57,7 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
         "v1:subscribe:taskcompleted",
         "v1:subscribe:notifications",
         "v2:system:temp-disk-space",
+        "v1:subscribe:remotecontrol",
 
         // "v1:subscribe:scheduler",
     ];
