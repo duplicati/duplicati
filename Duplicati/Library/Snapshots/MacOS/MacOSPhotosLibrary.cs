@@ -195,13 +195,26 @@ internal sealed class MacOSPhotosLibrary
     }
 
     /// <summary>
+    /// Minimum accepted value
+    /// </summary>
+    private static readonly long MinUnixSeconds = DateTimeOffset.MinValue.ToUnixTimeSeconds();
+
+    /// <summary>
+    /// Maximum accepted value
+    /// </summary>
+    private static readonly long MaxUnixSeconds = DateTimeOffset.MaxValue.ToUnixTimeSeconds();
+
+    /// <summary>
     /// Converts Unix time in seconds to a DateTime object
     /// </summary>
     /// <param name="seconds">The Unix time in seconds</param>
     /// <returns>A DateTime object representing the specified Unix time</returns>
     private static DateTime FromUnixSeconds(double seconds)
     {
-        var rounded = (long)Math.Round(seconds, MidpointRounding.AwayFromZero);
+        if (double.IsNaN(seconds)) return DateTime.MinValue;
+
+        var clamped = Math.Clamp(seconds, MinUnixSeconds, MaxUnixSeconds);
+        var rounded = (long)Math.Round(clamped, MidpointRounding.AwayFromZero);
         return DateTimeOffset.FromUnixTimeSeconds(rounded).UtcDateTime;
     }
 
