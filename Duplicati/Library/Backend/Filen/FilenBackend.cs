@@ -282,6 +282,6 @@ public class FilenBackend : IStreamingBackend, IRenameEnabledBackend
         if (fileEntry == null)
             throw new FileMissingException($"File '{oldname}' not found.");
 
-        await Utility.Utility.WithTimeout(_timeout.ShortTimeout, cancellationToken, ct => client.RenameFileAsync(fileEntry.Uuid, newname, ct)).ConfigureAwait(false);
+        await Utility.Utility.WithTimeout(_timeout.ShortTimeout, cancellationToken, ct => client.RenameFileAsync(fileEntry, newname, ct)).ConfigureAwait(false);
     }
 }

@@ -47,6 +47,10 @@ public sealed record FilenFileEntry
     /// </summary>
     public required DateTime LastModified { get; set; }
     /// <summary>
+    /// The creation date of the file
+    /// </summary>
+    public required DateTime CreatedTimestamp { get; set; }
+    /// <summary>
     /// The region of the file
     /// </summary>
     public required string Region { get; set; }
@@ -66,5 +70,9 @@ public sealed record FilenFileEntry
     /// The encryption version
     /// </summary>
     public required int Version;
+    /// <summary>
+    /// The MIME type of the file
+    /// </summary>
+    public required string MimeType { get; set; }
 }
 

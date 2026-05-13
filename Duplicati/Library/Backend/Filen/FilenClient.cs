@@ -22,7 +22,6 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Text.Json;
 using Duplicati.Library.Interface;
 
@@ -415,12 +414,14 @@ public class FilenClient : IDisposable
                     Name = decryptedName.Name,
                     IsFolder = true,
                     LastModified = DateTimeOffset.FromUnixTimeMilliseconds(folder.LastModified).UtcDateTime,
+                    CreatedTimestamp = new DateTime(0),
                     Size = 0,
                     Region = string.Empty,
                     Bucket = string.Empty,
                     Chunks = 0,
                     FileKey = string.Empty,
-                    Version = 0
+                    Version = 0,
+                    MimeType = string.Empty,
                 };
 
         }
@@ -447,11 +448,13 @@ public class FilenClient : IDisposable
                     IsFolder = false,
                     Size = file.Size,
                     LastModified = DateTimeOffset.FromUnixTimeMilliseconds(fileInfo.LastModified).UtcDateTime,
+                    CreatedTimestamp = DateTimeOffset.FromUnixTimeMilliseconds(fileInfo.Create).UtcDateTime,
                     Region = file.Region,
                     Bucket = file.Bucket,
                     Chunks = file.Chunks,
                     FileKey = fileInfo.Key,
-                    Version = file.Version
+                    Version = file.Version,
+                    MimeType = fileInfo.Mime,
                 };
         }
     }
@@ -737,26 +740,57 @@ public class FilenClient : IDisposable
     }
 
     /// <summary>
+    /// Helper for mapping DateTime to epoch milliseconds
+    /// </summary>
+    /// <param name="dateTime">The date time to map</param>
+    /// <returns>The epoch milliseconds</returns>
+    private static long MapDateTimeToEpochMs(DateTime dateTime)
+    {
+        if (dateTime.Ticks == 0)
+            return 0;
+        return (long)(dateTime - DateTime.UnixEpoch).TotalMilliseconds;
+    }
+
+    /// <summary>
     /// Renames a file in the Filen API
     /// </summary>
-    /// <param name="fileUuid">The UUID of the file to rename</param>
+    /// <param name="fileEntry">The file entry to rename</param>
     /// <param name="newName">The new name of the file</param>
     /// <param name="cancellationToken">The cancellation token to use for the operation</param>
     /// <returns>A task that completes when the file is renamed</returns>
-    public async Task RenameFileAsync(string fileUuid, string newName, CancellationToken cancellationToken)
+    public async Task RenameFileAsync(FilenFileEntry fileEntry, string newName, CancellationToken cancellationToken)
     {
-        var encryptedName = _authResult.EncryptMetadata(JsonSerializer.Serialize(new NameEntry() { Name = newName }));
+        var fileKey = DerivedKey.Create(fileEntry.FileKey);
+        var encryptedName = fileKey.EncryptMetadata(newName);
+        var nameHashed = FilenCrypto.HashFn(newName);
+
+        var metadata = _authResult.EncryptMetadata(JsonSerializer.Serialize(new FileInfoMetadata
+        {
+            Name = newName,
+            Size = fileEntry.Size,
+            Mime = fileEntry.MimeType,
+            Key = fileEntry.FileKey,
+            LastModified = MapDateTimeToEpochMs(fileEntry.LastModified),
+            Create = MapDateTimeToEpochMs(fileEntry.CreatedTimestamp),
+        }));
+
         var url = $"{_baseUrl}/v3/file/rename";
 
         using var request = new HttpRequestMessage(HttpMethod.Post, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _authResult.ApiKey);
-        request.Content = JsonContent.Create(new { uuid = fileUuid, name = encryptedName });
+        request.Content = JsonContent.Create(new
+        {
+            uuid = fileEntry.Uuid,
+            name = encryptedName,
+            nameHashed,
+            metadata
+        });
 
         var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
         await ExtractDataFromResponse<string?>(response, cancellationToken).ConfigureAwait(false);
 
         // Update cache
-        var key = _cachedFiles.FirstOrDefault(kv => kv.Value.Uuid == fileUuid).Key;
+        var key = _cachedFiles.FirstOrDefault(kv => kv.Value.Uuid == fileEntry.Uuid).Key;
         if (!string.IsNullOrWhiteSpace(key))
             _cachedFiles.Remove(key);
     }

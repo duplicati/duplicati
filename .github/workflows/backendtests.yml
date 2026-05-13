@@ -740,6 +740,7 @@ jobs:
           TESTCREDENTIAL_FILEN_FOLDER: "${{ secrets.TESTCREDENTIAL_FILEN_FOLDER }}"
           TESTCREDENTIAL_FILEN_USERNAME: "${{ secrets.TESTCREDENTIAL_FILEN_USERNAME }}"
           TESTCREDENTIAL_FILEN_PASSWORD: "${{ secrets.TESTCREDENTIAL_FILEN_PASSWORD }}"
+          TESTCREDENTIAL_FILEN_APIKEY: "${{ secrets.TESTCREDENTIAL_FILEN_APIKEY }}"
         run: >-
           dotnet test --no-build --filter="ClassName~Filen.FilenTests"
           --logger:"console;verbosity=detailed"
