@@ -509,7 +509,17 @@ namespace Duplicati.Library.Main.Operation.Restore
                             lock (results)
                             {
                                 results.RestoredFiles++;
-                                results.SizeOfRestoredFiles += bytes_written;
+                                results.SizeOfRestoredFiles += file.Length;
+                                results.SizeOfRestoredData += bytes_written;
+                            }
+                        }
+                        else
+                        {
+                            // Keep track of the existing files and their sizes
+                            lock (results)
+                            {
+                                results.UnmodifiedFiles++;
+                                results.SizeOfUnmodifiedFiles += file.Length;
                             }
                         }
                         sw_work_results?.Stop();

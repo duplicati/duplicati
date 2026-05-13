@@ -532,12 +532,15 @@ namespace Duplicati.Library.Main
         public Library.Utility.FileBackedStringList BrokenRemoteFiles { get; internal set; } = [];
         public long RestoredFiles { get; internal set; }
         public long SizeOfRestoredFiles { get; internal set; }
+        public long SizeOfRestoredData { get; internal set; }
         public long RestoredFolders { get; internal set; }
         public long RestoredSymlinks { get; internal set; }
         public long PatchedFiles { get; internal set; }
         public long DeletedFiles { get; internal set; }
         public long DeletedFolders { get; internal set; }
         public long DeletedSymlinks { get; internal set; }
+        public long UnmodifiedFiles { get; internal set; }
+        public long SizeOfUnmodifiedFiles { get; internal set; }
         public string RestorePath { get; internal set; }
 
         /// <summary>

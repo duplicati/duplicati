@@ -260,6 +260,7 @@ namespace Duplicati.Library.Main.Operation
                                         await blockmarker
                                             .SetBlockRestored(restorelist.FileID, targetblock.Offset / blocksize, targetblock.Key, size, false, cancellationToken)
                                             .ConfigureAwait(false);
+                                        result.SizeOfRestoredData += size;
                                     }
                                 }
                                 else
@@ -498,7 +499,12 @@ namespace Duplicati.Library.Main.Operation
                 Logging.Log.WriteErrorMessage(LOGTAG, "RestoreFailures", null, $"{remoteMessage}{nl}{localMessage}{nl}{remoteList}{nl}{localList}");
             }
             else if (m_result.RestoredFiles == 0)
-                Logging.Log.WriteWarningMessage(LOGTAG, "NoFilesRestored", null, "Restore completed without errors but no files were restored");
+            {
+                if (m_result.UnmodifiedFiles == 0)
+                    Logging.Log.WriteWarningMessage(LOGTAG, "NoFilesRestored", null, "Restore completed without errors but no files were restored");
+                else
+                    Logging.Log.WriteInformationMessage(LOGTAG, "NoFilesNeededRestore", null, "Restore completed but all files were already present");
+            }
 
             // Drop the temp tables
             await database.DropRestoreTable(cancellationToken).ConfigureAwait(false);
@@ -596,6 +602,14 @@ namespace Duplicati.Library.Main.Operation
                     await RestoreCoreAsync(backendManager, database, filter, restoreDestination, metadatastorage, cancellationToken)
                         .ConfigureAwait(false);
                 }
+            }
+
+            if (m_result.RestoredFiles == 0)
+            {
+                if (m_result.UnmodifiedFiles == 0)
+                    Logging.Log.WriteWarningMessage(LOGTAG, "NoFilesRestored", null, "Restore completed without errors but no files were restored");
+                else
+                    Logging.Log.WriteInformationMessage(LOGTAG, "NoFilesNeededRestore", null, "Restore completed but all files were already present");
             }
 
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_Finalize);
@@ -1248,6 +1262,9 @@ namespace Duplicati.Library.Main.Operation
                                     .ConfigureAwait(false);
                                 Logging.Log.WriteVerboseMessage(LOGTAG, "TargetExistsInCorrectVersion", "Target file exists{1} and is correct version: {0}", targetpath, wasTruncated ? " (but was truncated)" : "");
                                 rename = false;
+
+                                result.UnmodifiedFiles++;
+                                result.SizeOfUnmodifiedFiles += targetfilelength;
                             }
                             else if (rename)
                             {
