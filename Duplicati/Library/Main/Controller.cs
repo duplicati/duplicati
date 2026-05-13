@@ -30,6 +30,7 @@ using Duplicati.Library.Main.Database;
 using System.Threading.Tasks;
 using Duplicati.Library.Main.Operation.Common;
 using System.IO;
+using Duplicati.Library.Backends;
 
 namespace Duplicati.Library.Main
 {
@@ -1004,13 +1005,9 @@ namespace Duplicati.Library.Main
                 throw new UserInformationException(Strings.Controller.BackendNotSupportedError(scheme, string.Join(", ", DynamicLoader.BackendLoader.Keys)), "BackendNotSupported");
             }
 
-            //Inform the user about the deprecated Tardigrade-Backend. They should switch to Storj DCS instead.
-            if (string.Equals(scheme, "tardigrade", StringComparison.OrdinalIgnoreCase))
-                Logging.Log.WriteWarningMessage(LOGTAG, "TardigradeRename", null, "The Tardigrade-backend got renamed to Storj DCS - please migrate your backups to the new configuration by changing the destination storage type to Storj DCS.");
-
-            //Inform the user about the unmaintained Mega support library
-            if (string.Equals(scheme, "mega", StringComparison.OrdinalIgnoreCase))
-                Logging.Log.WriteWarningMessage(LOGTAG, "MegaUnmaintained", null, "The Mega support library is currently unmaintained and may not work as expected. Mega has not published an official API so it may break at any moment. Please consider migrating to another backend.");
+            //Inform the user about unmaintained backends
+            if (BackendModules.DeprecatedBackendModules.Contains(scheme))
+                Logging.Log.WriteWarningMessage(LOGTAG, "BackendDeprecated", null, $"The backend {scheme} is deprecated and should be migrated away from.");
 
             //TODO: Based on the action, see if all options are relevant
         }

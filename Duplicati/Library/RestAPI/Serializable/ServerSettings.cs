@@ -44,6 +44,8 @@ namespace Duplicati.Server.Serializable
                 this.Description = backend.Description;
                 this.DisplayName = backend.DisplayName;
                 this.Options = backend.SupportedCommands?.ToArray() ?? [];
+                this.IsDeprecated = Duplicati.Library.Backends.BackendModules.DeprecatedBackendModules.Contains(backend.ProtocolKey);
+                this.IsUntested = Duplicati.Library.Backends.BackendModules.UntestedBackendModules.Contains(backend.ProtocolKey);
             }
 
             /// <summary>
@@ -124,27 +126,23 @@ namespace Duplicati.Server.Serializable
                 this.Options = module.SupportedCommands?.ToArray() ?? [];
             }
 
-            /// <summary>
-            /// The module key
-            /// </summary>
+            /// <inheritdoc/>
             public string Key { get; private set; }
-            /// <summary>
-            /// The localized module description
-            /// </summary>
+            /// <inheritdoc/>
             public string Description { get; private set; }
             /// <summary>
-            /// Gets the localized display name
-            /// </summary>
-            /// <value>The display name.</value>
+            /// <inheritdoc/>
             public string DisplayName { get; private set; }
             /// <summary>
-            /// The options supported by the module
-            /// </summary>
+            /// <inheritdoc/>
             public Library.Interface.ICommandLineArgument[] Options { get; private set; }
             /// <summary>
-            /// The lookups supported by the module
-            /// </summary>
+            /// <inheritdoc/>
             public IDictionary<string, IDictionary<string, string>> Lookups { get; private set; }
+            /// <inheritdoc/>
+            public bool IsDeprecated { get; private set; }
+            /// <inheritdoc/>
+            public bool IsUntested { get; private set; }
         }
 
         /// <summary>
