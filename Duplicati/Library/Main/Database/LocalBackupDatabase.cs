@@ -1521,6 +1521,7 @@ namespace Duplicati.Library.Main.Database
                 //    with the same (PrefixID, Path) and the largest ID; the
                 //    correlated subquery is cheap because it is a covering
                 //    range scan on the FileLookupPath index.
+                //    Guard agains orphaned FileLookup rows with invalid MetadataID.
                 await cmd.SetTransaction(m_rtr)
                     .SetCommandAndParameters($@"
                         INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"")
@@ -1531,7 +1532,12 @@ namespace Duplicati.Library.Main.Database
                                  FROM ""FileLookup"" ""fl2""
                                  WHERE ""fl2"".""PrefixID"" = ""c"".""PrefixID""
                                    AND ""fl2"".""Path"" = ""c"".""Path""
-                                   AND ""fl2"".""ID"" != ""c"".""FileID""),
+                                   AND ""fl2"".""ID"" != ""c"".""FileID""
+                                   AND EXISTS (
+                                       SELECT 1
+                                       FROM ""FilesetEntry"" ""fe2""
+                                       WHERE ""fe2"".""FileID"" = ""fl2"".""ID""
+                                   )),
                                 ""c"".""FileID""
                             ),
                             ""c"".""Lastmodified""

@@ -289,26 +289,6 @@ namespace Duplicati.Library.Main.Operation.Backup
             );
         }
 
-        /// <summary>
-        /// Populates FilesetEntry table with files from previous fileset, which aren't
-        /// yet part of the new fileset, and which aren't excluded by the (optional) exclusion
-        /// predicate.
-        /// </summary>
-        /// <param name="exclusionPredicate">Optional exclusion predicate (true = exclude file).</param>
-        /// <param name="fileSetId">Current fileset ID.</param>
-        /// <param name="prevFileSetId">Source fileset ID.</param>
-        /// <param name="timestamp">If <c>prevFileSetId</c> == -1, used to locate previous fileset.</param>
-        /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
-        /// <returns>Task that completes when the files have been appended.</returns>
-        public Task AppendFilesFromPreviousSetWithPredicateAsync(Func<string, long, bool> exclusionPredicate, long fileSetId, long prevFileSetId, DateTime timestamp, CancellationToken cancellationToken)
-        {
-            return RunOnMain(async () =>
-                await m_database
-                    .AppendFilesFromPreviousSetWithPredicate(exclusionPredicate, fileSetId, prevFileSetId, timestamp, cancellationToken)
-                    .ConfigureAwait(false)
-            );
-        }
-
         public Task<KeyValuePair<long, DateTime>[]> GetIncompleteFilesetsAsync(CancellationToken cancellationToken)
         {
             return RunOnMain(async () =>
