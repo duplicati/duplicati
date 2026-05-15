@@ -23,25 +23,25 @@ internal static class Strings
     public static string RestoreTargetMissingOverwriteOption(string originalOptionName, string alternateOptionName) => LC.L($"The Office365 restore target must have the --{originalOptionName} option set to true. Use the provider specific option --{alternateOptionName} to avoid overwriting existing items.");
 
 
-    public static string MissingTenantId => LC.L("A tenant ID must be supplied to query the Office 365 Management API.");
+    public static string MissingTenantId => LC.L("A tenant ID must be supplied to query the Microsoft 365 Management API.");
 
     public static string OfficeTenantOptionShort => LC.L("Azure AD tenant identifier.");
 
-    public static string OfficeTenantOptionLong => LC.L("The tenant GUID used when calling the Office 365 Management Activity APIs.");
+    public static string OfficeTenantOptionLong => LC.L("The tenant GUID used when calling the Microsoft 365 Management Activity APIs.");
 
     public static string OfficeClientOptionShort => LC.L("Azure application (client) ID.");
 
-    public static string OfficeClientOptionLong => LC.L("Client identifier used for OAuth2 client credential flow against the Office 365 Management API.");
+    public static string OfficeClientOptionLong => LC.L("Client identifier used for OAuth2 client credential flow against the Microsoft 365 Management API.");
 
     public static string OfficeSecretOptionShort => LC.L("Azure application client secret.");
 
-    public static string OfficeSecretOptionLong => LC.L("Client secret used for OAuth2 client credential flow against the Office 365 Management API.");
+    public static string OfficeSecretOptionLong => LC.L("Client secret used for OAuth2 client credential flow against the Microsoft 365 Management API.");
 
     public static string OfficeCertificatePathOptionShort => LC.L("Path to the PKCS12 certificate file.");
-    public static string OfficeCertificatePathOptionLong => LC.L("Path to the PKCS12 certificate file used for OAuth2 client credential flow against the Office 365 Management API.");
+    public static string OfficeCertificatePathOptionLong => LC.L("Path to the PKCS12 certificate file used for OAuth2 client credential flow against the Microsoft 365 Management API.");
 
     public static string OfficeCertificatePasswordOptionShort => LC.L("Password for the certificate file.");
-    public static string OfficeCertificatePasswordOptionLong => LC.L("Password for the PKCS12 certificate file used for OAuth2 client credential flow against the Office 365 Management API.");
+    public static string OfficeCertificatePasswordOptionLong => LC.L("Password for the PKCS12 certificate file used for OAuth2 client credential flow against the Microsoft 365 Management API.");
 
     public static string OfficeGraphBaseOptionShort => LC.L("Microsoft Graph base URL.");
 

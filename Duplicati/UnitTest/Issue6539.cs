@@ -25,6 +25,7 @@ using System.Linq;
 using Duplicati.Library.DynamicLoader;
 using Duplicati.Library.Main;
 using Microsoft.Data.Sqlite;
+using System.Threading.Tasks;
 
 namespace Duplicati.UnitTest
 {
@@ -36,7 +37,7 @@ namespace Duplicati.UnitTest
     {
         [Test]
         [Category("Targeted")]
-        public void DeleteFailureShouldNotMarkAsDeleted()
+        public async Task DeleteFailureShouldNotMarkAsDeletedAsync()
         {
             var testopts = TestOptions.Expand(new
             {
@@ -52,12 +53,12 @@ namespace Duplicati.UnitTest
 
             // Run initial backup
             using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Backup(new string[] { DATAFOLDER }));
+                TestUtils.AssertResults(await c.BackupAsync(new string[] { DATAFOLDER }));
 
             // Run second backup to create a version we can delete
             File.WriteAllText(testFile, "Modified test data for issue 6539");
             using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Backup(new string[] { DATAFOLDER }));
+                TestUtils.AssertResults(await c.BackupAsync(new string[] { DATAFOLDER }));
 
             // Get the dlist file that will be deleted (Version 0 is the newest)
             var dlistFiles = Directory.GetFiles(TARGETFOLDER, "*.dlist.*");
@@ -89,7 +90,7 @@ namespace Duplicati.UnitTest
                     null))
                 {
                     // This should throw because delete fails
-                    c.Delete();
+                    await c.DeleteAsync();
                 }
             }
             catch
@@ -103,7 +104,7 @@ namespace Duplicati.UnitTest
             // Check database state - file should still be in Deleting state, not Deleted
             using (var connection = new SqliteConnection($"Data Source={DBFILE};Pooling=false"))
             {
-                connection.Open();
+                await connection.OpenAsync();
                 using (var cmd = connection.CreateCommand())
                 {
                     cmd.CommandText = @"
@@ -112,9 +113,9 @@ namespace Duplicati.UnitTest
                         WHERE Name = @name";
                     cmd.Parameters.AddWithValue("@name", fileToDelete);
 
-                    using (var reader = cmd.ExecuteReader())
+                    using (var reader = await cmd.ExecuteReaderAsync())
                     {
-                        if (reader.Read())
+                        if (await reader.ReadAsync())
                         {
                             var state = reader.GetString(1);
                             // State should be "Deleting", not "Deleted"
@@ -136,12 +137,12 @@ namespace Duplicati.UnitTest
 
             // Retry delete - this should succeed and clean up the state
             using (var c = new Controller("file://" + TARGETFOLDER, deleteOpts, null))
-                c.Delete();
+                await c.DeleteAsync();
 
             // Check database state - file should now be in Deleted state
             using (var connection = new SqliteConnection($"Data Source={DBFILE};Pooling=false"))
             {
-                connection.Open();
+                await connection.OpenAsync();
                 using (var cmd = connection.CreateCommand())
                 {
                     cmd.CommandText = @"
@@ -150,9 +151,9 @@ namespace Duplicati.UnitTest
                         WHERE Name = @name";
                     cmd.Parameters.AddWithValue("@name", fileToDelete);
 
-                    using (var reader = cmd.ExecuteReader())
+                    using (var reader = await cmd.ExecuteReaderAsync())
                     {
-                        if (reader.Read())
+                        if (await reader.ReadAsync())
                         {
                             var state = reader.GetString(1);
                             Assert.That(state, Is.EqualTo("Deleted"),
@@ -165,7 +166,7 @@ namespace Duplicati.UnitTest
             // Now run a test/verify operation - it should NOT report "not recorded in local storage"
             using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                var result = c.Test(1);
+                var result = await c.TestAsync(1);
                 // Should not have errors about files not recorded in local storage
                 Assert.That(result.Errors, Is.Empty,
                     "Test should not report errors about files not recorded in local storage");
@@ -174,7 +175,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Targeted")]
-        public void DeleteSuccessShouldMarkAsDeleted()
+        public async Task DeleteSuccessShouldMarkAsDeletedAsync()
         {
             var testopts = TestOptions.Expand(new
             {
@@ -190,12 +191,12 @@ namespace Duplicati.UnitTest
 
             // Run initial backup
             using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Backup(new string[] { DATAFOLDER }));
+                TestUtils.AssertResults(await c.BackupAsync(new string[] { DATAFOLDER }));
 
             // Run second backup
             File.WriteAllText(testFile, "Modified test data for issue 6539");
             using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Backup(new string[] { DATAFOLDER }));
+                TestUtils.AssertResults(await c.BackupAsync(new string[] { DATAFOLDER }));
 
             // Get the dlist file that will be deleted (Version 0 is the newest)
             var dlistFiles = Directory.GetFiles(TARGETFOLDER, "*.dlist.*");
@@ -210,12 +211,12 @@ namespace Duplicati.UnitTest
             });
 
             using (var c = new Controller("file://" + TARGETFOLDER, deleteOpts, null))
-                c.Delete();
+                await c.DeleteAsync();
 
             // Check database state - file should be marked as Deleted
             using (var connection = new SqliteConnection($"Data Source={DBFILE};Pooling=false"))
             {
-                connection.Open();
+                await connection.OpenAsync();
                 using (var cmd = connection.CreateCommand())
                 {
                     cmd.CommandText = @"
@@ -224,11 +225,11 @@ namespace Duplicati.UnitTest
                         WHERE Name = @name";
                     cmd.Parameters.AddWithValue("@name", fileToDelete);
 
-                    using (var reader = cmd.ExecuteReader())
+                    using (var reader = await cmd.ExecuteReaderAsync())
                     {
                         // File might be completely removed from DB after successful delete
                         // or marked as Deleted - both are acceptable
-                        if (reader.Read())
+                        if (await reader.ReadAsync())
                         {
                             var state = reader.GetString(1);
                             Assert.That(state, Is.EqualTo("Deleted"),

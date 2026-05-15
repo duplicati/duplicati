@@ -20,11 +20,9 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System.IO;
-using System.Collections.Generic;
 using Duplicati.Library.Main;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Interface;
-using Duplicati.Library.SQLiteHelper;
 using NUnit.Framework;
 using System.Threading;
 using System.Threading.Tasks;
@@ -43,7 +41,7 @@ public class EmptyFileTests : BasicSetupHelper
     /// </summary>
     [Test]
     [Category("EmptyFile")]
-    public async Task EmptyFileAfterDatabaseRecreate()
+    public async Task EmptyFileAfterDatabaseRecreateAsync()
     {
         var testopts = TestOptions.Expand(new { no_encryption = true });
 
@@ -56,11 +54,11 @@ public class EmptyFileTests : BasicSetupHelper
 
         // Run initial backup
         using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
-            TestUtils.AssertResults(c.Backup(new[] { DATAFOLDER }));
+            TestUtils.AssertResults(await c.BackupAsync(new[] { DATAFOLDER }));
 
         // Verify the backup works
         using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
-            TestUtils.AssertResults(c.Test(long.MaxValue));
+            TestUtils.AssertResults(await c.TestAsync(long.MaxValue));
 
         // Delete the local database to simulate database loss
         File.Delete(DBFILE);
@@ -73,7 +71,7 @@ public class EmptyFileTests : BasicSetupHelper
         testopts["dbpath"] = recreatedDatabaseFile;
 
         using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
-            TestUtils.AssertResults(c.Repair());
+            TestUtils.AssertResults(await c.RepairAsync());
 
         // Add a new file to force the backup to process changes
         // This triggers the code path where the database inconsistency is detected
@@ -85,7 +83,7 @@ public class EmptyFileTests : BasicSetupHelper
         {
             try
             {
-                await db.VerifyConsistency(opts.Blocksize, opts.BlockhashSize, true, CancellationToken.None);
+                await db.VerifyConsistencyAsync(opts.Blocksize, opts.BlockhashSize, true, CancellationToken.None);
             }
             catch (DatabaseInconsistencyException ex)
             {
@@ -95,11 +93,11 @@ public class EmptyFileTests : BasicSetupHelper
 
         // Run another backup after database recreation
         using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
-            TestUtils.AssertResults(c.Backup(new[] { DATAFOLDER }));
+            TestUtils.AssertResults(await c.BackupAsync(new[] { DATAFOLDER }));
 
         // Verify the backup is still consistent
         using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
-            TestUtils.AssertResults(c.Test(long.MaxValue));
+            TestUtils.AssertResults(await c.TestAsync(long.MaxValue));
     }
 
     /// <summary>
@@ -107,7 +105,7 @@ public class EmptyFileTests : BasicSetupHelper
     /// </summary>
     [Test]
     [Category("EmptyFile")]
-    public async Task OnlyEmptyFileAfterDatabaseRecreate()
+    public async Task OnlyEmptyFileAfterDatabaseRecreateAsync()
     {
         var testopts = TestOptions.Expand(new { no_encryption = true });
 
@@ -117,7 +115,7 @@ public class EmptyFileTests : BasicSetupHelper
 
         // Run initial backup
         using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
-            TestUtils.AssertResults(c.Backup(new[] { DATAFOLDER }));
+            TestUtils.AssertResults(await c.BackupAsync(new[] { DATAFOLDER }));
 
         // Delete the local database
         File.Delete(DBFILE);
@@ -130,7 +128,7 @@ public class EmptyFileTests : BasicSetupHelper
         testopts["dbpath"] = recreatedDatabaseFile;
 
         using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
-            TestUtils.AssertResults(c.Repair());
+            TestUtils.AssertResults(await c.RepairAsync());
 
         // Add a new file to force the backup to process changes
         // This triggers the code path where the database inconsistency is detected
@@ -138,11 +136,11 @@ public class EmptyFileTests : BasicSetupHelper
 
         // Run another backup after database recreation
         using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
-            TestUtils.AssertResults(c.Backup(new[] { DATAFOLDER }));
+            TestUtils.AssertResults(await c.BackupAsync(new[] { DATAFOLDER }));
 
         // Verify the backup is consistent
         using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
-            TestUtils.AssertResults(c.Test(long.MaxValue));
+            TestUtils.AssertResults(await c.TestAsync(long.MaxValue));
     }
 
     /// <summary>
@@ -151,7 +149,7 @@ public class EmptyFileTests : BasicSetupHelper
     /// </summary>
     [Test]
     [Category("EmptyFile")]
-    public async Task EmptyFileWithSameHashAlgorithm()
+    public async Task EmptyFileWithSameHashAlgorithmAsync()
     {
         // Use same hash algorithm for block and file - this triggers different code path
         var testopts = TestOptions.Expand(new
@@ -172,11 +170,11 @@ public class EmptyFileTests : BasicSetupHelper
 
         // Run initial backup
         using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
-            TestUtils.AssertResults(c.Backup(new[] { DATAFOLDER }));
+            TestUtils.AssertResults(await c.BackupAsync(new[] { DATAFOLDER }));
 
         // Verify the backup works
         using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
-            TestUtils.AssertResults(c.Test(long.MaxValue));
+            TestUtils.AssertResults(await c.TestAsync(long.MaxValue));
 
         // Delete the local database
         File.Delete(DBFILE);
@@ -189,7 +187,7 @@ public class EmptyFileTests : BasicSetupHelper
         testopts["dbpath"] = recreatedDatabaseFile;
 
         using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
-            TestUtils.AssertResults(c.Repair());
+            TestUtils.AssertResults(await c.RepairAsync());
 
         // Add a new file to force the backup to process changes
         // This triggers the code path where the database inconsistency is detected
@@ -201,7 +199,7 @@ public class EmptyFileTests : BasicSetupHelper
         {
             try
             {
-                await db.VerifyConsistency(opts.Blocksize, opts.BlockhashSize, true, CancellationToken.None);
+                await db.VerifyConsistencyAsync(opts.Blocksize, opts.BlockhashSize, true, CancellationToken.None);
             }
             catch (DatabaseInconsistencyException ex)
             {
@@ -211,11 +209,11 @@ public class EmptyFileTests : BasicSetupHelper
 
         // Run another backup after database recreation
         using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
-            TestUtils.AssertResults(c.Backup(new[] { DATAFOLDER }));
+            TestUtils.AssertResults(await c.BackupAsync(new[] { DATAFOLDER }));
 
         // Verify the backup is still consistent
         using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
-            TestUtils.AssertResults(c.Test(long.MaxValue));
+            TestUtils.AssertResults(await c.TestAsync(long.MaxValue));
     }
 
     /// <summary>
@@ -223,7 +221,7 @@ public class EmptyFileTests : BasicSetupHelper
     /// </summary>
     [Test]
     [Category("EmptyFile")]
-    public void EmptyFileReportedScenario()
+    public async Task EmptyFileReportedScenarioAsync()
     {
         var testopts = TestOptions.Expand(new { no_encryption = true });
 
@@ -233,7 +231,7 @@ public class EmptyFileTests : BasicSetupHelper
 
         // Run initial backup
         using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
-            TestUtils.AssertResults(c.Backup(new[] { DATAFOLDER }));
+            TestUtils.AssertResults(await c.BackupAsync(new[] { DATAFOLDER }));
 
         // Delete the local database (simulating database loss)
         File.Delete(DBFILE);
@@ -246,7 +244,7 @@ public class EmptyFileTests : BasicSetupHelper
         testopts["dbpath"] = recreatedDatabaseFile;
 
         using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
-            TestUtils.AssertResults(c.Repair());
+            TestUtils.AssertResults(await c.RepairAsync());
 
         // Add a new file to force the backup to process changes
         // This triggers the code path where the database inconsistency is detected
@@ -256,6 +254,6 @@ public class EmptyFileTests : BasicSetupHelper
         // If the bug is present, this will throw DatabaseInconsistencyException
         // with message: "Found inconsistency in the following files while validating database"
         using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
-            TestUtils.AssertResults(c.Backup(new[] { DATAFOLDER }));
+            TestUtils.AssertResults(await c.BackupAsync(new[] { DATAFOLDER }));
     }
 }

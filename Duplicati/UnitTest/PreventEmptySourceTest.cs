@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using NUnit.Framework;
 
@@ -28,23 +29,23 @@ namespace Duplicati.UnitTest
     {
         [Test]
         [Category("Targeted")]
-        public void BackupFailsWhenSourceFolderIsEmpty()
+        public async Task BackupFailsWhenSourceFolderIsEmptyAsync()
         {
             var testopts = TestOptions.Expand(new { prevent_empty_source = true });
 
             using var controller = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null);
-            var ex = Assert.Throws<UserInformationException>(() => controller.Backup(new[] { DATAFOLDER }));
+            var ex = Assert.ThrowsAsync<UserInformationException>(() => controller.BackupAsync(new[] { DATAFOLDER }));
             Assert.That(ex!.HelpID, Is.EqualTo("SourceFolderEmpty"));
         }
 
         [Test]
         [Category("Targeted")]
-        public void BackupWorksWhenSourceFolderIsEmpty()
+        public async Task BackupWorksWhenSourceFolderIsEmptyAsync()
         {
             var testopts = TestOptions.Expand(new { });
 
             using var controller = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null);
-            var result = controller.Backup(new[] { DATAFOLDER });
+            var result = await controller.BackupAsync(new[] { DATAFOLDER });
             Assert.That(result, Is.Not.Null);
         }
     }

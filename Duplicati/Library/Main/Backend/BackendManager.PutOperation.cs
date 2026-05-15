@@ -251,7 +251,7 @@ partial class BackendManager
             // Flag for next attempt, if any
             operationState = OperationState.Uploading;
 
-            await PerformUpload(backend, hash, size, cancelToken).ConfigureAwait(false);
+            await PerformUploadAsync(backend, hash, size, cancelToken).ConfigureAwait(false);
 
             operationState = OperationState.Uploaded;
 
@@ -278,7 +278,7 @@ partial class BackendManager
         /// <param name="size">The size of the file</param>
         /// <param name="cancelToken">The cancellation token</param>
         /// <returns>An awaitable task</returns>
-        private async Task PerformUpload(IBackend backend, string hash, long size, CancellationToken cancelToken)
+        private async Task PerformUploadAsync(IBackend backend, string hash, long size, CancellationToken cancelToken)
         {
             Context.Database.LogRemoteOperation("put", RemoteFilename, JsonConvert.SerializeObject(new { Size = size, Hash = hash }));
             Context.Statwriter.SendEvent(BackendActionType.Put, BackendEventType.Started, RemoteFilename, size);

@@ -22,8 +22,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
+using Duplicati.Library.Main.Database;
+using Duplicati.Library.Utility;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
 
@@ -210,43 +213,43 @@ namespace Duplicati.UnitTest
         [TestCase("false", "true")]
         [TestCase("true", "false")]
         [TestCase("false", "false")]
-        public void Recover(string buildIndexWithFiles, bool reducedMemoryUsage)
+        public async Task RecoverAsync(string buildIndexWithFiles, bool reducedMemoryUsage)
         {
             // Files to create in MB.
-            int[] fileSizes = { 0, 10, 20, 30 };
+            int[] fileSizes = [0, 10, 20, 30];
             foreach (int size in fileSizes)
             {
-                byte[] data = new byte[size * 1024 * 1024];
-                Random rng = new Random();
+                var data = new byte[size * 1024 * 1024];
+                var rng = new Random();
                 rng.NextBytes(data);
                 File.WriteAllBytes(Path.Combine(this.DATAFOLDER, size + "MB"), data);
             }
 
             const string subdirectoryName = "subdirectory";
-            string subdirectoryPath = Path.Combine(this.DATAFOLDER, subdirectoryName);
+            var subdirectoryPath = Path.Combine(this.DATAFOLDER, subdirectoryName);
             Directory.CreateDirectory(subdirectoryPath);
             foreach (int size in fileSizes)
             {
-                byte[] data = new byte[size * 1024 * 1024];
-                Random rng = new Random();
+                var data = new byte[size * 1024 * 1024];
+                var rng = new Random();
                 rng.NextBytes(data);
                 File.WriteAllBytes(Path.Combine(subdirectoryPath, size + "MB"), data);
             }
 
             // Run a backup.
-            Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions);
-            string backendURL = "file://" + this.TARGETFOLDER;
-            using (Controller c = new Controller(backendURL, options, null))
+            var options = new Dictionary<string, string>(this.TestOptions);
+            var backendURL = "file://" + this.TARGETFOLDER;
+            using (var c = new Controller(backendURL, options, null))
             {
-                IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
+                var backupResults = await c.BackupAsync(new[] { this.DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
             }
 
             // Download the backend files.
-            string downloadFolder = Path.Combine(this.RESTOREFOLDER, "downloadedFiles");
+            var downloadFolder = Path.Combine(this.RESTOREFOLDER, "downloadedFiles");
             Directory.CreateDirectory(downloadFolder);
-            int status = CommandLine.RecoveryTool.Program.Main(new[] { "download", $"{backendURL}", $"{downloadFolder}", $"--passphrase={options["passphrase"]}" });
+            var status = CommandLine.RecoveryTool.Program.Main(new[] { "download", $"{backendURL}", $"{downloadFolder}", $"--passphrase={options["passphrase"]}" });
             Assert.AreEqual(0, status);
 
             // Create the index.
@@ -254,7 +257,7 @@ namespace Duplicati.UnitTest
             Assert.AreEqual(0, status);
 
             // Restore to a different folder.
-            string restoreFolder = Path.Combine(this.RESTOREFOLDER, "restoredFiles");
+            var restoreFolder = Path.Combine(this.RESTOREFOLDER, "restoredFiles");
             Directory.CreateDirectory(restoreFolder);
             status = CommandLine.RecoveryTool.Program.Main(new[] { "restore", $"{downloadFolder}", $"--targetpath={restoreFolder}", $"--reduce-memory-use={reducedMemoryUsage}" });
             Assert.AreEqual(0, status);
@@ -266,34 +269,90 @@ namespace Duplicati.UnitTest
         [Category("RecoveryTool")]
         [TestCase(false)]
         [TestCase(true)]
-        public void Recompress(bool noEncryption)
+        public async Task RecompressAsync(bool noEncryption)
         {
             // Files to create in MB.
-            int[] fileSizes = { 10, 20, 30 };
+            int[] fileSizes = [10, 20, 30];
             foreach (int size in fileSizes)
             {
-                byte[] data = new byte[size * 1024 * 1024];
-                Random rng = new Random();
+                var data = new byte[size * 1024 * 1024];
+                var rng = new Random();
                 rng.NextBytes(data);
                 File.WriteAllBytes(Path.Combine(this.DATAFOLDER, size + "MB"), data);
             }
             // Run a backup.
-            Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions)
+            var options = new Dictionary<string, string>(this.TestOptions)
             {
                 ["no-encryption"] = noEncryption.ToString()
             };
-            string backendURL = "file://" + this.TARGETFOLDER;
-            using (Controller c = new Controller(backendURL, options, null))
+            var backendURL = "file://" + this.TARGETFOLDER;
+            using (var c = new Controller(backendURL, options, null))
             {
-                IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
+                var backupResults = await c.BackupAsync(new[] { this.DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
             }
             // Recompress.
-            string downloadFolder = Path.Combine(this.RESTOREFOLDER, "downloadedFiles");
+            var downloadFolder = Path.Combine(this.RESTOREFOLDER, "downloadedFiles");
             Directory.CreateDirectory(downloadFolder);
-            int status = CommandLine.RecoveryTool.Program.Main(new[] { "recompress", "zip", $"{backendURL}", this.RESTOREFOLDER, $"--passphrase={options["passphrase"]}" });
+            var status = CommandLine.RecoveryTool.Program.Main(new[] { "recompress", "zip", $"{backendURL}", this.RESTOREFOLDER, $"--passphrase={options["passphrase"]}" });
             Assert.AreEqual(0, status);
+        }
+
+        [Test]
+        [Category("RecoveryTool")]
+        [TestCase(false)]
+        [TestCase(true)]
+        public async Task RecompressAndRecreateDatabaseAsync(bool noEncryption)
+        {
+            // Create a small dataset.
+            File.WriteAllBytes(Path.Combine(this.DATAFOLDER, "file.txt"), new byte[] { 1, 2, 3 });
+
+            // Run a backup with default zip compression.
+            var options = new Dictionary<string, string>(this.TestOptions)
+            {
+                ["no-encryption"] = noEncryption.ToString()
+            };
+            var backendURL = "file://" + this.TARGETFOLDER;
+            using (var c = new Controller(backendURL, options, null))
+            {
+                var backupResults = await c.BackupAsync(new[] { this.DATAFOLDER });
+                Assert.AreEqual(0, backupResults.Errors.Count());
+                Assert.AreEqual(0, backupResults.Warnings.Count());
+            }
+
+            // Delete the local database.
+            File.Delete(options["dbpath"]);
+
+            // Recompress remote files from zip to tzstd and reupload.
+            var recompressFolder = Path.Combine(this.RESTOREFOLDER, "recompressed");
+            Directory.CreateDirectory(recompressFolder);
+            var status = CommandLine.RecoveryTool.Program.Main(new[] { "recompress", "tzstd", backendURL, recompressFolder, "--reupload", $"--passphrase={options["passphrase"]}" });
+            Assert.AreEqual(0, status);
+
+            // Verify that the remote now contains tzstd files and no zip files.
+            var remoteFiles = Directory.GetFiles(this.TARGETFOLDER);
+            Assert.That(remoteFiles.Any(f => f.EndsWith(".tzstd", StringComparison.OrdinalIgnoreCase)), Is.True, "Remote should contain tzstd files after recompress.");
+            Assert.That(remoteFiles.Any(f => f.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)), Is.False, "Remote should not contain zip files after recompress.");
+
+            // Recreate the local database via Repair.
+            using (var c = new Controller(backendURL, options, null))
+            {
+                var repairResults = await c.RepairAsync();
+                Assert.AreEqual(0, repairResults.Errors.Count());
+                Assert.AreEqual(0, repairResults.Warnings.Count());
+            }
+
+            // The recreated database should have compression-module set to tzstd,
+            // because that is the actual compression format now used on the remote.
+            using (var db = await Duplicati.Library.Main.Database.LocalDatabase.CreateLocalDatabaseAsync(options["dbpath"], "Test", true, null, System.Threading.CancellationToken.None))
+            {
+                var dbOptions = await db.GetDbOptionsAsync(System.Threading.CancellationToken.None);
+                Assert.That(dbOptions.ContainsKey("compression-module"), Is.True, "Database should contain compression-module option.");
+                // This assertion replicates the reported issue: after recreate the database
+                // still stores the old compression module (zip) instead of the actual one (tzstd).
+                Assert.That(dbOptions["compression-module"], Is.EqualTo("tzstd"), "Recreated database should reflect the actual compression module used by remote files.");
+            }
         }
 
     }

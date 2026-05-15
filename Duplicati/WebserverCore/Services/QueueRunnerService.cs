@@ -125,11 +125,11 @@ public class QueueRunnerService(
 
             var nextTask = _tasks[0];
             _tasks.RemoveAt(0);
-            _current = (Task.Run(() => RunTask(nextTask), CancellationToken.None), nextTask);
+            _current = (Task.Run(() => RunTaskAsync(nextTask), CancellationToken.None), nextTask);
         }
     }
 
-    private async Task RunTask(IQueuedTask task)
+    private async Task RunTaskAsync(IQueuedTask task)
     {
         var completed = false;
         try
@@ -140,7 +140,7 @@ public class QueueRunnerService(
             if (task.OnStarting != null)
                 await task.OnStarting().ConfigureAwait(false);
 
-            Runner.Run(connection, eventPollNotify, notificationUpdateService, progressStateProviderService, applicationSettings, task, true);
+            await Runner.RunAsync(connection, eventPollNotify, notificationUpdateService, progressStateProviderService, applicationSettings, task, true).ConfigureAwait(false);
 
             // If the task is completed, don't call OnFinished again
             completed = true;
@@ -213,8 +213,8 @@ public class QueueRunnerService(
     }
 
     /// <inheritdoc/>
-    public IBasicResults? RunImmediately(IQueuedTask task)
+    public async Task<IBasicResults?> RunImmediatelyAsync(IQueuedTask task)
     {
-        return Runner.Run(connection, eventPollNotify, notificationUpdateService, progressStateProviderService, applicationSettings, task, false);
+        return await Runner.RunAsync(connection, eventPollNotify, notificationUpdateService, progressStateProviderService, applicationSettings, task, false).ConfigureAwait(false);
     }
 }

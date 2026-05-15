@@ -54,6 +54,7 @@ public sealed record ClaimedClientData(
     string CertificateUrl,
     IEnumerable<MiniServerCertificate> ServerCertificates,
     string? LocalEncryptionKey,
+    string? StatusMessage,
     Dictionary<string, string?>? Settings = null
 );
 

@@ -100,7 +100,7 @@ public class Issue6705 : BasicSetupHelper
                 await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
                 try
                 {
-                    System.Net.Dns.GetHostEntry(new System.Uri(url).Host);
+                    await System.Net.Dns.GetHostEntryAsync(new System.Uri(url).Host);
                 }
                 catch (Exception)
                 {
@@ -140,7 +140,7 @@ public class Issue6705 : BasicSetupHelper
     */
 
     [OneTimeSetUp]
-    public void DownloadAndExtractBackups()
+    public async Task DownloadAndExtractBackupsAsync()
     {
         bool remote = true; // Set to false to use local files instead of downloading from S3
         var localZipPath = "D:\\git\\duplicati-carl";
@@ -152,7 +152,7 @@ public class Issue6705 : BasicSetupHelper
             {
                 zipFilepath = ZipPath(os);
                 var url = $"https://testfiles.duplicati.com/cross-os-backups/{os}{zipPostfix}.zip";
-                DownloadS3FileIfNewerAsync(zipFilepath, url).GetAwaiter().GetResult();
+                await DownloadS3FileIfNewerAsync(zipFilepath, url);
             }
             var extractedPath = ExtractedBasePath(os);
             Directory.CreateDirectory(extractedPath);
@@ -162,7 +162,7 @@ public class Issue6705 : BasicSetupHelper
 
     [Test]
     [Category("Targeted")]
-    public async Task RestoreAcrossOperatingSystems(
+    public async Task RestoreAcrossOperatingSystemsAsync(
         [Values("Windows", "Linux", "MacOS")] string original_os,
         [Values(true, false)] bool use_packed_db,
         [Values(true, false)] bool use_legacy_restore,
@@ -185,7 +185,7 @@ public class Issue6705 : BasicSetupHelper
             testopts["dbpath"] = Path.Combine(extractedPath, "db.sqlite");
 
         using var c = new Library.Main.Controller($"file://{extractedPath}/backup", testopts, null);
-        TestUtils.AssertResults(c.Restore(null));
+        TestUtils.AssertResults(await c.RestoreAsync(null));
 
         // Verify restored files
         TestUtils.AssertDirectoryTreesAreEquivalent(Path.Combine(extractedPath, "original"), RESTOREFOLDER, false, "Restored files do not match original files");

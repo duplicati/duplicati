@@ -24,6 +24,7 @@ using NUnit.Framework;
 using System;
 using NUnit.Framework.Internal;
 using Duplicati.Library.DynamicLoader;
+using System.Threading.Tasks;
 
 namespace Duplicati.UnitTest
 {
@@ -31,7 +32,7 @@ namespace Duplicati.UnitTest
     {
         [Test]
         [Category("Targeted")]
-        public void VerifyMultiVolumeCompactWorks()
+        public async Task VerifyMultiVolumeCompactWorksAsync()
         {
             const int FILESIZE = 500 * 1024;
             const int FILECOUNT = 40;
@@ -57,7 +58,7 @@ namespace Duplicati.UnitTest
 
             // Make a backup
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Backup(new string[] { DATAFOLDER }));
+                TestUtils.AssertResults(await c.BackupAsync(new string[] { DATAFOLDER }));
 
             // Delete half the files
             for (var i = 0; i < FILECOUNT / 2; i++)
@@ -65,13 +66,13 @@ namespace Duplicati.UnitTest
 
             // Make a backup
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Backup(new string[] { DATAFOLDER }));
+                TestUtils.AssertResults(await c.BackupAsync(new string[] { DATAFOLDER }));
 
             var fullBlockvolumeCount = Directory.GetFiles(TARGETFOLDER, "*.dblock.*", SearchOption.TopDirectoryOnly).Length;
 
             // Now run compact
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Compact());
+                TestUtils.AssertResults(await c.CompactAsync());
 
             var newBlockvolumeCount = Directory.GetFiles(TARGETFOLDER, "*.dblock.*", SearchOption.TopDirectoryOnly).Length;
 
@@ -89,7 +90,7 @@ namespace Duplicati.UnitTest
             };
 
             using (var c = new Library.Main.Controller(new DeterministicErrorBackend().ProtocolKey + "://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Repair());
+                TestUtils.AssertResults(await c.RepairAsync());
         }
     }
 }

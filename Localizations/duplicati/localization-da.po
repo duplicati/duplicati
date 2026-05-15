@@ -19,7 +19,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-22 15:17+0200\n"
+"POT-Creation-Date: 2026-05-04 14:35+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: jhertel <jesper.hertel@gmail.com>, 2025\n"
 "Language-Team: Danish (https://app.transifex.com/duplicati/teams/67655/da/)\n"
@@ -45,16 +45,16 @@ msgstr "AES-256-kryptering, indbygget"
 msgid "Empty passphrase not allowed"
 msgstr "Tom adgangskode ikke tilladt"
 
-#: Library/Encryption/Strings.cs:37
+#: Library/Encryption/Strings.cs:43
 #, csharp-format
 msgid "Failed to decrypt data (invalid passphrase?): {0}"
 msgstr "Kunne ikke dekryptere data (ugyldig adgangskode?): {0}"
 
-#: Library/Encryption/Strings.cs:42
+#: Library/Encryption/Strings.cs:48
 msgid "GNU Privacy Guard, external"
 msgstr "GNU Privacy Guard, ekstern"
 
-#: Library/Encryption/Strings.cs:43
+#: Library/Encryption/Strings.cs:49
 msgid ""
 "Use this switch to specify any extra options to GPG. You cannot specify the "
 "--passphrase-fd option here. The --decrypt option is always specified."
@@ -63,11 +63,11 @@ msgstr ""
 "angive indstillingen --passphrase-fd her. Indstillingen --decrypt er altid "
 "angivet."
 
-#: Library/Encryption/Strings.cs:44
+#: Library/Encryption/Strings.cs:50
 msgid "Extra GPG commandline options for decryption"
 msgstr "Ekstra GPG-kommandolinjeargumenter for dekryptering"
 
-#: Library/Encryption/Strings.cs:45
+#: Library/Encryption/Strings.cs:51
 msgid ""
 "Use this switch to specify any extra options to GPG. You cannot specify the "
 "--passphrase-fd option here. The --encrypt option is always specified."
@@ -76,20 +76,20 @@ msgstr ""
 "angive indstillingen --passphrase-fd her. Indstillingen --encrypt er altid "
 "angivet."
 
-#: Library/Encryption/Strings.cs:46
+#: Library/Encryption/Strings.cs:52
 msgid "Extra GPG commandline options for encryption"
 msgstr "Ekstra GPG-kommandolinjeargumenter for kryptering"
 
-#: Library/Encryption/Strings.cs:47
+#: Library/Encryption/Strings.cs:53
 #, csharp-format
 msgid "Failed to execute GPG with \"{0} {1}\": {2}"
 msgstr "Fejlede kørsel af GPG  \"\" {0} \"{1}\": {2}"
 
-#: Library/Encryption/Strings.cs:49
+#: Library/Encryption/Strings.cs:55
 msgid "The path to GnuPG"
 msgstr "Stien til GnuPG"
 
-#: Library/Encryption/Strings.cs:50
+#: Library/Encryption/Strings.cs:56
 msgid ""
 "Use this option to supply the --armor option to GPG. The files will be "
 "larger but can be sent as pure text files."
@@ -97,29 +97,29 @@ msgstr ""
 "Brug dette argument til at levere argumentet --armor til GPG. Filerne bliver"
 " større, men kan sendes som rene tekstfiler."
 
-#: Library/Encryption/Strings.cs:51
+#: Library/Encryption/Strings.cs:57
 msgid "Use GPG Armor"
 msgstr "Brug GPG Armor"
 
-#: Library/Encryption/Strings.cs:53
+#: Library/Encryption/Strings.cs:59
 msgid "The GPG decryption command"
 msgstr "GPG-dekrypteringskommandoen"
 
-#: Library/Encryption/Strings.cs:55
+#: Library/Encryption/Strings.cs:61
 msgid "The GPG encryption command"
 msgstr "GPG-krypteringskommandoen"
 
-#: Library/Encryption/Strings.cs:59
+#: Library/Encryption/Strings.cs:65
 #, csharp-format
 msgid "Decryption failed: {0}"
 msgstr "Dekryptering mislykkedes: {0}"
 
-#: Library/Encryption/Strings.cs:60
+#: Library/Encryption/Strings.cs:66
 msgid "Failure while invoking GnuPG, program won't flush output"
 msgstr ""
 "En fejl opstod mens GnuPG startede, programmet vil ikke printe resultatet"
 
-#: Library/Encryption/Strings.cs:61
+#: Library/Encryption/Strings.cs:67
 msgid "Failure while invoking GnuPG, program won't terminate"
 msgstr "Fejl under kald af GnuPG, programmet vil ikke stoppe"
 
@@ -423,6 +423,7 @@ msgstr "Google Drive"
 
 #: Library/Backend/GoogleServices/Strings.cs:53
 #: Library/Backend/File/Strings.cs:42 Library/Compression/Strings.cs:38
+#: Library/Compression/Strings.cs:49 Library/Compression/Strings.cs:60
 #, csharp-format
 msgid "File not found: {0}"
 msgstr "Fil ikke fundet: {0}"
@@ -1064,135 +1065,135 @@ msgstr "Kør script"
 msgid "Run a script on exit"
 msgstr "Kør et script når handling udført"
 
-#: Library/Modules/Builtin/Strings.cs:115
+#: Library/Modules/Builtin/Strings.cs:117
 #, csharp-format
 msgid "The script \"{0}\" returned with exit code {1}"
 msgstr "Scriptet \"{0}\" returneres med kode {1}"
 
-#: Library/Modules/Builtin/Strings.cs:118
+#: Library/Modules/Builtin/Strings.cs:120
 msgid "Run a required script on startup"
 msgstr "Kør et påkrævet script ved opstart"
 
-#: Library/Modules/Builtin/Strings.cs:124
+#: Library/Modules/Builtin/Strings.cs:126
 msgid "Run a script on startup"
 msgstr "Kør et script ved opstart"
 
-#: Library/Modules/Builtin/Strings.cs:125
+#: Library/Modules/Builtin/Strings.cs:127
 #, csharp-format
 msgid "The script \"{0}\" reported error messages: {1}"
 msgstr "Skriptet \"{0}\" rapporterede fejlmeddelelser: {1}"
 
-#: Library/Modules/Builtin/Strings.cs:134
+#: Library/Modules/Builtin/Strings.cs:136
 msgid "Send mail"
 msgstr "Send mail"
 
-#: Library/Modules/Builtin/Strings.cs:145
+#: Library/Modules/Builtin/Strings.cs:147
 msgid "The message body"
 msgstr "Meddelelsesteksten"
 
-#: Library/Modules/Builtin/Strings.cs:147
+#: Library/Modules/Builtin/Strings.cs:149
 msgid "SMTP Password"
 msgstr "SMTP Password"
 
-#: Library/Modules/Builtin/Strings.cs:152
+#: Library/Modules/Builtin/Strings.cs:154
 msgid "Email recipient(s)"
 msgstr "E-mail-modtager(e)"
 
-#: Library/Modules/Builtin/Strings.cs:159
+#: Library/Modules/Builtin/Strings.cs:161
 msgid "Email sender"
 msgstr "E-mail afsender"
 
-#: Library/Modules/Builtin/Strings.cs:162
-#: Library/Modules/Builtin/Strings.cs:202
-#: Library/Modules/Builtin/Strings.cs:236
-#: Library/Modules/Builtin/Strings.cs:265
+#: Library/Modules/Builtin/Strings.cs:164
+#: Library/Modules/Builtin/Strings.cs:204
+#: Library/Modules/Builtin/Strings.cs:238
+#: Library/Modules/Builtin/Strings.cs:267
 msgid "The messages to send"
 msgstr "Beskeder, der skal sendes"
 
-#: Library/Modules/Builtin/Strings.cs:167
+#: Library/Modules/Builtin/Strings.cs:169
 msgid "SMTP Url"
 msgstr "SMTP Url"
 
-#: Library/Modules/Builtin/Strings.cs:169
+#: Library/Modules/Builtin/Strings.cs:171
 msgid "The email subject"
 msgstr "E-mail emnet"
 
-#: Library/Modules/Builtin/Strings.cs:171
+#: Library/Modules/Builtin/Strings.cs:173
 msgid "SMTP Username"
 msgstr "SMTP brugernavn"
 
-#: Library/Modules/Builtin/Strings.cs:172
+#: Library/Modules/Builtin/Strings.cs:174
 #, csharp-format
 msgid "Whole SMTP communication: {0}"
 msgstr "Hele SMTP-kommunikationen: {0}"
 
-#: Library/Modules/Builtin/Strings.cs:173
+#: Library/Modules/Builtin/Strings.cs:175
 #, csharp-format
 msgid "Failed to send email with server: {0}, message: {1}, retrying with {2}"
 msgstr ""
 "Kunne ikke sende e-mail med server: {0}, meddelelse: {1}, forsøger igen med "
 "{2}"
 
-#: Library/Modules/Builtin/Strings.cs:174
+#: Library/Modules/Builtin/Strings.cs:176
 #, csharp-format
 msgid "Email sent successfully using server: {0}"
 msgstr "Email sendt med succes ved hjælp af server: {0}"
 
-#: Library/Modules/Builtin/Strings.cs:182
+#: Library/Modules/Builtin/Strings.cs:184
 msgid ""
 "This module provides support for sending status reports via XMPP messages"
 msgstr ""
 "Dette modul giver support til afsendelse af statusrapporter via XMPP-"
 "meddelelser"
 
-#: Library/Modules/Builtin/Strings.cs:183
+#: Library/Modules/Builtin/Strings.cs:185
 msgid "XMPP report module"
 msgstr "XMPP rapport modul"
 
-#: Library/Modules/Builtin/Strings.cs:185
+#: Library/Modules/Builtin/Strings.cs:187
 msgid "XMPP recipient email"
 msgstr "XMPP modtager email"
 
-#: Library/Modules/Builtin/Strings.cs:195
-#: Library/Modules/Builtin/Strings.cs:227
-#: Library/Modules/Builtin/Strings.cs:258
+#: Library/Modules/Builtin/Strings.cs:197
+#: Library/Modules/Builtin/Strings.cs:229
+#: Library/Modules/Builtin/Strings.cs:260
 msgid "The message template"
 msgstr "Meddelelsesskabelonen"
 
-#: Library/Modules/Builtin/Strings.cs:197
+#: Library/Modules/Builtin/Strings.cs:199
 msgid "The XMPP username"
 msgstr "XMPP brugernavnet"
 
-#: Library/Modules/Builtin/Strings.cs:199
+#: Library/Modules/Builtin/Strings.cs:201
 msgid "The XMPP password"
 msgstr "XMPP-adgangskoden"
 
-#: Library/Modules/Builtin/Strings.cs:204
-#: Library/Modules/Builtin/Strings.cs:238
-#: Library/Modules/Builtin/Strings.cs:267
+#: Library/Modules/Builtin/Strings.cs:206
+#: Library/Modules/Builtin/Strings.cs:240
+#: Library/Modules/Builtin/Strings.cs:269
 msgid "Send messages for all operations"
 msgstr "Send meddelelser fra alle operationer"
 
-#: Library/Modules/Builtin/Strings.cs:205
+#: Library/Modules/Builtin/Strings.cs:207
 msgid "Timeout occurred while logging in to jabber server"
 msgstr "Timeout opstod, mens du loggede ind på jabber-serveren"
 
-#: Library/Modules/Builtin/Strings.cs:245
+#: Library/Modules/Builtin/Strings.cs:247
 msgid ""
 "This module provides support for sending status reports via HTTP messages"
 msgstr ""
 "Dette modul giver support til afsendelse af statusrapporter via HTTP-"
 "meddelelser"
 
-#: Library/Modules/Builtin/Strings.cs:246
+#: Library/Modules/Builtin/Strings.cs:248
 msgid "HTTP report module"
 msgstr "HTTP rapport modul"
 
-#: Library/Modules/Builtin/Strings.cs:260
+#: Library/Modules/Builtin/Strings.cs:262
 msgid "The name of the parameter to send the message as"
 msgstr "Navnet på parameteren som beskeden bliver sendt som"
 
-#: Library/Modules/Builtin/Strings.cs:275 Library/Utility/Strings.cs:84
+#: Library/Modules/Builtin/Strings.cs:277 Library/Utility/Strings.cs:84
 msgid "Accept any server certificate"
 msgstr "Accepter enhvert servercertifikat"
 

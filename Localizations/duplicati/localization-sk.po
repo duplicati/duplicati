@@ -16,7 +16,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-22 15:17+0200\n"
+"POT-Creation-Date: 2026-05-04 14:35+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: Martin Rovňák <rovnakm@gmail.com>, 2026\n"
 "Language-Team: Slovak (https://app.transifex.com/duplicati/teams/67655/sk/)\n"
@@ -59,12 +59,12 @@ msgstr "Nastavte úroveň vlákna používanú na šifrovanie"
 msgid "The option --{0} is no longer used and has been deprecated."
 msgstr "Možnosť --{0} sa už nepoužíva a bola zrušená."
 
-#: Library/Encryption/Strings.cs:37
+#: Library/Encryption/Strings.cs:43
 #, csharp-format
 msgid "Failed to decrypt data (invalid passphrase?): {0}"
 msgstr "Chyba dešifrovania dát (nesprávne heslo?): {0}"
 
-#: Library/Encryption/Strings.cs:41
+#: Library/Encryption/Strings.cs:47
 #, csharp-format
 msgid ""
 "The GPG encryption module uses the GNU Privacy Guard program to encrypt and "
@@ -81,11 +81,11 @@ msgstr ""
 "predpokladá, že program je k dispozícii prostredníctvom premennej prostredia"
 " PATH. Cestu k GPG je možné zadať pomocou možnosti --{0}."
 
-#: Library/Encryption/Strings.cs:42
+#: Library/Encryption/Strings.cs:48
 msgid "GNU Privacy Guard, external"
 msgstr "GNU Privacy Guard, externé"
 
-#: Library/Encryption/Strings.cs:43
+#: Library/Encryption/Strings.cs:49
 msgid ""
 "Use this switch to specify any extra options to GPG. You cannot specify the "
 "--passphrase-fd option here. The --decrypt option is always specified."
@@ -94,11 +94,11 @@ msgstr ""
 "GPG. Tu nemôžete špecifikovať voľbu --passphrase-fd. Voľba --decrypt je vždy"
 " špecifikovaná."
 
-#: Library/Encryption/Strings.cs:44
+#: Library/Encryption/Strings.cs:50
 msgid "Extra GPG commandline options for decryption"
 msgstr "Extra GPG príkazy pre dešifrovanie"
 
-#: Library/Encryption/Strings.cs:45
+#: Library/Encryption/Strings.cs:51
 msgid ""
 "Use this switch to specify any extra options to GPG. You cannot specify the "
 "--passphrase-fd option here. The --encrypt option is always specified."
@@ -107,16 +107,16 @@ msgstr ""
 "GPG. Tu nemôžete špecifikovať voľbu --passphrase-fd. Voľba --encrypt je vždy"
 " špecifikovaná."
 
-#: Library/Encryption/Strings.cs:46
+#: Library/Encryption/Strings.cs:52
 msgid "Extra GPG commandline options for encryption"
 msgstr "Extra GPG príkazy pre šifrovanie"
 
-#: Library/Encryption/Strings.cs:47
+#: Library/Encryption/Strings.cs:53
 #, csharp-format
 msgid "Failed to execute GPG with \"{0} {1}\": {2}"
 msgstr "Nepodarilo sa spustiť GPG s \"{0} {1}\": {2}"
 
-#: Library/Encryption/Strings.cs:48
+#: Library/Encryption/Strings.cs:54
 msgid ""
 "The path to the GNU Privacy Guard program. If not supplied, Duplicati will "
 "search for \"gpg2\" and \"gpg\" on the system."
@@ -124,11 +124,11 @@ msgstr ""
 "Cesta k programu GNU Privacy Guard. Ak nie je uvedená, Duplicati vyhľadá v "
 "systéme \"gpg2\" a \"gpg\"."
 
-#: Library/Encryption/Strings.cs:49
+#: Library/Encryption/Strings.cs:55
 msgid "The path to GnuPG"
 msgstr "Cesta k GnuPG"
 
-#: Library/Encryption/Strings.cs:50
+#: Library/Encryption/Strings.cs:56
 msgid ""
 "Use this option to supply the --armor option to GPG. The files will be "
 "larger but can be sent as pure text files."
@@ -136,19 +136,19 @@ msgstr ""
 "Túto voľbu použite na zadanie voľby --armor pre GPG. Súbory budú väčšie, ale"
 " bude možné ich odosielať ako čisté textové súbory."
 
-#: Library/Encryption/Strings.cs:51
+#: Library/Encryption/Strings.cs:57
 msgid "Use GPG Armor"
 msgstr "Použiť GPG Armor"
 
-#: Library/Encryption/Strings.cs:52
+#: Library/Encryption/Strings.cs:58
 msgid "Override the GPG command supplied for decryption."
 msgstr "Prepíšte príkaz GPG určený na dešifrovanie."
 
-#: Library/Encryption/Strings.cs:53
+#: Library/Encryption/Strings.cs:59
 msgid "The GPG decryption command"
 msgstr "GPG dešifrovací príkaz"
 
-#: Library/Encryption/Strings.cs:54
+#: Library/Encryption/Strings.cs:60
 #, csharp-format
 msgid ""
 "Override the default GPG encryption command \"{0}\". Normal usage is to "
@@ -157,32 +157,32 @@ msgstr ""
 "Prepíšte predvolený príkaz šifrovania GPG \"{0}\". Bežné použitie je "
 "požiadať o asymetrické šifrovanie s nastavením {1}."
 
-#: Library/Encryption/Strings.cs:55
+#: Library/Encryption/Strings.cs:61
 msgid "The GPG encryption command"
 msgstr "GPG šifrovací príkaz"
 
-#: Library/Encryption/Strings.cs:59
+#: Library/Encryption/Strings.cs:65
 #, csharp-format
 msgid "Decryption failed: {0}"
 msgstr "Dešifrovanie zlyhalo: {0}"
 
-#: Library/Encryption/Strings.cs:60
+#: Library/Encryption/Strings.cs:66
 msgid "Failure while invoking GnuPG, program won't flush output"
 msgstr "Chyba pri vyvolaní GnuPG, program nevyprázdni výstup"
 
-#: Library/Encryption/Strings.cs:61
+#: Library/Encryption/Strings.cs:67
 msgid "Failure while invoking GnuPG, program won't terminate"
 msgstr "Chyba pri vyvolaní GnuPG, program sa neukončí"
 
-#: Library/Encryption/Strings.cs:65
+#: Library/Encryption/Strings.cs:71
 msgid "Key must be at least 8 characters long"
 msgstr "Kľúč musí mať minimálne 8 znakov."
 
-#: Library/Encryption/Strings.cs:66
+#: Library/Encryption/Strings.cs:72
 msgid "Key must not be empty"
 msgstr "Kľúč nesmie byť prázdny"
 
-#: Library/Encryption/Strings.cs:67
+#: Library/Encryption/Strings.cs:73
 msgid "Refusing to encrypt with blacklisted key"
 msgstr "Odmietnutie šifrovania pomocou kľúča zo zoznamu zakázaných kľúč"
 
@@ -408,6 +408,7 @@ msgstr "Google Drive"
 
 #: Library/Backend/GoogleServices/Strings.cs:53
 #: Library/Backend/File/Strings.cs:42 Library/Compression/Strings.cs:38
+#: Library/Compression/Strings.cs:49 Library/Compression/Strings.cs:60
 #, csharp-format
 msgid "File not found: {0}"
 msgstr "Súbor nenájdený: {0}"
@@ -679,48 +680,48 @@ msgstr "Spustiť skript"
 msgid "Run a script on exit"
 msgstr "Spustiť skript pri vypnutí"
 
-#: Library/Modules/Builtin/Strings.cs:118
+#: Library/Modules/Builtin/Strings.cs:120
 msgid "Run a required script on startup"
 msgstr "Spustiť potrebný skript pri štarte"
 
-#: Library/Modules/Builtin/Strings.cs:124
+#: Library/Modules/Builtin/Strings.cs:126
 msgid "Run a script on startup"
 msgstr "Spustenie skriptu pri štarte"
 
-#: Library/Modules/Builtin/Strings.cs:134
+#: Library/Modules/Builtin/Strings.cs:136
 msgid "Send mail"
 msgstr "Poslať email"
 
-#: Library/Modules/Builtin/Strings.cs:145
+#: Library/Modules/Builtin/Strings.cs:147
 msgid "The message body"
 msgstr "Správa"
 
-#: Library/Modules/Builtin/Strings.cs:147
+#: Library/Modules/Builtin/Strings.cs:149
 msgid "SMTP Password"
 msgstr "SMTP Heslo"
 
-#: Library/Modules/Builtin/Strings.cs:152
+#: Library/Modules/Builtin/Strings.cs:154
 msgid "Email recipient(s)"
 msgstr "Príjemca(i)"
 
-#: Library/Modules/Builtin/Strings.cs:171
+#: Library/Modules/Builtin/Strings.cs:173
 msgid "SMTP Username"
 msgstr "SMTP Užívateľské meno"
 
-#: Library/Modules/Builtin/Strings.cs:174
+#: Library/Modules/Builtin/Strings.cs:176
 #, csharp-format
 msgid "Email sent successfully using server: {0}"
 msgstr "Email úspešne odoslaný s použitím servera: {0}"
 
-#: Library/Modules/Builtin/Strings.cs:197
+#: Library/Modules/Builtin/Strings.cs:199
 msgid "The XMPP username"
 msgstr "XMPP užívateľ"
 
-#: Library/Modules/Builtin/Strings.cs:199
+#: Library/Modules/Builtin/Strings.cs:201
 msgid "The XMPP password"
 msgstr "XMPP heslo"
 
-#: Library/Modules/Builtin/Strings.cs:275 Library/Utility/Strings.cs:84
+#: Library/Modules/Builtin/Strings.cs:277 Library/Utility/Strings.cs:84
 msgid "Accept any server certificate"
 msgstr "Akceptovenie všetkých serverových certifikátov"
 

@@ -1402,7 +1402,7 @@ public static partial class Command
         // Create the tarball
         var tarfile = Path.Combine(tmpbuild, $"duplicati-{rtcfg.ReleaseInfo.Version}.tar.bz2");
         await ProcessHelper.Execute(
-            ["tar", "-cjf", tarfile, Path.GetFileName(tarsrc)],
+            ["tar", "--no-acls", "--no-xattrs", "-cjf", tarfile, Path.GetFileName(tarsrc)],
             workingDirectory: Path.GetDirectoryName(tarsrc)
         );
         Directory.Delete(tarsrc, true);

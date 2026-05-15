@@ -18,7 +18,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-22 15:17+0200\n"
+"POT-Creation-Date: 2026-05-04 14:35+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: Mariusz Wierzbicki <engineer@post.pl>, 2026\n"
 "Language-Team: Polish (https://app.transifex.com/duplicati/teams/67655/pl/)\n"
@@ -60,12 +60,12 @@ msgstr "Ustaw poziom wątków używany do szyfrowania"
 msgid "The option --{0} is no longer used and has been deprecated."
 msgstr "Opcja --{0} nie jest już używana i została uznana za przestarzałą."
 
-#: Library/Encryption/Strings.cs:37
+#: Library/Encryption/Strings.cs:43
 #, csharp-format
 msgid "Failed to decrypt data (invalid passphrase?): {0}"
 msgstr "Nie udało się odszyfrować danych (nieprawidłowe hasło?): {0}"
 
-#: Library/Encryption/Strings.cs:41
+#: Library/Encryption/Strings.cs:47
 #, csharp-format
 msgid ""
 "The GPG encryption module uses the GNU Privacy Guard program to encrypt and "
@@ -82,11 +82,11 @@ msgstr ""
 "że program jest dostępny za pośrednictwem zmiennej środowiskowej PATH. "
 "Możliwe jest podanie ścieżki do GPG za pomocą opcji --{0}"
 
-#: Library/Encryption/Strings.cs:42
+#: Library/Encryption/Strings.cs:48
 msgid "GNU Privacy Guard, external"
 msgstr "Zewnętrzne, chrona prywatności GNU"
 
-#: Library/Encryption/Strings.cs:43
+#: Library/Encryption/Strings.cs:49
 msgid ""
 "Use this switch to specify any extra options to GPG. You cannot specify the "
 "--passphrase-fd option here. The --decrypt option is always specified."
@@ -94,11 +94,11 @@ msgstr ""
 "Użyj tego przełącznika, aby określić dodatkowe opcje GPG. W tym miejscu nie "
 "można określić opcji --passphrase-fd. Opcja --decrypt jest zawsze określona."
 
-#: Library/Encryption/Strings.cs:44
+#: Library/Encryption/Strings.cs:50
 msgid "Extra GPG commandline options for decryption"
 msgstr "Dodatkowe opcje wiersza poleceń GPG do odszyfrowania"
 
-#: Library/Encryption/Strings.cs:45
+#: Library/Encryption/Strings.cs:51
 msgid ""
 "Use this switch to specify any extra options to GPG. You cannot specify the "
 "--passphrase-fd option here. The --encrypt option is always specified."
@@ -106,16 +106,16 @@ msgstr ""
 "Użyj tego przełącznika, aby określić dodatkowe opcje GPG. W tym miejscu nie "
 "można określić opcji --passphrase-fd. Opcja --encrypt jest zawsze określona."
 
-#: Library/Encryption/Strings.cs:46
+#: Library/Encryption/Strings.cs:52
 msgid "Extra GPG commandline options for encryption"
 msgstr "Dodatkowe opcje wiersza poleceń GPG do szyfrowania"
 
-#: Library/Encryption/Strings.cs:47
+#: Library/Encryption/Strings.cs:53
 #, csharp-format
 msgid "Failed to execute GPG with \"{0} {1}\": {2}"
 msgstr "Nie udało się wykonać GPG z \"{0} {1}\": {2}"
 
-#: Library/Encryption/Strings.cs:48
+#: Library/Encryption/Strings.cs:54
 msgid ""
 "The path to the GNU Privacy Guard program. If not supplied, Duplicati will "
 "search for \"gpg2\" and \"gpg\" on the system."
@@ -123,11 +123,11 @@ msgstr ""
 "Ścieżka do programu GNU Privacy Guard. Jeśli nie zostanie podana, Duplicati "
 "spróbuje znaleźć \"gpg2\" i \"gpg\" w systemie."
 
-#: Library/Encryption/Strings.cs:49
+#: Library/Encryption/Strings.cs:55
 msgid "The path to GnuPG"
 msgstr "Ścieżka do GnuPG"
 
-#: Library/Encryption/Strings.cs:50
+#: Library/Encryption/Strings.cs:56
 msgid ""
 "Use this option to supply the --armor option to GPG. The files will be "
 "larger but can be sent as pure text files."
@@ -135,19 +135,19 @@ msgstr ""
 "Użyj tej opcji, aby dostarczyć opcję --armor do GPG. Pliki będą większe, ale"
 " można je wysłać jako zwykłe pliki tekstowe."
 
-#: Library/Encryption/Strings.cs:51
+#: Library/Encryption/Strings.cs:57
 msgid "Use GPG Armor"
 msgstr "Użyj GPG Armor"
 
-#: Library/Encryption/Strings.cs:52
+#: Library/Encryption/Strings.cs:58
 msgid "Override the GPG command supplied for decryption."
 msgstr "Zastąp polecenie GPG używane w celu odszyfrowania."
 
-#: Library/Encryption/Strings.cs:53
+#: Library/Encryption/Strings.cs:59
 msgid "The GPG decryption command"
 msgstr "Polecenie deszyfrowania GPG"
 
-#: Library/Encryption/Strings.cs:54
+#: Library/Encryption/Strings.cs:60
 #, csharp-format
 msgid ""
 "Override the default GPG encryption command \"{0}\". Normal usage is to "
@@ -156,33 +156,33 @@ msgstr ""
 "Zastąp domyślne polecenie szyfrowania GPG \"{0}\". Normalnym zastosowaniem "
 "jest żądanie szyfrowania asymetrycznego z ustawieniem {1}."
 
-#: Library/Encryption/Strings.cs:55
+#: Library/Encryption/Strings.cs:61
 msgid "The GPG encryption command"
 msgstr "Polecenie szyfrowania GPG"
 
-#: Library/Encryption/Strings.cs:59
+#: Library/Encryption/Strings.cs:65
 #, csharp-format
 msgid "Decryption failed: {0}"
 msgstr "Odszyfrowanie nie powiodło się: {0}"
 
-#: Library/Encryption/Strings.cs:60
+#: Library/Encryption/Strings.cs:66
 msgid "Failure while invoking GnuPG, program won't flush output"
 msgstr ""
 "Błąd podczas wywoływania GnuPG, program nie opróżnia danych wyjściowych"
 
-#: Library/Encryption/Strings.cs:61
+#: Library/Encryption/Strings.cs:67
 msgid "Failure while invoking GnuPG, program won't terminate"
 msgstr "Błąd podczas wywoływania GnuPG, program się nie kończy"
 
-#: Library/Encryption/Strings.cs:65
+#: Library/Encryption/Strings.cs:71
 msgid "Key must be at least 8 characters long"
 msgstr "Klucz musi składać się z co najmniej 8 znaków"
 
-#: Library/Encryption/Strings.cs:66
+#: Library/Encryption/Strings.cs:72
 msgid "Key must not be empty"
 msgstr "Klucz nie może być pusty"
 
-#: Library/Encryption/Strings.cs:67
+#: Library/Encryption/Strings.cs:73
 msgid "Refusing to encrypt with blacklisted key"
 msgstr "Odmowa szyfrowania kluczem z czarnej listy"
 
@@ -905,6 +905,7 @@ msgstr ""
 
 #: Library/Backend/GoogleServices/Strings.cs:53
 #: Library/Backend/File/Strings.cs:42 Library/Compression/Strings.cs:38
+#: Library/Compression/Strings.cs:49 Library/Compression/Strings.cs:60
 #, csharp-format
 msgid "File not found: {0}"
 msgstr "Nie znaleziono pliku: {0}"
@@ -3411,75 +3412,75 @@ msgstr "Wykonaj skrypt"
 msgid "Run a script on exit"
 msgstr "Wykonaj skrypt na koniec"
 
-#: Library/Modules/Builtin/Strings.cs:115
+#: Library/Modules/Builtin/Strings.cs:117
 #, csharp-format
 msgid "The script \"{0}\" returned with exit code {1}"
 msgstr "Skrypt \"{0}\" zwrócił kod zakończenia {1}"
 
-#: Library/Modules/Builtin/Strings.cs:116
+#: Library/Modules/Builtin/Strings.cs:118
 #, csharp-format
 msgid "The script \"{0}\" returned with exit code {1}{2}"
 msgstr "Skrypt \"{0}\" zwrócił kod zakończenia {1}{2}"
 
-#: Library/Modules/Builtin/Strings.cs:118
+#: Library/Modules/Builtin/Strings.cs:120
 msgid "Run a required script on startup"
 msgstr "Wykonaj skrypt podczas startu"
 
-#: Library/Modules/Builtin/Strings.cs:121
+#: Library/Modules/Builtin/Strings.cs:123
 #, csharp-format
 msgid "Error while executing script \"{0}\": {1}"
 msgstr "Błąd podczas wykonywania skryptu \"{0}\": {1}"
 
-#: Library/Modules/Builtin/Strings.cs:122
+#: Library/Modules/Builtin/Strings.cs:124
 #, csharp-format
 msgid "Execution of the script \"{0}\" timed out"
 msgstr "Przekroczono limit czasu wykonania skryptu \"{0}\""
 
-#: Library/Modules/Builtin/Strings.cs:124
+#: Library/Modules/Builtin/Strings.cs:126
 msgid "Run a script on startup"
 msgstr "Uruchom skrypt podczas uruchamiania"
 
-#: Library/Modules/Builtin/Strings.cs:125
+#: Library/Modules/Builtin/Strings.cs:127
 #, csharp-format
 msgid "The script \"{0}\" reported error messages: {1}"
 msgstr "Skrypt \"{0}\" zgłosił komunikaty o błędach: {1}"
 
-#: Library/Modules/Builtin/Strings.cs:133
+#: Library/Modules/Builtin/Strings.cs:135
 msgid "This module can send email after an operation completes"
 msgstr "Ten moduł może wysyłać wiadomości e-mail po zakończeniu operacji"
 
-#: Library/Modules/Builtin/Strings.cs:134
+#: Library/Modules/Builtin/Strings.cs:136
 msgid "Send mail"
 msgstr "Wyślij email"
 
-#: Library/Modules/Builtin/Strings.cs:145
+#: Library/Modules/Builtin/Strings.cs:147
 msgid "The message body"
 msgstr "Treść wiadomości"
 
-#: Library/Modules/Builtin/Strings.cs:147
+#: Library/Modules/Builtin/Strings.cs:149
 msgid "SMTP Password"
 msgstr "Hasło SMTP"
 
-#: Library/Modules/Builtin/Strings.cs:152
+#: Library/Modules/Builtin/Strings.cs:154
 msgid "Email recipient(s)"
 msgstr "Adresat(ci) wiadomości e-mail"
 
-#: Library/Modules/Builtin/Strings.cs:159
+#: Library/Modules/Builtin/Strings.cs:161
 msgid "Email sender"
 msgstr "Nadawca wiadomości e-mail"
 
-#: Library/Modules/Builtin/Strings.cs:162
-#: Library/Modules/Builtin/Strings.cs:202
-#: Library/Modules/Builtin/Strings.cs:236
-#: Library/Modules/Builtin/Strings.cs:265
+#: Library/Modules/Builtin/Strings.cs:164
+#: Library/Modules/Builtin/Strings.cs:204
+#: Library/Modules/Builtin/Strings.cs:238
+#: Library/Modules/Builtin/Strings.cs:267
 msgid "The messages to send"
 msgstr "Wiadomości do wysłania"
 
-#: Library/Modules/Builtin/Strings.cs:167
+#: Library/Modules/Builtin/Strings.cs:169
 msgid "SMTP Url"
 msgstr "SMTP Url"
 
-#: Library/Modules/Builtin/Strings.cs:168
+#: Library/Modules/Builtin/Strings.cs:170
 #, csharp-format
 msgid ""
 "This setting supplies the email subject. Values are replaced as described in"
@@ -3488,103 +3489,103 @@ msgstr ""
 "To ustawienie dostarcza temat wiadomości e-mail. Wartości są zastępowane "
 "zgodnie z opisem w opisie --{0}."
 
-#: Library/Modules/Builtin/Strings.cs:169
+#: Library/Modules/Builtin/Strings.cs:171
 msgid "The email subject"
 msgstr "Temat wiadomości"
 
-#: Library/Modules/Builtin/Strings.cs:171
+#: Library/Modules/Builtin/Strings.cs:173
 msgid "SMTP Username"
 msgstr "Nazwa użytkownika SMTP"
 
-#: Library/Modules/Builtin/Strings.cs:172
+#: Library/Modules/Builtin/Strings.cs:174
 #, csharp-format
 msgid "Whole SMTP communication: {0}"
 msgstr "Całość komunikacji SMTP: {0}"
 
-#: Library/Modules/Builtin/Strings.cs:173
+#: Library/Modules/Builtin/Strings.cs:175
 #, csharp-format
 msgid "Failed to send email with server: {0}, message: {1}, retrying with {2}"
 msgstr ""
 "Nie można wysłać wiadomości e-mail z serwera: {0}, wiadomość: {1}, "
 "ponawianie próby z {2}"
 
-#: Library/Modules/Builtin/Strings.cs:174
+#: Library/Modules/Builtin/Strings.cs:176
 #, csharp-format
 msgid "Email sent successfully using server: {0}"
 msgstr "E-mail wysłany pomyślnie za pomocą serwera: {0}"
 
-#: Library/Modules/Builtin/Strings.cs:182
+#: Library/Modules/Builtin/Strings.cs:184
 msgid ""
 "This module provides support for sending status reports via XMPP messages"
 msgstr ""
 "Ten moduł zapewnia obsługę wysyłania raportów o stanie za pośrednictwem "
 "komunikatów XMPP"
 
-#: Library/Modules/Builtin/Strings.cs:183
+#: Library/Modules/Builtin/Strings.cs:185
 msgid "XMPP report module"
 msgstr "Moduł raportowania XMPP"
 
-#: Library/Modules/Builtin/Strings.cs:185
+#: Library/Modules/Builtin/Strings.cs:187
 msgid "XMPP recipient email"
 msgstr "E-mail odbiorcy XMPP"
 
-#: Library/Modules/Builtin/Strings.cs:195
-#: Library/Modules/Builtin/Strings.cs:227
-#: Library/Modules/Builtin/Strings.cs:258
+#: Library/Modules/Builtin/Strings.cs:197
+#: Library/Modules/Builtin/Strings.cs:229
+#: Library/Modules/Builtin/Strings.cs:260
 msgid "The message template"
 msgstr "Szablon wiadomości"
 
-#: Library/Modules/Builtin/Strings.cs:197
+#: Library/Modules/Builtin/Strings.cs:199
 msgid "The XMPP username"
 msgstr "Nazwa użytkownika XMPP"
 
-#: Library/Modules/Builtin/Strings.cs:199
+#: Library/Modules/Builtin/Strings.cs:201
 msgid "The XMPP password"
 msgstr "Hasło XMPP"
 
-#: Library/Modules/Builtin/Strings.cs:204
-#: Library/Modules/Builtin/Strings.cs:238
-#: Library/Modules/Builtin/Strings.cs:267
+#: Library/Modules/Builtin/Strings.cs:206
+#: Library/Modules/Builtin/Strings.cs:240
+#: Library/Modules/Builtin/Strings.cs:269
 msgid "Send messages for all operations"
 msgstr "Wysyłaj wiadomości dla wszystkich operacji"
 
-#: Library/Modules/Builtin/Strings.cs:205
+#: Library/Modules/Builtin/Strings.cs:207
 msgid "Timeout occurred while logging in to jabber server"
 msgstr "Limit czasu upłynął podczas logowania do serwera Jabber"
 
-#: Library/Modules/Builtin/Strings.cs:245
+#: Library/Modules/Builtin/Strings.cs:247
 msgid ""
 "This module provides support for sending status reports via HTTP messages"
 msgstr ""
 "Ten moduł zapewnia obsługę wysyłania raportów o stanie za pośrednictwem "
 "wiadomości HTTP"
 
-#: Library/Modules/Builtin/Strings.cs:246
+#: Library/Modules/Builtin/Strings.cs:248
 msgid "HTTP report module"
 msgstr "Moduł raportów HTTP"
 
-#: Library/Modules/Builtin/Strings.cs:260
+#: Library/Modules/Builtin/Strings.cs:262
 msgid "The name of the parameter to send the message as"
 msgstr "Nazwa parametru, który ma wysłać wiadomość jako"
 
-#: Library/Modules/Builtin/Strings.cs:275 Library/Utility/Strings.cs:84
+#: Library/Modules/Builtin/Strings.cs:277 Library/Utility/Strings.cs:84
 msgid "Accept any server certificate"
 msgstr "Zaakceptuj dowolny certyfikat serwera"
 
-#: Library/Modules/Builtin/Strings.cs:277 Library/Utility/Strings.cs:86
+#: Library/Modules/Builtin/Strings.cs:279 Library/Utility/Strings.cs:86
 msgid "Optionally accept a known SSL certificate"
 msgstr "Opcjonalnie zaakceptuj znany certyfikat SSL"
 
-#: Library/Modules/Builtin/Strings.cs:286
+#: Library/Modules/Builtin/Strings.cs:288
 #, csharp-format
 msgid "Failed to send message: {0}"
 msgstr "Nie udało się wysłać wiadomości: {0}"
 
-#: Library/Modules/Builtin/Strings.cs:290
+#: Library/Modules/Builtin/Strings.cs:292
 msgid "Log message filter"
 msgstr "Filtr komunikatów dziennika"
 
-#: Library/Modules/Builtin/Strings.cs:291
+#: Library/Modules/Builtin/Strings.cs:293
 msgid ""
 "Use this option to set the maximum number of log lines to include in the "
 "report. Zero or negative values means unlimited."

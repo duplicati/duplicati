@@ -36,7 +36,7 @@ public static class Program
     /// </summary>
     /// <param name="args">The arguments</param>
     /// <returns>The return code</returns>
-    public static Task<int> Main(string[] args)
+    public static Task<int> MainAsync(string[] args)
     {
         Library.AutoUpdater.PreloadSettingsLoader.ConfigurePreloadSettings(ref args, Library.AutoUpdater.PackageHelper.NamedExecutable.ServerUtil);
 

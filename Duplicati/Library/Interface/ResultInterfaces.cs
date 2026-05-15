@@ -354,12 +354,15 @@ namespace Duplicati.Library.Interface
     {
         long RestoredFiles { get; }
         long SizeOfRestoredFiles { get; }
+        long SizeOfRestoredData { get; }
         long RestoredFolders { get; }
         long RestoredSymlinks { get; }
         long PatchedFiles { get; }
         long DeletedFiles { get; }
         long DeletedFolders { get; }
         long DeletedSymlinks { get; }
+        long UnmodifiedFiles { get; }
+        long SizeOfUnmodifiedFiles { get; }
         string RestorePath { get; }
 
         IRecreateDatabaseResults RecreateDatabaseResults { get; }

@@ -91,13 +91,14 @@ namespace Duplicati.UnitTest
             public Task PutAsync(VolumeWriterBase blockVolume, IndexVolumeWriter? indexVolume, Func<Task>? indexVolumeFinished, bool waitForComplete, Func<Task>? onDbUpdate, CancellationToken cancelToken) => throw new NotImplementedException();
             public Task PutVerificationFileAsync(string remotename, TempFile tempFile, CancellationToken cancelToken) => throw new NotImplementedException();
             public Task<IEnumerable<InterfaceFileEntry>> ListAsync(CancellationToken cancelToken) => throw new NotImplementedException();
-            public TempFile DecryptFile(TempFile volume, string volume_name, Options options) => throw new NotImplementedException();
+            public TempFile DecryptFile(TempFile volume, string volume_name, Options options, bool dispose) => throw new NotImplementedException();
             public Task DeleteAsync(string remotename, long size, bool waitForComplete, CancellationToken cancelToken) => throw new NotImplementedException();
             public Task<IQuotaInfo?> GetQuotaInfoAsync(CancellationToken cancelToken) => throw new NotImplementedException();
             public Task<(TempFile File, string Hash, long Size)> GetWithInfoAsync(string remotename, string hash, long size, CancellationToken cancelToken) => throw new NotImplementedException();
             public Task<TempFile> GetAsync(string remotename, string hash, long size, CancellationToken cancelToken) => throw new NotImplementedException();
             public Task<TempFile> GetDirectAsync(string remotename, string hash, long size, CancellationToken cancelToken) => throw new NotImplementedException();
             public IAsyncEnumerable<(TempFile File, string Hash, long Size, string Name)> GetFilesOverlappedAsync(IEnumerable<IRemoteVolume> volumes, CancellationToken cancelToken) => throw new NotImplementedException();
+            public IAsyncEnumerable<(TempFile File, string Name)> GetFilesOverlappedDirectAsync(IEnumerable<IRemoteVolume> volumes, CancellationToken cancelToken) => throw new NotImplementedException();
             public Task FlushPendingMessagesAsync(LocalDatabase database, CancellationToken cancellationToken) => Task.CompletedTask;
             public void UpdateThrottleValues(long maxUploadPrSecond, long maxDownloadPrSecond) => throw new NotImplementedException();
             #endregion
@@ -111,12 +112,12 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("LockHandler")]
-        public async Task AppliesLocksForVolumesInFileset()
+        public async Task AppliesLocksForVolumesInFilesetAsync()
         {
             var options = new Dictionary<string, string>(TestOptions);
             using (var controller = new Controller("file://" + TARGETFOLDER, options, null))
             {
-                controller.Backup([DATAFOLDER]);
+                await controller.BackupAsync([DATAFOLDER]);
             }
 
             var lockDbPath = Path.Combine(BASEFOLDER, $"locktest-{Guid.NewGuid():N}.sqlite");
@@ -125,12 +126,12 @@ namespace Duplicati.UnitTest
             await using var db = await LocalLockDatabase.CreateAsync(lockDbPath, null, CancellationToken.None).ConfigureAwait(false);
 
             var filesets = new List<KeyValuePair<long, DateTime>>();
-            await foreach (var entry in db.FilesetTimes(CancellationToken.None).ConfigureAwait(false))
+            await foreach (var entry in db.FilesetTimesAsync(CancellationToken.None).ConfigureAwait(false))
                 filesets.Add(entry);
 
             var targetFileset = filesets.Last();
             var expectedVolumes = new List<string>();
-            await foreach ((var volume, _) in db.GetRemoteVolumesDependingOnFilesets(new[] { targetFileset.Key }, CancellationToken.None).ConfigureAwait(false))
+            await foreach ((var volume, _) in db.GetRemoteVolumesDependingOnFilesetsAsync(new[] { targetFileset.Key }, CancellationToken.None).ConfigureAwait(false))
                 expectedVolumes.Add(volume);
 
             var lockingOptions = new Options(new Dictionary<string, string?>(options.ToDictionary(kvp => kvp.Key, kvp => (string?)kvp.Value))
@@ -150,12 +151,12 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("LockHandler")]
-        public async Task ContinuesWhenLockingFails()
+        public async Task ContinuesWhenLockingFailsAsync()
         {
             var options = new Dictionary<string, string>(TestOptions);
             using (var controller = new Controller("file://" + TARGETFOLDER, options, null))
             {
-                controller.Backup([DATAFOLDER]);
+                await controller.BackupAsync([DATAFOLDER]);
             }
 
             var lockDbPath = Path.Combine(BASEFOLDER, $"locktest-{Guid.NewGuid():N}.sqlite");
@@ -164,12 +165,12 @@ namespace Duplicati.UnitTest
             await using var db = await LocalLockDatabase.CreateAsync(lockDbPath, null, CancellationToken.None).ConfigureAwait(false);
 
             var filesets = new List<KeyValuePair<long, DateTime>>();
-            await foreach (var entry in db.FilesetTimes(CancellationToken.None).ConfigureAwait(false))
+            await foreach (var entry in db.FilesetTimesAsync(CancellationToken.None).ConfigureAwait(false))
                 filesets.Add(entry);
 
             var latestFileset = filesets.Last();
             var expectedVolumes = new List<string>();
-            await foreach ((var volume, _) in db.GetRemoteVolumesDependingOnFilesets(new[] { latestFileset.Key }, CancellationToken.None).ConfigureAwait(false))
+            await foreach ((var volume, _) in db.GetRemoteVolumesDependingOnFilesetsAsync(new[] { latestFileset.Key }, CancellationToken.None).ConfigureAwait(false))
                 expectedVolumes.Add(volume);
 
             var lockingOptions = new Options(new Dictionary<string, string?>(options.ToDictionary(kvp => kvp.Key, kvp => (string?)kvp.Value))
@@ -192,10 +193,10 @@ namespace Duplicati.UnitTest
         /// </summary>
         [Test]
         [Category("Database")]
-        public async Task GetRemoteVolumesDependingOnFilesets_WithLargeInput_UsesTemporaryTable()
+        public async Task GetRemoteVolumesDependingOnFilesets_WithLargeInput_UsesTemporaryTable_Async()
         {
             using var dbfile = new TempFile();
-            using var db = SQLiteLoader.LoadConnection(dbfile);
+            using var db = await SQLiteLoader.LoadConnectionAsync(dbfile);
 
             // Use DatabaseUpgrader to create the schema from embedded resources
             DatabaseUpgrader.UpgradeDatabase(db, dbfile, typeof(DatabaseSchemaMarker));
@@ -204,7 +205,7 @@ namespace Duplicati.UnitTest
 
             // Insert an operation record (required for LocalDatabase initialization)
             cmd.CommandText = @"INSERT INTO ""Operation"" (""Description"", ""Timestamp"") VALUES ('Test', 0)";
-            cmd.ExecuteNonQuery();
+            await cmd.ExecuteNonQueryAsync();
 
             // Create 150 fileset IDs (exceeds CHUNK_SIZE of 128) to trigger temporary table path
             var filesetIds = new List<long>();
@@ -214,19 +215,19 @@ namespace Duplicati.UnitTest
                 cmd.CommandText = $@"
                     INSERT INTO ""Remotevolume"" (""ID"", ""OperationID"", ""Name"", ""Type"", ""State"", ""VerificationCount"", ""DeleteGraceTime"", ""ArchiveTime"", ""LockExpirationTime"")
                     VALUES ({i + 1}, 1, 'volume-{i}.zip', 'Files', 'Verified', 0, 0, 0, 0)";
-                cmd.ExecuteNonQuery();
+                await cmd.ExecuteNonQueryAsync();
 
                 // Insert a fileset referencing this volume
                 cmd.CommandText = $@"
                     INSERT INTO ""Fileset"" (""ID"", ""OperationID"", ""VolumeID"", ""IsFullBackup"", ""Timestamp"")
                     VALUES ({i + 1}, 1, {i + 1}, 1, {i})";
-                cmd.ExecuteNonQuery();
+                await cmd.ExecuteNonQueryAsync();
 
                 filesetIds.Add(i + 1);
             }
 
             // Close the connection so LocalDatabase can open it
-            db.Close();
+            await db.CloseAsync();
 
             // Create LocalDatabase instance
             await using var localDb = await LocalDatabase.CreateLocalDatabaseAsync(
@@ -240,7 +241,7 @@ namespace Duplicati.UnitTest
             // Act: Call GetRemoteVolumesDependingOnFilesets with 150 fileset IDs
             // This should trigger the temporary table code path
             var volumes = new List<string>();
-            await foreach ((var volume, _) in localDb.GetRemoteVolumesDependingOnFilesets(filesetIds, CancellationToken.None).ConfigureAwait(false))
+            await foreach ((var volume, _) in localDb.GetRemoteVolumesDependingOnFilesetsAsync(filesetIds, CancellationToken.None).ConfigureAwait(false))
                 volumes.Add(volume);
 
             // Assert: Should return all 150 volumes

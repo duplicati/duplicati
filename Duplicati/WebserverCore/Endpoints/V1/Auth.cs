@@ -47,7 +47,7 @@ public partial class Auth : IEndpointV1
             {
                 try
                 {
-                    var result = await loginProvider.PerformLoginWithRefreshToken(refreshTokenString, input?.Nonce ?? "", ct);
+                    var result = await loginProvider.PerformLoginWithRefreshTokenAsync(refreshTokenString, input?.Nonce ?? "", ct);
                     AddCookie(httpContextAccessor.HttpContext, cookieName, result.RefreshToken, DateTimeOffset.UtcNow.AddMinutes(jWTConfig.RefreshTokenDurationInMinutes));
                     return new Dto.AccessTokenOutputDto(result.AccessToken, result.Nonce);
                 }
@@ -70,7 +70,7 @@ public partial class Auth : IEndpointV1
             var cookieName = GetCookieName(httpContextAccessor);
             try
             {
-                var result = await loginProvider.PerformLoginWithSigninToken(input.SigninToken, !(input.RememberMe ?? false), ct);
+                var result = await loginProvider.PerformLoginWithSigninTokenAsync(input.SigninToken, !(input.RememberMe ?? false), ct);
                 if (!string.IsNullOrWhiteSpace(result.RefreshToken))
                     AddCookie(httpContextAccessor.HttpContext!, cookieName, result.RefreshToken, DateTimeOffset.UtcNow.AddMinutes(jWTConfig.RefreshTokenDurationInMinutes));
                 return new Dto.AccessTokenOutputDto(result.AccessToken, result.Nonce);
@@ -92,7 +92,7 @@ public partial class Auth : IEndpointV1
             var cookieName = GetCookieName(httpContextAccessor);
             try
             {
-                var result = await loginProvider.PerformLoginWithPassword(input.Password, !(input.RememberMe ?? false), ct);
+                var result = await loginProvider.PerformLoginWithPasswordAsync(input.Password, !(input.RememberMe ?? false), ct);
                 if (!string.IsNullOrWhiteSpace(result.RefreshToken))
                     AddCookie(httpContextAccessor.HttpContext!, cookieName, result.RefreshToken, DateTimeOffset.UtcNow.AddMinutes(jWTConfig.RefreshTokenDurationInMinutes));
                 return new Dto.AccessTokenOutputDto(result.AccessToken, result.Nonce);
@@ -191,7 +191,7 @@ public partial class Auth : IEndpointV1
         {
             try
             {
-                loginProvider.PerformLogoutWithRefreshToken(refreshTokenString, input?.Nonce, CancellationToken.None);
+                loginProvider.PerformLogoutWithRefreshTokenAsync(refreshTokenString, input?.Nonce, CancellationToken.None);
             }
             catch
             {

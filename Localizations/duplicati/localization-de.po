@@ -39,17 +39,17 @@
 # Martin Posselt <nekomajin@gmx.de>, 2024
 # agrajaghh <agrajaghh@gmail.com>, 2025
 # Michael, 2026
-# ghChrisHe, 2026
 # Mugros, 2026
+# ghChrisHe, 2026
 # 
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-22 15:17+0200\n"
+"POT-Creation-Date: 2026-05-04 14:35+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
-"Last-Translator: Mugros, 2026\n"
+"Last-Translator: ghChrisHe, 2026\n"
 "Language-Team: German (https://app.transifex.com/duplicati/teams/67655/de/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -90,12 +90,12 @@ msgstr "Setze Thread-Level für die Verschlüsselung"
 msgid "The option --{0} is no longer used and has been deprecated."
 msgstr "Die Option --{0} ist veraltet und wird nicht länger benutzt."
 
-#: Library/Encryption/Strings.cs:37
+#: Library/Encryption/Strings.cs:43
 #, csharp-format
 msgid "Failed to decrypt data (invalid passphrase?): {0}"
 msgstr "Fehler beim Entschlüsseln der Daten (ungültige Passphrase?): {0}"
 
-#: Library/Encryption/Strings.cs:41
+#: Library/Encryption/Strings.cs:47
 #, csharp-format
 msgid ""
 "The GPG encryption module uses the GNU Privacy Guard program to encrypt and "
@@ -113,11 +113,11 @@ msgstr ""
 " PATH verfügbar ist. Es ist möglich, den Pfad zu GPG mit der Option --{0} zu"
 " ändern."
 
-#: Library/Encryption/Strings.cs:42
+#: Library/Encryption/Strings.cs:48
 msgid "GNU Privacy Guard, external"
 msgstr "GNU Privacy Guard, extern"
 
-#: Library/Encryption/Strings.cs:43
+#: Library/Encryption/Strings.cs:49
 msgid ""
 "Use this switch to specify any extra options to GPG. You cannot specify the "
 "--passphrase-fd option here. The --decrypt option is always specified."
@@ -126,11 +126,11 @@ msgstr ""
 "Option --passphrase-fd wird hier nicht unterstützt. Die Option --decrypt ist"
 " immer angegeben."
 
-#: Library/Encryption/Strings.cs:44
+#: Library/Encryption/Strings.cs:50
 msgid "Extra GPG commandline options for decryption"
 msgstr "Zusätzliche GPG-Befehlszeilenoptionen für die Entschlüsselung"
 
-#: Library/Encryption/Strings.cs:45
+#: Library/Encryption/Strings.cs:51
 msgid ""
 "Use this switch to specify any extra options to GPG. You cannot specify the "
 "--passphrase-fd option here. The --encrypt option is always specified."
@@ -139,16 +139,16 @@ msgstr ""
 "Option --passphrase-fd wird hier nicht unterstützt. Die Option --encrypt ist"
 " immer angegeben."
 
-#: Library/Encryption/Strings.cs:46
+#: Library/Encryption/Strings.cs:52
 msgid "Extra GPG commandline options for encryption"
 msgstr "Zusätzliche GPG-Befehlszeilenoptionen für die Verschlüsselung"
 
-#: Library/Encryption/Strings.cs:47
+#: Library/Encryption/Strings.cs:53
 #, csharp-format
 msgid "Failed to execute GPG with \"{0} {1}\": {2}"
 msgstr "Fehler beim Ausführen von GPG mit \"{0} {1}\": {2}"
 
-#: Library/Encryption/Strings.cs:48
+#: Library/Encryption/Strings.cs:54
 msgid ""
 "The path to the GNU Privacy Guard program. If not supplied, Duplicati will "
 "search for \"gpg2\" and \"gpg\" on the system."
@@ -156,11 +156,11 @@ msgstr ""
 "Pfad zum GNU Privacy Guard Programm. Wenn nicht vorhanden, wird Duplicati "
 "nach \"gpg2\" und \"gpg\" im System suchen."
 
-#: Library/Encryption/Strings.cs:49
+#: Library/Encryption/Strings.cs:55
 msgid "The path to GnuPG"
 msgstr "Pfad zu GnuPG"
 
-#: Library/Encryption/Strings.cs:50
+#: Library/Encryption/Strings.cs:56
 msgid ""
 "Use this option to supply the --armor option to GPG. The files will be "
 "larger but can be sent as pure text files."
@@ -168,19 +168,19 @@ msgstr ""
 "Nutzen Sie diese Option, um die --armor-Option in GPG zu aktivieren. Die "
 "Dateien werden größer, können aber als reine Textdateien verschickt werden."
 
-#: Library/Encryption/Strings.cs:51
+#: Library/Encryption/Strings.cs:57
 msgid "Use GPG Armor"
 msgstr "Verwende GPG Armor"
 
-#: Library/Encryption/Strings.cs:52
+#: Library/Encryption/Strings.cs:58
 msgid "Override the GPG command supplied for decryption."
 msgstr "Überschreibt den GPG-Befehl zur Entschlüsselung"
 
-#: Library/Encryption/Strings.cs:53
+#: Library/Encryption/Strings.cs:59
 msgid "The GPG decryption command"
 msgstr "Der GPG-Entschlüsselungsbefehl"
 
-#: Library/Encryption/Strings.cs:54
+#: Library/Encryption/Strings.cs:60
 #, csharp-format
 msgid ""
 "Override the default GPG encryption command \"{0}\". Normal usage is to "
@@ -190,33 +190,33 @@ msgstr ""
 "normale Gebrauch ist die Anforderung asymetrischer Verschlüsselung mit der "
 "Einstellung {1}."
 
-#: Library/Encryption/Strings.cs:55
+#: Library/Encryption/Strings.cs:61
 msgid "The GPG encryption command"
 msgstr "Der GPG-Verschlüsselungsbefehl"
 
-#: Library/Encryption/Strings.cs:59
+#: Library/Encryption/Strings.cs:65
 #, csharp-format
 msgid "Decryption failed: {0}"
 msgstr "Entschlüsselung fehlgeschlagen: {0}"
 
-#: Library/Encryption/Strings.cs:60
+#: Library/Encryption/Strings.cs:66
 msgid "Failure while invoking GnuPG, program won't flush output"
 msgstr ""
 "Fehler beim Aufrufen von GnuPG, das Programm leert seine Ausgabe nicht."
 
-#: Library/Encryption/Strings.cs:61
+#: Library/Encryption/Strings.cs:67
 msgid "Failure while invoking GnuPG, program won't terminate"
 msgstr "Fehler beim Aufrufen von GnuPG, das Programm beendet sich nicht."
 
-#: Library/Encryption/Strings.cs:65
+#: Library/Encryption/Strings.cs:71
 msgid "Key must be at least 8 characters long"
 msgstr "Der Schlüssel muss mindestens 8 Zeichen lang sein"
 
-#: Library/Encryption/Strings.cs:66
+#: Library/Encryption/Strings.cs:72
 msgid "Key must not be empty"
 msgstr "Der Schlüssel darf nicht leer sein"
 
-#: Library/Encryption/Strings.cs:67
+#: Library/Encryption/Strings.cs:73
 msgid "Refusing to encrypt with blacklisted key"
 msgstr ""
 "Verschlüsselung mit einem Schlüssel auf der \"Schwarzen Liste\" verweigert"
@@ -939,6 +939,18 @@ msgstr ""
 "Pfad zu einer Datei mit JSON Zugangsdaten für ein Google Cloud Service "
 "Konto. Wenn gesetzt, ist AuthID nicht erforderlich."
 
+#: Library/Backend/GoogleServices/Strings.cs:44
+msgid "Specify retention policy mode"
+msgstr "Zurückbehaltungsmodus angeben"
+
+#: Library/Backend/GoogleServices/Strings.cs:45
+msgid ""
+"This option specifies the retention policy mode to use when setting object "
+"lock. Possible values are 'Locked' and 'Unlocked'."
+msgstr ""
+"Diese Option bestimmt den Zurückbehaltungsmodus wenn der Objekt Lock gesetzt"
+" wird. Mögliche Werte sind \"Locked\" und \"Unlocked\"."
+
 #: Library/Backend/GoogleServices/Strings.cs:50
 msgid ""
 "This backend can read and write data to Google Drive. Allowed format is "
@@ -958,6 +970,7 @@ msgstr "Es gibt mehr als einen Eintrag mit dem Namen \"{0}\" im Ordner \"{1}\"."
 
 #: Library/Backend/GoogleServices/Strings.cs:53
 #: Library/Backend/File/Strings.cs:42 Library/Compression/Strings.cs:38
+#: Library/Compression/Strings.cs:49 Library/Compression/Strings.cs:60
 #, csharp-format
 msgid "File not found: {0}"
 msgstr "Datei nicht gefunden: {0}"
@@ -1211,6 +1224,19 @@ msgstr "Angabe der Speicherklasse"
 #: Library/Backend/S3/Strings.cs:54
 msgid "Specify archive storage class"
 msgstr "Angabe der Archiv-Speicherklasse"
+
+#: Library/Backend/S3/Strings.cs:56
+msgid "Specify the S3 list API version to use"
+msgstr "Gibt die zu verwendende S3-List-API-Version an"
+
+#: Library/Backend/S3/Strings.cs:57
+msgid ""
+"Use this option to specify the S3 list API version to use. This can be used "
+"to work around issues with some S3 providers."
+msgstr ""
+"Verwenden Sie diese Option, um die zu verwendende S3-List-API-Version "
+"anzugeben. Dies kann benutzt werden, um Probleme mit einigen S3-Providern zu"
+" umgehen."
 
 #: Library/Backend/S3/Strings.cs:58
 msgid "Use this option to list all files in the bucket"
@@ -3547,6 +3573,15 @@ msgstr ""
 "Verwenden Sie diese Option, um die Datenbankverschlüsselung sensibler Felder"
 " zu deaktivieren"
 
+#: Library/RestAPI/Strings.cs:86
+msgid ""
+"Use this option to log to the Windows event log. The provided name is in the"
+" format Log:Source. If no log name is provided, \"Duplicati 2\" is used."
+msgstr ""
+"Verwenden Sie diese Option, um in die Windows Ereignianzeige zu "
+"protokollieren. Der bereitgestellte Name ist im Format Log:Quelle. Wenn kein"
+" Protokollname angegeben ist, wird \"Duplicati 2\" benutzt."
+
 #: Library/RestAPI/Strings.cs:87
 msgid "Log to the Windows event log"
 msgstr "In die Windows Ereignisanzeige protokollieren"
@@ -3603,6 +3638,52 @@ msgstr "Der Server hält an, Handler werden beendet"
 #: Library/RestAPI/Strings.cs:97
 msgid "Server has stopped"
 msgstr "Der Server ist angehalten"
+
+#: Library/RestAPI/Strings.cs:100
+#, csharp-format
+msgid ""
+"Database encryption key is required. Supply an encryption key via the "
+"environment variable {0} or disable database encryption with the option "
+"--{1}"
+msgstr ""
+"Ein Schlüssel zur Datenbankverschlüsselung ist erforderlich. Geben Sie einen"
+" Verschlüsselungs-Schlüssel über die Environment-Variable {0} ein oder "
+"deaktivieren Sie die Datenbankverschlüsselung mit der Option --{1}"
+
+#: Library/RestAPI/Strings.cs:101
+#, csharp-format
+msgid ""
+"The database encryption key is blacklisted and cannot be used. The database "
+"has been decrypted. Supply a new encryption key via the environment variable"
+" {0} or disable database encryption with the option --{1}"
+msgstr ""
+"Der Schlüssel zur Datenbankverschlüsselung steht auf der schwarzen Liste und"
+" kann nicht benutzt werden. Die Datenbank wurde verschlüsselt. Geben Sie "
+"einen neuen Verschlüsselungs-Schlüssel über die Environment-Variable {0} ein"
+" oder deaktivieren Sie die Datenbankverschlüsselung mit der Option --{1}"
+
+#: Library/RestAPI/Strings.cs:102
+#, csharp-format
+msgid ""
+"No database encryption key was found. The database will be stored "
+"unencrypted. Supply an encryption key via the environment variable {0} or "
+"disable database encryption with the option --{1}"
+msgstr ""
+"Es wurde kein Schlüssel zur Datenbankverschlüsselung gefunden. Die Datenbank"
+" wird unverschlüsselt gespeichert werden. Geben Sie einen Verschlüsselungs-"
+"Schlüssel über die Environment-Variable {0} ein oder deaktivieren Sie die "
+"Datenbankverschlüsselung mit der Option --{1}"
+
+#: Library/RestAPI/Strings.cs:103
+#, csharp-format
+msgid ""
+"The database appears to be encrypted, but no key was specified. Opening the "
+"database will likely fail. Use the environment variable {0} to specify the "
+"key."
+msgstr ""
+"Die Datenbank scheint verschlüsselt zu sein, aber es wurde kein Schlüssel "
+"angegeben. Das Öffnen der Datenbank wird scheitern. Benutzen Sie die "
+"Environment-Variable {0} um den Schlüssel einzugeben."
 
 #: Library/RestAPI/Strings.cs:104
 #, csharp-format
@@ -3705,6 +3786,29 @@ msgstr ""
 "gesetzt ist, sind alle Kompressionsmodule erlaubt. Verwenden Sie diese "
 "Option, um die Kompressionsmodule zu begrenzen, die zum Komprimieren von "
 "Daten benutzt werden können."
+
+#: Library/RestAPI/Strings.cs:121
+msgid "Failed to get encryption key from secret provider"
+msgstr ""
+"Abfrage des Verschlüsselungs-Schlüssels vom Secret-Provider fehlgeschlagen."
+
+#: Library/RestAPI/Strings.cs:122
+msgid "Failed to set encryption key in secret provider"
+msgstr ""
+"Setzen des Verschlüsselungs-Schlüssels beim Secret-Provider fehlgeschlagen."
+
+#: Library/RestAPI/Strings.cs:123
+msgid "Configure HTTPS certificates"
+msgstr "HTTPS-Zertifikate konfigurieren"
+
+#: Library/RestAPI/Strings.cs:124
+msgid "Automatically generate and configure HTTPS certificates for the server"
+msgstr ""
+"HTTPS-Zertifikate für den Server automatisch erzeugen und konfigurieren"
+
+#: Library/RestAPI/Strings.cs:125
+msgid "HTTPS hostnames"
+msgstr "HTTPS-Hostnamen"
 
 #: Library/RestAPI/Strings.cs:130
 #, csharp-format
@@ -3916,6 +4020,46 @@ msgstr "{0} Remotedateien verifiziert mit {1} Problem(en)"
 #, csharp-format
 msgid "Unexpected file type {0} for {1}"
 msgstr "Unerwarteter Dateityp {0} für {1}"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:61
+#: Library/Modules/Builtin/Strings.cs:58
+msgid ""
+"This module runs remote synchronization after a successful backup to create "
+"a secondary copy (3-2-1)."
+msgstr ""
+"Dieses Modul startet eine Remote-Synchronisation nach einer erfolgreichen "
+"Sicherung um eine zweite Kopie (3-2-1) zu erzeugen."
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:63
+#: Library/Modules/Builtin/Strings.cs:59
+msgid "Remote synchronization (3-2-1)"
+msgstr "Remote-Synchronisation (3-2-1)"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:78
+msgid ""
+"Automatically create folders in the destination backend if they do not exist"
+msgstr ""
+"Automatisch Ordner im Ziel-Backend erstellen, wenn sie nicht existieren"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:83
+msgid "Number of times to recreate a backend on backend errors"
+msgstr "Anzahl von Versuchen zur erneuten Erzeugung bei Backend-Fehlern"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:88
+msgid "Delay in milliseconds between backend retries"
+msgstr "Verzögerung in Millisekunden zwischen erneuten Backend-Versuchen"
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:93
+msgid ""
+"Use exponential backoff for backend retries, multiplying the delay by two "
+"for each failure."
+msgstr ""
+"Exponentielle Erhöhung für erneute Backend-Versuche, die Verzögerung wird "
+"mit jedem Fehler verdoppelt."
+
+#: Library/Main/Operation/RemoteSynchronization/Strings.cs:98
+msgid "Automatically confirm the operation"
+msgstr "Den Vorgang automatisch bestätigen"
 
 #: Library/Main/Strings.cs:28
 #, csharp-format
@@ -6158,6 +6302,15 @@ msgstr ""
 msgid "Configure Microsoft SQL Server module"
 msgstr "Microsoft SQL Server-Modul konfigurieren"
 
+#: Library/Modules/Builtin/Strings.cs:106
+msgid "Sync on warnings"
+msgstr "Synchronisation bei Warnungen"
+
+#: Library/Modules/Builtin/Strings.cs:107
+msgid "Enable synchronization when the backup completes with warnings."
+msgstr ""
+"Synchronisation erlauben, wenn die Sicherung mit Warnungen beendet wurde."
+
 #: Library/Modules/Builtin/Strings.cs:111
 msgid "Execute a script before starting an operation, and again on completion"
 msgstr "Führt das Script vor und nach einer Operation aus."
@@ -6178,17 +6331,17 @@ msgstr ""
 msgid "Run a script on exit"
 msgstr "Skript beim Beenden ausführen"
 
-#: Library/Modules/Builtin/Strings.cs:115
+#: Library/Modules/Builtin/Strings.cs:117
 #, csharp-format
 msgid "The script \"{0}\" returned with exit code {1}"
 msgstr "Das Skript \"{0}\" liefert den Exit-Code {1}"
 
-#: Library/Modules/Builtin/Strings.cs:116
+#: Library/Modules/Builtin/Strings.cs:118
 #, csharp-format
 msgid "The script \"{0}\" returned with exit code {1}{2}"
 msgstr "Das Skript \"{0}\" wurde mit Exit-Code {1}{2} beendet"
 
-#: Library/Modules/Builtin/Strings.cs:117
+#: Library/Modules/Builtin/Strings.cs:119
 msgid ""
 "Execute a script before performing an operation. The operation will block "
 "until the script has completed or timed out. If the script returns a non-"
@@ -6200,12 +6353,12 @@ msgstr ""
 "zurückgibt oder eine Zeitüberschreitung auftritt, wird der Vorgang "
 "abgebrochen."
 
-#: Library/Modules/Builtin/Strings.cs:118
+#: Library/Modules/Builtin/Strings.cs:120
 msgid "Run a required script on startup"
 msgstr "Erforderliches Skript beim Start ausführen"
 
-#: Library/Modules/Builtin/Strings.cs:119
-#: Library/Modules/Builtin/Strings.cs:293
+#: Library/Modules/Builtin/Strings.cs:121
+#: Library/Modules/Builtin/Strings.cs:295
 #, csharp-format
 msgid ""
 "Use this option to select the output format for results. Available formats: "
@@ -6214,22 +6367,22 @@ msgstr ""
 "Verwenden Sie diese Option, um das Ausgabeformat für Ergebnisse auszuwählen."
 " Verfügbare Formate: {0}"
 
-#: Library/Modules/Builtin/Strings.cs:120
-#: Library/Modules/Builtin/Strings.cs:294
+#: Library/Modules/Builtin/Strings.cs:122
+#: Library/Modules/Builtin/Strings.cs:296
 msgid "Select the output format for results"
 msgstr "Auswahl des Ausgabeformats für Ergebnisse"
 
-#: Library/Modules/Builtin/Strings.cs:121
+#: Library/Modules/Builtin/Strings.cs:123
 #, csharp-format
 msgid "Error while executing script \"{0}\": {1}"
 msgstr "Fehler beim Ausführen des Skripts \"{0}\": {1}"
 
-#: Library/Modules/Builtin/Strings.cs:122
+#: Library/Modules/Builtin/Strings.cs:124
 #, csharp-format
 msgid "Execution of the script \"{0}\" timed out"
 msgstr "Zeitüberschreitung beim Ausführen des Skripts \"{0}\""
 
-#: Library/Modules/Builtin/Strings.cs:123
+#: Library/Modules/Builtin/Strings.cs:125
 msgid ""
 "Execute a script before performing an operation. The operation will block "
 "until the script has completed or timed out."
@@ -6238,16 +6391,16 @@ msgstr ""
 "der Operation wird blockiert, so lange bis das Script beendet ist oder das "
 "Zeitlimit überschritten ist."
 
-#: Library/Modules/Builtin/Strings.cs:124
+#: Library/Modules/Builtin/Strings.cs:126
 msgid "Run a script on startup"
 msgstr "Skript beim Start ausführen "
 
-#: Library/Modules/Builtin/Strings.cs:125
+#: Library/Modules/Builtin/Strings.cs:127
 #, csharp-format
 msgid "The script \"{0}\" reported error messages: {1}"
 msgstr "Das Skript \"{0}\" berichtete Fehlermeldungen: {1}"
 
-#: Library/Modules/Builtin/Strings.cs:126
+#: Library/Modules/Builtin/Strings.cs:128
 msgid ""
 "Set the maximum time a script is allowed to execute. If the script has not "
 "completed within this time, it will continue to execute but the operation "
@@ -6258,11 +6411,11 @@ msgstr ""
 "ausgeführt, aber die Operation wird auch fortgesetzt, und es wird keine "
 "Skriptausgabe verarbeitet."
 
-#: Library/Modules/Builtin/Strings.cs:127
+#: Library/Modules/Builtin/Strings.cs:129
 msgid "Set the script timeout"
 msgstr "Legt die Skriptzeitüberschreitung fest"
 
-#: Library/Modules/Builtin/Strings.cs:128
+#: Library/Modules/Builtin/Strings.cs:130
 msgid ""
 "This option enables the use of script arguments. If this option is set, the "
 "script arguments are treated as commandline strings. Use single or double "
@@ -6273,21 +6426,21 @@ msgstr ""
 "behandelt. Benutzen Sie einfache oder doppelte Anführungszeichen zum Trennen"
 " der Argumente."
 
-#: Library/Modules/Builtin/Strings.cs:129
+#: Library/Modules/Builtin/Strings.cs:131
 msgid "Enable script arguments"
 msgstr "Aktiviere Script-Argumente"
 
-#: Library/Modules/Builtin/Strings.cs:133
+#: Library/Modules/Builtin/Strings.cs:135
 msgid "This module can send email after an operation completes"
 msgstr ""
 "Dieses Modul kann E-Mails versenden, nachdem eine Operation abgeschlossen "
 "wurde"
 
-#: Library/Modules/Builtin/Strings.cs:134
+#: Library/Modules/Builtin/Strings.cs:136
 msgid "Send mail"
 msgstr "E-Mail senden"
 
-#: Library/Modules/Builtin/Strings.cs:135
+#: Library/Modules/Builtin/Strings.cs:137
 #, csharp-format
 msgid ""
 "Unable to find the destination mail server through MX lookup. Please use the"
@@ -6297,7 +6450,7 @@ msgstr ""
 "Sie bitte die Option {0}, um zu definieren, welcher SMTP-Server verwendet "
 "werden soll."
 
-#: Library/Modules/Builtin/Strings.cs:136
+#: Library/Modules/Builtin/Strings.cs:138
 msgid ""
 "This value can be a filename. If the file exists, the file contents will be used as the message body.\n"
 "\n"
@@ -6319,11 +6472,11 @@ msgstr ""
 "\n"
 "Alle Befehlszeilenoptionen werden auch in %value% angegeben, beispielsweise %volsize%. Alle unbekannten/nicht festgelegten Werte werden entfernt."
 
-#: Library/Modules/Builtin/Strings.cs:145
+#: Library/Modules/Builtin/Strings.cs:147
 msgid "The message body"
 msgstr "Der Nachrichtentext"
 
-#: Library/Modules/Builtin/Strings.cs:146
+#: Library/Modules/Builtin/Strings.cs:148
 msgid ""
 "Use this option to set the password used to authenticate with the SMTP "
 "server if required."
@@ -6331,15 +6484,15 @@ msgstr ""
 "Verwenden Sie diese Option, um das Passwort zur Authentifikation mit dem "
 "SMTP-Server festzulegen, falls erforderlich."
 
-#: Library/Modules/Builtin/Strings.cs:147
+#: Library/Modules/Builtin/Strings.cs:149
 msgid "SMTP Password"
 msgstr "SMTP-Passwort"
 
-#: Library/Modules/Builtin/Strings.cs:152
+#: Library/Modules/Builtin/Strings.cs:154
 msgid "Email recipient(s)"
 msgstr "E-Mail-Empfänger"
 
-#: Library/Modules/Builtin/Strings.cs:153
+#: Library/Modules/Builtin/Strings.cs:155
 msgid ""
 "Use this option to set an address of the email sender. If no host is supplied, the hostname of the first recipient is used. Examples of allowed formats:\n"
 "\n"
@@ -6355,11 +6508,11 @@ msgstr ""
 "Mail Sender <sender>\n"
 "Mail Sender <sender@example.com>"
 
-#: Library/Modules/Builtin/Strings.cs:159
+#: Library/Modules/Builtin/Strings.cs:161
 msgid "Email sender"
 msgstr "E-Mail-Absender"
 
-#: Library/Modules/Builtin/Strings.cs:160
+#: Library/Modules/Builtin/Strings.cs:162
 #, csharp-format
 msgid ""
 "You can specify one of \"{0}\", \"{1}\", \"{2}\", \"{3}\".\n"
@@ -6368,14 +6521,14 @@ msgstr ""
 "Sie können wählen zwischen \"{0}\", \"{1}\", \"{2}\", \"{3}\".\n"
 "Mehrere Optionen können durch Komma voneinander getrennt angegeben werden, z.B: \"{0},{1}\". Der besondere Wert  \"{4}\" ist ein Kürzel für \"{0},{1},{2},{3}\" und wird alle Backupvorgänge veranlassen eine E-Mail zu versenden."
 
-#: Library/Modules/Builtin/Strings.cs:162
-#: Library/Modules/Builtin/Strings.cs:202
-#: Library/Modules/Builtin/Strings.cs:236
-#: Library/Modules/Builtin/Strings.cs:265
+#: Library/Modules/Builtin/Strings.cs:164
+#: Library/Modules/Builtin/Strings.cs:204
+#: Library/Modules/Builtin/Strings.cs:238
+#: Library/Modules/Builtin/Strings.cs:267
 msgid "The messages to send"
 msgstr "Die zu sendenden Nachrichten"
 
-#: Library/Modules/Builtin/Strings.cs:163
+#: Library/Modules/Builtin/Strings.cs:165
 msgid ""
 "Use this option to set a URL for the SMTP server, e.g. smtp://example.com:25. Multiple servers can be supplied in a prioritized list, separated with semicolon. If a server fails, the next server in the list is tried, until the message has been sent.\n"
 "If no server is supplied, a DNS lookup is performed to find the first recipient's MX record, and all SMTP servers are tried in their priority order until the message is sent.\n"
@@ -6387,11 +6540,11 @@ msgstr ""
 "\n"
 "Verwenden Sie zum Aktivieren von SMTP über SSL das Format smtps://example.com. Um SMTP STARTTLS zu aktivieren, verwenden Sie das Format smtp://example.com:25/?starttls=when-available oder smtp://example.com:25/?starttls=always. Wenn kein Port angegeben ist, wird Port 25 für Nicht-SSL und 465 für SSL-Verbindungen verwendet. Um die Verwendung von STARTTLS zu erzwingen, verwenden Sie smtp://example.com:25/?starttls=never."
 
-#: Library/Modules/Builtin/Strings.cs:167
+#: Library/Modules/Builtin/Strings.cs:169
 msgid "SMTP Url"
 msgstr "SMTP-URL"
 
-#: Library/Modules/Builtin/Strings.cs:168
+#: Library/Modules/Builtin/Strings.cs:170
 #, csharp-format
 msgid ""
 "This setting supplies the email subject. Values are replaced as described in"
@@ -6400,11 +6553,11 @@ msgstr ""
 "Diese Einstellung liefert den E-Mail-Betreff. Die Werte werden ersetzt, wie "
 "in der Beschreibung für --{0} beschrieben."
 
-#: Library/Modules/Builtin/Strings.cs:169
+#: Library/Modules/Builtin/Strings.cs:171
 msgid "The email subject"
 msgstr "Der E-Mail-Betreff"
 
-#: Library/Modules/Builtin/Strings.cs:170
+#: Library/Modules/Builtin/Strings.cs:172
 msgid ""
 "Use this option to set the username used to authenticate with the SMTP "
 "server if required."
@@ -6412,31 +6565,31 @@ msgstr ""
 "Verwenden Sie diese Option, um den Benutzernamen zur Authentifikation mit "
 "dem SMTP-Server festzulegen, falls erforderlich."
 
-#: Library/Modules/Builtin/Strings.cs:171
+#: Library/Modules/Builtin/Strings.cs:173
 msgid "SMTP Username"
 msgstr "SMTP-Benutzername"
 
-#: Library/Modules/Builtin/Strings.cs:172
+#: Library/Modules/Builtin/Strings.cs:174
 #, csharp-format
 msgid "Whole SMTP communication: {0}"
 msgstr "Gesamte SMTP-Kommunikation: {0}"
 
-#: Library/Modules/Builtin/Strings.cs:173
+#: Library/Modules/Builtin/Strings.cs:175
 #, csharp-format
 msgid "Failed to send email with server: {0}, message: {1}, retrying with {2}"
 msgstr ""
 "Fehler beim E-Mail senden mit dem Server: {0}, Nachricht: {1}, Wiederholen "
 "mit {2}"
 
-#: Library/Modules/Builtin/Strings.cs:174
+#: Library/Modules/Builtin/Strings.cs:176
 #, csharp-format
 msgid "Email sent successfully using server: {0}"
 msgstr "E-Mail erfolgreich über den Server gesendet: {0}"
 
-#: Library/Modules/Builtin/Strings.cs:175
-#: Library/Modules/Builtin/Strings.cs:206
-#: Library/Modules/Builtin/Strings.cs:239
-#: Library/Modules/Builtin/Strings.cs:261
+#: Library/Modules/Builtin/Strings.cs:177
+#: Library/Modules/Builtin/Strings.cs:208
+#: Library/Modules/Builtin/Strings.cs:241
+#: Library/Modules/Builtin/Strings.cs:263
 msgid ""
 "Use this option to set extra parameters for the message body. This parameter"
 " can either be a querystring (e.g. 'parameter1=value1&parameter2=value2') or"
@@ -6447,14 +6600,14 @@ msgstr ""
 "Zeichenkette (z.B. 'Parameter1=Wert1&Parameter2=Wert2') oder ein JSON "
 "Schlüssel/Wert Objekt sein."
 
-#: Library/Modules/Builtin/Strings.cs:176
-#: Library/Modules/Builtin/Strings.cs:207
-#: Library/Modules/Builtin/Strings.cs:240
-#: Library/Modules/Builtin/Strings.cs:262
+#: Library/Modules/Builtin/Strings.cs:178
+#: Library/Modules/Builtin/Strings.cs:209
+#: Library/Modules/Builtin/Strings.cs:242
+#: Library/Modules/Builtin/Strings.cs:264
 msgid "Extra parameters for the message sent"
 msgstr "Zusätzliche Parameter für die zu sendende Nachricht"
 
-#: Library/Modules/Builtin/Strings.cs:177
+#: Library/Modules/Builtin/Strings.cs:179
 #, csharp-format
 msgid ""
 "The recipient \"{0}\" is not a valid email address. Please use the format "
@@ -6463,7 +6616,7 @@ msgstr ""
 "Der Empfänger \"{0}\" ist keine gültige E-Mail-Adresse. Bitte benutzen Sie "
 "das Format \"Name <user@example.com>\" oder einfach \"user@example.com\""
 
-#: Library/Modules/Builtin/Strings.cs:178
+#: Library/Modules/Builtin/Strings.cs:180
 #, csharp-format
 msgid ""
 "No recipients specified. Please use the option --{0} to specify the "
@@ -6472,18 +6625,18 @@ msgstr ""
 "Keine Empfänger angegeben. Bitte benutzen Sie die Option --{0}, um die "
 "Empfänger festzulegen."
 
-#: Library/Modules/Builtin/Strings.cs:182
+#: Library/Modules/Builtin/Strings.cs:184
 msgid ""
 "This module provides support for sending status reports via XMPP messages"
 msgstr ""
 "Dieses Modul unterstützt das Senden von Statusberichten über XMPP-"
 "Nachrichten"
 
-#: Library/Modules/Builtin/Strings.cs:183
+#: Library/Modules/Builtin/Strings.cs:185
 msgid "XMPP report module"
 msgstr "XMPP Report Modul"
 
-#: Library/Modules/Builtin/Strings.cs:184
+#: Library/Modules/Builtin/Strings.cs:186
 msgid ""
 "Use this option to set the users who should have the messages sent. You can "
 "specify multiple users separated with commas."
@@ -6491,13 +6644,13 @@ msgstr ""
 "Verwenden Sie diese Option, um die Benutzer festzulegen, die die Nachrichten"
 " erhalten sollen. Sie können mehrere durch Komma getrennte Benutzer angeben."
 
-#: Library/Modules/Builtin/Strings.cs:185
+#: Library/Modules/Builtin/Strings.cs:187
 msgid "XMPP recipient email"
 msgstr "XMPP-Empfänger-E-Mail"
 
-#: Library/Modules/Builtin/Strings.cs:186
-#: Library/Modules/Builtin/Strings.cs:217
-#: Library/Modules/Builtin/Strings.cs:249
+#: Library/Modules/Builtin/Strings.cs:188
+#: Library/Modules/Builtin/Strings.cs:219
+#: Library/Modules/Builtin/Strings.cs:251
 msgid ""
 "This value can be a filename. If the file exists, the file contents will be used as the message.\n"
 "\n"
@@ -6519,13 +6672,13 @@ msgstr ""
 "\n"
 "Alle Befehlszeilenoptionen werden auch in %value% angegeben, beispielsweise %volsize%. Alle unbekannten/nicht festgelegten Werte werden entfernt."
 
-#: Library/Modules/Builtin/Strings.cs:195
-#: Library/Modules/Builtin/Strings.cs:227
-#: Library/Modules/Builtin/Strings.cs:258
+#: Library/Modules/Builtin/Strings.cs:197
+#: Library/Modules/Builtin/Strings.cs:229
+#: Library/Modules/Builtin/Strings.cs:260
 msgid "The message template"
 msgstr "Die Nachrichtenvorlage"
 
-#: Library/Modules/Builtin/Strings.cs:196
+#: Library/Modules/Builtin/Strings.cs:198
 msgid ""
 "Use this option to set a username for the account that will send the "
 "message, including the hostname, e.g. \"account@jabber.org/Home\""
@@ -6534,11 +6687,11 @@ msgstr ""
 "Nachricht senden wird - einschließlich des Hostnamens, zum Beispiel "
 "\"account@jabber.org/Home\" - festzulegen"
 
-#: Library/Modules/Builtin/Strings.cs:197
+#: Library/Modules/Builtin/Strings.cs:199
 msgid "The XMPP username"
 msgstr "Der XMPP-Benutzername"
 
-#: Library/Modules/Builtin/Strings.cs:198
+#: Library/Modules/Builtin/Strings.cs:200
 msgid ""
 "Use this option to set a password for the account that will send the "
 "message."
@@ -6546,13 +6699,13 @@ msgstr ""
 "Verwenden Sie diese Option, um ein Passwort für den Account, der die "
 "Nachricht senden wird, festzulegen."
 
-#: Library/Modules/Builtin/Strings.cs:199
+#: Library/Modules/Builtin/Strings.cs:201
 msgid "The XMPP password"
 msgstr "Das XMPP-Passwort"
 
-#: Library/Modules/Builtin/Strings.cs:203
-#: Library/Modules/Builtin/Strings.cs:237
-#: Library/Modules/Builtin/Strings.cs:266
+#: Library/Modules/Builtin/Strings.cs:205
+#: Library/Modules/Builtin/Strings.cs:239
+#: Library/Modules/Builtin/Strings.cs:268
 msgid ""
 "By default, messages will only be sent after a backup operation. Use this "
 "option to send messages for all operations."
@@ -6560,17 +6713,17 @@ msgstr ""
 "Standardmäßig werden E-Mails nur nach dem Backup-Vorgang gesendet. Mittels "
 "dieser Option werden E-Mails für alle Vorgänge gesendet."
 
-#: Library/Modules/Builtin/Strings.cs:204
-#: Library/Modules/Builtin/Strings.cs:238
-#: Library/Modules/Builtin/Strings.cs:267
+#: Library/Modules/Builtin/Strings.cs:206
+#: Library/Modules/Builtin/Strings.cs:240
+#: Library/Modules/Builtin/Strings.cs:269
 msgid "Send messages for all operations"
 msgstr "Senden von Nachrichten für alle Operationen"
 
-#: Library/Modules/Builtin/Strings.cs:205
+#: Library/Modules/Builtin/Strings.cs:207
 msgid "Timeout occurred while logging in to jabber server"
 msgstr "Zeitüberschreitung beim Anmelden beim Jabber-Server"
 
-#: Library/Modules/Builtin/Strings.cs:212
+#: Library/Modules/Builtin/Strings.cs:214
 msgid ""
 "This module provides support for sending status reports via Telegram "
 "messages"
@@ -6578,45 +6731,45 @@ msgstr ""
 "Dieses Modul unterstützt das Senden von Statusberichten über Telegram-"
 "Nachrichten"
 
-#: Library/Modules/Builtin/Strings.cs:213
+#: Library/Modules/Builtin/Strings.cs:215
 msgid "Telegram report module"
 msgstr "Telegram Report-Modul"
 
-#: Library/Modules/Builtin/Strings.cs:214
+#: Library/Modules/Builtin/Strings.cs:216
 msgid "Use this option to set the channel ID."
 msgstr "Verwenden Sie diese Option, um die Kanal ID festzulegen."
 
-#: Library/Modules/Builtin/Strings.cs:215
+#: Library/Modules/Builtin/Strings.cs:217
 msgid "Telegram channel ID"
 msgstr "Telegram Kanal ID"
 
-#: Library/Modules/Builtin/Strings.cs:228
+#: Library/Modules/Builtin/Strings.cs:230
 msgid ""
 "Use this option to set a bot ID for the bot that will send the message."
 msgstr ""
 "Verwenden Sie diese Option, um eine Bot ID für den Bot, der die Nachricht "
 "senden wird, festzulegen."
 
-#: Library/Modules/Builtin/Strings.cs:229
+#: Library/Modules/Builtin/Strings.cs:231
 msgid "The Telegram bot ID"
 msgstr "Die Telegram Bot ID"
 
-#: Library/Modules/Builtin/Strings.cs:230
+#: Library/Modules/Builtin/Strings.cs:232
 msgid ""
 "Use this option to set a API key for the bot that will send the message."
 msgstr ""
 "Verwenden Sie diese Option, um einen API-Schlüssel für den Bot, der die "
 "Nachricht senden wird, festzulegen."
 
-#: Library/Modules/Builtin/Strings.cs:231
+#: Library/Modules/Builtin/Strings.cs:233
 msgid "The Telegram API key"
 msgstr "Der Telegram API Schlüssel"
 
-#: Library/Modules/Builtin/Strings.cs:232
+#: Library/Modules/Builtin/Strings.cs:234
 msgid "The Telegram topic ID"
 msgstr "Die Telegram topic ID"
 
-#: Library/Modules/Builtin/Strings.cs:233
+#: Library/Modules/Builtin/Strings.cs:235
 msgid ""
 "Topic ID for the Topic in the telegram group. For more information on "
 "Telegram setup, refer to documentation."
@@ -6624,45 +6777,45 @@ msgstr ""
 "Topic ID für das THema in der Telegram Gruppe. Für weitere Informationen zu "
 "Telegram Einstellungen wird auf die Dokumentation verwiesen."
 
-#: Library/Modules/Builtin/Strings.cs:245
+#: Library/Modules/Builtin/Strings.cs:247
 msgid ""
 "This module provides support for sending status reports via HTTP messages"
 msgstr "Dieses Modul erlaubt das Senden eines Status via HTTP-Meldungen"
 
-#: Library/Modules/Builtin/Strings.cs:246
+#: Library/Modules/Builtin/Strings.cs:248
 msgid "HTTP report module"
 msgstr "HTTP Report-Modul"
 
-#: Library/Modules/Builtin/Strings.cs:247
+#: Library/Modules/Builtin/Strings.cs:249
 msgid "Use this option to set a HTTP report URL."
 msgstr "Verwenden Sie diese Option, um eine HTTP-Report-URL festzulegen."
 
-#: Library/Modules/Builtin/Strings.cs:248
+#: Library/Modules/Builtin/Strings.cs:250
 msgid "HTTP report URL"
 msgstr "HTTP-Report-URL"
 
-#: Library/Modules/Builtin/Strings.cs:259
+#: Library/Modules/Builtin/Strings.cs:261
 msgid "Use this option to set a name of the parameter to send the message as."
 msgstr ""
 "Verwenden Sie diese Option, um den Namen des Parameters, mit dem die "
 "Nachricht gesendet wird, festzulegen."
 
-#: Library/Modules/Builtin/Strings.cs:260
+#: Library/Modules/Builtin/Strings.cs:262
 msgid "The name of the parameter to send the message as"
 msgstr "Der Name des Parameters mit dem die Nachricht gesendet wird."
 
-#: Library/Modules/Builtin/Strings.cs:268
+#: Library/Modules/Builtin/Strings.cs:270
 msgid ""
 "Use this option to change the default HTTP verb used to submit a report."
 msgstr ""
 "Diese Option ermöglicht die Änderung der Standard-HTTP-Methode zum Senden "
 "eines Berichts."
 
-#: Library/Modules/Builtin/Strings.cs:269
+#: Library/Modules/Builtin/Strings.cs:271
 msgid "Set the HTTP verb to use"
 msgstr "Festlegen der zu verwendenden HTTP-Methode"
 
-#: Library/Modules/Builtin/Strings.cs:270
+#: Library/Modules/Builtin/Strings.cs:272
 msgid ""
 "Use this option to set HTTP report URLs for sending form-encoded data. This "
 "option accepts multiple URLs, seperated by a semi-colon. All URLs will "
@@ -6674,11 +6827,11 @@ msgstr ""
 "Semikolon getrennte URLs. Alle URLs werden die gleichen Daten empfangen. "
 "Hinweis: Diese Option ignoriert das Format und Verbal-Einstellungen."
 
-#: Library/Modules/Builtin/Strings.cs:271
+#: Library/Modules/Builtin/Strings.cs:273
 msgid "HTTP report URLs for sending form data"
 msgstr "HTTP Report-URLs zum Senden von Form-kodierten Daten"
 
-#: Library/Modules/Builtin/Strings.cs:272
+#: Library/Modules/Builtin/Strings.cs:274
 msgid ""
 "Use this option to set HTTP report URLs for sending JSON data. This option "
 "accepts multiple URLs, seperated by a semi-colon. All URLs will receive the "
@@ -6689,11 +6842,11 @@ msgstr ""
 "URLs. Alle URLs werden die gleichen Daten empfangen. Hinweis: Diese Option "
 "ignoriert das Format und Verbal-Einstellungen."
 
-#: Library/Modules/Builtin/Strings.cs:273
+#: Library/Modules/Builtin/Strings.cs:275
 msgid "HTTP report URLs for sending JSON data"
 msgstr "HTTP Report-URLs zum Senden von JSON-Daten"
 
-#: Library/Modules/Builtin/Strings.cs:274 Library/Utility/Strings.cs:83
+#: Library/Modules/Builtin/Strings.cs:276 Library/Utility/Strings.cs:83
 #, csharp-format
 msgid ""
 "Use this option to accept any server certificate, regardless of what errors "
@@ -6703,11 +6856,11 @@ msgstr ""
 "möglichen Fehlern zu akzeptieren. Bitte verwenden Sie wenn möglich "
 "stattdessen --{0}."
 
-#: Library/Modules/Builtin/Strings.cs:275 Library/Utility/Strings.cs:84
+#: Library/Modules/Builtin/Strings.cs:277 Library/Utility/Strings.cs:84
 msgid "Accept any server certificate"
 msgstr "Jedes Serverzertifikat akzeptieren"
 
-#: Library/Modules/Builtin/Strings.cs:276 Library/Utility/Strings.cs:85
+#: Library/Modules/Builtin/Strings.cs:278 Library/Utility/Strings.cs:85
 msgid ""
 "If your server certificate is reported as invalid (e.g. with self-signed "
 "certificates), you can supply the certificate hash (SHA1) to approve it "
@@ -6720,11 +6873,11 @@ msgstr ""
 " Leerzeichen oder Doppelpunkte eingegeben werden. Sie können mehrere Hashes "
 "eingeben, die durch Kommas getrennt sind."
 
-#: Library/Modules/Builtin/Strings.cs:277 Library/Utility/Strings.cs:86
+#: Library/Modules/Builtin/Strings.cs:279 Library/Utility/Strings.cs:86
 msgid "Optionally accept a known SSL certificate"
 msgstr "Optional ein bekanntes SSL-Zertifikat akzeptieren"
 
-#: Library/Modules/Builtin/Strings.cs:278
+#: Library/Modules/Builtin/Strings.cs:280
 msgid ""
 "Use this option to set the number of retries to attempt if the HTTP request "
 "fails."
@@ -6732,37 +6885,37 @@ msgstr ""
 "Verwenden Sie diese Option, um die Anzahl der erneuten Versuche festzulegen,"
 " falls die HTTP-Anfrage fehlschlägt."
 
-#: Library/Modules/Builtin/Strings.cs:279
+#: Library/Modules/Builtin/Strings.cs:281
 msgid "Set the number of retries"
 msgstr "Geben Sie die Anzahl der erneuten Versuche ein"
 
-#: Library/Modules/Builtin/Strings.cs:280
+#: Library/Modules/Builtin/Strings.cs:282
 msgid "Use this option to set the delay between retries."
 msgstr ""
 "Verwenden Sie diese Option, um die Verzögerung zwischen erneuten Versuchen "
 "festzulegen."
 
-#: Library/Modules/Builtin/Strings.cs:281
+#: Library/Modules/Builtin/Strings.cs:283
 msgid "Set the retry delay"
 msgstr "Verzögerung für erneute Versuche eingeben"
 
-#: Library/Modules/Builtin/Strings.cs:286
+#: Library/Modules/Builtin/Strings.cs:288
 #, csharp-format
 msgid "Failed to send message: {0}"
 msgstr "Fehler beim Senden der Nachricht: {0}"
 
-#: Library/Modules/Builtin/Strings.cs:287
+#: Library/Modules/Builtin/Strings.cs:289
 msgid ""
 "Use this option to set the log level for messages to include in the report."
 msgstr ""
 "Verwenden Sie diese Option, um den Protokollierungsgrad für Nachrichten "
 "festzulegen, die in den Bericht aufgenommen werden sollen"
 
-#: Library/Modules/Builtin/Strings.cs:288
+#: Library/Modules/Builtin/Strings.cs:290
 msgid "Define a log level for messages"
 msgstr "Geben Sie den Protokollierungsgrad für Nachrichten ein"
 
-#: Library/Modules/Builtin/Strings.cs:289
+#: Library/Modules/Builtin/Strings.cs:291
 msgid ""
 "Use this option to set a filter expression that defines what options are "
 "included in the report."
@@ -6770,11 +6923,11 @@ msgstr ""
 "Verwenden Sie diese Option, um einen Filter-Ausdruck zu erzeugen, der "
 "festlegt, welche Optionen in den Bericht aufgenommen werden sollen."
 
-#: Library/Modules/Builtin/Strings.cs:290
+#: Library/Modules/Builtin/Strings.cs:292
 msgid "Log message filter"
 msgstr "Protokollnachrichtenfilter"
 
-#: Library/Modules/Builtin/Strings.cs:291
+#: Library/Modules/Builtin/Strings.cs:293
 msgid ""
 "Use this option to set the maximum number of log lines to include in the "
 "report. Zero or negative values means unlimited."
@@ -6783,7 +6936,7 @@ msgstr ""
 "festzulegen, die in den Bericht aufgenommen werden sollen. Keine oder "
 "negative Werte bedeuten unbegrenzt Einträge."
 
-#: Library/Modules/Builtin/Strings.cs:292
+#: Library/Modules/Builtin/Strings.cs:294
 msgid "Limit log lines"
 msgstr "Begrenzt Protokollzeilen"
 
@@ -7342,13 +7495,55 @@ msgstr ""
 msgid "Allowed backends"
 msgstr "Erlaubte Backends"
 
+#: CommandLine/CLI/Strings.cs:64
+msgid ""
+"Comma-separated list of backend protocol keys that are allowed to be used. "
+"If this option is not specified, all available backends are allowed. Use "
+"this option to restrict the backends that can be used, for example in a "
+"managed environment. Example: --allowed-backend-modules=file,ftp,s3"
+msgstr ""
+"Komma-getrennte Liste der erlaubten Backend Protokoll Schlüssel. Wenn diese "
+"Option nicht angegeben ist, sind alle verfügbaren Backends erlaubt. "
+"Verwenden Sie diese Option, um die zu benutzenden Backends einzuschränken, "
+"zum Beispiel in einer eingeschränkten Umgebung. Beispiel: -allowed-backend-"
+"modules=file,ftp,s3"
+
 #: CommandLine/CLI/Strings.cs:65
 msgid "Allowed encryption modules"
 msgstr "Erlaubte Verschlüsselungs-Module"
 
+#: CommandLine/CLI/Strings.cs:66
+msgid ""
+"Comma-separated list of encryption module file extensions that are allowed "
+"to be used. If this option is not specified, all available encryption "
+"modules are allowed. Use this option to restrict the encryption modules that"
+" can be used, for example in a managed environment. Example: --allowed-"
+"encryption-modules=aes,gpg"
+msgstr ""
+"Komma-getrennte Liste der erlaubten Verschlüsselungsmodul "
+"Dateierweiterungen. Wenn diese Option nicht angegeben ist, sind alle "
+"verfügbaren Verschlüsselungsmodule erlaubt. Verwenden Sie diese Option, um "
+"die zu benutzenden Verschlüsselungsmodule einzuschränken, zum Beispiel in "
+"einer eingeschränkten Umgebung. Beispiel: -allowed-encryption-"
+"modules=aes,gpg"
+
 #: CommandLine/CLI/Strings.cs:67
 msgid "Allowed compression modules"
 msgstr "Erlaubte Kompressions-Module"
+
+#: CommandLine/CLI/Strings.cs:68
+msgid ""
+"Comma-separated list of compression module file extensions that are allowed "
+"to be used. If this option is not specified, all available compression "
+"modules are allowed. Use this option to restrict the compression modules "
+"that can be used, for example in a managed environment. Example: --allowed-"
+"compression-modules=zip"
+msgstr ""
+"Komma-getrennte Liste der erlaubten Kompressionsmodul Dateierweiterungen. "
+"Wenn diese Option nicht angegeben ist, sind alle verfügbaren "
+"Kompressionsmodule erlaubt. Verwenden Sie diese Option, um die zu "
+"benutzenden Kompressionsmodule einzuschränken, zum Beispiel in einer "
+"eingeschränkten Umgebung. Beispiel: -allowed-compression-modules=zip"
 
 #: CommandLine/CLI/Strings.cs:75
 #, csharp-format

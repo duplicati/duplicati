@@ -23,6 +23,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
@@ -33,7 +34,7 @@ namespace Duplicati.UnitTest
     {
         [Test]
         [Category("Targeted")]
-        public void RunCommands()
+        public async Task RunCommandsAsync()
         {
             var testopts = TestOptions;
             testopts["upload-unchanged-backups"] = "true";
@@ -45,7 +46,7 @@ namespace Duplicati.UnitTest
             File.WriteAllBytes(Path.Combine(DATAFOLDER, "a"), data);
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                var r = c.Backup(new string[] { DATAFOLDER });
+                var r = await c.BackupAsync(new string[] { DATAFOLDER });
                 Assert.AreEqual(0, r.Errors.Count());
                 Assert.AreEqual(0, r.Warnings.Count());
             }
@@ -55,7 +56,7 @@ namespace Duplicati.UnitTest
             File.WriteAllBytes(Path.Combine(DATAFOLDER, "b"), data);
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                var r = c.Backup(new string[] { DATAFOLDER });
+                var r = await c.BackupAsync(new string[] { DATAFOLDER });
                 Assert.AreEqual(0, r.Errors.Count());
                 Assert.AreEqual(0, r.Warnings.Count());
             }
@@ -73,11 +74,11 @@ namespace Duplicati.UnitTest
             File.Delete(DBFILE);
 
             // Repair the database, expect an error
-            Assert.Catch<CryptographicException>(() =>
+            Assert.CatchAsync<CryptographicException>(async () =>
             {
                 using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
                 {
-                    var r = c.Repair();
+                    var r = await c.RepairAsync();
                     Assert.AreEqual(0, r.Errors.Count());
                     Assert.AreEqual(0, r.Warnings.Count());
                 }
@@ -85,11 +86,11 @@ namespace Duplicati.UnitTest
 
             // Make a backup, this should fail
             File.WriteAllBytes(Path.Combine(DATAFOLDER, "c"), data);
-            var uix = Assert.Catch<UserInformationException>(() =>
+            var uix = Assert.CatchAsync<UserInformationException>(async () =>
             {
                 using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
                 {
-                    var r = c.Backup(new string[] { DATAFOLDER });
+                    var r = await c.BackupAsync(new string[] { DATAFOLDER });
                     Assert.AreEqual(1, r.Errors.Count());
                     Assert.AreEqual(0, r.Warnings.Count());
                 }

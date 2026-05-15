@@ -1,0 +1,6 @@
+{
+  "name": "ZstdSharp.Port",
+  "description": "Port of zstd compression library to C#",
+  "link": "https://github.com/oleg-st/ZstdSharp",
+  "license": "MIT"
+}

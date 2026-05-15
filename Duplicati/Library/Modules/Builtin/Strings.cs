@@ -112,6 +112,8 @@ namespace Duplicati.Library.Modules.Builtin.Strings
         public static string DisplayName { get { return LC.L(@"Run script"); } }
         public static string FinishoptionLong { get { return LC.L(@"Execute a script after performing an operation. The script will receive the operation results written to stdout."); } }
         public static string FinishoptionShort { get { return LC.L(@"Run a script on exit"); } }
+        public static string FinishBackupOptionLong { get { return LC.L(@"Execute a script after the backup data has been written and source resources (like VSS snapshots) have been released, but before the remote verification is performed. This allows scripts to run at the earliest point where the backup is complete but verification has not yet started. The script will receive the operation results written to stdout."); } }
+        public static string FinishBackupOptionShort { get { return LC.L(@"Run a script post-backup, before verification"); } }
         public static string InvalidExitCodeError(string script, int exitcode) { return LC.L(@"The script ""{0}"" returned with exit code {1}", script, exitcode); }
         public static string ExitCodeError(string script, int exitcode, string message) { return LC.L(@"The script ""{0}"" returned with exit code {1}{2}", script, exitcode, string.IsNullOrWhiteSpace(message) ? string.Empty : string.Format(": {0}", message)); }
         public static string RequiredoptionLong { get { return LC.L(@"Execute a script before performing an operation. The operation will block until the script has completed or timed out. If the script returns a non-zero error code or times out, the operation will be aborted."); } }

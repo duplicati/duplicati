@@ -41,7 +41,7 @@ namespace Duplicati.UnitTest
         /// </summary>
         [Test]
         [Category("Targeted")]
-        public async Task TestRemoveDuplicatePathsFromFileset()
+        public async Task TestRemoveDuplicatePathsFromFilesetAsync()
         {
             // Create test files
             var testFile = Path.Combine(DATAFOLDER, "duplicate.txt");
@@ -50,7 +50,7 @@ namespace Duplicati.UnitTest
             // Run initial backup
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, TestOptions, null))
             {
-                var results = c.Backup([DATAFOLDER]);
+                var results = await c.BackupAsync([DATAFOLDER]);
                 Assert.AreEqual(0, results.Errors.Count(), "Initial backup should succeed");
             }
 
@@ -165,7 +165,7 @@ namespace Duplicati.UnitTest
             // Now run the repair command which should fix the duplicates
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, TestOptions, null))
             {
-                var results = c.Repair();
+                var results = await c.RepairAsync();
                 Assert.AreEqual(0, results.Errors.Count(), "Repair should succeed");
             }
 
@@ -195,7 +195,7 @@ namespace Duplicati.UnitTest
         /// </summary>
         [Test]
         [Category("Targeted")]
-        public void TestChangedFilesDoesNotCreateDuplicates()
+        public async Task TestChangedFilesDoesNotCreateDuplicatesAsync()
         {
             // Setup: Create test files
             var testFile1 = Path.Combine(DATAFOLDER, "file1.txt");
@@ -207,7 +207,7 @@ namespace Duplicati.UnitTest
             // Step 1: Do initial backup
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, TestOptions, null))
             {
-                var backupResults = c.Backup([DATAFOLDER]);
+                var backupResults = await c.BackupAsync([DATAFOLDER]);
                 Assert.AreEqual(0, backupResults.Errors.Count());
             }
 
@@ -222,7 +222,7 @@ namespace Duplicati.UnitTest
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, changedFilesOptions, null))
             {
-                var backupResults = c.Backup([DATAFOLDER]);
+                var backupResults = await c.BackupAsync([DATAFOLDER]);
                 Assert.AreEqual(0, backupResults.Errors.Count());
             }
 
@@ -230,7 +230,7 @@ namespace Duplicati.UnitTest
             var dbPath = DBFILE;
             using (var connection = new SqliteConnection($"Data Source={dbPath};Pooling=False"))
             {
-                connection.Open();
+                await connection.OpenAsync();
                 using (var cmd = connection.CreateCommand())
                 {
                     cmd.CommandText = @"
@@ -242,7 +242,7 @@ namespace Duplicati.UnitTest
                             HAVING cnt > 1
                         )
                     ";
-                    var duplicateCount = (long)(cmd.ExecuteScalar() ?? 0);
+                    var duplicateCount = (long)((await cmd.ExecuteScalarAsync()) ?? 0);
                     Assert.AreEqual(0, duplicateCount, "Database should have no duplicate paths");
                 }
             }
@@ -253,7 +253,7 @@ namespace Duplicati.UnitTest
         /// </summary>
         [Test]
         [Category("Targeted")]
-        public async Task TestRepairFixesDuplicatesAcrossMultipleFilesets()
+        public async Task TestRepairFixesDuplicatesAcrossMultipleFilesetsAsync()
         {
             // Create test files
             var testFile = Path.Combine(DATAFOLDER, "test.txt");
@@ -265,7 +265,7 @@ namespace Duplicati.UnitTest
                 File.WriteAllText(testFile, $"content v{i + 1}");
                 using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, TestOptions, null))
                 {
-                    var results = c.Backup([DATAFOLDER]);
+                    var results = await c.BackupAsync([DATAFOLDER]);
                     Assert.AreEqual(0, results.Errors.Count(), $"Backup {i + 1} should succeed");
                 }
             }
@@ -459,7 +459,7 @@ namespace Duplicati.UnitTest
             // Run repair
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, TestOptions, null))
             {
-                var results = c.Repair();
+                var results = await c.RepairAsync();
                 Assert.AreEqual(0, results.Errors.Count(), "Repair should succeed");
             }
 
@@ -489,7 +489,7 @@ namespace Duplicati.UnitTest
         /// </summary>
         [Test]
         [Category("Targeted")]
-        public void TestNormalBackupHasNoDuplicates()
+        public async Task TestNormalBackupHasNoDuplicatesAsync()
         {
             // Create test files
             var testFile1 = Path.Combine(DATAFOLDER, "file1.txt");
@@ -503,7 +503,7 @@ namespace Duplicati.UnitTest
             // Run backup
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, TestOptions, null))
             {
-                var results = c.Backup([DATAFOLDER]);
+                var results = await c.BackupAsync([DATAFOLDER]);
                 Assert.AreEqual(0, results.Errors.Count());
             }
 
@@ -511,7 +511,7 @@ namespace Duplicati.UnitTest
             var dbPath = DBFILE;
             using (var connection = new SqliteConnection($"Data Source={dbPath};Pooling=False"))
             {
-                connection.Open();
+                await connection.OpenAsync();
                 using (var cmd = connection.CreateCommand())
                 {
                     cmd.CommandText = @"
@@ -523,7 +523,7 @@ namespace Duplicati.UnitTest
                             HAVING cnt > 1
                         )
                     ";
-                    var duplicateCount = (long)(cmd.ExecuteScalar() ?? 0);
+                    var duplicateCount = (long)((await cmd.ExecuteScalarAsync()) ?? 0);
                     Assert.AreEqual(0, duplicateCount, "Normal backup should not create duplicates");
                 }
             }

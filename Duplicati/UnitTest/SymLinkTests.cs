@@ -26,6 +26,7 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using Duplicati.Library.Snapshots;
 using NUnit.Framework;
+using System.Threading.Tasks;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
 
 namespace Duplicati.UnitTest
@@ -35,7 +36,7 @@ namespace Duplicati.UnitTest
     {
         [Test]
         [Category("SymLink")]
-        public void SymlinkExists()
+        public async Task SymlinkExistsAsync()
         {
             // Create symlink target directory
             const string targetDirName = "target";
@@ -70,7 +71,7 @@ namespace Duplicati.UnitTest
             };
             using (Controller c = new("file://" + this.TARGETFOLDER, this.TestOptions, null))
             {
-                IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
+                var backupResults = await c.BackupAsync(new[] { this.DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
             }
@@ -78,7 +79,7 @@ namespace Duplicati.UnitTest
             // Restore all files
             using (Controller c = new("file://" + this.TARGETFOLDER, restoreOptions, null))
             {
-                IRestoreResults restoreResults = c.Restore(null);
+                var restoreResults = await c.RestoreAsync(null);
                 Assert.AreEqual(0, restoreResults.Errors.Count());
                 Assert.AreEqual(0, restoreResults.Warnings.Count());
 
@@ -93,7 +94,7 @@ namespace Duplicati.UnitTest
             // Restore again, trying to overwrite existing symlink
             using (Controller c = new("file://" + this.TARGETFOLDER, restoreOptions, null))
             {
-                IRestoreResults restoreResults = c.Restore(null);
+                var restoreResults = await c.RestoreAsync(null);
                 Assert.AreEqual(0, restoreResults.Errors.Count());
                 Assert.AreEqual(0, restoreResults.Warnings.Count());
             }
@@ -104,7 +105,7 @@ namespace Duplicati.UnitTest
         [TestCase(Options.SymlinkStrategy.Store)]
         [TestCase(Options.SymlinkStrategy.Follow)]
         [TestCase(Options.SymlinkStrategy.Ignore)]
-        public void SymLinkPolicy(Options.SymlinkStrategy symlinkPolicy)
+        public async Task SymLinkPolicyAsync(Options.SymlinkStrategy symlinkPolicy)
         {
             // Create symlink target directory
             const string targetDirName = "target";
@@ -140,14 +141,14 @@ namespace Duplicati.UnitTest
             Dictionary<string, string> backupOptions = new Dictionary<string, string>(this.TestOptions) { ["symlink-policy"] = symlinkPolicy.ToString() };
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, backupOptions, null))
             {
-                IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
+                var backupResults = await c.BackupAsync(new[] { this.DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
             }
             // Restore all files
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
             {
-                IRestoreResults restoreResults = c.Restore(null);
+                var restoreResults = await c.RestoreAsync(null);
                 Assert.AreEqual(0, restoreResults.Errors.Count());
                 Assert.AreEqual(0, restoreResults.Warnings.Count());
 

@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
 
@@ -10,7 +11,7 @@ namespace Duplicati.UnitTest
     {
         [Test]
         [Category("Purge")]
-        public void TestPurgeFileSizeCalculationWithSharedBlocks()
+        public async Task TestPurgeFileSizeCalculationWithSharedBlocksAsync()
         {
             var blocksize = 1024 * 10; // 10KB blocks
 
@@ -29,13 +30,13 @@ namespace Duplicati.UnitTest
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                var res = c.Backup(new[] { DATAFOLDER });
+                var res = await c.BackupAsync(new[] { DATAFOLDER });
                 Assert.AreEqual(0, res.Errors.Count());
             }
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                var purgeResult = c.PurgeFiles(new Duplicati.Library.Utility.FilterExpression(new[] { file1 }));
+                var purgeResult = await c.PurgeFilesAsync(new Duplicati.Library.Utility.FilterExpression(new[] { file1 }));
 
                 Assert.AreEqual(0, purgeResult.Errors.Count());
 

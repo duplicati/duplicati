@@ -23,8 +23,8 @@ namespace Duplicati.Library.Backend.Strings
 {
     internal static class SharePoint
     {
-        public static string Description => LC.L(@"This backend can read and write data to a SharePoint server (including OneDrive for Business). Allowed formats are ""mssp://tennant.sharepoint.com/PathToWeb//BaseDocLibrary/subfolder"" and ""mssp://username:password@tennant.sharepoint.com/PathToWeb//BaseDocLibrary/subfolder"". Use a double slash '//' in the path to denote the web from the documents library.");
-        public static string DisplayName => LC.L(@"Microsoft SharePoint");
+        public static string Description => LC.L(@"This backend is deprecated. Please use the SharePoint backend instead. This backend can read and write data to a SharePoint server (including OneDrive for Business). Allowed formats are ""mssp://tennant.sharepoint.com/PathToWeb//BaseDocLibrary/subfolder"" and ""mssp://username:password@tennant.sharepoint.com/PathToWeb//BaseDocLibrary/subfolder"". Use a double slash '//' in the path to denote the web from the documents library.");
+        public static string DisplayName => LC.L(@"Microsoft SharePoint using legacy API");
         public static string DescriptionIntegratedAuthenticationLong => LC.L(@"If the server and client both supports integrated authentication, this option enables that authentication method. This is likely only available with windows servers and clients.");
         public static string DescriptionIntegratedAuthenticationShort => LC.L(@"Use windows integrated authentication to connect to the server");
         public static string DescriptionUseRecyclerLong => LC.L(@"Use this option to have files moved to the recycle bin folder instead of removing them permanently when compacting or deleting backups.");
@@ -46,7 +46,7 @@ namespace Duplicati.Library.Backend.Strings
 
     internal static class OneDriveForBusiness
     {
-        public static string Description => LC.L(@"This backend can read and write data to Microsoft OneDrive for Business. Allowed formats are ""od4b://tennant.sharepoint.com/personal/username_domain/Documents/subfolder"" and ""od4b://username:password@tennant.sharepoint.com/personal/username_domain/Documents/folder"". You can use a double slash '//' in the path to denote the base path from the documents folder.");
-        public static string DisplayName => LC.L(@"Microsoft OneDrive for Business");
+        public static string Description => LC.L(@"This backend is deprecated. Please use the SharePoint backend instead. This backend can read and write data to Microsoft OneDrive for Business. Allowed formats are ""od4b://tennant.sharepoint.com/personal/username_domain/Documents/subfolder"" and ""od4b://username:password@tennant.sharepoint.com/personal/username_domain/Documents/folder"". You can use a double slash '//' in the path to denote the base path from the documents folder.");
+        public static string DisplayName => LC.L(@"Microsoft OneDrive for Business (deprecated)");
     }
 }

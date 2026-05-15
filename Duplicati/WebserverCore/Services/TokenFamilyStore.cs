@@ -27,7 +27,7 @@ namespace Duplicati.WebserverCore.Services;
 public class TokenFamilyStore(Connection connection) : ITokenFamilyStore
 {
     // Use Dapper?
-    public Task<ITokenFamilyStore.TokenFamily> CreateTokenFamily(string userId, CancellationToken ct)
+    public Task<ITokenFamilyStore.TokenFamily> CreateTokenFamilyAsync(string userId, CancellationToken ct)
     {
         var familyId = System.Security.Cryptography.RandomNumberGenerator.GetHexString(16);
         var counter = System.Security.Cryptography.RandomNumberGenerator.GetInt32(1024) % 1024;
@@ -45,7 +45,7 @@ public class TokenFamilyStore(Connection connection) : ITokenFamilyStore
         return Task.FromResult(new ITokenFamilyStore.TokenFamily(familyId, userId, counter, lastUpdated));
     }
 
-    public Task<ITokenFamilyStore.TokenFamily> GetTokenFamily(string userId, string familyId, CancellationToken ct)
+    public Task<ITokenFamilyStore.TokenFamily> GetTokenFamilyAsync(string userId, string familyId, CancellationToken ct)
     {
         ITokenFamilyStore.TokenFamily? family = null;
         connection.ExecuteWithCommand(cmd =>
@@ -68,7 +68,7 @@ public class TokenFamilyStore(Connection connection) : ITokenFamilyStore
         return Task.FromResult(family ?? throw new Exceptions.UnauthorizedException("Token family not found"));
     }
 
-    public Task<ITokenFamilyStore.TokenFamily> IncrementTokenFamily(ITokenFamilyStore.TokenFamily tokenFamily, CancellationToken ct)
+    public Task<ITokenFamilyStore.TokenFamily> IncrementTokenFamilyAsync(ITokenFamilyStore.TokenFamily tokenFamily, CancellationToken ct)
     {
         var nextCounter = tokenFamily.Counter + 1;
         var lastUpdated = DateTime.UtcNow;
@@ -87,7 +87,7 @@ public class TokenFamilyStore(Connection connection) : ITokenFamilyStore
         return Task.FromResult(new ITokenFamilyStore.TokenFamily(tokenFamily.Id, tokenFamily.UserId, nextCounter, lastUpdated));
     }
 
-    public Task InvalidateTokenFamily(string userId, string familyId, CancellationToken ct)
+    public Task InvalidateTokenFamilyAsync(string userId, string familyId, CancellationToken ct)
     {
         connection.ExecuteWithCommand(cmd =>
         {
@@ -102,7 +102,7 @@ public class TokenFamilyStore(Connection connection) : ITokenFamilyStore
         return Task.CompletedTask;
     }
 
-    public Task InvalidateAllTokenFamilies(string userId, CancellationToken ct)
+    public Task InvalidateAllTokenFamiliesAsync(string userId, CancellationToken ct)
     {
         connection.ExecuteWithCommand(cmd =>
         {
@@ -114,7 +114,7 @@ public class TokenFamilyStore(Connection connection) : ITokenFamilyStore
         return Task.CompletedTask;
     }
 
-    public Task InvalidateAllTokens(CancellationToken ct)
+    public Task InvalidateAllTokensAsync(CancellationToken ct)
     {
         connection.ExecuteWithCommand(cmd =>
             cmd.ExecuteNonQuery(@"DELETE FROM ""TokenFamily""")

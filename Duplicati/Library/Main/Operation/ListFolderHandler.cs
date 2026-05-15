@@ -51,7 +51,7 @@ internal static class ListFolderHandler
             .ConfigureAwait(false);
 
         var filesetIds = await db
-            .GetFilesetIDs(options.Time, options.Version, singleTimeMatch: true, result.TaskControl.ProgressToken)
+            .GetFilesetIDsAsync(options.Time, options.Version, singleTimeMatch: true, result.TaskControl.ProgressToken)
             .ToArrayAsync(cancellationToken: result.TaskControl.ProgressToken)
             .ConfigureAwait(false);
 
@@ -65,7 +65,7 @@ internal static class ListFolderHandler
             if (folders != null && folders.Length > 1)
                 throw new UserInformationException("When no folder is specified, only one folder can be listed", "MultipleFoldersFound");
             var rootFolders = await db
-                .GetMinimalUniquePrefixEntries(filesetIds[0], result.TaskControl.ProgressToken)
+                .GetMinimalUniquePrefixEntriesAsync(filesetIds[0], result.TaskControl.ProgressToken)
                 .ToListAsync(cancellationToken: result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);
             result.Entries = new PaginatedResults<IListFolderEntry>(0, rootFolders.Count, 1, rootFolders.Count, rootFolders);
@@ -73,8 +73,8 @@ internal static class ListFolderHandler
         else
         {
             var entries = await db
-                .ListFolder(
-                    db.GetPrefixIds(folders, result.TaskControl.ProgressToken).ToBlockingEnumerable(),
+                .ListFolderAsync(
+                    db.GetPrefixIdsAsync(folders, result.TaskControl.ProgressToken).ToBlockingEnumerable(),
                     filesetIds[0],
                     offset,
                     limit,
@@ -88,7 +88,7 @@ internal static class ListFolderHandler
         if (extendedData)
         {
             var coreentries = result.Entries.Items.Cast<Database.LocalListDatabase.FolderEntry>().ToArray();
-            var metadata = await db.GetMetadataForFilesetIds(coreentries.Select(e => e.FileId), result.TaskControl.ProgressToken).ConfigureAwait(false);
+            var metadata = await db.GetMetadataForFilesetIdsAsync(coreentries.Select(e => e.FileId), result.TaskControl.ProgressToken).ConfigureAwait(false);
             for (int i = 0; i < coreentries.Length; i++)
             {
                 if (metadata.TryGetValue(coreentries[i].FileId, out var dict))

@@ -57,13 +57,13 @@ namespace Duplicati.Library.Main.Operation
             if (!m_options.NoLocalDb && System.IO.File.Exists(m_options.Dbpath))
                 await using (var db = await Database.LocalListDatabase.CreateAsync(m_options.Dbpath, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                 {
-                    await using var filesets = await db.SelectFileSets(m_options.Time, m_options.Version, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+                    await using var filesets = await db.SelectFileSetsAsync(m_options.Time, m_options.Version, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                     if (!filter.Empty)
                     {
                         if (simpleList || (m_options.ListFolderContents && !m_options.AllVersions))
                         {
                             await filesets
-                                .TakeFirst(m_result.TaskControl.ProgressToken)
+                                .TakeFirstAsync(m_result.TaskControl.ProgressToken)
                                 .ConfigureAwait(false);
                         }
                     }
@@ -71,11 +71,11 @@ namespace Duplicati.Library.Main.Operation
                     IAsyncEnumerable<Database.LocalListDatabase.IFileversion> files;
                     if (m_options.ListFolderContents)
                     {
-                        files = filesets.SelectFolderContents(filter, m_result.TaskControl.ProgressToken);
+                        files = filesets.SelectFolderContentsAsync(filter, m_result.TaskControl.ProgressToken);
                     }
                     else if (m_options.ListPrefixOnly)
                     {
-                        files = filesets.GetLargestPrefix(filter, m_result.TaskControl.ProgressToken);
+                        files = filesets.GetLargestPrefixAsync(filter, m_result.TaskControl.ProgressToken);
                     }
                     else if (filter.Empty)
                     {
@@ -83,14 +83,14 @@ namespace Duplicati.Library.Main.Operation
                     }
                     else
                     {
-                        files = filesets.SelectFiles(filter, m_result.TaskControl.ProgressToken);
+                        files = filesets.SelectFilesAsync(filter, m_result.TaskControl.ProgressToken);
                     }
 
                     if (m_options.ListSetsOnly)
                     {
                         m_result.SetResult(
                             await filesets
-                                .QuickSets(m_result.TaskControl.ProgressToken)
+                                .QuickSetsAsync(m_result.TaskControl.ProgressToken)
                                 .Select(x => new ListResultFileset(x.Version, x.IsFullBackup, x.Time, x.FileCount, x.FileSizes))
                                 .ToArrayAsync(cancellationToken: m_result.TaskControl.ProgressToken)
                                 .ConfigureAwait(false),
@@ -101,7 +101,7 @@ namespace Duplicati.Library.Main.Operation
                     {
                         m_result.SetResult(
                             await filesets
-                                .Sets(m_result.TaskControl.ProgressToken)
+                                .SetsAsync(m_result.TaskControl.ProgressToken)
                                 .Select(x => new ListResultFileset(x.Version, x.IsFullBackup, x.Time, x.FileCount, x.FileSizes))
                                 .ToArrayAsync(cancellationToken: m_result.TaskControl.ProgressToken)
                                 .ConfigureAwait(false),
@@ -112,7 +112,7 @@ namespace Duplicati.Library.Main.Operation
                                     new ListResultFile(
                                         n.Path,
                                         await n
-                                            .Sizes(m_result.TaskControl.ProgressToken)
+                                            .SizesAsync(m_result.TaskControl.ProgressToken)
                                             .ToArrayAsync(cancellationToken: m_result.TaskControl.ProgressToken)
                                             .ConfigureAwait(false)
                                     )
@@ -156,39 +156,42 @@ namespace Duplicati.Library.Main.Operation
                 filteredList.RemoveAt(0);
                 Dictionary<string, List<long>> res;
 
-                if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
+                if (!await m_result.TaskControl.ProgressRendevouzAsync().ConfigureAwait(false))
                     return;
 
                 using (var tmpfile = await backendManager.GetAsync(firstEntry.File.Name, null, firstEntry.File.Size, cancellationToken).ConfigureAwait(false))
-                using (var rd = new FilesetVolumeReader(RestoreHandler.GetCompressionModule(firstEntry.File.Name), tmpfile, m_options))
-                    if (simpleList)
-                    {
-                        m_result.SetResult(
-                            numberSeq.Take(1),
-                            (from n in rd.Files
-                             where Library.Utility.FilterExpression.Matches(filter, n.Path)
-                             orderby n.Path
-                             select new ListResultFile(n.Path, new long[] { n.Size }))
-                                  .ToArray()
-                        );
+                {
+                    VolumeReaderBase.UpdateOptionsFromManifest(RestoreHandler.GetCompressionModule(firstEntry.File.Name), tmpfile, m_options);
+                    using (var rd = new FilesetVolumeReader(RestoreHandler.GetCompressionModule(firstEntry.File.Name), tmpfile, m_options))
+                        if (simpleList)
+                        {
+                            m_result.SetResult(
+                                numberSeq.Take(1),
+                                (from n in rd.Files
+                                 where Library.Utility.FilterExpression.Matches(filter, n.Path)
+                                 orderby n.Path
+                                 select new ListResultFile(n.Path, new long[] { n.Size }))
+                                      .ToArray()
+                            );
 
-                        return;
-                    }
-                    else
-                    {
-                        res = rd.Files
-                              .Where(x => Library.Utility.FilterExpression.Matches(filter, x.Path))
-                              .ToDictionary(
-                                    x => x.Path,
-                                    y =>
-                                    {
-                                        var lst = new List<long>();
-                                        lst.Add(y.Size);
-                                        return lst;
-                                    },
-                                    Library.Utility.Utility.ClientFilenameStringComparer
-                              );
-                    }
+                            return;
+                        }
+                        else
+                        {
+                            res = rd.Files
+                                  .Where(x => Library.Utility.FilterExpression.Matches(filter, x.Path))
+                                  .ToDictionary(
+                                        x => x.Path,
+                                        y =>
+                                        {
+                                            var lst = new List<long>();
+                                            lst.Add(y.Size);
+                                            return lst;
+                                        },
+                                        Library.Utility.Utility.ClientFilenameStringComparer
+                                  );
+                        }
+                }
 
                 long flindex = 1;
                 var filteredListMap = filteredList.ToDictionary(x => x.Value.File.Name, x => x.Value);
@@ -198,7 +201,7 @@ namespace Duplicati.Library.Main.Operation
                     using (tmpfile)
                     using (var rd = new FilesetVolumeReader(flentry.CompressionModule, tmpfile, m_options))
                     {
-                        if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
+                        if (!await m_result.TaskControl.ProgressRendevouzAsync().ConfigureAwait(false))
                             return;
 
                         foreach (var p in from n in rd.Files where Library.Utility.FilterExpression.Matches(filter, n.Path) select n)

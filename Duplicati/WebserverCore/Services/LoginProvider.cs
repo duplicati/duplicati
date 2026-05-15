@@ -30,12 +30,12 @@ public class LoginProvider(ITokenFamilyStore repo, IJWTTokenProvider tokenProvid
 {
     private static readonly string LOGTAG = Log.LogTagFromType<LoginProvider>();
 
-    public async Task<(string AccessToken, string RefreshToken, string? Nonce)> PerformLoginWithSigninToken(string signinTokenString, bool shortLived, CancellationToken ct)
+    public async Task<(string AccessToken, string RefreshToken, string? Nonce)> PerformLoginWithSigninTokenAsync(string signinTokenString, bool shortLived, CancellationToken ct)
     {
         var signinToken = tokenProvider.ReadSigninToken(signinTokenString);
         var userId = signinToken.UserId;
 
-        var tokenFamily = await repo.CreateTokenFamily(userId, ct);
+        var tokenFamily = await repo.CreateTokenFamilyAsync(userId, ct);
         var (refreshToken, nonce) = tokenProvider.CreateRefreshToken(userId, tokenFamily.Id, tokenFamily.Counter, shortLived);
 
         return (
@@ -45,10 +45,10 @@ public class LoginProvider(ITokenFamilyStore repo, IJWTTokenProvider tokenProvid
         );
     }
 
-    public async Task<(string AccessToken, string RefreshToken, string? Nonce)> PerformLoginWithRefreshToken(string refreshTokenString, string? nonce, CancellationToken ct)
+    public async Task<(string AccessToken, string RefreshToken, string? Nonce)> PerformLoginWithRefreshTokenAsync(string refreshTokenString, string? nonce, CancellationToken ct)
     {
         var refreshToken = tokenProvider.ReadRefreshToken(refreshTokenString, nonce);
-        var tokenFamily = await repo.GetTokenFamily(refreshToken.UserId, refreshToken.TokenFamilyId, ct)
+        var tokenFamily = await repo.GetTokenFamilyAsync(refreshToken.UserId, refreshToken.TokenFamilyId, ct)
             ?? throw new UnauthorizedException("Invalid refresh token");
 
         // Allow slight drift to adjust for cases where the browser refreshes
@@ -60,11 +60,11 @@ public class LoginProvider(ITokenFamilyStore repo, IJWTTokenProvider tokenProvid
         if (counterDiff < 0 || counterDiff > maxDrift)
         {
             Log.WriteWarningMessage(LOGTAG, "TokenFamilyReuse", null, $"Invalid refresh token counter: {tokenFamily.Counter} != {refreshToken.Counter}");
-            await repo.InvalidateTokenFamily(tokenFamily.UserId, tokenFamily.Id, ct);
+            await repo.InvalidateTokenFamilyAsync(tokenFamily.UserId, tokenFamily.Id, ct);
             throw new UnauthorizedException("Token family re-use detected");
         }
 
-        tokenFamily = await repo.IncrementTokenFamily(tokenFamily, ct);
+        tokenFamily = await repo.IncrementTokenFamilyAsync(tokenFamily, ct);
         var isShortLived = (refreshToken.Expiration - refreshToken.ValidFrom).TotalMinutes <= jwtConfig.RefreshTokenShortLivedDurationInMinutes + 1;
         (var newRefreshToken, var newNonce) = tokenProvider.CreateRefreshToken(refreshToken.UserId, tokenFamily.Id, tokenFamily.Counter, isShortLived);
 
@@ -75,13 +75,13 @@ public class LoginProvider(ITokenFamilyStore repo, IJWTTokenProvider tokenProvid
         );
     }
 
-    public async Task<(string AccessToken, string RefreshToken, string? Nonce)> PerformLoginWithPassword(string password, bool shortLived, CancellationToken ct)
+    public async Task<(string AccessToken, string RefreshToken, string? Nonce)> PerformLoginWithPasswordAsync(string password, bool shortLived, CancellationToken ct)
     {
         if (!connection.ApplicationSettings.VerifyWebserverPassword(password))
             throw new UnauthorizedException("Invalid password");
 
         var userId = "webserver";
-        var tokenFamily = await repo.CreateTokenFamily(userId, ct);
+        var tokenFamily = await repo.CreateTokenFamilyAsync(userId, ct);
         var (refreshToken, nonce) = tokenProvider.CreateRefreshToken(userId, tokenFamily.Id, tokenFamily.Counter, shortLived);
 
         return (
@@ -91,17 +91,17 @@ public class LoginProvider(ITokenFamilyStore repo, IJWTTokenProvider tokenProvid
         );
     }
 
-    public async Task PerformLogoutWithRefreshToken(string refreshTokenString, string? nonce, CancellationToken ct)
+    public async Task PerformLogoutWithRefreshTokenAsync(string refreshTokenString, string? nonce, CancellationToken ct)
     {
         var token = tokenProvider.ReadRefreshToken(refreshTokenString, nonce);
-        await repo.InvalidateTokenFamily(token.UserId, token.TokenFamilyId, ct);
+        await repo.InvalidateTokenFamilyAsync(token.UserId, token.TokenFamilyId, ct);
     }
 
-    public async Task PerformCompleteLogout(string userId, CancellationToken ct)
+    public async Task PerformCompleteLogoutAsync(string userId, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(userId))
-            await repo.InvalidateAllTokens(ct);
+            await repo.InvalidateAllTokensAsync(ct);
         else
-            await repo.InvalidateAllTokenFamilies(userId, ct);
+            await repo.InvalidateAllTokenFamiliesAsync(userId, ct);
     }
 }

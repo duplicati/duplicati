@@ -34,7 +34,7 @@ namespace RemoteSynchronization
         /// </summary>
         /// <param name="args">The commandline arguments.</param>
         /// <returns>0 on success, -1 on abort, and the number of errors encountered otherwise.</returns>
-        public static Task<int> Main(string[] args)
+        public static Task<int> MainAsync(string[] args)
             => RemoteSynchronizationRunner.RunAsync(args);
     }
 }

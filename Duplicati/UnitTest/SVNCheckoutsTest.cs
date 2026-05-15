@@ -68,7 +68,7 @@ namespace Duplicati.UnitTest
         /// </summary>
         /// <param name="folders">The folders to backup. Folder at index 0 is the base, all others are incrementals</param>
         /// <param name="target">The target destination for the backups</param>
-        public static void RunTest(string[] folders, Dictionary<string, string> options, string target)
+        public static async Task RunTestAsync(string[] folders, Dictionary<string, string> options, string target)
         {
             string tempdir = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), "tempdir");
             string logfilename = System.IO.Path.Combine(tempdir, string.Format("unittest-{0}.log", Library.Utility.Utility.SerializeDateTime(DateTime.Now)));
@@ -176,7 +176,7 @@ namespace Duplicati.UnitTest
                                 using (var bk = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(target, options))
                                     foreach (var f in bk.ListAsync(System.Threading.CancellationToken.None).ToBlockingEnumerable())
                                         if (!f.IsFolder)
-                                            Utility.Await(bk.DeleteAsync(f.Name, System.Threading.CancellationToken.None));
+                                            await bk.DeleteAsync(f.Name, System.Threading.CancellationToken.None);
                             }
                             catch (Duplicati.Library.Interface.FolderMissingException)
                             {
@@ -195,7 +195,7 @@ namespace Duplicati.UnitTest
                             TestUtils.CopyDirectoryRecursive(folders[0], fhsourcefolder);
                         }
 
-                        RunBackup(usingFHWithRestore ? (string)fhsourcefolder : folders[0], target, options, folders[0]);
+                        await RunBackupAsync(usingFHWithRestore ? (string)fhsourcefolder : folders[0], target, options, folders[0]);
 
                         for (int i = 1; i < folders.Length; i++)
                         {
@@ -210,7 +210,7 @@ namespace Duplicati.UnitTest
                             }
 
                             //Call function to simplify profiling
-                            RunBackup(usingFHWithRestore ? (string)fhsourcefolder : folders[i], target, options, folders[i]);
+                            await RunBackupAsync(usingFHWithRestore ? (string)fhsourcefolder : folders[i], target, options, folders[i]);
                         }
                     }
 
@@ -227,7 +227,7 @@ namespace Duplicati.UnitTest
                     IList<DateTime> entries;
                     using (var console = new CommandLine.ConsoleOutput(Console.Out, options))
                     using (var i = new Duplicati.Library.Main.Controller(target, options, console))
-                        entries = (from n in i.List().Filesets select n.Time.ToLocalTime()).ToList();
+                        entries = (from n in (await i.ListAsync()).Filesets select n.Time.ToLocalTime()).ToList();
 
                     if (entries.Count != folders.Length)
                     {
@@ -259,7 +259,7 @@ namespace Duplicati.UnitTest
                                             List<string> sourcefiles;
                                             using (var console = new CommandLine.ConsoleOutput(Console.Out, options))
                                             using (var inst = new Library.Main.Controller(target, options, console))
-                                                sourcefiles = (from n in inst.List("*").Files select n.Path).ToList();
+                                                sourcefiles = (from n in (await inst.ListAsync("*")).Files select n.Path).ToList();
 
                                             //Remove all folders from list
                                             for (int j = 0; j < sourcefiles.Count; j++)
@@ -322,7 +322,7 @@ namespace Duplicati.UnitTest
                                         testfiles = (from n in testfiles select n.Substring(tfe.Length)).ToList();
 
                                         //Call function to simplify profiling
-                                        RunPartialRestore(folders[i], target, ptf, options, filterlist.ToArray());
+                                        await RunPartialRestoreAsync(folders[i], target, ptf, options, filterlist.ToArray());
 
                                         if (!skipverify)
                                         {
@@ -336,7 +336,7 @@ namespace Duplicati.UnitTest
                                 if (!skipfullrestore)
                                 {
                                     //Call function to simplify profiling
-                                    RunRestore(folders[i], target, ttf, options);
+                                    await RunRestoreAsync(folders[i], target, ttf, options);
 
                                     if (!skipverify)
                                     {
@@ -435,33 +435,33 @@ namespace Duplicati.UnitTest
             }
         }
 
-        private static void RunBackup(string source, string target, Dictionary<string, string> options, string sourcename)
+        private static async Task RunBackupAsync(string source, string target, Dictionary<string, string> options, string sourcename)
         {
             BasicSetupHelper.ProgressWriteLine("Backing up the copy: " + sourcename);
             using (new Timer(LOGTAG, "BackupRun", "Backup of " + sourcename))
             using (var console = new CommandLine.ConsoleOutput(Console.Out, options))
             using (var i = new Duplicati.Library.Main.Controller(target, options, console))
-                Log.WriteInformationMessage(LOGTAG, "BackupOutput", i.Backup(source.Split(System.IO.Path.PathSeparator)).ToString());
+                Log.WriteInformationMessage(LOGTAG, "BackupOutput", (await i.BackupAsync(source.Split(System.IO.Path.PathSeparator))).ToString());
         }
 
-        private static void RunRestore(string source, string target, string tempfolder, Dictionary<string, string> options)
+        private static async Task RunRestoreAsync(string source, string target, string tempfolder, Dictionary<string, string> options)
         {
             var tops = new Dictionary<string, string>(options);
             tops["restore-path"] = tempfolder;
             using (new Timer(LOGTAG, "RestoreRun", "Restore of " + source))
             using (var console = new CommandLine.ConsoleOutput(Console.Out, options))
             using (var i = new Duplicati.Library.Main.Controller(target, tops, console))
-                Log.WriteInformationMessage(LOGTAG, "RestoreOutput", i.Restore(null).ToString());
+                Log.WriteInformationMessage(LOGTAG, "RestoreOutput", (await i.RestoreAsync(null)).ToString());
         }
 
-        private static void RunPartialRestore(string source, string target, string tempfolder, Dictionary<string, string> options, string[] files)
+        private static async Task RunPartialRestoreAsync(string source, string target, string tempfolder, Dictionary<string, string> options, string[] files)
         {
             var tops = new Dictionary<string, string>(options);
             tops["restore-path"] = tempfolder;
             using (new Timer(LOGTAG, "PartialRestore", "Partial restore of " + source))
             using (var console = new CommandLine.ConsoleOutput(Console.Out, options))
             using (var i = new Duplicati.Library.Main.Controller(target, tops, console))
-                Log.WriteInformationMessage(LOGTAG, "PartialRestoreOutput", i.Restore(files).ToString());
+                Log.WriteInformationMessage(LOGTAG, "PartialRestoreOutput", (await i.RestoreAsync(files)).ToString());
         }
     }
 }

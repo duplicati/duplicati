@@ -25,6 +25,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
 
 namespace Duplicati.UnitTest
@@ -76,7 +77,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Disruption"), Category("Bug")]
-        public void InterruptedCompact5184()
+        public async Task InterruptedCompact5184Async()
         {
             // Reproduction steps from issue #4129 with smaller sizes
             var testopts = TestOptions;
@@ -93,33 +94,33 @@ namespace Duplicati.UnitTest
             // in combination with dblock-size
             const long filesize = 44971;
 
-            string target = "file://" + TARGETFOLDER;
-            string file1 = Path.Combine(DATAFOLDER, "f1");
-            string file2 = Path.Combine(DATAFOLDER, "f2");
-            string file3 = Path.Combine(DATAFOLDER, "f3");
-            string file4 = Path.Combine(DATAFOLDER, "f4");
-            string file5 = Path.Combine(DATAFOLDER, "f5");
-            string file6 = Path.Combine(DATAFOLDER, "f6");
+            var target = "file://" + TARGETFOLDER;
+            var file1 = Path.Combine(DATAFOLDER, "f1");
+            var file2 = Path.Combine(DATAFOLDER, "f2");
+            var file3 = Path.Combine(DATAFOLDER, "f3");
+            var file4 = Path.Combine(DATAFOLDER, "f4");
+            var file5 = Path.Combine(DATAFOLDER, "f5");
+            var file6 = Path.Combine(DATAFOLDER, "f6");
             // Add files 1,2
             TestUtils.WriteTestFile(file1, filesize);
             TestUtils.WriteTestFile(file2, filesize);
             using (var c = new Library.Main.Controller(target, testopts, null))
             {
-                IBackupResults backupResults = c.Backup(new[] { DATAFOLDER });
+                var backupResults = await c.BackupAsync(new[] { DATAFOLDER });
                 TestUtils.AssertResults(backupResults);
                 SleepUntilNextSecond(backupResults);
 
                 // Add files 3,4
                 TestUtils.WriteTestFile(file3, filesize);
                 TestUtils.WriteTestFile(file4, filesize);
-                backupResults = c.Backup(new[] { DATAFOLDER });
+                backupResults = await c.BackupAsync(new[] { DATAFOLDER });
                 TestUtils.AssertResults(backupResults);
                 SleepUntilNextSecond(backupResults);
 
                 // Add files 5,6
                 TestUtils.WriteTestFile(file5, filesize);
                 TestUtils.WriteTestFile(file6, filesize);
-                backupResults = c.Backup(new[] { DATAFOLDER });
+                backupResults = await c.BackupAsync(new[] { DATAFOLDER });
                 TestUtils.AssertResults(backupResults);
                 SleepUntilNextSecond(backupResults);
 
@@ -127,7 +128,7 @@ namespace Duplicati.UnitTest
                 File.Delete(file1);
                 File.Delete(file3);
                 File.Delete(file5);
-                backupResults = c.Backup(new[] { DATAFOLDER });
+                backupResults = await c.BackupAsync(new[] { DATAFOLDER });
                 TestUtils.AssertResults(backupResults);
             }
 
@@ -149,11 +150,11 @@ namespace Duplicati.UnitTest
                 return false;
             };
             // Expect error from backend
-            Assert.Catch<DeterministicErrorBackend.DeterministicErrorBackendException>(() =>
+            Assert.CatchAsync<DeterministicErrorBackend.DeterministicErrorBackendException>(async () =>
             {
                 using (var c = new Library.Main.Controller(target, testopts, null))
                 {
-                    ICompactResults compactResults = c.Compact();
+                    var compactResults = await c.CompactAsync();
                     Assert.Greater(compactResults.DownloadedFileCount, 0, "No compact operation was performed");
                 }
             });
@@ -163,7 +164,7 @@ namespace Duplicati.UnitTest
             target = "file://" + TARGETFOLDER;
             using (var c = new Library.Main.Controller(target, testopts, null))
             {
-                ITestResults testResults = c.Test(long.MaxValue);
+                var testResults = await c.TestAsync(long.MaxValue);
                 // Expect no verification errors
                 Assert.IsTrue(testResults.Verifications.All(v => !v.Value.Any()),
                     "Test verification failed:\n {0}", VerificationToString(testResults.Verifications));
@@ -175,14 +176,14 @@ namespace Duplicati.UnitTest
             // Repair to recreate the local database
             using (var c = new Library.Main.Controller(target, testopts, null))
             {
-                IRepairResults repairResults = c.Repair();
+                var repairResults = await c.RepairAsync();
                 TestUtils.AssertResults(repairResults);
             }
 
             // Re-do the full verification
             using (var c = new Library.Main.Controller(target, testopts, null))
             {
-                ITestResults testResults = c.Test(long.MaxValue);
+                var testResults = await c.TestAsync(long.MaxValue);
                 // Expect no verification errors
                 Assert.IsTrue(testResults.Verifications.All(v => !v.Value.Any()),
                     "Test verification failed:\n {0}", VerificationToString(testResults.Verifications));
@@ -191,7 +192,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Disruption"), Category("Bug")]
-        public void InterruptedCompactPlusNormalCompact5184()
+        public async Task InterruptedCompactPlusNormalCompact5184Async()
         {
             // Reproduction steps from issue #4129 with smaller sizes
             var testopts = TestOptions;
@@ -208,33 +209,33 @@ namespace Duplicati.UnitTest
             // in combination with dblock-size
             const long filesize = 44971;
 
-            string target = "file://" + TARGETFOLDER;
-            string file1 = Path.Combine(DATAFOLDER, "f1");
-            string file2 = Path.Combine(DATAFOLDER, "f2");
-            string file3 = Path.Combine(DATAFOLDER, "f3");
-            string file4 = Path.Combine(DATAFOLDER, "f4");
-            string file5 = Path.Combine(DATAFOLDER, "f5");
-            string file6 = Path.Combine(DATAFOLDER, "f6");
+            var target = "file://" + TARGETFOLDER;
+            var file1 = Path.Combine(DATAFOLDER, "f1");
+            var file2 = Path.Combine(DATAFOLDER, "f2");
+            var file3 = Path.Combine(DATAFOLDER, "f3");
+            var file4 = Path.Combine(DATAFOLDER, "f4");
+            var file5 = Path.Combine(DATAFOLDER, "f5");
+            var file6 = Path.Combine(DATAFOLDER, "f6");
             // Add files 1,2
             TestUtils.WriteTestFile(file1, filesize);
             TestUtils.WriteTestFile(file2, filesize);
             using (var c = new Library.Main.Controller(target, testopts, null))
             {
-                IBackupResults backupResults = c.Backup(new[] { DATAFOLDER });
+                var backupResults = await c.BackupAsync(new[] { DATAFOLDER });
                 TestUtils.AssertResults(backupResults);
                 SleepUntilNextSecond(backupResults);
 
                 // Add files 3,4
                 TestUtils.WriteTestFile(file3, filesize);
                 TestUtils.WriteTestFile(file4, filesize);
-                backupResults = c.Backup(new[] { DATAFOLDER });
+                backupResults = await c.BackupAsync(new[] { DATAFOLDER });
                 TestUtils.AssertResults(backupResults);
                 SleepUntilNextSecond(backupResults);
 
                 // Add files 5,6
                 TestUtils.WriteTestFile(file5, filesize);
                 TestUtils.WriteTestFile(file6, filesize);
-                backupResults = c.Backup(new[] { DATAFOLDER });
+                backupResults = await c.BackupAsync(new[] { DATAFOLDER });
                 TestUtils.AssertResults(backupResults);
                 SleepUntilNextSecond(backupResults);
 
@@ -242,7 +243,7 @@ namespace Duplicati.UnitTest
                 File.Delete(file1);
                 File.Delete(file3);
                 File.Delete(file5);
-                backupResults = c.Backup(new[] { DATAFOLDER });
+                backupResults = await c.BackupAsync(new[] { DATAFOLDER });
                 TestUtils.AssertResults(backupResults);
             }
 
@@ -264,11 +265,11 @@ namespace Duplicati.UnitTest
                 return false;
             };
             // Expect error from backend
-            Assert.Catch<DeterministicErrorBackend.DeterministicErrorBackendException>(() =>
+            Assert.CatchAsync<DeterministicErrorBackend.DeterministicErrorBackendException>(async () =>
             {
                 using (var c = new Library.Main.Controller(target, testopts, null))
                 {
-                    ICompactResults compactResults = c.Compact();
+                    var compactResults = await c.CompactAsync();
                     Assert.Greater(compactResults.DownloadedFileCount, 0, "No compact operation was performed");
                 }
             });
@@ -279,7 +280,7 @@ namespace Duplicati.UnitTest
             target = "file://" + TARGETFOLDER;
             using (var c = new Library.Main.Controller(target, testopts, null))
             {
-                ITestResults testResults = c.Test(long.MaxValue);
+                var testResults = await c.TestAsync(long.MaxValue);
                 // Expect no verification errors
                 Assert.IsTrue(testResults.Verifications.All(v => !v.Value.Any()),
                     "Test verification failed:\n {0}", VerificationToString(testResults.Verifications));
@@ -288,14 +289,14 @@ namespace Duplicati.UnitTest
             // Make sure we can compact after the interrupted compact
             using (var c = new Library.Main.Controller(target, testopts, null))
             {
-                ICompactResults compactResults = c.Compact();
+                var compactResults = await c.CompactAsync();
                 Assert.Greater(compactResults.DownloadedFileCount, 0, "No compact operation was performed");
             }
 
             // Make sure there are no errors after success compacting
             using (var c = new Library.Main.Controller(target, testopts, null))
             {
-                ITestResults testResults = c.Test(long.MaxValue);
+                var testResults = await c.TestAsync(long.MaxValue);
                 // Expect no verification errors
                 Assert.IsTrue(testResults.Verifications.All(v => !v.Value.Any()),
                     "Test verification failed:\n {0}", VerificationToString(testResults.Verifications));
@@ -307,14 +308,14 @@ namespace Duplicati.UnitTest
             // Repair to recreate the local database
             using (var c = new Library.Main.Controller(target, testopts, null))
             {
-                IRepairResults repairResults = c.Repair();
+                var repairResults = await c.RepairAsync();
                 TestUtils.AssertResults(repairResults);
             }
 
             // Re-do the full verification
             using (var c = new Library.Main.Controller(target, testopts, null))
             {
-                ITestResults testResults = c.Test(long.MaxValue);
+                var testResults = await c.TestAsync(long.MaxValue);
                 // Expect no verification errors
                 Assert.IsTrue(testResults.Verifications.All(v => !v.Value.Any()),
                     "Test verification failed:\n {0}", VerificationToString(testResults.Verifications));
@@ -323,7 +324,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Disruption"), Category("Bug")]
-        public void DoubleInterruptedCompact5184()
+        public async Task DoubleInterruptedCompact5184Async()
         {
             // Reproduction steps from issue #4129 with smaller sizes
             var testopts = TestOptions;
@@ -352,21 +353,21 @@ namespace Duplicati.UnitTest
             TestUtils.WriteTestFile(file2, filesize);
             using (var c = new Library.Main.Controller(target, testopts, null))
             {
-                IBackupResults backupResults = c.Backup(new[] { DATAFOLDER });
+                var backupResults = await c.BackupAsync(new[] { DATAFOLDER });
                 TestUtils.AssertResults(backupResults);
                 SleepUntilNextSecond(backupResults);
 
                 // Add files 3,4
                 TestUtils.WriteTestFile(file3, filesize);
                 TestUtils.WriteTestFile(file4, filesize);
-                backupResults = c.Backup(new[] { DATAFOLDER });
+                backupResults = await c.BackupAsync(new[] { DATAFOLDER });
                 TestUtils.AssertResults(backupResults);
                 SleepUntilNextSecond(backupResults);
 
                 // Add files 5,6
                 TestUtils.WriteTestFile(file5, filesize);
                 TestUtils.WriteTestFile(file6, filesize);
-                backupResults = c.Backup(new[] { DATAFOLDER });
+                backupResults = await c.BackupAsync(new[] { DATAFOLDER });
                 TestUtils.AssertResults(backupResults);
                 SleepUntilNextSecond(backupResults);
 
@@ -374,7 +375,7 @@ namespace Duplicati.UnitTest
                 File.Delete(file1);
                 File.Delete(file3);
                 File.Delete(file5);
-                backupResults = c.Backup(new[] { DATAFOLDER });
+                backupResults = await c.BackupAsync(new[] { DATAFOLDER });
                 TestUtils.AssertResults(backupResults);
             }
 
@@ -396,21 +397,21 @@ namespace Duplicati.UnitTest
                 return false;
             };
             // Expect error from backend
-            Assert.Catch<DeterministicErrorBackend.DeterministicErrorBackendException>(() =>
+            Assert.CatchAsync<DeterministicErrorBackend.DeterministicErrorBackendException>(async () =>
             {
                 using (var c = new Library.Main.Controller(target, testopts, null))
                 {
-                    ICompactResults compactResults = c.Compact();
+                    var compactResults = await c.CompactAsync();
                     Assert.Greater(compactResults.DownloadedFileCount, 0, "No compact operation was performed");
                 }
             });
 
             // Expect error from backend, again
-            Assert.Catch<DeterministicErrorBackend.DeterministicErrorBackendException>(() =>
+            Assert.CatchAsync<DeterministicErrorBackend.DeterministicErrorBackendException>(async () =>
             {
                 using (var c = new Library.Main.Controller(target, testopts, null))
                 {
-                    ICompactResults compactResults = c.Compact();
+                    var compactResults = await c.CompactAsync();
                     Assert.Greater(compactResults.DownloadedFileCount, 0, "No compact operation was performed");
                 }
             });
@@ -420,7 +421,7 @@ namespace Duplicati.UnitTest
             testopts["full-block-verification"] = "true";
             using (var c = new Library.Main.Controller(target, testopts, null))
             {
-                ITestResults testResults = c.Test(long.MaxValue);
+                var testResults = await c.TestAsync(long.MaxValue);
                 // Expect no verification errors
                 Assert.IsTrue(testResults.Verifications.All(v => !v.Value.Any()),
                     "Test verification failed:\n {0}", VerificationToString(testResults.Verifications));
@@ -429,14 +430,14 @@ namespace Duplicati.UnitTest
             // Make sure we can compact after two interrupted compacts
             using (var c = new Library.Main.Controller(target, testopts, null))
             {
-                ICompactResults compactResults = c.Compact();
+                var compactResults = await c.CompactAsync();
                 Assert.Greater(compactResults.DownloadedFileCount, 0, "No compact operation was performed");
             }
 
             // Make sure there are no errors after success compacting
             using (var c = new Library.Main.Controller(target, testopts, null))
             {
-                ITestResults testResults = c.Test(long.MaxValue);
+                var testResults = await c.TestAsync(long.MaxValue);
                 // Expect no verification errors
                 Assert.IsTrue(testResults.Verifications.All(v => !v.Value.Any()),
                     "Test verification failed:\n {0}", VerificationToString(testResults.Verifications));
@@ -448,14 +449,14 @@ namespace Duplicati.UnitTest
             // Repair to recreate the local database
             using (var c = new Library.Main.Controller(target, testopts, null))
             {
-                IRepairResults repairResults = c.Repair();
+                var repairResults = await c.RepairAsync();
                 TestUtils.AssertResults(repairResults);
             }
 
             // Re-do the full verification
             using (var c = new Library.Main.Controller(target, testopts, null))
             {
-                ITestResults testResults = c.Test(long.MaxValue);
+                var testResults = await c.TestAsync(long.MaxValue);
                 // Expect no verification errors
                 Assert.IsTrue(testResults.Verifications.All(v => !v.Value.Any()),
                     "Test verification failed:\n {0}", VerificationToString(testResults.Verifications));
@@ -464,7 +465,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Disruption"), Category("Bug")]
-        public void RestoreAfterDoubleInterruptedCompact5184()
+        public async Task RestoreAfterDoubleInterruptedCompact5184Async()
         {
             // Reproduction steps from issue #4129 with smaller sizes
             var testopts = TestOptions;
@@ -481,33 +482,33 @@ namespace Duplicati.UnitTest
             // in combination with dblock-size
             const long filesize = 44971;
 
-            string target = "file://" + TARGETFOLDER;
-            string file1 = Path.Combine(DATAFOLDER, "f1");
-            string file2 = Path.Combine(DATAFOLDER, "f2");
-            string file3 = Path.Combine(DATAFOLDER, "f3");
-            string file4 = Path.Combine(DATAFOLDER, "f4");
-            string file5 = Path.Combine(DATAFOLDER, "f5");
-            string file6 = Path.Combine(DATAFOLDER, "f6");
+            var target = "file://" + TARGETFOLDER;
+            var file1 = Path.Combine(DATAFOLDER, "f1");
+            var file2 = Path.Combine(DATAFOLDER, "f2");
+            var file3 = Path.Combine(DATAFOLDER, "f3");
+            var file4 = Path.Combine(DATAFOLDER, "f4");
+            var file5 = Path.Combine(DATAFOLDER, "f5");
+            var file6 = Path.Combine(DATAFOLDER, "f6");
             // Add files 1,2
             TestUtils.WriteTestFile(file1, filesize);
             TestUtils.WriteTestFile(file2, filesize);
             using (var c = new Library.Main.Controller(target, testopts, null))
             {
-                IBackupResults backupResults = c.Backup(new[] { DATAFOLDER });
+                var backupResults = await c.BackupAsync(new[] { DATAFOLDER });
                 TestUtils.AssertResults(backupResults);
                 SleepUntilNextSecond(backupResults);
 
                 // Add files 3,4
                 TestUtils.WriteTestFile(file3, filesize);
                 TestUtils.WriteTestFile(file4, filesize);
-                backupResults = c.Backup(new[] { DATAFOLDER });
+                backupResults = await c.BackupAsync(new[] { DATAFOLDER });
                 TestUtils.AssertResults(backupResults);
                 SleepUntilNextSecond(backupResults);
 
                 // Add files 5,6
                 TestUtils.WriteTestFile(file5, filesize);
                 TestUtils.WriteTestFile(file6, filesize);
-                backupResults = c.Backup(new[] { DATAFOLDER });
+                backupResults = await c.BackupAsync(new[] { DATAFOLDER });
                 TestUtils.AssertResults(backupResults);
                 SleepUntilNextSecond(backupResults);
 
@@ -515,7 +516,7 @@ namespace Duplicati.UnitTest
                 File.Delete(file1);
                 File.Delete(file3);
                 File.Delete(file5);
-                backupResults = c.Backup(new[] { DATAFOLDER });
+                backupResults = await c.BackupAsync(new[] { DATAFOLDER });
                 TestUtils.AssertResults(backupResults);
             }
 
@@ -537,21 +538,21 @@ namespace Duplicati.UnitTest
                 return false;
             };
             // Expect error from backend
-            Assert.Catch<DeterministicErrorBackend.DeterministicErrorBackendException>(() =>
+            Assert.CatchAsync<DeterministicErrorBackend.DeterministicErrorBackendException>(async () =>
             {
                 using (var c = new Library.Main.Controller(target, testopts, null))
                 {
-                    ICompactResults compactResults = c.Compact();
+                    var compactResults = await c.CompactAsync();
                     Assert.Greater(compactResults.DownloadedFileCount, 0, "No compact operation was performed");
                 }
             });
 
             // Expect error from backend, again
-            Assert.Catch<DeterministicErrorBackend.DeterministicErrorBackendException>(() =>
+            Assert.CatchAsync<DeterministicErrorBackend.DeterministicErrorBackendException>(async () =>
             {
                 using (var c = new Library.Main.Controller(target, testopts, null))
                 {
-                    ICompactResults compactResults = c.Compact();
+                    var compactResults = await c.CompactAsync();
                     Assert.Greater(compactResults.DownloadedFileCount, 0, "No compact operation was performed");
                 }
             });
@@ -562,7 +563,7 @@ namespace Duplicati.UnitTest
             testopts["full-block-verification"] = "true";
             using (var c = new Library.Main.Controller(target, testopts, null))
             {
-                ITestResults testResults = c.Test(long.MaxValue);
+                var testResults = await c.TestAsync(long.MaxValue);
                 // Expect no verification errors
                 Assert.IsTrue(testResults.Verifications.All(v => !v.Value.Any()),
                     "Test verification failed:\n {0}", VerificationToString(testResults.Verifications));
@@ -574,14 +575,14 @@ namespace Duplicati.UnitTest
             // Repair to recreate the local database
             using (var c = new Library.Main.Controller(target, testopts, null))
             {
-                IRepairResults repairResults = c.Repair();
+                var repairResults = await c.RepairAsync();
                 TestUtils.AssertResults(repairResults);
             }
 
             // Re-do the full verification
             using (var c = new Library.Main.Controller(target, testopts, null))
             {
-                ITestResults testResults = c.Test(long.MaxValue);
+                var testResults = await c.TestAsync(long.MaxValue);
                 // Expect no verification errors
                 Assert.IsTrue(testResults.Verifications.All(v => !v.Value.Any()),
                     "Test verification failed:\n {0}", VerificationToString(testResults.Verifications));
@@ -590,7 +591,7 @@ namespace Duplicati.UnitTest
             // Compact without issues on the repaired database
             using (var c = new Library.Main.Controller(target, testopts, null))
             {
-                ICompactResults compactResults = c.Compact();
+                var compactResults = await c.CompactAsync();
                 if (compactResults.DownloadedFileCount == 0)
                     Assert.Inconclusive("No compact operation was performed");
             }
@@ -598,7 +599,7 @@ namespace Duplicati.UnitTest
             // Make sure there are no errors after success compacting
             using (var c = new Library.Main.Controller(target, testopts, null))
             {
-                ITestResults testResults = c.Test(long.MaxValue);
+                var testResults = await c.TestAsync(long.MaxValue);
                 // Expect no verification errors
                 Assert.IsTrue(testResults.Verifications.All(v => !v.Value.Any()),
                     "Test verification failed:\n {0}", VerificationToString(testResults.Verifications));

@@ -25,7 +25,7 @@ internal class RootSourceEntry(SourceProvider provider, string mountPoint)
             {
                 { "o365:v", "1" },
                 { "o365:Type", SourceItemType.MetaRoot.ToString() },
-                { "o365:Name", "Office 365 Tenant" },
+                { "o365:Name", "Microsoft 365 Tenant" },
             }
             .Where(kv => !string.IsNullOrEmpty(kv.Value))
             .ToDictionary(kv => kv.Key, kv => kv.Value));

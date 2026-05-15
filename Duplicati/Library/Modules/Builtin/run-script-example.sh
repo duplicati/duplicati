@@ -11,6 +11,7 @@
 # --run-script-before-required = <filename>
 # --run-script-timeout = <time>
 # --run-script-after = <filename>
+# --run-script-post-backup = <filename>
 # --run-script-with-arguments = <boolean>
 #
 # --run-script-before-required = <filename>
@@ -43,6 +44,16 @@
 # Duplicati will run the script after the backup job and wait for its 
 # completion for 60 seconds (default timeout value). After a timeout a 
 # warning is logged.
+# Any other exit code than 0 will be logged as a warning.
+#
+# --run-script-post-backup = <filename>
+# Duplicati will run the script after the backup data has been written and
+# source resources (like VSS snapshots) have been released, but before the
+# remote verification is performed. This allows scripts to run at the earliest
+# point where the backup is complete but verification has not yet started.
+# This is useful for scenarios where you want to minimize the time that
+# operations are suspended or paused. The script will wait for its completion
+# for 60 seconds (default timeout value). After a timeout a warning is logged.
 # Any other exit code than 0 will be logged as a warning.
 #
 # --run-script-with-arguments = <boolean>
@@ -99,8 +110,9 @@
 ###############################################################################
 
 # DUPLICATI__EVENTNAME
-# Eventname is BEFORE if invoked as --run-script-before, and AFTER if 
-# invoked as --run-script-after. This value cannot be changed by writing
+# Eventname is BEFORE if invoked as --run-script-before, AFTER if 
+# invoked as --run-script-after, and POST-BACKUP if invoked as
+# --run-script-post-backup. This value cannot be changed by writing
 # it back!
 
 # DUPLICATI__OPERATIONNAME
@@ -161,6 +173,19 @@ then
 	else
 		# This will be ignored
 		echo "Got operation \"OPERATIONNAME\", ignoring"	
+	fi
+
+elif [ "$EVENTNAME" == "POST-BACKUP" ]
+then
+	# This event is triggered after the backup data has been written and
+	# source resources (like VSS snapshots) have been released, but before
+	# the remote verification is performed. This is the earliest point where
+	# you can safely resume operations that were suspended for the backup.
+
+	if [ "$OPERATIONNAME" == "Backup" ]
+	then
+		echo "Backup data written, resuming normal operations before verification"
+		# Add your post-backup logic here, e.g., resuming services
 	fi
 
 elif [ "$EVENTNAME" == "AFTER" ]

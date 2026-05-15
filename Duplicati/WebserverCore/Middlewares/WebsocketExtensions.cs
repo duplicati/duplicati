@@ -46,7 +46,7 @@ public static class WebsocketExtensions
                     if (context.WebSockets.IsWebSocketRequest)
                     {
                         using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-                        await context.RequestServices.GetRequiredService<IWebsocketAuthenticator>().AddConnection(webSocket);
+                        await context.RequestServices.GetRequiredService<IWebsocketAuthenticator>().AddConnectionAsync(webSocket);
                     }
                     else
                     {
@@ -58,7 +58,7 @@ public static class WebsocketExtensions
                 if (context.WebSockets.IsWebSocketRequest)
                 {
                     using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-                    await context.RequestServices.GetRequiredService<IWebsocketAccessor>().AddConnection(webSocket, true);
+                    await context.RequestServices.GetRequiredService<IWebsocketAccessor>().AddConnectionAsync(webSocket, true);
                 }
                 else
                 {

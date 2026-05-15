@@ -37,4 +37,26 @@ namespace Duplicati.Library.Compression.Strings
         public static string CompressionlibraryShort { get { return LC.L(@"Toggles the zip library to use"); } }
         public static string FileNotFoundError(string filename) { return LC.L(@"File not found: {0}", filename); }
     }
+
+    internal static class FileArchiveTarZstd
+    {
+        public static string Description { get { return LC.L(@"This module provides Tar+Zstd compression. Files created with this module use the .tzstd extension and include an EOF header for fast random access."); } }
+        public static string DisplayName { get { return LC.L(@"Tar+Zstd compression"); } }
+        public static string CompressionlevelLong { get { return LC.L(@"This option controls the compression level used. A setting of 1 gives the fastest compression with the lowest ratio, and a setting of 22 gives maximum compression."); } }
+        public static string CompressionlevelShort { get { return LC.L(@"Set the TarZstd compression level"); } }
+        public static string MemorybufferLong { get { return LC.L(@"Use this option to buffer file data in memory instead of temporary files during compression. This increases memory usage but avoids disk I/O for temporary files."); } }
+        public static string MemorybufferShort { get { return LC.L(@"Use memory buffer instead of temp files"); } }
+        public static string FileNotFoundError(string filename) { return LC.L(@"File not found: {0}", filename); }
+    }
+
+    internal static class FileArchiveTarGzip
+    {
+        public static string Description { get { return LC.L(@"This module provides Tar+GZip compression. Files created with this module use the .tgz extension and include an EOF header for fast random access."); } }
+        public static string DisplayName { get { return LC.L(@"Tar+GZip compression"); } }
+        public static string CompressionlevelLong { get { return LC.L(@"This option controls the compression level used. A setting of 1 gives the fastest compression with the lowest ratio, and a setting of 9 gives maximum compression."); } }
+        public static string CompressionlevelShort { get { return LC.L(@"Set the TarGzip compression level"); } }
+        public static string MemorybufferLong { get { return LC.L(@"Use this option to buffer file data in memory instead of temporary files during compression. This increases memory usage but avoids disk I/O for temporary files."); } }
+        public static string MemorybufferShort { get { return LC.L(@"Use memory buffer instead of temp files"); } }
+        public static string FileNotFoundError(string filename) { return LC.L(@"File not found: {0}", filename); }
+    }
 }

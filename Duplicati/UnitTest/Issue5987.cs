@@ -21,6 +21,7 @@
 
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using NUnit.Framework;
 
 namespace Duplicati.UnitTest
@@ -31,14 +32,14 @@ namespace Duplicati.UnitTest
         [Category("Targeted")]
         [TestCase(true)]
         [TestCase(false)]
-        public void TestRestoreWithMissingDblocks(bool deleteIndexFiles)
+        public async Task TestRestoreWithMissingDblocksAsync(bool deleteIndexFiles)
         {
             var testopts = TestOptions.Expand(new { blocksize = "1kb", no_encryption = true, rebuild_missing_dblock_files = true });
 
             // 1. Make a backup of a single file
             File.WriteAllText(Path.Combine(DATAFOLDER, "a"), "abc");
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Backup([DATAFOLDER]));
+                TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
 
             // 2. Delete the dblock file
             var dblockFiles = Directory.GetFiles(TARGETFOLDER, "*.dblock.*", SearchOption.TopDirectoryOnly).ToList();
@@ -55,9 +56,9 @@ namespace Duplicati.UnitTest
             // 3. Try to repair the remote destination
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                var res = c.Repair();
+                var res = await c.RepairAsync();
                 Assert.That(res.Errors.Count(), Is.EqualTo(0), "Repair should not have errors");
-                TestUtils.AssertResults(c.Test());
+                TestUtils.AssertResults(await c.TestAsync());
             }
         }
     }

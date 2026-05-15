@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="sharpcompress" Version="0.47.4" />
+    <PackageReference Include="ZstdSharp.Port" Version="0.8.8" />
   </ItemGroup>
 
   <ItemGroup>

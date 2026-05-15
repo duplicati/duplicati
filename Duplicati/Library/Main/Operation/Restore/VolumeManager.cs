@@ -100,7 +100,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// </summary>
         /// <param name="channels">The named channels for the restore operation.</param>
         /// <param name="options">The restore options.</param>
-        public static Task Run(Channels channels, Options options, RestoreResults results)
+        public static Task RunAsync(Channels channels, Options options, RestoreResults results)
         {
             return AutomationExtensions.RunTask(
                 new
@@ -183,7 +183,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         return volume_id;
                     }
 
-                    await results.TaskControl.ProgressRendevouz().ConfigureAwait(false);
+                    await results.TaskControl.ProgressRendevouzAsync().ConfigureAwait(false);
 
                     var rfa = new ReadFromEither(self.VolumeResponse, self.VolumeRequest);
                     try

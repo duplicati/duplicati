@@ -213,6 +213,10 @@ namespace Duplicati.Library.UsageReporter
         {
             get
             {
+                // Support the DO_NOT_TRACK=1 environment variable
+                if (Environment.GetEnvironmentVariable("DO_NOT_TRACK")?.Trim() == "1")
+                    return true;
+
                 var str = Environment.GetEnvironmentVariable(string.Format(DISABLED_ENVNAME_TEMPLATE, AutoUpdater.AutoUpdateSettings.AppName));
 #if DEBUG
                 // Default to not report crashes etc from debug builds

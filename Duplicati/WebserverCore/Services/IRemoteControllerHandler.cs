@@ -33,26 +33,26 @@ public interface IRemoteControllerHandler
     /// </summary>
     /// <param name="metadata">The initial metadata</param>
     /// <returns>The metadata to use</returns>
-    Task<Dictionary<string, string?>> OnConnect(Dictionary<string, string?> metadata);
+    Task<Dictionary<string, string?>> OnConnectAsync(Dictionary<string, string?> metadata);
 
     /// <summary>
     /// Re-keys the remote control connection.
     /// </summary>
     /// <param name="data">The data to re-key with</param>
     /// <returns>An awaitable task</returns>
-    Task ReKey(ClaimedClientData data);
+    Task ReKeyAsync(ClaimedClientData data);
 
     /// <summary>
     /// Handles a control message.
     /// </summary>
     /// <param name="message">The control message to handle</param>
     /// <returns>An awaitable task</returns>
-    Task OnControl(KeepRemoteConnection.ControlMessage message);
+    Task OnControlAsync(KeepRemoteConnection.ControlMessage message);
 
     /// <summary>
     /// Handles a command message.
     /// </summary>
     /// <param name="commandMessage">The command message to handle</param>
     /// <returns>An awaitable task</returns>
-    Task OnMessage(KeepRemoteConnection.CommandMessage commandMessage);
+    Task OnMessageAsync(KeepRemoteConnection.CommandMessage commandMessage);
 }

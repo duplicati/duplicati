@@ -136,8 +136,29 @@ namespace Duplicati.Library.Main.Volumes
                             while (this.MoveNext())
                             { /*skip*/ }
 
-                            var hash = ReadJsonStringProperty(m_reader, "volumehash");
-                            var size = ReadJsonInt64Property(m_reader, "volumesize");
+                            if (!m_reader.Read())
+                                throw new InvalidDataException("Invalid JSON, EOF found while reading volume properties");
+
+                            string hash = null;
+                            long size = 0;
+
+                            if (m_reader.TokenType == JsonToken.PropertyName)
+                            {
+                                if (m_reader.Value?.ToString() != "volumehash")
+                                    throw new InvalidDataException(string.Format("Invalid JSON, expected property \"volumehash\", but got {0}, {1}", m_reader.TokenType, m_reader.Value));
+
+                                if (!m_reader.Read() || m_reader.TokenType != JsonToken.String)
+                                    throw new InvalidDataException(string.Format("Invalid JSON, expected String, but got {0}, {1}", m_reader.TokenType, m_reader.Value));
+                                hash = m_reader.Value?.ToString();
+
+                                size = ReadJsonInt64Property(m_reader, "volumesize");
+                            }
+                            // Handle EndObject because specail cases could write an empty array: {"blocks":[]}
+                            // In this case, there are no volume properties, so we just return an empty value
+                            else if (m_reader.TokenType != JsonToken.EndObject)
+                            {
+                                throw new InvalidDataException(string.Format("Invalid JSON, expected PropertyName or EndObject, but got {0}, {1}", m_reader.TokenType, m_reader.Value));
+                            }
 
                             return (m_volumeProps = new KeyValuePair<string, long>(hash, size)).Value;
                         }
@@ -284,6 +305,9 @@ namespace Duplicati.Library.Main.Volumes
                     while (m_index < m_files.Length && ParseFilename(m_files[m_index]) == null)
                         m_index++;
 
+                    if (m_index >= m_files.Length)
+                        return false;
+
                     m_current = new IndexBlockVolume(m_compression, m_files[m_index]);
 
                     return true;
@@ -392,6 +416,9 @@ namespace Duplicati.Library.Main.Volumes
 
                     while (m_index < m_files.Length && IsValidBase64Hash(m_files[m_index].Key, m_hashsize))
                         m_index++;
+
+                    if (m_index >= m_files.Length)
+                        return false;
 
                     m_current = new IndexBlocklist(m_compression, m_files[m_index].Key, m_files[m_index].Value, m_hashsize, m_blockHashAlgorithm);
 

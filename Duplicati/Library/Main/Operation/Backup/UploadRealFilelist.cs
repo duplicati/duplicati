@@ -32,10 +32,10 @@ internal static class UploadRealFilelist
     /// </summary>
     private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(UploadRealFilelist));
 
-    public static async Task<bool> Run(BackupResults result, BackupDatabase db, IBackendManager backendManager, Options options, FilesetVolumeWriter filesetvolume, long filesetid, Common.ITaskReader taskreader, bool lastWasPartial)
+    public static async Task<bool> RunAsync(BackupResults result, BackupDatabase db, IBackendManager backendManager, Options options, FilesetVolumeWriter filesetvolume, long filesetid, Common.ITaskReader taskreader, bool lastWasPartial)
     {
         // We ignore the stop signal, but not the pause and terminate
-        await taskreader.ProgressRendevouz().ConfigureAwait(false);
+        await taskreader.ProgressRendevouzAsync().ConfigureAwait(false);
 
         // Update the reported source and backend changes
         using (new Logging.Timer(LOGTAG, "UpdateChangeStatistics", "UpdateChangeStatistics"))
@@ -58,13 +58,13 @@ internal static class UploadRealFilelist
                         filesetvolume.AddControlFile(p, options.GetCompressionHintFromFilename(p));
 
                 // We ignore the stop signal, but not the pause and terminate
-                await taskreader.ProgressRendevouz().ConfigureAwait(false);
+                await taskreader.ProgressRendevouzAsync().ConfigureAwait(false);
 
                 await db.WriteFilesetAsync(filesetvolume, filesetid, taskreader.ProgressToken).ConfigureAwait(false);
                 filesetvolume.Close();
 
                 // We ignore the stop signal, but not the pause and terminate
-                await taskreader.ProgressRendevouz().ConfigureAwait(false);
+                await taskreader.ProgressRendevouzAsync().ConfigureAwait(false);
 
                 await db.UpdateRemoteVolumeAsync(filesetvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null, false, default, null, taskreader.ProgressToken).ConfigureAwait(false);
 

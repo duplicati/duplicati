@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Duplicati.Library.Utility;
 using NUnit.Framework;
 
@@ -42,7 +43,7 @@ namespace Duplicati.UnitTest
         [Category("Targeted")]
         [TestCase(true)]
         [TestCase(false)]
-        public void TestDuplicatedBlocklists1(bool deleteAllIndexFiles)
+        public async Task TestDuplicatedBlocklists1Async(bool deleteAllIndexFiles)
         {
             var testopts = TestOptions.Expand(new { blocksize = "1kb" });
             var hashes = new List<string>();
@@ -54,7 +55,7 @@ namespace Duplicati.UnitTest
             hashes.Add(CalculateFileHash(Path.Combine(DATAFOLDER, "a")));
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Backup([DATAFOLDER]));
+                TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
 
             // Make the first blocklist different
             data[0] = (byte)'b';
@@ -64,7 +65,7 @@ namespace Duplicati.UnitTest
             // Record existing dindex files
             var existingDIndexFiles = Directory.GetFiles(TARGETFOLDER, "*.dindex*", SearchOption.TopDirectoryOnly).ToList();
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Backup([DATAFOLDER]));
+                TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
 
             // Delete new index files
             foreach (var file in Directory.GetFiles(TARGETFOLDER, "*.dindex*", SearchOption.TopDirectoryOnly))
@@ -75,8 +76,8 @@ namespace Duplicati.UnitTest
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                TestUtils.AssertResults(c.Repair());
-                TestUtils.AssertResults(c.Test());
+                TestUtils.AssertResults(await c.RepairAsync());
+                TestUtils.AssertResults(await c.TestAsync());
             }
 
             for (var version = 0; version < 2; version++)
@@ -84,7 +85,7 @@ namespace Duplicati.UnitTest
                 File.Delete(Path.Combine(DATAFOLDER, "a"));
                 using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = version }), null))
                 {
-                    TestUtils.AssertResults(c.Restore(null));
+                    TestUtils.AssertResults(await c.RestoreAsync(null));
                     var hash = CalculateFileHash(Path.Combine(DATAFOLDER, "a"));
                     Assert.That(hashes[version], Is.EqualTo(hash), "Hash mismatch for version " + version);
                 }
@@ -95,7 +96,7 @@ namespace Duplicati.UnitTest
         [Category("Targeted")]
         [TestCase(true)]
         [TestCase(false)]
-        public void TestDuplicatedBlocklists2(bool deleteAllIndexFiles)
+        public async Task TestDuplicatedBlocklists2Async(bool deleteAllIndexFiles)
         {
             var testopts = TestOptions.Expand(new { blocksize = "1kb" });
             var hashes = new List<string>();
@@ -107,7 +108,7 @@ namespace Duplicati.UnitTest
             hashes.Add(CalculateFileHash(Path.Combine(DATAFOLDER, "a")));
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Backup([DATAFOLDER]));
+                TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
 
             // Expand to an new set
             data = new byte[32769 * 2 + 1];
@@ -119,7 +120,7 @@ namespace Duplicati.UnitTest
             // Record existing dindex files
             var existingDIndexFiles = Directory.GetFiles(TARGETFOLDER, "*.dindex*", SearchOption.TopDirectoryOnly).ToList();
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Backup([DATAFOLDER]));
+                TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
 
             // Delete new index files
             foreach (var file in Directory.GetFiles(TARGETFOLDER, "*.dindex*", SearchOption.TopDirectoryOnly))
@@ -130,8 +131,8 @@ namespace Duplicati.UnitTest
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                TestUtils.AssertResults(c.Repair());
-                TestUtils.AssertResults(c.Test());
+                TestUtils.AssertResults(await c.RepairAsync());
+                TestUtils.AssertResults(await c.TestAsync());
             }
 
             for (var version = 0; version < 2; version++)
@@ -139,7 +140,7 @@ namespace Duplicati.UnitTest
                 File.Delete(Path.Combine(DATAFOLDER, "a"));
                 using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = version }), null))
                 {
-                    TestUtils.AssertResults(c.Restore(null));
+                    TestUtils.AssertResults(await c.RestoreAsync(null));
                     var hash = CalculateFileHash(Path.Combine(DATAFOLDER, "a"));
                     Assert.That(hashes[version], Is.EqualTo(hash), "Hash mismatch for version " + version);
                 }

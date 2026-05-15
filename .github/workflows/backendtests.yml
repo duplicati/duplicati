@@ -25,6 +25,7 @@ jobs:
       idrivee2_secrets_available: "${{ steps.check_idrivee2.outputs.available }}"
       gcs_secrets_available: "${{ steps.check_gcs.outputs.available }}"
       cloudstack_secrets_available: "${{ steps.check_cloudstack.outputs.available }}"
+      drime_secrets_available: "${{ steps.check_drime.outputs.available }}"
     steps:
       - id: check_pcloud
         name: Check pCloud secrets
@@ -238,6 +239,20 @@ jobs:
             echo "available=false" >> $GITHUB_OUTPUT
           fi
           echo "CloudStack check completed"
+      - id: check_drime
+        name: Check Drime secrets
+        shell: bash
+        run: |
+          echo "Starting Drime secrets check..."
+          if [[ -n "${{ secrets.TESTCREDENTIAL_DRIMECLOUD_FOLDER }}" ]] && \
+             [[ -n "${{ secrets.TESTCREDENTIAL_DRIMECLOUD_TOKEN }}" ]]; then
+            echo "All Drime secrets found"
+            echo "available=true" >> $GITHUB_OUTPUT
+          else
+            echo "Missing some Drime secrets"
+            echo "available=false" >> $GITHUB_OUTPUT
+          fi
+          echo "Drime check completed"
 
       - name: Debug Output
         shell: bash
@@ -256,6 +271,7 @@ jobs:
           echo "iDrivee2 Available: ${{ steps.check_idrivee2.outputs.available }}"
           echo "GCS Available: ${{ steps.check_gcs.outputs.available }}"
           echo "CloudStack Available: ${{ steps.check_cloudstack.outputs.available }}"
+          echo "Drime Available: ${{ steps.check_drime.outputs.available }}"
   test_ftp:
     needs: check_secrets
     if: needs.check_secrets.outputs.testcontainers_secrets_available == 'true'
@@ -740,6 +756,7 @@ jobs:
           TESTCREDENTIAL_FILEN_FOLDER: "${{ secrets.TESTCREDENTIAL_FILEN_FOLDER }}"
           TESTCREDENTIAL_FILEN_USERNAME: "${{ secrets.TESTCREDENTIAL_FILEN_USERNAME }}"
           TESTCREDENTIAL_FILEN_PASSWORD: "${{ secrets.TESTCREDENTIAL_FILEN_PASSWORD }}"
+          TESTCREDENTIAL_FILEN_APIKEY: "${{ secrets.TESTCREDENTIAL_FILEN_APIKEY }}"
         run: >-
           dotnet test --no-build --filter="ClassName~Filen.FilenTests"
           --logger:"console;verbosity=detailed"
@@ -933,5 +950,41 @@ jobs:
           TESTCREDENTIAL_CLOUDSTACK_FOLDER: "${{ secrets.TESTCREDENTIAL_CLOUDSTACK_FOLDER }}"
         run: >-
           dotnet test --no-build --filter="ClassName~CloudStack.CloudStackTests"
+          --logger:"console;verbosity=detailed"
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.slnx
+  test_drime:
+    needs: check_secrets
+    if: needs.check_secrets.outputs.drime_secrets_available == 'true'
+    name: Drime Tests
+    runs-on: "${{ matrix.os }}"
+    strategy:
+      max-parallel: 1
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+    steps:
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.x
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Restore NuGet dependencies
+        run: >-
+          dotnet restore
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.slnx
+      - name: Build project
+        run: >-
+          dotnet build --no-restore
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.slnx
+      - name: Run Drime tests
+        env:
+          TESTCREDENTIAL_DRIMECLOUD_FOLDER: "${{ secrets.TESTCREDENTIAL_DRIMECLOUD_FOLDER }}"
+          TESTCREDENTIAL_DRIMECLOUD_TOKEN: "${{ secrets.TESTCREDENTIAL_DRIMECLOUD_TOKEN }}"
+        run: >-
+          dotnet test --no-build --filter="ClassName~DrimeCloudTests"
           --logger:"console;verbosity=detailed"
           LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.slnx

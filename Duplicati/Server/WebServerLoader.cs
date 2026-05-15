@@ -205,7 +205,7 @@ public static class WebServerLoader
     /// </summary>
     /// <param name="options">A set of options</param>
     /// <param name="createServer">The method to start the server</param>
-    public static async Task<TServer> TryRunServer<TServer>(IReadOnlyDictionary<string, string?> options, Connection connection, Func<ParsedWebserverSettings, Task<TServer>> createServer)
+    public static async Task<TServer> TryRunServerAsync<TServer>(IReadOnlyDictionary<string, string?> options, Connection connection, Func<ParsedWebserverSettings, Task<TServer>> createServer)
     {
         var ports = Enumerable.Empty<int>();
         options.TryGetValue(OPTION_PORT, out var portstring);

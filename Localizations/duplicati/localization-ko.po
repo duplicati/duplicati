@@ -15,7 +15,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-22 15:17+0200\n"
+"POT-Creation-Date: 2026-05-04 14:35+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: joyfuI <jong970105@gmail.com>, 2025\n"
 "Language-Team: Korean (https://app.transifex.com/duplicati/teams/67655/ko/)\n"
@@ -39,16 +39,16 @@ msgstr "내장된 AES-256 암호화"
 msgid "Empty passphrase not allowed"
 msgstr "빈 암호가 허용되지 않음"
 
-#: Library/Encryption/Strings.cs:37
+#: Library/Encryption/Strings.cs:43
 #, csharp-format
 msgid "Failed to decrypt data (invalid passphrase?): {0}"
 msgstr "데이터를 복호화하지 못했습니다. (잘못된 암호?): {0}"
 
-#: Library/Encryption/Strings.cs:42
+#: Library/Encryption/Strings.cs:48
 msgid "GNU Privacy Guard, external"
 msgstr "GNU Privacy Guard, 외부"
 
-#: Library/Encryption/Strings.cs:43
+#: Library/Encryption/Strings.cs:49
 msgid ""
 "Use this switch to specify any extra options to GPG. You cannot specify the "
 "--passphrase-fd option here. The --decrypt option is always specified."
@@ -56,11 +56,11 @@ msgstr ""
 "이 스위치를 사용하여 GPG에 대한 추가 옵션을 지정합니다. 여기서 --passphrase-fd 옵션을 지정할 수 없습니다. "
 "--decrypt 옵션은 항상 지정됩니다."
 
-#: Library/Encryption/Strings.cs:44
+#: Library/Encryption/Strings.cs:50
 msgid "Extra GPG commandline options for decryption"
 msgstr "복호화를 위한 추가 GPG 명령줄 옵션"
 
-#: Library/Encryption/Strings.cs:45
+#: Library/Encryption/Strings.cs:51
 msgid ""
 "Use this switch to specify any extra options to GPG. You cannot specify the "
 "--passphrase-fd option here. The --encrypt option is always specified."
@@ -68,41 +68,41 @@ msgstr ""
 "GPG에 추가 옵션을 지정하려면이 스위치를 사용하십시오. 여기서 --passphrase-fd 옵션을 지정할 수 없습니다. "
 "--encrypt 옵션은 항상 지정됩니다."
 
-#: Library/Encryption/Strings.cs:46
+#: Library/Encryption/Strings.cs:52
 msgid "Extra GPG commandline options for encryption"
 msgstr "암호화를위한 추가 GPG 명령 줄 옵션"
 
-#: Library/Encryption/Strings.cs:47
+#: Library/Encryption/Strings.cs:53
 #, csharp-format
 msgid "Failed to execute GPG with \"{0} {1}\": {2}"
 msgstr "\"{0} {1}\"로 GPG를 실행하지 못했습니다: {2}"
 
-#: Library/Encryption/Strings.cs:49
+#: Library/Encryption/Strings.cs:55
 msgid "The path to GnuPG"
 msgstr "GnuPG 경로"
 
-#: Library/Encryption/Strings.cs:51
+#: Library/Encryption/Strings.cs:57
 msgid "Use GPG Armor"
 msgstr "GPG Armor 사용"
 
-#: Library/Encryption/Strings.cs:53
+#: Library/Encryption/Strings.cs:59
 msgid "The GPG decryption command"
 msgstr "GPG 복호화 명령"
 
-#: Library/Encryption/Strings.cs:55
+#: Library/Encryption/Strings.cs:61
 msgid "The GPG encryption command"
 msgstr "GPG 암호화 명령"
 
-#: Library/Encryption/Strings.cs:59
+#: Library/Encryption/Strings.cs:65
 #, csharp-format
 msgid "Decryption failed: {0}"
 msgstr "복호화 실패: {0}"
 
-#: Library/Encryption/Strings.cs:60
+#: Library/Encryption/Strings.cs:66
 msgid "Failure while invoking GnuPG, program won't flush output"
 msgstr "GnuPG를 호출하는 동안 오류가 발생해도 프로그램은 출력하지 않습니다."
 
-#: Library/Encryption/Strings.cs:61
+#: Library/Encryption/Strings.cs:67
 msgid "Failure while invoking GnuPG, program won't terminate"
 msgstr "GnuPG를 호출하는 동안 오류가 발생해도 프로그램이 종료되지 않습니다."
 
@@ -291,6 +291,7 @@ msgstr "Google Drive"
 
 #: Library/Backend/GoogleServices/Strings.cs:53
 #: Library/Backend/File/Strings.cs:42 Library/Compression/Strings.cs:38
+#: Library/Compression/Strings.cs:49 Library/Compression/Strings.cs:60
 #, csharp-format
 msgid "File not found: {0}"
 msgstr "파일을 찾을 수 없습니다: {0}"
@@ -1219,66 +1220,66 @@ msgstr "스크립트 실행"
 msgid "Run a script on exit"
 msgstr "종료시 스크립트 실행"
 
-#: Library/Modules/Builtin/Strings.cs:118
+#: Library/Modules/Builtin/Strings.cs:120
 msgid "Run a required script on startup"
 msgstr "시작할 때 필요한 스크립트를 실행"
 
-#: Library/Modules/Builtin/Strings.cs:124
+#: Library/Modules/Builtin/Strings.cs:126
 msgid "Run a script on startup"
 msgstr "시작할 때 스크립트 실행"
 
-#: Library/Modules/Builtin/Strings.cs:134
+#: Library/Modules/Builtin/Strings.cs:136
 msgid "Send mail"
 msgstr "메일 보내기"
 
-#: Library/Modules/Builtin/Strings.cs:145
+#: Library/Modules/Builtin/Strings.cs:147
 msgid "The message body"
 msgstr "메시지 본문"
 
-#: Library/Modules/Builtin/Strings.cs:147
+#: Library/Modules/Builtin/Strings.cs:149
 msgid "SMTP Password"
 msgstr "SMTP 암호"
 
-#: Library/Modules/Builtin/Strings.cs:159
+#: Library/Modules/Builtin/Strings.cs:161
 msgid "Email sender"
 msgstr "이메일 발신자"
 
-#: Library/Modules/Builtin/Strings.cs:162
-#: Library/Modules/Builtin/Strings.cs:202
-#: Library/Modules/Builtin/Strings.cs:236
-#: Library/Modules/Builtin/Strings.cs:265
-msgid "The messages to send"
-msgstr "보낼 메시지"
-
-#: Library/Modules/Builtin/Strings.cs:183
-msgid "XMPP report module"
-msgstr "XMPP 보고서 모듈"
-
-#: Library/Modules/Builtin/Strings.cs:195
-#: Library/Modules/Builtin/Strings.cs:227
-#: Library/Modules/Builtin/Strings.cs:258
-msgid "The message template"
-msgstr "메시지 템플릿"
-
-#: Library/Modules/Builtin/Strings.cs:197
-msgid "The XMPP username"
-msgstr "XMPP 사용자 이름"
-
-#: Library/Modules/Builtin/Strings.cs:199
-msgid "The XMPP password"
-msgstr "XMPP 암호"
-
+#: Library/Modules/Builtin/Strings.cs:164
 #: Library/Modules/Builtin/Strings.cs:204
 #: Library/Modules/Builtin/Strings.cs:238
 #: Library/Modules/Builtin/Strings.cs:267
+msgid "The messages to send"
+msgstr "보낼 메시지"
+
+#: Library/Modules/Builtin/Strings.cs:185
+msgid "XMPP report module"
+msgstr "XMPP 보고서 모듈"
+
+#: Library/Modules/Builtin/Strings.cs:197
+#: Library/Modules/Builtin/Strings.cs:229
+#: Library/Modules/Builtin/Strings.cs:260
+msgid "The message template"
+msgstr "메시지 템플릿"
+
+#: Library/Modules/Builtin/Strings.cs:199
+msgid "The XMPP username"
+msgstr "XMPP 사용자 이름"
+
+#: Library/Modules/Builtin/Strings.cs:201
+msgid "The XMPP password"
+msgstr "XMPP 암호"
+
+#: Library/Modules/Builtin/Strings.cs:206
+#: Library/Modules/Builtin/Strings.cs:240
+#: Library/Modules/Builtin/Strings.cs:269
 msgid "Send messages for all operations"
 msgstr "모든 작업을 이메일로 보냅니다"
 
-#: Library/Modules/Builtin/Strings.cs:246
+#: Library/Modules/Builtin/Strings.cs:248
 msgid "HTTP report module"
 msgstr "HTTP 보고서 모듈"
 
-#: Library/Modules/Builtin/Strings.cs:275 Library/Utility/Strings.cs:84
+#: Library/Modules/Builtin/Strings.cs:277 Library/Utility/Strings.cs:84
 msgid "Accept any server certificate"
 msgstr "모든 서버 인증서 수락"
 

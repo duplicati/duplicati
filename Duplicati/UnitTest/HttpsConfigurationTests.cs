@@ -51,7 +51,7 @@ public class HttpsConfigurationTests
     private Connection _connection = null!;
 
     [SetUp]
-    public async Task SetUp()
+    public async Task SetUpAsync()
     {
         // Create a temporary folder for test data
         _tempDataFolder = Path.Combine(Path.GetTempPath(), $"duplicati-test-{Guid.NewGuid()}");

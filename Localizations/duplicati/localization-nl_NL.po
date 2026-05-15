@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-22 15:17+0200\n"
+"POT-Creation-Date: 2026-05-04 14:35+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: Kees Zaaijer, 2026\n"
 "Language-Team: Dutch (Netherlands) (https://app.transifex.com/duplicati/teams/67655/nl_NL/)\n"
@@ -54,12 +54,12 @@ msgstr "Stel het threadniveau in dat wordt gebruikt voor codering."
 msgid "The option --{0} is no longer used and has been deprecated."
 msgstr "De optie --{0} is niet langer in gebruik en is verouderd."
 
-#: Library/Encryption/Strings.cs:37
+#: Library/Encryption/Strings.cs:43
 #, csharp-format
 msgid "Failed to decrypt data (invalid passphrase?): {0}"
 msgstr "Ontsleutelen van gegevens mislukt (ongeldige wachtwoordzin?): {0}"
 
-#: Library/Encryption/Strings.cs:41
+#: Library/Encryption/Strings.cs:47
 #, csharp-format
 msgid ""
 "The GPG encryption module uses the GNU Privacy Guard program to encrypt and "
@@ -77,11 +77,11 @@ msgstr ""
 "omgevingsvariabele. Het is mogelijk om het pad naar GPG op te geven door "
 "middel van de optie --{0}."
 
-#: Library/Encryption/Strings.cs:42
+#: Library/Encryption/Strings.cs:48
 msgid "GNU Privacy Guard, external"
 msgstr "GNU Privacy Guard, extern"
 
-#: Library/Encryption/Strings.cs:43
+#: Library/Encryption/Strings.cs:49
 msgid ""
 "Use this switch to specify any extra options to GPG. You cannot specify the "
 "--passphrase-fd option here. The --decrypt option is always specified."
@@ -90,11 +90,11 @@ msgstr ""
 "fd optie kan hier niet opgegeven worden. De --decrypt optie is altijd "
 "opgegeven."
 
-#: Library/Encryption/Strings.cs:44
+#: Library/Encryption/Strings.cs:50
 msgid "Extra GPG commandline options for decryption"
 msgstr "Extra GPG opdrachtregel opties voor ontsleuteling"
 
-#: Library/Encryption/Strings.cs:45
+#: Library/Encryption/Strings.cs:51
 msgid ""
 "Use this switch to specify any extra options to GPG. You cannot specify the "
 "--passphrase-fd option here. The --encrypt option is always specified."
@@ -103,16 +103,16 @@ msgstr ""
 "fd optie kan hier niet worden opgegeven. De --encrypt optie is altijd "
 "opgegeven."
 
-#: Library/Encryption/Strings.cs:46
+#: Library/Encryption/Strings.cs:52
 msgid "Extra GPG commandline options for encryption"
 msgstr "Extra GPG opdrachtregel opties voor codering"
 
-#: Library/Encryption/Strings.cs:47
+#: Library/Encryption/Strings.cs:53
 #, csharp-format
 msgid "Failed to execute GPG with \"{0} {1}\": {2}"
 msgstr "Uitvoeren GPG mislukt met \"{0} {1}\": {2}"
 
-#: Library/Encryption/Strings.cs:48
+#: Library/Encryption/Strings.cs:54
 msgid ""
 "The path to the GNU Privacy Guard program. If not supplied, Duplicati will "
 "search for \"gpg2\" and \"gpg\" on the system."
@@ -120,11 +120,11 @@ msgstr ""
 "Het pad naar het GNU Privacy Guard-programma. Indien niet opgegeven, zal "
 "Duplicati zoeken naar \"gpg2\" en \"gpg\" op het systeem."
 
-#: Library/Encryption/Strings.cs:49
+#: Library/Encryption/Strings.cs:55
 msgid "The path to GnuPG"
 msgstr "Het pad naar GnuPG"
 
-#: Library/Encryption/Strings.cs:50
+#: Library/Encryption/Strings.cs:56
 msgid ""
 "Use this option to supply the --armor option to GPG. The files will be "
 "larger but can be sent as pure text files."
@@ -132,19 +132,19 @@ msgstr ""
 "Gebruik deze optie om de --armor optie voor GPG op te geven. De bestanden "
 "zullen groter zijn maar kunnen verzonden worden als alleen tekstbestanden."
 
-#: Library/Encryption/Strings.cs:51
+#: Library/Encryption/Strings.cs:57
 msgid "Use GPG Armor"
 msgstr "Gebruik GPG Armor"
 
-#: Library/Encryption/Strings.cs:52
+#: Library/Encryption/Strings.cs:58
 msgid "Override the GPG command supplied for decryption."
 msgstr "Overschrijf de GPG-opdracht die voor decodering is opgegeven."
 
-#: Library/Encryption/Strings.cs:53
+#: Library/Encryption/Strings.cs:59
 msgid "The GPG decryption command"
 msgstr "Het GPG ontsleutelings commando"
 
-#: Library/Encryption/Strings.cs:54
+#: Library/Encryption/Strings.cs:60
 #, csharp-format
 msgid ""
 "Override the default GPG encryption command \"{0}\". Normal usage is to "
@@ -153,33 +153,33 @@ msgstr ""
 "Overschrijf de standaard GPG-coderingsopdracht \"{0}\". Normaal gesproken "
 "wordt asymmetrische codering aangevraagd met de instelling {1}."
 
-#: Library/Encryption/Strings.cs:55
+#: Library/Encryption/Strings.cs:61
 msgid "The GPG encryption command"
 msgstr "Het GPG coderingscommando"
 
-#: Library/Encryption/Strings.cs:59
+#: Library/Encryption/Strings.cs:65
 #, csharp-format
 msgid "Decryption failed: {0}"
 msgstr "Ontsleutelen mislukt: {0}"
 
-#: Library/Encryption/Strings.cs:60
+#: Library/Encryption/Strings.cs:66
 msgid "Failure while invoking GnuPG, program won't flush output"
 msgstr ""
 "Fout bij het uitvoeren van GnuPG, programma wil uitvoer niet leegmaken"
 
-#: Library/Encryption/Strings.cs:61
+#: Library/Encryption/Strings.cs:67
 msgid "Failure while invoking GnuPG, program won't terminate"
 msgstr "Fout bij het uitvoeren van GnuPG, programma wil niet beëindigen"
 
-#: Library/Encryption/Strings.cs:65
+#: Library/Encryption/Strings.cs:71
 msgid "Key must be at least 8 characters long"
 msgstr "Sleutel moet minstens 8 tekens lang zijn."
 
-#: Library/Encryption/Strings.cs:66
+#: Library/Encryption/Strings.cs:72
 msgid "Key must not be empty"
 msgstr "Sleutel mag niet leeg zijn"
 
-#: Library/Encryption/Strings.cs:67
+#: Library/Encryption/Strings.cs:73
 msgid "Refusing to encrypt with blacklisted key"
 msgstr "Encryptie met een op een zwarte lijst geplaatste sleutel gwweigerd"
 
@@ -937,6 +937,7 @@ msgstr "Er is meer dan één item met de naam \"{0}\" in de map \"{1}\"."
 
 #: Library/Backend/GoogleServices/Strings.cs:53
 #: Library/Backend/File/Strings.cs:42 Library/Compression/Strings.cs:38
+#: Library/Compression/Strings.cs:49 Library/Compression/Strings.cs:60
 #, csharp-format
 msgid "File not found: {0}"
 msgstr "Bestand niet gevonden: {0}"
@@ -4098,6 +4099,14 @@ msgstr ""
 "gebruiker opnieuw wordt gevraagd in te loggen. De waarde moet groter zijn "
 "dan nul en is beperkt tot 30 dagen."
 
+#: Library/RestAPI/Strings.cs:83
+msgid ""
+"Enable the folder status service for showing overlay icons in the file "
+"explorer"
+msgstr ""
+"Inschakelen van de mapstatusservice om overlaypictogrammen in de "
+"bestandsverkenner weer te geven."
+
 #: Library/RestAPI/Strings.cs:84
 msgid "Use this option to disable database encryption of sensitive fields"
 msgstr ""
@@ -4351,6 +4360,27 @@ msgstr ""
 msgid "Failed to set encryption key in secret provider"
 msgstr ""
 "Encryptiesleutel in provider voor geheime referenties instellen is mislukt."
+
+#: Library/RestAPI/Strings.cs:123
+msgid "Configure HTTPS certificates"
+msgstr "HTTPS-certificaten configureren"
+
+#: Library/RestAPI/Strings.cs:124
+msgid "Automatically generate and configure HTTPS certificates for the server"
+msgstr ""
+"Automatisch HTTPS-certificaten voor de server genereren en configureren"
+
+#: Library/RestAPI/Strings.cs:125
+msgid "HTTPS hostnames"
+msgstr "HTTPS-hostnamen"
+
+#: Library/RestAPI/Strings.cs:126
+msgid ""
+"Comma-separated list of hostnames to include in the HTTPS certificate (used "
+"with --configure-https)"
+msgstr ""
+"Door komma's gescheiden lijst met hostnamen die opgenomen moeten worden in "
+"het HTTPS-certificaat (gebruikt met --configure-https)"
 
 #: Library/RestAPI/Strings.cs:130
 #, csharp-format
@@ -7170,6 +7200,16 @@ msgstr ""
 "hoger getal vertaalt zich in een hoger gebruiksbudget. Bijvoorbeeld, 10 "
 "betekent geen beperkingen. Moet een geheel getal zijn tussen 1-10."
 
+#: Library/Main/Strings.cs:366
+msgid "Remote synchronization configuration"
+msgstr "Configuratie van externe synchronisatie"
+
+#: Library/Main/Strings.cs:367
+msgid ""
+"JSON string or file path containing remote synchronization configuration"
+msgstr ""
+"JSON-tekenreeks of bestandspad met configuratie voor externe synchronisatie"
+
 #: Library/Main/Strings.cs:369
 msgid "Maximum cache size for restoring files"
 msgstr "Maximale cachegrootte voor het herstellen van bestanden"
@@ -7252,6 +7292,51 @@ msgstr ""
 #: Library/Main/Strings.cs:379
 msgid "Hints to the desired maximum size of the restore volume cache"
 msgstr "Aanwijzing voor de gewenste grootte van de cache voor herstelvolumes"
+
+#: Library/Main/Strings.cs:380
+msgid ""
+"Use this option to hint the maximum desired size of the restore volume "
+"cache. The restore volume cache is used to store the volumes from the remote"
+" storage on local disk. When this number is exceeded, the client tries to "
+"evict the least recently used volume(s). This means that the number of "
+"volumes kept on disk can exceed this value if they are still being "
+"downloaded or are in use. A bare number is interpreted as megabytes. When "
+"left unset, the cache is unlimited and disk-space-aware eviction is used "
+"instead (see restore-volume-cache-min-free). Set to 0 to disable caching "
+"entirely."
+msgstr ""
+"Gebruik deze optie om de maximaal gewenste grootte van de herstelvolumecache"
+" aan te geven. De herstelvolumecache wordt gebruikt om de volumes van de "
+"externe opslag op de lokale schijf op te slaan. Wanneer dit aantal wordt "
+"overschreden, probeert de client de minst recent gebruikte volumes te "
+"verwijderen. Dit betekent dat het aantal volumes dat op de schijf wordt "
+"bewaard deze waarde kan overschrijden als ze nog worden gedownload of in "
+"gebruik zijn. Een waarde zonder eenheid wordt geïnterpreteerd als megabytes."
+" Indien niet ingesteld, is de cache onbeperkt en wordt in plaats daarvan "
+"schijfruimtebewuste verwijdering gebruikt (zie restore-volume-cache-min-"
+"free). Stel in op 0 om caching volledig uit te schakelen."
+
+#: Library/Main/Strings.cs:381
+msgid ""
+"Minimum free disk space to maintain in the temp directory during restore"
+msgstr ""
+"Minimale vrije schijfruimte die in de tijdelijke map moet worden aangehouden"
+" tijdens het herstelproces"
+
+#: Library/Main/Strings.cs:382
+msgid ""
+"When restore-volume-cache-hint is unset (unlimited mode), the restore volume"
+" cache evicts least-recently-used volumes whenever the free space in the "
+"temp directory drops below this value. The default is 1gb. A bare number is "
+"interpreted as gigabytes. Has no effect when restore-volume-cache-hint is "
+"set to a specific size or to 0."
+msgstr ""
+"Wanneer restore-volume-cache-hint niet is ingesteld (onbeperkte modus), "
+"verwijdert de restore-volume-cache de minst recent gebruikte volumes zodra "
+"de vrije ruimte in de tijdelijke map onder deze waarde komt. De "
+"standaardwaarde is 1 GB. Een waarde zonder eenheid wordt geïnterpreteerd als"
+" gigabytes. Heeft geen effect wanneer restore-volume-cache-hint is ingesteld"
+" op een specifieke grootte of op 0."
 
 #: Library/Main/Strings.cs:383
 msgid "Number of concurrent FileDecompressor processes used during restore"
@@ -7847,17 +7932,17 @@ msgstr ""
 msgid "Run a script on exit"
 msgstr "Voer een script uit bij beëindiging"
 
-#: Library/Modules/Builtin/Strings.cs:115
+#: Library/Modules/Builtin/Strings.cs:117
 #, csharp-format
 msgid "The script \"{0}\" returned with exit code {1}"
 msgstr "Het script \"{0}\" gaf de exit code {1} terug"
 
-#: Library/Modules/Builtin/Strings.cs:116
+#: Library/Modules/Builtin/Strings.cs:118
 #, csharp-format
 msgid "The script \"{0}\" returned with exit code {1}{2}"
 msgstr "Het script \"{0}\" gaf afsluitcode {1}{2} terug"
 
-#: Library/Modules/Builtin/Strings.cs:117
+#: Library/Modules/Builtin/Strings.cs:119
 msgid ""
 "Execute a script before performing an operation. The operation will block "
 "until the script has completed or timed out. If the script returns a non-"
@@ -7868,12 +7953,12 @@ msgstr ""
 "plaatsgevonden. Als het script een waarde anders dan 0 teruggeeft of er een "
 "time-out plaatsvindt, zal de bewerking worden afgebroken."
 
-#: Library/Modules/Builtin/Strings.cs:118
+#: Library/Modules/Builtin/Strings.cs:120
 msgid "Run a required script on startup"
 msgstr "Voer een vereist script uit bij opstarten"
 
-#: Library/Modules/Builtin/Strings.cs:119
-#: Library/Modules/Builtin/Strings.cs:293
+#: Library/Modules/Builtin/Strings.cs:121
+#: Library/Modules/Builtin/Strings.cs:295
 #, csharp-format
 msgid ""
 "Use this option to select the output format for results. Available formats: "
@@ -7882,22 +7967,22 @@ msgstr ""
 "Gebruik deze optie om het uitvoerformaat voor resultaten te selecteren. "
 "Beschikbare formaten: {0}"
 
-#: Library/Modules/Builtin/Strings.cs:120
-#: Library/Modules/Builtin/Strings.cs:294
+#: Library/Modules/Builtin/Strings.cs:122
+#: Library/Modules/Builtin/Strings.cs:296
 msgid "Select the output format for results"
 msgstr "Selecteer het uitvoerformaat voor de resultaten"
 
-#: Library/Modules/Builtin/Strings.cs:121
+#: Library/Modules/Builtin/Strings.cs:123
 #, csharp-format
 msgid "Error while executing script \"{0}\": {1}"
 msgstr "Fout tijdens uitvoeren script: \"{0}\":{1}"
 
-#: Library/Modules/Builtin/Strings.cs:122
+#: Library/Modules/Builtin/Strings.cs:124
 #, csharp-format
 msgid "Execution of the script \"{0}\" timed out"
 msgstr "Time-out bij uitvoeren van script \"{0}\""
 
-#: Library/Modules/Builtin/Strings.cs:123
+#: Library/Modules/Builtin/Strings.cs:125
 msgid ""
 "Execute a script before performing an operation. The operation will block "
 "until the script has completed or timed out."
@@ -7906,16 +7991,16 @@ msgstr ""
 " onderbroken worden totdat het script is afgerond of er een time-out heeft "
 "plaatsgevonden."
 
-#: Library/Modules/Builtin/Strings.cs:124
+#: Library/Modules/Builtin/Strings.cs:126
 msgid "Run a script on startup"
 msgstr "Voer een script uit bij opstarten"
 
-#: Library/Modules/Builtin/Strings.cs:125
+#: Library/Modules/Builtin/Strings.cs:127
 #, csharp-format
 msgid "The script \"{0}\" reported error messages: {1}"
 msgstr "Het script \"{0}\" rapporteerde foutmeldingen: {1}"
 
-#: Library/Modules/Builtin/Strings.cs:126
+#: Library/Modules/Builtin/Strings.cs:128
 msgid ""
 "Set the maximum time a script is allowed to execute. If the script has not "
 "completed within this time, it will continue to execute but the operation "
@@ -7926,11 +8011,11 @@ msgstr ""
 "bewerking zal ook verder gaan, en uitvoer van het script zal niet worden "
 "verwerkt."
 
-#: Library/Modules/Builtin/Strings.cs:127
+#: Library/Modules/Builtin/Strings.cs:129
 msgid "Set the script timeout"
 msgstr "Stel de script time-out in"
 
-#: Library/Modules/Builtin/Strings.cs:128
+#: Library/Modules/Builtin/Strings.cs:130
 msgid ""
 "This option enables the use of script arguments. If this option is set, the "
 "script arguments are treated as commandline strings. Use single or double "
@@ -7941,19 +8026,19 @@ msgstr ""
 "tekenreeksen. Gebruik enkele of dubbele aanhalingstekens om meerdere "
 "argumenten te scheiden."
 
-#: Library/Modules/Builtin/Strings.cs:129
+#: Library/Modules/Builtin/Strings.cs:131
 msgid "Enable script arguments"
 msgstr "Script argumenten inschakelen"
 
-#: Library/Modules/Builtin/Strings.cs:133
+#: Library/Modules/Builtin/Strings.cs:135
 msgid "This module can send email after an operation completes"
 msgstr "Deze module kan een email verzenden nadat een bewerking voltooid is"
 
-#: Library/Modules/Builtin/Strings.cs:134
+#: Library/Modules/Builtin/Strings.cs:136
 msgid "Send mail"
 msgstr "Stuur email"
 
-#: Library/Modules/Builtin/Strings.cs:135
+#: Library/Modules/Builtin/Strings.cs:137
 #, csharp-format
 msgid ""
 "Unable to find the destination mail server through MX lookup. Please use the"
@@ -7962,7 +8047,7 @@ msgstr ""
 "De doel-mailserver kan niet gevonden worden door MX-lookup. Gebruik de optie"
 " {0} om aan te geven welke SMTP-server gebruikt moet worden."
 
-#: Library/Modules/Builtin/Strings.cs:136
+#: Library/Modules/Builtin/Strings.cs:138
 msgid ""
 "This value can be a filename. If the file exists, the file contents will be used as the message body.\n"
 "\n"
@@ -7984,11 +8069,11 @@ msgstr ""
 "\n"
 "Alle opdrachtregel-opties worden eveneens gerapporteerd binnen %value%, bijvoorbeeld %volsize%. Onbekende/niet ingestelde waarden worden verwijderd."
 
-#: Library/Modules/Builtin/Strings.cs:145
+#: Library/Modules/Builtin/Strings.cs:147
 msgid "The message body"
 msgstr "De berichttekst"
 
-#: Library/Modules/Builtin/Strings.cs:146
+#: Library/Modules/Builtin/Strings.cs:148
 msgid ""
 "Use this option to set the password used to authenticate with the SMTP "
 "server if required."
@@ -7996,11 +8081,11 @@ msgstr ""
 "Gebruik deze optie om het wachtwoord in te stellen dat gebruikt wordt om te "
 "authentiseren bij de SMTP server, indien vereist."
 
-#: Library/Modules/Builtin/Strings.cs:147
+#: Library/Modules/Builtin/Strings.cs:149
 msgid "SMTP Password"
 msgstr "SMTP wachtwoord"
 
-#: Library/Modules/Builtin/Strings.cs:148
+#: Library/Modules/Builtin/Strings.cs:150
 msgid ""
 "This setting is required if mail should be sent, all other settings have default values. You can supply multiple email addresses separated with commas, and you can use the normal address format as specified by RFC2822 section 3.4.\n"
 "Example with 3 recipients:\n"
@@ -8012,11 +8097,11 @@ msgstr ""
 "\n"
 "Peter Sample <peter@example.com>, John Sample <john@example.com>, admin@example.com"
 
-#: Library/Modules/Builtin/Strings.cs:152
+#: Library/Modules/Builtin/Strings.cs:154
 msgid "Email recipient(s)"
 msgstr "Email ontvanger(s)"
 
-#: Library/Modules/Builtin/Strings.cs:153
+#: Library/Modules/Builtin/Strings.cs:155
 msgid ""
 "Use this option to set an address of the email sender. If no host is supplied, the hostname of the first recipient is used. Examples of allowed formats:\n"
 "\n"
@@ -8032,11 +8117,11 @@ msgstr ""
 "Mail Sender <sender>\n"
 "Mail Sender <sender@example.com>"
 
-#: Library/Modules/Builtin/Strings.cs:159
+#: Library/Modules/Builtin/Strings.cs:161
 msgid "Email sender"
 msgstr "Email afzender"
 
-#: Library/Modules/Builtin/Strings.cs:160
+#: Library/Modules/Builtin/Strings.cs:162
 #, csharp-format
 msgid ""
 "You can specify one of \"{0}\", \"{1}\", \"{2}\", \"{3}\".\n"
@@ -8048,14 +8133,14 @@ msgstr ""
 " korte schrijfwijze voor \"{0},{1},{2},{3}\" en zal ervoor zorgen dat voor "
 "alle back-up bewerkingen een email wordt verstuurd."
 
-#: Library/Modules/Builtin/Strings.cs:162
-#: Library/Modules/Builtin/Strings.cs:202
-#: Library/Modules/Builtin/Strings.cs:236
-#: Library/Modules/Builtin/Strings.cs:265
+#: Library/Modules/Builtin/Strings.cs:164
+#: Library/Modules/Builtin/Strings.cs:204
+#: Library/Modules/Builtin/Strings.cs:238
+#: Library/Modules/Builtin/Strings.cs:267
 msgid "The messages to send"
 msgstr "De berichten die verzonden moeten worden"
 
-#: Library/Modules/Builtin/Strings.cs:163
+#: Library/Modules/Builtin/Strings.cs:165
 msgid ""
 "Use this option to set a URL for the SMTP server, e.g. smtp://example.com:25. Multiple servers can be supplied in a prioritized list, separated with semicolon. If a server fails, the next server in the list is tried, until the message has been sent.\n"
 "If no server is supplied, a DNS lookup is performed to find the first recipient's MX record, and all SMTP servers are tried in their priority order until the message is sent.\n"
@@ -8066,11 +8151,11 @@ msgstr ""
 "Als geen server is opgegeven, zal een DNS-lookup worden uitgevoerd om het MX-record van de eerste geadresseerde te vinden, en alle SMTP-servers worden geprobeerd op volgorde van prioriteit totdat het bericht is verzonden.\n"
 "Gebruik om SMTP over SSL in te schakelen het formaat smtps://example.com. Gebruik om SMTP STARTTLS in te schakelen het formaat smtp://example.com:25/?starttls=when-available of smtp://example.com:25/?starttls=always. Als geen poort wordt opgegeven, wordt poort 25 gebruikt voor niet-SSL en poort 465 gebruikt voor SSL verbindingen. Gebruik om het niet gebruiken van STARTTLS af te dwingen het formaat smtp://example.com:25/?starttls=never."
 
-#: Library/Modules/Builtin/Strings.cs:167
+#: Library/Modules/Builtin/Strings.cs:169
 msgid "SMTP Url"
 msgstr "SMTP url"
 
-#: Library/Modules/Builtin/Strings.cs:168
+#: Library/Modules/Builtin/Strings.cs:170
 #, csharp-format
 msgid ""
 "This setting supplies the email subject. Values are replaced as described in"
@@ -8079,11 +8164,11 @@ msgstr ""
 "Deze instelling geeft het email onderwerp op. Waarden worden vervangen zoals"
 " beschreven in de beschrijving voor --{0}."
 
-#: Library/Modules/Builtin/Strings.cs:169
+#: Library/Modules/Builtin/Strings.cs:171
 msgid "The email subject"
 msgstr "Het email onderwerp"
 
-#: Library/Modules/Builtin/Strings.cs:170
+#: Library/Modules/Builtin/Strings.cs:172
 msgid ""
 "Use this option to set the username used to authenticate with the SMTP "
 "server if required."
@@ -8091,31 +8176,31 @@ msgstr ""
 "Gebruik deze optie om de gebruikersnaam in te stellen die gebruikt wordt om "
 "te authentiseren bij de SMTP server, indien vereist."
 
-#: Library/Modules/Builtin/Strings.cs:171
+#: Library/Modules/Builtin/Strings.cs:173
 msgid "SMTP Username"
 msgstr "SMTP gebruikersnaam"
 
-#: Library/Modules/Builtin/Strings.cs:172
+#: Library/Modules/Builtin/Strings.cs:174
 #, csharp-format
 msgid "Whole SMTP communication: {0}"
 msgstr "Complete SMTP communicatie: {0}"
 
-#: Library/Modules/Builtin/Strings.cs:173
+#: Library/Modules/Builtin/Strings.cs:175
 #, csharp-format
 msgid "Failed to send email with server: {0}, message: {1}, retrying with {2}"
 msgstr ""
 "Verzenden van email mislukt met server: {0}, bericht {1}, opnieuw proberen "
 "met {2}"
 
-#: Library/Modules/Builtin/Strings.cs:174
+#: Library/Modules/Builtin/Strings.cs:176
 #, csharp-format
 msgid "Email sent successfully using server: {0}"
 msgstr "Email succesvol verzonden via server: {0}"
 
-#: Library/Modules/Builtin/Strings.cs:175
-#: Library/Modules/Builtin/Strings.cs:206
-#: Library/Modules/Builtin/Strings.cs:239
-#: Library/Modules/Builtin/Strings.cs:261
+#: Library/Modules/Builtin/Strings.cs:177
+#: Library/Modules/Builtin/Strings.cs:208
+#: Library/Modules/Builtin/Strings.cs:241
+#: Library/Modules/Builtin/Strings.cs:263
 msgid ""
 "Use this option to set extra parameters for the message body. This parameter"
 " can either be a querystring (e.g. 'parameter1=value1&parameter2=value2') or"
@@ -8125,14 +8210,14 @@ msgstr ""
 "Deze parameter kan een querystring zijn (bijv. "
 "'parameter1=value1&parameter2=value2') of een JSON sleutel/waarde-object."
 
-#: Library/Modules/Builtin/Strings.cs:176
-#: Library/Modules/Builtin/Strings.cs:207
-#: Library/Modules/Builtin/Strings.cs:240
-#: Library/Modules/Builtin/Strings.cs:262
+#: Library/Modules/Builtin/Strings.cs:178
+#: Library/Modules/Builtin/Strings.cs:209
+#: Library/Modules/Builtin/Strings.cs:242
+#: Library/Modules/Builtin/Strings.cs:264
 msgid "Extra parameters for the message sent"
 msgstr "Extra parameters voor het te verzenden bericht"
 
-#: Library/Modules/Builtin/Strings.cs:177
+#: Library/Modules/Builtin/Strings.cs:179
 #, csharp-format
 msgid ""
 "The recipient \"{0}\" is not a valid email address. Please use the format "
@@ -8141,7 +8226,7 @@ msgstr ""
 "De ontvanger \"{0}\" is geen geldig e-mailadres. Gebruik de notatie \"Naam "
 "<user@example.com>\" of gewoon \"user@example.com\"."
 
-#: Library/Modules/Builtin/Strings.cs:178
+#: Library/Modules/Builtin/Strings.cs:180
 #, csharp-format
 msgid ""
 "No recipients specified. Please use the option --{0} to specify the "
@@ -8150,18 +8235,18 @@ msgstr ""
 "Geen ontvangers opgegeven. Gebruik de optie --{0} om de ontvangers op te "
 "geven."
 
-#: Library/Modules/Builtin/Strings.cs:182
+#: Library/Modules/Builtin/Strings.cs:184
 msgid ""
 "This module provides support for sending status reports via XMPP messages"
 msgstr ""
 "Deze module geeft ondersteuning voor het versturen van statusrapporten via "
 "XMPP berichten"
 
-#: Library/Modules/Builtin/Strings.cs:183
+#: Library/Modules/Builtin/Strings.cs:185
 msgid "XMPP report module"
 msgstr "XMPP rapportagemoduke"
 
-#: Library/Modules/Builtin/Strings.cs:184
+#: Library/Modules/Builtin/Strings.cs:186
 msgid ""
 "Use this option to set the users who should have the messages sent. You can "
 "specify multiple users separated with commas."
@@ -8170,13 +8255,13 @@ msgstr ""
 "verzonden moeten worden. Meerdere gebruikers kunnen gescheiden door komma's "
 "worden opgegeven."
 
-#: Library/Modules/Builtin/Strings.cs:185
+#: Library/Modules/Builtin/Strings.cs:187
 msgid "XMPP recipient email"
 msgstr "XMPP ontvanger email"
 
-#: Library/Modules/Builtin/Strings.cs:186
-#: Library/Modules/Builtin/Strings.cs:217
-#: Library/Modules/Builtin/Strings.cs:249
+#: Library/Modules/Builtin/Strings.cs:188
+#: Library/Modules/Builtin/Strings.cs:219
+#: Library/Modules/Builtin/Strings.cs:251
 msgid ""
 "This value can be a filename. If the file exists, the file contents will be used as the message.\n"
 "\n"
@@ -8198,13 +8283,13 @@ msgstr ""
 "\n"
 "Alle opdrachtregel-opties worden eveneens gerapporteerd binnen %value%, bijvoorbeeld %volsize%. Onbekende/niet ingestelde waarden worden verwijderd."
 
-#: Library/Modules/Builtin/Strings.cs:195
-#: Library/Modules/Builtin/Strings.cs:227
-#: Library/Modules/Builtin/Strings.cs:258
+#: Library/Modules/Builtin/Strings.cs:197
+#: Library/Modules/Builtin/Strings.cs:229
+#: Library/Modules/Builtin/Strings.cs:260
 msgid "The message template"
 msgstr "Het bericht-sjabloon"
 
-#: Library/Modules/Builtin/Strings.cs:196
+#: Library/Modules/Builtin/Strings.cs:198
 msgid ""
 "Use this option to set a username for the account that will send the "
 "message, including the hostname, e.g. \"account@jabber.org/Home\""
@@ -8213,11 +8298,11 @@ msgstr ""
 "waarmee het bericht verstuurd wordt, inclusief de hostnaam. Voorbeeld: "
 "\"account@jabber.org/Home\""
 
-#: Library/Modules/Builtin/Strings.cs:197
+#: Library/Modules/Builtin/Strings.cs:199
 msgid "The XMPP username"
 msgstr "De XMPP gebruikersnaam"
 
-#: Library/Modules/Builtin/Strings.cs:198
+#: Library/Modules/Builtin/Strings.cs:200
 msgid ""
 "Use this option to set a password for the account that will send the "
 "message."
@@ -8225,13 +8310,13 @@ msgstr ""
 "Gebruik deze optie om een wachtwoord in te stellen van het account waarmee "
 "het bericht verstuurd wordt."
 
-#: Library/Modules/Builtin/Strings.cs:199
+#: Library/Modules/Builtin/Strings.cs:201
 msgid "The XMPP password"
 msgstr "Het XMPP wachtwoord"
 
-#: Library/Modules/Builtin/Strings.cs:200
-#: Library/Modules/Builtin/Strings.cs:234
-#: Library/Modules/Builtin/Strings.cs:263
+#: Library/Modules/Builtin/Strings.cs:202
+#: Library/Modules/Builtin/Strings.cs:236
+#: Library/Modules/Builtin/Strings.cs:265
 #, csharp-format
 msgid ""
 "You can specify one of \"{0}\", \"{1}\", \"{2}\", \"{3}\".\n"
@@ -8240,9 +8325,9 @@ msgstr ""
 "U kunt één van de volgende waarden opgeven: \"{0}\", \"{1}\", \"{2}\", \"{3}\".\n"
 "U kunt meerdere opties opgeven, gescheiden door een komma, bijvoorbeeld \"{0},{1}\". De speciale waarde \"{4}\" is een afkorting voor \"{0},{1},{2},{3}\" en zorgt ervoor dat alle back-upbewerkingen een bericht verzenden."
 
-#: Library/Modules/Builtin/Strings.cs:203
-#: Library/Modules/Builtin/Strings.cs:237
-#: Library/Modules/Builtin/Strings.cs:266
+#: Library/Modules/Builtin/Strings.cs:205
+#: Library/Modules/Builtin/Strings.cs:239
+#: Library/Modules/Builtin/Strings.cs:268
 msgid ""
 "By default, messages will only be sent after a backup operation. Use this "
 "option to send messages for all operations."
@@ -8250,17 +8335,17 @@ msgstr ""
 "Standaard worden berichten alleen verstuurd na een back-upbewerking. Gebruik"
 " deze optie om berichten te versturen voor alle bewerkingen."
 
-#: Library/Modules/Builtin/Strings.cs:204
-#: Library/Modules/Builtin/Strings.cs:238
-#: Library/Modules/Builtin/Strings.cs:267
+#: Library/Modules/Builtin/Strings.cs:206
+#: Library/Modules/Builtin/Strings.cs:240
+#: Library/Modules/Builtin/Strings.cs:269
 msgid "Send messages for all operations"
 msgstr "Verstuur berichten voor alle bewerkingen"
 
-#: Library/Modules/Builtin/Strings.cs:205
+#: Library/Modules/Builtin/Strings.cs:207
 msgid "Timeout occurred while logging in to jabber server"
 msgstr "Time-out opgetreden tijdens inloggen bij jabber server"
 
-#: Library/Modules/Builtin/Strings.cs:212
+#: Library/Modules/Builtin/Strings.cs:214
 msgid ""
 "This module provides support for sending status reports via Telegram "
 "messages"
@@ -8268,45 +8353,45 @@ msgstr ""
 "Deze module biedt ondersteuning voor het versturen van statusrapporten via "
 "Telegram-berichten"
 
-#: Library/Modules/Builtin/Strings.cs:213
+#: Library/Modules/Builtin/Strings.cs:215
 msgid "Telegram report module"
 msgstr "Telegram rapportagemodule"
 
-#: Library/Modules/Builtin/Strings.cs:214
+#: Library/Modules/Builtin/Strings.cs:216
 msgid "Use this option to set the channel ID."
 msgstr "Gebruik deze optie om het kanaal-ID in te stellen"
 
-#: Library/Modules/Builtin/Strings.cs:215
+#: Library/Modules/Builtin/Strings.cs:217
 msgid "Telegram channel ID"
 msgstr "Telegram kanaal-ID"
 
-#: Library/Modules/Builtin/Strings.cs:228
+#: Library/Modules/Builtin/Strings.cs:230
 msgid ""
 "Use this option to set a bot ID for the bot that will send the message."
 msgstr ""
 "Gebruik deze optie om een bot-ID in te stellen van de bot waarmee het "
 "bericht verstuurd wordt."
 
-#: Library/Modules/Builtin/Strings.cs:229
+#: Library/Modules/Builtin/Strings.cs:231
 msgid "The Telegram bot ID"
 msgstr "Het Telegram bot-ID"
 
-#: Library/Modules/Builtin/Strings.cs:230
+#: Library/Modules/Builtin/Strings.cs:232
 msgid ""
 "Use this option to set a API key for the bot that will send the message."
 msgstr ""
 "Gebruik deze optie om een API-sleutel in te stellen van de bot waarmee het "
 "bericht verstuurd wordt."
 
-#: Library/Modules/Builtin/Strings.cs:231
+#: Library/Modules/Builtin/Strings.cs:233
 msgid "The Telegram API key"
 msgstr "De Telegram API-sleutel"
 
-#: Library/Modules/Builtin/Strings.cs:232
+#: Library/Modules/Builtin/Strings.cs:234
 msgid "The Telegram topic ID"
 msgstr "Het Telegram-onderwerp-ID"
 
-#: Library/Modules/Builtin/Strings.cs:233
+#: Library/Modules/Builtin/Strings.cs:235
 msgid ""
 "Topic ID for the Topic in the telegram group. For more information on "
 "Telegram setup, refer to documentation."
@@ -8314,47 +8399,47 @@ msgstr ""
 "Onderwerp-ID voor het onderwerp in de Telegram-groep. Raadpleeg de "
 "documentatie voor meer informatie over het instellen van Telegram."
 
-#: Library/Modules/Builtin/Strings.cs:245
+#: Library/Modules/Builtin/Strings.cs:247
 msgid ""
 "This module provides support for sending status reports via HTTP messages"
 msgstr ""
 "Deze module biedt ondersteuning voor het versturen van statusrapporten via "
 "HTTP-berichten"
 
-#: Library/Modules/Builtin/Strings.cs:246
+#: Library/Modules/Builtin/Strings.cs:248
 msgid "HTTP report module"
 msgstr "HTTP rapportagemodule"
 
-#: Library/Modules/Builtin/Strings.cs:247
+#: Library/Modules/Builtin/Strings.cs:249
 msgid "Use this option to set a HTTP report URL."
 msgstr "Gebruik deze optie om een HTTP rapportage-URL in te stellen."
 
-#: Library/Modules/Builtin/Strings.cs:248
+#: Library/Modules/Builtin/Strings.cs:250
 msgid "HTTP report URL"
 msgstr "HTTP rapportage-URL"
 
-#: Library/Modules/Builtin/Strings.cs:259
+#: Library/Modules/Builtin/Strings.cs:261
 msgid "Use this option to set a name of the parameter to send the message as."
 msgstr ""
 "Gebruik deze optie om de naam van de parameter in te stellen namens wie het "
 "bericht verstuurd moet worden."
 
-#: Library/Modules/Builtin/Strings.cs:260
+#: Library/Modules/Builtin/Strings.cs:262
 msgid "The name of the parameter to send the message as"
 msgstr "De naam van de parameter namens wie het bericht verstuurd moet worden"
 
-#: Library/Modules/Builtin/Strings.cs:268
+#: Library/Modules/Builtin/Strings.cs:270
 msgid ""
 "Use this option to change the default HTTP verb used to submit a report."
 msgstr ""
 "Gebruik deze optie om het standaard HTTP-woord te veranderen dat wordt "
 "gebruikt om een rapport in te dienen."
 
-#: Library/Modules/Builtin/Strings.cs:269
+#: Library/Modules/Builtin/Strings.cs:271
 msgid "Set the HTTP verb to use"
 msgstr "Stel het te gebruiken HTTP-woord in"
 
-#: Library/Modules/Builtin/Strings.cs:270
+#: Library/Modules/Builtin/Strings.cs:272
 msgid ""
 "Use this option to set HTTP report URLs for sending form-encoded data. This "
 "option accepts multiple URLs, seperated by a semi-colon. All URLs will "
@@ -8366,11 +8451,11 @@ msgstr ""
 "gescheiden door puntkomma's. Alle URL's ontvangen dezelfde gegevens. Houd er"
 " rekening mee dat deze optie de opmaak- en verb-instellingen negeert."
 
-#: Library/Modules/Builtin/Strings.cs:271
+#: Library/Modules/Builtin/Strings.cs:273
 msgid "HTTP report URLs for sending form data"
 msgstr "HTTP rapportage-URL's voor het verzenden van formuliergegevens."
 
-#: Library/Modules/Builtin/Strings.cs:272
+#: Library/Modules/Builtin/Strings.cs:274
 msgid ""
 "Use this option to set HTTP report URLs for sending JSON data. This option "
 "accepts multiple URLs, seperated by a semi-colon. All URLs will receive the "
@@ -8381,11 +8466,11 @@ msgstr ""
 "puntkomma's. Alle URL's ontvangen dezelfde gegevens. Houd er rekening mee "
 "dat deze optie de opmaak- en verb-instellingen negeert."
 
-#: Library/Modules/Builtin/Strings.cs:273
+#: Library/Modules/Builtin/Strings.cs:275
 msgid "HTTP report URLs for sending JSON data"
 msgstr "HTTP rapportage-URL's voor het verzenden van JSON-gegevens"
 
-#: Library/Modules/Builtin/Strings.cs:274 Library/Utility/Strings.cs:83
+#: Library/Modules/Builtin/Strings.cs:276 Library/Utility/Strings.cs:83
 #, csharp-format
 msgid ""
 "Use this option to accept any server certificate, regardless of what errors "
@@ -8394,11 +8479,11 @@ msgstr ""
 "Gebruik deze optie om ieder servercertificaat te accepteren, ongeacht welke "
 "fouten het heeft. Gebruik in plaats hiervan --{0} wanneer mogelijk."
 
-#: Library/Modules/Builtin/Strings.cs:275 Library/Utility/Strings.cs:84
+#: Library/Modules/Builtin/Strings.cs:277 Library/Utility/Strings.cs:84
 msgid "Accept any server certificate"
 msgstr "Accepteer ieder servercertificaat"
 
-#: Library/Modules/Builtin/Strings.cs:276 Library/Utility/Strings.cs:85
+#: Library/Modules/Builtin/Strings.cs:278 Library/Utility/Strings.cs:85
 msgid ""
 "If your server certificate is reported as invalid (e.g. with self-signed "
 "certificates), you can supply the certificate hash (SHA1) to approve it "
@@ -8411,11 +8496,11 @@ msgstr ""
 "worden ingevoerd, zonder spaties of dubbele punten. U kunt meerdere hashes "
 "invoeren, gescheiden door komma's."
 
-#: Library/Modules/Builtin/Strings.cs:277 Library/Utility/Strings.cs:86
+#: Library/Modules/Builtin/Strings.cs:279 Library/Utility/Strings.cs:86
 msgid "Optionally accept a known SSL certificate"
 msgstr "Accepteer optioneel een bekend SSL certificaat"
 
-#: Library/Modules/Builtin/Strings.cs:278
+#: Library/Modules/Builtin/Strings.cs:280
 msgid ""
 "Use this option to set the number of retries to attempt if the HTTP request "
 "fails."
@@ -8423,36 +8508,36 @@ msgstr ""
 "Gebruik deze optie om het aantal nieuwe pogingen in te stellen als de HTTP-"
 "aanvraag mislukt."
 
-#: Library/Modules/Builtin/Strings.cs:279
+#: Library/Modules/Builtin/Strings.cs:281
 msgid "Set the number of retries"
 msgstr "Stel het aantal nieuwe pogingen in"
 
-#: Library/Modules/Builtin/Strings.cs:280
+#: Library/Modules/Builtin/Strings.cs:282
 msgid "Use this option to set the delay between retries."
 msgstr ""
 "Gebruik deze optie om de wachttijd tussen nieuwe pogingen in te stellen."
 
-#: Library/Modules/Builtin/Strings.cs:281
+#: Library/Modules/Builtin/Strings.cs:283
 msgid "Set the retry delay"
 msgstr "Stel de wachttijd voor nieuwe pogingen in"
 
-#: Library/Modules/Builtin/Strings.cs:286
+#: Library/Modules/Builtin/Strings.cs:288
 #, csharp-format
 msgid "Failed to send message: {0}"
 msgstr "Verzenden van bericht mislukt: {0}"
 
-#: Library/Modules/Builtin/Strings.cs:287
+#: Library/Modules/Builtin/Strings.cs:289
 msgid ""
 "Use this option to set the log level for messages to include in the report."
 msgstr ""
 "Gebruik deze optie om een logniveau in te stellen voor berichten die moeten "
 "worden opgenomen in het rapport."
 
-#: Library/Modules/Builtin/Strings.cs:288
+#: Library/Modules/Builtin/Strings.cs:290
 msgid "Define a log level for messages"
 msgstr "Definieer een logniveau voor berichten"
 
-#: Library/Modules/Builtin/Strings.cs:289
+#: Library/Modules/Builtin/Strings.cs:291
 msgid ""
 "Use this option to set a filter expression that defines what options are "
 "included in the report."
@@ -8460,11 +8545,11 @@ msgstr ""
 "Gebruik deze optie om een filteruitdrukking in te stellen die definieert "
 "welke opties worden opgenomen in het rapport."
 
-#: Library/Modules/Builtin/Strings.cs:290
+#: Library/Modules/Builtin/Strings.cs:292
 msgid "Log message filter"
 msgstr "Logbericht filter"
 
-#: Library/Modules/Builtin/Strings.cs:291
+#: Library/Modules/Builtin/Strings.cs:293
 msgid ""
 "Use this option to set the maximum number of log lines to include in the "
 "report. Zero or negative values means unlimited."
@@ -8473,7 +8558,7 @@ msgstr ""
 " die worden opgenomen in het rapport. Nul of een negatieve waarde betekent "
 "onbeperkt."
 
-#: Library/Modules/Builtin/Strings.cs:292
+#: Library/Modules/Builtin/Strings.cs:294
 msgid "Limit log lines"
 msgstr "Beperk logboekregels"
 

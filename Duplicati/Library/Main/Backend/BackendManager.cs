@@ -112,7 +112,7 @@ internal partial class BackendManager : IBackendManager
     /// </summary>
     /// <param name="op">The operation to queue</param>
     /// <returns>An awaitable task</returns>
-    private async Task QueueTask(PendingOperationBase op)
+    private async Task QueueTaskAsync(PendingOperationBase op)
     {
         if (queueRunner.IsCompleted)
         {
@@ -156,11 +156,10 @@ internal partial class BackendManager : IBackendManager
     /// <param name="tmpfile">The file to decrypt</param>
     /// <param name="filename">The name of the file. Used for detecting encryption algorithm if not specified in options or if it differs from the options</param>
     /// <param name="options">The Duplicati options</param>
+    /// <param name="dispose">True if the input file should be disposed after decryption</param>
     /// <returns>The decrypted file</returns>
-    public TempFile DecryptFile(TempFile volume, string volume_name, Options options)
-    {
-        return GetOperation.DecryptFile(volume, volume_name, options);
-    }
+    public TempFile DecryptFile(TempFile volume, string volume_name, Options options, bool dispose)
+        => GetOperation.DecryptFile(volume, volume_name, options, dispose);
 
     /// <summary>
     /// Deletes a remote file
@@ -173,8 +172,8 @@ internal partial class BackendManager : IBackendManager
     public async Task DeleteAsync(string remotename, long size, bool waitForComplete, CancellationToken cancelToken)
     {
         var op = new DeleteOperation(remotename, size, context, waitForComplete, cancelToken);
-        await QueueTask(op).ConfigureAwait(false);
-        await op.GetResult().ConfigureAwait(false);
+        await QueueTaskAsync(op).ConfigureAwait(false);
+        await op.GetResultAsync().ConfigureAwait(false);
     }
 
     /// <summary>
@@ -187,8 +186,8 @@ internal partial class BackendManager : IBackendManager
     public async Task SetObjectLockUntilAsync(string remotename, DateTime lockUntilUtc, CancellationToken cancelToken)
     {
         var op = new SetObjectLockOperation(remotename, lockUntilUtc, context, cancelToken);
-        await QueueTask(op).ConfigureAwait(false);
-        await op.GetResult().ConfigureAwait(false);
+        await QueueTaskAsync(op).ConfigureAwait(false);
+        await op.GetResultAsync().ConfigureAwait(false);
     }
 
     /// <summary>
@@ -200,8 +199,8 @@ internal partial class BackendManager : IBackendManager
     public async Task<DateTime?> GetObjectLockUntilAsync(string remotename, CancellationToken cancelToken)
     {
         var op = new GetObjectLockOperation(remotename, context, cancelToken);
-        await QueueTask(op).ConfigureAwait(false);
-        return await op.GetResult().ConfigureAwait(false);
+        await QueueTaskAsync(op).ConfigureAwait(false);
+        return await op.GetResultAsync().ConfigureAwait(false);
     }
 
     /// <summary>
@@ -219,8 +218,8 @@ internal partial class BackendManager : IBackendManager
             Hash = hash,
             Decrypt = true
         };
-        await QueueTask(op).ConfigureAwait(false);
-        (var file, var _, var _) = await op.GetResult().ConfigureAwait(false);
+        await QueueTaskAsync(op).ConfigureAwait(false);
+        (var file, var _, var _) = await op.GetResultAsync().ConfigureAwait(false);
         return file;
     }
 
@@ -239,8 +238,8 @@ internal partial class BackendManager : IBackendManager
             Hash = hash,
             Decrypt = false
         };
-        await QueueTask(op).ConfigureAwait(false);
-        (var file, var _, var _) = await op.GetResult().ConfigureAwait(false);
+        await QueueTaskAsync(op).ConfigureAwait(false);
+        (var file, var _, var _) = await op.GetResultAsync().ConfigureAwait(false);
         return file;
     }
 
@@ -252,8 +251,8 @@ internal partial class BackendManager : IBackendManager
     public async Task<IQuotaInfo?> GetQuotaInfoAsync(CancellationToken cancelToken)
     {
         var op = new QuotaInfoOperation(context, cancelToken);
-        await QueueTask(op).ConfigureAwait(false);
-        return await op.GetResult().ConfigureAwait(false);
+        await QueueTaskAsync(op).ConfigureAwait(false);
+        return await op.GetResultAsync().ConfigureAwait(false);
     }
 
     /// <summary>
@@ -271,8 +270,8 @@ internal partial class BackendManager : IBackendManager
             Hash = hash,
             Decrypt = true
         };
-        await QueueTask(op).ConfigureAwait(false);
-        (var file, var downloadHash, var downloadSize) = await op.GetResult().ConfigureAwait(false);
+        await QueueTaskAsync(op).ConfigureAwait(false);
+        (var file, var downloadHash, var downloadSize) = await op.GetResultAsync().ConfigureAwait(false);
         return (file, downloadHash, downloadSize);
     }
 
@@ -284,8 +283,8 @@ internal partial class BackendManager : IBackendManager
     public async Task<IEnumerable<Interface.IFileEntry>> ListAsync(CancellationToken cancelToken)
     {
         var op = new ListOperation(context, cancelToken);
-        await QueueTask(op).ConfigureAwait(false);
-        return await op.GetResult().ConfigureAwait(false);
+        await QueueTaskAsync(op).ConfigureAwait(false);
+        return await op.GetResultAsync().ConfigureAwait(false);
     }
 
     /// <summary>
@@ -314,8 +313,8 @@ internal partial class BackendManager : IBackendManager
 
         // Prepare encryption
         op.StartEncryptionAndHashing();
-        await QueueTask(op).ConfigureAwait(false);
-        await op.GetResult().ConfigureAwait(false);
+        await QueueTaskAsync(op).ConfigureAwait(false);
+        await op.GetResultAsync().ConfigureAwait(false);
     }
 
     /// <summary>
@@ -339,8 +338,8 @@ internal partial class BackendManager : IBackendManager
 
         // Sets the task as already completed
         op.StartEncryptionAndHashing();
-        await QueueTask(op).ConfigureAwait(false);
-        await op.GetResult().ConfigureAwait(false);
+        await QueueTaskAsync(op).ConfigureAwait(false);
+        await op.GetResultAsync().ConfigureAwait(false);
     }
 
     /// <summary>
@@ -351,7 +350,7 @@ internal partial class BackendManager : IBackendManager
     /// <returns>A task that completes when the messages are flushed.</returns>
     public async Task FlushPendingMessagesAsync(LocalDatabase database, CancellationToken cancellationToken)
     {
-        await context.Database.FlushPendingMessages(database, cancellationToken).ConfigureAwait(false);
+        await context.Database.FlushPendingMessagesAsync(database, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -362,8 +361,8 @@ internal partial class BackendManager : IBackendManager
     public async Task WaitForEmptyAsync(CancellationToken cancellationToken)
     {
         var op = new WaitForEmptyOperation(context, cancellationToken);
-        await QueueTask(op).ConfigureAwait(false);
-        await op.GetResult().ConfigureAwait(false);
+        await QueueTaskAsync(op).ConfigureAwait(false);
+        await op.GetResultAsync().ConfigureAwait(false);
     }
 
     /// <summary>
@@ -385,7 +384,7 @@ internal partial class BackendManager : IBackendManager
     /// </summary>
     /// <param name="database">The database to write pending messages to.</param>
     /// <returns>A task that completes when the runner is stopped and messages are flushed.</returns>
-    public async Task StopRunnerAndFlushMessages(LocalDatabase database)
+    public async Task StopRunnerAndFlushMessagesAsync(LocalDatabase database)
     {
         await requestChannel.RetireAsync().ConfigureAwait(false);
         await FlushPendingMessagesAsync(database, CancellationToken.None).ConfigureAwait(false);
@@ -438,6 +437,41 @@ internal partial class BackendManager : IBackendManager
         // Return the last result
         yield return (prevResult.File, prevResult.Hash, prevResult.Size, prevVolume.Name);
         prevResult.File.Dispose();
+    }
+
+    /// <summary>
+    /// Performs a direct download of the files specified, with pre-fetch to overlap the download and processing
+    /// </summary>
+    /// <param name="volumes">The volumes to download</param>
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <returns>The downloaded files and the volume they came from</returns>
+    public async IAsyncEnumerable<(TempFile File, string Name)> GetFilesOverlappedDirectAsync(IEnumerable<IRemoteVolume> volumes, [EnumeratorCancellation] CancellationToken cancelToken)
+    {
+        var prevVolume = volumes.FirstOrDefault();
+        if (prevVolume == null)
+            yield break;
+
+        // Get the first volume, so we do not have pending parallel transfers
+        var prevResult = await GetDirectAsync(prevVolume.Name, prevVolume.Hash, prevVolume.Size, cancelToken)
+            .ConfigureAwait(false);
+
+        foreach (var volume in volumes.Skip(1))
+        {
+            // Prepare the next volume, while processing the previous one
+            var nextTask = GetDirectAsync(volume.Name, volume.Hash, volume.Size, cancelToken);
+
+            // Assuming we do not throw while yielding, otherwise we would need to dispose nextTask
+            yield return (prevResult, prevVolume.Name);
+            prevResult.Dispose();
+
+            // Set up for next iteration
+            prevVolume = volume;
+            prevResult = await nextTask.ConfigureAwait(false);
+        }
+
+        // Return the last result
+        yield return (prevResult, prevVolume.Name);
+        prevResult.Dispose();
     }
 
     /// <summary>

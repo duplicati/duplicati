@@ -23,6 +23,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Server.Serialization.Interface;
 
@@ -103,5 +104,5 @@ public interface IQueueRunnerService
     /// Note that the task will run concurrently with the queue tasks and may cause database lock issues.
     /// </summary>
     /// <param name="task">The task to run</param>
-    IBasicResults? RunImmediately(IQueuedTask task);
+    Task<IBasicResults?> RunImmediatelyAsync(IQueuedTask task);
 }

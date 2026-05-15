@@ -20,7 +20,7 @@ partial class BackendManager
         public void HandleProgress(long pg, string filename)
         {
             // This pauses and throws on cancellation, but ignores stop
-            TaskReader.TransferRendevouz().Await();
+            TaskReader.TransferRendevouzAsync().Await();
             Stats.BackendProgressUpdater.UpdateProgress(filename, pg);
         }
 

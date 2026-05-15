@@ -19,8 +19,10 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
+using System.Collections.Concurrent;
 using System.Net;
-using System.Security.Cryptography.X509Certificates;
+using System.Net.Security;
+using System.Security.Authentication;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Duplicati.Library.Interface;
@@ -279,7 +281,7 @@ public class DuplicatiWebserver
                     OnTokenValidated = context =>
                     {
                         var store = context.HttpContext.RequestServices.GetRequiredService<ITokenFamilyStore>();
-                        return JWTTokenProvider.ValidateAccessToken(context, store);
+                        return JWTTokenProvider.ValidateAccessTokenAsync(context, store);
                     }
                 };
             });
@@ -390,6 +392,8 @@ public class DuplicatiWebserver
                     app.ApplicationServices.GetRequiredService<ILogger<DuplicatiWebserver>>()
                         .LogError(thrownException, "Unhandled exception");
 
+                    Library.Logging.Log.WriteErrorMessage(LOGTAG, "UnhandledException", thrownException, "Unhandled exception in webserver request to {0}", context.Request.Path);
+
                     context.Response.StatusCode = 500;
                     context.Response.ContentType = "application/json";
                     await context.Response.WriteAsync(JsonSerializer.Serialize(new { Error = "An error occurred", Code = 500 }));
@@ -434,29 +438,30 @@ public class DuplicatiWebserver
     /// <param name="connection">The connection</param>
     private static void ConfigureHttps(Microsoft.AspNetCore.Server.Kestrel.Core.ListenOptions listenOptions, Connection connection)
     {
-        listenOptions.UseHttps(new HttpsConnectionAdapterOptions()
-        {
-            // Use ServerCertificateSelector for dynamic certificate loading
-            // This allows the certificate to be renewed without server restart
-            ServerCertificateSelector = (connectionContext, hostName) =>
-            {
-                try
-                {
-                    var cert = connection.ApplicationSettings.ServerSSLCertificate;
-                    if (cert == null || cert.Count == 0)
-                    {
-                        Library.Logging.Log.WriteWarningMessage(LOGTAG, "NoCertificateAvailable", null, "No SSL certificate available for HTTPS connection.");
-                        return null;
-                    }
+        var _contextCache = new ConcurrentDictionary<string, SslStreamCertificateContext>();
 
-                    // Return the certificate with private key
-                    return cert.FirstOrDefault(x => x.HasPrivateKey);
-                }
-                catch (Exception ex)
+        listenOptions.UseHttps(new TlsHandshakeCallbackOptions
+        {
+            OnConnection = context =>
+            {
+                var collection = connection.ApplicationSettings.ServerSSLCertificate;
+                var leafCert = collection?.FirstOrDefault(x => x.HasPrivateKey);
+                if (leafCert == null || collection == null)
                 {
-                    Library.Logging.Log.WriteErrorMessage(LOGTAG, "CertificateLoadFailed", ex, "Failed to load SSL certificate for connection.");
-                    return null;
+                    Library.Logging.Log.WriteWarningMessage(LOGTAG, "NoCertificateAvailable", null, "No SSL certificate available for HTTPS connection.");
+                    throw new AuthenticationException("No certificates found");
                 }
+
+                // We only expect a single active certificate
+                if (_contextCache.Count > 2)
+                    _contextCache.Clear();
+
+                // Reuse cert context across connections
+                var certContext = _contextCache.GetOrAdd(leafCert.Thumbprint, _ => SslStreamCertificateContext.Create(leafCert, collection));
+                return new ValueTask<SslServerAuthenticationOptions>(new SslServerAuthenticationOptions
+                {
+                    ServerCertificateContext = certContext
+                });
             }
         });
     }
@@ -465,7 +470,7 @@ public class DuplicatiWebserver
     /// Starts the webserver
     /// </summary>
     /// <returns>The task that will be set when the server is terminated</returns>
-    public Task Start()
+    public Task StartAsync()
     {
         App.MapHealthChecks("/health");
         App.AddEndpoints(CorsEnabled)
@@ -478,8 +483,6 @@ public class DuplicatiWebserver
     /// Stops the webserver
     /// </summary>
     /// <returns>An awaitable task</returns>
-    public async Task Stop()
-    {
-        await App.StopAsync();
-    }
+    public Task StopAsync()
+        => App.StopAsync();
 }

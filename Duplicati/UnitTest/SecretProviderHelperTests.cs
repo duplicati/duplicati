@@ -85,7 +85,7 @@ public class SecretProviderHelperTests : BasicSetupHelper
 
     [Test]
     [Category("SecretHelper")]
-    public async Task ReplaceSecretsWithDefaultSettings()
+    public async Task ReplaceSecretsWithDefaultSettingsAsync()
     {
         var secretProvider = new MockedSecretProvider();
         secretProvider.Secrets["key1"] = "secret1";
@@ -117,7 +117,7 @@ public class SecretProviderHelperTests : BasicSetupHelper
 
     [Test]
     [Category("SecretHelper")]
-    public async Task ReplaceSecretsWithSlashKeys()
+    public async Task ReplaceSecretsWithSlashKeysAsync()
     {
         var secretProvider = new MockedSecretProvider();
         secretProvider.Secrets["key1"] = "secret1";
@@ -149,7 +149,7 @@ public class SecretProviderHelperTests : BasicSetupHelper
 
     [Test]
     [Category("SecretHelper")]
-    public async Task ReplaceSecretsWithDashKeys()
+    public async Task ReplaceSecretsWithDashKeysAsync()
     {
         var secretProvider = new MockedSecretProvider();
         secretProvider.Secrets["key1"] = "secret1";
@@ -181,7 +181,7 @@ public class SecretProviderHelperTests : BasicSetupHelper
 
     [Test]
     [Category("SecretHelper")]
-    public async Task ReplacesSecretsWithUrlEscaping()
+    public async Task ReplacesSecretsWithUrlEscapingAsync()
     {
         var secretProvider = new MockedSecretProvider();
         secretProvider.Secrets["key1"] = "secret 1%&+abc";
@@ -211,7 +211,7 @@ public class SecretProviderHelperTests : BasicSetupHelper
 
     [Test]
     [Category("SecretHelper")]
-    public async Task ReplaceSecretsWithExtendedPattern()
+    public async Task ReplaceSecretsWithExtendedPatternAsync()
     {
         var secretProvider = new MockedSecretProvider();
         secretProvider.Secrets["key1"] = "secret1";
@@ -244,7 +244,7 @@ public class SecretProviderHelperTests : BasicSetupHelper
 
     [Test]
     [Category("SecretHelper")]
-    public async Task ReplaceSecretsWithExtendedLongPattern()
+    public async Task ReplaceSecretsWithExtendedLongPatternAsync()
     {
         var secretProvider = new MockedSecretProvider();
         secretProvider.Secrets["key1"] = "secret1";
@@ -277,7 +277,7 @@ public class SecretProviderHelperTests : BasicSetupHelper
 
     [Test]
     [Category("SecretHelper")]
-    public async Task CachedProviderRetainsPattern()
+    public async Task CachedProviderRetainsPatternAsync()
     {
         var secretProvider = new MockedSecretProvider();
         secretProvider.Secrets["sec1"] = "secret1";
@@ -352,7 +352,7 @@ public class SecretProviderHelperTests : BasicSetupHelper
 
     [Test]
     [Category("SecretHelper")]
-    public async Task ReplaceUsesInMemoryCache()
+    public async Task ReplaceUsesInMemoryCacheAsync()
     {
         var secretProvider = new MockedSecretProvider();
         secretProvider.Secrets["key1"] = "secret1";
@@ -382,7 +382,7 @@ public class SecretProviderHelperTests : BasicSetupHelper
 
     [Test]
     [Category("SecretHelper")]
-    public async Task ReplaceUsesPersistedCache()
+    public async Task ReplaceUsesPersistedCacheAsync()
     {
         var secretProvider = new MockedSecretProvider();
         secretProvider.Secrets["key1"] = "secret1";
@@ -413,7 +413,7 @@ public class SecretProviderHelperTests : BasicSetupHelper
 
     [Test]
     [Category("SecretHelper")]
-    public async Task ReplaceUsesPersistedCacheOnRestart()
+    public async Task ReplaceUsesPersistedCacheOnRestartAsync()
     {
         var secretProvider = new MockedSecretProvider();
         secretProvider.Secrets["key1"] = "secret1";
@@ -459,7 +459,7 @@ public class SecretProviderHelperTests : BasicSetupHelper
 
     [Test]
     [Category("SecretHelper")]
-    public async Task ReplaceWarnsOnPartialMatches()
+    public async Task ReplaceWarnsOnPartialMatchesAsync()
     {
         var secretProvider = new MockedSecretProvider();
         secretProvider.Secrets["key1"] = "secret1";

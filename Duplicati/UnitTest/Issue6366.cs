@@ -17,7 +17,7 @@ namespace Duplicati.UnitTest
         // [Test]
         // [Category("Purge")]
         // [Category("Performance")]
-        public async Task TestPurgeBrokenFilesPerformance()
+        public async Task TestPurgeBrokenFilesPerformanceAsync()
         {
             var blocksize = 1024 * 10;
             var numberOfVersions = 50; // Simulate many versions as in the issue
@@ -48,7 +48,7 @@ namespace Duplicati.UnitTest
 
                 using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
                 {
-                    var res = c.Backup(new string[] { DATAFOLDER });
+                    var res = await c.BackupAsync(new string[] { DATAFOLDER });
                     Assert.AreEqual(0, res.Errors.Count());
                 }
 
@@ -79,7 +79,7 @@ namespace Duplicati.UnitTest
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                var task = Task.Run(() => c.PurgeBrokenFiles(null));
+                var task = Task.Run(async () => await c.PurgeBrokenFilesAsync(null));
                 if (await Task.WhenAny(task, Task.Delay(60000)) == task)
                 {
                     var brk = await task;
@@ -88,7 +88,7 @@ namespace Duplicati.UnitTest
                 }
                 else
                 {
-                    c.Abort();
+                    await c.AbortAsync();
                     Assert.Fail("PurgeBrokenFiles timed out");
                 }
             }
@@ -105,7 +105,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Purge")]
-        public void TestPurgeBrokenFilesReducedStatistics()
+        public async Task TestPurgeBrokenFilesReducedStatisticsAsync()
         {
             var blocksize = 1024 * 10;
             var numberOfVersions = 3;
@@ -141,7 +141,7 @@ namespace Duplicati.UnitTest
 
                 using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
                 {
-                    var res = c.Backup(new string[] { DATAFOLDER });
+                    var res = await c.BackupAsync(new string[] { DATAFOLDER });
                     Assert.AreEqual(0, res.Errors.Count());
                 }
 
@@ -171,7 +171,7 @@ namespace Duplicati.UnitTest
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                var brk = c.PurgeBrokenFiles(null);
+                var brk = await c.PurgeBrokenFilesAsync(null);
                 Assert.AreEqual(0, brk.Errors.Count());
                 Assert.AreEqual(0, brk.Warnings.Count());
 

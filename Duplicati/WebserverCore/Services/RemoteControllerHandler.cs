@@ -43,14 +43,14 @@ public class RemoteControllerHandler(Connection connection, IHttpClientFactory h
     private static readonly string LOGTAG = Log.LogTagFromType<RemoteControllerHandler>();
 
     /// <inheritdoc/>
-    public Task<Dictionary<string, string?>> OnConnect(Dictionary<string, string?> metadata)
+    public Task<Dictionary<string, string?>> OnConnectAsync(Dictionary<string, string?> metadata)
     {
         metadata["feature:additional-report-url"] = connection.ApplicationSettings.AdditionalReportUrl;
         return Task.FromResult(metadata);
     }
 
     /// <inheritdoc/>
-    public Task ReKey(ClaimedClientData data)
+    public Task ReKeyAsync(ClaimedClientData data)
     {
         var oldCerts = connection.ApplicationSettings.RemoteControlConfig == null
             ? null
@@ -75,7 +75,7 @@ public class RemoteControllerHandler(Connection connection, IHttpClientFactory h
     }
 
     /// <inheritdoc/>
-    public async Task OnControl(KeepRemoteConnection.ControlMessage message)
+    public async Task OnControlAsync(KeepRemoteConnection.ControlMessage message)
     {
         // Make method async
         await Task.CompletedTask;
@@ -193,7 +193,7 @@ public class RemoteControllerHandler(Connection connection, IHttpClientFactory h
 
 
     /// <inheritdoc/>
-    public async Task OnMessage(KeepRemoteConnection.CommandMessage commandMessage)
+    public async Task OnMessageAsync(KeepRemoteConnection.CommandMessage commandMessage)
     {
         if (connection.ApplicationSettings.DisableConsoleControl)
         {
@@ -211,6 +211,6 @@ public class RemoteControllerHandler(Connection connection, IHttpClientFactory h
         if (!string.IsNullOrWhiteSpace(psk))
             httpClient.DefaultRequestHeaders.Add(Middlewares.PreSharedKeyFilter.HeaderName, psk);
 
-        await commandMessage.Handle(httpClient);
+        await commandMessage.HandleAsync(httpClient);
     }
 }

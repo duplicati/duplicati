@@ -48,17 +48,17 @@ namespace Duplicati.Library.Main.Operation
             if (callback == null)
             {
                 m_result.SetResult(
-                    await db.GetFilesets(args, m_result.TaskControl.ProgressToken)
+                    await db.GetFilesetsAsync(args, m_result.TaskControl.ProgressToken)
                         .OrderByDescending(x => x.Time)
                         .ToArrayAsync()
                         .ConfigureAwait(false),
-                    await db.GetFiles(args, m_result.TaskControl.ProgressToken)
+                    await db.GetFilesAsync(args, m_result.TaskControl.ProgressToken)
                         .ToArrayAsync()
                         .ConfigureAwait(false),
-                    await db.GetLogLines(args, m_result.TaskControl.ProgressToken)
+                    await db.GetLogLinesAsync(args, m_result.TaskControl.ProgressToken)
                         .ToArrayAsync()
                         .ConfigureAwait(false),
-                    await db.GetVolumes(args, m_result.TaskControl.ProgressToken)
+                    await db.GetVolumesAsync(args, m_result.TaskControl.ProgressToken)
                         .ToArrayAsync()
                         .ConfigureAwait(false)
                 );
@@ -66,17 +66,17 @@ namespace Duplicati.Library.Main.Operation
             else
             {
                 m_result.SetResult(
-                    await db.GetFilesets(args, m_result.TaskControl.ProgressToken)
+                    await db.GetFilesetsAsync(args, m_result.TaskControl.ProgressToken)
                         .OrderByDescending(x => x.Time)
                         .ToArrayAsync()
                         .ConfigureAwait(false),
-                    await db.GetFiles(args, m_result.TaskControl.ProgressToken)
+                    await db.GetFilesAsync(args, m_result.TaskControl.ProgressToken)
                         .ToArrayAsync()
                         .ConfigureAwait(false),
-                    await db.GetLogLines(args, m_result.TaskControl.ProgressToken)
+                    await db.GetLogLinesAsync(args, m_result.TaskControl.ProgressToken)
                         .ToArrayAsync()
                         .ConfigureAwait(false),
-                    await db.GetVolumes(args, m_result.TaskControl.ProgressToken)
+                    await db.GetVolumesAsync(args, m_result.TaskControl.ProgressToken)
                         .ToArrayAsync()
                         .ConfigureAwait(false)
                 );

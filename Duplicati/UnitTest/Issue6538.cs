@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
+using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
 
@@ -20,7 +21,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Issue6538")]
-        public void JobLogShouldBeWrittenOnError()
+        public async Task JobLogShouldBeWrittenOnErrorAsync()
         {
             // Arrange
             var testopts = TestOptions;
@@ -33,7 +34,7 @@ namespace Duplicati.UnitTest
 
             using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                var res = c.Backup(new[] { sourceFolder });
+                var res = await c.BackupAsync(new[] { sourceFolder });
                 Assert.AreEqual(0, res.Errors.Count());
             }
 
@@ -46,7 +47,7 @@ namespace Duplicati.UnitTest
                 IBackupResults backupResults = null;
                 try
                 {
-                    backupResults = c.Backup(new[] { invalidSourcePath });
+                    backupResults = await c.BackupAsync(new[] { invalidSourcePath });
                 }
                 catch
                 {
@@ -56,7 +57,7 @@ namespace Duplicati.UnitTest
                 // Assert - Check that the job log was written to the database
                 using (var connection = new SqliteConnection($"Data Source={testopts["dbpath"]};Pooling=false"))
                 {
-                    connection.Open();
+                    await connection.OpenAsync();
                     var command = connection.CreateCommand();
                     // We want to check the LAST log entry, or ensure there is a NEW one.
                     // Since we ran a backup before, there will be logs.
@@ -64,9 +65,9 @@ namespace Duplicati.UnitTest
                     command.CommandText = "SELECT Type, Message FROM LogData ORDER BY Timestamp DESC LIMIT 10";
 
                     var logEntries = new List<LogEntry>();
-                    using (var reader = command.ExecuteReader())
+                    using (var reader = await command.ExecuteReaderAsync())
                     {
-                        while (reader.Read())
+                        while (await reader.ReadAsync())
                         {
                             var entry = new LogEntry
                             {

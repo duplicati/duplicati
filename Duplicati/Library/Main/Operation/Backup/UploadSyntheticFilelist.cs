@@ -48,7 +48,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <param name="backendManager">The backend manager to use</param>
         /// <param name="lastTempFilelist">The last temporary file list volume</param>
         /// <returns></returns>
-        public static async Task<DateTime?> Run(BackupDatabase database, Options options, BasicResults result, ITaskReader taskreader, IBackendManager backendManager, RemoteVolumeEntry lastTempFilelist)
+        public static async Task<DateTime?> RunAsync(BackupDatabase database, Options options, BasicResults result, ITaskReader taskreader, IBackendManager backendManager, RemoteVolumeEntry lastTempFilelist)
         {
             // Check if we should upload a synthetic filelist
             if (options.DisableSyntheticFilelist || string.IsNullOrWhiteSpace(lastTempFilelist.Name) || lastTempFilelist.ID <= 0)
@@ -68,7 +68,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             if (!incompleteFilesets.Any())
                 return null;
 
-            if (!await taskreader.ProgressRendevouz().ConfigureAwait(false))
+            if (!await taskreader.ProgressRendevouzAsync().ConfigureAwait(false))
                 return null;
 
             result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PreviousBackupFinalize);
@@ -89,7 +89,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             FilesetVolumeWriter fsw = null;
             try
             {
-                var fileTime = await FilesetVolumeWriter.ProbeUnusedFilenameName(database, options, incompleteSet.Value, taskreader.ProgressToken).ConfigureAwait(false);
+                var fileTime = await FilesetVolumeWriter.ProbeUnusedFilenameNameAsync(database, options, incompleteSet.Value, taskreader.ProgressToken).ConfigureAwait(false);
                 syntheticFilelistTime = fileTime;
                 fsw = new FilesetVolumeWriter(options, fileTime);
                 fsw.VolumeID = await database.RegisterRemoteVolumeAsync(fsw.RemoteFilename, RemoteVolumeType.Files, RemoteVolumeState.Temporary, taskreader.ProgressToken).ConfigureAwait(false);
@@ -108,7 +108,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 await database.WriteFilesetAsync(fsw, newFilesetID, taskreader.ProgressToken).ConfigureAwait(false);
                 fsw.Close();
 
-                if (!await taskreader.ProgressRendevouz().ConfigureAwait(false))
+                if (!await taskreader.ProgressRendevouzAsync().ConfigureAwait(false))
                     return null;
 
                 await database.UpdateRemoteVolumeAsync(fsw.RemoteFilename, RemoteVolumeState.Uploading, -1, null, false, default, null, taskreader.ProgressToken).ConfigureAwait(false);

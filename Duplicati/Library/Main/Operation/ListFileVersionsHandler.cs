@@ -54,7 +54,7 @@ internal static class ListFileVersionsHandler
         if (!options.AllVersions)
         {
             filesetIds = await db
-                .GetFilesetIDs(options.Time, options.Version, false, result.TaskControl.ProgressToken)
+                .GetFilesetIDsAsync(options.Time, options.Version, false, result.TaskControl.ProgressToken)
                 .ToArrayAsync(cancellationToken: result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);
 
@@ -67,7 +67,7 @@ internal static class ListFileVersionsHandler
 
         paths = paths.Select(path => Util.AppendDirSeparator(path)).ToArray();
         result.FileVersions = await db
-            .ListFileVersions(paths, filesetIds, offset, limit, result.TaskControl.ProgressToken)
+            .ListFileVersionsAsync(paths, filesetIds, offset, limit, result.TaskControl.ProgressToken)
             .ConfigureAwait(false);
     }
 }

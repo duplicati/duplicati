@@ -2978,6 +2978,18 @@ msgstr "Dom"
 msgid "Symbolic link"
 msgstr "Link simbolico"
 
+#: scripts/controllers/StateController.js:80
+msgid ""
+"Synchronizing remote destination: {{files}} files ({{size}}) to "
+"go{{speed_txt}}"
+msgstr ""
+"Sincronizzazione della destinazione remota: {{files}} file ({{size}}) da "
+"inviare a {{speed_txt}}"
+
+#: scripts/services/ServerStatus.js:48
+msgid "Synchronizing secondary destination …"
+msgstr "Sincronizzazione della destinazione secondaria…"
+
 #: scripts/services/AppUtils.js:200
 msgid "System Files"
 msgstr "File di sistema"
@@ -3289,7 +3301,7 @@ msgstr ""
 "consentiti a quelli elencati qui. L'accesso IP e localhost diretti sono "
 "sempre consentiti. È possibile fornire più nomi di host con un separatore di"
 " punto e virgola.  Se uno dei nomi di host consentiti è un asterisco (*), "
-"tutti i nomi host sono consentiti e questa funzione è disabilitata. Se il "
+"tutti i nomi host sono consentiti e questa funzione è disattivare. Se il "
 "campo è vuoto, è consentito solo l'accesso all'indirizzo IP e a localhost."
 
 #: scripts/controllers/RestoreController.js:34

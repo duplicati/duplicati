@@ -156,7 +156,7 @@ internal class TemporaryDbValueList : IDisposable, IAsyncDisposable
     private static async Task<TemporaryDbValueList> DoCreateAsync(TemporaryDbValueList valueList, CancellationToken token)
     {
         if (valueList._values.Count() > LocalDatabase.CHUNK_SIZE)
-            await valueList.ForceToTable(token).ConfigureAwait(false);
+            await valueList.ForceToTableAsync(token).ConfigureAwait(false);
 
         return valueList;
     }
@@ -176,12 +176,12 @@ internal class TemporaryDbValueList : IDisposable, IAsyncDisposable
     /// </summary>
     /// <param name="token">A cancellation token to cancel the operation.</param>
     /// <returns>A task that when awaited contains the SQL in clause string.</returns>
-    public async Task<string> GetInClause(CancellationToken token)
+    public async Task<string> GetInClauseAsync(CancellationToken token)
     {
         if (_disposed)
             throw new ObjectDisposedException(nameof(TemporaryDbValueList));
 
-        await ForceToTable(token).ConfigureAwait(false);
+        await ForceToTableAsync(token).ConfigureAwait(false);
 
         return $@"
             SELECT ""Value""
@@ -194,7 +194,7 @@ internal class TemporaryDbValueList : IDisposable, IAsyncDisposable
     /// </summary>
     /// <param name="token">A cancellation token to cancel the operation.</param>
     /// <returns>A task that completes when the table has been created and the values inserted.</returns>
-    public async Task ForceToTable(CancellationToken token)
+    public async Task ForceToTableAsync(CancellationToken token)
     {
         if (_disposed)
             throw new ObjectDisposedException(nameof(TemporaryDbValueList));

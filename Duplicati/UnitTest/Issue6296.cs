@@ -28,6 +28,7 @@ using System.IO.Compression;
 using Duplicati.Library.DynamicLoader;
 using Duplicati.Library.Main;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Duplicati.UnitTest
 {
@@ -35,7 +36,7 @@ namespace Duplicati.UnitTest
     {
         [Test]
         [Category("Targeted")]
-        public void TestRepairIndexFilesWorks([Values(1, 2, 3)] int fileDistribution)
+        public async Task TestRepairIndexFilesWorksAsync([Values(1, 2, 3)] int fileDistribution)
         {
             var testopts = TestOptions.Expand(new
             {
@@ -77,7 +78,7 @@ namespace Duplicati.UnitTest
 
             // Make a backup
             using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Backup(new string[] { DATAFOLDER }));
+                TestUtils.AssertResults(await c.BackupAsync(new string[] { DATAFOLDER }));
 
             // Make sure the tests succeed
             var verifyopts = testopts.Expand(new
@@ -86,7 +87,7 @@ namespace Duplicati.UnitTest
                 dont_replace_faulty_index_files = true,
             });
             using (var c = new Controller("file://" + TARGETFOLDER, verifyopts, null))
-                TestUtils.AssertResults(c.Test(short.MaxValue));
+                TestUtils.AssertResults(await c.TestAsync(short.MaxValue));
 
             // Manipulate the index files to remove the blocklist hashes
             var brokenIndexFiles = new HashSet<string>();
@@ -125,7 +126,7 @@ namespace Duplicati.UnitTest
 
             File.Delete(DBFILE);
             using (var c = new Controller(new DeterministicErrorBackend().ProtocolKey + "://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Repair());
+                TestUtils.AssertResults(await c.RepairAsync());
 
             // Check that the backup is valid, but missing data in the index files
             Assert.That(anyblockfiles, Is.True, "No dblock files were loaded during repair");
@@ -141,7 +142,7 @@ namespace Duplicati.UnitTest
 
             using (var c = new Controller("file://" + TARGETFOLDER, repairopts, null))
             {
-                var res = c.Test(short.MaxValue);
+                var res = await c.TestAsync(short.MaxValue);
                 Assert.That(res.Warnings, Is.Not.Empty, "Expected warnings during test with broken index files");
                 var faultyResults = res.Verifications
                     .Where(x => x.Value.Any())
@@ -165,7 +166,7 @@ namespace Duplicati.UnitTest
 
             // Check that the recreate operation works without downloading dblock files
             using (var c = new Controller(new DeterministicErrorBackend().ProtocolKey + "://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Repair());
+                TestUtils.AssertResults(await c.RepairAsync());
         }
     }
 }

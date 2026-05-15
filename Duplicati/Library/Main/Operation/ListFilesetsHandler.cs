@@ -54,7 +54,7 @@ internal static class ListFilesetsHandler
                 .ConfigureAwait(false);
 
             result.Filesets = await db
-                .ListFilesetsExtended(result.TaskControl.ProgressToken)
+                .ListFilesetsExtendedAsync(result.TaskControl.ProgressToken)
                 .ToArrayAsync(cancellationToken: result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);
 

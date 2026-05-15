@@ -2962,6 +2962,18 @@ msgstr "Dim."
 msgid "Symbolic link"
 msgstr "Lien symbolique"
 
+#: scripts/controllers/StateController.js:80
+msgid ""
+"Synchronizing remote destination: {{files}} files ({{size}}) to "
+"go{{speed_txt}}"
+msgstr ""
+"Synchronisation de la destination distante : {{files}} fichiers restants "
+"pour ({{size}}) à {{speed_txt}}"
+
+#: scripts/services/ServerStatus.js:48
+msgid "Synchronizing secondary destination …"
+msgstr "Synchronisation de la destination secondaire…"
+
 #: scripts/services/AppUtils.js:200
 msgid "System Files"
 msgstr "Fichiers système"

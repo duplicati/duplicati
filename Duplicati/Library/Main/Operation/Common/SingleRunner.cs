@@ -35,7 +35,7 @@ namespace Duplicati.Library.Main.Operation.Common
         protected readonly AsyncLock m_lock = new AsyncLock();
         protected readonly CancellationTokenSource m_workerSource = new CancellationTokenSource();
 
-        protected async Task<T> DoRunOnMain<T>(Func<Task<T>> method)
+        protected async Task<T> DoRunOnMainAsync<T>(Func<Task<T>> method)
         {
             m_workerSource.Token.ThrowIfCancellationRequested();
 
@@ -46,34 +46,35 @@ namespace Duplicati.Library.Main.Operation.Common
             }
         }
 
-        protected Task RunOnMain(Action method)
+        protected Task RunOnMainAsync(Action method)
         {
-            return DoRunOnMain<bool>(() =>
+            return DoRunOnMainAsync<bool>(() =>
             {
                 method();
                 return Task.FromResult(true);
             });
         }
 
-        protected Task<T> RunOnMain<T>(Func<T> method)
+        protected Task<T> RunOnMainAsync<T>(Func<T> method)
         {
-            return DoRunOnMain(() =>
+            return DoRunOnMainAsync(() =>
             {
                 return Task.FromResult(method());
             });
         }
 
-        protected Task RunOnMain(Func<Task> method)
+        protected Task RunOnMainAsync(Func<Task> method)
         {
-            return DoRunOnMain(async () => {
+            return DoRunOnMainAsync(async () =>
+            {
                 await method().ConfigureAwait(false);
                 return true;
             });
         }
 
-        protected Task<T> RunOnMain<T>(Func<Task<T>> method)
+        protected Task<T> RunOnMainAsync<T>(Func<Task<T>> method)
         {
-            return DoRunOnMain(method);
+            return DoRunOnMainAsync(method);
         }
 
         public void Dispose()

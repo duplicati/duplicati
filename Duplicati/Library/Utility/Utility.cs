@@ -2104,7 +2104,7 @@ namespace Duplicati.Library.Utility
                 }
                 else if (!OperatingSystem.IsWindows())
                 {
-                    var driveInfo = new DriveInfo(root);
+                    var driveInfo = new DriveInfo(path);
                     if (driveInfo.TotalSize > 0)
                         return (driveInfo.AvailableFreeSpace, driveInfo.TotalSize);
                 }

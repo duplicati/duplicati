@@ -23,8 +23,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
-using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
@@ -35,7 +35,7 @@ namespace Duplicati.UnitTest
     {
         [Test]
         [Category("Purge")]
-        public void PurgeTest()
+        public async Task PurgeTestAsync()
         {
             var blocksize = 1024 * 10;
             var basedatasize = 0;
@@ -51,7 +51,7 @@ namespace Duplicati.UnitTest
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                var res = c.Backup(new string[] { DATAFOLDER }, new Library.Utility.FilterExpression(round1.Select(x => "*" + Path.DirectorySeparatorChar + x)));
+                var res = await c.BackupAsync(new string[] { DATAFOLDER }, new Library.Utility.FilterExpression(round1.Select(x => "*" + Path.DirectorySeparatorChar + x)));
                 Assert.AreEqual(0, res.Errors.Count());
                 Assert.AreEqual(0, res.Warnings.Count());
                 Assert.AreEqual(res.AddedFiles, round1.Length);
@@ -60,7 +60,7 @@ namespace Duplicati.UnitTest
             System.Threading.Thread.Sleep(TimeSpan.FromSeconds(5));
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                var res = c.Backup(new string[] { DATAFOLDER }, new Library.Utility.FilterExpression(round2.Select(x => "*" + Path.DirectorySeparatorChar + x)));
+                var res = await c.BackupAsync(new string[] { DATAFOLDER }, new Library.Utility.FilterExpression(round2.Select(x => "*" + Path.DirectorySeparatorChar + x)));
                 Assert.AreEqual(0, res.Errors.Count());
                 Assert.AreEqual(0, res.Warnings.Count());
                 Assert.AreEqual(res.AddedFiles, round2.Length - round1.Length);
@@ -69,7 +69,7 @@ namespace Duplicati.UnitTest
             System.Threading.Thread.Sleep(TimeSpan.FromSeconds(5));
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                var res = c.Backup(new string[] { DATAFOLDER });
+                var res = await c.BackupAsync(new string[] { DATAFOLDER });
                 Assert.AreEqual(0, res.Errors.Count());
                 Assert.AreEqual(0, res.Warnings.Count());
                 Assert.AreEqual(res.AddedFiles, filenames.Count - round2.Length);
@@ -80,7 +80,7 @@ namespace Duplicati.UnitTest
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { list_sets_only = true }), null))
             {
-                var inf = c.List();
+                var inf = await c.ListAsync();
                 Assert.AreEqual(0, inf.Errors.Count());
                 Assert.AreEqual(0, inf.Warnings.Count());
                 var filesets = inf.Filesets.Count();
@@ -89,7 +89,7 @@ namespace Duplicati.UnitTest
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                IListResults listResults = c.List("*");
+                var listResults = await c.ListAsync("*");
                 Assert.AreEqual(0, listResults.Errors.Count());
                 Assert.AreEqual(0, listResults.Warnings.Count());
                 var filecount = listResults.Files.Count();
@@ -101,7 +101,7 @@ namespace Duplicati.UnitTest
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                var res = c.PurgeFiles(new Library.Utility.FilterExpression("*" + Path.DirectorySeparatorChar + allversion_candidate));
+                var res = await c.PurgeFilesAsync(new Library.Utility.FilterExpression("*" + Path.DirectorySeparatorChar + allversion_candidate));
                 Assert.AreEqual(0, res.Errors.Count());
                 Assert.AreEqual(0, res.Warnings.Count());
                 Assert.AreEqual(3, res.RewrittenFileLists, "Incorrect number of rewritten filesets after all-versions purge");
@@ -112,7 +112,7 @@ namespace Duplicati.UnitTest
             {
                 using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = i }), null))
                 {
-                    var res = c.PurgeFiles(new Library.Utility.FilterExpression(Path.Combine(this.DATAFOLDER, single_version_candidate)));
+                    var res = await c.PurgeFilesAsync(new Library.Utility.FilterExpression(Path.Combine(this.DATAFOLDER, single_version_candidate)));
                     Assert.AreEqual(0, res.Errors.Count());
                     Assert.AreEqual(0, res.Warnings.Count());
                     Assert.AreEqual(1, res.RewrittenFileLists, "Incorrect number of rewritten filesets after single-versions purge");
@@ -122,7 +122,7 @@ namespace Duplicati.UnitTest
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                var res = c.PurgeFiles(new Library.Utility.FilterExpression(round2.Skip(round1.Length).Take(2).Select(x => "*" + Path.DirectorySeparatorChar + x)));
+                var res = await c.PurgeFilesAsync(new Library.Utility.FilterExpression(round2.Skip(round1.Length).Take(2).Select(x => "*" + Path.DirectorySeparatorChar + x)));
                 Assert.AreEqual(0, res.Errors.Count());
                 Assert.AreEqual(0, res.Warnings.Count());
                 Assert.AreEqual(2, res.RewrittenFileLists, "Incorrect number of rewritten filesets after 2-versions purge");
@@ -131,7 +131,7 @@ namespace Duplicati.UnitTest
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                var res = c.PurgeFiles(new Library.Utility.FilterExpression(round3.Skip(round2.Length).Take(2).Select(x => "*" + Path.DirectorySeparatorChar + x)));
+                var res = await c.PurgeFilesAsync(new Library.Utility.FilterExpression(round3.Skip(round2.Length).Take(2).Select(x => "*" + Path.DirectorySeparatorChar + x)));
                 Assert.AreEqual(0, res.Errors.Count());
                 Assert.AreEqual(0, res.Warnings.Count());
                 Assert.AreEqual(1, res.RewrittenFileLists, "Incorrect number of rewritten filesets after 1-versions purge");
@@ -145,11 +145,11 @@ namespace Duplicati.UnitTest
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                var listinfo = c.List("*");
+                var listinfo = await c.ListAsync("*");
                 Assert.AreEqual(0, listinfo.Errors.Count());
                 Assert.AreEqual(0, listinfo.Warnings.Count());
                 var filecount = listinfo.Files.Count();
-                listinfo = c.List();
+                listinfo = await c.ListAsync();
                 Assert.AreEqual(0, listinfo.Errors.Count());
                 Assert.AreEqual(0, listinfo.Warnings.Count());
                 var filesets = listinfo.Filesets.Count();
@@ -160,19 +160,19 @@ namespace Duplicati.UnitTest
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                IBackupResults backupResults = c.Backup(new string[] { DATAFOLDER });
+                var backupResults = await c.BackupAsync(new string[] { DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
             }
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                var listinfo = c.List("*");
+                var listinfo = await c.ListAsync("*");
                 Assert.AreEqual(0, listinfo.Errors.Count());
                 Assert.AreEqual(0, listinfo.Warnings.Count());
                 var files = listinfo.Files.ToArray();
                 var filecount = files.Length;
-                listinfo = c.List();
+                listinfo = await c.ListAsync();
                 Assert.AreEqual(0, listinfo.Errors.Count());
                 Assert.AreEqual(0, listinfo.Warnings.Count());
                 var filesets = listinfo.Filesets.ToArray();
@@ -191,7 +191,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Purge")]
-        public void PurgeBrokenFilesTest()
+        public async Task PurgeBrokenFilesTestAsync()
         {
             var blocksize = 1024 * 10;
             var basedatasize = 0;
@@ -206,7 +206,7 @@ namespace Duplicati.UnitTest
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                var res = c.Backup(new string[] { DATAFOLDER }, new Library.Utility.FilterExpression(round1.Select(x => "*" + Path.DirectorySeparatorChar + x)));
+                var res = await c.BackupAsync(new string[] { DATAFOLDER }, new Library.Utility.FilterExpression(round1.Select(x => "*" + Path.DirectorySeparatorChar + x)));
                 Assert.AreEqual(0, res.Errors.Count());
                 Assert.AreEqual(0, res.Warnings.Count());
                 Assert.AreEqual(res.AddedFiles, round1.Length);
@@ -222,7 +222,7 @@ namespace Duplicati.UnitTest
             System.Threading.Thread.Sleep(TimeSpan.FromSeconds(5));
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                var res = c.Backup(new string[] { DATAFOLDER }, new Library.Utility.FilterExpression(round2.Select(x => "*" + Path.DirectorySeparatorChar + x)));
+                var res = await c.BackupAsync(new string[] { DATAFOLDER }, new Library.Utility.FilterExpression(round2.Select(x => "*" + Path.DirectorySeparatorChar + x)));
                 Assert.AreEqual(0, res.Errors.Count());
                 Assert.AreEqual(0, res.Warnings.Count());
                 Assert.AreEqual(round2.Length - round1.Length, res.AddedFiles);
@@ -231,7 +231,7 @@ namespace Duplicati.UnitTest
             System.Threading.Thread.Sleep(TimeSpan.FromSeconds(5));
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                var res = c.Backup(new string[] { DATAFOLDER });
+                var res = await c.BackupAsync(new string[] { DATAFOLDER });
                 Assert.AreEqual(0, res.Errors.Count());
                 Assert.AreEqual(0, res.Warnings.Count());
                 Assert.AreEqual(filenames.Count - round2.Length, res.AddedFiles);
@@ -244,7 +244,7 @@ namespace Duplicati.UnitTest
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                var brk = c.ListBrokenFiles(null);
+                var brk = await c.ListBrokenFilesAsync(null);
                 Assert.AreEqual(0, brk.Errors.Count());
                 Assert.AreEqual(0, brk.Warnings.Count());
                 var sets = brk.BrokenFiles.Count();
@@ -258,7 +258,7 @@ namespace Duplicati.UnitTest
             for (var i = 0; i < 3; i++)
                 using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = i }), null))
                 {
-                    var brk = c.ListBrokenFiles(null);
+                    var brk = await c.ListBrokenFilesAsync(null);
                     Assert.AreEqual(0, brk.Errors.Count());
                     Assert.AreEqual(0, brk.Warnings.Count());
                     var sets = brk.BrokenFiles.Count();
@@ -269,16 +269,16 @@ namespace Duplicati.UnitTest
 
             // A dry-run should run without exceptions (see issue #4379).
             Dictionary<string, string> dryRunOptions = new Dictionary<string, string>(testopts) { ["dry-run"] = "true" };
-            using (Controller c = new Controller("file://" + this.TARGETFOLDER, dryRunOptions, null))
+            using (var c = new Controller("file://" + this.TARGETFOLDER, dryRunOptions, null))
             {
-                IPurgeBrokenFilesResults purgeResults = c.PurgeBrokenFiles(null);
+                var purgeResults = await c.PurgeBrokenFilesAsync(null);
                 Assert.AreEqual(0, purgeResults.Errors.Count());
                 Assert.AreEqual(0, purgeResults.Warnings.Count());
             }
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                var brk = c.PurgeBrokenFiles(null);
+                var brk = await c.PurgeBrokenFilesAsync(null);
                 Assert.AreEqual(0, brk.Errors.Count());
                 Assert.AreEqual(0, brk.Warnings.Count());
 
@@ -298,9 +298,9 @@ namespace Duplicati.UnitTest
                 System.Threading.Thread.Sleep(wait_target);
 
             // A subsequent backup should be successful.
-            using (Controller c = new Controller("file://" + this.TARGETFOLDER, testopts, null))
+            using (var c = new Controller("file://" + this.TARGETFOLDER, testopts, null))
             {
-                IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
+                var backupResults = await c.BackupAsync(new[] { this.DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
             }

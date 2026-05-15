@@ -53,7 +53,7 @@ namespace Duplicati.UnitTest;
 public class SecretProviderSetSecretTests
 {
     [Test]
-    public async Task FileProvider_SetSecret_WritesToFile()
+    public async Task FileProvider_SetSecret_WritesToFile_Async()
     {
         var tempFile = Path.Combine(Path.GetTempPath(), $"duplicati-secrets-{Guid.NewGuid():N}.json");
         var passphrase = "test1234";
@@ -90,7 +90,7 @@ public class SecretProviderSetSecretTests
 
     [Test]
     [Category("SecretProviders.Remote")]
-    public async Task AwsProvider_SetSecret_Works()
+    public async Task AwsProvider_SetSecret_Works_Async()
     {
         var url = Environment.GetEnvironmentVariable("DUPLICATI_TEST_AWSSM_URL");
 
@@ -169,7 +169,7 @@ public class SecretProviderSetSecretTests
 
     [Test]
     [Category("SecretProviders.Remote")]
-    public async Task AzureProvider_SetSecret_Works()
+    public async Task AzureProvider_SetSecret_Works_Async()
     {
         var url = Environment.GetEnvironmentVariable("DUPLICATI_TEST_AZKV_URL");
 
@@ -228,7 +228,7 @@ public class SecretProviderSetSecretTests
 
     [Test]
     [Category("SecretProviders.Remote")]
-    public async Task GcsProvider_SetSecret_Works()
+    public async Task GcsProvider_SetSecret_Works_Async()
     {
         var url = Environment.GetEnvironmentVariable("DUPLICATI_TEST_GCS_URL");
 
@@ -284,7 +284,7 @@ public class SecretProviderSetSecretTests
 
     [Test]
     [Category("SecretProviders.Remote")]
-    public async Task HcVaultProvider_SetSecret_Works()
+    public async Task HcVaultProvider_SetSecret_Works_Async()
     {
         var url = Environment.GetEnvironmentVariable("DUPLICATI_TEST_HCV_URL");
 
@@ -364,7 +364,7 @@ public class SecretProviderSetSecretTests
         return secrets ?? new Dictionary<string, string>();
     }
 
-    private static async Task<bool> IsDockerAvailable()
+    private static async Task<bool> IsDockerAvailable_Async()
     {
         try
         {
@@ -381,9 +381,9 @@ public class SecretProviderSetSecretTests
 
     [Test]
     [Category("SecretProviders.Remote")]
-    public async Task HcVaultProvider_SetSecret_Works_WithTestcontainers()
+    public async Task HcVaultProvider_SetSecret_Works_WithTestcontainers_Async()
     {
-        if (!await IsDockerAvailable())
+        if (!await IsDockerAvailable_Async())
             Assert.Ignore("Testcontainers not available");
 
         const string rootToken = "duplicati-root-token";

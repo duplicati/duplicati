@@ -80,7 +80,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="block_response">The channel to receive blocks from the block manager.</param>
         /// <param name="options">The restore options.</param>
         /// <param name="results">The restore results.</param>
-        public static Task Run(Channels channels, LocalRestoreDatabase db, IChannel<BlockRequest> block_request, IChannel<Task<DataBlock>> block_response, IRestoreDestinationProvider restoreDestination, Options options, RestoreResults results)
+        public static Task RunAsync(Channels channels, LocalRestoreDatabase db, IChannel<BlockRequest> block_request, IChannel<Task<DataBlock>> block_response, IRestoreDestinationProvider restoreDestination, Options options, RestoreResults results)
         {
             return AutomationExtensions.RunTask(
             new
@@ -125,7 +125,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         sw_file?.Stop();
 
                         // Check if this is a priority file and wait for all priority files to complete before processing non-priority files
-                        await WaitForPriorityFilesIfNeeded(file).ConfigureAwait(false);
+                        await WaitForPriorityFilesIfNeededAsync(file).ConfigureAwait(false);
 
                         Logging.Log.WriteExplicitMessage(LOGTAG, "FileRestored", null, "{0} Restoring file {1}", my_id, file.TargetPath);
 
@@ -137,12 +137,12 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 if (file_processors_restoring_files <= 0 && !file_processor_continue.Task.IsCompleted)
                                     file_processor_continue.SetResult();
                                 else
-                                    await RendezvousBeforeProcessingFolderMetadata()
+                                    await RendezvousBeforeProcessingFolderMetadataAsync()
                                         .ConfigureAwait(false);
                                 decremented = true;
                             }
 
-                            await RestoreMetadata(db, file, restoreDestination, block_request, block_response, options, sw_meta, sw_work_meta, sw_req, sw_resp, results.TaskControl.ProgressToken)
+                            await RestoreMetadataAsync(db, file, restoreDestination, block_request, block_response, options, sw_meta, sw_work_meta, sw_req, sw_resp, results.TaskControl.ProgressToken)
                                 .ConfigureAwait(false);
 
                             continue;
@@ -152,7 +152,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         // TODO rather than keeping all of the blocks in memory, we could do a single pass over the blocks using a cursor, only keeping the relevant block requests in memory. Maybe even only a single block request at a time.
                         sw_block?.Start();
                         var blocks = await db
-                            .GetBlocksFromFile(file.BlocksetID, results.TaskControl.ProgressToken)
+                            .GetBlocksFromFileAsync(file.BlocksetID, results.TaskControl.ProgressToken)
                             .ToArrayAsync(results.TaskControl.ProgressToken)
                             .ConfigureAwait(false);
                         sw_block?.Stop();
@@ -163,7 +163,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         List<BlockRequest> missing_blocks, verified_blocks;
                         try
                         {
-                            (bytes_verified, missing_blocks, verified_blocks) = await VerifyTargetBlocks(file, restoreDestination, blocks, filehasher, blockhasher, buffer, options, results, results.TaskControl.ProgressToken).ConfigureAwait(false);
+                            (bytes_verified, missing_blocks, verified_blocks) = await VerifyTargetBlocksAsync(file, restoreDestination, blocks, filehasher, blockhasher, buffer, options, results, results.TaskControl.ProgressToken).ConfigureAwait(false);
                         }
                         catch (Exception ex)
                         {
@@ -182,7 +182,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         // Check if the target file needs to be retargeted
                         if (missing_blocks.Count > 0 && !options.Overwrite && await restoreDestination.FileExists(file.TargetPath, results.TaskControl.ProgressToken).ConfigureAwait(false))
                         {
-                            var new_name = await GenerateNewName(file, db, restoreDestination, filehasher, results.TaskControl.ProgressToken).ConfigureAwait(false);
+                            var new_name = await GenerateNewNameAsync(file, db, restoreDestination, filehasher, results.TaskControl.ProgressToken).ConfigureAwait(false);
                             if (await restoreDestination.FileExists(new_name, results.TaskControl.ProgressToken).ConfigureAwait(false))
                             {
                                 // The file already exists, which it only does when it matches the target hash. So we can skip the file.
@@ -203,7 +203,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                     {
                                         try
                                         {
-                                            await CopyOldTargetBlocksToNewTarget(file, new_file, restoreDestination, buffer, verified_blocks, results.TaskControl.ProgressToken).ConfigureAwait(false);
+                                            await CopyOldTargetBlocksToNewTargetAsync(file, new_file, restoreDestination, buffer, verified_blocks, results.TaskControl.ProgressToken).ConfigureAwait(false);
                                         }
                                         catch (Exception ex)
                                         {
@@ -245,7 +245,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         if (missing_blocks.Count > 0 && options.UseLocalBlocks)
                         {
                             // Verify the local blocks at the original restore path that may be used to restore the file.
-                            (bytes_written, missing_blocks) = await VerifyLocalBlocks(file, restoreDestination, missing_blocks, blocks.Length, filehasher, blockhasher, buffer, options, results, block_request, results.TaskControl.ProgressToken).ConfigureAwait(false);
+                            (bytes_written, missing_blocks) = await VerifyLocalBlocksAsync(file, restoreDestination, missing_blocks, blocks.Length, filehasher, blockhasher, buffer, options, results, block_request, results.TaskControl.ProgressToken).ConfigureAwait(false);
                         }
                         sw_work_verify_local?.Stop();
 
@@ -490,13 +490,13 @@ namespace Duplicati.Library.Main.Operation.Restore
                             }
                             finally
                             {
-                                fs?.Dispose();
+                                await (fs?.DisposeAsync().AsTask() ?? Task.CompletedTask).ConfigureAwait(false);
                             }
                         }
 
                         if (!options.SkipMetadata)
                         {
-                            empty_file_or_symlink |= await RestoreMetadata(db, file, restoreDestination, block_request, block_response, options, sw_meta, sw_work_meta, sw_req, sw_resp, results.TaskControl.ProgressToken).ConfigureAwait(false);
+                            empty_file_or_symlink |= await RestoreMetadataAsync(db, file, restoreDestination, block_request, block_response, options, sw_meta, sw_work_meta, sw_req, sw_resp, results.TaskControl.ProgressToken).ConfigureAwait(false);
                             sw_work_meta?.Stop();
                         }
 
@@ -509,7 +509,17 @@ namespace Duplicati.Library.Main.Operation.Restore
                             lock (results)
                             {
                                 results.RestoredFiles++;
-                                results.SizeOfRestoredFiles += bytes_written;
+                                results.SizeOfRestoredFiles += file.Length;
+                                results.SizeOfRestoredData += bytes_written;
+                            }
+                        }
+                        else
+                        {
+                            // Keep track of the existing files and their sizes
+                            lock (results)
+                            {
+                                results.UnmodifiedFiles++;
+                                results.SizeOfUnmodifiedFiles += file.Length;
                             }
                         }
                         sw_work_results?.Stop();
@@ -557,7 +567,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="restoreDestination">The restore destination provider.</param>
         /// <param name="verified_blocks">The blocks in the old file that were verified.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
-        private static async Task CopyOldTargetBlocksToNewTarget(FileRequest old_file, FileRequest new_file, IRestoreDestinationProvider restoreDestination, byte[] buffer, List<BlockRequest> verified_blocks, CancellationToken cancellationToken)
+        private static async Task CopyOldTargetBlocksToNewTargetAsync(FileRequest old_file, FileRequest new_file, IRestoreDestinationProvider restoreDestination, byte[] buffer, List<BlockRequest> verified_blocks, CancellationToken cancellationToken)
         {
             using var fs_old = await restoreDestination.OpenRead(old_file.TargetPath, cancellationToken).ConfigureAwait(false);
             using var fs_new = await restoreDestination.OpenWrite(new_file.TargetPath, cancellationToken).ConfigureAwait(false);
@@ -586,7 +596,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="filehasher">The file hasher used to verify whether any of the </param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>The new filename. If the file already exists, its file hash matches the target hash.</returns>
-        private static async Task<string> GenerateNewName(FileRequest request, LocalRestoreDatabase database, IRestoreDestinationProvider restoreDestination, System.Security.Cryptography.HashAlgorithm filehasher, CancellationToken cancellationToken)
+        private static async Task<string> GenerateNewNameAsync(FileRequest request, LocalRestoreDatabase database, IRestoreDestinationProvider restoreDestination, System.Security.Cryptography.HashAlgorithm filehasher, CancellationToken cancellationToken)
         {
             var ext = SystemIO.IO_OS.PathGetExtension(request.TargetPath) ?? "";
             if (!string.IsNullOrEmpty(ext) && !ext.StartsWith(".", StringComparison.Ordinal))
@@ -638,7 +648,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// Rendezvous with the other FileProcessor's before processing folder metadata.
         /// </summary>
         /// <returns>An awaitable task that completes once all of the FileProcessor's have rendezvoused.</returns>
-        private static async Task RendezvousBeforeProcessingFolderMetadata()
+        private static async Task RendezvousBeforeProcessingFolderMetadataAsync()
         {
             var should_wait = false;
             lock (file_processor_continue_lock)
@@ -661,7 +671,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// If the current file is not a priority file, it waits until all priority files have been processed.
         /// </summary>
         /// <param name="file">The file request being processed.</param>
-        private static async Task WaitForPriorityFilesIfNeeded(FileRequest file)
+        private static async Task WaitForPriorityFilesIfNeededAsync(FileRequest file)
         {
             if (file.IsPriorityFile)
             {
@@ -711,7 +721,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="sw_resp">The stopwatch for internal profiling of the block responses.</param>
         /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
         /// <returns>An awaitable `Task`, which returns `true` if the metadata was restored successfully, `false` otherwise.</returns>
-        private static async Task<bool> RestoreMetadata(LocalRestoreDatabase db, FileRequest file, IRestoreDestinationProvider restoreDestination, IChannel<BlockRequest> block_request, IChannel<Task<DataBlock>> block_response, Options options, Stopwatch? sw_meta, Stopwatch? sw_work, Stopwatch? sw_req, Stopwatch? sw_resp, CancellationToken cancellationToken)
+        private static async Task<bool> RestoreMetadataAsync(LocalRestoreDatabase db, FileRequest file, IRestoreDestinationProvider restoreDestination, IChannel<BlockRequest> block_request, IChannel<Task<DataBlock>> block_response, Options options, Stopwatch? sw_meta, Stopwatch? sw_work, Stopwatch? sw_req, Stopwatch? sw_resp, CancellationToken cancellationToken)
         {
             sw_meta?.Start();
             // Since each FileProcessor should have its own connection, it's ok
@@ -719,7 +729,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             // time, as the other processes should still be able to read.
             // Therefore, we don't need to read the entire result set into
             // memory.
-            var blocks = db.GetMetadataBlocksFromFile(file.ID, cancellationToken);
+            var blocks = db.GetMetadataBlocksFromFileAsync(file.ID, cancellationToken);
             sw_meta?.Stop();
 
             using var ms = new MemoryStream();
@@ -749,7 +759,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 sw_resp?.Stop();
 
                 sw_work?.Start();
-                ms.Write(datablock.Data, 0, (int)block.BlockSize);
+                await ms.WriteAsync(datablock.Data, 0, (int)block.BlockSize);
                 sw_work?.Stop();
 
                 sw_req?.Start();
@@ -769,7 +779,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             }
             ms.Seek(0, SeekOrigin.Begin);
 
-            return await RestoreHandler.ApplyMetadata(file.TargetPath, ms, options, restoreDestination, cancellationToken);
+            return await RestoreHandler.ApplyMetadataAsync(file.TargetPath, ms, options, restoreDestination, cancellationToken);
         }
 
         /// <summary>
@@ -785,7 +795,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="results">The restoration results.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>An awaitable `Task`, which returns a collection of data blocks that are missing.</returns>
-        private static async Task<(long, List<BlockRequest>, List<BlockRequest>)> VerifyTargetBlocks(FileRequest file, IRestoreDestinationProvider restoreDestination, BlockRequest[] blocks, System.Security.Cryptography.HashAlgorithm filehasher, System.Security.Cryptography.HashAlgorithm blockhasher, byte[] buffer, Options options, RestoreResults results, CancellationToken cancellationToken)
+        private static async Task<(long, List<BlockRequest>, List<BlockRequest>)> VerifyTargetBlocksAsync(FileRequest file, IRestoreDestinationProvider restoreDestination, BlockRequest[] blocks, System.Security.Cryptography.HashAlgorithm filehasher, System.Security.Cryptography.HashAlgorithm blockhasher, byte[] buffer, Options options, RestoreResults results, CancellationToken cancellationToken)
         {
             long bytes_read = 0;
             List<BlockRequest> missing_blocks = [];
@@ -901,7 +911,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="block_request">The channel to request blocks from the block manager. Used to inform the block manager which blocks are already present.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>An awaitable `Task`, which returns a collection of data blocks that are missing.</returns>
-        private static async Task<(long, List<BlockRequest>)> VerifyLocalBlocks(FileRequest file, IRestoreDestinationProvider restoreDestination, List<BlockRequest> blocks, long total_blocks, System.Security.Cryptography.HashAlgorithm filehasher, System.Security.Cryptography.HashAlgorithm blockhasher, byte[] buffer, Options options, RestoreResults results, IChannel<BlockRequest> block_request, CancellationToken cancellationToken)
+        private static async Task<(long, List<BlockRequest>)> VerifyLocalBlocksAsync(FileRequest file, IRestoreDestinationProvider restoreDestination, List<BlockRequest> blocks, long total_blocks, System.Security.Cryptography.HashAlgorithm filehasher, System.Security.Cryptography.HashAlgorithm blockhasher, byte[] buffer, Options options, RestoreResults results, IChannel<BlockRequest> block_request, CancellationToken cancellationToken)
         {
             if (file.TargetPath == file.OriginalPath)
             {

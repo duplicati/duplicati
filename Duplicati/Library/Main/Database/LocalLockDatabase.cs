@@ -61,7 +61,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="lockExpirationTime">The lock expiration time, or null to clear the lock.</param>
         /// <param name="token">Cancellation token.</param>
         /// <returns>A task that completes when the update is done.</returns>
-        public async Task UpdateRemoteVolumeLockExpiration(string name, DateTime lockExpirationTime, CancellationToken token)
+        public async Task UpdateRemoteVolumeLockExpirationAsync(string name, DateTime lockExpirationTime, CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand();
             cmd.SetTransaction(m_rtr);
@@ -73,7 +73,7 @@ namespace Duplicati.Library.Main.Database
             cmd.SetParameterValue("@Name", name);
             cmd.SetParameterValue("@LockExpirationTime", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(lockExpirationTime));
 
-            var c = await cmd.ExecuteNonQueryAsync(token).ConfigureAwait(false);
+            var c = await cmd.ExecuteNonQueryAsync(true, token).ConfigureAwait(false);
             if (c != 1)
                 throw new Exception($"Unexpected number of remote volumes updated: {c}, expected 1");
         }
@@ -84,7 +84,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="onlyWithoutLockInformation">If true, only returns volumes without lock expiration</param>
         /// <param name="token">Cancellation token.</param>
         /// <returns>An asynchronous sequence of tuples containing the volume name and lock expiration time.</returns>
-        public async IAsyncEnumerable<(string Name, DateTime? LockExpirationTime)> GetRemoteVolumesWithLockExpiration(bool onlyWithoutLockInformation, [EnumeratorCancellation] CancellationToken token)
+        public async IAsyncEnumerable<(string Name, DateTime? LockExpirationTime)> GetRemoteVolumesWithLockExpirationAsync(bool onlyWithoutLockInformation, [EnumeratorCancellation] CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand();
             cmd.SetTransaction(m_rtr);

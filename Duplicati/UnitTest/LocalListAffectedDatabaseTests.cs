@@ -40,13 +40,13 @@ namespace Duplicati.UnitTest
     public class LocalListAffectedDatabaseTests
     {
         /// <summary>
-        /// Tests that <see cref="LocalListAffectedDatabase.GetLogLines"/> works correctly
+        /// Tests that <see cref="LocalListAffectedDatabase.GetLogLinesAsync"/> works correctly
         /// with a large number of items that triggers the temporary table code path
         /// (when count > CHUNK_SIZE = 128).
         /// </summary>
         [Test]
         [Category("Database")]
-        public async Task GetLogLines_WithLargeItemCount_UsesTemporaryTable()
+        public async Task GetLogLines_WithLargeItemCount_UsesTemporaryTable_Async()
         {
             // Arrange
             using var tempFile = new TempFile();
@@ -59,10 +59,10 @@ namespace Duplicati.UnitTest
             using (var cmd = db.Connection.CreateCommand())
             {
                 // Insert operation entry first
-                cmd.SetCommandAndParameters(@"
+                await cmd.SetCommandAndParameters(@"
                     INSERT OR IGNORE INTO Operation (ID, Description, Timestamp)
                     VALUES (1, 'TestOperation', 0);")
-                    .ExecuteNonQuery();
+                    .ExecuteNonQueryAsync();
 
                 // Insert 150 remote operation entries
                 for (int i = 0; i < 150; i++)
@@ -70,7 +70,7 @@ namespace Duplicati.UnitTest
                     var path = $"/remote/path/file{i:D4}.zip";
                     remotePaths.Add(path);
 
-                    cmd.SetCommandAndParameters(@"
+                    await cmd.SetCommandAndParameters(@"
                         INSERT INTO RemoteOperation (OperationID, Timestamp, Operation, Path, Data)
                         VALUES (@operationId, @timestamp, @operation, @path, @data);")
                         .SetParameterValue("@operationId", 1L)
@@ -78,7 +78,7 @@ namespace Duplicati.UnitTest
                         .SetParameterValue("@operation", "put")
                         .SetParameterValue("@path", path)
                         .SetParameterValue("@data", $"Operation data for {path}")
-                        .ExecuteNonQuery();
+                        .ExecuteNonQueryAsync();
                 }
 
                 // Insert some log data that references these paths
@@ -86,7 +86,7 @@ namespace Duplicati.UnitTest
                 // log entries to match the first chunk
                 for (int i = 0; i < 150; i++)
                 {
-                    cmd.SetCommandAndParameters(@"
+                    await cmd.SetCommandAndParameters(@"
                         INSERT INTO LogData (OperationID, Timestamp, Type, Message, Exception)
                         VALUES (@operationId, @timestamp, @type, @message, @exception);")
                         .SetParameterValue("@operationId", 1L)
@@ -94,13 +94,13 @@ namespace Duplicati.UnitTest
                         .SetParameterValue("@type", "Information")
                         .SetParameterValue("@message", $"Log message referencing {remotePaths[i]}")
                         .SetParameterValue("@exception", (string?)null)
-                        .ExecuteNonQuery();
+                        .ExecuteNonQueryAsync();
                 }
             }
 
             // Act: Call GetLogLines with 150 items
             // This should trigger the temporary table code path
-            var results = await db.GetLogLines(remotePaths, CancellationToken.None)
+            var results = await db.GetLogLinesAsync(remotePaths, CancellationToken.None)
                 .ToListAsync()
                 .ConfigureAwait(false);
 
@@ -109,13 +109,13 @@ namespace Duplicati.UnitTest
         }
 
         /// <summary>
-        /// Tests that <see cref="LocalListAffectedDatabase.GetVolumes"/> works correctly
+        /// Tests that <see cref="LocalListAffectedDatabase.GetVolumesAsync"/> works correctly
         /// with a large number of items that triggers the temporary table code path
         /// (when count > CHUNK_SIZE = 128).
         /// </summary>
         [Test]
         [Category("Database")]
-        public async Task GetVolumes_WithLargeItemCount_UsesTemporaryTable()
+        public async Task GetVolumes_WithLargeItemCount_UsesTemporaryTable_Async()
         {
             // Arrange
             using var tempFile = new TempFile();
@@ -132,15 +132,15 @@ namespace Duplicati.UnitTest
             using (var cmd = db.Connection.CreateCommand())
             {
                 // Insert operation entry
-                cmd.SetCommandAndParameters(@"
+                await cmd.SetCommandAndParameters(@"
                     INSERT OR IGNORE INTO Operation (ID, Description, Timestamp)
                     VALUES (1, 'TestOperation', 0);")
-                    .ExecuteNonQuery();
+                    .ExecuteNonQueryAsync();
 
                 // Insert 150 remote volumes
                 for (int i = 0; i < 150; i++)
                 {
-                    cmd.SetCommandAndParameters(@"
+                    await cmd.SetCommandAndParameters(@"
                         INSERT INTO RemoteVolume (ID, OperationID, Name, Type, State, Size, VerificationCount, DeleteGraceTime, ArchiveTime, LockExpirationTime)
                         VALUES (@id, @operationId, @name, @type, @state, @size, @verificationCount, @deleteGraceTime, @archiveTime, @lockExpirationTime);")
                         .SetParameterValue("@id", i + 1)
@@ -153,13 +153,13 @@ namespace Duplicati.UnitTest
                         .SetParameterValue("@deleteGraceTime", 0)
                         .SetParameterValue("@archiveTime", 0)
                         .SetParameterValue("@lockExpirationTime", 0)
-                        .ExecuteNonQuery();
+                        .ExecuteNonQueryAsync();
                 }
 
                 // Insert fileset entries that reference these volumes
                 for (int i = 0; i < 150; i++)
                 {
-                    cmd.SetCommandAndParameters(@"
+                    await cmd.SetCommandAndParameters(@"
                         INSERT INTO Fileset (ID, OperationID, VolumeID, IsFullBackup, Timestamp)
                         VALUES (@id, @operationId, @volumeId, @isFullBackup, @timestamp);")
                         .SetParameterValue("@id", i + 1)
@@ -167,56 +167,56 @@ namespace Duplicati.UnitTest
                         .SetParameterValue("@volumeId", i + 1)
                         .SetParameterValue("@isFullBackup", 1)
                         .SetParameterValue("@timestamp", i)
-                        .ExecuteNonQuery();
+                        .ExecuteNonQueryAsync();
                 }
 
                 // Insert Block entries that reference these volumes
                 for (int i = 0; i < 150; i++)
                 {
-                    cmd.SetCommandAndParameters(@"
+                    await cmd.SetCommandAndParameters(@"
                         INSERT INTO Block (ID, VolumeID, Hash, Size)
                         VALUES (@id, @volumeId, @hash, @size);")
                         .SetParameterValue("@id", i + 1)
                         .SetParameterValue("@volumeId", i + 1)
                         .SetParameterValue("@hash", $"hash{i}")
                         .SetParameterValue("@size", 1024)
-                        .ExecuteNonQuery();
+                        .ExecuteNonQueryAsync();
                 }
 
                 // Insert Blockset entries
-                cmd.SetCommandAndParameters(@"
+                await cmd.SetCommandAndParameters(@"
                     INSERT INTO Blockset (ID, Length, FullHash)
                     VALUES (1, 1024, 'fullhash');")
-                    .ExecuteNonQuery();
+                    .ExecuteNonQueryAsync();
 
                 // Insert BlocksetEntry entries that link blocks to blocksets
                 for (int i = 0; i < 150; i++)
                 {
-                    cmd.SetCommandAndParameters(@"
+                    await cmd.SetCommandAndParameters(@"
                         INSERT INTO BlocksetEntry (BlocksetID, BlockID, ""Index"")
                         VALUES (@blocksetId, @blockId, @idx);")
                         .SetParameterValue("@blocksetId", 1)
                         .SetParameterValue("@blockId", i + 1)
                         .SetParameterValue("@idx", i)
-                        .ExecuteNonQuery();
+                        .ExecuteNonQueryAsync();
                 }
 
                 // Insert Metadataset entries
-                cmd.SetCommandAndParameters(@"
+                await cmd.SetCommandAndParameters(@"
                     INSERT INTO Metadataset (ID, BlocksetID)
                     VALUES (1, 1);")
-                    .ExecuteNonQuery();
+                    .ExecuteNonQueryAsync();
 
                 // Insert PathPrefix entries
-                cmd.SetCommandAndParameters(@"
+                await cmd.SetCommandAndParameters(@"
                     INSERT INTO PathPrefix (ID, Prefix)
                     VALUES (1, '/test/');")
-                    .ExecuteNonQuery();
+                    .ExecuteNonQueryAsync();
 
                 // Insert FileLookup entries
                 for (int i = 0; i < 150; i++)
                 {
-                    cmd.SetCommandAndParameters(@"
+                    await cmd.SetCommandAndParameters(@"
                         INSERT INTO FileLookup (ID, PrefixID, Path, BlocksetID, MetadataID)
                         VALUES (@id, @prefixId, @path, @blocksetId, @metadataId);")
                         .SetParameterValue("@id", i + 1)
@@ -224,25 +224,25 @@ namespace Duplicati.UnitTest
                         .SetParameterValue("@path", $"file{i}.txt")
                         .SetParameterValue("@blocksetId", 1)
                         .SetParameterValue("@metadataId", 1)
-                        .ExecuteNonQuery();
+                        .ExecuteNonQueryAsync();
                 }
 
                 // Insert FilesetEntry entries
                 for (int i = 0; i < 150; i++)
                 {
-                    cmd.SetCommandAndParameters(@"
+                    await cmd.SetCommandAndParameters(@"
                         INSERT INTO FilesetEntry (FilesetID, FileID, Lastmodified)
                         VALUES (@filesetId, @fileId, @lastModified);")
                         .SetParameterValue("@filesetId", i + 1)
                         .SetParameterValue("@fileId", i + 1)
                         .SetParameterValue("@lastModified", 0)
-                        .ExecuteNonQuery();
+                        .ExecuteNonQueryAsync();
                 }
             }
 
             // Act: Call GetVolumes with 150 items
             // This should trigger the temporary table code path
-            var results = await db.GetVolumes(volumeNames, CancellationToken.None)
+            var results = await db.GetVolumesAsync(volumeNames, CancellationToken.None)
                 .ToListAsync()
                 .ConfigureAwait(false);
 
@@ -251,12 +251,12 @@ namespace Duplicati.UnitTest
         }
 
         /// <summary>
-        /// Tests that <see cref="LocalListAffectedDatabase.GetLogLines"/> returns empty
+        /// Tests that <see cref="LocalListAffectedDatabase.GetLogLinesAsync"/> returns empty
         /// results when given an empty list of items.
         /// </summary>
         [Test]
         [Category("Database")]
-        public async Task GetLogLines_WithEmptyItems_ReturnsEmpty()
+        public async Task GetLogLines_WithEmptyItems_ReturnsEmpty_Async()
         {
             // Arrange
             using var tempFile = new TempFile();
@@ -264,7 +264,7 @@ namespace Duplicati.UnitTest
                 .ConfigureAwait(false);
 
             // Act: Call GetLogLines with empty list
-            var results = await db.GetLogLines(Array.Empty<string>(), CancellationToken.None)
+            var results = await db.GetLogLinesAsync(Array.Empty<string>(), CancellationToken.None)
                 .ToListAsync()
                 .ConfigureAwait(false);
 
@@ -273,12 +273,12 @@ namespace Duplicati.UnitTest
         }
 
         /// <summary>
-        /// Tests that <see cref="LocalListAffectedDatabase.GetVolumes"/> returns empty
+        /// Tests that <see cref="LocalListAffectedDatabase.GetVolumesAsync"/> returns empty
         /// results when given an empty list of items.
         /// </summary>
         [Test]
         [Category("Database")]
-        public async Task GetVolumes_WithEmptyItems_ReturnsEmpty()
+        public async Task GetVolumes_WithEmptyItems_ReturnsEmpty_Async()
         {
             // Arrange
             using var tempFile = new TempFile();
@@ -286,7 +286,7 @@ namespace Duplicati.UnitTest
                 .ConfigureAwait(false);
 
             // Act: Call GetVolumes with empty list
-            var results = await db.GetVolumes(Array.Empty<string>(), CancellationToken.None)
+            var results = await db.GetVolumesAsync(Array.Empty<string>(), CancellationToken.None)
                 .ToListAsync()
                 .ConfigureAwait(false);
 

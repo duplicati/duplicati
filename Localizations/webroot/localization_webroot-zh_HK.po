@@ -3,11 +3,12 @@
 # YUCHENG CHIU, 2026
 # Steve Link, 2026
 # vishun, 2026
+# boshu tu, 2026
 # 
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"Last-Translator: vishun, 2026\n"
+"Last-Translator: boshu tu, 2026\n"
 "Language-Team: Chinese (Hong Kong) (https://app.transifex.com/duplicati/teams/67655/zh_HK/)\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -2884,6 +2885,16 @@ msgstr "星期日"
 #: scripts/services/AppUtils.js:78
 msgid "Symbolic link"
 msgstr "符號連結"
+
+#: scripts/controllers/StateController.js:80
+msgid ""
+"Synchronizing remote destination: {{files}} files ({{size}}) to "
+"go{{speed_txt}}"
+msgstr "正在同步远程目标：{{files}}个文件（{{size}}）速度（{{speed_txt}}）"
+
+#: scripts/services/ServerStatus.js:48
+msgid "Synchronizing secondary destination …"
+msgstr "正在同步辅助目标..."
 
 #: scripts/services/AppUtils.js:200
 msgid "System Files"

@@ -24,6 +24,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text.Json;
+using CoCoL;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Logging;
 using Duplicati.Library.Utility;
@@ -124,6 +125,24 @@ public class KeepRemoteConnection : IDisposable
     /// The current state of the connection
     /// </summary>
     private ConnectionState _state = ConnectionState.NotConnected;
+
+    /// <summary>
+    /// Event raised when the connection state changes
+    /// </summary>
+    public event EventHandler<ConnectionState>? StateChanged;
+
+    /// <summary>
+    /// Sets the connection state and raises the StateChanged event if it changed
+    /// </summary>
+    /// <param name="newState">The new state</param>
+    private void SetState(ConnectionState newState)
+    {
+        if (_state == newState)
+            return;
+
+        _state = newState;
+        StateChanged?.Invoke(this, newState);
+    }
     /// <summary>
     /// The task that runs the connection
     /// </summary>
@@ -218,14 +237,14 @@ public class KeepRemoteConnection : IDisposable
         _refreshSettingsBy = refreshSettingsBy ?? DateTimeOffset.MinValue;
 
         _client = new Websocket.Client.WebsocketClient(new Uri(serverUrl));
-        _runnerTask = RunMainLoop(forceConnect);
+        _runnerTask = RunMainLoopAsync(forceConnect);
     }
 
     /// <summary>
     /// Runs the inner loop of the connection
     /// </summary>
     /// <param name="forceConnect">If the connection should be force enabled, ignoring re-connect delays</param>
-    private async Task RunMainLoop(bool forceConnect)
+    private async Task RunMainLoopAsync(bool forceConnect)
     {
         _client.ReconnectTimeout = NoResponseTimeout;
         _client.LostReconnectTimeout = ReconnectInterval;
@@ -233,7 +252,7 @@ public class KeepRemoteConnection : IDisposable
 
         // Set up the periodic refreshers
         using var reconnectHelper = new PeriodicRefresher(
-            Timeout.InfiniteTimeSpan,
+            System.Threading.Timeout.InfiniteTimeSpan,
             ReconnectInterval,
             async token =>
             {
@@ -254,9 +273,9 @@ public class KeepRemoteConnection : IDisposable
                 // If we do not get any response from the server, we should reconnect
                 else if ((_state == ConnectionState.Authenticated || _state == ConnectionState.WelcomeReceived) && _lastMessageReceived.Add(NoResponseTimeout) < DateTimeOffset.Now)
                 {
-                    _state = ConnectionState.Error;
+                    SetState(ConnectionState.Error);
                     Log.WriteMessage(LogMessageType.Warning, LogTag, "WebsocketDisconnect", "No response from server");
-                    _client.Stop(System.Net.WebSockets.WebSocketCloseStatus.NormalClosure, "No response");
+                    _client.Stop(System.Net.WebSockets.WebSocketCloseStatus.NormalClosure, "No response").FireAndForget();
                 }
 
                 SendEnvelope(new EnvelopedMessage()
@@ -273,15 +292,15 @@ public class KeepRemoteConnection : IDisposable
             },
             _cancellationTokenSource.Token);
 
-        using var certificateRfreshHelper = new PeriodicRefresher(
+        using var certificateRefreshHelper = new PeriodicRefresher(
             CertificateRefreshInterval,
             MinimumCertificateRefreshInterval,
-            RefreshCertificates,
+            RefreshCertificatesAsync,
             _cancellationTokenSource.Token);
 
         _client.DisconnectionHappened.Subscribe(info =>
         {
-            _state = ConnectionState.NotConnected;
+            SetState(ConnectionState.NotConnected);
             _serverCertificate = null;
             _serverPublicKey = null;
             if (!IsAutoReconnectDisabled())
@@ -295,62 +314,80 @@ public class KeepRemoteConnection : IDisposable
             }
         });
 
-        _client.MessageReceived.Subscribe(async msg =>
+        _client.MessageReceived.Subscribe(msg => OnMessageAsync(msg, certificateRefreshHelper, reconnectHelper).Await());
+
+        // Start the connection
+        if (forceConnect || !IsAutoReconnectDisabled())
+            reconnectHelper.Signal();
+
+        var t = await Task.WhenAny(
+            heartbeatHelper.RunLoopAsync(),
+            reconnectHelper.RunLoopAsync(),
+            certificateRefreshHelper.RunLoopAsync()
+        );
+
+        await _cancellationTokenSource.CancelAsync();
+
+        // Re-throw any exceptions
+        await t;
+    }
+
+    private async Task OnMessageAsync(Websocket.Client.ResponseMessage msg, PeriodicRefresher certificateRefreshHelper, PeriodicRefresher reconnectHelper)
+    {
+        // Ignore messages if we are in an error state
+        if (_state == ConnectionState.Error)
+            return;
+
+        _lastMessageReceived = DateTimeOffset.Now;
+        if (_state == ConnectionState.NotConnected)
+            Log.WriteMessage(LogMessageType.Verbose, LogTag, "WebsocketMessage", "Received message from server: {0}", msg);
+        else // Encrypted messages are not logged, as the content has no meaning before being decrypted
+            Log.WriteMessage(LogMessageType.Verbose, LogTag, "WebsocketMessage", "Received encrypted message from server");
+
+        try
         {
-            // Ignore messages if we are in an error state
-            if (_state == ConnectionState.Error)
-                return;
+            if (string.IsNullOrWhiteSpace(msg.Text))
+                throw new ProtocolViolationException("Empty message");
 
-            _lastMessageReceived = DateTimeOffset.Now;
-            if (_state == ConnectionState.NotConnected)
-                Log.WriteMessage(LogMessageType.Verbose, LogTag, "WebsocketMessage", "Received message from server: {0}", msg);
-            else // Encrypted messages are not logged, as the content has no meaning before being decrypted
-                Log.WriteMessage(LogMessageType.Verbose, LogTag, "WebsocketMessage", "Received encrypted message from server");
-
-            try
+            if (_serverCertificate == null || _serverPublicKey == null || _state == ConnectionState.NotConnected)
             {
-                if (string.IsNullOrWhiteSpace(msg.Text))
-                    throw new ProtocolViolationException("Empty message");
+                // Should be safe from replay, as the response is encrypted with the server public key
+                // So even a replay attack would not let the attacker know the client's token
+                var welcomeEnvelope = EnvelopedMessage.ForceParse(msg.Text);
+                if (welcomeEnvelope.GetMessageType() != MessageType.Welcome)
+                    throw new ProtocolViolationException("Expected welcome message");
+                if (string.IsNullOrWhiteSpace(welcomeEnvelope.Payload))
+                    throw new ProtocolViolationException("No payload in welcome message");
 
-                if (_serverCertificate == null || _serverPublicKey == null || _state == ConnectionState.NotConnected)
+                var welcomeMessage = welcomeEnvelope.GetPayload<WelcomeMessage>()
+                    ?? throw new ProtocolViolationException("Invalid welcome message");
+
+                if (string.IsNullOrWhiteSpace(welcomeMessage.PublicKeyHash))
+                    throw new ProtocolViolationException("No public key hash in welcome message");
+                _serverCertificate = _serverKeys.FirstOrDefault(x => x.PublicKeyHash == welcomeMessage.PublicKeyHash && x.Expiry > DateTimeOffset.Now);
+
+                if (_serverCertificate == null)
                 {
-                    // Should be safe from replay, as the response is encrypted with the server public key
-                    // So even a replay attack would not let the attacker know the client's token
-                    var welcomeEnvelope = EnvelopedMessage.ForceParse(msg.Text);
-                    if (welcomeEnvelope.GetMessageType() != MessageType.Welcome)
-                        throw new ProtocolViolationException("Expected welcome message");
-                    if (string.IsNullOrWhiteSpace(welcomeEnvelope.Payload))
-                        throw new ProtocolViolationException("No payload in welcome message");
+                    certificateRefreshHelper.Signal();
+                    throw new ProtocolViolationException("No valid server certificate");
+                }
 
-                    var welcomeMessage = welcomeEnvelope.GetPayload<WelcomeMessage>()
-                        ?? throw new ProtocolViolationException("Invalid welcome message");
+                try
+                {
+                    var tmp = RSA.Create();
+                    tmp.ImportFromPem(_serverCertificate.PublicKey);
+                    _serverPublicKey = tmp;
+                }
+                catch
+                {
+                    certificateRefreshHelper.Signal();
+                    throw new ProtocolViolationException("Invalid server certificate");
+                }
 
-                    if (string.IsNullOrWhiteSpace(welcomeMessage.PublicKeyHash))
-                        throw new ProtocolViolationException("No public key hash in welcome message");
-                    _serverCertificate = _serverKeys.FirstOrDefault(x => x.PublicKeyHash == welcomeMessage.PublicKeyHash && x.Expiry > DateTimeOffset.Now);
+                SetState(ConnectionState.WelcomeReceived);
 
-                    if (_serverCertificate == null)
-                    {
-                        certificateRfreshHelper.Signal();
-                        throw new ProtocolViolationException("No valid server certificate");
-                    }
-
-                    try
-                    {
-                        var tmp = RSA.Create();
-                        tmp.ImportFromPem(_serverCertificate.PublicKey);
-                        _serverPublicKey = tmp;
-                    }
-                    catch
-                    {
-                        certificateRfreshHelper.Signal();
-                        throw new ProtocolViolationException("Invalid server certificate");
-                    }
-
-                    _state = ConnectionState.WelcomeReceived;
-
-                    // Prepare basic metadata and allow additional metadata to be added
-                    var metadata = await _onConnect(new Dictionary<string, string?>() {
+                // Prepare basic metadata and allow additional metadata to be added
+                var metadata = await _onConnect(new Dictionary<string, string?>() {
                         { "client-version", UpdaterManager.SelfVersion?.Version ?? "0.0.0.0" },
                         { "client-id", ClientId },
                         { "client-uptime", (DateTime.Now - Process.GetCurrentProcess().StartTime).ToString() },
@@ -362,115 +399,98 @@ public class KeepRemoteConnection : IDisposable
                         { "update-channel", UpdaterManager.CurrentChannel.ToString() }
                     });
 
-                    SendEnvelope(
-                        welcomeEnvelope.RespondWith(
-                            new AuthMessage(
-                                _token,
-                                ClientKey.ExportRSAPublicKeyPem(),
-                                UpdaterManager.SelfVersion?.Version ?? "0.0.0.0",
-                                PROTOCOL_VERSION,
-                                metadata
-                            ),
-                            "auth"
+                SendEnvelope(
+                    welcomeEnvelope.RespondWith(
+                        new AuthMessage(
+                            _token,
+                            ClientKey.ExportRSAPublicKeyPem(),
+                            UpdaterManager.SelfVersion?.Version ?? "0.0.0.0",
+                            PROTOCOL_VERSION,
+                            metadata
                         ),
-                        force: true);
-                    return;
-                }
-
-                if (_serverCertificate == null || _serverPublicKey == null || _serverCertificate.HasExpired())
-                {
-                    certificateRfreshHelper.Signal();
-                    throw new ProtocolViolationException("No valid server certificate");
-                }
-
-                var envelope = TransportHelper.ParseFromEncryptedMessage(msg.Text, ClientKey);
-                if (_state == ConnectionState.WelcomeReceived)
-                {
-                    if (envelope.GetMessageType() != MessageType.Auth)
-                        throw new ProtocolViolationException("Expected welcome message");
-
-                    var authMessage = envelope.GetPayload<AuthResultMessage>();
-                    if (!authMessage.Accepted ?? false)
-                        throw new ProtocolViolationException("Authentication failed");
-
-                    _state = ConnectionState.Authenticated;
-
-                    if ((authMessage.WillReplaceToken ?? false) && authMessage.NewToken != null)
-                    {
-                        _token = authMessage.NewToken;
-                        await InvokeReKey();
-                    }
-                }
-                else if (_state == ConnectionState.Authenticated)
-                {
-                    Log.WriteVerboseMessage(LogTag, "WebsocketMessage", "Processing message of type {0}", envelope.GetMessageType());
-                    switch (envelope.GetMessageType())
-                    {
-                        case MessageType.Pong:
-                            break;
-
-                        case MessageType.Command:
-                            await _onMessage(new CommandMessage(
-                                envelope.GetPayload<CommandRequestMessage>(),
-                                response => SendEnvelope(envelope.RespondWith(response))
-                            ));
-                            break;
-
-                        case MessageType.Control:
-                            await _onControl(new ControlMessage(
-                                envelope.GetPayload<ControlRequestMessage>(),
-                                response => SendEnvelope(envelope.RespondWith(response)),
-                                refreshSettingsBy =>
-                                {
-                                    _refreshSettingsBy = DateTimeOffset.FromUnixTimeMilliseconds(Math.Max(refreshSettingsBy.ToUnixTimeMilliseconds(), DateTimeOffset.UtcNow.AddSeconds(30).ToUnixTimeMilliseconds()));
-                                    _client.Stop(System.Net.WebSockets.WebSocketCloseStatus.NormalClosure, "Disconnect requested");
-                                }
-                            ));
-                            break;
-
-                        default:
-                            throw new ProtocolViolationException("Unexpected message");
-                    }
-                }
-                else
-                {
-                    throw new ProtocolViolationException("Unexpected message");
-                }
-
-
+                        "auth"
+                    ),
+                    force: true);
+                return;
             }
-            catch (Exception ex)
+
+            if (_serverCertificate == null || _serverPublicKey == null || _serverCertificate.HasExpired())
             {
-                _state = ConnectionState.Error;
-                Log.WriteMessage(LogMessageType.Error, LogTag, "WebsocketMessage", ex, "Failed to process message: {0}", msg);
-
-                await _client.Stop(System.Net.WebSockets.WebSocketCloseStatus.NormalClosure, "Error");
-                reconnectHelper.Signal();
+                certificateRefreshHelper.Signal();
+                throw new ProtocolViolationException("No valid server certificate");
             }
-        });
 
-        // Start the connection
-        if (forceConnect || !IsAutoReconnectDisabled())
+            var envelope = TransportHelper.ParseFromEncryptedMessage(msg.Text, ClientKey);
+            if (_state == ConnectionState.WelcomeReceived)
+            {
+                if (envelope.GetMessageType() != MessageType.Auth)
+                    throw new ProtocolViolationException("Expected welcome message");
+
+                var authMessage = envelope.GetPayload<AuthResultMessage>();
+                if (!authMessage.Accepted ?? false)
+                    throw new ProtocolViolationException("Authentication failed");
+
+                SetState(ConnectionState.Authenticated);
+
+                if ((authMessage.WillReplaceToken ?? false) && authMessage.NewToken != null)
+                {
+                    _token = authMessage.NewToken;
+                    await InvokeReKeyAsync();
+                }
+            }
+            else if (_state == ConnectionState.Authenticated)
+            {
+                Log.WriteVerboseMessage(LogTag, "WebsocketMessage", "Processing message of type {0}", envelope.GetMessageType());
+                switch (envelope.GetMessageType())
+                {
+                    case MessageType.Pong:
+                        break;
+
+                    case MessageType.Command:
+                        await _onMessage(new CommandMessage(
+                            envelope.GetPayload<CommandRequestMessage>(),
+                            response => SendEnvelope(envelope.RespondWith(response))
+                        ));
+                        break;
+
+                    case MessageType.Control:
+                        await _onControl(new ControlMessage(
+                            envelope.GetPayload<ControlRequestMessage>(),
+                            response => SendEnvelope(envelope.RespondWith(response)),
+                            refreshSettingsBy =>
+                            {
+                                _refreshSettingsBy = DateTimeOffset.FromUnixTimeMilliseconds(Math.Max(refreshSettingsBy.ToUnixTimeMilliseconds(), DateTimeOffset.UtcNow.AddSeconds(30).ToUnixTimeMilliseconds()));
+                                _client.Stop(System.Net.WebSockets.WebSocketCloseStatus.NormalClosure, "Disconnect requested").FireAndForget();
+                            }
+                        ));
+                        break;
+
+                    default:
+                        throw new ProtocolViolationException("Unexpected message");
+                }
+            }
+            else
+            {
+                throw new ProtocolViolationException("Unexpected message");
+            }
+        }
+        catch (Exception ex)
+        {
+            SetState(ConnectionState.Error);
+            Log.WriteMessage(LogMessageType.Error, LogTag, "WebsocketMessage", ex, "Failed to process message: {0}", msg);
+
+            await _client.Stop(System.Net.WebSockets.WebSocketCloseStatus.NormalClosure, "Error");
             reconnectHelper.Signal();
+        }
 
-        var t = await Task.WhenAny(
-            heartbeatHelper.RunLoopAsync(),
-            reconnectHelper.RunLoopAsync(),
-            certificateRfreshHelper.RunLoopAsync()
-        );
-
-        _cancellationTokenSource.Cancel();
-
-        // Re-throw any exceptions
-        await t;
     }
 
     /// <summary>
     /// Helper method to invoke the rekey callback
     /// </summary>
     /// <returns>An awaitable task</returns>
-    private Task InvokeReKey()
-        => _onReKey(new ClaimedClientData(_token, _serverUrl, _certificateUrl, _serverKeys, null));
+    private Task InvokeReKeyAsync()
+        => _onReKey(new ClaimedClientData(_token, _serverUrl, _certificateUrl, _serverKeys, null, null));
 
     /// <summary>
     /// Creates a new connection to the remote server
@@ -487,7 +507,7 @@ public class KeepRemoteConnection : IDisposable
     /// <param name="onControl">The callback to call when a control message is received</param>
     /// <param name="onMessage">The callback to call when a command message is received</param>
     /// <returns></returns>
-    public static Task Start(
+    public static Task StartAsync(
         string serverUrl,
         string JWT,
         string certificateUrl,
@@ -509,17 +529,17 @@ public class KeepRemoteConnection : IDisposable
     /// Gets the task representing the connection
     /// </summary>
     /// <returns>The task</returns>
-    public Task Run()
+    public Task RunAsync()
         => _runnerTask;
 
     /// <summary>
     /// Stops the connection
     /// </summary>
     /// <returns>An awaitable task</returns>
-    public Task Stop()
+    public async Task StopAsync()
     {
-        _cancellationTokenSource.Cancel();
-        return _runnerTask;
+        await _cancellationTokenSource.CancelAsync();
+        await _runnerTask;
     }
 
     /// <summary>
@@ -605,7 +625,7 @@ public class KeepRemoteConnection : IDisposable
     /// </summary>
     /// <param name="cancelToken">The cancellation token</param>
     /// <returns>An awaitable task</returns>
-    private async Task RefreshCertificates(CancellationToken cancelToken)
+    private async Task RefreshCertificatesAsync(CancellationToken cancelToken)
     {
         using var client = HttpClientHelper.CreateClient(); // We won't set infiniteTimeout and keep the default 100s timeout
         var response = await client.GetAsync(_certificateUrl, cancelToken);
@@ -619,7 +639,7 @@ public class KeepRemoteConnection : IDisposable
                     .Where(x => !x.HasExpired() && !string.IsNullOrWhiteSpace(x.PublicKeyHash) && !string.IsNullOrWhiteSpace(x.PublicKey))
                     .ToList();
 
-                await InvokeReKey();
+                await InvokeReKeyAsync();
             }
         }
     }
@@ -671,7 +691,7 @@ public class KeepRemoteConnection : IDisposable
         /// </summary>
         /// <param name="client">The pre-configured http client</param>
         /// <returns>An awaitable task</returns>
-        public async Task Handle(HttpClient client)
+        public async Task HandleAsync(HttpClient client)
         {
             try
             {

@@ -22,7 +22,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     /// Tests that ListFilesAsync returns the expected block-based files for an UnknownFilesystem.
     /// </summary>
     [Test]
-    public async Task Test_UnknownFilesystem_ListFilesAsync_ReturnsBlockBasedFiles()
+    public async Task Test_UnknownFilesystem_ListFilesAsync_ReturnsBlockBasedFiles_Async()
     {
         // Create a partition on the writable disk
         var sectorSize = _writableRawDisk.SectorSize;
@@ -68,7 +68,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     /// Tests that write and read round-trip preserves data correctly.
     /// </summary>
     [Test]
-    public async Task Test_UnknownFilesystem_WriteRead_RoundTrip_DataMatches()
+    public async Task Test_UnknownFilesystem_WriteRead_RoundTrip_DataMatches_Async()
     {
         // Create a partition on the writable disk
         var sectorSize = _writableRawDisk.SectorSize;

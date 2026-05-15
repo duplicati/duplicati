@@ -38,7 +38,7 @@ public class Fat32ZeroStreamTests
     }
 
     [Test]
-    public async Task Test_Fat32ZeroStream_ReadAsync_ReturnsZeros()
+    public async Task Test_Fat32ZeroStream_ReadAsync_ReturnsZeros_Async()
     {
         const int blockSize = 1024 * 1024; // 1MB
         using var stream = new Fat32Filesystem.Fat32ZeroStream(blockSize);

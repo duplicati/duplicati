@@ -23,9 +23,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using NUnit.Framework;
-using Tmds.DBus.Protocol;
 
 namespace Duplicati.UnitTest
 {
@@ -33,7 +33,7 @@ namespace Duplicati.UnitTest
     {
         [Test]
         [Category("Targeted")]
-        public void TestPurgeFindsCorrectBlockSize()
+        public async Task TestPurgeFindsCorrectBlockSizeAsync()
         {
             // 1. Prepare some data
             var longdata = new byte[32 * 1024 + 5];
@@ -51,7 +51,7 @@ namespace Duplicati.UnitTest
             // 3. Backup the large file
             File.WriteAllBytes(Path.Combine(DATAFOLDER, "a"), longdata);
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Backup([DATAFOLDER]));
+                TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
 
             var existingDIndexAndDblockFiles = Directory.GetFiles(TARGETFOLDER)
                 .Where(f => f.Contains(".dindex.") || f.Contains(".dblock."))
@@ -60,7 +60,7 @@ namespace Duplicati.UnitTest
             // 4. Backup the small file
             File.WriteAllBytes(Path.Combine(DATAFOLDER, "b"), shortdata);
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Backup([DATAFOLDER]));
+                TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
 
             // 5. Delete dindex and dblock files from second backup
             foreach (var file in Directory.GetFiles(TARGETFOLDER)
@@ -87,11 +87,11 @@ namespace Duplicati.UnitTest
             // 7. Recreate and expect an error due to missing data
             File.Delete(DBFILE);
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, opts1, null))
-                Assert.Throws<UserInformationException>(() => c.Repair());
+                Assert.ThrowsAsync<UserInformationException>(() => c.RepairAsync());
 
             // 8. Run purge-broken-files
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, opts2, null))
-                TestUtils.AssertResults(c.PurgeBrokenFiles(null));
+                TestUtils.AssertResults(await c.PurgeBrokenFilesAsync(null));
 
         }
     }
