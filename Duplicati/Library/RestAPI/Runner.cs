@@ -867,6 +867,8 @@ namespace Duplicati.Server
 
         private static async Task<Library.Main.IController> CreateControllerAsync(string url, Dictionary<string, string?> options, MessageSink sink, bool useOutOfProcess)
         {
+            if (useOutOfProcess)
+                return await Library.Main.IPC.ControllerRpcProxy.CreateProxyAsync(url, options, sink);
             return new Library.Main.Controller(url, options, sink);
         }
 
