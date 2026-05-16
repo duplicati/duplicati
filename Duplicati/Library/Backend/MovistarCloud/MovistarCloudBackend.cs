@@ -306,6 +306,7 @@ public sealed class MovistarCloudBackend : IBackend
         if (_waitForValidation)
         {
             var deadline = DateTime.UtcNow.Add(_validationTimeout);
+            var usableStatus = false;
             while (DateTime.UtcNow < deadline)
             {
                 var st = await Client.WithAutoRelogin(
@@ -313,9 +314,18 @@ public sealed class MovistarCloudBackend : IBackend
                     cancellationToken).ConfigureAwait(false);
 
                 if (string.Equals(st, "U", StringComparison.OrdinalIgnoreCase))
+                {
+                    usableStatus = true;
                     break;
+                }
 
                 await Task.Delay(_validationPollInterval, cancellationToken).ConfigureAwait(false);
+            }
+            if (!usableStatus)
+            {
+                //Right now we dont see other cases appart of status "V" and Status "U"
+                //TODO: validate new status in the previous block if they appear
+                Logging.Log.WriteWarningMessage(LOGTAG, "ValidationTimeout",null, "Validation did not reach status=U within {0} for {1} (uploadId={2}). Continuing as best-effort.",_validationTimeout, remotename, upload.Id);
             }
         }
 
