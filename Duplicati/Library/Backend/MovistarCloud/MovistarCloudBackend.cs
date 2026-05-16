@@ -47,11 +47,7 @@ public sealed class MovistarCloudBackend : IBackend
     /// <summary>
     /// The client ID option name
     /// </summary>
-    private const string DeviceIdOption = "deviceID";
-    /// <summary>
-    /// The root folder path option name
-    /// </summary>
-    private const string RootFolderPathOption = "root-folder-path";
+    private const string DeviceIdOption = "deviceID";    
     /// <summary>
     /// The list limit option name
     /// </summary>
@@ -212,8 +208,7 @@ public sealed class MovistarCloudBackend : IBackend
     [
         new CommandLineArgument(EmailOption, CommandLineArgument.ArgumentType.String, Strings.MovistarCloudBackend.EmailShort, Strings.MovistarCloudBackend.EmailLong),
         new CommandLineArgument(PasswordOption, CommandLineArgument.ArgumentType.Password, Strings.MovistarCloudBackend.PasswordShort, Strings.MovistarCloudBackend.PasswordLong),
-        new CommandLineArgument(DeviceIdOption, CommandLineArgument.ArgumentType.String, Strings.MovistarCloudBackend.DeviceIdShort, Strings.MovistarCloudBackend.DeviceIdLong),
-        new CommandLineArgument(RootFolderPathOption, CommandLineArgument.ArgumentType.String, Strings.MovistarCloudBackend.RootFolderPathShort, Strings.MovistarCloudBackend.RootFolderPathLong),
+        new CommandLineArgument(DeviceIdOption, CommandLineArgument.ArgumentType.String, Strings.MovistarCloudBackend.DeviceIdShort, Strings.MovistarCloudBackend.DeviceIdLong),        
         new CommandLineArgument(ListLimitOption, CommandLineArgument.ArgumentType.Integer, Strings.MovistarCloudBackend.ListLimitShort, Strings.MovistarCloudBackend.ListLimitLong, DefaultListLimit.ToString()),
         new CommandLineArgument(WaitForValidationOption, CommandLineArgument.ArgumentType.Boolean, Strings.MovistarCloudBackend.WaitForValidationShort, Strings.MovistarCloudBackend.WaitForValidationLong, DefaultWaitForValidation.ToString()),
         new CommandLineArgument(ValidationTimeoutOption, CommandLineArgument.ArgumentType.Timespan, Strings.MovistarCloudBackend.ValidationTimeoutShort, Strings.MovistarCloudBackend.ValidationTimeoutLong, DefaultValidationTimeout),
@@ -251,7 +246,10 @@ public sealed class MovistarCloudBackend : IBackend
         var password = RequireOption(options, PasswordOption);
         var device_id = RequireOption(options, DeviceIdOption);
 
-        _rootFolderPathOpt = options.GetValueOrDefault(RootFolderPathOption)?.Trim();
+
+        var uri = new Utility.Uri(url);
+        _rootFolderPathOpt = uri.HostAndPath;
+        
         _listLimit = Library.Utility.Utility.ParseIntOption(options, ListLimitOption, DefaultListLimit);
 
         //TODO: Possible replacement of ParseBoolOption to accept default value.
@@ -294,8 +292,8 @@ public sealed class MovistarCloudBackend : IBackend
             _destinationResolved = true;
             return;
         }
-
-        throw new FolderMissingException("Missing destination folder: specify root-folder-path.");
+        
+        throw new FolderMissingException("Missing destination folder: specify path on configuration.");
     }
 
     /// <inheritdoc/>
@@ -390,8 +388,8 @@ public sealed class MovistarCloudBackend : IBackend
         }
         // Case C: nothing -> indicate missing folder
         else
-        {
-            throw new FolderMissingException("Missing destination folder: specify root-folder-path.");
+        {            
+            throw new FolderMissingException("Missing destination folder during Test: specify path on configuration.");
         }
 
         // Diagnostics logging when enabled
@@ -476,7 +474,7 @@ public sealed class MovistarCloudBackend : IBackend
         }
                 
         throw new UserInformationException(
-            "Unable to create the destination folder because no destination path was provided. Specify --root-folder-path so the Movistar Cloud backend knows which remote folder to create or use.",
+            "Unable to create the destination folder because no destination path was provided. Specify Path so the Movistar Cloud backend knows which remote folder to create or use.",
             "MovistarCloudMissingRootFolderPath");
     }
 
