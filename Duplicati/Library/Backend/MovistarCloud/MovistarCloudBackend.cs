@@ -253,7 +253,12 @@ public sealed class MovistarCloudBackend : IBackend
 
         _rootFolderPathOpt = options.GetValueOrDefault(RootFolderPathOption)?.Trim();
         _listLimit = Library.Utility.Utility.ParseIntOption(options, ListLimitOption, DefaultListLimit);
-        _waitForValidation = Library.Utility.Utility.ParseBoolOption(options, WaitForValidationOption);
+
+        //TODO: Possible replacement of ParseBoolOption to accept default value.
+        if (options.ContainsKey(WaitForValidationOption))
+            _waitForValidation = Library.Utility.Utility.ParseBoolOption(options, WaitForValidationOption);
+        else _waitForValidation = DefaultWaitForValidation;
+
         _validationTimeout = Library.Utility.Utility.ParseTimespanOption(options, ValidationTimeoutOption, DefaultValidationTimeout);
         _validationPollInterval = Library.Utility.Utility.ParseTimespanOption(options, ValidationPollIntervalOption, DefaultValidationPollInterval);
         _diagnostics = Library.Utility.Utility.ParseBoolOption(options, DiagnosticsOption);
