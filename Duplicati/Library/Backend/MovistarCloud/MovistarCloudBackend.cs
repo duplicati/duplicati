@@ -45,7 +45,7 @@ public sealed class MovistarCloudBackend : IBackend
     /// </summary>
     private const string PasswordOption = "password";
     /// <summary>
-    /// The client ID option name
+    /// The device ID option name coming from the X-Deviceid header
     /// </summary>
     private const string DeviceIdOption = "deviceID";    
     /// <summary>
