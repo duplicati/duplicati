@@ -9,10 +9,13 @@ using Duplicati.Library.Main;
 namespace AutoTune;
 
 // TODO backup command tuning
+// TODO backup with several versions
+// TODO block size
 // TODO dblock size
 // TODO data sizes
 // TODO non-folder source
 // TODO non-folder restore target
+
 public record ConfigRestore
 {
     public required int ChannelDepth { get; init; }
@@ -246,6 +249,7 @@ public class Program
         return await root_cmd.InvokeAsync(args).ConfigureAwait(false);
     }
 
+    // TODO assumes restore tuning. Should be moved into several commands for additional tunings (e.g. backup).
     internal static async Task<int> RunCore(string source, string destination, string restoretarget, string tempfolder, Dictionary<string, string?> options)
     {
         if (!destination.Contains("://"))
@@ -321,6 +325,7 @@ public class Program
         await cmd.InvokeAsync(args);
     }
 
+    // TODO taken from the remote synchronization tool. Consolidate into shared library.
     /// <summary>
     /// Parses the options from a list of strings.
     /// Each option should be in the format "key=value". If the value contains spaces,
