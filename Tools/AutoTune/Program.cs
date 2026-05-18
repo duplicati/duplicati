@@ -12,7 +12,6 @@ namespace AutoTune;
 // TODO backup with several versions
 // TODO block size
 // TODO dblock size
-// TODO data sizes
 // TODO non-folder source
 // TODO non-folder restore target
 
@@ -191,13 +190,27 @@ public class Program
             },
             new Option<string?>(aliases: ["--destination"], description: "Destination to store the test backup. The destination should be empty (as required by Duplicati). The data will be deleted again after the tuning process. If no argument is specified, then a temporary folder (as optionally specified with the temp_folder argument) will be used.", getDefaultValue: () => null),
             new Option<string?>(aliases: ["--restoretarget"], description: "Target folder to restore a backup to. The folder should be empty beforehand, as it needs to be emptied during measurements. If no argument is specified, then a temporary folder (as optionally specified with the temp_folder argument) will be used.", getDefaultValue: () => null),
-            new Option<int>(aliases: ["--runs"], description: "Number of runs to measure. The mean is reported.", getDefaultValue: () => 1),
+            new Option<int>(aliases: ["--runs"], description: "Number of runs to measure. The mean is reported.", getDefaultValue: () => 3),
             new Option<string?>(aliases: ["--source-folder"], description: "Source folder to make a backup of. If the folder is empty, then some test data will be generated. If no argument is specified, then a temporary folder (as optionally specified with the temp_folder argument) will be used.", getDefaultValue: () => null),
             new Option<string?>(aliases: ["--temp-folder"], description: "Path to where the temporary files should be created. If no argument is specified, then the system default (e.g. /tmp or %TEMP%) will be used.", getDefaultValue: () => null),
-            new Option<int>(aliases: ["--warmup"], description: "Amount of warmup runs to perform before measuring.", getDefaultValue: () => 0),
+            new Option<long>(aliases: ["--testdata-max-file-size"], description: "If no source folder has been specified, this option tunes the maximum size (in bytes) a generated file may have.", getDefaultValue: () => 1024 * 1024),
+            new Option<long>(aliases: ["--testdata-max-total-size"], description: "If no source folder has been specified, this option tunes the maximum size (in bytes) the generated files collectively may take up.", getDefaultValue: () => 512 * 1024 * 1024),
+            new Option<long>(aliases: ["--testdata-num-files"], description: "If no source folder has been specified, this option tunes how many files are generated as test data.", getDefaultValue: () => 10000),
+            new Option<int>(aliases: ["--warmup"], description: "Amount of warmup runs to perform before measuring.", getDefaultValue: () => 1),
         };
 
-        root_cmd.Handler = CommandHandler.Create(async (string? source, string? destination, string? restoretarget, string? tempfolder, List<string> options, int warmup, int runs, CancellationToken token) =>
+        root_cmd.Handler = CommandHandler.Create(async (
+            List<string> options,
+            string? destination,
+            string? restoretarget,
+            int runs,
+            string? source,
+            string? tempfolder,
+            long testdatamaxfilesize,
+            long testdatamaxtotalsize,
+            long testdatanumfiles,
+            int warmup,
+            CancellationToken token) =>
         {
             // Check if a specific temp folder has been specified.
             tempfolder ??= Path.Combine(Path.GetTempPath(), $"duplicati_autotune_{new Guid()}");
@@ -223,7 +236,7 @@ public class Program
             create_dir(restoretarget);
 
             if (!Directory.EnumerateFiles(source).Any())
-                await GenerateData(source, token);
+                await GenerateData(source, testdatamaxfilesize, testdatamaxtotalsize, testdatanumfiles, token);
 
             var opts = ParseOptions(options);
 
@@ -402,13 +415,9 @@ public class Program
         };
     }
 
-    private static async Task GenerateData(string path, CancellationToken token)
+    private static async Task GenerateData(string path, long max_file_size, long max_total_size, long file_count, CancellationToken token)
     {
         var cmd = TestDataGenerator.Commands.Create.CreateCommand();
-        const long MB = 1024 * 1024;
-        long max_file_size = 1 * MB;
-        long max_total_size = 1024 * MB;
-        long file_count = 10000;
         long sparse_factor = 30;
         var args = $"\"{path}\" --max-file-size {max_file_size} --max-total-size {max_total_size} --file-count {file_count} --sparse-factor {sparse_factor}";
         await cmd.InvokeAsync(args);
