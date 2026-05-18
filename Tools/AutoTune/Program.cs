@@ -312,6 +312,7 @@ public class Program
             c.Restore(["*"]);
 
             var profile_current = await sink.ParseLines();
+            Console.WriteLine("-----");
             Console.WriteLine($"New run {profile_current.Total} - {profile_best.Total}");
 
             if (profile_current.Total < profile_best.Total)
@@ -348,6 +349,10 @@ public class Program
             };
             last_idx = idx;
         }
+
+        Console.WriteLine("-----");
+        Console.WriteLine($"Best run found took {profile_best.Total} ms compared to {profile_default_baseline.Total} ms default ({(double)profile_default_baseline.Total / (double)profile_best.Total:.02f} x)");
+        Console.WriteLine($"{config_best.FileProcessors} {config_best.VolumeDecompressors} {config_best.VolumeDecryptors} {config_best.VolumeDownloaders}");
 
         // Cleanup
         using (var c = new Controller(destination, options, sink))
