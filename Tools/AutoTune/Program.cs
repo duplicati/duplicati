@@ -159,6 +159,12 @@ public class ProfilingCaptureSink : IMessageSink, IDisposable
         return parsed;
     }
 
+    public void Reset()
+    {
+        _log_lines.Clear();
+        _network_wait.Clear();
+    }
+
     void ILogDestination.WriteMessage(LogEntry entry)
     {
         if (entry.Id == "InternalTimings")
@@ -265,42 +271,52 @@ public class Program
         options["console-log-level"] = "Profiling";
 
         var sink = new ProfilingCaptureSink();
-        IBackupResults backup_results;
-        IRestoreResults restore_results;
-        using var c = new Controller(destination, options, sink);
-        try
-        {
-            backup_results = c.Backup([source]);
-        }
-        catch (Exception e)
-        {
-            await Console.Error.WriteLineAsync($"Error during backup: {e.Message}.");
-            await Console.Error.WriteLineAsync(e.StackTrace);
-            return -1;
-        }
 
-        try
-        {
-            restore_results = c.Restore(["*"]);
-        }
-        catch (Exception e)
-        {
-            await Console.Error.WriteLineAsync($"Error during backup: {e.Message}.");
-            await Console.Error.WriteLineAsync(e.StackTrace);
-            return -1;
-        }
-        var profile = await sink.ParseLines();
+        // Setup
+        using (var c = new Controller(destination, options, sink))
+            try
+            {
+                c.Backup([source]);
+            }
+            catch (Exception e)
+            {
+                await Console.Error.WriteLineAsync($"Error during backup: {e.Message}.");
+                await Console.Error.WriteLineAsync(e.StackTrace);
+                return -1;
+            }
 
-        try
+        using (var c = new Controller(destination, options, sink))
+            try
+            {
+                c.Restore(["*"]);
+            }
+            catch (Exception e)
+            {
+                await Console.Error.WriteLineAsync($"Error during backup: {e.Message}.");
+                await Console.Error.WriteLineAsync(e.StackTrace);
+                return -1;
+            }
+        var default_baseline = await sink.ParseLines();
+
+        do
         {
-            c.Delete();
+
+            break;
         }
-        catch (Exception e)
-        {
-            await Console.Error.WriteLineAsync($"Error during backup: {e.Message}.");
-            await Console.Error.WriteLineAsync(e.StackTrace);
-            return -1;
-        }
+        while (true);
+
+        // Cleanup
+        using (var c = new Controller(destination, options, sink))
+            try
+            {
+                c.Delete();
+            }
+            catch (Exception e)
+            {
+                await Console.Error.WriteLineAsync($"Error during backup: {e.Message}.");
+                await Console.Error.WriteLineAsync(e.StackTrace);
+                return -1;
+            }
 
         try
         {
@@ -323,6 +339,14 @@ public class Program
         long sparse_factor = 30;
         var args = $"\"{path}\" --max-file-size {max_file_size} --max-total-size {max_total_size} --file-count {file_count} --sparse-factor {sparse_factor}";
         await cmd.InvokeAsync(args);
+    }
+
+    private static void SetOptions(Dictionary<string, string?> options, ConfigRestore config)
+    {
+        options["restore-file-processors"] = config.FileProcessors.ToString();
+        options["restore-volume-decompressors"] = config.VolumeDecompressors.ToString();
+        options["restore-volume-decryptors"] = config.VolumeDecryptors.ToString();
+        options["restore-volume-downloaders"] = config.VolumeDownloaders.ToString();
     }
 
     // TODO taken from the remote synchronization tool. Consolidate into shared library.
