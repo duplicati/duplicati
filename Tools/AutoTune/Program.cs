@@ -189,6 +189,7 @@ public class Program
                 AllowMultipleArgumentsPerToken = true
             },
             new Option<string?>(aliases: ["--destination"], description: "Destination to store the test backup. The destination should be empty (as required by Duplicati). The data will be deleted again after the tuning process. If no argument is specified, then a temporary folder (as optionally specified with the temp_folder argument) will be used.", getDefaultValue: () => null),
+            new Option<bool>(aliases: ["--dont-revisit-parameters"], description: "During tuning, once a new 'better' configuration has been found, all of the tunable parameters become candidates again. Setting this option will disable already visited candidate parameters. This will make the tuning converge faster, but may not find an optimal configuration.", getDefaultValue: () => false),
             new Option<bool>(aliases: ["--exponential-steps"], description: "If specified, the steps taken for next candidate run is to multiply by 2 instead of plus 1. This will make the tuning converge faster, but may not find an optimal configuration.", getDefaultValue: () => false),
             new Option<string?>(aliases: ["--restoretarget"], description: "Target folder to restore a backup to. The folder should be empty beforehand, as it needs to be emptied during measurements. If no argument is specified, then a temporary folder (as optionally specified with the temp_folder argument) will be used.", getDefaultValue: () => null),
             new Option<int>(aliases: ["--runs"], description: "Number of runs to measure. The mean is reported.", getDefaultValue: () => 3),
@@ -203,6 +204,7 @@ public class Program
         root_cmd.Handler = CommandHandler.Create(async (
             List<string> options,
             string? destination,
+            bool dontrevisitparameters,
             bool exponentialsteps,
             string? restoretarget,
             int runs,
@@ -242,7 +244,7 @@ public class Program
 
             var opts = ParseOptions(options);
 
-            var rc = await RunCore(source, destination, restoretarget, tempfolder, exponentialsteps, warmup, runs, opts);
+            var rc = await RunCore(source, destination, restoretarget, tempfolder, dontrevisitparameters, exponentialsteps, warmup, runs, opts);
 
             // Cleanup
             // TODO only if the directories were created
@@ -258,7 +260,7 @@ public class Program
     }
 
     // TODO assumes restore tuning. Should be moved into several commands for additional tunings (e.g. backup).
-    internal static async Task<int> RunCore(string source, string destination, string restoretarget, string tempfolder, bool exponential_steps, int warmup, int runs, Dictionary<string, string?> options)
+    internal static async Task<int> RunCore(string source, string destination, string restoretarget, string tempfolder, bool dont_revisit, bool exponential_steps, int warmup, int runs, Dictionary<string, string?> options)
     {
         if (!destination.Contains("://"))
             destination = $"file://{destination}";
@@ -345,7 +347,8 @@ public class Program
             {
                 profile_best = profile_current;
                 config_best = config_current;
-                excludes.Clear();
+                if (!dont_revisit)
+                    excludes.Clear();
             }
             else
             {
