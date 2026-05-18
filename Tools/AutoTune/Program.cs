@@ -31,19 +31,23 @@ public record ResultEntry
 
 public record ResultsRestore
 {
-    public required ResultEntry Total { get; init; }
+    /// <summary>
+    /// Total time for the restore operation in milliseconds.
+    /// </summary>
+    public required int Total { get; init; }
     public required ResultEntry FileProcessor { get; init; }
-    public required ResultEntry BlockHandler { get; init; }
-    public required ResultEntry VolumeManager { get; init; }
+    //public required ResultEntry BlockHandler { get; init; }
+    //public required ResultEntry VolumeManager { get; init; }
     public required ResultEntry VolumeDownloader { get; init; }
     public required ResultEntry VolumeDecryptor { get; init; }
     public required ResultEntry VolumeDecompressor { get; init; }
-    public required ResultEntry VolumeConsumer { get; init; }
+    //public required ResultEntry VolumeConsumer { get; init; }
 }
 
 public class ProfilingCaptureSink : IMessageSink, IDisposable
 {
     private readonly List<LogEntry> _log_lines = [];
+    private readonly List<LogEntry> _network_wait = [];
 
     public void Dispose()
     {
@@ -64,11 +68,6 @@ public class ProfilingCaptureSink : IMessageSink, IDisposable
         // Do nothing
     }
 
-    private static int ParseBlockHandler(ResultsRestore results, Dictionary<string, int> timings)
-    {
-        return 0;
-    }
-
     private static int ParseFileProcessor(ResultsRestore results, Dictionary<string, int> timings)
     {
         results.FileProcessor.Read.Add(
@@ -83,21 +82,59 @@ public class ProfilingCaptureSink : IMessageSink, IDisposable
         return 0;
     }
 
+    private static int ParseVolumeDecompressor(ResultsRestore results, Dictionary<string, int> timings)
+    {
+        results.VolumeDecompressor.Read.Add(timings["Read"]);
+        results.VolumeDecompressor.Execute.Add(
+            timings["Decompress allocate"] + timings["Decompress instantiate"] +
+            timings["Decompress lock"] + timings["Decompress read"] +
+            timings["Verify"]
+        );
+        results.VolumeDecompressor.Write.Add(timings["Write"]);
+        return 0;
+    }
+
+    private static int ParseVolumeDecryptor(ResultsRestore results, Dictionary<string, int> timings)
+    {
+        results.VolumeDecryptor.Read.Add(timings["Read"]);
+        results.VolumeDecryptor.Execute.Add(
+            timings["Decrypt"] + timings["BlockVolumeReader"] +
+            timings["VolumeWrapper"]
+        );
+        results.VolumeDecryptor.Write.Add(timings["Write"]);
+        return 0;
+    }
+
+    private static int ParseVolumeDownloader(ResultsRestore results, Dictionary<string, int> timings)
+    {
+        results.VolumeDownloader.Read.Add(timings["Read"]);
+        results.VolumeDownloader.Execute.Add(timings["Wait"]);
+        results.VolumeDownloader.Write.Add(timings["Write"]);
+        return 0;
+    }
+
     public async Task<ResultsRestore> ParseLines()
     {
-        if (_log_lines.Count < 0)
+        if (_log_lines.Count <= 0)
             throw new InvalidDataException("No log lines has been captured.");
+        if (_network_wait.Count <= 0)
+            throw new InvalidDataException("Total network execution time hasn't been captured.");
+
+        int total = -1;
+        foreach (var line in _network_wait)
+            if (line.Message.StartsWith("{0} took"))
+                total = (int)TimeSpan.ParseExact(line.ToString().Split(' ')[^1], @"d\:hh\:mm\:ss\.fff", null).TotalMilliseconds;
 
         ResultsRestore parsed = new()
         {
-            Total = new(),
+            Total = total,
             FileProcessor = new(),
-            BlockHandler = new(),
-            VolumeManager = new(),
+            //BlockHandler = new(),
+            //VolumeManager = new(),
             VolumeDownloader = new(),
             VolumeDecryptor = new(),
             VolumeDecompressor = new(),
-            VolumeConsumer = new(),
+            //VolumeConsumer = new(),
         };
 
         foreach (var line in _log_lines)
@@ -109,8 +146,10 @@ public class ProfilingCaptureSink : IMessageSink, IDisposable
             _ = proc switch
             {
                 "FileProcessor" => ParseFileProcessor(parsed, timings),
-                "BlockHandler" => ParseBlockHandler(parsed, timings),
-                _ => 0  // throw new InvalidDataException($"Encountered unknown log tag '{proc}' from log line: {line}")
+                "VolumeDecompressor" => ParseVolumeDecompressor(parsed, timings),
+                "VolumeDecryptor" => ParseVolumeDecryptor(parsed, timings),
+                "VolumeDownloader" => ParseVolumeDownloader(parsed, timings),
+                _ => 0  // Ignore the rest
             };
         }
 
@@ -121,6 +160,8 @@ public class ProfilingCaptureSink : IMessageSink, IDisposable
     {
         if (entry.Id == "InternalTimings")
             _log_lines.Add(entry);
+        else if (entry.Id == "RestoreNetworkWait")
+            _network_wait.Add(entry);
     }
 }
 
@@ -244,7 +285,7 @@ public class Program
             await Console.Error.WriteLineAsync(e.StackTrace);
             return -1;
         }
-        await sink.ParseLines();
+        var profile = await sink.ParseLines();
 
         try
         {
