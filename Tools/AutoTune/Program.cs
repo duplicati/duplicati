@@ -1,6 +1,5 @@
 ﻿using System.CommandLine;
 using System.CommandLine.NamingConventionBinder;
-using Duplicati.Library.Interface;
 using Duplicati.Library.Logging;
 using Duplicati.Library.Main;
 
@@ -201,29 +200,16 @@ public class Program
             new Option<int>(aliases: ["--warmup"], description: "Amount of warmup runs to perform before measuring.", getDefaultValue: () => 1),
         };
 
-        root_cmd.Handler = CommandHandler.Create(async (
-            List<string> options,
-            string? destination,
-            bool dontrevisitparameters,
-            bool exponentialsteps,
-            string? restoretarget,
-            int runs,
-            string? source,
-            string? tempfolder,
-            long testdatamaxfilesize,
-            long testdatamaxtotalsize,
-            long testdatanumfiles,
-            int warmup,
-            CancellationToken token) =>
+        root_cmd.Handler = CommandHandler.Create(async (ConfigAutoTune cfg, CancellationToken token) =>
         {
             // Check if a specific temp folder has been specified.
-            tempfolder ??= Path.Combine(Path.GetTempPath(), $"duplicati_autotune_{new Guid()}");
+            var tempfolder = cfg.TempFolder ?? Path.Combine(Path.GetTempPath(), $"duplicati_autotune_{new Guid()}");
 
             // Check if any of the other paths are unspecified and should thus use the temp folder.
-            bool any_in_tmp = (source is null) || (destination is null) || (restoretarget is null);
-            source ??= Path.Combine(tempfolder, "source");
-            destination ??= Path.Combine(tempfolder, "backup");
-            restoretarget ??= Path.Combine(tempfolder, "restored");
+            bool any_in_tmp = cfg.SourceFolder is null || cfg.Destination is null || cfg.RestoreTarget is null;
+            var source = cfg.SourceFolder ?? Path.Combine(tempfolder, "source");
+            var destination = cfg.Destination ?? Path.Combine(tempfolder, "backup");
+            var restoretarget = cfg.RestoreTarget ?? Path.Combine(tempfolder, "restored");
             if (any_in_tmp)
                 tempfolder = Path.Combine(tempfolder, "temp");
 
@@ -240,11 +226,11 @@ public class Program
             create_dir(restoretarget);
 
             if (!Directory.EnumerateFiles(source).Any())
-                await GenerateData(source, testdatamaxfilesize, testdatamaxtotalsize, testdatanumfiles, token);
+                await GenerateData(source, cfg.MaxTestFileSize, cfg.MaxTestTotalSize, cfg.NumTestFiles, token);
 
-            var opts = ParseOptions(options);
+            var opts = ParseOptions(cfg.BackendOptions);
 
-            var rc = await RunCore(source, destination, restoretarget, tempfolder, dontrevisitparameters, exponentialsteps, warmup, runs, opts);
+            var rc = await RunCore(source, destination, restoretarget, tempfolder, cfg, opts);
 
             // Cleanup
             // TODO only if the directories were created
@@ -260,7 +246,7 @@ public class Program
     }
 
     // TODO assumes restore tuning. Should be moved into several commands for additional tunings (e.g. backup).
-    internal static async Task<int> RunCore(string source, string destination, string restoretarget, string tempfolder, bool dont_revisit, bool exponential_steps, int warmup, int runs, Dictionary<string, string?> options)
+    internal static async Task<int> RunCore(string source, string destination, string restoretarget, string tempfolder, ConfigAutoTune cfg, Dictionary<string, string?> options)
     {
         if (!destination.Contains("://"))
             destination = $"file://{destination}";
@@ -315,7 +301,7 @@ public class Program
         List<int> excludes = [];
         int last_idx = -1;
 
-        Func<int, int> step_method = exponential_steps ? x => x * 2 : x => x + 1;
+        Func<int, int> step_method = cfg.ExponentialSteps ? x => x * 2 : x => x + 1;
 
         while (true)
         {
@@ -323,7 +309,7 @@ public class Program
             sink.Reset();
             using var c = new Controller(destination, options, sink);
 
-            for (int i = 0; i < warmup; i++)
+            for (int i = 0; i < cfg.Warmup; i++)
             {
                 Directory.Delete(restoretarget, true);
                 Directory.CreateDirectory(restoretarget);
@@ -332,7 +318,7 @@ public class Program
 
             sink.Reset();
 
-            for (int i = 0; i < runs; i++)
+            for (int i = 0; i < cfg.Runs; i++)
             {
                 Directory.Delete(restoretarget, true);
                 Directory.CreateDirectory(restoretarget);
@@ -347,7 +333,7 @@ public class Program
             {
                 profile_best = profile_current;
                 config_best = config_current;
-                if (!dont_revisit)
+                if (!cfg.DontRevisitParameters)
                     excludes.Clear();
             }
             else
