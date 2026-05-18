@@ -11,11 +11,107 @@ namespace AutoTune;
 // TODO data sizes
 public record ConfigRestore
 {
-    public int ChannelDepth { get; init; }
-    public int FileProcessors { get; init; }
-    public int VolumeDownloaders { get; init; }
-    public int VolumeDecryptors { get; init; }
-    public int VolumeDecompressors { get; init; }
+
+public record ResultEntry
+{
+    public List<int> Read { get; init; } = [];
+    public List<int> Execute { get; init; } = [];
+    public List<int> Write { get; init; } = [];
+}
+
+public record ResultsRestore
+{
+    public required ResultEntry Total { get; init; }
+    public required ResultEntry FileProcessor { get; init; }
+    public required ResultEntry BlockHandler { get; init; }
+    public required ResultEntry VolumeManager { get; init; }
+    public required ResultEntry VolumeDownloader { get; init; }
+    public required ResultEntry VolumeDecryptor { get; init; }
+    public required ResultEntry VolumeDecompressor { get; init; }
+    public required ResultEntry VolumeConsumer { get; init; }
+}
+
+public class ProfilingCaptureSink : IMessageSink, IDisposable
+{
+    private readonly List<LogEntry> _log_lines = [];
+
+    public void Dispose()
+    {
+    }
+
+    void IMessageSink.BackendEvent(BackendActionType action, BackendEventType type, string path, long size)
+    {
+        // Do nothing
+    }
+
+    void IMessageSink.SetBackendProgress(IBackendProgress progress)
+    {
+        // Do nothing
+    }
+
+    void IMessageSink.SetOperationProgress(IOperationProgress progress)
+    {
+        // Do nothing
+    }
+
+    private static int ParseBlockHandler(ResultsRestore results, Dictionary<string, int> timings)
+    {
+        return 0;
+    }
+
+    private static int ParseFileProcessor(ResultsRestore results, Dictionary<string, int> timings)
+    {
+        results.FileProcessor.Read.Add(
+            timings["File"] + timings["Resp"]
+        );
+        results.FileProcessor.Execute.Add(
+            timings["Block"] + timings["Meta"] + timings["Work"] + timings["VerifyTarget"] + timings["Retarget"] + timings["VerifyLocal"] + timings["EmptyFile"] + timings["Hash"] + timings["Read"] + timings["Write"] + timings["Results"] + timings["Meta Work"]
+        );
+        results.FileProcessor.Write.Add(
+            timings["Req"] + timings["NotifyLocal"]
+        );
+        return 0;
+    }
+
+    public async Task<ResultsRestore> ParseLines()
+    {
+        if (_log_lines.Count < 0)
+            throw new InvalidDataException("No log lines has been captured.");
+
+        ResultsRestore parsed = new()
+        {
+            Total = new(),
+            FileProcessor = new(),
+            BlockHandler = new(),
+            VolumeManager = new(),
+            VolumeDownloader = new(),
+            VolumeDecryptor = new(),
+            VolumeDecompressor = new(),
+            VolumeConsumer = new(),
+        };
+
+        foreach (var line in _log_lines)
+        {
+            var proc = line.Tag.Split(".")[^1];
+            var timings = line.Message.Split(",")
+                .Select(x => x.Split(":").Select(y => y.Trim()).ToArray())
+                .ToDictionary(x => x[0], x => int.Parse(x[1].TrimEnd("ms")));
+            _ = proc switch
+            {
+                "FileProcessor" => ParseFileProcessor(parsed, timings),
+                "BlockHandler" => ParseBlockHandler(parsed, timings),
+                _ => 0  // throw new InvalidDataException($"Encountered unknown log tag '{proc}' from log line: {line}")
+            };
+        }
+
+        return parsed;
+    }
+
+    void ILogDestination.WriteMessage(LogEntry entry)
+    {
+        if (entry.Id == "InternalTimings")
+            _log_lines.Add(entry);
+    }
 }
 
 public class Program
@@ -112,11 +208,16 @@ public class Program
         options["allow-full-removal"] = "true";
         options["tempdir"] = tempfolder;
         options["version"] = "0";
+        options["internal-profiling"] = "true";
+        options["console-log-level"] = "Profiling";
 
-        using var c = new Controller(destination, options, null);
+        var sink = new ProfilingCaptureSink();
+        IBackupResults backup_results;
+        IRestoreResults restore_results;
+        using var c = new Controller(destination, options, sink);
         try
         {
-            c.Backup([source]);
+            backup_results = c.Backup([source]);
         }
         catch (Exception e)
         {
@@ -127,7 +228,7 @@ public class Program
 
         try
         {
-            c.Restore(["*"]);
+            restore_results = c.Restore(["*"]);
         }
         catch (Exception e)
         {
@@ -135,6 +236,7 @@ public class Program
             await Console.Error.WriteLineAsync(e.StackTrace);
             return -1;
         }
+        await sink.ParseLines();
 
         try
         {
