@@ -9,6 +9,8 @@ namespace AutoTune;
 // TODO backup command tuning
 // TODO dblock size
 // TODO data sizes
+// TODO non-folder source
+// TODO non-folder restore target
 public record ConfigRestore
 {
 
@@ -197,8 +199,6 @@ public class Program
 
     internal static async Task<int> RunCore(string source, string destination, string restoretarget, string tempfolder, Dictionary<string, string?> options)
     {
-        if (!source.Contains("://"))
-            source = $"file://{source}";
         if (!destination.Contains("://"))
             destination = $"file://{destination}";
         var database = Path.Combine(tempfolder, "db.sqlite");
