@@ -128,17 +128,7 @@ public class ProfilingCaptureSink : IMessageSink, IDisposable
             if (line.Message.StartsWith("{0} took"))
                 total = (int)TimeSpan.ParseExact(line.ToString().Split(' ')[^1], @"d\:hh\:mm\:ss\.fff", null).TotalMilliseconds;
 
-        ResultsRestore parsed = new()
-        {
-            Total = total,
-            FileProcessor = new(),
-            //BlockHandler = new(),
-            //VolumeManager = new(),
-            VolumeDownloader = new(),
-            VolumeDecryptor = new(),
-            VolumeDecompressor = new(),
-            //VolumeConsumer = new(),
-        };
+        ResultsRestore parsed = Program.EmptyResultsRestore(total);
 
         foreach (var line in _log_lines)
         {
@@ -176,7 +166,7 @@ public class ProfilingCaptureSink : IMessageSink, IDisposable
 
 public class Program
 {
-    private readonly ConfigRestore DefaultConfigRestore = new()
+    private static readonly ConfigRestore DefaultConfigRestore = new()
     {
         ChannelDepth = Duplicati.Library.Main.Options.DEFAULT_RESTORE_CHANNEL_BUFFER_SIZE,
         FileProcessors = Duplicati.Library.Main.Options.DEFAULT_RESTORE_FILE_PROCESSORS,
@@ -296,14 +286,59 @@ public class Program
                 await Console.Error.WriteLineAsync(e.StackTrace);
                 return -1;
             }
-        var default_baseline = await sink.ParseLines();
-
-        do
+        var profile_default_baseline = await sink.ParseLines();
+        Console.WriteLine($"Default configuration ran in {profile_default_baseline.Total} ms");
+        var config_current = DefaultConfigRestore with
         {
+            FileProcessors = 1,
+            VolumeDecompressors = 1,
+            VolumeDecryptors = 1,
+            VolumeDownloaders = 1
+        };
 
-            break;
+        var profile_best = EmptyResultsRestore(int.MaxValue);
+        var config_best = config_current;
+
+        while (true)
+        {
+            Directory.Delete(restoretarget, true);
+            Directory.CreateDirectory(restoretarget);
+            SetOptions(options, config_current);
+            sink.Reset();
+            using var c = new Controller(destination, options, sink);
+
+            c.Restore(["*"]);
+
+            var profile_current = await sink.ParseLines();
+            Console.WriteLine($"New run {profile_current.Total} - {profile_best.Total}");
+
+            if (profile_current.Total < profile_best.Total)
+            {
+                profile_best = profile_current;
+                config_best = config_current;
+
+                // TODO current strategy is to double the count of the process with the longest execution time.
+                List<(int, int)> candidates = [
+                    (0, (int) profile_current.FileProcessor.Execute.Average()),
+                    (1, (int) profile_current.VolumeDecompressor.Execute.Average()),
+                    (2, (int) profile_current.VolumeDecryptor.Execute.Average()),
+                    (3, (int) profile_current.VolumeDownloader.Execute.Average())
+                ];
+                Console.WriteLine($"{candidates[0].Item2} {candidates[1].Item2} {candidates[2].Item2} {candidates[3].Item2}");
+                var (idx, _) = candidates.MaxBy(x => x.Item2);
+                Console.WriteLine($"Increasing {idx}");
+                config_current = idx switch
+                {
+                    0 => config_best with { FileProcessors = config_best.FileProcessors * 2 },
+                    1 => config_best with { VolumeDecompressors = config_best.VolumeDecompressors * 2 },
+                    2 => config_best with { VolumeDecryptors = config_best.VolumeDecryptors * 2 },
+                    3 => config_best with { VolumeDownloaders = config_best.VolumeDownloaders * 2 },
+                    _ => throw new Exception($"Incorrect process idx specified: {idx}"),
+                };
+            }
+            else
+                break;
         }
-        while (true);
 
         // Cleanup
         using (var c = new Controller(destination, options, sink))
@@ -328,6 +363,21 @@ public class Program
     }
 
     // Helper methods
+
+    public static ResultsRestore EmptyResultsRestore(int total)
+    {
+        return new()
+        {
+            Total = total,
+            FileProcessor = new(),
+            //BlockHandler = new(),
+            //VolumeManager = new(),
+            VolumeDownloader = new(),
+            VolumeDecryptor = new(),
+            VolumeDecompressor = new(),
+            //VolumeConsumer = new(),
+        };
+    }
 
     private static async Task GenerateData(string path, CancellationToken token)
     {
