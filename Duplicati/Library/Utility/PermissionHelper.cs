@@ -34,6 +34,24 @@ namespace Duplicati.Library.Utility;
 public static class PermissionHelper
 {
     /// <summary>
+    /// Checks if the current process has the required privileges to create snapshots.
+    /// Note that this just checks the SeBackupPrivilege or if the process is running as administrator or LocalSystem.
+    /// There are other ways to give snapshot permissions, but this seems like a good indicator.
+    /// </summary>
+    /// <returns><c>true</c> if the current process has the required privileges to create snapshots, <c>false</c> otherwise.</returns>
+    public static bool HasSnapshotPrivilege()
+    {
+        try
+        {
+            return HasSeBackupPrivilege() || IsRunningAsAdministratorOrLocalSystem();
+        }
+        catch
+        { }
+
+        return false;
+    }
+
+    /// <summary>
     /// Checks if the current process has the Backup Privilege.
     /// </summary>
     /// <returns>True if has Backup Privilege, false otherwise.</returns>
