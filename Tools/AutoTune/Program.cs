@@ -298,6 +298,8 @@ public class Program
 
         var profile_best = EmptyResultsRestore(int.MaxValue);
         var config_best = config_current;
+        List<int> excludes = [];
+        int last_idx = -1;
 
         while (true)
         {
@@ -316,28 +318,35 @@ public class Program
             {
                 profile_best = profile_current;
                 config_best = config_current;
-
-                // TODO current strategy is to double the count of the process with the longest execution time.
-                List<(int, int)> candidates = [
-                    (0, (int) profile_current.FileProcessor.Execute.Average()),
-                    (1, (int) profile_current.VolumeDecompressor.Execute.Average()),
-                    (2, (int) profile_current.VolumeDecryptor.Execute.Average()),
-                    (3, (int) profile_current.VolumeDownloader.Execute.Average())
-                ];
-                Console.WriteLine($"{candidates[0].Item2} {candidates[1].Item2} {candidates[2].Item2} {candidates[3].Item2}");
-                var (idx, _) = candidates.MaxBy(x => x.Item2);
-                Console.WriteLine($"Increasing {idx}");
-                config_current = idx switch
-                {
-                    0 => config_best with { FileProcessors = config_best.FileProcessors * 2 },
-                    1 => config_best with { VolumeDecompressors = config_best.VolumeDecompressors * 2 },
-                    2 => config_best with { VolumeDecryptors = config_best.VolumeDecryptors * 2 },
-                    3 => config_best with { VolumeDownloaders = config_best.VolumeDownloaders * 2 },
-                    _ => throw new Exception($"Incorrect process idx specified: {idx}"),
-                };
+                excludes.Clear();
             }
             else
-                break;
+            {
+                excludes.Add(last_idx);
+                if (excludes.Count == 4)
+                    break;
+            }
+
+            // TODO current strategy is to double the count of the process with the longest execution time.
+            List<(int, int)> candidates = [
+                (0, (int) profile_current.FileProcessor.Execute.Average()),
+                (1, (int) profile_current.VolumeDecompressor.Execute.Average()),
+                (2, (int) profile_current.VolumeDecryptor.Execute.Average()),
+                (3, (int) profile_current.VolumeDownloader.Execute.Average())
+            ];
+            Console.WriteLine($"{config_current.FileProcessors} {config_current.VolumeDecompressors} {config_current.VolumeDecryptors} {config_current.VolumeDownloaders}");
+            Console.WriteLine($"{candidates[0].Item2} {candidates[1].Item2} {candidates[2].Item2} {candidates[3].Item2}");
+            var (idx, _) = candidates.Where(x => !excludes.Contains(x.Item1)).MaxBy(x => x.Item2);
+            Console.WriteLine($"Increasing {idx}");
+            config_current = idx switch
+            {
+                0 => config_best with { FileProcessors = config_best.FileProcessors * 2 },
+                1 => config_best with { VolumeDecompressors = config_best.VolumeDecompressors * 2 },
+                2 => config_best with { VolumeDecryptors = config_best.VolumeDecryptors * 2 },
+                3 => config_best with { VolumeDownloaders = config_best.VolumeDownloaders * 2 },
+                _ => throw new Exception($"Incorrect process idx specified: {idx}"),
+            };
+            last_idx = idx;
         }
 
         // Cleanup
