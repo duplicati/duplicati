@@ -367,7 +367,7 @@ public class Program
         }
 
         Console.WriteLine("-----");
-        Console.WriteLine($"Best run found took {profile_best.Total} ms compared to {profile_default_baseline.Total} ms default ({(double)profile_default_baseline.Total / (double)profile_best.Total:.02f} x)");
+        Console.WriteLine($"Best run found took {profile_best.Total} ms compared to {profile_default_baseline.Total} ms default ({(double)profile_default_baseline.Total / (double)profile_best.Total:F2} x)");
         Console.WriteLine($"{config_best.FileProcessors} {config_best.VolumeDecompressors} {config_best.VolumeDecryptors} {config_best.VolumeDownloaders}");
 
         // Cleanup
