@@ -1,5 +1,7 @@
 ﻿using System.CommandLine;
 using System.CommandLine.NamingConventionBinder;
+using Duplicati.Library.Interface;
+using Duplicati.Library.Logging;
 using Duplicati.Library.Main;
 
 #nullable enable
@@ -13,6 +15,12 @@ namespace AutoTune;
 // TODO non-folder restore target
 public record ConfigRestore
 {
+    public required int ChannelDepth { get; init; }
+    public required int FileProcessors { get; init; }
+    public required int VolumeDownloaders { get; init; }
+    public required int VolumeDecryptors { get; init; }
+    public required int VolumeDecompressors { get; init; }
+}
 
 public record ResultEntry
 {
