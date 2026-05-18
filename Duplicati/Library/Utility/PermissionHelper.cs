@@ -35,7 +35,7 @@ public static class PermissionHelper
 {
     /// <summary>
     /// Checks if the current process has the required privileges to create snapshots.
-    /// Note that this just checks the SeBackupPrivilege or if the process is running as administrator or LocalSystem.
+    /// Note that this just checks the SeBackupPrivilege or if the process is running as root.
     /// There are other ways to give snapshot permissions, but this seems like a good indicator.
     /// </summary>
     /// <returns><c>true</c> if the current process has the required privileges to create snapshots, <c>false</c> otherwise.</returns>
@@ -43,7 +43,9 @@ public static class PermissionHelper
     {
         try
         {
-            return HasSeBackupPrivilege() || IsRunningAsAdministratorOrLocalSystem();
+            return OperatingSystem.IsWindows()
+                ? HasSeBackupPrivilege()
+                : IsRunningAsAdministratorOrLocalSystem();
         }
         catch
         { }
