@@ -189,6 +189,7 @@ public class Program
                 AllowMultipleArgumentsPerToken = true
             },
             new Option<string?>(aliases: ["--destination"], description: "Destination to store the test backup. The destination should be empty (as required by Duplicati). The data will be deleted again after the tuning process. If no argument is specified, then a temporary folder (as optionally specified with the temp_folder argument) will be used.", getDefaultValue: () => null),
+            new Option<bool>(aliases: ["--exponential-steps"], description: "If specified, the steps taken for next candidate run is to multiply by 2 instead of plus 1. This will make the tuning converge faster, but may not find an optimal configuration.", getDefaultValue: () => false),
             new Option<string?>(aliases: ["--restoretarget"], description: "Target folder to restore a backup to. The folder should be empty beforehand, as it needs to be emptied during measurements. If no argument is specified, then a temporary folder (as optionally specified with the temp_folder argument) will be used.", getDefaultValue: () => null),
             new Option<int>(aliases: ["--runs"], description: "Number of runs to measure. The mean is reported.", getDefaultValue: () => 3),
             new Option<string?>(aliases: ["--source-folder"], description: "Source folder to make a backup of. If the folder is empty, then some test data will be generated. If no argument is specified, then a temporary folder (as optionally specified with the temp_folder argument) will be used.", getDefaultValue: () => null),
@@ -202,6 +203,7 @@ public class Program
         root_cmd.Handler = CommandHandler.Create(async (
             List<string> options,
             string? destination,
+            bool exponentialsteps,
             string? restoretarget,
             int runs,
             string? source,
@@ -240,7 +242,7 @@ public class Program
 
             var opts = ParseOptions(options);
 
-            var rc = await RunCore(source, destination, restoretarget, tempfolder, warmup, runs, opts);
+            var rc = await RunCore(source, destination, restoretarget, tempfolder, exponentialsteps, warmup, runs, opts);
 
             // Cleanup
             // TODO only if the directories were created
@@ -256,7 +258,7 @@ public class Program
     }
 
     // TODO assumes restore tuning. Should be moved into several commands for additional tunings (e.g. backup).
-    internal static async Task<int> RunCore(string source, string destination, string restoretarget, string tempfolder, int warmup, int runs, Dictionary<string, string?> options)
+    internal static async Task<int> RunCore(string source, string destination, string restoretarget, string tempfolder, bool exponential_steps, int warmup, int runs, Dictionary<string, string?> options)
     {
         if (!destination.Contains("://"))
             destination = $"file://{destination}";
@@ -311,6 +313,8 @@ public class Program
         List<int> excludes = [];
         int last_idx = -1;
 
+        Func<int, int> step_method = exponential_steps ? x => x * 2 : x => x + 1;
+
         while (true)
         {
             SetOptions(options, config_current);
@@ -350,7 +354,6 @@ public class Program
                     break;
             }
 
-            // TODO current strategy is to double the count of the process with the longest execution time.
             List<(int, int)> candidates = [
                 (0, (int) profile_current.FileProcessor.Execute.Average()),
                 (1, (int) profile_current.VolumeDecompressor.Execute.Average()),
@@ -363,10 +366,10 @@ public class Program
             Console.WriteLine($"Increasing {idx}");
             config_current = idx switch
             {
-                0 => config_best with { FileProcessors = config_best.FileProcessors * 2 },
-                1 => config_best with { VolumeDecompressors = config_best.VolumeDecompressors * 2 },
-                2 => config_best with { VolumeDecryptors = config_best.VolumeDecryptors * 2 },
-                3 => config_best with { VolumeDownloaders = config_best.VolumeDownloaders * 2 },
+                0 => config_best with { FileProcessors = step_method(config_best.FileProcessors) },
+                1 => config_best with { VolumeDecompressors = step_method(config_best.VolumeDecompressors) },
+                2 => config_best with { VolumeDecryptors = step_method(config_best.VolumeDecryptors) },
+                3 => config_best with { VolumeDownloaders = step_method(config_best.VolumeDownloaders) },
                 _ => throw new Exception($"Incorrect process idx specified: {idx}"),
             };
             last_idx = idx;
