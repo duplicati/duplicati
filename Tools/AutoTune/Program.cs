@@ -192,15 +192,19 @@ public class Program
             Arity = ArgumentArity.OneOrMore,
             AllowMultipleArgumentsPerToken = true
         };
+        var opt_warmup = new Option<int>(aliases: ["--warmup"], description: "Amount of warmup runs to perform before measuring.", getDefaultValue: () => 0);
+        var opt_runs = new Option<int>(aliases: ["--runs"], description: "Number of runs to measure. The mean is reported.", getDefaultValue: () => 1);
 
         var root_cmd = new RootCommand("Auto tuning of the Duplicati concurrency parameters.")
         {
             arg_src, arg_dst,
             arg_tmp,
-            opt_backend_options
+            opt_backend_options,
+            opt_warmup,
+            opt_runs
         };
 
-        root_cmd.Handler = CommandHandler.Create(async (string? source, string? destination, string? restoretarget, string? tempfolder, List<string> options, CancellationToken token) =>
+        root_cmd.Handler = CommandHandler.Create(async (string? source, string? destination, string? restoretarget, string? tempfolder, List<string> options, int warmup, int runs, CancellationToken token) =>
         {
             // Check if a specific temp folder has been specified.
             tempfolder ??= Path.Combine(Path.GetTempPath(), $"duplicati_autotune_{new Guid()}");
@@ -230,7 +234,7 @@ public class Program
 
             var opts = ParseOptions(options);
 
-            var rc = await RunCore(source, destination, restoretarget, tempfolder, opts);
+            var rc = await RunCore(source, destination, restoretarget, tempfolder, warmup, runs, opts);
 
             // Cleanup
             // TODO only if the directories were created
@@ -246,7 +250,7 @@ public class Program
     }
 
     // TODO assumes restore tuning. Should be moved into several commands for additional tunings (e.g. backup).
-    internal static async Task<int> RunCore(string source, string destination, string restoretarget, string tempfolder, Dictionary<string, string?> options)
+    internal static async Task<int> RunCore(string source, string destination, string restoretarget, string tempfolder, int warmup, int runs, Dictionary<string, string?> options)
     {
         if (!destination.Contains("://"))
             destination = $"file://{destination}";
@@ -303,13 +307,25 @@ public class Program
 
         while (true)
         {
-            Directory.Delete(restoretarget, true);
-            Directory.CreateDirectory(restoretarget);
             SetOptions(options, config_current);
             sink.Reset();
             using var c = new Controller(destination, options, sink);
 
-            c.Restore(["*"]);
+            for (int i = 0; i < warmup; i++)
+            {
+                Directory.Delete(restoretarget, true);
+                Directory.CreateDirectory(restoretarget);
+                c.Restore(["*"]);
+            }
+
+            sink.Reset();
+
+            for (int i = 0; i < runs; i++)
+            {
+                Directory.Delete(restoretarget, true);
+                Directory.CreateDirectory(restoretarget);
+                c.Restore(["*"]);
+            }
 
             var profile_current = await sink.ParseLines();
             Console.WriteLine("-----");
