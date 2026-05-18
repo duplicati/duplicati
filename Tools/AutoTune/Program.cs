@@ -282,7 +282,7 @@ public class Program
             }
             catch (Exception e)
             {
-                await Console.Error.WriteLineAsync($"Error during backup: {e.Message}.");
+                await Console.Error.WriteLineAsync($"Error during restore: {e.Message}.");
                 await Console.Error.WriteLineAsync(e.StackTrace);
                 return -1;
             }
