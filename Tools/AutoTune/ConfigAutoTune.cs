@@ -25,6 +25,7 @@ namespace AutoTune;
 /// Configuration input record for the AutoTune tool.
 /// </summary>
 /// <param name="BackendOptions">Duplicati options to pass to the backend during backup. Each option is a key-value pair separated by an equals sign, e.g. key1=value1 key2=value2.</param>
+/// <param name="BaselineParams">The step value(s) to consider the baseline for the final comparison, 1 or 4 integers. If one value is specified, the same value is used for all parameters. If four values are specified, they are applied individually for file-processors, volume-decompressors, volume-decryptors, and volume-downloaders (in that order). If not specified, the default Duplicati parameters are used.</param>
 /// <param name="Destination">Destination to store the test backup. The destination should be empty (as required by Duplicati). The data will be deleted again after the tuning process. If null, a temporary folder is used.</param>
 /// <param name="DontRevisitParameters">When true, once a new better configuration has been found, already visited candidate parameters are excluded from subsequent tuning rounds. This makes tuning converge faster, but may not find an optimal configuration.</param>
 /// <param name="ExponentialSteps">When true, the step size for the next candidate run is doubled instead of incremented by 1. This makes tuning converge faster, but may not find an optimal configuration.</param>
@@ -43,6 +44,7 @@ public record ConfigAutoTune
 (
     // Arguments / Options
     List<string> BackendOptions,
+    int[] BaselineParams,
     string? Destination,
     bool DontRevisitParameters,
     bool ExponentialSteps,

@@ -321,6 +321,11 @@ public class Program
                 Arity = ArgumentArity.OneOrMore,
                 AllowMultipleArgumentsPerToken = true
             },
+            new Option<int[]>(aliases: ["--baseline-params"], description: "The step value(s) to consider the baseline for the final comparison, 1 or 4 integers. If one value is specified, the same value is used for all parameters. If four values are specified, they are applied individually for file-processors, volume-decompressors, volume-decryptors, and volume-downloaders (in that order). If not specified, the default Duplicati parameters are used.", getDefaultValue: () => [])
+            {
+                Arity = ArgumentArity.OneOrMore,
+                AllowMultipleArgumentsPerToken = true,
+            },
             new Option<string?>(aliases: ["--destination"], description: "Destination to store the test backup. The destination should be empty (as required by Duplicati). The data will be deleted again after the tuning process. If no argument is specified, then a temporary folder (as optionally specified with the temp_folder argument) will be used.", getDefaultValue: () => null),
             new Option<bool>(aliases: ["--dont-revisit-parameters"], description: "During tuning, once a new 'better' configuration has been found, all of the tunable parameters become candidates again. Setting this option will disable already visited candidate parameters. This will make the tuning converge faster, but may not find an optimal configuration.", getDefaultValue: () => false),
             new Option<bool>(aliases: ["--exponential-steps"], description: "If specified, the steps taken for next candidate run is to multiply by 2 instead of plus 1. This will make the tuning converge faster, but may not find an optimal configuration.", getDefaultValue: () => false),
@@ -449,6 +454,28 @@ public class Program
 
         if (cfg.Verbose > 0)
             Console.WriteLine("Making the baseline measurement based of the Duplicati default concurrency parameters...");
+
+        var config_baseline = cfg.BaselineParams.Length switch
+        {
+            0 => DefaultConfigRestore,
+            1 => DefaultConfigRestore with
+            {
+                FileProcessors = cfg.BaselineParams[0],
+                VolumeDecompressors = cfg.BaselineParams[0],
+                VolumeDecryptors = cfg.BaselineParams[0],
+                VolumeDownloaders = cfg.BaselineParams[0],
+            },
+            4 => DefaultConfigRestore with
+            {
+                FileProcessors = cfg.BaselineParams[0],
+                VolumeDecompressors = cfg.BaselineParams[1],
+                VolumeDecryptors = cfg.BaselineParams[2],
+                VolumeDownloaders = cfg.BaselineParams[3],
+            },
+            _ => throw new ArgumentOutOfRangeException($"BaselineParams should be of length either 0, 1, or 4. Got {cfg.BaselineParams.Length}")
+        };
+        SetOptions(options, config_baseline);
+
         using (var c = new Controller(destination, options, sink))
             try
             {
@@ -465,7 +492,7 @@ public class Program
         if (cfg.Verbose > 0)
         {
             Console.WriteLine("----==== Default configuration baseline ====----");
-            Console.WriteLine($"  Default config: {DefaultConfigRestore}");
+            Console.WriteLine($"  Default config: {config_baseline}");
             Console.WriteLine($"  Baseline time: {profile_default_baseline.Total} ms");
         }
 
