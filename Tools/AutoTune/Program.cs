@@ -34,15 +34,36 @@ namespace AutoTune;
 // TODO dblock size
 // TODO non-folder source
 // TODO non-folder restore target
-//
-// TODO docstring
+// TODO current RunCore assumes restore tuning. Should be moved into several commands for additional tunings (e.g. backup).
 
+/// <summary>
+/// Configuration for a single restore tuning run, specifying the concurrency parameters.
+/// </summary>
 public record ConfigRestore
 {
+    /// <summary>
+    /// The restore channel buffer depth.
+    /// </summary>
     public required int ChannelDepth { get; init; }
+
+    /// <summary>
+    /// Number of parallel file processing workers.
+    /// </summary>
     public required int FileProcessors { get; init; }
+
+    /// <summary>
+    /// Number of parallel volume download workers.
+    /// </summary>
     public required int VolumeDownloaders { get; init; }
+
+    /// <summary>
+    /// Number of parallel volume decrypt workers.
+    /// </summary>
     public required int VolumeDecryptors { get; init; }
+
+    /// <summary>
+    /// Number of parallel volume decompress workers.
+    /// </summary>
     public required int VolumeDecompressors { get; init; }
 
     public override string ToString()
@@ -51,28 +72,62 @@ public record ConfigRestore
     }
 }
 
+/// <summary>
+/// Holds the measured read, execute, and write timing samples (in milliseconds).
+/// </summary>
 public record ResultEntry
 {
+    /// <summary>
+    /// Measured read-phase durations (ms).
+    /// </summary>
     public List<int> Read { get; init; } = [];
+
+    /// <summary>
+    /// Measured execute-phase durations (ms).
+    /// </summary>
     public List<int> Execute { get; init; } = [];
+
+    /// <summary>
+    /// Measured write-phase durations (ms).
+    /// </summary>
     public List<int> Write { get; init; } = [];
 }
 
+/// <summary>
+/// Aggregated restore timing results broken down by pipeline stage.
+/// </summary>
 public record ResultsRestore
 {
     /// <summary>
-    /// Total time for the restore operation in milliseconds.
+    /// Total wall-clock time for the restore operation in milliseconds.
     /// </summary>
     public required int Total { get; init; }
+
+    /// <summary>
+    /// Execution-time samples from the FileProcessor.
+    /// </summary>
     public required ResultEntry FileProcessor { get; init; }
-    //public required ResultEntry BlockHandler { get; init; }
-    //public required ResultEntry VolumeManager { get; init; }
+
+    /// <summary>
+    /// Execution-time samples from the VolumeDownloader.
+    /// </summary>
     public required ResultEntry VolumeDownloader { get; init; }
+
+    /// <summary>
+    /// Execution-time samples from the VolumeDecryptor.
+    /// </summary>
     public required ResultEntry VolumeDecryptor { get; init; }
+
+    /// <summary>
+    /// Execution-time samples from the VolumeDecompressor.
+    /// </summary>
     public required ResultEntry VolumeDecompressor { get; init; }
-    //public required ResultEntry VolumeConsumer { get; init; }
 }
 
+/// <summary>
+/// Captures Duplicati profiling log lines and timing messages during a restore operation
+/// so they can be parsed into structured <see cref="ResultsRestore"/> data.
+/// </summary>
 public class ProfilingCaptureSink : IMessageSink, IDisposable
 {
     private readonly List<LogEntry> _log_lines = [];
@@ -97,6 +152,13 @@ public class ProfilingCaptureSink : IMessageSink, IDisposable
         // Do nothing
     }
 
+    /// <summary>
+    /// Parses internal-timings dictionary from the FileProcessor and appends
+    /// the read, execute, and write durations to <paramref name="results"/>.
+    /// </summary>
+    /// <param name="results">The aggregate results object to append to.</param>
+    /// <param name="timings">Parsed key-value timing pairs from one log line.</param>
+    /// <returns>Always 0.</returns>
     private static int ParseFileProcessor(ResultsRestore results, Dictionary<string, int> timings)
     {
         results.FileProcessor.Read.Add(
@@ -111,6 +173,13 @@ public class ProfilingCaptureSink : IMessageSink, IDisposable
         return 0;
     }
 
+    /// <summary>
+    /// Parses internal-timings dictionary from the VolumeDecompressor and
+    /// appends the read, execute, and write durations to <paramref name="results"/>.
+    /// </summary>
+    /// <param name="results">The aggregate results object to append to.</param>
+    /// <param name="timings">Parsed key-value timing pairs from one log line.</param>
+    /// <returns>Always 0.</returns>
     private static int ParseVolumeDecompressor(ResultsRestore results, Dictionary<string, int> timings)
     {
         results.VolumeDecompressor.Read.Add(timings["Read"]);
@@ -123,6 +192,13 @@ public class ProfilingCaptureSink : IMessageSink, IDisposable
         return 0;
     }
 
+    /// <summary>
+    /// Parses internal-timings dictionary from the VolumeDecryptor and appends
+    /// the read, execute, and write durations to <paramref name="results"/>.
+    /// </summary>
+    /// <param name="results">The aggregate results object to append to.</param>
+    /// <param name="timings">Parsed key-value timing pairs from one log line.</param>
+    /// <returns>Always 0.</returns>
     private static int ParseVolumeDecryptor(ResultsRestore results, Dictionary<string, int> timings)
     {
         results.VolumeDecryptor.Read.Add(timings["Read"]);
@@ -134,6 +210,13 @@ public class ProfilingCaptureSink : IMessageSink, IDisposable
         return 0;
     }
 
+    /// <summary>
+    /// Parses internal-timings dictionary from the VolumeDownloader and appends
+    /// the read, execute, and write durations to <paramref name="results"/>.
+    /// </summary>
+    /// <param name="results">The aggregate results object to append to.</param>
+    /// <param name="timings">Parsed key-value timing pairs from one log line.</param>
+    /// <returns>Always 0.</returns>
     private static int ParseVolumeDownloader(ResultsRestore results, Dictionary<string, int> timings)
     {
         results.VolumeDownloader.Read.Add(timings["Read"]);
@@ -142,6 +225,11 @@ public class ProfilingCaptureSink : IMessageSink, IDisposable
         return 0;
     }
 
+    /// <summary>
+    /// Parses all captured log lines and network-wait entries into a <see cref="ResultsRestore"/> record.
+    /// </summary>
+    /// <returns>A fully populated restore timing result.</returns>
+    /// <exception cref="InvalidDataException">Thrown when no log lines or no network-wait entries have been captured.</exception>
     public async Task<ResultsRestore> ParseLines()
     {
         if (_log_lines.Count <= 0)
@@ -175,12 +263,21 @@ public class ProfilingCaptureSink : IMessageSink, IDisposable
         return parsed;
     }
 
+    /// <summary>
+    /// Clears all captured log lines and network-wait entries, readying the sink for a new measurement round.
+    /// </summary>
     public void Reset()
     {
         _log_lines.Clear();
         _network_wait.Clear();
     }
 
+    /// <summary>
+    /// Called by the Duplicati logging infrastructure for each log entry.
+    /// InternalTimings lines are retained for profiling analysis; RestoreNetworkWait lines
+    /// are retained to compute total wall-clock time.
+    /// </summary>
+    /// <param name="entry">The log entry written by Duplicati.</param>
     void ILogDestination.WriteMessage(LogEntry entry)
     {
         if (entry.Id == "InternalTimings")
@@ -192,6 +289,10 @@ public class ProfilingCaptureSink : IMessageSink, IDisposable
 
 public class Program
 {
+    /// <summary>
+    /// The Duplicati library default restore configuration, used both as a baseline and as the
+    /// starting point when --default-settings is specified.
+    /// </summary>
     private static readonly ConfigRestore DefaultConfigRestore = new()
     {
         ChannelDepth = Duplicati.Library.Main.Options.DEFAULT_RESTORE_CHANNEL_BUFFER_SIZE,
@@ -206,6 +307,11 @@ public class Program
     /// </summary>
     private static readonly string LOGTAG = Duplicati.Library.Logging.Log.LogTagFromType(typeof(Program));
 
+    /// <summary>
+    /// Entry point for the AutoTune tool. Parses command-line options and invokes <see cref="RunCore"/>.
+    /// </summary>
+    /// <param name="args">Command-line arguments.</param>
+    /// <returns>A process exit code: 0 on success, -1 on error.</returns>
     public static async Task<int> Main(string[] args)
     {
         var root_cmd = new RootCommand("Auto tuning of the Duplicati concurrency parameters.")
@@ -287,7 +393,17 @@ public class Program
         return await root_cmd.InvokeAsync(args).ConfigureAwait(false);
     }
 
-    // TODO assumes restore tuning. Should be moved into several commands for additional tunings (e.g. backup).
+    /// <summary>
+    /// Core tuning loop for restore performance. Measures a baseline, then iteratively adjusts
+    /// concurrency parameters to find the fastest configuration.
+    /// </summary>
+    /// <param name="source">Path to the source folder to back up.</param>
+    /// <param name="destination">Backup destination URI (e.g. file:///tmp/backup).</param>
+    /// <param name="restoretarget">Path where restores are performed during measurement.</param>
+    /// <param name="tempfolder">Path for temporary files such as the database.</param>
+    /// <param name="cfg">User-supplied tuning options.</param>
+    /// <param name="options">Parsed Duplicati key-value options passed to the controller.</param>
+    /// <returns>A process exit code: 0 on success, -1 on error.</returns>
     internal static async Task<int> RunCore(string source, string destination, string restoretarget, string tempfolder, ConfigAutoTune cfg, Dictionary<string, string?> options)
     {
         if (!destination.Contains("://"))
@@ -478,21 +594,32 @@ public class Program
 
     // Helper methods
 
+    /// <summary>
+    /// Creates an empty <see cref="ResultsRestore"/> record with the given total time and no per-stage samples.
+    /// </summary>
+    /// <param name="total">Initial total time value (e.g. <see cref="int.MaxValue"/> for an unmeasured baseline).</param>
+    /// <returns>A new empty <see cref="ResultsRestore"/> instance.</returns>
     public static ResultsRestore EmptyResultsRestore(int total)
     {
         return new()
         {
             Total = total,
             FileProcessor = new(),
-            //BlockHandler = new(),
-            //VolumeManager = new(),
             VolumeDownloader = new(),
             VolumeDecryptor = new(),
             VolumeDecompressor = new(),
-            //VolumeConsumer = new(),
         };
     }
 
+    /// <summary>
+    /// Generates synthetic test data by invoking the Duplicati TestDataGenerator tool.
+    /// </summary>
+    /// <param name="path">Output directory for the generated files.</param>
+    /// <param name="max_file_size">Maximum size of an individual generated file (bytes).</param>
+    /// <param name="max_total_size">Maximum cumulative size of all generated files (bytes).</param>
+    /// <param name="file_count">Number of files to generate.</param>
+    /// <param name="verbose">When true, generator output is forwarded to the console.</param>
+    /// <exception cref="Exception">Thrown when the generator returns a non-zero exit code.</exception>
     private static async Task GenerateData(string path, long max_file_size, long max_total_size, long file_count, bool verbose)
     {
         var cmd = TestDataGenerator.Commands.Create.CreateCommand();
@@ -521,6 +648,11 @@ public class Program
             throw new Exception("Test data generation failed.");
     }
 
+    /// <summary>
+    /// Writes the restore concurrency settings from <paramref name="config"/> into the Duplicati options dictionary.
+    /// </summary>
+    /// <param name="options">The mutable options dictionary for the Duplicati controller.</param>
+    /// <param name="config">The restored concurrency configuration to apply.</param>
     private static void SetOptions(Dictionary<string, string?> options, ConfigRestore config)
     {
         options["restore-file-processors"] = config.FileProcessors.ToString();

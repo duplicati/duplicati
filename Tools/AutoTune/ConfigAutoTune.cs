@@ -21,6 +21,24 @@
 
 namespace AutoTune;
 
+/// <summary>
+/// Configuration input record for the AutoTune tool.
+/// </summary>
+/// <param name="BackendOptions">Duplicati options to pass to the backend during backup. Each option is a key-value pair separated by an equals sign, e.g. key1=value1 key2=value2.</param>
+/// <param name="Destination">Destination to store the test backup. The destination should be empty (as required by Duplicati). The data will be deleted again after the tuning process. If null, a temporary folder is used.</param>
+/// <param name="DontRevisitParameters">When true, once a new better configuration has been found, already visited candidate parameters are excluded from subsequent tuning rounds. This makes tuning converge faster, but may not find an optimal configuration.</param>
+/// <param name="ExponentialSteps">When true, the step size for the next candidate run is doubled instead of incremented by 1. This makes tuning converge faster, but may not find an optimal configuration.</param>
+/// <param name="RestoreTarget">Target folder to restore a backup to. The folder should be empty beforehand. If null, a temporary folder is used.</param>
+/// <param name="Runs">Number of runs to measure per configuration; the mean is reported.</param>
+/// <param name="SourceFolder">Source folder to make a backup of. If the folder is empty, test data will be generated. If null, a temporary folder is used.</param>
+/// <param name="TempFolder">Path to where temporary files should be created. If null, the system default (e.g. /tmp or %TEMP%) is used.</param>
+/// <param name="TestdataMaxFileSize">When generating test data, the maximum size (in bytes) of a single generated file.</param>
+/// <param name="TestdataMaxTotalSize">When generating test data, the maximum collective size (in bytes) of all generated files.</param>
+/// <param name="TestdataNumFiles">When generating test data, the number of files to generate.</param>
+/// <param name="StartingSteps">The starting concurrency values for the tunable parameters. Accepts 1 or 4 integer values. One value applies to all four parameters; four values apply individually to file-processors, volume-decompressors, volume-decryptors, and volume-downloaders (in that order). Defaults to an empty array, which is treated as 1 for every parameter.</param>
+/// <param name="UseDefaultSettings">When true, tuning starts from the Duplicati built-in default settings instead of starting from 1 for all parameters. Ignored if --starting-steps is also specified.</param>
+/// <param name="Verbose">When true, progress information is printed during tuning runs. By default, only the final result is printed.</param>
+/// <param name="Warmup">Number of warmup runs to perform before measuring.</param>
 public record ConfigAutoTune
 (
     // Arguments / Options
