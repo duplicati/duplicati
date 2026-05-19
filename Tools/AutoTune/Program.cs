@@ -314,7 +314,7 @@ public class Program
     /// <returns>A process exit code: 0 on success, -1 on error.</returns>
     public static async Task<int> Main(string[] args)
     {
-        var root_cmd = new RootCommand("Auto tuning of the Duplicati concurrency parameters.")
+        var root_cmd = new RootCommand("Auto tuning of the Duplicati concurrency parameters. Warning, this program will be accessing the source, destination, and restoretarget a lot, potentially degrading them.")
         {
             new Option<List<string>>(aliases: ["--backend-options"], description: "Duplicati options to pass to the backend during backup. Each option is a key-value pair spearated by an equals sign, e.g. --backend-options key1=value1 key2=value2. Default is an empty list.", getDefaultValue: () => [])
             {
