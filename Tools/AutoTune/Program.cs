@@ -13,6 +13,9 @@ namespace AutoTune;
 // TODO dblock size
 // TODO non-folder source
 // TODO non-folder restore target
+//
+// TODO docstring
+// TODO license
 
 public record ConfigRestore
 {
@@ -196,7 +199,12 @@ public class Program
             new Option<bool>(aliases: ["--dont-revisit-parameters"], description: "During tuning, once a new 'better' configuration has been found, all of the tunable parameters become candidates again. Setting this option will disable already visited candidate parameters. This will make the tuning converge faster, but may not find an optimal configuration.", getDefaultValue: () => false),
             new Option<bool>(aliases: ["--exponential-steps"], description: "If specified, the steps taken for next candidate run is to multiply by 2 instead of plus 1. This will make the tuning converge faster, but may not find an optimal configuration.", getDefaultValue: () => false),
             new Option<string?>(aliases: ["--restoretarget"], description: "Target folder to restore a backup to. The folder should be empty beforehand, as it needs to be emptied during measurements. If no argument is specified, then a temporary folder (as optionally specified with the temp_folder argument) will be used.", getDefaultValue: () => null),
-            new Option<int>(aliases: ["--runs"], description: "Number of runs to measure. The mean is reported.", getDefaultValue: () => 3),
+            new Option<bool>(aliases: ["--default-settings"], description: "Start tuning from the Duplicati default settings instead of a starting step of 1. Ignored if --starting-steps is specified.", getDefaultValue: () => false),
+            new Option<int[]>(aliases: ["--starting-steps"], description: "The starting step value(s) for the tunable parameters, 1 or 4 integers. If one value is specified, the same value is used for all parameters. If four values are specified, they are applied individually for file-processors, volume-decompressors, volume-decryptors, and volume-downloaders (in that order). If not specified, the starting step is 1 for all parameters. Cannot be used together with --default-settings.", getDefaultValue: () => [])
+            {
+                Arity = ArgumentArity.OneOrMore,
+                AllowMultipleArgumentsPerToken = true,
+            },
             new Option<string?>(aliases: ["--source-folder"], description: "Source folder to make a backup of. If the folder is empty, then some test data will be generated. If no argument is specified, then a temporary folder (as optionally specified with the temp_folder argument) will be used.", getDefaultValue: () => null),
             new Option<string?>(aliases: ["--temp-folder"], description: "Path to where the temporary files should be created. If no argument is specified, then the system default (e.g. /tmp or %TEMP%) will be used.", getDefaultValue: () => null),
             new Option<long>(aliases: ["--testdata-max-file-size"], description: "If no source folder has been specified, this option tunes the maximum size (in bytes) a generated file may have.", getDefaultValue: () => 1024 * 1024),
@@ -208,6 +216,12 @@ public class Program
 
         root_cmd.Handler = CommandHandler.Create(async (ConfigAutoTune cfg, CancellationToken token) =>
         {
+            // Warn on conflicting options
+            if (cfg.StartingSteps is { Length: > 0 } && cfg.UseDefaultSettings)
+            {
+                Console.WriteLine("Warning: --starting-steps and --default-settings are both set. Ignoring --starting-steps.");
+            }
+
             // Check if a specific temp folder has been specified.
             var tempfolder = cfg.TempFolder ?? Path.Combine(Path.GetTempPath(), $"duplicati_autotune_{new Guid()}");
 
@@ -302,13 +316,34 @@ public class Program
             Console.WriteLine($"  Baseline time: {profile_default_baseline.Total} ms");
         }
 
-        var config_current = DefaultConfigRestore with
-        {
-            FileProcessors = 1,
-            VolumeDecompressors = 1,
-            VolumeDecryptors = 1,
-            VolumeDownloaders = 1
-        };
+        var config_current = cfg.UseDefaultSettings
+            ? DefaultConfigRestore
+             : cfg.StartingSteps is { Length: >= 1 } steps
+                 ? steps.Length switch
+                 {
+                     1 => DefaultConfigRestore with
+                     {
+                         FileProcessors = steps[0],
+                         VolumeDecompressors = steps[0],
+                         VolumeDecryptors = steps[0],
+                         VolumeDownloaders = steps[0],
+                     },
+                     4 => DefaultConfigRestore with
+                     {
+                         FileProcessors = steps[0],
+                         VolumeDecompressors = steps[1],
+                         VolumeDecryptors = steps[2],
+                         VolumeDownloaders = steps[3],
+                     },
+                     _ => throw new ArgumentException($"--starting-steps requires 1 or 4 values, got {steps.Length}."),
+                 }
+                : DefaultConfigRestore with
+                {
+                    FileProcessors = 1,
+                    VolumeDecompressors = 1,
+                    VolumeDecryptors = 1,
+                    VolumeDownloaders = 1
+                };
 
         var profile_best = EmptyResultsRestore(int.MaxValue);
         var config_best = config_current;
