@@ -431,10 +431,14 @@ public class Program
         var sink = new ProfilingCaptureSink();
 
         // Setup
+        if (cfg.Verbose > 0)
+            Console.WriteLine("Creating initial backup...");
         using (var c = new Controller(destination, options, sink))
             try
             {
-                c.Backup([source]);
+                var res = c.Backup([source]);
+                if (cfg.Verbose > 0)
+                    Console.WriteLine($"Backup ran in {res.Duration}");
             }
             catch (Exception e)
             {
@@ -443,6 +447,8 @@ public class Program
                 return -1;
             }
 
+        if (cfg.Verbose > 0)
+            Console.WriteLine("Making the baseline measurement based of the Duplicati default concurrency parameters...");
         using (var c = new Controller(destination, options, sink))
             try
             {
