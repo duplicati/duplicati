@@ -390,7 +390,14 @@ public class Program
 
             var opts = ParseOptions(cfg.BackendOptions);
 
-            var rc = await RunCore(source, destination, restoretarget, tempfolder, cfg, opts);
+            var cfg_final = cfg with
+            {
+                SourceFolder = source,
+                Destination = destination.Contains("://") ? destination : $"file://{destination}",
+                RestoreTarget = restoretarget,
+                TempFolder = tempfolder
+            };
+            var rc = await RunCore(cfg_final, opts);
 
             // Cleanup - only delete directories that were created by this tool
             if (source_created)
@@ -419,16 +426,14 @@ public class Program
     /// <param name="cfg">User-supplied tuning options.</param>
     /// <param name="options">Parsed Duplicati key-value options passed to the controller.</param>
     /// <returns>A process exit code: 0 on success, -1 on error.</returns>
-    internal static async Task<int> RunCore(string source, string destination, string restoretarget, string tempfolder, ConfigAutoTune cfg, Dictionary<string, string?> options)
+    internal static async Task<int> RunCore(ConfigAutoTune cfg, Dictionary<string, string?> options)
     {
-        if (!destination.Contains("://"))
-            destination = $"file://{destination}";
-        var database = Path.Combine(tempfolder, "db.sqlite");
+        var database = Path.Combine(cfg.TempFolder!, "db.sqlite");
         options["passphrase"] = "1234";
         options["dbpath"] = database;
-        options["restore-path"] = restoretarget;
+        options["restore-path"] = cfg.RestoreTarget;
         options["allow-full-removal"] = "true";
-        options["tempdir"] = tempfolder;
+        options["tempdir"] = cfg.TempFolder;
         options["version"] = "0";
         options["internal-profiling"] = "true";
         options["console-log-level"] = "Profiling";
@@ -438,10 +443,10 @@ public class Program
         // Setup
         if (cfg.Verbose > 0)
             Console.WriteLine("Creating initial backup...");
-        using (var c = new Controller(destination, options, sink))
+        using (var c = new Controller(cfg.Destination, options, sink))
             try
             {
-                var res = c.Backup([source]);
+                var res = c.Backup([cfg.SourceFolder]);
                 if (cfg.Verbose > 0)
                     Console.WriteLine($"Backup ran in {res.Duration}");
             }
@@ -474,26 +479,13 @@ public class Program
             },
             _ => throw new ArgumentOutOfRangeException($"BaselineParams should be of length either 0, 1, or 4. Got {cfg.BaselineParams.Length}")
         };
-        SetOptions(options, config_baseline);
-
-        using (var c = new Controller(destination, options, sink))
-            try
-            {
-                c.Restore(["*"]);
-            }
-            catch (Exception e)
-            {
-                await Console.Error.WriteLineAsync($"Error during restore: {e.Message}.");
-                await Console.Error.WriteLineAsync($"  Stack trace: {e.StackTrace}");
-                return -1;
-            }
-        var profile_default_baseline = await sink.ParseLines();
+        var profile_baseline = await RunRestore(options, config_baseline, cfg, sink);
 
         if (cfg.Verbose > 0)
         {
             Console.WriteLine("----==== Default configuration baseline ====----");
             Console.WriteLine($"  Default config: {config_baseline}");
-            Console.WriteLine($"  Baseline time: {profile_default_baseline.Total} ms");
+            Console.WriteLine($"  Baseline time: {profile_baseline.Total} ms");
         }
 
         var config_current = cfg.UseDefaultSettings
@@ -537,27 +529,8 @@ public class Program
         while (true)
         {
             round++;
-            SetOptions(options, config_current);
-            sink.Reset();
-            using var c = new Controller(destination, options, sink);
 
-            for (int i = 0; i < cfg.Warmup; i++)
-            {
-                Directory.Delete(restoretarget, true);
-                Directory.CreateDirectory(restoretarget);
-                c.Restore(["*"]);
-            }
-
-            sink.Reset();
-
-            for (int i = 0; i < cfg.Runs; i++)
-            {
-                Directory.Delete(restoretarget, true);
-                Directory.CreateDirectory(restoretarget);
-                c.Restore(["*"]);
-            }
-
-            var profile_current = await sink.ParseLines();
+            var profile_current = await RunRestore(options, config_current, cfg, sink);
 
             if (cfg.Verbose > 0)
             {
@@ -614,11 +587,11 @@ public class Program
         Console.WriteLine("----==== Tuning complete ====----");
         Console.WriteLine($" Best configuration: {config_best}");
         Console.WriteLine($" Best time:         {profile_best.Total} ms");
-        Console.WriteLine($" Default time:      {profile_default_baseline.Total} ms");
-        Console.WriteLine($" Speedup:           {(double)profile_default_baseline.Total / profile_best.Total:F2}x");
+        Console.WriteLine($" Default time:      {profile_baseline.Total} ms");
+        Console.WriteLine($" Speedup:           {(double)profile_baseline.Total / profile_best.Total:F2}x");
 
         // Cleanup
-        using (var c = new Controller(destination, options, sink))
+        using (var c = new Controller(cfg.Destination, options, sink))
             try
             {
                 c.Delete();
@@ -736,4 +709,38 @@ public class Program
 
         return result;
     }
+
+    /// <summary>
+    /// Runs and benchmarks the restore operation.
+    /// </summary>
+    /// <param name="options">Options to pass to the Duplicati Controller.</param>
+    /// <param name="config_current">Concurrency parameters to set during the run.</param>
+    /// <param name="cfg">The AutoTune configuration containing all of the paths, warmup runs, and benchmarking runs.</param>
+    /// <param name="sink">The sink for capturing log lines.</param>
+    /// <returns>Results from running the benchmark.</returns>
+    private static async Task<ResultsRestore> RunRestore(Dictionary<string, string?> options, ConfigRestore config_current, ConfigAutoTune cfg, ProfilingCaptureSink sink)
+    {
+        SetOptions(options, config_current);
+        sink.Reset();
+        using var c = new Controller(cfg.Destination, options, sink);
+
+        for (int i = 0; i < cfg.Warmup; i++)
+        {
+            Directory.Delete(cfg.RestoreTarget!, true);
+            Directory.CreateDirectory(cfg.RestoreTarget!);
+            c.Restore(["*"]);
+        }
+
+        sink.Reset();
+
+        for (int i = 0; i < cfg.Runs; i++)
+        {
+            Directory.Delete(cfg.RestoreTarget!, true);
+            Directory.CreateDirectory(cfg.RestoreTarget!);
+            c.Restore(["*"]);
+        }
+
+        return await sink.ParseLines();
+    }
+
 }
