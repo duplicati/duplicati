@@ -21,6 +21,11 @@ public record ConfigRestore
     public required int VolumeDownloaders { get; init; }
     public required int VolumeDecryptors { get; init; }
     public required int VolumeDecompressors { get; init; }
+
+    public override string ToString()
+    {
+        return $"FileProcessors: {FileProcessors}, VolumeDecompressors: {VolumeDecompressors}, VolumeDecryptors: {VolumeDecryptors}, VolumeDownloaders: {VolumeDownloaders}";
+    }
 }
 
 public record ResultEntry
@@ -214,19 +219,19 @@ public class Program
                 tempfolder = Path.Combine(tempfolder, "temp");
 
             // Check whether the paths exist, and if so, whether they already contain data.
-            static void create_dir(string path)
+            static void ensure_dir(string path)
             {
-                Console.WriteLine($"Creating folder {path}");
+                Console.WriteLine($"  [init] {path}");
                 if (!Directory.Exists(path))
                     Directory.CreateDirectory(path);
             }
-            create_dir(source);
-            create_dir(destination);
-            create_dir(tempfolder);
-            create_dir(restoretarget);
+            ensure_dir(source);
+            ensure_dir(destination);
+            ensure_dir(tempfolder);
+            ensure_dir(restoretarget);
 
             if (!Directory.EnumerateFiles(source).Any())
-                await GenerateData(source, cfg.MaxTestFileSize, cfg.MaxTestTotalSize, cfg.NumTestFiles, token);
+                await GenerateData(source, cfg.TestdataMaxFileSize, cfg.TestdataMaxTotalSize, cfg.TestdataNumFiles, token);
 
             var opts = ParseOptions(cfg.BackendOptions);
 
@@ -271,7 +276,7 @@ public class Program
             catch (Exception e)
             {
                 await Console.Error.WriteLineAsync($"Error during backup: {e.Message}.");
-                await Console.Error.WriteLineAsync(e.StackTrace);
+                await Console.Error.WriteLineAsync($"  Stack trace: {e.StackTrace}");
                 return -1;
             }
 
@@ -283,11 +288,13 @@ public class Program
             catch (Exception e)
             {
                 await Console.Error.WriteLineAsync($"Error during restore: {e.Message}.");
-                await Console.Error.WriteLineAsync(e.StackTrace);
+                await Console.Error.WriteLineAsync($"  Stack trace: {e.StackTrace}");
                 return -1;
             }
         var profile_default_baseline = await sink.ParseLines();
-        Console.WriteLine($"Default configuration ran in {profile_default_baseline.Total} ms");
+        Console.WriteLine("----==== Default configuration baseline ====----");
+        Console.WriteLine($"  Default config: {DefaultConfigRestore}");
+        Console.WriteLine($"  Baseline time: {profile_default_baseline.Total} ms");
         var config_current = DefaultConfigRestore with
         {
             FileProcessors = 1,
@@ -300,6 +307,7 @@ public class Program
         var config_best = config_current;
         List<int> excludes = [];
         int last_idx = -1;
+        string last_label = "";
 
         Func<int, int> step_method = cfg.ExponentialSteps ? x => x * 2 : x => x + 1;
 
@@ -326,11 +334,14 @@ public class Program
             }
 
             var profile_current = await sink.ParseLines();
-            Console.WriteLine("-----");
-            Console.WriteLine($"New run {profile_current.Total} - {profile_best.Total}");
+
+            Console.WriteLine($"----- Round {(last_idx >= 0 ? '→' : '1')} -----");
+            Console.WriteLine($"  Config: {config_current}");
+            Console.WriteLine($"  Time:   {profile_current.Total,6} ms  (best: {profile_best.Total,6} ms)");
 
             if (profile_current.Total < profile_best.Total)
             {
+                Console.WriteLine($"  -> New best! Improvement: {profile_best.Total - profile_current.Total:D} ms saved");
                 profile_best = profile_current;
                 config_best = config_current;
                 if (!cfg.DontRevisitParameters)
@@ -339,20 +350,23 @@ public class Program
             else
             {
                 excludes.Add(last_idx);
+                Console.WriteLine($"  -> Excluded stage {last_label} ({excludes.Count}/4 parameters exhausted)");
                 if (excludes.Count == 4)
                     break;
             }
 
-            List<(int, int)> candidates = [
-                (0, (int) profile_current.FileProcessor.Execute.Average()),
-                (1, (int) profile_current.VolumeDecompressor.Execute.Average()),
-                (2, (int) profile_current.VolumeDecryptor.Execute.Average()),
-                (3, (int) profile_current.VolumeDownloader.Execute.Average())
-            ];
-            Console.WriteLine($"{config_current.FileProcessors} {config_current.VolumeDecompressors} {config_current.VolumeDecryptors} {config_current.VolumeDownloaders}");
-            Console.WriteLine($"{candidates[0].Item2} {candidates[1].Item2} {candidates[2].Item2} {candidates[3].Item2}");
-            var (idx, _) = candidates.Where(x => !excludes.Contains(x.Item1)).MaxBy(x => x.Item2);
-            Console.WriteLine($"Increasing {idx}");
+            var candidates = new List<(int Stage, string Label, int Time)>
+            {
+                (0, "FProc", (int)profile_current.FileProcessor.Execute.Average()),
+                (1, "VDeco", (int)profile_current.VolumeDecompressor.Execute.Average()),
+                (2, "VDecr", (int)profile_current.VolumeDecryptor.Execute.Average()),
+                (3, "VDown", (int)profile_current.VolumeDownloader.Execute.Average()),
+            };
+
+            Console.WriteLine($"  Timings (avg ms): {string.Join(" ", candidates.Select(x => $"[{x.Label}] {x.Time,6}"))}");
+
+            var (idx, label, _) = candidates.Where(x => !excludes.Contains(x.Stage)).MaxBy(x => x.Time);
+            Console.WriteLine($"  -> Increasing stage {label} (most saturated: {candidates[idx].Time} ms avg execute time)");
             config_current = idx switch
             {
                 0 => config_best with { FileProcessors = step_method(config_best.FileProcessors) },
@@ -362,11 +376,14 @@ public class Program
                 _ => throw new Exception($"Incorrect process idx specified: {idx}"),
             };
             last_idx = idx;
+            last_label = label;
         }
 
-        Console.WriteLine("-----");
-        Console.WriteLine($"Best run found took {profile_best.Total} ms compared to {profile_default_baseline.Total} ms default ({(double)profile_default_baseline.Total / (double)profile_best.Total:F2} x)");
-        Console.WriteLine($"{config_best.FileProcessors} {config_best.VolumeDecompressors} {config_best.VolumeDecryptors} {config_best.VolumeDownloaders}");
+        Console.WriteLine("----==== Tuning complete ====----");
+        Console.WriteLine($" Best configuration: {config_best}");
+        Console.WriteLine($" Best time:         {profile_best.Total} ms");
+        Console.WriteLine($" Default time:      {profile_default_baseline.Total} ms");
+        Console.WriteLine($" Speedup:           {(double)profile_default_baseline.Total / profile_best.Total:F2}x");
 
         // Cleanup
         using (var c = new Controller(destination, options, sink))
@@ -376,8 +393,8 @@ public class Program
             }
             catch (Exception e)
             {
-                await Console.Error.WriteLineAsync($"Error during backup: {e.Message}.");
-                await Console.Error.WriteLineAsync(e.StackTrace);
+                await Console.Error.WriteLineAsync($"Error during cleanup: {e.Message}.");
+                await Console.Error.WriteLineAsync($"  Stack trace: {e.StackTrace}");
                 return -1;
             }
 
