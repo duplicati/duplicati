@@ -99,7 +99,7 @@ public record ResultEntry
 public record ResultsRestore
 {
     /// <summary>
-    /// Total wall-clock time for the restore operation in milliseconds.
+    /// Average total wall-clock time for the restore operation(s) in milliseconds.
     /// </summary>
     public required int Total { get; init; }
 
@@ -237,12 +237,12 @@ public class ProfilingCaptureSink : IMessageSink, IDisposable
         if (_network_wait.Count <= 0)
             throw new InvalidDataException("Total network execution time hasn't been captured.");
 
-        int total = -1;
+        List<int> totals = [];
         foreach (var line in _network_wait)
             if (line.Message.StartsWith("{0} took"))
-                total = (int)TimeSpan.ParseExact(line.ToString().Split(' ')[^1], @"d\:hh\:mm\:ss\.fff", null).TotalMilliseconds;
+                totals.Add((int)TimeSpan.ParseExact(line.ToString().Split(' ')[^1], @"d\:hh\:mm\:ss\.fff", null).TotalMilliseconds);
 
-        ResultsRestore parsed = Program.EmptyResultsRestore(total);
+        ResultsRestore parsed = Program.EmptyResultsRestore((int)totals.Average());
 
         foreach (var line in _log_lines)
         {
