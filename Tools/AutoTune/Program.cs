@@ -503,11 +503,13 @@ public class Program
         List<int> excludes = [];
         int last_idx = -1;
         string last_label = "";
+        int round = 0;
 
         Func<int, int> step_method = cfg.ExponentialSteps ? x => x * 2 : x => x + 1;
 
         while (true)
         {
+            round++;
             SetOptions(options, config_current);
             sink.Reset();
             using var c = new Controller(destination, options, sink);
@@ -532,15 +534,17 @@ public class Program
 
             if (cfg.Verbose > 0)
             {
-                Console.WriteLine($"----- Round {(last_idx >= 0 ? '→' : '1')} -----");
+                Console.WriteLine($"----- Round {round} -----");
                 Console.WriteLine($"  Config: {config_current}");
-                Console.WriteLine($"  Time:   {profile_current.Total,6} ms  (best: {profile_best.Total,6} ms)");
+                var best_str = round > 1 ? $" (best: {profile_best.Total,6} ms)" : "";
+                Console.WriteLine($"  Time:   {profile_current.Total,6} ms{best_str}");
             }
 
             if (profile_current.Total < profile_best.Total)
             {
                 if (cfg.Verbose > 0)
-                    Console.WriteLine($"  -> New best! Improvement: {profile_best.Total - profile_current.Total:D} ms saved");
+                    if (round > 1)
+                        Console.WriteLine($"  -> New best! Improvement: {profile_best.Total - profile_current.Total:D} ms saved");
                 profile_best = profile_current;
                 config_best = config_current;
                 if (!cfg.DontRevisitParameters)
