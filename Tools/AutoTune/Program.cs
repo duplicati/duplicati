@@ -350,10 +350,14 @@ public class Program
             }
 
             // Check if a specific temp folder has been specified.
+            bool tempfolder_created = cfg.TempFolder is null;
             var tempfolder = cfg.TempFolder ?? Path.Combine(Path.GetTempPath(), $"duplicati_autotune_{new Guid()}");
 
             // Check if any of the other paths are unspecified and should thus use the temp folder.
             bool any_in_tmp = cfg.SourceFolder is null || cfg.Destination is null || cfg.RestoreTarget is null;
+            bool source_created = cfg.SourceFolder is null;
+            bool destination_created = cfg.Destination is null;
+            bool restoretarget_created = cfg.RestoreTarget is null;
             var source = cfg.SourceFolder ?? Path.Combine(tempfolder, "source");
             var destination = cfg.Destination ?? Path.Combine(tempfolder, "backup");
             var restoretarget = cfg.RestoreTarget ?? Path.Combine(tempfolder, "restored");
@@ -380,12 +384,15 @@ public class Program
 
             var rc = await RunCore(source, destination, restoretarget, tempfolder, cfg, opts);
 
-            // Cleanup
-            // TODO only if the directories were created
-            Directory.Delete(source, true);
-            Directory.Delete(destination, true);
-            Directory.Delete(tempfolder, true);
-            Directory.Delete(restoretarget, true);
+            // Cleanup - only delete directories that were created by this tool
+            if (source_created)
+                Directory.Delete(source, true);
+            if (destination_created)
+                Directory.Delete(destination, true);
+            if (restoretarget_created)
+                Directory.Delete(restoretarget, true);
+            if (tempfolder_created)
+                Directory.Delete(tempfolder, true);
 
             return rc;
         });
