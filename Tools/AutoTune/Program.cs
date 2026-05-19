@@ -446,7 +446,7 @@ public class Program
         using (var c = new Controller(cfg.Destination, options, sink))
             try
             {
-                var res = c.Backup([cfg.SourceFolder]);
+                var res = await c.BackupAsync([cfg.SourceFolder]);
                 if (cfg.Verbose > 0)
                     Console.WriteLine($"Backup ran in {res.Duration}");
             }
@@ -594,7 +594,7 @@ public class Program
         using (var c = new Controller(cfg.Destination, options, sink))
             try
             {
-                c.Delete();
+                await c.DeleteAsync();
             }
             catch (Exception e)
             {
@@ -728,7 +728,7 @@ public class Program
         {
             Directory.Delete(cfg.RestoreTarget!, true);
             Directory.CreateDirectory(cfg.RestoreTarget!);
-            c.Restore(["*"]);
+            await c.RestoreAsync(["*"]);
         }
 
         sink.Reset();
@@ -737,7 +737,7 @@ public class Program
         {
             Directory.Delete(cfg.RestoreTarget!, true);
             Directory.CreateDirectory(cfg.RestoreTarget!);
-            c.Restore(["*"]);
+            await c.RestoreAsync(["*"]);
         }
 
         return await sink.ParseLines();
