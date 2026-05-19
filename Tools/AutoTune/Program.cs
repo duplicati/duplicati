@@ -202,6 +202,7 @@ public class Program
             new Option<long>(aliases: ["--testdata-max-file-size"], description: "If no source folder has been specified, this option tunes the maximum size (in bytes) a generated file may have.", getDefaultValue: () => 1024 * 1024),
             new Option<long>(aliases: ["--testdata-max-total-size"], description: "If no source folder has been specified, this option tunes the maximum size (in bytes) the generated files collectively may take up.", getDefaultValue: () => 512 * 1024 * 1024),
             new Option<long>(aliases: ["--testdata-num-files"], description: "If no source folder has been specified, this option tunes how many files are generated as test data.", getDefaultValue: () => 10000),
+            new Option<bool>(aliases: ["--verbose"], description: "Toggles whether to print progress information during tuning runs. By default, only the final result is printed.", getDefaultValue: () => false),
             new Option<int>(aliases: ["--warmup"], description: "Amount of warmup runs to perform before measuring.", getDefaultValue: () => 1),
         };
 
@@ -219,19 +220,20 @@ public class Program
                 tempfolder = Path.Combine(tempfolder, "temp");
 
             // Check whether the paths exist, and if so, whether they already contain data.
-            static void ensure_dir(string path)
+            static void ensure_dir(string path, bool verbose)
             {
-                Console.WriteLine($"  [init] {path}");
+                if (verbose)
+                    Console.WriteLine($"  [init] {path}");
                 if (!Directory.Exists(path))
                     Directory.CreateDirectory(path);
             }
-            ensure_dir(source);
-            ensure_dir(destination);
-            ensure_dir(tempfolder);
-            ensure_dir(restoretarget);
+            ensure_dir(source, cfg.Verbose);
+            ensure_dir(destination, cfg.Verbose);
+            ensure_dir(tempfolder, cfg.Verbose);
+            ensure_dir(restoretarget, cfg.Verbose);
 
             if (!Directory.EnumerateFiles(source).Any())
-                await GenerateData(source, cfg.TestdataMaxFileSize, cfg.TestdataMaxTotalSize, cfg.TestdataNumFiles, token);
+                await GenerateData(source, cfg.TestdataMaxFileSize, cfg.TestdataMaxTotalSize, cfg.TestdataNumFiles, cfg.Verbose);
 
             var opts = ParseOptions(cfg.BackendOptions);
 
@@ -292,9 +294,14 @@ public class Program
                 return -1;
             }
         var profile_default_baseline = await sink.ParseLines();
-        Console.WriteLine("----==== Default configuration baseline ====----");
-        Console.WriteLine($"  Default config: {DefaultConfigRestore}");
-        Console.WriteLine($"  Baseline time: {profile_default_baseline.Total} ms");
+
+        if (cfg.Verbose)
+        {
+            Console.WriteLine("----==== Default configuration baseline ====----");
+            Console.WriteLine($"  Default config: {DefaultConfigRestore}");
+            Console.WriteLine($"  Baseline time: {profile_default_baseline.Total} ms");
+        }
+
         var config_current = DefaultConfigRestore with
         {
             FileProcessors = 1,
@@ -335,13 +342,17 @@ public class Program
 
             var profile_current = await sink.ParseLines();
 
-            Console.WriteLine($"----- Round {(last_idx >= 0 ? '→' : '1')} -----");
-            Console.WriteLine($"  Config: {config_current}");
-            Console.WriteLine($"  Time:   {profile_current.Total,6} ms  (best: {profile_best.Total,6} ms)");
+            if (cfg.Verbose)
+            {
+                Console.WriteLine($"----- Round {(last_idx >= 0 ? '→' : '1')} -----");
+                Console.WriteLine($"  Config: {config_current}");
+                Console.WriteLine($"  Time:   {profile_current.Total,6} ms  (best: {profile_best.Total,6} ms)");
+            }
 
             if (profile_current.Total < profile_best.Total)
             {
-                Console.WriteLine($"  -> New best! Improvement: {profile_best.Total - profile_current.Total:D} ms saved");
+                if (cfg.Verbose)
+                    Console.WriteLine($"  -> New best! Improvement: {profile_best.Total - profile_current.Total:D} ms saved");
                 profile_best = profile_current;
                 config_best = config_current;
                 if (!cfg.DontRevisitParameters)
@@ -350,7 +361,8 @@ public class Program
             else
             {
                 excludes.Add(last_idx);
-                Console.WriteLine($"  -> Excluded stage {last_label} ({excludes.Count}/4 parameters exhausted)");
+                if (cfg.Verbose)
+                    Console.WriteLine($"  -> Excluded stage {last_label} ({excludes.Count}/4 parameters exhausted)");
                 if (excludes.Count == 4)
                     break;
             }
@@ -363,10 +375,11 @@ public class Program
                 (3, "VDown", (int)profile_current.VolumeDownloader.Execute.Average()),
             };
 
-            Console.WriteLine($"  Timings (avg ms): {string.Join(" ", candidates.Select(x => $"[{x.Label}] {x.Time,6}"))}");
+            if (cfg.Verbose)
+                Console.WriteLine($"  Timings (avg ms): {string.Join(" ", candidates.Select(x => $"[{x.Label}] {x.Time,6}"))}");
 
             var (idx, label, _) = candidates.Where(x => !excludes.Contains(x.Stage)).MaxBy(x => x.Time);
-            Console.WriteLine($"  -> Increasing stage {label} (most saturated: {candidates[idx].Time} ms avg execute time)");
+            if (cfg.Verbose) Console.WriteLine($"  -> Increasing stage {label} (most saturated: {candidates[idx].Time} ms avg execute time)");
             config_current = idx switch
             {
                 0 => config_best with { FileProcessors = step_method(config_best.FileProcessors) },
@@ -424,12 +437,28 @@ public class Program
         };
     }
 
-    private static async Task GenerateData(string path, long max_file_size, long max_total_size, long file_count, CancellationToken token)
+    private static async Task GenerateData(string path, long max_file_size, long max_total_size, long file_count, bool verbose)
     {
         var cmd = TestDataGenerator.Commands.Create.CreateCommand();
         long sparse_factor = 30;
         var args = $"\"{path}\" --max-file-size {max_file_size} --max-total-size {max_total_size} --file-count {file_count} --sparse-factor {sparse_factor}";
-        await cmd.InvokeAsync(args);
+
+        if (verbose)
+        {
+            await cmd.InvokeAsync(args);
+        }
+        else
+        {
+            var originalOut = Console.Out;
+            var originalError = Console.Error;
+            Console.SetOut(TextWriter.Null);
+            Console.SetError(TextWriter.Null);
+
+            await cmd.InvokeAsync(args);
+
+            Console.SetOut(originalOut);
+            Console.SetError(originalError);
+        }
     }
 
     private static void SetOptions(Dictionary<string, string?> options, ConfigRestore config)

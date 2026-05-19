@@ -14,5 +14,6 @@ public record ConfigAutoTune
     long TestdataMaxFileSize,
     long TestdataMaxTotalSize,
     long TestdataNumFiles,
+    bool Verbose,
     int Warmup
 );
