@@ -365,17 +365,20 @@ public class Program
                 tempfolder = Path.Combine(tempfolder, "temp");
 
             // Check whether the paths exist, and if so, whether they already contain data.
-            static void ensure_dir(string path, int verbose)
+            static void ensure_dir(string label, string path, int verbose, bool may_contain_data)
             {
                 if (verbose > 0)
                     Console.WriteLine($"  [init] {path}");
                 if (!Directory.Exists(path))
                     Directory.CreateDirectory(path);
+                else if (!may_contain_data && !Directory.EnumerateFileSystemEntries(path).Any())
+                    throw new InvalidDataException($"{label} directory '{path}' may not contain any data.");
+
             }
-            ensure_dir(source, cfg.Verbose);
-            ensure_dir(destination, cfg.Verbose);
-            ensure_dir(tempfolder, cfg.Verbose);
-            ensure_dir(restoretarget, cfg.Verbose);
+            ensure_dir("Source", source, cfg.Verbose, true);
+            ensure_dir("Destination", destination, cfg.Verbose, false);
+            ensure_dir("Temporary folder", tempfolder, cfg.Verbose, true);
+            ensure_dir("Restore target", restoretarget, cfg.Verbose, false);
 
             if (!Directory.EnumerateFiles(source).Any())
                 await GenerateData(source, cfg.TestdataMaxFileSize, cfg.TestdataMaxTotalSize, cfg.TestdataNumFiles, cfg.Verbose);
