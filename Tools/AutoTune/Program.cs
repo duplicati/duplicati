@@ -443,9 +443,10 @@ public class Program
         long sparse_factor = 30;
         var args = $"\"{path}\" --max-file-size {max_file_size} --max-total-size {max_total_size} --file-count {file_count} --sparse-factor {sparse_factor}";
 
+        int return_code;
         if (verbose)
         {
-            await cmd.InvokeAsync(args);
+            return_code = await cmd.InvokeAsync(args);
         }
         else
         {
@@ -454,11 +455,14 @@ public class Program
             Console.SetOut(TextWriter.Null);
             Console.SetError(TextWriter.Null);
 
-            await cmd.InvokeAsync(args);
+            return_code = await cmd.InvokeAsync(args);
 
             Console.SetOut(originalOut);
             Console.SetError(originalError);
         }
+
+        if (return_code != 0)
+            throw new Exception("Test data generation failed.");
     }
 
     private static void SetOptions(Dictionary<string, string?> options, ConfigRestore config)
