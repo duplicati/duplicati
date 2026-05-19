@@ -37,7 +37,7 @@ namespace AutoTune;
 /// <param name="TestdataNumFiles">When generating test data, the number of files to generate.</param>
 /// <param name="StartingSteps">The starting concurrency values for the tunable parameters. Accepts 1 or 4 integer values. One value applies to all four parameters; four values apply individually to file-processors, volume-decompressors, volume-decryptors, and volume-downloaders (in that order). Defaults to an empty array, which is treated as 1 for every parameter.</param>
 /// <param name="UseDefaultSettings">When true, tuning starts from the Duplicati built-in default settings instead of starting from 1 for all parameters. Ignored if --starting-steps is also specified.</param>
-/// <param name="Verbose">When true, progress information is printed during tuning runs. By default, only the final result is printed.</param>
+/// <param name="Verbose">Verbosity level: 0 disables output, 1 prints full progress information during tuning runs. Higher levels reserved for future debug printing. Defaults to 1.</param>
 /// <param name="Warmup">Number of warmup runs to perform before measuring.</param>
 public record ConfigAutoTune
 (
@@ -55,6 +55,6 @@ public record ConfigAutoTune
     long TestdataNumFiles,
     int[] StartingSteps,
     bool UseDefaultSettings,
-    bool Verbose,
+    int Verbose,
     int Warmup
 );

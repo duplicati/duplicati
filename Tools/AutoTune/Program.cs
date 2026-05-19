@@ -337,7 +337,7 @@ public class Program
             new Option<long>(aliases: ["--testdata-max-file-size"], description: "If no source folder has been specified, this option tunes the maximum size (in bytes) a generated file may have.", getDefaultValue: () => 1024 * 1024),
             new Option<long>(aliases: ["--testdata-max-total-size"], description: "If no source folder has been specified, this option tunes the maximum size (in bytes) the generated files collectively may take up.", getDefaultValue: () => 512 * 1024 * 1024),
             new Option<long>(aliases: ["--testdata-num-files"], description: "If no source folder has been specified, this option tunes how many files are generated as test data.", getDefaultValue: () => 10000),
-            new Option<bool>(aliases: ["--verbose"], description: "Toggles whether to print progress information during tuning runs. By default, only the final result is printed.", getDefaultValue: () => false),
+            new Option<int>(aliases: ["--verbose"], description: "Verbosity level: 0 disables output, 1 prints full progress information during tuning runs. Higher levels reserved for future debug printing.", getDefaultValue: () => 1),
             new Option<int>(aliases: ["--warmup"], description: "Amount of warmup runs to perform before measuring.", getDefaultValue: () => 1),
         };
 
@@ -361,9 +361,9 @@ public class Program
                 tempfolder = Path.Combine(tempfolder, "temp");
 
             // Check whether the paths exist, and if so, whether they already contain data.
-            static void ensure_dir(string path, bool verbose)
+            static void ensure_dir(string path, int verbose)
             {
-                if (verbose)
+                if (verbose > 0)
                     Console.WriteLine($"  [init] {path}");
                 if (!Directory.Exists(path))
                     Directory.CreateDirectory(path);
@@ -446,7 +446,7 @@ public class Program
             }
         var profile_default_baseline = await sink.ParseLines();
 
-        if (cfg.Verbose)
+        if (cfg.Verbose > 0)
         {
             Console.WriteLine("----==== Default configuration baseline ====----");
             Console.WriteLine($"  Default config: {DefaultConfigRestore}");
@@ -514,7 +514,7 @@ public class Program
 
             var profile_current = await sink.ParseLines();
 
-            if (cfg.Verbose)
+            if (cfg.Verbose > 0)
             {
                 Console.WriteLine($"----- Round {(last_idx >= 0 ? '→' : '1')} -----");
                 Console.WriteLine($"  Config: {config_current}");
@@ -523,7 +523,7 @@ public class Program
 
             if (profile_current.Total < profile_best.Total)
             {
-                if (cfg.Verbose)
+                if (cfg.Verbose > 0)
                     Console.WriteLine($"  -> New best! Improvement: {profile_best.Total - profile_current.Total:D} ms saved");
                 profile_best = profile_current;
                 config_best = config_current;
@@ -533,7 +533,7 @@ public class Program
             else
             {
                 excludes.Add(last_idx);
-                if (cfg.Verbose)
+                if (cfg.Verbose > 0)
                     Console.WriteLine($"  -> Excluded stage {last_label} ({excludes.Count}/4 parameters exhausted)");
                 if (excludes.Count == 4)
                     break;
@@ -547,11 +547,11 @@ public class Program
                 (3, "VDown", (int)profile_current.VolumeDownloader.Execute.Average()),
             };
 
-            if (cfg.Verbose)
+            if (cfg.Verbose > 0)
                 Console.WriteLine($"  Timings (avg ms): {string.Join(" ", candidates.Select(x => $"[{x.Label}] {x.Time,6}"))}");
 
             var (idx, label, _) = candidates.Where(x => !excludes.Contains(x.Stage)).MaxBy(x => x.Time);
-            if (cfg.Verbose) Console.WriteLine($"  -> Increasing stage {label} (most saturated: {candidates[idx].Time} ms avg execute time)");
+            if (cfg.Verbose > 0) Console.WriteLine($"  -> Increasing stage {label} (most saturated: {candidates[idx].Time} ms avg execute time)");
             config_current = idx switch
             {
                 0 => config_best with { FileProcessors = step_method(config_best.FileProcessors) },
@@ -620,14 +620,14 @@ public class Program
     /// <param name="file_count">Number of files to generate.</param>
     /// <param name="verbose">When true, generator output is forwarded to the console.</param>
     /// <exception cref="Exception">Thrown when the generator returns a non-zero exit code.</exception>
-    private static async Task GenerateData(string path, long max_file_size, long max_total_size, long file_count, bool verbose)
+    private static async Task GenerateData(string path, long max_file_size, long max_total_size, long file_count, int verbose)
     {
         var cmd = TestDataGenerator.Commands.Create.CreateCommand();
         long sparse_factor = 30;
         var args = $"\"{path}\" --max-file-size {max_file_size} --max-total-size {max_total_size} --file-count {file_count} --sparse-factor {sparse_factor}";
 
         int return_code;
-        if (verbose)
+        if (verbose > 0)
         {
             return_code = await cmd.InvokeAsync(args);
         }
