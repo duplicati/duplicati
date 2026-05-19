@@ -11,8 +11,8 @@ public record ConfigAutoTune
     int Runs,
     string? SourceFolder,
     string? TempFolder,
-    long MaxTestFileSize,
-    long MaxTestTotalSize,
-    long NumTestFiles,
+    long TestdataMaxFileSize,
+    long TestdataMaxTotalSize,
+    long TestdataNumFiles,
     int Warmup
 );
