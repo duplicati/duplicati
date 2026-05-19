@@ -36,6 +36,7 @@ namespace AutoTune;
 /// <param name="TestdataMaxFileSize">When generating test data, the maximum size (in bytes) of a single generated file.</param>
 /// <param name="TestdataMaxTotalSize">When generating test data, the maximum collective size (in bytes) of all generated files.</param>
 /// <param name="TestdataNumFiles">When generating test data, the number of files to generate.</param>
+/// <param name="TestdataSparseFactor">When generating test data, defines the amount of data that should explicitly be set 0 to force deduplication.</param>
 /// <param name="StartingSteps">The starting concurrency values for the tunable parameters. Accepts 1 or 4 integer values. One value applies to all four parameters; four values apply individually to file-processors, volume-decompressors, volume-decryptors, and volume-downloaders (in that order). Defaults to an empty array, which is treated as 1 for every parameter.</param>
 /// <param name="UseDefaultSettings">When true, tuning starts from the Duplicati built-in default settings instead of starting from 1 for all parameters. Ignored if --starting-steps is also specified.</param>
 /// <param name="Verbose">Verbosity level: 0 disables output, 1 prints full progress information during tuning runs. Higher levels reserved for future debug printing. Defaults to 1.</param>
@@ -55,6 +56,7 @@ public record ConfigAutoTune
     long TestdataMaxFileSize,
     long TestdataMaxTotalSize,
     long TestdataNumFiles,
+    int TestdataSparseFactor,
     int[] StartingSteps,
     bool UseDefaultSettings,
     int Verbose,

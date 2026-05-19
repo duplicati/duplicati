@@ -342,6 +342,7 @@ public class Program
             new Option<long>(aliases: ["--testdata-max-file-size"], description: "If no source folder has been specified, this option tunes the maximum size (in bytes) a generated file may have. Default is 1 MB.", getDefaultValue: () => 1024 * 1024),
             new Option<long>(aliases: ["--testdata-max-total-size"], description: "If no source folder has been specified, this option tunes the maximum size (in bytes) the generated files collectively may take up. Default is 512 MB.", getDefaultValue: () => 512 * 1024 * 1024),
             new Option<long>(aliases: ["--testdata-num-files"], description: "If no source folder has been specified, this option tunes how many files are generated as test data.", getDefaultValue: () => 10000),
+            new Option<int>(aliases: ["--testdata-sparse-factor"], description: "If no source folder has been specified, this option tunes how much of the generated data that should be explicitly set to 0 to force deduplication. The number should be an integer and defines the percentage, e.g. 30 corresponds to 30% of the data.", getDefaultValue: () => 30),
             new Option<int>(aliases: ["--verbose"], description: "Verbosity level: 0 disables output, 1 prints full progress information during tuning runs. Higher levels reserved for future debug printing.", getDefaultValue: () => 1),
             new Option<int>(aliases: ["--warmup"], description: "Amount of warmup runs to perform before measuring.", getDefaultValue: () => 1),
         };
@@ -386,7 +387,7 @@ public class Program
             ensure_dir("Restore target", restoretarget, cfg.Verbose, false);
 
             if (!Directory.EnumerateFiles(source).Any())
-                await GenerateData(source, cfg.TestdataMaxFileSize, cfg.TestdataMaxTotalSize, cfg.TestdataNumFiles, cfg.Verbose);
+                await GenerateData(source, cfg.TestdataMaxFileSize, cfg.TestdataMaxTotalSize, cfg.TestdataNumFiles, cfg.TestdataSparseFactor, cfg.Verbose);
 
             var opts = ParseOptions(cfg.BackendOptions);
 
@@ -638,12 +639,12 @@ public class Program
     /// <param name="max_file_size">Maximum size of an individual generated file (bytes).</param>
     /// <param name="max_total_size">Maximum cumulative size of all generated files (bytes).</param>
     /// <param name="file_count">Number of files to generate.</param>
+    /// <param name="sparse_factor">Amount of data that should be set to 0 for deduplication.</param>
     /// <param name="verbose">When true, generator output is forwarded to the console.</param>
     /// <exception cref="Exception">Thrown when the generator returns a non-zero exit code.</exception>
-    private static async Task GenerateData(string path, long max_file_size, long max_total_size, long file_count, int verbose)
+    private static async Task GenerateData(string path, long max_file_size, long max_total_size, long file_count, int sparse_factor, int verbose)
     {
         var cmd = TestDataGenerator.Commands.Create.CreateCommand();
-        long sparse_factor = 30;
         var args = $"\"{path}\" --max-file-size {max_file_size} --max-total-size {max_total_size} --file-count {file_count} --sparse-factor {sparse_factor}";
 
         int return_code;
