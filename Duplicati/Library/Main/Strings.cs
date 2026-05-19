@@ -409,7 +409,12 @@ namespace Duplicati.Library.Main.Strings
         public static string InvalidCryptoSystem(string algorithm) { return LC.L(@"The cryptolibrary does not support re-usable transforms for the hash algorithm {0}", algorithm); }
         public static string InvalidHashAlgorithm(string algorithm) { return LC.L(@"The cryptolibrary does not support the hash algorithm {0}", algorithm); }
         public static string PassphraseChangeUnsupported { get { return LC.L(@"The passphrase cannot be changed for an existing backup"); } }
-        public static string SnapshotFailedError(string message) { return LC.L(@"Failed to create a snapshot: {0}", message); }
+        public static string SnapshotFailedError(string message, bool seemsToHavePermissions)
+        {
+            return seemsToHavePermissions
+                ? LC.L(@"Failed to create a snapshot. The process appears to have the necessary permissions, but the snapshot failed anyway. Error message: {0}", message)
+                : LC.L(@"Failed to create a snapshot. This may be caused by insufficient permissions. Try running Duplicati with elevated privileges. Error message: {0}", message);
+        }
         public static string BackupReadNotAvailable { get { return LC.L(@"Failed to activate BackupRead as the current process does not have sufficient permissions"); } }
     }
 

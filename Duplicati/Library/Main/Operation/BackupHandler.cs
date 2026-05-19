@@ -99,11 +99,11 @@ namespace Duplicati.Library.Main.Operation
             catch (Exception ex)
             {
                 if (options.SnapShotStrategy == Options.OptimizationStrategy.Required)
-                    throw new UserInformationException(Strings.Common.SnapshotFailedError(ex.Message), "SnapshotFailed", ex);
+                    throw new UserInformationException(Strings.Common.SnapshotFailedError(ex.Message, PermissionHelper.HasSnapshotPrivilege()), "SnapshotFailed", ex);
                 else if (options.SnapShotStrategy == Options.OptimizationStrategy.On)
-                    Log.WriteWarningMessage(LOGTAG, "SnapshotFailed", ex, Strings.Common.SnapshotFailedError(ex.Message));
+                    Log.WriteWarningMessage(LOGTAG, "SnapshotFailed", ex, Strings.Common.SnapshotFailedError(ex.Message, PermissionHelper.HasSnapshotPrivilege()));
                 else if (options.SnapShotStrategy == Options.OptimizationStrategy.Auto)
-                    Log.WriteInformationMessage(LOGTAG, "SnapshotFailed", Strings.Common.SnapshotFailedError(ex.Message));
+                    Log.WriteInformationMessage(LOGTAG, "SnapshotFailed", Strings.Common.SnapshotFailedError(ex.Message, PermissionHelper.HasSnapshotPrivilege()));
             }
 
             var useSeBackup = false;
