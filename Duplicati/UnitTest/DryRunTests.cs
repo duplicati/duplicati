@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Main;
 using NUnit.Framework;
@@ -12,7 +11,7 @@ namespace Duplicati.UnitTest
     public class DryRunTests : BasicSetupHelper
     {
         [Test]
-        public void TestBackupDryRunDoesNotUpload()
+        public async Task TestBackupDryRunDoesNotUploadAsync()
         {
             var sourceFolder = Path.Combine(DATAFOLDER, "source");
             var backendFolder = Path.Combine(TARGETFOLDER, "backend");
@@ -29,7 +28,7 @@ namespace Duplicati.UnitTest
             };
 
             using (var controller = new Controller($"file://{backendFolder}", options, null))
-                controller.Backup(new[] { sourceFolder });
+                await controller.BackupAsync(new[] { sourceFolder });
 
             // Verify no files were uploaded
             var uploadedFiles = Directory.GetFiles(backendFolder);
@@ -37,7 +36,7 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
-        public void TestDeleteAllRemoteFilesDryRunDoesNotDelete()
+        public async Task TestDeleteAllRemoteFilesDryRunDoesNotDeleteAsync()
         {
             var sourceFolder = Path.Combine(DATAFOLDER, "source");
             var backendFolder = Path.Combine(TARGETFOLDER, "backend");
@@ -49,11 +48,8 @@ namespace Duplicati.UnitTest
             File.WriteAllText(Path.Combine(sourceFolder, "test.txt"), "test content");
 
             using (var controller = new Controller($"file://{backendFolder}", this.TestOptions, null))
-            {
-                controller.Backup(new[] { sourceFolder });
-            }
+                await controller.BackupAsync(new[] { sourceFolder });
 
-            // Count files before dry-run delete
             var filesBefore = Directory.GetFiles(backendFolder).Length;
             Assert.Greater(filesBefore, 0, "Should have files in backend after backup");
 
@@ -64,9 +60,7 @@ namespace Duplicati.UnitTest
             };
 
             using (var controller = new Controller($"file://{backendFolder}", options, null))
-            {
-                controller.DeleteAllRemoteFiles();
-            }
+                await controller.DeleteAllRemoteFilesAsync();
 
             // Verify files still exist
             var filesAfter = Directory.GetFiles(backendFolder).Length;
@@ -74,7 +68,7 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
-        public void TestVerifyLocalListDryRunDoesNotDelete()
+        public async Task TestVerifyLocalListDryRunDoesNotDeleteAsync()
         {
             var sourceFolder = Path.Combine(DATAFOLDER, "source");
             var backendFolder = Path.Combine(TARGETFOLDER, "backend");
@@ -86,9 +80,7 @@ namespace Duplicati.UnitTest
             File.WriteAllText(Path.Combine(sourceFolder, "test.txt"), "test content");
 
             using (var controller = new Controller($"file://{backendFolder}", this.TestOptions, null))
-            {
-                controller.Backup(new[] { sourceFolder });
-            }
+                await controller.BackupAsync(new[] { sourceFolder });
 
             var filesBefore = Directory.GetFiles(backendFolder).Length;
             Assert.Greater(filesBefore, 0);
@@ -96,11 +88,11 @@ namespace Duplicati.UnitTest
             // Manually mark some files as "Uploading" in the database
             using (var connection = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={DBFILE};Pooling=false"))
             {
-                connection.Open();
+                await connection.OpenAsync();
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText = "UPDATE RemoteVolume SET State = \"Uploading\" WHERE Type = \"Files\"";
-                    command.ExecuteNonQuery();
+                    await command.ExecuteNonQueryAsync();
                 }
             }
 
@@ -111,9 +103,7 @@ namespace Duplicati.UnitTest
             };
 
             using (var controller = new Controller($"file://{backendFolder}", options, null))
-            {
-                controller.Backup(new[] { sourceFolder });
-            }
+                await controller.BackupAsync(new[] { sourceFolder });
 
             // Verify that the files were not deleted
             var filesAfter = Directory.GetFiles(backendFolder).Length;
@@ -121,7 +111,7 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
-        public void TestInterruptedBackupRecoveryDryRunDoesNotUpload()
+        public async Task TestInterruptedBackupRecoveryDryRunDoesNotUploadAsync()
         {
             var sourceFolder = Path.Combine(DATAFOLDER, "source");
             var backendFolder = Path.Combine(TARGETFOLDER, "backend");
@@ -137,13 +127,13 @@ namespace Duplicati.UnitTest
             // Start a backup and interrupt it
             using (var controller = new Controller($"file://{backendFolder}", this.TestOptions, null))
             {
-                var backupTask = Task.Run(() => controller.Backup(new[] { sourceFolder }));
-                Thread.Sleep(2000); // Wait 2 seconds
-                controller.Stop();
+                var backupTask = controller.BackupAsync(new[] { sourceFolder });
+                await Task.Delay(2000); // Wait 2 seconds
+                await controller.StopAsync();
 
                 try
                 {
-                    backupTask.Wait();
+                    await backupTask;
                 }
                 catch (AggregateException)
                 {
@@ -160,9 +150,7 @@ namespace Duplicati.UnitTest
             var filesBefore = Directory.GetFiles(backendFolder).Length;
 
             using (var controller = new Controller($"file://{backendFolder}", options, null))
-            {
-                controller.Backup(new[] { sourceFolder });
-            }
+                await controller.BackupAsync(new[] { sourceFolder });
 
             // Verify no new files were uploaded
             var filesAfter = Directory.GetFiles(backendFolder).Length;

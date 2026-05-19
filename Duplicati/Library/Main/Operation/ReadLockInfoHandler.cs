@@ -88,7 +88,7 @@ namespace Duplicati.Library.Main.Operation
             var updatedCount = 0;
             var errorCount = 0;
 
-            await foreach (var (name, lockExpiration) in database.GetRemoteVolumesWithLockExpiration(!m_options.RefreshLockInfoComplete, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
+            await foreach (var (name, lockExpiration) in database.GetRemoteVolumesWithLockExpirationAsync(!m_options.RefreshLockInfoComplete, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
             {
                 readCount++;
                 try
@@ -99,7 +99,7 @@ namespace Duplicati.Library.Main.Operation
                     // Only update if the value has changed
                     if (remoteLockExpiration != lockExpiration)
                     {
-                        await database.UpdateRemoteVolumeLockExpiration(name, remoteLockExpiration, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+                        await database.UpdateRemoteVolumeLockExpirationAsync(name, remoteLockExpiration, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                         updatedCount++;
 
                         Log.WriteVerboseMessage(LOGTAG, "UpdatedLockExpiration", "Updated lock expiration for {0} to {1}", name, remoteLockExpiration);

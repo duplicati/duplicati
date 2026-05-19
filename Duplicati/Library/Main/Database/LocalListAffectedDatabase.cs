@@ -130,9 +130,9 @@ namespace Duplicati.Library.Main.Database
         /// <param name="items">The items to filter the filesets by.</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>An asynchronous enumerable of fileset times.</returns>
-        public async IAsyncEnumerable<Interface.IListResultFileset> GetFilesets(IEnumerable<string> items, [EnumeratorCancellation] CancellationToken token)
+        public async IAsyncEnumerable<Interface.IListResultFileset> GetFilesetsAsync(IEnumerable<string> items, [EnumeratorCancellation] CancellationToken token)
         {
-            var filesets = await FilesetTimes(token)
+            var filesets = await FilesetTimesAsync(token)
                 .ToArrayAsync(cancellationToken: token)
                 .ConfigureAwait(false);
 
@@ -201,7 +201,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="items">The items to filter the files by.</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>An asynchronous enumerable of file results.</returns>
-        public async IAsyncEnumerable<Interface.IListResultFile> GetFiles(IEnumerable<string> items, [EnumeratorCancellation] CancellationToken token)
+        public async IAsyncEnumerable<Interface.IListResultFile> GetFilesAsync(IEnumerable<string> items, [EnumeratorCancellation] CancellationToken token)
         {
             var sql = $@"
                 SELECT DISTINCT ""Path""
@@ -286,7 +286,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="items">The items to filter the log lines by.</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>An asynchronous enumerable of log line results.</returns>
-        public async IAsyncEnumerable<Interface.IListResultRemoteLog> GetLogLines(IEnumerable<string> items, [EnumeratorCancellation] CancellationToken token)
+        public async IAsyncEnumerable<Interface.IListResultRemoteLog> GetLogLinesAsync(IEnumerable<string> items, [EnumeratorCancellation] CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand();
 
@@ -336,7 +336,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="items">The names of the remote volumes to filter by.</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>An asynchronous enumerable of remote volume results.</returns>
-        public async IAsyncEnumerable<Interface.IListResultRemoteVolume> GetVolumes(IEnumerable<string> items, [EnumeratorCancellation] CancellationToken token)
+        public async IAsyncEnumerable<Interface.IListResultRemoteVolume> GetVolumesAsync(IEnumerable<string> items, [EnumeratorCancellation] CancellationToken token)
         {
             var itemsList = items.ToList();
             if (itemsList.Count == 0)

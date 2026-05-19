@@ -11,7 +11,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
 {
 
     [Test]
-    public async Task Test_GPT_ParseFromRealDisk_ReturnsCorrectPartitions()
+    public async Task Test_GPT_ParseFromRealDisk_ReturnsCorrectPartitions_Async()
     {
         var sectorSize = s_gptRawDisk!.SectorSize;
 
@@ -53,7 +53,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_MBR_ParseFromRealDisk_ReturnsCorrectPartitions()
+    public async Task Test_MBR_ParseFromRealDisk_ReturnsCorrectPartitions_Async()
     {
         var sectorSize = s_mbrRawDisk!.SectorSize;
 
@@ -97,7 +97,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_GPT_EnumeratePartitions_ReturnsCorrectCount()
+    public async Task Test_GPT_EnumeratePartitions_ReturnsCorrectCount_Async()
     {
         var sectorSize = s_gptRawDisk!.SectorSize;
 
@@ -122,7 +122,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_MBR_EnumeratePartitions_ReturnsCorrectCount()
+    public async Task Test_MBR_EnumeratePartitions_ReturnsCorrectCount_Async()
     {
         var sectorSize = s_mbrRawDisk!.SectorSize;
 
@@ -147,7 +147,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_GPT_GetPartitionAsync_ReturnsCorrectPartition()
+    public async Task Test_GPT_GetPartitionAsync_ReturnsCorrectPartition_Async()
     {
         var sectorSize = s_gptRawDisk!.SectorSize;
 
@@ -180,7 +180,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_MBR_GetPartitionAsync_ReturnsCorrectPartition()
+    public async Task Test_MBR_GetPartitionAsync_ReturnsCorrectPartition_Async()
     {
         var sectorSize = s_mbrRawDisk!.SectorSize;
 
@@ -213,7 +213,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_GPT_PartitionAlignment_IsSectorAligned()
+    public async Task Test_GPT_PartitionAlignment_IsSectorAligned_Async()
     {
         var sectorSize = s_gptRawDisk!.SectorSize;
 
@@ -237,7 +237,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_MBR_PartitionAlignment_IsSectorAligned()
+    public async Task Test_MBR_PartitionAlignment_IsSectorAligned_Async()
     {
         var sectorSize = s_mbrRawDisk!.SectorSize;
 

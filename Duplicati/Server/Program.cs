@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using CoCoL;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Certificates;
 using Duplicati.Library.Common.IO;
@@ -148,7 +149,7 @@ namespace Duplicati.Server
         /// </summary>
         private static void ShutdownModernWebserver()
         {
-            DuplicatiWebserver.Stop().GetAwaiter().GetResult();
+            DuplicatiWebserver.StopAsync().Await();
         }
 
         /// <summary>
@@ -212,7 +213,7 @@ namespace Duplicati.Server
             SystemContextSettings.StartSession();
 
             ApplyEnvironmentVariables(commandlineOptions);
-            ApplySecretProvider(applicationSettings, commandlineOptions, CancellationToken.None).Await();
+            ApplySecretProviderAsync(applicationSettings, commandlineOptions, CancellationToken.None).Await();
             DefaultSecretProvider = SecretProviderHelper.GetDefaultSecretProvider(commandlineOptions, CancellationToken.None)
                 .Await();
 
@@ -265,6 +266,8 @@ namespace Duplicati.Server
                 CreateApplicationInstance(applicationSettings.DataFolder, writeToConsoleOnException);
 
                 applicationSettings.StartOrStopUsageReporter = () => StartOrStopUsageReporter(connection);
+                // Bit messy, but the callback needs the connection, and the connection needs the callback
+                connection.UpdateUsageReporterCallback(applicationSettings.StartOrStopUsageReporter);
                 applicationSettings.StartOrStopUsageReporter?.Invoke();
 
                 AdjustApplicationSettings(connection, commandlineOptions);
@@ -274,7 +277,7 @@ namespace Duplicati.Server
                     connection.LogError(null, "Error in updater", obj);
                 };
 
-                DuplicatiWebserver = StartWebServer(commandlineOptions, connection, logHandler, applicationSettings).Await();
+                DuplicatiWebserver = StartWebServerAsync(commandlineOptions, connection, logHandler, applicationSettings).Await();
 
                 connection.SetServiceProvider(DuplicatiWebserver.Provider);
                 queueRunner = DuplicatiWebserver.Provider.GetRequiredService<IQueueRunnerService>();
@@ -338,7 +341,7 @@ namespace Duplicati.Server
 
                     terminated = true;
                     applicationSettings.SignalApplicationExit();
-                });
+                }, TaskScheduler.Default).FireAndForget();
 
                 var stopCounter = 0;
                 Console.CancelKeyPress += (sender, e) =>
@@ -346,7 +349,7 @@ namespace Duplicati.Server
                     if (Interlocked.Increment(ref stopCounter) <= 1)
                     {
                         Log.WriteInformationMessage(LOGTAG, "CancelKeyPressed", "Cancel key pressed, stopping server");
-                        Task.Run(() => DuplicatiWebserver?.Stop());
+                        Task.Run(async () => DuplicatiWebserver?.StopAsync() ?? Task.CompletedTask).FireAndForget();
                     }
                     else
                     {
@@ -436,9 +439,9 @@ namespace Duplicati.Server
         /// <param name="logWriteHandler">The log write handler</param>
         /// <param name="applicationSettings">The application settings</param>
         /// <returns></returns>
-        private static async Task<DuplicatiWebserver> StartWebServer(IReadOnlyDictionary<string, string> options, Connection connection, ILogWriteHandler logWriteHandler, IApplicationSettings applicationSettings)
+        private static async Task<DuplicatiWebserver> StartWebServerAsync(IReadOnlyDictionary<string, string> options, Connection connection, ILogWriteHandler logWriteHandler, IApplicationSettings applicationSettings)
         {
-            var server = await WebServerLoader.TryRunServer(options, connection, async parsedOptions =>
+            var server = await WebServerLoader.TryRunServerAsync(options, connection, async parsedOptions =>
             {
                 var mappedSettings = new DuplicatiWebserver.InitSettings(
                     parsedOptions.WebRoot,
@@ -455,7 +458,7 @@ namespace Duplicati.Server
                 var server = DuplicatiWebserver.CreateWebServer(mappedSettings, connection, logWriteHandler, applicationSettings);
 
                 // Start the server, but catch any configuration issues
-                var task = server.Start();
+                var task = server.StartAsync();
                 await Task.WhenAny(task, Task.Delay(500));
                 if (task.IsCompleted)
                     await task;
@@ -597,7 +600,7 @@ namespace Duplicati.Server
             {
                 try
                 {
-                    var regTask = remoteControllerRegistration.RegisterMachine(remoteControlUrl);
+                    var regTask = remoteControllerRegistration.RegisterMachineAsync(remoteControlUrl);
                     while (!regTask.IsCompleted)
                     {
                         // Interface does not have events, so poll it every second
@@ -617,7 +620,8 @@ namespace Duplicati.Server
                 {
                     Log.WriteErrorMessage(LOGTAG, "RemoteControlRegistrationFailed", ex, Strings.Program.RemoteControlRegistrationFailed(ex.Message));
                 }
-            });
+            })
+            .FireAndForget();
         }
 
         /// <summary>
@@ -957,7 +961,7 @@ namespace Duplicati.Server
         /// <param name="commandlineOptions">The commandline options</param>
         /// <param name="cancellationToken">The cancellation token</param>
         /// <returns>A task that represents the asynchronous operation</returns>
-        private static async Task ApplySecretProvider(IApplicationSettings applicationSettings, Dictionary<string, string> commandlineOptions, CancellationToken cancellationToken)
+        private static async Task ApplySecretProviderAsync(IApplicationSettings applicationSettings, Dictionary<string, string> commandlineOptions, CancellationToken cancellationToken)
             => applicationSettings.SecretProvider = await SecretProviderHelper.ApplySecretProviderAsync([], [], commandlineOptions, TempFolder.SystemTempPath, applicationSettings.SecretProvider, cancellationToken).ConfigureAwait(false);
 
         /// <summary>
@@ -1255,14 +1259,14 @@ namespace Duplicati.Server
                 case LiveControls.LiveControlState.Paused:
                     {
                         queueRunnerService.Pause();
-                        queueRunnerService.GetCurrentTask()?.Pause(e.TransfersPaused);
+                        queueRunnerService.GetCurrentTask()?.PauseAsync(e.TransfersPaused).Await();
                         appSettings.PausedUntil = e.WaitTimeExpiration;
                         break;
                     }
                 case LiveControls.LiveControlState.Running:
                     {
                         queueRunnerService.Resume();
-                        queueRunnerService.GetCurrentTask()?.Resume();
+                        queueRunnerService.GetCurrentTask()?.ResumeAsync().Await();
                         schedulerService?.Reschedule();
                         appSettings.PausedUntil = null;
                         break;

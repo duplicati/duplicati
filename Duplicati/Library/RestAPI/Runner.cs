@@ -35,6 +35,7 @@ using Duplicati.WebserverCore.Abstractions;
 using System.Threading;
 using System.Text.Json;
 using System.Globalization;
+using CoCoL;
 
 namespace Duplicati.Server
 {
@@ -49,7 +50,7 @@ namespace Duplicati.Server
             int PageSize { get; }
             int PageOffset { get; }
             bool ReturnExtended { get; }
-            void SetController(Library.Main.Controller? controller);
+            void SetController(Library.Main.IController? controller);
         }
 
         private class RunnerData : IRunnerData
@@ -80,37 +81,41 @@ namespace Duplicati.Server
             public DateTime? TaskStarted { get; set; }
             public DateTime? TaskFinished { get; set; }
 
-            internal Library.Main.Controller? Controller { get; set; }
+            internal Library.Main.IController? Controller { get; set; }
 
-            public void SetController(Library.Main.Controller? controller)
+            public void SetController(Library.Main.IController? controller)
             {
                 Controller = controller;
             }
 
-            public void Stop()
+            public async Task StopAsync()
             {
-                Controller?.Stop();
+                if (Controller != null)
+                    await Controller.StopAsync().ConfigureAwait(false);
             }
 
-            public void Abort()
+            public async Task AbortAsync()
             {
-                Controller?.Abort();
+                if (Controller != null)
+                    await Controller.AbortAsync().ConfigureAwait(false);
             }
 
-            public void Pause(bool alsoTransfers)
+            public async Task PauseAsync(bool alsoTransfers)
             {
-                Controller?.Pause(alsoTransfers);
+                if (Controller != null)
+                    await Controller.PauseAsync(alsoTransfers).ConfigureAwait(false);
             }
 
-            public void Resume()
+            public async Task ResumeAsync()
             {
-                Controller?.Resume();
+                if (Controller != null)
+                    await Controller.ResumeAsync().ConfigureAwait(false);
             }
 
             public long OriginalUploadSpeed { get; set; }
             public long OriginalDownloadSpeed { get; set; }
 
-            public void UpdateThrottleSpeeds(string? uploadSpeed, string? downloadSpeed)
+            public async Task UpdateThrottleSpeedsAsync(string? uploadSpeed, string? downloadSpeed)
             {
                 var controller = this.Controller;
                 if (controller == null)
@@ -145,7 +150,7 @@ namespace Duplicati.Server
                 if (download_throttle <= 0 || download_throttle == long.MaxValue)
                     download_throttle = 0;
 
-                controller.SetThrottleSpeeds(upload_throttle, download_throttle);
+                await controller.SetThrottleSpeedsAsync(upload_throttle, download_throttle).ConfigureAwait(false);
             }
 
             private readonly long m_taskID;
@@ -564,15 +569,15 @@ namespace Duplicati.Server
             return parts.ToArray();
         }
 
-        public static IBasicResults? Run(Connection databaseConnection, EventPollNotify eventPollNotify, INotificationUpdateService notificationUpdateService, IProgressStateProviderService progressStateProviderService, IApplicationSettings applicationSettings, IQueuedTask data, bool fromQueue)
+        public static Task<IBasicResults?> RunAsync(Connection databaseConnection, EventPollNotify eventPollNotify, INotificationUpdateService notificationUpdateService, IProgressStateProviderService progressStateProviderService, IApplicationSettings applicationSettings, IQueuedTask data, bool fromQueue)
         {
             if (data is IRunnerData runnerData)
-                return RunInternal(databaseConnection, eventPollNotify, notificationUpdateService, progressStateProviderService, applicationSettings, runnerData, fromQueue);
+                return RunInternalAsync(databaseConnection, eventPollNotify, notificationUpdateService, progressStateProviderService, applicationSettings, runnerData, fromQueue);
 
             throw new ArgumentException("Invalid task type", nameof(data));
         }
 
-        private static IBasicResults? RunInternal(Connection databaseConnection, EventPollNotify eventPollNotify, INotificationUpdateService notificationUpdateService, IProgressStateProviderService progressStateProviderService, IApplicationSettings applicationSettings, IRunnerData data, bool fromQueue)
+        private static async Task<IBasicResults?> RunInternalAsync(Connection databaseConnection, EventPollNotify eventPollNotify, INotificationUpdateService notificationUpdateService, IProgressStateProviderService progressStateProviderService, IApplicationSettings applicationSettings, IRunnerData data, bool fromQueue)
         {
             data.TaskStarted = DateTime.Now;
             if (data is CustomRunnerTask task)
@@ -600,7 +605,7 @@ namespace Duplicati.Server
                             if (!cts.IsCancellationRequested)
                                 eventPollNotify.SignalProgressUpdate(sink.Copy);
                         }
-                    });
+                    }).FireAndForget();
 
                     task.Run(sink);
                     eventPollNotify.SignalProgressUpdate(sink.Copy);
@@ -647,7 +652,7 @@ namespace Duplicati.Server
                             if (!cts.IsCancellationRequested)
                                 eventPollNotify.SignalProgressUpdate(sink.Copy);
                         }
-                    });
+                    }).FireAndForget();
                 }
 
                 var options = ApplyOptions(databaseConnection, backup, GetCommonOptions(databaseConnection), out var url);
@@ -663,15 +668,16 @@ namespace Duplicati.Server
                 if (data.Operation == DuplicatiOperation.Backup && options.ContainsKey("store-task-config"))
                     tempfolder = StoreTaskConfigAndGetTempFolder(databaseConnection, data, options);
 
+                var useOutOfProcess = databaseConnection.ApplicationSettings.UseOutOfProcessController;
+
                 // Attach a log scope that tags all messages to relay the TaskID and BackupID
                 using (Library.Logging.Log.StartScope(log =>
                 {
                     log[ILogWriteHandler.LiveLogEntry.LOG_EXTRA_TASKID] = data.TaskID.ToString();
                     log[ILogWriteHandler.LiveLogEntry.LOG_EXTRA_BACKUPID] = data.BackupID;
                 }))
-
                 using (tempfolder)
-                using (var controller = new Duplicati.Library.Main.Controller(url, options, sink))
+                using (var controller = await CreateControllerAsync(url, options, sink, useOutOfProcess).ConfigureAwait(false))
                 {
                     try
                     {
@@ -689,16 +695,16 @@ namespace Duplicati.Server
 
                     ((RunnerData)data).Controller = controller;
                     var appSettings = databaseConnection.ApplicationSettings;
-                    data.UpdateThrottleSpeeds(appSettings.UploadSpeedLimit, appSettings.DownloadSpeedLimit);
+                    await data.UpdateThrottleSpeedsAsync(appSettings.UploadSpeedLimit, appSettings.DownloadSpeedLimit).ConfigureAwait(false);
 
                     // Pass on the provider, will be replaced if configured in the backup
-                    controller.SetSecretProvider(applicationSettings.SecretProvider);
+                    await controller.SetSecretProviderAsync(applicationSettings.SecretProvider).ConfigureAwait(false);
 
                     if (backup.Metadata.ContainsKey("LastCompactFinished"))
-                        controller.LastCompact = Utility.DeserializeDateTime(backup.Metadata["LastCompactFinished"]);
+                        await controller.SetLastCompactAsync(Utility.DeserializeDateTime(backup.Metadata["LastCompactFinished"])).ConfigureAwait(false);
 
                     if (backup.Metadata.ContainsKey("LastVacuumFinished"))
-                        controller.LastVacuum = Utility.DeserializeDateTime(backup.Metadata["LastVacuumFinished"]);
+                        await controller.SetLastVacuumAsync(Utility.DeserializeDateTime(backup.Metadata["LastVacuumFinished"])).ConfigureAwait(false);
 
                     switch (data.Operation)
                     {
@@ -710,49 +716,49 @@ namespace Duplicati.Server
                                     .WhereNotNullOrWhiteSpace()
                                     .ToArray();
 
-                                var r = controller.Backup(sources, filter);
+                                var r = await controller.BackupAsync(sources, filter).ConfigureAwait(false);
                                 UpdateMetadataBase(databaseConnection, eventPollNotify, notificationUpdateService, backup, r);
                                 return r;
                             }
                         case DuplicatiOperation.List:
                             {
-                                var r = controller.List(data.FilterStrings, null);
+                                var r = await controller.ListAsync(data.FilterStrings, null).ConfigureAwait(false);
                                 UpdateMetadataBase(databaseConnection, eventPollNotify, notificationUpdateService, backup, r);
                                 return r;
                             }
                         case DuplicatiOperation.Repair:
                             {
-                                var r = controller.Repair(data.FilterStrings == null ? null : new Library.Utility.FilterExpression(data.FilterStrings));
+                                var r = await controller.RepairAsync(data.FilterStrings == null ? null : new Library.Utility.FilterExpression(data.FilterStrings)).ConfigureAwait(false);
                                 UpdateMetadataBase(databaseConnection, eventPollNotify, notificationUpdateService, backup, r);
                                 return r;
                             }
                         case DuplicatiOperation.RepairUpdate:
                             {
-                                var r = controller.UpdateDatabaseWithVersions();
+                                var r = await controller.UpdateDatabaseWithVersionsAsync().ConfigureAwait(false);
                                 UpdateMetadataBase(databaseConnection, eventPollNotify, notificationUpdateService, backup, r);
                                 return r;
                             }
                         case DuplicatiOperation.Remove:
                             {
-                                var r = controller.Delete();
+                                var r = await controller.DeleteAsync().ConfigureAwait(false);
                                 UpdateMetadataBase(databaseConnection, eventPollNotify, notificationUpdateService, backup, r);
                                 return r;
                             }
                         case DuplicatiOperation.Restore:
                             {
-                                var r = controller.Restore(data.FilterStrings);
+                                var r = await controller.RestoreAsync(data.FilterStrings).ConfigureAwait(false);
                                 UpdateMetadataBase(databaseConnection, eventPollNotify, notificationUpdateService, backup, r);
                                 return r;
                             }
                         case DuplicatiOperation.Verify:
                             {
-                                var r = controller.Test();
+                                var r = await controller.TestAsync().ConfigureAwait(false);
                                 UpdateMetadataBase(databaseConnection, eventPollNotify, notificationUpdateService, backup, r);
                                 return r;
                             }
                         case DuplicatiOperation.Compact:
                             {
-                                var r = controller.Compact();
+                                var r = await controller.CompactAsync().ConfigureAwait(false);
                                 UpdateMetadataBase(databaseConnection, eventPollNotify, notificationUpdateService, backup, r);
                                 return r;
                             }
@@ -760,7 +766,7 @@ namespace Duplicati.Server
                             {
                                 using (var tf = new Library.Utility.TempFile())
                                 {
-                                    var r = controller.CreateLogDatabase(tf);
+                                    var r = await controller.CreateLogDatabaseAsync(tf).ConfigureAwait(false);
                                     var tempid = databaseConnection.RegisterTempFile("create-bug-report", r.TargetPath, DateTime.Now.AddDays(3));
 
                                     if (string.Equals(tf, r.TargetPath, Utility.ClientFilenameStringComparison))
@@ -785,7 +791,7 @@ namespace Duplicati.Server
 
                         case DuplicatiOperation.ListRemote:
                             {
-                                var r = controller.ListRemote();
+                                var r = await controller.ListRemoteAsync().ConfigureAwait(false);
                                 UpdateMetadataBase(databaseConnection, eventPollNotify, notificationUpdateService, backup, r);
                                 return r;
                             }
@@ -795,7 +801,7 @@ namespace Duplicati.Server
                                 if (data.ExtraOptions != null)
                                 {
                                     if (Utility.ParseBoolOption(data.ExtraOptions.AsReadOnly(), "delete-remote-files"))
-                                        controller.DeleteAllRemoteFiles();
+                                        await controller.DeleteAllRemoteFilesAsync().ConfigureAwait(false);
 
                                     if (Utility.ParseBoolOption(data.ExtraOptions.AsReadOnly(), "delete-local-db"))
                                     {
@@ -811,30 +817,30 @@ namespace Duplicati.Server
                             }
                         case DuplicatiOperation.Vacuum:
                             {
-                                var r = controller.Vacuum();
+                                var r = await controller.VacuumAsync().ConfigureAwait(false);
                                 UpdateMetadataBase(databaseConnection, eventPollNotify, notificationUpdateService, backup, r);
                                 return r;
                             }
 
                         case DuplicatiOperation.ListFilesets:
                             {
-                                var r = controller.ListFilesets();
+                                var r = await controller.ListFilesetsAsync().ConfigureAwait(false);
                                 UpdateMetadataBase(databaseConnection, eventPollNotify, notificationUpdateService, backup, r);
                                 return r;
                             }
                         case DuplicatiOperation.ListFolderContents:
                             {
-                                return controller.ListFolder(data.ExtraArguments, data.PageOffset * data.PageSize, data.PageSize, data.ReturnExtended);
+                                return await controller.ListFolderAsync(data.ExtraArguments, data.PageOffset * data.PageSize, data.PageSize, data.ReturnExtended).ConfigureAwait(false);
                             }
 
                         case DuplicatiOperation.ListFileVersions:
                             {
-                                return controller.ListFileVersions(data.ExtraArguments, data.PageOffset * data.PageSize, data.PageSize);
+                                return await controller.ListFileVersionsAsync(data.ExtraArguments, data.PageOffset * data.PageSize, data.PageSize).ConfigureAwait(false);
                             }
                         case DuplicatiOperation.SearchEntries:
                             {
                                 var parsedfilter = new FilterExpression(data.FilterStrings);
-                                return controller.SearchEntries(data.ExtraArguments, parsedfilter, data.PageOffset * data.PageSize, data.PageSize, data.ReturnExtended);
+                                return await controller.SearchEntriesAsync(data.ExtraArguments, parsedfilter, data.PageOffset * data.PageSize, data.PageSize, data.ReturnExtended).ConfigureAwait(false);
                             }
                         default:
                             //TODO: Log this
@@ -857,6 +863,11 @@ namespace Duplicati.Server
                 data.TaskFinished = DateTime.Now;
                 eventPollNotify.SignalProgressUpdate(progressStateProviderService?.GenerateProgressState);
             }
+        }
+
+        private static async Task<Library.Main.IController> CreateControllerAsync(string url, Dictionary<string, string?> options, MessageSink sink, bool useOutOfProcess)
+        {
+            return new Library.Main.Controller(url, options, sink);
         }
 
         private static TempFolder? StoreTaskConfigAndGetTempFolder(Connection databaseConnection, IRunnerData data, Dictionary<string, string?> options)

@@ -28,6 +28,7 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using System.Threading.Tasks;
 
 namespace Duplicati.UnitTest
 {
@@ -35,7 +36,7 @@ namespace Duplicati.UnitTest
     {
         [Test]
         [Category("Filter")]
-        public void TestEmptyFolderExclude()
+        public async Task TestEmptyFolderExcludeAsync()
         {
             var source = DATAFOLDER;
             // Top level folder with no contents
@@ -68,7 +69,7 @@ namespace Duplicati.UnitTest
             // Create a fileset with all data present
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                IBackupResults backupResults = c.Backup(new string[] { DATAFOLDER });
+                var backupResults = await c.BackupAsync(new string[] { DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
             }
@@ -76,7 +77,7 @@ namespace Duplicati.UnitTest
             // Check that we have 4 files and 7 folders
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
             {
-                var r = c.List("*");
+                var r = await c.ListAsync("*");
                 Assert.AreEqual(0, r.Errors.Count());
                 Assert.AreEqual(0, r.Warnings.Count());
                 var folders = r.Files.Count(x => x.Path.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal));
@@ -93,7 +94,7 @@ namespace Duplicati.UnitTest
             testopts["ignore-filenames"] = "exclude.me";
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                IBackupResults backupResults = c.Backup(new string[] { DATAFOLDER });
+                var backupResults = await c.BackupAsync(new string[] { DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
             }
@@ -101,7 +102,7 @@ namespace Duplicati.UnitTest
             // Check that we have 2 files and 6 folders after excluding the "excludefile" folder
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
             {
-                var r = c.List("*");
+                var r = await c.ListAsync("*");
                 Assert.AreEqual(0, r.Errors.Count());
                 Assert.AreEqual(0, r.Warnings.Count());
                 var folders = r.Files.Count(x => x.Path.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal));
@@ -118,7 +119,7 @@ namespace Duplicati.UnitTest
             testopts["exclude-empty-folders"] = "true";
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                IBackupResults backupResults = c.Backup(new string[] { DATAFOLDER });
+                var backupResults = await c.BackupAsync(new string[] { DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
             }
@@ -126,7 +127,7 @@ namespace Duplicati.UnitTest
             // Check that the two empty folders are now removed
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
             {
-                var r = c.List("*");
+                var r = await c.ListAsync("*");
                 Assert.AreEqual(0, r.Errors.Count());
                 Assert.AreEqual(0, r.Warnings.Count());
                 var folders = r.Files.Count(x => x.Path.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal));
@@ -143,7 +144,7 @@ namespace Duplicati.UnitTest
             var excludefilter = new Library.Utility.FilterExpression($"*{System.IO.Path.DirectorySeparatorChar}myfile.txt", false);
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                IBackupResults backupResults = c.Backup(new string[] { DATAFOLDER }, excludefilter);
+                var backupResults = await c.BackupAsync(new string[] { DATAFOLDER }, excludefilter);
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
             }
@@ -151,7 +152,7 @@ namespace Duplicati.UnitTest
             // Check that the empty folder is now removed
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
             {
-                var r = c.List("*");
+                var r = await c.ListAsync("*");
                 Assert.AreEqual(0, r.Errors.Count());
                 Assert.AreEqual(0, r.Warnings.Count());
                 var folders = r.Files.Count(x => x.Path.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal));
@@ -168,7 +169,7 @@ namespace Duplicati.UnitTest
             File.Delete(Path.Combine(source, "toplevel", "normal", "standard.txt"));
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                IBackupResults backupResults = c.Backup(new string[] { DATAFOLDER }, excludefilter);
+                var backupResults = await c.BackupAsync(new string[] { DATAFOLDER }, excludefilter);
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
             }
@@ -176,7 +177,7 @@ namespace Duplicati.UnitTest
             // Check we now have only one folder and no files
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
             {
-                var r = c.List("*");
+                var r = await c.ListAsync("*");
                 Assert.AreEqual(0, r.Errors.Count());
                 Assert.AreEqual(0, r.Warnings.Count());
                 var folders = r.Files.Count(x => x.Path.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal));

@@ -85,7 +85,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="parentid">The ID of the parent fileset.</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>A task that when awaited contains a new instance of <see cref="ITemporaryFileset"/>.</returns>
-        public async Task<ITemporaryFileset> CreateTemporaryFileset(long parentid, CancellationToken token)
+        public async Task<ITemporaryFileset> CreateTemporaryFilesetAsync(long parentid, CancellationToken token)
         {
             return await TemporaryFileset.CreateAsync(parentid, this, token)
                 .ConfigureAwait(false);
@@ -97,7 +97,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="id">The ID of the fileset.</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>A task that when awaited contains the name of the remote volume.</returns>
-        public async Task<string> GetRemoteVolumeNameForFileset(long id, CancellationToken token)
+        public async Task<string> GetRemoteVolumeNameForFilesetAsync(long id, CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand(@"
                 SELECT
@@ -123,7 +123,7 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>A task that when awaited contains the count of orphan files.</returns>
-        internal async Task<long> CountOrphanFiles(CancellationToken token)
+        internal async Task<long> CountOrphanFilesAsync(CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand(m_rtr);
             cmd.SetCommandAndParameters(@"
@@ -173,14 +173,14 @@ namespace Duplicati.Library.Main.Database
             /// <param name="filter">The filter to apply.</param>
             /// <param name="token">A cancellation token to cancel the operation.</param>
             /// <returns>A task that completes when the filter has been applied.</returns>
-            Task ApplyFilter(Library.Utility.IFilter filter, CancellationToken token);
+            Task ApplyFilterAsync(Library.Utility.IFilter filter, CancellationToken token);
             /// <summary>
             /// Applies a filter using a custom command.
             /// </summary>
             /// <param name="filtercommand">The command to execute for filtering.</param>
             /// <param name="token">A cancellation token to cancel the operation.</param>
             /// <returns>A task that completes when the filter has been applied.</returns>
-            Task ApplyFilter(Func<SqliteCommand, long, string, Task<int>> filtercommand, CancellationToken token);
+            Task ApplyFilterAsync(Func<SqliteCommand, long, string, Task<int>> filtercommand, CancellationToken token);
             /// <summary>
             /// Converts the temporary fileset to a permanent fileset.
             /// </summary>
@@ -189,13 +189,13 @@ namespace Duplicati.Library.Main.Database
             /// <param name="isFullBackup">Indicates if this is a full backup.</param>
             /// <param name="token">A cancellation token to cancel the operation.</param>
             /// <returns>A task that when awaited contains a tuple with the remote volume ID and the new fileset ID.</returns>
-            Task<Tuple<long, long>> ConvertToPermanentFileset(string name, DateTime timestamp, bool isFullBackup, CancellationToken token);
+            Task<Tuple<long, long>> ConvertToPermanentFilesetAsync(string name, DateTime timestamp, bool isFullBackup, CancellationToken token);
             /// <summary>
             /// Lists all deleted files in the temporary fileset.
             /// </summary>
             /// <param name="token">A cancellation token to cancel the operation.</param>
             /// <returns>An asynchronous enumerable of key-value pairs where the key is the file path and the value is the file size.</returns>
-            IAsyncEnumerable<KeyValuePair<string, long>> ListAllDeletedFiles(CancellationToken token);
+            IAsyncEnumerable<KeyValuePair<string, long>> ListAllDeletedFilesAsync(CancellationToken token);
         }
 
         /// <summary>
@@ -265,14 +265,14 @@ namespace Duplicati.Library.Main.Database
             /// <param name="filtercommand">The command to execute for filtering.</param>
             /// <param name="token">A cancellation token to cancel the operation.</param>
             /// <returns>A task that completes when the filter has been applied.</returns>
-            public async Task ApplyFilter(Func<SqliteCommand, long, string, Task<int>> filtercommand, CancellationToken token)
+            public async Task ApplyFilterAsync(Func<SqliteCommand, long, string, Task<int>> filtercommand, CancellationToken token)
             {
                 int updated;
                 await using (var cmd = m_db.Connection.CreateCommand())
                     updated = await filtercommand(cmd, ParentID, m_tablename)
                         .ConfigureAwait(false);
 
-                await PostFilterChecks(updated, token).ConfigureAwait(false);
+                await PostFilterChecksAsync(updated, token).ConfigureAwait(false);
             }
 
             /// <summary>
@@ -281,7 +281,7 @@ namespace Duplicati.Library.Main.Database
             /// <param name="filter">The filter to apply.</param>
             /// <param name="token">A cancellation token to cancel the operation.</param>
             /// <returns>A task that completes when the filter has been applied.</returns>
-            public async Task ApplyFilter(Library.Utility.IFilter filter, CancellationToken token)
+            public async Task ApplyFilterAsync(Library.Utility.IFilter filter, CancellationToken token)
             {
                 if (Library.Utility.Utility.IsFSCaseSensitive && filter is FilterExpression expression && expression.Type == Duplicati.Library.Utility.FilterType.Simple)
                 {
@@ -374,7 +374,7 @@ namespace Duplicati.Library.Main.Database
                     }
                 }
 
-                await PostFilterChecks(0, token).ConfigureAwait(false);
+                await PostFilterChecksAsync(0, token).ConfigureAwait(false);
             }
 
             /// <summary>
@@ -383,7 +383,7 @@ namespace Duplicati.Library.Main.Database
             /// <param name="updated">The number of files updated by the filter.</param>
             /// <param name="token">A cancellation token to cancel the operation.</param>
             /// <returns>A task that completes when the checks have been applied.</returns>
-            private async Task PostFilterChecks(int updated, CancellationToken token)
+            private async Task PostFilterChecksAsync(int updated, CancellationToken token)
             {
                 await using var cmd = m_db.Connection.CreateCommand();
                 UpdatedFileCount = updated;
@@ -456,19 +456,19 @@ namespace Duplicati.Library.Main.Database
             }
 
             /// <inheritdoc/>
-            public async Task<Tuple<long, long>> ConvertToPermanentFileset(string name, DateTime timestamp, bool isFullBackup, CancellationToken token)
+            public async Task<Tuple<long, long>> ConvertToPermanentFilesetAsync(string name, DateTime timestamp, bool isFullBackup, CancellationToken token)
             {
                 var remotevolid =
                     await m_db
-                        .RegisterRemoteVolume(name, RemoteVolumeType.Files, RemoteVolumeState.Temporary, token)
+                        .RegisterRemoteVolumeAsync(name, RemoteVolumeType.Files, RemoteVolumeState.Temporary, token)
                         .ConfigureAwait(false);
 
                 var filesetid = await m_db
-                    .CreateFileset(remotevolid, timestamp, token)
+                    .CreateFilesetAsync(remotevolid, timestamp, token)
                     .ConfigureAwait(false);
 
                 await m_db
-                    .UpdateFullBackupStateInFileset(filesetid, isFullBackup, token)
+                    .UpdateFullBackupStateInFilesetAsync(filesetid, isFullBackup, token)
                     .ConfigureAwait(false);
 
                 await using (var cmd = m_db.Connection.CreateCommand(m_db.Transaction))
@@ -496,7 +496,7 @@ namespace Duplicati.Library.Main.Database
             }
 
             /// <inheritdoc/>
-            public async IAsyncEnumerable<KeyValuePair<string, long>> ListAllDeletedFiles([EnumeratorCancellation] CancellationToken token)
+            public async IAsyncEnumerable<KeyValuePair<string, long>> ListAllDeletedFilesAsync([EnumeratorCancellation] CancellationToken token)
             {
                 await using var cmd = m_db.Connection.CreateCommand();
                 await using var rd = await cmd.ExecuteReaderAsync($@"

@@ -33,33 +33,33 @@ public class BackupListing : IEndpointV2
 {
     public static void Map(RouteGroupBuilder group)
     {
-        group.MapPost("/backup/list-filesets", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromBody] Dto.V2.ListFilesetsRequestDto input)
-            => ExecuteGetFilesets(queueRunnerService, GetBackup(connection, input.BackupId), input))
+        group.MapPost("/backup/list-filesets", async ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromBody] Dto.V2.ListFilesetsRequestDto input)
+            => await ExecuteGetFilesetsAsync(queueRunnerService, GetBackup(connection, input.BackupId), input).ConfigureAwait(false))
             .RequireAuthorization();
 
-        group.MapPost("/backup/list-folder", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromBody] Dto.V2.ListFolderContentRequestDto input)
-            => ExecuteListFolder(queueRunnerService, GetBackup(connection, input.BackupId), input))
+        group.MapPost("/backup/list-folder", async ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromBody] Dto.V2.ListFolderContentRequestDto input)
+            => await ExecuteListFolderAsync(queueRunnerService, GetBackup(connection, input.BackupId), input).ConfigureAwait(false))
             .RequireAuthorization();
 
-        group.MapPost("/backup/list-versions", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromBody] Dto.V2.ListFileVersionsRequestDto input)
-            => ExecuteListVersions(queueRunnerService, GetBackup(connection, input.BackupId), input))
+        group.MapPost("/backup/list-versions", async ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromBody] Dto.V2.ListFileVersionsRequestDto input)
+            => await ExecuteListVersionsAsync(queueRunnerService, GetBackup(connection, input.BackupId), input).ConfigureAwait(false))
             .RequireAuthorization();
 
-        group.MapPost("/backup/search", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromBody] Dto.V2.SearchEntriesRequestDto input)
-            => ExecuteSearch(queueRunnerService, GetBackup(connection, input.BackupId), input))
+        group.MapPost("/backup/search", async ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromBody] Dto.V2.SearchEntriesRequestDto input)
+            => await ExecuteSearchAsync(queueRunnerService, GetBackup(connection, input.BackupId), input).ConfigureAwait(false))
             .RequireAuthorization();
     }
 
     private static IBackup GetBackup(Connection connection, string id)
         => connection.GetBackup(id) ?? throw new NotFoundException("Backup not found");
 
-    private static Dto.V2.ListFolderContentResponseDto ExecuteListFolder(IQueueRunnerService queueRunnerService, IBackup bk, Dto.V2.ListFolderContentRequestDto input)
+    private static async Task<Dto.V2.ListFolderContentResponseDto> ExecuteListFolderAsync(IQueueRunnerService queueRunnerService, IBackup bk, Dto.V2.ListFolderContentRequestDto input)
     {
         var time = string.IsNullOrWhiteSpace(input.Time)
             ? new DateTime(0)
             : Library.Utility.Timeparser.ParseTimeInterval(input.Time, DateTime.Now);
 
-        var r = queueRunnerService.RunImmediately(Runner.CreateListFolderContents(bk, input.Paths, time, input.PageSize ?? 1000, input.Page ?? 0, input.ReturnExtended ?? false)) as IListFolderResults;
+        var r = await queueRunnerService.RunImmediatelyAsync(Runner.CreateListFolderContents(bk, input.Paths, time, input.PageSize ?? 1000, input.Page ?? 0, input.ReturnExtended ?? false)).ConfigureAwait(false) as IListFolderResults;
         if (r == null)
             throw new ServerErrorException("No result from list operation");
 
@@ -79,7 +79,7 @@ public class BackupListing : IEndpointV2
                 r.Entries.TotalCount);
     }
 
-    private static Dto.V2.ListFilesetsResponseDto ExecuteGetFilesets(IQueueRunnerService queueRunnerService, IBackup bk, Dto.V2.ListFilesetsRequestDto input)
+    private static async Task<Dto.V2.ListFilesetsResponseDto> ExecuteGetFilesetsAsync(IQueueRunnerService queueRunnerService, IBackup bk, Dto.V2.ListFilesetsRequestDto input)
     {
         var extra = new Dictionary<string, string?>();
 
@@ -91,7 +91,7 @@ public class BackupListing : IEndpointV2
 
         try
         {
-            var r = queueRunnerService.RunImmediately(Runner.CreateListFilesetsTask(bk, extra)) as IListFilesetResults;
+            var r = await queueRunnerService.RunImmediatelyAsync(Runner.CreateListFilesetsTask(bk, extra)).ConfigureAwait(false) as IListFilesetResults;
             if (r == null)
                 throw new ServerErrorException("No result from list operation");
 
@@ -116,9 +116,9 @@ public class BackupListing : IEndpointV2
         }
     }
 
-    private static Dto.V2.ListFileVersionsOutputDto ExecuteListVersions(IQueueRunnerService queueRunnerService, IBackup bk, Dto.V2.ListFileVersionsRequestDto input)
+    private static async Task<Dto.V2.ListFileVersionsOutputDto> ExecuteListVersionsAsync(IQueueRunnerService queueRunnerService, IBackup bk, Dto.V2.ListFileVersionsRequestDto input)
     {
-        var r = queueRunnerService.RunImmediately(Runner.ListFileVersionsTask(bk, input.Paths, input.PageSize ?? 1000, input.Page ?? 0)) as IListFileVersionsResults;
+        var r = await queueRunnerService.RunImmediatelyAsync(Runner.ListFileVersionsTask(bk, input.Paths, input.PageSize ?? 1000, input.Page ?? 0)).ConfigureAwait(false) as IListFileVersionsResults;
         if (r == null)
             throw new ServerErrorException("No result from list operation");
 
@@ -139,13 +139,13 @@ public class BackupListing : IEndpointV2
                 r.FileVersions.TotalCount);
     }
 
-    private static Dto.V2.SearchEntriesResponseDto ExecuteSearch(IQueueRunnerService queueRunnerService, IBackup bk, Dto.V2.SearchEntriesRequestDto input)
+    private static async Task<Dto.V2.SearchEntriesResponseDto> ExecuteSearchAsync(IQueueRunnerService queueRunnerService, IBackup bk, Dto.V2.SearchEntriesRequestDto input)
     {
         var time = string.IsNullOrWhiteSpace(input.Time)
             ? new DateTime(0)
             : Library.Utility.Timeparser.ParseTimeInterval(input.Time, DateTime.Now);
 
-        var r = queueRunnerService.RunImmediately(Runner.CreateSearchEntriesTask(bk, input.Filters, input.Paths, time, input.Version, input.PageSize ?? 1000, input.Page ?? 0, input.ReturnExtended ?? false)) as ISearchFilesResults;
+        var r = await queueRunnerService.RunImmediatelyAsync(Runner.CreateSearchEntriesTask(bk, input.Filters, input.Paths, time, input.Version, input.PageSize ?? 1000, input.Page ?? 0, input.ReturnExtended ?? false)).ConfigureAwait(false) as ISearchFilesResults;
         if (r == null)
             throw new ServerErrorException("No result from list operation");
 

@@ -32,6 +32,7 @@ using Duplicati.WebserverCore.Dto;
 using Duplicati.Library.Interface;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using System.Threading.Tasks;
 
 namespace Duplicati.UnitTest;
 
@@ -61,7 +62,7 @@ public class FolderStatusServiceTests
         public void Resume() { }
         public void Pause() { }
         public IList<Tuple<long, string?>> GetQueueWithIds() => new List<Tuple<long, string?>>();
-        public IBasicResults? RunImmediately(IQueuedTask task) => null;
+        public Task<IBasicResults?> RunImmediatelyAsync(IQueuedTask task) => Task.FromResult<IBasicResults?>(null);
     }
 
     /// <summary>
@@ -77,11 +78,11 @@ public class FolderStatusServiceTests
         public DateTime? TaskStarted { get; set; }
         public DateTime? TaskFinished { get; set; }
 
-        public void UpdateThrottleSpeeds(string? uploadSpeed, string? downloadSpeed) { }
-        public void Stop() { }
-        public void Abort() { }
-        public void Pause(bool alsoTransfers) { }
-        public void Resume() { }
+        public Task UpdateThrottleSpeedsAsync(string? uploadSpeed, string? downloadSpeed) => Task.CompletedTask;
+        public Task StopAsync() => Task.CompletedTask;
+        public Task AbortAsync() => Task.CompletedTask;
+        public Task PauseAsync(bool alsoTransfers) => Task.CompletedTask;
+        public Task ResumeAsync() => Task.CompletedTask;
     }
 
     /// <summary>

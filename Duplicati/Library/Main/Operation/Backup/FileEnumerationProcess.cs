@@ -49,7 +49,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// </summary>
         private static readonly string FILTER_LOGTAG = Logging.Log.LogTagFromType(typeof(FileEnumerationProcess));
 
-        public static Task Run(
+        public static Task RunAsync(
             Channels channels,
             ISourceProvider sourceProvider,
             UsnJournalService? journalService,
@@ -101,7 +101,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                     // Shared filter function with bound variables
                     ValueTask<bool> FilterEntry(ISourceProviderEntry entry)
-                        => SourceFileEntryFilter(entry, blacklistPaths, hardlinkPolicy, symlinkPolicy, hardlinkmap, fileAttributeFilter, enumeratefilter, ignorenames, mixinqueue, disableBackupExclusionXattr, token);
+                        => SourceFileEntryFilterAsync(entry, blacklistPaths, hardlinkPolicy, symlinkPolicy, hardlinkmap, fileAttributeFilter, enumeratefilter, ignorenames, mixinqueue, disableBackupExclusionXattr, token);
 
                     // Prepare the work list
                     IAsyncEnumerable<ISourceProviderEntry> worklist;
@@ -154,19 +154,19 @@ namespace Duplicati.Library.Main.Operation.Backup
                         // It should be possible to remove RecurseEntries from the GetModifiedSources()
                         // enumeration result.
                         // Such a change requires significant testing as there are many pitfalls with USN.
-                        worklist = RecurseEntries(journalService.GetModifiedSources(FilterEntry, token),
+                        worklist = RecurseEntriesAsync(journalService.GetModifiedSources(FilterEntry, token),
                             FilterEntry,
                             token
                         )
                         .Concat(
-                            RecurseEntries(journalService.GetFullScanSources(token),
+                            RecurseEntriesAsync(journalService.GetFullScanSources(token),
                             FilterEntry,
                             token)
                         );
                     }
                     else
                     {
-                        worklist = RecurseEntries(sourceProvider.Enumerate(token),
+                        worklist = RecurseEntriesAsync(sourceProvider.Enumerate(token),
                             FilterEntry,
                             token
                         );
@@ -175,12 +175,12 @@ namespace Duplicati.Library.Main.Operation.Backup
                     if (token.IsCancellationRequested)
                         return;
 
-                    var source = ExpandWorkList(worklist, mixinqueue, emitfilter, enumeratefilter, token);
+                    var source = ExpandWorkListAsync(worklist, mixinqueue, emitfilter, enumeratefilter, token);
                     // TODO: There was a call to DistinctBy here, but this would cause all paths to be stored in memory
                     //.DistinctBy(x => x.Path, Library.Utility.Utility.IsFSCaseSensitive ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase);
 
                     if (excludeemptyfolders)
-                        source = ExcludeEmptyFolders(source, token);
+                        source = ExcludeEmptyFoldersAsync(source, token);
 
                     // Process each path, and dequeue the mixins with symlinks as we go
                     await foreach (var s in source.WithCancellation(token).ConfigureAwait(false))
@@ -195,7 +195,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                             taskreader.TestMethodCallback?.Invoke(s.Path);
 #endif
                         // Stop if requested
-                        if (token.IsCancellationRequested || !await taskreader.ProgressRendevouz().ConfigureAwait(false))
+                        if (token.IsCancellationRequested || !await taskreader.ProgressRendevouzAsync().ConfigureAwait(false))
                         {
                             onStopRequested?.Invoke();
                             return;
@@ -228,7 +228,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// </summary>
         /// <returns>The list without empty folders.</returns>
         /// <param name="source">The list with potential empty folders.</param>
-        private static async IAsyncEnumerable<ISourceProviderEntry> ExcludeEmptyFolders(IAsyncEnumerable<ISourceProviderEntry> source, [EnumeratorCancellation] CancellationToken cancellationToken)
+        private static async IAsyncEnumerable<ISourceProviderEntry> ExcludeEmptyFoldersAsync(IAsyncEnumerable<ISourceProviderEntry> source, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             var pathstack = new Stack<DirectoryStackEntry>();
 
@@ -287,7 +287,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <param name="entries">The entries to recurse</param>
         /// <param name="filter">The filter to apply</param>
         /// <returns></returns>
-        private static async IAsyncEnumerable<ISourceProviderEntry> RecurseEntries(IAsyncEnumerable<ISourceProviderEntry> entries, Func<ISourceProviderEntry, ValueTask<bool>> filter, [EnumeratorCancellation] CancellationToken cancellationToken)
+        private static async IAsyncEnumerable<ISourceProviderEntry> RecurseEntriesAsync(IAsyncEnumerable<ISourceProviderEntry> entries, Func<ISourceProviderEntry, ValueTask<bool>> filter, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             var work = new Stack<ISourceProviderEntry>();
 
@@ -340,7 +340,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <param name="mixinqueue">The mix in queue.</param>
         /// <param name="emitfilter">The emitfilter.</param>
         /// <param name="enumeratefilter">The enumeratefilter.</param>
-        private static async IAsyncEnumerable<ISourceProviderEntry> ExpandWorkList(IAsyncEnumerable<ISourceProviderEntry> worklist, Queue<ISourceProviderEntry> mixinqueue, Library.Utility.IFilter emitfilter, Library.Utility.IFilter? enumeratefilter, [EnumeratorCancellation] CancellationToken cancellationToken)
+        private static async IAsyncEnumerable<ISourceProviderEntry> ExpandWorkListAsync(IAsyncEnumerable<ISourceProviderEntry> worklist, Queue<ISourceProviderEntry> mixinqueue, Library.Utility.IFilter emitfilter, Library.Utility.IFilter? enumeratefilter, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             // Process each path, and dequeue the mixins with symlinks as we go
             await foreach (var s in worklist.WithCancellation(cancellationToken).ConfigureAwait(false))
@@ -428,7 +428,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <param name="ignorenames">The ignore names.</param>
         /// <param name="mixinqueue">The mixin queue.</param>
         /// <returns>True if the path should be returned, false otherwise.</returns>
-        private static async ValueTask<bool> SourceFileEntryFilter(ISourceProviderEntry entry, HashSet<string> blacklistPaths, Options.HardlinkStrategy hardlinkPolicy, Options.SymlinkStrategy symlinkPolicy, Dictionary<string, string> hardlinkmap, FileAttributes fileAttributeFilter, Duplicati.Library.Utility.IFilter enumeratefilter, string[]? ignorenames, Queue<ISourceProviderEntry> mixinqueue, bool disableBackupExclusionXattr, CancellationToken cancellationToken)
+        private static async ValueTask<bool> SourceFileEntryFilterAsync(ISourceProviderEntry entry, HashSet<string> blacklistPaths, Options.HardlinkStrategy hardlinkPolicy, Options.SymlinkStrategy symlinkPolicy, Dictionary<string, string> hardlinkmap, FileAttributes fileAttributeFilter, Duplicati.Library.Utility.IFilter enumeratefilter, string[]? ignorenames, Queue<ISourceProviderEntry> mixinqueue, bool disableBackupExclusionXattr, CancellationToken cancellationToken)
         {
             // Do the course pre-filtering first
             if (!PreFilterSourceEntry(entry, blacklistPaths))
@@ -514,7 +514,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             }
 
             // Filter entries that are marked as excluded from backups via filesystem extended attributes
-            if (!disableBackupExclusionXattr && await HasBackupExclusionAttribute(entry, cancellationToken).ConfigureAwait(false))
+            if (!disableBackupExclusionXattr && await HasBackupExclusionAttributeAsync(entry, cancellationToken).ConfigureAwait(false))
             {
                 Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingPathFromBackupAttribute", "Excluding path marked as excluded from backups via filesystem attribute: {0}", entry.Path);
                 return false;
@@ -595,7 +595,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// </summary>
         /// <param name="entry">The entry to check.</param>
         /// <returns>True if the entry has the attribute, false otherwise.</returns>
-        private static async Task<bool> HasBackupExclusionAttribute(ISourceProviderEntry entry, CancellationToken token)
+        private static async Task<bool> HasBackupExclusionAttributeAsync(ISourceProviderEntry entry, CancellationToken token)
         {
             try
             {

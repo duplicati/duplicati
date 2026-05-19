@@ -125,7 +125,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("ImportExport")]
-        public async Task RoundTrip()
+        public async Task RoundTripAsync()
         {
             var metadata = new Dictionary<string, string> { { "SourceFilesCount", "1" } };
             var advancedOptions = new Dictionary<string, string> { { "server-datafolder", this.serverDatafolder } };

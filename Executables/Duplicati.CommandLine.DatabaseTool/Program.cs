@@ -18,6 +18,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+using System.Threading.Tasks;
 using Duplicati.Library.Crashlog;
 
 namespace Duplicati.CommandLine.DatabaseTool.Net10
@@ -25,7 +26,7 @@ namespace Duplicati.CommandLine.DatabaseTool.Net10
     // Wrapper class to keep code independent
     public static class Program
     {
-        public static int Main(string[] args)
-            => CrashlogHelper.WrapWithCrashLog(() => DatabaseTool.Program.Main(args).ConfigureAwait(false).GetAwaiter().GetResult());
+        public static Task<int> Main(string[] args)
+            => CrashlogHelper.WrapWithCrashLog(() => DatabaseTool.Program.MainAsync(args));
     }
 }

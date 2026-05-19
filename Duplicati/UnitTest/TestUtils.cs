@@ -52,7 +52,7 @@ namespace Duplicati.UnitTest
             }
         }
 
-        public static async Task GrowingFile(string testFile, CancellationToken token)
+        public static async Task GrowingFileAsync(string testFile, CancellationToken token)
         {
             try
             {

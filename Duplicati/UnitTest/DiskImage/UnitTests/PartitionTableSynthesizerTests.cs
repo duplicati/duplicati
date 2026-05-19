@@ -122,7 +122,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_PartitionTableSynthesizer_MBRRoundTrip_PreservesPartitionData()
+    public async Task Test_PartitionTableSynthesizer_MBRRoundTrip_PreservesPartitionData_Async()
     {
         // Create a GeometryMetadata with known partition info
         var sectorSize = 512;
@@ -193,7 +193,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_PartitionTableSynthesizer_GPTRoundTrip_PreservesPartitionData()
+    public async Task Test_PartitionTableSynthesizer_GPTRoundTrip_PreservesPartitionData_Async()
     {
         // Create a GeometryMetadata with known partition info
         var sectorSize = 512;

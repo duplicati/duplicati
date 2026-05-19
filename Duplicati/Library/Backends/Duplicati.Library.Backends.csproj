@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Backend\DrimeCloud\Duplicati.Library.Backend.DrimeCloud.csproj" />
     <ProjectReference Include="..\Backend\Filejump\Duplicati.Library.Backend.Filejump.csproj" />
     <ProjectReference Include="..\Backend\Filen\Duplicati.Library.Backend.Filen.csproj" />
     <ProjectReference Include="..\Backend\AzureBlob\Duplicati.Library.Backend.AzureBlob.csproj" />

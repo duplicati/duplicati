@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 using Duplicati.Proprietary.DiskImage.Disk;
 using Duplicati.Proprietary.DiskImage.General;
 using Duplicati.UnitTest.DiskImage.Helpers;
@@ -54,7 +55,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     /// Creates read-only GPT and MBR disks with 2 FAT32 partitions each.
     /// </summary>
     [OneTimeSetUp]
-    public void OneTimeSetUp()
+    public async Task OneTimeSetUpAsync()
     {
         base.BasicHelperSetUp();
 
@@ -86,12 +87,12 @@ public partial class DiskImageUnitTests : BasicSetupHelper
 
         // Create and initialize raw disk for GPT (read-only)
         s_gptRawDisk = DiskImageTestHelpers.CreateRawDiskForIdentifier(s_gptDiskIdentifier);
-        if (!s_gptRawDisk.InitializeAsync(true, CancellationToken.None).Result)
+        if (!await s_gptRawDisk.InitializeAsync(true, CancellationToken.None))
             throw new InvalidOperationException("Failed to initialize GPT raw disk");
 
         // Fill GPT partitions with well-known test data
-        DiskImageTestHelpers.FillPartitionWithTestDataAsync(s_gptRawDisk, s_gptPartition1Offset, s_gptPartition1Size, CancellationToken.None).Wait();
-        DiskImageTestHelpers.FillPartitionWithTestDataAsync(s_gptRawDisk, s_gptPartition2Offset, s_gptPartition2Size, CancellationToken.None).Wait();
+        await DiskImageTestHelpers.FillPartitionWithTestDataAsync(s_gptRawDisk, s_gptPartition1Offset, s_gptPartition1Size, CancellationToken.None);
+        await DiskImageTestHelpers.FillPartitionWithTestDataAsync(s_gptRawDisk, s_gptPartition2Offset, s_gptPartition2Size, CancellationToken.None);
         s_diskHelper.FlushDisk(s_gptDiskIdentifier);
 
         // Create MBR disk with 2 FAT32 partitions
@@ -111,12 +112,12 @@ public partial class DiskImageUnitTests : BasicSetupHelper
 
         // Create and initialize raw disk for MBR (read-only)
         s_mbrRawDisk = DiskImageTestHelpers.CreateRawDiskForIdentifier(s_mbrDiskIdentifier);
-        if (!s_mbrRawDisk.InitializeAsync(true, CancellationToken.None).Result)
+        if (!await s_mbrRawDisk.InitializeAsync(true, CancellationToken.None))
             throw new InvalidOperationException("Failed to initialize MBR raw disk");
 
         // Fill MBR partitions with well-known test data
-        DiskImageTestHelpers.FillPartitionWithTestDataAsync(s_mbrRawDisk, s_mbrPartition1Offset, s_mbrPartition1Size, CancellationToken.None).Wait();
-        DiskImageTestHelpers.FillPartitionWithTestDataAsync(s_mbrRawDisk, s_mbrPartition2Offset, s_mbrPartition2Size, CancellationToken.None).Wait();
+        await DiskImageTestHelpers.FillPartitionWithTestDataAsync(s_mbrRawDisk, s_mbrPartition1Offset, s_mbrPartition1Size, CancellationToken.None);
+        await DiskImageTestHelpers.FillPartitionWithTestDataAsync(s_mbrRawDisk, s_mbrPartition2Offset, s_mbrPartition2Size, CancellationToken.None);
         s_diskHelper.FlushDisk(s_mbrDiskIdentifier);
 
         // Create writable disk path (will be created per-test)
@@ -128,7 +129,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
 
         // Create raw disk interface (with write access)
         s_writableRawDisk = DiskImageTestHelpers.CreateRawDiskForIdentifier(s_writableDiskIdentifier);
-        if (!s_writableRawDisk.InitializeAsync(true, CancellationToken.None).Result)
+        if (!await s_writableRawDisk.InitializeAsync(true, CancellationToken.None))
             throw new InvalidOperationException("Failed to initialize writable raw disk");
     }
 

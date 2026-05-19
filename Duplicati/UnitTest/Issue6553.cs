@@ -5,6 +5,7 @@ using NUnit.Framework;
 using Duplicati.Library.Main;
 using Microsoft.Data.Sqlite;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using System.Threading.Tasks;
 
 namespace Duplicati.UnitTest
 {
@@ -12,7 +13,7 @@ namespace Duplicati.UnitTest
     {
         [Test]
         [Category("Issue6553")]
-        public void RecreateDbShouldNotLoseFilesetWhenDindexLacksDblock()
+        public async Task RecreateDbShouldNotLoseFilesetWhenDindexLacksDblockAsync()
         {
             // Arrange
             var testopts = TestOptions;
@@ -28,7 +29,7 @@ namespace Duplicati.UnitTest
 
             using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                var res = c.Backup(new[] { sourceFolder });
+                var res = await c.BackupAsync(new[] { sourceFolder });
                 Assert.AreEqual(0, res.Errors.Count());
             }
 
@@ -47,7 +48,7 @@ namespace Duplicati.UnitTest
 
             using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                var res = c.Backup(new[] { sourceFolder });
+                var res = await c.BackupAsync(new[] { sourceFolder });
                 Assert.AreEqual(0, res.Errors.Count());
             }
 
@@ -63,7 +64,7 @@ namespace Duplicati.UnitTest
             {
                 try
                 {
-                    var res = c.Repair();
+                    var res = await c.RepairAsync();
                 }
                 catch (Exception)
                 {
@@ -74,7 +75,7 @@ namespace Duplicati.UnitTest
             // Step 5: Verify that we have at least one version (Backup 2)
             using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                var listRes = c.List();
+                var listRes = await c.ListAsync();
 
                 Assert.IsTrue(listRes.Filesets.Count() > 0,
                     "Expected at least one backup version after recreate, but found none");
@@ -83,7 +84,7 @@ namespace Duplicati.UnitTest
             // Step 6: Check for DeletedBlock entries pointing to Temporary volumes
             using (var connection = new SqliteConnection($"Data Source={testopts["dbpath"]};Pooling=false"))
             {
-                connection.Open();
+                await connection.OpenAsync();
                 var command = connection.CreateCommand();
 
                 command.CommandText = @"
@@ -91,7 +92,7 @@ namespace Duplicati.UnitTest
                     FROM DeletedBlock
                     WHERE VolumeID IN (SELECT ID FROM RemoteVolume WHERE State = 'Temporary')
                 ";
-                var tempCount = (long)command.ExecuteScalar();
+                var tempCount = (long)await command.ExecuteScalarAsync();
 
                 // With the fix (and apparently even without it in this environment), this should be 0
                 Assert.AreEqual(0, tempCount, "Should not have DeletedBlock entries pointing to Temporary volumes");
@@ -101,7 +102,7 @@ namespace Duplicati.UnitTest
                     FROM DeletedBlock
                     WHERE VolumeID NOT IN (SELECT ID FROM RemoteVolume)
                 ";
-                var invalidCount = (long)command.ExecuteScalar();
+                var invalidCount = (long)await command.ExecuteScalarAsync();
                 Assert.AreEqual(0, invalidCount, "Should not have DeletedBlock entries with invalid VolumeID references");
             }
         }

@@ -36,7 +36,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// </summary>
         private static readonly string FILELOGTAG = Logging.Log.LogTagFromType(typeof(FileBlockProcessor)) + ".FileEntry";
 
-        public static Task Run(Channels channels, Options options, BackupDatabase database, BackupStatsCollector stats, ITaskReader taskreader)
+        public static Task RunAsync(Channels channels, Options options, BackupDatabase database, BackupStatsCollector stats, ITaskReader taskreader)
         {
             return AutomationExtensions.RunTask(
             new
@@ -52,7 +52,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     var e = await self.Input.ReadAsync().ConfigureAwait(false);
 
                     // We ignore the stop signal, but not the pause and terminate
-                    await taskreader.ProgressRendevouz().ConfigureAwait(false);
+                    await taskreader.ProgressRendevouzAsync().ConfigureAwait(false);
 
                     try
                     {
@@ -80,9 +80,9 @@ namespace Duplicati.Library.Main.Operation.Backup
                             });
 
                         using (var fs = await e.Entry.OpenRead(taskreader.ProgressToken).ConfigureAwait(false))
-                            filestreamdata = await StreamBlock.ProcessStream(self.StreamBlockChannel, e.Entry.Path, fs, false, hint).ConfigureAwait(false);
+                            filestreamdata = await StreamBlock.ProcessStreamAsync(self.StreamBlockChannel, e.Entry.Path, fs, false, hint).ConfigureAwait(false);
 
-                        await stats.AddOpenedFile(filestreamdata.Streamlength).ConfigureAwait(false);
+                        await stats.AddOpenedFileAsync(filestreamdata.Streamlength).ConfigureAwait(false);
 
                         var metadataid = await metatask.ConfigureAwait(false);
                         var filekey = filestreamdata.Streamhash;
@@ -97,14 +97,14 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                             if (e.OldId < 0)
                             {
-                                await stats.AddAddedFile(filesize);
+                                await stats.AddAddedFileAsync(filesize);
 
                                 if (options.Dryrun)
                                     Logging.Log.WriteVerboseMessage(FILELOGTAG, "WouldAddNewFile", "Would add new file {0}, size {1}", e.Entry.Path, Library.Utility.Utility.FormatSizeString(filesize));
                             }
                             else
                             {
-                                await stats.AddModifiedFile(filesize);
+                                await stats.AddModifiedFileAsync(filesize);
 
                                 if (options.Dryrun)
                                     Logging.Log.WriteVerboseMessage(FILELOGTAG, "WouldAddChangedFile", "Would add changed file {0}, size {1}", e.Entry.Path, Library.Utility.Utility.FormatSizeString(filesize));
@@ -119,7 +119,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                         }
                         else if (e.TimestampChanged)
                         {
-                            await stats.AddTimestampChangedFile();
+                            await stats.AddTimestampChangedFileAsync();
                             Logging.Log.WriteVerboseMessage(FILELOGTAG, "FileTimestampChanged", "File has only timestamp changes {0}", e.Entry.Path);
                             await database.AddUnmodifiedAsync(e.OldId, e.LastWrite, taskreader.ProgressToken).ConfigureAwait(false);
                         }

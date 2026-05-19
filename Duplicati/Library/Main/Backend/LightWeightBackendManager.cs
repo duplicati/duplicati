@@ -73,7 +73,7 @@ namespace Duplicati.Library.Main.Backend
         /// <returns>A task representing the asynchronous delete operation.</returns>
         public Task DeleteAsync(string remotename, CancellationToken token)
         {
-            return RetryWithDelay(
+            return RetryWithDelayAsync(
                 $"Delete {remotename}",
                 () => _streamingBackend!.DeleteAsync(remotename, token),
                 null,
@@ -125,7 +125,7 @@ namespace Duplicati.Library.Main.Backend
         /// <returns>A task representing the asynchronous get operation.</returns>
         public Task GetAsync(string remotename, Stream stream, CancellationToken token)
         {
-            return RetryWithDelay(
+            return RetryWithDelayAsync(
                 $"Get {remotename}",
                 async () =>
                 {
@@ -231,7 +231,7 @@ namespace Duplicati.Library.Main.Backend
             // crashed. Current "workaround" is to build the entire list before
             // returning it.
             List<IFileEntry> entries = [];
-            await RetryWithDelay("List", async () =>
+            await RetryWithDelayAsync("List", async () =>
                 {
                     entries = await _streamingBackend!.ListAsync(token).ToListAsync().ConfigureAwait(false);
                 },
@@ -255,7 +255,7 @@ namespace Duplicati.Library.Main.Backend
         /// <returns>A task representing the asynchronous put operation.</returns>
         public Task PutAsync(string remotename, Stream stream, CancellationToken token, string? md5 = null, string? sha256 = null, long? length = null)
         {
-            return RetryWithDelay(
+            return RetryWithDelayAsync(
                 $"Put {remotename}",
                 async () =>
                 {
@@ -310,7 +310,7 @@ namespace Duplicati.Library.Main.Backend
             return _backend switch
             {
                 IStreamingBackend sb =>
-                    RetryWithDelay(
+                    RetryWithDelayAsync(
                         $"Rename {oldname} to {newname}",
                         async () =>
                         {
@@ -328,7 +328,7 @@ namespace Duplicati.Library.Main.Backend
                         token
                     ),
                 IRenameEnabledBackend ireb =>
-                    RetryWithDelay(
+                    RetryWithDelayAsync(
                         $"Rename {oldname} to {newname}",
                         async () =>
                         {
@@ -349,7 +349,7 @@ namespace Duplicati.Library.Main.Backend
         /// This method resets the download and upload flags and resets the retry delay to its initial value.
         /// </summary>
         /// <returns>A task representing the asynchronous reset operation.</returns>
-        public async Task Reset()
+        public async Task ResetAsync()
         {
             _anyDownloaded = false;
             _anyUploaded = false;
@@ -370,7 +370,7 @@ namespace Duplicati.Library.Main.Backend
         /// <param name="resetStream">Whether to reset the stream if the operation fails.</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
-        private async Task RetryWithDelay(string operationName, Func<Task> action, Stream? stream, bool resetStream, CancellationToken token)
+        private async Task RetryWithDelayAsync(string operationName, Func<Task> action, Stream? stream, bool resetStream, CancellationToken token)
         {
             int instantiations = 0;
             _currentRetryDelay = _retryDelay; // Reset the current retry delay to the initial value
@@ -401,7 +401,7 @@ namespace Duplicati.Library.Main.Backend
                     }
 
                     // Try to see if we can recover from the error.
-                    await TryRecoverFromException(ex, token).ConfigureAwait(false);
+                    await TryRecoverFromExceptionAsync(ex, token).ConfigureAwait(false);
                 }
             } while (instantiations < _maxRetries);
 
@@ -414,10 +414,10 @@ namespace Duplicati.Library.Main.Backend
         /// </summary>
         /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>A task that represents the asynchronous operation. The task result is true if the folder was created successfully, false otherwise.</returns>
-        public async Task<bool> TryCreateFolder(CancellationToken token)
+        public async Task<bool> TryCreateFolderAsync(CancellationToken token)
         {
             bool created = false;
-            await RetryWithDelay("CreateFolder", async () =>
+            await RetryWithDelayAsync("CreateFolder", async () =>
                 {
                     try
                     {
@@ -445,7 +445,7 @@ namespace Duplicati.Library.Main.Backend
         /// <param name="ex">The exception that occurred during the operation.</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>A task representing the asynchronous recovery operation.</returns>
-        private async Task TryRecoverFromException(Exception ex, CancellationToken token)
+        private async Task TryRecoverFromExceptionAsync(Exception ex, CancellationToken token)
         {
             // Copied from Duplicati.Library.Main.Backend.BackendManager.Handler.
 
@@ -465,7 +465,7 @@ namespace Duplicati.Library.Main.Backend
 
                     foreach (var name in await _backend!.GetDNSNamesAsync(token).ConfigureAwait(false) ?? [])
                         if (!string.IsNullOrWhiteSpace(name))
-                            System.Net.Dns.GetHostEntry(name);
+                            await System.Net.Dns.GetHostEntryAsync(name);
                 }
                 catch { }
             }
@@ -475,7 +475,7 @@ namespace Duplicati.Library.Main.Backend
             // Check if this was a folder missing exception and we are allowed to autocreate folders
             if (!(_anyDownloaded || _anyUploaded) && _autoCreateFolders && ExceptionExtensions.FlattenException(ex).Any(x => x is FolderMissingException))
             {
-                if (await TryCreateFolder(token).ConfigureAwait(false))
+                if (await TryCreateFolderAsync(token).ConfigureAwait(false))
                     recovered = true;
             }
 

@@ -35,7 +35,7 @@ public record WebModules : IEndpointV1
     {
         group.MapGet("/webmodules", ExecuteGet).RequireAuthorization();
         group.MapPost("/webmodule/{modulekey}", ([FromServices] Connection connection, [FromServices] IApplicationSettings applicationSettings, [FromRoute] string modulekey, [FromBody] Dictionary<string, string> options, CancellationToken cancellationToken)
-            => ExecutePost(connection, applicationSettings, modulekey, options, cancellationToken))
+            => ExecutePostAsync(connection, applicationSettings, modulekey, options, cancellationToken))
             .RequireAuthorization();
     }
 
@@ -43,7 +43,7 @@ public record WebModules : IEndpointV1
         => Library.DynamicLoader.WebLoader.Modules;
 
 
-    private static async Task<Dto.WebModuleOutputDto> ExecutePost(Connection connection, IApplicationSettings applicationSettings, string modulekey, Dictionary<string, string> inputOptions, CancellationToken cancellationToken)
+    private static async Task<Dto.WebModuleOutputDto> ExecutePostAsync(Connection connection, IApplicationSettings applicationSettings, string modulekey, Dictionary<string, string> inputOptions, CancellationToken cancellationToken)
     {
         var m = Library.DynamicLoader.WebLoader.Modules.FirstOrDefault(x => x.Key.Equals(modulekey, StringComparison.OrdinalIgnoreCase))
             ?? throw new NotFoundException("No such module found");
@@ -55,7 +55,7 @@ public record WebModules : IEndpointV1
         var url = options.GetValueOrDefault("url");
         if (!string.IsNullOrWhiteSpace(url))
         {
-            var (newUrl, opts) = await SharedRemoteOperation.ExpandUrl(connection, applicationSettings, url, options.GetValueOrDefault("backup-id"), Library.Utility.Utility.ParseLongOption(options, "connection-string-id", -1), options.GetValueOrDefault("source-prefix"), cancellationToken);
+            var (newUrl, opts) = await SharedRemoteOperation.ExpandUrlAsync(connection, applicationSettings, url, options.GetValueOrDefault("backup-id"), Library.Utility.Utility.ParseLongOption(options, "connection-string-id", -1), options.GetValueOrDefault("source-prefix"), cancellationToken);
             options["url"] = newUrl;
             foreach (var k in opts.Keys)
                 options[k] = opts[k];

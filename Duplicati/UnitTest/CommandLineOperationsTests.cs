@@ -62,12 +62,12 @@ namespace Duplicati.UnitTest
         }
 
         [SetUp]
-        public void SetUp()
+        public async Task SetUpAsync()
         {
             if (!systemIO.FileExists(zipAlternativeFilepath))
             {
                 var url = $"{S3_URL}{this.zipFilename}";
-                DownloadS3FileIfNewer(zipFilepath, url);
+                await DownloadS3FileIfNewerAsync(zipFilepath, url);
                 ZipFileExtractToDirectory(this.zipFilepath, BASEFOLDER);
             }
             else
@@ -75,9 +75,6 @@ namespace Duplicati.UnitTest
                 ZipFileExtractToDirectory(this.zipAlternativeFilepath, BASEFOLDER);
             }
         }
-
-        private void DownloadS3FileIfNewer(string destinationFilePath, string url, int retries = 5)
-            => DownloadS3FileIfNewerAsync(destinationFilePath, url, retries).Await();
 
         public static async Task DownloadS3FileIfNewerAsync(string destinationFilePath, string url, int retries = 5)
         {
@@ -128,7 +125,7 @@ namespace Duplicati.UnitTest
                     await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
                     try
                     {
-                        System.Net.Dns.GetHostEntry(new System.Uri(url).Host);
+                        await System.Net.Dns.GetHostEntryAsync(new System.Uri(url).Host);
                     }
                     catch (Exception)
                     {

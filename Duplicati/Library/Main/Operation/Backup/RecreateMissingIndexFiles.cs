@@ -31,20 +31,20 @@ internal static class RecreateMissingIndexFiles
 	/// </summary>
 	private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(RecreateMissingIndexFiles));
 
-	public static async Task Run(BackupDatabase database, IBackendManager backendManager, Options options, ITaskReader taskreader)
+	public static async Task RunAsync(BackupDatabase database, IBackendManager backendManager, Options options, ITaskReader taskreader)
 	{
 		if (options.IndexfilePolicy != Options.IndexFileStrategy.None)
 		{
 			var anyfiles = false;
 			await foreach (var blockfile in (await database.GetMissingIndexFilesAsync(taskreader.ProgressToken).ConfigureAwait(false)).ConfigureAwait(false))
 			{
-				if (!await taskreader.ProgressRendevouz().ConfigureAwait(false))
+				if (!await taskreader.ProgressRendevouzAsync().ConfigureAwait(false))
 					return;
 
 				Logging.Log.WriteInformationMessage(LOGTAG, "RecreateMissingIndexFile", "Re-creating missing index file for {0}", blockfile);
-				var w = await Common.IndexVolumeCreator.CreateIndexVolume(blockfile, options, database, taskreader.ProgressToken).ConfigureAwait(false);
+				var w = await Common.IndexVolumeCreator.CreateIndexVolumeAsync(blockfile, options, database, taskreader.ProgressToken).ConfigureAwait(false);
 
-				if (!await taskreader.ProgressRendevouz().ConfigureAwait(false))
+				if (!await taskreader.ProgressRendevouzAsync().ConfigureAwait(false))
 					return;
 
 				anyfiles = true;

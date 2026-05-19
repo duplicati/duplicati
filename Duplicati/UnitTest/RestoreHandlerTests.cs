@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
@@ -38,57 +39,55 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("RestoreHandler")]
-        public void DisablePipedStreaming()
+        public async Task DisablePipedStreamingAsync()
         {
-            string filePath = Path.Combine(this.DATAFOLDER, "file");
+            var filePath = Path.Combine(this.DATAFOLDER, "file");
             File.WriteAllBytes(filePath, new byte[] { 0 });
 
-            Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions);
-            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
-            {
-                c.Backup(new[] { this.DATAFOLDER });
-            }
+            var options = new Dictionary<string, string>(this.TestOptions);
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                await c.BackupAsync(new[] { this.DATAFOLDER });
 
-            Dictionary<string, string> restoreOptions = new Dictionary<string, string>(this.TestOptions) { ["restore-path"] = this.RESTOREFOLDER };
+            var restoreOptions = new Dictionary<string, string>(this.TestOptions) { ["restore-path"] = this.RESTOREFOLDER };
             // This is now the default behavior, so we cannot explicitly disable it
             //restoreOptions["disable-piped-streaming"] = "true";
-            using (Controller c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
+            using (var c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
             {
-                IRestoreResults restoreResults = c.Restore(new[] { filePath });
+                var restoreResults = await c.RestoreAsync(new[] { filePath });
                 Assert.AreEqual(0, restoreResults.Errors.Count());
                 Assert.AreEqual(0, restoreResults.Warnings.Count());
             }
 
-            string restoredFilePath = Path.Combine(this.RESTOREFOLDER, "file");
+            var restoredFilePath = Path.Combine(this.RESTOREFOLDER, "file");
             Assert.IsTrue(File.Exists(restoredFilePath));
         }
 
         [Test]
         [Category("RestoreHandler")]
-        public void RestoreEmptyFile()
+        public async Task RestoreEmptyFileAsync()
         {
-            string folderPath = Path.Combine(this.DATAFOLDER, "folder");
+            var folderPath = Path.Combine(this.DATAFOLDER, "folder");
             Directory.CreateDirectory(folderPath);
-            string filePath = Path.Combine(folderPath, "empty_file");
+            var filePath = Path.Combine(folderPath, "empty_file");
             File.WriteAllBytes(filePath, new byte[] { });
 
-            Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions);
-            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            var options = new Dictionary<string, string>(this.TestOptions);
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
+                var backupResults = await c.BackupAsync(new[] { this.DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
             }
 
             // Issue #4148 described a situation where the folders containing the empty file were not recreated properly.
-            Dictionary<string, string> restoreOptions = new Dictionary<string, string>(this.TestOptions)
+            var restoreOptions = new Dictionary<string, string>(this.TestOptions)
             {
                 ["restore-path"] = this.RESTOREFOLDER,
                 ["dont-compress-restore-paths"] = "true"
             };
-            using (Controller c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
+            using (var c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
             {
-                IRestoreResults restoreResults = c.Restore(new[] { filePath });
+                var restoreResults = await c.RestoreAsync(new[] { filePath });
                 Assert.AreEqual(0, restoreResults.Errors.Count());
                 // TODO The expected warning is expected, as the 'dont-compress-restore-paths' option results in a warning about a folder not being created before restoring a file.
                 Assert.AreEqual(1, restoreResults.Warnings.Count());
@@ -96,8 +95,8 @@ namespace Duplicati.UnitTest
 
             // We need to strip the root part of the path. Otherwise, Path.Combine will simply return the second argument
             // if it's determined to be an absolute path.
-            string rootString = SystemIO.IO_OS.GetPathRoot(filePath);
-            string newPathPart = filePath.Substring(rootString.Length);
+            var rootString = SystemIO.IO_OS.GetPathRoot(filePath);
+            var newPathPart = filePath.Substring(rootString.Length);
             if (OperatingSystem.IsWindows())
             {
                 // On Windows, the drive letter is included in the path when the dont-compress-restore-paths option is used.
@@ -105,13 +104,13 @@ namespace Duplicati.UnitTest
                 newPathPart = Path.Combine(rootString.Substring(0, 1), filePath.Substring(rootString.Length));
             }
 
-            string restoredFilePath = Path.Combine(restoreOptions["restore-path"], newPathPart);
+            var restoredFilePath = Path.Combine(restoreOptions["restore-path"], newPathPart);
             Assert.IsTrue(File.Exists(restoredFilePath));
         }
 
         [Test]
         [Category("RestoreHandler")]
-        public void RestoreInheritanceBreaks()
+        public async Task RestoreInheritanceBreaksAsync()
         {
             if (!OperatingSystem.IsWindows())
             {
@@ -130,13 +129,13 @@ namespace Duplicati.UnitTest
 
             var options = new Dictionary<string, string>(this.TestOptions);
             using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
-                TestUtils.AssertResults(c.Backup(new[] { this.DATAFOLDER }));
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
 
             // First, restore without restoring permissions.
             var restoreOptions = new Dictionary<string, string>(this.TestOptions) { ["restore-path"] = this.RESTOREFOLDER };
             using (var c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
             {
-                TestUtils.AssertResults(c.Restore(new[] { filePath }));
+                TestUtils.AssertResults(await c.RestoreAsync(new[] { filePath }));
 
                 var restoredFilePath = Path.Combine(this.RESTOREFOLDER, "file");
                 Assert.IsTrue(File.Exists(restoredFilePath));
@@ -154,7 +153,7 @@ namespace Duplicati.UnitTest
             restoreOptions["restore-permissions"] = "true";
             using (var c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
             {
-                TestUtils.AssertResults(c.Restore(new[] { filePath }));
+                TestUtils.AssertResults(await c.RestoreAsync(new[] { filePath }));
 
                 var restoredFilePath = Path.Combine(this.RESTOREFOLDER, "file");
                 Assert.IsTrue(File.Exists(restoredFilePath));
@@ -166,7 +165,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("RestoreHandler")]
-        public async System.Threading.Tasks.Task RestoreVolumeCache([Values("0b", "1mb", "5mb", "1gb", null)] string? cache_size, [Values("0", "1", null)] string? channel_size)
+        public async Task RestoreVolumeCacheAsync([Values("0b", "1mb", "5mb", "1gb", null)] string? cache_size, [Values("0", "1", null)] string? channel_size)
         {
             var opts = TestOptions;
             opts["dblock-size"] = "1mb";
@@ -193,34 +192,34 @@ namespace Duplicati.UnitTest
             }
 
             using var c = new Controller("file://" + this.TARGETFOLDER, opts, null);
-            TestUtils.AssertResults(c.Backup([this.DATAFOLDER]));
+            TestUtils.AssertResults(await c.BackupAsync([this.DATAFOLDER]));
 
             // Start a 30 second timeout
             var timeout_task = System.Threading.Tasks.Task.Delay(TimeSpan.FromSeconds(30));
 
-            var restore_task = System.Threading.Tasks.Task.Run(() =>
+            var restore_task = System.Threading.Tasks.Task.Run(async () =>
             {
-                TestUtils.AssertResults(c.Restore(["*"]));
+                TestUtils.AssertResults(await c.RestoreAsync(["*"]));
             });
 
             var t = await System.Threading.Tasks.Task.WhenAny(timeout_task, restore_task);
 
             if (t == timeout_task)
             {
-                c.Abort();
+                await c.AbortAsync().ConfigureAwait(false);
                 await restore_task; // Ensure we wait for the restore task to complete
                 Assert.Fail("Restore timed out");
             }
             else if (t == restore_task)
                 // Throw any exceptions it might have
-                t.GetAwaiter().GetResult();
+                await t.ConfigureAwait(false);
 
             TestUtils.AssertDirectoryTreesAreEquivalent(this.DATAFOLDER, this.RESTOREFOLDER, true, "Restoring with different volume cache sizes");
         }
 
         [Test]
         [Category("RestoreHandler")]
-        public void RestoreInternalProfilingLogsCacheUsage()
+        public async Task RestoreInternalProfilingLogsCacheUsageAsync()
         {
             var sourceFilePath = Path.Combine(this.DATAFOLDER, "profiled-restore.bin");
             File.WriteAllBytes(sourceFilePath, new byte[256 * 1024]);
@@ -232,7 +231,7 @@ namespace Duplicati.UnitTest
             };
 
             using (var c = new Controller("file://" + this.TARGETFOLDER, backupOptions, null))
-                TestUtils.AssertResults(c.Backup(new[] { this.DATAFOLDER }));
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
 
             var restoreOptions = new Dictionary<string, string>(backupOptions)
             {
@@ -244,7 +243,7 @@ namespace Duplicati.UnitTest
             };
 
             using (var c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
-                TestUtils.AssertResults(c.Restore(new[] { "*" }));
+                TestUtils.AssertResults(await c.RestoreAsync(new[] { "*" }));
 
             var logContents = File.ReadAllText(this.LOGFILE);
             Assert.That(logContents, Does.Contain("Max used cache size:"));
@@ -252,7 +251,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("RestoreHandler")]
-        public void RestoreWithoutLocalData([Values("true", "false")] string noLocalDb, [Values("true", "false")] string patchWithLocalBlocks)
+        public async Task RestoreWithoutLocalDataAsync([Values("true", "false")] string noLocalDb, [Values("true", "false")] string patchWithLocalBlocks)
         {
             var file1Path = Path.Combine(this.DATAFOLDER, "file1");
             File.WriteAllBytes(file1Path, new byte[] { 1, 2, 3 });
@@ -264,8 +263,8 @@ namespace Duplicati.UnitTest
             Directory.CreateDirectory(folderPath);
             systemIO.FileCopy(file1Path, Path.Combine(folderPath, "file1 copy"), true);
 
-            using (Controller c = new Controller("file://" + this.TARGETFOLDER, new Dictionary<string, string>(this.TestOptions), null))
-                TestUtils.AssertResults(c.Backup(new[] { this.DATAFOLDER }));
+            using (var c = new Controller("file://" + this.TARGETFOLDER, new Dictionary<string, string>(this.TestOptions), null))
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
 
             var restoreOptions = new Dictionary<string, string>(this.TestOptions)
             {
@@ -275,14 +274,14 @@ namespace Duplicati.UnitTest
             };
 
             using (var c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
-                TestUtils.AssertResults(c.Restore(new[] { "*" }));
+                TestUtils.AssertResults(await c.RestoreAsync(new[] { "*" }));
 
             TestUtils.AssertDirectoryTreesAreEquivalent(this.DATAFOLDER, this.RESTOREFOLDER, true, "Restoring without local data");
         }
 
         [Test]
         [Category("RestoreHandler")]
-        public void RestoreThreeVersionsWithoutLocalDb([Values(0, 1, 2)] int version)
+        public async Task RestoreThreeVersionsWithoutLocalDbAsync([Values(0, 1, 2)] int version)
         {
             // Create three versions with different file contents
             var file1Path = Path.Combine(this.DATAFOLDER, "file1.txt");
@@ -291,19 +290,19 @@ namespace Duplicati.UnitTest
             // Version 0 (oldest): Create initial files
             File.WriteAllText(file1Path, "version 0 content");
             File.WriteAllText(file2Path, "version 0 file2");
-            using (Controller c = new Controller("file://" + this.TARGETFOLDER, new Dictionary<string, string>(this.TestOptions), null))
-                TestUtils.AssertResults(c.Backup(new[] { this.DATAFOLDER }));
+            using (var c = new Controller("file://" + this.TARGETFOLDER, new Dictionary<string, string>(this.TestOptions), null))
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
 
             // Version 1: Modify file1, keep file2
             File.WriteAllText(file1Path, "version 1 content");
-            using (Controller c = new Controller("file://" + this.TARGETFOLDER, new Dictionary<string, string>(this.TestOptions), null))
-                TestUtils.AssertResults(c.Backup(new[] { this.DATAFOLDER }));
+            using (var c = new Controller("file://" + this.TARGETFOLDER, new Dictionary<string, string>(this.TestOptions), null))
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
 
             // Version 2 (newest): Modify both files
             File.WriteAllText(file1Path, "version 2 content");
             File.WriteAllText(file2Path, "version 2 file2");
-            using (Controller c = new Controller("file://" + this.TARGETFOLDER, new Dictionary<string, string>(this.TestOptions), null))
-                TestUtils.AssertResults(c.Backup(new[] { this.DATAFOLDER }));
+            using (var c = new Controller("file://" + this.TARGETFOLDER, new Dictionary<string, string>(this.TestOptions), null))
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
 
             // Prepare expected content based on version being restored
             // Note: In Duplicati, version 0 is the MOST RECENT backup
@@ -336,7 +335,7 @@ namespace Duplicati.UnitTest
             };
 
             using (var c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
-                TestUtils.AssertResults(c.Restore(new[] { "*" }));
+                TestUtils.AssertResults(await c.RestoreAsync(new[] { "*" }));
 
             // Verify restored files match the expected version
             var restoredFile1Path = Path.Combine(this.RESTOREFOLDER, "file1.txt");
@@ -350,7 +349,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("RestoreHandler")]
-        public void RestoreOtherProcessIsUsingFile()
+        public async Task RestoreOtherProcessIsUsingFileAsync()
         {
             var file1Path = Path.Combine(this.DATAFOLDER, "file1");
             byte[] original_contents = [1, 2, 3];
@@ -361,14 +360,14 @@ namespace Duplicati.UnitTest
 
             using var c = new Controller("file://" + this.TARGETFOLDER, opts, null);
 
-            var res_backup = c.Backup([this.DATAFOLDER]);
+            var res_backup = await c.BackupAsync([this.DATAFOLDER]);
             TestUtils.AssertResults(res_backup);
 
             File.WriteAllBytes(file1Path, [4, 5, 6]);
 
             using (var fs = new FileStream(file1Path, FileMode.Open, FileAccess.Read, FileShare.None))
             {
-                var res_failing = c.Restore(["*"]);
+                var res_failing = await c.RestoreAsync(["*"]);
                 Assert.AreEqual(4, res_failing.Errors.Count());
                 var first_error = res_failing.Errors.First();
                 Assert.IsTrue(
@@ -378,14 +377,14 @@ namespace Duplicati.UnitTest
                 );
             }
 
-            var res_restore = c.Restore(["*"]);
+            var res_restore = await c.RestoreAsync(["*"]);
             TestUtils.AssertResults(res_restore);
             Assert.AreEqual(original_contents, File.ReadAllBytes(file1Path));
         }
 
         [Test]
         [Category("RestoreHandler")]
-        public async System.Threading.Tasks.Task RestoreVolumeCacheDiskPressure()
+        public async Task RestoreVolumeCacheDiskPressureAsync()
         {
             var opts = TestOptions;
             opts["dblock-size"] = "1mb";
@@ -409,26 +408,26 @@ namespace Duplicati.UnitTest
             }
 
             using var c = new Controller("file://" + this.TARGETFOLDER, opts, null);
-            TestUtils.AssertResults(c.Backup([this.DATAFOLDER]));
+            TestUtils.AssertResults(await c.BackupAsync([this.DATAFOLDER]));
 
             var timeout_task = System.Threading.Tasks.Task.Delay(TimeSpan.FromSeconds(120));
             RestoreResults? result = null;
 
-            var restore_task = System.Threading.Tasks.Task.Run(() =>
+            var restore_task = System.Threading.Tasks.Task.Run(async () =>
             {
-                result = (RestoreResults)c.Restore(["*"]);
+                result = (RestoreResults)await c.RestoreAsync(["*"]);
             });
 
             var t = await System.Threading.Tasks.Task.WhenAny(timeout_task, restore_task);
             if (t == timeout_task)
             {
-                c.Abort();
+                await c.AbortAsync().ConfigureAwait(false);
                 await restore_task;
                 Assert.Fail("Restore timed out");
             }
             else
             {
-                t.GetAwaiter().GetResult();
+                await t.ConfigureAwait(false);
             }
 
             Assert.IsNotNull(result);

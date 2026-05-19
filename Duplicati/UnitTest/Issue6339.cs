@@ -25,6 +25,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using NUnit.Framework;
 using Duplicati.Library.Utility;
+using System.Threading.Tasks;
 
 namespace Duplicati.UnitTest;
 
@@ -45,7 +46,7 @@ public class Issue6339 : BasicSetupHelper
 
     [Test]
     [Category("Targeted")]
-    public void RepairShouldRecreateCompleteDindex([Values(1, 2)] int versions, [Values(true, false)] bool recreatedb)
+    public async Task RepairShouldRecreateCompleteDindexAsync([Values(1, 2)] int versions, [Values(true, false)] bool recreatedb)
     {
         var testopts = TestOptions.Expand(new { no_encryption = true, keep_versions = versions });
 
@@ -56,10 +57,10 @@ public class Issue6339 : BasicSetupHelper
         File.WriteAllText(pathb, "B");
 
         using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-            TestUtils.AssertResults(c.Backup(new[] { patha, pathb }));
+            TestUtils.AssertResults(await c.BackupAsync(new[] { patha, pathb }));
 
         using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-            TestUtils.AssertResults(c.Backup(new[] { patha }));
+            TestUtils.AssertResults(await c.BackupAsync(new[] { patha }));
 
         var dindex = Directory.GetFiles(TARGETFOLDER, "*.dindex.*", SearchOption.TopDirectoryOnly).First();
         int dataBlocks;
@@ -75,14 +76,14 @@ public class Issue6339 : BasicSetupHelper
         File.Delete(dindex);
 
         using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-            TestUtils.AssertResults(c.Repair());
+            TestUtils.AssertResults(await c.RepairAsync());
 
         if (recreatedb)
         {
             File.Delete(DBFILE);
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Repair());
+                TestUtils.AssertResults(await c.RepairAsync());
         }
 
         var newIndex = Directory.GetFiles(TARGETFOLDER, "*.dindex.*", SearchOption.TopDirectoryOnly).First();
@@ -95,6 +96,6 @@ public class Issue6339 : BasicSetupHelper
         }
 
         using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-            TestUtils.AssertResults(c.Test(100));
+            TestUtils.AssertResults(await c.TestAsync(100));
     }
 }

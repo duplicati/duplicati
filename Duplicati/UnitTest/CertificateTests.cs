@@ -173,7 +173,6 @@ public class CertificateTests
     }
 
     [Test]
-    [Platform(Exclude = "MacOsX", Reason = "macOS keychain export limitations")]
     public void CreatePfxBundle_CreatesValidPfx()
     {
         // Arrange
@@ -309,7 +308,6 @@ public class CertificateTests
     }
 
     [Test]
-    [Platform(Exclude = "MacOsX", Reason = "macOS keychain export limitations")]
     public void SerializeDeserializeCertificateWithKey_RoundTripsCorrectly()
     {
         // Arrange
@@ -404,7 +402,6 @@ public class CertificateTests
     }
 
     [Test]
-    [Platform(Exclude = "MacOsX", Reason = "macOS keychain export limitations")]
     public void SerializeCertificateWithKey_WrongPassword_ThrowsException()
     {
         // Arrange

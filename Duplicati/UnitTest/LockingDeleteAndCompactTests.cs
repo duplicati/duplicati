@@ -59,13 +59,14 @@ namespace Duplicati.UnitTest
             public Task PutAsync(Duplicati.Library.Main.Volumes.VolumeWriterBase blockVolume, Duplicati.Library.Main.Volumes.IndexVolumeWriter? indexVolume, Func<Task>? indexVolumeFinished, bool waitForComplete, Func<Task>? onDbUpdate, CancellationToken cancelToken) => throw new NotImplementedException();
             public Task PutVerificationFileAsync(string remotename, TempFile tempFile, CancellationToken cancelToken) => throw new NotImplementedException();
             public Task<System.Collections.Generic.IEnumerable<Duplicati.Library.Interface.IFileEntry>> ListAsync(CancellationToken cancelToken) => throw new NotImplementedException();
-            public TempFile DecryptFile(TempFile volume, string volume_name, Options options) => throw new NotImplementedException();
+            public TempFile DecryptFile(TempFile volume, string volume_name, Options options, bool dispose) => throw new NotImplementedException();
             public Task DeleteAsync(string remotename, long size, bool waitForComplete, CancellationToken cancelToken) => throw new NotImplementedException();
             public Task<IQuotaInfo?> GetQuotaInfoAsync(CancellationToken cancelToken) => throw new NotImplementedException();
             public Task<(TempFile File, string Hash, long Size)> GetWithInfoAsync(string remotename, string hash, long size, CancellationToken cancelToken) => throw new NotImplementedException();
             public Task<TempFile> GetAsync(string remotename, string hash, long size, CancellationToken cancelToken) => throw new NotImplementedException();
             public Task<TempFile> GetDirectAsync(string remotename, string hash, long size, CancellationToken cancelToken) => throw new NotImplementedException();
             public System.Collections.Generic.IAsyncEnumerable<(TempFile File, string Hash, long Size, string Name)> GetFilesOverlappedAsync(System.Collections.Generic.IEnumerable<IRemoteVolume> volumes, CancellationToken cancelToken) => throw new NotImplementedException();
+            public System.Collections.Generic.IAsyncEnumerable<(TempFile File, string Name)> GetFilesOverlappedDirectAsync(System.Collections.Generic.IEnumerable<IRemoteVolume> volumes, CancellationToken cancelToken) => throw new NotImplementedException();
             public Task FlushPendingMessagesAsync(LocalDatabase database, CancellationToken cancellationToken) => Task.CompletedTask;
             public void UpdateThrottleValues(long maxUploadPrSecond, long maxDownloadPrSecond) => throw new NotImplementedException();
             #endregion
@@ -82,7 +83,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("DeleteHandler")]
-        public async Task DeleteSkipsLockedRemoteFilesetVolume()
+        public async Task DeleteSkipsLockedRemoteFilesetVolumeAsync()
         {
             var backupOpts = TestOptions;
             var target = "file://" + TARGETFOLDER;
@@ -94,13 +95,13 @@ namespace Duplicati.UnitTest
             string oldestFilesetVolumeName;
             using (var c = new Controller(target, backupOpts, null))
             {
-                var b1 = c.Backup(new[] { DATAFOLDER });
+                var b1 = await c.BackupAsync(new[] { DATAFOLDER });
                 Assert.That(b1.Errors, Is.Empty, "Backup 1 had errors");
 
                 SleepUntilNextSecond(b1.BeginTime);
                 TestUtils.WriteTestFile(file2, 1024);
 
-                var b2 = c.Backup(new[] { DATAFOLDER });
+                var b2 = await c.BackupAsync(new[] { DATAFOLDER });
                 Assert.That(b2.Errors, Is.Empty, "Backup 2 had errors");
 
                 // Find the oldest fileset volume, and lock it.
@@ -108,13 +109,13 @@ namespace Duplicati.UnitTest
 
                 await using (var db = await LocalDatabase.CreateLocalDatabaseAsync(DBFILE, null, true, null, token).ConfigureAwait(false))
                 {
-                    var filesets = await db.FilesetTimes(token)
+                    var filesets = await db.FilesetTimesAsync(token)
                         .ToArrayAsync(cancellationToken: token)
                         .ConfigureAwait(false);
 
                     Assert.That(filesets.Length, Is.GreaterThanOrEqualTo(2), "Expected at least 2 filesets");
                     var oldestFilesetId = filesets.Last().Key;
-                    var oldestFilesetVolume = await db.GetRemoteVolumeFromFilesetID(oldestFilesetId, token).ConfigureAwait(false);
+                    var oldestFilesetVolume = await db.GetRemoteVolumeFromFilesetIDAsync(oldestFilesetId, token).ConfigureAwait(false);
                     oldestFilesetVolumeName = oldestFilesetVolume.Name;
                 }
 
@@ -122,7 +123,7 @@ namespace Duplicati.UnitTest
 
                 await using (var lockDb = await LocalLockDatabase.CreateAsync(DBFILE, null, token).ConfigureAwait(false))
                 {
-                    await lockDb.UpdateRemoteVolumeLockExpiration(oldestFilesetVolumeName, DateTime.UtcNow.AddHours(1), token).ConfigureAwait(false);
+                    await lockDb.UpdateRemoteVolumeLockExpirationAsync(oldestFilesetVolumeName, DateTime.UtcNow.AddHours(1), token).ConfigureAwait(false);
                     await lockDb.Transaction.CommitAsync(token: token).ConfigureAwait(false);
                 }
             }
@@ -136,7 +137,7 @@ namespace Duplicati.UnitTest
 
             using (var cdelete = new Controller(target, deleteOpts, null))
             {
-                var deleteResults = cdelete.Delete();
+                var deleteResults = await cdelete.DeleteAsync();
                 Assert.That(deleteResults.Errors, Is.Empty, "Delete had errors");
                 Assert.That(deleteResults.Warnings.Any(x => x.Contains("fileset volume has an active lock", StringComparison.Ordinal)),
                     Is.True,
@@ -149,7 +150,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("DeleteHandler")]
-        public async Task DeleteHonorsFilesetLocksFromBackupUntilExpiration()
+        public async Task DeleteHonorsFilesetLocksFromBackupUntilExpirationAsync()
         {
             // These values are chosen to give the backup and delete operations enough time to complete
             // while still leaving a window where the lock is active. They can be adjusted in CI if
@@ -199,7 +200,7 @@ namespace Duplicati.UnitTest
             var b1BeginTime = DateTime.MinValue;
             using (var c1 = new Controller(target, backupOpts, null))
             {
-                var b1 = c1.Backup(new[] { DATAFOLDER });
+                var b1 = await c1.BackupAsync(new[] { DATAFOLDER });
                 Assert.That(b1.Errors, Is.Empty, "Backup 1 had errors");
                 b1BeginTime = b1.BeginTime;
             }
@@ -207,7 +208,7 @@ namespace Duplicati.UnitTest
             // Capture the latest fileset (the one created by backup 1) and apply locks.
             await using (var db = await LocalDatabase.CreateLocalDatabaseAsync(DBFILE, null, true, null, token).ConfigureAwait(false))
             {
-                var filesets = await db.FilesetTimes(token)
+                var filesets = await db.FilesetTimesAsync(token)
                     .ToArrayAsync(cancellationToken: token)
                     .ConfigureAwait(false);
 
@@ -228,14 +229,14 @@ namespace Duplicati.UnitTest
             TestUtils.WriteTestFile(file2, 1024);
             using (var c2 = new Controller(target, backupOpts, null))
             {
-                var b2 = c2.Backup(new[] { DATAFOLDER });
+                var b2 = await c2.BackupAsync(new[] { DATAFOLDER });
                 Assert.That(b2.Errors, Is.Empty, "Backup 2 had errors");
             }
 
             // Apply locks for the second backup as well.
             await using (var db = await LocalDatabase.CreateLocalDatabaseAsync(DBFILE, null, true, null, token).ConfigureAwait(false))
             {
-                var filesets = await db.FilesetTimes(token)
+                var filesets = await db.FilesetTimesAsync(token)
                     .ToArrayAsync(cancellationToken: token)
                     .ConfigureAwait(false);
 
@@ -247,7 +248,7 @@ namespace Duplicati.UnitTest
             async Task<bool> IsFilesetLockedAsync(long filesetId, CancellationToken ct)
             {
                 await using var deleteDb = await LocalDeleteDatabase.CreateAsync(DBFILE, "LockCheck", null, ct).ConfigureAwait(false);
-                return await deleteDb.HasAnyLockedFiles(filesetId, DateTime.UtcNow, ct).ConfigureAwait(false);
+                return await deleteDb.HasAnyLockedFilesAsync(filesetId, DateTime.UtcNow, ct).ConfigureAwait(false);
             }
 
             // Verify that the oldest fileset has at least one active lock immediately after the backups.
@@ -264,7 +265,7 @@ namespace Duplicati.UnitTest
 
             using (var cdelete = new Controller(target, deleteOpts, null))
             {
-                var deleteResults = cdelete.Delete();
+                var deleteResults = await cdelete.DeleteAsync();
                 Assert.That(deleteResults.Errors, Is.Empty, "Delete (with active lock) had errors");
                 Assert.That(deleteResults.DeletedSets, Is.Empty, "Expected no filesets to be deleted while lock is active");
                 Assert.That(deleteResults.Warnings.Any(x => x.Contains("Skipping deletion of fileset version", StringComparison.Ordinal)),
@@ -291,7 +292,7 @@ namespace Duplicati.UnitTest
 
             using (var cdelete = new Controller(target, finalDeleteOpts, null))
             {
-                var deleteResults = cdelete.Delete();
+                var deleteResults = await cdelete.DeleteAsync();
                 Assert.That(deleteResults.Errors, Is.Empty, "Delete (after lock expiration) had errors");
 
                 var deletedSets = deleteResults.DeletedSets?.ToArray() ?? Array.Empty<Tuple<long, DateTime>>();
@@ -303,7 +304,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Compact")]
-        public async Task CompactDetectsAndAvoidsLockedCompactableVolume()
+        public async Task CompactDetectsAndAvoidsLockedCompactableVolumeAsync()
         {
             var testopts = TestOptions;
             testopts["backup-test-samples"] = "0";
@@ -333,21 +334,21 @@ namespace Duplicati.UnitTest
                 // Create multiple versions and remove some files to generate compactable volumes.
                 TestUtils.WriteTestFile(file1, fileSize);
                 TestUtils.WriteTestFile(file2, fileSize);
-                var b1 = c.Backup(new[] { DATAFOLDER });
+                var b1 = await c.BackupAsync(new[] { DATAFOLDER });
                 Assert.That(b1.Errors, Is.Empty, "Backup 1 had errors");
 
                 SleepUntilNextSecond(b1.BeginTime);
                 TestUtils.WriteTestFile(file3, fileSize);
                 TestUtils.WriteTestFile(file4, fileSize);
 
-                var b2 = c.Backup(new[] { DATAFOLDER });
+                var b2 = await c.BackupAsync(new[] { DATAFOLDER });
                 Assert.That(b2.Errors, Is.Empty, "Backup 2 had errors");
 
                 SleepUntilNextSecond(b2.BeginTime);
                 TestUtils.WriteTestFile(file5, fileSize);
                 TestUtils.WriteTestFile(file6, fileSize);
 
-                var b3 = c.Backup(new[] { DATAFOLDER });
+                var b3 = await c.BackupAsync(new[] { DATAFOLDER });
                 Assert.That(b3.Errors, Is.Empty, "Backup 3 had errors");
 
                 SleepUntilNextSecond(b3.BeginTime);
@@ -355,7 +356,7 @@ namespace Duplicati.UnitTest
                 File.Delete(file3);
                 File.Delete(file5);
 
-                var b4 = c.Backup(new[] { DATAFOLDER });
+                var b4 = await c.BackupAsync(new[] { DATAFOLDER });
                 Assert.That(b4.Errors, Is.Empty, "Backup 4 had errors");
 
                 var token = CancellationToken.None;
@@ -364,7 +365,7 @@ namespace Duplicati.UnitTest
 
                 await using (var db = await LocalDeleteDatabase.CreateAsync(DBFILE, "CompactLockTest", null, token).ConfigureAwait(false))
                 {
-                    var report = await db.GetCompactReport(optionsObj.VolumeSize, optionsObj.Threshold, optionsObj.SmallFileSize, optionsObj.SmallFileMaxCount, token).ConfigureAwait(false);
+                    var report = await db.GetCompactReportAsync(optionsObj.VolumeSize, optionsObj.Threshold, optionsObj.SmallFileSize, optionsObj.SmallFileMaxCount, token).ConfigureAwait(false);
                     lockedCandidateName = report.CompactableVolumes.FirstOrDefault();
                 }
 
@@ -373,11 +374,11 @@ namespace Duplicati.UnitTest
 
                 await using (var lockDb = await LocalLockDatabase.CreateAsync(DBFILE, null, token).ConfigureAwait(false))
                 {
-                    await lockDb.UpdateRemoteVolumeLockExpiration(lockedCandidateName, DateTime.UtcNow.AddHours(1), token).ConfigureAwait(false);
+                    await lockDb.UpdateRemoteVolumeLockExpirationAsync(lockedCandidateName, DateTime.UtcNow.AddHours(1), token).ConfigureAwait(false);
                     await lockDb.Transaction.CommitAsync(token: token).ConfigureAwait(false);
                 }
 
-                var compactResults = c.Compact();
+                var compactResults = await c.CompactAsync();
                 Assert.That(compactResults.Errors, Is.Empty, "Compact had errors");
                 Assert.That(compactResults.Messages.Any(x => x.Contains("selected for compaction but has an active lock", StringComparison.Ordinal) && x.Contains(lockedCandidateName, StringComparison.Ordinal)),
                     Is.True,
@@ -387,7 +388,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Compact")]
-        public async Task CompactRestoresStoredWritePathOptionsWhenCliOmitsThem()
+        public async Task CompactRestoresStoredWritePathOptionsWhenCliOmitsThemAsync()
         {
             var backupOpts = TestOptions;
             backupOpts["prefix"] = "compactprefix";
@@ -415,21 +416,21 @@ namespace Duplicati.UnitTest
             {
                 TestUtils.WriteTestFile(file1, fileSize);
                 TestUtils.WriteTestFile(file2, fileSize);
-                var b1 = c.Backup(new[] { DATAFOLDER });
+                var b1 = await c.BackupAsync(new[] { DATAFOLDER });
                 Assert.That(b1.Errors, Is.Empty, "Backup 1 had errors");
 
                 SleepUntilNextSecond(b1.BeginTime);
                 TestUtils.WriteTestFile(file3, fileSize);
                 TestUtils.WriteTestFile(file4, fileSize);
 
-                var b2 = c.Backup(new[] { DATAFOLDER });
+                var b2 = await c.BackupAsync(new[] { DATAFOLDER });
                 Assert.That(b2.Errors, Is.Empty, "Backup 2 had errors");
 
                 SleepUntilNextSecond(b2.BeginTime);
                 TestUtils.WriteTestFile(file5, fileSize);
                 TestUtils.WriteTestFile(file6, fileSize);
 
-                var b3 = c.Backup(new[] { DATAFOLDER });
+                var b3 = await c.BackupAsync(new[] { DATAFOLDER });
                 Assert.That(b3.Errors, Is.Empty, "Backup 3 had errors");
 
                 SleepUntilNextSecond(b3.BeginTime);
@@ -437,14 +438,14 @@ namespace Duplicati.UnitTest
                 File.Delete(file3);
                 File.Delete(file5);
 
-                var b4 = c.Backup(new[] { DATAFOLDER });
+                var b4 = await c.BackupAsync(new[] { DATAFOLDER });
                 Assert.That(b4.Errors, Is.Empty, "Backup 4 had errors");
             }
 
             var token = CancellationToken.None;
             await using (var db = await LocalDatabase.CreateLocalDatabaseAsync(DBFILE, null, true, null, token).ConfigureAwait(false))
             {
-                var storedOptions = await db.GetDbOptions(token).ConfigureAwait(false);
+                var storedOptions = await db.GetDbOptionsAsync(token).ConfigureAwait(false);
                 Assert.That(storedOptions["prefix"], Is.EqualTo("compactprefix"));
                 Assert.That(storedOptions["dblock-size"], Is.EqualTo((20 * 1024).ToString()));
                 Assert.That(storedOptions["compression-module"], Is.EqualTo("zip"));
@@ -468,7 +469,7 @@ namespace Duplicati.UnitTest
 
             using (var c = new Controller(target, compactOpts, null))
             {
-                var compactResults = c.Compact();
+                var compactResults = await c.CompactAsync();
                 Assert.That(compactResults.Errors, Is.Empty, "Compact had errors");
                 Assert.That(compactResults.DownloadedFileCount, Is.GreaterThan(0), "No compact operation was performed");
             }

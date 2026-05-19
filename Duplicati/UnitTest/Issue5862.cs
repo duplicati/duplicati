@@ -81,7 +81,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Targeted")]
-        public void TestUploadFailureWithResume()
+        public async Task TestUploadFailureWithResumeAsync()
         {
             var testopts = TestOptions.Expand(new
             {
@@ -95,11 +95,11 @@ namespace Duplicati.UnitTest
 
             // Make a failing backup
             using (var c = new Library.Main.Controller(PreventingBackend.Key + "://" + TARGETFOLDER, testopts, null))
-                Assert.Throws<DeterministicErrorBackend.DeterministicErrorBackendException>(() => c.Backup(new string[] { DATAFOLDER }));
+                Assert.ThrowsAsync<DeterministicErrorBackend.DeterministicErrorBackendException>(async () => await c.BackupAsync(new string[] { DATAFOLDER }));
 
             // Make a working backup, should not give any errors
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Backup(new string[] { DATAFOLDER }));
+                TestUtils.AssertResults(await c.BackupAsync(new string[] { DATAFOLDER }));
         }
     }
 }

@@ -52,10 +52,10 @@ namespace Duplicati.UnitTest
         /// </summary>
         [Test]
         [Category("Database")]
-        public async Task RemoveRemoteVolumes_WithOrphanedFilesetEntry_ThrowsConstraintException()
+        public async Task RemoveRemoteVolumes_WithOrphanedFilesetEntry_ThrowsConstraintExceptionAsync()
         {
             using var dbfile = new TempFile();
-            using var db = SQLiteLoader.LoadConnection(dbfile);
+            using var db = await SQLiteLoader.LoadConnectionAsync(dbfile);
 
             // Use DatabaseUpgrader to create the schema from embedded resources
             DatabaseUpgrader.UpgradeDatabase(db, dbfile, typeof(DatabaseSchemaMarker));
@@ -64,35 +64,35 @@ namespace Duplicati.UnitTest
 
             // Insert an operation record (required for LocalDatabase initialization)
             cmd.CommandText = @"INSERT INTO ""Operation"" (""Description"", ""Timestamp"") VALUES ('Test', 0)";
-            cmd.ExecuteNonQuery();
+            await cmd.ExecuteNonQueryAsync();
 
             // Insert a block volume (ID=1) - this is the volume we will delete
             cmd.CommandText = @"
                 INSERT INTO ""Remotevolume"" (""ID"", ""OperationID"", ""Name"", ""Type"", ""State"", ""VerificationCount"", ""DeleteGraceTime"", ""ArchiveTime"", ""LockExpirationTime"")
                 VALUES (1, 1, 'block-volume.zip', 'Blocks', 'Verified', 0, 0, 0, 0)";
-            cmd.ExecuteNonQuery();
+            await cmd.ExecuteNonQueryAsync();
 
             // Insert a fileset volume (ID=2) - this volume is NOT being deleted
             cmd.CommandText = @"
                 INSERT INTO ""Remotevolume"" (""ID"", ""OperationID"", ""Name"", ""Type"", ""State"", ""VerificationCount"", ""DeleteGraceTime"", ""ArchiveTime"", ""LockExpirationTime"")
                 VALUES (2, 1, 'fileset-volume.zip', 'Files', 'Verified', 0, 0, 0, 0)";
-            cmd.ExecuteNonQuery();
+            await cmd.ExecuteNonQueryAsync();
 
             // Insert a fileset that references the fileset volume (NOT being deleted)
             cmd.CommandText = @"
                 INSERT INTO ""Fileset"" (""ID"", ""OperationID"", ""VolumeID"", ""IsFullBackup"", ""Timestamp"")
                 VALUES (1, 1, 2, 1, 0)";
-            cmd.ExecuteNonQuery();
+            await cmd.ExecuteNonQueryAsync();
 
             // Insert an orphaned FilesetEntry - this references a FileID (99999) that does NOT exist in FileLookup
             // This simulates a database corruption scenario
             cmd.CommandText = @"
                 INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"")
                 VALUES (1, 99999, 0)";
-            cmd.ExecuteNonQuery();
+            await cmd.ExecuteNonQueryAsync();
 
             // Close the connection so LocalDatabase can open it
-            db.Close();
+            await db.CloseAsync();
 
             // Create LocalDatabase instance and attempt to remove the block volume
             await using var localDb = await LocalDatabase.CreateLocalDatabaseAsync(
@@ -110,7 +110,7 @@ namespace Duplicati.UnitTest
             ConstraintException? caughtException = null;
             try
             {
-                await localDb.RemoveRemoteVolumes(new[] { "block-volume.zip" }, CancellationToken.None);
+                await localDb.RemoveRemoteVolumesAsync(new[] { "block-volume.zip" }, CancellationToken.None);
             }
             catch (ConstraintException ex)
             {
@@ -128,10 +128,10 @@ namespace Duplicati.UnitTest
         /// </summary>
         [Test]
         [Category("Database")]
-        public async Task RemoveRemoteVolumes_WithValidFilesetEntry_Succeeds()
+        public async Task RemoveRemoteVolumes_WithValidFilesetEntry_Succeeds_Async()
         {
             using var dbfile = new TempFile();
-            using var db = SQLiteLoader.LoadConnection(dbfile);
+            using var db = await SQLiteLoader.LoadConnectionAsync(dbfile);
 
             // Use DatabaseUpgrader to create the schema from embedded resources
             DatabaseUpgrader.UpgradeDatabase(db, dbfile, typeof(DatabaseSchemaMarker));
@@ -140,16 +140,16 @@ namespace Duplicati.UnitTest
 
             // Insert an operation record
             cmd.CommandText = @"INSERT INTO ""Operation"" (""Description"", ""Timestamp"") VALUES ('Test', 0)";
-            cmd.ExecuteNonQuery();
+            await cmd.ExecuteNonQueryAsync();
 
             // Insert a remote volume that we will try to remove
             cmd.CommandText = @"
                 INSERT INTO ""Remotevolume"" (""OperationID"", ""Name"", ""Type"", ""State"", ""VerificationCount"", ""DeleteGraceTime"", ""ArchiveTime"", ""LockExpirationTime"")
                 VALUES (1, 'test-volume.zip', 'Blocks', 'Verified', 0, 0, 0, 0)";
-            cmd.ExecuteNonQuery();
+            await cmd.ExecuteNonQueryAsync();
 
             // Close the connection so LocalDatabase can open it
-            db.Close();
+            await db.CloseAsync();
 
             // Create LocalDatabase instance and attempt to remove the volume
             await using var localDb = await LocalDatabase.CreateLocalDatabaseAsync(
@@ -164,7 +164,7 @@ namespace Duplicati.UnitTest
             // (no FilesetEntry records exist, so no orphans can be created)
             Assert.DoesNotThrowAsync(async () =>
             {
-                await localDb.RemoveRemoteVolumes(new[] { "test-volume.zip" }, CancellationToken.None);
+                await localDb.RemoveRemoteVolumesAsync(new[] { "test-volume.zip" }, CancellationToken.None);
             });
         }
 
@@ -177,10 +177,10 @@ namespace Duplicati.UnitTest
         /// </summary>
         [Test]
         [Category("Database")]
-        public async Task RemoveRemoteVolumes_WithMultipleOrphanedFilesetEntries_ThrowsConstraintExceptionWithCount()
+        public async Task RemoveRemoteVolumes_WithMultipleOrphanedFilesetEntries_ThrowsConstraintExceptionWithCount_Async()
         {
             using var dbfile = new TempFile();
-            using var db = SQLiteLoader.LoadConnection(dbfile);
+            using var db = await SQLiteLoader.LoadConnectionAsync(dbfile);
 
             // Use DatabaseUpgrader to create the schema from embedded resources
             DatabaseUpgrader.UpgradeDatabase(db, dbfile, typeof(DatabaseSchemaMarker));
@@ -189,25 +189,25 @@ namespace Duplicati.UnitTest
 
             // Insert an operation record
             cmd.CommandText = @"INSERT INTO ""Operation"" (""Description"", ""Timestamp"") VALUES ('Test', 0)";
-            cmd.ExecuteNonQuery();
+            await cmd.ExecuteNonQueryAsync();
 
             // Insert a block volume (ID=1) - this is the volume we will delete
             cmd.CommandText = @"
                 INSERT INTO ""Remotevolume"" (""ID"", ""OperationID"", ""Name"", ""Type"", ""State"", ""VerificationCount"", ""DeleteGraceTime"", ""ArchiveTime"", ""LockExpirationTime"")
                 VALUES (1, 1, 'block-volume.zip', 'Blocks', 'Verified', 0, 0, 0, 0)";
-            cmd.ExecuteNonQuery();
+            await cmd.ExecuteNonQueryAsync();
 
             // Insert a fileset volume (ID=2) - this volume is NOT being deleted
             cmd.CommandText = @"
                 INSERT INTO ""Remotevolume"" (""ID"", ""OperationID"", ""Name"", ""Type"", ""State"", ""VerificationCount"", ""DeleteGraceTime"", ""ArchiveTime"", ""LockExpirationTime"")
                 VALUES (2, 1, 'fileset-volume.zip', 'Files', 'Verified', 0, 0, 0, 0)";
-            cmd.ExecuteNonQuery();
+            await cmd.ExecuteNonQueryAsync();
 
             // Insert a fileset that references the fileset volume (NOT being deleted)
             cmd.CommandText = @"
                 INSERT INTO ""Fileset"" (""ID"", ""OperationID"", ""VolumeID"", ""IsFullBackup"", ""Timestamp"")
                 VALUES (1, 1, 2, 1, 0)";
-            cmd.ExecuteNonQuery();
+            await cmd.ExecuteNonQueryAsync();
 
             // Insert 3 orphaned FilesetEntry records - these reference FileIDs that do NOT exist in FileLookup
             // This simulates a database corruption scenario with multiple orphaned records
@@ -215,10 +215,10 @@ namespace Duplicati.UnitTest
                 INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"") VALUES (1, 99999, 0);
                 INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"") VALUES (1, 99998, 0);
                 INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"") VALUES (1, 99997, 0);";
-            cmd.ExecuteNonQuery();
+            await cmd.ExecuteNonQueryAsync();
 
             // Close the connection so LocalDatabase can open it
-            db.Close();
+            await db.CloseAsync();
 
             // Create LocalDatabase instance
             await using var localDb = await LocalDatabase.CreateLocalDatabaseAsync(
@@ -233,7 +233,7 @@ namespace Duplicati.UnitTest
             ConstraintException? caughtException = null;
             try
             {
-                await localDb.RemoveRemoteVolumes(new[] { "block-volume.zip" }, CancellationToken.None);
+                await localDb.RemoveRemoteVolumesAsync(new[] { "block-volume.zip" }, CancellationToken.None);
             }
             catch (ConstraintException ex)
             {
@@ -252,10 +252,10 @@ namespace Duplicati.UnitTest
         /// </summary>
         [Test]
         [Category("Database")]
-        public async Task RemoveRemoteVolumes_WithLargeInput_UsesTemporaryTable()
+        public async Task RemoveRemoteVolumes_WithLargeInput_UsesTemporaryTable_Async()
         {
             using var dbfile = new TempFile();
-            using var db = SQLiteLoader.LoadConnection(dbfile);
+            using var db = await SQLiteLoader.LoadConnectionAsync(dbfile);
 
             // Use DatabaseUpgrader to create the schema from embedded resources
             DatabaseUpgrader.UpgradeDatabase(db, dbfile, typeof(DatabaseSchemaMarker));
@@ -264,7 +264,7 @@ namespace Duplicati.UnitTest
 
             // Insert an operation record (required for LocalDatabase initialization)
             cmd.CommandText = @"INSERT INTO ""Operation"" (""Description"", ""Timestamp"") VALUES ('Test', 0)";
-            cmd.ExecuteNonQuery();
+            await cmd.ExecuteNonQueryAsync();
 
             // Create 150 remote volumes (exceeds CHUNK_SIZE of 128) to trigger temporary table path
             // Set DeleteGraceTime to 0 so they can be deleted immediately (grace time has passed)
@@ -278,11 +278,11 @@ namespace Duplicati.UnitTest
                 cmd.CommandText = $@"
                     INSERT INTO ""Remotevolume"" (""ID"", ""OperationID"", ""Name"", ""Type"", ""State"", ""VerificationCount"", ""DeleteGraceTime"", ""ArchiveTime"", ""LockExpirationTime"")
                     VALUES ({i + 1}, 1, '{volumeName}', 'Blocks', 'Deleted', 0, 0, 0, 0)";
-                cmd.ExecuteNonQuery();
+                await cmd.ExecuteNonQueryAsync();
             }
 
             // Close the connection so LocalDatabase can open it
-            db.Close();
+            await db.CloseAsync();
 
             // Create LocalDatabase instance
             await using var localDb = await LocalDatabase.CreateLocalDatabaseAsync(
@@ -297,7 +297,7 @@ namespace Duplicati.UnitTest
             // This should trigger the temporary table code path
             Assert.DoesNotThrowAsync(async () =>
             {
-                await localDb.RemoveRemoteVolumes(volumeNames, CancellationToken.None);
+                await localDb.RemoveRemoteVolumesAsync(volumeNames, CancellationToken.None);
             });
 
             // Assert: Verify all volumes were deleted
@@ -305,7 +305,7 @@ namespace Duplicati.UnitTest
             // Since State is 'Deleted' and @State is 'Deleted', and DeleteGraceTime is 0, they should be deleted
             using var verifyCmd = localDb.Connection.CreateCommand();
             verifyCmd.CommandText = @"SELECT COUNT(*) FROM ""Remotevolume"" WHERE ""Name"" LIKE 'test-volume-%'";
-            var count = (long)verifyCmd.ExecuteScalar()!;
+            var count = (long)(await verifyCmd.ExecuteScalarAsync())!;
             Assert.That(count, Is.EqualTo(0), "All 150 volumes should have been deleted");
         }
     }

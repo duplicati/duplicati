@@ -45,7 +45,7 @@ namespace Duplicati.Library.Backend.Strings
     internal static class SharePointV2
     {
         public static string Description(string mssadescription, string mssalink, string msopdescription, string msoplink) { return LC.L(@"Store files in a Microsoft SharePoint site via the Microsoft Graph API. Usage of this backend requires that you agree to the terms in {0} ({1}) and {2} ({3}).", mssadescription, mssalink, msopdescription, msoplink); }
-        public static string DisplayName { get { return LC.L(@"Microsoft SharePoint v2"); } }
+        public static string DisplayName { get { return LC.L(@"Microsoft SharePoint"); } }
         public static string SiteIdLong { get { return LC.L(@"ID of the site to store data in."); } }
         public static string SiteIdShort { get { return LC.L(@"ID of the site"); } }
         public static string MissingSiteId { get { return LC.L(@"No site ID was provided"); } }

@@ -52,7 +52,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="options">The restore options</param>
         /// <param name="result">The restore results</param>
         /// <param name="restoreDestination">The restore destination provider, used to get priority files.</param>
-        public static Task Run(Channels channels, LocalRestoreDatabase db, Options options, RestoreResults result, IList<string> priorityFiles)
+        public static Task RunAsync(Channels channels, LocalRestoreDatabase db, Options options, RestoreResults result, IList<string> priorityFiles)
         {
             return AutomationExtensions.RunTask(
             new
@@ -73,7 +73,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     sw_get_files?.Start();
                     // The enumerables are cast to arrays to force the query to be executed and release the database lock.
                     var files = await db
-                        .GetFilesAndSymlinksToRestore(result.TaskControl.ProgressToken)
+                        .GetFilesAndSymlinksToRestoreAsync(result.TaskControl.ProgressToken)
                         .ToArrayAsync()
                         .ConfigureAwait(false);
 
@@ -114,7 +114,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         sw_get_folders?.Start();
                         // The enumerables are cast to arrays to force the query to be executed and release the database lock.
                         var folders = await db
-                            .GetFolderMetadataToRestore(result.TaskControl.ProgressToken)
+                            .GetFolderMetadataToRestoreAsync(result.TaskControl.ProgressToken)
                             .ToArrayAsync()
                             .ConfigureAwait(false);
                         sw_get_folders?.Stop();

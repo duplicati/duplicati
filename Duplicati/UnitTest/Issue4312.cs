@@ -23,6 +23,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
 
@@ -32,7 +33,7 @@ public class Issue4312 : BasicSetupHelper
 {
     [Test]
     [Category("Targeted")]
-    public void ChangeTimestampShouldCreateExtraBackup()
+    public async Task ChangeTimestampShouldCreateExtraBackupAsync()
     {
         var testopts = TestOptions;
         // Make sure we detect changes from metadata
@@ -43,7 +44,7 @@ public class Issue4312 : BasicSetupHelper
         File.WriteAllBytes(Path.Combine(DATAFOLDER, "a"), data);
         using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
         {
-            var r = c.Backup(new string[] { DATAFOLDER });
+            var r = await c.BackupAsync(new string[] { DATAFOLDER });
             Assert.AreEqual(0, r.Errors.Count());
             Assert.AreEqual(0, r.Warnings.Count());
             Assert.AreEqual(1, r.AddedFiles);
@@ -51,9 +52,9 @@ public class Issue4312 : BasicSetupHelper
             if (pr.KnownFileSize == 0 || pr.KnownFileCount != 3 || pr.BackupListCount != 1)
                 throw new Exception(string.Format("Failed to get stats from remote backend: {0}, {1}, {2}", pr.KnownFileSize, pr.KnownFileCount, pr.BackupListCount));
 
-            System.Threading.Thread.Sleep(3000);
+            await Task.Delay(3000);
 
-            r = c.Backup(new string[] { DATAFOLDER });
+            r = await c.BackupAsync(new string[] { DATAFOLDER });
             Assert.AreEqual(0, r.Errors.Count());
             Assert.AreEqual(0, r.Warnings.Count());
             Assert.AreEqual(0, r.AddedFiles);
@@ -62,12 +63,12 @@ public class Issue4312 : BasicSetupHelper
             if (pr.KnownFileSize == 0 || pr.KnownFileCount != 3 || pr.BackupListCount != 1)
                 throw new Exception(string.Format("Failed to get stats from remote backend: {0}, {1}, {2}", pr.KnownFileSize, pr.KnownFileCount, pr.BackupListCount));
 
-            System.Threading.Thread.Sleep(3000);
+            await Task.Delay(3000);
 
             // Force a change in the file metadata            
             File.SetLastWriteTimeUtc(Path.Combine(DATAFOLDER, "a"), DateTime.Now);
 
-            r = c.Backup(new string[] { DATAFOLDER });
+            r = await c.BackupAsync(new string[] { DATAFOLDER });
             Assert.AreEqual(0, r.Errors.Count());
             Assert.AreEqual(0, r.Warnings.Count());
             Assert.AreEqual(0, r.AddedFiles);
@@ -80,7 +81,7 @@ public class Issue4312 : BasicSetupHelper
 
     [Test]
     [Category("Targeted")]
-    public void BackupFromRecreatedDatabaseShouldUpdateMetadata()
+    public async Task BackupFromRecreatedDatabaseShouldUpdateMetadataAsync()
     {
         var testopts = TestOptions;
         // Make sure we detect changes from metadata
@@ -91,7 +92,7 @@ public class Issue4312 : BasicSetupHelper
         File.WriteAllBytes(Path.Combine(DATAFOLDER, "a"), data);
         using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
         {
-            var r = c.Backup(new string[] { DATAFOLDER });
+            var r = await c.BackupAsync(new string[] { DATAFOLDER });
             Assert.AreEqual(0, r.Errors.Count());
             Assert.AreEqual(0, r.Warnings.Count());
             Assert.AreEqual(1, r.AddedFiles);
@@ -106,13 +107,13 @@ public class Issue4312 : BasicSetupHelper
             Thread.Sleep(2000);
 
             // Recreate
-            var rr = c.Repair();
+            var rr = await c.RepairAsync();
             Assert.AreEqual(0, rr.Errors.Count());
             Assert.AreEqual(0, rr.Warnings.Count());
 
             // Because the timestamps are restored with lower precision
             // this will trigger a rescan of the files
-            r = c.Backup(new string[] { DATAFOLDER });
+            r = await c.BackupAsync(new string[] { DATAFOLDER });
             Assert.AreEqual(0, r.Errors.Count());
             Assert.AreEqual(0, r.Warnings.Count());
             Assert.AreEqual(0, r.AddedFiles);
@@ -123,7 +124,7 @@ public class Issue4312 : BasicSetupHelper
                 throw new Exception(string.Format("Looks like the metadata scan failed: {0}, {1}, {2}", pr.KnownFileSize, pr.KnownFileCount, pr.BackupListCount));
 
             // Make a backup again, and ensure that no files are opened
-            r = c.Backup(new string[] { DATAFOLDER });
+            r = await c.BackupAsync(new string[] { DATAFOLDER });
             Assert.AreEqual(0, r.Errors.Count());
             Assert.AreEqual(0, r.Warnings.Count());
             Assert.AreEqual(0, r.AddedFiles);

@@ -26,6 +26,7 @@ using System.Linq;
 using System.Collections.Generic;
 using Microsoft.Data.Sqlite;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using System.Threading.Tasks;
 
 #nullable enable
 
@@ -38,7 +39,7 @@ namespace Duplicati.UnitTest
         /// </summary>
         [Test]
         [Category("Disruption"), Category("Bug")]
-        public void CompactWithControllerSequence_ShouldNotCrash()
+        public async Task CompactWithControllerSequence_ShouldNotCrash_Async()
         {
             var testopts = new Dictionary<string, string>(TestOptions)
             {
@@ -64,9 +65,7 @@ namespace Duplicati.UnitTest
             File.WriteAllBytes(largeFile, largeContent);
 
             using (var c = new Library.Main.Controller(target, testopts, null))
-            {
-                c.Backup(new[] { DATAFOLDER });
-            }
+                await c.BackupAsync(new[] { DATAFOLDER });
 
             File.Delete(largeFile);
 
@@ -75,18 +74,14 @@ namespace Duplicati.UnitTest
             testopts["allow-full-removal"] = "true";
 
             using (var c = new Library.Main.Controller(target, testopts, null))
-            {
-                c.Backup(new[] { DATAFOLDER });
-            }
+                await c.BackupAsync(new[] { DATAFOLDER });
 
             testopts.Remove("no-auto-compact");
             testopts["threshold"] = "5";
 
             // Run compact, it should not crash.
             using (var c = new Library.Main.Controller(target, testopts, null))
-            {
-                c.Compact();
-            }
+                await c.CompactAsync();
         }
 
         /// <summary>
@@ -100,7 +95,7 @@ namespace Duplicati.UnitTest
         /// </summary>
         [Test]
         [Category("Disruption"), Category("Bug")]
-        public void CompactWithControllerSequence_AddBackFile_TriggersNotNullConstraint()
+        public async Task CompactWithControllerSequence_AddBackFile_TriggersNotNullConstraint_Async()
         {
             var testopts = new Dictionary<string, string>(TestOptions)
             {
@@ -128,9 +123,7 @@ namespace Duplicati.UnitTest
 
             // Step 1: Backup with both files
             using (var c = new Library.Main.Controller(target, testopts, null))
-            {
-                c.Backup(new[] { DATAFOLDER });
-            }
+                await c.BackupAsync(new[] { DATAFOLDER });
 
             // Step 2: Remove large file and backup (deletes old version, moves large blocks to DeletedBlock)
             File.Delete(largeFile);
@@ -138,16 +131,12 @@ namespace Duplicati.UnitTest
             testopts["allow-full-removal"] = "true";
 
             using (var c = new Library.Main.Controller(target, testopts, null))
-            {
-                c.Backup(new[] { DATAFOLDER });
-            }
+                await c.BackupAsync(new[] { DATAFOLDER });
 
             // Step 3: Add large file back and backup (moves large blocks back to Block)
             File.WriteAllBytes(largeFile, largeContent);
             using (var c = new Library.Main.Controller(target, testopts, null))
-            {
-                c.Backup(new[] { DATAFOLDER });
-            }
+                await c.BackupAsync(new[] { DATAFOLDER });
 
             // Simulate the faulty database state that the natural flow does not create:
             // blocks exist in both Block and DeletedBlock with matching Hash/Size/VolumeID.
@@ -155,14 +144,14 @@ namespace Duplicati.UnitTest
             // entries from DeletedBlock after moving them back to Block.
             using (var db = new SqliteConnection($"Data Source={DBFILE};Pooling=False"))
             {
-                db.Open();
+                await db.OpenAsync();
                 using (var cmd = db.CreateCommand())
                 {
                     cmd.CommandText = @"
                         INSERT OR IGNORE INTO ""DeletedBlock"" (""Hash"", ""Size"", ""VolumeID"")
                         SELECT ""Hash"", ""Size"", ""VolumeID"" FROM ""Block"";
                     ";
-                    cmd.ExecuteNonQuery();
+                    await cmd.ExecuteNonQueryAsync();
                 }
             }
 
@@ -175,7 +164,7 @@ namespace Duplicati.UnitTest
                 Exception? caughtException = null;
                 try
                 {
-                    c.Compact();
+                    await c.CompactAsync();
                 }
                 catch (Exception ex)
                 {

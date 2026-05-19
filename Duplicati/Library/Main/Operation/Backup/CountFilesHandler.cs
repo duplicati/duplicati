@@ -30,7 +30,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 {
     internal static class CountFilesHandler
     {
-        public static async Task Run(
+        public static async Task RunAsync(
             ISourceProvider sources,
             UsnJournalService journalService,
             BackupResults result,
@@ -45,7 +45,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             using (Logging.Log.StartIsolatingScope(true))
             {
                 Channels channels = new();
-                var enumeratorTask = FileEnumerationProcess.Run(
+                var enumeratorTask = FileEnumerationProcess.RunAsync(
                     channels, sources, journalService, options.FileAttributeFilter, filter,
                     options.SymlinkPolicy, options.HardlinkPolicy, options.DisableBackupExclusionXattr,
                     options.ExcludeEmptyFolders, options.IgnoreFilenames,
@@ -63,7 +63,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                     try
                     {
-                        while (await taskreader.ProgressRendevouz() && !token.IsCancellationRequested)
+                        while (await taskreader.ProgressRendevouzAsync() && !token.IsCancellationRequested)
                         {
                             var entry = await self.Input.ReadAsync();
                             if (entry.IsFolder)

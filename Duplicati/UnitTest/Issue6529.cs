@@ -25,6 +25,7 @@ using System.IO;
 using System.Linq;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using System.Threading.Tasks;
 
 namespace Duplicati.UnitTest
 {
@@ -37,7 +38,7 @@ namespace Duplicati.UnitTest
     {
         [Test]
         [Category("Targeted")]
-        public void TestChangedFilesOptionDoesNotCauseFilesetMismatch()
+        public async Task TestChangedFilesOptionDoesNotCauseFilesetMismatchAsync()
         {
             // Setup: Create test files
             var testFile1 = Path.Combine(DATAFOLDER, "file1.txt");
@@ -51,7 +52,7 @@ namespace Duplicati.UnitTest
             // Step 1: Do initial backup without --changed-files
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, TestOptions, null))
             {
-                var backupResults = c.Backup([DATAFOLDER]);
+                var backupResults = await c.BackupAsync([DATAFOLDER]);
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
             }
@@ -67,7 +68,7 @@ namespace Duplicati.UnitTest
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, changedFilesOptions, null))
             {
-                var backupResults = c.Backup([DATAFOLDER]);
+                var backupResults = await c.BackupAsync([DATAFOLDER]);
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
             }
@@ -77,7 +78,7 @@ namespace Duplicati.UnitTest
             {
                 // This is where the bug manifests - the backup should succeed
                 // but currently fails with "Unexpected difference in fileset version"
-                var backupResults = c.Backup([DATAFOLDER]);
+                var backupResults = await c.BackupAsync([DATAFOLDER]);
                 Assert.AreEqual(0, backupResults.Errors.Count(),
                     "Backup after --changed-files should not cause fileset mismatch errors");
                 Assert.AreEqual(0, backupResults.Warnings.Count());
@@ -86,14 +87,14 @@ namespace Duplicati.UnitTest
             // Step 5: Verify data integrity by doing a test
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, TestOptions, null))
             {
-                var testResults = c.Test();
+                var testResults = await c.TestAsync();
                 Assert.AreEqual(0, testResults.Errors.Count());
             }
         }
 
         [Test]
         [Category("Targeted")]
-        public void TestDeletedFilesOptionDoesNotCauseFilesetMismatch()
+        public async Task TestDeletedFilesOptionDoesNotCauseFilesetMismatchAsync()
         {
             // Setup: Create test files
             var testFile1 = Path.Combine(DATAFOLDER, "file1.txt");
@@ -107,7 +108,7 @@ namespace Duplicati.UnitTest
             // Step 1: Do initial backup
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, TestOptions, null))
             {
-                var backupResults = c.Backup([DATAFOLDER]);
+                var backupResults = await c.BackupAsync([DATAFOLDER]);
                 Assert.AreEqual(0, backupResults.Errors.Count());
             }
 
@@ -123,14 +124,14 @@ namespace Duplicati.UnitTest
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, changedFilesOptions, null))
             {
-                var backupResults = c.Backup([DATAFOLDER]);
+                var backupResults = await c.BackupAsync([DATAFOLDER]);
                 Assert.AreEqual(0, backupResults.Errors.Count());
             }
 
             // Step 4: Do another backup (this should NOT fail)
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, TestOptions, null))
             {
-                var backupResults = c.Backup([DATAFOLDER]);
+                var backupResults = await c.BackupAsync([DATAFOLDER]);
                 Assert.AreEqual(0, backupResults.Errors.Count(),
                     "Backup after --deleted-files should not cause fileset mismatch errors");
             }
@@ -138,7 +139,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Targeted")]
-        public void TestMultipleChangedFilesBackupsInSequence()
+        public async Task TestMultipleChangedFilesBackupsInSequenceAsync()
         {
             // Setup: Create test files
             var testFile1 = Path.Combine(DATAFOLDER, "file1.txt");
@@ -150,7 +151,7 @@ namespace Duplicati.UnitTest
             // Step 1: Initial backup
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, TestOptions, null))
             {
-                c.Backup([DATAFOLDER]);
+                await c.BackupAsync([DATAFOLDER]);
             }
 
             // Step 2-4: Multiple sequential backups with --changed-files
@@ -166,7 +167,7 @@ namespace Duplicati.UnitTest
 
                 using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, changedFilesOptions, null))
                 {
-                    var backupResults = c.Backup([DATAFOLDER]);
+                    var backupResults = await c.BackupAsync([DATAFOLDER]);
                     Assert.AreEqual(0, backupResults.Errors.Count(),
                         $"Backup iteration {i} with --changed-files should succeed");
                 }
@@ -175,7 +176,7 @@ namespace Duplicati.UnitTest
             // Step 5: Final backup without --changed-files
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, TestOptions, null))
             {
-                var backupResults = c.Backup([DATAFOLDER]);
+                var backupResults = await c.BackupAsync([DATAFOLDER]);
                 Assert.AreEqual(0, backupResults.Errors.Count(),
                     "Final backup should succeed without fileset mismatch");
             }

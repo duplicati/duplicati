@@ -24,6 +24,7 @@ using System.IO;
 using Duplicati.Library.Main;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.SQLiteHelper;
+using System.Threading.Tasks;
 using NUnit.Framework;
 
 namespace Duplicati.UnitTest;
@@ -44,7 +45,7 @@ public class MetadataContentInDatabaseTests : BasicSetupHelper
     }
 
     [Test]
-    public void Backup_StoresMetadataContent_WhenOptionEnabled()
+    public async Task Backup_StoresMetadataContent_WhenOptionEnabledAsync()
     {
         var options = new Dictionary<string, string>(this.TestOptions)
         {
@@ -56,13 +57,13 @@ public class MetadataContentInDatabaseTests : BasicSetupHelper
         File.WriteAllText(Path.Combine(this.DATAFOLDER, "folder", "file.txt"), "data");
 
         using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
-            TestUtils.AssertResults(c.Backup([this.DATAFOLDER]));
+            TestUtils.AssertResults(await c.BackupAsync([this.DATAFOLDER]));
 
         Assert.That(CountMetadatasetsWithContent(options["dbpath"]), Is.GreaterThan(0));
     }
 
     [Test]
-    public void Recreate_StoresMetadataContent_WhenOptionEnabled()
+    public async Task Recreate_StoresMetadataContent_WhenOptionEnabledAsync()
     {
         var options = new Dictionary<string, string>(this.TestOptions)
         {
@@ -74,13 +75,13 @@ public class MetadataContentInDatabaseTests : BasicSetupHelper
         File.WriteAllText(Path.Combine(this.DATAFOLDER, "folder", "file.txt"), "data");
 
         using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
-            TestUtils.AssertResults(c.Backup([this.DATAFOLDER]));
+            TestUtils.AssertResults(await c.BackupAsync([this.DATAFOLDER]));
 
         // Force a recreate by deleting the local database.
         File.Delete(options["dbpath"]);
 
         using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
-            TestUtils.AssertResults(c.Repair());
+            TestUtils.AssertResults(await c.RepairAsync());
 
         Assert.That(CountMetadatasetsWithContent(options["dbpath"]), Is.GreaterThan(0));
     }

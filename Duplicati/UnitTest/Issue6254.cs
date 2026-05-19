@@ -26,6 +26,7 @@ using System;
 using NUnit.Framework.Internal;
 using System.IO.Compression;
 using Duplicati.Library.DynamicLoader;
+using System.Threading.Tasks;
 
 namespace Duplicati.UnitTest
 {
@@ -33,7 +34,7 @@ namespace Duplicati.UnitTest
     {
         [Test]
         [Category("Targeted")]
-        public void VerifyCompactKeepsIndexFileBlocklists()
+        public async Task VerifyCompactKeepsIndexFileBlocklistsAsync()
         {
             var testopts = TestOptions.Expand(new
             {
@@ -59,7 +60,7 @@ namespace Duplicati.UnitTest
 
             // Make a backup
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Backup(new string[] { DATAFOLDER }));
+                TestUtils.AssertResults(await c.BackupAsync(new string[] { DATAFOLDER }));
 
             // Add some second files
             for (var i = 0; i < 10; i++)
@@ -67,7 +68,7 @@ namespace Duplicati.UnitTest
 
             // Make a backup
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Backup(new string[] { DATAFOLDER }));
+                TestUtils.AssertResults(await c.BackupAsync(new string[] { DATAFOLDER }));
 
             // Delete the first files
             for (var i = 0; i < 8; i++)
@@ -77,11 +78,11 @@ namespace Duplicati.UnitTest
 
             // Make a backup
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Backup(new string[] { DATAFOLDER }));
+                TestUtils.AssertResults(await c.BackupAsync(new string[] { DATAFOLDER }));
 
             // Now run compact
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Compact());
+                TestUtils.AssertResults(await c.CompactAsync());
 
             // Find the new index files
             var newIndexFiles = Directory.GetFiles(TARGETFOLDER, "*.dindex.*", SearchOption.TopDirectoryOnly)
@@ -115,7 +116,7 @@ namespace Duplicati.UnitTest
             };
 
             using (var c = new Library.Main.Controller(new DeterministicErrorBackend().ProtocolKey + "://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Repair());
+                TestUtils.AssertResults(await c.RepairAsync());
         }
     }
 }

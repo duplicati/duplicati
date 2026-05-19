@@ -120,7 +120,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="toDelete">The fileset entries to delete.</param>
         /// <param name="token"> A cancellation token to cancel the operation.</param>
         /// <returns>An async enumerable of key-value pairs, where the key is the fileset name and the value is the size of the fileset.</returns>
-        public async IAsyncEnumerable<KeyValuePair<string, long>> DropFilesetsFromTable(DateTime[] toDelete, [EnumeratorCancellation] CancellationToken token)
+        public async IAsyncEnumerable<KeyValuePair<string, long>> DropFilesetsFromTableAsync(DateTime[] toDelete, [EnumeratorCancellation] CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand(m_rtr);
             var deleted = 0;
@@ -300,7 +300,7 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         /// <param name="token"> A cancellation token to cancel the operation.</param>
         /// <returns>An async enumerable of IListResultFileset.</returns>
-        internal async IAsyncEnumerable<IListResultFileset> FilesetsWithBackupVersion([EnumeratorCancellation] CancellationToken token)
+        internal async IAsyncEnumerable<IListResultFileset> FilesetsWithBackupVersionAsync([EnumeratorCancellation] CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand(m_rtr);
             // TODO check if this is still the case? (shouldn't be with new sqlite driver):
@@ -347,9 +347,9 @@ namespace Duplicati.Library.Main.Database
         /// Checks whether any non-fileset volumes (block or index) referenced by the given fileset have an active lock.
         /// The lock expiration is stored as epoch seconds in the database.
         /// </summary>
-        internal async Task<bool> HasAnyLockedFiles(long filesetId, DateTime nowUtc, CancellationToken token)
+        internal async Task<bool> HasAnyLockedFilesAsync(long filesetId, DateTime nowUtc, CancellationToken token)
         {
-            await foreach (var (_, lockUntil) in GetRemoteVolumesDependingOnFilesets([filesetId], token).ConfigureAwait(false))
+            await foreach (var (_, lockUntil) in GetRemoteVolumesDependingOnFilesetsAsync([filesetId], token).ConfigureAwait(false))
                 if (lockUntil.HasValue && lockUntil.Value.ToUniversalTime() > nowUtc)
                     return true;
 
@@ -405,7 +405,7 @@ namespace Duplicati.Library.Main.Database
         /// the size of the data stored in the volume, the size of the data that is no longer needed in the volume,
         /// and the size of the data that is compressed in the volume.
         /// </returns>
-        private async IAsyncEnumerable<VolumeUsage> GetWastedSpaceReport([EnumeratorCancellation] CancellationToken token)
+        private async IAsyncEnumerable<VolumeUsage> GetWastedSpaceReportAsync([EnumeratorCancellation] CancellationToken token)
         {
             var tmptablename = $"UsageReport-{Library.Utility.Utility.GetHexGuid()}";
 
@@ -764,14 +764,14 @@ namespace Duplicati.Library.Main.Database
         /// <param name="maxsmallfilecount">The maximum number of small files to trigger compaction.</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>A task that when awaited contains an instance of <see cref="ICompactReport"/>.</returns>
-        public async Task<ICompactReport> GetCompactReport(long volsize, long wastethreshold, long smallfilesize, long maxsmallfilecount, CancellationToken token)
+        public async Task<ICompactReport> GetCompactReportAsync(long volsize, long wastethreshold, long smallfilesize, long maxsmallfilecount, CancellationToken token)
         {
             return new CompactReport(
                 volsize,
                 wastethreshold,
                 smallfilesize,
                 maxsmallfilecount,
-                await GetWastedSpaceReport(token)
+                await GetWastedSpaceReportAsync(token)
                     .ToListAsync(cancellationToken: token)
                     .ConfigureAwait(false)
             );
@@ -791,7 +791,7 @@ namespace Duplicati.Library.Main.Database
             /// <param name="volumeId">The volume ID to check, or -1 to check all volumes.</param>
             /// <param name="token">A cancellation token to cancel the operation.</param>
             /// <returns>A task that when awaited returns true if the block is in use, false otherwise.</returns>
-            Task<bool> UseBlock(string hash, long size, long volumeId, CancellationToken token);
+            Task<bool> UseBlockAsync(string hash, long size, long volumeId, CancellationToken token);
         }
 
         /// <summary>
@@ -844,7 +844,7 @@ namespace Duplicati.Library.Main.Database
             }
 
             /// <inheritdoc />
-            public async Task<bool> UseBlock(string hash, long size, long volumeId, CancellationToken token)
+            public async Task<bool> UseBlockAsync(string hash, long size, long volumeId, CancellationToken token)
             {
                 var r = await m_command
                     .SetTransaction(m_db.Transaction)
@@ -880,7 +880,7 @@ namespace Duplicati.Library.Main.Database
         /// Builds a lookup table to enable faster response to block queries.
         /// </summary>
         /// <param name="token">A cancellation token to cancel the operation.</param>
-        public async Task<IBlockQuery> CreateBlockQueryHelper(CancellationToken token)
+        public async Task<IBlockQuery> CreateBlockQueryHelperAsync(CancellationToken token)
         {
             return await BlockQuery.CreateAsync(this, token).ConfigureAwait(false);
         }
@@ -893,7 +893,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="volumeID">The new volume ID.</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>A task that when completed indicates the block has been registered.</returns>
-        public async Task RegisterDuplicatedBlock(string hash, long size, long volumeID, CancellationToken token)
+        public async Task RegisterDuplicatedBlockAsync(string hash, long size, long volumeID, CancellationToken token)
         {
             // Using INSERT OR IGNORE to avoid duplicate entries, result may be 1 or 0
             await m_registerDuplicateBlockCommand
@@ -912,9 +912,9 @@ namespace Duplicati.Library.Main.Database
         /// <param name="volumeIdsToBeRemoved">The volume IDs that will be removed.</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>A task that when completed indicates the operation has finished.</returns>
-        public async Task PrepareForDelete(string filename, IEnumerable<long> volumeIdsToBeRemoved, CancellationToken token)
+        public async Task PrepareForDeleteAsync(string filename, IEnumerable<long> volumeIdsToBeRemoved, CancellationToken token)
         {
-            var deletedVolume = await GetRemoteVolume(filename, token)
+            var deletedVolume = await GetRemoteVolumeAsync(filename, token)
                 .ConfigureAwait(false);
             if (deletedVolume.Type != RemoteVolumeType.Blocks)
                 return;
@@ -1043,7 +1043,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="deleteableVolumes">Block volumes slated for deletion.</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>An asynchronous enumerable of <see cref="IRemoteVolume"/> that represents the order in which volumes should be deleted.</returns>
-        public async IAsyncEnumerable<IRemoteVolume> ReOrderDeleteableVolumes(IEnumerable<IRemoteVolume> deleteableVolumes, [EnumeratorCancellation] CancellationToken token)
+        public async IAsyncEnumerable<IRemoteVolume> ReOrderDeleteableVolumesAsync(IEnumerable<IRemoteVolume> deleteableVolumes, [EnumeratorCancellation] CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand(m_rtr);
             // Although the generated index volumes are always in pairs,

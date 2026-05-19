@@ -32,5 +32,5 @@ public interface IWebsocketAuthenticator
     /// </summary>
     /// <param name="newConnection">The new WebSocket connection to add.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    Task AddConnection(WebSocket newConnection);
+    Task AddConnectionAsync(WebSocket newConnection);
 }

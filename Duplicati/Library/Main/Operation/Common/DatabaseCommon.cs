@@ -51,18 +51,18 @@ namespace Duplicati.Library.Main.Operation.Common
 
         public Task<long> RegisterRemoteVolumeAsync(string name, RemoteVolumeType type, RemoteVolumeState state, CancellationToken cancellationToken)
         {
-            return RunOnMain(async () =>
+            return RunOnMainAsync(async () =>
                 await m_db
-                    .RegisterRemoteVolume(name, type, state, cancellationToken)
+                    .RegisterRemoteVolumeAsync(name, type, state, cancellationToken)
                     .ConfigureAwait(false)
             );
         }
 
         public Task UpdateRemoteVolumeAsync(string name, RemoteVolumeState state, long size, string hash, bool suppressCleanup, TimeSpan deleteGraceTime, bool? setArchived, CancellationToken cancellationToken)
         {
-            return RunOnMain(async () =>
+            return RunOnMainAsync(async () =>
                 await m_db
-                    .UpdateRemoteVolume(name, state, size, hash, suppressCleanup, deleteGraceTime, setArchived, cancellationToken)
+                    .UpdateRemoteVolumeAsync(name, state, size, hash, suppressCleanup, deleteGraceTime, setArchived, cancellationToken)
                     .ConfigureAwait(false)
             );
         }
@@ -74,11 +74,11 @@ namespace Duplicati.Library.Main.Operation.Common
         }
 
         private Task FlushPendingBackendMessagesAsync(IBackendManager backendManager, CancellationToken cancellationToken)
-            => RunOnMain(async () => await backendManager.FlushPendingMessagesAsync(m_db, cancellationToken).ConfigureAwait(false));
+            => RunOnMainAsync(async () => await backendManager.FlushPendingMessagesAsync(m_db, cancellationToken).ConfigureAwait(false));
 
         public Task CommitTransactionAsync(string message, bool restart, CancellationToken cancellationToken)
         {
-            return RunOnMain(async () =>
+            return RunOnMainAsync(async () =>
             {
                 if (m_options.Dryrun)
                 {
@@ -98,7 +98,7 @@ namespace Duplicati.Library.Main.Operation.Common
 
         public Task RollbackTransactionAsync(CancellationToken cancellationToken)
         {
-            return RunOnMain(async () =>
+            return RunOnMainAsync(async () =>
                 await m_db.Transaction
                     .RollBackAsync(cancellationToken)
                     .ConfigureAwait(false)
@@ -107,18 +107,18 @@ namespace Duplicati.Library.Main.Operation.Common
 
         public Task RenameRemoteFileAsync(string oldname, string newname, CancellationToken cancellationToken)
         {
-            return RunOnMain(async () =>
+            return RunOnMainAsync(async () =>
                 await m_db
-                    .RenameRemoteFile(oldname, newname, cancellationToken)
+                    .RenameRemoteFileAsync(oldname, newname, cancellationToken)
                     .ConfigureAwait(false)
             );
         }
 
         public Task LogRemoteOperationAsync(string operation, string path, string data, CancellationToken cancellationToken)
         {
-            return RunOnMain(async () =>
+            return RunOnMainAsync(async () =>
                 await m_db
-                    .LogRemoteOperation(operation, path, data, cancellationToken)
+                    .LogRemoteOperationAsync(operation, path, data, cancellationToken)
                     .ConfigureAwait(false)
             );
         }
@@ -127,9 +127,9 @@ namespace Duplicati.Library.Main.Operation.Common
         {
             // TODO: Figure out how to return the enumerable, while keeping the lock
             // and not creating the entire result in memory
-            return RunOnMain(async () =>
+            return RunOnMainAsync(async () =>
                 await m_db
-                    .GetBlocks(volumeid, cancellationToken)
+                    .GetBlocksAsync(volumeid, cancellationToken)
                     .ToArrayAsync(cancellationToken: cancellationToken)
                     .ConfigureAwait(false)
             );
@@ -137,9 +137,9 @@ namespace Duplicati.Library.Main.Operation.Common
 
         public Task<RemoteVolumeEntry> GetVolumeInfoAsync(string remotename, CancellationToken cancellationToken)
         {
-            return RunOnMain(async () =>
+            return RunOnMainAsync(async () =>
                 await m_db
-                    .GetRemoteVolume(remotename, cancellationToken)
+                    .GetRemoteVolumeAsync(remotename, cancellationToken)
                     .ConfigureAwait(false)
             );
         }
@@ -148,9 +148,9 @@ namespace Duplicati.Library.Main.Operation.Common
         {
             // TODO: Figure out how to return the enumerable, while keeping the lock
             // and not creating the entire result in memory
-            return RunOnMain(async () =>
+            return RunOnMainAsync(async () =>
                 await m_db
-                    .GetBlocklists(volumeid, blocksize, hashsize, cancellationToken)
+                    .GetBlocklistsAsync(volumeid, blocksize, hashsize, cancellationToken)
                     .ToArrayAsync(cancellationToken: cancellationToken)
                     .ConfigureAwait(false)
             );
@@ -158,18 +158,18 @@ namespace Duplicati.Library.Main.Operation.Common
 
         public Task<long> GetRemoteVolumeIDAsync(string remotename, CancellationToken cancellationToken)
         {
-            return RunOnMain(async () =>
+            return RunOnMainAsync(async () =>
                 await m_db
-                    .GetRemoteVolumeID(remotename, cancellationToken)
+                    .GetRemoteVolumeIDAsync(remotename, cancellationToken)
                     .ConfigureAwait(false)
             );
         }
 
         public Task AddIndexBlockLinkAsync(long indexVolumeID, long blockVolumeID, CancellationToken cancellationToken)
         {
-            return RunOnMain(async () =>
+            return RunOnMainAsync(async () =>
                 await m_db
-                    .AddIndexBlockLink(indexVolumeID, blockVolumeID, cancellationToken)
+                    .AddIndexBlockLinkAsync(indexVolumeID, blockVolumeID, cancellationToken)
                     .ConfigureAwait(false)
             );
         }

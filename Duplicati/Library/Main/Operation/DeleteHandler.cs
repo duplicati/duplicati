@@ -50,10 +50,10 @@ namespace Duplicati.Library.Main.Operation
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseFileMissing");
 
             await using var db = await LocalDeleteDatabase.CreateAsync(m_options.Dbpath, "Delete", null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
-            await Utility.UpdateOptionsFromDb(db, m_options, m_result.TaskControl.ProgressToken)
+            await Utility.UpdateOptionsFromDbAsync(db, m_options, m_result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);
 
-            await Utility.VerifyOptionsAndUpdateDatabase(db, m_options, m_result.TaskControl.ProgressToken)
+            await Utility.VerifyOptionsAndUpdateDatabaseAsync(db, m_options, m_result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);
 
             await DoRunAsync(db, false, false, backendManager).ConfigureAwait(false);
@@ -67,12 +67,12 @@ namespace Duplicati.Library.Main.Operation
         public async Task DoRunAsync(LocalDeleteDatabase db, bool hasVerifiedBackend, bool forceCompact, IBackendManager backendManager)
         {
             if (!hasVerifiedBackend)
-                await FilelistProcessor.VerifyRemoteList(backendManager, m_options, db, m_result.BackendWriter, latestVolumesOnly: true, verifyMode: FilelistProcessor.VerifyMode.VerifyStrict, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+                await FilelistProcessor.VerifyRemoteListAsync(backendManager, m_options, db, m_result.BackendWriter, latestVolumesOnly: true, verifyMode: FilelistProcessor.VerifyMode.VerifyStrict, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
 
             // We collapse the async enumerablo into a array to avoid multiple
             // enumerations (and thus multiple database queries)
             var filesets = await db
-                .FilesetsWithBackupVersion(m_result.TaskControl.ProgressToken)
+                .FilesetsWithBackupVersionAsync(m_result.TaskControl.ProgressToken)
                 .ToArrayAsync(cancellationToken: m_result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);
 
@@ -115,7 +115,7 @@ namespace Duplicati.Library.Main.Operation
                     }
 
                     // Skip deleting a fileset if the fileset volume itself is currently locked.
-                    var filesetVolume = await db.GetRemoteVolumeFromFilesetID(filesetId, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+                    var filesetVolume = await db.GetRemoteVolumeFromFilesetIDAsync(filesetId, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                     if (HasActiveLock(filesetVolume.LockExpirationTime))
                     {
                         Logging.Log.WriteWarningMessage(
@@ -145,7 +145,7 @@ namespace Duplicati.Library.Main.Operation
                 Logging.Log.WriteInformationMessage(LOGTAG, "DeleteRemoteFileset", "Deleting {0} remote fileset(s) ...", versionsToDelete.Count);
 
                 var lst = await db
-                    .DropFilesetsFromTable(
+                    .DropFilesetsFromTableAsync(
                         versionsToDelete
                             .Select(x => x.Time)
                             .ToArray(),
@@ -156,7 +156,7 @@ namespace Duplicati.Library.Main.Operation
 
                 foreach (var f in lst)
                     await db
-                        .UpdateRemoteVolume(f.Key, RemoteVolumeState.Deleting, f.Value, null, m_result.TaskControl.ProgressToken)
+                        .UpdateRemoteVolumeAsync(f.Key, RemoteVolumeState.Deleting, f.Value, null, m_result.TaskControl.ProgressToken)
                         .ConfigureAwait(false);
 
                 if (!m_options.Dryrun)
@@ -166,7 +166,7 @@ namespace Duplicati.Library.Main.Operation
 
                 foreach (var f in lst)
                 {
-                    if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
+                    if (!await m_result.TaskControl.ProgressRendevouzAsync().ConfigureAwait(false))
                     {
                         await backendManager.WaitForEmptyAsync(db, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                         return;

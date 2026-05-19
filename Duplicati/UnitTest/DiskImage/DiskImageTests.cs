@@ -122,75 +122,75 @@ public class DiskImageTests : BasicSetupHelper
     #region GPT Single Partition
 
     [Test, Category("DiskImage")]
-    public Task Test_GPT_FAT32() =>
-        FullRoundTrip((int)(50 * MiB), PartitionTableType.GPT, [(FileSystemType.FAT32, 0)]);
+    public Task Test_GPT_FAT32_Async() =>
+        FullRoundTripAsync((int)(50 * MiB), PartitionTableType.GPT, [(FileSystemType.FAT32, 0)]);
 
     [Test, Category("DiskImage")]
-    public Task Test_GPT_NTFS()
+    public Task Test_GPT_NTFS_Async()
     {
         if (!OperatingSystem.IsWindows())
             Assert.Ignore("Test_GPT_NTFS is only supported on Windows.");
-        return FullRoundTrip((int)(50 * MiB), PartitionTableType.GPT, [(FileSystemType.NTFS, 0)]);
+        return FullRoundTripAsync((int)(50 * MiB), PartitionTableType.GPT, [(FileSystemType.NTFS, 0)]);
     }
 
     [Test, Category("DiskImage")]
-    public Task Test_GPT_APFS()
+    public Task Test_GPT_APFS_Async()
     {
         if (!OperatingSystem.IsMacOS())
             Assert.Ignore("APFS is only supported on macOS.");
-        return FullRoundTrip((int)(50 * MiB), PartitionTableType.GPT, [(FileSystemType.APFS, 0)]);
+        return FullRoundTripAsync((int)(50 * MiB), PartitionTableType.GPT, [(FileSystemType.APFS, 0)]);
     }
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_GPT_HFSPlus()
+    public Task Test_GPT_HFSPlus_Async()
     {
         if (!OperatingSystem.IsMacOS())
             Assert.Ignore("HFSPlus is only supported on macOS.");
-        return FullRoundTrip((int)(50 * MiB), PartitionTableType.GPT, [(FileSystemType.HFSPlus, 0)]);
+        return FullRoundTripAsync((int)(50 * MiB), PartitionTableType.GPT, [(FileSystemType.HFSPlus, 0)]);
     }
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_GPT_ExFAT() =>
-        FullRoundTrip((int)(50 * MiB), PartitionTableType.GPT, [(FileSystemType.ExFAT, 0)]);
+    public Task Test_GPT_ExFAT_Async() =>
+        FullRoundTripAsync((int)(50 * MiB), PartitionTableType.GPT, [(FileSystemType.ExFAT, 0)]);
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_GPT_Ext2()
+    public Task Test_GPT_Ext2_Async()
     {
         if (!OperatingSystem.IsLinux())
             Assert.Ignore("Ext2 is only supported on Linux.");
-        return FullRoundTrip((int)(50 * MiB), PartitionTableType.GPT, [(FileSystemType.Ext2, 0)]);
+        return FullRoundTripAsync((int)(50 * MiB), PartitionTableType.GPT, [(FileSystemType.Ext2, 0)]);
     }
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_GPT_Ext3()
+    public Task Test_GPT_Ext3_Async()
     {
         if (!OperatingSystem.IsLinux())
             Assert.Ignore("Ext3 is only supported on Linux.");
-        return FullRoundTrip((int)(50 * MiB), PartitionTableType.GPT, [(FileSystemType.Ext3, 0)]);
+        return FullRoundTripAsync((int)(50 * MiB), PartitionTableType.GPT, [(FileSystemType.Ext3, 0)]);
     }
 
     [Test, Category("DiskImage")]
-    public Task Test_GPT_Ext4()
+    public Task Test_GPT_Ext4_Async()
     {
         if (!OperatingSystem.IsLinux())
             Assert.Ignore("Ext4 is only supported on Linux.");
-        return FullRoundTrip((int)(50 * MiB), PartitionTableType.GPT, [(FileSystemType.Ext4, 0)]);
+        return FullRoundTripAsync((int)(50 * MiB), PartitionTableType.GPT, [(FileSystemType.Ext4, 0)]);
     }
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_GPT_XFS()
+    public Task Test_GPT_XFS_Async()
     {
         if (!OperatingSystem.IsLinux())
             Assert.Ignore("XFS is only supported on Linux.");
-        return FullRoundTrip((int)(310 * MiB), PartitionTableType.GPT, [(FileSystemType.XFS, 0)]);
+        return FullRoundTripAsync((int)(310 * MiB), PartitionTableType.GPT, [(FileSystemType.XFS, 0)]);
     }
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_GPT_Btrfs()
+    public Task Test_GPT_Btrfs_Async()
     {
         if (!OperatingSystem.IsLinux())
             Assert.Ignore("Btrfs is only supported on Linux.");
-        return FullRoundTrip((int)(110 * MiB), PartitionTableType.GPT, [(FileSystemType.Btrfs, 0)]);
+        return FullRoundTripAsync((int)(110 * MiB), PartitionTableType.GPT, [(FileSystemType.Btrfs, 0)]);
     }
 
     #endregion
@@ -200,67 +200,67 @@ public class DiskImageTests : BasicSetupHelper
     // APFS is only supported on GPT partition tables.
 
     [Test, Category("DiskImage")]
-    public Task Test_MBR_FAT32() =>
-        FullRoundTrip((int)(50 * MiB), PartitionTableType.MBR, [(FileSystemType.FAT32, 0)]);
+    public Task Test_MBR_FAT32_Async() =>
+        FullRoundTripAsync((int)(50 * MiB), PartitionTableType.MBR, [(FileSystemType.FAT32, 0)]);
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_MBR_HFSPlus()
+    public Task Test_MBR_HFSPlus_Async()
     {
         if (!OperatingSystem.IsMacOS())
             Assert.Ignore("HFSPlus is only supported on macOS.");
-        return FullRoundTrip((int)(50 * MiB), PartitionTableType.MBR, [(FileSystemType.HFSPlus, 0)]);
+        return FullRoundTripAsync((int)(50 * MiB), PartitionTableType.MBR, [(FileSystemType.HFSPlus, 0)]);
     }
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_MBR_ExFAT() =>
-        FullRoundTrip((int)(50 * MiB), PartitionTableType.MBR, [(FileSystemType.ExFAT, 0)]);
+    public Task Test_MBR_ExFAT_Async() =>
+        FullRoundTripAsync((int)(50 * MiB), PartitionTableType.MBR, [(FileSystemType.ExFAT, 0)]);
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_MBR_NTFS()
+    public Task Test_MBR_NTFS_Async()
     {
         if (!OperatingSystem.IsWindows())
             Assert.Ignore("Test_MBR_NTFS is only supported on Windows.");
-        return FullRoundTrip((int)(50 * MiB), PartitionTableType.MBR, [(FileSystemType.NTFS, 0)]);
+        return FullRoundTripAsync((int)(50 * MiB), PartitionTableType.MBR, [(FileSystemType.NTFS, 0)]);
     }
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_MBR_Ext2()
+    public Task Test_MBR_Ext2_Async()
     {
         if (!OperatingSystem.IsLinux())
             Assert.Ignore("Ext2 is only supported on Linux.");
-        return FullRoundTrip((int)(50 * MiB), PartitionTableType.MBR, [(FileSystemType.Ext2, 0)]);
+        return FullRoundTripAsync((int)(50 * MiB), PartitionTableType.MBR, [(FileSystemType.Ext2, 0)]);
     }
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_MBR_Ext3()
+    public Task Test_MBR_Ext3_Async()
     {
         if (!OperatingSystem.IsLinux())
             Assert.Ignore("Ext3 is only supported on Linux.");
-        return FullRoundTrip((int)(50 * MiB), PartitionTableType.MBR, [(FileSystemType.Ext3, 0)]);
+        return FullRoundTripAsync((int)(50 * MiB), PartitionTableType.MBR, [(FileSystemType.Ext3, 0)]);
     }
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_MBR_Ext4()
+    public Task Test_MBR_Ext4_Async()
     {
         if (!OperatingSystem.IsLinux())
             Assert.Ignore("Ext4 is only supported on Linux.");
-        return FullRoundTrip((int)(50 * MiB), PartitionTableType.MBR, [(FileSystemType.Ext4, 0)]);
+        return FullRoundTripAsync((int)(50 * MiB), PartitionTableType.MBR, [(FileSystemType.Ext4, 0)]);
     }
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_MBR_XFS()
+    public Task Test_MBR_XFS_Async()
     {
         if (!OperatingSystem.IsLinux())
             Assert.Ignore("XFS is only supported on Linux.");
-        return FullRoundTrip((int)(310 * MiB), PartitionTableType.MBR, [(FileSystemType.XFS, 0)]);
+        return FullRoundTripAsync((int)(310 * MiB), PartitionTableType.MBR, [(FileSystemType.XFS, 0)]);
     }
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_MBR_Btrfs()
+    public Task Test_MBR_Btrfs_Async()
     {
         if (!OperatingSystem.IsLinux())
             Assert.Ignore("Btrfs is only supported on Linux.");
-        return FullRoundTrip((int)(110 * MiB), PartitionTableType.MBR, [(FileSystemType.Btrfs, 0)]);
+        return FullRoundTripAsync((int)(110 * MiB), PartitionTableType.MBR, [(FileSystemType.Btrfs, 0)]);
     }
 
     #endregion
@@ -268,154 +268,154 @@ public class DiskImageTests : BasicSetupHelper
     #region Unknown Partition Table
 
     [Test, Category("DiskImage")]
-    public Task Test_Unknown_NoPartitions() =>
-        FullRoundTrip((int)(50 * MiB), PartitionTableType.Unknown, []);
+    public Task Test_Unknown_NoPartitions_Async() =>
+        FullRoundTripAsync((int)(50 * MiB), PartitionTableType.Unknown, []);
 
     #endregion
 
     #region GPT Two Partitions
 
     [Test, Category("DiskImage")]
-    public Task Test_GPT_FAT32_FAT32() =>
-        FullRoundTrip((int)(100 * MiB), PartitionTableType.GPT, [
+    public Task Test_GPT_FAT32_FAT32_Async() =>
+        FullRoundTripAsync((int)(100 * MiB), PartitionTableType.GPT, [
             (FileSystemType.FAT32, 50 * MiB),
             (FileSystemType.FAT32, 0)
         ]);
 
     [Test, Category("DiskImage")]
-    public Task Test_GPT_APFS_APFS()
+    public Task Test_GPT_APFS_APFS_Async()
     {
         if (!OperatingSystem.IsMacOS())
             Assert.Ignore("APFS is only supported on macOS.");
-        return FullRoundTrip((int)(100 * MiB), PartitionTableType.GPT, [
+        return FullRoundTripAsync((int)(100 * MiB), PartitionTableType.GPT, [
             (FileSystemType.APFS, 50 * MiB),
             (FileSystemType.APFS, 0)
         ]);
     }
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_GPT_HFSPlus_HFSPlus()
+    public Task Test_GPT_HFSPlus_HFSPlus_Async()
     {
         if (!OperatingSystem.IsMacOS())
             Assert.Ignore("HFSPlus is only supported on macOS.");
-        return FullRoundTrip((int)(100 * MiB), PartitionTableType.GPT, [
+        return FullRoundTripAsync((int)(100 * MiB), PartitionTableType.GPT, [
             (FileSystemType.HFSPlus, 50 * MiB),
             (FileSystemType.HFSPlus, 0)
         ]);
     }
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_GPT_APFS_HFSPlus()
+    public Task Test_GPT_APFS_HFSPlus_Async()
     {
         if (!OperatingSystem.IsMacOS())
             Assert.Ignore("APFS and HFSPlus are only supported on macOS.");
-        return FullRoundTrip((int)(100 * MiB), PartitionTableType.GPT, [
+        return FullRoundTripAsync((int)(100 * MiB), PartitionTableType.GPT, [
             (FileSystemType.APFS, 50 * MiB),
             (FileSystemType.HFSPlus, 0)
         ]);
     }
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_GPT_FAT32_APFS()
+    public Task Test_GPT_FAT32_APFS_Async()
     {
         if (!OperatingSystem.IsMacOS())
             Assert.Ignore("APFS is only supported on macOS.");
-        return FullRoundTrip((int)(100 * MiB), PartitionTableType.GPT, [
+        return FullRoundTripAsync((int)(100 * MiB), PartitionTableType.GPT, [
             (FileSystemType.FAT32, 50 * MiB),
             (FileSystemType.APFS, 0)
         ]);
     }
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_GPT_ExFAT_HFSPlus()
+    public Task Test_GPT_ExFAT_HFSPlus_Async()
     {
         if (!OperatingSystem.IsMacOS())
             Assert.Ignore("HFSPlus is only supported on macOS.");
-        return FullRoundTrip((int)(100 * MiB), PartitionTableType.GPT, [
+        return FullRoundTripAsync((int)(100 * MiB), PartitionTableType.GPT, [
             (FileSystemType.ExFAT, 50 * MiB),
             (FileSystemType.HFSPlus, 0)
         ]);
     }
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_GPT_FAT32_ExFAT() =>
-        FullRoundTrip((int)(100 * MiB), PartitionTableType.GPT, [
+    public Task Test_GPT_FAT32_ExFAT_Async() =>
+        FullRoundTripAsync((int)(100 * MiB), PartitionTableType.GPT, [
             (FileSystemType.FAT32, 50 * MiB),
             (FileSystemType.ExFAT, 0)
         ]);
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_GPT_NTFS_FAT32()
+    public Task Test_GPT_NTFS_FAT32_Async()
     {
         if (!OperatingSystem.IsWindows())
             Assert.Ignore("This test is only supported on Windows.");
-        return FullRoundTrip((int)(100 * MiB), PartitionTableType.GPT, [
+        return FullRoundTripAsync((int)(100 * MiB), PartitionTableType.GPT, [
             (FileSystemType.NTFS, 50 * MiB),
             (FileSystemType.FAT32, 0)
         ]);
     }
 
     [Test, Category("DiskImage")]
-    public Task Test_GPT_NTFS_NTFS()
+    public Task Test_GPT_NTFS_NTFS_Async()
     {
         if (!OperatingSystem.IsWindows())
             Assert.Ignore("This test is only supported on Windows.");
-        return FullRoundTrip((int)(100 * MiB), PartitionTableType.GPT, [
+        return FullRoundTripAsync((int)(100 * MiB), PartitionTableType.GPT, [
             (FileSystemType.NTFS, 50 * MiB),
             (FileSystemType.NTFS, 0)
         ]);
     }
 
     [Test, Category("DiskImage")]
-    public Task Test_GPT_Ext4_Ext4()
+    public Task Test_GPT_Ext4_Ext4_Async()
     {
         if (!OperatingSystem.IsLinux())
             Assert.Ignore("Ext4 is only supported on Linux.");
-        return FullRoundTrip((int)(100 * MiB), PartitionTableType.GPT, [
+        return FullRoundTripAsync((int)(100 * MiB), PartitionTableType.GPT, [
             (FileSystemType.Ext4, 50 * MiB),
             (FileSystemType.Ext4, 0)
         ]);
     }
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_GPT_Ext4_FAT32()
+    public Task Test_GPT_Ext4_FAT32_Async()
     {
         if (!OperatingSystem.IsLinux())
             Assert.Ignore("This test is only supported on Linux.");
-        return FullRoundTrip((int)(100 * MiB), PartitionTableType.GPT, [
+        return FullRoundTripAsync((int)(100 * MiB), PartitionTableType.GPT, [
             (FileSystemType.Ext4, 50 * MiB),
             (FileSystemType.FAT32, 0)
         ]);
     }
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_GPT_Ext4_XFS()
+    public Task Test_GPT_Ext4_XFS_Async()
     {
         if (!OperatingSystem.IsLinux())
             Assert.Ignore("This test is only supported on Linux.");
-        return FullRoundTrip((int)(360 * MiB), PartitionTableType.GPT, [
+        return FullRoundTripAsync((int)(360 * MiB), PartitionTableType.GPT, [
             (FileSystemType.Ext4, 50 * MiB),
             (FileSystemType.XFS, 0)
         ]);
     }
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_GPT_XFS_FAT32()
+    public Task Test_GPT_XFS_FAT32_Async()
     {
         if (!OperatingSystem.IsLinux())
             Assert.Ignore("This test is only supported on Linux.");
-        return FullRoundTrip((int)(360 * MiB), PartitionTableType.GPT, [
+        return FullRoundTripAsync((int)(360 * MiB), PartitionTableType.GPT, [
             (FileSystemType.XFS, 310 * MiB),
             (FileSystemType.FAT32, 0)
         ]);
     }
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_GPT_Btrfs_FAT32()
+    public Task Test_GPT_Btrfs_FAT32_Async()
     {
         if (!OperatingSystem.IsLinux())
             Assert.Ignore("This test is only supported on Linux.");
-        return FullRoundTrip((int)(160 * MiB), PartitionTableType.GPT, [
+        return FullRoundTripAsync((int)(160 * MiB), PartitionTableType.GPT, [
             (FileSystemType.Btrfs, 110 * MiB),
             (FileSystemType.FAT32, 0)
         ]);
@@ -426,8 +426,8 @@ public class DiskImageTests : BasicSetupHelper
     #region MBR Two Partitions
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_MBR_FAT32_FAT32() =>
-        FullRoundTrip((int)(100 * MiB), PartitionTableType.MBR, [
+    public Task Test_MBR_FAT32_FAT32_Async() =>
+        FullRoundTripAsync((int)(100 * MiB), PartitionTableType.MBR, [
             (FileSystemType.FAT32, 50 * MiB),
             (FileSystemType.FAT32, 0)
         ]);
@@ -435,11 +435,11 @@ public class DiskImageTests : BasicSetupHelper
     // APFS is only supported on GPT partition tables.
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_MBR_HFSPlus_HFSPlus()
+    public Task Test_MBR_HFSPlus_HFSPlus_Async()
     {
         if (!OperatingSystem.IsMacOS())
             Assert.Ignore("HFSPlus is only supported on macOS.");
-        return FullRoundTrip((int)(100 * MiB), PartitionTableType.MBR, [
+        return FullRoundTripAsync((int)(100 * MiB), PartitionTableType.MBR, [
             (FileSystemType.HFSPlus, 50 * MiB),
             (FileSystemType.HFSPlus, 0)
         ]);
@@ -447,86 +447,86 @@ public class DiskImageTests : BasicSetupHelper
 
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_MBR_FAT32_ExFAT()
+    public Task Test_MBR_FAT32_ExFAT_Async()
     {
-        return FullRoundTrip((int)(100 * MiB), PartitionTableType.MBR, [
+        return FullRoundTripAsync((int)(100 * MiB), PartitionTableType.MBR, [
             (FileSystemType.FAT32, 50 * MiB),
             (FileSystemType.ExFAT, 0)
         ]);
     }
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_MBR_FAT32_HFSPlus()
+    public Task Test_MBR_FAT32_HFSPlus_Async()
     {
         if (!OperatingSystem.IsMacOS())
             Assert.Ignore("HFSPlus is only supported on macOS.");
-        return FullRoundTrip((int)(100 * MiB), PartitionTableType.MBR, [
+        return FullRoundTripAsync((int)(100 * MiB), PartitionTableType.MBR, [
             (FileSystemType.FAT32, 50 * MiB),
             (FileSystemType.HFSPlus, 0)
         ]);
     }
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_MBR_NTFS_FAT32()
+    public Task Test_MBR_NTFS_FAT32_Async()
     {
         if (!OperatingSystem.IsWindows())
             Assert.Ignore("This test is only supported on Windows.");
-        return FullRoundTrip((int)(100 * MiB), PartitionTableType.MBR, [
+        return FullRoundTripAsync((int)(100 * MiB), PartitionTableType.MBR, [
             (FileSystemType.NTFS, 50 * MiB),
             (FileSystemType.FAT32, 0)
         ]);
     }
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_MBR_Ext4_Ext4()
+    public Task Test_MBR_Ext4_Ext4_Async()
     {
         if (!OperatingSystem.IsLinux())
             Assert.Ignore("Ext4 is only supported on Linux.");
-        return FullRoundTrip((int)(100 * MiB), PartitionTableType.MBR, [
+        return FullRoundTripAsync((int)(100 * MiB), PartitionTableType.MBR, [
             (FileSystemType.Ext4, 50 * MiB),
             (FileSystemType.Ext4, 0)
         ]);
     }
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_MBR_FAT32_Ext4()
+    public Task Test_MBR_FAT32_Ext4_Async()
     {
         if (!OperatingSystem.IsLinux())
             Assert.Ignore("This test is only supported on Linux.");
-        return FullRoundTrip((int)(100 * MiB), PartitionTableType.MBR, [
+        return FullRoundTripAsync((int)(100 * MiB), PartitionTableType.MBR, [
             (FileSystemType.FAT32, 50 * MiB),
             (FileSystemType.Ext4, 0)
         ]);
     }
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_MBR_XFS_Ext4()
+    public Task Test_MBR_XFS_Ext4_Async()
     {
         if (!OperatingSystem.IsLinux())
             Assert.Ignore("This test is only supported on Linux.");
-        return FullRoundTrip((int)(360 * MiB), PartitionTableType.MBR, [
+        return FullRoundTripAsync((int)(360 * MiB), PartitionTableType.MBR, [
             (FileSystemType.XFS, 310 * MiB),
             (FileSystemType.Ext4, 0)
         ]);
     }
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_MBR_Btrfs_Ext4()
+    public Task Test_MBR_Btrfs_Ext4_Async()
     {
         if (!OperatingSystem.IsLinux())
             Assert.Ignore("This test is only supported on Linux.");
-        return FullRoundTrip((int)(160 * MiB), PartitionTableType.MBR, [
+        return FullRoundTripAsync((int)(160 * MiB), PartitionTableType.MBR, [
             (FileSystemType.Btrfs, 110 * MiB),
             (FileSystemType.Ext4, 0)
         ]);
     }
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_MBR_XFS_Btrfs()
+    public Task Test_MBR_XFS_Btrfs_Async()
     {
         if (!OperatingSystem.IsLinux())
             Assert.Ignore("This test is only supported on Linux.");
-        return FullRoundTrip((int)(420 * MiB), PartitionTableType.MBR, [
+        return FullRoundTripAsync((int)(420 * MiB), PartitionTableType.MBR, [
             (FileSystemType.XFS, 310 * MiB),
             (FileSystemType.Btrfs, 0)
         ]);
@@ -537,9 +537,9 @@ public class DiskImageTests : BasicSetupHelper
     #region GPT Three Partitions
 
     [Test, Category("DiskImage")]
-    public Task Test_GPT_FAT32_FAT32_FAT32()
+    public Task Test_GPT_FAT32_FAT32_FAT32_Async()
     {
-        return FullRoundTrip((int)(150 * MiB), PartitionTableType.GPT, [
+        return FullRoundTripAsync((int)(150 * MiB), PartitionTableType.GPT, [
             (FileSystemType.FAT32, 50 * MiB),
             (FileSystemType.FAT32, 50 * MiB),
             (FileSystemType.FAT32, 0)
@@ -547,11 +547,11 @@ public class DiskImageTests : BasicSetupHelper
     }
 
     [Test, Category("DiskImage")]
-    public Task Test_GPT_APFS_APFS_APFS()
+    public Task Test_GPT_APFS_APFS_APFS_Async()
     {
         if (!OperatingSystem.IsMacOS())
             Assert.Ignore("APFS is only supported on macOS.");
-        return FullRoundTrip((int)(150 * MiB), PartitionTableType.GPT, [
+        return FullRoundTripAsync((int)(150 * MiB), PartitionTableType.GPT, [
             (FileSystemType.APFS, 50 * MiB),
             (FileSystemType.APFS, 50 * MiB),
             (FileSystemType.APFS, 0)
@@ -559,11 +559,11 @@ public class DiskImageTests : BasicSetupHelper
     }
 
     [Test, Category("DiskImage")]
-    public Task Test_GPT_NTFS_NTFS_NTFS()
+    public Task Test_GPT_NTFS_NTFS_NTFS_Async()
     {
         if (!OperatingSystem.IsWindows())
             Assert.Ignore("NTFS is only supported on Windows.");
-        return FullRoundTrip((int)(150 * MiB), PartitionTableType.GPT, [
+        return FullRoundTripAsync((int)(150 * MiB), PartitionTableType.GPT, [
             (FileSystemType.NTFS, 50 * MiB),
             (FileSystemType.NTFS, 50 * MiB),
             (FileSystemType.NTFS, 0)
@@ -571,11 +571,11 @@ public class DiskImageTests : BasicSetupHelper
     }
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_GPT_HFSPlus_HFSPlus_HFSPlus()
+    public Task Test_GPT_HFSPlus_HFSPlus_HFSPlus_Async()
     {
         if (!OperatingSystem.IsMacOS())
             Assert.Ignore("HFSPlus is only supported on macOS.");
-        return FullRoundTrip((int)(150 * MiB), PartitionTableType.GPT, [
+        return FullRoundTripAsync((int)(150 * MiB), PartitionTableType.GPT, [
             (FileSystemType.HFSPlus, 50 * MiB),
             (FileSystemType.HFSPlus, 50 * MiB),
             (FileSystemType.HFSPlus, 0)
@@ -583,11 +583,11 @@ public class DiskImageTests : BasicSetupHelper
     }
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_GPT_APFS_HFSPlus_APFS()
+    public Task Test_GPT_APFS_HFSPlus_APFS_Async()
     {
         if (!OperatingSystem.IsMacOS())
             Assert.Ignore("APFS and HFSPlus are only supported on macOS.");
-        return FullRoundTrip((int)(150 * MiB), PartitionTableType.GPT, [
+        return FullRoundTripAsync((int)(150 * MiB), PartitionTableType.GPT, [
             (FileSystemType.APFS, 50 * MiB),
             (FileSystemType.HFSPlus, 50 * MiB),
             (FileSystemType.APFS, 0)
@@ -595,11 +595,11 @@ public class DiskImageTests : BasicSetupHelper
     }
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_GPT_FAT32_APFS_HFSPlus()
+    public Task Test_GPT_FAT32_APFS_HFSPlus_Async()
     {
         if (!OperatingSystem.IsMacOS())
             Assert.Ignore("APFS and HFSPlus are only supported on macOS.");
-        return FullRoundTrip((int)(150 * MiB), PartitionTableType.GPT, [
+        return FullRoundTripAsync((int)(150 * MiB), PartitionTableType.GPT, [
             (FileSystemType.FAT32, 50 * MiB),
             (FileSystemType.APFS, 50 * MiB),
             (FileSystemType.HFSPlus, 0)
@@ -607,11 +607,11 @@ public class DiskImageTests : BasicSetupHelper
     }
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_GPT_ExFAT_APFS_HFSPlus()
+    public Task Test_GPT_ExFAT_APFS_HFSPlus_Async()
     {
         if (!OperatingSystem.IsMacOS())
             Assert.Ignore("APFS and HFSPlus are only supported on macOS.");
-        return FullRoundTrip((int)(150 * MiB), PartitionTableType.GPT, [
+        return FullRoundTripAsync((int)(150 * MiB), PartitionTableType.GPT, [
             (FileSystemType.ExFAT, 50 * MiB),
             (FileSystemType.APFS, 50 * MiB),
             (FileSystemType.HFSPlus, 0)
@@ -619,11 +619,11 @@ public class DiskImageTests : BasicSetupHelper
     }
 
     [Test, Category("DiskImage")]
-    public Task Test_GPT_Ext4_Ext4_Ext4()
+    public Task Test_GPT_Ext4_Ext4_Ext4_Async()
     {
         if (!OperatingSystem.IsLinux())
             Assert.Ignore("Ext4 is only supported on Linux.");
-        return FullRoundTrip((int)(150 * MiB), PartitionTableType.GPT, [
+        return FullRoundTripAsync((int)(150 * MiB), PartitionTableType.GPT, [
             (FileSystemType.Ext4, 50 * MiB),
             (FileSystemType.Ext4, 50 * MiB),
             (FileSystemType.Ext4, 0)
@@ -631,11 +631,11 @@ public class DiskImageTests : BasicSetupHelper
     }
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_GPT_FAT32_Ext4_XFS()
+    public Task Test_GPT_FAT32_Ext4_XFS_Async()
     {
         if (!OperatingSystem.IsLinux())
             Assert.Ignore("This test is only supported on Linux.");
-        return FullRoundTrip((int)(410 * MiB), PartitionTableType.GPT, [
+        return FullRoundTripAsync((int)(410 * MiB), PartitionTableType.GPT, [
             (FileSystemType.FAT32, 50 * MiB),
             (FileSystemType.Ext4, 50 * MiB),
             (FileSystemType.XFS, 0)
@@ -643,11 +643,11 @@ public class DiskImageTests : BasicSetupHelper
     }
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_GPT_Ext4_XFS_Btrfs()
+    public Task Test_GPT_Ext4_XFS_Btrfs_Async()
     {
         if (!OperatingSystem.IsLinux())
             Assert.Ignore("This test is only supported on Linux.");
-        return FullRoundTrip((int)(470 * MiB), PartitionTableType.GPT, [
+        return FullRoundTripAsync((int)(470 * MiB), PartitionTableType.GPT, [
             (FileSystemType.Ext4, 50 * MiB),
             (FileSystemType.XFS, 310 * MiB),
             (FileSystemType.Btrfs, 0)
@@ -655,11 +655,11 @@ public class DiskImageTests : BasicSetupHelper
     }
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_GPT_XFS_Ext4_Ext4()
+    public Task Test_GPT_XFS_Ext4_Ext4_Async()
     {
         if (!OperatingSystem.IsLinux())
             Assert.Ignore("This test is only supported on Linux.");
-        return FullRoundTrip((int)(410 * MiB), PartitionTableType.GPT, [
+        return FullRoundTripAsync((int)(410 * MiB), PartitionTableType.GPT, [
             (FileSystemType.XFS, 310 * MiB),
             (FileSystemType.Ext4, 50 * MiB),
             (FileSystemType.Ext4, 0)
@@ -667,11 +667,11 @@ public class DiskImageTests : BasicSetupHelper
     }
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_GPT_Btrfs_Ext4_FAT32()
+    public Task Test_GPT_Btrfs_Ext4_FAT32_Async()
     {
         if (!OperatingSystem.IsLinux())
             Assert.Ignore("This test is only supported on Linux.");
-        return FullRoundTrip((int)(210 * MiB), PartitionTableType.GPT, [
+        return FullRoundTripAsync((int)(210 * MiB), PartitionTableType.GPT, [
             (FileSystemType.Btrfs, 110 * MiB),
             (FileSystemType.Ext4, 50 * MiB),
             (FileSystemType.FAT32, 0)
@@ -685,9 +685,9 @@ public class DiskImageTests : BasicSetupHelper
     // APFS is only supported on GPT partition tables.
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_MBR_FAT32_FAT32_FAT32()
+    public Task Test_MBR_FAT32_FAT32_FAT32_Async()
     {
-        return FullRoundTrip((int)(150 * MiB), PartitionTableType.MBR, [
+        return FullRoundTripAsync((int)(150 * MiB), PartitionTableType.MBR, [
             (FileSystemType.FAT32, 50 * MiB),
             (FileSystemType.FAT32, 50 * MiB),
             (FileSystemType.FAT32, 0)
@@ -695,11 +695,11 @@ public class DiskImageTests : BasicSetupHelper
     }
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_MBR_HFSPlus_HFSPlus_HFSPlus()
+    public Task Test_MBR_HFSPlus_HFSPlus_HFSPlus_Async()
     {
         if (!OperatingSystem.IsMacOS())
             Assert.Ignore("HFSPlus is only supported on macOS.");
-        return FullRoundTrip((int)(150 * MiB), PartitionTableType.MBR, [
+        return FullRoundTripAsync((int)(150 * MiB), PartitionTableType.MBR, [
             (FileSystemType.HFSPlus, 50 * MiB),
             (FileSystemType.HFSPlus, 50 * MiB),
             (FileSystemType.HFSPlus, 0)
@@ -707,11 +707,11 @@ public class DiskImageTests : BasicSetupHelper
     }
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_MBR_FAT32_ExFAT_HFSPlus()
+    public Task Test_MBR_FAT32_ExFAT_HFSPlus_Async()
     {
         if (!OperatingSystem.IsMacOS())
             Assert.Ignore("HFSPlus is only supported on macOS.");
-        return FullRoundTrip((int)(150 * MiB), PartitionTableType.MBR, [
+        return FullRoundTripAsync((int)(150 * MiB), PartitionTableType.MBR, [
             (FileSystemType.FAT32, 50 * MiB),
             (FileSystemType.ExFAT, 50 * MiB),
             (FileSystemType.HFSPlus, 0)
@@ -720,11 +720,11 @@ public class DiskImageTests : BasicSetupHelper
 
     // GPT NTFS for Windows - local-only (tested via single partition)
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_GPT_NTFS_FAT32_ExFAT()
+    public Task Test_GPT_NTFS_FAT32_ExFAT_Async()
     {
         if (!OperatingSystem.IsWindows())
             Assert.Ignore("This test is only supported on Windows.");
-        return FullRoundTrip((int)(150 * MiB), PartitionTableType.GPT, [
+        return FullRoundTripAsync((int)(150 * MiB), PartitionTableType.GPT, [
             (FileSystemType.NTFS, 50 * MiB),
             (FileSystemType.FAT32, 50 * MiB),
             (FileSystemType.ExFAT, 0)
@@ -732,11 +732,11 @@ public class DiskImageTests : BasicSetupHelper
     }
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_MBR_Ext4_Ext4_Ext4()
+    public Task Test_MBR_Ext4_Ext4_Ext4_Async()
     {
         if (!OperatingSystem.IsLinux())
             Assert.Ignore("Ext4 is only supported on Linux.");
-        return FullRoundTrip((int)(150 * MiB), PartitionTableType.MBR, [
+        return FullRoundTripAsync((int)(150 * MiB), PartitionTableType.MBR, [
             (FileSystemType.Ext4, 50 * MiB),
             (FileSystemType.Ext4, 50 * MiB),
             (FileSystemType.Ext4, 0)
@@ -744,11 +744,11 @@ public class DiskImageTests : BasicSetupHelper
     }
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_MBR_FAT32_Ext4_XFS()
+    public Task Test_MBR_FAT32_Ext4_XFS_Async()
     {
         if (!OperatingSystem.IsLinux())
             Assert.Ignore("This test is only supported on Linux.");
-        return FullRoundTrip((int)(410 * MiB), PartitionTableType.MBR, [
+        return FullRoundTripAsync((int)(410 * MiB), PartitionTableType.MBR, [
             (FileSystemType.FAT32, 50 * MiB),
             (FileSystemType.Ext4, 50 * MiB),
             (FileSystemType.XFS, 0)
@@ -756,11 +756,11 @@ public class DiskImageTests : BasicSetupHelper
     }
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_MBR_Ext4_XFS_Btrfs()
+    public Task Test_MBR_Ext4_XFS_Btrfs_Async()
     {
         if (!OperatingSystem.IsLinux())
             Assert.Ignore("This test is only supported on Linux.");
-        return FullRoundTrip((int)(470 * MiB), PartitionTableType.MBR, [
+        return FullRoundTripAsync((int)(470 * MiB), PartitionTableType.MBR, [
             (FileSystemType.Ext4, 50 * MiB),
             (FileSystemType.XFS, 310 * MiB),
             (FileSystemType.Btrfs, 0)
@@ -768,11 +768,11 @@ public class DiskImageTests : BasicSetupHelper
     }
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_MBR_XFS_Btrfs_Ext4()
+    public Task Test_MBR_XFS_Btrfs_Ext4_Async()
     {
         if (!OperatingSystem.IsLinux())
             Assert.Ignore("This test is only supported on Linux.");
-        return FullRoundTrip((int)(470 * MiB), PartitionTableType.MBR, [
+        return FullRoundTripAsync((int)(470 * MiB), PartitionTableType.MBR, [
             (FileSystemType.XFS, 310 * MiB),
             (FileSystemType.Btrfs, 110 * MiB),
             (FileSystemType.Ext4, 0)
@@ -780,11 +780,11 @@ public class DiskImageTests : BasicSetupHelper
     }
 
     [Test, Category("DiskImage"), Category("DiskImageLocal")]
-    public Task Test_MBR_Btrfs_Ext4_XFS()
+    public Task Test_MBR_Btrfs_Ext4_XFS_Async()
     {
         if (!OperatingSystem.IsLinux())
             Assert.Ignore("This test is only supported on Linux.");
-        return FullRoundTrip((int)(470 * MiB), PartitionTableType.MBR, [
+        return FullRoundTripAsync((int)(470 * MiB), PartitionTableType.MBR, [
             (FileSystemType.Btrfs, 110 * MiB),
             (FileSystemType.Ext4, 50 * MiB),
             (FileSystemType.XFS, 0)
@@ -793,7 +793,7 @@ public class DiskImageTests : BasicSetupHelper
 
     #endregion
 
-    public async Task FullRoundTrip(int size, PartitionTableType tableType, (FileSystemType, long)[] partitions)
+    public async Task FullRoundTripAsync(int size, PartitionTableType tableType, (FileSystemType, long)[] partitions)
     {
         await TestContext.Progress.WriteLineAsync("Test: Full Round-Trip Backup + Restore");
 
@@ -805,13 +805,13 @@ public class DiskImageTests : BasicSetupHelper
 
         // Populate source partition with test data
         foreach (var partition in sourcePartitions)
-            await ToolTests.GenerateTestData(partition, 10, 5, 2, 1024);
+            await ToolTests.GenerateTestDataAsync(partition, 10, 5, 2, 1024);
         _diskHelper.FlushDisk(sourceDrivePath);
         _diskHelper.Unmount(sourceDrivePath);
         await TestContext.Progress.WriteLineAsync($"Test data generated on source partition(s)");
 
         // Backup
-        var backupResults = RunBackup(sourceDrivePath);
+        var backupResults = await RunBackupAsync(sourceDrivePath);
         TestUtils.AssertResults(backupResults);
         await TestContext.Progress.WriteLineAsync($"Backup completed successfully");
 
@@ -822,7 +822,7 @@ public class DiskImageTests : BasicSetupHelper
         await TestContext.Progress.WriteLineAsync($"Restore disk image created at: {_restoreImagePath}");
 
         // Restore
-        var restoreResults = RunRestore(restoreDrivePath);
+        var restoreResults = await RunRestoreAsync(restoreDrivePath);
         TestUtils.AssertResults(restoreResults);
         await TestContext.Progress.WriteLineAsync($"Restore completed successfully");
 
@@ -851,7 +851,7 @@ public class DiskImageTests : BasicSetupHelper
 
     [Test]
     [Category("DiskImage")]
-    public async Task Test_GeometryMetadata_Verification()
+    public async Task Test_GeometryMetadata_Verification_Async()
     {
         await TestContext.Progress.WriteLineAsync("Test: Full Round-Trip Backup + Restore");
 
@@ -864,13 +864,13 @@ public class DiskImageTests : BasicSetupHelper
         await TestContext.Progress.WriteLineAsync($"Source Disk initialized with partition(s): {string.Join(", ", sourcePartitions)}");
 
         // Backup
-        var backupResults = RunBackup(sourceDrivePath);
+        var backupResults = await RunBackupAsync(sourceDrivePath);
         TestUtils.AssertResults(backupResults);
 
         // List backup contents and verify geometry.json is present
         using (var c = new Controller("file://" + TARGETFOLDER, TestOptions, null))
         {
-            var listResults = c.List("*");
+            var listResults = await c.ListAsync("*").ConfigureAwait(false);
             TestUtils.AssertResults(listResults);
 
             // Check that geometry.json is in the backup
@@ -881,19 +881,19 @@ public class DiskImageTests : BasicSetupHelper
         }
 
         // Verify geometry metadata contains correct information
-        VerifyGeometryMetadata(TARGETFOLDER, TestOptions, partitions);
+        await VerifyGeometryMetadataAsync(TARGETFOLDER, TestOptions, partitions);
     }
 
     [Test]
     [Category("DiskImage")]
-    public async Task Test_SourceProvider_Enumeration()
+    public async Task Test_SourceProvider_Enumeration_Async()
     {
-        TestContext.Progress.WriteLine("Test: SourceProvider Enumeration");
+        await TestContext.Progress.WriteLineAsync("Test: SourceProvider Enumeration");
 
         // Setup: Create GPT disk with one FAT32 partition
         var sourceDrivePath = _diskHelper.CreateDisk(_sourceImagePath, (100 * MiB));
         var sourcePartitions = _diskHelper.InitializeDisk(sourceDrivePath, PartitionTableType.GPT, [(FileSystemType.FAT32, 0)]);
-        TestContext.Progress.WriteLine($"Source disk image created at: {_sourceImagePath}");
+        await TestContext.Progress.WriteLineAsync($"Source disk image created at: {_sourceImagePath}");
 
         // Directly instantiate SourceProvider
         // Note: When directly instantiating SourceProvider, we don't use the @ prefix
@@ -909,7 +909,7 @@ public class DiskImageTests : BasicSetupHelper
         await foreach (var entry in provider.Enumerate(CancellationToken.None))
         {
             diskEntries.Add(entry);
-            TestContext.Progress.WriteLine($"Found entry: {entry.Path} (IsFolder: {entry.IsFolder}, Size: {entry.Size})");
+            await TestContext.Progress.WriteLineAsync($"Found entry: {entry.Path} (IsFolder: {entry.IsFolder}, Size: {entry.Size})");
         }
 
         // Verify hierarchy: disk → partition → filesystem → files
@@ -924,7 +924,7 @@ public class DiskImageTests : BasicSetupHelper
         await foreach (var entry in diskEntry!.Enumerate(CancellationToken.None))
             entries.Add(entry);
 
-        TestContext.Progress.WriteLine($"Total entries found: {entries.Count}");
+        await TestContext.Progress.WriteLineAsync($"Total entries found: {entries.Count}");
 
         // Check for geometry.json
         var geometryEntry = entries.FirstOrDefault(e => e.Path.EndsWith("geometry.json"));
@@ -947,25 +947,25 @@ public class DiskImageTests : BasicSetupHelper
 
     [Test]
     [Category("DiskImage")]
-    public async Task Test_AutoUnmountOption_RestoreWhileOnline()
+    public async Task Test_AutoUnmountOption_RestoreWhileOnline_Async()
     {
-        TestContext.Progress.WriteLine("Test: Auto Unmount Option - Restore While Disk Online");
+        await TestContext.Progress.WriteLineAsync("Test: Auto Unmount Option - Restore While Disk Online");
 
         // Setup source disk image: 100MB, GPT, single FAT32 partition
         var sourceDrivePath = _diskHelper.CreateDisk(_sourceImagePath, (100 * MiB));
         var sourcePartitions = _diskHelper.InitializeDisk(sourceDrivePath, PartitionTableType.GPT, [(FileSystemType.FAT32, 0)]);
-        TestContext.Progress.WriteLine($"Source disk image created at: {_sourceImagePath}");
+        await TestContext.Progress.WriteLineAsync($"Source disk image created at: {_sourceImagePath}");
 
         // Generate some test data
-        await ToolTests.GenerateTestData(sourcePartitions.First(), 10, 5, 2, 1024);
+        await ToolTests.GenerateTestDataAsync(sourcePartitions.First(), 10, 5, 2, 1024);
         _diskHelper.FlushDisk(sourceDrivePath);
         _diskHelper.Unmount(sourceDrivePath);
-        TestContext.Progress.WriteLine($"Test data generated on source partition");
+        await TestContext.Progress.WriteLineAsync($"Test data generated on source partition");
 
         // Backup
-        var backupResults = RunBackup(sourceDrivePath);
+        var backupResults = await RunBackupAsync(sourceDrivePath);
         TestUtils.AssertResults(backupResults);
-        TestContext.Progress.WriteLine($"Backup completed successfully");
+        await TestContext.Progress.WriteLineAsync($"Backup completed successfully");
 
         // Create and attach disk image
         var restoreDrivePath = _diskHelper.CreateDisk(_restoreImagePath, (100 * MiB));
@@ -973,11 +973,11 @@ public class DiskImageTests : BasicSetupHelper
         // Initialize disk (the restore will overwrite this, but we need it formatted)
         _diskHelper.InitializeDisk(restoreDrivePath, PartitionTableType.GPT, [(FileSystemType.FAT32, 50 * MiB), (FileSystemType.FAT32, 0)]);
         _diskHelper.Mount(restoreDrivePath, _restoreMountPath);
-        TestContext.Progress.WriteLine($"Restore disk image created and kept online at: {_restoreImagePath}");
+        await TestContext.Progress.WriteLineAsync($"Restore disk image created and kept online at: {_restoreImagePath}");
 
         // First attempt: Restore without auto-unmount option should fail
         // because the disk is online and in use
-        TestContext.Progress.WriteLine("Attempting restore without auto-unmount (should fail)...");
+        await TestContext.Progress.WriteLineAsync("Attempting restore without auto-unmount (should fail)...");
         var options = new Dictionary<string, string>(TestOptions)
         {
             ["restore-path"] = $"@diskimage://{restoreDrivePath}",
@@ -991,12 +991,12 @@ public class DiskImageTests : BasicSetupHelper
         {
             try
             {
-                var results = c.Restore(["*"]);
+                var results = await c.RestoreAsync(["*"]).ConfigureAwait(false);
 
                 // Verify that the restore failed (has errors)
                 Assert.That(results.Errors.Any(), Is.True,
                     "Restore should fail when target disk is online and auto-unmount is not enabled");
-                TestContext.Progress.WriteLine($"Restore failed as expected with errors: {string.Join(", ", results.Errors)}");
+                await TestContext.Progress.WriteLineAsync($"Restore failed as expected with errors: {string.Join(", ", results.Errors)}");
             }
             catch (IOException)
             {
@@ -1009,16 +1009,16 @@ public class DiskImageTests : BasicSetupHelper
         }
 
         // Second attempt: Restore with auto-unmount option should succeed
-        TestContext.Progress.WriteLine("Attempting restore with auto-unmount enabled (should succeed)...");
+        await TestContext.Progress.WriteLineAsync("Attempting restore with auto-unmount enabled (should succeed)...");
 
         options["diskimage-restore-auto-unmount"] = "true";
         using (var c = new Controller("file://" + TARGETFOLDER, options, null))
         {
-            var results = c.Restore(["*"]);
+            var results = await c.RestoreAsync(["*"]).ConfigureAwait(false);
 
             Assert.That(!results.Errors.Any() && results.Warnings.Count() <= 1);
         }
-        TestContext.Progress.WriteLine($"Restore completed successfully with auto-unmount option");
+        await TestContext.Progress.WriteLineAsync($"Restore completed successfully with auto-unmount option");
 
         // Mount before verification, to make disks online on Windows.
         sourcePartitions = _diskHelper.Mount(sourceDrivePath, _sourceMountPath, readOnly: true);
@@ -1041,7 +1041,7 @@ public class DiskImageTests : BasicSetupHelper
     /// <param name="physicalDrivePath">The physical drive path to backup.</param>
     /// <param name="treatFilesystemAsUnknown">If true, treats filesystem as unknown (forces raw block-based backup).</param>
     /// <returns>The backup results.</returns>
-    private IBackupResults RunBackup(string physicalDrivePath, bool treatFilesystemAsUnknown = false)
+    private async Task<IBackupResults> RunBackupAsync(string physicalDrivePath, bool treatFilesystemAsUnknown = false)
     {
         var options = new Dictionary<string, string>(TestOptions);
         options["enable-module"] = "diskimage";
@@ -1054,7 +1054,7 @@ public class DiskImageTests : BasicSetupHelper
 
         using var c = new Controller("file://" + TARGETFOLDER, options, null);
         var sourceUrl = $"@/testdisk|diskimage://{physicalDrivePath}";
-        return c.Backup(new[] { sourceUrl });
+        return await c.BackupAsync(new[] { sourceUrl }).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -1062,7 +1062,7 @@ public class DiskImageTests : BasicSetupHelper
     /// </summary>
     /// <param name="restoreDrivePath">The physical drive path to restore to.</param>
     /// <returns>The restore results.</returns>
-    private IRestoreResults RunRestore(string restoreDrivePath)
+    private Task<IRestoreResults> RunRestoreAsync(string restoreDrivePath)
     {
         var options = new Dictionary<string, string>(TestOptions);
         options["restore-path"] = $"@diskimage://{restoreDrivePath}";
@@ -1070,9 +1070,7 @@ public class DiskImageTests : BasicSetupHelper
         options["restore-file-processors"] = "1";
 
         using var c = new Controller("file://" + TARGETFOLDER, options, null);
-        var results = c.Restore(new[] { "*" });
-
-        return results;
+        return c.RestoreAsync(new[] { "*" });
     }
 
     /// <summary>
@@ -1142,13 +1140,13 @@ public class DiskImageTests : BasicSetupHelper
     /// <param name="target">The backup target URL.</param>
     /// <param name="options">The options to use when accessing the backup.</param>
     /// <param name="partitions">The expected partitions and their sizes.</param>
-    private void VerifyGeometryMetadata(string target, Dictionary<string, string> options, (FileSystemType, long)[] partitions)
+    private async Task VerifyGeometryMetadataAsync(string target, Dictionary<string, string> options, (FileSystemType, long)[] partitions)
     {
-        TestContext.Progress.WriteLine("Verifying geometry metadata...");
+        await TestContext.Progress.WriteLineAsync("Verifying geometry metadata...");
 
         using (var c = new Controller("file://" + target, options, null))
         {
-            var listResults = c.List("*");
+            var listResults = await c.ListAsync("*").ConfigureAwait(false);
             Assert.That(listResults.Files, Is.Not.Null);
 
             var geometryFile = listResults.Files.FirstOrDefault(f => f.Path.EndsWith("geometry.json"));
@@ -1166,7 +1164,7 @@ public class DiskImageTests : BasicSetupHelper
 
                 using (var restoreController = new Controller("file://" + target, restoreOptions, null))
                 {
-                    var restoreResults = restoreController.Restore(new[] { geometryFile!.Path });
+                    var restoreResults = await restoreController.RestoreAsync(new[] { geometryFile!.Path });
                     TestUtils.AssertResults(restoreResults);
                 }
 
@@ -1185,14 +1183,14 @@ public class DiskImageTests : BasicSetupHelper
                     Assert.That(geometry.Partitions, Is.Not.Null, "Partitions list should be present");
                     Assert.That(geometry.Partitions!.Count, Is.GreaterThan(0), "Should have at least one partition");
 
-                    TestContext.Progress.WriteLine($"Geometry metadata verified: Disk size={geometry.Disk.Size}, " +
+                    await TestContext.Progress.WriteLineAsync($"Geometry metadata verified: Disk size={geometry.Disk.Size}, " +
                         $"Sector size={geometry.Disk.SectorSize}, Partitions={geometry.Partitions.Count}, " +
                         $"Table type={geometry.PartitionTable!.Type}");
 
                     for (int i = 0; i < geometry.Partitions.Count; i++)
                     {
                         var partition = geometry.Partitions[i];
-                        TestContext.Progress.WriteLine($"Partition {i}: Type={partition.Type}, Start={partition.StartOffset}, Size={partition.Size}");
+                        await TestContext.Progress.WriteLineAsync($"Partition {i}: Type={partition.Type}, Start={partition.StartOffset}, Size={partition.Size}");
 
                         Assert.That(partition.Size, Is.GreaterThan(0), $"Partition {i} size should be greater than 0");
                         if (partitions[i].Item2 > 0)
@@ -1276,7 +1274,7 @@ public class DiskImageTests : BasicSetupHelper
     [TestCase((int)(50 * MiB), PartitionTableType.GPT, FileSystemType.Unknown)]
     [Category("DiskImage")]
     [Category("DiskImageFileSystem")]
-    public async Task Test_FileSystem_IncrementalBackup_UnchangedBlocks_Skipped(int size, PartitionTableType tableType, FileSystemType fsType)
+    public async Task Test_FileSystem_IncrementalBackup_UnchangedBlocks_Skipped_Async(int size, PartitionTableType tableType, FileSystemType fsType)
     {
         await TestContext.Progress.WriteLineAsync($"Test: {fsType} Incremental Backup - Unchanged Blocks Skipped");
 
@@ -1291,13 +1289,13 @@ public class DiskImageTests : BasicSetupHelper
         await TestContext.Progress.WriteLineAsync($"Source disk created at: {_sourceImagePath}");
 
         // Generate initial test data
-        await ToolTests.GenerateTestData(sourcePartitions.First(), 10, 3, 1, 1024);
+        await ToolTests.GenerateTestDataAsync(sourcePartitions.First(), 10, 3, 1, 1024);
         _diskHelper.FlushDisk(sourceDrivePath);
         _diskHelper.Unmount(sourceDrivePath);
         await TestContext.Progress.WriteLineAsync("Initial test data generated");
 
         // First backup
-        var firstBackupResults = RunBackup(sourceDrivePath, treatFilesystemAsUnknown);
+        var firstBackupResults = await RunBackupAsync(sourceDrivePath, treatFilesystemAsUnknown);
 
         // When treating filesystem as unknown, the option may not be recognized by the Controller
         // so we only check for errors, not warnings
@@ -1325,7 +1323,7 @@ public class DiskImageTests : BasicSetupHelper
         _diskHelper.Unmount(restoreDrivePath);
         await TestContext.Progress.WriteLineAsync($"Restore disk created at: {_restoreImagePath}");
 
-        var restoreResults = RunRestore(restoreDrivePath);
+        var restoreResults = await RunRestoreAsync(restoreDrivePath);
         TestUtils.AssertResults(restoreResults);
         await TestContext.Progress.WriteLineAsync("Initial restore completed successfully");
 
@@ -1396,7 +1394,7 @@ public class DiskImageTests : BasicSetupHelper
         await TestContext.Progress.WriteLineAsync($"Source disk re-attached for second backup at: {sourceDrivePath}");
 
         // Second backup (incremental)
-        var secondBackupResults = RunBackup(sourceDrivePath, treatFilesystemAsUnknown);
+        var secondBackupResults = await RunBackupAsync(sourceDrivePath, treatFilesystemAsUnknown);
 
         // When treating filesystem as unknown, the option may not be recognized by the Controller
         // so we only check for errors, not warnings
@@ -1442,7 +1440,7 @@ public class DiskImageTests : BasicSetupHelper
         _diskHelper.Unmount(restoreDrivePath);
         await TestContext.Progress.WriteLineAsync($"Fresh restore disk created for incremental restore");
 
-        var incrementalRestoreResults = RunRestore(restoreDrivePath);
+        var incrementalRestoreResults = await RunRestoreAsync(restoreDrivePath);
         TestUtils.AssertResults(incrementalRestoreResults);
         await TestContext.Progress.WriteLineAsync("Incremental restore completed successfully");
 
@@ -1467,7 +1465,7 @@ public class DiskImageTests : BasicSetupHelper
     [TestCase((int)(50 * MiB), PartitionTableType.GPT, FileSystemType.Unknown)]
     [Category("DiskImage")]
     [Category("DiskImageFileSystem")]
-    public async Task Test_FileSystem_UnallocatedSpace_CompressesWell(int size, PartitionTableType tableType, FileSystemType fsType)
+    public async Task Test_FileSystem_UnallocatedSpace_CompressesWell_Async(int size, PartitionTableType tableType, FileSystemType fsType)
     {
         await TestContext.Progress.WriteLineAsync($"Test: {fsType} Unallocated Space Compression");
 
@@ -1483,13 +1481,13 @@ public class DiskImageTests : BasicSetupHelper
 
         // Generate minimal test data (sparse data - only a few small files)
         // This leaves most of the 50MB as unallocated space
-        await ToolTests.GenerateTestData(sourcePartitions.First(), 3, 0, 0, 512);
+        await ToolTests.GenerateTestDataAsync(sourcePartitions.First(), 3, 0, 0, 512);
         _diskHelper.FlushDisk(sourceDrivePath);
         _diskHelper.Unmount(sourceDrivePath);
         await TestContext.Progress.WriteLineAsync("Sparse test data generated (few files, lots of free space)");
 
         // Backup
-        var backupResults = RunBackup(sourceDrivePath, treatFilesystemAsUnknown);
+        var backupResults = await RunBackupAsync(sourceDrivePath, treatFilesystemAsUnknown);
         // When treating filesystem as unknown, the option may not be recognized by the Controller
         // so we only check for errors, not warnings
         if (treatFilesystemAsUnknown)
@@ -1523,7 +1521,7 @@ public class DiskImageTests : BasicSetupHelper
         _diskHelper.InitializeDisk(restoreDrivePath, tableType, []);
         _diskHelper.Unmount(restoreDrivePath);
 
-        var restoreResults = RunRestore(restoreDrivePath);
+        var restoreResults = await RunRestoreAsync(restoreDrivePath);
         TestUtils.AssertResults(restoreResults);
 
         // Reattach and verify
@@ -1547,7 +1545,7 @@ public class DiskImageTests : BasicSetupHelper
     [TestCase((int)(50 * MiB), PartitionTableType.GPT, FileSystemType.Unknown)]
     [Category("DiskImage")]
     [Category("DiskImageFileSystem")]
-    public async Task Test_FileSystem_FullDisk_AllBlocksAllocated(int size, PartitionTableType tableType, FileSystemType fsType)
+    public async Task Test_FileSystem_FullDisk_AllBlocksAllocated_Async(int size, PartitionTableType tableType, FileSystemType fsType)
     {
         await TestContext.Progress.WriteLineAsync($"Test: {fsType} Full Disk - All Blocks Allocated");
 
@@ -1570,14 +1568,14 @@ public class DiskImageTests : BasicSetupHelper
         var batchCount = fsType == FileSystemType.Unknown ? 5 : 10;
         for (int batch = 0; batch < batchCount; batch++)
         {
-            await ToolTests.GenerateTestData(Path.Combine(partitionPath, $"batch_{batch}"), 10, 0, 0, 4096);
+            await ToolTests.GenerateTestDataAsync(Path.Combine(partitionPath, $"batch_{batch}"), 10, 0, 0, 4096);
         }
         _diskHelper.FlushDisk(sourceDrivePath);
         _diskHelper.Unmount(sourceDrivePath);
         await TestContext.Progress.WriteLineAsync("Disk filled with data");
 
         // Backup
-        var backupResults = RunBackup(sourceDrivePath, treatFilesystemAsUnknown);
+        var backupResults = await RunBackupAsync(sourceDrivePath, treatFilesystemAsUnknown);
 
         // When treating filesystem as unknown, the option may not be recognized by the Controller
         // so we only check for errors, not warnings
@@ -1605,7 +1603,7 @@ public class DiskImageTests : BasicSetupHelper
         _diskHelper.InitializeDisk(restoreDrivePath, tableType, []);
         _diskHelper.Unmount(restoreDrivePath);
 
-        var restoreResults = RunRestore(restoreDrivePath);
+        var restoreResults = await RunRestoreAsync(restoreDrivePath);
         TestUtils.AssertResults(restoreResults);
 
         // Reattach and verify

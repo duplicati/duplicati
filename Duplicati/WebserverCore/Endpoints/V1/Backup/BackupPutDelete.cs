@@ -18,6 +18,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+using Duplicati.Library.Utility;
 using Duplicati.Server;
 using Duplicati.Server.Database;
 using Duplicati.Server.Serialization.Interface;
@@ -144,7 +145,7 @@ public class BackupPutDelete : IEndpointV1
                 bool hasPaused = liveControls.State != LiveControls.LiveControlState.Paused;
                 if (hasPaused)
                     liveControls.Pause(true);
-                nt.Abort();
+                nt.AbortAsync().Await();
 
                 for (int i = 0; i < 10; i++)
                 {

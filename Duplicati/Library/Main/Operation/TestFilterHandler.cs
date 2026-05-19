@@ -48,10 +48,10 @@ namespace Duplicati.Library.Main.Operation
         {
             var stopToken = m_result.TaskControl.ProgressToken;
 
-            using (var provider = await BackupHandler.GetSourceProvider(sources, m_options, stopToken).ConfigureAwait(false))
+            using (var provider = await BackupHandler.GetSourceProviderAsync(sources, m_options, stopToken).ConfigureAwait(false))
             {
                 Backup.Channels channels = new();
-                var source = Backup.FileEnumerationProcess.Run(channels, provider, null,
+                var source = Backup.FileEnumerationProcess.RunAsync(channels, provider, null,
                     m_options.FileAttributeFilter, filter, m_options.SymlinkPolicy,
                     m_options.HardlinkPolicy, m_options.DisableBackupExclusionXattr, m_options.ExcludeEmptyFolders, m_options.IgnoreFilenames,
                     BackupHandler.GetBlacklistedPaths(m_options), null, m_result.TaskControl, null, stopToken);
@@ -62,7 +62,7 @@ namespace Duplicati.Library.Main.Operation
                 },
                     async self =>
                     {
-                        while (await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
+                        while (await m_result.TaskControl.ProgressRendevouzAsync().ConfigureAwait(false))
                         {
                             var entry = await self.source.ReadAsync();
                             var fa = entry.IsFolder

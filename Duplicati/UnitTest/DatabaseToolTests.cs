@@ -35,42 +35,42 @@ namespace Duplicati.UnitTest
     {
         [Test]
         [Category("DatabaseTool")]
-        public async Task TestLocalDbMethods()
+        public async Task TestLocalDbMethodsAsync()
         {
             using var dbfile = new TempFile();
-            using var db = SQLiteLoader.LoadConnection(dbfile);
+            using var db = await SQLiteLoader.LoadConnectionAsync(dbfile);
             using var cmd = db.CreateCommand();
             cmd.CommandText = LocalSchemaV12;
-            cmd.ExecuteNonQuery();
+            await cmd.ExecuteNonQueryAsync();
 
-            Assert.AreEqual(0, await Program.Main(["upgrade", dbfile, "--no-backups"]));
-            Assert.AreEqual(0, await Program.Main(["downgrade", dbfile, "--server-version=6", "--local-version=12", "--no-backups"]));
-            Assert.AreEqual(0, await Program.Main(["upgrade", dbfile, "--no-backups"]));
+            Assert.AreEqual(0, await Program.MainAsync(["upgrade", dbfile, "--no-backups"]));
+            Assert.AreEqual(0, await Program.MainAsync(["downgrade", dbfile, "--server-version=6", "--local-version=12", "--no-backups"]));
+            Assert.AreEqual(0, await Program.MainAsync(["upgrade", dbfile, "--no-backups"]));
 
-            Assert.AreEqual(0, await Program.Main(["list", dbfile]));
-            Assert.AreEqual(0, await Program.Main(["list", dbfile, "RemoteVolume"]));
-            Assert.AreEqual(0, await Program.Main(["list", dbfile, "RemoteVolume", "--output-json"]));
-            Assert.AreEqual(0, await Program.Main(["execute", dbfile, "SELECT * FROM RemoteVolume", "--output-json"]));
+            Assert.AreEqual(0, await Program.MainAsync(["list", dbfile]));
+            Assert.AreEqual(0, await Program.MainAsync(["list", dbfile, "RemoteVolume"]));
+            Assert.AreEqual(0, await Program.MainAsync(["list", dbfile, "RemoteVolume", "--output-json"]));
+            Assert.AreEqual(0, await Program.MainAsync(["execute", dbfile, "SELECT * FROM RemoteVolume", "--output-json"]));
         }
 
         [Test]
         [Category("DatabaseTool")]
-        public async Task TestServerDbMethods()
+        public async Task TestServerDbMethodsAsync()
         {
             using var dbfile = new TempFile();
-            using var db = SQLiteLoader.LoadConnection(dbfile);
+            using var db = await SQLiteLoader.LoadConnectionAsync(dbfile);
             using var cmd = db.CreateCommand();
             cmd.CommandText = ServerSchemaV6;
-            cmd.ExecuteNonQuery();
+            await cmd.ExecuteNonQueryAsync();
 
-            Assert.AreEqual(0, await Program.Main(["upgrade", dbfile, "--no-backups"]));
-            Assert.AreEqual(0, await Program.Main(["downgrade", dbfile, "--server-version=6", "--local-version=12", "--no-backups"]));
-            Assert.AreEqual(0, await Program.Main(["upgrade", dbfile, "--no-backups"]));
+            Assert.AreEqual(0, await Program.MainAsync(["upgrade", dbfile, "--no-backups"]));
+            Assert.AreEqual(0, await Program.MainAsync(["downgrade", dbfile, "--server-version=6", "--local-version=12", "--no-backups"]));
+            Assert.AreEqual(0, await Program.MainAsync(["upgrade", dbfile, "--no-backups"]));
 
-            Assert.AreEqual(0, await Program.Main(["list", dbfile]));
-            Assert.AreEqual(0, await Program.Main(["list", dbfile, "Source"]));
-            Assert.AreEqual(0, await Program.Main(["list", dbfile, "Source", "--output-json"]));
-            Assert.AreEqual(0, await Program.Main(["execute", dbfile, "SELECT * FROM Source", "--output-json"]));
+            Assert.AreEqual(0, await Program.MainAsync(["list", dbfile]));
+            Assert.AreEqual(0, await Program.MainAsync(["list", dbfile, "Source"]));
+            Assert.AreEqual(0, await Program.MainAsync(["list", dbfile, "Source", "--output-json"]));
+            Assert.AreEqual(0, await Program.MainAsync(["execute", dbfile, "SELECT * FROM Source", "--output-json"]));
         }
 
         /// <summary>
@@ -342,7 +342,7 @@ INSERT INTO ""Version"" (""Version"") VALUES (12);
 
         [Test]
         [Category("DatabaseTool")]
-        public async Task TestVerifyCommand()
+        public async Task TestVerifyCommandAsync()
         {
             using var tempFolder = new Library.Utility.TempFolder();
             string tempDir = tempFolder;
@@ -353,34 +353,34 @@ INSERT INTO ""Version"" (""Version"") VALUES (12);
             var orphanDb = Path.Combine(tempDir, "ABCDEFGHIJ.sqlite"); // Random name = Orphaned
 
             // Create server database
-            using (var db = SQLiteLoader.LoadConnection(serverDb))
+            using (var db = await SQLiteLoader.LoadConnectionAsync(serverDb))
             using (var cmd = db.CreateCommand())
             {
                 cmd.CommandText = ServerSchemaV6;
-                cmd.ExecuteNonQuery();
+                await cmd.ExecuteNonQueryAsync();
 
                 // Insert a backup referencing localDb1
                 cmd.CommandText = $@"
                     INSERT INTO ""Backup"" (""Name"", ""Tags"", ""TargetURL"", ""DBPath"")
                     VALUES ('Test Backup', '', 'file:///test', '{localDb1.Replace("'", "''")}');
                 ";
-                cmd.ExecuteNonQuery();
+                await cmd.ExecuteNonQueryAsync();
             }
 
             // Create local database
-            using (var db = SQLiteLoader.LoadConnection(localDb1))
+            using (var db = await SQLiteLoader.LoadConnectionAsync(localDb1))
             using (var cmd = db.CreateCommand())
             {
                 cmd.CommandText = LocalSchemaV12;
-                cmd.ExecuteNonQuery();
+                await cmd.ExecuteNonQueryAsync();
             }
 
             // Create orphan database (exists but not referenced)
-            using (var db = SQLiteLoader.LoadConnection(orphanDb))
+            using (var db = await SQLiteLoader.LoadConnectionAsync(orphanDb))
             using (var cmd = db.CreateCommand())
             {
                 cmd.CommandText = LocalSchemaV12;
-                cmd.ExecuteNonQuery();
+                await cmd.ExecuteNonQueryAsync();
             }
 
             // Copy server database to expected location
@@ -423,7 +423,7 @@ INSERT INTO ""Version"" (""Version"") VALUES (12);
 
             try
             {
-                Assert.AreEqual(0, await Program.Main(["verify", "--datafolder", tempDir, "--output-json"]));
+                Assert.AreEqual(0, await Program.MainAsync(["verify", "--datafolder", tempDir, "--output-json"]));
             }
             finally
             {
@@ -444,7 +444,7 @@ INSERT INTO ""Version"" (""Version"") VALUES (12);
         [Category("DatabaseTool")]
         [TestCase(true)]  // Dry run - no files should be deleted
         [TestCase(false)] // Force - only orphaned files should be deleted
-        public async Task TestCleanupCommand(bool dryRun)
+        public async Task TestCleanupCommandAsync(bool dryRun)
         {
             using var tempFolder = new Library.Utility.TempFolder();
             var tempDir = (string)tempFolder;
@@ -460,33 +460,33 @@ INSERT INTO ""Version"" (""Version"") VALUES (12);
             var serverDb = Path.Combine(tempDir, "Duplicati-server.sqlite");
 
             // Create server database with a backup referencing foundDb
-            using (var db = SQLiteLoader.LoadConnection(serverDb))
+            using (var db = await SQLiteLoader.LoadConnectionAsync(serverDb))
             using (var cmd = db.CreateCommand())
             {
                 cmd.CommandText = ServerSchemaV6;
-                cmd.ExecuteNonQuery();
+                await cmd.ExecuteNonQueryAsync();
 
                 cmd.CommandText = $@"
                     INSERT INTO ""Backup"" (""Name"", ""Tags"", ""TargetURL"", ""DBPath"")
                     VALUES ('Test Backup', '', 'file:///test', '{foundDb.Replace("'", "''")}');
                 ";
-                cmd.ExecuteNonQuery();
+                await cmd.ExecuteNonQueryAsync();
             }
 
             // Create "Found" database (referenced in server DB and exists)
-            using (var db = SQLiteLoader.LoadConnection(foundDb))
+            using (var db = await SQLiteLoader.LoadConnectionAsync(foundDb))
             using (var cmd = db.CreateCommand())
             {
                 cmd.CommandText = LocalSchemaV12;
-                cmd.ExecuteNonQuery();
+                await cmd.ExecuteNonQueryAsync();
             }
 
             // Create "Orphaned" database (exists but not referenced)
-            using (var db = SQLiteLoader.LoadConnection(orphanDb))
+            using (var db = await SQLiteLoader.LoadConnectionAsync(orphanDb))
             using (var cmd = db.CreateCommand())
             {
                 cmd.CommandText = LocalSchemaV12;
-                cmd.ExecuteNonQuery();
+                await cmd.ExecuteNonQueryAsync();
             }
 
             // Create dbconfig.json with missingDb reference (file won't exist = Missing)
@@ -528,7 +528,7 @@ INSERT INTO ""Version"" (""Version"") VALUES (12);
                 ? ["cleanup", "--datafolder", tempDir, "--dry-run"]
                 : ["cleanup", "--datafolder", tempDir, "--force"];
 
-            Assert.AreEqual(0, await Program.Main(args));
+            Assert.AreEqual(0, await Program.MainAsync(args));
 
             if (dryRun)
             {

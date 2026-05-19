@@ -41,13 +41,13 @@ namespace Duplicati.Library.Main.Operation.Backup
         public CompressionHint Hint;
         public TaskCompletionSource<StreamProcessResult> Result;
 
-        public static async Task<StreamProcessResult> ProcessStream(IWriteChannel<StreamBlock> channel, string path, Stream stream, bool isMetadata, CompressionHint hint)
+        public static async Task<StreamProcessResult> ProcessStreamAsync(IWriteChannel<StreamBlock> channel, string path, Stream stream, bool isMetadata, CompressionHint hint)
         {
             var tcs = new TaskCompletionSource<StreamProcessResult>();
 
             // limit the stream length to that found now, a fixed point in time
             var limitedStream = new Library.Utility.ReadLimitLengthStream(stream, stream.Length);
-            
+
             var streamBlock = new StreamBlock
             {
                 Path = path,
@@ -56,9 +56,9 @@ namespace Duplicati.Library.Main.Operation.Backup
                 Hint = hint,
                 Result = tcs
             };
-            
+
             await channel.WriteAsync(streamBlock);
-            
+
             return await tcs.Task.ConfigureAwait(false);
         }
     }

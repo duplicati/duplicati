@@ -40,6 +40,8 @@ public class WebsocketAccessor : IWebsocketAccessor
     private readonly ISettingsService _settingsService;
     private readonly INotificationService _notificationService;
     private readonly IBackupListService _backupListService;
+    private readonly IRemoteController _remoteController;
+    private readonly IRemoteControllerRegistration _remoteControllerRegistration;
 
     private const int APIVersion = 1;
 
@@ -60,7 +62,9 @@ public class WebsocketAccessor : IWebsocketAccessor
         ITaskQueueService taskQueueService,
         ISettingsService settingsService,
         INotificationService notificationService,
-        IBackupListService backupListService)
+        IBackupListService backupListService,
+        IRemoteController remoteController,
+        IRemoteControllerRegistration remoteControllerRegistration)
     {
         _jsonSettings = jsonSettings;
         _statusService = statusService;
@@ -68,13 +72,16 @@ public class WebsocketAccessor : IWebsocketAccessor
         _taskQueueService = taskQueueService;
         _settingsService = settingsService;
         _notificationService = notificationService;
+        _remoteController = remoteController;
+        _remoteControllerRegistration = remoteControllerRegistration;
 
-        eventPollNotify.NewEvent += async (_, _) => { await Send(SubscriptionService.LegacyStatus); };
-        eventPollNotify.ServerSettingsUpdate += async (_, _) => { await Send(SubscriptionService.ServerSettings); };
-        eventPollNotify.BackupListUpdate += async (_, _) => { await Send(SubscriptionService.BackupList); };
-        eventPollNotify.NotificationsUpdated += async (_, _) => { await Send(SubscriptionService.Notifications); };
-        eventPollNotify.TaskQueueUpdate += async (_, _) => { await Send(SubscriptionService.TaskQueue); };
-        eventPollNotify.TaskCompleted += async (_, taskId) => { await SendTaskCompleted(taskId, GetConnections()); };
+        eventPollNotify.NewEvent += async (_, _) => { await SendAsync(SubscriptionService.LegacyStatus); };
+        eventPollNotify.ServerSettingsUpdate += async (_, _) => { await SendAsync(SubscriptionService.ServerSettings); };
+        eventPollNotify.BackupListUpdate += async (_, _) => { await SendAsync(SubscriptionService.BackupList); };
+        eventPollNotify.NotificationsUpdated += async (_, _) => { await SendAsync(SubscriptionService.Notifications); };
+        eventPollNotify.TaskQueueUpdate += async (_, _) => { await SendAsync(SubscriptionService.TaskQueue); };
+        eventPollNotify.TaskCompleted += async (_, taskId) => { await SendTaskCompletedAsync(taskId, GetConnections()); };
+        eventPollNotify.RemoteControlUpdate += async (_, _) => { await SendAsync(SubscriptionService.RemoteControl); };
         eventPollNotify.ProgressUpdate += async (_, progress) =>
         {
             if (progress == null)
@@ -84,11 +91,11 @@ public class WebsocketAccessor : IWebsocketAccessor
             if (!_subscribers.Any(c => c.Value.ContainsKey(SubscriptionService.Progress)))
                 return;
 
-            await SendData(SubscriptionService.Progress, progress(), GetConnections());
+            await SendDataAsync(SubscriptionService.Progress, progress(), GetConnections());
         };
     }
 
-    public async Task AddConnection(WebSocket newConnection, bool subscribeToLegacyStatus)
+    public async Task AddConnectionAsync(WebSocket newConnection, bool subscribeToLegacyStatus)
     {
         var subscribed = new ConcurrentDictionary<SubscriptionService, string>();
         if (subscribeToLegacyStatus)
@@ -97,12 +104,12 @@ public class WebsocketAccessor : IWebsocketAccessor
 
         _connections.Add(newConnection);
         if (subscribeToLegacyStatus)
-            await Send(SubscriptionService.LegacyStatus, [newConnection]);
+            await SendAsync(SubscriptionService.LegacyStatus, [newConnection]);
         ClearClosed();
-        await HandleClientData(newConnection);
+        await HandleClientDataAsync(newConnection);
     }
 
-    private async Task HandleClientData(WebSocket webSocket, CancellationToken cancellationToken = default)
+    private async Task HandleClientDataAsync(WebSocket webSocket, CancellationToken cancellationToken = default)
     {
         var buffer = new byte[1024 * 4];
         var result = await ReceiveAsync();
@@ -131,7 +138,7 @@ public class WebsocketAccessor : IWebsocketAccessor
             if (receiveResult is not null && receiveResult.CloseStatus is null)
             {
                 var message = Encoding.UTF8.GetString(buffer[..receiveResult.Count]);
-                await HandleClientMessage(webSocket, message);
+                await HandleClientMessageAsync(webSocket, message);
             }
 
             return receiveResult;
@@ -163,6 +170,23 @@ public class WebsocketAccessor : IWebsocketAccessor
         return _connections;
     }
 
+    private Dto.RemoteControlStatusOutput GetRemoteControlStatus()
+    {
+        var registrationTask = _remoteControllerRegistration.IsRegistering
+            ? _remoteControllerRegistration.WaitForRegistrationAsync()
+            : null;
+
+        return new Dto.RemoteControlStatusOutput(
+            CanEnable: _remoteController.CanEnable,
+            IsEnabled: _remoteController.IsEnabled,
+            IsConnected: _remoteController.Connected,
+            IsRegistering: _remoteControllerRegistration.IsRegistering,
+            IsRegisteringFaulted: registrationTask?.IsFaulted ?? false,
+            IsRegisteringCompleted: registrationTask?.IsCompleted ?? false,
+            RegistrationUrl: _remoteControllerRegistration.RegistrationUrl
+        );
+    }
+
     private ArraySegment<byte> GetBytes<T>(T Data)
     {
         var json = JsonConvert.SerializeObject(Data, _jsonSettings);
@@ -170,22 +194,22 @@ public class WebsocketAccessor : IWebsocketAccessor
         return new ArraySegment<byte>(bytes);
     }
 
-    private Task SendRequestReply<T>(WebSocket socket, string id, string? service, string message, bool success, T? data = default)
+    private Task SendRequestReplyAsync<T>(WebSocket socket, string id, string? service, string message, bool success, T? data = default)
         => socket.SendAsync(GetBytes(new WebSocketReply(APIVersion, id, service, message, success, data)), WebSocketMessageType.Text, true, CancellationToken.None);
 
-    private Task SendRequestSuccessReply(WebSocket socket, WebSocketRequest req, string message = "OK")
-        => SendRequestSuccessReply<object?>(socket, req, message, null);
+    private Task SendRequestSuccessReplyAsync(WebSocket socket, WebSocketRequest req, string message = "OK")
+        => SendRequestSuccessReplyAsync<object?>(socket, req, message, null);
 
-    private Task SendRequestSuccessReply<T>(WebSocket socket, WebSocketRequest req, string message = "OK", T? data = default)
+    private Task SendRequestSuccessReplyAsync<T>(WebSocket socket, WebSocketRequest req, string message = "OK", T? data = default)
         => socket.SendAsync(GetBytes(new WebSocketReply(APIVersion, req.Id, req.Service, message, true, data)), WebSocketMessageType.Text, true, CancellationToken.None);
 
-    private Task SendRequestFailureReply(WebSocket socket, WebSocketRequest req, string message)
-        => SendRequestFailureReply<object>(socket, req, message, null);
+    private Task SendRequestFailureReplyAsync(WebSocket socket, WebSocketRequest req, string message)
+        => SendRequestFailureReplyAsync<object>(socket, req, message, null);
 
-    private Task SendRequestFailureReply<T>(WebSocket socket, WebSocketRequest req, string message, T? data = default)
+    private Task SendRequestFailureReplyAsync<T>(WebSocket socket, WebSocketRequest req, string message, T? data = default)
         => socket.SendAsync(GetBytes(new WebSocketReply(APIVersion, req.Id, req.Service, message, false, data)), WebSocketMessageType.Text, true, CancellationToken.None);
 
-    private async Task SendTaskCompleted(long taskId, IEnumerable<WebSocket> connections)
+    private async Task SendTaskCompletedAsync(long taskId, IEnumerable<WebSocket> connections)
     {
         var task = _taskQueueService.GetTaskInfo(taskId);
         if (task == null)
@@ -193,11 +217,11 @@ public class WebsocketAccessor : IWebsocketAccessor
             Log.WriteWarningMessage(LOGTAG, "WebsocketTaskNotFound", null, $"Task with ID {taskId} not found for completion notification.");
             return;
         }
-        await SendData(SubscriptionService.TaskCompleted, task, connections);
+        await SendDataAsync(SubscriptionService.TaskCompleted, task, connections);
     }
 
 
-    private async Task Send(SubscriptionService key, IEnumerable<WebSocket> connections)
+    private async Task SendAsync(SubscriptionService key, IEnumerable<WebSocket> connections)
     {
         // Avoid generating data for subscriptions that are not active
         if (!_subscribers.Any(c => c.Value.ContainsKey(key)))
@@ -206,10 +230,10 @@ public class WebsocketAccessor : IWebsocketAccessor
         switch (key)
         {
             case SubscriptionService.LegacyStatus:
-                await SendData(SubscriptionService.LegacyStatus, _statusService.GetStatus(), connections);
+                await SendDataAsync(SubscriptionService.LegacyStatus, _statusService.GetStatus(), connections);
                 break;
             case SubscriptionService.ServerSettings:
-                await SendData(SubscriptionService.ServerSettings, _settingsService.GetSettingsMasked(), connections);
+                await SendDataAsync(SubscriptionService.ServerSettings, _settingsService.GetSettingsMasked(), connections);
                 break;
             case SubscriptionService.BackupList:
                 var targets = connections.ToHashSet();
@@ -223,14 +247,14 @@ public class WebsocketAccessor : IWebsocketAccessor
                         })
                         .Where(c => c.found)
                         .GroupBy(c => c.order)
-                        .Select(c => SendData(SubscriptionService.BackupList, _backupListService.List(c.Key), c.Select(x => x.Key)))
+                        .Select(c => SendDataAsync(SubscriptionService.BackupList, _backupListService.List(c.Key), c.Select(x => x.Key)))
                 );
                 break;
             case SubscriptionService.Notifications:
-                await SendData(SubscriptionService.Notifications, _notificationService.GetNotifications(), connections);
+                await SendDataAsync(SubscriptionService.Notifications, _notificationService.GetNotifications(), connections);
                 break;
             case SubscriptionService.TaskQueue:
-                await SendData(SubscriptionService.TaskQueue, _taskQueueService.GetTaskQueue(), connections);
+                await SendDataAsync(SubscriptionService.TaskQueue, _taskQueueService.GetTaskQueue(), connections);
                 break;
             case SubscriptionService.TaskCompleted:
                 // This event is sent when a task completes, so we do not send initial data
@@ -238,13 +262,16 @@ public class WebsocketAccessor : IWebsocketAccessor
             case SubscriptionService.Progress:
                 // Progress updates are sent via the event system, so we cannot send information in advance
                 break;
+            case SubscriptionService.RemoteControl:
+                await SendDataAsync(SubscriptionService.RemoteControl, GetRemoteControlStatus(), connections);
+                break;
             default:
                 Log.WriteWarningMessage(LOGTAG, "WebsocketUnknownSubscription", null, $"Unknown subscription service: {key}");
                 break;
         }
     }
 
-    private async Task SendData<T>(SubscriptionService key, T? data, IEnumerable<WebSocket> connections)
+    private async Task SendDataAsync<T>(SubscriptionService key, T? data, IEnumerable<WebSocket> connections)
     {
         try
         {
@@ -266,9 +293,9 @@ public class WebsocketAccessor : IWebsocketAccessor
         }
     }
 
-    public Task Send(SubscriptionService key) => Send(key, GetConnections());
+    public Task SendAsync(SubscriptionService key) => SendAsync(key, GetConnections());
 
-    public async Task HandleClientMessage(WebSocket socket, string messagestr)
+    public async Task HandleClientMessageAsync(WebSocket socket, string messagestr)
     {
         WebSocketRequest? message;
         try
@@ -278,7 +305,7 @@ public class WebsocketAccessor : IWebsocketAccessor
         catch (Exception ex)
         {
             Log.WriteErrorMessage(LOGTAG, "WebsocketDeserializationError", ex, $"Failed to deserialize websocket message");
-            await SendRequestReply<object>(socket, "", null, "Invalid message format", false);
+            await SendRequestReplyAsync<object>(socket, "", null, "Invalid message format", false);
             return;
         }
 
@@ -287,27 +314,27 @@ public class WebsocketAccessor : IWebsocketAccessor
 
         if (message.Version != APIVersion)
         {
-            await SendRequestFailureReply(socket, message, "Unsupported API version");
+            await SendRequestFailureReplyAsync(socket, message, "Unsupported API version");
             return;
         }
 
         switch (message.Action)
         {
             case "status":
-                await SendRequestReply(socket, message.Id, message.Service, "Status request received", true, _statusService.GetStatus());
+                await SendRequestReplyAsync(socket, message.Id, message.Service, "Status request received", true, _statusService.GetStatus());
                 return;
             case "ping":
-                await SendRequestSuccessReply(socket, message, "pong");
+                await SendRequestSuccessReplyAsync(socket, message, "pong");
                 return;
             case "auth":
-                await SendRequestSuccessReply(socket, message, "Already authenticated");
+                await SendRequestSuccessReplyAsync(socket, message, "Already authenticated");
                 return;
             case "sub":
             case "unsub":
                 {
                     if (!Enum.TryParse<SubscriptionService>(message.Service, true, out var serviceEnum))
                     {
-                        await SendRequestFailureReply(socket, message, "Unknown subscription service");
+                        await SendRequestFailureReplyAsync(socket, message, "Unknown subscription service");
                         return;
                     }
 
@@ -327,13 +354,13 @@ public class WebsocketAccessor : IWebsocketAccessor
                             }
 
                             subscribed.AddOrUpdate(serviceEnum, config, (key, oldValue) => config);
-                            await SendRequestSuccessReply<object>(socket, message, "Subscribed successfully");
-                            await Send(serviceEnum, [socket]);
+                            await SendRequestSuccessReplyAsync<object>(socket, message, "Subscribed successfully");
+                            await SendAsync(serviceEnum, [socket]);
                         }
                         else if (message.Action == "unsub")
                         {
                             subscribed.TryRemove(serviceEnum, out _);
-                            await SendRequestSuccessReply<object>(socket, message, "Unsubscribed successfully");
+                            await SendRequestSuccessReplyAsync<object>(socket, message, "Unsubscribed successfully");
                         }
                     }
 
@@ -343,7 +370,7 @@ public class WebsocketAccessor : IWebsocketAccessor
             default:
                 {
                     Log.WriteWarningMessage(LOGTAG, "WebsocketUnknownAction", null, $"Unknown websocket action: {message.Action}");
-                    await SendRequestFailureReply(socket, message, "Unknown action");
+                    await SendRequestFailureReplyAsync(socket, message, "Unknown action");
                     return;
                 }
         }

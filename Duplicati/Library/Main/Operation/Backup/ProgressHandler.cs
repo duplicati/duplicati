@@ -33,7 +33,7 @@ namespace Duplicati.Library.Main.Operation.Backup
     /// </summary>
     internal static class ProgressHandler
     {
-        public static Task Run(Channels channels, BackupResults stat)
+        public static Task RunAsync(Channels channels, BackupResults stat)
         {
             return AutomationExtensions.RunTask(new
             {
@@ -48,10 +48,10 @@ namespace Duplicati.Library.Main.Operation.Backup
                 long processedFileSize = 0;
                 string current = null;
 
-                while(true)
+                while (true)
                 {
                     var t = await self.Input.ReadAsync();
-                    switch(t.Type)
+                    switch (t.Type)
                     {
                         case EventType.FileStarted:
                             filesStarted[t.Filepath] = t.Length;

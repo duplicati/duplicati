@@ -86,7 +86,7 @@ namespace Duplicati.Library.Main.Operation
 
             foreach (var filesetId in filesetIds)
             {
-                await foreach ((var volumeName, var lockUntil) in database.GetRemoteVolumesDependingOnFilesets([filesetId], m_result.TaskControl.ProgressToken).ConfigureAwait(false))
+                await foreach ((var volumeName, var lockUntil) in database.GetRemoteVolumesDependingOnFilesetsAsync([filesetId], m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                 {
                     readCount++;
                     try
@@ -106,7 +106,7 @@ namespace Duplicati.Library.Main.Operation
                             Log.WriteInformationMessage(LOGTAG, "SetObjectLock", "Setting object lock for {0} in fileset {1} until {2:u}", volumeName, filesetId, lockUntilUtc);
                             await backendManager.SetObjectLockUntilAsync(volumeName, lockUntilUtc, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                             // Update the lock expiration time in the database
-                            await database.UpdateRemoteVolumeLockExpiration(volumeName, lockUntilUtc, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+                            await database.UpdateRemoteVolumeLockExpirationAsync(volumeName, lockUntilUtc, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                         }
                         updatedCount++;
                     }
@@ -141,7 +141,7 @@ namespace Duplicati.Library.Main.Operation
                 foreach (var versionTime in versions!)
                 {
                     var matched = await db
-                        .GetFilesetIDs(versionTime, null, true, token)
+                        .GetFilesetIDsAsync(versionTime, null, true, token)
                         .ToArrayAsync(cancellationToken: token)
                         .ConfigureAwait(false);
 
@@ -154,7 +154,7 @@ namespace Duplicati.Library.Main.Operation
             else if (m_options.AllVersions)
             {
                 filesetIds.AddRange(await db
-                    .FilesetTimes(token)
+                    .FilesetTimesAsync(token)
                     .Select(x => x.Key)
                     .ToArrayAsync(token)
                     .ConfigureAwait(false));
@@ -162,7 +162,7 @@ namespace Duplicati.Library.Main.Operation
             else
             {
                 var matched = await db
-                    .GetFilesetIDs(m_options.Time, m_options.Version, false, token)
+                    .GetFilesetIDsAsync(m_options.Time, m_options.Version, false, token)
                     .ToArrayAsync(cancellationToken: token)
                     .ConfigureAwait(false);
 

@@ -74,7 +74,7 @@ namespace Duplicati.Library.Main.Database
             /// </summary>
             /// <param name="token">A cancellation token to cancel the operation.</param>
             /// <returns>An asynchronous enumerable of file sizes.</returns>
-            IAsyncEnumerable<long> Sizes(CancellationToken token);
+            IAsyncEnumerable<long> SizesAsync(CancellationToken token);
         }
 
         /// <summary>
@@ -114,40 +114,40 @@ namespace Duplicati.Library.Main.Database
             /// </summary>
             /// <param name="token">A cancellation token to cancel the operation.</param>
             /// <returns>An asynchronous enumerable of filesets.</returns>
-            IAsyncEnumerable<IFileset> Sets(CancellationToken token);
+            IAsyncEnumerable<IFileset> SetsAsync(CancellationToken token);
             /// <summary>
             /// Gets all of the filesets in the database as an asynchronous enumerable, omitting file count and total size.
             /// </summary>
             /// <param name="token">A cancellation token to cancel the operation.</param>
             /// <returns>An asynchronous enumerable of filesets.</returns>
-            IAsyncEnumerable<IFileset> QuickSets(CancellationToken token);
+            IAsyncEnumerable<IFileset> QuickSetsAsync(CancellationToken token);
             /// <summary>
             /// Gets the files in the filesets that match the provided filter as an asynchronous enumerable.
             /// </summary>
             /// <param name="filter">The filter to apply to the files.</param>
             /// <param name="token">A cancellation token to cancel the operation.</param>
             /// <returns>An asynchronous enumerable of file versions representing the selected files.</returns>
-            IAsyncEnumerable<IFileversion> SelectFiles(IFilter filter, CancellationToken token);
+            IAsyncEnumerable<IFileversion> SelectFilesAsync(IFilter filter, CancellationToken token);
             /// <summary>
             /// Gets the largest prefix of files in the filesets that match the provided filter as an asynchronous enumerable.
             /// </summary>
             /// <param name="filter">The filter to apply to the files.</param>
             /// <param name="token">A cancellation token to cancel the operation.</param>
             /// <returns>An asynchronous enumerable of file versions representing the largest prefix.</returns>
-            IAsyncEnumerable<IFileversion> GetLargestPrefix(IFilter filter, CancellationToken token);
+            IAsyncEnumerable<IFileversion> GetLargestPrefixAsync(IFilter filter, CancellationToken token);
             /// <summary>
             /// Selects the contents of a folder in the filesets that match the provided filter as an asynchronous enumerable.
             /// </summary>
             /// <param name="filter">The filter to apply to the folder contents.</param>
             /// <param name="token">A cancellation token to cancel the operation.</param>
             /// <returns>An asynchronous enumerable of file versions representing the folder contents.</returns>
-            IAsyncEnumerable<IFileversion> SelectFolderContents(IFilter filter, CancellationToken token);
+            IAsyncEnumerable<IFileversion> SelectFolderContentsAsync(IFilter filter, CancellationToken token);
             /// <summary>
             /// Deletes all filesets except the most recent one.
             /// </summary>
             /// <param name="token">A cancellation token to cancel the operation.</param>
             /// <returns>A task that completes when the filesets have been deleted.</returns>
-            Task TakeFirst(CancellationToken token);
+            Task TakeFirstAsync(CancellationToken token);
         }
 
         /// <summary>
@@ -196,12 +196,12 @@ namespace Duplicati.Library.Main.Database
                 {
                     m_db = owner,
                     m_filesets = await owner
-                        .FilesetTimes(token)
+                        .FilesetTimesAsync(token)
                         .ToArrayAsync(cancellationToken: token)
                         .ConfigureAwait(false),
                     m_tablename = $"Filesets-{Library.Utility.Utility.GetHexGuid()}"
                 };
-                var (Query, Values) = await owner.GetFilelistWhereClause(time, versions, fs.m_filesets, false, token)
+                var (Query, Values) = await owner.GetFilelistWhereClauseAsync(time, versions, fs.m_filesets, false, token)
                     .ConfigureAwait(false);
 
                 await using (var cmd = fs.m_db.Connection.CreateCommand())
@@ -303,7 +303,7 @@ namespace Duplicati.Library.Main.Database
                 }
 
                 /// <inheritdoc />
-                public async IAsyncEnumerable<long> Sizes([EnumeratorCancellation] CancellationToken token)
+                public async IAsyncEnumerable<long> SizesAsync([EnumeratorCancellation] CancellationToken token)
                 {
                     while (More && Path == m_reader.ConvertValueToString(0))
                     {
@@ -321,13 +321,13 @@ namespace Duplicati.Library.Main.Database
                 /// <inheritdoc/>
                 public string? Path { get; internal set; }
                 /// <inheritdoc/>
-                public IAsyncEnumerable<long> Sizes(CancellationToken token) => AsyncEnumerable.Empty<long>();
+                public IAsyncEnumerable<long> SizesAsync(CancellationToken token) => AsyncEnumerable.Empty<long>();
             }
 
             /// <inheritdoc />
-            public IAsyncEnumerable<IFileversion> GetLargestPrefix(IFilter filter, CancellationToken token)
+            public IAsyncEnumerable<IFileversion> GetLargestPrefixAsync(IFilter filter, CancellationToken token)
             {
-                return GetLargestPrefix(filter, null, token);
+                return GetLargestPrefixAsync(filter, null, token);
             }
 
             /// <summary>
@@ -337,7 +337,7 @@ namespace Duplicati.Library.Main.Database
             /// <param name="prefixrule">The prefix rule to apply, or null if no prefix rule is specified.</param>
             /// <param name="token"> A cancellation token to cancel the operation.</param>
             /// <returns>An asynchronous enumerable of file versions representing the largest prefix.</returns>
-            private async IAsyncEnumerable<IFileversion> GetLargestPrefix(IFilter filter, string? prefixrule, [EnumeratorCancellation] CancellationToken token)
+            private async IAsyncEnumerable<IFileversion> GetLargestPrefixAsync(IFilter filter, string? prefixrule, [EnumeratorCancellation] CancellationToken token)
             {
                 await using var tmpnames = await FilteredFilenameTable
                     .CreateFilteredFilenameTableAsync(m_db, filter, token)
@@ -447,7 +447,7 @@ namespace Duplicati.Library.Main.Database
 
                     var result = roots
                         .Concat(rootsUNC)
-                        .Select(x => GetLargestPrefix(filter, x, token)
+                        .Select(x => GetLargestPrefixAsync(filter, x, token)
                             .FirstAsync())
                         .Distinct();
 
@@ -469,7 +469,7 @@ namespace Duplicati.Library.Main.Database
             /// <param name="table">The name of the table to query.</param>
             /// <param name="token"> A cancellation token to cancel the operation.</param>
             /// <returns>An asynchronous enumerable of folder entries.</returns>
-            private static async IAsyncEnumerable<string> SelectFolderEntries(SqliteCommand cmd, string prefix, string table, [EnumeratorCancellation] CancellationToken token)
+            private static async IAsyncEnumerable<string> SelectFolderEntriesAsync(SqliteCommand cmd, string prefix, string table, [EnumeratorCancellation] CancellationToken token)
             {
                 if (!string.IsNullOrEmpty(prefix))
                     prefix = Util.AppendDirSeparator(prefix, Util.GuessDirSeparator(prefix));
@@ -498,7 +498,7 @@ namespace Duplicati.Library.Main.Database
             }
 
             /// <inheritdoc />
-            public async IAsyncEnumerable<IFileversion> SelectFolderContents(IFilter filter, [EnumeratorCancellation] CancellationToken token)
+            public async IAsyncEnumerable<IFileversion> SelectFolderContentsAsync(IFilter filter, [EnumeratorCancellation] CancellationToken token)
             {
                 var tbname = $"Filenames-{Library.Utility.Utility.GetHexGuid()}";
                 try
@@ -564,7 +564,7 @@ namespace Duplicati.Library.Main.Database
                             ");
 
                         using (new Logging.Timer(LOGTAG, "ListFolderContents", "Inserting paths into table"))
-                            await foreach (var n in SelectFolderEntries(cmd, pathprefix, tmpnames.Tablename, token).Distinct().ConfigureAwait(false))
+                            await foreach (var n in SelectFolderEntriesAsync(cmd, pathprefix, tmpnames.Tablename, token).Distinct().ConfigureAwait(false))
                                 await c2
                                     .SetParameterValue("@Path", n)
                                     .ExecuteNonQueryAsync(token) // Not logging as we log the total time
@@ -666,7 +666,7 @@ namespace Duplicati.Library.Main.Database
             }
 
             /// <inheritdoc />
-            public async IAsyncEnumerable<IFileversion> SelectFiles(IFilter filter, [EnumeratorCancellation] CancellationToken token)
+            public async IAsyncEnumerable<IFileversion> SelectFilesAsync(IFilter filter, [EnumeratorCancellation] CancellationToken token)
             {
                 await using var tmpnames = await FilteredFilenameTable
                     .CreateFilteredFilenameTableAsync(m_db, filter, token)
@@ -755,7 +755,7 @@ namespace Duplicati.Library.Main.Database
             }
 
             /// <inheritdoc />
-            public async Task TakeFirst(CancellationToken token)
+            public async Task TakeFirstAsync(CancellationToken token)
             {
                 await using var cmd = m_db.Connection.CreateCommand();
                 await cmd.ExecuteNonQueryAsync($@"
@@ -771,7 +771,7 @@ namespace Duplicati.Library.Main.Database
             }
 
             /// <inheritdoc />
-            public async IAsyncEnumerable<IFileset> QuickSets([EnumeratorCancellation] CancellationToken token)
+            public async IAsyncEnumerable<IFileset> QuickSetsAsync([EnumeratorCancellation] CancellationToken token)
             {
                 var dict = new Dictionary<long, long>();
                 for (var i = 0; i < m_filesets.Length; i++)
@@ -803,7 +803,7 @@ namespace Duplicati.Library.Main.Database
             }
 
             /// <inheritdoc />
-            public async IAsyncEnumerable<IFileset> Sets([EnumeratorCancellation] CancellationToken token)
+            public async IAsyncEnumerable<IFileset> SetsAsync([EnumeratorCancellation] CancellationToken token)
             {
                 var dict = new Dictionary<long, long>();
                 for (var i = 0; i < m_filesets.Length; i++)
@@ -887,7 +887,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="time">The time to filter filesets by.</param>
         /// <param name="versions">An array of versions to filter filesets by.</param>
         /// <returns>A task that when awaited returns a new instance of <see cref="FileSets"/>.</returns>
-        public async Task<IFileSets> SelectFileSets(DateTime time, long[] versions, CancellationToken token)
+        public async Task<IFileSets> SelectFileSetsAsync(DateTime time, long[] versions, CancellationToken token)
         {
             return await FileSets.CreateAsync(this, time, versions, token)
                 .ConfigureAwait(false);
@@ -909,7 +909,7 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>An asynchronous enumerable of fileset entries.</returns>
-        public async IAsyncEnumerable<IListFilesetResultFileset> ListFilesetsExtended([EnumeratorCancellation] CancellationToken token)
+        public async IAsyncEnumerable<IListFilesetResultFileset> ListFilesetsExtendedAsync([EnumeratorCancellation] CancellationToken token)
         {
             const string query = @"
                 SELECT
@@ -970,7 +970,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="limit">>The limit for pagination.</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>A task that when awaited returns a paginated result set of folder entries.</returns>
-        public async Task<IPaginatedResults<IListFolderEntry>> ListFolder(IEnumerable<long> prefixIds, long filesetid, long offset, long limit, CancellationToken token)
+        public async Task<IPaginatedResults<IListFolderEntry>> ListFolderAsync(IEnumerable<long> prefixIds, long filesetid, long offset, long limit, CancellationToken token)
         {
             if (offset != 0 && limit <= 0)
                 throw new ArgumentException("Cannot use offset without limit specified.", nameof(offset));
@@ -1093,7 +1093,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="prefixes">The prefixes to get the IDs for.</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>An asynchronous enumerable of prefix IDs.</returns>
-        public async IAsyncEnumerable<long> GetPrefixIds(IEnumerable<string> prefixes, [EnumeratorCancellation] CancellationToken token)
+        public async IAsyncEnumerable<long> GetPrefixIdsAsync(IEnumerable<string> prefixes, [EnumeratorCancellation] CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand();
             await using var prefixesTable = await TemporaryDbValueList.CreateAsync(this, prefixes, token)
@@ -1120,7 +1120,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="filesetId">The fileset id.</param>
         /// <param name="token"> A cancellation token to cancel the operation.</param>
         /// <returns>A task that when awaited returns a list of the entries that are unique roots.</returns>
-        public async IAsyncEnumerable<IListFolderEntry> GetMinimalUniquePrefixEntries(long filesetId, [EnumeratorCancellation] CancellationToken token)
+        public async IAsyncEnumerable<IListFolderEntry> GetMinimalUniquePrefixEntriesAsync(long filesetId, [EnumeratorCancellation] CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand();
             cmd.SetCommandAndParameters(@"
@@ -1167,7 +1167,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="entries">The folder entries to extend.</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>A task that when awaited returns the extended folder entries.</returns>
-        public async Task<Dictionary<long, Dictionary<string, string?>>> GetMetadataForFilesetIds(IEnumerable<long> filesetIds, CancellationToken token)
+        public async Task<Dictionary<long, Dictionary<string, string?>>> GetMetadataForFilesetIdsAsync(IEnumerable<long> filesetIds, CancellationToken token)
         {
             await using var filesetIdsTable = await TemporaryDbValueList.CreateAsync(this, filesetIds, token)
                 .ConfigureAwait(false);
@@ -1226,7 +1226,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="limit">Pagination limit.</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>A task that when awaited returns all matching file versions ordered by path and then version time.</returns>
-        public async Task<IPaginatedResults<IListFileVersion>> ListFileVersions(IEnumerable<string> paths, long[]? filesetIds, long offset, long limit, CancellationToken token)
+        public async Task<IPaginatedResults<IListFileVersion>> ListFileVersionsAsync(IEnumerable<string> paths, long[]? filesetIds, long offset, long limit, CancellationToken token)
         {
             if (paths == null || !paths.Any())
                 return new PaginatedResults<IListFileVersion>(0, (int)(limit > 0 ? limit : long.MaxValue), 0, 0, Enumerable.Empty<IListFileVersion>());
@@ -1385,7 +1385,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="limit">The limit for pagination.</param>
         /// <param name="token"> A cancellation token to cancel the operation.</param>
         /// <returns>A task that when awaited returns all matching file versions ordered by path and then version time.</returns>
-        public async Task<IPaginatedResults<ISearchFileVersion>> SearchEntries(IEnumerable<string>? pathprefixes, IFilter filter, long[]? filesetIds, long offset, long limit, CancellationToken token)
+        public async Task<IPaginatedResults<ISearchFileVersion>> SearchEntriesAsync(IEnumerable<string>? pathprefixes, IFilter filter, long[]? filesetIds, long offset, long limit, CancellationToken token)
         {
             if (offset != 0 && limit <= 0)
                 throw new ArgumentException("Cannot use offset without limit specified.", nameof(offset));

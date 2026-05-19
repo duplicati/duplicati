@@ -27,6 +27,8 @@ using System.Collections.Generic;
 using Duplicati.Library.Interface;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using Duplicati.Library.Utility;
+using System.Threading.Tasks;
+using Duplicati.Library.Main;
 
 namespace Duplicati.UnitTest
 {
@@ -34,154 +36,124 @@ namespace Duplicati.UnitTest
     {
         [Test]
         [Category("Border")]
-        public void Run10kNoProgress()
-        {
-            RunCommands(1024 * 10, modifyOptions: opts =>
-            {
-                opts["disable-file-scanner"] = "true";
-            });
-        }
+        public Task Run10kNoProgressAsync()
+            => RunCommandsAsync(1024 * 10, modifyOptions: opts =>
+                {
+                    opts["disable-file-scanner"] = "true";
+                });
 
         [Test]
         [Category("Border")]
-        public void Run10k()
-        {
-            RunCommands(1024 * 10);
-        }
+        public Task Run10kAsync()
+            => RunCommandsAsync(1024 * 10);
 
         [Test]
         [Category("Border")]
-        public void Run10mb()
-        {
-            RunCommands(1024 * 10, modifyOptions: opts =>
-            {
-                opts["blocksize"] = "10mb";
-                opts["dblock-size"] = "25mb";
-            });
-        }
+        public Task Run10mbAsync()
+            => RunCommandsAsync(1024 * 10, modifyOptions: opts =>
+                {
+                    opts["blocksize"] = "10mb";
+                    opts["dblock-size"] = "25mb";
+                });
 
         [Test]
         [Category("Border")]
-        public void Run100k()
-        {
-            RunCommands(1024 * 100);
-        }
+        public Task Run100kAsync()
+            => RunCommandsAsync(1024 * 100);
 
         [Test]
         [Category("Border")]
-        public void Run12345_1()
-        {
-            RunCommands(12345);
-        }
+        public Task Run12345_1Async()
+            => RunCommandsAsync(12345);
 
         [Test]
         [Category("Border")]
-        public void Run12345_2()
-        {
-            RunCommands(12345, 1024 * 1024 * 10);
-        }
+        public Task Run12345_2Async()
+            => RunCommandsAsync(12345, 1024 * 1024 * 10);
 
         [Test]
         [Category("Border")]
-        public void RunNoMetadata()
-        {
-            RunCommands(1024 * 10, modifyOptions: opts =>
-            {
-                opts["skip-metadata"] = "true";
-            });
-        }
+        public Task RunNoMetadataAsync()
+            => RunCommandsAsync(1024 * 10, modifyOptions: opts =>
+                {
+                    opts["skip-metadata"] = "true";
+                });
 
 
         [Test]
         [Category("Border")]
-        public void RunMD5()
-        {
-            RunCommands(1024 * 10, modifyOptions: opts =>
-            {
-                opts["block-hash-algorithm"] = "MD5";
-                opts["file-hash-algorithm"] = "MD5";
-            });
-        }
+        public Task RunMD5Async()
+            => RunCommandsAsync(1024 * 10, modifyOptions: opts =>
+                {
+                    opts["block-hash-algorithm"] = "MD5";
+                    opts["file-hash-algorithm"] = "MD5";
+                });
 
         [Test]
         [Category("Border")]
-        public void RunSHA384()
-        {
-            RunCommands(1024 * 10, modifyOptions: opts =>
-            {
-                opts["block-hash-algorithm"] = "SHA384";
-                opts["file-hash-algorithm"] = "SHA384";
-            });
-        }
+        public Task RunSHA384Async()
+            => RunCommandsAsync(1024 * 10, modifyOptions: opts =>
+                {
+                    opts["block-hash-algorithm"] = "SHA384";
+                    opts["file-hash-algorithm"] = "SHA384";
+                });
 
         [Test]
         [Category("Border")]
-        public void RunMixedBlockFile_1()
-        {
-            RunCommands(1024 * 10, modifyOptions: opts =>
-            {
-                opts["block-hash-algorithm"] = "MD5";
-                opts["file-hash-algorithm"] = "SHA1";
-            });
-        }
+        public Task RunMixedBlockFile_1Async()
+            => RunCommandsAsync(1024 * 10, modifyOptions: opts =>
+                {
+                    opts["block-hash-algorithm"] = "MD5";
+                    opts["file-hash-algorithm"] = "SHA1";
+                });
 
         [Test]
         [Category("Border")]
-        public void RunMixedBlockFile_2()
-        {
-            RunCommands(1024 * 10, modifyOptions: opts =>
-            {
-                opts["block-hash-algorithm"] = "MD5";
-                opts["file-hash-algorithm"] = "SHA256";
-            });
-        }
+        public Task RunMixedBlockFile_2Async()
+            => RunCommandsAsync(1024 * 10, modifyOptions: opts =>
+                {
+                    opts["block-hash-algorithm"] = "MD5";
+                    opts["file-hash-algorithm"] = "SHA256";
+                });
 
         [Test]
         [Category("Border")]
-        public void RunNoIndexFiles()
-        {
-            RunCommands(1024 * 10, modifyOptions: opts =>
-            {
-                opts["index-file-policy"] = "None";
-            });
-        }
+        public Task RunNoIndexFilesAsync()
+            => RunCommandsAsync(1024 * 10, modifyOptions: opts =>
+                {
+                    opts["index-file-policy"] = "None";
+                });
 
         [Test]
         [Category("Border")]
-        public void RunSlimIndexFiles()
-        {
-            RunCommands(1024 * 10, modifyOptions: opts =>
-            {
-                opts["index-file-policy"] = "Lookup";
-            });
-        }
+        public Task RunSlimIndexFilesAsync()
+            => RunCommandsAsync(1024 * 10, modifyOptions: opts =>
+                {
+                    opts["index-file-policy"] = "Lookup";
+                });
 
         [Test]
         [Category("Border")]
-        public void RunQuickTimestamps()
-        {
-            RunCommands(1024 * 10, modifyOptions: opts =>
-            {
-                opts["check-filetime-only"] = "true";
-            });
-        }
+        public Task RunQuickTimestampsAsync()
+            => RunCommandsAsync(1024 * 10, modifyOptions: opts =>
+                {
+                    opts["check-filetime-only"] = "true";
+                });
 
         [Test]
         [Category("Border")]
-        public void RunFullScan()
-        {
-            RunCommands(1024 * 10, modifyOptions: opts =>
-            {
-                opts["disable-filetime-check"] = "true";
-            });
-        }
+        public Task RunFullScanAsync()
+            => RunCommandsAsync(1024 * 10, modifyOptions: opts =>
+                {
+                    opts["disable-filetime-check"] = "true";
+                });
 
         [Test]
         [Category("Border")]
-        public void Run10kBackupRead()
+        public Task Run10kBackupReadAsync()
         {
             if (!PermissionHelper.HasSeBackupPrivilege())
-                return;
+                return Task.CompletedTask;
 
             try
             {
@@ -189,10 +161,10 @@ namespace Duplicati.UnitTest
             }
             catch (Exception)
             {
-                return;
+                return Task.CompletedTask;
             }
 
-            RunCommands(1024 * 10, modifyOptions: opts =>
+            return RunCommandsAsync(1024 * 10, modifyOptions: opts =>
             {
                 opts["backupread-policy"] = "required";
             });
@@ -200,23 +172,28 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Border")]
-        public void Run10kTgzCompression()
-        {
-            RunCommands(1024 * 10, modifyOptions: opts =>
-            {
-                opts["compression-module"] = "tgz";
-            });
-        }
+        public Task Run10kTgzCompressionAsync()
+            => RunCommandsAsync(1024 * 10, modifyOptions: opts =>
+                {
+                    opts["compression-module"] = "tgz";
+                });
 
         [Test]
         [Category("Border")]
-        public void Run10kTzstdCompression()
-        {
-            RunCommands(1024 * 10, modifyOptions: opts =>
-            {
-                opts["compression-module"] = "tzstd";
-            });
-        }
+        public Task Run10kTzstdCompressionAsync()
+            => RunCommandsAsync(1024 * 10, modifyOptions: opts =>
+                {
+                    opts["compression-module"] = "tzstd";
+                });
+
+        // [Test]
+        // [Category("Border")]
+        // public Task Run10kIPCAsync()
+        //     => RunCommandsAsync(1024 * 10, modifyOptions: opts =>
+        //         {
+        //             opts["rpc-controller"] = "1";
+        //         });
+
 
         public static Dictionary<string, int> WriteTestFilesToFolder(string targetfolder, int blocksize, int basedatasize = 0)
         {
@@ -252,17 +229,25 @@ namespace Duplicati.UnitTest
             return filenames;
         }
 
-        private void RunCommands(int blocksize, int basedatasize = 0, Action<Dictionary<string, string>> modifyOptions = null)
+        private async Task RunCommandsAsync(int blocksize, int basedatasize = 0, Action<Dictionary<string, string>> modifyOptions = null)
         {
             var testopts = TestOptions;
             testopts["blocksize"] = blocksize.ToString() + "b";
             modifyOptions?.Invoke(testopts);
 
+            var useRpcController = testopts.ContainsKey("rpc-controller");
+            testopts.Remove("rpc-controller");
+
+            async Task<IController> CreateControllerAsync(string url, Dictionary<string, string> options, IMessageSink messageSink)
+            {
+                return new Controller(url, options, messageSink);
+            }
+
             var filenames = WriteTestFilesToFolder(DATAFOLDER, blocksize, basedatasize);
 
-            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            using (var c = await CreateControllerAsync("file://" + TARGETFOLDER, testopts, null))
             {
-                IBackupResults backupResults = c.Backup(new string[] { DATAFOLDER });
+                IBackupResults backupResults = await c.BackupAsync(new string[] { DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
 
                 // TODO: This sometimes results in a "No block hash found for file: C:\projects\duplicati\testdata\backup-data\a-0" warning.
@@ -274,8 +259,8 @@ namespace Duplicati.UnitTest
             testopts.Remove("block-hash-algorithm");
             testopts.Remove("file-hash-algorithm");
 
-            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
-                TestUtils.AssertResults(c.List("*"));
+            using (var c = await CreateControllerAsync("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
+                TestUtils.AssertResults(await c.ListAsync("*"));
 
             // Do a "touch" on files to trigger a re-scan, which should do nothing
             //foreach (var k in filenames)
@@ -287,9 +272,9 @@ namespace Duplicati.UnitTest
             foreach (var k in filenames)
                 File.WriteAllBytes(Path.Combine(DATAFOLDER, "b" + k.Key), data.Take(k.Value).ToArray());
 
-            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            using (var c = await CreateControllerAsync("file://" + TARGETFOLDER, testopts, null))
             {
-                var r = c.Backup(new string[] { DATAFOLDER });
+                var r = await c.BackupAsync(new string[] { DATAFOLDER });
                 Assert.AreEqual(0, r.Errors.Count());
                 Assert.AreEqual(0, r.Warnings.Count());
 
@@ -309,30 +294,30 @@ namespace Duplicati.UnitTest
                 File.WriteAllBytes(Path.Combine(DATAFOLDER, "c" + k.Key), data.Take(k.Value).ToArray());
             }
 
-            System.Threading.Tasks.Task.Delay(1000).Wait();
+            await Task.Delay(1000);
 
-            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Backup(new string[] { DATAFOLDER }));
-            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
+            using (var c = await CreateControllerAsync("file://" + TARGETFOLDER, testopts, null))
+                TestUtils.AssertResults(await c.BackupAsync(new string[] { DATAFOLDER }));
+            using (var c = await CreateControllerAsync("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
             {
-                var r = c.List("*");
+                var r = await c.ListAsync("*");
                 TestUtils.AssertResults(r);
                 //ProgressWriteLine("Newest before deleting:");
                 //ProgressWriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
                 Assert.AreEqual((filenames.Count * 3) + 1, r.Files.Count());
             }
 
-            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0, no_local_db = true }), null))
+            using (var c = await CreateControllerAsync("file://" + TARGETFOLDER, testopts.Expand(new { version = 0, no_local_db = true }), null))
             {
-                var r = c.List("*");
+                var r = await c.ListAsync("*");
                 TestUtils.AssertResults(r);
                 //ProgressWriteLine("Newest without db:");
                 //ProgressWriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
                 Assert.AreEqual((filenames.Count * 3) + 1, r.Files.Count());
             }
 
-            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { full_remote_verification = true }), null))
-                TestUtils.AssertResults(c.Test(long.MaxValue));
+            using (var c = await CreateControllerAsync("file://" + TARGETFOLDER, testopts.Expand(new { full_remote_verification = true }), null))
+                TestUtils.AssertResults(await c.TestAsync(long.MaxValue));
 
             var recreatedDatabaseFile = Path.Combine(BASEFOLDER, "recreated-database.sqlite");
             if (File.Exists(recreatedDatabaseFile))
@@ -340,54 +325,54 @@ namespace Duplicati.UnitTest
 
             testopts["dbpath"] = recreatedDatabaseFile;
 
-            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Repair());
+            using (var c = await CreateControllerAsync("file://" + TARGETFOLDER, testopts, null))
+                TestUtils.AssertResults(await c.RepairAsync());
 
-            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            using (var c = await CreateControllerAsync("file://" + TARGETFOLDER, testopts, null))
             {
-                IListResults listResults = c.List();
+                var listResults = await c.ListAsync();
                 TestUtils.AssertResults(listResults);
                 Assert.AreEqual(3, listResults.Filesets.Count());
             }
 
-            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 2 }), null))
+            using (var c = await CreateControllerAsync("file://" + TARGETFOLDER, testopts.Expand(new { version = 2 }), null))
             {
-                var r = c.List("*");
+                var r = await c.ListAsync("*");
                 TestUtils.AssertResults(r);
                 //ProgressWriteLine("V2 after delete:");
                 //ProgressWriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
                 Assert.AreEqual((filenames.Count * 1) + 1, r.Files.Count());
             }
 
-            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 1 }), null))
+            using (var c = await CreateControllerAsync("file://" + TARGETFOLDER, testopts.Expand(new { version = 1 }), null))
             {
-                var r = c.List("*");
+                var r = await c.ListAsync("*");
                 TestUtils.AssertResults(r);
                 //ProgressWriteLine("V1 after delete:");
                 //ProgressWriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
                 Assert.AreEqual((filenames.Count * 2) + 1, r.Files.Count());
             }
 
-            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
+            using (var c = await CreateControllerAsync("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
             {
-                var r = c.List("*");
+                var r = await c.ListAsync("*");
                 TestUtils.AssertResults(r);
                 //ProgressWriteLine("Newest after delete:");
                 //ProgressWriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
                 Assert.AreEqual((filenames.Count * 3) + 1, r.Files.Count());
             }
 
-            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { full_remote_verification = true }), null))
+            using (var c = await CreateControllerAsync("file://" + TARGETFOLDER, testopts.Expand(new { full_remote_verification = true }), null))
             {
-                var r = c.Test(long.MaxValue);
+                var r = await c.TestAsync(long.MaxValue);
                 Assert.AreEqual(0, r.Errors.Count());
                 Assert.AreEqual(0, r.Warnings.Count());
                 Assert.IsFalse(r.Verifications.Any(p => p.Value.Any()));
             }
 
-            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { restore_path = RESTOREFOLDER }), null))
+            using (var c = await CreateControllerAsync("file://" + TARGETFOLDER, testopts.Expand(new { restore_path = RESTOREFOLDER }), null))
             {
-                var r = c.Restore(null);
+                var r = await c.RestoreAsync(null);
                 TestUtils.AssertResults(r);
                 Assert.AreEqual(filenames.Count * 3, r.RestoredFiles);
             }
@@ -396,9 +381,9 @@ namespace Duplicati.UnitTest
 
             using (var tf = new Library.Utility.TempFolder())
             {
-                using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { restore_path = (string)tf }), null))
+                using (var c = await CreateControllerAsync("file://" + TARGETFOLDER, testopts.Expand(new { restore_path = (string)tf }), null))
                 {
-                    var r = c.Restore(new string[] { Path.Combine(DATAFOLDER, "a") + "*" });
+                    var r = await c.RestoreAsync(new string[] { Path.Combine(DATAFOLDER, "a") + "*" });
                     TestUtils.AssertResults(r);
                     Assert.AreEqual(filenames.Count, r.RestoredFiles);
                 }

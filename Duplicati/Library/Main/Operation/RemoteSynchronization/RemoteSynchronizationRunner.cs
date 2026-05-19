@@ -87,7 +87,7 @@ public static class RemoteSynchronizationRunner
         {
             var config_with_args = config with { Dst = backend_dst, Src = backend_src };
 
-            return Run(config_with_args, token);
+            return RunAsync(config_with_args, token);
         });
 
         return await root_cmd.InvokeAsync(args).ConfigureAwait(false);
@@ -101,7 +101,7 @@ public static class RemoteSynchronizationRunner
     /// <param name="progressUpdater">Optional progress updater for reporting file count and transfer progress to the UI.</param>
     /// <param name="backendProgressUpdater">Optional backend progress updater for reporting transfer speed to the UI.</param>
     /// <returns>The return code (0 on success).</returns>
-    internal static async Task<int> Run(RemoteSynchronizationConfig config, CancellationToken token, IOperationProgressUpdater? progressUpdater = null, IBackendProgressUpdater? backendProgressUpdater = null, IBasicResults? results = null)
+    internal static async Task<int> RunAsync(RemoteSynchronizationConfig config, CancellationToken token, IOperationProgressUpdater? progressUpdater = null, IBackendProgressUpdater? backendProgressUpdater = null, IBasicResults? results = null)
     {
         // Parse the log level
         var log_level_parsed = Enum.TryParse<Duplicati.Library.Logging.LogMessageType>(config.LogLevel, true, out var log_level_enum);
@@ -131,7 +131,7 @@ public static class RemoteSynchronizationRunner
                 // Start the logging scope with both file logging and message capture
                 using var scope = Duplicati.Library.Logging.Log.StartScope(multi_log_target.WriteMessage);
 
-                return await RunCore(config, token, progressUpdater, backendProgressUpdater, rsyncResults).ConfigureAwait(false);
+                return await RunCoreAsync(config, token, progressUpdater, backendProgressUpdater, rsyncResults).ConfigureAwait(false);
             }
             else
             {
@@ -140,7 +140,7 @@ public static class RemoteSynchronizationRunner
                 // Start the logging scope
                 using var _ = Duplicati.Library.Logging.Log.StartScope(multi_sink, log_level_enum);
 
-                return await RunCore(config, token, progressUpdater, backendProgressUpdater).ConfigureAwait(false);
+                return await RunCoreAsync(config, token, progressUpdater, backendProgressUpdater).ConfigureAwait(false);
             }
         }
         else
@@ -151,11 +151,11 @@ public static class RemoteSynchronizationRunner
                 using var log_target = new ControllerMultiLogTarget(rsyncResults, log_level_enum, null, null);
                 using var scope = Duplicati.Library.Logging.Log.StartScope(log_target.WriteMessage);
 
-                return await RunCore(config, token, progressUpdater, backendProgressUpdater, rsyncResults).ConfigureAwait(false);
+                return await RunCoreAsync(config, token, progressUpdater, backendProgressUpdater, rsyncResults).ConfigureAwait(false);
             }
             else
             {
-                return await RunCore(config, token, progressUpdater, backendProgressUpdater).ConfigureAwait(false);
+                return await RunCoreAsync(config, token, progressUpdater, backendProgressUpdater).ConfigureAwait(false);
             }
         }
     }
@@ -168,7 +168,7 @@ public static class RemoteSynchronizationRunner
     /// <param name="progressUpdater">Optional progress updater for reporting file count and transfer progress to the UI.</param>
     /// <param name="backendProgressUpdater">Optional backend progress updater for reporting transfer speed to the UI.</param>
     /// <returns>The return code (0 on success).</returns>
-    private static async Task<int> RunCore(RemoteSynchronizationConfig config, CancellationToken token, IOperationProgressUpdater? progressUpdater = null, IBackendProgressUpdater? backendProgressUpdater = null, RemoteSynchronizationResults? results = null)
+    private static async Task<int> RunCoreAsync(RemoteSynchronizationConfig config, CancellationToken token, IOperationProgressUpdater? progressUpdater = null, IBackendProgressUpdater? backendProgressUpdater = null, RemoteSynchronizationResults? results = null)
     {
         // Unpack and parse the multi token options
         var global_options = ParseOptions(config.GlobalOptions);
@@ -188,7 +188,7 @@ public static class RemoteSynchronizationRunner
         // Check if we only had to parse the arguments
         if (config.ParseArgumentsOnly)
         {
-            Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync", "Arguments parsed successfully; {0}; exiting.", config);
+            Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "ArgumentsParsed", "Arguments parsed successfully; {0}; exiting.", config);
             return 0;
         }
 
@@ -196,7 +196,7 @@ public static class RemoteSynchronizationRunner
         using var b2m = new LightWeightBackendManager(config.Dst, dst_opts, config.BackendRetries, config.BackendRetryDelay, config.BackendRetryWithExponentialBackoff, progressUpdater: progressUpdater, backendProgressUpdater: backendProgressUpdater);
 
         // Prepare the operations
-        var (to_copy, to_delete, to_verify) = await PrepareFileLists(b1m, b2m, config, token).ConfigureAwait(false);
+        var (to_copy, to_delete, to_verify) = await PrepareFileListsAsync(b1m, b2m, config, token).ConfigureAwait(false);
         var disableQuota = Library.Utility.Utility.ParseBoolOption(dst_opts, "quota-disable");
 
         // Check if we have enough free space in the destination to perform the synchronization.
@@ -207,7 +207,7 @@ public static class RemoteSynchronizationRunner
             var total_copy_size = to_copy.Sum(x => Math.Max(x.Size, 0));
             if (dst_quota.FreeQuotaSpace < total_copy_size - total_delete_size)
             {
-                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "rsync", null,
+                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "NotEnoughDestinationSpace", null,
                     "Not enough free space in destination to perform the synchronization. Required: {0}, Available: {1}. Aborting.",
                     Duplicati.Library.Utility.Utility.FormatSizeString(total_copy_size - total_delete_size),
                     Duplicati.Library.Utility.Utility.FormatSizeString(dst_quota.FreeQuotaSpace));
@@ -226,7 +226,7 @@ public static class RemoteSynchronizationRunner
                 var response = Console.ReadLine();
                 if (!response?.Equals("y", StringComparison.CurrentCultureIgnoreCase) ?? true)
                 {
-                    Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync", "Aborted");
+                    Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "AbortedByUser", "Aborted");
                     return -1;
                 }
             }
@@ -237,7 +237,7 @@ public static class RemoteSynchronizationRunner
 
             if (not_verified.Any())
             {
-                Duplicati.Library.Logging.Log.WriteWarningMessage(LOGTAG, "rsync", null,
+                Duplicati.Library.Logging.Log.WriteWarningMessage(LOGTAG, "VerificationFailed", null,
                     "{0} files failed verification. They will be deleted and copied again.",
                     not_verified.Count());
                 to_delete = to_delete.Concat(not_verified);
@@ -245,7 +245,7 @@ public static class RemoteSynchronizationRunner
             }
         }
 
-        Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
+        Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "SynchronizationPlan",
             "The remote synchronization plan is to {0} {1} files from {2}, then copy {3} files from {4} to {2}.",
             config.Retention ? "rename" : "delete",
             to_delete.Count(), b2m.DisplayName, to_copy.Count(), b1m.DisplayName);
@@ -263,7 +263,7 @@ public static class RemoteSynchronizationRunner
             var response = Console.ReadLine();
             if (!response?.Equals("y", StringComparison.CurrentCultureIgnoreCase) ?? true)
             {
-                Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync", "Aborted");
+                Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "AbortedByUser", "Aborted");
                 return -1;
             }
         }
@@ -283,13 +283,13 @@ public static class RemoteSynchronizationRunner
         if (config.Retention)
         {
             renamed = await RenameAsync(b2m, to_delete, config, token, 0, totalFileCount, progressUpdater, backendProgressUpdater).ConfigureAwait(false);
-            Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "rsync",
+            Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "RenameComplete",
                 "Renamed {0} files in {1}", renamed, b2m.DisplayName);
         }
         else
         {
             deleted = await DeleteAsync(b2m, to_delete, config, token, 0, totalFileCount, progressUpdater, backendProgressUpdater).ConfigureAwait(false);
-            Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "rsync",
+            Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "DeleteComplete",
                 "Deleted {0} files from {1}", deleted, b2m.DisplayName);
         }
 
@@ -298,24 +298,24 @@ public static class RemoteSynchronizationRunner
 
         // Copy the files
         var (copied, copy_errors) = await CopyAsync(b1m, b2m, to_copy, config, deletedOrRenamed, totalFileCount, token, progressUpdater, backendProgressUpdater).ConfigureAwait(false);
-        Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "rsync",
+        Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "CopyComplete",
             "Copied {0} files from {1} to {2}", copied, b1m.DisplayName, b2m.DisplayName);
 
         // If there are still errors, retry a few times
         if (copy_errors.Any())
         {
-            Duplicati.Library.Logging.Log.WriteWarningMessage(LOGTAG, "rsync", null,
+            Duplicati.Library.Logging.Log.WriteWarningMessage(LOGTAG, "CopyErrors", null,
                 "Could not copy {0} files.", copy_errors.Count());
             if (config.Retry > 0)
             {
-                Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "rsync",
+                Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "CopyRetry",
                     "Retrying {0} more times to copy the {1} files that failed",
                     config.Retry, copy_errors.Count());
                 for (int i = 0; i < config.Retry; i++)
                 {
                     await Task.Delay(5000).ConfigureAwait(false); // Wait 5 seconds before retrying
                     (copied, copy_errors) = await CopyAsync(b1m, b2m, copy_errors, config, deletedOrRenamed, totalFileCount, token, progressUpdater, backendProgressUpdater).ConfigureAwait(false);
-                    Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "rsync",
+                    Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "CopyPartialComplete",
                         "Copied {0} files from {1} to {2}", copied, b1m.DisplayName, b2m.DisplayName);
                     if (!copy_errors.Any())
                         break;
@@ -324,7 +324,7 @@ public static class RemoteSynchronizationRunner
 
             if (copy_errors.Any())
             {
-                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "rsync", null,
+                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "CopyFailed", null,
                     "Could not copy {0} files. Not retrying any more.", copy_errors.Count());
                 results?.DeletedFileCount = deleted;
                 results?.RenamedFileCount = renamed;
@@ -340,25 +340,25 @@ public static class RemoteSynchronizationRunner
         if (results is not null)
         {
             if (verified > 0)
-                Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
+                Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "VerificationSuccess",
                     "Verified {0} files in {1} that didn't need to be copied",
                     verified, b2m.DisplayName);
             if (failed_verify > 0)
-                Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
+                Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "VerificationFailedRetry",
                     "Failed to verify {0} files in {1}, which were then attempted to be copied",
                     failed_verify, b2m.DisplayName);
             if (copied > 0)
-                Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
+                Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "CopyComplete",
                     "Copied {0} files from {1} to {2}", copied, b1m.DisplayName, b2m.DisplayName);
             if (deleted > 0)
-                Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
+                Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "DeleteComplete",
                     "Deleted {0} files from {1}", deleted, b2m.DisplayName);
             if (renamed > 0)
-                Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
+                Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "RenameComplete",
                     "Renamed {0} files in {1}", renamed, b2m.DisplayName);
         }
 
-        Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync",
+        Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "SynchronizationComplete",
             "Remote synchronization completed successfully");
 
         results?.DeletedFileCount = deleted;
@@ -406,7 +406,7 @@ public static class RemoteSynchronizationRunner
             if (config.Progress)
                 Console.Write($"\rCopying: {i}/{n}");
 
-            Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "rsync",
+            Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "CopyingFile",
                 "Copying {0} from {1} to {2}", f.Name, b_src.DisplayName, b_dst.DisplayName);
 
             try
@@ -426,7 +426,7 @@ public static class RemoteSynchronizationRunner
 
                 if (config.DryRun)
                 {
-                    Duplicati.Library.Logging.Log.WriteDryrunMessage(LOGTAG, "rsync",
+                    Duplicati.Library.Logging.Log.WriteDryrunMessage(LOGTAG, "DryRunCopy",
                         "Would write {0} bytes of {1} to {2}",
                         Duplicati.Library.Utility.Utility.FormatSizeString(s_src_length),
                         f.Name, b_dst.DisplayName);
@@ -494,7 +494,7 @@ public static class RemoteSynchronizationRunner
             }
             catch (Exception e)
             {
-                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "rsync", e,
+                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "CopyError", e,
                     "Error copying {0}: {1}", f.Name, e.Message);
                 errors.Add(f);
             }
@@ -513,7 +513,7 @@ public static class RemoteSynchronizationRunner
         if (config.Progress)
             Console.WriteLine($"\rCopying: {n}/{n}");
 
-        Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync",
+        Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "CopyTiming",
             "Copy | Get source: {0} ms, Put destination: {1} ms, Get destination: {2} ms, Get compare: {3} ms",
             TimeSpan.FromMilliseconds(sw_get_src.ElapsedMilliseconds),
             TimeSpan.FromMilliseconds(sw_put_dst.ElapsedMilliseconds),
@@ -539,7 +539,7 @@ public static class RemoteSynchronizationRunner
     {
         long successful_deletes = 0;
         long i = 0, n = files.Count();
-        using var timer = new Duplicati.Library.Logging.Timer(LOGTAG, "rsync", "Delete operation");
+        using var timer = new Duplicati.Library.Logging.Timer(LOGTAG, "DeleteOperation", "Delete operation");
 
         foreach (var f in files)
         {
@@ -548,7 +548,7 @@ public static class RemoteSynchronizationRunner
                 Console.Write($"\rDeleting: {i}/{n}");
             }
 
-            Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "rsync",
+            Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "DeletingFile",
                 "Deleting {0} from {1}", f.Name, b.DisplayName);
 
             try
@@ -560,12 +560,12 @@ public static class RemoteSynchronizationRunner
 
                 if (config.DryRun)
                 {
-                    Duplicati.Library.Logging.Log.WriteDryrunMessage(LOGTAG, "rsync",
+                    Duplicati.Library.Logging.Log.WriteDryrunMessage(LOGTAG, "DryRunDelete",
                         "Would delete {0} from {1}", f.Name, b.DisplayName);
                 }
                 else
                 {
-                    using (var timer_delete = new Duplicati.Library.Logging.Timer(LOGTAG, "rsync", $"Delete {f.Name}"))
+                    using (var timer_delete = new Duplicati.Library.Logging.Timer(LOGTAG, "DeleteFile", $"Delete {f.Name}"))
                         await b.DeleteAsync(f.Name, token).ConfigureAwait(false);
                 }
                 successful_deletes++;
@@ -579,7 +579,7 @@ public static class RemoteSynchronizationRunner
             }
             catch (Exception e)
             {
-                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "rsync", e,
+                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "DeleteError", e,
                     "Error deleting {0}: {1}", f.Name, e.Message);
             }
             finally
@@ -664,7 +664,7 @@ public static class RemoteSynchronizationRunner
         {
             if (!options.Contains(opt))
             {
-                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "rsync", null,
+                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "InvalidOption", null,
                     "The source option '{0}' is not valid. Please check the syntax.", opt);
                 throw new ArgumentException($"The source option '{opt}' has not been parsed correctly.");
             }
@@ -684,14 +684,14 @@ public static class RemoteSynchronizationRunner
     /// <param name="config">The parsed configuration for the tool.</param>
     /// <param name="token">The cancellation token to use for the asynchronous operations.</param>
     /// <returns>A tuple of Lists each holding the files to copy, delete and verify.</returns>
-    private static async Task<(IEnumerable<IFileEntry>, IEnumerable<IFileEntry>, IEnumerable<IFileEntry>)> PrepareFileLists(LightWeightBackendManager b_src, LightWeightBackendManager b_dst, RemoteSynchronizationConfig config, CancellationToken token)
+    private static async Task<(IEnumerable<IFileEntry>, IEnumerable<IFileEntry>, IEnumerable<IFileEntry>)> PrepareFileListsAsync(LightWeightBackendManager b_src, LightWeightBackendManager b_dst, RemoteSynchronizationConfig config, CancellationToken token)
     {
         IEnumerable<IFileEntry> files_src, files_dst;
 
-        using (new Duplicati.Library.Logging.Timer(LOGTAG, "rsync", "Prepare | List source"))
+        using (new Duplicati.Library.Logging.Timer(LOGTAG, "ListSource", "Prepare | List source"))
             files_src = await b_src.ListAsync(token).ConfigureAwait(false);
 
-        using (new Duplicati.Library.Logging.Timer(LOGTAG, "rsync", "Prepare | List destination"))
+        using (new Duplicati.Library.Logging.Timer(LOGTAG, "ListDestination", "Prepare | List destination"))
             files_dst = await b_dst.ListAsync(token).ConfigureAwait(false);
 
         // Shortcut for force
@@ -707,7 +707,7 @@ public static class RemoteSynchronizationRunner
         }
 
         Dictionary<string, IFileEntry> lookup_src, lookup_dst;
-        using (new Duplicati.Library.Logging.Timer(LOGTAG, "rsync", "Prepare | Build lookup for source and destination"))
+        using (new Duplicati.Library.Logging.Timer(LOGTAG, "BuildLookup", "Prepare | Build lookup for source and destination"))
         {
             lookup_src = files_src.ToDictionary(x => x.Name);
             lookup_dst = files_dst.ToDictionary(x => x.Name);
@@ -718,7 +718,7 @@ public static class RemoteSynchronizationRunner
         var to_verify = new List<IFileEntry>();
 
         // Find all of the files in src that are not in dst, where the dst has a different size than src or src a more recent modification date than dst
-        using (new Duplicati.Library.Logging.Timer(LOGTAG, "rsync", "Prepare | Check the files that are present in source against destination"))
+        using (new Duplicati.Library.Logging.Timer(LOGTAG, "CheckSourceAgainstDestination", "Prepare | Check the files that are present in source against destination"))
             foreach (var f_src in files_src)
             {
                 if (lookup_dst.TryGetValue(f_src.Name, out var f_dst))
@@ -743,7 +743,7 @@ public static class RemoteSynchronizationRunner
             }
 
         // Find all of the files in dst that are not in src
-        using (new Duplicati.Library.Logging.Timer(LOGTAG, "rsync", "Prepare | Check the files that are present in destination against source"))
+        using (new Duplicati.Library.Logging.Timer(LOGTAG, "CheckDestinationAgainstSource", "Prepare | Check the files that are present in destination against source"))
             foreach (var f_dst in files_dst)
             {
                 if (to_delete.Contains(f_dst.Name))
@@ -756,7 +756,7 @@ public static class RemoteSynchronizationRunner
             }
 
         List<IFileEntry> to_delete_lookedup;
-        using (new Duplicati.Library.Logging.Timer(LOGTAG, "rsync", "Prepare | Lookup the files to delete"))
+        using (new Duplicati.Library.Logging.Timer(LOGTAG, "LookupFilesToDelete", "Prepare | Lookup the files to delete"))
             to_delete_lookedup = [.. to_delete.Select(x => lookup_dst[x])];
 
         return (to_copy, to_delete_lookedup, to_verify);
@@ -789,7 +789,7 @@ public static class RemoteSynchronizationRunner
             if (config.Progress)
                 Console.Write($"\rRenaming: {i}/{n}");
 
-            Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "rsync",
+            Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "RenamingFile",
                 "Renaming {0} to {1}.{0} by calling Rename on {2}",
                 f.Name, prefix, bm.DisplayName);
 
@@ -803,7 +803,7 @@ public static class RemoteSynchronizationRunner
 
                 if (config.DryRun)
                 {
-                    Duplicati.Library.Logging.Log.WriteDryrunMessage(LOGTAG, "rsync",
+                    Duplicati.Library.Logging.Log.WriteDryrunMessage(LOGTAG, "DryRunRename",
                         "Would rename {0} to {1}.{0} by calling Rename on {2}",
                         f.Name, prefix, bm.DisplayName);
                 }
@@ -824,7 +824,7 @@ public static class RemoteSynchronizationRunner
             }
             catch (Exception e)
             {
-                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "rsync", e,
+                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "RenameError", e,
                     "Error renaming {0}: {1}", f.Name, e.Message);
             }
             finally
@@ -836,7 +836,7 @@ public static class RemoteSynchronizationRunner
             }
         }
 
-        Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync",
+        Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "RenameTiming",
             "Rename: {0} ms",
             TimeSpan.FromMilliseconds(sw.ElapsedMilliseconds));
 
@@ -870,7 +870,7 @@ public static class RemoteSynchronizationRunner
             if (config.Progress)
                 Console.Write($"\rVerifying: {i}/{n}");
 
-            Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "rsync",
+            Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "VerifyingFile",
                 "Verifying {0} by downloading and comparing {1} bytes from {2} and {3}",
                 f.Name,
                 Duplicati.Library.Utility.Utility.FormatSizeString(s_src.Length),
@@ -896,7 +896,7 @@ public static class RemoteSynchronizationRunner
             catch (Exception e)
             {
                 errors.Add(f);
-                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "rsync", e,
+                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "VerificationError", e,
                     "Error during verification of {0}: {1}", f.Name, e.Message);
             }
             finally
@@ -913,7 +913,7 @@ public static class RemoteSynchronizationRunner
             i++;
         }
 
-        Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync",
+        Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "VerifyTiming",
             "Verify | Get: {0} ms, Compare: {1} ms",
             TimeSpan.FromMilliseconds(sw_get.ElapsedMilliseconds),
             TimeSpan.FromMilliseconds(sw_cmp.ElapsedMilliseconds));

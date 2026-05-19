@@ -181,7 +181,7 @@ namespace Duplicati.UnitTest
         [Category("Disruption")]
         [Category("Issue6820")]
         [Category("ExcludedFromCLI")]
-        public async Task StuckCompletingPreviousBackupWithTwoTemporaryDlists()
+        public async Task StuckCompletingPreviousBackupWithTwoTemporaryDlists_Async()
         {
             var options = new Dictionary<string, string>(this.TestOptions)
             {
@@ -194,19 +194,19 @@ namespace Duplicati.UnitTest
             this.WriteSourceFiles(seed: 1);
             using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                var res = c.Backup(new[] { this.DATAFOLDER });
+                var res = await c.BackupAsync(new[] { this.DATAFOLDER });
                 Assert.AreEqual(0, res.Errors.Count(), "First backup should succeed");
             }
 
             this.WriteSourceFiles(seed: 2);
             using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                var res = c.Backup(new[] { this.DATAFOLDER });
+                var res = await c.BackupAsync(new[] { this.DATAFOLDER });
                 Assert.AreEqual(0, res.Errors.Count(), "Second backup should succeed");
             }
 
             var beforeInject = GetIncompleteDlistVolumes(this.DBFILE);
-            TestContext.Progress.WriteLine($"Incomplete dlists before injection: {beforeInject.Count}");
+            await TestContext.Progress.WriteLineAsync($"Incomplete dlists before injection: {beforeInject.Count}");
             Assert.AreEqual(0, beforeInject.Count,
                 "After successful backups, no dlist should be Temporary");
 
@@ -218,12 +218,12 @@ namespace Duplicati.UnitTest
 
             // 2. Inject the "stuck" state: two Temporary dlists + matching Fileset rows.
             var newName = InjectDoubleTemporaryDlistState(this.DBFILE);
-            TestContext.Progress.WriteLine($"Injected second Temporary dlist name: {newName}");
+            await TestContext.Progress.WriteLineAsync($"Injected second Temporary dlist name: {newName}");
 
             var afterInject = GetIncompleteDlistVolumes(this.DBFILE);
-            TestContext.Progress.WriteLine($"Incomplete dlists after injection: {afterInject.Count}");
+            await TestContext.Progress.WriteLineAsync($"Incomplete dlists after injection: {afterInject.Count}");
             foreach (var v in afterInject)
-                TestContext.Progress.WriteLine($"  ID={v.Id} Name={v.Name} State={v.State}");
+                await TestContext.Progress.WriteLineAsync($"  ID={v.Id} Name={v.Name} State={v.State}");
             Assert.AreEqual(2, afterInject.Count,
                 "After injecting, there should be exactly two Temporary dlist rows " +
                 "(reproducing the state reported in issue 6820)");
@@ -236,7 +236,7 @@ namespace Duplicati.UnitTest
                 var path = Path.Combine(this.TARGETFOLDER, v.Name);
                 if (File.Exists(path))
                 {
-                    TestContext.Progress.WriteLine($"Removing backend dlist: {v.Name}");
+                    await TestContext.Progress.WriteLineAsync($"Removing backend dlist: {v.Name}");
                     File.Delete(path);
                 }
             }
@@ -265,12 +265,12 @@ namespace Duplicati.UnitTest
             Exception backupException = null;
 
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-            var backupTask = Task.Run(() =>
+            var backupTask = Task.Run(async () =>
             {
                 try
                 {
                     using var c = new Controller("file://" + this.TARGETFOLDER, recoveryOptions, null);
-                    backupResults = c.Backup(new[] { this.DATAFOLDER });
+                    backupResults = await c.BackupAsync(new[] { this.DATAFOLDER });
                 }
                 catch (Exception ex)
                 {
@@ -281,7 +281,7 @@ namespace Duplicati.UnitTest
             var completed = await Task.WhenAny(backupTask, Task.Delay(timeout)).ConfigureAwait(false);
             stopwatch.Stop();
 
-            TestContext.Progress.WriteLine(
+            await TestContext.Progress.WriteLineAsync(
                 $"Recovery backup finished after {stopwatch.Elapsed.TotalSeconds:F2}s");
 
             // Report whether we actually took the synthetic-filelist path,
@@ -295,7 +295,7 @@ namespace Duplicati.UnitTest
             {
                 var lines = File.ReadAllLines(recoveryLogPath);
                 syntheticTaken = lines.Any(l => l.Contains("PreviousBackupFilelistUpload"));
-                TestContext.Progress.WriteLine(
+                await TestContext.Progress.WriteLineAsync(
                     syntheticTaken
                         ? "Synthetic filelist path was taken"
                         : "WARNING: Synthetic filelist path was NOT taken - the test did not " +
@@ -337,23 +337,23 @@ namespace Duplicati.UnitTest
                     lastLine = line;
                 }
 
-                TestContext.Progress.WriteLine(
+                await TestContext.Progress.WriteLineAsync(
                     $"Longest silent gap after synthetic-filelist begin: {longestGap.TotalSeconds:F1}s");
                 if (longestGap.TotalMilliseconds > 0)
-                    TestContext.Progress.WriteLine($"  preceded by: {longestGapContext}");
+                    await TestContext.Progress.WriteLineAsync($"  preceded by: {longestGapContext}");
 
                 // Copy the log out of the cleaned-up test folder for post-mortem.
                 try
                 {
                     var keptLogPath = Path.Combine(Path.GetTempPath(), $"Issue6820.recovery.{DateTime.Now:yyyyMMddHHmmss}.log");
                     File.Copy(recoveryLogPath, keptLogPath, true);
-                    TestContext.Progress.WriteLine($"Recovery log preserved at: {keptLogPath}");
+                    await TestContext.Progress.WriteLineAsync($"Recovery log preserved at: {keptLogPath}");
                 }
                 catch { }
             }
             else
             {
-                TestContext.Progress.WriteLine(
+                await TestContext.Progress.WriteLineAsync(
                     "WARNING: Recovery log file was not created - cannot verify code path");
             }
 
@@ -365,11 +365,11 @@ namespace Duplicati.UnitTest
             {
                 // Report the state we're stuck in, for easier diagnosis.
                 var stuckState = GetIncompleteDlistVolumes(this.DBFILE);
-                TestContext.Progress.WriteLine(
+                await TestContext.Progress.WriteLineAsync(
                     "Backup did not complete within the timeout. " +
                     "Incomplete dlist rows at timeout:");
                 foreach (var v in stuckState)
-                    TestContext.Progress.WriteLine($"  ID={v.Id} Name={v.Name} State={v.State}");
+                    await TestContext.Progress.WriteLineAsync($"  ID={v.Id} Name={v.Name} State={v.State}");
                 Assert.Fail(
                     $"Backup did not complete within {timeout.TotalSeconds:F0}s - " +
                     "reproduces 'stuck in completing previous backup' (issue 6820). " +
@@ -387,9 +387,9 @@ namespace Duplicati.UnitTest
             // Final state: no dlist should remain Temporary. The recovery code should
             // have either uploaded or marked for deletion the previously-Temporary rows.
             var finalState = GetIncompleteDlistVolumes(this.DBFILE);
-            TestContext.Progress.WriteLine($"Final incomplete dlist rows: {finalState.Count}");
+            await TestContext.Progress.WriteLineAsync($"Final incomplete dlist rows: {finalState.Count}");
             foreach (var v in finalState)
-                TestContext.Progress.WriteLine($"  ID={v.Id} Name={v.Name} State={v.State}");
+                await TestContext.Progress.WriteLineAsync($"  ID={v.Id} Name={v.Name} State={v.State}");
             Assert.AreEqual(0, finalState.Count,
                 "After a successful backup, no dlist should remain in Temporary/Uploading state");
         }

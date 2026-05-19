@@ -78,8 +78,10 @@ namespace Duplicati.CommandLine.RecoveryTool
                 filelist = List.SelectListFile(args[2], folder);
             }
 
-            Library.Main.Volumes.VolumeReaderBase.UpdateOptionsFromManifest(Path.GetExtension(filelist).Trim('.'), filelist, new Duplicati.Library.Main.Options(options));
+            var parsedoptions = new Library.Main.Options(options);
+            Library.Main.Volumes.VolumeReaderBase.UpdateOptionsFromManifest(Path.GetExtension(filelist).Trim('.'), filelist, parsedoptions);
 
+            options = parsedoptions.RawOptions;
             options.TryGetValue("blocksize", out var blocksize_str);
             options.TryGetValue("block-hash-algorithm", out var blockhash_str);
             options.TryGetValue("block-hash-algorithm", out var filehash_str);

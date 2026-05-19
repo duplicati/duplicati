@@ -27,6 +27,6 @@ namespace Duplicati.Agent.Net10
     public static class Program
     {
         public static Task<int> Main(string[] args)
-            => CrashlogHelper.WrapWithCrashLog(() => Duplicati.Agent.Program.Main(args));
+            => CrashlogHelper.WrapWithCrashLog(() => Duplicati.Agent.Program.MainAsync(args));
     }
 }

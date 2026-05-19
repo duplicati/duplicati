@@ -13,7 +13,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
 {
 
     [Test]
-    public async Task Test_PartitionWriteStream_WriteAndDispose_DataFlushedToDisk()
+    public async Task Test_PartitionWriteStream_WriteAndDispose_DataFlushedToDisk_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
         var partitionOffset = 10 * sectorSize;
@@ -137,7 +137,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_PartitionWriteStream_WriteAtUnalignedPosition_DataMatches()
+    public async Task Test_PartitionWriteStream_WriteAtUnalignedPosition_DataMatches_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
         var partitionOffset = 15 * sectorSize;
@@ -147,15 +147,15 @@ public partial class DiskImageUnitTests : BasicSetupHelper
         using (var stream = new PartitionWriteStream(_writableRawDisk, partitionOffset, partitionSize))
         {
             // Write at position 0
-            stream.Write([0xAA, 0xBB], 0, 2);
+            await stream.WriteAsync([0xAA, 0xBB], 0, 2);
 
             // Seek to unaligned position
             stream.Seek(7, SeekOrigin.Begin);
-            stream.Write([0xCC, 0xDD, 0xEE], 0, 3);
+            await stream.WriteAsync([0xCC, 0xDD, 0xEE], 0, 3);
 
             // Seek to another unaligned position
             stream.Seek(20, SeekOrigin.Begin);
-            stream.Write([0x11, 0x22, 0x33, 0x44], 0, 4);
+            await stream.WriteAsync([0x11, 0x22, 0x33, 0x44], 0, 4);
         }
 
         // Read back and verify
@@ -182,7 +182,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_PartitionWriteStream_WriteMultipleTimes_DataMatches()
+    public async Task Test_PartitionWriteStream_WriteMultipleTimes_DataMatches_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
         var partitionOffset = 20 * sectorSize;
@@ -192,13 +192,13 @@ public partial class DiskImageUnitTests : BasicSetupHelper
         using (var stream = new PartitionWriteStream(_writableRawDisk, partitionOffset, partitionSize))
         {
             // First write
-            stream.Write([0x01, 0x02, 0x03], 0, 3);
+            await stream.WriteAsync([0x01, 0x02, 0x03], 0, 3);
 
             // Second write (should append)
-            stream.Write([0x04, 0x05], 0, 2);
+            await stream.WriteAsync([0x04, 0x05], 0, 2);
 
             // Third write
-            stream.Write([0x06, 0x07, 0x08, 0x09], 0, 4);
+            await stream.WriteAsync([0x06, 0x07, 0x08, 0x09], 0, 4);
         }
 
         // Read back and verify all data was written
@@ -230,7 +230,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_PartitionWriteStream_SetLengthWithinMaxSize_SetsLength()
+    public async Task Test_PartitionWriteStream_SetLengthWithinMaxSize_SetsLength_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
         var partitionOffset = 10 * sectorSize;
@@ -243,7 +243,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
             Assert.AreEqual(100, stream.Length, "Length should be set to 100.");
 
             // Write some data at position 0
-            stream.Write([0xAA, 0xBB, 0xCC], 0, 3);
+            await stream.WriteAsync([0xAA, 0xBB, 0xCC], 0, 3);
             // Length should be max(SetLength(100), written position) = 100
             Assert.AreEqual(100, stream.Length, "Length should remain 100 (SetLength value).");
         }
@@ -300,7 +300,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_PartitionWriteStream_WriteEmptyData_NoFlush()
+    public async Task Test_PartitionWriteStream_WriteEmptyData_NoFlush_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
         var partitionOffset = 10 * sectorSize;

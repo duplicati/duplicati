@@ -206,10 +206,10 @@ namespace Duplicati.Library.Main.Database
         /// <param name="versions">Optional array of versions to filter filesets by. If null, all versions are considered.</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>An asynchronous enumerable of broken file IDs.</returns>
-        public async IAsyncEnumerable<(DateTime FilesetTime, long FilesetID, long RemoveFileCount)> GetBrokenFilesets(DateTime time, long[]? versions, [EnumeratorCancellation] CancellationToken token)
+        public async IAsyncEnumerable<(DateTime FilesetTime, long FilesetID, long RemoveFileCount)> GetBrokenFilesetsAsync(DateTime time, long[]? versions, [EnumeratorCancellation] CancellationToken token)
         {
             var query = BROKEN_FILE_SETS;
-            var clause = await GetFilelistWhereClause(time, versions, null, false, token)
+            var clause = await GetFilelistWhereClauseAsync(time, versions, null, false, token)
                 .ConfigureAwait(false);
 
             if (!string.IsNullOrWhiteSpace(clause.Query))
@@ -228,7 +228,7 @@ namespace Duplicati.Library.Main.Database
                 .SetParameterValues(clause.Values);
 
             await foreach (var rd in cmd.ExecuteReaderEnumerableAsync(token).ConfigureAwait(false))
-                if (!rd.IsDBNull(0))
+                if (!await rd.IsDBNullAsync(0))
                     yield return (
                         ParseFromEpochSeconds(rd.ConvertValueToInt64(0, 0)),
                         rd.ConvertValueToInt64(1, -1),
@@ -242,14 +242,14 @@ namespace Duplicati.Library.Main.Database
         /// <param name="filesetid">The fileset ID to filter by.</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>An asynchronous enumerable of broken file IDs.</returns>
-        public async IAsyncEnumerable<Tuple<string, long>> GetBrokenFilenames(long filesetid, [EnumeratorCancellation] CancellationToken token)
+        public async IAsyncEnumerable<Tuple<string, long>> GetBrokenFilenamesAsync(long filesetid, [EnumeratorCancellation] CancellationToken token)
         {
             await using var cmd = Connection.CreateCommand(m_rtr)
                 .SetCommandAndParameters(BROKEN_FILE_NAMES)
                 .SetParameterValue("@FilesetId", filesetid);
 
             await foreach (var rd in cmd.ExecuteReaderEnumerableAsync(token).ConfigureAwait(false))
-                if (!rd.IsDBNull(0))
+                if (!await rd.IsDBNullAsync(0))
                     yield return new Tuple<string, long>(
                         rd.ConvertValueToString(0) ?? throw new Exception("Filename was null"),
                         rd.ConvertValueToInt64(1)
@@ -261,7 +261,7 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>An asynchronous enumerable of <see cref="RemoteVolume"/> representing the orphaned index files.</returns>
-        public async IAsyncEnumerable<RemoteVolume> GetOrphanedIndexFiles([EnumeratorCancellation] CancellationToken token)
+        public async IAsyncEnumerable<RemoteVolume> GetOrphanedIndexFilesAsync([EnumeratorCancellation] CancellationToken token)
         {
             await using var cmd = Connection.CreateCommand($@"
                 SELECT
@@ -294,7 +294,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="IDfieldname">The name of the ID field in the table.</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>A task that completes when the insertion is finished.</returns>
-        public async Task InsertBrokenFileIDsIntoTable(long filesetid, string tablename, string IDfieldname, CancellationToken token)
+        public async Task InsertBrokenFileIDsIntoTableAsync(long filesetid, string tablename, string IDfieldname, CancellationToken token)
         {
             await using var cmd = Connection.CreateCommand(m_rtr)
                 .SetCommandAndParameters(INSERT_BROKEN_IDS(tablename, IDfieldname))
@@ -312,7 +312,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="emptyBlocksetId">The empty blockset ID to replace with.</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>A task that when awaited contains the number of rows affected</returns>
-        public async Task<int> ReplaceMetadata(long filesetId, long emptyBlocksetId, CancellationToken token)
+        public async Task<int> ReplaceMetadataAsync(long filesetId, long emptyBlocksetId, CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand(@"
                 UPDATE ""Metadataset""
@@ -348,7 +348,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="names">The names of the volumes to check for missing blocks.</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>A task that completes when the removal is finished.</returns>
-        public async Task RemoveMissingBlocks(IEnumerable<string> names, CancellationToken token)
+        public async Task RemoveMissingBlocksAsync(IEnumerable<string> names, CancellationToken token)
         {
             if (names == null || !names.Any()) return;
 
@@ -432,7 +432,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="filesetid">The ID of the fileset to count files in.</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>A task that when awaited contains the count of files in the specified fileset.</returns>
-        public async Task<long> GetFilesetFileCount(long filesetid, CancellationToken token)
+        public async Task<long> GetFilesetFileCountAsync(long filesetid, CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand(@"
                 SELECT COUNT(*)

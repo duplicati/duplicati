@@ -22,6 +22,7 @@
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using NUnit.Framework;
 
 namespace Duplicati.UnitTest
@@ -30,7 +31,7 @@ namespace Duplicati.UnitTest
     {
         [Test]
         [Category("Targeted")]
-        public void TestMultiRetentionOptions()
+        public async Task TestMultiRetentionOptionsAsync()
         {
             var testopts = TestOptions;
             testopts.Add("upload-unchanged-backups", "true");
@@ -44,9 +45,9 @@ namespace Duplicati.UnitTest
             {
                 using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
                 {
-                    var res = c.Backup([DATAFOLDER]);
+                    var res = await c.BackupAsync([DATAFOLDER]);
                     TestUtils.AssertResults(res);
-                    Assert.That(c.List(null).Filesets.Count(), Is.EqualTo(i + 1), "Backup count mismatch after backup " + i);
+                    Assert.That((await c.ListAsync(null)).Filesets.Count(), Is.EqualTo(i + 1), "Backup count mismatch after backup " + i);
                 }
                 Thread.Sleep(1000);
             }
@@ -55,10 +56,10 @@ namespace Duplicati.UnitTest
             Thread.Sleep(1000);
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 2, retention_policy = "1s:U" }), null))
-                TestUtils.AssertResults(c.Delete());
+                TestUtils.AssertResults(await c.DeleteAsync());
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 2, retention_policy = "1s:U" }), null))
-                Assert.That(c.List(null).Filesets.Count(), Is.EqualTo(1), "Backup count mismatch after delete");
+                Assert.That((await c.ListAsync(null)).Filesets.Count(), Is.EqualTo(1), "Backup count mismatch after delete");
         }
     }
 }

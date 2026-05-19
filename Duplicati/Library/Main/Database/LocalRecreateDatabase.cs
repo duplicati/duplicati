@@ -448,7 +448,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="blocksize">The size of the blocks in the blocklist.</param>
         /// <param name="token">A cancellation token to observe while waiting for the task to complete.</param>
         /// <returns>A task that completes when the operation is finished.</returns>
-        public async Task FindMissingBlocklistHashes(long hashsize, long blocksize, CancellationToken token)
+        public async Task FindMissingBlocklistHashesAsync(long hashsize, long blocksize, CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand(m_rtr);
             //Update all small blocklists and matching blocks
@@ -648,7 +648,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="hashOnly">If true, only hash entries are processed, ignoring small blocks.</param>
         /// <param name="token">A cancellation token to observe while waiting for the task to complete.</param>
         /// <returns>A task that completes when the operation is finished.</returns>
-        public async Task AddBlockAndBlockSetEntryFromTemp(long hashsize, long blocksize, bool hashOnly, CancellationToken token)
+        public async Task AddBlockAndBlockSetEntryFromTempAsync(long hashsize, long blocksize, bool hashOnly, CancellationToken token)
         {
             // TODO should values be parameters, rather than hardcoded into the SQL queries?
             await using var cmd = m_connection.CreateCommand(m_rtr);
@@ -793,11 +793,8 @@ namespace Duplicati.Library.Main.Database
         /// <param name="metadataid">The ID of the metadata associated with the directory entry.</param>
         /// <param name="token">A cancellation token to observe while waiting for the task to complete.</param>
         /// <returns>A task that when completed, indicates that the directory entry has been added.</returns>
-        public async Task AddDirectoryEntry(long filesetid, long pathprefixid, string path, DateTime time, long metadataid, CancellationToken token)
-        {
-            await AddEntry(filesetid, pathprefixid, path, time, FOLDER_BLOCKSET_ID, metadataid, token)
-                .ConfigureAwait(false);
-        }
+        public Task AddDirectoryEntryAsync(long filesetid, long pathprefixid, string path, DateTime time, long metadataid, CancellationToken token)
+            => AddEntryAsync(filesetid, pathprefixid, path, time, FOLDER_BLOCKSET_ID, metadataid, token);
 
         /// <summary>
         /// Adds a symlink entry to the FilesetEntry table, linking it to a fileset and a path prefix.
@@ -809,11 +806,8 @@ namespace Duplicati.Library.Main.Database
         /// <param name="metadataid">The ID of the metadata associated with the symlink entry.</param>
         /// <param name="token">A cancellation token to observe while waiting for the task to complete.</param>
         /// <returns>A task that when completed, indicates that the symlink entry has been added.</returns>
-        public async Task AddSymlinkEntry(long filesetid, long pathprefixid, string path, DateTime time, long metadataid, CancellationToken token)
-        {
-            await AddEntry(filesetid, pathprefixid, path, time, SYMLINK_BLOCKSET_ID, metadataid, token)
-                .ConfigureAwait(false);
-        }
+        public Task AddSymlinkEntryAsync(long filesetid, long pathprefixid, string path, DateTime time, long metadataid, CancellationToken token)
+            => AddEntryAsync(filesetid, pathprefixid, path, time, SYMLINK_BLOCKSET_ID, metadataid, token);
 
         /// <summary>
         /// Adds a file entry to the FilesetEntry table, linking it to a fileset and a path prefix.
@@ -826,11 +820,8 @@ namespace Duplicati.Library.Main.Database
         /// <param name="metadataid">The ID of the metadata associated with the file entry.</param>
         /// <param name="token">A cancellation token to observe while waiting for the task to complete.</param>
         /// <returns>A task that when completed, indicates that the file entry has been added.</returns>
-        public async Task AddFileEntry(long filesetid, long pathprefixid, string path, DateTime time, long blocksetid, long metadataid, CancellationToken token)
-        {
-            await AddEntry(filesetid, pathprefixid, path, time, blocksetid, metadataid, token)
-                .ConfigureAwait(false);
-        }
+        public Task AddFileEntryAsync(long filesetid, long pathprefixid, string path, DateTime time, long blocksetid, long metadataid, CancellationToken token)
+            => AddEntryAsync(filesetid, pathprefixid, path, time, blocksetid, metadataid, token);
 
         /// <summary>
         /// Adds a file and fileset entry to the FilesetEntry table, linking it to a fileset and a path prefix.
@@ -845,7 +836,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="metadataid">The ID of the metadata associated with the file entry.</param>
         /// <param name="token">A cancellation token to observe while waiting for the task to complete.</param>
         /// <returns>A task that when completed, indicates that the file and fileset entry has been added.</returns>
-        private async Task AddEntry(long filesetid, long pathprefixid, string path, DateTime time, long blocksetid, long metadataid, CancellationToken token)
+        private async Task AddEntryAsync(long filesetid, long pathprefixid, string path, DateTime time, long blocksetid, long metadataid, CancellationToken token)
         {
             var fileid = await m_findFilesetCommand
                 .SetTransaction(m_rtr)
@@ -887,7 +878,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="expectedmetablocklisthashes">The expected number of blocklist hashes for the metadataset.</param>
         /// <param name="token">A cancellation token to observe while waiting for the task to complete.</param>
         /// <returns>A task that returns the ID of the added or existing metadataset.</returns>
-        public async Task<long> AddMetadataset(string metahash, long metahashsize, IEnumerable<string> metablocklisthashes, long expectedmetablocklisthashes, CancellationToken token)
+        public async Task<long> AddMetadatasetAsync(string metahash, long metahashsize, IEnumerable<string> metablocklisthashes, long expectedmetablocklisthashes, CancellationToken token)
         {
             var metadataid = -1L;
             if (metahash == null)
@@ -904,7 +895,7 @@ namespace Duplicati.Library.Main.Database
                 return metadataid;
 
             var blocksetid =
-                await AddBlockset(metahash, metahashsize, metablocklisthashes, expectedmetablocklisthashes, token)
+                await AddBlocksetAsync(metahash, metahashsize, metablocklisthashes, expectedmetablocklisthashes, token)
                     .ConfigureAwait(false);
 
             metadataid = await m_insertMetadatasetCommand
@@ -926,7 +917,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="expectedblocklisthashes">The expected number of blocklist hashes for the blockset.</param>
         /// <param name="token">A cancellation token to observe while waiting for the task to complete.</param>
         /// <returns>A task that returns the ID of the added or existing blockset.</returns>
-        public async Task<long> AddBlockset(string fullhash, long size, IEnumerable<string> blocklisthashes, long expectedblocklisthashes, CancellationToken token)
+        public async Task<long> AddBlocksetAsync(string fullhash, long size, IEnumerable<string> blocklisthashes, long expectedblocklisthashes, CancellationToken token)
         {
             var blocksetid = await m_findBlocksetCommand
                 .SetTransaction(m_rtr)
@@ -986,7 +977,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="volumeID">The ID of the volume to which the block belongs.</param>
         /// <param name="token">A cancellation token to observe while waiting for the task to complete.</param>
         /// <returns>A task that returns a tuple indicating whether any changes were made and whether the block was newly inserted.</returns>
-        public async Task<(bool, bool)> UpdateBlock(string hash, long size, long volumeID, CancellationToken token)
+        public async Task<(bool, bool)> UpdateBlockAsync(string hash, long size, long volumeID, CancellationToken token)
         {
             var anyChange = false;
             var currentVolumeId = await m_findHashBlockCommand
@@ -1053,7 +1044,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="blocksize">The size of the small block in bytes.</param>
         /// <param name="token">A cancellation token to observe while waiting for the task to complete.</param>
         /// <returns>A task that completes when the small blockset link has been added.</returns>
-        public async Task AddSmallBlocksetLink(string filehash, string blockhash, long blocksize, CancellationToken token)
+        public async Task AddSmallBlocksetLinkAsync(string filehash, string blockhash, long blocksize, CancellationToken token)
         {
             await m_insertSmallBlockset
                 .SetTransaction(m_rtr)
@@ -1072,7 +1063,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="blocklisthashes">A collection of block hashes associated with the temporary blocklist.</param>
         /// <param name="token">A cancellation token to observe while waiting for the task to complete.</param>
         /// <returns>A task that returns a boolean indicating whether the temporary blocklist hash was successfully added.</returns>
-        public async Task<bool> AddTempBlockListHash(string hash, IEnumerable<string> blocklisthashes, CancellationToken token)
+        public async Task<bool> AddTempBlockListHashAsync(string hash, IEnumerable<string> blocklisthashes, CancellationToken token)
         {
             var r = await m_findTempBlockListHashCommand
                 .SetTransaction(m_rtr)
@@ -1108,7 +1099,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="volumeid">The ID of the volume for which to retrieve block hashes.</param>
         /// <param name="token">A cancellation token to observe while waiting for the task to complete.</param>
         /// <returns>An asynchronous enumerable collection of block hashes associated with the specified volume ID.</returns>
-        public async IAsyncEnumerable<string> GetBlockLists(long volumeid, [EnumeratorCancellation] CancellationToken token)
+        public async IAsyncEnumerable<string> GetBlockListsAsync(long volumeid, [EnumeratorCancellation] CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand(@"
                 SELECT DISTINCT ""BlocklistHash"".""Hash""
@@ -1137,7 +1128,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="forceBlockUse">A boolean indicating whether to force the use of blocks, even if they are not missing.</param>
         /// <param name="token">A cancellation token to observe while waiting for the task to complete.</param>
         /// <returns>An asynchronous enumerable collection of remote volumes that are missing blocks.</returns>
-        public async IAsyncEnumerable<IRemoteVolume> GetMissingBlockListVolumes(int passNo, long blocksize, long hashsize, bool forceBlockUse, [EnumeratorCancellation] CancellationToken token)
+        public async IAsyncEnumerable<IRemoteVolume> GetMissingBlockListVolumesAsync(int passNo, long blocksize, long hashsize, bool forceBlockUse, [EnumeratorCancellation] CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand(m_rtr);
             var selectCommand = @"
@@ -1267,7 +1258,7 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         /// <param name="token">A cancellation token to observe while waiting for the task to complete.</param>
         /// <returns>A task that completes when the cleanup operation is finished.</returns>
-        public async Task CleanupMissingVolumes(CancellationToken token)
+        public async Task CleanupMissingVolumesAsync(CancellationToken token)
         {
             var tablename = "SwapBlocks-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 
@@ -1421,7 +1412,7 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         /// <param name="token">A cancellation token to observe while waiting for the task to complete.</param>
         /// <returns>A task that completes when the cleanup operation is finished.</returns>
-        public async Task CleanupDeletedBlocks(CancellationToken token)
+        public async Task CleanupDeletedBlocksAsync(CancellationToken token)
         {
             // Find out which blocks are deleted and move them into DeletedBlock, so that compact notices these blocks are empty
             // Deleted blocks do not appear in the BlocksetEntry and not in the BlocklistHash table
@@ -1512,7 +1503,7 @@ namespace Duplicati.Library.Main.Database
             long VolumeSize
         );
 
-        public async IAsyncEnumerable<MetadataBlockInfo> GetMissingMetadataBlocks([EnumeratorCancellation] CancellationToken token)
+        public async IAsyncEnumerable<MetadataBlockInfo> GetMissingMetadataBlocksAsync([EnumeratorCancellation] CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand(m_rtr);
             cmd.CommandText = @"
@@ -1554,13 +1545,13 @@ namespace Duplicati.Library.Main.Database
                     rd.ConvertValueToString(3) ?? string.Empty,
                     rd.ConvertValueToInt64(4),
                     rd.ConvertValueToString(5) ?? string.Empty,
-                    rd.IsDBNull(6) ? null : rd.ConvertValueToString(6),
+                    await rd.IsDBNullAsync(6) ? null : rd.ConvertValueToString(6),
                     rd.ConvertValueToInt64(7, -1)
                 );
             }
         }
 
-        public async Task SetMetadataContent(long metadataId, string content, CancellationToken token)
+        public async Task SetMetadataContentAsync(long metadataId, string content, CancellationToken token)
         {
             await using var update = m_connection.CreateCommand(m_rtr);
             update.CommandText = @"

@@ -53,30 +53,30 @@ namespace Duplicati.Library.Main.Operation
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
 
             await using var db = await Database.LocalListBrokenFilesDatabase.CreateAsync(m_options.Dbpath, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
-            await Utility.UpdateOptionsFromDb(db, m_options, m_result.TaskControl.ProgressToken)
+            await Utility.UpdateOptionsFromDbAsync(db, m_options, m_result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);
-            await Utility.VerifyOptionsAndUpdateDatabase(db, m_options, m_result.TaskControl.ProgressToken)
+            await Utility.VerifyOptionsAndUpdateDatabaseAsync(db, m_options, m_result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);
             await DoRunAsync(backendManager, db, filter, callbackhandler).ConfigureAwait(false);
             await db.Transaction.RollBackAsync().ConfigureAwait(false);
         }
 
-        public static async Task<((DateTime FilesetTime, long FilesetID, long RemoveCount)[]?, List<Database.RemoteVolumeEntry>? Missing)> GetBrokenFilesetsFromRemote(IBackendManager backendManager, BasicResults result, Database.LocalListBrokenFilesDatabase db, Options options)
+        public static async Task<((DateTime FilesetTime, long FilesetID, long RemoveCount)[]?, List<Database.RemoteVolumeEntry>? Missing)> GetBrokenFilesetsFromRemoteAsync(IBackendManager backendManager, BasicResults result, Database.LocalListBrokenFilesDatabase db, Options options)
         {
             List<Database.RemoteVolumeEntry>? missing = null;
             var brokensets = await db
-                .GetBrokenFilesets(options.Time, options.Version, result.TaskControl.ProgressToken)
+                .GetBrokenFilesetsAsync(options.Time, options.Version, result.TaskControl.ProgressToken)
                 .ToArrayAsync(cancellationToken: result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);
 
             if (brokensets.Length == 0)
             {
-                if (await db.RepairInProgress(result.TaskControl.ProgressToken).ConfigureAwait(false))
+                if (await db.RepairInProgressAsync(result.TaskControl.ProgressToken).ConfigureAwait(false))
                     throw new UserInformationException("Cannot continue because the database is marked as being under repair, but does not have broken files.", "CannotListOnDatabaseInRepair");
 
                 Logging.Log.WriteInformationMessage(LOGTAG, "NoBrokenFilesetsInDatabase", "No broken filesets found in database, checking for missing remote files");
 
-                var remotestate = await FilelistProcessor.RemoteListAnalysis(backendManager, options, db, result.BackendWriter, null, null, FilelistProcessor.VerifyMode.VerifyOnly, result.TaskControl.ProgressToken).ConfigureAwait(false);
+                var remotestate = await FilelistProcessor.RemoteListAnalysisAsync(backendManager, options, db, result.BackendWriter, null, null, FilelistProcessor.VerifyMode.VerifyOnly, result.TaskControl.ProgressToken).ConfigureAwait(false);
                 if (!remotestate.ParsedVolumes.Any())
                     throw new UserInformationException("No remote volumes were found, refusing purge", "CannotPurgeWithNoRemoteVolumes");
 
@@ -90,24 +90,24 @@ namespace Duplicati.Library.Main.Operation
                 // Mark all volumes as disposable
                 foreach (var f in missing)
                     await db
-                        .UpdateRemoteVolume(f.Name, RemoteVolumeState.Deleting, f.Size, f.Hash, result.TaskControl.ProgressToken)
+                        .UpdateRemoteVolumeAsync(f.Name, RemoteVolumeState.Deleting, f.Size, f.Hash, result.TaskControl.ProgressToken)
                         .ConfigureAwait(false);
 
                 Logging.Log.WriteInformationMessage(LOGTAG, "MarkedRemoteFilesForDeletion", "Marked {0} remote files for deletion", missing.Count);
 
                 // Drop all content from tables
                 await db
-                    .RemoveMissingBlocks(missing.Select(x => x.Name), result.TaskControl.ProgressToken)
+                    .RemoveMissingBlocksAsync(missing.Select(x => x.Name), result.TaskControl.ProgressToken)
                     .ConfigureAwait(false);
 
                 // Mark all orphaned index files as disposable after removing the missing block files
-                await foreach (var f in db.GetOrphanedIndexFiles(result.TaskControl.ProgressToken).ConfigureAwait(false))
+                await foreach (var f in db.GetOrphanedIndexFilesAsync(result.TaskControl.ProgressToken).ConfigureAwait(false))
                     await db
-                        .UpdateRemoteVolume(f.Name, RemoteVolumeState.Deleting, f.Size, f.Hash, result.TaskControl.ProgressToken)
+                        .UpdateRemoteVolumeAsync(f.Name, RemoteVolumeState.Deleting, f.Size, f.Hash, result.TaskControl.ProgressToken)
                         .ConfigureAwait(false);
 
                 brokensets = await db
-                    .GetBrokenFilesets(options.Time, options.Version, result.TaskControl.ProgressToken)
+                    .GetBrokenFilesetsAsync(options.Time, options.Version, result.TaskControl.ProgressToken)
                     .ToArrayAsync()
                     .ConfigureAwait(false);
             }
@@ -120,10 +120,10 @@ namespace Duplicati.Library.Main.Operation
             if (filter != null && !filter.Empty)
                 throw new UserInformationException("Filters are not supported for this operation", "FiltersAreNotSupportedForListBrokenFiles");
 
-            if (await db.PartiallyRecreated(m_result.TaskControl.ProgressToken).ConfigureAwait(false))
+            if (await db.PartiallyRecreatedAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                 throw new UserInformationException("The command does not work on partially recreated databases", "ListBrokenFilesDoesNotWorkOnPartialDatabase");
 
-            (var brokensets, var missing) = await GetBrokenFilesetsFromRemote(backendManager, m_result, db, m_options).ConfigureAwait(false);
+            (var brokensets, var missing) = await GetBrokenFilesetsFromRemoteAsync(backendManager, m_result, db, m_options).ConfigureAwait(false);
             if (brokensets == null)
                 return;
 
@@ -142,7 +142,7 @@ namespace Duplicati.Library.Main.Operation
             }
 
             var fstimes = await db
-                .FilesetTimes(m_result.TaskControl.ProgressToken)
+                .FilesetTimesAsync(m_result.TaskControl.ProgressToken)
                 .ToListAsync(cancellationToken: m_result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);
 
@@ -165,7 +165,7 @@ namespace Duplicati.Library.Main.Operation
                                 x.Timestamp,
                                 callbackhandler == null && !m_options.ListSetsOnly
                                     ? await db
-                                        .GetBrokenFilenames(x.FilesetID, m_result.TaskControl.ProgressToken)
+                                        .GetBrokenFilenamesAsync(x.FilesetID, m_result.TaskControl.ProgressToken)
                                         .ToArrayAsync(cancellationToken: m_result.TaskControl.ProgressToken)
                                         .ConfigureAwait(false)
                                     : new MockList<Tuple<string, long>>((int)x.BrokenCount)
@@ -175,7 +175,7 @@ namespace Duplicati.Library.Main.Operation
 
             if (callbackhandler != null)
                 foreach (var bs in brokenfilesets)
-                    await foreach (var fe in db.GetBrokenFilenames(bs.FilesetID, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
+                    await foreach (var fe in db.GetBrokenFilenamesAsync(bs.FilesetID, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                         if (!callbackhandler(bs.Version, bs.Timestamp, bs.BrokenCount, fe.Item1, fe.Item2))
                             break;
         }

@@ -66,19 +66,18 @@ public class BackupExclusionAttributeTests : BasicSetupHelper
             => throw new NotImplementedException();
     }
 
-    private static bool InvokeHasBackupExclusionAttribute(ISourceProviderEntry entry)
+    private static Task<bool> InvokeHasBackupExclusionAttributeAsync(ISourceProviderEntry entry)
     {
         var method = typeof(FileEnumerationProcess).GetMethod(
-            "HasBackupExclusionAttribute",
+            "HasBackupExclusionAttributeAsync",
             BindingFlags.NonPublic | BindingFlags.Static);
 
-        Assert.That(method, Is.Not.Null, "HasBackupExclusionAttribute not found via reflection");
-        var task = (Task<bool>)method!.Invoke(null, [entry, CancellationToken.None])!;
-        return task.GetAwaiter().GetResult();
+        Assert.That(method, Is.Not.Null, "HasBackupExclusionAttributeAsync not found via reflection");
+        return (Task<bool>)method!.Invoke(null, [entry, CancellationToken.None])!;
     }
 
     [Test]
-    public void HasBackupExclusionAttribute_ReturnsFalse_WhenMetadataIsEmpty()
+    public async Task HasBackupExclusionAttribute_ReturnsFalse_WhenMetadataIsEmpty_Async()
     {
         var entry = new TestEntry
         {
@@ -86,13 +85,13 @@ public class BackupExclusionAttributeTests : BasicSetupHelper
             MinorMetadata = new Dictionary<string, string?>()
         };
 
-        var result = InvokeHasBackupExclusionAttribute(entry);
+        var result = await InvokeHasBackupExclusionAttributeAsync(entry);
 
         Assert.That(result, Is.False);
     }
 
     [Test]
-    public void HasBackupExclusionAttribute_DetectsKnownExclusionAttributes()
+    public async Task HasBackupExclusionAttribute_DetectsKnownExclusionAttributes_Async()
     {
         var entry = new TestEntry
         {
@@ -102,16 +101,16 @@ public class BackupExclusionAttributeTests : BasicSetupHelper
 
         // macOS attribute
         entry.MinorMetadata["unix-ext:com.apple.metadata:com_apple_backup_excludeItem"] = "ignored";
-        Assert.That(InvokeHasBackupExclusionAttribute(entry), Is.True, "macOS exclusion attribute was not detected");
+        Assert.That(await InvokeHasBackupExclusionAttributeAsync(entry), Is.True, "macOS exclusion attribute was not detected");
 
         // Linux system attribute
         entry.MinorMetadata.Clear();
         entry.MinorMetadata["unix-ext:duplicati.exclude"] = "ignored";
-        Assert.That(InvokeHasBackupExclusionAttribute(entry), Is.True, "Linux exclusion attribute was not detected");
+        Assert.That(await InvokeHasBackupExclusionAttributeAsync(entry), Is.True, "Linux exclusion attribute was not detected");
 
         // Linux user attribute
         entry.MinorMetadata.Clear();
         entry.MinorMetadata["unix-ext:user.duplicati.exclude"] = "ignored";
-        Assert.That(InvokeHasBackupExclusionAttribute(entry), Is.True, "Linux user exclusion attribute was not detected");
+        Assert.That(await InvokeHasBackupExclusionAttributeAsync(entry), Is.True, "Linux user exclusion attribute was not detected");
     }
 }

@@ -23,6 +23,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using CoCoL;
 using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main
@@ -142,7 +143,7 @@ namespace Duplicati.Library.Main
                         {
                             Logging.Log.WriteWarningMessage(LOGTAG, "SleepPreventionError", ex, "Failed to set sleep prevention");
                         }
-                    });
+                    }).FireAndForget();
 
                     m_runningSleepPrevention = true;
                 }

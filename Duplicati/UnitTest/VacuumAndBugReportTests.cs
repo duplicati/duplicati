@@ -28,6 +28,7 @@ using System.Threading;
 using Duplicati.Library.Main;
 using NUnit.Framework;
 using NUnit.Framework.Legacy;
+using System.Threading.Tasks;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
 
 namespace Duplicati.UnitTest
@@ -37,21 +38,21 @@ namespace Duplicati.UnitTest
     {
         [Test]
         [Category("Vacuum")]
-        public void VacuumDatabase()
+        public async Task VacuumDatabaseAsync()
         {
             var opts = new Dictionary<string, string>(TestOptions);
 
             using (var conn = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={DBFILE};Pooling=false"))
             {
-                conn.Open();
+                await conn.OpenAsync();
                 using var cmd = conn.CreateCommand();
                 cmd.CommandText = "CREATE TABLE test (id INTEGER); INSERT INTO test(id) VALUES (1);";
-                cmd.ExecuteNonQuery();
+                await cmd.ExecuteNonQueryAsync();
             }
 
             using (var c = new Controller("file://" + TARGETFOLDER, opts, null))
             {
-                var res = c.Vacuum();
+                var res = await c.VacuumAsync();
                 TestUtils.AssertResults(res);
                 Assert.AreEqual(OperationMode.Vacuum, ((dynamic)res).MainOperation);
             }
@@ -78,7 +79,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("CreateBugReport")]
-        public void CreateBugReportZip([Values(true, false)] bool vacuum)
+        public async Task CreateBugReportZipAsync([Values(true, false)] bool vacuum)
         {
             File.WriteAllBytes(Path.Combine(DATAFOLDER, "file.txt"), new byte[] { 1 });
 
@@ -89,7 +90,7 @@ namespace Duplicati.UnitTest
 
             using (var c = new Controller("file://" + TARGETFOLDER, opts, null))
             {
-                var backup = c.Backup(new[] { DATAFOLDER });
+                var backup = await c.BackupAsync(new[] { DATAFOLDER });
                 TestUtils.AssertResults(backup);
             }
             for (int i = 0; i < 3; i++)
@@ -103,7 +104,7 @@ namespace Duplicati.UnitTest
 
             using (var c = new Controller("file://" + TARGETFOLDER, opts, null))
             {
-                var res = c.CreateLogDatabase(basepath);
+                var res = await c.CreateLogDatabaseAsync(basepath);
                 TestUtils.AssertResults(res);
 
                 Assert.AreEqual(expected, res.TargetPath);

@@ -34,7 +34,7 @@ namespace Duplicati.Library.Main.Operation.Backup
     {
         private static readonly string METALOGTAG = Logging.Log.LogTagFromType(typeof(MetadataGenerator)) + ".Metadata";
 
-        public static async Task<Dictionary<string, string>> GenerateMetadata(ISourceProviderEntry entry, System.IO.FileAttributes attributes, Options options, CancellationToken token)
+        public static async Task<Dictionary<string, string>> GenerateMetadataAsync(ISourceProviderEntry entry, System.IO.FileAttributes attributes, Options options, CancellationToken token)
         {
             try
             {

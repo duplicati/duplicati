@@ -70,8 +70,8 @@ public class RemoteControl : IEndpointV1
             throw new BadRequestException("Existing remote control must be removed before registering");
 
         var task = registration.IsRegistering
-            ? registration.WaitForRegistration()
-            : registration.RegisterMachine(registrationUrl ?? throw new BadRequestException("Registration URL must be provided"));
+            ? registration.WaitForRegistrationAsync()
+            : registration.RegisterMachineAsync(registrationUrl ?? throw new BadRequestException("Registration URL must be provided"));
 
         // Wait for registration, or at most 5 seconds
         // Client must poll if the registration is not completed by then
@@ -92,7 +92,7 @@ public class RemoteControl : IEndpointV1
         if (!registration.IsRegistering)
             throw new BadRequestException("No ongoing registration to wait for");
 
-        var task = registration.WaitForRegistration();
+        var task = registration.WaitForRegistrationAsync();
 
         // Wait for registration, or at most 5 seconds
         await Task.WhenAny(task, Task.Delay(TimeSpan.FromSeconds(4.5), cancellationToken));
@@ -134,8 +134,8 @@ public class RemoteControl : IEndpointV1
             IsEnabled: remoteController.IsEnabled,
             IsConnected: remoteController.Connected,
             IsRegistering: registration.IsRegistering,
-            IsRegisteringFaulted: registration.IsRegistering && registration.WaitForRegistration().IsFaulted,
-            IsRegisteringCompleted: registration.IsRegistering && registration.WaitForRegistration().IsCompleted,
+            IsRegisteringFaulted: registration.IsRegistering && registration.WaitForRegistrationAsync().IsFaulted,
+            IsRegisteringCompleted: registration.IsRegistering && registration.WaitForRegistrationAsync().IsCompleted,
             RegistrationUrl: registration.RegistrationUrl
         );
 }

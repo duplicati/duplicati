@@ -63,7 +63,7 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>A task that completes when the obfuscation is finished.</returns>
-        public async Task Fix(CancellationToken token)
+        public async Task ObfuscateAsync(CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand(m_rtr);
             var tablename = $"PathMap-{Library.Utility.Utility.GetHexGuid()}";

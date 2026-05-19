@@ -77,7 +77,7 @@ namespace Duplicati.Library.Main.Database
             /// <param name="logQuery">If true, logs the SQL query.</param>
             /// <param name="token">A cancellation token to cancel the operation.</param>
             /// <returns>A task that completes when the element is added.</returns>
-            Task AddElement(string path, string filehash, string metahash, long size, Interface.ListChangesElementType type, bool asNew, bool logQuery, CancellationToken token);
+            Task AddElementAsync(string path, string filehash, string metahash, long size, Interface.ListChangesElementType type, bool asNew, bool logQuery, CancellationToken token);
 
             /// <summary>
             /// Adds elements from the database to the temporary storage.
@@ -87,28 +87,28 @@ namespace Duplicati.Library.Main.Database
             /// <param name="filter">An optional filter to apply when adding elements.</param>
             /// <param name="token">A cancellation token to cancel the operation.</param>
             /// <returns>A task that completes when the elements are added.</returns>
-            Task AddFromDb(long filesetId, bool asNew, IFilter filter, CancellationToken token);
+            Task AddFromDbAsync(long filesetId, bool asNew, IFilter filter, CancellationToken token);
 
             /// <summary>
             /// Creates a report containing the count of added, deleted, and modified elements.
             /// </summary>
             /// <param name="token">A cancellation token to cancel the operation.</param>
             /// <returns>A task that, when awaited, returns an <see cref="IChangeCountReport"/> with the change counts.</returns>
-            Task<IChangeCountReport> CreateChangeCountReport(CancellationToken token);
+            Task<IChangeCountReport> CreateChangeCountReportAsync(CancellationToken token);
 
             /// <summary>
             /// Creates a report containing the size information for added, deleted, previous, and current elements.
             /// </summary>
             /// <param name="token"> A cancellation token to cancel the operation.</param>
             /// <returns>A task that, when awaited, returns an <see cref="IChangeSizeReport"/> with the size details.</returns>
-            Task<IChangeSizeReport> CreateChangeSizeReport(CancellationToken token);
+            Task<IChangeSizeReport> CreateChangeSizeReportAsync(CancellationToken token);
 
             /// <summary>
             /// Asynchronously generates a report of changed files, yielding tuples that describe the change type, element type, and file path.
             /// </summary>
             /// <param name="token"> A cancellation token to cancel the operation.</param>
             /// <returns>An asynchronous enumerable of tuples containing the change type, element type, and file path.</returns>
-            IAsyncEnumerable<Tuple<Interface.ListChangesChangeType, Interface.ListChangesElementType, string>> CreateChangedFileReport(CancellationToken token);
+            IAsyncEnumerable<Tuple<Interface.ListChangesChangeType, Interface.ListChangesElementType, string>> CreateChangedFileReportAsync(CancellationToken token);
         }
 
         /// <summary>
@@ -335,7 +335,7 @@ namespace Duplicati.Library.Main.Database
             }
 
             /// <inheritdoc/>
-            public async Task AddFromDb(long filesetId, bool asNew, IFilter filter, CancellationToken token)
+            public async Task AddFromDbAsync(long filesetId, bool asNew, IFilter filter, CancellationToken token)
             {
                 var tablename = asNew ? m_currentTable : m_previousTable;
 
@@ -565,7 +565,7 @@ namespace Duplicati.Library.Main.Database
             }
 
             /// <inheritdoc/>
-            public async Task AddElement(string path, string filehash, string metahash, long size, Interface.ListChangesElementType type, bool asNew, bool logQuery, CancellationToken token)
+            public async Task AddElementAsync(string path, string filehash, string metahash, long size, Interface.ListChangesElementType type, bool asNew, bool logQuery, CancellationToken token)
             {
                 var cmd = asNew ? m_insertCurrentElementCommand : m_insertPreviousElementCommand;
                 await cmd
@@ -584,7 +584,7 @@ namespace Duplicati.Library.Main.Database
             /// <param name="rd">The SqliteDataReader to read from.</param>
             /// <param name="token"> A cancellation token to cancel the operation.</param>
             /// <returns>An asynchronous enumerable of strings, where each string is a value from the first column of the reader.</returns>
-            private static async IAsyncEnumerable<string?> ReaderToStringList(SqliteDataReader rd, [EnumeratorCancellation] CancellationToken token)
+            private static async IAsyncEnumerable<string?> ReaderToStringListAsync(SqliteDataReader rd, [EnumeratorCancellation] CancellationToken token)
             {
                 await using (rd)
                     while (await rd.ReadAsync(token).ConfigureAwait(false))
@@ -647,7 +647,7 @@ namespace Duplicati.Library.Main.Database
             /// </summary>
             /// <param name="token"> A cancellation token to cancel the operation.</param>
             /// <returns>A task that, when awaited, returns an <see cref="IChangeSizeReport"/> with the size details.</returns>
-            public async Task<IChangeSizeReport> CreateChangeSizeReport(CancellationToken token)
+            public async Task<IChangeSizeReport> CreateChangeSizeReportAsync(CancellationToken token)
             {
                 var (Added, Deleted, Modified) = GetSqls(true);
 
@@ -689,7 +689,7 @@ namespace Duplicati.Library.Main.Database
             /// </summary>
             /// <param name="token">A cancellation token to cancel the operation.</param>
             /// <returns>A task that, when awaited, returns an <see cref="IChangeCountReport"/> with the change counts.</returns>
-            public async Task<IChangeCountReport> CreateChangeCountReport(CancellationToken token)
+            public async Task<IChangeCountReport> CreateChangeCountReportAsync(CancellationToken token)
             {
                 var (Added, Deleted, Modified) = GetSqls(false);
 
@@ -767,7 +767,7 @@ namespace Duplicati.Library.Main.Database
             /// </summary>
             /// <param name="token"> A cancellation token to cancel the operation.</param>
             /// <returns>An asynchronous enumerable of tuples containing the change type, element type, and file path.</returns>
-            public async IAsyncEnumerable<Tuple<Interface.ListChangesChangeType, Interface.ListChangesElementType, string>> CreateChangedFileReport([EnumeratorCancellation] CancellationToken token)
+            public async IAsyncEnumerable<Tuple<Interface.ListChangesChangeType, Interface.ListChangesElementType, string>> CreateChangedFileReportAsync([EnumeratorCancellation] CancellationToken token)
             {
                 var (Added, Deleted, Modified) = GetSqls(false);
 
@@ -783,7 +783,7 @@ namespace Duplicati.Library.Main.Database
                     {
                         cmd.SetCommandAndParameters(sql);
                         foreach (var type in elTypes)
-                            await foreach (var s in ReaderToStringList(await cmd.SetParameterValue("@Type", (int)type).ExecuteReaderAsync(token).ConfigureAwait(false), token).ConfigureAwait(false))
+                            await foreach (var s in ReaderToStringListAsync(await cmd.SetParameterValue("@Type", (int)type).ExecuteReaderAsync(token).ConfigureAwait(false), token).ConfigureAwait(false))
                                 yield return new Tuple<Interface.ListChangesChangeType, Interface.ListChangesElementType, string>(changeType, type, s ?? "");
                     }
 
@@ -858,7 +858,7 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>A task that, when awaited, returns an instance of <see cref="IStorageHelper"/>.</returns>
-        public async Task<IStorageHelper> CreateStorageHelper(CancellationToken token)
+        public async Task<IStorageHelper> CreateStorageHelperAsync(CancellationToken token)
         {
             return await StorageHelper.CreateAsync(this, token).ConfigureAwait(false);
         }

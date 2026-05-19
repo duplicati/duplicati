@@ -106,7 +106,7 @@ public class CommandlineRunService(IQueueRunnerService queueRunnerService, ILogW
         {
             var tt = this.Task;
             if (tt != null)
-                tt.Abort();
+                tt.AbortAsync().Await();
         }
     }
 
@@ -165,7 +165,7 @@ public class CommandlineRunService(IQueueRunnerService queueRunnerService, ILogW
                 var code = CommandLine.Program.RunCommandLine(k.Writer, k.Writer, c =>
                 {
                     k.Task!.SetController(c);
-                    c.AppendSink(sink);
+                    c.AppendSinkAsync(sink).Await();
                 }, args);
                 k.Writer.WriteLine("Return code: {0}", code);
             }

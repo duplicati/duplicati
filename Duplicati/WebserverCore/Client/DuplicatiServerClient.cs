@@ -77,7 +77,7 @@ public class DuplicatiServerClient : IDisposable
     /// The idea of having a separate Authenticate method is to allow for explicit authentication to avoid getting a 401 result on the server log.
     /// </summary>
     /// <param name="cancellationToken">The cancellation token. Optional, defaults to <see cref="CancellationToken.None"/>.</param>
-    public async Task Authenticate(CancellationToken cancellationToken = default)
+    public async Task AuthenticateAsync(CancellationToken cancellationToken = default)
     {
         await RefreshTokenAsync(cancellationToken).ConfigureAwait(false);
     }

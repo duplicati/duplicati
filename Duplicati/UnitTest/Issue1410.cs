@@ -25,6 +25,7 @@ using NUnit.Framework;
 using System.Linq;
 using Duplicati.Library.Interface;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using System.Threading.Tasks;
 
 namespace Duplicati.UnitTest
 {
@@ -32,7 +33,7 @@ namespace Duplicati.UnitTest
     {
         [Test]
         [Category("Targeted")]
-        public void RunCommands()
+        public async Task RunCommandsAsync()
         {
             var testopts = TestOptions;
 
@@ -40,14 +41,14 @@ namespace Duplicati.UnitTest
             File.WriteAllBytes(Path.Combine(DATAFOLDER, "a"), data);
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                IBackupResults backupResults = c.Backup(new string[] { DATAFOLDER });
+                var backupResults = await c.BackupAsync(new string[] { DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
             }
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
             {
-                var r = c.List("*");
+                var r = await c.ListAsync("*");
                 Assert.AreEqual(0, r.Errors.Count());
                 Assert.AreEqual(0, r.Warnings.Count());
                 Console.WriteLine("In first backup:");
@@ -58,14 +59,14 @@ namespace Duplicati.UnitTest
             File.WriteAllBytes(Path.Combine(DATAFOLDER, "b"), data);
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                IBackupResults backupResults = c.Backup(new string[] { DATAFOLDER });
+                var backupResults = await c.BackupAsync(new string[] { DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
             }
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
             {
-                var r = c.List("*");
+                var r = await c.ListAsync("*");
                 Assert.AreEqual(0, r.Errors.Count());
                 Assert.AreEqual(0, r.Warnings.Count());
                 Console.WriteLine("Newest before deleting:");
@@ -75,7 +76,7 @@ namespace Duplicati.UnitTest
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0, no_local_db = true }), null))
             {
-                var r = c.List("*");
+                var r = await c.ListAsync("*");
                 Assert.AreEqual(0, r.Errors.Count());
                 Assert.AreEqual(0, r.Warnings.Count());
                 Console.WriteLine("Newest without db:");
@@ -87,14 +88,14 @@ namespace Duplicati.UnitTest
             File.Delete(DBFILE);
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                IRepairResults repairResults = c.Repair();
+                var repairResults = await c.RepairAsync();
                 Assert.AreEqual(0, repairResults.Errors.Count());
                 Assert.AreEqual(0, repairResults.Warnings.Count());
             }
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                IListResults listResults = c.List();
+                var listResults = await c.ListAsync();
                 Assert.AreEqual(0, listResults.Errors.Count());
                 Assert.AreEqual(0, listResults.Warnings.Count());
                 Assert.AreEqual(listResults.Filesets.Count(), 2);
@@ -102,7 +103,7 @@ namespace Duplicati.UnitTest
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 1 }), null))
             {
-                var r = c.List("*");
+                var r = await c.ListAsync("*");
                 Assert.AreEqual(0, r.Errors.Count());
                 Assert.AreEqual(0, r.Warnings.Count());
                 Console.WriteLine("Oldest after delete:");
@@ -112,7 +113,7 @@ namespace Duplicati.UnitTest
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
             {
-                var r = c.List("*");
+                var r = await c.ListAsync("*");
                 Assert.AreEqual(0, r.Errors.Count());
                 Assert.AreEqual(0, r.Warnings.Count());
                 Console.WriteLine("Newest after delete:");
