@@ -58,11 +58,11 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
 
     /// <inheritdoc />
     public Task SetLastCompactAsync(DateTime lastCompact)
-        => Rpc.InvokeAsync(nameof(IControllerRpc.SetLastCompactAsync), lastCompact).WaitAsync(TimeSpan.FromSeconds(5));
+        => Rpc.InvokeAsync(nameof(IController.SetLastCompactAsync), lastCompact).WaitAsync(TimeSpan.FromSeconds(5));
 
     /// <inheritdoc />
     public Task SetLastVacuumAsync(DateTime lastVacuum)
-        => Rpc.InvokeAsync(nameof(IControllerRpc.SetLastVacuumAsync), lastVacuum).WaitAsync(TimeSpan.FromSeconds(5));
+        => Rpc.InvokeAsync(nameof(IController.SetLastVacuumAsync), lastVacuum).WaitAsync(TimeSpan.FromSeconds(5));
 
     /// <summary>
     /// Creates a new controller proxy
@@ -115,7 +115,7 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
         if (!File.Exists(exePath))
             throw new FileNotFoundException($"Controller executable not found: {exePath}");
 
-        var psi = new ProcessStartInfo(exePath, "--controller-server")
+        var psi = new ProcessStartInfo(exePath, "controller-server")
         {
             UseShellExecute = false,
             RedirectStandardInput = true,
@@ -129,7 +129,7 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
             ?? throw new InvalidOperationException("Failed to start controller process");
 
         // Setup StreamJsonRpc over stdio
-        var formatter = new SystemTextJsonFormatter();
+        var formatter = new SystemTextJsonFormatter { JsonSerializerOptions = RpcJsonOptions.Options };
         var handler = new NewLineDelimitedMessageHandler(
             _process.StandardInput.BaseStream,
             _process.StandardOutput.BaseStream,
@@ -142,7 +142,7 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
         _ = Task.Run(ReadStderrAsync);
 
         // Initialize the remote controller
-        await _rpc.InvokeAsync(nameof(IControllerRpc.InitializeAsync), _backendUrl, _options).ConfigureAwait(false);
+        await _rpc.InvokeAsync("InitializeAsync", _backendUrl, _options).ConfigureAwait(false);
     }
 
 #if DEBUG
@@ -162,7 +162,7 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
             {
                 await pipeServer.WaitForConnectionAsync().ConfigureAwait(false);
 
-                var formatter = new SystemTextJsonFormatter();
+                var formatter = new SystemTextJsonFormatter { JsonSerializerOptions = RpcJsonOptions.Options };
                 var handler = new NewLineDelimitedMessageHandler(
                     pipeServer,
                     pipeServer,
@@ -192,7 +192,7 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
         var pipeClient = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
         await pipeClient.ConnectAsync().ConfigureAwait(false);
 
-        var clientFormatter = new SystemTextJsonFormatter();
+        var clientFormatter = new SystemTextJsonFormatter { JsonSerializerOptions = RpcJsonOptions.Options };
         var clientHandler = new NewLineDelimitedMessageHandler(
             pipeClient,
             pipeClient,
@@ -202,7 +202,7 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
         _rpc.StartListening();
 
         // Initialize the remote controller
-        await _rpc.InvokeAsync(nameof(IControllerRpc.InitializeAsync), _backendUrl, _options).ConfigureAwait(false);
+        await _rpc.InvokeAsync(nameof(ControllerRpcServer.InitializeAsync), _backendUrl, _options).ConfigureAwait(false);
     }
 #endif
     private async Task ReadStderrAsync()
@@ -352,25 +352,15 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
 
     /// <inheritdoc />
     public async Task<IBackupResults> BackupAsync(string[] inputsources, IFilter? filter = null)
-    {
-        var filterDto = FilterDto.FromFilter(filter);
-        var dto = await Rpc.InvokeAsync<BackupResultsDto>(nameof(IControllerRpc.BackupAsync), inputsources, filterDto).ConfigureAwait(false);
-        return new BackupResultsWrapper(dto);
-    }
+        => await Rpc.InvokeAsync<IBackupResults>(nameof(IController.BackupAsync), inputsources, filter).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<IRestoreResults> RestoreAsync(string[]? paths, IFilter? filter = null)
-    {
-        var filterDto = FilterDto.FromFilter(filter);
-        var dto = await Rpc.InvokeAsync<RestoreResultsDto>(nameof(IControllerRpc.RestoreAsync), paths, filterDto).ConfigureAwait(false);
-        return new RestoreResultsWrapper(dto);
-    }
+        => await Rpc.InvokeAsync<IRestoreResults>(nameof(IController.RestoreAsync), paths, filter).ConfigureAwait(false);
 
     /// <inheritdoc />
     public Task<IListResults> ListAsync()
-    {
-        return ListAsync(null, null);
-    }
+        => ListAsync(null, null);
 
     /// <inheritdoc />
     public Task<IListResults> ListAsync(string? filterstring)
@@ -378,197 +368,110 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
 
     /// <inheritdoc />
     public async Task<IListResults> ListAsync(IEnumerable<string>? filterstrings, IFilter? filter)
-    {
-        var filterDto = FilterDto.FromFilter(filter);
-        var dto = await Rpc.InvokeAsync<ListResultsDto>(nameof(IControllerRpc.ListAsync), filterstrings, filterDto).ConfigureAwait(false);
-        return new ListResultsWrapper(dto);
-    }
+        => await Rpc.InvokeAsync<IListResults>(nameof(IController.ListAsync), filterstrings, filter).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<IDeleteResults> DeleteAsync()
-    {
-        var dto = await Rpc.InvokeAsync<DeleteResultsDto>(nameof(IControllerRpc.DeleteAsync)).ConfigureAwait(false);
-        return new DeleteResultsWrapper(dto);
-    }
+        => await Rpc.InvokeAsync<IDeleteResults>(nameof(IController.DeleteAsync)).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<IRepairResults> RepairAsync(IFilter? filter = null)
-    {
-        var filterDto = FilterDto.FromFilter(filter);
-        var dto = await Rpc.InvokeAsync<RepairResultsDto>(nameof(IControllerRpc.RepairAsync), filterDto).ConfigureAwait(false);
-        return new RepairResultsWrapper(dto);
-    }
+        => await Rpc.InvokeAsync<IRepairResults>(nameof(IController.RepairAsync), filter).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<ICompactResults> CompactAsync()
-    {
-        var dto = await Rpc.InvokeAsync<CompactResultsDto>(nameof(IControllerRpc.CompactAsync)).ConfigureAwait(false);
-        return new CompactResultsWrapper(dto);
-    }
+        => await Rpc.InvokeAsync<ICompactResults>(nameof(IController.CompactAsync)).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<IVacuumResults> VacuumAsync()
-    {
-        var dto = await Rpc.InvokeAsync<VacuumResultsDto>(nameof(IControllerRpc.VacuumAsync)).ConfigureAwait(false);
-        return new VacuumResultsWrapper(dto);
-    }
+        => await Rpc.InvokeAsync<IVacuumResults>(nameof(IController.VacuumAsync)).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<ITestResults> TestAsync(long samples = 1)
-    {
-        var dto = await Rpc.InvokeAsync<TestResultsDto>(nameof(IControllerRpc.TestAsync), samples).ConfigureAwait(false);
-        return new TestResultsWrapper(dto);
-    }
+        => await Rpc.InvokeAsync<ITestResults>(nameof(IController.TestAsync), samples).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<IListFilesetResults> ListFilesetsAsync()
-    {
-        var dto = await Rpc.InvokeAsync<ListFilesetResultsDto>(nameof(IControllerRpc.ListFilesetsAsync)).ConfigureAwait(false);
-        return new ListFilesetResultsWrapper(dto);
-    }
+        => await Rpc.InvokeAsync<IListFilesetResults>(nameof(IController.ListFilesetsAsync)).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<IListFolderResults> ListFolderAsync(string[]? folders, long offset, long limit, bool extendedData)
-    {
-        var dto = await Rpc.InvokeAsync<ListFolderResultsDto>(nameof(IControllerRpc.ListFolderAsync), folders, offset, limit, extendedData).ConfigureAwait(false);
-        return new ListFolderResultsWrapper(dto);
-    }
+        => await Rpc.InvokeAsync<IListFolderResults>(nameof(IController.ListFolderAsync), folders, offset, limit, extendedData).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<IListFileVersionsResults> ListFileVersionsAsync(string[]? files, long offset, long limit)
-    {
-        var dto = await Rpc.InvokeAsync<ListFileVersionsResultsDto>(nameof(IControllerRpc.ListFileVersionsAsync), files, offset, limit).ConfigureAwait(false);
-        return new ListFileVersionsResultsWrapper(dto);
-    }
+        => await Rpc.InvokeAsync<IListFileVersionsResults>(nameof(IController.ListFileVersionsAsync), files, offset, limit).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<ISearchFilesResults> SearchEntriesAsync(string[]? pathprefixes, IFilter? filter, long offset, long limit, bool extendedData)
-    {
-        var filterDto = FilterDto.FromFilter(filter);
-        var dto = await Rpc.InvokeAsync<SearchFilesResultsDto>(nameof(IControllerRpc.SearchEntriesAsync), pathprefixes, filterDto, offset, limit, extendedData).ConfigureAwait(false);
-        return new SearchFilesResultsWrapper(dto);
-    }
+        => await Rpc.InvokeAsync<ISearchFilesResults>(nameof(IController.SearchEntriesAsync), pathprefixes, filter, offset, limit, extendedData).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<ICreateLogDatabaseResults> CreateLogDatabaseAsync(string targetpath)
-    {
-        var dto = await Rpc.InvokeAsync<CreateLogDatabaseResultsDto>(nameof(IControllerRpc.CreateLogDatabaseAsync), targetpath).ConfigureAwait(false);
-        return new CreateLogDatabaseResultsWrapper(dto);
-    }
+        => await Rpc.InvokeAsync<ICreateLogDatabaseResults>(nameof(IController.CreateLogDatabaseAsync), targetpath).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<IListRemoteResults> ListRemoteAsync()
-    {
-        var dto = await Rpc.InvokeAsync<ListRemoteResultsDto>(nameof(IControllerRpc.ListRemoteAsync)).ConfigureAwait(false);
-        return new ListRemoteResultsWrapper(dto);
-    }
+        => await Rpc.InvokeAsync<IListRemoteResults>(nameof(IController.ListRemoteAsync)).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<IListRemoteResults> DeleteAllRemoteFilesAsync()
-    {
-        var dto = await Rpc.InvokeAsync<ListRemoteResultsDto>(nameof(IControllerRpc.DeleteAllRemoteFilesAsync)).ConfigureAwait(false);
-        return new ListRemoteResultsWrapper(dto);
-    }
+        => await Rpc.InvokeAsync<IListRemoteResults>(nameof(IController.DeleteAllRemoteFilesAsync)).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<ISetLockResults> SetLocksAsync()
-    {
-        var dto = await Rpc.InvokeAsync<SetLockResultsDto>(nameof(IControllerRpc.SetLocksAsync)).ConfigureAwait(false);
-        return new SetLockResultsWrapper(dto);
-    }
+        => await Rpc.InvokeAsync<ISetLockResults>(nameof(IController.SetLocksAsync)).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<IReadLockInfoResults> ReadLockInfoAsync()
-    {
-        var dto = await Rpc.InvokeAsync<ReadLockInfoResultsDto>(nameof(IControllerRpc.ReadLockInfoAsync)).ConfigureAwait(false);
-        return new ReadLockInfoResultsWrapper(dto);
-    }
+        => await Rpc.InvokeAsync<IReadLockInfoResults>(nameof(IController.ReadLockInfoAsync)).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<IRecreateDatabaseResults> UpdateDatabaseWithVersionsAsync(IFilter? filter = null)
-    {
-        var filterDto = FilterDto.FromFilter(filter);
-        var dto = await Rpc.InvokeAsync<RecreateDatabaseResultsDto>(nameof(IControllerRpc.UpdateDatabaseWithVersionsAsync), filterDto).ConfigureAwait(false);
-        return new RecreateDatabaseResultsWrapper(dto);
-    }
+        => await Rpc.InvokeAsync<IRecreateDatabaseResults>(nameof(IController.UpdateDatabaseWithVersionsAsync), filter).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<IPurgeFilesResults> PurgeFilesAsync(IFilter? filter)
-    {
-        var filterDto = FilterDto.FromFilter(filter);
-        var dto = await Rpc.InvokeAsync<PurgeFilesResultsDto>(nameof(IControllerRpc.PurgeFilesAsync), filterDto).ConfigureAwait(false);
-        return new PurgeFilesResultsWrapper(dto);
-    }
+        => await Rpc.InvokeAsync<IPurgeFilesResults>(nameof(IController.PurgeFilesAsync), filter).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<IListBrokenFilesResults> ListBrokenFilesAsync(IFilter? filter, Func<long, DateTime, long, string, long, bool>? callbackhandler = null)
     {
         // Note: callbacks for progress are not supported in the RPC model
-        var filterDto = FilterDto.FromFilter(filter);
-        var dto = await Rpc.InvokeAsync<ListBrokenFilesResultsDto>(nameof(IControllerRpc.ListBrokenFilesAsync), filterDto).ConfigureAwait(false);
-        return new ListBrokenFilesResultsWrapper(dto);
+        return await Rpc.InvokeAsync<IListBrokenFilesResults>(nameof(IController.ListBrokenFilesAsync), filter).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
     public async Task<IPurgeBrokenFilesResults> PurgeBrokenFilesAsync(IFilter? filter)
-    {
-        var filterDto = FilterDto.FromFilter(filter);
-        var dto = await Rpc.InvokeAsync<PurgeBrokenFilesResultsDto>(nameof(IControllerRpc.PurgeBrokenFilesAsync), filterDto).ConfigureAwait(false);
-        return new PurgeBrokenFilesResultsWrapper(dto);
-    }
+        => await Rpc.InvokeAsync<IPurgeBrokenFilesResults>(nameof(IController.PurgeBrokenFilesAsync), filter).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<ISendMailResults> SendMailAsync()
-    {
-        var dto = await Rpc.InvokeAsync<SendMailResultsDto>(nameof(IControllerRpc.SendMailAsync)).ConfigureAwait(false);
-        return new SendMailResultsWrapper(dto);
-    }
+        => await Rpc.InvokeAsync<ISendMailResults>(nameof(IController.SendMailAsync)).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<ISystemInfoResults> SystemInfoAsync()
-    {
-        var dto = await Rpc.InvokeAsync<SystemInfoResultsDto>(nameof(IControllerRpc.SystemInfoAsync)).ConfigureAwait(false);
-        return new SystemInfoResultsWrapper(dto);
-    }
+        => await Rpc.InvokeAsync<ISystemInfoResults>(nameof(IController.SystemInfoAsync)).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<ITestFilterResults> TestFilterAsync(string[] paths, IFilter? filter = null)
-    {
-        var filterDto = FilterDto.FromFilter(filter);
-        var dto = await Rpc.InvokeAsync<TestFilterResultsDto>(nameof(IControllerRpc.TestFilterAsync), paths, filterDto).ConfigureAwait(false);
-        return new TestFilterResultsWrapper(dto);
-    }
+        => await Rpc.InvokeAsync<ITestFilterResults>(nameof(IController.TestFilterAsync), paths, filter).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<IListChangesResults> ListChangesAsync(string baseVersion, string targetVersion, IEnumerable<string>? filterstrings = null, IFilter? filter = null, Action<IListChangesResults, IEnumerable<Tuple<ListChangesChangeType, ListChangesElementType, string>>>? callback = null)
-    {
-        var filterDto = FilterDto.FromFilter(filter);
-        var dto = await Rpc.InvokeAsync<ListChangesResultsDto>(nameof(IControllerRpc.ListChangesAsync), baseVersion, targetVersion, filterstrings, filterDto).ConfigureAwait(false);
-        return new ListChangesResultsWrapper(dto);
-    }
+        => await Rpc.InvokeAsync<IListChangesResults>(nameof(IController.ListChangesAsync), baseVersion, targetVersion, filterstrings, filter).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<IListAffectedResults> ListAffectedAsync(List<string>? args, Action<IListAffectedResults>? callback = null)
-    {
-        var dto = await Rpc.InvokeAsync<ListAffectedResultsDto>(nameof(IControllerRpc.ListAffectedAsync), args).ConfigureAwait(false);
-        return new ListAffectedResultsWrapper(dto);
-    }
+        => await Rpc.InvokeAsync<IListAffectedResults>(nameof(IController.ListAffectedAsync), args).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<IRestoreControlFilesResults> RestoreControlFilesAsync(IEnumerable<string>? files = null, IFilter? filter = null)
-    {
-        var filterDto = FilterDto.FromFilter(filter);
-        var dto = await Rpc.InvokeAsync<RestoreControlFilesResultsDto>(nameof(IControllerRpc.RestoreControlFilesAsync), files, filterDto).ConfigureAwait(false);
-        return new RestoreControlFilesResultsWrapper(dto);
-    }
+        => await Rpc.InvokeAsync<IRestoreControlFilesResults>(nameof(IController.RestoreControlFilesAsync), files, filter).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<IListResults> ListControlFilesAsync(IEnumerable<string>? filterstrings, IFilter? filter)
-    {
-        var filterDto = FilterDto.FromFilter(filter);
-        var dto = await Rpc.InvokeAsync<ListResultsDto>(nameof(IControllerRpc.ListControlFilesAsync), filterstrings, filterDto).ConfigureAwait(false);
-        return new ListResultsWrapper(dto);
-    }
+        => await Rpc.InvokeAsync<IListResults>(nameof(IController.ListControlFilesAsync), filterstrings, filter).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task AbortAsync()
@@ -577,7 +480,7 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
         {
             try
             {
-                await _rpc.InvokeAsync(nameof(IControllerRpc.AbortAsync)).WaitAsync(TimeSpan.FromSeconds(2)).ConfigureAwait(false);
+                await _rpc.InvokeAsync(nameof(IController.AbortAsync)).WaitAsync(TimeSpan.FromSeconds(2)).ConfigureAwait(false);
             }
             catch
             {
@@ -604,38 +507,35 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
     public async Task StopAsync()
     {
         if (_rpc != null)
-            await _rpc.InvokeAsync(nameof(IControllerRpc.StopAsync)).ConfigureAwait(false);
+            await _rpc.InvokeAsync(nameof(IController.StopAsync)).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
     public async Task PauseAsync(bool alsoTransfers)
     {
         if (_rpc != null)
-            await _rpc.InvokeAsync(nameof(IControllerRpc.PauseAsync), alsoTransfers).ConfigureAwait(false);
+            await _rpc.InvokeAsync(nameof(IController.PauseAsync), alsoTransfers).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
     public async Task ResumeAsync()
     {
         if (_rpc != null)
-            await _rpc.InvokeAsync(nameof(IControllerRpc.ResumeAsync)).ConfigureAwait(false);
+            await _rpc.InvokeAsync(nameof(IController.ResumeAsync)).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
     public async Task SetThrottleSpeedsAsync(long maxUploadPrSecond, long maxDownloadPrSecond)
     {
         if (_rpc != null)
-            await _rpc.InvokeAsync(nameof(IControllerRpc.SetThrottleSpeedsAsync), maxUploadPrSecond, maxDownloadPrSecond).ConfigureAwait(false);
+            await _rpc.InvokeAsync(nameof(IController.SetThrottleSpeedsAsync), maxUploadPrSecond, maxDownloadPrSecond).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
     public async Task SetSecretProviderAsync(ISecretProvider? secretProvider)
     {
         if (_rpc != null)
-        {
-            var dto = secretProvider == null ? null : SecretProviderDto.FromProvider(secretProvider);
-            await _rpc.InvokeAsync(nameof(IControllerRpc.SetSecretProviderAsync), dto).ConfigureAwait(false);
-        }
+            await _rpc.InvokeAsync(nameof(IController.SetSecretProviderAsync), secretProvider).ConfigureAwait(false);
     }
 
     /// <inheritdoc />

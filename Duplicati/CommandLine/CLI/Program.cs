@@ -45,7 +45,7 @@ namespace Duplicati.CommandLine
             PreloadSettingsLoader.ConfigurePreloadSettings(ref args, PackageHelper.NamedExecutable.CommandLine);
 
             // Check for controller server mode
-            if (args.Contains("--controller-server"))
+            if (args.IndexOf("controller-server") == 0)
                 return ControllerProcessEntry.Run(args);
 
             Library.UsageReporter.Reporter.Initialize();

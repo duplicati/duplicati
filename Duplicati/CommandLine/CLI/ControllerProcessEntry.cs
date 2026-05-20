@@ -39,7 +39,7 @@ public static class ControllerProcessEntry
         try
         {
             // Setup RPC over stdio
-            var formatter = new SystemTextJsonFormatter();
+            var formatter = new SystemTextJsonFormatter { JsonSerializerOptions = RpcJsonOptions.Options };
             var handler = new NewLineDelimitedMessageHandler(
                 Console.OpenStandardOutput(),
                 Console.OpenStandardInput(),
