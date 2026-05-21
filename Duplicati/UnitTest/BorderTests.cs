@@ -186,13 +186,13 @@ namespace Duplicati.UnitTest
                     opts["compression-module"] = "tzstd";
                 });
 
-        // [Test]
-        // [Category("Border")]
-        // public Task Run10kIPCAsync()
-        //     => RunCommandsAsync(1024 * 10, modifyOptions: opts =>
-        //         {
-        //             opts["rpc-controller"] = "1";
-        //         });
+        [Test]
+        [Category("Border")]
+        public Task Run10kIPCAsync()
+            => RunCommandsAsync(1024 * 10, modifyOptions: opts =>
+                {
+                    opts["rpc-controller"] = "1";
+                });
 
 
         public static Dictionary<string, int> WriteTestFilesToFolder(string targetfolder, int blocksize, int basedatasize = 0)
@@ -240,6 +240,8 @@ namespace Duplicati.UnitTest
 
             async Task<IController> CreateControllerAsync(string url, Dictionary<string, string> options, IMessageSink messageSink)
             {
+                if (useRpcController)
+                    return await Library.Main.IPC.ControllerRpcProxy.CreateProxyAsync(url, options, messageSink);
                 return new Controller(url, options, messageSink);
             }
 
@@ -247,7 +249,7 @@ namespace Duplicati.UnitTest
 
             using (var c = await CreateControllerAsync("file://" + TARGETFOLDER, testopts, null))
             {
-                IBackupResults backupResults = await c.BackupAsync(new string[] { DATAFOLDER });
+                var backupResults = await c.BackupAsync(new string[] { DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
 
                 // TODO: This sometimes results in a "No block hash found for file: C:\projects\duplicati\testdata\backup-data\a-0" warning.

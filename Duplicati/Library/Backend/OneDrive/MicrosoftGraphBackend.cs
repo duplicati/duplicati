@@ -86,11 +86,6 @@ namespace Duplicati.Library.Backend
         private const int UPLOAD_SESSION_FRAGMENT_MULTIPLE_SIZE = 320 * 1024;
 
         /// <summary>
-        /// Cached copy of the PATH method
-        /// </summary>
-        private static readonly HttpMethod PatchMethod = new HttpMethod("PATCH");
-
-        /// <summary>
         /// Dummy UploadSession given as an empty body to createUploadSession requests when using the OAuthHelper instead of the OAuthHttpClient.
         /// The API expects a ContentLength to be specified, but the body content is optional.
         /// Passing an empty object (or specifying the ContentLength explicitly) bypasses this error.
@@ -700,7 +695,7 @@ namespace Duplicati.Library.Backend
 
         protected Task<T> PatchAsync<T>(string url, T body, CancellationToken cancelToken) where T : class
         {
-            return this.SendRequestAsync(PatchMethod, url, body, cancelToken);
+            return this.SendRequestAsync(HttpMethod.Patch, url, body, cancelToken);
         }
 
         private async Task<T> SendRequestAsync<T>(HttpMethod method, string url, CancellationToken cancelToken)

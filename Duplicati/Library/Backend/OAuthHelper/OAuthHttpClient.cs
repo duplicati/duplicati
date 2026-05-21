@@ -46,6 +46,8 @@ namespace Duplicati.Library
 
             // Set the default user agent
             this.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("Duplicati", USER_AGENT_VERSION));
+            // Make sure the client never times out, we use a custom timeout setup
+            this.Timeout = System.Threading.Timeout.InfiniteTimeSpan;
         }
 
         /// <summary>
