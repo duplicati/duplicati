@@ -47,15 +47,15 @@ public sealed class MovistarCloudBackend : IBackend
     /// <summary>
     /// The device ID option name coming from the X-Deviceid header
     /// </summary>
-    private const string DeviceIdOption = "deviceID";    
+    private const string DeviceIdOption = "deviceID";
     /// <summary>
     /// The list limit option name
     /// </summary>
     private const string ListLimitOption = "list-limit";
     /// <summary>
-    /// The wait for validation option name
+    /// The ignore validation result option name
     /// </summary>
-    private const string WaitForValidationOption = "wait-for-validation";
+    private const string IgnoreValidationResultOption = "ignore-validation-result";
     /// <summary>
     /// The validation timeout option name
     /// </summary>
@@ -81,10 +81,6 @@ public sealed class MovistarCloudBackend : IBackend
     /// The default list limit value
     /// </summary>
     private const int DefaultListLimit = 2000;
-    /// <summary>
-    /// The default wait for validation value
-    /// </summary>
-    private const bool DefaultWaitForValidation = true;
     /// <summary>
     /// The default validation timeout value
     /// </summary>
@@ -125,47 +121,47 @@ public sealed class MovistarCloudBackend : IBackend
     /// The root folder ID
     /// </summary>
     private long _rootFolderId;
-    
+
     /// <summary>
     /// The maximum number of items to return per listing call
     /// </summary>
     private readonly int _listLimit;
-    
+
     /// <summary>
     /// Whether to wait until uploaded file becomes usable (status=U)
     /// </summary>
     private readonly bool _waitForValidation;
-    
+
     /// <summary>
     /// The maximum time to wait for server-side upload validation
     /// </summary>
     private readonly TimeSpan _validationTimeout;
-    
+
     /// <summary>
     /// The polling interval for validation status
     /// </summary>
     private readonly TimeSpan _validationPollInterval;
-    
+
     /// <summary>
     /// Whether diagnostics logging is enabled
     /// </summary>
     private readonly bool _diagnostics;
-    
+
     /// <summary>
     /// The diagnostics level (basic or trash)
     /// </summary>
     private readonly DiagnosticsLevel _diagnosticsLevel;
-    
+
     /// <summary>
     /// The number of items to list from trash when diagnostics-level=trash
     /// </summary>
     private readonly int _trashPageSize;
-    
+
     /// <summary>
     /// The optional root folder path
     /// </summary>
     private readonly string? _rootFolderPathOpt;
-    
+
     /// <summary>
     /// Whether the destination has been resolved
     /// </summary>
@@ -174,32 +170,56 @@ public sealed class MovistarCloudBackend : IBackend
     /// <summary>
     /// The API client instance
     /// </summary>
-    private readonly MovistarCloudApiClient? _client;
-    
+    private MovistarCloudApiClient? _client;
+
+    /// <summary>
+    /// The email address for authentication
+    /// </summary>
+    private readonly string _email;
+
+    /// <summary>
+    /// The password for authentication
+    /// </summary>
+    private readonly string _password;
+
+    /// <summary>
+    /// The device ID for authentication
+    /// </summary>
+    private readonly string _deviceId;
+
     /// <summary>
     /// The mapping of file names to IDs
     /// </summary>
     private readonly Dictionary<string, long> _nameToId = new(StringComparer.Ordinal);
-    
+
     /// <summary>
     /// The timeout configuration
     /// </summary>
     private readonly TimeoutOptionsHelper.Timeouts _timeouts;
 
     /// <summary>
-    /// Gets the API client, throwing if not initialized
+    /// Gets or creates the API client, initializing it on first use.
     /// </summary>
-    private MovistarCloudApiClient Client
-        => _client ?? throw new InvalidOperationException(
-            "Backend not initialized. This instance was created using the default constructor for metadata only."
-        );
+    /// <param name="ct">The cancellation token</param>
+    /// <returns>The API client</returns>
+    private async Task<MovistarCloudApiClient> GetClientAsync(CancellationToken ct)
+    {
+        if (_client != null)
+            return _client;
+
+        if (string.IsNullOrWhiteSpace(_email) || string.IsNullOrWhiteSpace(_password) || string.IsNullOrWhiteSpace(_deviceId))
+            throw new InvalidOperationException("Backend not initialized with credentials.");
+
+        _client = await MovistarCloudApiClient.CreateAsync(_email, _password, _deviceId, _timeouts, ct).ConfigureAwait(false);
+        return _client;
+    }
 
     /// <inheritdoc/>
     public string DisplayName => Strings.MovistarCloudBackend.DisplayName;
-    
+
     /// <inheritdoc/>
     public string ProtocolKey => "movistarcloud";
-    
+
     /// <inheritdoc/>
     public string Description => Strings.MovistarCloudBackend.Description;
 
@@ -208,9 +228,9 @@ public sealed class MovistarCloudBackend : IBackend
     [
         new CommandLineArgument(EmailOption, CommandLineArgument.ArgumentType.String, Strings.MovistarCloudBackend.EmailShort, Strings.MovistarCloudBackend.EmailLong),
         new CommandLineArgument(PasswordOption, CommandLineArgument.ArgumentType.Password, Strings.MovistarCloudBackend.PasswordShort, Strings.MovistarCloudBackend.PasswordLong),
-        new CommandLineArgument(DeviceIdOption, CommandLineArgument.ArgumentType.String, Strings.MovistarCloudBackend.DeviceIdShort, Strings.MovistarCloudBackend.DeviceIdLong),        
+        new CommandLineArgument(DeviceIdOption, CommandLineArgument.ArgumentType.String, Strings.MovistarCloudBackend.DeviceIdShort, Strings.MovistarCloudBackend.DeviceIdLong),
         new CommandLineArgument(ListLimitOption, CommandLineArgument.ArgumentType.Integer, Strings.MovistarCloudBackend.ListLimitShort, Strings.MovistarCloudBackend.ListLimitLong, DefaultListLimit.ToString()),
-        new CommandLineArgument(WaitForValidationOption, CommandLineArgument.ArgumentType.Boolean, Strings.MovistarCloudBackend.WaitForValidationShort, Strings.MovistarCloudBackend.WaitForValidationLong, DefaultWaitForValidation.ToString()),
+        new CommandLineArgument(IgnoreValidationResultOption, CommandLineArgument.ArgumentType.Boolean, Strings.MovistarCloudBackend.IgnoreValidationResultShort, Strings.MovistarCloudBackend.IgnoreValidationResultLong, false.ToString()),
         new CommandLineArgument(ValidationTimeoutOption, CommandLineArgument.ArgumentType.Timespan, Strings.MovistarCloudBackend.ValidationTimeoutShort, Strings.MovistarCloudBackend.ValidationTimeoutLong, DefaultValidationTimeout),
         new CommandLineArgument(ValidationPollIntervalOption, CommandLineArgument.ArgumentType.Timespan, Strings.MovistarCloudBackend.ValidationPollIntervalShort, Strings.MovistarCloudBackend.ValidationPollIntervalLong, DefaultValidationPollInterval),
         new CommandLineArgument(DiagnosticsOption, CommandLineArgument.ArgumentType.Boolean, Strings.MovistarCloudBackend.DiagnosticsShort, Strings.MovistarCloudBackend.DiagnosticsLong, DefaultDiagnostics.ToString()),
@@ -225,7 +245,7 @@ public sealed class MovistarCloudBackend : IBackend
     public MovistarCloudBackend()
     {
         _listLimit = DefaultListLimit;
-        _waitForValidation = DefaultWaitForValidation;
+        _waitForValidation = true;
         _validationTimeout = Timeparser.ParseTimeSpan(DefaultValidationTimeout);
         _validationPollInterval = Timeparser.ParseTimeSpan(DefaultValidationPollInterval);
         _diagnostics = DefaultDiagnostics;
@@ -233,6 +253,9 @@ public sealed class MovistarCloudBackend : IBackend
         _trashPageSize = DefaultTrashPageSize;
         _timeouts = null!;
         _rootFolderPathOpt = null;
+        _email = null!;
+        _password = null!;
+        _deviceId = null!;
     }
 
     /// <summary>
@@ -242,20 +265,15 @@ public sealed class MovistarCloudBackend : IBackend
     /// <param name="options">The options dictionary</param>
     public MovistarCloudBackend(string url, Dictionary<string, string?> options)
     {
-        var email = RequireOption(options, EmailOption);
-        var password = RequireOption(options, PasswordOption);
-        var device_id = RequireOption(options, DeviceIdOption);
-
+        _email = RequireOption(options, EmailOption);
+        _password = RequireOption(options, PasswordOption);
+        _deviceId = RequireOption(options, DeviceIdOption);
 
         var uri = new Utility.Uri(url);
         _rootFolderPathOpt = uri.HostAndPath;
-        
-        _listLimit = Library.Utility.Utility.ParseIntOption(options, ListLimitOption, DefaultListLimit);
 
-        //TODO: Possible replacement of ParseBoolOption to accept default value.
-        if (options.ContainsKey(WaitForValidationOption))
-            _waitForValidation = Library.Utility.Utility.ParseBoolOption(options, WaitForValidationOption);
-        else _waitForValidation = DefaultWaitForValidation;
+        _listLimit = Library.Utility.Utility.ParseIntOption(options, ListLimitOption, DefaultListLimit);
+        _waitForValidation = !Library.Utility.Utility.ParseBoolOption(options, IgnoreValidationResultOption);
 
         _validationTimeout = Library.Utility.Utility.ParseTimespanOption(options, ValidationTimeoutOption, DefaultValidationTimeout);
         _validationPollInterval = Library.Utility.Utility.ParseTimespanOption(options, ValidationPollIntervalOption, DefaultValidationPollInterval);
@@ -264,11 +282,8 @@ public sealed class MovistarCloudBackend : IBackend
         _trashPageSize = Math.Clamp(Library.Utility.Utility.ParseIntOption(options, TrashPageSizeOption, DefaultTrashPageSize), 1, 200);
 
         _timeouts = TimeoutOptionsHelper.Parse(options);
-        _client = MovistarCloudApiClient.CreateAsync(email, password, device_id, CancellationToken.None).GetAwaiter().GetResult();
     }
 
-    /// <inheritdoc/>
-    
     /// <summary>
     /// Ensures the destination folder is resolved, creating it if necessary.
     /// </summary>
@@ -278,21 +293,23 @@ public sealed class MovistarCloudBackend : IBackend
         if (_destinationResolved)
             return;
 
+        var client = await GetClientAsync(ct).ConfigureAwait(false);
+
         if (_rootFolderId > 0)
         {
-            await Client.WithAutoRelogin(x => Client.AssertFolderExistsByIdAsync(_rootFolderId, _timeouts.ShortTimeout, x), ct);
+            await client.WithAutoRelogin(x => client.AssertFolderExistsByIdAsync(_rootFolderId, x), ct);
             _destinationResolved = true;
             return;
         }
 
         if (!string.IsNullOrWhiteSpace(_rootFolderPathOpt))
         {
-            var id = await Client.WithAutoRelogin(x => Client.EnsureFolderPathAsync(_rootFolderPathOpt!, _timeouts.ShortTimeout, x), ct);
+            var id = await client.WithAutoRelogin(x => client.EnsureFolderPathAsync(_rootFolderPathOpt!, x), ct);
             _rootFolderId = id;
             _destinationResolved = true;
             return;
         }
-        
+
         throw new FolderMissingException("Missing destination folder: specify path on configuration.");
     }
 
@@ -302,8 +319,9 @@ public sealed class MovistarCloudBackend : IBackend
         await EnsureDestinationResolvedAsync(cancellationToken).ConfigureAwait(false);
         ValidateRemoteName(remotename);
 
-        var upload = await Client.WithAutoRelogin(
-            ct => Client.UploadFileAsync(_rootFolderId, remotename, filename, _timeouts.ReadWriteTimeout, ct),
+        var client = await GetClientAsync(cancellationToken).ConfigureAwait(false);
+        var upload = await client.WithAutoRelogin(
+            ct => client.UploadFileAsync(_rootFolderId, remotename, filename, ct),
             cancellationToken).ConfigureAwait(false);
 
         if (_waitForValidation)
@@ -312,8 +330,8 @@ public sealed class MovistarCloudBackend : IBackend
             var usableStatus = false;
             while (DateTime.UtcNow < deadline)
             {
-                var st = await Client.WithAutoRelogin(
-                    ct => Client.GetValidationStatusAsync(upload.Id, _timeouts.ShortTimeout, ct),
+                var st = await client.WithAutoRelogin(
+                    ct => client.GetValidationStatusAsync(upload.Id, ct),
                     cancellationToken).ConfigureAwait(false);
 
                 if (string.Equals(st, "U", StringComparison.OrdinalIgnoreCase))
@@ -328,7 +346,7 @@ public sealed class MovistarCloudBackend : IBackend
             {
                 //Right now we dont see other cases appart of status "V" and Status "U"
                 //TODO: validate new status in the previous block if they appear
-                Logging.Log.WriteWarningMessage(LOGTAG, "ValidationTimeout",null, "Validation did not reach status=U within {0} for {1} (uploadId={2}). Continuing as best-effort.",_validationTimeout, remotename, upload.Id);
+                Logging.Log.WriteWarningMessage(LOGTAG, "ValidationTimeout", null, "Validation did not reach status=U within {0} for {1} (uploadId={2}). Continuing as best-effort.", _validationTimeout, remotename, upload.Id);
             }
         }
 
@@ -340,12 +358,15 @@ public sealed class MovistarCloudBackend : IBackend
     {
         await EnsureDestinationResolvedAsync(cancellationToken).ConfigureAwait(false);
         var id = await ResolveIdByNameAsync(remotename, cancellationToken).ConfigureAwait(false);
+        if (id == null)
+            throw new FileMissingException($"File {remotename} not found in Movistar Cloud.");
 
-        var signedUrl = await Client.WithAutoRelogin(
-            ct => Client.GetDownloadUrlAsync((long)id, _timeouts.ShortTimeout, ct),
+        var client = await GetClientAsync(cancellationToken).ConfigureAwait(false);
+        var signedUrl = await client.WithAutoRelogin(
+            ct => client.GetDownloadUrlAsync((long)id, ct),
             cancellationToken).ConfigureAwait(false);
 
-        await Client.DownloadToFileAsync(signedUrl, filename, _timeouts.ReadWriteTimeout, cancellationToken).ConfigureAwait(false);
+        await client.DownloadToFileAsync(signedUrl, filename, cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc/>
@@ -355,8 +376,9 @@ public sealed class MovistarCloudBackend : IBackend
         var id = await ResolveIdByNameAsync(remotename, cancellationToken, allowMissing: true).ConfigureAwait(false);
         if (id == null) return;
 
-        await Client.WithAutoRelogin(
-            ct => Client.SoftDeleteFileAsync(id.Value, _timeouts.ShortTimeout, ct),
+        var client = await GetClientAsync(cancellationToken).ConfigureAwait(false);
+        await client.WithAutoRelogin(
+            ct => client.SoftDeleteFileAsync(id.Value, ct),
             cancellationToken).ConfigureAwait(false);
 
         _nameToId.Remove(remotename);
@@ -365,19 +387,21 @@ public sealed class MovistarCloudBackend : IBackend
     /// <inheritdoc/>
     public async Task TestAsync(CancellationToken cancellationToken)
     {
+        var client = await GetClientAsync(cancellationToken).ConfigureAwait(false);
+
         // Case A: we already have an id -> check that it exists
         if (_rootFolderId > 0)
         {
-            await Client.WithAutoRelogin(
-                ct => Client.AssertFolderExistsByIdAsync(_rootFolderId, _timeouts.ShortTimeout, ct),
+            await client.WithAutoRelogin(
+                ct => client.AssertFolderExistsByIdAsync(_rootFolderId, ct),
                 cancellationToken
             ).ConfigureAwait(false);
         }
         // Case B: no id but there is a path -> resolve/create and fill _rootFolderId
         else if (!string.IsNullOrWhiteSpace(_rootFolderPathOpt))
         {
-            var resolvedId = await Client.WithAutoRelogin(
-                ct => Client.EnsureFolderPathAsync(_rootFolderPathOpt!, _timeouts.ShortTimeout, ct),
+            var resolvedId = await client.WithAutoRelogin(
+                ct => client.EnsureFolderPathAsync(_rootFolderPathOpt!, ct),
                 cancellationToken
             ).ConfigureAwait(false);
 
@@ -388,7 +412,7 @@ public sealed class MovistarCloudBackend : IBackend
         }
         // Case C: nothing -> indicate missing folder
         else
-        {            
+        {
             throw new FolderMissingException("Missing destination folder during Test: specify path on configuration.");
         }
 
@@ -407,8 +431,9 @@ public sealed class MovistarCloudBackend : IBackend
     {
         try
         {
-            var space = await Client.WithAutoRelogin(
-                ct => Client.GetStorageSpaceAsync(_timeouts.ListTimeout, ct),
+            var client = await GetClientAsync(cancellationToken).ConfigureAwait(false);
+            var space = await client.WithAutoRelogin(
+                ct => client.GetStorageSpaceAsync(ct),
                 cancellationToken
             ).ConfigureAwait(false);
 
@@ -418,8 +443,8 @@ public sealed class MovistarCloudBackend : IBackend
 
             if (_diagnosticsLevel == DiagnosticsLevel.Trash)
             {
-                var trash = await Client.WithAutoRelogin(
-                    ct => Client.ListTrashAsync(_trashPageSize, _timeouts.ListTimeout, ct),
+                var trash = await client.WithAutoRelogin(
+                    ct => client.ListTrashAsync(_trashPageSize, ct),
                     cancellationToken
                 ).ConfigureAwait(false);
 
@@ -443,8 +468,9 @@ public sealed class MovistarCloudBackend : IBackend
     {
         await EnsureDestinationResolvedAsync(cancellationToken).ConfigureAwait(false);
 
-        var files = await Client.WithAutoRelogin(
-            ct => Client.ListFilesAsync(_rootFolderId, _listLimit, _timeouts.ListTimeout, ct),
+        var client = await GetClientAsync(cancellationToken).ConfigureAwait(false);
+        var files = await client.WithAutoRelogin(
+            ct => client.ListFilesAsync(_rootFolderId, _listLimit, ct),
             cancellationToken
         ).ConfigureAwait(false);
 
@@ -465,14 +491,15 @@ public sealed class MovistarCloudBackend : IBackend
     {
         if (!string.IsNullOrWhiteSpace(_rootFolderPathOpt))
         {
-            var id = await Client.WithAutoRelogin(
-                x => Client.EnsureFolderPathAsync(_rootFolderPathOpt!, _timeouts.ShortTimeout, x),
+            var client = await GetClientAsync(cancellationToken).ConfigureAwait(false);
+            var id = await client.WithAutoRelogin(
+                x => client.EnsureFolderPathAsync(_rootFolderPathOpt!, x),
                 cancellationToken);
             _rootFolderId = id;
             _destinationResolved = true;
             return;
         }
-                
+
         throw new UserInformationException(
             "Unable to create the destination folder because no destination path was provided. Specify Path so the Movistar Cloud backend knows which remote folder to create or use.",
             "MovistarCloudMissingRootFolderPath");
@@ -495,8 +522,9 @@ public sealed class MovistarCloudBackend : IBackend
         if (_nameToId.TryGetValue(remotename, out var id))
             return id;
 
-        var files = await Client.WithAutoRelogin(
-            x => Client.ListFilesAsync(_rootFolderId, _listLimit, _timeouts.ListTimeout, x),
+        var client = await GetClientAsync(ct).ConfigureAwait(false);
+        var files = await client.WithAutoRelogin(
+            x => client.ListFilesAsync(_rootFolderId, _listLimit, x),
             ct).ConfigureAwait(false);
 
         _nameToId.Clear();
@@ -561,22 +589,22 @@ public sealed class MovistarCloudBackend : IBackend
 
         /// <inheritdoc/>
         public string Name { get; }
-        
+
         /// <inheritdoc/>
         public long Size { get; }
-        
+
         /// <inheritdoc/>
         public bool IsFolder { get; }
-        
+
         /// <inheritdoc/>
         public DateTime LastAccess { get; }
-        
+
         /// <inheritdoc/>
         public DateTime LastModification { get; }
-        
+
         /// <inheritdoc/>
         public DateTime Created { get; }
-        
+
         /// <inheritdoc/>
         public bool IsArchived { get; }
     }

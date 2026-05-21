@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using Duplicati.Library.Utility;
+using Duplicati.Library.Utility.Options;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
@@ -138,6 +139,11 @@ internal sealed class MovistarCloudApiClient : IDisposable
     private string? _validationKey;
 
     /// <summary>
+    /// The timeout configuration
+    /// </summary>
+    private readonly TimeoutOptionsHelper.Timeouts _timeouts;
+
+    /// <summary>
     /// Whether a relogin has been attempted
     /// </summary>
     private bool _reloginAttempted;
@@ -160,11 +166,13 @@ internal sealed class MovistarCloudApiClient : IDisposable
     /// <param name="email">The email address for authentication</param>
     /// <param name="password">The password for authentication</param>
     /// <param name="device_id">The device ID for authentication</param>
-    private MovistarCloudApiClient(string email, string password, string device_id)
+    /// <param name="timeouts">The timeout configuration</param>
+    private MovistarCloudApiClient(string email, string password, string device_id, TimeoutOptionsHelper.Timeouts timeouts)
     {
         _email = email ?? throw new ArgumentNullException(nameof(email));
         _password = password ?? throw new ArgumentNullException(nameof(password));
         _device_id = device_id;
+        _timeouts = timeouts;
     }
 
     /// <summary>
@@ -173,11 +181,12 @@ internal sealed class MovistarCloudApiClient : IDisposable
     /// <param name="email">The email address for authentication</param>
     /// <param name="password">The password for authentication</param>
     /// <param name="device_id">The device ID for authentication</param>
+    /// <param name="timeouts">The timeout configuration</param>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>The initialized API client</returns>
-    public static async Task<MovistarCloudApiClient> CreateAsync(string email, string password, string device_id, CancellationToken cancellationToken = default)
+    public static async Task<MovistarCloudApiClient> CreateAsync(string email, string password, string device_id, TimeoutOptionsHelper.Timeouts timeouts, CancellationToken cancellationToken = default)
     {
-        var client = new MovistarCloudApiClient(email, password, device_id);
+        var client = new MovistarCloudApiClient(email, password, device_id, timeouts);
         await client.EnsureLoggedInAsync(cancellationToken).ConfigureAwait(false);
         return client;
     }
@@ -250,6 +259,7 @@ internal sealed class MovistarCloudApiClient : IDisposable
         };
 
         _http = HttpClientHelper.CreateClient(handler);
+        _http.Timeout = Timeout.InfiniteTimeSpan;
         _http.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgent);
     }
 
@@ -273,15 +283,13 @@ internal sealed class MovistarCloudApiClient : IDisposable
     /// Reads the response body as JSON or throws if it looks like HTML.
     /// </summary>
     /// <param name="resp">The HTTP response</param>
-    /// <param name="timeout">The read timeout</param>
     /// <param name="ct">The cancellation token</param>
     /// <returns>The response body as a string</returns>
     /// <exception cref="MovistarCloudSessionExpiredException">Thrown when the session appears expired</exception>
-    private async Task<string> ReadJsonOrThrowAsync(HttpResponseMessage resp, TimeSpan timeout, CancellationToken ct)
+    private async Task<string> ReadJsonOrThrowAsync(HttpResponseMessage resp, CancellationToken ct)
     {
         await using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
-        using var timeoutStream = stream.ObserveReadTimeout(timeout, false);
-        using var reader = new StreamReader(timeoutStream, Encoding.UTF8);
+        using var reader = new StreamReader(stream, Encoding.UTF8);
         var body = await reader.ReadToEndAsync(ct).ConfigureAwait(false);
 
         if (LooksLikeHtml(resp, body))
@@ -315,10 +323,13 @@ internal sealed class MovistarCloudApiClient : IDisposable
         };
 
         using var http = HttpClientHelper.CreateClient(handler);
+        http.Timeout = Timeout.InfiniteTimeSpan;
         http.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgent);
 
         // Any public/light endpoint works; we use the home page
-        using var respInitial = await http.GetAsync($"{BaseUrl}/", ct).ConfigureAwait(false);
+        using var respInitial = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, ct, cts =>
+            http.GetAsync($"{BaseUrl}/", cts)
+        ).ConfigureAwait(false);
         respInitial.EnsureSuccessStatusCode();
 
         var url = $"{BaseUrl}{LoginPath}";
@@ -332,9 +343,12 @@ internal sealed class MovistarCloudApiClient : IDisposable
         req.Content = content;
         req.Headers.Add("X-Deviceid", _device_id);
 
-        using var resp = await http.SendAsync(req, ct);
-        var body = await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
-        resp.EnsureSuccessStatusCode();
+        var body = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, ct, async cts =>
+        {
+            using var resp = await http.SendAsync(req, cts).ConfigureAwait(false);
+            resp.EnsureSuccessStatusCode();
+            return await resp.Content.ReadAsStringAsync(cts).ConfigureAwait(false);
+        }).ConfigureAwait(false);
 
         using var doc = JsonDocument.Parse(body);
         var data = doc.RootElement.GetProperty("data");
@@ -353,14 +367,13 @@ internal sealed class MovistarCloudApiClient : IDisposable
     /// </summary>
     /// <param name="folderId">The folder ID (0 for root)</param>
     /// <param name="limit">The maximum number of items to return</param>
-    /// <param name="timeout">The operation timeout</param>
     /// <param name="ct">The cancellation token</param>
     /// <returns>The list of remote files</returns>
-    public async Task<List<RemoteFile>> ListFilesAsync(long folderId, int limit, TimeSpan timeout, CancellationToken ct)
+    public async Task<List<RemoteFile>> ListFilesAsync(long folderId, int limit, CancellationToken ct)
     {
         if (folderId == 0)
         {
-            folderId = await GetRootFolderIdAsync(timeout, ct).ConfigureAwait(false);
+            folderId = await GetRootFolderIdAsync(ct).ConfigureAwait(false);
         }
 
         var result = new List<RemoteFile>();
@@ -368,10 +381,13 @@ internal sealed class MovistarCloudApiClient : IDisposable
         // List Files
         var url = AddValidationKey($"{BaseUrl}{MediaListPath}&folderid={folderId}&limit={limit}");
         var payload = new { data = new { fields = new[] { "name", "modificationdate", "size", "etag" } } };
-
         using var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
-        using var resp = await Http.PostAsync(url, content, ct).ConfigureAwait(false);
-        var body = await ReadJsonOrThrowAsync(resp, timeout, ct).ConfigureAwait(false);
+
+        var body = await Utility.Utility.WithTimeout(_timeouts.ListTimeout, ct, async cts =>
+        {
+            using var resp = await Http.PostAsync(url, content, cts).ConfigureAwait(false);
+            return await ReadJsonOrThrowAsync(resp, cts).ConfigureAwait(false);
+        }).ConfigureAwait(false);
 
         using var doc = JsonDocument.Parse(body);
         var media = doc.RootElement.GetProperty("data").GetProperty("media");
@@ -391,10 +407,13 @@ internal sealed class MovistarCloudApiClient : IDisposable
         // List Directories
         url = AddValidationKey($"{BaseUrl}{FolderListPath}&parentid={folderId}&limit={limit}");
         payload = new { data = new { fields = new[] { "name", "date" } } };
-
         using var contentDir = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
-        using var respDir = await Http.PostAsync(url, contentDir, ct).ConfigureAwait(false);
-        body = await ReadJsonOrThrowAsync(respDir, timeout, ct).ConfigureAwait(false);
+
+        body = await Utility.Utility.WithTimeout(_timeouts.ListTimeout, ct, async cts =>
+        {
+            using var respDir = await Http.PostAsync(url, contentDir, cts).ConfigureAwait(false);
+            return await ReadJsonOrThrowAsync(respDir, cts).ConfigureAwait(false);
+        }).ConfigureAwait(false);
 
         using var docDir = JsonDocument.Parse(body);
         media = docDir.RootElement.GetProperty("data").GetProperty("folders");
@@ -420,10 +439,9 @@ internal sealed class MovistarCloudApiClient : IDisposable
     /// <param name="folderId">The destination folder ID</param>
     /// <param name="remoteName">The remote file name</param>
     /// <param name="localFilePath">The local file path</param>
-    /// <param name="timeout">The operation timeout</param>
     /// <param name="ct">The cancellation token</param>
     /// <returns>The upload result</returns>
-    public async Task<UploadResult> UploadFileAsync(long folderId, string remoteName, string localFilePath, TimeSpan timeout, CancellationToken ct)
+    public async Task<UploadResult> UploadFileAsync(long folderId, string remoteName, string localFilePath, CancellationToken ct)
     {
         var fi = new FileInfo(localFilePath);
         if (!fi.Exists) throw new FileNotFoundException("Local file not found", localFilePath);
@@ -446,13 +464,15 @@ internal sealed class MovistarCloudApiClient : IDisposable
         form.Add(new StringContent(JsonSerializer.Serialize(meta), Encoding.UTF8, "application/json"), "data");
 
         await using var fs = File.OpenRead(localFilePath);
-        await using var timeoutStream = fs.ObserveReadTimeout(timeout, false);
+        await using var timeoutStream = fs.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false);
         var filePart = new StreamContent(timeoutStream);
         filePart.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
         form.Add(filePart, "file", remoteName);
 
         using var resp = await Http.PostAsync(url, form, ct).ConfigureAwait(false);
-        var body = await ReadJsonOrThrowAsync(resp, timeout, ct).ConfigureAwait(false);
+        var body = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, ct, cts =>
+            ReadJsonOrThrowAsync(resp, cts)
+        ).ConfigureAwait(false);
 
         using var doc = JsonDocument.Parse(body);
         var idElem = doc.RootElement.GetProperty("id");
@@ -467,17 +487,19 @@ internal sealed class MovistarCloudApiClient : IDisposable
     /// Gets the validation status of an uploaded file.
     /// </summary>
     /// <param name="id">The file ID</param>
-    /// <param name="timeout">The operation timeout</param>
     /// <param name="ct">The cancellation token</param>
     /// <returns>The validation status string</returns>
-    public async Task<string> GetValidationStatusAsync(long id, TimeSpan timeout, CancellationToken ct)
+    public async Task<string> GetValidationStatusAsync(long id, CancellationToken ct)
     {
         var url = AddValidationKey($"{BaseUrl}{ValidationStatusPath}");
         var payload = new { data = new { ids = new[] { new { id } } } };
-
         using var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
-        using var resp = await Http.PostAsync(url, content, ct).ConfigureAwait(false);
-        var body = await ReadJsonOrThrowAsync(resp, timeout, ct).ConfigureAwait(false);
+
+        var body = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, ct, async cts =>
+        {
+            using var resp = await Http.PostAsync(url, content, cts).ConfigureAwait(false);
+            return await ReadJsonOrThrowAsync(resp, cts).ConfigureAwait(false);
+        }).ConfigureAwait(false);
 
         using var doc = JsonDocument.Parse(body);
         return doc.RootElement.GetProperty("data").GetProperty("ids")[0].GetProperty("status").GetString() ?? "";
@@ -487,17 +509,19 @@ internal sealed class MovistarCloudApiClient : IDisposable
     /// Gets a signed download URL for a file.
     /// </summary>
     /// <param name="fileId">The file ID</param>
-    /// <param name="timeout">The operation timeout</param>
     /// <param name="ct">The cancellation token</param>
     /// <returns>The signed download URL</returns>
-    public async Task<string> GetDownloadUrlAsync(long fileId, TimeSpan timeout, CancellationToken ct)
+    public async Task<string> GetDownloadUrlAsync(long fileId, CancellationToken ct)
     {
         var url = AddValidationKey($"{BaseUrl}{DownloadUrlPath}");
         var payload = new { data = new { ids = new[] { fileId }, fields = new[] { "url", "name", "size", "etag" } } };
-
         using var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
-        using var resp = await Http.PostAsync(url, content, ct).ConfigureAwait(false);
-        var body = await ReadJsonOrThrowAsync(resp, timeout, ct).ConfigureAwait(false);
+
+        var body = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, ct, async cts =>
+        {
+            using var resp = await Http.PostAsync(url, content, cts).ConfigureAwait(false);
+            return await ReadJsonOrThrowAsync(resp, cts).ConfigureAwait(false);
+        }).ConfigureAwait(false);
 
         using var doc = JsonDocument.Parse(body);
         return doc.RootElement.GetProperty("data").GetProperty("media")[0].GetProperty("url").GetString()!;
@@ -508,48 +532,56 @@ internal sealed class MovistarCloudApiClient : IDisposable
     /// </summary>
     /// <param name="signedUrl">The signed URL to download from</param>
     /// <param name="localFilePath">The local file path to save to</param>
-    /// <param name="timeout">The operation timeout</param>
     /// <param name="ct">The cancellation token</param>
-    public async Task DownloadToFileAsync(string signedUrl, string localFilePath, TimeSpan timeout, CancellationToken ct)
+    public async Task DownloadToFileAsync(string signedUrl, string localFilePath, CancellationToken ct)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(localFilePath) ?? ".");
-        using var resp = await Http.GetAsync(signedUrl, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
+        using var resp = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, ct, cts =>
+            Http.GetAsync(signedUrl, HttpCompletionOption.ResponseHeadersRead, cts)
+        ).ConfigureAwait(false);
         resp.EnsureSuccessStatusCode();
 
-        await using var rs = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);        
-        await using var timeoutReadStream = rs.ObserveReadTimeout(timeout, false);
+        await using var rs = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, ct, cts =>
+            resp.Content.ReadAsStreamAsync(cts)
+        ).ConfigureAwait(false);
+
         await using var fs = File.Create(localFilePath);
-        await using var timeoutWriteStream = fs.ObserveWriteTimeout(timeout, false);
-        await timeoutReadStream.CopyToAsync(timeoutWriteStream, ct).ConfigureAwait(false);
+        await using var timeoutWriteStream = fs.ObserveWriteTimeout(_timeouts.ReadWriteTimeout, false);
+        await rs.CopyToAsync(timeoutWriteStream, ct).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Soft deletes a file (moves to trash).
     /// </summary>
     /// <param name="fileId">The file ID to delete</param>
-    /// <param name="timeout">The operation timeout</param>
     /// <param name="ct">The cancellation token</param>
-    public async Task SoftDeleteFileAsync(long fileId, TimeSpan timeout, CancellationToken ct)
+    public async Task SoftDeleteFileAsync(long fileId, CancellationToken ct)
     {
         var url = AddValidationKey($"{BaseUrl}{DeletePath}");
         var payload = new { data = new { files = new[] { fileId } } };
-
         using var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
-        using var resp = await Http.PostAsync(url, content, ct).ConfigureAwait(false);
-        _ = await ReadJsonOrThrowAsync(resp, timeout, ct).ConfigureAwait(false);
+
+        await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, ct, async cts =>
+        {
+            using var resp = await Http.PostAsync(url, content, cts).ConfigureAwait(false);
+            _ = await ReadJsonOrThrowAsync(resp, cts).ConfigureAwait(false);
+        }).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Gets the storage space information.
     /// </summary>
-    /// <param name="timeout">The operation timeout</param>
     /// <param name="ct">The cancellation token</param>
     /// <returns>The storage space information</returns>
-    public async Task<StorageSpace> GetStorageSpaceAsync(TimeSpan timeout, CancellationToken ct)
+    public async Task<StorageSpace> GetStorageSpaceAsync(CancellationToken ct)
     {
         var url = AddValidationKey($"{BaseUrl}{StorageSpacePath}");
-        using var resp = await Http.PostAsync(url, new StringContent("", Encoding.UTF8, "application/x-www-form-urlencoded"), ct).ConfigureAwait(false);
-        var body = await ReadJsonOrThrowAsync(resp, timeout, ct).ConfigureAwait(false);
+
+        var body = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, ct, async cts =>
+        {
+            using var resp = await Http.PostAsync(url, new StringContent("", Encoding.UTF8, "application/x-www-form-urlencoded"), cts).ConfigureAwait(false);
+            return await ReadJsonOrThrowAsync(resp, cts).ConfigureAwait(false);
+        }).ConfigureAwait(false);
 
         using var doc = JsonDocument.Parse(body);
         var d = doc.RootElement.GetProperty("data");
@@ -565,10 +597,9 @@ internal sealed class MovistarCloudApiClient : IDisposable
     /// Lists items in the trash.
     /// </summary>
     /// <param name="pageSize">The number of items to return</param>
-    /// <param name="timeout">The operation timeout</param>
     /// <param name="ct">The cancellation token</param>
     /// <returns>The list of trash entries</returns>
-    public async Task<List<TrashEntry>> ListTrashAsync(int pageSize, TimeSpan timeout, CancellationToken ct)
+    public async Task<List<TrashEntry>> ListTrashAsync(int pageSize, CancellationToken ct)
     {
         var url = AddValidationKey($"{BaseUrl}{TrashPath}");
 
@@ -580,10 +611,13 @@ internal sealed class MovistarCloudApiClient : IDisposable
                 ["origin"] = new[] { "omh", "dropbox" }
             }
         };
-
         using var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
-        using var resp = await Http.PostAsync(url, content, ct).ConfigureAwait(false);
-        var body = await ReadJsonOrThrowAsync(resp, timeout, ct).ConfigureAwait(false);
+
+        var body = await Utility.Utility.WithTimeout(_timeouts.ListTimeout, ct, async cts =>
+        {
+            using var resp = await Http.PostAsync(url, content, cts).ConfigureAwait(false);
+            return await ReadJsonOrThrowAsync(resp, cts).ConfigureAwait(false);
+        }).ConfigureAwait(false);
 
         using var doc = JsonDocument.Parse(body);
         var entries = doc.RootElement.GetProperty("data").GetProperty("entries");
@@ -606,15 +640,17 @@ internal sealed class MovistarCloudApiClient : IDisposable
     /// </summary>
     /// <param name="parentId">The parent folder ID</param>
     /// <param name="name">The folder name to search for</param>
-    /// <param name="timeout">The operation timeout</param>
     /// <param name="ct">The cancellation token</param>
     /// <returns>The folder ID if found, null otherwise</returns>
-    public async Task<long?> TryGetFolderIdByNameAsync(long parentId, string name, TimeSpan timeout, CancellationToken ct)
+    public async Task<long?> TryGetFolderIdByNameAsync(long parentId, string name, CancellationToken ct)
     {
         var url = AddValidationKey($"{BaseUrl}{FolderListPath}&parentid={parentId}&limit=2000");
 
-        using var resp = await Http.GetAsync(url, ct).ConfigureAwait(false);
-        var body = await ReadJsonOrThrowAsync(resp, timeout, ct).ConfigureAwait(false);
+        var body = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, ct, async cts =>
+        {
+            using var resp = await Http.GetAsync(url, cts).ConfigureAwait(false);
+            return await ReadJsonOrThrowAsync(resp, cts).ConfigureAwait(false);
+        }).ConfigureAwait(false);
 
         using var doc = JsonDocument.Parse(body);
         var folders = doc.RootElement.GetProperty("data").GetProperty("folders");
@@ -635,24 +671,22 @@ internal sealed class MovistarCloudApiClient : IDisposable
     /// </summary>
     /// <param name="parentId">The parent folder ID</param>
     /// <param name="name">The folder name to create</param>
-    /// <param name="timeout">The operation timeout</param>
     /// <param name="ct">The cancellation token</param>
     /// <returns>The created or existing folder ID</returns>
-    public async Task<long> CreateFolderAsync(long parentId, string name, TimeSpan timeout, CancellationToken ct)
+    public async Task<long> CreateFolderAsync(long parentId, string name, CancellationToken ct)
     {
         if (parentId == 0)
         {
-            parentId = await GetRootFolderIdAsync(timeout, ct).ConfigureAwait(false);
+            parentId = await GetRootFolderIdAsync(ct).ConfigureAwait(false);
         }
 
         // Idempotency: if it already exists, return its id
-        var existing = await TryGetFolderIdByNameAsync(parentId, name, timeout, ct).ConfigureAwait(false);
+        var existing = await TryGetFolderIdByNameAsync(parentId, name, ct).ConfigureAwait(false);
         if (existing.HasValue)
             return existing.Value;
 
         // Create folder
         var url = AddValidationKey($"{BaseUrl}{FolderCreatePath}");
-
         var payload = new
         {
             data = new
@@ -663,10 +697,13 @@ internal sealed class MovistarCloudApiClient : IDisposable
                 parentid = parentId
             }
         };
-
         using var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
-        using var resp = await Http.PostAsync(url, content, ct).ConfigureAwait(false);
-        var body = await ReadJsonOrThrowAsync(resp, timeout, ct).ConfigureAwait(false);
+
+        var body = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, ct, async cts =>
+        {
+            using var resp = await Http.PostAsync(url, content, cts).ConfigureAwait(false);
+            return await ReadJsonOrThrowAsync(resp, cts).ConfigureAwait(false);
+        }).ConfigureAwait(false);
 
         using var doc = JsonDocument.Parse(body);
         var createdFolder = doc.RootElement.GetProperty("data").GetProperty("folder");
@@ -678,14 +715,17 @@ internal sealed class MovistarCloudApiClient : IDisposable
     /// <summary>
     /// Gets the root folder ID for the current user.
     /// </summary>
-    /// <param name="timeout">The operation timeout</param>
     /// <param name="ct">The cancellation token</param>
     /// <returns>The root folder ID</returns>
-    public async Task<long> GetRootFolderIdAsync(TimeSpan timeout, CancellationToken ct)
+    public async Task<long> GetRootFolderIdAsync(CancellationToken ct)
     {
         var url = AddValidationKey($"{BaseUrl}{RootFolderPath}");
-        using var resp = await Http.GetAsync(url, ct).ConfigureAwait(false);
-        var body = await ReadJsonOrThrowAsync(resp, timeout, ct).ConfigureAwait(false);
+
+        var body = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, ct, async cts =>
+        {
+            using var resp = await Http.GetAsync(url, cts).ConfigureAwait(false);
+            return await ReadJsonOrThrowAsync(resp, cts).ConfigureAwait(false);
+        }).ConfigureAwait(false);
 
         using var doc = JsonDocument.Parse(body);
         var folders = doc.RootElement.GetProperty("data").GetProperty("folders");
@@ -696,41 +736,43 @@ internal sealed class MovistarCloudApiClient : IDisposable
     /// Asserts that a folder exists by checking if it can be listed.
     /// </summary>
     /// <param name="folderId">The folder ID to check</param>
-    /// <param name="timeout">The operation timeout</param>
     /// <param name="ct">The cancellation token</param>
-    public async Task AssertFolderExistsByIdAsync(long folderId, TimeSpan timeout, CancellationToken ct)
+    public async Task AssertFolderExistsByIdAsync(long folderId, CancellationToken ct)
     {
         var url = AddValidationKey($"{BaseUrl}{MediaListPath}&folderid={folderId}&limit=1");
-        using var resp = await Http.GetAsync(url, ct).ConfigureAwait(false);
-        _ = await ReadJsonOrThrowAsync(resp, timeout, ct).ConfigureAwait(false);
+
+        await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, ct, async cts =>
+        {
+            using var resp = await Http.GetAsync(url, cts).ConfigureAwait(false);
+            _ = await ReadJsonOrThrowAsync(resp, cts).ConfigureAwait(false);
+        }).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Ensures a folder path exists, creating parent folders as needed.
     /// </summary>
     /// <param name="path">The folder path to ensure</param>
-    /// <param name="timeout">The operation timeout</param>
     /// <param name="ct">The cancellation token</param>
     /// <returns>The folder ID of the final path segment</returns>
-    public async Task<long> EnsureFolderPathAsync(string path, TimeSpan timeout, CancellationToken ct)
+    public async Task<long> EnsureFolderPathAsync(string path, CancellationToken ct)
     {
         var p = path.Trim();
         if (string.IsNullOrWhiteSpace(p))
             throw new ArgumentException("root-folder-path empty");
 
         var segments = p.Split('/', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        var currentId = await GetRootFolderIdAsync(timeout, ct).ConfigureAwait(false);
+        var currentId = await GetRootFolderIdAsync(ct).ConfigureAwait(false);
 
         foreach (var segment in segments)
         {
-            var existing = await TryGetFolderIdByNameAsync(currentId, segment, timeout, ct).ConfigureAwait(false);
+            var existing = await TryGetFolderIdByNameAsync(currentId, segment, ct).ConfigureAwait(false);
             if (existing.HasValue)
             {
                 currentId = existing.Value;
                 continue;
             }
 
-            currentId = await CreateFolderAsync(currentId, segment, timeout, ct).ConfigureAwait(false);
+            currentId = await CreateFolderAsync(currentId, segment, ct).ConfigureAwait(false);
         }
 
         return currentId;

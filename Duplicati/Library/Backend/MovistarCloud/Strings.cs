@@ -35,8 +35,8 @@ namespace Duplicati.Library.Backend.MovistarCloud.Strings
         public static string RootFolderPathLong => LC.L(@"The path where to store the backup (e.g., /Duplicati/Backups/Computer).");
         public static string ListLimitShort => LC.L(@"List limit");
         public static string ListLimitLong => LC.L(@"The maximum number of items returned per listing call.");
-        public static string WaitForValidationShort => LC.L(@"Wait for validation");
-        public static string WaitForValidationLong => LC.L(@"Wait until the uploaded file becomes usable (status=U).");
+        public static string IgnoreValidationResultShort => LC.L(@"Ignore validation result");
+        public static string IgnoreValidationResultLong => LC.L(@"If set, the backend will not wait for server-side upload validation and will continue immediately after the upload.");
         public static string ValidationTimeoutShort => LC.L(@"Validation timeout");
         public static string ValidationTimeoutLong => LC.L(@"The maximum time to wait for server-side upload validation.");
         public static string ValidationPollIntervalShort => LC.L(@"Validation poll interval");
