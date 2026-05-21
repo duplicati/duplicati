@@ -40,7 +40,8 @@ public static class BackendModules
     /// </summary>
     public static IReadOnlySet<string> UntestedBackendModules => new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
         new Backend.AliyunOSS.OSS().ProtocolKey,
-        new Backend.TencentCOS.COS().ProtocolKey
+        new Backend.TencentCOS.COS().ProtocolKey,
+        new Backend.MovistarCloud.MovistarCloudBackend().ProtocolKey
     };
 
     /// <summary>
