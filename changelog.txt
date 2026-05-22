@@ -1,3 +1,51 @@
+2026-05-22 - 2.3.0.103_canary_2026-05-22
+==========
+This release is a canary release intended to be used for testing.
+
+# Changes in this version
+
+This release marks the soft-launch of the Duplicati Storage service, giving a zero-configuration setup of storage. The Duplicati Storage backend works like any other backend, but there is no configuration to set up. Once the client is connected to the console, it can use the Duplicati Storage backend.
+
+The service is currently in soft-launch mode and anyone interrested can contact Duplicati support to have a storage trial activated on their account.
+
+In this release there is an experimental setting option that makes the actual operations (backup, restore, verify, etc.) run in an isolated sub-process. When this setting is enabled, the Duplicati server will spawn a new process for each operation, and the operation will run in that process. This means that if the process crashes or hangs, the Duplicati server will not be affected. It also allows the Duplicati server, and by extension the user, to force-kill a stuck process. While this feature is tested, it is not enabled by default as we are aware that there might be subtle issues and would like feedback on how the feature works in real-world scenarios.
+
+The previous "SharePoint" and "OneDrive for Business" backends have been marked as deprecated, as Microsoft shut down the API they were calling. The migration step is to use the "SharePoint v2" backend (renamed to just "SharePoint" in this version) which uses the Microsoft Graph API.
+
+This version also adds a new backend for the Spanish proivder Movistar, thanks to @redmars27. The backend is marked as "untested" as it can only be used (and tested) by Movistar customers.
+
+This update also adds some more guards to the synthetic filelist generation update from 2.3.0.102, and a fix for OneDrive timeouts.
+
+## Detailed list of changes
+
+- Fixed an issue with Filen.io renaming
+- Added a failsafe when creating synthetic filelists
+- Added check code to ensure synthetic filelists are generated with required fields
+- Fixed restore message when no files are restored to reflect if existing files are found
+- Added support for marking backends as deprecated or untested
+- Deprecated `od4b` and `mssp` backends as the API is no longer working
+- Fixed some files showing as folders and missing size information
+- Hide the `--unittest-mode` flag from supported options
+- Fix parsing MacOS timestamps that are from year 0000
+- Updated internal controller to only expose `async` methods
+- Updated Mega S4 endpoint list
+- Fixed an issue where option settings could potentially be sticky across operations
+- Updated warning logic on restore if no files were restored
+- Fix a 100s timeout with OneDrive and SharePoint v2
+- Updated the Duplicati Backend to use the new API
+- Added support for running backup and restore in an isolated sub-process
+- Added MoviStar storage backend, thanks @redmars27
+
+## Changes in ngclient
+
+- Prevent iteration of non-folder paths
+- Enable selecting hidden items
+- Added path resolving on the "dynamic paths", such as "My documents"
+- Fixed compression option not being visible
+- Added support for showing backends as deprecated or untested
+- Fixed an issue where file size would not be shown in the file tree
+- Added an option to retry loading a backup list
+
 2026-05-09 - 2.3.0.102_canary_2026-05-09
 ==========
 This release is a canary release intended to be used for testing.
