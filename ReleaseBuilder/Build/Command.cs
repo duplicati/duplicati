@@ -119,6 +119,7 @@ public static partial class Command
         { "Duplicati.CommandLine.SourceTool", "duplicati-source-tool" },
         { "Duplicati.CommandLine.DatabaseTool", "duplicati-database-tool" },
         { "Duplicati.CommandLine.ConfigureTool", "duplicati-configure" },
+        { "Duplicati.CommandLine.AutoTuneTool.exe", "duplicati-autotune-tool" },
         { "Duplicati.Service", "duplicati-service" },
         { "Duplicati.Agent", "duplicati-agent" },
         { "Duplicati.CommandLine", "duplicati-cli" },

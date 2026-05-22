@@ -105,6 +105,10 @@ namespace Duplicati.Library.AutoUpdater
             /// The configure tool
             /// </summary>
             ConfigureTool,
+            /// <summary>
+            /// The auto tune tool
+            /// </summary>
+            AutoTuneTool
         }
 
         /// <summary>
@@ -134,6 +138,7 @@ namespace Duplicati.Library.AutoUpdater
                 NamedExecutable.SourceTool => OperatingSystem.IsWindows() ? "Duplicati.CommandLine.Sourcetool.exe" : "duplicati-source-tool",
                 NamedExecutable.DatabaseTool => OperatingSystem.IsWindows() ? "Duplicati.CommandLine.DatabaseTool.exe" : "duplicati-database-tool",
                 NamedExecutable.ConfigureTool => OperatingSystem.IsWindows() ? "Duplicati.CommandLine.ConfigureTool.exe" : "duplicati-configure",
+                NamedExecutable.AutoTuneTool => OperatingSystem.IsWindows() ? "Duplicati.CommandLine.AutoTuneTool.exe" : "duplicati-autotune-tool",
                 _ => throw new ArgumentException($"Named executable not known: {exe}", nameof(exe))
             };
 

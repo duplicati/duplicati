@@ -60,6 +60,7 @@
     <Project Path="Executables/Duplicati.CommandLine.Snapshots/Duplicati.CommandLine.Snapshots.csproj" />
     <Project Path="Executables/Duplicati.CommandLine.SourceTool/Duplicati.CommandLine.SourceTool.csproj" />
     <Project Path="Executables/Duplicati.CommandLine.SyncTool/Duplicati.CommandLine.SyncTool.csproj" />
+    <Project Path="Executables/Duplicati.CommandLine.AutoTuneTool/Duplicati.CommandLine.AutoTuneTool.csproj" />
     <Project Path="Executables/Duplicati.CommandLine/Duplicati.CommandLine.csproj" />
     <Project Path="Executables/Duplicati.GUI.TrayIcon/Duplicati.GUI.TrayIcon.csproj" />
     <Project Path="Executables/Duplicati.Server/Duplicati.Server.csproj" />
@@ -88,6 +89,7 @@
   <Folder Name="/Tools/">
     <Project Path="Tools/RemoteSynchronization/RemoteSynchronization.csproj" />
     <Project Path="Tools/AutoTune/AutoTune.csproj" />
+    <Project Path="Tools/TestDataGenerator/TestDataGenerator.csproj" />
     <Project Path="WebserverCore.Client.UsageExample/WebserverCore.Client.UsageExample.csproj" />
   </Folder>
   <Project Path="Duplicati/Library/AutoUpdater/Duplicati.Library.AutoUpdater.csproj" />

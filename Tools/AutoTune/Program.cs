@@ -26,7 +26,7 @@ using Duplicati.Library.Main;
 
 #nullable enable
 
-namespace AutoTune;
+namespace Duplicati.AutoTune;
 
 // TODO backup command tuning
 // TODO backup with several versions
