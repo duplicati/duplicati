@@ -552,6 +552,22 @@ public static partial class Command
 
             await ProcessHelper.Execute(wixArgs, workingDirectory: buildRoot);
 
+            // Apply any installer data tables present
+            // On Windows, the wxs files include the tables, but on Linux/MacOS, we need to apply them separately
+            // because wixl does not support the tables directly
+            if (!OperatingSystem.IsWindows())
+            {
+                if (string.IsNullOrWhiteSpace(rtcfg.Configuration.Commands.MsiBuild))
+                {
+                    Console.WriteLine("WARNING: msiBuild not found, skipping IDT file injection.");
+                }
+                else
+                {
+                    foreach (var idtFile in Directory.GetFiles(resourcesSubDir, "*.idt"))
+                        await ProcessHelper.Execute([rtcfg.Configuration.Commands.MsiBuild, msiFile, "-i", idtFile]);
+                }
+            }
+
             if (rtcfg.UseAuthenticodeSigning)
                 await rtcfg.AuthenticodeSign(msiFile);
 

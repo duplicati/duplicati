@@ -40,13 +40,23 @@
       <Directory Id="DesktopFolder" Name="Desktop"/>
     
       <Directory Id="$(var.ProgramFilesFolder)">
-        <Directory Id="INSTALLLOCATION" Name="Duplicati Agent" />
+        <Directory Id="INSTALLLOCATION" Name="Duplicati Agent" >
+          <Component Id="SecureInstallDirComp" Guid="7C52A563-7182-411E-8B57-79F881775E9B">
+              <CreateFolder>
+              <!-- WiX supports permssions, wixl uses a .idt table -->
+<?if $(var.BuildEnv) = "Windows" ?>
+                <util:PermissionEx Sddl="D:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)(A;OICI;GRFX;;;BU)" xmlns:util="http://schemas.microsoft.com/wix/UtilExtension"/>
+<?endif?>
+              </CreateFolder>
+          </Component>
+        </Directory>
       </Directory>
     </Directory>
 
     <Property Id="WIXUI_INSTALLDIR" Value="INSTALLLOCATION" />
 
     <Feature Id="DuplicatiCore" Title="Duplicati Agent files" Level="1" Description="Installs the required files for the Duplicati Agent." AllowAdvertise="no" Absent="disallow" ConfigurableDirectory="INSTALLLOCATION" >
+      <ComponentRef Id="SecureInstallDirComp" />
       <ComponentGroupRef Id="DUPLICATIBIN" />
     </Feature>
     
