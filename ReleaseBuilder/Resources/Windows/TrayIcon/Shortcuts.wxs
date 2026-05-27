@@ -3,22 +3,25 @@
 	<Fragment>
 
     <!--
-      Shortcuts come in two variants:
-        * The default variant launches Duplicati.GUI.TrayIcon.exe with no arguments
-          (the TrayIcon hosts its own server).
-        * The "service" variant adds the no-hosted-server argument and is used when
-          Duplicati is installed as a Windows Service. The service hosts the server,
-          and the TrayIcon connects to it.
-      The component Conditions reference the action state (&amp;DuplicatiServiceFeature)
-      and installed state (!DuplicatiServiceFeature) of the service feature so that
-      MSI selects the correct variant during CostFinalize.
-        Action state 3 = INSTALLSTATE_LOCAL (will be installed)
-        Installed state 3 = INSTALLSTATE_LOCAL (currently installed)
+      Each shortcut is a single component whose Arguments attribute uses the
+      MSI Formatted-string substitution {[NOHOSTEDSERVERARG]}. The
+      SetNoHostedServerArg custom action (see Duplicati.wxs) populates that
+      property in the InstallExecuteSequence right before CreateShortcuts,
+      based on the action state of DuplicatiServiceFeature:
+        * Feature being installed locally : value "no-hosted-server" (with
+          the leading dashes set in Duplicati.wxs)
+        * Feature absent : empty
+      If NOHOSTEDSERVERARG is empty the curly braces collapse and the
+      shortcut is created with no arguments.
+
+      This single-component approach avoids relying on Component-table
+      Conditions referencing &amp;Feature, which are evaluated during CostFinalize
+      before feature action states are stable, and avoids relying on a UI
+      property that wixl 0.106 does not preserve across UAC elevation.
     -->
 
     <DirectoryRef Id="ProgramMenuFolder">
       <Component Id="DuplicatiProgramMenuShortcutComponent" Guid="1D03AB64-E310-4974-835E-E9E8CFB18BBC">
-        <Condition>&amp;DuplicatiServiceFeature&lt;&gt;3</Condition>
         <Shortcut Id="DuplicatiProgramMenuShortcut"
                   Name="Duplicati"
                   WorkingDirectory="INSTALLLOCATION"
@@ -27,28 +30,9 @@
                   Icon="DuplicatiIcon.exe"
                   IconIndex="0"
                   Target="[INSTALLLOCATION]Duplicati.GUI.TrayIcon.exe"
+                  Arguments="{[NOHOSTEDSERVERARG]}"
                   />
         <RegistryKey Root="HKCU" Key="Software\DuplicatiTeam\Duplicati\ProgramMenuShortcut">
-          <RegistryValue
-                  Value="Installed"
-                  Type="string"
-                  KeyPath="yes" />
-        </RegistryKey>
-      </Component>
-
-      <Component Id="DuplicatiProgramMenuShortcutServiceComponent" Guid="A4F2E5C1-7B8E-4D3A-9F01-1E2B3C4D5E6F">
-        <Condition>&amp;DuplicatiServiceFeature=3</Condition>
-        <Shortcut Id="DuplicatiProgramMenuShortcutService"
-                  Name="Duplicati"
-                  WorkingDirectory="INSTALLLOCATION"
-                  Description="Launch Duplicati"
-                  Directory="ProgramMenuFolder"
-                  Icon="DuplicatiIcon.exe"
-                  IconIndex="0"
-                  Target="[INSTALLLOCATION]Duplicati.GUI.TrayIcon.exe"
-                  Arguments="--no-hosted-server"
-                  />
-        <RegistryKey Root="HKCU" Key="Software\DuplicatiTeam\Duplicati\ProgramMenuShortcutService">
           <RegistryValue
                   Value="Installed"
                   Type="string"
@@ -59,7 +43,6 @@
 
     <DirectoryRef Id="DesktopFolder">
       <Component Id="DuplicatiDesktopShortcutComponent" Guid="7BF060B8-389F-4a95-931C-5D551E55902A">
-        <Condition>&amp;DuplicatiServiceFeature&lt;&gt;3</Condition>
         <Shortcut Id="DuplicatiDesktopComponent"
                   Name="Duplicati"
                   WorkingDirectory="INSTALLLOCATION"
@@ -68,28 +51,9 @@
                   Icon="DuplicatiIcon.exe"
                   IconIndex="0"
                   Target="[INSTALLLOCATION]Duplicati.GUI.TrayIcon.exe"
+                  Arguments="{[NOHOSTEDSERVERARG]}"
                 />
         <RegistryKey Root="HKCU" Key="Software\DuplicatiTeam\Duplicati\DesktopFolderShortcut">
-          <RegistryValue
-                  Value="Installed"
-                  Type="string"
-                  KeyPath="yes" />
-        </RegistryKey>
-      </Component>
-
-      <Component Id="DuplicatiDesktopShortcutServiceComponent" Guid="B5E1D6C3-8A9F-4E2B-AD12-2F3C4D5E6F70">
-        <Condition>&amp;DuplicatiServiceFeature=3</Condition>
-        <Shortcut Id="DuplicatiDesktopComponentService"
-                  Name="Duplicati"
-                  WorkingDirectory="INSTALLLOCATION"
-                  Description="Launch Duplicati"
-                  Directory="DesktopFolder"
-                  Icon="DuplicatiIcon.exe"
-                  IconIndex="0"
-                  Target="[INSTALLLOCATION]Duplicati.GUI.TrayIcon.exe"
-                  Arguments="--no-hosted-server"
-                />
-        <RegistryKey Root="HKCU" Key="Software\DuplicatiTeam\Duplicati\DesktopFolderShortcutService">
           <RegistryValue
                   Value="Installed"
                   Type="string"
@@ -101,7 +65,6 @@
     <DirectoryRef Id="ProgramMenuFolder">
       <Directory Id="StartupFolder">
         <Component Id="StartupMenuItem" Guid="A85B1D4E-26EF-4d6a-8C1F-279EAABCE8DE">
-          <Condition>&amp;DuplicatiServiceFeature&lt;&gt;3</Condition>
           <Shortcut Id="DuplicatiStartupComponent"
                     Name="Duplicati"
                     WorkingDirectory="INSTALLLOCATION"
@@ -110,30 +73,10 @@
                     Icon="DuplicatiIcon.exe"
                     IconIndex="0"
                     Target="[INSTALLLOCATION]Duplicati.GUI.TrayIcon.exe"
+                    Arguments="{[NOHOSTEDSERVERARG]}"
                 />
           
           <RegistryKey Root="HKCU" Key="Software\DuplicatiTeam\Duplicati\StartupShortcut">
-            <RegistryValue
-                    Value="Installed"
-                    Type="string"
-                    KeyPath="yes" />
-          </RegistryKey>
-        </Component>
-
-        <Component Id="StartupMenuItemService" Guid="C6F2E7D4-9B0A-4F3C-BE23-3041526374A8">
-          <Condition>&amp;DuplicatiServiceFeature=3</Condition>
-          <Shortcut Id="DuplicatiStartupComponentService"
-                    Name="Duplicati"
-                    WorkingDirectory="INSTALLLOCATION"
-                    Description="Launch Duplicati"
-                    Directory="StartupFolder"
-                    Icon="DuplicatiIcon.exe"
-                    IconIndex="0"
-                    Target="[INSTALLLOCATION]Duplicati.GUI.TrayIcon.exe"
-                    Arguments="--no-hosted-server"
-                />
-          
-          <RegistryKey Root="HKCU" Key="Software\DuplicatiTeam\Duplicati\StartupShortcutService">
             <RegistryValue
                     Value="Installed"
                     Type="string"

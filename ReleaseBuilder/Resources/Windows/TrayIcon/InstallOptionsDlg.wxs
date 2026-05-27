@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Custom dialog presented after the license agreement on a fresh install,
+  and from MaintenanceTypeDlg's Change button on a maintenance install.
+
+  The dialog lets the user pick the install location and toggle:
+    * LAUNCH_AS_SERVICE       -> install as a Windows Service
+    * ADD_DESKTOP_SHORTCUT    -> create a desktop shortcut
+    * ADD_PROGRAMMENU_SHORTCUT-> create a Program Menu shortcut
+    * ADD_STARTUP_SHORTCUT    -> launch at user logon
+
+  The Next button publishes AddLocal/Remove for the corresponding feature(s)
+  and sets the INSTALLASSERVICE property which the service-variant shortcut
+  components and the InstallDuplicatiService custom action key off of.
+-->
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Fragment>
+    <UI>
+      <Dialog Id="InstallOptionsDlg" Width="370" Height="270" Title="[ProductName] Setup">
+        <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="WixUI_Bmp_Banner" />
+        <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="0" />
+        <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
+        <Control Id="Title" Type="Text" X="15" Y="6" Width="210" Height="15" Transparent="yes" NoPrefix="yes" Text="{\WixUI_Font_Title}Installation Options" />
+        <Control Id="Description" Type="Text" X="25" Y="23" Width="280" Height="15" Transparent="yes" NoPrefix="yes" Text="Choose installation folder and optional configurations." />
+
+        <Control Id="FolderLabel" Type="Text" X="25" Y="53" Width="320" Height="15" NoPrefix="yes" Text="Install [ProductName] to:" />
+        <Control Id="FolderEdit" Type="PathEdit" X="25" Y="68" Width="228" Height="17" Property="WIXUI_INSTALLDIR" Indirect="yes" />
+        <Control Id="Browse" Type="PushButton" X="260" Y="67" Width="56" Height="17" Text="Browse...">
+          <Publish Event="SelectionBrowse" Value="BrowseDlg" />
+        </Control>
+
+        <Control Id="OptionsGroup" Type="GroupBox" X="20" Y="95" Width="330" Height="125" Text="Configuration Options" />
+
+        <Control Id="ServiceChk" Type="CheckBox" X="35" Y="115" Width="300" Height="15" Property="LAUNCH_AS_SERVICE" CheckBoxValue="1" Text="Install Duplicati as a Windows Service" />
+        <Control Id="DesktopShortcutChk" Type="CheckBox" X="35" Y="135" Width="300" Height="15" Property="ADD_DESKTOP_SHORTCUT" CheckBoxValue="1" Text="Create Desktop shortcut" />
+        <Control Id="MenuShortcutChk" Type="CheckBox" X="35" Y="155" Width="300" Height="15" Property="ADD_PROGRAMMENU_SHORTCUT" CheckBoxValue="1" Text="Create Program Menu shortcut" />
+        <Control Id="StartupChk" Type="CheckBox" X="35" Y="175" Width="300" Height="15" Property="ADD_STARTUP_SHORTCUT" CheckBoxValue="1" Text="Launch Duplicati at system startup" />
+
+        <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="Back" />
+        <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="Cancel">
+          <Publish Event="SpawnDialog" Value="CancelDlg" />
+        </Control>
+
+        <!--
+          Next button: order matters here.
+          Lower-Order publishes fire first. We set the install path and feature
+          selections (Order 1..50) before the navigation publish (Order 100,
+          defined in the parent UI) which actually changes dialog.
+        -->
+        <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="Next">
+          <Publish Event="SetTargetPath" Value="[WIXUI_INSTALLDIR]" Order="1" />
+
+          <Publish Event="AddLocal" Value="DuplicatiServiceFeature"        Order="10" Condition="LAUNCH_AS_SERVICE = &quot;1&quot;" />
+          <Publish Event="Remove"   Value="DuplicatiServiceFeature"        Order="10" Condition="NOT (LAUNCH_AS_SERVICE = &quot;1&quot;)" />
+
+          <Publish Event="AddLocal" Value="DuplicatiDesktopShortCutFeature" Order="11" Condition="ADD_DESKTOP_SHORTCUT = &quot;1&quot;" />
+          <Publish Event="Remove"   Value="DuplicatiDesktopShortCutFeature" Order="11" Condition="NOT (ADD_DESKTOP_SHORTCUT = &quot;1&quot;)" />
+
+          <Publish Event="AddLocal" Value="DuplicatiProgramMenuShortCutFeature" Order="12" Condition="ADD_PROGRAMMENU_SHORTCUT = &quot;1&quot;" />
+          <Publish Event="Remove"   Value="DuplicatiProgramMenuShortCutFeature" Order="12" Condition="NOT (ADD_PROGRAMMENU_SHORTCUT = &quot;1&quot;)" />
+
+          <Publish Event="AddLocal" Value="DuplicatiStartupShortCutFeature" Order="13" Condition="ADD_STARTUP_SHORTCUT = &quot;1&quot;" />
+          <Publish Event="Remove"   Value="DuplicatiStartupShortCutFeature" Order="13" Condition="NOT (ADD_STARTUP_SHORTCUT = &quot;1&quot;)" />
+
+          <Publish Property="INSTALLASSERVICE" Value="true"  Order="20" Condition="LAUNCH_AS_SERVICE = &quot;1&quot;" />
+          <Publish Property="INSTALLASSERVICE" Value="false" Order="20" Condition="NOT (LAUNCH_AS_SERVICE = &quot;1&quot;)" />
+        </Control>
+      </Dialog>
+    </UI>
+  </Fragment>
+</Wix>

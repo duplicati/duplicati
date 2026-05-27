@@ -511,6 +511,10 @@ public static partial class Command
             // Prepare the Wix arguments, different for WiX (Windows) and wixl (Linux/MacOS)
             string[] wixArgs;
 
+            // Optional dialog fragment, only included when present in the resource subdir.
+            var installOptionsDlgPath = Path.Combine(resourcesSubDir, "InstallOptionsDlg.wxs");
+            var hasInstallOptionsDlg = File.Exists(installOptionsDlgPath);
+
             if (isWindows)
             {
                 // Update namespace in the .wxs files for WiX v4
@@ -523,7 +527,16 @@ public static partial class Command
                 File.WriteAllText(entryTempfile, File.ReadAllText(Path.Combine(resourcesSubDir, "Duplicati.wxs"))
                     .Replace(originalNamespace, wixv4Namespace));
 
-                wixArgs = [
+                string? installOptionsTempfile = null;
+                if (hasInstallOptionsDlg)
+                {
+                    installOptionsTempfile = Path.Combine(buildTmp, "InstallOptionsDlg.wxs");
+                    File.WriteAllText(installOptionsTempfile, File.ReadAllText(installOptionsDlgPath)
+                        .Replace(originalNamespace, wixv4Namespace));
+                }
+
+                var args = new List<string>
+                {
                     rtcfg.Configuration.Commands.Wix!,
                     "build",
                     "-define", $"HarvestPath={sourceFiles}",
@@ -531,13 +544,17 @@ public static partial class Command
                     "-out", msiFile,
                     shortcutsTempfile,
                     binFiles,
-                    entryTempfile
-                ];
+                };
+                if (installOptionsTempfile != null)
+                    args.Add(installOptionsTempfile);
+                args.Add(entryTempfile);
+                wixArgs = args.ToArray();
             }
             else
             {
                 // wixl needs the UI extension
-                wixArgs = [
+                var args = new List<string>
+                {
                     rtcfg.Configuration.Commands.Wix!,
                     "--ext", "ui",
                     "--extdir", Path.Combine(resourcesDir, "WixUIExtension"),
@@ -546,8 +563,11 @@ public static partial class Command
                     "--output", msiFile,
                     Path.Combine(resourcesSubDir, "Shortcuts.wxs"),
                     binFiles,
-                    Path.Combine(resourcesSubDir, "Duplicati.wxs")
-                ];
+                };
+                if (hasInstallOptionsDlg)
+                    args.Add(installOptionsDlgPath);
+                args.Add(Path.Combine(resourcesSubDir, "Duplicati.wxs"));
+                wixArgs = args.ToArray();
             }
 
             await ProcessHelper.Execute(wixArgs, workingDirectory: buildRoot);
