@@ -45,6 +45,16 @@
 <?endif?>
               </CreateFolder>
           </Component>
+
+          <!-- Marker component for the DuplicatiServiceFeature. It exists primarily so
+               the feature has a key component MSI can track; its action/installed state
+               is what the InstallDuplicatiService and UninstallDuplicatiService custom
+               actions key off of via &amp;DuplicatiServiceFeature / !DuplicatiServiceFeature. -->
+          <Component Id="DuplicatiServiceMarkerComponent" Guid="6F1E3B8A-2C4D-4F7B-9C5A-3E2D1B0F4A8C">
+            <RegistryKey Root="HKLM" Key="$(var.SoftwareKey)\DuplicatiTeam\Duplicati\Service">
+              <RegistryValue Name="Installed" Value="1" Type="string" KeyPath="yes" />
+            </RegistryKey>
+          </Component>
         </Directory>
       </Directory>
     </Directory>
@@ -56,18 +66,28 @@
       
       <Feature Id="DuplicatiDesktopShortCutFeature" Title="Desktop Shortcut" Level="1" Description ="Installs a shortcut to Duplicati on the desktop" Absent="allow" AllowAdvertise="no">
         <ComponentRef Id="DuplicatiDesktopShortcutComponent"/>
+        <ComponentRef Id="DuplicatiDesktopShortcutServiceComponent"/>
         <Condition Level="0">FORSERVICE = "true"</Condition>
       </Feature>
 
       <Feature Id="DuplicatiProgramMenuShortCutFeature" Title="Program Menu Shortcut" Level="1" Description ="Installs a shortcut to Duplicati in the Program menu" Absent="allow" AllowAdvertise="no">
         <ComponentRef Id="DuplicatiProgramMenuShortcutComponent"/>
+        <ComponentRef Id="DuplicatiProgramMenuShortcutServiceComponent"/>
         <Condition Level="0">FORSERVICE = "true"</Condition>
+      </Feature>
+
+      <!-- Optional: install Duplicati as a Windows Service. When selected, the TrayIcon
+           shortcut is configured with the no-hosted-server flag so it connects to the service. -->
+      <Feature Id="DuplicatiServiceFeature" Title="Install as Windows Service" Level="0" Description="Installs Duplicati as a Windows Service running in the background. The TrayIcon shortcut will connect to the service instead of running its own server." Absent="allow" AllowAdvertise="no">
+        <ComponentRef Id="DuplicatiServiceMarkerComponent"/>
+        <Condition Level="1">FORSERVICE &lt;&gt; "true"</Condition>
       </Feature>
       <ComponentGroupRef Id="DUPLICATIBIN" />
     </Feature>
     
     <Feature Id="DuplicatiStartupShortCutFeature" Title="Launch Duplicati at startup" Level="1" Description ="Automatically launches Duplicati when you log on to the computer" Absent="allow" AllowAdvertise="no">
       <ComponentRef Id="StartupMenuItem"/>
+      <ComponentRef Id="StartupMenuItemService"/>
       <Condition Level="0">FORSERVICE = "true"</Condition>
     </Feature>
 
@@ -89,6 +109,13 @@
       <!-- Stop and start service must be deferred actions between InstallInitialize and InstallFinalize -->
       <Custom Action="StopService" After="InstallInitialize">SERVICE_WAS_STOPPED=1 AND NOT UPGRADINGPRODUCTCODE</Custom>
       <Custom Action="StartService" After="InstallFiles">SERVICE_WAS_STOPPED=1 AND NOT REMOVE~="ALL" AND NOT UPGRADINGPRODUCTCODE</Custom>
+
+      <!-- Install the Windows Service after files are laid down.
+           Runs when the service feature is being installed locally and was not already installed. -->
+      <Custom Action="InstallDuplicatiService" After="InstallFiles">(&amp;DuplicatiServiceFeature=3) AND (!DuplicatiServiceFeature&lt;&gt;3) AND NOT UPGRADINGPRODUCTCODE</Custom>
+      <!-- Uninstall the Windows Service before files are removed.
+           Runs when the service feature was previously installed and is being removed (uninstall, or feature deselect). -->
+      <Custom Action="UninstallDuplicatiService" Before="RemoveFiles">(!DuplicatiServiceFeature=3) AND (&amp;DuplicatiServiceFeature&lt;&gt;3) AND NOT UPGRADINGPRODUCTCODE</Custom>
     </InstallExecuteSequence>
 
     <Property Id="PREVIOUSVERSIONSINSTALLED" Secure="yes" />
@@ -121,6 +148,23 @@
               JScriptCall="CustomAction"
               Execute="deferred"
               Return="check" />
+
+    <!-- Service install/uninstall custom actions.
+         Use the existing Duplicati.WindowsService.exe shipped with the package.
+         FileKey resolves the path and the working directory. -->
+    <CustomAction Id="InstallDuplicatiService"
+              FileKey="Duplicati.WindowsService.exe"
+              ExeCommand="INSTALL"
+              Execute="deferred"
+              Impersonate="no"
+              Return="check" />
+
+    <CustomAction Id="UninstallDuplicatiService"
+              FileKey="Duplicati.WindowsService.exe"
+              ExeCommand="UNINSTALL"
+              Execute="deferred"
+              Impersonate="no"
+              Return="ignore" />
 
   </Product>
 </Wix>
