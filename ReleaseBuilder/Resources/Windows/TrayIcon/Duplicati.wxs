@@ -36,13 +36,24 @@
       <Directory Id="DesktopFolder" Name="Desktop"/>
     
       <Directory Id="$(var.ProgramFilesFolder)">
-        <Directory Id="INSTALLLOCATION" Name="Duplicati 2" />
+        <Directory Id="INSTALLLOCATION" Name="Duplicati 2" >
+          <Component Id="SecureInstallDirComp" Guid="7C52A563-7182-411E-8B57-79F881775E9B">
+              <CreateFolder>
+              <!-- WiX supports permssions, wixl uses a .idt table -->
+<?if $(var.BuildEnv) = "Windows" ?>
+                <util:PermissionEx Sddl="D:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)(A;OICI;GRFX;;;BU)" xmlns:util="http://schemas.microsoft.com/wix/UtilExtension"/>
+<?endif?>
+              </CreateFolder>
+          </Component>
+        </Directory>
       </Directory>
     </Directory>
 
     <Property Id="WIXUI_INSTALLDIR" Value="INSTALLLOCATION" />
 
     <Feature Id="DuplicatiCore" Title="Duplicati core files" Level="1" Description="Installs the required files for Duplicati." AllowAdvertise="no" Absent="disallow" ConfigurableDirectory="INSTALLLOCATION" >
+      <ComponentRef Id="SecureInstallDirComp" />
+      
       <Feature Id="DuplicatiDesktopShortCutFeature" Title="Desktop Shortcut" Level="1" Description ="Installs a shortcut to Duplicati on the desktop" Absent="allow" AllowAdvertise="no">
         <ComponentRef Id="DuplicatiDesktopShortcutComponent"/>
         <Condition Level="0">FORSERVICE = "true"</Condition>
