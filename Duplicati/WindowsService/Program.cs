@@ -25,16 +25,16 @@ using System.Reflection;
 using System.ServiceProcess;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Utility;
+using Microsoft.Win32;
 
 namespace Duplicati.WindowsService
 {
     public class Program
     {
-        
         [STAThread]
         public static int Main(string[] args)
         {
-            Library.AutoUpdater.PreloadSettingsLoader.ConfigurePreloadSettings(ref args, Library.AutoUpdater.PackageHelper.NamedExecutable.WindowsService);
+            PreloadSettingsLoader.ConfigurePreloadSettings(ref args, PackageHelper.NamedExecutable.WindowsService);
 
             if (!OperatingSystem.IsWindows())
                 throw new NotSupportedException("Unsupported Operating System");
@@ -42,6 +42,7 @@ namespace Duplicati.WindowsService
             var uninstall = args != null && args.Any(x => string.Equals("uninstall", x, StringComparison.OrdinalIgnoreCase));
             var install_agent = args != null && args.Any(x => string.Equals("install-agent", x, StringComparison.OrdinalIgnoreCase) || string.Equals("install-only-agent", x, StringComparison.OrdinalIgnoreCase));
             var uninstall_agent = args != null && args.Any(x => string.Equals("uninstall-agent", x, StringComparison.OrdinalIgnoreCase));
+            var reset_password = args != null && args.Any(x => string.Equals("reset-password", x, StringComparison.OrdinalIgnoreCase));
             var help = args != null && HelpOptionExtensions.IsArgumentAnyHelpString(args);
 
             if (help)
@@ -56,6 +57,7 @@ namespace Duplicati.WindowsService
                 Console.WriteLine("  install-agent:\r\n    Installs and starts the agent service");
                 Console.WriteLine("  install-only-agent:\r\n    Installs the agent service");
                 Console.WriteLine("  uninstall-agent:\r\n    Uninstalls the agent service");
+                Console.WriteLine("  reset-password:\r\n    Sets a new API password and restarts the service");
                 Console.WriteLine();
                 Console.WriteLine("It is possible to pass arguments to Duplicati.Server.exe, simply add them to the commandline:");
                 Console.WriteLine("  Duplicati.WindowsService.exe install --webservice-interface=loopback --log-retention=3M");
@@ -169,6 +171,63 @@ namespace Duplicati.WindowsService
                     }
                 }
             }
+            else if (reset_password)
+            {
+                var password = Utility.ReadSecretFromConsole("Enter new password (leave empty to auto-generate): ");
+
+                if (string.IsNullOrEmpty(password))
+                {
+                    password = GenerateRandomPassword(32);
+                    Console.WriteLine("Generated password: {0}", password);
+                }
+                else
+                {
+                    var confirm = Utility.ReadSecretFromConsole("Confirm password: ");
+                    if (password != confirm)
+                    {
+                        Console.WriteLine("Passwords do not match.");
+                        return 1;
+                    }
+                }
+
+                try
+                {
+                    using (var view = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64))
+                    using (var key = view.CreateSubKey(ServiceControl.INIT_REGISTRY_KEY))
+                        key.SetValue(ServiceControl.INIT_REGISTRY_VALUE, password, RegistryValueKind.String);
+
+                    Console.WriteLine("Password written to registry.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Failed to write password to registry: {0}", ex.Message);
+                    return 1;
+                }
+
+                try
+                {
+                    ServiceInstaller.StopService(ServiceControl.SERVICE_NAME);
+                    Console.WriteLine("Service stopped.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Failed to stop service: {0}", ex.Message);
+                    return 1;
+                }
+
+                try
+                {
+                    ServiceInstaller.StartService(ServiceControl.SERVICE_NAME);
+                    Console.WriteLine("Service started.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Failed to start service: {0}", ex.Message);
+                    return 1;
+                }
+
+                Console.WriteLine("Password reset complete.");
+            }
             else
             {
                 if (args != null && args.Take(1).Any(x => string.Equals("agent", x, StringComparison.OrdinalIgnoreCase)))
@@ -190,5 +249,11 @@ namespace Duplicati.WindowsService
 
             return 0;
         }
+
+        /// <summary>
+        /// Generates a cryptographically random alphanumeric password.
+        /// </summary>
+        private static string GenerateRandomPassword(int length)
+            => System.Security.Cryptography.RandomNumberGenerator.GetString("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", length);
     }
 }

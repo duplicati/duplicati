@@ -45,6 +45,7 @@
 
     <!-- Command-line-only switch. When passed as NOSCRIPT=true on the msiexec
          command line it suppresses actions that require a script engine.
+         Note that activating this prevents the service install from running.
          Not exposed in the UI. -->
     <Property Id="NOSCRIPT" Value="false" Secure="yes" />
 
@@ -218,9 +219,11 @@
         Service install pipeline (only when the service feature is freshly
         installed, gated by the same condition):
           1. Generate random password into DUPLICATI_SERVICE_PASSWORD
-             (immediate, before InstallFiles). For UI installs the UI has
-             already generated and propagated the value, so this is a no-op
-             then; for silent installs this is where the password originates.
+             (immediate, before InstallFiles). This action only runs when
+             UILevel >= 5 (full UI mode). In silent/unattended installs the
+             password MUST be supplied on the command line via
+             DUPLICATI_SERVICE_PASSWORD="..."; otherwise InitPassword is
+             written empty and no webservice password is configured.
           2. WriteRegistryValues (standard MSI action, sequence 5000) writes
              the InitPassword value into the protected Service registry key
              owned by DuplicatiServiceMarkerComponent, substituting in the
@@ -239,17 +242,21 @@
              On timeout it clears DUPLICATI_SERVICE_PASSWORD; otherwise the
              value survives and StoreTrayIconPassword (also UI sequence)
              writes it to the user credential vault for the TrayIcon.
+             In silent mode this step is skipped entirely, so the TrayIcon
+             will not have the password pre-stored in the credential vault.
       -->
-      <Custom Action="GenerateDuplicatiServicePassword" Sequence="1505">(&amp;DuplicatiServiceFeature=3) AND (!DuplicatiServiceFeature&lt;&gt;3) AND NOT UPGRADINGPRODUCTCODE AND NOSCRIPT &lt;&gt; "true"</Custom>
+      <Custom Action="GenerateDuplicatiServicePassword" Sequence="1505">(&amp;DuplicatiServiceFeature=3) AND (!DuplicatiServiceFeature&lt;&gt;3) AND NOT UPGRADINGPRODUCTCODE AND NOSCRIPT &lt;&gt; "true" AND UILevel &gt;= 5</Custom>
 
       <!-- Sequence 5500 puts InstallDuplicatiService after the standard
            WriteRegistryValues at 5000 so InitPassword is already in the
            registry by the time the service is registered and started. -->
+      <Custom Action="SetInstallDuplicatiService" Sequence="5499">(&amp;DuplicatiServiceFeature=3) AND (!DuplicatiServiceFeature&lt;&gt;3) AND NOT UPGRADINGPRODUCTCODE</Custom>
       <Custom Action="InstallDuplicatiService" Sequence="5500">(&amp;DuplicatiServiceFeature=3) AND (!DuplicatiServiceFeature&lt;&gt;3) AND NOT UPGRADINGPRODUCTCODE</Custom>
 
       <!-- Uninstall the Windows Service before files are removed.
            Runs when the service feature was previously installed and is being
            removed (full uninstall or feature deselect via reconfigure). -->
+      <Custom Action="SetUninstallDuplicatiService" Before="UninstallDuplicatiService">(!DuplicatiServiceFeature=3) AND (&amp;DuplicatiServiceFeature&lt;&gt;3) AND NOT UPGRADINGPRODUCTCODE</Custom>
       <Custom Action="UninstallDuplicatiService" Before="RemoveFiles">(!DuplicatiServiceFeature=3) AND (&amp;DuplicatiServiceFeature&lt;&gt;3) AND NOT UPGRADINGPRODUCTCODE</Custom>
     </InstallExecuteSequence>
 
@@ -264,8 +271,9 @@
          Its condition checks DUPLICATI_SERVICE_PASSWORD so it only fires
          when CheckBootstrapResult confirmed success. -->
     <InstallUISequence>
-      <Custom Action="CheckBootstrapResult"  Sequence="1305">DUPLICATI_SERVICE_PASSWORD</Custom>
-      <Custom Action="StoreTrayIconPassword" Sequence="1306">DUPLICATI_SERVICE_PASSWORD</Custom>
+      <Custom Action="GenerateDuplicatiServicePassword" Sequence="1100">NOT Installed</Custom>
+      <Custom Action="CheckBootstrapResult"             Sequence="1305">DUPLICATI_SERVICE_PASSWORD</Custom>
+      <Custom Action="StoreTrayIconPassword"            Sequence="1306">DUPLICATI_SERVICE_PASSWORD</Custom>
     </InstallUISequence>
 
     <Property Id="PREVIOUSVERSIONSINSTALLED" Secure="yes" />
@@ -285,6 +293,7 @@
     <Binary Id="StoreTrayIconPasswordScript"     SourceFile="StoreTrayIconPassword.js" />
     <Binary Id="CheckBootstrapResultScript"      SourceFile="CheckBootstrapResult.js" />
     <Binary Id="CopyPasswordToClipboardScript"   SourceFile="CopyPasswordToClipboard.js" />
+    <Binary Id="SilentRunScript"                 SourceFile="SilentRun.js" />
 
     <CustomAction Id="CheckService"
               BinaryKey="CheckServiceScript"
@@ -323,9 +332,26 @@
               Return="check" />
 
     <!-- Service install/uninstall custom actions.
+         The installer invokes Duplicati.WindowsService.exe via a JScript
+         helper (SilentRun.js) so the console window stays hidden.
+         The command line is passed through CustomActionData using a pair
+         of Type-51 SetProperty actions. -->
+    <CustomAction Id="SetInstallDuplicatiService"
+              Property="InstallDuplicatiService"
+              Value="&quot;[#Duplicati.WindowsService.exe]&quot; INSTALL"
+              Execute="immediate"
+              Return="check" />
+
+    <CustomAction Id="SetUninstallDuplicatiService"
+              Property="UninstallDuplicatiService"
+              Value="&quot;[#Duplicati.WindowsService.exe]&quot; UNINSTALL"
+              Execute="immediate"
+              Return="check" />
+
+    <!-- Service install/uninstall custom actions.
          Use the existing Duplicati.WindowsService.exe shipped with the package.
-         FileKey resolves the path and the working directory. The service
-         runs as LocalSystem, so it uses LocalSystem's default data folder.
+         The action is deferred, so the service runs as LocalSystem,
+         granting access to create the service.
          The first-time webservice password is delivered via the registry
          (DuplicatiServiceMarkerComponent writes InitPassword into the
          locked-down Service key during the standard WriteRegistryValues
@@ -339,15 +365,15 @@
          attached, so the Type-18 FileKey/ExeCommand call does not allocate
          one. -->
     <CustomAction Id="InstallDuplicatiService"
-              FileKey="Duplicati.WindowsService.exe"
-              ExeCommand="INSTALL"
+              BinaryKey="SilentRunScript"
+              JScriptCall="RunAppHidden"
               Execute="deferred"
               Impersonate="no"
               Return="check" />
 
     <CustomAction Id="UninstallDuplicatiService"
-              FileKey="Duplicati.WindowsService.exe"
-              ExeCommand="UNINSTALL"
+              BinaryKey="SilentRunScript"
+              JScriptCall="RunAppHidden"
               Execute="deferred"
               Impersonate="no"
               Return="ignore" />
