@@ -271,7 +271,7 @@
          Its condition checks DUPLICATI_SERVICE_PASSWORD so it only fires
          when CheckBootstrapResult confirmed success. -->
     <InstallUISequence>
-      <Custom Action="GenerateDuplicatiServicePassword" Sequence="1100">NOT Installed</Custom>
+      <Custom Action="GenerateDuplicatiServicePassword" Sequence="1100">NOT Installed AND &amp;DuplicatiServiceFeature=3</Custom>
       <Custom Action="CheckBootstrapResult"             Sequence="1305">DUPLICATI_SERVICE_PASSWORD</Custom>
       <Custom Action="StoreTrayIconPassword"            Sequence="1306">DUPLICATI_SERVICE_PASSWORD</Custom>
     </InstallUISequence>
