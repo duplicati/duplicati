@@ -31,11 +31,8 @@
     <Property Id="WIXUI_INSTALLDIR" Value="INSTALLLOCATION" />
 
     <!-- Properties bound to the InstallOptionsDlg checkboxes.
-         An MSI CheckBox is rendered checked whenever its property has any
-         non-blank value (regardless of whether it matches CheckBoxValue),
-         so we deliberately do NOT declare a default for LAUNCH_AS_SERVICE:
-         leaving it undefined makes the box appear unchecked initially.
-         The shortcut checkboxes default to "1" so they appear checked. -->
+         We deliberately do NOT declare a default for LAUNCH_AS_SERVICE:
+         leaving it undefined makes the box appear unchecked initially. -->
     <Property Id="ADD_DESKTOP_SHORTCUT" Value="1" Secure="yes" />
     <Property Id="ADD_PROGRAMMENU_SHORTCUT" Value="1" Secure="yes" />
     <Property Id="ADD_STARTUP_SHORTCUT" Value="1" Secure="yes" />
@@ -45,6 +42,10 @@
          Program Menu / Startup) for unattended/silent service deployments.
          Not exposed in the UI. -->
     <Property Id="FORSERVICE" Value="false" Secure="yes" />
+
+    <!-- Command-line-only switch. When passed as NOSCRIPT=true on the msiexec
+         command line it suppresses actions that require a script engine.
+         Not exposed in the UI. -->
     <Property Id="NOSCRIPT" Value="false" Secure="yes" />
 
     <!-- Set to "true" by InstallOptionsDlg when the user opts into installing
@@ -53,6 +54,19 @@
          DuplicatiServiceFeature (which IS preserved across UAC elevation),
          while the shortcut argument is driven by NOHOSTEDSERVERARG below. -->
     <Property Id="INSTALLASSERVICE" Value="false" Secure="yes" />
+
+    <!-- Random alphanumeric password generated for the service install.
+         Generated in the InstallUISequence (client side).
+         No default Value: the property must remain undefined for non-service
+         installs so the ExitDialog password field does not appear. -->
+    <Property Id="DUPLICATI_SERVICE_PASSWORD" Secure="yes" />
+
+    <!-- Redact the password from the verbose MSI log. Without this, the
+         "PROPERTY CHANGE: Adding DUPLICATI_SERVICE_PASSWORD property"
+         entry would expose the password in plaintext when the property is
+         set by GenerateDuplicatiServicePassword and again when it is
+         transferred to the elevated server-side session. -->
+    <Property Id="MsiHiddenProperties" Value="DUPLICATI_SERVICE_PASSWORD" />
 
     <!-- NOHOSTEDSERVERARG is set at runtime by SetNoHostedServerArg /
          ClearNoHostedServerArg (just before CreateShortcuts). It is consumed
@@ -80,10 +94,46 @@
           <!-- Marker component for the DuplicatiServiceFeature. It exists primarily so
                the feature has a key component MSI can track; its action/installed state
                is what the InstallDuplicatiService and UninstallDuplicatiService custom
-               actions key off of via &amp;DuplicatiServiceFeature / !DuplicatiServiceFeature. -->
+               actions key off of via &amp;DuplicatiServiceFeature / !DuplicatiServiceFeature.
+
+               Two registry keys are managed here:
+                 * Service       - holds the Installed=1 keypath value AND
+                                   the runtime-generated InitPassword value.
+                                   The key's ACL is hardened by
+                                   MsiLockPermissionsEx.idt.
+
+                 * ServiceState  - holds the BootstrapApplied sentinel that
+                                   the service writes once it has applied
+                                   the password.
+                                   This key is intentionally readable by
+                                   non-admin users as it is read unelevated 
+                                   by the CheckBootstrapResult script. -->
           <Component Id="DuplicatiServiceMarkerComponent" Guid="6F1E3B8A-2C4D-4F7B-9C5A-3E2D1B0F4A8C">
+            <!-- The Service key holds:
+                   * Installed   - keypath value used by MSI to track the
+                                   component's install state.
+                   * InitPassword - the freshly generated webservice
+                                    password substituted in via Formatted
+                                    string property substitution at
+                                    WriteRegistryValues time. Consumed and
+                                    deleted by Duplicati.WindowsService at
+                                    first start. -->
             <RegistryKey Root="HKLM" Key="$(var.SoftwareKey)\DuplicatiTeam\Duplicati\Service">
-              <RegistryValue Name="Installed" Value="1" Type="string" KeyPath="yes" />
+              <!-- Id is fixed (not auto-generated) so the
+                   MsiLockPermissionsEx.idt row that hardens this key's ACL
+                   can reference a stable row primary key. -->
+              <RegistryValue Id="ServiceInstalledMarker"      Name="Installed"    Value="1"                              Type="string" KeyPath="yes" />
+              <RegistryValue Id="ServiceInitPasswordValue"    Name="InitPassword" Value="[DUPLICATI_SERVICE_PASSWORD]"   Type="string" />
+            </RegistryKey>
+
+            <!-- The ServiceState key holds the BootstrapApplied sentinel
+                 that ServiceControl writes after applying the password.
+
+                 The "Installed=1" placeholder value here exists solely
+                 so MSI creates the key (the Registry table only
+                 manipulates keys via values they contain). -->
+            <RegistryKey Root="HKLM" Key="$(var.SoftwareKey)\DuplicatiTeam\Duplicati\ServiceState">
+              <RegistryValue Id="ServiceStateInstalledMarker" Name="Installed" Value="1" Type="string" />
             </RegistryKey>
           </Component>
         </Directory>
@@ -105,7 +155,7 @@
       <Condition Level="0">FORSERVICE = "true"</Condition>
     </Feature>
 
-    <!-- Optional: install Duplicati as a Windows Service. When selected, the
+    <!-- Install Duplicati as a Windows Service. When selected, the
          TrayIcon shortcut is configured with the no-hosted-server flag so it
          connects to the service.
 
@@ -126,7 +176,20 @@
     <!-- Launch duplicati setup -->
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch Duplicati now" />
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
-    <CustomAction Id="LaunchApplication" FileKey="Duplicati.GUI.TrayIcon.exe" Impersonate="yes" ExeCommand="" Return="asyncNoWait" />
+    <!-- Two LaunchApplication variants:
+           * LaunchApplication           - the standard non-service launch.
+                                           No arguments; the TrayIcon hosts
+                                           its own server.
+           * LaunchApplicationNoHosted   - service-mode launch with
+                                           no-hosted-server so the
+                                           TrayIcon connects to the
+                                           Duplicati Windows Service.
+         The ExitDialog Finish button picks between them via Publish
+         conditions on DUPLICATI_SERVICE_PASSWORD (set when the user
+         opted into the service install AND the bootstrap was verified
+         by CheckBootstrapResult). -->
+    <CustomAction Id="LaunchApplication"          FileKey="Duplicati.GUI.TrayIcon.exe" Impersonate="yes" ExeCommand=""                    Return="asyncNoWait" />
+    <CustomAction Id="LaunchApplicationNoHosted"  FileKey="Duplicati.GUI.TrayIcon.exe" Impersonate="yes" ExeCommand="--no-hosted-server"  Return="asyncNoWait" />
     
     <!-- Set the Add/Remove icon -->
     <Property Id="ARPPRODUCTICON" Value="DuplicatiIcon.exe" />
@@ -151,20 +214,59 @@
       <Custom Action="SetNoHostedServerArg"   Before="CreateShortcuts">&amp;DuplicatiServiceFeature=3</Custom>
       <Custom Action="ClearNoHostedServerArg" Before="CreateShortcuts">NOT (&amp;DuplicatiServiceFeature=3)</Custom>
 
-      <!-- Install the Windows Service after files are laid down.
-           Runs when DuplicatiServiceFeature is transitioning from "not
-           installed locally" to "installed locally". This happens when the
-           user opted into the service install in InstallOptionsDlg (which
-           publishes AddLocal DuplicatiServiceFeature) or when the install is
-           triggered with ADDLOCAL=DuplicatiServiceFeature on the command line.
-           Feature action/installed states ARE persisted across UAC elevation
-           by MSI itself, unlike custom Secure="yes" properties under wixl. -->
-      <Custom Action="InstallDuplicatiService" After="InstallFiles">(&amp;DuplicatiServiceFeature=3) AND (!DuplicatiServiceFeature&lt;&gt;3) AND NOT UPGRADINGPRODUCTCODE</Custom>
+      <!--
+        Service install pipeline (only when the service feature is freshly
+        installed, gated by the same condition):
+          1. Generate random password into DUPLICATI_SERVICE_PASSWORD
+             (immediate, before InstallFiles). For UI installs the UI has
+             already generated and propagated the value, so this is a no-op
+             then; for silent installs this is where the password originates.
+          2. WriteRegistryValues (standard MSI action, sequence 5000) writes
+             the InitPassword value into the protected Service registry key
+             owned by DuplicatiServiceMarkerComponent, substituting in the
+             current value of DUPLICATI_SERVICE_PASSWORD. The key's ACL is
+             hardened by a row in the hand-authored MsiLockPermissionsEx.idt
+             table (injected by msibuild after wixl runs) so non-admin users
+             cannot read the password value.
+          3. InstallDuplicatiService (sequenced AFTER WriteRegistryValues so
+             the password is already in the registry before SCM starts the
+             service) registers the Duplicati Windows Service. The service
+             itself runs as LocalSystem and reads InitPassword on first start.
+          4. After ExecuteAction returns to the UI sequence (see
+             InstallUISequence below), CheckBootstrapResult polls the
+             ServiceState key for the BootstrapApplied sentinel that
+             ServiceControl writes once the password has been applied.
+             On timeout it clears DUPLICATI_SERVICE_PASSWORD; otherwise the
+             value survives and StoreTrayIconPassword (also UI sequence)
+             writes it to the user credential vault for the TrayIcon.
+      -->
+      <Custom Action="GenerateDuplicatiServicePassword" Sequence="1505">(&amp;DuplicatiServiceFeature=3) AND (!DuplicatiServiceFeature&lt;&gt;3) AND NOT UPGRADINGPRODUCTCODE AND NOSCRIPT &lt;&gt; "true"</Custom>
+
+      <!-- Sequence 5500 puts InstallDuplicatiService after the standard
+           WriteRegistryValues at 5000 so InitPassword is already in the
+           registry by the time the service is registered and started. -->
+      <Custom Action="InstallDuplicatiService" Sequence="5500">(&amp;DuplicatiServiceFeature=3) AND (!DuplicatiServiceFeature&lt;&gt;3) AND NOT UPGRADINGPRODUCTCODE</Custom>
+
       <!-- Uninstall the Windows Service before files are removed.
            Runs when the service feature was previously installed and is being
            removed (full uninstall or feature deselect via reconfigure). -->
       <Custom Action="UninstallDuplicatiService" Before="RemoveFiles">(!DuplicatiServiceFeature=3) AND (&amp;DuplicatiServiceFeature&lt;&gt;3) AND NOT UPGRADINGPRODUCTCODE</Custom>
     </InstallExecuteSequence>
+
+    <!-- Post-ExecuteAction client-side actions:
+         CheckBootstrapResult polls for the BootstrapApplied registry sentinel
+         that ServiceControl writes once Duplicati.Server.exe has consumed
+         InitPassword and committed the password to the database. On timeout
+         it clears DUPLICATI_SERVICE_PASSWORD, hiding the ExitDialog password
+         panel.
+         StoreTrayIconPassword then runs - immediate, in the UI process which
+         already runs as the installing user, no impersonation dance needed.
+         Its condition checks DUPLICATI_SERVICE_PASSWORD so it only fires
+         when CheckBootstrapResult confirmed success. -->
+    <InstallUISequence>
+      <Custom Action="CheckBootstrapResult"  Sequence="1305">DUPLICATI_SERVICE_PASSWORD</Custom>
+      <Custom Action="StoreTrayIconPassword" Sequence="1306">DUPLICATI_SERVICE_PASSWORD</Custom>
+    </InstallUISequence>
 
     <Property Id="PREVIOUSVERSIONSINSTALLED" Secure="yes" />
     <Upgrade Id="$(var.UpgradeCode)">
@@ -175,8 +277,14 @@
     
     <!-- Service restart code below -->
     <Binary Id="CheckServiceScript" SourceFile="CheckService.js" />
-    <Binary Id="StopServiceScript" SourceFile="StopService.js" />
+    <Binary Id="StopServiceScript"  SourceFile="StopService.js" />
     <Binary Id="StartServiceScript" SourceFile="StartService.js" />
+
+    <!-- Random password generation + service configuration scripts. -->
+    <Binary Id="GeneratePasswordScript"          SourceFile="GeneratePassword.js" />
+    <Binary Id="StoreTrayIconPasswordScript"     SourceFile="StoreTrayIconPassword.js" />
+    <Binary Id="CheckBootstrapResultScript"      SourceFile="CheckBootstrapResult.js" />
+    <Binary Id="CopyPasswordToClipboardScript"   SourceFile="CopyPasswordToClipboard.js" />
 
     <CustomAction Id="CheckService"
               BinaryKey="CheckServiceScript"
@@ -216,7 +324,20 @@
 
     <!-- Service install/uninstall custom actions.
          Use the existing Duplicati.WindowsService.exe shipped with the package.
-         FileKey resolves the path and the working directory. -->
+         FileKey resolves the path and the working directory. The service
+         runs as LocalSystem, so it uses LocalSystem's default data folder.
+         The first-time webservice password is delivered via the registry
+         (DuplicatiServiceMarkerComponent writes InitPassword into the
+         locked-down Service key during the standard WriteRegistryValues
+         action); the WindowsService loader picks it up on first start,
+         exposes it to Duplicati.Server.exe through the
+         DUPLICATI__WEBSERVICE_PASSWORD env var, then deletes the registry
+         value once the server has stayed up for ~5 seconds.
+
+         No console window flashes during install because Duplicati.WindowsService.exe
+         is built as WinExe (not Exe) - the executable has no console
+         attached, so the Type-18 FileKey/ExeCommand call does not allocate
+         one. -->
     <CustomAction Id="InstallDuplicatiService"
               FileKey="Duplicati.WindowsService.exe"
               ExeCommand="INSTALL"
@@ -229,6 +350,47 @@
               ExeCommand="UNINSTALL"
               Execute="deferred"
               Impersonate="no"
+              Return="ignore" />
+
+    <!-- Generates the random password and stores it in
+         DUPLICATI_SERVICE_PASSWORD. Immediate so the property is set before
+         the SetCustomActionData type-51 actions read it. -->
+    <CustomAction Id="GenerateDuplicatiServicePassword"
+              BinaryKey="GeneratePasswordScript"
+              JScriptCall="CustomAction"
+              Execute="immediate"
+              Return="check" />
+
+    <!-- Runs in the InstallUISequence after ExecuteAction. Polls the
+         registry for the BootstrapApplied sentinel and clears
+         DUPLICATI_SERVICE_PASSWORD client-side if the sentinel does not
+         appear within the script's timeout, which hides the password panel
+         on the ExitDialog. -->
+    <CustomAction Id="CheckBootstrapResult"
+              BinaryKey="CheckBootstrapResultScript"
+              JScriptCall="CustomAction"
+              Execute="immediate"
+              Return="ignore" />
+
+    <!-- Immediate CA in the InstallUISequence, sequenced AFTER
+         CheckBootstrapResult so it can rely on CheckBootstrapResult having
+         cleared DUPLICATI_SERVICE_PASSWORD on bootstrap failure. Reads the
+         password and the SecretTool path directly from session properties.
+         The UI sequence runs as the installing user (un-elevated), which is
+         exactly the context where the user credential vault entry needs to
+         be written, so no Impersonate dance is needed. -->
+    <CustomAction Id="StoreTrayIconPassword"
+              BinaryKey="StoreTrayIconPasswordScript"
+              JScriptCall="CustomAction"
+              Execute="immediate"
+              Return="ignore" />
+
+    <!-- Wired to the "Copy" button on the ExitDialog. Immediate so it can
+         read DUPLICATI_SERVICE_PASSWORD directly from the session. -->
+    <CustomAction Id="CopyServicePasswordToClipboard"
+              BinaryKey="CopyPasswordToClipboardScript"
+              JScriptCall="CustomAction"
+              Execute="immediate"
               Return="ignore" />
 
   </Product>
@@ -246,7 +408,7 @@
          + Remove   -> VerifyReadyDlg
 
     InstallOptionsDlg replaces the standard CustomizeDlg with a simple checkbox dialog
-    (defined in the InstallOptions fragment in Shortcuts.wxs). The checkboxes drive
+    (defined in the InstallOptionsDlg.wxs fragment). The checkboxes drive
     the LAUNCH_AS_SERVICE / ADD_*_SHORTCUT properties, which are translated into
     feature AddLocal/Remove publishes when the user clicks Next.
   -->

@@ -511,63 +511,51 @@ public static partial class Command
             // Prepare the Wix arguments, different for WiX (Windows) and wixl (Linux/MacOS)
             string[] wixArgs;
 
-            // Optional dialog fragment, only included when present in the resource subdir.
-            var installOptionsDlgPath = Path.Combine(resourcesSubDir, "InstallOptionsDlg.wxs");
-            var hasInstallOptionsDlg = File.Exists(installOptionsDlgPath);
+            // Include these files explictly if they are present in the resource subdir.
+            var fragments = new[] {
+                    "InstallOptionsDlg.wxs",
+                    "ExitDialog.wxs",
+                    "Shortcuts.wxs",
+                    "Duplicati.wxs"
+                }
+                .Select(x => Path.Combine(resourcesSubDir, x))
+                .Where(File.Exists)
+                .ToArray();
 
             if (isWindows)
             {
                 // Update namespace in the .wxs files for WiX v4
-                var shortcutsTempfile = Path.Combine(buildTmp, "Shortcuts.wxs");
-                var entryTempfile = Path.Combine(buildTmp, "Duplicati.wxs");
+                var tempFiles = fragments
+                    .Select(x =>
+                    {
+                        var tempFile = Path.Combine(buildTmp, Path.GetFileName(x));
+                        File.WriteAllText(tempFile, File.ReadAllText(x).Replace(originalNamespace, wixv4Namespace));
+                        return tempFile;
+                    }).ToArray();
 
-                File.WriteAllText(shortcutsTempfile, File.ReadAllText(Path.Combine(resourcesSubDir, "Shortcuts.wxs"))
-                    .Replace(originalNamespace, wixv4Namespace));
-
-                File.WriteAllText(entryTempfile, File.ReadAllText(Path.Combine(resourcesSubDir, "Duplicati.wxs"))
-                    .Replace(originalNamespace, wixv4Namespace));
-
-                string? installOptionsTempfile = null;
-                if (hasInstallOptionsDlg)
-                {
-                    installOptionsTempfile = Path.Combine(buildTmp, "InstallOptionsDlg.wxs");
-                    File.WriteAllText(installOptionsTempfile, File.ReadAllText(installOptionsDlgPath)
-                        .Replace(originalNamespace, wixv4Namespace));
-                }
-
-                var args = new List<string>
-                {
+                wixArgs = [
                     rtcfg.Configuration.Commands.Wix!,
                     "build",
                     "-define", $"HarvestPath={sourceFiles}",
                     "-arch", msiArch,
                     "-out", msiFile,
-                    shortcutsTempfile,
                     binFiles,
-                };
-                if (installOptionsTempfile != null)
-                    args.Add(installOptionsTempfile);
-                args.Add(entryTempfile);
-                wixArgs = args.ToArray();
+                    ..tempFiles
+                ];
             }
             else
             {
                 // wixl needs the UI extension
-                var args = new List<string>
-                {
+                wixArgs = [
                     rtcfg.Configuration.Commands.Wix!,
                     "--ext", "ui",
                     "--extdir", Path.Combine(resourcesDir, "WixUIExtension"),
                     "--define", $"HarvestPath={sourceFiles}",
                     "--arch", msiArch,
                     "--output", msiFile,
-                    Path.Combine(resourcesSubDir, "Shortcuts.wxs"),
                     binFiles,
-                };
-                if (hasInstallOptionsDlg)
-                    args.Add(installOptionsDlgPath);
-                args.Add(Path.Combine(resourcesSubDir, "Duplicati.wxs"));
-                wixArgs = args.ToArray();
+                    ..fragments,
+                ];
             }
 
             await ProcessHelper.Execute(wixArgs, workingDirectory: buildRoot);

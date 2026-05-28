@@ -20,10 +20,12 @@
 // DEALINGS IN THE SOFTWARE.
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Service;
+using Microsoft.Win32;
 using System;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
+using System.Threading;
 
 namespace Duplicati.WindowsService
 {
@@ -40,6 +42,60 @@ namespace Duplicati.WindowsService
         public const string SERVICE_NAME_AGENT = "Duplicati.Agent";
         public const string DISPLAY_NAME_AGENT = "Duplicati Agent service";
         public const string SERVICE_DESCRIPTION_AGENT = "The Duplicati Agent service";
+
+        /// <summary>
+        /// Registry key holding the one-shot init password written by the
+        /// MSI installer. The value is readable only by SYSTEM and
+        /// Administrators (the MSI hardens the ACL via
+        /// MsiLockPermissionsEx). On first start of the service we promote
+        /// it to a process-scoped environment variable for the child
+        /// Duplicati.Server.exe (which the option-loader maps to
+        /// --webservice-password).
+        /// After the server has stayed up for a few seconds we delete the
+        /// value so the password no longer lives on disk.
+        /// </summary>
+        internal const string INIT_REGISTRY_KEY = @"SOFTWARE\DuplicatiTeam\Duplicati\Service";
+        /// <summary>
+        /// The name of the registry value holding the init password.
+        /// </summary>
+        internal const string INIT_REGISTRY_VALUE = "InitPassword";
+
+        /// <summary>
+        /// Separate registry key for the BootstrapApplied sentinel. This key
+        /// retains its default inheritable ACL (Authenticated Users have
+        /// Read), unlike INIT_REGISTRY_KEY which is locked down to admins
+        /// because it briefly holds the password. The sentinel only stores
+        /// "1" with no secret content, so read access for non-admin users
+        /// is fine - and is required because the MSI's CheckBootstrapResult
+        /// CA polls this value from the un-elevated UI process.
+        /// </summary>
+        private const string SERVICE_STATE_REGISTRY_KEY = @"SOFTWARE\DuplicatiTeam\Duplicati\ServiceState";
+
+        /// <summary>
+        /// Sentinel value the installer (CheckBootstrapResult) polls for to
+        /// confirm that the service actually applied the password. We write
+        /// "1" once we have successfully deleted InitPassword. The installer
+        /// removes any pre-existing copy at the start of WriteServicePassword
+        /// so this is always a fresh signal.
+        /// </summary>
+        private const string BOOTSTRAP_APPLIED_VALUE = "BootstrapApplied";
+
+        /// <summary>
+        /// Environment variable name consumed by Duplicati.Server.exe's
+        /// option loader (ApplyEnvironmentVariables in Server/Program.cs).
+        /// The prefix matches AutoUpdateSettings.AppName.ToUpperInvariant()
+        /// and the suffix is the option name with '-' replaced by '_' and
+        /// uppercased. Encoding "webservice-password" yields
+        /// DUPLICATI__WEBSERVICE_PASSWORD.
+        /// </summary>
+        private const string ENV_WEBSERVICE_PASSWORD = "DUPLICATI__WEBSERVICE_PASSWORD";
+
+        /// <summary>
+        /// How long the server must stay alive after start before we are
+        /// confident the bootstrap actually consumed the password and we
+        /// can safely remove the copy from the registry.
+        /// </summary>
+        private static readonly TimeSpan INIT_PASSWORD_RETENTION = TimeSpan.FromSeconds(5);
 
         private readonly System.Diagnostics.EventLog m_eventLog;
 
@@ -65,7 +121,6 @@ namespace Duplicati.WindowsService
             };
             m_verbose_messages = args != null && args.Any(x => string.Equals("--debug-service", x, StringComparison.OrdinalIgnoreCase));
             m_cmdargs = (args ?? new string[0]).Where(x => !string.Equals("--debug-service", x, StringComparison.OrdinalIgnoreCase)).ToArray();
-
         }
 
         protected override void OnStart(string[] args)
@@ -95,6 +150,14 @@ namespace Duplicati.WindowsService
                     ? AGENT_LOG_NAME
                     : SERVER_LOG_NAME)
                 }).ToArray();
+
+            // Pick up the one-shot init password planted by the MSI installer
+            // (only relevant for the Server service, not the Agent service).
+            // This sets process-level environment variables that the Runner's
+            // child Process.Start inherits via UseShellExecute=false.
+            var initPasswordPickedUp = false;
+            if (m_executable == PackageHelper.NamedExecutable.Server)
+                initPasswordPickedUp = ReadInitPasswordFromRegistry();
 
             if (m_verbose_messages)
                 m_eventLog.WriteEntry("Starting...");
@@ -126,6 +189,15 @@ namespace Duplicati.WindowsService
                                 dwCurrentState = ServiceState.SERVICE_RUNNING
                             };
                             SetServiceStatus(this.ServiceHandle, ref sv2);
+
+                            // If we just consumed an init password, give the
+                            // server a few seconds to actually accept it,
+                            // then remove the on-disk copy. We also clear
+                            // the env vars so they don't accidentally apply
+                            // to a future child process started in the same
+                            // service host.
+                            if (initPasswordPickedUp)
+                                ScheduleInitPasswordCleanup();
                         },
                         () =>
                         {
@@ -196,5 +268,187 @@ namespace Duplicati.WindowsService
 
         [DllImport("advapi32.dll", SetLastError = true)]
         private static extern bool SetServiceStatus(IntPtr handle, ref ServiceStatus serviceStatus);
+
+        /// <summary>
+        /// Reads the InitPassword value written by the MSI installer's
+        /// WriteServicePassword custom action. If found, exposes it to 
+        /// the child server process via environment variables.
+        /// </summary>
+        /// <returns>true if a value was found and the env vars were set; false otherwise.</returns>
+        private bool ReadInitPasswordFromRegistry()
+        {
+            try
+            {
+                using (var view = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64))
+                using (var key = view.OpenSubKey(INIT_REGISTRY_KEY, writable: false))
+                {
+                    if (key == null)
+                    {
+                        if (m_verbose_messages)
+                            m_eventLog.WriteEntry(
+                                "ConsumeInitPasswordFromRegistry: HKLM\\" + INIT_REGISTRY_KEY + " does not exist; "
+                                + "no init password to apply.",
+                                System.Diagnostics.EventLogEntryType.Information);
+                        return false;
+                    }
+
+                    var raw = key.GetValue(INIT_REGISTRY_VALUE);
+                    if (raw == null)
+                    {
+                        if (m_verbose_messages)
+                            m_eventLog.WriteEntry(
+                                "ConsumeInitPasswordFromRegistry: " + INIT_REGISTRY_VALUE + " value is missing under HKLM\\"
+                                + INIT_REGISTRY_KEY + "; no init password to apply.",
+                                System.Diagnostics.EventLogEntryType.Information);
+                        return false;
+                    }
+
+                    var value = raw as string;
+                    if (string.IsNullOrEmpty(value))
+                    {
+                        if (m_verbose_messages)
+                            m_eventLog.WriteEntry(
+                                "ConsumeInitPasswordFromRegistry: " + INIT_REGISTRY_VALUE + " is present but empty/non-string "
+                                + "(type=" + raw.GetType().FullName + "); not applying.",
+                                System.Diagnostics.EventLogEntryType.Warning);
+                        return false;
+                    }
+
+                    Environment.SetEnvironmentVariable(ENV_WEBSERVICE_PASSWORD, value);
+
+                    if (m_verbose_messages)
+                        m_eventLog.WriteEntry(
+                            "ConsumeInitPasswordFromRegistry: picked up init password"
+                            + " and set " + ENV_WEBSERVICE_PASSWORD
+                            + " for the child server process. Cleanup will fire " + INIT_PASSWORD_RETENTION.TotalSeconds
+                            + "s after the runner reports started.",
+                            System.Diagnostics.EventLogEntryType.Information);
+
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                // Don't block service start on registry read failure.
+                m_eventLog.WriteEntry(
+                    "ConsumeInitPasswordFromRegistry: failed to read InitPassword: " + ex,
+                    System.Diagnostics.EventLogEntryType.Warning);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Background timer that, after INIT_PASSWORD_RETENTION elapses,
+        /// removes the InitPassword value from the registry and clears the
+        /// process-scoped environment variables.
+        ///
+        /// We get here only after Runner.PingProcess succeeded, i.e. the
+        /// child Duplicati.Server.exe responded on stdin/stdout, which in
+        /// turn means it completed its option-loader pass (consuming the
+        /// env vars) and entered its event loop. At that point the
+        /// password is already persisted in the server database (via the
+        /// --database-bootstrap-mode=Init flow) and the registry copy is
+        /// no longer needed.
+        ///
+        /// The retention window covers the gap between "server has started
+        /// listening" and "the bootstrap commit has flushed", and gives a
+        /// buffer in case of an immediate crash; a few seconds of extra
+        /// retention is acceptable since the registry value is already
+        /// ACL-locked to SYSTEM and Administrators.
+        /// </summary>
+        private void ScheduleInitPasswordCleanup()
+        {
+            if (m_verbose_messages)
+                m_eventLog.WriteEntry(
+                    "ScheduleInitPasswordCleanup: scheduling cleanup timer to fire in "
+                    + INIT_PASSWORD_RETENTION.TotalSeconds + "s.",
+                    System.Diagnostics.EventLogEntryType.Information);
+
+            // Use a one-shot Timer; fire-and-forget. The timer is captured
+            // by the closure and self-disposed in the callback.
+            Timer timer = null;
+            timer = new Timer(_ =>
+            {
+                if (m_verbose_messages)
+                    m_eventLog.WriteEntry(
+                       "InitPasswordCleanup: timer fired; clearing InitPassword and writing BootstrapApplied sentinel.",
+                       System.Diagnostics.EventLogEntryType.Information);
+
+                try
+                {
+                    using (var view = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64))
+                    {
+                        // Remove the password first, then write the sentinel
+                        // that confirms successful application. Doing it in
+                        // this order guarantees that an observer either sees
+                        // no signal (still racing) or sees BootstrapApplied
+                        // with InitPassword already gone - never the inverse.
+                        using (var initKey = view.OpenSubKey(INIT_REGISTRY_KEY, writable: true))
+                        {
+                            if (initKey == null)
+                            {
+                                if (m_verbose_messages)
+                                    m_eventLog.WriteEntry(
+                                       "InitPasswordCleanup: HKLM\\" + INIT_REGISTRY_KEY + " could not be opened for write; "
+                                       + "skipping InitPassword deletion.",
+                                       System.Diagnostics.EventLogEntryType.Warning);
+                            }
+                            else
+                            {
+                                initKey.DeleteValue(INIT_REGISTRY_VALUE, throwOnMissingValue: false);
+                                if (m_verbose_messages)
+                                    m_eventLog.WriteEntry(
+                                       "InitPasswordCleanup: deleted " + INIT_REGISTRY_VALUE + " from HKLM\\" + INIT_REGISTRY_KEY + ".",
+                                       System.Diagnostics.EventLogEntryType.Information);
+                            }
+                        }
+
+                        // The installer creates SERVICE_STATE_REGISTRY_KEY
+                        // with default ACLs so this CreateSubKey is idempotent
+                        // (it opens the existing key); if for some reason it
+                        // doesn't exist (manual cleanup, partial install),
+                        // creating it here is still safe and keeps the same
+                        // default-ACL property because we are running as
+                        // LocalSystem and the parent SOFTWARE key's
+                        // inheritable ACEs apply.
+                        using (var stateKey = view.CreateSubKey(SERVICE_STATE_REGISTRY_KEY))
+                        {
+                            if (stateKey == null)
+                            {
+                                if (m_verbose_messages)
+                                    m_eventLog.WriteEntry(
+                                       "InitPasswordCleanup: failed to create/open HKLM\\" + SERVICE_STATE_REGISTRY_KEY
+                                       + "; cannot write " + BOOTSTRAP_APPLIED_VALUE + " sentinel.",
+                                       System.Diagnostics.EventLogEntryType.Warning);
+                            }
+                            else
+                            {
+                                stateKey.SetValue(BOOTSTRAP_APPLIED_VALUE, "1", RegistryValueKind.String);
+                                if (m_verbose_messages)
+                                    m_eventLog.WriteEntry(
+                                       "InitPasswordCleanup: wrote " + BOOTSTRAP_APPLIED_VALUE + "=1 to HKLM\\"
+                                       + SERVICE_STATE_REGISTRY_KEY + ".",
+                                       System.Diagnostics.EventLogEntryType.Information);
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    m_eventLog.WriteEntry(
+                        "InitPasswordCleanup: failed to clear InitPassword / write BootstrapApplied: " + ex,
+                        System.Diagnostics.EventLogEntryType.Warning);
+                }
+                finally
+                {
+                    // Clear the env vars from this process so they do not
+                    // accidentally apply to a future restart of the server
+                    // child (which would re-trigger database-bootstrap-mode
+                    // if it ever ran a second time on a stale value).
+                    Environment.SetEnvironmentVariable(ENV_WEBSERVICE_PASSWORD, null);
+                    timer?.Dispose();
+                }
+            }, null, INIT_PASSWORD_RETENTION, Timeout.InfiniteTimeSpan);
+        }
     }
 }

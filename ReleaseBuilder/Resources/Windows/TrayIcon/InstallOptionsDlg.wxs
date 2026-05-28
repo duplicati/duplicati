@@ -64,6 +64,13 @@
 
           <Publish Property="INSTALLASSERVICE" Value="true"  Order="20" Condition="LAUNCH_AS_SERVICE = &quot;1&quot;" />
           <Publish Property="INSTALLASSERVICE" Value="false" Order="20" Condition="NOT (LAUNCH_AS_SERVICE = &quot;1&quot;)" />
+
+          <!-- Generate the random password client-side (before the elevation
+               switch) so it can be displayed on the ExitDialog and so its
+               value propagates through to the server-side custom actions
+               via the public-property mechanism. Skipped when service install
+               was not selected. -->
+          <Publish Event="DoAction" Value="GenerateDuplicatiServicePassword" Order="30" Condition="LAUNCH_AS_SERVICE = &quot;1&quot;" />
         </Control>
       </Dialog>
     </UI>
