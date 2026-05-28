@@ -282,7 +282,7 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
                             info.LastAccessTime,
                             info.LastWriteTime)
                         {
-                            IsFolder = info.FileAttributes == FileAttributes.Directory,
+                            IsFolder = (info.FileAttributes && FileAttributes.Directory) == FileAttributes.Directory,
                             Created = info.CreationTime
                         })
                         .ToList()
