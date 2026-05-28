@@ -84,7 +84,7 @@ public class BackendSourceProvider(IFolderEnabledBackend backend, string mounted
 
     /// <inheritdoc/>
     public Task Test(CancellationToken cancellationToken)
-        => backend.TestAsync(cancellationToken);
+        => Initialize(cancellationToken);
 
     /// <inheritdoc/>
     public IAsyncEnumerable<ISourceProviderEntry> Enumerate(CancellationToken cancellationToken)
