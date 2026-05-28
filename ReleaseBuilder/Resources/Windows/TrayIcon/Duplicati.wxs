@@ -49,6 +49,11 @@
          Not exposed in the UI. -->
     <Property Id="NOSCRIPT" Value="false" Secure="yes" />
 
+    <!-- Tracks if the TLS certificates feature was selected in the UI or
+         passed via command line. Secure="yes" allows it to pass through to
+         elevated execution sequence. -->
+    <Property Id="INSTALL_TLS_CERTS" Secure="yes" />
+
     <!-- Set to "true" by InstallOptionsDlg when the user opts into installing
          Duplicati as a Windows Service. Currently used only as a UI hint;
          the actual server-side behaviour is driven by the action state of
@@ -137,6 +142,14 @@
               <RegistryValue Id="ServiceStateInstalledMarker" Name="Installed" Value="1" Type="string" />
             </RegistryKey>
           </Component>
+          <Component Id="TlsCertsMarkerComponent" Guid="B8C9D0E1-F2A3-4B5C-6D7E-8F9A0B1C2D3E">
+            <RegistryKey Root="HKLM" Key="$(var.SoftwareKey)\DuplicatiTeam\Duplicati\TlsCerts">
+              <RegistryValue Id="TlsCertsInstalledMarker" Name="Installed" Value="1" Type="string" KeyPath="yes" />
+            </RegistryKey>
+            <RegistryKey Root="HKLM" Key="$(var.SoftwareKey)\DuplicatiTeam\Duplicati\Service">
+              <RegistryValue Id="TlsCertsOptionValue" Name="TlsCertsOption" Value="install" Type="string" />
+            </RegistryKey>
+          </Component>
         </Directory>
       </Directory>
     </Directory>
@@ -169,6 +182,10 @@
       <ComponentRef Id="DuplicatiServiceMarkerComponent"/>
     </Feature>
     
+    <Feature Id="DuplicatiTlsCertsFeature" Level="2" Absent="allow" AllowAdvertise="no">
+      <ComponentRef Id="TlsCertsMarkerComponent"/>
+    </Feature>
+
     <Feature Id="DuplicatiStartupShortCutFeature" Level="1" Absent="allow" AllowAdvertise="no">
       <ComponentRef Id="StartupMenuItem"/>
       <Condition Level="0">FORSERVICE = "true"</Condition>
@@ -253,6 +270,16 @@
       <Custom Action="SetInstallDuplicatiService" Sequence="5499">(&amp;DuplicatiServiceFeature=3) AND (!DuplicatiServiceFeature&lt;&gt;3) AND NOT UPGRADINGPRODUCTCODE</Custom>
       <Custom Action="InstallDuplicatiService" Sequence="5500">(&amp;DuplicatiServiceFeature=3) AND (!DuplicatiServiceFeature&lt;&gt;3) AND NOT UPGRADINGPRODUCTCODE</Custom>
 
+      <Custom Action="SetInstallTlsCertsUser" Sequence="5501">(&amp;DuplicatiTlsCertsFeature=3) AND (!DuplicatiServiceFeature&lt;&gt;3) AND (&amp;DuplicatiServiceFeature&lt;&gt;3) AND NOT UPGRADINGPRODUCTCODE</Custom>
+      <Custom Action="InstallTlsCertsUser" Sequence="5502">(&amp;DuplicatiTlsCertsFeature=3) AND (!DuplicatiServiceFeature&lt;&gt;3) AND (&amp;DuplicatiServiceFeature&lt;&gt;3) AND NOT UPGRADINGPRODUCTCODE</Custom>
+
+      <Custom Action="SetUninstallTlsCertsUser" Before="UninstallTlsCertsUser">(!DuplicatiTlsCertsFeature=3) AND (&amp;DuplicatiTlsCertsFeature&lt;&gt;3) AND (!DuplicatiServiceFeature&lt;&gt;3) AND NOT UPGRADINGPRODUCTCODE</Custom>
+      <Custom Action="UninstallTlsCertsUser" Before="RemoveFiles">(!DuplicatiTlsCertsFeature=3) AND (&amp;DuplicatiTlsCertsFeature&lt;&gt;3) AND (!DuplicatiServiceFeature&lt;&gt;3) AND NOT UPGRADINGPRODUCTCODE</Custom>
+
+      <!-- InstallTlsCertsService is done in the service, so we just need to set the registry key -->
+      <Custom Action="SetUninstallTlsCertsService" Before="UninstallTlsCertsService">(!DuplicatiTlsCertsFeature=3) AND (&amp;DuplicatiTlsCertsFeature&lt;&gt;3) AND (!DuplicatiServiceFeature=3) AND NOT UPGRADINGPRODUCTCODE</Custom>
+      <Custom Action="UninstallTlsCertsService" Before="UninstallDuplicatiService">(!DuplicatiTlsCertsFeature=3) AND (&amp;DuplicatiTlsCertsFeature&lt;&gt;3) AND (!DuplicatiServiceFeature=3) AND NOT UPGRADINGPRODUCTCODE</Custom>
+
       <!-- Uninstall the Windows Service before files are removed.
            Runs when the service feature was previously installed and is being
            removed (full uninstall or feature deselect via reconfigure). -->
@@ -266,14 +293,14 @@
          InitPassword and committed the password to the database. On timeout
          it clears DUPLICATI_SERVICE_PASSWORD, hiding the ExitDialog password
          panel.
-         StoreTrayIconPassword then runs - immediate, in the UI process which
+         StoreTrayIconValues then runs - immediate, in the UI process which
          already runs as the installing user, no impersonation dance needed.
          Its condition checks DUPLICATI_SERVICE_PASSWORD so it only fires
          when CheckBootstrapResult confirmed success. -->
     <InstallUISequence>
       <Custom Action="GenerateDuplicatiServicePassword" Sequence="1100">NOT Installed AND &amp;DuplicatiServiceFeature=3</Custom>
       <Custom Action="CheckBootstrapResult"             Sequence="1305">DUPLICATI_SERVICE_PASSWORD</Custom>
-      <Custom Action="StoreTrayIconPassword"            Sequence="1306">DUPLICATI_SERVICE_PASSWORD</Custom>
+      <Custom Action="StoreTrayIconValues"              Sequence="1306">DUPLICATI_SERVICE_PASSWORD</Custom>
     </InstallUISequence>
 
     <Property Id="PREVIOUSVERSIONSINSTALLED" Secure="yes" />
@@ -290,7 +317,7 @@
 
     <!-- Random password generation + service configuration scripts. -->
     <Binary Id="GeneratePasswordScript"          SourceFile="GeneratePassword.js" />
-    <Binary Id="StoreTrayIconPasswordScript"     SourceFile="StoreTrayIconPassword.js" />
+    <Binary Id="StoreTrayIconValuesScript"       SourceFile="StoreTrayIconValues.js" />
     <Binary Id="CheckBootstrapResultScript"      SourceFile="CheckBootstrapResult.js" />
     <Binary Id="CopyPasswordToClipboardScript"   SourceFile="CopyPasswordToClipboard.js" />
     <Binary Id="SilentRunScript"                 SourceFile="SilentRun.js" />
@@ -378,6 +405,15 @@
               Impersonate="no"
               Return="ignore" />
 
+    <CustomAction Id="SetInstallTlsCertsUser" Property="InstallTlsCertsUser" Value="&quot;[#Duplicati.CommandLine.ConfigureTool.exe]&quot; https generate --auto-create-database" Execute="immediate" Return="check" />
+    <CustomAction Id="InstallTlsCertsUser" BinaryKey="SilentRunScript" JScriptCall="RunAppHidden" Execute="deferred" Impersonate="yes" Return="ignore" />
+
+    <CustomAction Id="SetUninstallTlsCertsUser" Property="UninstallTlsCertsUser" Value="&quot;[#Duplicati.CommandLine.ConfigureTool.exe]&quot; https remove" Execute="immediate" Return="check" />
+    <CustomAction Id="UninstallTlsCertsUser" BinaryKey="SilentRunScript" JScriptCall="RunAppHidden" Execute="deferred" Impersonate="yes" Return="ignore" />
+
+    <CustomAction Id="SetUninstallTlsCertsService" Property="UninstallTlsCertsService" Value="&quot;[#Duplicati.WindowsService.exe]&quot; remove-certs" Execute="immediate" Return="check" />
+    <CustomAction Id="UninstallTlsCertsService" BinaryKey="SilentRunScript" JScriptCall="RunAppHidden" Execute="deferred" Impersonate="no" Return="ignore" />
+
     <!-- Generates the random password and stores it in
          DUPLICATI_SERVICE_PASSWORD. Immediate so the property is set before
          the SetCustomActionData type-51 actions read it. -->
@@ -405,8 +441,8 @@
          The UI sequence runs as the installing user (un-elevated), which is
          exactly the context where the user credential vault entry needs to
          be written, so no Impersonate dance is needed. -->
-    <CustomAction Id="StoreTrayIconPassword"
-              BinaryKey="StoreTrayIconPasswordScript"
+    <CustomAction Id="StoreTrayIconValues"
+              BinaryKey="StoreTrayIconValuesScript"
               JScriptCall="CustomAction"
               Execute="immediate"
               Return="ignore" />

@@ -61,6 +61,11 @@ namespace Duplicati.WindowsService
         internal const string INIT_REGISTRY_VALUE = "InitPassword";
 
         /// <summary>
+        /// The name of the registry value holding the TLS certs install/uninstall instruction.
+        /// </summary>
+        internal const string TLS_CERTS_REGISTRY_VALUE = "TlsCertsOption";
+
+        /// <summary>
         /// Separate registry key for the BootstrapApplied sentinel. This key
         /// retains its default inheritable ACL (Authenticated Users have
         /// Read), unlike INIT_REGISTRY_KEY which is locked down to admins
@@ -157,7 +162,10 @@ namespace Duplicati.WindowsService
             // child Process.Start inherits via UseShellExecute=false.
             var initPasswordPickedUp = false;
             if (m_executable == PackageHelper.NamedExecutable.Server)
+            {
+                ReadAndExecuteTlsCertsCommandFromRegistry();
                 initPasswordPickedUp = ReadInitPasswordFromRegistry();
+            }
 
             if (m_verbose_messages)
                 m_eventLog.WriteEntry("Starting...");
@@ -268,6 +276,103 @@ namespace Duplicati.WindowsService
 
         [DllImport("advapi32.dll", SetLastError = true)]
         private static extern bool SetServiceStatus(IntPtr handle, ref ServiceStatus serviceStatus);
+
+        private void ReadAndExecuteTlsCertsCommandFromRegistry()
+        {
+            try
+            {
+                using (var view = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64))
+                using (var key = view.OpenSubKey(INIT_REGISTRY_KEY, writable: true))
+                {
+                    if (key == null)
+                        return;
+
+                    var raw = key.GetValue(TLS_CERTS_REGISTRY_VALUE);
+                    if (raw == null)
+                        return;
+
+                    var value = raw as string;
+                    if (string.IsNullOrEmpty(value))
+                        return;
+
+                    var installDir = UpdaterManager.INSTALLATIONDIR;
+                    var exeName = PackageHelper.GetExecutableName(PackageHelper.NamedExecutable.ConfigureTool);
+                    string configureToolExe = System.IO.Path.Combine(installDir, exeName);
+                    if (System.IO.File.Exists(configureToolExe))
+                    {
+                        var startInfo = new System.Diagnostics.ProcessStartInfo
+                        {
+                            FileName = configureToolExe,
+                            UseShellExecute = false,
+                            CreateNoWindow = true,
+                            RedirectStandardOutput = true,
+                            RedirectStandardError = true
+                        };
+
+                        if (string.Equals(value, "install", StringComparison.OrdinalIgnoreCase))
+                        {
+                            startInfo.Arguments = "https generate --auto-create-database";
+                            m_eventLog.WriteEntry("Running ConfigureTool to generate TLS certificates.", System.Diagnostics.EventLogEntryType.Information);
+                        }
+                        else if (string.Equals(value, "uninstall", StringComparison.OrdinalIgnoreCase))
+                        {
+                            startInfo.Arguments = "https remove";
+                            m_eventLog.WriteEntry("Running ConfigureTool to remove TLS certificates.", System.Diagnostics.EventLogEntryType.Information);
+                        }
+                        else
+                        {
+                            return;
+                        }
+
+                        using (var process = new System.Diagnostics.Process { StartInfo = startInfo })
+                        {
+                            var outputBuilder = new System.Text.StringBuilder();
+                            var errorBuilder = new System.Text.StringBuilder();
+
+                            if (m_verbose_messages)
+                            {
+                                process.OutputDataReceived += (s, e) => { if (e.Data != null) outputBuilder.AppendLine(e.Data); };
+                                process.ErrorDataReceived += (s, e) => { if (e.Data != null) errorBuilder.AppendLine(e.Data); };
+                            }
+
+                            if (process.Start())
+                            {
+                                if (m_verbose_messages)
+                                {
+                                    process.BeginOutputReadLine();
+                                    process.BeginErrorReadLine();
+                                }
+
+                                if (process.WaitForExit(TimeSpan.FromSeconds(20)))
+                                {
+                                    process.WaitForExit(); // Ensure async streams are fully read
+                                    if (process.ExitCode != 0)
+                                        m_eventLog.WriteEntry($"ConfigureTool failed with exit code {process.ExitCode}", System.Diagnostics.EventLogEntryType.Warning);
+
+                                    if (m_verbose_messages)
+                                        m_eventLog.WriteEntry($"ConfigureTool output was:.\n\nSTDOUT:\n{outputBuilder}\n\nSTDERR:\n{errorBuilder}", System.Diagnostics.EventLogEntryType.Information);
+                                }
+                                else
+                                {
+                                    m_eventLog.WriteEntry("ConfigureTool timed out after 20 seconds.", System.Diagnostics.EventLogEntryType.Warning);
+                                    try { process.Kill(); } catch { }
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        m_eventLog.WriteEntry("ConfigureTool not found, cannot configure TLS certificates.", System.Diagnostics.EventLogEntryType.Warning);
+                    }
+
+                    key.DeleteValue(TLS_CERTS_REGISTRY_VALUE, throwOnMissingValue: false);
+                }
+            }
+            catch (Exception ex)
+            {
+                m_eventLog.WriteEntry("Failed to process TLS certs registry command: " + ex.Message, System.Diagnostics.EventLogEntryType.Warning);
+            }
+        }
 
         /// <summary>
         /// Reads the InitPassword value written by the MSI installer's

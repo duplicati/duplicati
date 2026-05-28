@@ -43,6 +43,8 @@ namespace Duplicati.WindowsService
             var install_agent = args != null && args.Any(x => string.Equals("install-agent", x, StringComparison.OrdinalIgnoreCase) || string.Equals("install-only-agent", x, StringComparison.OrdinalIgnoreCase));
             var uninstall_agent = args != null && args.Any(x => string.Equals("uninstall-agent", x, StringComparison.OrdinalIgnoreCase));
             var reset_password = args != null && args.Any(x => string.Equals("reset-password", x, StringComparison.OrdinalIgnoreCase));
+            var install_certs = args != null && args.Any(x => string.Equals("install-certs", x, StringComparison.OrdinalIgnoreCase));
+            var remove_certs = args != null && args.Any(x => string.Equals("remove-certs", x, StringComparison.OrdinalIgnoreCase));
             var help = args != null && HelpOptionExtensions.IsArgumentAnyHelpString(args);
 
             if (help)
@@ -58,6 +60,8 @@ namespace Duplicati.WindowsService
                 Console.WriteLine("  install-only-agent:\r\n    Installs the agent service");
                 Console.WriteLine("  uninstall-agent:\r\n    Uninstalls the agent service");
                 Console.WriteLine("  reset-password:\r\n    Sets a new API password and restarts the service");
+                Console.WriteLine("  install-certs:\r\n    Generates and installs TLS certificates, then restarts the service");
+                Console.WriteLine("  remove-certs:\r\n    Removes TLS certificates, then restarts the service");
                 Console.WriteLine();
                 Console.WriteLine("It is possible to pass arguments to Duplicati.Server.exe, simply add them to the commandline:");
                 Console.WriteLine("  Duplicati.WindowsService.exe install --webservice-interface=loopback --log-retention=3M");
@@ -227,6 +231,61 @@ namespace Duplicati.WindowsService
                 }
 
                 Console.WriteLine("Password reset complete.");
+            }
+            else if (install_certs || remove_certs)
+            {
+                var val = install_certs ? "install" : "uninstall";
+                try
+                {
+                    using (var view = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64))
+                    using (var key = view.CreateSubKey(ServiceControl.INIT_REGISTRY_KEY))
+                        key.SetValue(ServiceControl.TLS_CERTS_REGISTRY_VALUE, val, RegistryValueKind.String);
+
+                    Console.WriteLine($"TLS certs mode '{val}' written to registry.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Failed to write TLS certs mode to registry: {ex.Message}");
+                    return 1;
+                }
+
+                try
+                {
+                    ServiceInstaller.StopService(ServiceControl.SERVICE_NAME);
+                    Console.WriteLine("Service stopped.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Failed to stop service: {0}", ex.Message);
+                    return 1;
+                }
+
+                try
+                {
+                    ServiceInstaller.StartService(ServiceControl.SERVICE_NAME);
+                    Console.WriteLine("Service started. Waiting for TLS certs operation to complete...");
+
+                    // Poll registry up to 15 seconds to ensure the service processed the command
+                    using (var view = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64))
+                    {
+                        for (int i = 0; i < 30; i++)
+                        {
+                            using (var key = view.OpenSubKey(ServiceControl.INIT_REGISTRY_KEY, writable: false))
+                            {
+                                if (key == null || key.GetValue(ServiceControl.TLS_CERTS_REGISTRY_VALUE) == null)
+                                    break;
+                            }
+                            System.Threading.Thread.Sleep(500);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Failed to start service: {0}", ex.Message);
+                    return 1;
+                }
+
+                Console.WriteLine("TLS certs operation complete.");
             }
             else
             {

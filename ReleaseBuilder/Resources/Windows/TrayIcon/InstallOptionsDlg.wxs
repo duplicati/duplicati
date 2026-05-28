@@ -32,9 +32,10 @@
         <Control Id="OptionsGroup" Type="GroupBox" X="20" Y="95" Width="330" Height="125" Text="Configuration Options" />
 
         <Control Id="ServiceChk" Type="CheckBox" X="35" Y="115" Width="300" Height="15" Property="LAUNCH_AS_SERVICE" CheckBoxValue="1" Text="Install Duplicati as a Windows Service" />
-        <Control Id="DesktopShortcutChk" Type="CheckBox" X="35" Y="135" Width="300" Height="15" Property="ADD_DESKTOP_SHORTCUT" CheckBoxValue="1" Text="Create Desktop shortcut" />
-        <Control Id="MenuShortcutChk" Type="CheckBox" X="35" Y="155" Width="300" Height="15" Property="ADD_PROGRAMMENU_SHORTCUT" CheckBoxValue="1" Text="Create Program Menu shortcut" />
-        <Control Id="StartupChk" Type="CheckBox" X="35" Y="175" Width="300" Height="15" Property="ADD_STARTUP_SHORTCUT" CheckBoxValue="1" Text="Launch Duplicati at system startup" />
+        <Control Id="TlsCertsChk" Type="CheckBox" X="35" Y="135" Width="300" Height="15" Property="INSTALL_TLS_CERTS" CheckBoxValue="1" Text="Generate and use TLS (HTTPS) certificates" />
+        <Control Id="DesktopShortcutChk" Type="CheckBox" X="35" Y="155" Width="300" Height="15" Property="ADD_DESKTOP_SHORTCUT" CheckBoxValue="1" Text="Create Desktop shortcut" />
+        <Control Id="MenuShortcutChk" Type="CheckBox" X="35" Y="175" Width="300" Height="15" Property="ADD_PROGRAMMENU_SHORTCUT" CheckBoxValue="1" Text="Create Program Menu shortcut" />
+        <Control Id="StartupChk" Type="CheckBox" X="35" Y="195" Width="300" Height="15" Property="ADD_STARTUP_SHORTCUT" CheckBoxValue="1" Text="Launch Duplicati at system startup" />
 
         <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="Back" />
         <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="Cancel">
@@ -61,6 +62,9 @@
 
           <Publish Event="AddLocal" Value="DuplicatiStartupShortCutFeature" Order="13" Condition="ADD_STARTUP_SHORTCUT = &quot;1&quot;" />
           <Publish Event="Remove"   Value="DuplicatiStartupShortCutFeature" Order="13" Condition="NOT (ADD_STARTUP_SHORTCUT = &quot;1&quot;)" />
+
+          <Publish Event="AddLocal" Value="DuplicatiTlsCertsFeature" Order="14" Condition="INSTALL_TLS_CERTS = &quot;1&quot;" />
+          <Publish Event="Remove"   Value="DuplicatiTlsCertsFeature" Order="14" Condition="NOT (INSTALL_TLS_CERTS = &quot;1&quot;)" />
 
           <Publish Property="INSTALLASSERVICE" Value="true"  Order="20" Condition="LAUNCH_AS_SERVICE = &quot;1&quot;" />
           <Publish Property="INSTALLASSERVICE" Value="false" Order="20" Condition="NOT (LAUNCH_AS_SERVICE = &quot;1&quot;)" />

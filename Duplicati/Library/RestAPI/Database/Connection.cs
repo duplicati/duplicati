@@ -95,6 +95,9 @@ namespace Duplicati.Server.Database
             m_dataFolder = dataFolder;
             m_encryptSensitiveFields = !disableFieldEncryption;
             m_key = key;
+            if (m_encryptSensitiveFields && m_key == null)
+                throw new ArgumentNullException(nameof(key), "Key must be provided if encryption is enabled");
+
             m_connection = connection;
             m_errorcmd = m_connection.CreateCommand(@"INSERT INTO ""ErrorLog"" (""BackupID"", ""Message"", ""Exception"", ""Timestamp"") VALUES (@BackupId,@Message,@Exception,@Timestamp)");
             m_startOrStopUsageReporter = startOrStopUsageReporter;

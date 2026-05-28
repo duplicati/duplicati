@@ -35,7 +35,7 @@ function CustomAction() {
 
         var installDir = Session.Property("INSTALLLOCATION");
         if (!installDir || installDir.length === 0) {
-            LogMessage("StoreTrayIconPassword: INSTALLLOCATION is empty, skipping.");
+            LogMessage("StoreTrayIconValues: INSTALLLOCATION is empty, skipping.");
             return 0;
         }
 
@@ -46,7 +46,7 @@ function CustomAction() {
 
         var fso = new ActiveXObject("Scripting.FileSystemObject");
         if (!fso.FileExists(exePath)) {
-            LogMessage("StoreTrayIconPassword: SecretTool.exe not found at " + exePath + ", skipping.");
+            LogMessage("StoreTrayIconValues: SecretTool.exe not found at " + exePath + ", skipping.");
             return 0;
         }
 
@@ -58,17 +58,32 @@ function CustomAction() {
 
         var rc = shell.Run(cmd, 0, true);
         if (rc !== 0) {
-            LogMessage("StoreTrayIconPassword: SecretTool.exe exited with code " + rc + ".");
+            LogMessage("StoreTrayIconValues: SecretTool.exe exited with code " + rc + ".");
             // Don't fail the install if user-context secret storage fails;
             // the user can still log in by entering the password manually
             // (which is shown on the ExitDialog).
             return 0;
         }
 
-        LogMessage("StoreTrayIconPassword: stored duplicati-trayicon-password in user credential store.");
+        LogMessage("StoreTrayIconValues: stored duplicati-trayicon-password in user credential store.");
+
+        var installTls = Session.Property("INSTALL_TLS_CERTS");
+        if (installTls === "1") {
+            var urlCmd = "\"" + exePath + "\""
+                    + " set wincred:// duplicati-trayicon-hosturl \"https://127.0.0.1:8200\""
+                    + " --overwrite";
+            
+            var urlRc = shell.Run(urlCmd, 0, true);
+            if (urlRc !== 0) {
+                LogMessage("StoreTrayIconValues: SecretTool.exe for hosturl exited with code " + urlRc + ".");
+            } else {
+                LogMessage("StoreTrayIconValues: stored duplicati-trayicon-hosturl in user credential store.");
+            }
+        }
+
         return 0;
     } catch (e) {
-        LogMessage("StoreTrayIconPassword: error: " + e.message);
+        LogMessage("StoreTrayIconValues: error: " + e.message);
         return 0;
     }
 }
