@@ -2071,6 +2071,34 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
+        /// Windows-only helper to attach the console to the parent process.
+        /// This is required if the start application is a Windows Executable (WinExe),
+        /// as this has not console attached and cannot write to the console, if launched from a command prompt.
+        /// By attaching the console, Console.Write/Read calls work as expected.
+        /// </summary>
+        [SupportedOSPlatform("windows")]
+        public static void AttachWindowsConsole()
+        {
+            // The parent process ID
+            const int ATTACH_PARENT_PROCESS = -1;
+
+            // WinExe has no console attached; when launched from a command
+            // prompt (e.g. for reset-password or help) attach to the parent
+            // console so Console.Write/Read calls work as expected.
+            if (Win32.AttachConsole(ATTACH_PARENT_PROCESS))
+            {
+                var stdout = new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true };
+                Console.SetOut(stdout);
+                var stderr = new StreamWriter(Console.OpenStandardError()) { AutoFlush = true };
+                Console.SetError(stderr);
+                var standardInput = new StreamReader(Console.OpenStandardInput());
+                Console.SetIn(standardInput);
+            }
+        }
+
+
+
+        /// <summary>
         /// Gets the free and total space available for the specified path.
         /// Uses the same approach as FileBackend.GetQuotaInfoAsync.
         /// </summary>
