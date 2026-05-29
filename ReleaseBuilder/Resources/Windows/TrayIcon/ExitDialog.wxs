@@ -17,15 +17,15 @@
     <UI>
       <Dialog Id="ExitDialog" Width="370" Height="270" Title="[ProductName] Setup">
         <Control Id="Finish" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Cancel="yes" Text="Finish">
-          <!-- Service mode (DUPLICATI_SERVICE_PASSWORD set by
-               GenerateDuplicatiServicePassword and confirmed by
-               CheckBootstrapResult): launch with the no-hosted-server
-               flag so the TrayIcon connects to the freshly-installed
-               Windows Service instead of port-conflicting by hosting
-               its own server. -->
-          <Publish Event="DoAction" Value="LaunchApplicationNoHosted" Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = &quot;1&quot; AND FORSERVICE = &quot;false&quot; AND NOT Installed AND DUPLICATI_SERVICE_PASSWORD" />
+          <!-- Service mode (the user opted into the Windows Service
+               install, i.e. DuplicatiServiceFeature has been marked for
+               local install): launch with the no-hosted-server flag so
+               the TrayIcon connects to the freshly-installed Windows
+               Service instead of port-conflicting by hosting its own
+               server. -->
+          <Publish Event="DoAction" Value="LaunchApplicationNoHosted" Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = &quot;1&quot; AND FORSERVICE = &quot;false&quot; AND NOT Installed AND &amp;DuplicatiServiceFeature=3" />
           <!-- Non-service mode: standard launch with no extra arguments. -->
-          <Publish Event="DoAction" Value="LaunchApplication"         Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = &quot;1&quot; AND FORSERVICE = &quot;false&quot; AND NOT Installed AND NOT DUPLICATI_SERVICE_PASSWORD" />
+          <Publish Event="DoAction" Value="LaunchApplication"         Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = &quot;1&quot; AND FORSERVICE = &quot;false&quot; AND NOT Installed AND NOT (&amp;DuplicatiServiceFeature=3)" />
         </Control>
         <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Disabled="yes" Text="Cancel" />
         <Control Id="Bitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="234" TabSkip="no" Text="WixUI_Bmp_Dialog" />

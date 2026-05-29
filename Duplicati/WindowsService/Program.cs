@@ -198,7 +198,7 @@ namespace Duplicati.WindowsService
                 {
                     using (var view = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64))
                     using (var key = view.CreateSubKey(ServiceControl.INIT_REGISTRY_KEY))
-                        key.SetValue(ServiceControl.INIT_REGISTRY_VALUE, password, RegistryValueKind.String);
+                        key.SetValue(ServiceControl.RESET_REGISTRY_VALUE, password, RegistryValueKind.String);
 
                     Console.WriteLine("Password written to registry.");
                 }

@@ -140,6 +140,12 @@
                  manipulates keys via values they contain). -->
             <RegistryKey Root="HKLM" Key="$(var.SoftwareKey)\DuplicatiTeam\Duplicati\ServiceState">
               <RegistryValue Id="ServiceStateInstalledMarker" Name="Installed" Value="1" Type="string" />
+              <!-- Make sure we remove the BootstrapApplied value if it exists,
+                   which is handled by RemoveRegistry.idt on non-Windows.
+                   The removal is required to ensure we do not pick up a stale value -->
+<?if $(var.BuildEnv) = "Windows" ?>
+              <RemoveRegistryValue Id="RemoveStaleBootstrapApplied" Name="BootstrapApplied" Action="removeOnInstall" />
+<?endif?>
             </RegistryKey>
           </Component>
           <Component Id="TlsCertsMarkerComponent" Guid="B8C9D0E1-F2A3-4B5C-6D7E-8F9A0B1C2D3E">

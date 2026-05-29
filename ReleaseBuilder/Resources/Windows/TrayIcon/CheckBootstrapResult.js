@@ -31,8 +31,8 @@ function LogMessage(message) {
 }
 
 // Returns true if HKLM\...\ServiceState\BootstrapApplied exists.
-// ServiceControl is the only writer and only ever writes "1", so presence
-// of the value implies the password has been applied.
+// ServiceControl is the only writer and writes "1", if the password was
+// applied, zero if a password was already present.
 //
 // IMPORTANT: the MSI JScript custom action host on a per-machine install
 // runs in the unprivileged user's *32-bit* msiexec context (even on x64
@@ -66,11 +66,17 @@ function IsBootstrapApplied() {
 
         var outParams = reg.ExecMethod_("GetStringValue", inParams, 0, ctx);
         if (outParams.ReturnValue !== 0) {
+            return null;
+        }
+        if (outParams.sValue === "0") {
             return false;
         }
-        return outParams.sValue && outParams.sValue.length > 0;
+        if (outParams.sValue === "1") {
+            return true;
+        }
+        return null;
     } catch (e) {
-        return false;
+        return null;
     }
 }
 
@@ -109,9 +115,15 @@ function CustomAction() {
         var deadline = (new Date()).getTime() + POLL_TIMEOUT_MS;
         while ((new Date()).getTime() < deadline) {
             pollCount++;
-            if (IsBootstrapApplied()) {
+            var status = IsBootstrapApplied();
+            if (status === true) {
                 LogMessage("CheckBootstrapResult: BootstrapApplied sentinel detected on poll #"
                     + pollCount + "; password is live in the server.");
+                return 0;
+            } else if (status === false) {
+                LogMessage("CheckBootstrapResult: BootstrapApplied sentinel explicitly rejected on poll #"
+                    + pollCount + "; clearing DUPLICATI_SERVICE_PASSWORD.");
+                ClearPassword();
                 return 0;
             }
             // Log progress every 10 polls so the MSI log shows the loop is alive.

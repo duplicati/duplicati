@@ -34,6 +34,7 @@ namespace Duplicati.Service
         private readonly Action m_onStartedAction;
         private readonly Action m_onStoppedAction;
         private readonly Action<string, bool> m_reportMessage;
+        private readonly Action<System.Diagnostics.ProcessStartInfo> m_onBeforeFirstStart;
 
         private readonly object m_writelock = new object();
         private readonly string[] m_cmdargs;
@@ -42,11 +43,12 @@ namespace Duplicati.Service
 
         private readonly int WAIT_POLL_TIME = (int)TimeSpan.FromMinutes(15).TotalMilliseconds;
 
-        public Runner(PackageHelper.NamedExecutable executable, string[] cmdargs, Action onStartedAction = null, Action onStoppedAction = null, Action<string, bool> logMessage = null)
+        public Runner(PackageHelper.NamedExecutable executable, string[] cmdargs, Action onStartedAction = null, Action onStoppedAction = null, Action<string, bool> logMessage = null, Action<System.Diagnostics.ProcessStartInfo> onBeforeFirstStart = null)
         {
             m_onStartedAction = onStartedAction;
             m_onStoppedAction = onStoppedAction;
             m_reportMessage = logMessage;
+            m_onBeforeFirstStart = onBeforeFirstStart;
             m_executable = executable;
             if (m_reportMessage == null)
                 m_reportMessage = (x, y) => Console.WriteLine(x);
@@ -95,6 +97,9 @@ namespace Duplicati.Service
                             RedirectStandardError = false,
                             WorkingDirectory = path
                         };
+
+                        if (firstRun && m_onBeforeFirstStart != null)
+                            m_onBeforeFirstStart(pr);
 
                         if (!m_terminate)
                             m_process = System.Diagnostics.Process.Start(pr);
