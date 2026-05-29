@@ -560,19 +560,26 @@ public static partial class Command
 
             await ProcessHelper.Execute(wixArgs, workingDirectory: buildRoot);
 
-            // Apply any installer data tables present
-            // On Windows, the wxs files include the tables, but on Linux/MacOS, we need to apply them separately
-            // because wixl does not support the tables directly
+            // Apply post-wixl MSI table customizations on Linux/macOS. On Windows the
+            // real WiX toolchain handles all of these natively via WXS elements
             if (!OperatingSystem.IsWindows())
             {
                 if (string.IsNullOrWhiteSpace(rtcfg.Configuration.Commands.MsiBuild))
                 {
-                    Console.WriteLine("WARNING: msiBuild not found, skipping IDT file injection.");
+                    Console.WriteLine("WARNING: msiBuild not found, skipping SQL file injection.");
                 }
                 else
                 {
-                    foreach (var idtFile in Directory.GetFiles(resourcesSubDir, "*.idt"))
-                        await ProcessHelper.Execute([rtcfg.Configuration.Commands.MsiBuild, msiFile, "-i", idtFile]);
+                    foreach (var sqlFile in Directory.GetFiles(resourcesSubDir, "*.sql"))
+                    {
+                        var queries = (await File.ReadAllLinesAsync(sqlFile))
+                            .Select(line => line.Trim())
+                            .Where(line => line.Length > 0 && !line.StartsWith("--"))
+                            .ToArray();
+
+                        foreach (var query in queries)
+                            await ProcessHelper.Execute([rtcfg.Configuration.Commands.MsiBuild, msiFile, "-q", query]);
+                    }
                 }
             }
 

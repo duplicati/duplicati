@@ -1,6 +1,0 @@
-MsiLockPermissionsEx	LockObject	Table	SDDLText	Condition
-s72	s72	s32	s255	S255
-MsiLockPermissionsEx	MsiLockPermissionsEx	LockObject	Table
-SecureFolderACLs	INSTALLLOCATION	CreateFolder	D:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)(A;OICI;GRFX;;;BU)	
-SecureServiceRegKey	ServiceInstalledMarker	Registry	D:P(A;OICI;KA;;;SY)(A;OICI;KA;;;BA)	
-OpenServiceStateRegKey	ServiceStateInstalledMarker	Registry	D:P(A;OICI;KA;;;SY)(A;OICI;KA;;;BA)(A;OICI;KR;;;AU)(A;OICI;KR;;;BU)	

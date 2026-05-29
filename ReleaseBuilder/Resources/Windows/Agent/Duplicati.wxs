@@ -35,6 +35,12 @@
     <Property Id="FORSERVICE" Value="false" Secure="yes" />
     <Property Id="NOSCRIPT" Value="false" Secure="yes" />
 
+    <!-- Opt-in switch for installing a preload.json -->
+    <Property Id="INSTALL_PRELOAD" Secure="yes" />
+
+    <!-- Property from SetPreloadSource pointing to [SourceDir] -->
+    <Property Id="PRELOAD_SOURCE" Secure="yes" />
+
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Directory Id="ProgramMenuFolder" Name="Programs"/>
       <Directory Id="DesktopFolder" Name="Desktop"/>
@@ -87,6 +93,9 @@
       <!-- Stop and start service must be deferred actions between InstallInitialize and InstallFinalize -->
       <Custom Action="StopService" After="InstallInitialize">SERVICE_WAS_STOPPED=1 AND NOT UPGRADINGPRODUCTCODE</Custom>
       <Custom Action="StartService" After="InstallFiles">SERVICE_WAS_STOPPED=1 AND NOT REMOVE~="ALL" AND NOT UPGRADINGPRODUCTCODE</Custom>
+
+      <!-- Resolves [SourceDir] into PRELOAD_SOURCE -->
+      <Custom Action="SetPreloadSource" After="CostFinalize">INSTALL_PRELOAD="true" AND NOT Installed</Custom>
     </InstallExecuteSequence>
 
     <Property Id="PREVIOUSVERSIONSINSTALLED" Secure="yes" />
@@ -118,6 +127,13 @@
               BinaryKey="StartServiceScript"
               JScriptCall="CustomAction"
               Execute="deferred"
+              Return="check" />
+
+    <!-- Resolves [SourceDir] into the PRELOAD_SOURCE property -->
+    <CustomAction Id="SetPreloadSource"
+              Property="PRELOAD_SOURCE"
+              Value="[SourceDir]"
+              Execute="immediate"
               Return="check" />
   </Product>
 </Wix>

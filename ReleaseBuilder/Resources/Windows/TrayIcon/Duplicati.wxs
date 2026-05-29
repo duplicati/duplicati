@@ -54,6 +54,12 @@
          elevated execution sequence. -->
     <Property Id="INSTALL_TLS_CERTS" Secure="yes" />
 
+    <!-- Opt-in switch for installing a preload.json -->
+    <Property Id="INSTALL_PRELOAD" Secure="yes" />
+
+    <!-- Property from SetPreloadSource pointing to [SourceDir] -->
+    <Property Id="PRELOAD_SOURCE" Secure="yes" />
+
     <!-- Set to "true" by InstallOptionsDlg when the user opts into installing
          Duplicati as a Windows Service. Currently used only as a UI hint;
          the actual server-side behaviour is driven by the action state of
@@ -90,7 +96,7 @@
         <Directory Id="INSTALLLOCATION" Name="Duplicati 2" >
           <Component Id="SecureInstallDirComp" Guid="7C52A563-7182-411E-8B57-79F881775E9B">
               <CreateFolder>
-              <!-- WiX supports permssions, wixl uses a .idt table -->
+              <!-- WiX supports permssions, wixl uses sql -->
 <?if $(var.BuildEnv) = "Windows" ?>
                 <util:PermissionEx Sddl="D:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)(A;OICI;GRFX;;;BU)" xmlns:util="http://schemas.microsoft.com/wix/UtilExtension"/>
 <?endif?>
@@ -105,8 +111,9 @@
                Two registry keys are managed here:
                  * Service       - holds the Installed=1 keypath value AND
                                    the runtime-generated InitPassword value.
-                                   The key's ACL is hardened by
-                                   MsiLockPermissionsEx.idt.
+                                   The key's ACL is hardened by the
+                                   MsiLockPermissionsEx row in
+                                   InstallTables.sql.
 
                  * ServiceState  - holds the BootstrapApplied sentinel that
                                    the service writes once it has applied
@@ -126,8 +133,8 @@
                                     first start. -->
             <RegistryKey Root="HKLM" Key="$(var.SoftwareKey)\DuplicatiTeam\Duplicati\Service">
               <!-- Id is fixed (not auto-generated) so the
-                   MsiLockPermissionsEx.idt row that hardens this key's ACL
-                   can reference a stable row primary key. -->
+                   MsiLockPermissionsEx row in InstallTables.sql that hardens
+                   this key's ACL can reference a stable row primary key. -->
               <RegistryValue Id="ServiceInstalledMarker"      Name="Installed"    Value="1"                              Type="string" KeyPath="yes" />
               <RegistryValue Id="ServiceInitPasswordValue"    Name="InitPassword" Value="[DUPLICATI_SERVICE_PASSWORD]"   Type="string" />
             </RegistryKey>
@@ -141,7 +148,8 @@
             <RegistryKey Root="HKLM" Key="$(var.SoftwareKey)\DuplicatiTeam\Duplicati\ServiceState">
               <RegistryValue Id="ServiceStateInstalledMarker" Name="Installed" Value="1" Type="string" />
               <!-- Make sure we remove the BootstrapApplied value if it exists,
-                   which is handled by RemoveRegistry.idt on non-Windows.
+                   which is handled by the RemoveRegistry row in
+                   InstallTables.sql on non-Windows.
                    The removal is required to ensure we do not pick up a stale value -->
 <?if $(var.BuildEnv) = "Windows" ?>
               <RemoveRegistryValue Id="RemoveStaleBootstrapApplied" Name="BootstrapApplied" Action="removeOnInstall" />
@@ -238,6 +246,9 @@
       <Custom Action="SetNoHostedServerArg"   Before="CreateShortcuts">&amp;DuplicatiServiceFeature=3</Custom>
       <Custom Action="ClearNoHostedServerArg" Before="CreateShortcuts">NOT (&amp;DuplicatiServiceFeature=3)</Custom>
 
+      <!-- Resolves [SourceDir] into PRELOAD_SOURCE -->
+      <Custom Action="SetPreloadSource" After="CostFinalize">INSTALL_PRELOAD="true" AND NOT Installed</Custom>
+
       <!--
         Service install pipeline (only when the service feature is freshly
         installed, gated by the same condition):
@@ -251,9 +262,9 @@
              the InitPassword value into the protected Service registry key
              owned by DuplicatiServiceMarkerComponent, substituting in the
              current value of DUPLICATI_SERVICE_PASSWORD. The key's ACL is
-             hardened by a row in the hand-authored MsiLockPermissionsEx.idt
-             table (injected by msibuild after wixl runs) so non-admin users
-             cannot read the password value.
+             hardened by a row in the hand-authored MsiLockPermissionsEx
+             table from InstallTables.sql (injected by msibuild after wixl
+             runs) so non-admin users cannot read the password value.
           3. InstallDuplicatiService (sequenced AFTER WriteRegistryValues so
              the password is already in the registry before SCM starts the
              service) registers the Duplicati Windows Service. The service
@@ -361,6 +372,13 @@
     <CustomAction Id="ClearNoHostedServerArg"
               Property="NOHOSTEDSERVERARG"
               Value=""
+              Execute="immediate"
+              Return="check" />
+
+    <!-- Resolves [SourceDir] into the PRELOAD_SOURCE property -->
+    <CustomAction Id="SetPreloadSource"
+              Property="PRELOAD_SOURCE"
+              Value="[SourceDir]"
               Execute="immediate"
               Return="check" />
 
