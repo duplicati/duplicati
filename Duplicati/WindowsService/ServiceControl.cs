@@ -463,7 +463,7 @@ namespace Duplicati.WindowsService
                     {
                         var password = rawPwd as string;
                         if (m_verbose_messages && !string.IsNullOrWhiteSpace(password))
-                            m_eventLog.WriteEntry($"Found reset password in registry, applying", System.Diagnostics.EventLogEntryType.Information)
+                            m_eventLog.WriteEntry($"Found reset password in registry, applying", System.Diagnostics.EventLogEntryType.Information);
                         return string.IsNullOrWhiteSpace(password) ? null : password;
                     }
                 }
