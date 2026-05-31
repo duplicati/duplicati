@@ -45,6 +45,8 @@ namespace Duplicati.WindowsService
             var reset_password = args != null && args.Any(x => string.Equals("reset-password", x, StringComparison.OrdinalIgnoreCase));
             var install_certs = args != null && args.Any(x => string.Equals("install-certs", x, StringComparison.OrdinalIgnoreCase));
             var remove_certs = args != null && args.Any(x => string.Equals("remove-certs", x, StringComparison.OrdinalIgnoreCase));
+            var set_init_password = args != null && args.Any(x => string.Equals("set-init-password", x, StringComparison.OrdinalIgnoreCase));
+            var lock_key = args != null && args.Any(x => string.Equals("lock-service-key", x, StringComparison.OrdinalIgnoreCase));
             var help = args != null && HelpOptionExtensions.IsArgumentAnyHelpString(args);
 
             if (help)
@@ -62,6 +64,8 @@ namespace Duplicati.WindowsService
                 Console.WriteLine("  reset-password:\r\n    Sets a new API password and restarts the service");
                 Console.WriteLine("  install-certs:\r\n    Generates and installs TLS certificates, then restarts the service");
                 Console.WriteLine("  remove-certs:\r\n    Removes TLS certificates, then restarts the service");
+                Console.WriteLine("  set-init-password:\r\n    Sets the initial API password (if not already set), then restarts the service");
+                Console.WriteLine("  lock-service-key:\r\n    Recreates the hardened Duplicati service registry key");
                 Console.WriteLine();
                 Console.WriteLine("It is possible to pass arguments to Duplicati.Server.exe, simply add them to the commandline:");
                 Console.WriteLine("  Duplicati.WindowsService.exe install --webservice-interface=loopback --log-retention=3M");
@@ -175,6 +179,50 @@ namespace Duplicati.WindowsService
                     }
                 }
             }
+            else if (set_init_password)
+            {
+                // Used by the MSI installer to atomically:
+                //   1. Wipe the entire Service subkey 
+                //   2. Recreate the Service key with the locked-down DACL
+                //   3. Write InitPassword into the just-created key
+                //      handle in the same process, before any other
+                //      thread/process can see the key exist.
+
+                var password = Environment.GetEnvironmentVariable("DUPLICATI__INIT_PASSWORD");
+                Environment.SetEnvironmentVariable("DUPLICATI__INIT_PASSWORD", null);
+
+                if (string.IsNullOrWhiteSpace(password))
+                {
+                    Console.WriteLine("Refusing to set init password: DUPLICATI__INIT_PASSWORD environment variable is not set.");
+                    return 1;
+                }
+
+                try
+                {
+                    using (var key = ServiceRegistryKey.RecreateLockedDown())
+                        key.SetValue(ServiceControl.INIT_REGISTRY_VALUE, password, RegistryValueKind.String);
+
+                    Console.WriteLine("Init password written to locked-down service registry key.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Failed to write init password: {0}", ex.Message);
+                    return 1;
+                }
+            }
+            else if (lock_key)
+            {
+                try
+                {
+                    ServiceRegistryKey.RecreateLockedDown();
+                    Console.WriteLine("Service registry key recreated locked down.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Failed to lock down service registry key: {0}", ex.Message);
+                    return 1;
+                }
+            }
             else if (reset_password)
             {
                 var password = Utility.ReadSecretFromConsole("Enter new password (leave empty to auto-generate): ");
@@ -196,8 +244,8 @@ namespace Duplicati.WindowsService
 
                 try
                 {
-                    using (var view = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64))
-                    using (var key = view.CreateSubKey(ServiceControl.INIT_REGISTRY_KEY))
+                    // Create a locked-down key before we restart the service
+                    using (var key = ServiceRegistryKey.RecreateLockedDown())
                         key.SetValue(ServiceControl.RESET_REGISTRY_VALUE, password, RegistryValueKind.String);
 
                     Console.WriteLine("Password written to registry.");
@@ -237,8 +285,8 @@ namespace Duplicati.WindowsService
                 var val = install_certs ? "install" : "uninstall";
                 try
                 {
-                    using (var view = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64))
-                    using (var key = view.CreateSubKey(ServiceControl.INIT_REGISTRY_KEY))
+                    // Create a locked-down key before we restart the service
+                    using (var key = ServiceRegistryKey.RecreateLockedDown())
                         key.SetValue(ServiceControl.TLS_CERTS_REGISTRY_VALUE, val, RegistryValueKind.String);
 
                     Console.WriteLine($"TLS certs mode '{val}' written to registry.");

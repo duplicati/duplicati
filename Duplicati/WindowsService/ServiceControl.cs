@@ -78,7 +78,7 @@ namespace Duplicati.WindowsService
         /// is fine - and is required because the MSI's CheckBootstrapResult
         /// CA polls this value from the un-elevated UI process.
         /// </summary>
-        private const string SERVICE_STATE_REGISTRY_KEY = @"SOFTWARE\DuplicatiTeam\Duplicati\ServiceState";
+        private const string SERVICE_STATE_REGISTRY_KEY = @"SOFTWARE\DuplicatiTeam\Duplicati\InstallState";
 
         /// <summary>
         /// Sentinel value the installer (CheckBootstrapResult) polls for to
@@ -269,11 +269,16 @@ namespace Duplicati.WindowsService
         {
             try
             {
-                using (var view = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64))
-                using (var key = view.OpenSubKey(INIT_REGISTRY_KEY, writable: true))
+                using (var key = ServiceRegistryKey.OpenIfTrusted(writable: true, out var reason))
                 {
                     if (key == null)
+                    {
+                        if (reason != null && reason != "key-missing")
+                            m_eventLog.WriteEntry(
+                                $"Refusing to process TLS certs registry command: {reason}",
+                                System.Diagnostics.EventLogEntryType.Warning);
                         return;
+                    }
 
                     var raw = key.GetValue(TLS_CERTS_REGISTRY_VALUE);
                     if (raw == null)
@@ -375,10 +380,17 @@ namespace Duplicati.WindowsService
                 if (m_verbose_messages)
                     m_eventLog.WriteEntry("Checking for init password in registry...", System.Diagnostics.EventLogEntryType.Information);
 
-                using (var view = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64))
-                using (var key = view.OpenSubKey(INIT_REGISTRY_KEY, writable: true))
+                using (var key = ServiceRegistryKey.OpenIfTrusted(writable: true, out var reason))
                 {
-                    if (key == null) return;
+                    if (key == null)
+                    {
+                        if (reason != null && reason != "key-missing")
+                            m_eventLog.WriteEntry(
+                                $"Refusing to consume init password: {reason}",
+                                System.Diagnostics.EventLogEntryType.Warning);
+
+                        return;
+                    }
 
                     var rawPwd = key.GetValue(INIT_REGISTRY_VALUE);
                     if (rawPwd != null)
@@ -421,11 +433,13 @@ namespace Duplicati.WindowsService
                             }
                         }
 
-                        // Always delete the InitPassword key
+                        // Always delete the InitPassword key if found
                         key.DeleteValue(INIT_REGISTRY_VALUE, throwOnMissingValue: false);
 
-                        // Always write sentinel if the key was present
-                        using (var stateKey = view.CreateSubKey(SERVICE_STATE_REGISTRY_KEY, writable: true))
+                        // Always write sentinel if the key was present.
+                        // This is not locked down because the MSI must be able to read it.
+                        using (var stateView = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64))
+                        using (var stateKey = stateView.CreateSubKey(SERVICE_STATE_REGISTRY_KEY, writable: true))
                             stateKey.SetValue(BOOTSTRAP_APPLIED_VALUE, success ? "1" : "0", RegistryValueKind.String);
                     }
                 }
@@ -448,10 +462,16 @@ namespace Duplicati.WindowsService
                 if (m_verbose_messages)
                     m_eventLog.WriteEntry("Checking for reset password in registry...", System.Diagnostics.EventLogEntryType.Information);
 
-                using (var view = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64))
-                using (var key = view.OpenSubKey(INIT_REGISTRY_KEY, writable: true))
+                using (var key = ServiceRegistryKey.OpenIfTrusted(writable: true, out var reason))
                 {
-                    if (key == null) return null;
+                    if (key == null)
+                    {
+                        if (reason != null && reason != "key-missing")
+                            m_eventLog.WriteEntry(
+                                $"Refusing to consume reset password: {reason}",
+                                System.Diagnostics.EventLogEntryType.Warning);
+                        return null;
+                    }
 
                     var rawPwd = key.GetValue(RESET_REGISTRY_VALUE);
                     key.DeleteValue(RESET_REGISTRY_VALUE, throwOnMissingValue: false);

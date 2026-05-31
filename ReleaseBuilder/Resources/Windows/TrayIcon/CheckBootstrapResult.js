@@ -3,7 +3,7 @@
 // successfully applied the freshly generated password before the ExitDialog
 // shows it to the user.
 //
-// We poll HKLM\SOFTWARE\DuplicatiTeam\Duplicati\ServiceState for the
+// We poll HKLM\SOFTWARE\DuplicatiTeam\Duplicati\InstallState for the
 // BootstrapApplied sentinel, which is written by
 // ServiceControl.ScheduleInitPasswordCleanup once the server has started,
 // consumed the password, and committed it to the database. If the sentinel
@@ -21,7 +21,7 @@
 
 var POLL_TIMEOUT_MS = 30 * 1000;
 var POLL_INTERVAL_SECONDS = 1;
-var REGISTRY_PATH = "HKLM\\SOFTWARE\\DuplicatiTeam\\Duplicati\\ServiceState";
+var REGISTRY_PATH = "HKLM\\SOFTWARE\\DuplicatiTeam\\Duplicati\\InstallState";
 
 function LogMessage(message) {
     var record = Session.Installer.CreateRecord(1);
@@ -30,7 +30,7 @@ function LogMessage(message) {
     Session.Message(INSTALLMESSAGE_INFO, record);
 }
 
-// Returns true if HKLM\...\ServiceState\BootstrapApplied exists.
+// Returns true if HKLM\...\InstallState\BootstrapApplied exists.
 // ServiceControl is the only writer and writes "1", if the password was
 // applied, zero if a password was already present.
 //
@@ -61,7 +61,7 @@ function IsBootstrapApplied() {
         // hDefKey 0x80000002 = HKEY_LOCAL_MACHINE
         var inParams = reg.Methods_("GetStringValue").InParameters.SpawnInstance_();
         inParams.hDefKey = 0x80000002;
-        inParams.sSubKeyName = "SOFTWARE\\DuplicatiTeam\\Duplicati\\ServiceState";
+        inParams.sSubKeyName = "SOFTWARE\\DuplicatiTeam\\Duplicati\\InstallState";
         inParams.sValueName = "BootstrapApplied";
 
         var outParams = reg.ExecMethod_("GetStringValue", inParams, 0, ctx);

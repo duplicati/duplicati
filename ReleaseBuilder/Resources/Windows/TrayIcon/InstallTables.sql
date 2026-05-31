@@ -8,24 +8,22 @@
 -- This enables certain customizations that wixl cannot handle natively.
 
 -- ---------------------------------------------------------------------------
--- MsiLockPermissionsEx: ACLs for the install dir and the protected
--- Service / ServiceState registry keys created by
--- DuplicatiServiceMarkerComponent. Replaces the WiX <util:PermissionEx>
--- elements that wixl cannot parse.
+-- MsiLockPermissionsEx: ACL for the install dir.
+
+-- Replaces the WiX <util:PermissionEx> element on the install
+-- directory that wixl cannot parse.
 -- ---------------------------------------------------------------------------
 CREATE TABLE `MsiLockPermissionsEx` (`MsiLockPermissionsEx` CHAR(72) NOT NULL, `LockObject` CHAR(72) NOT NULL, `Table` CHAR(32) NOT NULL, `SDDLText` CHAR(255) NOT NULL, `Condition` CHAR(255) PRIMARY KEY `MsiLockPermissionsEx`, `LockObject`, `Table`)
 INSERT INTO `MsiLockPermissionsEx` (`MsiLockPermissionsEx`, `LockObject`, `Table`, `SDDLText`) VALUES ('SecureFolderACLs', 'INSTALLLOCATION', 'CreateFolder', 'D:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)(A;OICI;GRFX;;;BU)')
-INSERT INTO `MsiLockPermissionsEx` (`MsiLockPermissionsEx`, `LockObject`, `Table`, `SDDLText`) VALUES ('SecureServiceRegKey', 'ServiceInstalledMarker', 'Registry', 'D:P(A;OICI;KA;;;SY)(A;OICI;KA;;;BA)')
-INSERT INTO `MsiLockPermissionsEx` (`MsiLockPermissionsEx`, `LockObject`, `Table`, `SDDLText`) VALUES ('OpenServiceStateRegKey', 'ServiceStateInstalledMarker', 'Registry', 'D:P(A;OICI;KA;;;SY)(A;OICI;KA;;;BA)(A;OICI;KR;;;AU)(A;OICI;KR;;;BU)')
 
 -- ---------------------------------------------------------------------------
 -- RemoveRegistry: deletes the BootstrapApplied sentinel value on install so
 -- a stale value from a previous install does not get re-picked-up by the
 -- service. Replaces the WiX <RemoveRegistryValue Action="removeOnInstall"/>
--- inside DuplicatiServiceMarkerComponent (wixl does not emit this).
+-- inside DuplicatiServiceFeatureValuesComponent (wixl does not emit this).
 -- ---------------------------------------------------------------------------
 CREATE TABLE `RemoveRegistry` (`RemoveRegistry` CHAR(72) NOT NULL, `Root` SHORT NOT NULL, `Key` CHAR(255) NOT NULL LOCALIZABLE, `Name` CHAR(255) LOCALIZABLE, `Component_` CHAR(72) NOT NULL PRIMARY KEY `RemoveRegistry`)
-INSERT INTO `RemoveRegistry` (`RemoveRegistry`, `Root`, `Key`, `Name`, `Component_`) VALUES ('RemoveStaleBootstrapApplied', 2, 'SOFTWARE\DuplicatiTeam\Duplicati\ServiceState', 'BootstrapApplied', 'DuplicatiServiceMarkerComponent')
+INSERT INTO `RemoveRegistry` (`RemoveRegistry`, `Root`, `Key`, `Name`, `Component_`) VALUES ('RemoveStaleBootstrapApplied', 2, 'SOFTWARE\DuplicatiTeam\Duplicati\InstallState', 'BootstrapApplied', 'DuplicatiServiceFeatureValuesComponent')
 
 -- ---------------------------------------------------------------------------
 -- MoveFile: copies preload.json from the directory containing the MSI
