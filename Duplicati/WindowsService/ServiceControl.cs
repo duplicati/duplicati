@@ -422,7 +422,7 @@ namespace Duplicati.WindowsService
 
                                 using (var process = System.Diagnostics.Process.Start(startInfo))
                                 {
-                                    if (process.WaitForExit(15000) && process.ExitCode == 0)
+                                    if (process.WaitForExit(30000) && process.ExitCode == 0)
                                         success = true;
 
                                     if (m_verbose_messages)

@@ -74,7 +74,7 @@
                value propagates through to the server-side custom actions
                via the public-property mechanism. Skipped when service install
                was not selected. -->
-          <Publish Event="DoAction" Value="GenerateDuplicatiServicePassword" Order="30" Condition="LAUNCH_AS_SERVICE = &quot;1&quot;" />
+          <Publish Event="DoAction" Value="GenerateDuplicatiServicePassword" Order="30" Condition="LAUNCH_AS_SERVICE = &quot;1&quot; AND PREVIOUS_SERVICE_INSTALLED &lt;&gt; &quot;1&quot;" />
         </Control>
       </Dialog>
     </UI>

@@ -52,15 +52,17 @@ function CustomAction() {
     // Check the service status
     var isRunning = CheckServiceStatus("Duplicati");
 
-    // Set a property in the installer to track the service status
+    // Set a property in the installer to track the service status.
+    // SERVICE_WAS_RUNNING=1 means the service was running when the installer
+    // started, and the installer will stop it and restart it after the upgrade.
     if (isRunning === true) {
-        Session.Property("SERVICE_WAS_STOPPED") = "1"; // Service is running, will be stopped
+        Session.Property("SERVICE_WAS_RUNNING") = "1"; // Service is running, will be stopped
     } else if (isRunning === false) {
-        Session.Property("SERVICE_WAS_STOPPED") = "0"; // Service is not running
+        Session.Property("SERVICE_WAS_RUNNING") = "0"; // Service is not running
     } else {
         // Service not found or error occurred
         LogMessage("Failed to determine service status.");
-        Session.Property("SERVICE_WAS_STOPPED") = "0"; // Service was not running
+        Session.Property("SERVICE_WAS_RUNNING") = "0"; // Service was not running
     }
 
     return 0; // Success

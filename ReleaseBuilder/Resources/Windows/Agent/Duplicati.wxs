@@ -91,8 +91,8 @@
       <!-- Check service status early (immediate action, can run anytime) -->
       <Custom Action="CheckService" After="FindRelatedProducts">NOSCRIPT &lt;&gt; "true" AND NOT UPGRADINGPRODUCTCODE</Custom>
       <!-- Stop and start service must be deferred actions between InstallInitialize and InstallFinalize -->
-      <Custom Action="StopService" After="InstallInitialize">SERVICE_WAS_STOPPED=1 AND NOT UPGRADINGPRODUCTCODE</Custom>
-      <Custom Action="StartService" After="InstallFiles">SERVICE_WAS_STOPPED=1 AND NOT REMOVE~="ALL" AND NOT UPGRADINGPRODUCTCODE</Custom>
+      <Custom Action="StopService" After="InstallInitialize">SERVICE_WAS_RUNNING=1 AND NOT UPGRADINGPRODUCTCODE</Custom>
+      <Custom Action="StartService" After="InstallFiles">SERVICE_WAS_RUNNING=1 AND NOT REMOVE~="ALL" AND NOT UPGRADINGPRODUCTCODE</Custom>
 
       <!-- Resolves [SourceDir] into PRELOAD_SOURCE -->
       <Custom Action="SetPreloadSource" After="CostFinalize">INSTALL_PRELOAD="true" AND NOT Installed</Custom>

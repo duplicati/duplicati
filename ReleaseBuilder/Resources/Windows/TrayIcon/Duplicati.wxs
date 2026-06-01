@@ -270,8 +270,8 @@
       <!-- Check service status early (immediate action, can run anytime) -->
       <Custom Action="CheckService" After="FindRelatedProducts">NOSCRIPT &lt;&gt; "true" AND NOT UPGRADINGPRODUCTCODE</Custom>
       <!-- Stop and start service must be deferred actions between InstallInitialize and InstallFinalize -->
-      <Custom Action="StopService" After="InstallInitialize">SERVICE_WAS_STOPPED=1 AND NOT UPGRADINGPRODUCTCODE</Custom>
-      <Custom Action="StartService" After="InstallFiles">SERVICE_WAS_STOPPED=1 AND NOT REMOVE~="ALL" AND NOT UPGRADINGPRODUCTCODE</Custom>
+      <Custom Action="StopService" After="InstallInitialize">SERVICE_WAS_RUNNING=1 AND NOT UPGRADINGPRODUCTCODE</Custom>
+      <Custom Action="StartService" After="InstallDuplicatiService">SERVICE_WAS_RUNNING=1 AND NOT REMOVE~="ALL" AND NOT UPGRADINGPRODUCTCODE</Custom>
 
       <!-- Set NOHOSTEDSERVERARG so the shortcut Arguments column expands to
            the no-hosted-server flag when the service feature ends up
@@ -287,7 +287,8 @@
 
       <!--
         Service install pipeline (only when the service feature is being
-        installed, gated by the same condition):
+        installed AND no prior install had already registered the service,
+        gated by the same condition):
           1. Generate random password into DUPLICATI_SERVICE_PASSWORD
           2. LockServiceRegKey so we are sure the key is protected
              even if it is not used in this install sequence.
@@ -297,22 +298,22 @@
              CheckBootstrapResult polls for the applied password.
           6. If password was applied, store password in user's keyring.
       -->
-      <Custom Action="GenerateDuplicatiServicePassword" Sequence="1505">(&amp;DuplicatiServiceFeature=3) AND (!DuplicatiServiceFeature&lt;&gt;3) AND NOT UPGRADINGPRODUCTCODE AND NOSCRIPT &lt;&gt; "true" AND UILevel &gt;= 5</Custom>
+      <Custom Action="GenerateDuplicatiServicePassword" Sequence="1505">(&amp;DuplicatiServiceFeature=3) AND (!DuplicatiServiceFeature&lt;&gt;3) AND PREVIOUS_SERVICE_INSTALLED&lt;&gt;"1" AND NOT UPGRADINGPRODUCTCODE AND NOSCRIPT &lt;&gt; "true" AND UILevel &gt;= 5</Custom>
 
       <!-- Ensure the service key is always locked down. -->
       <Custom Action="SetLockServiceRegKey" Sequence="4798">(&amp;DuplicatiCore=3) AND NOT UPGRADINGPRODUCTCODE AND NOSCRIPT &lt;&gt; "true" AND NOT REMOVE~="ALL"</Custom>
       <Custom Action="LockServiceRegKey"    Sequence="4800">(&amp;DuplicatiCore=3) AND NOT UPGRADINGPRODUCTCODE AND NOSCRIPT &lt;&gt; "true" AND NOT REMOVE~="ALL"</Custom>
 
-      <!-- Atomic set InitPassword. -->
-      <Custom Action="SetSetInitPassword" Sequence="4899">(&amp;DuplicatiServiceFeature=3) AND DUPLICATI_SERVICE_PASSWORD AND NOT UPGRADINGPRODUCTCODE AND NOSCRIPT &lt;&gt; "true" AND NOT REMOVE~="ALL"</Custom>
-      <Custom Action="SetInitPassword"    Sequence="4900">(&amp;DuplicatiServiceFeature=3) AND DUPLICATI_SERVICE_PASSWORD AND NOT UPGRADINGPRODUCTCODE AND NOSCRIPT &lt;&gt; "true" AND NOT REMOVE~="ALL"</Custom>
+      <!-- Atomic set InitPassword on new service install. -->
+      <Custom Action="SetSetInitPassword" Sequence="4899">(&amp;DuplicatiServiceFeature=3) AND (!DuplicatiServiceFeature&lt;&gt;3) AND PREVIOUS_SERVICE_INSTALLED&lt;&gt;"1" AND DUPLICATI_SERVICE_PASSWORD AND NOT UPGRADINGPRODUCTCODE AND NOSCRIPT &lt;&gt; "true" AND NOT REMOVE~="ALL"</Custom>
+      <Custom Action="SetInitPassword"    Sequence="4900">(&amp;DuplicatiServiceFeature=3) AND (!DuplicatiServiceFeature&lt;&gt;3) AND PREVIOUS_SERVICE_INSTALLED&lt;&gt;"1" AND DUPLICATI_SERVICE_PASSWORD AND NOT UPGRADINGPRODUCTCODE AND NOSCRIPT &lt;&gt; "true" AND NOT REMOVE~="ALL"</Custom>
 
       <!-- Sequence 5500 puts InstallDuplicatiService after both the
            standard WriteRegistryValues (5000) and the SetInitPassword CA
            (4900), so InitPassword is already in the locked-down Service
            key by the time SCM registers and starts the service. -->
-      <Custom Action="SetInstallDuplicatiService" Sequence="5499">(&amp;DuplicatiServiceFeature=3) AND (!DuplicatiServiceFeature&lt;&gt;3) AND NOT UPGRADINGPRODUCTCODE</Custom>
-      <Custom Action="InstallDuplicatiService" Sequence="5500">(&amp;DuplicatiServiceFeature=3) AND (!DuplicatiServiceFeature&lt;&gt;3) AND NOT UPGRADINGPRODUCTCODE</Custom>
+      <Custom Action="SetInstallDuplicatiService" Sequence="5499">(&amp;DuplicatiServiceFeature=3) AND (!DuplicatiServiceFeature&lt;&gt;3) AND PREVIOUS_SERVICE_INSTALLED&lt;&gt;"1" AND NOT UPGRADINGPRODUCTCODE</Custom>
+      <Custom Action="InstallDuplicatiService" Sequence="5500">(&amp;DuplicatiServiceFeature=3) AND (!DuplicatiServiceFeature&lt;&gt;3) AND PREVIOUS_SERVICE_INSTALLED&lt;&gt;"1" AND NOT UPGRADINGPRODUCTCODE</Custom>
 
       <Custom Action="SetInstallTlsCertsUser" Sequence="5501">(&amp;DuplicatiTlsCertsFeature=3) AND (!DuplicatiServiceFeature&lt;&gt;3) AND (&amp;DuplicatiServiceFeature&lt;&gt;3) AND NOT UPGRADINGPRODUCTCODE</Custom>
       <Custom Action="InstallTlsCertsUser" Sequence="5502">(&amp;DuplicatiTlsCertsFeature=3) AND (!DuplicatiServiceFeature&lt;&gt;3) AND (&amp;DuplicatiServiceFeature&lt;&gt;3) AND NOT UPGRADINGPRODUCTCODE</Custom>
@@ -365,9 +366,9 @@
          Its condition checks DUPLICATI_SERVICE_PASSWORD so it only fires
          when CheckBootstrapResult confirmed success. -->
     <InstallUISequence>
-      <Custom Action="GenerateDuplicatiServicePassword" Sequence="1100">NOT Installed AND &amp;DuplicatiServiceFeature=3</Custom>
-      <Custom Action="CheckBootstrapResult"             Sequence="1305">DUPLICATI_SERVICE_PASSWORD</Custom>
-      <Custom Action="StoreTrayIconValues"              Sequence="1306">DUPLICATI_SERVICE_PASSWORD</Custom>
+      <Custom Action="GenerateDuplicatiServicePassword" Sequence="1100">NOT Installed AND &amp;DuplicatiServiceFeature=3 AND PREVIOUS_SERVICE_INSTALLED&lt;&gt;"1"</Custom>
+      <Custom Action="CheckBootstrapResult"             Sequence="1305">DUPLICATI_SERVICE_PASSWORD AND PREVIOUS_SERVICE_INSTALLED&lt;&gt;"1"</Custom>
+      <Custom Action="StoreTrayIconValues"              Sequence="1306">DUPLICATI_SERVICE_PASSWORD AND PREVIOUS_SERVICE_INSTALLED&lt;&gt;"1"</Custom>
     </InstallUISequence>
 
     <Property Id="PREVIOUSVERSIONSINSTALLED" Secure="yes" />
