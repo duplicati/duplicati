@@ -139,6 +139,9 @@ public class RemoteControllerRegistrationService(Connection connection, IHttpCli
             }
             finally
             {
+                // Machine is claimed or failed and we are done with the registration process, throw away the data
+                _registerForRemote = null;
+                RegistrationUrl = null;
                 eventPollNotify.SignalRemoteControlUpdate();
             }
         });
