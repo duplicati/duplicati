@@ -494,10 +494,20 @@ public static partial class Command
             if (File.Exists(binFiles))
                 File.Delete(binFiles);
 
+            // For the TrayIcon and Agent MSIs, Duplicati.WindowsService.exe is
+            // declared manually in Duplicati.wxs so the explicit Component can
+            // host the native MSI ServiceInstall/ServiceControl rows. The
+            // harvester is told to skip the file here so we don't end up with
+            // two Components referencing the same source.
+            var harvestExcludes = target.Interface is InterfaceType.GUI or InterfaceType.Agent
+                ? new[] { "Duplicati.WindowsService.exe" }
+                : null;
+
             File.WriteAllText(binFiles, WixHeatBuilder.CreateWixFilelist(
                 sourceFiles,
                 version: rtcfg.ReleaseInfo.Version.ToString(),
-                wixNs: isWindows ? wixv4Namespace : originalNamespace
+                wixNs: isWindows ? wixv4Namespace : originalNamespace,
+                excludeFiles: harvestExcludes
             ));
 
             var msiArch = target.Arch switch

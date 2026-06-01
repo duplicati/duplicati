@@ -28,8 +28,7 @@
     <Package InstallerVersion="405" Compressed="yes" Id="$(var.PackageCode)" InstallScope="perMachine" />
     <Media Id="1" Cabinet="media1.cab" EmbedCab="yes" />
 
-    <!-- Using FeatureTree until the service support is complete -->
-    <!-- <UIRef Id="WixUI_InstallDir"/> -->
+    <!-- TODO: Swith to <UIRef Id="WixUI_InstallDir"/> -->
     <UIRef Id="WixUI_FeatureTree"/>
 
     <Property Id="FORSERVICE" Value="false" Secure="yes" />
@@ -55,6 +54,31 @@
 <?endif?>
               </CreateFolder>
           </Component>
+
+          <!--Manage the Agent service. -->
+          <Component Id="DuplicatiAgentServiceComponent" Guid="9D3E5F71-2B40-4C18-8A6D-EF725B9D0413">
+            <File Id="Duplicati.WindowsService.exe"
+                  Name="Duplicati.WindowsService.exe"
+                  KeyPath="yes"
+                  Source="$(var.HarvestPath)Duplicati.WindowsService.exe" />
+
+            <ServiceInstall Id="DuplicatiAgentServiceInstall"
+                            Name="Duplicati.Agent"
+                            DisplayName="Duplicati Agent service"
+                            Description="The Duplicati Agent service"
+                            Type="ownProcess"
+                            Start="auto"
+                            ErrorControl="normal"
+                            Arguments="AGENT run"
+                            Vital="yes" />
+
+            <ServiceControl Id="DuplicatiAgentServiceControl"
+                            Name="Duplicati.Agent"
+                            Start="install"
+                            Stop="both"
+                            Remove="uninstall"
+                            Wait="yes" />
+          </Component>
         </Directory>
       </Directory>
     </Directory>
@@ -63,6 +87,7 @@
 
     <Feature Id="DuplicatiCore" Title="Duplicati Agent files" Level="1" Description="Installs the required files for the Duplicati Agent." AllowAdvertise="no" Absent="disallow" ConfigurableDirectory="INSTALLLOCATION" >
       <ComponentRef Id="SecureInstallDirComp" />
+      <ComponentRef Id="DuplicatiAgentServiceComponent" />
       <ComponentGroupRef Id="DUPLICATIBIN" />
     </Feature>
     
@@ -88,12 +113,6 @@
       <!-- Note: This is suboptimal, but the ref counting is not working, so we use Early REP -->
       <RemoveExistingProducts After="FindRelatedProducts" />
 
-      <!-- Check service status early (immediate action, can run anytime) -->
-      <Custom Action="CheckService" After="FindRelatedProducts">NOSCRIPT &lt;&gt; "true" AND NOT UPGRADINGPRODUCTCODE</Custom>
-      <!-- Stop and start service must be deferred actions between InstallInitialize and InstallFinalize -->
-      <Custom Action="StopService" After="InstallInitialize">SERVICE_WAS_RUNNING=1 AND NOT UPGRADINGPRODUCTCODE</Custom>
-      <Custom Action="StartService" After="InstallFiles">SERVICE_WAS_RUNNING=1 AND NOT REMOVE~="ALL" AND NOT UPGRADINGPRODUCTCODE</Custom>
-
       <!-- Resolves [SourceDir] into PRELOAD_SOURCE -->
       <Custom Action="SetPreloadSource" After="CostFinalize">INSTALL_PRELOAD="true" AND NOT Installed</Custom>
     </InstallExecuteSequence>
@@ -104,30 +123,6 @@
     </Upgrade>
 
     <Icon Id="DuplicatiIcon.exe" SourceFile="$(var.HarvestPath)Duplicati.Agent.exe" />
-
-    <!-- Service restart code below -->
-    <Binary Id="CheckServiceScript" SourceFile="CheckService.js" />
-    <Binary Id="StopServiceScript" SourceFile="StopService.js" />
-    <Binary Id="StartServiceScript" SourceFile="StartService.js" />
-
-    <CustomAction Id="CheckService"
-              BinaryKey="CheckServiceScript"
-              JScriptCall="CustomAction"
-              Execute="immediate"
-              Return="ignore" />
-
-    <CustomAction Id="StopService"
-              BinaryKey="StopServiceScript"
-              JScriptCall="CustomAction"
-              Execute="deferred"
-              Impersonate="no"
-              Return="ignore" />
-
-    <CustomAction Id="StartService"
-              BinaryKey="StartServiceScript"
-              JScriptCall="CustomAction"
-              Execute="deferred"
-              Return="check" />
 
     <!-- Resolves [SourceDir] into the PRELOAD_SOURCE property -->
     <CustomAction Id="SetPreloadSource"
