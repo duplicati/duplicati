@@ -52,32 +52,5 @@ public static class ConsoleHelper
     /// <param name="prompt">The text to show the user</param>
     /// <returns>The password</returns>
     public static string ReadPassword(string prompt)
-    {
-        Console.WriteLine(prompt);
-
-        // From: https://stackoverflow.com/a/3404522
-        var pass = string.Empty;
-        ConsoleKey key;
-        do
-        {
-            var keyInfo = Console.ReadKey(intercept: true);
-            key = keyInfo.Key;
-
-            if (key == ConsoleKey.Backspace && pass.Length > 0)
-            {
-                Console.Write("\b \b");
-                pass = pass[0..^1];
-            }
-            else if (!char.IsControl(keyInfo.KeyChar))
-            {
-                if (OperatingSystem.IsWindows())
-                    Console.Write("*");
-
-                pass += keyInfo.KeyChar;
-            }
-        } while (key != ConsoleKey.Enter);
-
-        return pass;
-    }
-
+        => Duplicati.Library.Utility.Utility.ReadSecretFromConsole(prompt);
 }
