@@ -19,7 +19,7 @@
 // Presence of the value alone is checked by reg.exe's exit code (0 when
 // the value exists, non-zero otherwise), so no stdout parsing is needed.
 
-var POLL_TIMEOUT_MS = 30 * 1000;
+var POLL_TIMEOUT_MS = 35 * 1000;
 var POLL_INTERVAL_SECONDS = 1;
 var REGISTRY_PATH = "HKLM\\SOFTWARE\\DuplicatiTeam\\Duplicati\\InstallState";
 
@@ -47,24 +47,19 @@ function LogMessage(message) {
 // in sValue; any other return code or empty value means "not present".
 function IsBootstrapApplied() {
     try {
-        // Get a 64-bit-view StdRegProv. SWbemContext.Add lets us pin the
-        // provider architecture regardless of the calling process bitness.
-        var locator = new ActiveXObject("WbemScripting.SWbemLocator");
-        var ctx = new ActiveXObject("WbemScripting.SWbemNamedValueSet");
-        ctx.Add("__ProviderArchitecture", 64);
-        ctx.Add("__RequiredArchitecture", true);
-
-        var services = locator.ConnectServer(".", "root\\default", "", "", null, null, 0, ctx);
-        var reg = services.Get("StdRegProv");
+        var reg = GetStdRegProv64();
+        if (reg === null) {
+            return null;
+        }
 
         // GetStringValue signature: (hDefKey, sSubKeyName, sValueName, [out] sValue)
         // hDefKey 0x80000002 = HKEY_LOCAL_MACHINE
-        var inParams = reg.Methods_("GetStringValue").InParameters.SpawnInstance_();
+        var inParams = reg.provider.Methods_("GetStringValue").InParameters.SpawnInstance_();
         inParams.hDefKey = 0x80000002;
         inParams.sSubKeyName = "SOFTWARE\\DuplicatiTeam\\Duplicati\\InstallState";
         inParams.sValueName = "BootstrapApplied";
 
-        var outParams = reg.ExecMethod_("GetStringValue", inParams, 0, ctx);
+        var outParams = reg.provider.ExecMethod_("GetStringValue", inParams, 0, reg.ctx);
         if (outParams.ReturnValue !== 0) {
             return null;
         }
@@ -77,6 +72,44 @@ function IsBootstrapApplied() {
         return null;
     } catch (e) {
         return null;
+    }
+}
+
+// Returns an object { provider, ctx } pinned to the 64-bit registry view,
+// or null on failure. Pulled out of IsBootstrapApplied so DeleteBootstrapApplied
+// can reuse the same WOW64-bypass path.
+function GetStdRegProv64() {
+    try {
+        var locator = new ActiveXObject("WbemScripting.SWbemLocator");
+        var ctx = new ActiveXObject("WbemScripting.SWbemNamedValueSet");
+        ctx.Add("__ProviderArchitecture", 64);
+        ctx.Add("__RequiredArchitecture", true);
+
+        var services = locator.ConnectServer(".", "root\\default", "", "", null, null, 0, ctx);
+        return { provider: services.Get("StdRegProv"), ctx: ctx };
+    } catch (e) {
+        return null;
+    }
+}
+
+// Deletes the BootstrapApplied sentinel value after we have consumed it.
+function DeleteBootstrapApplied() {
+    try {
+        var reg = GetStdRegProv64();
+        if (reg === null) {
+            return;
+        }
+
+        // DeleteValue signature: (hDefKey, sSubKeyName, sValueName)
+        // hDefKey 0x80000002 = HKEY_LOCAL_MACHINE
+        var inParams = reg.provider.Methods_("DeleteValue").InParameters.SpawnInstance_();
+        inParams.hDefKey = 0x80000002;
+        inParams.sSubKeyName = "SOFTWARE\\DuplicatiTeam\\Duplicati\\InstallState";
+        inParams.sValueName = "BootstrapApplied";
+
+        reg.provider.ExecMethod_("DeleteValue", inParams, 0, reg.ctx);
+    } catch (e) {
+        /* ignore */
     }
 }
 
@@ -119,11 +152,13 @@ function CustomAction() {
             if (status === true) {
                 LogMessage("CheckBootstrapResult: BootstrapApplied sentinel detected on poll #"
                     + pollCount + "; password is live in the server.");
+                DeleteBootstrapApplied();
                 return 0;
             } else if (status === false) {
                 LogMessage("CheckBootstrapResult: BootstrapApplied sentinel explicitly rejected on poll #"
                     + pollCount + "; clearing DUPLICATI_SERVICE_PASSWORD.");
                 ClearPassword();
+                DeleteBootstrapApplied();
                 return 0;
             }
             // Log progress every 10 polls so the MSI log shows the loop is alive.
