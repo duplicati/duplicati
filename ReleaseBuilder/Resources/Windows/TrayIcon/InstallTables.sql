@@ -23,7 +23,6 @@ INSERT INTO `MsiLockPermissionsEx` (`MsiLockPermissionsEx`, `LockObject`, `Table
 -- inside DuplicatiServiceFeatureValuesComponent (wixl does not emit this).
 -- ---------------------------------------------------------------------------
 CREATE TABLE `RemoveRegistry` (`RemoveRegistry` CHAR(72) NOT NULL, `Root` SHORT NOT NULL, `Key` CHAR(255) NOT NULL LOCALIZABLE, `Name` CHAR(255) LOCALIZABLE, `Component_` CHAR(72) NOT NULL PRIMARY KEY `RemoveRegistry`)
-INSERT INTO `RemoveRegistry` (`RemoveRegistry`, `Root`, `Key`, `Name`, `Component_`) VALUES ('RemoveStaleBootstrapApplied', 2, 'SOFTWARE\DuplicatiTeam\Duplicati\InstallState', 'BootstrapApplied', 'DuplicatiServiceFeatureValuesComponent')
 
 -- ---------------------------------------------------------------------------
 -- MoveFile: copies preload.json from the directory containing the MSI
