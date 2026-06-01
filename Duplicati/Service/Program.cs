@@ -31,7 +31,7 @@ namespace Duplicati.Service
         {
             PreloadSettingsLoader.ConfigurePreloadSettings(ref args, PackageHelper.NamedExecutable.Service);
 
-            using (var runner = new Runner(PackageHelper.NamedExecutable.Server, args))
+            using (var runner = new Runner(PackageHelper.NamedExecutable.Server, args, inProcess: false))
                 runner.Wait();
 
             return 0;

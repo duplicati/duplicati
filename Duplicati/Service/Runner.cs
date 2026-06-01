@@ -43,8 +43,19 @@ namespace Duplicati.Service
 
         private readonly int WAIT_POLL_TIME = (int)TimeSpan.FromMinutes(15).TotalMilliseconds;
 
-        public Runner(PackageHelper.NamedExecutable executable, string[] cmdargs, Action onStartedAction = null, Action onStoppedAction = null, Action<string, bool> logMessage = null, Action<System.Diagnostics.ProcessStartInfo> onBeforeFirstStart = null)
+        private readonly bool m_inProcess;
+
+        public Runner(
+            PackageHelper.NamedExecutable executable,
+            string[] cmdargs,
+            bool inProcess,
+            Action onStartedAction = null,
+            Action onStoppedAction = null,
+            Action<string, bool> logMessage = null,
+            Action<System.Diagnostics.ProcessStartInfo> onBeforeFirstStart = null
+        )
         {
+            m_inProcess = inProcess;
             m_onStartedAction = onStartedAction;
             m_onStoppedAction = onStoppedAction;
             m_reportMessage = logMessage;
@@ -54,13 +65,46 @@ namespace Duplicati.Service
                 m_reportMessage = (x, y) => Console.WriteLine(x);
 
             m_cmdargs = cmdargs;
-            m_thread = new System.Threading.Thread(Run);
+            m_thread = new System.Threading.Thread(m_inProcess ? RunInProcess : RunSpawned);
             m_thread.IsBackground = true;
             m_thread.Name = "Server Runner";
             m_thread.Start();
         }
 
-        private void Run()
+        private void RunInProcess()
+        {
+            try
+            {
+                m_reportMessage(string.Format("Starting in-process {0} with cmd args {1}", m_executable, string.Join(Environment.NewLine, m_cmdargs ?? new string[0])), false);
+
+                m_onBeforeFirstStart?.Invoke(null);
+                m_onStartedAction?.Invoke();
+
+                if (!m_terminate && !m_softstop)
+                {
+                    if (m_executable == PackageHelper.NamedExecutable.Server)
+                        Server.Program.Main(m_cmdargs ?? []);
+                    else if (m_executable == PackageHelper.NamedExecutable.Agent)
+                        Agent.Program.MainAsync(m_cmdargs ?? []).ConfigureAwait(false).GetAwaiter().GetResult();
+                    else
+                        throw new NotImplementedException($"In-process execution of {m_executable} is not implemented");
+                }
+
+                if (!m_terminate && !m_softstop)
+                    m_reportMessage("In-process execution ended unexpectedly", true);
+            }
+            catch (Exception ex)
+            {
+                m_reportMessage(string.Format("In-process execution has failed with error message: {0}", ex), true);
+                throw;
+            }
+            finally
+            {
+                m_onStoppedAction?.Invoke();
+            }
+        }
+
+        private void RunSpawned()
         {
             var path = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
             var exec = System.IO.Path.Combine(path, PackageHelper.GetExecutableName(m_executable));
@@ -184,18 +228,15 @@ namespace Duplicati.Service
             m_thread.Join();
         }
 
-        public void Stop(bool force = true)
+        public void Stop()
         {
-            if (force)
+            m_softstop = true;
+            if (m_inProcess)
             {
-                m_terminate = true;
-                var p = m_process;
-                if (p != null)
-                    p.Kill();
+
             }
             else
             {
-                m_softstop = true;
                 lock (m_writelock)
                 {
                     if (m_process != null)

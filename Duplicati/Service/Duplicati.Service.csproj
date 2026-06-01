@@ -9,6 +9,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Library\Utility\Duplicati.Library.Utility.csproj" />
     <ProjectReference Include="..\Server\Duplicati.Server.csproj" />
+    <ProjectReference Include="..\Agent\Duplicati.Agent.csproj" />
   </ItemGroup>
 
 </Project>

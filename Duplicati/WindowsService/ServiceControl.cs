@@ -175,6 +175,7 @@ namespace Duplicati.WindowsService
                     m_runner = new Runner(
                         m_executable,
                         startargs,
+                        true,
                         () =>
                         {
                             if (m_verbose_messages)
@@ -206,7 +207,7 @@ namespace Duplicati.WindowsService
                         (startInfo) =>
                         {
                             // If we have a reset password, pass it to the server once
-                            if (!string.IsNullOrEmpty(resetPassword))
+                            if (!string.IsNullOrEmpty(resetPassword) && startInfo != null)
                             {
                                 startInfo.EnvironmentVariables["DUPLICATI__WEBSERVICE_PASSWORD"] = resetPassword;
                                 resetPassword = null;
@@ -234,7 +235,7 @@ namespace Duplicati.WindowsService
 
                     if (m_verbose_messages)
                         m_eventLog.WriteEntry("Soft stop invoked...");
-                    m_runner.Stop(false);
+                    m_runner.Stop();
                 }
 
         }
@@ -402,35 +403,22 @@ namespace Duplicati.WindowsService
                         {
                             m_eventLog.WriteEntry("Found init password in registry, applying...", System.Diagnostics.EventLogEntryType.Information);
 
-                            var installDir = UpdaterManager.INSTALLATIONDIR;
-                            var exeName = PackageHelper.GetExecutableName(PackageHelper.NamedExecutable.Server);
-                            var serverExe = System.IO.Path.Combine(installDir, exeName);
+                            if (m_verbose_messages)
+                                m_eventLog.WriteEntry($"Starting server in-process to apply init password...", System.Diagnostics.EventLogEntryType.Information);
+
+                            try
+                            {
+                                var res = Server.Program.Main(["--webservice-password-init=" + password]);
+                                if (res == Server.Program.EXITCODE_INITPASSWORD_SUCCESS)
+                                    success = true;
+                            }
+                            catch (Exception ex)
+                            {
+                                m_eventLog.WriteEntry($"Exception from applying init password: {ex.Message}", System.Diagnostics.EventLogEntryType.Warning);
+                            }
 
                             if (m_verbose_messages)
-                                m_eventLog.WriteEntry($"Starting server at {serverExe} to apply init password...", System.Diagnostics.EventLogEntryType.Information);
-
-                            if (System.IO.File.Exists(serverExe))
-                            {
-                                var startInfo = new System.Diagnostics.ProcessStartInfo
-                                {
-                                    FileName = serverExe,
-                                    UseShellExecute = false,
-                                    CreateNoWindow = true
-                                };
-
-                                startInfo.EnvironmentVariables["DUPLICATI__WEBSERVICE_PASSWORD_INIT"] = password;
-
-                                using (var process = System.Diagnostics.Process.Start(startInfo))
-                                {
-                                    if (process.WaitForExit(30000) && process.ExitCode == 0)
-                                        success = true;
-
-                                    if (m_verbose_messages)
-                                        m_eventLog.WriteEntry($"Result from applying init password: {success}, code={(process.HasExited ? process.ExitCode.ToString() : "-alive-")}", System.Diagnostics.EventLogEntryType.Information);
-                                    if (!process.HasExited)
-                                        try { process.Kill(); } catch { }
-                                }
-                            }
+                                m_eventLog.WriteEntry($"Result from applying init password: {success}", System.Diagnostics.EventLogEntryType.Information);
                         }
 
                         // Always delete the InitPassword key if found

@@ -60,7 +60,7 @@ function IsBootstrapApplied() {
         inParams.sValueName = "BootstrapApplied";
 
         var outParams = reg.provider.ExecMethod_("GetStringValue", inParams, 0, reg.ctx);
-        if (outParams.ReturnValue !== 0) {
+        if (outParams.ReturnValue !== 0 || outParams.sValue === "unset") {
             return null;
         }
         if (outParams.sValue === "0") {
