@@ -7,11 +7,9 @@
 // Why HKCU (not HKLM): WriteUpgradeSentinel must run BEFORE RemoveExisting
 // Products, which is scheduled early (before InstallInitialize), so it can only
 // be an immediate CA. Immediate CAs run impersonated and non-elevated, so a
-// write to HKLM\SOFTWARE silently fails - which is exactly why every HKLM
-// attempt (WScript.Shell or 64-bit StdRegProv) never reached the nested
-// uninstall. The installing user CAN write their own HKCU, and the nested
-// uninstall's AppSearch resolves HKCU to the same user, so the sentinel round-
-// trips reliably (confirmed empirically).
+// write to HKLM\SOFTWARE silently fails. The installing user CAN write their
+// own HKCU, and the nested uninstall's AppSearch resolves HKCU to the same
+// user, so the sentinel round-trips reliably.
 //
 // WScript.Shell honors the current (impersonated) user token in-process; WMI's
 // StdRegProv would instead resolve HKCU to the WMI service's SYSTEM hive. There
@@ -38,58 +36,66 @@ function ClearUpgradeSentinel() {
 }
 
 // Registry locations of the TLS-cert state markers. These mirror the
-// RegistryValue elements in the marker components in Duplicati.wxs, which write
-// to the native HKLM\SOFTWARE view (SoftwareKey, NOT Wow6432Node) on both
-// architectures.
-//
-// The MSI custom-action script host is 32-bit, so on x64 Windows a naive
-// WScript.Shell RegWrite would be redirected into Wow6432Node and diverge from
-// where the components wrote the markers. To stay consistent we go through the
-// WMI StdRegProv bound to the explicit 64-bit registry view (see getRegProv).
-var HKLM = 0x80000000;
+// RegistryValue elements in the marker components in Duplicati.wxs
+
+var HKLM = 0x80000002;
 var TLS_INSTALLSTATE_KEY = "SOFTWARE\\DuplicatiTeam\\Duplicati\\InstallState";
 var TLS_SERVICE_KEY = "SOFTWARE\\DuplicatiTeam\\Duplicati\\Service";
 
-// Returns a StdRegProv for HKLM. On x64/ARM64 (where the MSI - and thus this
-// 32-bit script host - targets the native 64-bit registry) we request the
-// 64-bit WMI provider so writes are NOT redirected into Wow6432Node, matching
-// where the MSI marker components write. On a genuine 32-bit OS that provider
-// does not exist, so we fall back to the default (32-bit) provider, which is
-// the native view there anyway.
+// Returns { provider, ctx } pinned to the 64-bit registry view, or the default
+// provider (ctx=null) on a genuine 32-bit OS.
 function getRegProv() {
     var locator = new ActiveXObject("WbemScripting.SWbemLocator");
 
     try {
-        var namedValueSet = new ActiveXObject("WbemScripting.SWbemNamedValueSet");
-        namedValueSet.Add("__ProviderArchitecture", 64);
-        namedValueSet.Add("__RequiredArchitecture", true);
+        var ctx = new ActiveXObject("WbemScripting.SWbemNamedValueSet");
+        ctx.Add("__ProviderArchitecture", 64);
+        ctx.Add("__RequiredArchitecture", true);
         var services64 = locator.ConnectServer(
-            ".", "root\\default", "", "", null, null, 0, namedValueSet);
-        return services64.Get("StdRegProv");
+            ".", "root\\default", "", "", null, null, 0, ctx);
+        return { provider: services64.Get("StdRegProv"), ctx: ctx };
     } catch (e) {
         // No 64-bit provider (32-bit OS): use the default provider/view.
     }
 
     var services = locator.ConnectServer(".", "root\\default");
-    return services.Get("StdRegProv");
+    return { provider: services.Get("StdRegProv"), ctx: null };
 }
 
-function regWriteString(reg, hive, key, name, value) {
-    var method = reg.Methods_.Item("SetStringValue").InParameters.SpawnInstance_();
-    method.hDefKey = hive;
-    method.sSubKeyName = key;
-    method.sValueName = name;
-    method.sValue = value;
-    reg.ExecMethod_("SetStringValue", method);
+// Runs a StdRegProv method with the InParameters object, threading the 64-bit
+// context (reg.ctx) into ExecMethod_ so the operation hits the native view.
+function wmiExec(reg, methodName, inParams) {
+    return reg.provider.ExecMethod_(methodName, inParams, 0, reg.ctx);
 }
 
-function regDeleteValue(reg, hive, key, name) {
+// StdRegProv.SetStringValue does NOT create the subkey and returns 2
+// (ERROR_FILE_NOT_FOUND) when it does not already exist, so CreateKey first.
+function regCreateKey(reg, key) {
+    var inParams = reg.provider.Methods_.Item("CreateKey").InParameters.SpawnInstance_();
+    inParams.hDefKey = HKLM;
+    inParams.sSubKeyName = key;
+    wmiExec(reg, "CreateKey", inParams);
+}
+
+function regWriteString(key, name, value) {
+    var reg = getRegProv();
+    regCreateKey(reg, key);
+    var inParams = reg.provider.Methods_.Item("SetStringValue").InParameters.SpawnInstance_();
+    inParams.hDefKey = HKLM;
+    inParams.sSubKeyName = key;
+    inParams.sValueName = name;
+    inParams.sValue = value;
+    wmiExec(reg, "SetStringValue", inParams);
+}
+
+function regDeleteValue(key, name) {
     try {
-        var method = reg.Methods_.Item("DeleteValue").InParameters.SpawnInstance_();
-        method.hDefKey = hive;
-        method.sSubKeyName = key;
-        method.sValueName = name;
-        reg.ExecMethod_("DeleteValue", method);
+        var reg = getRegProv();
+        var inParams = reg.provider.Methods_.Item("DeleteValue").InParameters.SpawnInstance_();
+        inParams.hDefKey = HKLM;
+        inParams.sSubKeyName = key;
+        inParams.sValueName = name;
+        wmiExec(reg, "DeleteValue", inParams);
     } catch (e) {
         // Value already absent: nothing to do.
     }
@@ -122,23 +128,35 @@ function ReconcileTlsCertMarkers() {
         if (state)
             state = state.replace(/^\s+|\s+$/g, "");
 
-        var reg = getRegProv();
-
         if (state == "user") {
-            regWriteString(reg, HKLM, TLS_INSTALLSTATE_KEY, "TlsCertsUserInstalled", "1");
-            regDeleteValue(reg, HKLM, TLS_INSTALLSTATE_KEY, "TlsCertsServiceInstalled");
-            regDeleteValue(reg, HKLM, TLS_SERVICE_KEY, "TlsCertsOption");
+            regWriteString(TLS_INSTALLSTATE_KEY, "TlsCertsUserInstalled", "1");
+            regDeleteValue(TLS_INSTALLSTATE_KEY, "TlsCertsServiceInstalled");
+            regDeleteValue(TLS_SERVICE_KEY, "TlsCertsOption");
         } else if (state == "service") {
-            regWriteString(reg, HKLM, TLS_INSTALLSTATE_KEY, "TlsCertsServiceInstalled", "1");
-            regWriteString(reg, HKLM, TLS_SERVICE_KEY, "TlsCertsOption", "install");
-            regDeleteValue(reg, HKLM, TLS_INSTALLSTATE_KEY, "TlsCertsUserInstalled");
+            regWriteString(TLS_INSTALLSTATE_KEY, "TlsCertsServiceInstalled", "1");
+            regWriteString(TLS_SERVICE_KEY, "TlsCertsOption", "install");
+            regDeleteValue(TLS_INSTALLSTATE_KEY, "TlsCertsUserInstalled");
         } else if (state == "none") {
-            regDeleteValue(reg, HKLM, TLS_INSTALLSTATE_KEY, "TlsCertsUserInstalled");
-            regDeleteValue(reg, HKLM, TLS_INSTALLSTATE_KEY, "TlsCertsServiceInstalled");
-            regDeleteValue(reg, HKLM, TLS_SERVICE_KEY, "TlsCertsOption");
+            regDeleteValue(TLS_INSTALLSTATE_KEY, "TlsCertsUserInstalled");
+            regDeleteValue(TLS_INSTALLSTATE_KEY, "TlsCertsServiceInstalled");
+            regDeleteValue(TLS_SERVICE_KEY, "TlsCertsOption");
         }
     } catch (e) {
         // Marker reconciliation is best-effort: never block the install on it.
+    }
+}
+
+// Deferred custom action. Deletes all three TLS-cert marker values on
+// uninstall / TLS-feature removal. ReconcileTlsCertMarkers may have written
+// these values outside MSI's component machinery, so MSI's RemoveRegistryValues
+// would not remove them; this closes that gap. Best-effort.
+function DeleteTlsCertMarkers() {
+    try {
+        regDeleteValue(TLS_INSTALLSTATE_KEY, "TlsCertsServiceInstalled");
+        regDeleteValue(TLS_INSTALLSTATE_KEY, "TlsCertsUserInstalled");
+        regDeleteValue(TLS_SERVICE_KEY, "TlsCertsOption");
+    } catch (e) {
+        // Best-effort: never block uninstall on marker cleanup.
     }
 }
 
