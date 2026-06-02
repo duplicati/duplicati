@@ -401,7 +401,7 @@
       <Custom Action="UninstallRemoveTlsCertsService" Sequence="1802">((REMOVE="ALL" OR &amp;DuplicatiTlsCertsFeature=2 OR &amp;DuplicatiServiceFeature=2) AND NOT UPGRADINGPRODUCTCODE) OR (REMOVE="ALL" AND UPGRADINGPRODUCTCODE AND UPGRADE_DROP_SERVICE_CERTS="1") AND NOSCRIPT &lt;&gt; "true"</Custom>
 
       <!-- Upgrade sentinel management; set sentinel for upgrade to drop service certs before removing service -->
-      <Custom Action="WriteUpgradeSentinel" Before="RemoveExistingProducts">PREVIOUSVERSIONSINSTALLED AND NOT &amp;DuplicatiTlsCertsFeature=3 AND NOSCRIPT &lt;&gt; "true"</Custom>
+      <Custom Action="WriteUpgradeSentinel" Before="RemoveExistingProducts">PREVIOUSVERSIONSINSTALLED AND PREVIOUS_SERVICE_CERTS_INSTALLED="1" AND NOT (INSTALL_TLS_CERTS="1" AND (INSTALLASSERVICE="true" OR LAUNCH_AS_SERVICE="1")) AND NOSCRIPT &lt;&gt; "true"</Custom>
       <Custom Action="ClearUpgradeSentinel" After="RemoveExistingProducts">PREVIOUSVERSIONSINSTALLED AND NOSCRIPT &lt;&gt; "true"</Custom>
       
     </InstallExecuteSequence>
