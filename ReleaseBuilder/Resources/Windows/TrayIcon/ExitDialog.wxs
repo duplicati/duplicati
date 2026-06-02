@@ -45,7 +45,7 @@
           install path).
         -->
         <Control Id="ServicePasswordLabel" Type="Text" X="135" Y="100" Width="220" Height="45" Transparent="yes" NoPrefix="yes" Hidden="yes" Text="Duplicati was installed as a Windows Service and a random password was generated for it. If you need the password, copy it now as it is not accessible later. It has also been installed into Windows Credential Manager." ShowCondition="DUPLICATI_SERVICE_PASSWORD AND NOT Installed" />
-        <Control Id="ServicePasswordCopy" Type="PushButton" X="275" Y="155" Width="80" Height="17" Text="Copy password" Hidden="yes" ShowCondition="DUPLICATI_SERVICE_PASSWORD AND NOT Installed">
+        <Control Id="ServicePasswordCopy" Type="PushButton" X="275" Y="155" Width="80" Height="17" Text="Copy password" Hidden="yes" ShowCondition="DUPLICATI_SERVICE_PASSWORD AND NOT Installed AND NOSCRIPT &lt;&gt; &quot;true&quot;">
           <Publish Event="DoAction" Value="CopyServicePasswordToClipboard" Condition="DUPLICATI_SERVICE_PASSWORD" />
         </Control>
       </Dialog>

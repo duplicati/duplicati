@@ -315,6 +315,7 @@ namespace Duplicati.WindowsService
                         }
                         else
                         {
+                            m_eventLog.WriteEntry($"Unknown TLS certs command: {value}", System.Diagnostics.EventLogEntryType.Warning);
                             return;
                         }
 
