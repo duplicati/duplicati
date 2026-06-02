@@ -338,7 +338,8 @@ namespace Duplicati.WindowsService
                                     process.BeginErrorReadLine();
                                 }
 
-                                if (process.WaitForExit(TimeSpan.FromSeconds(20)))
+                                var timeout = TimeSpan.FromSeconds(60);
+                                if (process.WaitForExit(timeout))
                                 {
                                     process.WaitForExit(); // Ensure async streams are fully read
                                     if (process.ExitCode != 0)
@@ -349,7 +350,7 @@ namespace Duplicati.WindowsService
                                 }
                                 else
                                 {
-                                    m_eventLog.WriteEntry("ConfigureTool timed out after 20 seconds.", System.Diagnostics.EventLogEntryType.Warning);
+                                    m_eventLog.WriteEntry($"ConfigureTool timed out after {timeout.TotalSeconds} seconds.", System.Diagnostics.EventLogEntryType.Warning);
                                     try { process.Kill(); } catch { }
                                 }
                             }
