@@ -50,7 +50,7 @@ namespace Duplicati.Library.Main.Operation
         public Task RunAsync(IBackendManager backendManager, IEnumerable<DateTime>? versionTimestamps = null)
             => RunAsync(backendManager, null, versionTimestamps);
 
-        internal async Task RunAsync(IBackendManager backendManager, Database.LocalLockDatabase? databaseOverride, IEnumerable<DateTime>? versionTimestamps = null)
+        public async Task RunAsync(IBackendManager backendManager, Database.LocalLockDatabase? databaseOverride, IEnumerable<DateTime>? versionTimestamps = null)
         {
             if (m_options.RemoteFileLockDuration is null)
                 throw new UserInformationException("No lock duration specified", "MissingLockDuration");
@@ -61,16 +61,16 @@ namespace Duplicati.Library.Main.Operation
             if (!backendManager.SupportsObjectLocking)
                 throw new UserInformationException("Backend does not support object locking", "BackendDoesNotSupportLocking");
 
-            if (!File.Exists(m_options.Dbpath))
+            var ownsDatabase = databaseOverride is null;
+            if (ownsDatabase && !File.Exists(m_options.Dbpath))
                 throw new Exception(string.Format("Database file does not exist: {0}", m_options.Dbpath));
 
             var effectiveVersionTimestamps = versionTimestamps ?? m_versionTimestamps;
 
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Lock);
 
-            var ownsDatabase = databaseOverride is null;
             await using var db = ownsDatabase
-                ? await LocalLockDatabase.CreateAsync(m_options.Dbpath, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false)
+                ? await LocalLockDatabase.CreateAsync(m_options.Dbpath!, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false)
                 : null;
             var database = databaseOverride ?? db!;
 
@@ -123,6 +123,7 @@ namespace Duplicati.Library.Main.Operation
 
             m_result.VolumesRead = readCount;
             m_result.VolumesUpdated = updatedCount;
+            m_result.EndTime = DateTime.UtcNow;
         }
 
         private async Task<List<long>> ResolveFilesetIdsAsync(Database.LocalListDatabase db, IEnumerable<DateTime>? suppliedVersions)
