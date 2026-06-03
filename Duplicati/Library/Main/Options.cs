@@ -161,7 +161,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// The default value for the number of file processors during restore
         /// </summary>
-        private static readonly int DEFAULT_RESTORE_FILE_PROCESSORS = Math.Max(1, Environment.ProcessorCount / 2);
+        public static readonly int DEFAULT_RESTORE_FILE_PROCESSORS = Math.Max(1, Environment.ProcessorCount / 2);
 
         /// <summary>
         /// The default value for the restore volume cache hint. When empty, the cache is unlimited (disk-space-aware eviction via <see cref="RestoreVolumeCacheMinFree"/>).
@@ -176,22 +176,22 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// The default value for the number of volume decryptors during restore
         /// </summary>
-        private static readonly int DEFAULT_RESTORE_VOLUME_DECRYPTORS = Math.Max(1, Environment.ProcessorCount / 2);
+        public static readonly int DEFAULT_RESTORE_VOLUME_DECRYPTORS = Math.Max(1, Environment.ProcessorCount / 2);
 
         /// <summary>
         /// The default value for the number of volume decompressors during restore
         /// </summary>
-        private static readonly int DEFAULT_RESTORE_VOLUME_DECOMPRESSORS = Math.Max(1, Environment.ProcessorCount / 2);
+        public static readonly int DEFAULT_RESTORE_VOLUME_DECOMPRESSORS = Math.Max(1, Environment.ProcessorCount / 2);
 
         /// <summary>
         /// The default value for the number of volume downloaders during restore
         /// </summary>
-        private static readonly int DEFAULT_RESTORE_VOLUME_DOWNLOADERS = Math.Max(1, Environment.ProcessorCount / 2);
+        public static readonly int DEFAULT_RESTORE_VOLUME_DOWNLOADERS = Math.Max(1, Environment.ProcessorCount / 2);
 
         /// <summary>
         /// The default value for the size of the channel buffers during restore
         /// </summary>
-        private static readonly int DEFAULT_RESTORE_CHANNEL_BUFFER_SIZE = Environment.ProcessorCount;
+        public static readonly int DEFAULT_RESTORE_CHANNEL_BUFFER_SIZE = Environment.ProcessorCount;
 
         /// <summary>
         /// The default value for the long database query threshold
