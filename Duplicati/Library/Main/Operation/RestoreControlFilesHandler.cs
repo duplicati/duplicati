@@ -66,7 +66,7 @@ namespace Duplicati.Library.Main.Operation
                 foreach (var fileversion in filteredList)
                     try
                     {
-                        if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
+                        if (!await m_result.TaskControl.ProgressRendevouzAsync().ConfigureAwait(false))
                         {
                             await backendManager.WaitForEmptyAsync(db, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                             return;
@@ -74,7 +74,7 @@ namespace Duplicati.Library.Main.Operation
 
                         var file = fileversion.Value.File;
                         var entry = await db
-                            .GetRemoteVolume(file.Name, m_result.TaskControl.ProgressToken)
+                            .GetRemoteVolumeAsync(file.Name, m_result.TaskControl.ProgressToken)
                             .ConfigureAwait(false);
 
                         var res = new List<string>();

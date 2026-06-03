@@ -51,7 +51,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="backend">The backend to use for downloading the volumes.</param>
         /// <param name="options">The restore options.</param>
         /// <param name="results">The restore results.</param>
-        public static Task Run(Channels channels, LocalRestoreDatabase db, IBackendManager backend, Options options, RestoreResults results)
+        public static Task RunAsync(Channels channels, LocalRestoreDatabase db, IBackendManager backend, Options options, RestoreResults results)
         {
             return AutomationExtensions.RunTask(
             new
@@ -79,7 +79,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         sw_wait?.Start();
                         TempFile f;
                         var (volume_name, size, hash) = await db
-                            .GetVolumeInfo(volume_id, results.TaskControl.ProgressToken)
+                            .GetVolumeInfoAsync(volume_id, results.TaskControl.ProgressToken)
                             .FirstAsync()
                             .ConfigureAwait(false);
                         try

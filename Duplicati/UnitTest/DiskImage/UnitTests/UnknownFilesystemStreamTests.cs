@@ -17,7 +17,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     /// Tests that writing partial data (less than block size) is correctly flushed on dispose.
     /// </summary>
     [Test]
-    public async Task Test_UnknownFilesystemStream_WritePartialData_FlushesOnDispose()
+    public async Task Test_UnknownFilesystemStream_WritePartialData_FlushesOnDispose_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
         var partitionSize = 5 * MiB;
@@ -65,7 +65,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     /// Tests writing at position 0, seeking to middle, writing more data, and verifying both regions.
     /// </summary>
     [Test]
-    public async Task Test_UnknownFilesystemStream_WriteSeekWrite_BothRegionsPreserved()
+    public async Task Test_UnknownFilesystemStream_WriteSeekWrite_BothRegionsPreserved_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
         var partitionSize = 5 * MiB;
@@ -128,7 +128,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     /// Tests reading after seeking to a non-zero position.
     /// </summary>
     [Test]
-    public async Task Test_UnknownFilesystemStream_ReadAfterSeek_ReturnsCorrectData()
+    public async Task Test_UnknownFilesystemStream_ReadAfterSeek_ReturnsCorrectData_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
         var partitionSize = 5 * MiB;
@@ -184,7 +184,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     /// while the remaining bytes retain their previous values.
     /// </summary>
     [Test]
-    public async Task Test_UnknownFilesystemStream_WritePartial_PreservesData()
+    public async Task Test_UnknownFilesystemStream_WritePartial_PreservesData_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
         var partitionSize = 5 * MiB;
@@ -240,7 +240,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     /// Tests the lazy-load behavior: first read triggers disk read, subsequent reads use buffer.
     /// </summary>
     [Test]
-    public async Task Test_UnknownFilesystemStream_LazyLoad_FirstReadTriggersDiskRead()
+    public async Task Test_UnknownFilesystemStream_LazyLoad_FirstReadTriggersDiskRead_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
         var partitionSize = 5 * MiB;
@@ -305,7 +305,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     /// Tests seeking with SeekOrigin.Current works correctly.
     /// </summary>
     [Test]
-    public async Task Test_UnknownFilesystemStream_SeekCurrent_UpdatesPosition()
+    public async Task Test_UnknownFilesystemStream_SeekCurrent_UpdatesPosition_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
         var partitionSize = 5 * MiB;
@@ -366,7 +366,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     /// Tests seeking with SeekOrigin.End works correctly.
     /// </summary>
     [Test]
-    public async Task Test_UnknownFilesystemStream_SeekEnd_UpdatesPosition()
+    public async Task Test_UnknownFilesystemStream_SeekEnd_UpdatesPosition_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
         var partitionSize = 5 * MiB;
@@ -421,7 +421,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     /// Tests that reading past the end of the stream returns 0 bytes.
     /// </summary>
     [Test]
-    public async Task Test_UnknownFilesystemStream_ReadPastEnd_ReturnsZero()
+    public async Task Test_UnknownFilesystemStream_ReadPastEnd_ReturnsZero_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
         var partitionSize = 5 * MiB;
@@ -473,7 +473,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     /// Tests that unaligned writes within the stream work correctly.
     /// </summary>
     [Test]
-    public async Task Test_UnknownFilesystemStream_UnalignedWrite_DataMatches()
+    public async Task Test_UnknownFilesystemStream_UnalignedWrite_DataMatches_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
         var partitionSize = 5 * MiB;

@@ -39,7 +39,7 @@ namespace Duplicati.Library.Main.Operation.Common
         /// Gets the progress state, waiting if the state is paused, throws if terminated
         /// </summary>
         /// <returns><c>true</c> if the progress should continue, <c>false</c> if it should stop</returns>
-        Task<bool> ProgressRendevouz();
+        Task<bool> ProgressRendevouzAsync();
 
         /// <summary>
         /// A cancellation token that can be used to monitor transfer abort
@@ -50,7 +50,7 @@ namespace Duplicati.Library.Main.Operation.Common
         /// Gets the transfer state, waiting if the state is paused, throws if terminated
         /// </summary>
         /// <returns><c>true</c> if the transfer should continue, <c>false</c> if it should stop</returns>
-        Task<bool> TransferRendevouz();
+        Task<bool> TransferRendevouzAsync();
 
         /// <summary>
         /// A cancellation token that can be used to monitor stop requests
@@ -194,7 +194,7 @@ namespace Duplicati.Library.Main.Operation.Common
         /// Gets the progress state, waiting if the state is paused
         /// </summary>
         /// <returns><c>true</c> if the progress should continue, <c>false</c> if it should stop</returns>
-        public async Task<bool> ProgressRendevouz()
+        public async Task<bool> ProgressRendevouzAsync()
         {
             var res = await m_progress.Task.ConfigureAwait(false);
             lock (m_lock)
@@ -206,7 +206,7 @@ namespace Duplicati.Library.Main.Operation.Common
         /// Gets the transfer state, waiting if the state is paused
         /// </summary>
         /// <returns><c>true</c> if the transfer should continue, <c>false</c> if it should stop</returns>
-        public async Task<bool> TransferRendevouz()
+        public async Task<bool> TransferRendevouzAsync()
         {
             var res = await m_transfer.Task.ConfigureAwait(false);
             lock (m_lock)

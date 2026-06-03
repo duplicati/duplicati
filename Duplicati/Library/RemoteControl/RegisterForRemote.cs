@@ -199,7 +199,7 @@ public class RegisterForRemote : IDisposable
     /// <returns>The data needed to claim the machine</returns>
     /// <exception cref="InvalidOperationException">Thrown if the class is not in the correct state</exception>
     /// <exception cref="Exception">Thrown if the machine could not be registered</exception>
-    public async Task<(RegisterClientData? RegistrationData, ClaimedClientData? ClaimedData)> Register(int? maxRetries = null, TimeSpan? retryInterval = null)
+    public async Task<(RegisterClientData? RegistrationData, ClaimedClientData? ClaimedData)> RegisterAsync(int? maxRetries = null, TimeSpan? retryInterval = null)
     {
         if (_state != States.NotStarted)
             throw new InvalidOperationException("Registration process has already started");
@@ -207,7 +207,7 @@ public class RegisterForRemote : IDisposable
         _state = States.Registering;
         try
         {
-            (_registerClientData, _claimedClientData) = await RetryHelper.Retry(() => RegisterClient(), maxRetries ?? ClientRegisterMaxRetries, retryInterval ?? ClientRegisterRetryInterval, _cancellationTokenSource.Token);
+            (_registerClientData, _claimedClientData) = await RetryHelper.Retry(() => RegisterClientAsync(), maxRetries ?? ClientRegisterMaxRetries, retryInterval ?? ClientRegisterRetryInterval, _cancellationTokenSource.Token);
         }
         catch (Exception ex)
         {
@@ -261,7 +261,7 @@ public class RegisterForRemote : IDisposable
     /// Registers the machine with the server
     /// </summary>
     /// <returns>The data needed to claim the machine</returns>
-    private async Task<(RegisterClientData?, ClaimedClientData?)> RegisterClient()
+    private async Task<(RegisterClientData?, ClaimedClientData?)> RegisterClientAsync()
     {
         var response = await _httpClient.PostAsync(_registrationUrl, CreateMachineData(), _cancellationTokenSource.Token);
 
@@ -300,7 +300,7 @@ public class RegisterForRemote : IDisposable
     /// <returns>The settings for the machine</returns>
     /// <exception cref="InvalidOperationException">Thrown if the class is not in the correct state</exception>
     /// <exception cref="Exception">Thrown if the machine could not be registered</exception>
-    public async Task<ClaimedClientData> Claim()
+    public async Task<ClaimedClientData> ClaimAsync()
     {
         if (_state == States.Claimed)
             return _claimedClientData ?? throw new InvalidOperationException("Claimed data is null");
@@ -312,7 +312,7 @@ public class RegisterForRemote : IDisposable
         _cancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(Math.Min(3600, Math.Max(1, _registerClientData!.MaxLifetimeSeconds))));
         try
         {
-            _claimedClientData = await RetryHelper.Retry(() => CheckClientClaimed(), Math.Min(100, Math.Max(1, _registerClientData!.MaxRetries)), TimeSpan.FromSeconds(_registerClientData!.RetrySeconds), _cancellationTokenSource.Token);
+            _claimedClientData = await RetryHelper.Retry(() => CheckClientClaimedAsync(), Math.Min(100, Math.Max(1, _registerClientData!.MaxRetries)), TimeSpan.FromSeconds(_registerClientData!.RetrySeconds), _cancellationTokenSource.Token);
         }
         catch (Exception ex)
         {
@@ -331,7 +331,7 @@ public class RegisterForRemote : IDisposable
     /// </summary>
     /// <returns>The data for the claimed machine</returns>
     /// <exception cref="Exception">Thrown if the machine could not be claimed</exception>
-    private async Task<ClaimedClientData> CheckClientClaimed()
+    private async Task<ClaimedClientData> CheckClientClaimedAsync()
     {
         var response = await _httpClient.PostAsync(_registerClientData!.StatusLink, CreateMachineData(), _cancellationTokenSource.Token);
 

@@ -22,6 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Duplicati.Library.Main;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
@@ -33,7 +34,7 @@ namespace Duplicati.UnitTest
     {
         [Test]
         [Category("BackendTool")]
-        public void Get()
+        public async Task GetAsync()
         {
             // Files to create in MB.
             int[] fileSizes = { 10, 20, 30 };
@@ -48,9 +49,9 @@ namespace Duplicati.UnitTest
             // Run a backup.
             var options = new Dictionary<string, string>(TestOptions);
             var backendURL = "file://" + this.TARGETFOLDER;
-            using (Controller c = new Controller(backendURL, options, null))
+            using (var c = new Controller(backendURL, options, null))
             {
-                var backupResults = c.Backup(new[] { DATAFOLDER });
+                var backupResults = await c.BackupAsync(new[] { DATAFOLDER });
                 foreach (var backupResultsWarning in backupResults.Warnings)
                 {
                     TestContext.WriteLine("Backend result warning:" + backupResultsWarning);

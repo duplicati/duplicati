@@ -170,13 +170,13 @@ public class Filesystem : IEndpointV1
                     id = specialtoken + x.id.Substring(specialpath.Length),
                     text = x.text,
                     iconCls = x.iconCls,
-                    cls = "folder",
+                    cls = x.cls,
                     leaf = x.leaf,
                     hidden = x.hidden,
                     symlink = x.symlink,
                     temporary = x.temporary,
                     systemFile = x.systemFile,
-                    fileSize = -1,
+                    fileSize = x.fileSize,
                     resolvedpath = x.id,
                     check = false
                 });

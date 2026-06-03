@@ -11,7 +11,7 @@ namespace Duplicati.UnitTest.DiskImage.UnitTests;
 public partial class DiskImageUnitTests : BasicSetupHelper
 {
     [Test]
-    public async Task Test_PartitionTableFactory_GPTBytes_DetectsGPT()
+    public async Task Test_PartitionTableFactory_GPTBytes_DetectsGPT_Async()
     {
         var sectorSize = 512;
         var diskBytes = new byte[sectorSize * 4];
@@ -32,7 +32,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_PartitionTableFactory_MBRBytes_DetectsMBR()
+    public async Task Test_PartitionTableFactory_MBRBytes_DetectsMBR_Async()
     {
         var sectorSize = 512;
         var diskBytes = new byte[sectorSize];
@@ -48,7 +48,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_PartitionTableFactory_InvalidBytes_ReturnsUnknown()
+    public async Task Test_PartitionTableFactory_InvalidBytes_ReturnsUnknown_Async()
     {
         var sectorSize = 512;
         var diskBytes = new byte[sectorSize];
@@ -60,7 +60,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_PartitionTableFactory_ProtectiveMBRType_DetectsGPT()
+    public async Task Test_PartitionTableFactory_ProtectiveMBRType_DetectsGPT_Async()
     {
         var sectorSize = 512;
         var diskBytes = new byte[sectorSize * 4];
@@ -79,7 +79,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_PartitionTableFactory_ProtectiveMBRWithoutGptHeader_FallsBackToMBR()
+    public async Task Test_PartitionTableFactory_ProtectiveMBRWithoutGptHeader_FallsBackToMBR_Async()
     {
         var sectorSize = 512;
         var diskBytes = new byte[sectorSize * 2];
@@ -95,7 +95,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_PartitionTableFactory_GPTFromRealDisk_DetectsGPT()
+    public async Task Test_PartitionTableFactory_GPTFromRealDisk_DetectsGPT_Async()
     {
         var sectorSize = s_gptRawDisk!.SectorSize;
         var sectorsToRead = 34;

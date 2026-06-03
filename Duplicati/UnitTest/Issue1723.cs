@@ -21,7 +21,7 @@
 
 using System;
 using System.IO;
-using System.Linq;
+using System.Threading.Tasks;
 using NUnit.Framework;
 
 namespace Duplicati.UnitTest
@@ -30,7 +30,7 @@ namespace Duplicati.UnitTest
 	{
 		[Test]
 		[Category("Targeted")]
-		public void RunCommands()
+		public async Task RunCommandsAsync()
 		{
 			var testopts = TestOptions;
 			testopts["no-backend-verification"] = "true";
@@ -39,7 +39,7 @@ namespace Duplicati.UnitTest
 			File.WriteAllBytes(Path.Combine(DATAFOLDER, "a"), data);
 			using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
 			{
-				var r = c.Backup(new string[] { DATAFOLDER });
+				var r = await c.BackupAsync(new string[] { DATAFOLDER });
 				TestUtils.AssertResults(r);
 				var pr = (Library.Interface.IParsedBackendStatistics)r.BackendStatistics;
 				if (pr.KnownFileSize == 0 || pr.KnownFileCount != 3 || pr.BackupListCount != 1)

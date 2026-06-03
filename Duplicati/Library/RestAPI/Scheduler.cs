@@ -215,7 +215,7 @@ namespace Duplicati.Server
             return res;
         }
 
-        private Task OnCompleted(Runner.IRunnerData task)
+        private Task OnCompletedAsync(Runner.IRunnerData task)
         {
             Tuple<ISchedule, DateTime, DateTime>? t = null;
             lock (m_lock)
@@ -234,7 +234,7 @@ namespace Duplicati.Server
             return Task.CompletedTask;
         }
 
-        private Task OnStartingWork(Runner.IRunnerData task)
+        private Task OnStartingWorkAsync(Runner.IRunnerData task)
         {
             if (task is null)
                 return Task.CompletedTask;
@@ -354,8 +354,8 @@ namespace Duplicati.Server
                                             }
 
                                             var job = Server.Runner.CreateTask(Serialization.DuplicatiOperation.Backup, entry, taskOptions);
-                                            job.OnStarting = () => OnStartingWork(job);
-                                            job.OnFinished = (_) => OnCompleted(job);
+                                            job.OnStarting = () => OnStartingWorkAsync(job);
+                                            job.OnFinished = (_) => OnCompletedAsync(job);
                                             collectedJobs.Add((start, job));
                                         }
                                     }

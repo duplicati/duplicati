@@ -49,6 +49,14 @@ namespace Duplicati.Server.Serialization.Interface
         /// The lookups supported by the module
         /// </summary>
         IDictionary<string, IDictionary<string, string>> Lookups { get; }
+        /// <summary>
+        /// Indicated the module is deprecated
+        /// </summary>
+        bool IsDeprecated { get; }
+        /// <summary>
+        /// Indicated the module is untested
+        /// </summary>
+        bool IsUntested { get; }
     }
 }
 

@@ -342,7 +342,7 @@ namespace Duplicati.CommandLine.RecoveryTool
             if (string.IsNullOrWhiteSpace(dbpath) || !File.Exists(dbpath))
                 return;
 
-            Duplicati.Library.Main.Utility.UpdateOptionsFromDatabase(dbpath, options, "RecoveryTool Recompress", CancellationToken.None).Await();
+            Duplicati.Library.Main.Utility.UpdateOptionsFromDatabaseAsync(dbpath, options, "RecoveryTool Recompress", CancellationToken.None).Await();
         }
     }
 }

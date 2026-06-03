@@ -179,7 +179,7 @@ namespace Duplicati.UnitTest
                 ]}}"
             };
 
-            string remoteurl = $"file://{source}";
+            var remoteurl = $"file://{source}";
             var handler = new RemoteSynchronizationHandler(remoteurl, new Options(options), new BackupResults());
 
             var stored_source = handler.GetType().GetField("m_source", BINDING_FLAGS).GetValue(handler) as string;
@@ -301,7 +301,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("RemoteSync")]
-        public void TestRunAsync_SuccessfulBackup_TriggersSync()
+        public async Task TestRunAsync_SuccessfulBackup_TriggersSyncAsync()
         {
             // Create some test files
             System.IO.File.WriteAllText(System.IO.Path.Combine(DATAFOLDER, "testfile.txt"), "test content");
@@ -313,25 +313,25 @@ namespace Duplicati.UnitTest
             // Run actual backup
             using var console = new CommandLine.ConsoleOutput(Console.Out, options);
             using var controller = new Controller($"file://{TARGETFOLDER}", options, console);
-            var result = controller.Backup([DATAFOLDER]);
+            var result = await controller.BackupAsync([DATAFOLDER]);
 
             // Now check if sync was triggered by checking if Operation table
             // has sync entry
-            using var db = SQLiteLoader.LoadConnection(DBFILE);
+            using var db = await SQLiteLoader.LoadConnectionAsync(DBFILE);
             using var cmd = db.CreateCommand();
             cmd.CommandText = @"
                 SELECT COUNT(*)
                 FROM ""Operation""
                 WHERE ""Description"" LIKE 'Rsync %'
             ";
-            var count = (long)cmd.ExecuteScalar();
+            var count = (long)await cmd.ExecuteScalarAsync();
 
             Assert.AreEqual(1, count);
         }
 
         [Test]
         [Category("RemoteSync")]
-        public async Task TestRunAsync_FailedBackup_SkipsSync()
+        public async Task TestRunAsync_FailedBackup_SkipsSync_Async()
         {
             var options = new Dictionary<string, string>
             {
@@ -339,12 +339,12 @@ namespace Duplicati.UnitTest
                 ["dbpath"] = DBFILE
             };
 
-            string remoteurl = $"file://{source}";
+            var remoteurl = $"file://{source}";
             var results = new BasicBackupResults(ParsedResultType.Error);
             var handler = new RemoteSynchronizationHandler(remoteurl, new Options(options), results);
 
             // Create Operation table
-            using var db = SQLiteLoader.LoadConnection(DBFILE);
+            using var db = await SQLiteLoader.LoadConnectionAsync(DBFILE);
             using var cmd = db.CreateCommand();
             EnsureOperationTableCreated(cmd);
 
@@ -356,7 +356,7 @@ namespace Duplicati.UnitTest
                 FROM ""Operation""
                 WHERE ""Description"" = 'Rsync 0'
             ";
-            var count = (long)cmd.ExecuteScalar();
+            var count = (long)await cmd.ExecuteScalarAsync();
 
             Assert.AreEqual(0, count);
         }
@@ -697,7 +697,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("RemoteSync")]
-        public async Task TestRunAsync_NonBackupOperation_SkipsSync()
+        public async Task TestRunAsync_NonBackupOperation_SkipsSync_Async()
         {
             var options = new Dictionary<string, string>
             {
@@ -707,14 +707,14 @@ namespace Duplicati.UnitTest
                 ["dbpath"] = DBFILE
             };
 
-            string remoteurl = $"file://{source}";
+            var remoteurl = $"file://{source}";
             var results = new BasicBackupResults(ParsedResultType.Success);
             var handler = new RemoteSynchronizationHandler(remoteurl, new Options(options), results);
 
             await handler.RunAsync();
 
             // Check if sync was not recorded
-            using var db = SQLiteLoader.LoadConnection(DBFILE);
+            using var db = await SQLiteLoader.LoadConnectionAsync(DBFILE);
             using var cmd = db.CreateCommand();
             EnsureOperationTableCreated(cmd);
             cmd.CommandText = @"
@@ -722,14 +722,14 @@ namespace Duplicati.UnitTest
                 FROM ""Operation""
                 WHERE ""Description"" = 'Rsync 0'
             ";
-            var count = (long)cmd.ExecuteScalar();
+            var count = (long)await cmd.ExecuteScalarAsync();
 
             Assert.AreEqual(0, count);
         }
 
         [Test]
         [Category("RemoteSync")]
-        public async Task TestRunAsync_FatalResult_SkipsSync()
+        public async Task TestRunAsync_FatalResult_SkipsSync_Async()
         {
             var options = new Dictionary<string, string>
             {
@@ -738,14 +738,14 @@ namespace Duplicati.UnitTest
                 ]}}",
                 ["dbpath"] = DBFILE
             };
-            string remoteurl = $"file://{source}";
+            var remoteurl = $"file://{source}";
             var results = new BasicBackupResults(ParsedResultType.Fatal);
             var handler = new RemoteSynchronizationHandler(remoteurl, new Options(options), results);
 
             await handler.RunAsync();
 
             // Check if sync was not recorded
-            using var db = SQLiteLoader.LoadConnection(DBFILE);
+            using var db = await SQLiteLoader.LoadConnectionAsync(DBFILE);
             using var cmd = db.CreateCommand();
             EnsureOperationTableCreated(cmd);
             cmd.CommandText = @"
@@ -753,7 +753,7 @@ namespace Duplicati.UnitTest
                 FROM ""Operation""
                 WHERE ""Description"" = 'Rsync 0'
             ";
-            var count = (long)cmd.ExecuteScalar();
+            var count = (long)await cmd.ExecuteScalarAsync();
 
             Assert.AreEqual(0, count);
         }
@@ -800,7 +800,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("RemoteSync")]
-        public async Task TestRunAsync_WithEmptyDestinations_SkipsSync()
+        public async Task TestRunAsync_WithEmptyDestinations_SkipsSync_Async()
         {
             var options = new Dictionary<string, string>
             {
@@ -812,12 +812,12 @@ namespace Duplicati.UnitTest
                 ["dbpath"] = DBFILE
             };
 
-            string remoteurl = $"file://{source}/";
+            var remoteurl = $"file://{source}/";
             var results = new BasicBackupResults(ParsedResultType.Success);
             var handler = new RemoteSynchronizationHandler(remoteurl, new Options(options), results);
 
             // Create Operation table
-            using var db = SQLiteLoader.LoadConnection(DBFILE);
+            using var db = await SQLiteLoader.LoadConnectionAsync(DBFILE);
             using var cmd = db.CreateCommand();
             EnsureOperationTableCreated(cmd);
 
@@ -830,7 +830,7 @@ namespace Duplicati.UnitTest
                 WHERE ""Description""
                 LIKE 'Rsync %'
             ";
-            var count = (long)cmd.ExecuteScalar();
+            var count = (long)await cmd.ExecuteScalarAsync();
 
             Assert.AreEqual(2, count); // Two valid destinations, empty skipped
         }
@@ -862,7 +862,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("RemoteSync")]
-        public async Task TestRunAsync_WithMultipleDestinations_SelectiveSync()
+        public async Task TestRunAsync_WithMultipleDestinations_SelectiveSync_Async()
         {
             var options = new Dictionary<string, string>
             {
@@ -872,12 +872,12 @@ namespace Duplicati.UnitTest
                 ]}}",
                 ["dbpath"] = DBFILE
             };
-            string remoteurl = $"file://{source}";
+            var remoteurl = $"file://{source}";
             var results = new BasicBackupResults(ParsedResultType.Success);
             var handler = new RemoteSynchronizationHandler(remoteurl, new Options(options), results);
 
             // Create Operation table and insert recent sync for dest2
-            using var db = SQLiteLoader.LoadConnection(DBFILE);
+            using var db = await SQLiteLoader.LoadConnectionAsync(DBFILE);
             using var cmd = db.CreateCommand();
             EnsureOperationTableCreated(cmd);
             cmd.CommandText = @"
@@ -889,7 +889,7 @@ namespace Duplicati.UnitTest
                     @ts
                 )";
             cmd.AddNamedParameter("@ts", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow));
-            cmd.ExecuteNonQuery();
+            await cmd.ExecuteNonQueryAsync();
 
             await handler.RunAsync();
 
@@ -899,14 +899,14 @@ namespace Duplicati.UnitTest
                 FROM ""Operation""
                 WHERE ""Description"" LIKE 'Rsync %'
             ";
-            var count = (long)cmd.ExecuteScalar();
+            var count = (long)await cmd.ExecuteScalarAsync();
 
             Assert.AreEqual(2, count); // Initial 1 + 1 new = 2
         }
 
         [Test]
         [Category("RemoteSync")]
-        public async Task TestRunAsync_WithWarningResult_TriggersSync()
+        public async Task TestRunAsync_WithWarningResult_TriggersSync_Async()
         {
             var options = new Dictionary<string, string>
             {
@@ -916,12 +916,12 @@ namespace Duplicati.UnitTest
                 ["dbpath"] = DBFILE
             };
 
-            string remoteurl = $"file://{source}";
+            var remoteurl = $"file://{source}";
             var result = new BasicBackupResults(ParsedResultType.Warning);
             var handler = new RemoteSynchronizationHandler(remoteurl, new Options(options), result);
 
             // Create Operation table
-            using var db = SQLiteLoader.LoadConnection(DBFILE);
+            using var db = await SQLiteLoader.LoadConnectionAsync(DBFILE);
             using var cmd = db.CreateCommand();
             EnsureOperationTableCreated(cmd);
 
@@ -933,14 +933,14 @@ namespace Duplicati.UnitTest
                 FROM ""Operation""
                 WHERE ""Description"" = 'Rsync 0'
             ";
-            var count = (long)cmd.ExecuteScalar();
+            var count = (long)await cmd.ExecuteScalarAsync();
 
             Assert.AreEqual(1, count);
         }
 
         [Test]
         [Category("RemoteSync")]
-        public async Task TestRunAsync_WithWarningResult_SkipsSync_WhenDisabled()
+        public async Task TestRunAsync_WithWarningResult_SkipsSync_WhenDisabled_Async()
         {
             var options = new Dictionary<string, string>
             {
@@ -949,12 +949,12 @@ namespace Duplicati.UnitTest
                 ]}}",
                 ["dbpath"] = DBFILE
             };
-            string remoteurl = $"file://{source}";
+            var remoteurl = $"file://{source}";
             var result = new BasicBackupResults(ParsedResultType.Warning);
             var handler = new RemoteSynchronizationHandler(remoteurl, new Options(options), result);
 
             // Create Operation table
-            using var db = SQLiteLoader.LoadConnection(DBFILE);
+            using var db = await SQLiteLoader.LoadConnectionAsync(DBFILE);
             using var cmd = db.CreateCommand();
             EnsureOperationTableCreated(cmd);
 
@@ -966,7 +966,7 @@ namespace Duplicati.UnitTest
                 FROM ""Operation""
                 WHERE ""Description"" = 'Rsync 0'
             ";
-            var count = (long)cmd.ExecuteScalar();
+            var count = (long)await cmd.ExecuteScalarAsync();
 
             Assert.AreEqual(0, count);
         }
@@ -1085,7 +1085,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("RemoteSync")]
-        public async Task TestRunAsync_WithNoDestinations_DoesNotActivate()
+        public async Task TestRunAsync_WithNoDestinations_DoesNotActivate_Async()
         {
             var options = new Dictionary<string, string>
             {
@@ -1093,7 +1093,7 @@ namespace Duplicati.UnitTest
                 ["dbpath"] = DBFILE
             };
 
-            string remoteurl = $"file://{source}";
+            var remoteurl = $"file://{source}";
             var results = new BasicBackupResults(ParsedResultType.Success);
             var handler = new RemoteSynchronizationHandler(remoteurl, new Options(options), results);
 
@@ -1101,7 +1101,7 @@ namespace Duplicati.UnitTest
             Assert.IsFalse((bool)enabled);
 
             // Create Operation table
-            using var db = SQLiteLoader.LoadConnection(DBFILE);
+            using var db = await SQLiteLoader.LoadConnectionAsync(DBFILE);
             using var cmd = db.CreateCommand();
             EnsureOperationTableCreated(cmd);
 
@@ -1114,7 +1114,7 @@ namespace Duplicati.UnitTest
                 WHERE ""Description""
                 LIKE 'Rsync %'
             ";
-            var count = (long)cmd.ExecuteScalar();
+            var count = (long)await cmd.ExecuteScalarAsync();
 
             Assert.AreEqual(0, count);
         }
@@ -1122,7 +1122,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("RemoteSync")]
-        public async Task TestRunAsync_ForNonBackupOperations_SkipsSync()
+        public async Task TestRunAsync_ForNonBackupOperations_SkipsSync_Async()
         {
             var options = new Dictionary<string, string>
             {
@@ -1132,14 +1132,14 @@ namespace Duplicati.UnitTest
                 ["dbpath"] = DBFILE
             };
 
-            string remoteurl = $"file://{source}";
+            var remoteurl = $"file://{source}";
             var results = new BasicBackupResults(ParsedResultType.Success);
             var handler = new RemoteSynchronizationHandler(remoteurl, new Options(options), results);
 
             await handler.RunAsync();
 
             // Check if sync was not recorded
-            using var db = SQLiteLoader.LoadConnection(DBFILE);
+            using var db = await SQLiteLoader.LoadConnectionAsync(DBFILE);
             using var cmd = db.CreateCommand();
             EnsureOperationTableCreated(cmd);
             cmd.CommandText = @"
@@ -1147,14 +1147,14 @@ namespace Duplicati.UnitTest
                 FROM ""Operation""
                 WHERE ""Description"" = 'Rsync 0'
             ";
-            var count = (long)cmd.ExecuteScalar();
+            var count = (long)await cmd.ExecuteScalarAsync();
 
             Assert.AreEqual(0, count);
         }
 
         [Test]
         [Category("RemoteSync")]
-        public void TestMultipleBackups_WithCountingDestinations()
+        public async Task TestMultipleBackups_WithCountingDestinationsAsync()
         {
             // Create test files: one folder with 2 files, 2 subfolders each with 2 files, all ~1kb
             var testDataFolder = System.IO.Path.Combine(DATAFOLDER, "testdata");
@@ -1214,15 +1214,15 @@ namespace Duplicati.UnitTest
             options["dbpath"] = DBFILE;
 
             // First backup
-            void Backup()
+            async Task BackupAsync()
             {
-                Task.Delay(1000).Wait(); // Ensure timestamp difference between backups
+                await Task.Delay(1000); // Ensure timestamp difference between backups
                 using var console = new CommandLine.ConsoleOutput(Console.Out, options);
                 using var controller = new Controller("file://" + TARGETFOLDER, options, console);
-                var result = controller.Backup([DATAFOLDER]);
+                var result = await controller.BackupAsync([DATAFOLDER]);
                 Assert.AreEqual(ParsedResultType.Success, result.ParsedResult);
             }
-            Backup();
+            await BackupAsync();
 
             // Assert all destinations have same files
             bool ContainsSameFiles(string path1, string path2, bool shouldAssert = true)
@@ -1243,7 +1243,7 @@ namespace Duplicati.UnitTest
                 if (!matches)
                     return false;
 
-                for (int i = 0; i < files1.Length; i++)
+                for (var i = 0; i < files1.Length; i++)
                 {
                     if (shouldAssert)
                         Assert.AreEqual(files1[i], files2[i], $"Filename mismatch: {files1[i]} vs {files2[i]}");
@@ -1285,8 +1285,8 @@ namespace Duplicati.UnitTest
 
             bool DestinationsAreEqual(bool shouldAssert = true, params string[] paths)
             {
-                bool matches = true;
-                for (int i = 1; i < paths.Length; i++)
+                var matches = true;
+                for (var i = 1; i < paths.Length; i++)
                     matches &= ContainsSameFiles(paths[0], paths[i], shouldAssert);
                 return matches;
             }
@@ -1294,7 +1294,7 @@ namespace Duplicati.UnitTest
             DestinationsAreEqual(true, TARGETFOLDER, syncDest1, syncDest2, syncDest3);
 
             // Assert restore from each works
-            void AssertRestoreWorks(string[] Urls)
+            async Task AssertRestoreWorksAsync(string[] Urls)
             {
                 var restoreFolders = Urls.Select(url => System.IO.Path.Combine(BASEFOLDER, "restore_" + System.IO.Path.GetRandomFileName())).ToArray();
                 foreach (var (url, restoreFolder) in Urls.Zip(restoreFolders))
@@ -1311,36 +1311,36 @@ namespace Duplicati.UnitTest
 
                     using var console = new CommandLine.ConsoleOutput(Console.Out, restoreOptions);
                     using var controller = new Controller(url, restoreOptions, console);
-                    var result = controller.Restore(["*"]);
+                    var result = await controller.RestoreAsync(["*"]);
                 }
 
                 DestinationsAreEqual(true, [.. restoreFolders.Select(f => System.IO.Path.Combine(f, "data"))]);
 
             }
 
-            AssertRestoreWorks([TARGETFOLDER, syncDest1, syncDest2, syncDest3]);
+            await AssertRestoreWorksAsync([TARGETFOLDER, syncDest1, syncDest2, syncDest3]);
 
             // Add another file and backup
             NewRandomFile(testDataFolder, "file7.txt");
-            Backup();
+            await BackupAsync();
             DestinationsAreEqual(true, TARGETFOLDER, syncDest1);
             Assert.IsFalse(DestinationsAreEqual(false, TARGETFOLDER, syncDest2)); // syncDest2 should be out of date
             Assert.IsFalse(DestinationsAreEqual(false, TARGETFOLDER, syncDest3)); // syncDest3 should be out of date
-            AssertRestoreWorks([TARGETFOLDER, syncDest1]);
+            await AssertRestoreWorksAsync([TARGETFOLDER, syncDest1]);
 
             // Add another file and backup
             NewRandomFile(sub1, "file8.txt");
-            Backup();
+            await BackupAsync();
             DestinationsAreEqual(true, TARGETFOLDER, syncDest1, syncDest2);
             Assert.IsFalse(DestinationsAreEqual(false, TARGETFOLDER, syncDest3)); // syncDest3 should be out of date
-            AssertRestoreWorks([TARGETFOLDER, syncDest1, syncDest2]);
+            await AssertRestoreWorksAsync([TARGETFOLDER, syncDest1, syncDest2]);
 
             // Add another file and backup
             NewRandomFile(sub2, "file9.txt");
-            Backup();
+            await BackupAsync();
             DestinationsAreEqual(true, TARGETFOLDER, syncDest1, syncDest3);
             Assert.IsFalse(DestinationsAreEqual(false, TARGETFOLDER, syncDest2)); // syncDest2 should be out of date
-            AssertRestoreWorks([TARGETFOLDER, syncDest1, syncDest3]);
+            await AssertRestoreWorksAsync([TARGETFOLDER, syncDest1, syncDest3]);
         }
 
     }

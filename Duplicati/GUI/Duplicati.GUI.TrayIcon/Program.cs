@@ -120,7 +120,7 @@ namespace Duplicati.GUI.TrayIcon
             var options = CommandLineParser.ExtractOptions(args);
 
             if (OperatingSystem.IsWindows() && !Utility.ParseBoolOption(options, DETACHED_PROCESS))
-                Win32.AttachConsole(Win32.ATTACH_PARENT_PROCESS);
+                Utility.AttachWindowsConsole();
 
             if (HelpOptionExtensions.IsArgumentAnyHelpString(_args))
             {

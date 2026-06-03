@@ -266,10 +266,10 @@ namespace Duplicati.Library.Main
         /// <param name="db">The database to flush the log messages to.</param>
         /// <param name="token">The cancellation token to use.</param>
         /// <returns>A task that completes when the log messages have been flushed.</returns>
-        public async Task FlushLog(LocalDatabase db, CancellationToken token)
+        public async Task FlushLogAsync(LocalDatabase db, CancellationToken token)
         {
             if (m_parent != null)
-                await m_parent.FlushLog(db, token).ConfigureAwait(false);
+                await m_parent.FlushLogAsync(db, token).ConfigureAwait(false);
             else
             {
                 await m_lock.WaitAsync(token).ConfigureAwait(false);
@@ -279,7 +279,7 @@ namespace Duplicati.Library.Main
                     {
                         var el = m_dbqueue.Dequeue();
                         await db
-                            .LogMessage(el.Type, el.Message, el.Exception, token)
+                            .LogMessageAsync(el.Type, el.Message, el.Exception, token)
                             .ConfigureAwait(false);
                     }
                 }
@@ -532,12 +532,15 @@ namespace Duplicati.Library.Main
         public Library.Utility.FileBackedStringList BrokenRemoteFiles { get; internal set; } = [];
         public long RestoredFiles { get; internal set; }
         public long SizeOfRestoredFiles { get; internal set; }
+        public long SizeOfRestoredData { get; internal set; }
         public long RestoredFolders { get; internal set; }
         public long RestoredSymlinks { get; internal set; }
         public long PatchedFiles { get; internal set; }
         public long DeletedFiles { get; internal set; }
         public long DeletedFolders { get; internal set; }
         public long DeletedSymlinks { get; internal set; }
+        public long UnmodifiedFiles { get; internal set; }
+        public long SizeOfUnmodifiedFiles { get; internal set; }
         public string RestorePath { get; internal set; }
 
         /// <summary>

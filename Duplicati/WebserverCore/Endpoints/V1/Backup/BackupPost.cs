@@ -46,7 +46,7 @@ public class BackupPost : IEndpointV1
             .RequireAuthorization();
 
         group.MapPost("/backup/{id}/restore", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromServices] IApplicationSettings applicationSettings, [FromRoute] string id, [FromBody] Dto.RestoreInputDto input, CancellationToken cancellationToken)
-            => ExecuteRestore(connection, applicationSettings, id, queueRunnerService, input, cancellationToken))
+            => ExecuteRestoreAsync(connection, applicationSettings, id, queueRunnerService, input, cancellationToken))
             .RequireAuthorization();
 
         group.MapPost("/backup/{id}/createreport", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromRoute] string id)
@@ -114,13 +114,13 @@ public class BackupPost : IEndpointV1
 
 
 
-    private static async Task<Dto.TaskStartedDto> ExecuteRestore(Connection connection, IApplicationSettings applicationSettings, string id, IQueueRunnerService queueRunnerService, Dto.RestoreInputDto input, CancellationToken cancellationToken)
+    private static async Task<Dto.TaskStartedDto> ExecuteRestoreAsync(Connection connection, IApplicationSettings applicationSettings, string id, IQueueRunnerService queueRunnerService, Dto.RestoreInputDto input, CancellationToken cancellationToken)
     {
         var backup = GetBackup(connection, id);
         var restorepath = input.restore_path;
         if (restorepath != null && restorepath.StartsWith("@"))
         {
-            var res = await SharedRemoteOperation.ExpandUrl(connection, applicationSettings, restorepath.Substring(1), id, input.connection_string_id ?? -1, input.source_prefix, cancellationToken);
+            var res = await SharedRemoteOperation.ExpandUrlAsync(connection, applicationSettings, restorepath.Substring(1), id, input.connection_string_id ?? -1, input.source_prefix, cancellationToken);
             if (!string.IsNullOrWhiteSpace(res.Url))
                 restorepath = "@" + res.Url;
         }

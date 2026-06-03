@@ -338,6 +338,8 @@ namespace Duplicati.Library.Main.Strings
 
         public static string ProfilealldatabasequeriesLong { get { return LC.L("To improve performance of the backups, frequent database queries are not logged by default. Enable this option to log all database queries, and remember to set either --{0}={2} or --{1}={2} to report the additional log data", "console-log-level", "log-file-log-level", nameof(Logging.LogMessageType.Profiling)); } }
         public static string ProfilealldatabasequeriesShort { get { return LC.L("Activate logging of all database queries"); } }
+        public static string LongdatabasequerythresholdShort { get { return LC.L("The threshold for a database query to be considered slow"); } }
+        public static string LongdatabasequerythresholdLong { get { return LC.L("If any query takes longer than this threshold, it will be logged with a warning as a slow query. Set this value to less than 0 seconds to disable the monitor."); } }
         public static string StoremetadatacontentindatabaseShort { get { return LC.L("Store metadata content in the database"); } }
         public static string StoremetadatacontentindatabaseLong { get { return LC.L("By default, metadata content is only stored in the remote volumes. Use this option to also store metadata content in the local database, which can speed up certain operations at the cost of increased database size."); } }
         public static string RebuildmissingdblockfilesLong { get { return LC.L("If dblock files are missing from the destination, you can attempt to rebuild them using local source data. However, since the local data may have changed, it may not be possible to retrieve all the required data and the process may be slow. Use this option to attempt to rebuild missing dblock files."); } }
@@ -409,7 +411,12 @@ namespace Duplicati.Library.Main.Strings
         public static string InvalidCryptoSystem(string algorithm) { return LC.L(@"The cryptolibrary does not support re-usable transforms for the hash algorithm {0}", algorithm); }
         public static string InvalidHashAlgorithm(string algorithm) { return LC.L(@"The cryptolibrary does not support the hash algorithm {0}", algorithm); }
         public static string PassphraseChangeUnsupported { get { return LC.L(@"The passphrase cannot be changed for an existing backup"); } }
-        public static string SnapshotFailedError(string message) { return LC.L(@"Failed to create a snapshot: {0}", message); }
+        public static string SnapshotFailedError(string message, bool seemsToHavePermissions)
+        {
+            return seemsToHavePermissions
+                ? LC.L(@"Failed to create a snapshot. The process appears to have the necessary permissions, but the snapshot failed anyway. Error message: {0}", message)
+                : LC.L(@"Failed to create a snapshot. This may be caused by insufficient permissions. Try running Duplicati with elevated privileges. Error message: {0}", message);
+        }
         public static string BackupReadNotAvailable { get { return LC.L(@"Failed to activate BackupRead as the current process does not have sufficient permissions"); } }
     }
 

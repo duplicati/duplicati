@@ -32,14 +32,14 @@ public interface ITokenFamilyStore
     /// <param name="familyId">The family ID.</param>
     /// <param name="ct">The cancellation token.</param>
     /// <returns>The token family.</returns>
-    Task<TokenFamily> GetTokenFamily(string userId, string familyId, CancellationToken ct);
+    Task<TokenFamily> GetTokenFamilyAsync(string userId, string familyId, CancellationToken ct);
     /// <summary>
     /// Creates a token family.
     /// </summary>
     /// <param name="userId">The user ID.</param>
     /// <param name="ct">The cancellation token.</param>
     /// <returns>The token family.</returns>
-    Task<TokenFamily> CreateTokenFamily(string userId, CancellationToken ct);
+    Task<TokenFamily> CreateTokenFamilyAsync(string userId, CancellationToken ct);
     /// <summary>
     /// Invalidates a token family.
     /// </summary>
@@ -47,26 +47,26 @@ public interface ITokenFamilyStore
     /// <param name="familyId">The family
     /// <param name="ct">The cancellation token.</param>
     /// <returns>The task.</returns>
-    Task InvalidateTokenFamily(string userId, string familyId, CancellationToken ct);
+    Task InvalidateTokenFamilyAsync(string userId, string familyId, CancellationToken ct);
     /// <summary>
     /// Invalidates all token families for a given userId.
     /// </summary>
     /// <param name="userId">The user ID.</param>
     /// <param name="ct">The cancellation token.</param>
     /// <returns>The task.</returns>
-    Task InvalidateAllTokenFamilies(string userId, CancellationToken ct);
+    Task InvalidateAllTokenFamiliesAsync(string userId, CancellationToken ct);
     /// <summary>
     /// Invalidates all token families.
     /// </summary>
     /// <param name="ct">The cancellation token.</param>
-    Task InvalidateAllTokens(CancellationToken ct);
+    Task InvalidateAllTokensAsync(CancellationToken ct);
     /// <summary>
     /// Increments a token family.
     /// </summary>
     /// <param name="tokenFamily">The token family.</param>
     /// <param name="ct">The cancellation token.</param>
     /// <returns>The incremented token family.</returns>
-    Task<TokenFamily> IncrementTokenFamily(TokenFamily tokenFamily, CancellationToken ct);
+    Task<TokenFamily> IncrementTokenFamilyAsync(TokenFamily tokenFamily, CancellationToken ct);
 
     /// <summary>
     /// Represents a token family.

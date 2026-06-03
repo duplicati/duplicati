@@ -364,7 +364,7 @@ public static class HttpsCommand
                 Console.WriteLine(entry.FormattedMessage);
             else
                 Console.WriteLine($"{entry.Level}: {entry.FormattedMessage}");
-        }, entry => entry.Level >= LogMessageType.Information);        
+        }, entry => entry.Level >= LogMessageType.Information);
 
     /// <summary>
     /// Handles the 'generate' command.
@@ -375,7 +375,7 @@ public static class HttpsCommand
         var storeLocation = ParseStoreLocation(store);
         var dataFolderPath = GetDataFolder(dataFolder);
 
-        using var _  = StartConsoleLogScope();
+        using var _ = StartConsoleLogScope();
         Console.WriteLine($"Using data folder: {dataFolderPath}");
 
         using var connection = OpenDatabase(dataFolderPath, settingsEncryptionKey, autoCreateDatabase);
@@ -431,7 +431,7 @@ public static class HttpsCommand
         var dataFolderPath = GetDataFolder(dataFolder);
 
         Console.WriteLine($"Using data folder: {dataFolderPath}");
-        using var _  = StartConsoleLogScope();
+        using var _ = StartConsoleLogScope();
 
         using var connection = OpenDatabase(dataFolderPath, settingsEncryptionKey, false);
 
@@ -472,7 +472,7 @@ public static class HttpsCommand
         var dataFolderPath = GetDataFolder(dataFolder);
 
         Console.WriteLine($"Using data folder: {dataFolderPath}");
-        using var _  = StartConsoleLogScope();
+        using var _ = StartConsoleLogScope();
 
         using var connection = OpenDatabase(dataFolderPath, settingsEncryptionKey, false);
 
@@ -517,14 +517,18 @@ public static class HttpsCommand
         var dataFolderPath = GetDataFolder(dataFolder);
 
         Console.WriteLine($"Using data folder: {dataFolderPath}");
-        using var _  = StartConsoleLogScope();
+        using var _ = StartConsoleLogScope();
 
         using var connection = OpenDatabase(dataFolderPath, settingsEncryptionKey, false);
 
         // Get existing CA certificate and remove from trust store
         var caCertBase64 = connection.ApplicationSettings.ServerCACertificate;
 
-        if (!string.IsNullOrWhiteSpace(caCertBase64))
+        if (string.IsNullOrWhiteSpace(caCertBase64))
+        {
+            Console.WriteLine("No CA certificate found in database, not attempting to remove from trust store.");
+        }
+        else
         {
             try
             {
@@ -580,7 +584,7 @@ public static class HttpsCommand
 
         Console.WriteLine($"Using data folder: {dataFolderPath}");
         Console.WriteLine();
-        using var _  = StartConsoleLogScope();
+        using var _ = StartConsoleLogScope();
 
         using var connection = OpenDatabase(dataFolderPath, settingsEncryptionKey, false);
 
@@ -674,7 +678,7 @@ public static class HttpsCommand
 
         Console.WriteLine($"Using data folder: {dataFolderPath}");
         Console.WriteLine($"Exporting server certificate to: {Path.GetFullPath(outputFile)}");
-        using var _  = StartConsoleLogScope();
+        using var _ = StartConsoleLogScope();
 
         using var connection = OpenDatabase(dataFolderPath, settingsEncryptionKey, false);
 
@@ -712,7 +716,7 @@ public static class HttpsCommand
 
         Console.WriteLine($"Using data folder: {dataFolderPath}");
         Console.WriteLine($"Exporting CA certificate to: {Path.GetFullPath(outputFile)}");
-        using var _  = StartConsoleLogScope();
+        using var _ = StartConsoleLogScope();
 
         using var connection = OpenDatabase(dataFolderPath, settingsEncryptionKey, false);
 

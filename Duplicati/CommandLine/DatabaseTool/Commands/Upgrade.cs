@@ -51,7 +51,7 @@ public static class Upgrade
         }
         .WithHandler(CommandHandler.Create<string[], DirectoryInfo, int, int, bool, bool>((databases, serverdatafolder, serverversion, localversion, nobackups, includeuntrackeddatabases) =>
             {
-                databases = Helper.FindAllDatabases(databases, serverdatafolder.FullName, includeuntrackeddatabases).Await();
+                databases = Helper.FindAllDatabasesAsync(databases, serverdatafolder.FullName, includeuntrackeddatabases).Await();
                 if (databases.Length == 0)
                 {
                     Console.WriteLine("No databases found to upgrade");
@@ -84,7 +84,7 @@ public static class Upgrade
                     bool isserverdb;
                     try
                     {
-                        (version, isserverdb) = Helper.ExamineDatabase(db).Await();
+                        (version, isserverdb) = Helper.ExamineDatabaseAsync(db).Await();
                     }
                     catch (Exception ex)
                     {
@@ -93,7 +93,7 @@ public static class Upgrade
                     }
 
                     Console.WriteLine($"Database {db} is version {version} and is a {(isserverdb ? "server" : "local")} database");
-                    ApplyUpgrade(db, version,
+                    ApplyUpgradeAsync(db, version,
                         isserverdb ? serverversion : localversion,
                         isserverdb ? serverVersions : localVersions,
                     nobackups)
@@ -148,7 +148,7 @@ public static class Upgrade
     /// <param name="scripts">The upgrade scripts</param>
     /// <param name="nobackups">Flag to disable backups</param>
     /// <returns>A task that completes when the upgrade is done.</returns>
-    private static async Task ApplyUpgrade(string db, int dbversion, int targetversion, IEnumerable<UpgradeScript> scripts, bool nobackups)
+    private static async Task ApplyUpgradeAsync(string db, int dbversion, int targetversion, IEnumerable<UpgradeScript> scripts, bool nobackups)
     {
         if (targetversion > dbversion)
         {

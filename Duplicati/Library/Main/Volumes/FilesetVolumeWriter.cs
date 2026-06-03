@@ -55,6 +55,8 @@ namespace Duplicati.Library.Main.Volumes
 
         private void WriteMetaProperties(string metahash, long metasize, string metablockhash, IEnumerable<string> metablocklisthashes)
         {
+            if (string.IsNullOrWhiteSpace(metahash))
+                throw new ArgumentNullException(nameof(metahash));
             m_writer.WritePropertyName("metahash");
             m_writer.WriteValue(metahash);
             m_writer.WritePropertyName("metasize");
@@ -83,19 +85,13 @@ namespace Duplicati.Library.Main.Volumes
             }
         }
 
-        public async Task AddFile(string name, string filehash, long size, DateTime lastmodified, string metahash, long metasize, string metablockhash, string blockhash, long blocksize, IAsyncEnumerable<string> blocklisthashes, IEnumerable<string> metablocklisthashes)
-        {
-            await AddFileEntry(FilelistEntryType.File, name, filehash, size, lastmodified, metahash, metasize, metablockhash, blockhash, blocksize, blocklisthashes, metablocklisthashes)
-                .ConfigureAwait(false);
-        }
+        public Task AddFileAsync(string name, string filehash, long size, DateTime lastmodified, string metahash, long metasize, string metablockhash, string blockhash, long blocksize, IAsyncEnumerable<string> blocklisthashes, IEnumerable<string> metablocklisthashes)
+            => AddFileEntryAsync(FilelistEntryType.File, name, filehash, size, lastmodified, metahash, metasize, metablockhash, blockhash, blocksize, blocklisthashes, metablocklisthashes);
 
-        public async Task AddAlternateStream(string name, string filehash, long size, DateTime lastmodified, string metahash, string metablockhash, long metasize, string blockhash, long blocksize, IAsyncEnumerable<string> blocklisthashes, IEnumerable<string> metablocklisthashes)
-        {
-            await AddFileEntry(FilelistEntryType.AlternateStream, name, filehash, size, lastmodified, metahash, metasize, metablockhash, blockhash, blocksize, blocklisthashes, metablocklisthashes)
-                .ConfigureAwait(false);
-        }
+        public Task AddAlternateStreamAsync(string name, string filehash, long size, DateTime lastmodified, string metahash, string metablockhash, long metasize, string blockhash, long blocksize, IAsyncEnumerable<string> blocklisthashes, IEnumerable<string> metablocklisthashes)
+            => AddFileEntryAsync(FilelistEntryType.AlternateStream, name, filehash, size, lastmodified, metahash, metasize, metablockhash, blockhash, blocksize, blocklisthashes, metablocklisthashes);
 
-        private async Task AddFileEntry(FilelistEntryType type, string name, string filehash, long size, DateTime lastmodified, string metahash, long metasize, string metablockhash, string blockhash, long blocksize, IAsyncEnumerable<string> blocklisthashes, IEnumerable<string> metablocklisthashes)
+        private async Task AddFileEntryAsync(FilelistEntryType type, string name, string filehash, long size, DateTime lastmodified, string metahash, long metasize, string metablockhash, string blockhash, long blocksize, IAsyncEnumerable<string> blocklisthashes, IEnumerable<string> metablocklisthashes)
         {
             m_filecount++;
             m_writer.WriteStartObject();
@@ -109,8 +105,7 @@ namespace Duplicati.Library.Main.Volumes
             m_writer.WriteValue(size);
             m_writer.WritePropertyName("time");
             m_writer.WriteValue(Library.Utility.Utility.SerializeDateTime(lastmodified));
-            if (metahash != null)
-                WriteMetaProperties(metahash, metasize, metablockhash, metablocklisthashes);
+            WriteMetaProperties(metahash, metasize, metablockhash, metablocklisthashes);
 
             if (blocklisthashes != null)
             {
@@ -152,8 +147,7 @@ namespace Duplicati.Library.Main.Volumes
             m_writer.WriteValue(type.ToString());
             m_writer.WritePropertyName("path");
             m_writer.WriteValue(name);
-            if (metahash != null)
-                WriteMetaProperties(metahash, metasize, metablockhash, metablocklisthashes);
+            WriteMetaProperties(metahash, metasize, metablockhash, metablocklisthashes);
 
             m_writer.WriteEndObject();
         }
@@ -241,8 +235,8 @@ namespace Duplicati.Library.Main.Volumes
         /// <param name="increment">The time to increment by each probe</param>
         /// <param name="maxTries">The maximum number of tries to probe</param>
         /// <returns>The first unused filename</returns>
-        internal static Task<DateTime> ProbeUnusedFilenameName(DatabaseCommon database, Options options, DateTime start, CancellationToken cancellationToken, TimeSpan increment = default, int maxTries = 60)
-            => ProbeUnusedFilenameName((name, CancellationToken) => database.GetRemoteVolumeIDAsync(name, cancellationToken), options, start, cancellationToken, increment, maxTries);
+        internal static Task<DateTime> ProbeUnusedFilenameNameAsync(DatabaseCommon database, Options options, DateTime start, CancellationToken cancellationToken, TimeSpan increment = default, int maxTries = 60)
+            => ProbeUnusedFilenameNameAsync((name, CancellationToken) => database.GetRemoteVolumeIDAsync(name, cancellationToken), options, start, cancellationToken, increment, maxTries);
 
         /// <summary>
         /// Probes for an unused filename, using the current time as a starting point.
@@ -253,8 +247,8 @@ namespace Duplicati.Library.Main.Volumes
         /// <param name="increment">The time to increment by each probe.</param>
         /// <param name="maxTries">The maximum number of tries to probe.</param>
         /// <returns>A task that when awaited returns the first unused filename.</returns>
-        internal static async Task<DateTime> ProbeUnusedFilenameName(LocalDatabase database, Options options, DateTime start, CancellationToken cancellationToken, TimeSpan increment = default, int maxTries = 60)
-            => await ProbeUnusedFilenameName(database.GetRemoteVolumeID, options, start, cancellationToken, increment, maxTries)
+        internal static async Task<DateTime> ProbeUnusedFilenameNameAsync(LocalDatabase database, Options options, DateTime start, CancellationToken cancellationToken, TimeSpan increment = default, int maxTries = 60)
+            => await ProbeUnusedFilenameNameAsync(database.GetRemoteVolumeIDAsync, options, start, cancellationToken, increment, maxTries)
                 .ConfigureAwait(false);
 
         /// <summary>
@@ -266,7 +260,7 @@ namespace Duplicati.Library.Main.Volumes
         /// <param name="increment">The time to increment by each probe</param>
         /// <param name="maxTries">The maximum number of tries to probe</param>
         /// <returns>The first unused filename</returns>
-        private static async Task<DateTime> ProbeUnusedFilenameName(Func<string, CancellationToken, Task<long>> ProbeForId, Options options, DateTime start, CancellationToken cancellationToken, TimeSpan increment = default, int maxTries = 60)
+        private static async Task<DateTime> ProbeUnusedFilenameNameAsync(Func<string, CancellationToken, Task<long>> ProbeForId, Options options, DateTime start, CancellationToken cancellationToken, TimeSpan increment = default, int maxTries = 60)
         {
             if (increment == default)
                 increment = TimeSpan.FromSeconds(1);

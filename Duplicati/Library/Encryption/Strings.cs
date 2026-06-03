@@ -31,6 +31,12 @@ namespace Duplicati.Library.Encryption.Strings
         public static string AessetthreadlevelLong { get { return LC.L(@"Use this option to set the thread level allowed for AES crypt operations."); } }
         public static string AessetthreadlevelShort { get { return LC.L(@"Set thread level utilized for crypting"); } }
         public static string AessetthreadlevelDeprecated { get { return LC.L(@"The option --{0} is no longer used and has been deprecated.", "aes-set-threadlevel"); } }
+        public static string AesversionShort { get { return LC.L(@"Set the AES file format version"); } }
+        public static string AesversionLong { get { return LC.L(@"Use this option to set the AES encryption file format version."); } }
+        public static string Aesv3iterationsShort { get { return LC.L(@"Set the number of iterations used for AES v3 key derivation"); } }
+        public static string Aesv3iterationsLong { get { return LC.L(@"Use this option to set the number of iterations used for AES v3 encryption. The default is using the library default."); } }
+        public static string AesminimalheaderShort { get { return LC.L(@"Use minimal header for AES encryption"); } }
+        public static string AesminimalheaderLong { get { return LC.L(@"Use this option to use a minimal header for AES encryption. This will reduce the size of the encrypted file, but will remove some additional metadata that is normally stored in the header."); } }
     }
     internal static class EncryptionBase
     {

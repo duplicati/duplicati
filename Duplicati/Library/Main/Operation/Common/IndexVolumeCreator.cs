@@ -73,7 +73,7 @@ namespace Duplicati.Library.Main.Operation.Common
         /// <param name="database">The database to use.</param>
         /// <param name="cancellationToken">The cancellation token to use.</param>
         /// <returns>The index volume.</returns>
-        public async Task<IndexVolumeWriter> CreateVolume(string blockfilename, Options options, DatabaseCommon database, CancellationToken cancellationToken)
+        public async Task<IndexVolumeWriter> CreateVolumeAsync(string blockfilename, Options options, DatabaseCommon database, CancellationToken cancellationToken)
         {
             var w = new IndexVolumeWriter(options);
             w.VolumeID = await database.RegisterRemoteVolumeAsync(w.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, cancellationToken).ConfigureAwait(false);
@@ -160,7 +160,7 @@ namespace Duplicati.Library.Main.Operation.Common
     /// </summary>
     internal static class IndexVolumeCreator
     {
-        public static async Task<IndexVolumeWriter> CreateIndexVolume(string blockname, Options options, Common.DatabaseCommon database, CancellationToken cancellationToken)
+        public static async Task<IndexVolumeWriter> CreateIndexVolumeAsync(string blockname, Options options, Common.DatabaseCommon database, CancellationToken cancellationToken)
         {
             using (var h = HashFactory.CreateHasher(options.BlockHashAlgorithm))
             {

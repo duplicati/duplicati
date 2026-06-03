@@ -87,7 +87,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Backend")]
-        public void TestArchiveAttributes()
+        public async Task TestArchiveAttributesAsync()
         {
             var testopts = TestOptions;
             testopts["blocksize"] = "100kb";
@@ -101,7 +101,7 @@ namespace Duplicati.UnitTest
             File.WriteAllBytes(Path.Combine(DATAFOLDER, "a"), data);
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                var backupResults = c.Backup(new string[] { DATAFOLDER });
+                var backupResults = await c.BackupAsync(new string[] { DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
             }
@@ -109,7 +109,7 @@ namespace Duplicati.UnitTest
             File.WriteAllBytes(Path.Combine(DATAFOLDER, "b"), new byte[1024 * 1024 * 2]);
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                var backupResults = c.Backup(new string[] { DATAFOLDER });
+                var backupResults = await c.BackupAsync(new string[] { DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
             }
@@ -129,18 +129,18 @@ namespace Duplicati.UnitTest
                     remotefilenames.TryGetValue(x.Name, out var r) ? r : false));
             BackendLoader.AddBackend(new ArchiveEnabledBackend());
 
-            void RunTest()
+            async Task RunTestAsync()
             {
                 using (var c = new Library.Main.Controller(ArchiveEnabledBackend.Key + "://" + TARGETFOLDER, testopts, null))
                 {
-                    var res = c.Test(remotefilenames.Count);
+                    var res = await c.TestAsync(remotefilenames.Count);
                     TestUtils.AssertResults(res);
                     Assert.AreEqual(remotefilenames.Where(x => !x.Value).Count() + protectedfiles.Count, res.Verifications.Count());
                 }
             }
 
             // Run the test with no files archived
-            RunTest();
+            await RunTestAsync();
 
             // Archive some files
             var archived = remotefilenames.Keys.Take(5).ToArray();
@@ -148,28 +148,28 @@ namespace Duplicati.UnitTest
                 remotefilenames[k] = true;
 
             // Run the test with some files archived
-            RunTest();
+            await RunTestAsync();
 
             // Archive all files
             foreach (var k in remotefilenames.Keys.ToArray())
                 remotefilenames[k] = true;
 
             // Run the test with all files archived
-            RunTest();
+            await RunTestAsync();
 
             // Unarchive some files
             foreach (var k in archived)
                 remotefilenames[k] = true;
 
             // Run the test with some files unarchived
-            RunTest();
+            await RunTestAsync();
 
             // Unarchive all files
             foreach (var k in remotefilenames.Keys.ToArray())
                 remotefilenames[k] = false;
 
             // Run the test with all files unarchived
-            RunTest();
+            await RunTestAsync();
         }
     }
 }

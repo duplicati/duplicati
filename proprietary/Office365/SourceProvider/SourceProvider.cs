@@ -268,7 +268,7 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
             if (current >= approved)
             {
                 if (Interlocked.Exchange(ref _userLicenseWarningIssued, 1) == 0)
-                    Library.Logging.Log.WriteWarningMessage(LOGTAG, "LicenseWarning", null, $"Licensed Office 365 feature seats exceeded for {type} ({approved}). Some items will not be backed up.");
+                    Library.Logging.Log.WriteWarningMessage(LOGTAG, "LicenseWarning", null, $"Licensed Microsoft 365 feature seats exceeded for {type} ({approved}). Some items will not be backed up.");
                 return false;
             }
         }
@@ -279,7 +279,7 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
             if (current >= approved)
             {
                 if (Interlocked.Exchange(ref _groupLicenseWarningIssued, 1) == 0)
-                    Library.Logging.Log.WriteWarningMessage(LOGTAG, "LicenseWarning", null, $"Licensed Office 365 feature seats exceeded for {type} ({approved}). Some items will not be backed up.");
+                    Library.Logging.Log.WriteWarningMessage(LOGTAG, "LicenseWarning", null, $"Licensed Microsoft 365 feature seats exceeded for {type} ({approved}). Some items will not be backed up.");
                 return false;
             }
         }
@@ -290,7 +290,7 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
             if (current >= approved)
             {
                 if (Interlocked.Exchange(ref _siteLicenseWarningIssued, 1) == 0)
-                    Library.Logging.Log.WriteWarningMessage(LOGTAG, "LicenseWarning", null, $"Licensed Office 365 feature seats exceeded for {type} ({approved}). Some items will not be backed up.");
+                    Library.Logging.Log.WriteWarningMessage(LOGTAG, "LicenseWarning", null, $"Licensed Microsoft 365 feature seats exceeded for {type} ({approved}). Some items will not be backed up.");
                 return false;
             }
         }

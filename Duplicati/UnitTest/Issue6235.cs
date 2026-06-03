@@ -23,6 +23,7 @@ using System.IO;
 using NUnit.Framework;
 using NUnit.Framework.Internal;
 using Duplicati.Library.DynamicLoader;
+using System.Threading.Tasks;
 
 namespace Duplicati.UnitTest
 {
@@ -30,7 +31,7 @@ namespace Duplicati.UnitTest
     {
         [Test]
         [Category("Targeted")]
-        public void RepairWithDlistRetries([Values(1, 2)] int keepVersions)
+        public async Task RepairWithDlistRetriesAsync([Values(1, 2)] int keepVersions)
         {
             var testopts = TestOptions.Expand(new
             {
@@ -46,7 +47,7 @@ namespace Duplicati.UnitTest
 
             // Make a backup
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Backup(new string[] { DATAFOLDER }));
+                TestUtils.AssertResults(await c.BackupAsync(new string[] { DATAFOLDER }));
 
             BackendLoader.AddBackend(new DeterministicErrorBackend());
             var count = 0;
@@ -63,13 +64,13 @@ namespace Duplicati.UnitTest
 
             // Make a backup where two attemps to upload the dlist file fails
             using (var c = new Library.Main.Controller(new DeterministicErrorBackend().ProtocolKey + "://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Backup(new string[] { DATAFOLDER }));
+                TestUtils.AssertResults(await c.BackupAsync(new string[] { DATAFOLDER }));
 
             Assert.That(count, Is.EqualTo(3), "Did not retry the dlist upload");
 
             // Check that repair works
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Repair());
+                TestUtils.AssertResults(await c.RepairAsync());
 
             // Check that recreate works
             File.Delete(DBFILE);
@@ -81,7 +82,7 @@ namespace Duplicati.UnitTest
             };
 
             using (var c = new Library.Main.Controller(new DeterministicErrorBackend().ProtocolKey + "://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Repair());
+                TestUtils.AssertResults(await c.RepairAsync());
         }
     }
 }

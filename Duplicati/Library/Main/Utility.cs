@@ -139,9 +139,9 @@ namespace Duplicati.Library.Main
         /// <param name="options">The options to update.</param>
         /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
         /// <returns>A task that completes when the options have been updated.</returns>
-        internal static async Task UpdateOptionsFromDb(LocalDatabase db, Options options, CancellationToken cancellationToken)
+        internal static async Task UpdateOptionsFromDbAsync(LocalDatabase db, Options options, CancellationToken cancellationToken)
         {
-            var opts = await db.GetDbOptions(cancellationToken).ConfigureAwait(false);
+            var opts = await db.GetDbOptionsAsync(cancellationToken).ConfigureAwait(false);
 
             foreach (var option in PersistedOptionMappings)
                 RestoreOptionFromDb(opts, options, option.DatabaseKey, option.OptionKey, option.RestoreValue);
@@ -159,9 +159,9 @@ namespace Duplicati.Library.Main
         /// <param name="db">The database to check.</param>
         /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
         /// <returns>A task that when awaited returns <c>true</c> if the database contains options that need to be verified; <c>false</c> otherwise.</returns>
-        internal static async Task<bool> ContainsOptionsForVerification(LocalDatabase db, CancellationToken cancellationToken)
+        internal static async Task<bool> ContainsOptionsForVerificationAsync(LocalDatabase db, CancellationToken cancellationToken)
         {
-            var opts = await db.GetDbOptions(cancellationToken).ConfigureAwait(false);
+            var opts = await db.GetDbOptionsAsync(cancellationToken).ConfigureAwait(false);
             await db.Transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
             return PersistedOptionMappings
                 .Select(option => option.DatabaseKey)
@@ -176,10 +176,10 @@ namespace Duplicati.Library.Main
         /// <param name="options">The options to verify.</param>
         /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
         /// <returns>A task that completes when the options have been verified and the database has been updated if needed.</returns>
-        internal static async Task VerifyOptionsAndUpdateDatabase(LocalDatabase db, Options options, CancellationToken cancellationToken)
+        internal static async Task VerifyOptionsAndUpdateDatabaseAsync(LocalDatabase db, Options options, CancellationToken cancellationToken)
         {
             var newDict = GetPersistedOptionValues(options);
-            var opts = await db.GetDbOptions(cancellationToken).ConfigureAwait(false);
+            var opts = await db.GetDbOptionsAsync(cancellationToken).ConfigureAwait(false);
 
             if (options.NoEncryption)
             {
@@ -229,11 +229,11 @@ namespace Duplicati.Library.Main
                 }
 
             //Extra sanity check
-            if (await db.GetBlocksLargerThan(options.Blocksize, cancellationToken).ConfigureAwait(false) > 0)
+            if (await db.GetBlocksLargerThanAsync(options.Blocksize, cancellationToken).ConfigureAwait(false) > 0)
                 throw new Duplicati.Library.Interface.UserInformationException("You have attempted to change the block-size on an existing backup, which is not supported. Please configure a new clean backup if you want to change the block-size.", "BlockSizeChangeNotSupported");
 
             if (needsUpdate)
-                await PersistOptionsToDb(db, options, opts, cancellationToken).ConfigureAwait(false);
+                await PersistOptionsToDbAsync(db, options, opts, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -244,10 +244,10 @@ namespace Duplicati.Library.Main
         /// <param name="operation">The operation description to record in the database.</param>
         /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
         /// <returns>A task that completes when the options have been stored.</returns>
-        public static async Task PersistOptionsToDatabaseWithoutValidation(string dbpath, Options options, string operation, CancellationToken cancellationToken)
+        public static async Task PersistOptionsToDatabaseWithoutValidationAsync(string dbpath, Options options, string operation, CancellationToken cancellationToken)
         {
             await using var db = await LocalDatabase.CreateLocalDatabaseAsync(dbpath, operation, true, null, cancellationToken).ConfigureAwait(false);
-            await PersistOptionsToDb(db, options, null, cancellationToken).ConfigureAwait(false);
+            await PersistOptionsToDbAsync(db, options, null, cancellationToken).ConfigureAwait(false);
             await db.Transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
         }
 
@@ -260,10 +260,10 @@ namespace Duplicati.Library.Main
         /// <param name="operation">The operation description to record in the database.</param>
         /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
         /// <returns>A task that completes when the options have been restored.</returns>
-        public static async Task UpdateOptionsFromDatabase(string dbpath, Options options, string operation, CancellationToken cancellationToken)
+        public static async Task UpdateOptionsFromDatabaseAsync(string dbpath, Options options, string operation, CancellationToken cancellationToken)
         {
             await using var db = await LocalDatabase.CreateLocalDatabaseAsync(dbpath, operation, true, null, cancellationToken).ConfigureAwait(false);
-            await UpdateOptionsFromDb(db, options, cancellationToken).ConfigureAwait(false);
+            await UpdateOptionsFromDbAsync(db, options, cancellationToken).ConfigureAwait(false);
             await db.Transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
         }
 
@@ -294,10 +294,10 @@ namespace Duplicati.Library.Main
         /// <param name="existingOptions">The existing options to merge with, or null</param>
         /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
         /// <returns>An awaitable task</returns>
-        private static async Task PersistOptionsToDb(LocalDatabase db, Options options, IDictionary<string, string> existingOptions, CancellationToken cancellationToken)
+        private static async Task PersistOptionsToDbAsync(LocalDatabase db, Options options, IDictionary<string, string> existingOptions, CancellationToken cancellationToken)
         {
-            existingOptions ??= await db.GetDbOptions(cancellationToken).ConfigureAwait(false);
-            await db.SetDbOptions(BuildStoredOptions(existingOptions, options), cancellationToken).ConfigureAwait(false);
+            existingOptions ??= await db.GetDbOptionsAsync(cancellationToken).ConfigureAwait(false);
+            await db.SetDbOptionsAsync(BuildStoredOptions(existingOptions, options), cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>

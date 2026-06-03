@@ -332,7 +332,7 @@ internal class RemoteSynchronizationHandler : IDisposable
                 {
                     Destination = Duplicati.Library.Utility.Utility.GetUrlWithoutCredentials(config.Dst),
                 };
-                var exitCode = RemoteSynchronizationRunner.Run(config, CancellationToken.None, m_results.OperationProgressUpdater, m_results.BackendProgressUpdater, syncResult).ConfigureAwait(false).GetAwaiter().GetResult();
+                var exitCode = RemoteSynchronizationRunner.RunAsync(config, CancellationToken.None, m_results.OperationProgressUpdater, m_results.BackendProgressUpdater, syncResult).ConfigureAwait(false).GetAwaiter().GetResult();
                 var date_end = DateTime.UtcNow;
                 syncResult.BeginTime = date_start;
                 syncResult.EndTime = date_end;

@@ -49,31 +49,31 @@ public class WebsocketAuthenticator(
         public string Type => "auth";
     }
 
-    public async Task AddConnection(WebSocket newConnection)
+    public async Task AddConnectionAsync(WebSocket newConnection)
     {
         _connections.TryAdd(newConnection, DateTime.UtcNow);
         // Set up a task to clear closed connections after the maximum authentication time plus a small buffer
         var _ = Task.Run(async () =>
         {
             await Task.Delay(MaxAuthTime.Add(TimeSpan.FromSeconds(5)));
-            await ClearClosed();
+            await ClearClosedAsync();
         });
 
-        await HandleClientData(newConnection);
+        await HandleClientDataAsync(newConnection);
     }
 
-    private async Task HandleClientData(WebSocket webSocket, CancellationToken cancellationToken = default)
+    private async Task HandleClientDataAsync(WebSocket webSocket, CancellationToken cancellationToken = default)
     {
         var buffer = new byte[1024 * 4];
         var result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), cancellationToken);
         if (result is not null && result.CloseStatus is null)
         {
             var message = Encoding.UTF8.GetString(buffer[..result.Count]);
-            await HandleClientMessage(webSocket, message);
+            await HandleClientMessageAsync(webSocket, message);
         }
     }
 
-    private async Task ClearClosed()
+    private async Task ClearClosedAsync()
     {
         // Snapshot the connections to avoid modifying the collection while iterating
         var connections = _connections.ToList();
@@ -102,7 +102,7 @@ public class WebsocketAuthenticator(
         var bytes = Encoding.UTF8.GetBytes(json);
         return new ArraySegment<byte>(bytes);
     }
-    private async Task SendRequestReply(WebSocket socket, string message, bool success)
+    private async Task SendRequestReplyAsync(WebSocket socket, string message, bool success)
     {
         var reply = new WebSocketAuthReply(APIVersion, message, success);
         var bytes = GetBytes(reply);
@@ -114,7 +114,7 @@ public class WebsocketAuthenticator(
         _connections.TryRemove(socket, out _);
     }
 
-    public async Task HandleClientMessage(WebSocket socket, string messagestr)
+    public async Task HandleClientMessageAsync(WebSocket socket, string messagestr)
     {
         WebSocketAuthRequest? message = null;
         try
@@ -128,13 +128,13 @@ public class WebsocketAuthenticator(
 
         if (message == null)
         {
-            await SendRequestReply(socket, "Invalid message format", false);
+            await SendRequestReplyAsync(socket, "Invalid message format", false);
             return;
         }
 
         if (message.Version != APIVersion)
         {
-            await SendRequestReply(socket, "Unsupported API version", false);
+            await SendRequestReplyAsync(socket, "Unsupported API version", false);
             return;
         }
 
@@ -161,13 +161,13 @@ public class WebsocketAuthenticator(
         if (!isValid)
         {
             Log.WriteVerboseMessage(LOGTAG, "WebsocketInvalidToken", exception, $"WebSocket connection with invalid token");
-            await SendRequestReply(socket, "Invalid token", false);
+            await SendRequestReplyAsync(socket, "Invalid token", false);
             return;
         }
 
         Log.WriteVerboseMessage(LOGTAG, "WebsocketAuthenticated", $"WebSocket connection authenticated with token");
-        await SendRequestReply(socket, "Authenticated successfully", true);
-        await websocketAccessor.AddConnection(socket, false);
+        await SendRequestReplyAsync(socket, "Authenticated successfully", true);
+        await websocketAccessor.AddConnectionAsync(socket, false);
 
     }
 }

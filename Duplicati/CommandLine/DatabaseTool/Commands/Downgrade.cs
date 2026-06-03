@@ -51,7 +51,7 @@ public static class Downgrade
         }
         .WithHandler(CommandHandler.Create<string[], DirectoryInfo, int, int, bool, bool>((databases, serverdatafolder, serverversion, localversion, nobackups, includeuntrackeddatabases) =>
             {
-                databases = Helper.FindAllDatabases(databases, serverdatafolder.FullName, includeuntrackeddatabases).Await();
+                databases = Helper.FindAllDatabasesAsync(databases, serverdatafolder.FullName, includeuntrackeddatabases).Await();
                 if (databases.Length == 0)
                 {
                     Console.WriteLine("No databases found to downgrade");
@@ -101,7 +101,7 @@ public static class Downgrade
                     bool isserverdb;
                     try
                     {
-                        (version, isserverdb) = Helper.ExamineDatabase(db).Await();
+                        (version, isserverdb) = Helper.ExamineDatabaseAsync(db).Await();
                     }
                     catch (Exception ex)
                     {
@@ -110,7 +110,7 @@ public static class Downgrade
                     }
 
                     Console.WriteLine($"Database {db} is version {version} and is a {(isserverdb ? "server" : "local")} database");
-                    ApplyDowngrade(db, version,
+                    ApplyDowngradeAsync(db, version,
                         isserverdb ? serverversion : localversion,
                         isserverdb ? serverVersions : localVersions,
                     nobackups)
@@ -135,7 +135,7 @@ public static class Downgrade
     /// <param name="scripts">The downgrade scripts</param>
     /// <param name="nobackups">Flag to disable backups</param>
     /// <returns>A task that completes when the downgrade is done.</returns>
-    private static async Task ApplyDowngrade(string db, int dbversion, int targetversion, IEnumerable<DowngradeScript> scripts, bool nobackups)
+    private static async Task ApplyDowngradeAsync(string db, int dbversion, int targetversion, IEnumerable<DowngradeScript> scripts, bool nobackups)
     {
         if (dbversion > targetversion)
         {

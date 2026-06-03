@@ -42,7 +42,7 @@ namespace Duplicati.Library.Main.Volumes
         {
         }
 
-        public async Task AddBlock(string hash, byte[] data, int offset, int size, CompressionHint hint)
+        public async Task AddBlockAsync(string hash, byte[] data, int offset, int size, CompressionHint hint)
         {
             m_blocks++;
             m_sourcesize += size;

@@ -17,7 +17,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
 {
 
     [Test]
-    public async Task Test_GPT_GetProtectiveMbrAsync_ReturnsValidMbr()
+    public async Task Test_GPT_GetProtectiveMbrAsync_ReturnsValidMbr_Async()
     {
         var sectorSize = s_gptRawDisk!.SectorSize;
 
@@ -53,7 +53,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_GPT_GetPartitionTableDataAsync_ReturnsValidData()
+    public async Task Test_GPT_GetPartitionTableDataAsync_ReturnsValidData_Async()
     {
         var sectorSize = s_gptRawDisk!.SectorSize;
 
@@ -87,7 +87,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_UnknownFilesystem_GetFilesystemMetadataAsync_ReturnsCorrectMetadata()
+    public async Task Test_UnknownFilesystem_GetFilesystemMetadataAsync_ReturnsCorrectMetadata_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
         var partitionSize = 5 * MiB;
@@ -112,7 +112,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_UnknownFilesystem_GetFileLengthAsync_ReturnsCorrectSize()
+    public async Task Test_UnknownFilesystem_GetFileLengthAsync_ReturnsCorrectSize_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
         var partitionSize = 5 * MiB;
@@ -142,7 +142,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_UnknownFilesystemStream_SetLength_ThrowsNotSupported()
+    public async Task Test_UnknownFilesystemStream_SetLength_ThrowsNotSupported_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
         var partitionSize = 5 * MiB;
@@ -171,7 +171,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_UnknownFilesystemStream_WriteOnReadOnly_ThrowsNotSupported()
+    public async Task Test_UnknownFilesystemStream_WriteOnReadOnly_ThrowsNotSupported_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
         var partitionSize = 5 * MiB;
@@ -201,7 +201,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_UnknownFilesystemStream_ReadOnWriteOnly_ThrowsNotSupported()
+    public async Task Test_UnknownFilesystemStream_ReadOnWriteOnly_ThrowsNotSupported_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
         var partitionSize = 5 * MiB;
@@ -231,7 +231,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_UnknownFilesystemStream_DisposeAsync_FlushesDirtyData()
+    public async Task Test_UnknownFilesystemStream_DisposeAsync_FlushesDirtyData_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
         var partitionSize = 5 * MiB;
@@ -315,7 +315,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_UnknownFilesystemStream_PositionSetter_ValidatesBounds()
+    public async Task Test_UnknownFilesystemStream_PositionSetter_ValidatesBounds_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
         var partitionSize = 5 * MiB;
@@ -359,7 +359,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_UnknownFilesystemStream_Flush_DoesNotThrow()
+    public async Task Test_UnknownFilesystemStream_Flush_DoesNotThrow_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
         var partitionSize = 5 * MiB;
@@ -396,7 +396,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_UnknownFilesystemStream_WriteBeyondSize_ThrowsArgumentException()
+    public async Task Test_UnknownFilesystemStream_WriteBeyondSize_ThrowsArgumentException_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
         var partitionSize = 5 * MiB;
@@ -429,7 +429,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_UnknownFilesystemStream_SyncRead_ReturnsCorrectData()
+    public async Task Test_UnknownFilesystemStream_SyncRead_ReturnsCorrectData_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
         var partitionSize = 5 * MiB;
@@ -464,7 +464,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
         // Read using synchronous Read method
         using var readStream = await fs.OpenReadStreamAsync(firstFile!, CancellationToken.None);
         var readBuffer = new byte[256];
-        var bytesRead = readStream.Read(readBuffer, 0, 256);
+        var bytesRead = await readStream.ReadAsync(readBuffer, 0, 256);
 
         Assert.AreEqual(256, bytesRead, "Sync Read should return 256 bytes.");
         for (int i = 0; i < 256; i++)
@@ -472,7 +472,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_UnknownFilesystemStream_SyncWrite_DataMatches()
+    public async Task Test_UnknownFilesystemStream_SyncWrite_DataMatches_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
         var partitionSize = 5 * MiB;
@@ -501,12 +501,12 @@ public partial class DiskImageUnitTests : BasicSetupHelper
         new Random(42).NextBytes(writeData);
 
         using (var writeStream = await fs.OpenWriteStreamAsync(firstFile!, CancellationToken.None))
-            writeStream.Write(writeData, 0, writeData.Length);
+            await writeStream.WriteAsync(writeData, 0, writeData.Length);
 
         // Read back and verify
         using var readStream = await fs.OpenReadStreamAsync(firstFile!, CancellationToken.None);
         var readBuffer = new byte[100];
-        var bytesRead = readStream.Read(readBuffer, 0, 100);
+        var bytesRead = await readStream.ReadAsync(readBuffer, 0, 100);
 
         Assert.AreEqual(100, bytesRead, "Should read 100 bytes.");
         Assert.AreEqual(writeData, readBuffer, "Sync-written data should match on read-back.");
@@ -566,11 +566,11 @@ public partial class DiskImageUnitTests : BasicSetupHelper
         var metadata = new GeometryMetadata();
         using var table = new ReconstructedPartitionTable(_writableRawDisk, metadata, PartitionTableType.GPT);
 
-        Assert.Throws<NotSupportedException>(() =>
+        Assert.ThrowsAsync<NotSupportedException>(async () =>
         {
             // Force enumeration to trigger the throw
             var enumerator = table.EnumeratePartitions(CancellationToken.None).GetAsyncEnumerator();
-            enumerator.MoveNextAsync().AsTask().GetAwaiter().GetResult();
+            await enumerator.MoveNextAsync().AsTask();
         }, "EnumeratePartitions should throw NotSupportedException.");
     }
 
@@ -652,7 +652,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     /// Tests that BasePartition.OpenReadAsync returns a readable stream.
     /// </summary>
     [Test]
-    public async Task Test_BasePartition_OpenReadAsync_ReturnsReadableStream()
+    public async Task Test_BasePartition_OpenReadAsync_ReturnsReadableStream_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
         var partitionOffset = 10L * sectorSize;
@@ -690,7 +690,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     /// Tests that BasePartition.OpenWriteAsync returns a writable PartitionWriteStream.
     /// </summary>
     [Test]
-    public async Task Test_BasePartition_OpenWriteAsync_ReturnsWritableStream()
+    public async Task Test_BasePartition_OpenWriteAsync_ReturnsWritableStream_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
         var partitionOffset = 10L * sectorSize;
@@ -732,7 +732,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     /// Tests that UnknownPartitionTable.GetPartitionTableDataAsync returns empty data.
     /// </summary>
     [Test]
-    public async Task Test_UnknownPartitionTable_GetPartitionTableDataAsync_ReturnsEmptyStream()
+    public async Task Test_UnknownPartitionTable_GetPartitionTableDataAsync_ReturnsEmptyStream_Async()
     {
         using var table = new UnknownPartitionTable(null);
 
@@ -756,7 +756,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     /// Tests that UnknownPartitionTable.GetPartitionAsync returns null for invalid partition numbers.
     /// </summary>
     [Test]
-    public async Task Test_UnknownPartitionTable_GetPartitionAsync_InvalidNumber_ReturnsNull()
+    public async Task Test_UnknownPartitionTable_GetPartitionAsync_InvalidNumber_ReturnsNull_Async()
     {
         using var table = new UnknownPartitionTable(null);
 
@@ -771,7 +771,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     /// Tests that UnknownPartitionTable.GetPartitionAsync returns null when no raw disk is set.
     /// </summary>
     [Test]
-    public async Task Test_UnknownPartitionTable_GetPartitionAsync_NullDisk_ReturnsNull()
+    public async Task Test_UnknownPartitionTable_GetPartitionAsync_NullDisk_ReturnsNull_Async()
     {
         using var table = new UnknownPartitionTable(null);
 
@@ -783,7 +783,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     /// Tests that UnknownPartitionTable.GetPartitionAsync returns a valid partition when disk is set.
     /// </summary>
     [Test]
-    public async Task Test_UnknownPartitionTable_GetPartitionAsync_ValidDisk_ReturnsPartition()
+    public async Task Test_UnknownPartitionTable_GetPartitionAsync_ValidDisk_ReturnsPartition_Async()
     {
         using var table = new UnknownPartitionTable(_writableRawDisk);
 
@@ -911,7 +911,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     /// Tests that UnknownFilesystem path-based OpenReadStreamAsync works correctly.
     /// </summary>
     [Test]
-    public async Task Test_UnknownFilesystem_OpenReadStreamAsync_ByPath_ReturnsStream()
+    public async Task Test_UnknownFilesystem_OpenReadStreamAsync_ByPath_ReturnsStream_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
         var partitionSize = 5 * MiB;
@@ -956,7 +956,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     /// Tests that UnknownFilesystem path-based OpenWriteStreamAsync works correctly.
     /// </summary>
     [Test]
-    public async Task Test_UnknownFilesystem_OpenWriteStreamAsync_ByPath_ReturnsStream()
+    public async Task Test_UnknownFilesystem_OpenWriteStreamAsync_ByPath_ReturnsStream_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
         var partitionSize = 5 * MiB;
@@ -982,7 +982,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     /// Tests that UnknownFilesystem path-based OpenReadWriteStreamAsync works correctly.
     /// </summary>
     [Test]
-    public async Task Test_UnknownFilesystem_OpenReadWriteStreamAsync_ByPath_ReturnsStream()
+    public async Task Test_UnknownFilesystem_OpenReadWriteStreamAsync_ByPath_ReturnsStream_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
         var partitionSize = 5 * MiB;
@@ -1009,7 +1009,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     /// Tests that UnknownFilesystem path-based GetFileLengthAsync returns correct size.
     /// </summary>
     [Test]
-    public async Task Test_UnknownFilesystem_GetFileLengthAsync_ByPath_ReturnsCorrectSize()
+    public async Task Test_UnknownFilesystem_GetFileLengthAsync_ByPath_ReturnsCorrectSize_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
         var partitionSize = 5 * MiB;
@@ -1095,7 +1095,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     /// Tests that UnknownFilesystemStream.Seek with invalid origin throws ArgumentException.
     /// </summary>
     [Test]
-    public async Task Test_UnknownFilesystemStream_Seek_InvalidOrigin_ThrowsArgumentException()
+    public async Task Test_UnknownFilesystemStream_Seek_InvalidOrigin_ThrowsArgumentException_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
         var partitionSize = 5 * MiB;
@@ -1128,7 +1128,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     /// Tests that UnknownFilesystemStream.Seek beyond bounds throws ArgumentOutOfRangeException.
     /// </summary>
     [Test]
-    public async Task Test_UnknownFilesystemStream_Seek_BeyondBounds_ThrowsArgumentOutOfRange()
+    public async Task Test_UnknownFilesystemStream_Seek_BeyondBounds_ThrowsArgumentOutOfRange_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
         var partitionSize = 5 * MiB;
@@ -1223,7 +1223,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     /// Tests that UnknownFilesystem.ParsePathToAddress throws for invalid path format.
     /// </summary>
     [Test]
-    public async Task Test_UnknownFilesystem_OpenReadStreamAsync_InvalidPath_ThrowsArgumentException()
+    public async Task Test_UnknownFilesystem_OpenReadStreamAsync_InvalidPath_ThrowsArgumentException_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
         var partitionSize = 5 * MiB;

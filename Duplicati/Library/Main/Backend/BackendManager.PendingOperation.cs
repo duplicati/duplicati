@@ -106,7 +106,7 @@ partial class BackendManager
         /// <summary>
         /// The task that is completed when the operation is done
         /// </summary>
-        public Task<TResult> GetResult() => taskCompleteSignal.Task;
+        public Task<TResult> GetResultAsync() => taskCompleteSignal.Task;
 
         /// <summary>
         /// Sets the operation as complete

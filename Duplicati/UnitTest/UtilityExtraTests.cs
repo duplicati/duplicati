@@ -60,11 +60,11 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Utility")]
-        public async Task UpdateOptionsFromDbPopulatesMissingValues()
+        public async Task UpdateOptionsFromDbPopulatesMissingValuesAsync()
         {
             using var tempDb = new TempFile();
             await using var db = await LocalDatabase.CreateLocalDatabaseAsync(tempDb, "test", true, null, CancellationToken.None);
-            await db.SetDbOptions(new Dictionary<string, string>
+            await db.SetDbOptionsAsync(new Dictionary<string, string>
             {
                 { "prefix", "custom-prefix" },
                 { "blocksize", "16384" },
@@ -77,7 +77,7 @@ namespace Duplicati.UnitTest
 
             var options = new Options(new Dictionary<string, string?>());
 
-            await Utility.UpdateOptionsFromDb(db, options, CancellationToken.None);
+            await Utility.UpdateOptionsFromDbAsync(db, options, CancellationToken.None);
 
             Assert.That(options.RawOptions.TryGetValue("prefix", out var prefix), Is.True);
             Assert.That(prefix, Is.EqualTo("custom-prefix"));
@@ -97,11 +97,11 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Utility")]
-        public async Task UpdateOptionsFromDbRespectsExistingValues()
+        public async Task UpdateOptionsFromDbRespectsExistingValuesAsync()
         {
             using var tempDb = new TempFile();
             await using var db = await LocalDatabase.CreateLocalDatabaseAsync(tempDb, "test", true, null, CancellationToken.None);
-            await db.SetDbOptions(new Dictionary<string, string>
+            await db.SetDbOptionsAsync(new Dictionary<string, string>
             {
                 { "prefix", "stored-prefix" },
                 { "blocksize", "4096" },
@@ -123,7 +123,7 @@ namespace Duplicati.UnitTest
                 { "encryption-module", "gpg" }
             });
 
-            await Utility.UpdateOptionsFromDb(db, options, CancellationToken.None);
+            await Utility.UpdateOptionsFromDbAsync(db, options, CancellationToken.None);
 
             Assert.That(options.RawOptions["prefix"], Is.EqualTo("cli-prefix"));
             Assert.That(options.RawOptions["blocksize"], Is.EqualTo("32kb"));
@@ -136,18 +136,18 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Utility")]
-        public async Task UpdateOptionsFromDbRestoresNoEncryptionWhenStoredBackupIsUnencrypted()
+        public async Task UpdateOptionsFromDbRestoresNoEncryptionWhenStoredBackupIsUnencryptedAsync()
         {
             using var tempDb = new TempFile();
             await using var db = await LocalDatabase.CreateLocalDatabaseAsync(tempDb, "test", true, null, CancellationToken.None);
-            await db.SetDbOptions(new Dictionary<string, string>
+            await db.SetDbOptionsAsync(new Dictionary<string, string>
             {
                 { "passphrase", "no-encryption" }
             }, CancellationToken.None);
 
             var options = new Options(new Dictionary<string, string?>());
 
-            await Utility.UpdateOptionsFromDb(db, options, CancellationToken.None);
+            await Utility.UpdateOptionsFromDbAsync(db, options, CancellationToken.None);
 
             Assert.That(options.RawOptions.TryGetValue("no-encryption", out var noEncryption), Is.True);
             Assert.That(noEncryption, Is.EqualTo("true"));
@@ -155,40 +155,40 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Utility")]
-        public async Task ContainsOptionsForVerificationDetectsSensitiveEntries()
+        public async Task ContainsOptionsForVerificationDetectsSensitiveEntriesAsync()
         {
             using var tempDb = new TempFile();
             await using var db = await LocalDatabase.CreateLocalDatabaseAsync(tempDb, "test", true, null, CancellationToken.None);
-            await db.SetDbOptions(new Dictionary<string, string>
+            await db.SetDbOptionsAsync(new Dictionary<string, string>
             {
                 { "compression-module", "zip" }
             }, CancellationToken.None);
 
-            var result = await Utility.ContainsOptionsForVerification(db, CancellationToken.None);
+            var result = await Utility.ContainsOptionsForVerificationAsync(db, CancellationToken.None);
 
             Assert.That(result, Is.True);
         }
 
         [Test]
         [Category("Utility")]
-        public async Task ContainsOptionsForVerificationReturnsFalseWhenOptionsAbsent()
+        public async Task ContainsOptionsForVerificationReturnsFalseWhenOptionsAbsentAsync()
         {
             using var tempDb = new TempFile();
             await using var db = await LocalDatabase.CreateLocalDatabaseAsync(tempDb, "test", true, null, CancellationToken.None);
-            await db.SetDbOptions(new Dictionary<string, string>(), CancellationToken.None);
+            await db.SetDbOptionsAsync(new Dictionary<string, string>(), CancellationToken.None);
 
-            var result = await Utility.ContainsOptionsForVerification(db, CancellationToken.None);
+            var result = await Utility.ContainsOptionsForVerificationAsync(db, CancellationToken.None);
 
             Assert.That(result, Is.False);
         }
 
         [Test]
         [Category("Utility")]
-        public async Task VerifyOptionsThrowsWhenAddingPassphraseWithoutPermission()
+        public async Task VerifyOptionsThrowsWhenAddingPassphraseWithoutPermissionAsync()
         {
             using var tempDb = new TempFile();
             await using var db = await LocalDatabase.CreateLocalDatabaseAsync(tempDb, "test", true, null, CancellationToken.None);
-            await db.SetDbOptions(new Dictionary<string, string>
+            await db.SetDbOptionsAsync(new Dictionary<string, string>
             {
                 { "blocksize", "16384" },
                 { "blockhash", Library.Utility.HashFactory.SHA256 },
@@ -206,17 +206,17 @@ namespace Duplicati.UnitTest
             });
 
             var ex = Assert.ThrowsAsync<UserInformationException>(async () =>
-                await Utility.VerifyOptionsAndUpdateDatabase(db, options, CancellationToken.None));
+                await Utility.VerifyOptionsAndUpdateDatabaseAsync(db, options, CancellationToken.None));
 
             Assert.That(ex?.Message, Does.Contain("add a passphrase"));
 
-            var storedOptions = await db.GetDbOptions(CancellationToken.None);
+            var storedOptions = await db.GetDbOptionsAsync(CancellationToken.None);
             Assert.That(storedOptions["passphrase"], Is.EqualTo("no-encryption"));
         }
 
         [Test]
         [Category("Utility")]
-        public async Task VerifyOptionsAndUpdateDatabasePersistsWritePathValues()
+        public async Task VerifyOptionsAndUpdateDatabasePersistsWritePathValuesAsync()
         {
             using var tempDb = new TempFile();
             await using var db = await LocalDatabase.CreateLocalDatabaseAsync(tempDb, "test", true, null, CancellationToken.None);
@@ -233,9 +233,9 @@ namespace Duplicati.UnitTest
                 { "passphrase", "secret" }
             });
 
-            await Utility.VerifyOptionsAndUpdateDatabase(db, options, CancellationToken.None);
+            await Utility.VerifyOptionsAndUpdateDatabaseAsync(db, options, CancellationToken.None);
 
-            var storedOptions = await db.GetDbOptions(CancellationToken.None);
+            var storedOptions = await db.GetDbOptionsAsync(CancellationToken.None);
             Assert.That(storedOptions["prefix"], Is.EqualTo("persisted-prefix"));
             Assert.That(storedOptions["blocksize"], Is.EqualTo(options.Blocksize.ToString()));
             Assert.That(storedOptions["blockhash"], Is.EqualTo(Library.Utility.HashFactory.SHA256));
@@ -249,11 +249,11 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Utility")]
-        public async Task PersistOptionsToDatabaseRemovesStaleEncryptionMarkersForUnencryptedBackup()
+        public async Task PersistOptionsToDatabaseRemovesStaleEncryptionMarkersForUnencryptedBackup_Async()
         {
             using var tempDb = new TempFile();
             await using var db = await LocalDatabase.CreateLocalDatabaseAsync(tempDb, "test", true, null, CancellationToken.None);
-            await db.SetDbOptions(new Dictionary<string, string>
+            await db.SetDbOptionsAsync(new Dictionary<string, string>
             {
                 { "compression-module", "zip" },
                 { "encryption-module", "aes" },
@@ -270,10 +270,10 @@ namespace Duplicati.UnitTest
                 { "no-encryption", bool.TrueString }
             });
 
-            await Utility.PersistOptionsToDatabaseWithoutValidation(tempDb, options, "UnitTestPersistOptions", CancellationToken.None);
+            await Utility.PersistOptionsToDatabaseWithoutValidationAsync(tempDb, options, "UnitTestPersistOptions", CancellationToken.None);
 
             await using var reopened = await LocalDatabase.CreateLocalDatabaseAsync(tempDb, "verify", true, null, CancellationToken.None);
-            var storedOptions = await reopened.GetDbOptions(CancellationToken.None);
+            var storedOptions = await reopened.GetDbOptionsAsync(CancellationToken.None);
 
             Assert.That(storedOptions["compression-module"], Is.EqualTo("zip"));
             Assert.That(storedOptions["passphrase"], Is.EqualTo("no-encryption"));

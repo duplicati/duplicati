@@ -9,7 +9,7 @@ namespace Duplicati.UnitTest.DiskImage.UnitTests;
 public partial class DiskImageUnitTests : BasicSetupHelper
 {
     [Test]
-    public async Task Test_RawDisk_ReadUnalignedOffset_ReturnsCorrectData()
+    public async Task Test_RawDisk_ReadUnalignedOffset_ReturnsCorrectData_Async()
     {
         // Use writable disk for this test
         var sectorSize = _writableRawDisk.SectorSize;
@@ -35,7 +35,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_RawDisk_ReadUnalignedLength_ReturnsCorrectData()
+    public async Task Test_RawDisk_ReadUnalignedLength_ReturnsCorrectData_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
 
@@ -58,7 +58,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_RawDisk_ReadShortLength_ReturnsCorrectData()
+    public async Task Test_RawDisk_ReadShortLength_ReturnsCorrectData_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
 
@@ -81,7 +81,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_RawDisk_ReadStraddlingSectors_ReturnsCorrectData()
+    public async Task Test_RawDisk_ReadStraddlingSectors_ReturnsCorrectData_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
 
@@ -121,7 +121,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_RawDisk_ReadNearEndOfDisk_ReturnsCorrectData()
+    public async Task Test_RawDisk_ReadNearEndOfDisk_ReturnsCorrectData_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
         var diskSize = _writableRawDisk.Size;
@@ -144,7 +144,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_RawDisk_ReadUnalignedOffsetWithMemory_ReturnsCorrectData()
+    public async Task Test_RawDisk_ReadUnalignedOffsetWithMemory_ReturnsCorrectData_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
 
@@ -167,7 +167,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_RawDisk_ReadUnalignedLengthWithMemory_ReturnsCorrectData()
+    public async Task Test_RawDisk_ReadUnalignedLengthWithMemory_ReturnsCorrectData_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
 

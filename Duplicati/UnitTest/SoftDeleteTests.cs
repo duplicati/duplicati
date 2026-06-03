@@ -19,7 +19,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -38,7 +37,7 @@ namespace Duplicati.UnitTest
         /// </summary>
         [Test]
         [Category("SoftDelete")]
-        public void TestSoftDeleteWithSimplePrefix()
+        public async Task TestSoftDeleteWithSimplePrefixAsync()
         {
             // Use a simple prefix (not a folder path)
             var softDeletePrefix = "deleted-";
@@ -48,7 +47,7 @@ namespace Duplicati.UnitTest
             File.WriteAllText(testFile, "test content version 1");
             using (var c = new Controller("file://" + this.TARGETFOLDER, TestOptions.Expand(new { soft_delete_prefix = softDeletePrefix, keep_versions = 2 }), null))
             {
-                var result = c.Backup(new[] { this.DATAFOLDER });
+                var result = await c.BackupAsync(new[] { this.DATAFOLDER });
                 Assert.That(result.Errors, Is.Empty, "Backup 1 should have no errors");
             }
 
@@ -61,7 +60,7 @@ namespace Duplicati.UnitTest
             File.WriteAllText(testFile, "test content version 2");
             using (var c = new Controller("file://" + this.TARGETFOLDER, TestOptions.Expand(new { soft_delete_prefix = softDeletePrefix, keep_versions = 2 }), null))
             {
-                var result = c.Backup(new[] { this.DATAFOLDER });
+                var result = await c.BackupAsync(new[] { this.DATAFOLDER });
                 Assert.That(result.Errors, Is.Empty, "Backup 2 should have no errors");
             }
 
@@ -70,7 +69,7 @@ namespace Duplicati.UnitTest
             File.WriteAllText(testFile, "test content version 3");
             using (var c = new Controller("file://" + this.TARGETFOLDER, TestOptions.Expand(new { soft_delete_prefix = softDeletePrefix, keep_versions = 2 }), null))
             {
-                var result = c.Backup(new[] { this.DATAFOLDER });
+                var result = await c.BackupAsync(new[] { this.DATAFOLDER });
                 Assert.That(result.Errors, Is.Empty, "Backup 3 should have no errors");
             }
 
@@ -93,7 +92,7 @@ namespace Duplicati.UnitTest
         /// </summary>
         [Test]
         [Category("SoftDelete")]
-        public void TestSoftDeleteWithFolderPrefix()
+        public async Task TestSoftDeleteWithFolderPrefixAsync()
         {
             // Use a folder-based prefix
             var softDeletePrefix = "recycled/";
@@ -106,7 +105,7 @@ namespace Duplicati.UnitTest
             File.WriteAllText(testFile, "test content version 1");
             using (var c = new Controller("file://" + this.TARGETFOLDER, TestOptions.Expand(new { soft_delete_prefix = softDeletePrefix, keep_versions = 2 }), null))
             {
-                var result = c.Backup(new[] { this.DATAFOLDER });
+                var result = await c.BackupAsync(new[] { this.DATAFOLDER });
                 Assert.That(result.Errors, Is.Empty, "Backup 1 should have no errors");
             }
 
@@ -115,7 +114,7 @@ namespace Duplicati.UnitTest
             File.WriteAllText(testFile, "test content version 2");
             using (var c = new Controller("file://" + this.TARGETFOLDER, TestOptions.Expand(new { soft_delete_prefix = softDeletePrefix, keep_versions = 2 }), null))
             {
-                var result = c.Backup(new[] { this.DATAFOLDER });
+                var result = await c.BackupAsync(new[] { this.DATAFOLDER });
                 Assert.That(result.Errors, Is.Empty, "Backup 2 should have no errors");
             }
 
@@ -124,7 +123,7 @@ namespace Duplicati.UnitTest
             File.WriteAllText(testFile, "test content version 3");
             using (var c = new Controller("file://" + this.TARGETFOLDER, TestOptions.Expand(new { soft_delete_prefix = softDeletePrefix, keep_versions = 2 }), null))
             {
-                var result = c.Backup(new[] { this.DATAFOLDER });
+                var result = await c.BackupAsync(new[] { this.DATAFOLDER });
                 Assert.That(result.Errors, Is.Empty, "Backup 3 should have no errors");
             }
 
@@ -149,7 +148,7 @@ namespace Duplicati.UnitTest
         /// </summary>
         [Test]
         [Category("SoftDelete")]
-        public void TestSoftDeleteWithoutRenameEnabledBackend()
+        public async Task TestSoftDeleteWithoutRenameEnabledBackendAsync()
         {
             // Register the NoRenameBackend
             Library.DynamicLoader.BackendLoader.AddBackend(new NoRenameBackend());
@@ -162,7 +161,7 @@ namespace Duplicati.UnitTest
             File.WriteAllText(testFile, "test content version 1");
             using (var c = new Controller(new NoRenameBackend().ProtocolKey + "://" + this.TARGETFOLDER, TestOptions.Expand(new { soft_delete_prefix = softDeletePrefix, keep_versions = 2 }), null))
             {
-                var result = c.Backup(new[] { this.DATAFOLDER });
+                var result = await c.BackupAsync(new[] { this.DATAFOLDER });
                 Assert.That(result.Errors, Is.Empty, "Backup 1 should have no errors");
             }
 
@@ -175,7 +174,7 @@ namespace Duplicati.UnitTest
             File.WriteAllText(testFile, "test content version 2");
             using (var c = new Controller(new NoRenameBackend().ProtocolKey + "://" + this.TARGETFOLDER, TestOptions.Expand(new { soft_delete_prefix = softDeletePrefix, keep_versions = 2 }), null))
             {
-                var result = c.Backup(new[] { this.DATAFOLDER });
+                var result = await c.BackupAsync(new[] { this.DATAFOLDER });
                 Assert.That(result.Errors, Is.Empty, "Backup 2 should have no errors");
             }
 
@@ -184,7 +183,7 @@ namespace Duplicati.UnitTest
             File.WriteAllText(testFile, "test content version 3");
             using (var c = new Controller(new NoRenameBackend().ProtocolKey + "://" + this.TARGETFOLDER, TestOptions.Expand(new { soft_delete_prefix = softDeletePrefix, keep_versions = 2 }), null))
             {
-                var result = c.Backup(new[] { this.DATAFOLDER });
+                var result = await c.BackupAsync(new[] { this.DATAFOLDER });
                 Assert.That(result.Errors, Is.Empty, "Backup 3 should have no errors");
             }
 
@@ -208,7 +207,7 @@ namespace Duplicati.UnitTest
         /// </summary>
         [Test]
         [Category("SoftDelete")]
-        public void TestSoftDeleteWithFolderPrefixWithoutRenameBackend()
+        public async Task TestSoftDeleteWithFolderPrefixWithoutRenameBackendAsync()
         {
             // Register the NoRenameBackend
             Library.DynamicLoader.BackendLoader.AddBackend(new NoRenameBackend());
@@ -224,7 +223,7 @@ namespace Duplicati.UnitTest
             File.WriteAllText(testFile, "test content version 1");
             using (var c = new Controller(new NoRenameBackend().ProtocolKey + "://" + this.TARGETFOLDER, TestOptions.Expand(new { soft_delete_prefix = softDeletePrefix, keep_versions = 2 }), null))
             {
-                var result = c.Backup(new[] { this.DATAFOLDER });
+                var result = await c.BackupAsync(new[] { this.DATAFOLDER });
                 Assert.That(result.Errors, Is.Empty, "Backup 1 should have no errors");
             }
 
@@ -233,7 +232,7 @@ namespace Duplicati.UnitTest
             File.WriteAllText(testFile, "test content version 2");
             using (var c = new Controller(new NoRenameBackend().ProtocolKey + "://" + this.TARGETFOLDER, TestOptions.Expand(new { soft_delete_prefix = softDeletePrefix, keep_versions = 2 }), null))
             {
-                var result = c.Backup(new[] { this.DATAFOLDER });
+                var result = await c.BackupAsync(new[] { this.DATAFOLDER });
                 Assert.That(result.Errors, Is.Empty, "Backup 2 should have no errors");
             }
 
@@ -242,7 +241,7 @@ namespace Duplicati.UnitTest
             File.WriteAllText(testFile, "test content version 3");
             using (var c = new Controller(new NoRenameBackend().ProtocolKey + "://" + this.TARGETFOLDER, TestOptions.Expand(new { soft_delete_prefix = softDeletePrefix, keep_versions = 2 }), null))
             {
-                var result = c.Backup(new[] { this.DATAFOLDER });
+                var result = await c.BackupAsync(new[] { this.DATAFOLDER });
                 Assert.That(result.Errors, Is.Empty, "Backup 3 should have no errors");
             }
 
@@ -267,7 +266,7 @@ namespace Duplicati.UnitTest
         /// </summary>
         [Test]
         [Category("SoftDelete")]
-        public void TestSoftDeleteWithPreventBackendRename()
+        public async Task TestSoftDeleteWithPreventBackendRenameAsync()
         {
             // Use a simple prefix
             var softDeletePrefix = "deleted-";
@@ -277,7 +276,7 @@ namespace Duplicati.UnitTest
             File.WriteAllText(testFile, "test content version 1");
             using (var c = new Controller("file://" + this.TARGETFOLDER, TestOptions.Expand(new { soft_delete_prefix = softDeletePrefix, keep_versions = 2, prevent_backend_rename = "true" }), null))
             {
-                var result = c.Backup(new[] { this.DATAFOLDER });
+                var result = await c.BackupAsync(new[] { this.DATAFOLDER });
                 Assert.That(result.Errors, Is.Empty, "Backup 1 should have no errors");
             }
 
@@ -286,7 +285,7 @@ namespace Duplicati.UnitTest
             File.WriteAllText(testFile, "test content version 2");
             using (var c = new Controller("file://" + this.TARGETFOLDER, TestOptions.Expand(new { soft_delete_prefix = softDeletePrefix, keep_versions = 2, prevent_backend_rename = "true" }), null))
             {
-                var result = c.Backup(new[] { this.DATAFOLDER });
+                var result = await c.BackupAsync(new[] { this.DATAFOLDER });
                 Assert.That(result.Errors, Is.Empty, "Backup 2 should have no errors");
             }
 
@@ -295,7 +294,7 @@ namespace Duplicati.UnitTest
             File.WriteAllText(testFile, "test content version 3");
             using (var c = new Controller("file://" + this.TARGETFOLDER, TestOptions.Expand(new { soft_delete_prefix = softDeletePrefix, keep_versions = 2, prevent_backend_rename = "true" }), null))
             {
-                var result = c.Backup(new[] { this.DATAFOLDER });
+                var result = await c.BackupAsync(new[] { this.DATAFOLDER });
                 Assert.That(result.Errors, Is.Empty, "Backup 3 should have no errors");
             }
 
@@ -317,7 +316,7 @@ namespace Duplicati.UnitTest
         /// </summary>
         [Test]
         [Category("SoftDelete")]
-        public void TestWithoutSoftDeleteFilesAreActuallyDeleted()
+        public async Task TestWithoutSoftDeleteFilesAreActuallyDeletedAsync()
         {
             var testFile = Path.Combine(this.DATAFOLDER, "testfile.txt");
 
@@ -325,7 +324,7 @@ namespace Duplicati.UnitTest
             File.WriteAllText(testFile, "test content version 1");
             using (var c = new Controller("file://" + this.TARGETFOLDER, TestOptions.Expand(new { keep_versions = 2 }), null))
             {
-                var result = c.Backup(new[] { this.DATAFOLDER });
+                var result = await c.BackupAsync(new[] { this.DATAFOLDER });
                 Assert.That(result.Errors, Is.Empty, "Backup 1 should have no errors");
             }
 
@@ -338,7 +337,7 @@ namespace Duplicati.UnitTest
             File.WriteAllText(testFile, "test content version 2");
             using (var c = new Controller("file://" + this.TARGETFOLDER, TestOptions.Expand(new { keep_versions = 2 }), null))
             {
-                var result = c.Backup(new[] { this.DATAFOLDER });
+                var result = await c.BackupAsync(new[] { this.DATAFOLDER });
                 Assert.That(result.Errors, Is.Empty, "Backup 2 should have no errors");
             }
 
@@ -347,7 +346,7 @@ namespace Duplicati.UnitTest
             File.WriteAllText(testFile, "test content version 3");
             using (var c = new Controller("file://" + this.TARGETFOLDER, TestOptions.Expand(new { keep_versions = 2 }), null))
             {
-                var result = c.Backup(new[] { this.DATAFOLDER });
+                var result = await c.BackupAsync(new[] { this.DATAFOLDER });
                 Assert.That(result.Errors, Is.Empty, "Backup 3 should have no errors");
             }
 
@@ -370,7 +369,7 @@ namespace Duplicati.UnitTest
         /// </summary>
         [Test]
         [Category("SoftDelete")]
-        public void TestSoftDeleteWithCompact()
+        public async Task TestSoftDeleteWithCompactAsync()
         {
             var softDeletePrefix = "deleted-";
             var testFile = Path.Combine(this.DATAFOLDER, "testfile.txt");
@@ -380,7 +379,7 @@ namespace Duplicati.UnitTest
             File.WriteAllText(testFile, largeContent);
             using (var c = new Controller("file://" + this.TARGETFOLDER, TestOptions.Expand(new { soft_delete_prefix = softDeletePrefix }), null))
             {
-                var result = c.Backup(new[] { this.DATAFOLDER });
+                var result = await c.BackupAsync(new[] { this.DATAFOLDER });
                 Assert.That(result.Errors, Is.Empty, "Backup 1 should have no errors");
             }
 
@@ -388,21 +387,21 @@ namespace Duplicati.UnitTest
             File.Delete(testFile);
             using (var c = new Controller("file://" + this.TARGETFOLDER, TestOptions.Expand(new { soft_delete_prefix = softDeletePrefix }), null))
             {
-                var result = c.Backup(new[] { this.DATAFOLDER });
+                var result = await c.BackupAsync(new[] { this.DATAFOLDER });
                 Assert.That(result.Errors, Is.Empty, "Backup 2 should have no errors");
             }
 
             // 3. Delete the first version to trigger compact
             using (var c = new Controller("file://" + this.TARGETFOLDER, TestOptions.Expand(new { soft_delete_prefix = softDeletePrefix }), null))
             {
-                var result = c.Delete();
+                var result = await c.DeleteAsync();
                 Assert.That(result.Errors, Is.Empty, "Delete should have no errors");
             }
 
             // 4. Run compact with aggressive settings
             using (var c = new Controller("file://" + this.TARGETFOLDER, TestOptions.Expand(new { soft_delete_prefix = softDeletePrefix, small_file_size = "1", small_file_max_count = "0" }), null))
             {
-                var result = c.Compact();
+                var result = await c.CompactAsync();
                 Assert.That(result.Errors, Is.Empty, "Compact should have no errors");
             }
 
@@ -420,7 +419,7 @@ namespace Duplicati.UnitTest
         /// </summary>
         [Test]
         [Category("SoftDelete")]
-        public void TestSoftDeleteHandlesDuplicateFilenames()
+        public async Task TestSoftDeleteHandlesDuplicateFilenamesAsync()
         {
             var softDeletePrefix = "deleted-";
             var testFile = Path.Combine(this.DATAFOLDER, "testfile.txt");
@@ -432,7 +431,7 @@ namespace Duplicati.UnitTest
                 Thread.Sleep(1100); // Ensure timestamp difference
                 using (var c = new Controller("file://" + this.TARGETFOLDER, TestOptions.Expand(new { soft_delete_prefix = softDeletePrefix, keep_versions = 2 }), null))
                 {
-                    var result = c.Backup(new[] { this.DATAFOLDER });
+                    var result = await c.BackupAsync(new[] { this.DATAFOLDER });
                     Assert.That(result.Errors, Is.Empty, $"Backup {i} should have no errors");
                 }
             }

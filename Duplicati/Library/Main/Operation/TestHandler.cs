@@ -54,16 +54,16 @@ namespace Duplicati.Library.Main.Operation
                 throw new UserInformationException(LC.L("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
 
             await using var db = await LocalTestDatabase.CreateAsync(m_options.Dbpath, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
-            await Utility.UpdateOptionsFromDb(db, m_options, m_result.TaskControl.ProgressToken)
+            await Utility.UpdateOptionsFromDbAsync(db, m_options, m_result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);
-            await Utility.VerifyOptionsAndUpdateDatabase(db, m_options, m_result.TaskControl.ProgressToken)
+            await Utility.VerifyOptionsAndUpdateDatabaseAsync(db, m_options, m_result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);
 
             await db
-                .VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, !m_options.DisableFilelistConsistencyChecks, m_result.TaskControl.ProgressToken)
+                .VerifyConsistencyAsync(m_options.Blocksize, m_options.BlockhashSize, !m_options.DisableFilelistConsistencyChecks, m_result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);
 
-            await FilelistProcessor.VerifyRemoteList(backendManager, m_options, db, m_result.BackendWriter, latestVolumesOnly: true, verifyMode: FilelistProcessor.VerifyMode.VerifyOnly, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+            await FilelistProcessor.VerifyRemoteListAsync(backendManager, m_options, db, m_result.BackendWriter, latestVolumesOnly: true, verifyMode: FilelistProcessor.VerifyMode.VerifyOnly, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
             await DoRunAsync(samples, db, backendManager).ConfigureAwait(false);
             await db.Transaction
                 .CommitAsync("TestHandlerComplete")
@@ -73,7 +73,7 @@ namespace Duplicati.Library.Main.Operation
         public async Task DoRunAsync(long samples, LocalTestDatabase db, IBackendManager backend)
         {
             var files = await db
-                .SelectTestTargets(samples, m_options, m_result.TaskControl.ProgressToken)
+                .SelectTestTargetsAsync(samples, m_options, m_result.TaskControl.ProgressToken)
                 .ToListAsync(cancellationToken: m_result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);
 
@@ -89,7 +89,7 @@ namespace Duplicati.Library.Main.Operation
                     var vol = new RemoteVolume(name, hash, size);
                     try
                     {
-                        if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
+                        if (!await m_result.TaskControl.ProgressRendevouzAsync().ConfigureAwait(false))
                         {
                             await backend.WaitForEmptyAsync(db, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                             m_result.EndTime = DateTime.UtcNow;
@@ -101,7 +101,7 @@ namespace Duplicati.Library.Main.Operation
 
                         KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>> res;
                         using (tf)
-                            res = await TestVolumeInternals(db, vol, tf, m_options, m_options.FullBlockVerification ? 1.0 : 0.2, m_result.TaskControl.ProgressToken)
+                            res = await TestVolumeInternalsAsync(db, vol, tf, m_options, m_options.FullBlockVerification ? 1.0 : 0.2, m_result.TaskControl.ProgressToken)
                                 .ConfigureAwait(false);
 
                         var parsedInfo = VolumeBase.ParseFilename(vol.Name);
@@ -127,7 +127,7 @@ namespace Duplicati.Library.Main.Operation
                             if (res.Value == null || !res.Value.Any())
                             {
                                 var rv = await db
-                                    .GetRemoteVolume(vol.Name, m_result.TaskControl.ProgressToken)
+                                    .GetRemoteVolumeAsync(vol.Name, m_result.TaskControl.ProgressToken)
                                     .ConfigureAwait(false);
 
                                 if (rv.ID < 0)
@@ -142,7 +142,7 @@ namespace Duplicati.Library.Main.Operation
                                         {
                                             Logging.Log.WriteInformationMessage(LOGTAG, "CaptureHashAndSize", LC.L("Successfully captured hash and size for {0}, updating database", vol.Name));
                                             await db
-                                                .UpdateRemoteVolume(vol.Name, RemoteVolumeState.Verified, vol.Size, vol.Hash, m_result.TaskControl.ProgressToken)
+                                                .UpdateRemoteVolumeAsync(vol.Name, RemoteVolumeState.Verified, vol.Size, vol.Hash, m_result.TaskControl.ProgressToken)
                                                 .ConfigureAwait(false);
                                         }
                                     }
@@ -151,7 +151,7 @@ namespace Duplicati.Library.Main.Operation
                         }
 
                         await db
-                            .UpdateVerificationCount(vol.Name, m_result.TaskControl.ProgressToken)
+                            .UpdateVerificationCountAsync(vol.Name, m_result.TaskControl.ProgressToken)
                             .ConfigureAwait(false);
                     }
                     catch (Exception ex)
@@ -183,7 +183,7 @@ namespace Duplicati.Library.Main.Operation
                 {
                     try
                     {
-                        if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
+                        if (!await m_result.TaskControl.ProgressRendevouzAsync().ConfigureAwait(false))
                         {
                             m_result.EndTime = DateTime.UtcNow;
                             return;
@@ -200,7 +200,7 @@ namespace Duplicati.Library.Main.Operation
                             (var tf, var hash, var size) = await backend.GetWithInfoAsync(f.Name, f.Hash, f.Size, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
 
                             using (tf)
-                                res = await TestVolumeInternals(db, f, tf, m_options, 1, m_result.TaskControl.ProgressToken)
+                                res = await TestVolumeInternalsAsync(db, f, tf, m_options, 1, m_result.TaskControl.ProgressToken)
                                     .ConfigureAwait(false);
                             m_result.AddResult(res.Key, res.Value);
 
@@ -216,7 +216,7 @@ namespace Duplicati.Library.Main.Operation
                                     {
                                         Logging.Log.WriteInformationMessage(LOGTAG, "CapturedHashAndSize", LC.L("Successfully captured hash and size for {0}, updating database", f.Name));
                                         await db
-                                            .UpdateRemoteVolume(f.Name, RemoteVolumeState.Verified, size, hash, m_result.TaskControl.ProgressToken)
+                                            .UpdateRemoteVolumeAsync(f.Name, RemoteVolumeState.Verified, size, hash, m_result.TaskControl.ProgressToken)
                                             .ConfigureAwait(false);
                                     }
                                 }
@@ -229,7 +229,7 @@ namespace Duplicati.Library.Main.Operation
                         }
 
                         await db
-                            .UpdateVerificationCount(f.Name, m_result.TaskControl.ProgressToken)
+                            .UpdateVerificationCountAsync(f.Name, m_result.TaskControl.ProgressToken)
                             .ConfigureAwait(false);
                         m_result.AddResult(f.Name, []);
                     }
@@ -270,7 +270,7 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="sample_percent">A value between 0 and 1 that indicates how many blocks are tested in a dblock file.</param>
         /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
         /// <returns>A task that when awaited returns a key-value pair where the key is the volume name and the value is a list of test results.</returns>
-        public static async Task<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> TestVolumeInternals(LocalTestDatabase db, IRemoteVolume vol, string tf, Options options, double sample_percent, CancellationToken cancellationToken)
+        public static async Task<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> TestVolumeInternalsAsync(LocalTestDatabase db, IRemoteVolume vol, string tf, Options options, double sample_percent, CancellationToken cancellationToken)
         {
             var hashsize = HashFactory.HashSizeBytes(options.BlockHashAlgorithm);
             var parsedInfo = Volumes.VolumeBase.ParseFilename(vol.Name);
@@ -281,15 +281,15 @@ namespace Duplicati.Library.Main.Operation
                 case RemoteVolumeType.Files:
                     //Compare with db and see if all files are accounted for
                     // with correct file hashes and blocklist hashes
-                    await using (var fl = await db.CreateFilelist(vol.Name, cancellationToken).ConfigureAwait(false))
+                    await using (var fl = await db.CreateFilelistAsync(vol.Name, cancellationToken).ConfigureAwait(false))
                     {
                         using (var rd = new Volumes.FilesetVolumeReader(parsedInfo.CompressionModule, tf, options))
                             foreach (var f in rd.Files)
                                 await fl
-                                    .Add(f.Path, f.Size, f.Hash, f.Metasize, f.Metahash, f.BlocklistHashes, f.Type, f.Time, cancellationToken)
+                                    .AddAsync(f.Path, f.Size, f.Hash, f.Metasize, f.Metahash, f.BlocklistHashes, f.Type, f.Time, cancellationToken)
                                     .ConfigureAwait(false);
 
-                        return new KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>(vol.Name, await fl.Compare(cancellationToken).ToListAsync(cancellationToken: cancellationToken).ConfigureAwait(false));
+                        return new KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>(vol.Name, await fl.CompareAsync(cancellationToken).ToListAsync(cancellationToken: cancellationToken).ConfigureAwait(false));
                     }
 
                 case RemoteVolumeType.Index:
@@ -302,16 +302,16 @@ namespace Duplicati.Library.Main.Operation
                         foreach (var v in rd.Volumes)
                         {
                             blocklinks.Add(new Tuple<string, string, long>(v.Filename, v.Hash, v.Length));
-                            await using (var bl = await db.CreateBlocklist(v.Filename, cancellationToken).ConfigureAwait(false))
+                            await using (var bl = await db.CreateBlocklistAsync(v.Filename, cancellationToken).ConfigureAwait(false))
                             {
                                 foreach (var h in v.Blocks)
                                     await bl
-                                        .AddBlock(h.Key, h.Value, cancellationToken)
+                                        .AddBlockAsync(h.Key, h.Value, cancellationToken)
                                         .ConfigureAwait(false);
 
                                 combined.AddRange(
                                     await bl
-                                        .Compare(cancellationToken)
+                                        .CompareAsync(cancellationToken)
                                         .ToListAsync(cancellationToken: cancellationToken)
                                         .ConfigureAwait(false)
                                 );
@@ -321,16 +321,16 @@ namespace Duplicati.Library.Main.Operation
                         if (options.IndexfilePolicy == Options.IndexFileStrategy.Full)
                         {
                             var hashesPerBlock = options.Blocksize / options.BlockhashSize;
-                            await using (var bl = await db.CreateBlocklistHashList(vol.Name, cancellationToken).ConfigureAwait(false))
+                            await using (var bl = await db.CreateBlocklistHashListAsync(vol.Name, cancellationToken).ConfigureAwait(false))
                             {
                                 foreach (var b in rd.BlockLists)
                                     await bl
-                                        .AddBlockHash(b.Hash, b.Length, cancellationToken)
+                                        .AddBlockHashAsync(b.Hash, b.Length, cancellationToken)
                                         .ConfigureAwait(false);
 
                                 combined.AddRange(
                                     await bl
-                                        .Compare(hashesPerBlock, options.BlockhashSize, options.Blocksize, cancellationToken)
+                                        .CompareAsync(hashesPerBlock, options.BlockhashSize, options.Blocksize, cancellationToken)
                                         .ToListAsync(cancellationToken: cancellationToken)
                                         .ConfigureAwait(false)
                                 );
@@ -339,16 +339,16 @@ namespace Duplicati.Library.Main.Operation
                     }
 
                     // Compare with db and see that all blocklists are listed
-                    await using (var il = await db.CreateIndexlist(vol.Name, cancellationToken).ConfigureAwait(false))
+                    await using (var il = await db.CreateIndexlistAsync(vol.Name, cancellationToken).ConfigureAwait(false))
                     {
                         foreach (var t in blocklinks)
                             await il
-                                .AddBlockLink(t.Item1, t.Item2, t.Item3, cancellationToken)
+                                .AddBlockLinkAsync(t.Item1, t.Item2, t.Item3, cancellationToken)
                                 .ConfigureAwait(false);
 
                         combined.AddRange(
                             await il
-                                .Compare(cancellationToken)
+                                .CompareAsync(cancellationToken)
                                 .ToArrayAsync(cancellationToken: cancellationToken)
                                 .ConfigureAwait(false)
                         );
@@ -357,13 +357,13 @@ namespace Duplicati.Library.Main.Operation
                     return new KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>(vol.Name, combined);
                 case RemoteVolumeType.Blocks:
                     using (var blockhasher = HashFactory.CreateHasher(options.BlockHashAlgorithm))
-                    await using (var bl = await db.CreateBlocklist(vol.Name, cancellationToken).ConfigureAwait(false))
+                    await using (var bl = await db.CreateBlocklistAsync(vol.Name, cancellationToken).ConfigureAwait(false))
                     using (var rd = new Volumes.BlockVolumeReader(parsedInfo.CompressionModule, tf, options))
                     {
                         //Verify that all blocks are in the file
                         foreach (var b in rd.Blocks)
                             await bl
-                                .AddBlock(b.Key, b.Value, cancellationToken)
+                                .AddBlockAsync(b.Key, b.Value, cancellationToken)
                                 .ConfigureAwait(false);
 
                         //Select random blocks and verify their hashes match the filename and size
@@ -393,7 +393,7 @@ namespace Duplicati.Library.Main.Operation
                             vol.Name,
                             changes.Union(
                                 await bl
-                                    .Compare(cancellationToken)
+                                    .CompareAsync(cancellationToken)
                                     .ToListAsync(cancellationToken: cancellationToken)
                                     .ConfigureAwait(false)
                             )
@@ -413,7 +413,7 @@ namespace Duplicati.Library.Main.Operation
 
             foreach (var vol in faultyIndexFiles)
             {
-                if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
+                if (!await m_result.TaskControl.ProgressRendevouzAsync().ConfigureAwait(false))
                 {
                     m_result.EndTime = DateTime.UtcNow;
                     return;
@@ -423,7 +423,7 @@ namespace Duplicati.Library.Main.Operation
                 try
                 {
                     var w = newEntry = new IndexVolumeWriter(m_options);
-                    await RepairHandler.RunRepairDindex(backendManager, repairdb, w, vol, m_options, cancellationToken).ConfigureAwait(false);
+                    await RepairHandler.RunRepairDindexAsync(backendManager, repairdb, w, vol, m_options, cancellationToken).ConfigureAwait(false);
                     if (m_options.Dryrun)
                     {
                         Logging.Log.WriteDryrunMessage(LOGTAG, "ReplaceFaultyIndexFile", LC.L("Would replace faulty index file {0} with {1}", vol.Name, w.RemoteFilename));

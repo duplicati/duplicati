@@ -37,22 +37,22 @@ class Program
         try
         {
             // Authenticate explicitly (optional - happens automatically on first API call)
-            await client.Authenticate();
+            await client.AuthenticateAsync();
             Console.WriteLine("✓ Authentication successful");
 
             // Demonstrate all client methods
-            await DemonstrateAuthenticationMethods(client);
-            await DemonstrateBackupManagement(client);
-            await DemonstrateBackupOperations(client);
-            await DemonstrateBackupDataAccess(client);
-            await DemonstrateDatabaseManagement(client);
-            await DemonstrateExportOperations(client);
-            await DemonstrateServerManagement(client);
-            await DemonstrateTaskManagement(client);
-            await DemonstrateSystemInformation(client);
-            await DemonstrateSettingsManagement(client);
-            await DemonstrateFilesystemOperations(client);
-            await DemonstrateV2ApiMethods(client);
+            await DemonstrateAuthenticationMethodsAsync(client);
+            await DemonstrateBackupManagementAsync(client);
+            await DemonstrateBackupOperationsAsync(client);
+            await DemonstrateBackupDataAccessAsync(client);
+            await DemonstrateDatabaseManagementAsync(client);
+            await DemonstrateExportOperationsAsync(client);
+            await DemonstrateServerManagementAsync(client);
+            await DemonstrateTaskManagementAsync(client);
+            await DemonstrateSystemInformationAsync(client);
+            await DemonstrateSettingsManagementAsync(client);
+            await DemonstrateFilesystemOperationsAsync(client);
+            await DemonstrateV2ApiMethodsAsync(client);
         }
         catch (Exception ex)
         {
@@ -63,7 +63,7 @@ class Program
     /// <summary>
     /// Demonstrates authentication-related methods
     /// </summary>
-    static async Task DemonstrateAuthenticationMethods(DuplicatiServerClient client)
+    static async Task DemonstrateAuthenticationMethodsAsync(DuplicatiServerClient client)
     {
         Console.WriteLine("\n=== Authentication Methods ===");
 
@@ -78,7 +78,7 @@ class Program
             var operationToken = await client.IssueTokenV1Async("export", CancellationToken.None);
             Console.WriteLine($"✓ Operation token issued: {operationToken.Token[..10]}...");
 
-            await client.Authenticate();
+            await client.AuthenticateAsync();
             // Issue a forever token
             try
             {
@@ -110,7 +110,7 @@ class Program
     /// <summary>
     /// Demonstrates backup management methods
     /// </summary>
-    static async Task DemonstrateBackupManagement(DuplicatiServerClient client)
+    static async Task DemonstrateBackupManagementAsync(DuplicatiServerClient client)
     {
         Console.WriteLine("\n=== Backup Management ===");
 
@@ -181,7 +181,7 @@ class Program
     /// <summary>
     /// Demonstrates backup operations
     /// </summary>
-    static async Task DemonstrateBackupOperations(DuplicatiServerClient client)
+    static async Task DemonstrateBackupOperationsAsync(DuplicatiServerClient client)
     {
         Console.WriteLine("\n=== Backup Operations ===");
 
@@ -248,7 +248,7 @@ class Program
     /// <summary>
     /// Demonstrates backup data access methods
     /// </summary>
-    static async Task DemonstrateBackupDataAccess(DuplicatiServerClient client)
+    static async Task DemonstrateBackupDataAccessAsync(DuplicatiServerClient client)
     {
         Console.WriteLine("\n=== Backup Data Access ===");
 
@@ -289,7 +289,7 @@ class Program
     /// <summary>
     /// Demonstrates database management methods
     /// </summary>
-    static async Task DemonstrateDatabaseManagement(DuplicatiServerClient client)
+    static async Task DemonstrateDatabaseManagementAsync(DuplicatiServerClient client)
     {
         Console.WriteLine("\n=== Database Management ===");
 
@@ -333,7 +333,7 @@ class Program
     /// <summary>
     /// Demonstrates export operations
     /// </summary>
-    static async Task DemonstrateExportOperations(DuplicatiServerClient client)
+    static async Task DemonstrateExportOperationsAsync(DuplicatiServerClient client)
     {
         Console.WriteLine("\n=== Export Operations ===");
 
@@ -371,7 +371,7 @@ class Program
     /// <summary>
     /// Demonstrates server management methods
     /// </summary>
-    static async Task DemonstrateServerManagement(DuplicatiServerClient client)
+    static async Task DemonstrateServerManagementAsync(DuplicatiServerClient client)
     {
         Console.WriteLine("\n=== Server Management ===");
 
@@ -405,7 +405,7 @@ class Program
     /// <summary>
     /// Demonstrates task management methods
     /// </summary>
-    static async Task DemonstrateTaskManagement(DuplicatiServerClient client)
+    static async Task DemonstrateTaskManagementAsync(DuplicatiServerClient client)
     {
         Console.WriteLine("\n=== Task Management ===");
 
@@ -451,7 +451,7 @@ class Program
     /// <summary>
     /// Demonstrates system information methods
     /// </summary>
-    static async Task DemonstrateSystemInformation(DuplicatiServerClient client)
+    static async Task DemonstrateSystemInformationAsync(DuplicatiServerClient client)
     {
         Console.WriteLine("\n=== System Information ===");
 
@@ -488,7 +488,7 @@ class Program
     /// <summary>
     /// Demonstrates settings management methods
     /// </summary>
-    static async Task DemonstrateSettingsManagement(DuplicatiServerClient client)
+    static async Task DemonstrateSettingsManagementAsync(DuplicatiServerClient client)
     {
         Console.WriteLine("\n=== Settings Management ===");
 
@@ -525,7 +525,7 @@ class Program
     /// <summary>
     /// Demonstrates filesystem operations
     /// </summary>
-    static async Task DemonstrateFilesystemOperations(DuplicatiServerClient client)
+    static async Task DemonstrateFilesystemOperationsAsync(DuplicatiServerClient client)
     {
         Console.WriteLine("\n=== Filesystem Operations ===");
 
@@ -559,7 +559,7 @@ class Program
     /// <summary>
     /// Demonstrates V2 API methods
     /// </summary>
-    static async Task DemonstrateV2ApiMethods(DuplicatiServerClient client)
+    static async Task DemonstrateV2ApiMethodsAsync(DuplicatiServerClient client)
     {
         Console.WriteLine("\n=== V2 API Methods ===");
 

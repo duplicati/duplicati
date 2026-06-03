@@ -194,6 +194,11 @@ namespace Duplicati.Library.Main
         private static readonly int DEFAULT_RESTORE_CHANNEL_BUFFER_SIZE = Environment.ProcessorCount;
 
         /// <summary>
+        /// The default value for the long database query threshold
+        /// </summary>
+        private const string DEFAULT_LONG_DATABASE_QUERY_THRESHOLD = "30m";
+
+        /// <summary>
         /// An enumeration that describes the supported strategies for an optimization
         /// </summary>
         public enum OptimizationStrategy
@@ -327,7 +332,7 @@ namespace Duplicati.Library.Main
 
         public Options(Dictionary<string, string?> options)
         {
-            m_options = options;
+            m_options = new Dictionary<string, string?>(options);
         }
 
         public Dictionary<string, string?> RawOptions => m_options;
@@ -386,6 +391,14 @@ namespace Duplicati.Library.Main
             }
         }
 
+        private IEnumerable<ICommandLineArgument> GetDebugConditionalCommands()
+        {
+#if DEBUG
+            yield return new CommandLineArgument("unittest-mode", CommandLineArgument.ArgumentType.Boolean, Strings.Options.UnittestmodeShort, Strings.Options.UnittestmodeLong, "false");
+#endif
+            yield break;
+        }
+
         /// <summary>
         /// Gets all supported commands
         /// </summary>
@@ -393,7 +406,6 @@ namespace Duplicati.Library.Main
         [
             new CommandLineArgument("dblock-size", CommandLineArgument.ArgumentType.Size, Strings.Options.DblocksizeShort, Strings.Options.DblocksizeLong, DEFAULT_VOLUME_SIZE, ["remote-volume-size"]),
             new CommandLineArgument("auto-cleanup", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AutocleanupShort, Strings.Options.AutocleanupLong, "false"),
-            new CommandLineArgument("unittest-mode", CommandLineArgument.ArgumentType.Boolean, Strings.Options.UnittestmodeShort, Strings.Options.UnittestmodeLong, "false"),
 
             new CommandLineArgument("control-files", CommandLineArgument.ArgumentType.Path, Strings.Options.ControlfilesShort, Strings.Options.ControlfilesLong),
             new CommandLineArgument("skip-file-hash-checks", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SkipfilehashchecksShort, Strings.Options.SkipfilehashchecksLong, "false"),
@@ -467,6 +479,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("log-socket-data", CommandLineArgument.ArgumentType.Integer, Strings.Options.LogsocketdataShort, Strings.Options.LogsocketdataLong, "-1"),
 
             new CommandLineArgument("profile-all-database-queries", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ProfilealldatabasequeriesShort, Strings.Options.ProfilealldatabasequeriesLong, "false"),
+            new CommandLineArgument("long-database-query-threshold", CommandLineArgument.ArgumentType.Timespan, Strings.Options.LongdatabasequerythresholdShort, Strings.Options.LongdatabasequerythresholdLong, DEFAULT_LONG_DATABASE_QUERY_THRESHOLD),
             new CommandLineArgument("store-metadata-content-in-database", CommandLineArgument.ArgumentType.Boolean, Strings.Options.StoremetadatacontentindatabaseShort, Strings.Options.StoremetadatacontentindatabaseLong, "false"),
 
             new CommandLineArgument("list-verify-uploads", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ListverifyuploadsShort, Strings.Options.ListverifyuploadsLong, "false"),
@@ -590,7 +603,8 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("internal-profiling", CommandLineArgument.ArgumentType.Boolean, Strings.Options.InternalProfilingShort, Strings.Options.InternalProfilingLong, "false"),
             new CommandLineArgument("ignore-update-if-version-exists", CommandLineArgument.ArgumentType.Boolean, Strings.Options.IgnoreUpdateIfVersionExistsShort, Strings.Options.IgnoreUpdateIfVersionExistsLong, "false"),
 
-            .. GetOSConditionalCommands()
+            .. GetOSConditionalCommands(),
+            .. GetDebugConditionalCommands(),
         ];
 
         /// <summary>
@@ -1147,6 +1161,11 @@ namespace Duplicati.Library.Main
         /// A value indicating if all database queries should be logged
         /// </summary>
         public bool ProfileAllDatabaseQueries => GetBool("profile-all-database-queries");
+
+        /// <summary>
+        /// Gets the threshold for a database query to be considered slow
+        /// </summary>
+        public TimeSpan SlowQueryThreshold => Library.Utility.Utility.ParseTimespanOption(m_options, "long-database-query-threshold", DEFAULT_LONG_DATABASE_QUERY_THRESHOLD);
 
         /// <summary>
         /// A value indicating if metadata content should be stored in the database

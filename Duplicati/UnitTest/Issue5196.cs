@@ -20,8 +20,10 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Duplicati.Library.Main.Volumes;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
@@ -32,8 +34,10 @@ public class Issue5196 : BasicSetupHelper
 {
     [Test]
     [Category("Targeted")]
-    public void RunCommands()
+    public async Task RunCommandsAsync()
     {
+        List<Library.Interface.IListResultFileset> versions;
+
         var testopts = TestOptions;
         testopts["upload-unchanged-backups"] = "true";
         testopts["blocksize"] = "50kb";
@@ -42,7 +46,7 @@ public class Issue5196 : BasicSetupHelper
         File.WriteAllBytes(Path.Combine(DATAFOLDER, "a"), data);
         using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
         {
-            var r = c.Backup(new string[] { DATAFOLDER });
+            var r = await c.BackupAsync(new string[] { DATAFOLDER });
             Assert.AreEqual(0, r.Errors.Count());
             Assert.AreEqual(0, r.Warnings.Count());
             Assert.AreEqual(1, r.AddedFiles);
@@ -52,39 +56,43 @@ public class Issue5196 : BasicSetupHelper
 
             System.Threading.Thread.Sleep(3000);
 
-            r = c.Backup(new string[] { DATAFOLDER });
+            r = await c.BackupAsync(new string[] { DATAFOLDER });
             Assert.AreEqual(0, r.Errors.Count());
             Assert.AreEqual(0, r.Warnings.Count());
             pr = (Library.Interface.IParsedBackendStatistics)r.BackendStatistics;
             if (pr.KnownFileSize == 0 || pr.KnownFileCount != 4 || pr.BackupListCount != 2)
                 throw new Exception(string.Format("Failed to get stats from remote backend: {0}, {1}, {2}", pr.KnownFileSize, pr.KnownFileCount, pr.BackupListCount));
 
-            var versions = c.List().Filesets.ToList();
-
-            using (var tempDbPath = new Library.Utility.TempFile())
-            {
-                testopts["dbpath"] = tempDbPath;
-                testopts["repair-only-paths"] = "true";
-                testopts.Remove("blocksize");
-                testopts["time"] = Library.Utility.Utility.SerializeDateTime(versions[0].Time);
-                var rcr1 = c.UpdateDatabaseWithVersions();
-
-                testopts["time"] = Library.Utility.Utility.SerializeDateTime(versions[1].Time);
-                var rcr2 = c.UpdateDatabaseWithVersions();
-
-                File.Delete(tempDbPath);
-                testopts["repair-only-paths"] = "true";
-                testopts["blocksize"] = "25kb";
-                try
-                {
-                    c.UpdateDatabaseWithVersions();
-                    throw new Exception("Expected an exception when changing blocksize");
-                }
-                catch (InvalidManifestException)
-                {
-                }
-            }
+            versions = (await c.ListAsync()).Filesets.ToList();
         }
 
+
+        using (var tempDbPath = new Library.Utility.TempFile())
+        {
+            testopts["dbpath"] = tempDbPath;
+            testopts["repair-only-paths"] = "true";
+            testopts.Remove("blocksize");
+
+            testopts["time"] = Library.Utility.Utility.SerializeDateTime(versions[0].Time);
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+                await c.UpdateDatabaseWithVersionsAsync();
+
+            testopts["time"] = Library.Utility.Utility.SerializeDateTime(versions[1].Time);
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+                await c.UpdateDatabaseWithVersionsAsync();
+
+            File.Delete(tempDbPath);
+            testopts["repair-only-paths"] = "true";
+            testopts["blocksize"] = "25kb";
+            try
+            {
+                using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+                    await c.UpdateDatabaseWithVersionsAsync();
+                throw new Exception("Expected an exception when changing blocksize");
+            }
+            catch (InvalidManifestException)
+            {
+            }
+        }
     }
 }

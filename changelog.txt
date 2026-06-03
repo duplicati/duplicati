@@ -1,3 +1,178 @@
+2026-05-22 - 2.3.0.103_canary_2026-05-22
+==========
+This release is a canary release intended to be used for testing.
+
+# Changes in this version
+
+This release marks the soft-launch of the Duplicati Storage service, giving a zero-configuration setup of storage. The Duplicati Storage backend works like any other backend, but there is no configuration to set up. Once the client is connected to the console, it can use the Duplicati Storage backend.
+
+The service is currently in soft-launch mode and anyone interrested can contact Duplicati support to have a storage trial activated on their account.
+
+In this release there is an experimental setting option that makes the actual operations (backup, restore, verify, etc.) run in an isolated sub-process. When this setting is enabled, the Duplicati server will spawn a new process for each operation, and the operation will run in that process. This means that if the process crashes or hangs, the Duplicati server will not be affected. It also allows the Duplicati server, and by extension the user, to force-kill a stuck process. While this feature is tested, it is not enabled by default as we are aware that there might be subtle issues and would like feedback on how the feature works in real-world scenarios.
+
+The previous "SharePoint" and "OneDrive for Business" backends have been marked as deprecated, as Microsoft shut down the API they were calling. The migration step is to use the "SharePoint v2" backend (renamed to just "SharePoint" in this version) which uses the Microsoft Graph API.
+
+This version also adds a new backend for the Spanish proivder Movistar, thanks to @redmars27. The backend is marked as "untested" as it can only be used (and tested) by Movistar customers.
+
+This update also adds some more guards to the synthetic filelist generation update from 2.3.0.102, and a fix for OneDrive timeouts.
+
+## Detailed list of changes
+
+- Fixed an issue with Filen.io renaming
+- Added a failsafe when creating synthetic filelists
+- Added check code to ensure synthetic filelists are generated with required fields
+- Fixed restore message when no files are restored to reflect if existing files are found
+- Added support for marking backends as deprecated or untested
+- Deprecated `od4b` and `mssp` backends as the API is no longer working
+- Fixed some files showing as folders and missing size information
+- Hide the `--unittest-mode` flag from supported options
+- Fix parsing MacOS timestamps that are from year 0000
+- Updated internal controller to only expose `async` methods
+- Updated Mega S4 endpoint list
+- Fixed an issue where option settings could potentially be sticky across operations
+- Updated warning logic on restore if no files were restored
+- Fix a 100s timeout with OneDrive and SharePoint v2
+- Updated the Duplicati Backend to use the new API
+- Added support for running backup and restore in an isolated sub-process
+- Added MoviStar storage backend, thanks @redmars27
+
+## Changes in ngclient
+
+- Prevent iteration of non-folder paths
+- Enable selecting hidden items
+- Added path resolving on the "dynamic paths", such as "My documents"
+- Fixed compression option not being visible
+- Added support for showing backends as deprecated or untested
+- Fixed an issue where file size would not be shown in the file tree
+- Added an option to retry loading a backup list
+
+2026-05-09 - 2.3.0.102_canary_2026-05-09
+==========
+This release is a canary release intended to be used for testing.
+
+# Changes in this version
+
+## Drime Cloud Backend
+
+Added support for Drime Cloud as a new storage backend.
+
+## Slow Query Monitor
+
+Added a slow query monitor to help diagnose performance issues by tracking long-running database queries.
+
+## Synthetic Filelist Optimization
+
+Optimized the creation of synthetic filelists, improving performance for large datasets.
+
+## Empty Index File Handling
+
+Improved handling of empty index files to prevent errors during database recreate and restore operations.
+
+## SQL Logging Improvements
+
+Improved SQL logging across the database layer for better diagnostics and debugging.
+
+## Detailed Changes
+
+- Added Drime Cloud backend support
+- Improved websocket handling for remote management
+- Added slow query monitor for database performance diagnostics
+- Optimized synthetic filelist creation
+- Improved handling of empty index files
+- Persisted used compression module in volume reader
+- Improved SQL logging across database operations
+- Updated Office 365 strings to Microsoft 365
+- Added package to Docker image
+- Improved immediate usage reporter updates
+
+## ngclient Updates
+
+- Show "last backup" with the same date in both detail and grid view
+- Show actual scheduled time for backups
+- Fixed an issue with using stored destinations which would fail to create folders
+- Fixed an issue with importing backups where the schedule edits would be ignored
+- Fixed an issue where the date for a scheduled backup would be off-by-one when edited
+- Optimized query flow to use websockets instead of polling/fetching
+
+2026-05-04 - 2.3.0.101_canary_2026-05-04
+==========
+# 2026-05-04 - 2.3.0.101_canary_2026-05-04
+
+This release is a canary release intended to be used for testing.
+
+# Changes in this version
+
+## Zstd Compression Support
+
+Added a new experimental compression module that supports the zstd compression algorithm, providing faster and more efficient compression for backups.
+This new format is currently only for testing and will log a warning when used. Please do report feedback on speed or usability for this feature.
+
+## SharpAESCrypt v3
+
+Updated the SharpAESCrypt encryption library to support "AES Crypt Stream Format v3", which has a number of improvements over the v2 format.
+For this release, the default written format remains v2, but we encourage you to set the environment variable `DUPLICATI__AES_VERSION=3` to test the new format.
+**Note:** if you set this version to 3, the new remote volumes cannot be read by Duplicati versions older than this version (2.3.0.101).
+
+## Post-Backup Script Support
+
+The RunScript module now supports running scripts when a backup has finished, but before checks and compaction.
+With this new script option it is possible to pause/resume critical functions for a shorter period.
+
+## Remote Synchronization Improvements
+
+Added destination space quota checks to the remote synchronization runner, helping prevent failures due to insufficient destination space.
+An option to disable quota checks (`quota-disable`) has also been added for scenarios where quota information is not available or reliable.
+The remote sync code now handles backend instantiation failures more gracefully.
+
+## Maintenance and Recompress Fixes
+
+Fixed an issue where the write-path option was not correctly persisted and restored during maintenance and recompress operations, thanks @aureliandevel.
+
+## More Defensive Delete Operations
+
+Added additional defensive checks during the delete operation to prevent database constraint violations in edge cases.
+
+## Certificate Chain Preservation
+
+The web server again returns full certificate chains when serving HTTPS.
+
+## Avalonia Update
+
+Updated the Avalonia UI framework to version 12.0.2, which no longer requires DX12.
+
+## Detailed Changes
+
+- Added experimental zstd compression support
+- Updated SharpAESCrypt to version 3
+- Added post-backup script support to the RunScript module
+- Added destination space quota checks to remote synchronization
+- Added option to disable quota checks in remote synchronization
+- Improved S3 backend to use precomputed hashes for uploads
+- Added content length support for non-seekable streams in S3 backend
+- Improved error handling in remote sync
+- Fixed persisted write-path option for maintenance and recompress operations, thanks @aureliandevel
+- Added more defensive checks during delete operations
+- Fixed certificate chain preservation in HTTPS server
+- Added support for DO_NOT_TRACK environment variable
+- Added logging of 500 errors to live log
+- Fixed SecretProvider initialization failure handling
+- Improved expired remote control link handling
+- Fixed full-result option mismatch with alias support, thanks @aureliandevel
+- Added remote-volume-size option alias
+- Updated Avalonia to version 12.0.2
+- Updated all localizations, thanks to all translators
+
+## ngclient changes
+
+- Removed flicker on console signup
+- Expanded restore view to work better on large screens
+- Fixed filters on Commandline page not being fully editable
+- Added filename searching to the restore page
+- Fixed an issue where a folder would not always expand when loading the tree
+- Fixed an issue where invalid requests would be sent to the backend when loading the tree
+- Updated to latest ShipUI
+- Fixed an issue with referencing crypto API directly
+
 2026-04-23 - 2.3.0.100_canary_2026-04-23
 ==========
 This release is a canary release intended to be used for testing.

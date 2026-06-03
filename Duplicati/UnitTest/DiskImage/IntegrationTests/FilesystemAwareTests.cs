@@ -23,7 +23,7 @@ public class FilesystemAwareTests : DiskImageTests
     [TestCase((int)(50 * MiB), PartitionTableType.GPT, FileSystemType.Unknown)]
     [Category("DiskImage")]
     [Category("DiskImageFileSystem")]
-    public async Task Test_FileSystem_IncrementalBackup_UnchangedBlocks_Skipped(int size, PartitionTableType tableType, FileSystemType fsType)
+    public async Task Test_FileSystem_IncrementalBackup_UnchangedBlocks_Skipped_Async(int size, PartitionTableType tableType, FileSystemType fsType)
     {
         var stopwatch = new Stopwatch();
         stopwatch.Start();
@@ -49,7 +49,7 @@ public class FilesystemAwareTests : DiskImageTests
         stopwatch.Restart();
 
         // Generate initial test data
-        await ToolTests.GenerateTestData(sourcePartitions.First(), 10, 3, 1, 1024);
+        await ToolTests.GenerateTestDataAsync(sourcePartitions.First(), 10, 3, 1, 1024);
         _diskHelper.FlushDisk(sourceDrivePath);
         _diskHelper.Unmount(sourceDrivePath);
         stopwatch.Stop();
@@ -57,7 +57,7 @@ public class FilesystemAwareTests : DiskImageTests
         stopwatch.Restart();
 
         // First backup
-        var firstBackupResults = RunBackup(sourceDrivePath, treatFilesystemAsUnknown);
+        var firstBackupResults = await RunBackupAsync(sourceDrivePath, treatFilesystemAsUnknown);
 
         // When treating filesystem as unknown, the option may not be recognized by the Controller
         // so we only check for errors, not warnings
@@ -89,7 +89,7 @@ public class FilesystemAwareTests : DiskImageTests
         await TestContext.Progress.WriteLineAsync($"Restore disk created at: {_restoreImagePath} ({stopwatch.ElapsedMilliseconds}ms)");
         stopwatch.Restart();
 
-        var restoreResults = RunRestore(restoreDrivePath);
+        var restoreResults = await RunRestoreAsync(restoreDrivePath);
         TestUtils.AssertResults(restoreResults);
         stopwatch.Stop();
         await TestContext.Progress.WriteLineAsync($"Initial restore completed successfully ({stopwatch.ElapsedMilliseconds}ms)");
@@ -177,7 +177,7 @@ public class FilesystemAwareTests : DiskImageTests
         stopwatch.Restart();
 
         // Second backup (incremental)
-        var secondBackupResults = RunBackup(sourceDrivePath, treatFilesystemAsUnknown);
+        var secondBackupResults = await RunBackupAsync(sourceDrivePath, treatFilesystemAsUnknown);
 
         // When treating filesystem as unknown, the option may not be recognized by the Controller
         // so we only check for errors, not warnings
@@ -230,7 +230,7 @@ public class FilesystemAwareTests : DiskImageTests
         await TestContext.Progress.WriteLineAsync($"Fresh restore disk created for incremental restore ({stopwatch.ElapsedMilliseconds}ms)");
         stopwatch.Restart();
 
-        var incrementalRestoreResults = RunRestore(restoreDrivePath);
+        var incrementalRestoreResults = await RunRestoreAsync(restoreDrivePath);
         TestUtils.AssertResults(incrementalRestoreResults);
         stopwatch.Stop();
         await TestContext.Progress.WriteLineAsync($"Incremental restore completed successfully ({stopwatch.ElapsedMilliseconds}ms)");
@@ -260,7 +260,7 @@ public class FilesystemAwareTests : DiskImageTests
     [TestCase((int)(50 * MiB), PartitionTableType.GPT, FileSystemType.Unknown)]
     [Category("DiskImage")]
     [Category("DiskImageFileSystem")]
-    public async Task Test_FileSystem_UnallocatedSpace_CompressesWell(int size, PartitionTableType tableType, FileSystemType fsType)
+    public async Task Test_FileSystem_UnallocatedSpace_CompressesWell_Async(int size, PartitionTableType tableType, FileSystemType fsType)
     {
         var (isSupported, reason) = _diskHelper.IsFileSystemTypeSupported(fsType);
         if (!isSupported)
@@ -280,13 +280,13 @@ public class FilesystemAwareTests : DiskImageTests
 
         // Generate minimal test data (sparse data - only a few small files)
         // This leaves most of the 50MB as unallocated space
-        await ToolTests.GenerateTestData(sourcePartitions.First(), 3, 0, 0, 512);
+        await ToolTests.GenerateTestDataAsync(sourcePartitions.First(), 3, 0, 0, 512);
         _diskHelper.FlushDisk(sourceDrivePath);
         _diskHelper.Unmount(sourceDrivePath);
         await TestContext.Progress.WriteLineAsync("Sparse test data generated (few files, lots of free space)");
 
         // Backup
-        var backupResults = RunBackup(sourceDrivePath, treatFilesystemAsUnknown);
+        var backupResults = await RunBackupAsync(sourceDrivePath, treatFilesystemAsUnknown);
         // When treating filesystem as unknown, the option may not be recognized by the Controller
         // so we only check for errors, not warnings
         if (treatFilesystemAsUnknown)
@@ -320,7 +320,7 @@ public class FilesystemAwareTests : DiskImageTests
         _diskHelper.InitializeDisk(restoreDrivePath, tableType, []);
         _diskHelper.Unmount(restoreDrivePath);
 
-        var restoreResults = RunRestore(restoreDrivePath);
+        var restoreResults = await RunRestoreAsync(restoreDrivePath);
         TestUtils.AssertResults(restoreResults);
 
         // Reattach and verify
@@ -345,7 +345,7 @@ public class FilesystemAwareTests : DiskImageTests
     [TestCase((int)(50 * MiB), PartitionTableType.GPT, FileSystemType.Unknown)]
     [Category("DiskImage")]
     [Category("DiskImageFileSystem")]
-    public async Task Test_FileSystem_FullDisk_AllBlocksAllocated(int size, PartitionTableType tableType, FileSystemType fsType)
+    public async Task Test_FileSystem_FullDisk_AllBlocksAllocated_Async(int size, PartitionTableType tableType, FileSystemType fsType)
     {
         var (isSupported, reason) = _diskHelper.IsFileSystemTypeSupported(fsType);
         if (!isSupported)
@@ -372,14 +372,14 @@ public class FilesystemAwareTests : DiskImageTests
         var batchCount = fsType == FileSystemType.Unknown ? 5 : 10;
         for (int batch = 0; batch < batchCount; batch++)
         {
-            await ToolTests.GenerateTestData(Path.Combine(partitionPath, $"batch_{batch}"), 10, 0, 0, 4096);
+            await ToolTests.GenerateTestDataAsync(Path.Combine(partitionPath, $"batch_{batch}"), 10, 0, 0, 4096);
         }
         _diskHelper.FlushDisk(sourceDrivePath);
         _diskHelper.Unmount(sourceDrivePath);
         await TestContext.Progress.WriteLineAsync("Disk filled with data");
 
         // Backup
-        var backupResults = RunBackup(sourceDrivePath, treatFilesystemAsUnknown);
+        var backupResults = await RunBackupAsync(sourceDrivePath, treatFilesystemAsUnknown);
 
         // When treating filesystem as unknown, the option may not be recognized by the Controller
         // so we only check for errors, not warnings
@@ -407,7 +407,7 @@ public class FilesystemAwareTests : DiskImageTests
         _diskHelper.InitializeDisk(restoreDrivePath, tableType, []);
         _diskHelper.Unmount(restoreDrivePath);
 
-        var restoreResults = RunRestore(restoreDrivePath);
+        var restoreResults = await RunRestoreAsync(restoreDrivePath);
         TestUtils.AssertResults(restoreResults);
 
         // Reattach and verify

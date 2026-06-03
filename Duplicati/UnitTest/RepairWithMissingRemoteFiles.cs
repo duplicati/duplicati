@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.SQLiteHelper;
@@ -42,7 +43,7 @@ namespace Duplicati.UnitTest
         [TestCase(false, true, false)]
         [TestCase(true, true, false)]
         [TestCase(true, false, false)]
-        public void TestRepairWithMissingDblocks(bool deleteDblockFiles, bool deleteIndexFiles, bool deleteDlistFiles)
+        public async Task TestRepairWithMissingDblocksAsync(bool deleteDblockFiles, bool deleteIndexFiles, bool deleteDlistFiles)
         {
             var testopts = TestOptions.Expand(new { blocksize = "1kb", no_encryption = true, rebuild_missing_dblock_files = true, number_of_retries = 0 });
 
@@ -51,7 +52,7 @@ namespace Duplicati.UnitTest
             data.AsSpan().Fill((byte)'a');
             File.WriteAllBytes(Path.Combine(DATAFOLDER, "a"), data);
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Backup([DATAFOLDER]));
+                TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
 
             // 2. Delete files
             if (deleteDblockFiles)
@@ -77,11 +78,11 @@ namespace Duplicati.UnitTest
 
             // 3. Try to repair the remote destination
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Repair());
+                TestUtils.AssertResults(await c.RepairAsync());
 
             // 4. Test that the database is now valid
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Test());
+                TestUtils.AssertResults(await c.TestAsync());
         }
 
         [Test]
@@ -89,7 +90,7 @@ namespace Duplicati.UnitTest
         [TestCase(false, true, false)]
         [TestCase(true, true, false)]
         [TestCase(true, false, false)]
-        public void TestRepairWithMissingDblocksAndMultipleSources(bool deleteDblockFiles, bool deleteIndexFiles, bool deleteDlistFiles)
+        public async Task TestRepairWithMissingDblocksAndMultipleSourcesAsync(bool deleteDblockFiles, bool deleteIndexFiles, bool deleteDlistFiles)
         {
             var testopts = TestOptions.Expand(new { blocksize = "1kb", no_encryption = true, rebuild_missing_dblock_files = true });
 
@@ -101,7 +102,7 @@ namespace Duplicati.UnitTest
             File.WriteAllBytes(Path.Combine(DATAFOLDER, "c"), data.AsSpan().Slice(0, 1024).ToArray());
             File.WriteAllBytes(Path.Combine(DATAFOLDER, "d"), data.AsSpan().Slice(1024, 3).ToArray());
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Backup([DATAFOLDER]));
+                TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
 
             // 2. Delete files
             if (deleteDblockFiles)
@@ -128,8 +129,8 @@ namespace Duplicati.UnitTest
             // 3. Try to repair the remote destination
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                TestUtils.AssertResults(c.Repair());
-                TestUtils.AssertResults(c.Test());
+                TestUtils.AssertResults(await c.RepairAsync());
+                TestUtils.AssertResults(await c.TestAsync());
             }
         }
 
@@ -138,7 +139,7 @@ namespace Duplicati.UnitTest
         [TestCase(false, true, false)]
         [TestCase(true, true, false)]
         [TestCase(true, false, false)]
-        public void TestRepairWithDataFillingMultipleBlocklists(bool deleteDblockFiles, bool deleteIndexFiles, bool deleteDlistFiles)
+        public async Task TestRepairWithDataFillingMultipleBlocklistsAsync(bool deleteDblockFiles, bool deleteIndexFiles, bool deleteDlistFiles)
         {
             var testopts = TestOptions.Expand(new { blocksize = "1kb", no_encryption = true, rebuild_missing_dblock_files = true });
 
@@ -153,7 +154,7 @@ namespace Duplicati.UnitTest
             File.WriteAllBytes(Path.Combine(DATAFOLDER, "d"), data.AsSpan().Slice(0, 1028).ToArray());
             File.WriteAllBytes(Path.Combine(DATAFOLDER, "e"), data.AsSpan().Slice(4098, 67).ToArray());
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Backup([DATAFOLDER]));
+                TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
 
             // 2. Delete files
             if (deleteDblockFiles)
@@ -180,8 +181,8 @@ namespace Duplicati.UnitTest
             // 3. Try to repair the remote destination
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                TestUtils.AssertResults(c.Repair());
-                TestUtils.AssertResults(c.Test());
+                TestUtils.AssertResults(await c.RepairAsync());
+                TestUtils.AssertResults(await c.TestAsync());
             }
         }
 
@@ -189,7 +190,7 @@ namespace Duplicati.UnitTest
         [Category("Targeted")]
         [TestCase(true, true, true)]
         [TestCase(true, false, false)]
-        public void TestRepairWithSmallFileOnly(bool deleteDblockFiles, bool deleteIndexFiles, bool deleteDlistFiles)
+        public async Task TestRepairWithSmallFileOnlyAsync(bool deleteDblockFiles, bool deleteIndexFiles, bool deleteDlistFiles)
         {
             var testopts = TestOptions.Expand(new { blocksize = "1kb", no_encryption = true, rebuild_missing_dblock_files = true });
 
@@ -198,7 +199,7 @@ namespace Duplicati.UnitTest
             data.AsSpan().Fill((byte)'a');
             File.WriteAllBytes(Path.Combine(DATAFOLDER, "a"), data);
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Backup([DATAFOLDER]));
+                TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
 
             // 2. Delete files
             if (deleteDblockFiles)
@@ -225,8 +226,8 @@ namespace Duplicati.UnitTest
             // 3. Try to repair the remote destination
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                TestUtils.AssertResults(c.Repair());
-                TestUtils.AssertResults(c.Test());
+                TestUtils.AssertResults(await c.RepairAsync());
+                TestUtils.AssertResults(await c.TestAsync());
             }
         }
 
@@ -237,7 +238,7 @@ namespace Duplicati.UnitTest
         [TestCase(true, false, false)]
         [TestCase(true, true, true)]
         [TestCase(true, false, true)]
-        public void TestRepairWithDataFillingMultipleBlocklistsRandom(bool deleteDblockFiles, bool deleteIndexFiles, bool deleteDlistFiles)
+        public async Task TestRepairWithDataFillingMultipleBlocklistsRandomAsync(bool deleteDblockFiles, bool deleteIndexFiles, bool deleteDlistFiles)
         {
             var testopts = TestOptions.Expand(new { blocksize = "1kb", no_encryption = true, rebuild_missing_dblock_files = true });
 
@@ -247,7 +248,7 @@ namespace Duplicati.UnitTest
             File.WriteAllBytes(Path.Combine(DATAFOLDER, "a"), data);
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Backup([DATAFOLDER]));
+                TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
 
             // 2. Delete files
             if (deleteDblockFiles)
@@ -274,13 +275,13 @@ namespace Duplicati.UnitTest
             // 3. Try to repair the remote destination
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                TestUtils.AssertResults(c.Repair());
-                TestUtils.AssertResults(c.Test());
+                TestUtils.AssertResults(await c.RepairAsync());
+                TestUtils.AssertResults(await c.TestAsync());
             }
 
             // 4. Verify that restore works
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { restore_path = RESTOREFOLDER }), null))
-                TestUtils.AssertResults(c.Restore(null));
+                TestUtils.AssertResults(await c.RestoreAsync(null));
 
             TestUtils.AssertDirectoryTreesAreEquivalent(DATAFOLDER, RESTOREFOLDER, !Library.Utility.Utility.ParseBoolOption(testopts, "skip-metadata"), "Restore");
         }
@@ -289,7 +290,7 @@ namespace Duplicati.UnitTest
         [Category("Targeted")]
         [TestCase(true, true, true)]
         [TestCase(true, false, false)]
-        public void TestRepairWithDryRun(bool deleteDblockFiles, bool deleteIndexFiles, bool deleteDlistFiles)
+        public async Task TestRepairWithDryRunAsync(bool deleteDblockFiles, bool deleteIndexFiles, bool deleteDlistFiles)
         {
             var testopts = TestOptions.Expand(new { blocksize = "1kb", no_encryption = true, rebuild_missing_dblock_files = true });
 
@@ -299,7 +300,7 @@ namespace Duplicati.UnitTest
             File.WriteAllBytes(Path.Combine(DATAFOLDER, "a"), data);
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Backup([DATAFOLDER]));
+                TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
 
             // 2. Delete files
             if (deleteDblockFiles)
@@ -323,9 +324,9 @@ namespace Duplicati.UnitTest
                     File.Delete(file);
             }
 
-            (long remoteVolumes, long duplicatedBlocks, List<long> blockVolumeIds, List<(long, long)> indexVolumeLinks) GetDbSignature()
+            async Task<(long remoteVolumes, long duplicatedBlocks, List<long> blockVolumeIds, List<(long, long)> indexVolumeLinks)> GetDbSignatureAsync()
             {
-                using var db = SQLiteLoader.LoadConnection(DBFILE);
+                using var db = await SQLiteLoader.LoadConnectionAsync(DBFILE);
                 using var cmd = db.CreateCommand();
 
                 var remoteVolumes = cmd.ExecuteScalarInt64("SELECT COUNT(*) FROM RemoteVolume");
@@ -335,13 +336,13 @@ namespace Duplicati.UnitTest
                 return (remoteVolumes, duplicatedBlocks, blockVolumeIds, indexVolumeLinks);
             }
 
-            var preSignature = GetDbSignature();
+            var preSignature = await GetDbSignatureAsync();
 
             // 3. Try to repair the remote destination
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { dry_run = true }), null))
-                TestUtils.AssertResults(c.Repair());
+                TestUtils.AssertResults(await c.RepairAsync());
 
-            var postSignature = GetDbSignature();
+            var postSignature = await GetDbSignatureAsync();
 
             Assert.AreEqual(preSignature.remoteVolumes, postSignature.remoteVolumes, "Remote volumes count should be the same after dry run repair.");
             Assert.AreEqual(preSignature.duplicatedBlocks, postSignature.duplicatedBlocks, "Duplicated blocks count should be the same after dry run repair.");
@@ -354,7 +355,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Targeted")]
-        public void TestRepairWithNoBlockAvailableFails()
+        public async Task TestRepairWithNoBlockAvailableFailsTaskAsync()
         {
             var testopts = TestOptions.Expand(new { blocksize = "1kb", no_encryption = true, rebuild_missing_dblock_files = true });
 
@@ -364,7 +365,7 @@ namespace Duplicati.UnitTest
             File.WriteAllBytes(Path.Combine(DATAFOLDER, "a"), data);
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Backup([DATAFOLDER]));
+                TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
 
             // 2. Delete files
             var dblockFiles = Directory.GetFiles(TARGETFOLDER, "*.dblock.*", SearchOption.TopDirectoryOnly).ToList();
@@ -378,14 +379,14 @@ namespace Duplicati.UnitTest
             // 3. Try to repair the remote destination
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                var res = c.Repair();
+                var res = await c.RepairAsync();
                 Assert.IsTrue(res.Errors.Where(x => x.Contains("purge-broken-files")).Count() == 1, "Repair should fail with missing block data.");
             }
         }
 
         [Test]
         [Category("Targeted")]
-        public void TestPartialRepairPossibleWithMissingMetadata()
+        public async Task TestPartialRepairPossibleWithMissingMetadataAsync()
         {
             var testopts = TestOptions.Expand(new
             {
@@ -400,7 +401,7 @@ namespace Duplicati.UnitTest
             File.WriteAllBytes(Path.Combine(DATAFOLDER, "a"), data);
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Backup([DATAFOLDER]));
+                TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
 
             // 2. Delete files
             var dblockFiles = Directory.GetFiles(TARGETFOLDER, "*.dblock.*", SearchOption.TopDirectoryOnly).ToList();
@@ -413,20 +414,20 @@ namespace Duplicati.UnitTest
             // 3. Try to repair the remote destination
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                var res = c.Repair();
+                var res = await c.RepairAsync();
                 Assert.IsTrue(res.Warnings.Where(x => x.Contains("purge-broken-files")).Count() == 1, "Repair should warn about missing block data.");
 
                 // Ensure that the partial repair did not clean up fully
-                Assert.Throws<RemoteListVerificationException>(() => c.Test());
+                Assert.ThrowsAsync<RemoteListVerificationException>(() => c.TestAsync());
 
                 // Purge broken files should be possible
-                TestUtils.AssertResults(c.PurgeBrokenFiles(null));
-                TestUtils.AssertResults(c.Test(int.MaxValue));
+                TestUtils.AssertResults(await c.PurgeBrokenFilesAsync(null));
+                TestUtils.AssertResults(await c.TestAsync(int.MaxValue));
             }
 
             // 4. Verify that restore works
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { restore_path = RESTOREFOLDER }), null))
-                TestUtils.AssertResults(c.Restore(null));
+                TestUtils.AssertResults(await c.RestoreAsync(null));
 
             TestUtils.AssertDirectoryTreesAreEquivalent(DATAFOLDER, RESTOREFOLDER, !Library.Utility.Utility.ParseBoolOption(testopts, "skip-metadata"), "Restore");
         }
@@ -435,7 +436,7 @@ namespace Duplicati.UnitTest
         [Category("Targeted")]
         [TestCase(false)]
         [TestCase(true)]
-        public void TestPartialRepairPossibleWithDeletedFiles(bool deleteLargeFile)
+        public async Task TestPartialRepairPossibleWithDeletedFilesAsync(bool deleteLargeFile)
         {
             var testopts = TestOptions.Expand(new
             {
@@ -451,7 +452,7 @@ namespace Duplicati.UnitTest
             File.WriteAllBytes(Path.Combine(DATAFOLDER, "b"), data.AsSpan().Slice(0, 1024).ToArray());
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Backup([DATAFOLDER]));
+                TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
 
             // 2. Delete files
             var dblockFiles = Directory.GetFiles(TARGETFOLDER, "*.dblock.*", SearchOption.TopDirectoryOnly).ToList();
@@ -467,23 +468,23 @@ namespace Duplicati.UnitTest
             // 3. Try to repair the remote destination
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                var res = c.Repair();
+                var res = await c.RepairAsync();
                 Assert.IsTrue(res.Warnings.Where(x => x.Contains("purge-broken-files")).Count() == 1, "Repair should warn about missing block data.");
 
                 // Ensure that the partial repair did not clean up fully
-                Assert.Throws<RemoteListVerificationException>(() => c.Test());
+                Assert.ThrowsAsync<RemoteListVerificationException>(() => c.TestAsync());
 
                 // Purge broken files should be possible
-                TestUtils.AssertResults(c.PurgeBrokenFiles(null));
-                TestUtils.AssertResults(c.Test(int.MaxValue));
+                TestUtils.AssertResults(await c.PurgeBrokenFilesAsync(null));
+                TestUtils.AssertResults(await c.TestAsync(int.MaxValue));
 
-                var files = c.List("*").Files.ToList();
+                var files = (await c.ListAsync("*")).Files.ToList();
                 Console.WriteLine("Files: " + string.Join(", ", files.Select(x => x.Path)));
             }
 
             // 4. Verify that restore works
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { restore_path = RESTOREFOLDER }), null))
-                TestUtils.AssertResults(c.Restore(null));
+                TestUtils.AssertResults(await c.RestoreAsync(null));
 
             Assert.That(File.Exists(Path.Combine(RESTOREFOLDER, "a")), Is.EqualTo(!deleteLargeFile), "Restored file 'a' should be restored.");
             Assert.That(File.Exists(Path.Combine(RESTOREFOLDER, "b")), Is.EqualTo(true), "File 'b' should always be restored.");
@@ -499,7 +500,7 @@ namespace Duplicati.UnitTest
         [TestCase(1)] // Small file only
         [TestCase(2)] // Both files
         [TestCase(3)] // Metadata only
-        public void TestPartialRepairPossibleWithPartialData(int scenario)
+        public async Task TestPartialRepairPossibleWithPartialDataAsync(int scenario)
         {
             var testopts = TestOptions.Expand(new { blocksize = "1kb", no_encryption = true, rebuild_missing_dblock_files = true });
 
@@ -510,7 +511,7 @@ namespace Duplicati.UnitTest
             File.WriteAllBytes(Path.Combine(DATAFOLDER, "b"), data.AsSpan().Slice(0, 1024).ToArray());
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Backup([DATAFOLDER]));
+                TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
 
             // 2. Delete files
             var dblockFiles = Directory.GetFiles(TARGETFOLDER, "*.dblock.*", SearchOption.TopDirectoryOnly).ToList();
@@ -550,30 +551,30 @@ namespace Duplicati.UnitTest
             // 3. Try to repair the remote destination
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                var res = c.Repair();
+                var res = await c.RepairAsync();
 
                 if (corruptBothFiles || destroyMetadata)
                 {
-                    Assert.IsTrue(res.Warnings.Where(x => x.Contains("purge-broken-files")).Count() == 1, "Repair should warn about missing block data.");
+                    Assert.IsTrue(res.Warnings.Count(x => x.Contains("purge-broken-files")) == 1, "Repair should warn about missing block data.");
 
                     // Ensure that the partial repair did not clean up fully
-                    Assert.Throws<RemoteListVerificationException>(() => c.Test());
+                    Assert.ThrowsAsync<RemoteListVerificationException>(() => c.TestAsync());
                 }
                 else
                 {
                     TestUtils.AssertResults(res);
-                    TestUtils.AssertResults(c.Test(int.MaxValue));
+                    TestUtils.AssertResults(await c.TestAsync(int.MaxValue));
                 }
 
                 // Purge broken files should be possible
-                TestUtils.AssertResults(c.PurgeBrokenFiles(null));
-                TestUtils.AssertResults(c.Test(int.MaxValue));
+                TestUtils.AssertResults(await c.PurgeBrokenFilesAsync(null));
+                TestUtils.AssertResults(await c.TestAsync(int.MaxValue));
             }
 
             // 4. Verify that restore works
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { restore_path = RESTOREFOLDER }), null))
             {
-                var res = c.Restore(null);
+                var res = await c.RestoreAsync(null);
                 if (corruptBothFiles)
                 {
                     // We get a warning because neither file can be restored
@@ -598,7 +599,7 @@ namespace Duplicati.UnitTest
         [TestCase(1)]
         [TestCase(5)]
         [TestCase(10)]
-        public void TestRepairPossibleWithMultipleDblockFiles(int dblocksToDelete)
+        public async Task TestRepairPossibleWithMultipleDblockFilesAsync(int dblocksToDelete)
         {
             var testopts = TestOptions.Expand(new
             {
@@ -615,7 +616,7 @@ namespace Duplicati.UnitTest
             File.WriteAllBytes(Path.Combine(DATAFOLDER, "a"), data);
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Backup([DATAFOLDER]));
+                TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
 
             // 2. Delete files
             var dblockFiles = Directory.GetFiles(TARGETFOLDER, "*.dblock.*", SearchOption.TopDirectoryOnly).ToArray();
@@ -626,13 +627,13 @@ namespace Duplicati.UnitTest
             // 3. Try to repair the remote destination
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                TestUtils.AssertResults(c.Repair());
-                TestUtils.AssertResults(c.Test());
+                TestUtils.AssertResults(await c.RepairAsync());
+                TestUtils.AssertResults(await c.TestAsync());
             }
 
             // 4. Verify that restore works
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { restore_path = RESTOREFOLDER }), null))
-                TestUtils.AssertResults(c.Restore(null));
+                TestUtils.AssertResults(await c.RestoreAsync(null));
 
             TestUtils.AssertDirectoryTreesAreEquivalent(DATAFOLDER, RESTOREFOLDER, !Library.Utility.Utility.ParseBoolOption(testopts, "skip-metadata"), "Restore");
         }

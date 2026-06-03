@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.IO.Compression;
+using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
@@ -15,7 +16,7 @@ namespace Duplicati.UnitTest
     {
         [Test]
         [Category("RestoreHandler")]
-        public void RestoreToSymlinkTarget()
+        public async Task RestoreToSymlinkTargetAsync()
         {
             if (OperatingSystem.IsWindows())
                 Assert.Ignore("Symlink tests are not supported on Windows");
@@ -28,9 +29,9 @@ namespace Duplicati.UnitTest
             File.WriteAllText(filePath, "secret data");
 
             // 2. Backup
-            using (Controller c = new Controller("file://" + this.TARGETFOLDER, this.TestOptions, null))
+            using (var c = new Controller("file://" + this.TARGETFOLDER, this.TestOptions, null))
             {
-                var backupResults = c.Backup(new[] { sourceFolder });
+                var backupResults = await c.BackupAsync(new[] { sourceFolder });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.Greater(backupResults.ExaminedFiles, 0);
             }
@@ -56,7 +57,7 @@ namespace Duplicati.UnitTest
             using (var c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
             {
                 // We expect a UserInformationException due to path traversal detection
-                var ex = NUnit.Framework.Assert.Throws<UserInformationException>(() => c.Restore(null));
+                var ex = NUnit.Framework.Assert.ThrowsAsync<UserInformationException>(() => c.RestoreAsync(null));
                 NUnit.Framework.Assert.That(ex.Message.Contains("Path traversal detected"), "Expected path traversal error message");
             }
 
@@ -75,7 +76,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("RestoreHandler")]
-        public void RestoreSymlinkPointingOutside()
+        public async Task RestoreSymlinkPointingOutsideAsync()
         {
             if (OperatingSystem.IsWindows())
                 Assert.Ignore("Symlink tests are not supported on Windows");
@@ -92,7 +93,7 @@ namespace Duplicati.UnitTest
             // 2. Backup
             using (var c = new Controller("file://" + this.TARGETFOLDER, this.TestOptions, null))
             {
-                var backupResults = c.Backup(new[] { sourceFolder });
+                var backupResults = await c.BackupAsync(new[] { sourceFolder });
                 Assert.AreEqual(0, backupResults.Errors.Count());
             }
 
@@ -104,7 +105,7 @@ namespace Duplicati.UnitTest
 
             using (var c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
             {
-                var restoreResults = c.Restore(null);
+                var restoreResults = await c.RestoreAsync(null);
                 Assert.AreEqual(0, restoreResults.Errors.Count());
             }
 
@@ -126,7 +127,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("RestoreHandler")]
-        public void RestoreRelativePathInDlist()
+        public async Task RestoreRelativePathInDlistAsync()
         {
             // 1. Setup source data
             var sourceFolder = Path.Combine(this.DATAFOLDER, "source");
@@ -141,7 +142,7 @@ namespace Duplicati.UnitTest
             // 2. Backup
             using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IBackupResults backupResults = c.Backup(new[] { sourceFolder });
+                IBackupResults backupResults = await c.BackupAsync(new[] { sourceFolder });
                 Assert.AreEqual(0, backupResults.Errors.Count());
             }
 
@@ -174,7 +175,7 @@ namespace Duplicati.UnitTest
 
             using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                var repairResults = c.Repair();
+                var repairResults = await c.RepairAsync();
 
                 // We expect warnings about invalid path
                 var foundWarning = repairResults.Warnings.Any(w => w.Contains("Path traversal detected") || w.Contains("Invalid path"));

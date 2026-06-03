@@ -10,7 +10,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
 {
 
     [Test]
-    public async Task Test_RawDisk_WriteUnalignedOffset_DataMatches()
+    public async Task Test_RawDisk_WriteUnalignedOffset_DataMatches_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
 
@@ -54,7 +54,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_RawDisk_WriteUnalignedLength_DataMatches()
+    public async Task Test_RawDisk_WriteUnalignedLength_DataMatches_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
 
@@ -92,7 +92,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_RawDisk_WriteSingleByte_VerifySingleByteChanged()
+    public async Task Test_RawDisk_WriteSingleByte_VerifySingleByteChanged_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
 
@@ -126,7 +126,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_RawDisk_WriteSpanningSectorBoundary_DataMatches()
+    public async Task Test_RawDisk_WriteSpanningSectorBoundary_DataMatches_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
 
@@ -170,7 +170,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_RawDisk_WriteAtLastSector_NoOverflow()
+    public async Task Test_RawDisk_WriteAtLastSector_NoOverflow_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
         var diskSize = _writableRawDisk.Size;
@@ -195,7 +195,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_RawDisk_WriteUnalignedWithMemory_DataMatches()
+    public async Task Test_RawDisk_WriteUnalignedWithMemory_DataMatches_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
 

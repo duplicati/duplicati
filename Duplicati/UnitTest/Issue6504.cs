@@ -25,6 +25,7 @@ using NUnit.Framework;
 using Duplicati.Library.Main.Volumes;
 using Duplicati.Library.SQLiteHelper;
 using Duplicati.Library.Main.Database;
+using System.Threading.Tasks;
 
 namespace Duplicati.UnitTest;
 
@@ -32,7 +33,7 @@ public class Issue6504 : BasicSetupHelper
 {
     [Test]
     [Category("Targeted")]
-    public void RecreateIndexFilesShouldHandleDuplicatedBlocks()
+    public async Task RecreateIndexFilesShouldHandleDuplicatedBlocksAsync()
     {
         var testopts = TestOptions.Expand(new { no_encryption = true, keep_versions = 1 });
 
@@ -43,7 +44,7 @@ public class Issue6504 : BasicSetupHelper
         File.WriteAllText(pathb, "B");
 
         using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-            TestUtils.AssertResults(c.Backup(new[] { patha, pathb }));
+            TestUtils.AssertResults(await c.BackupAsync(new[] { patha, pathb }));
 
         var original_dblock_file = Directory.GetFiles(TARGETFOLDER, "*.dblock.*", SearchOption.TopDirectoryOnly).First();
         var original_dindex_file = Directory.GetFiles(TARGETFOLDER, "*.dindex.*", SearchOption.TopDirectoryOnly).First();
@@ -90,10 +91,10 @@ public class Issue6504 : BasicSetupHelper
         // Prepare for accepting the new duplicated block by recreating the database
         File.Delete(DBFILE);
         using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-            TestUtils.AssertResults(c.Repair());
+            TestUtils.AssertResults(await c.RepairAsync());
 
         // Force the error by making sure the duplicate blocks are from both dblock files
-        using (var db = SQLiteLoader.LoadConnection(DBFILE))
+        using (var db = await SQLiteLoader.LoadConnectionAsync(DBFILE))
         using (var cmd = db.CreateCommand())
         {
             cmd.CommandText = @"SELECT BlockId,VolumeID FROM DuplicateBlock";
@@ -112,13 +113,13 @@ public class Issue6504 : BasicSetupHelper
                 cmd.CommandText = "UPDATE DuplicateBlock SET VolumeID=@VolumeID WHERE BlockID=@BlockID";
                 cmd.Parameters.AddWithValue("@VolumeID", otherVolumeId);
                 cmd.Parameters.AddWithValue("@BlockID", blockToChange.BlockId);
-                cmd.ExecuteNonQuery();
+                await cmd.ExecuteNonQueryAsync();
                 cmd.Parameters.Clear();
 
                 cmd.CommandText = "UPDATE Block SET VolumeID=@VolumeID WHERE ID=@BlockID";
                 cmd.Parameters.AddWithValue("@VolumeID", duplicateVolumeId);
                 cmd.Parameters.AddWithValue("@BlockID", blockToChange.BlockId);
-                cmd.ExecuteNonQuery();
+                await cmd.ExecuteNonQueryAsync();
             }
         }
 
@@ -126,13 +127,13 @@ public class Issue6504 : BasicSetupHelper
         // Make sure the test rewrites the faulty index file
         using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
         {
-            var res = c.Test(100);
+            var res = await c.TestAsync(100);
             Assert.That(res.Warnings.Count, Is.EqualTo(1), "Expected one warning about faulty index files");
             Assert.That(res.Warnings.Any(c => c.Contains("FaultyIndexFiles")), Is.True, "Expected a warning about faulty index files");
         }
 
         // Second run should not have faulty index files
         using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-            TestUtils.AssertResults(c.Test(100));
+            TestUtils.AssertResults(await c.TestAsync(100));
     }
 }

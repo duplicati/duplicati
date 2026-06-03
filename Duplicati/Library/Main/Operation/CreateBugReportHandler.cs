@@ -70,9 +70,9 @@ namespace Duplicati.Library.Main.Operation
                 File.Copy(m_options.Dbpath, tmp, true);
                 await using (var db = await LocalBugReportDatabase.CreateAsync(tmp, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                 {
-                    await db.Fix(m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+                    await db.ObfuscateAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                     if (m_options.AutoVacuum)
-                        await db.Vacuum(m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+                        await db.VacuumAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                 }
 
                 using (var stream = new FileStream(m_targetpath, FileMode.Create, FileAccess.Write, FileShare.Read))
@@ -84,7 +84,7 @@ namespace Duplicati.Library.Main.Operation
 
                     using (var cs = new StreamWriter(cm.CreateFile("system-info.txt", CompressionHint.Compressible, DateTime.UtcNow)))
                         foreach (var line in SystemInfoHandler.GetSystemInfo())
-                            cs.WriteLine(line);
+                            await cs.WriteLineAsync(line);
                 }
 
                 m_result.TargetPath = m_targetpath;

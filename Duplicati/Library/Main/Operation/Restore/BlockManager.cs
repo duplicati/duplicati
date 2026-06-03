@@ -203,7 +203,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             {
                 var sd = new SleepableDictionary(volume_request, options, readers);
 
-                await foreach (var (block_id, volume_id) in db.GetBlocksAndVolumeIDs(options.SkipMetadata, cancellationToken).ConfigureAwait(false))
+                await foreach (var (block_id, volume_id) in db.GetBlocksAndVolumeIDsAsync(options.SkipMetadata, cancellationToken).ConfigureAwait(false))
                 {
                     var bc = sd.m_blockcount.TryGetValue(block_id, out var c);
                     sd.m_blockcount[block_id] = bc ? c + 1 : 1;
@@ -481,7 +481,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="fp_responses">The channels for writing block responses back to the `FileProcessor`.</param>
         /// <param name="options">The restore options.</param>
         /// <param name="results">The results of the restore operation.</param>
-        public static Task Run(Channels channels, LocalRestoreDatabase db, IChannel<BlockRequest>[] fp_requests, IChannel<Task<DataBlock>>[] fp_responses, Options options, RestoreResults results)
+        public static Task RunAsync(Channels channels, LocalRestoreDatabase db, IChannel<BlockRequest>[] fp_requests, IChannel<Task<DataBlock>>[] fp_responses, Options options, RestoreResults results)
         {
             return AutomationExtensions.RunTask(
             new

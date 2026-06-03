@@ -347,6 +347,7 @@ public record ConfigFiles(
 /// <param name="Codesign">The &quot;codesign&quot; command</param>
 /// <param name="Productsign">The &quot;productsign&quot; command</param>
 /// <param name="Wix">The &quot;wix&quot; command</param>
+/// <param name="MsiBuild">The &quot;msibuild&quot; command from msitools</param>
 /// <param name="Docker">The &quot;docker&quot; command</param>
 /// <param name="Npm">The &quot;npm&quot; command</param>
 public record Commands(
@@ -357,6 +358,7 @@ public record Commands(
     string? Codesign,
     string? Productsign,
     string? Wix,
+    string? MsiBuild,
     string? Docker,
     string? Npm
 )
@@ -374,6 +376,7 @@ public record Commands(
             OperatingSystem.IsMacOS() ? FindCommand("codesign", "CODESIGN") : null,
             OperatingSystem.IsMacOS() ? FindCommand("productsign", "PRODUCTSIGN") : null,
             FindCommand(OperatingSystem.IsWindows() ? "wix" : "wixl", "WIX"),
+            OperatingSystem.IsWindows() ? null : FindCommand("msibuild", "MSIBUILD"),
             FindCommand("docker", "DOCKER"),
             FindCommand("npm", "NPM")
         );

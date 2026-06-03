@@ -77,7 +77,7 @@ public class SharedRemoteOperation
     /// <param name="sourcePrefix">The prefix, if this is a remote source</param>
     /// <param name="cancelToken">The cancellation token</param>
     /// <returns>The unmasked URL and the options after the expansion</returns>
-    public static async Task<(string Url, Dictionary<string, string?> Options)> ExpandUrl(Connection connection, IApplicationSettings applicationSettings, string url, string? backupId, long connectionStringId, string? sourcePrefix, CancellationToken cancelToken)
+    public static async Task<(string Url, Dictionary<string, string?> Options)> ExpandUrlAsync(Connection connection, IApplicationSettings applicationSettings, string url, string? backupId, long connectionStringId, string? sourcePrefix, CancellationToken cancelToken)
     {
         url = UnmaskUrl(connection, url, backupId, connectionStringId, sourcePrefix);
         var uri = new Library.Utility.Uri(url);
@@ -98,26 +98,26 @@ public class SharedRemoteOperation
         return (url, opts);
     }
 
-    public static async Task<BackendTupleDisposeWrapper> GetBackend(Connection connection, IApplicationSettings applicationSettings, string url, string? backupId, long connectionStringId, CancellationToken cancelToken)
+    public static async Task<BackendTupleDisposeWrapper> GetBackendAsync(Connection connection, IApplicationSettings applicationSettings, string url, string? backupId, long connectionStringId, CancellationToken cancelToken)
     {
-        (url, var opts) = await ExpandUrl(connection, applicationSettings, url, backupId, connectionStringId, null, cancelToken);
+        (url, var opts) = await ExpandUrlAsync(connection, applicationSettings, url, backupId, connectionStringId, null, cancelToken);
         var modules = ConfigureModules(opts);
         var backend = Library.DynamicLoader.BackendLoader.GetBackend(url, opts);
         return new BackendTupleDisposeWrapper(backend, modules);
     }
 
-    public static async Task<SourceProviderTupleDisposeWrapper> GetSourceProviderForTesting(Connection connection, IApplicationSettings applicationSettings, string url, string? backupId, long connectionStringId, string? sourcePrefix, CancellationToken cancelToken)
+    public static async Task<SourceProviderTupleDisposeWrapper> GetSourceProviderForTestingAsync(Connection connection, IApplicationSettings applicationSettings, string url, string? backupId, long connectionStringId, string? sourcePrefix, CancellationToken cancelToken)
     {
-        (url, var opts) = await ExpandUrl(connection, applicationSettings, url, backupId, connectionStringId, sourcePrefix, cancelToken);
+        (url, var opts) = await ExpandUrlAsync(connection, applicationSettings, url, backupId, connectionStringId, sourcePrefix, cancelToken);
         var modules = ConfigureModules(opts);
         var sourceProvider = await Library.DynamicLoader.SourceProviderLoader.GetSourceProviderForTesting(url, "", opts, cancelToken);
 
         return new SourceProviderTupleDisposeWrapper(sourceProvider, modules);
     }
 
-    public static async Task<RestoreDestinationProviderTupleDisposeWrapper> GetRestoreDestinationProviderForTesting(Connection connection, IApplicationSettings applicationSettings, string url, string? backupId, long connectionStringId, string? sourcePrefix, CancellationToken cancelToken)
+    public static async Task<RestoreDestinationProviderTupleDisposeWrapper> GetRestoreDestinationProviderForTestingAsync(Connection connection, IApplicationSettings applicationSettings, string url, string? backupId, long connectionStringId, string? sourcePrefix, CancellationToken cancelToken)
     {
-        (url, var opts) = await ExpandUrl(connection, applicationSettings, url, backupId, connectionStringId, sourcePrefix, cancelToken);
+        (url, var opts) = await ExpandUrlAsync(connection, applicationSettings, url, backupId, connectionStringId, sourcePrefix, cancelToken);
         var modules = ConfigureModules(opts);
         var restoreDestinationProvider = await Library.DynamicLoader.RestoreDestinationProviderLoader.GetRestoreDestinationProviderForTesting(url, opts, cancelToken);
 

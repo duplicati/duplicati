@@ -21,7 +21,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.IO;
 using Duplicati.Library.Main;
 using Duplicati.Library.Main.Database;
@@ -38,7 +37,7 @@ public class EmptyMetadataTests : BasicSetupHelper
 {
     [Test]
     [Category("Targeted")]
-    public async Task ReplaceMissingMetadataRestoresConsistency()
+    public async Task ReplaceMissingMetadataRestoresConsistencyAsync()
     {
         var testopts = TestOptions.Expand(new { no_encryption = true });
 
@@ -47,12 +46,12 @@ public class EmptyMetadataTests : BasicSetupHelper
         File.WriteAllText(Path.Combine(DATAFOLDER, "folder", "file.txt"), "data");
 
         using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
-            TestUtils.AssertResults(c.Backup(new[] { DATAFOLDER }));
+            TestUtils.AssertResults(await c.BackupAsync(new[] { DATAFOLDER }));
 
         long metaBlocksetId;
         long filesetId;
 
-        using (var db = SQLiteLoader.LoadConnection(DBFILE))
+        using (var db = await SQLiteLoader.LoadConnectionAsync(DBFILE))
         using (var cmd = db.CreateCommand())
         {
             // Find metadata blockset ID and fileset ID for the backed up folder
@@ -63,9 +62,9 @@ public class EmptyMetadataTests : BasicSetupHelper
                                          WHERE F.""Path"" LIKE @Path AND F.""BlocksetID"" = {LocalDatabase.FOLDER_BLOCKSET_ID}
                                          ORDER BY FE.""FilesetID"" DESC LIMIT 1");
             cmd.SetParameterValue("@Path", "%folder%");
-            using (var rd = cmd.ExecuteReader())
+            using (var rd = await cmd.ExecuteReaderAsync())
             {
-                Assert.That(rd.Read(), Is.True, "Folder entry not found");
+                Assert.That(await rd.ReadAsync(), Is.True, "Folder entry not found");
                 metaBlocksetId = rd.ConvertValueToInt64(0);
                 filesetId = rd.ConvertValueToInt64(1);
             }
@@ -73,38 +72,38 @@ public class EmptyMetadataTests : BasicSetupHelper
             // Remove metadata blockset entries to simulate missing metadata
             cmd.SetCommandAndParameters("DELETE FROM \"BlocksetEntry\" WHERE \"BlocksetID\" = @Id");
             cmd.SetParameterValue("@Id", metaBlocksetId);
-            cmd.ExecuteNonQuery();
+            await cmd.ExecuteNonQueryAsync();
 
             // Remove the now orphaned blockset record
             cmd.SetCommandAndParameters("DELETE FROM \"Blockset\" WHERE \"ID\" = @Id");
             cmd.SetParameterValue("@Id", metaBlocksetId);
-            cmd.ExecuteNonQuery();
+            await cmd.ExecuteNonQueryAsync();
         }
 
         var opts = new Options(testopts);
         var emptyMeta = Duplicati.Library.Main.Utility.WrapMetadata(new Dictionary<string, string>(), opts);
 
-        Assert.Throws<DatabaseInconsistencyException>(() =>
+        Assert.ThrowsAsync<DatabaseInconsistencyException>(async () =>
         {
-            using var db = LocalDatabase.CreateLocalDatabaseAsync(DBFILE, "verify", true, null, CancellationToken.None).Await();
-            db.VerifyConsistency(opts.Blocksize, opts.BlockhashSize, true, CancellationToken.None).Await();
+            using var db = await LocalDatabase.CreateLocalDatabaseAsync(DBFILE, "verify", true, null, CancellationToken.None);
+            await db.VerifyConsistencyAsync(opts.Blocksize, opts.BlockhashSize, true, CancellationToken.None);
         });
 
         await using (var db = await LocalListBrokenFilesDatabase.CreateAsync(DBFILE, null, CancellationToken.None).ConfigureAwait(false))
         {
             var blockVolumeIds = Array.Empty<long>();
 
-            var emptyId = await db.GetEmptyMetadataBlocksetId(blockVolumeIds, emptyMeta.FileHash, emptyMeta.Blob.Length, CancellationToken.None);
+            var emptyId = await db.GetEmptyMetadataBlocksetIdAsync(blockVolumeIds, emptyMeta.FileHash, emptyMeta.Blob.Length, CancellationToken.None);
             Assert.That(emptyId, Is.GreaterThanOrEqualTo(0), "Empty metadata blockset not found");
 
-            var replaced = await db.ReplaceMetadata(filesetId, emptyId, CancellationToken.None);
+            var replaced = await db.ReplaceMetadataAsync(filesetId, emptyId, CancellationToken.None);
             Assert.That(replaced, Is.GreaterThan(0), "No metadata rows replaced");
 
             await db.Transaction.CommitAsync(CancellationToken.None).ConfigureAwait(false);
         }
 
         await using (var db = await LocalDatabase.CreateLocalDatabaseAsync(DBFILE, "verify", true, null, CancellationToken.None))
-            await db.VerifyConsistency(opts.Blocksize, opts.BlockhashSize, true, CancellationToken.None);
+            await db.VerifyConsistencyAsync(opts.Blocksize, opts.BlockhashSize, true, CancellationToken.None);
     }
 
     /// <summary>
@@ -113,10 +112,10 @@ public class EmptyMetadataTests : BasicSetupHelper
     /// </summary>
     [Test]
     [Category("Database")]
-    public async Task GetEmptyMetadataBlocksetId_WithLargeInput_UsesTemporaryTable()
+    public async Task GetEmptyMetadataBlocksetId_WithLargeInput_UsesTemporaryTable_Async()
     {
         using var dbfile = new TempFile();
-        using var db = SQLiteLoader.LoadConnection(dbfile);
+        using var db = await SQLiteLoader.LoadConnectionAsync(dbfile);
 
         // Use DatabaseUpgrader to create the schema from embedded resources
         DatabaseUpgrader.UpgradeDatabase(db, dbfile, typeof(DatabaseSchemaMarker));
@@ -125,7 +124,7 @@ public class EmptyMetadataTests : BasicSetupHelper
 
         // Insert an operation record (required for LocalDatabase initialization)
         cmd.CommandText = @"INSERT INTO ""Operation"" (""Description"", ""Timestamp"") VALUES ('Test', 0)";
-        cmd.ExecuteNonQuery();
+        await cmd.ExecuteNonQueryAsync();
 
         // Create 150 block volume IDs (exceeds CHUNK_SIZE of 128) to trigger temporary table path
         var blockVolumeIds = new List<long>();
@@ -137,7 +136,7 @@ public class EmptyMetadataTests : BasicSetupHelper
             cmd.CommandText = $@"
                 INSERT INTO ""Remotevolume"" (""ID"", ""OperationID"", ""Name"", ""Type"", ""State"", ""VerificationCount"", ""DeleteGraceTime"", ""ArchiveTime"", ""LockExpirationTime"")
                 VALUES ({i + 1}, 1, 'block-volume-{i}.zip', 'Blocks', 'Verified', 0, 0, 0, 0)";
-            cmd.ExecuteNonQuery();
+            await cmd.ExecuteNonQueryAsync();
         }
 
         // Insert a blockset entry that represents empty metadata (hash of empty data)
@@ -145,17 +144,17 @@ public class EmptyMetadataTests : BasicSetupHelper
         cmd.CommandText = @"
             INSERT INTO ""Blockset"" (""ID"", ""FullHash"", ""Length"")
             VALUES (1, 'da39a3ee5e6b4b0d3255bfef95601890afd80709', 0)";
-        cmd.ExecuteNonQuery();
+        await cmd.ExecuteNonQueryAsync();
 
         // Close the connection so LocalDatabase can open it
-        db.Close();
+        await db.CloseAsync();
 
         // Create LocalListBrokenFilesDatabase instance (which inherits GetEmptyMetadataBlocksetId from LocalDatabase)
         await using var localDb = await LocalListBrokenFilesDatabase.CreateAsync(dbfile, null, CancellationToken.None).ConfigureAwait(false);
 
         // Act: Call GetEmptyMetadataBlocksetId with 150 block volume IDs
         // This should trigger the temporary table code path
-        var emptyId = await localDb.GetEmptyMetadataBlocksetId(blockVolumeIds, "da39a3ee5e6b4b0d3255bfef95601890afd80709", 0, CancellationToken.None);
+        var emptyId = await localDb.GetEmptyMetadataBlocksetIdAsync(blockVolumeIds, "da39a3ee5e6b4b0d3255bfef95601890afd80709", 0, CancellationToken.None);
 
         // Assert: Should find the empty metadata blockset (ID = 1)
         Assert.That(emptyId, Is.EqualTo(1));

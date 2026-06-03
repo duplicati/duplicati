@@ -42,7 +42,7 @@ public static class Helper
     /// <param name="datafolder">The folder to scan</param>
     /// <param name="scanExtra">Whether to scan for extra databases</param>
     /// <returns>A task that when awaited contains the list of databases.</returns>
-    public static async Task<string[]> FindAllDatabases(string[]? databases, string datafolder, bool scanExtra)
+    public static async Task<string[]> FindAllDatabasesAsync(string[]? databases, string datafolder, bool scanExtra)
     {
         databases ??= [];
         if (databases.Length != 0)
@@ -91,7 +91,7 @@ public static class Helper
     /// </summary>
     /// <param name="db">The path to the database</param>
     /// <returns>A task that when awaited contains a tuple with the version and whether it is a server database</returns>
-    public static async Task<(int Version, bool isserver)> ExamineDatabase(string db)
+    public static async Task<(int Version, bool isserver)> ExamineDatabaseAsync(string db)
     {
         await using var con = await SQLiteLoader.LoadConnectionAsync(db)
             .ConfigureAwait(false);

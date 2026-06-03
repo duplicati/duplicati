@@ -57,7 +57,7 @@ internal static class SearchEntriesHandler
         if (!options.AllVersions)
         {
             filesetIds = await db
-                .GetFilesetIDs(options.Time, options.Version, false, result.TaskControl.ProgressToken)
+                .GetFilesetIDsAsync(options.Time, options.Version, false, result.TaskControl.ProgressToken)
                 .ToArrayAsync(cancellationToken: result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);
 
@@ -69,13 +69,13 @@ internal static class SearchEntriesHandler
             paths = paths.Select(path => Util.AppendDirSeparator(path)).ToArray();
 
         result.FileVersions = await db
-            .SearchEntries(paths, filter, filesetIds, offset, limit, result.TaskControl.ProgressToken)
+            .SearchEntriesAsync(paths, filter, filesetIds, offset, limit, result.TaskControl.ProgressToken)
             .ConfigureAwait(false);
 
         if (extendedData)
         {
             var coreentries = result.FileVersions.Items.Cast<SearchFileVersion>().ToArray();
-            var metadata = await db.GetMetadataForFilesetIds(coreentries.Select(e => e.FileId), result.TaskControl.ProgressToken).ConfigureAwait(false);
+            var metadata = await db.GetMetadataForFilesetIdsAsync(coreentries.Select(e => e.FileId), result.TaskControl.ProgressToken).ConfigureAwait(false);
 
             for (int i = 0; i < coreentries.Length; i++)
             {

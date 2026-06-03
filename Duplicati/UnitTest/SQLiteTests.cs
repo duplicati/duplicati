@@ -34,9 +34,9 @@ namespace Duplicati.UnitTest
     [TestFixture]
     public class SQLiteTests : BasicSetupHelper
     {
-        private static async Task<SqliteConnection> CreateDummyDatabase(string path)
+        private static async Task<SqliteConnection> CreateDummyDatabaseAsync(string path)
         {
-            var connection = SQLiteLoader.LoadConnection(path);
+            var connection = await SQLiteLoader.LoadConnectionAsync(path);
 
             using (var command = connection.CreateCommand())
             {
@@ -53,10 +53,10 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("SQLite")]
-        public async Task TestEmptyTransaction()
+        public async Task TestEmptyTransactionAsync()
         {
             using var tf = new TempFile();
-            using var connection = await CreateDummyDatabase(tf)
+            using var connection = await CreateDummyDatabaseAsync(tf)
                 .ConfigureAwait(false);
 
             using var t1 = connection.BeginTransaction();
@@ -68,10 +68,10 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("SQLite")]
-        public async Task TestListExpansion()
+        public async Task TestListExpansionAsync()
         {
             using var tf = new TempFile();
-            using var connection = await CreateDummyDatabase(tf).ConfigureAwait(false);
+            using var connection = await CreateDummyDatabaseAsync(tf).ConfigureAwait(false);
             using var rtr = new ReusableTransaction(connection);
 
             using (var command = connection.CreateCommand("SELECT COUNT(*) FROM TestTable WHERE ID IN (@List)"))

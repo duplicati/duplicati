@@ -57,7 +57,7 @@ public class ServerApiIntegrationTests : BasicSetupHelper
 
     [Test]
     [Category("Integration")]
-    public async Task ServerBackupLifecycle()
+    public async Task ServerBackupLifecycle_Async()
     {
         var backupPassphrase = "integration-passphrase";
         var backupName = $"API integration backup {Guid.NewGuid():N}";
@@ -106,7 +106,7 @@ public class ServerApiIntegrationTests : BasicSetupHelper
 
     [Test]
     [Category("Integration")]
-    public async Task ImportSupportsProvidingPassphraseOverride()
+    public async Task ImportSupportsProvidingPassphraseOverride_Async()
     {
         var backupPassphrase = "integration-passphrase";
 
@@ -140,7 +140,7 @@ public class ServerApiIntegrationTests : BasicSetupHelper
 
     [Test]
     [Category("Integration")]
-    public async Task ServerMetadataEndpointsReturnData()
+    public async Task ServerMetadataEndpointsReturnData_Async()
     {
         var entryAssemblyLocation = Duplicati.Library.Utility.Utility.getEntryAssembly().Location;
         var installationRoot = Path.GetDirectoryName(entryAssemblyLocation) ?? ".";
@@ -224,7 +224,7 @@ public class ServerApiIntegrationTests : BasicSetupHelper
 
     [Test]
     [Category("Integration")]
-    public async Task ServerRepairUpdateListsRootPaths()
+    public async Task ServerRepairUpdateListsRootPaths_Async()
     {
         var backupPassphrase = "repair-update-passphrase";
         var sampleFilePath = Path.Combine(this.DATAFOLDER, "sample.txt");
@@ -314,7 +314,7 @@ public class ServerApiIntegrationTests : BasicSetupHelper
             };
 
             ServerProgram.ServerStartedEvent.Reset();
-            serverTask = RunServerInBackground(applicationSettings, serverArgs);
+            serverTask = RunServerInBackgroundAsync(applicationSettings, serverArgs);
 
             if (!ServerProgram.ServerStartedEvent.WaitOne(TimeSpan.FromSeconds(60)))
                 Assert.Fail("Server did not start within the allotted time");
@@ -526,7 +526,7 @@ public class ServerApiIntegrationTests : BasicSetupHelper
                ?? throw new InvalidOperationException("Task state response was empty");
     }
 
-    private static Task<int> RunServerInBackground(ApplicationSettings applicationSettings, string[] args)
+    private static Task<int> RunServerInBackgroundAsync(ApplicationSettings applicationSettings, string[] args)
     {
         var tcs = new TaskCompletionSource<int>();
         var thread = new Thread(() =>

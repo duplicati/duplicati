@@ -85,7 +85,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Targeted")]
-        public void TestDuplicatedBlocksInOrphanIndex()
+        public async Task TestDuplicatedBlocksInOrphanIndexAsync()
         {
             var testopts = TestOptions;
             testopts.Add("no-encryption", "true");
@@ -97,7 +97,7 @@ namespace Duplicati.UnitTest
             File.WriteAllBytes(Path.Combine(DATAFOLDER, "a"), data);
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                IBackupResults backupResults = c.Backup(new string[] { DATAFOLDER });
+                var backupResults = await c.BackupAsync(new string[] { DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
             }
@@ -167,14 +167,14 @@ namespace Duplicati.UnitTest
             File.Delete(DBFILE);
             using (var c = new Library.Main.Controller(ListSortingBackend.Key + "://" + TARGETFOLDER, testopts, null))
             {
-                IRepairResults repairResults = c.Repair();
+                var repairResults = await c.RepairAsync();
                 Assert.AreEqual(0, repairResults.Errors.Count());
                 Assert.AreEqual(3, repairResults.Warnings.Count());
             }
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                IListResults listResults = c.List();
+                var listResults = await c.ListAsync();
                 Assert.AreEqual(0, listResults.Errors.Count());
                 Assert.AreEqual(0, listResults.Warnings.Count());
                 Assert.AreEqual(listResults.Filesets.Count(), 1);
@@ -183,7 +183,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Targeted")]
-        public void TestReplicatedBlocksInOrphanIndex()
+        public async Task TestReplicatedBlocksInOrphanIndexAsync()
         {
             var replicas = 4;
             var goodExtras = 1;
@@ -197,7 +197,7 @@ namespace Duplicati.UnitTest
             File.WriteAllBytes(Path.Combine(DATAFOLDER, "a"), data);
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                IBackupResults backupResults = c.Backup(new string[] { DATAFOLDER });
+                var backupResults = await c.BackupAsync(new string[] { DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
             }
@@ -262,14 +262,14 @@ namespace Duplicati.UnitTest
             File.Delete(DBFILE);
             using (var c = new Library.Main.Controller(ListSortingBackend.Key + "://" + TARGETFOLDER, testopts, null))
             {
-                IRepairResults repairResults = c.Repair();
+                var repairResults = await c.RepairAsync();
                 Assert.AreEqual(0, repairResults.Errors.Count());
                 Assert.AreEqual(1 + replicas - goodExtras, repairResults.Warnings.Count());
             }
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                IListResults listResults = c.List();
+                var listResults = await c.ListAsync();
                 Assert.AreEqual(0, listResults.Errors.Count());
                 Assert.AreEqual(0, listResults.Warnings.Count());
                 Assert.AreEqual(1, listResults.Filesets.Count());

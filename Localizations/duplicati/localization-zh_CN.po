@@ -14,15 +14,17 @@
 # Steve Link, 2025
 # 璃音, 2026
 # vishun, 2026
+# cs0663c, 2026
+# boshu tu, 2026
 # 
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-22 15:17+0200\n"
+"POT-Creation-Date: 2026-05-04 14:35+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
-"Last-Translator: vishun, 2026\n"
+"Last-Translator: boshu tu, 2026\n"
 "Language-Team: Chinese (China) (https://app.transifex.com/duplicati/teams/67655/zh_CN/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -59,12 +61,12 @@ msgstr "设置用于加密的线程级别。"
 msgid "The option --{0} is no longer used and has been deprecated."
 msgstr "选项--{0}已不再使用并且已被弃用。"
 
-#: Library/Encryption/Strings.cs:37
+#: Library/Encryption/Strings.cs:43
 #, csharp-format
 msgid "Failed to decrypt data (invalid passphrase?): {0}"
 msgstr "解密数据失败 (密码错误？)：{0}"
 
-#: Library/Encryption/Strings.cs:41
+#: Library/Encryption/Strings.cs:47
 #, csharp-format
 msgid ""
 "The GPG encryption module uses the GNU Privacy Guard program to encrypt and "
@@ -77,96 +79,96 @@ msgstr ""
 "GPG加密模块使用GNU Privacy "
 "Guard程序来加密和解密文件。它要求系统上必须有gpg可执行文件。在Windows上，默认假设它位于程序文件的安装文件夹中，在Linux和OSX上，则假设该程序可以通过PATH环境变量获得。可以使用选项--{0}提供GPG的路径。"
 
-#: Library/Encryption/Strings.cs:42
+#: Library/Encryption/Strings.cs:48
 msgid "GNU Privacy Guard, external"
-msgstr "外部的 GNU Privacy Guard"
+msgstr "外置 GNU 隐私保护工具"
 
-#: Library/Encryption/Strings.cs:43
+#: Library/Encryption/Strings.cs:49
 msgid ""
 "Use this switch to specify any extra options to GPG. You cannot specify the "
 "--passphrase-fd option here. The --decrypt option is always specified."
 msgstr "指定 GPG 的额外参数。您不能指定 --passphrase-fd 选项。选项 --decrypt 总是生效的。"
 
-#: Library/Encryption/Strings.cs:44
+#: Library/Encryption/Strings.cs:50
 msgid "Extra GPG commandline options for decryption"
 msgstr "用于解密的额外的 GPG 命令行参数"
 
-#: Library/Encryption/Strings.cs:45
+#: Library/Encryption/Strings.cs:51
 msgid ""
 "Use this switch to specify any extra options to GPG. You cannot specify the "
 "--passphrase-fd option here. The --encrypt option is always specified."
 msgstr "指定 GPG 的额外参数。您不能指定 --passphrase-fd 选项。选项 --encrypt 总是生效的。"
 
-#: Library/Encryption/Strings.cs:46
+#: Library/Encryption/Strings.cs:52
 msgid "Extra GPG commandline options for encryption"
 msgstr "用于加密的额外的 GPG 命令行参数"
 
-#: Library/Encryption/Strings.cs:47
+#: Library/Encryption/Strings.cs:53
 #, csharp-format
 msgid "Failed to execute GPG with \"{0} {1}\": {2}"
 msgstr "无法使用 \"{0} {1}\" 执行GPG：{2}"
 
-#: Library/Encryption/Strings.cs:48
+#: Library/Encryption/Strings.cs:54
 msgid ""
 "The path to the GNU Privacy Guard program. If not supplied, Duplicati will "
 "search for \"gpg2\" and \"gpg\" on the system."
 msgstr "GNU Privacy Guard程序的路径。如果没有提供，Duplicati将在系统上搜索\"gpg2\"和\"gpg\"。"
 
-#: Library/Encryption/Strings.cs:49
+#: Library/Encryption/Strings.cs:55
 msgid "The path to GnuPG"
 msgstr "GunPG 路径"
 
-#: Library/Encryption/Strings.cs:50
+#: Library/Encryption/Strings.cs:56
 msgid ""
 "Use this option to supply the --armor option to GPG. The files will be "
 "larger but can be sent as pure text files."
 msgstr "使用该选项可以指定 --armor 选项给GPG。文件将会更大，但可以当作纯文本文件发送。"
 
-#: Library/Encryption/Strings.cs:51
+#: Library/Encryption/Strings.cs:57
 msgid "Use GPG Armor"
 msgstr "使用 GPG Armor"
 
-#: Library/Encryption/Strings.cs:52
+#: Library/Encryption/Strings.cs:58
 msgid "Override the GPG command supplied for decryption."
 msgstr "覆盖用于解密的GPG命令。"
 
-#: Library/Encryption/Strings.cs:53
+#: Library/Encryption/Strings.cs:59
 msgid "The GPG decryption command"
 msgstr "GPG 解密命令"
 
-#: Library/Encryption/Strings.cs:54
+#: Library/Encryption/Strings.cs:60
 #, csharp-format
 msgid ""
 "Override the default GPG encryption command \"{0}\". Normal usage is to "
 "request asymetric encryption with the setting {1}."
 msgstr "覆盖默认的GPG加密命令 \"{0}\"。通常的用法是设置 {1} 来请求非对称加密。"
 
-#: Library/Encryption/Strings.cs:55
+#: Library/Encryption/Strings.cs:61
 msgid "The GPG encryption command"
 msgstr "GPG 加密命令"
 
-#: Library/Encryption/Strings.cs:59
+#: Library/Encryption/Strings.cs:65
 #, csharp-format
 msgid "Decryption failed: {0}"
 msgstr "解密失败：{0}"
 
-#: Library/Encryption/Strings.cs:60
+#: Library/Encryption/Strings.cs:66
 msgid "Failure while invoking GnuPG, program won't flush output"
 msgstr "调用 GunPG 失败，程序未能正常输出"
 
-#: Library/Encryption/Strings.cs:61
+#: Library/Encryption/Strings.cs:67
 msgid "Failure while invoking GnuPG, program won't terminate"
 msgstr "调用 GunPG 失败，程序未能正确关闭"
 
-#: Library/Encryption/Strings.cs:65
+#: Library/Encryption/Strings.cs:71
 msgid "Key must be at least 8 characters long"
 msgstr "密钥长度必须至少为8个字符"
 
-#: Library/Encryption/Strings.cs:66
+#: Library/Encryption/Strings.cs:72
 msgid "Key must not be empty"
 msgstr "密钥不能为空"
 
-#: Library/Encryption/Strings.cs:67
+#: Library/Encryption/Strings.cs:73
 msgid "Refusing to encrypt with blacklisted key"
 msgstr "拒绝使用黑名单密钥加密"
 
@@ -814,6 +816,7 @@ msgstr "在文件夹 \"{1}\" 中有多于一个名为 \"{0}\" 的项目。"
 
 #: Library/Backend/GoogleServices/Strings.cs:53
 #: Library/Backend/File/Strings.cs:42 Library/Compression/Strings.cs:38
+#: Library/Compression/Strings.cs:49 Library/Compression/Strings.cs:60
 #, csharp-format
 msgid "File not found: {0}"
 msgstr "未找到文件：{0}"
@@ -3510,6 +3513,12 @@ msgid ""
 "days."
 msgstr "服务器签发的刷新令牌有效期。该值表示在要求用户重新登录前，允许处于非活跃状态的最长时间。该值必须大于零，上限为 30 天。"
 
+#: Library/RestAPI/Strings.cs:83
+msgid ""
+"Enable the folder status service for showing overlay icons in the file "
+"explorer"
+msgstr "启用文件夹状态服务，以便在文件资源管理器中显示覆盖图标"
+
 #: Library/RestAPI/Strings.cs:84
 msgid "Use this option to disable database encryption of sensitive fields"
 msgstr "使用此选项禁用敏感字段的数据库加密"
@@ -3715,6 +3724,24 @@ msgstr "无法从密钥提供者处获取加密密钥"
 #: Library/RestAPI/Strings.cs:122
 msgid "Failed to set encryption key in secret provider"
 msgstr "在密钥提供程序中设置加密密钥失败"
+
+#: Library/RestAPI/Strings.cs:123
+msgid "Configure HTTPS certificates"
+msgstr "配置 HTTPS 证书"
+
+#: Library/RestAPI/Strings.cs:124
+msgid "Automatically generate and configure HTTPS certificates for the server"
+msgstr "自动为服务器生成和配置 HTTPS 证书"
+
+#: Library/RestAPI/Strings.cs:125
+msgid "HTTPS hostnames"
+msgstr "HTTPS 主机名"
+
+#: Library/RestAPI/Strings.cs:126
+msgid ""
+"Comma-separated list of hostnames to include in the HTTPS certificate (used "
+"with --configure-https)"
+msgstr "HTTPS 证书中包含的以逗号分隔的主机名列表（与 --configure-https 一起使用）"
 
 #: Library/RestAPI/Strings.cs:130
 #, csharp-format
@@ -5956,6 +5983,15 @@ msgid ""
 "restrictions. Must be an integer between 1-10."
 msgstr "设置 CPU 强度级别以限制 CPU 资源使用。数字越大，使用预算越高。例如，10 表示无限制。必须是 1-10 之间的整数。"
 
+#: Library/Main/Strings.cs:366
+msgid "Remote synchronization configuration"
+msgstr "远程同步"
+
+#: Library/Main/Strings.cs:367
+msgid ""
+"JSON string or file path containing remote synchronization configuration"
+msgstr "包含远程同步配置的 JSON 字符串或文件路径"
+
 #: Library/Main/Strings.cs:369
 msgid "Maximum cache size for restoring files"
 msgstr "恢复文件的最大缓存大小"
@@ -6019,6 +6055,38 @@ msgstr "使用此选项可切换是否在将恢复的文件写入磁盘前设置
 #: Library/Main/Strings.cs:379
 msgid "Hints to the desired maximum size of the restore volume cache"
 msgstr "设置恢复卷缓存的期望最大值建议"
+
+#: Library/Main/Strings.cs:380
+msgid ""
+"Use this option to hint the maximum desired size of the restore volume "
+"cache. The restore volume cache is used to store the volumes from the remote"
+" storage on local disk. When this number is exceeded, the client tries to "
+"evict the least recently used volume(s). This means that the number of "
+"volumes kept on disk can exceed this value if they are still being "
+"downloaded or are in use. A bare number is interpreted as megabytes. When "
+"left unset, the cache is unlimited and disk-space-aware eviction is used "
+"instead (see restore-volume-cache-min-free). Set to 0 to disable caching "
+"entirely."
+msgstr ""
+"使用此选项提示还原卷缓存的最大所需大小。恢复卷缓存用于将远程存储中的卷存储在本地磁盘上。超过此数量时，客户端将尝试退出最近最少使用的卷。这意味着如果仍在下载或使用卷，则磁盘上保留的卷数可能会超过此值。空数被解释为兆字节。如果未设置，则该高速缓存是无限制的，并使用磁盘空间感知回收（请参阅"
+" restore-volume-cache-min-free）。设置为0可完全禁用缓存。"
+
+#: Library/Main/Strings.cs:381
+msgid ""
+"Minimum free disk space to maintain in the temp directory during restore"
+msgstr "还原期间临时目录中要保留的最小可用磁盘空间"
+
+#: Library/Main/Strings.cs:382
+msgid ""
+"When restore-volume-cache-hint is unset (unlimited mode), the restore volume"
+" cache evicts least-recently-used volumes whenever the free space in the "
+"temp directory drops below this value. The default is 1gb. A bare number is "
+"interpreted as gigabytes. Has no effect when restore-volume-cache-hint is "
+"set to a specific size or to 0."
+msgstr ""
+"当 restore-volume-cache-hint "
+"未设置（无限模式）时，只要临时目录中的可用空间低于此值，还原卷缓存就会驱逐最近最少使用的卷。默认值为1GB。空数被解释为千兆字节。当 restore-"
+"volume-cache-hint 设置为特定大小或0时无效。"
 
 #: Library/Main/Strings.cs:383
 msgid "Number of concurrent FileDecompressor processes used during restore"
@@ -6511,103 +6579,103 @@ msgstr "在执行某一操作结束后执行一段脚本。此脚本将会接收
 msgid "Run a script on exit"
 msgstr "结束时运行脚本"
 
-#: Library/Modules/Builtin/Strings.cs:115
+#: Library/Modules/Builtin/Strings.cs:117
 #, csharp-format
 msgid "The script \"{0}\" returned with exit code {1}"
 msgstr "脚本 \"{0}\" 返回退出码 {1}"
 
-#: Library/Modules/Builtin/Strings.cs:116
+#: Library/Modules/Builtin/Strings.cs:118
 #, csharp-format
 msgid "The script \"{0}\" returned with exit code {1}{2}"
 msgstr "脚本 \"{0}\" 返回退出代码 {1}{2}"
 
-#: Library/Modules/Builtin/Strings.cs:117
+#: Library/Modules/Builtin/Strings.cs:119
 msgid ""
 "Execute a script before performing an operation. The operation will block "
 "until the script has completed or timed out. If the script returns a non-"
 "zero error code or times out, the operation will be aborted."
 msgstr "在开始执行某一操作前运行一段脚本。在脚本完成或超时之前，操作将不会开始。如果脚本超时或返回了非0错误码，操作将会中止。"
 
-#: Library/Modules/Builtin/Strings.cs:118
+#: Library/Modules/Builtin/Strings.cs:120
 msgid "Run a required script on startup"
 msgstr "开始时运行必要脚本"
 
-#: Library/Modules/Builtin/Strings.cs:119
-#: Library/Modules/Builtin/Strings.cs:293
+#: Library/Modules/Builtin/Strings.cs:121
+#: Library/Modules/Builtin/Strings.cs:295
 #, csharp-format
 msgid ""
 "Use this option to select the output format for results. Available formats: "
 "{0}"
 msgstr "使用此选项选择结果的输出格式。可用格式： {0} "
 
-#: Library/Modules/Builtin/Strings.cs:120
-#: Library/Modules/Builtin/Strings.cs:294
+#: Library/Modules/Builtin/Strings.cs:122
+#: Library/Modules/Builtin/Strings.cs:296
 msgid "Select the output format for results"
 msgstr "选择输出结果的格式"
 
-#: Library/Modules/Builtin/Strings.cs:121
+#: Library/Modules/Builtin/Strings.cs:123
 #, csharp-format
 msgid "Error while executing script \"{0}\": {1}"
 msgstr "运行脚本 \"{0}\" 出错：{1}"
 
-#: Library/Modules/Builtin/Strings.cs:122
+#: Library/Modules/Builtin/Strings.cs:124
 #, csharp-format
 msgid "Execution of the script \"{0}\" timed out"
 msgstr "运行脚本 \"{0}\" 超时"
 
-#: Library/Modules/Builtin/Strings.cs:123
+#: Library/Modules/Builtin/Strings.cs:125
 msgid ""
 "Execute a script before performing an operation. The operation will block "
 "until the script has completed or timed out."
 msgstr "在开始执行某一操作前运行一段脚本。在脚本完成或超时之前，操作将不会开始。"
 
-#: Library/Modules/Builtin/Strings.cs:124
+#: Library/Modules/Builtin/Strings.cs:126
 msgid "Run a script on startup"
 msgstr "开始时运行脚本"
 
-#: Library/Modules/Builtin/Strings.cs:125
+#: Library/Modules/Builtin/Strings.cs:127
 #, csharp-format
 msgid "The script \"{0}\" reported error messages: {1}"
 msgstr "脚本 \"{0}\" 报错：{1}"
 
-#: Library/Modules/Builtin/Strings.cs:126
+#: Library/Modules/Builtin/Strings.cs:128
 msgid ""
 "Set the maximum time a script is allowed to execute. If the script has not "
 "completed within this time, it will continue to execute but the operation "
 "will continue too, and no script output will be processed."
 msgstr "设置允许脚本执行的最大时间。如果脚本到时不能完成，它仍将继续执行，但操作将继续且不再处理脚本输出"
 
-#: Library/Modules/Builtin/Strings.cs:127
+#: Library/Modules/Builtin/Strings.cs:129
 msgid "Set the script timeout"
 msgstr "设置脚本超时时间"
 
-#: Library/Modules/Builtin/Strings.cs:128
+#: Library/Modules/Builtin/Strings.cs:130
 msgid ""
 "This option enables the use of script arguments. If this option is set, the "
 "script arguments are treated as commandline strings. Use single or double "
 "quotes to separate arguments."
 msgstr "此选项启用脚本参数的使用。如果设置了此选项，脚本参数将被视为命令行字符串。使用单引号或双引号来分隔参数。"
 
-#: Library/Modules/Builtin/Strings.cs:129
+#: Library/Modules/Builtin/Strings.cs:131
 msgid "Enable script arguments"
 msgstr "启用脚本参数"
 
-#: Library/Modules/Builtin/Strings.cs:133
+#: Library/Modules/Builtin/Strings.cs:135
 msgid "This module can send email after an operation completes"
 msgstr "该模块可以在操作完成后发送邮件"
 
-#: Library/Modules/Builtin/Strings.cs:134
+#: Library/Modules/Builtin/Strings.cs:136
 msgid "Send mail"
 msgstr "发送邮件"
 
-#: Library/Modules/Builtin/Strings.cs:135
+#: Library/Modules/Builtin/Strings.cs:137
 #, csharp-format
 msgid ""
 "Unable to find the destination mail server through MX lookup. Please use the"
 " option --{0} to specify what SMTP server to use."
 msgstr "通过MX查找无法找到目标邮件服务器。请使用选项 --{0} 指定要使用的smtp服务器。"
 
-#: Library/Modules/Builtin/Strings.cs:136
+#: Library/Modules/Builtin/Strings.cs:138
 msgid ""
 "This value can be a filename. If the file exists, the file contents will be used as the message body.\n"
 "\n"
@@ -6629,21 +6697,21 @@ msgstr ""
 "\n"
 "所有命令行选项也会在%value%中报告，例如：%volsize%。任何未知/未设置的值将被移除"
 
-#: Library/Modules/Builtin/Strings.cs:145
+#: Library/Modules/Builtin/Strings.cs:147
 msgid "The message body"
 msgstr "邮件正文"
 
-#: Library/Modules/Builtin/Strings.cs:146
+#: Library/Modules/Builtin/Strings.cs:148
 msgid ""
 "Use this option to set the password used to authenticate with the SMTP "
 "server if required."
 msgstr "使用此选项设置用于与SMTP服务器进行身份验证的密码（如果需要）。"
 
-#: Library/Modules/Builtin/Strings.cs:147
+#: Library/Modules/Builtin/Strings.cs:149
 msgid "SMTP Password"
 msgstr "SMTP 密码"
 
-#: Library/Modules/Builtin/Strings.cs:148
+#: Library/Modules/Builtin/Strings.cs:150
 msgid ""
 "This setting is required if mail should be sent, all other settings have default values. You can supply multiple email addresses separated with commas, and you can use the normal address format as specified by RFC2822 section 3.4.\n"
 "Example with 3 recipients:\n"
@@ -6655,11 +6723,11 @@ msgstr ""
 "\n"
 "Peter Sample <peter@example.com>, John Sample <john@example.com>, admin@example.com"
 
-#: Library/Modules/Builtin/Strings.cs:152
+#: Library/Modules/Builtin/Strings.cs:154
 msgid "Email recipient(s)"
 msgstr "收件人"
 
-#: Library/Modules/Builtin/Strings.cs:153
+#: Library/Modules/Builtin/Strings.cs:155
 msgid ""
 "Use this option to set an address of the email sender. If no host is supplied, the hostname of the first recipient is used. Examples of allowed formats:\n"
 "\n"
@@ -6675,11 +6743,11 @@ msgstr ""
 "Mail Sender <sender>\n"
 "Mail Sender <sender@example.com>"
 
-#: Library/Modules/Builtin/Strings.cs:159
+#: Library/Modules/Builtin/Strings.cs:161
 msgid "Email sender"
 msgstr "发件人"
 
-#: Library/Modules/Builtin/Strings.cs:160
+#: Library/Modules/Builtin/Strings.cs:162
 #, csharp-format
 msgid ""
 "You can specify one of \"{0}\", \"{1}\", \"{2}\", \"{3}\".\n"
@@ -6688,14 +6756,14 @@ msgstr ""
 "您可以指定以下选项之一：\"{0}\"， \"{1}\"， \"{2}\"， \"{3}\"。\n"
 "您可以使用逗号分隔符提供多个选项，例如\"{0},{1}\"。特殊值\"{4}\"是\"{0},{1},{2},{3}\"的简写，它将导致所有备份操作发送电子邮件。"
 
-#: Library/Modules/Builtin/Strings.cs:162
-#: Library/Modules/Builtin/Strings.cs:202
-#: Library/Modules/Builtin/Strings.cs:236
-#: Library/Modules/Builtin/Strings.cs:265
+#: Library/Modules/Builtin/Strings.cs:164
+#: Library/Modules/Builtin/Strings.cs:204
+#: Library/Modules/Builtin/Strings.cs:238
+#: Library/Modules/Builtin/Strings.cs:267
 msgid "The messages to send"
 msgstr "要发送的消息"
 
-#: Library/Modules/Builtin/Strings.cs:163
+#: Library/Modules/Builtin/Strings.cs:165
 msgid ""
 "Use this option to set a URL for the SMTP server, e.g. smtp://example.com:25. Multiple servers can be supplied in a prioritized list, separated with semicolon. If a server fails, the next server in the list is tried, until the message has been sent.\n"
 "If no server is supplied, a DNS lookup is performed to find the first recipient's MX record, and all SMTP servers are tried in their priority order until the message is sent.\n"
@@ -6707,99 +6775,99 @@ msgstr ""
 "\n"
 "要启用SMTP over SSL，请使用格式：smtps://example.com。要启用SMTP STARTTLS，请使用格式：smtp://example.com:25/?starttls=when-available 或 smtp://example.com:25/?starttls=always。如果没有指定端口，则非SSL连接使用端口25，SSL连接使用端口465。要强制不使用STARTTLS，请使用格式：smtp://example.com:25/?starttls=never。"
 
-#: Library/Modules/Builtin/Strings.cs:167
+#: Library/Modules/Builtin/Strings.cs:169
 msgid "SMTP Url"
 msgstr "SMTP 地址"
 
-#: Library/Modules/Builtin/Strings.cs:168
+#: Library/Modules/Builtin/Strings.cs:170
 #, csharp-format
 msgid ""
 "This setting supplies the email subject. Values are replaced as described in"
 " the description for --{0}."
 msgstr "该设置指定邮件标题。如 --{0} 的描述的值将被替换。"
 
-#: Library/Modules/Builtin/Strings.cs:169
+#: Library/Modules/Builtin/Strings.cs:171
 msgid "The email subject"
 msgstr "邮件主题"
 
-#: Library/Modules/Builtin/Strings.cs:170
+#: Library/Modules/Builtin/Strings.cs:172
 msgid ""
 "Use this option to set the username used to authenticate with the SMTP "
 "server if required."
 msgstr "使用此选项设置用于与SMTP服务器进行身份验证的用户名（如果需要）。"
 
-#: Library/Modules/Builtin/Strings.cs:171
+#: Library/Modules/Builtin/Strings.cs:173
 msgid "SMTP Username"
 msgstr "SMTP 用户名"
 
-#: Library/Modules/Builtin/Strings.cs:172
+#: Library/Modules/Builtin/Strings.cs:174
 #, csharp-format
 msgid "Whole SMTP communication: {0}"
 msgstr "完整的 SMTP 通信：{0}"
 
-#: Library/Modules/Builtin/Strings.cs:173
+#: Library/Modules/Builtin/Strings.cs:175
 #, csharp-format
 msgid "Failed to send email with server: {0}, message: {1}, retrying with {2}"
 msgstr "通过服务器 {0} 发送邮件消息 {1} 失败，重试次数：{2}"
 
-#: Library/Modules/Builtin/Strings.cs:174
+#: Library/Modules/Builtin/Strings.cs:176
 #, csharp-format
 msgid "Email sent successfully using server: {0}"
 msgstr "通过服务器 {0} 发送邮件成功"
 
-#: Library/Modules/Builtin/Strings.cs:175
-#: Library/Modules/Builtin/Strings.cs:206
-#: Library/Modules/Builtin/Strings.cs:239
-#: Library/Modules/Builtin/Strings.cs:261
+#: Library/Modules/Builtin/Strings.cs:177
+#: Library/Modules/Builtin/Strings.cs:208
+#: Library/Modules/Builtin/Strings.cs:241
+#: Library/Modules/Builtin/Strings.cs:263
 msgid ""
 "Use this option to set extra parameters for the message body. This parameter"
 " can either be a querystring (e.g. 'parameter1=value1&parameter2=value2') or"
 " a JSON key/value object."
 msgstr "使用此选项为消息正文设置额外参数。参数可以是查询字符串（如 'a=1&b=2'）或 JSON 键值对对象。"
 
-#: Library/Modules/Builtin/Strings.cs:176
-#: Library/Modules/Builtin/Strings.cs:207
-#: Library/Modules/Builtin/Strings.cs:240
-#: Library/Modules/Builtin/Strings.cs:262
+#: Library/Modules/Builtin/Strings.cs:178
+#: Library/Modules/Builtin/Strings.cs:209
+#: Library/Modules/Builtin/Strings.cs:242
+#: Library/Modules/Builtin/Strings.cs:264
 msgid "Extra parameters for the message sent"
 msgstr "发送消息的额外参数"
 
-#: Library/Modules/Builtin/Strings.cs:177
+#: Library/Modules/Builtin/Strings.cs:179
 #, csharp-format
 msgid ""
 "The recipient \"{0}\" is not a valid email address. Please use the format "
 "\"Name <user@example.com>\" or just \"user@example.com\""
 msgstr "收件人 \"{0}\" 不是有效的电子邮件地址。请使用 \"姓名 <user@example.com>\" 或直接使用\"user@example.com\""
 
-#: Library/Modules/Builtin/Strings.cs:178
+#: Library/Modules/Builtin/Strings.cs:180
 #, csharp-format
 msgid ""
 "No recipients specified. Please use the option --{0} to specify the "
 "recipients."
 msgstr "未指定收件人。请使用选项 --{0} 指定收件人。"
 
-#: Library/Modules/Builtin/Strings.cs:182
+#: Library/Modules/Builtin/Strings.cs:184
 msgid ""
 "This module provides support for sending status reports via XMPP messages"
 msgstr "该模块可以通过 XMPP 消息发送状态报告"
 
-#: Library/Modules/Builtin/Strings.cs:183
+#: Library/Modules/Builtin/Strings.cs:185
 msgid "XMPP report module"
 msgstr "XMPP 报告模块"
 
-#: Library/Modules/Builtin/Strings.cs:184
+#: Library/Modules/Builtin/Strings.cs:186
 msgid ""
 "Use this option to set the users who should have the messages sent. You can "
 "specify multiple users separated with commas."
 msgstr "使用此选项设置应收到消息的用户。您可以指定用逗号分隔的多个用户。"
 
-#: Library/Modules/Builtin/Strings.cs:185
+#: Library/Modules/Builtin/Strings.cs:187
 msgid "XMPP recipient email"
 msgstr "XMPP 接收邮箱"
 
-#: Library/Modules/Builtin/Strings.cs:186
-#: Library/Modules/Builtin/Strings.cs:217
-#: Library/Modules/Builtin/Strings.cs:249
+#: Library/Modules/Builtin/Strings.cs:188
+#: Library/Modules/Builtin/Strings.cs:219
+#: Library/Modules/Builtin/Strings.cs:251
 msgid ""
 "This value can be a filename. If the file exists, the file contents will be used as the message.\n"
 "\n"
@@ -6821,35 +6889,35 @@ msgstr ""
 "\n"
 "所有命令行选项也会在%value%中报告，例如：%volsize%。任何未知/未设置的值将被移除。"
 
-#: Library/Modules/Builtin/Strings.cs:195
-#: Library/Modules/Builtin/Strings.cs:227
-#: Library/Modules/Builtin/Strings.cs:258
+#: Library/Modules/Builtin/Strings.cs:197
+#: Library/Modules/Builtin/Strings.cs:229
+#: Library/Modules/Builtin/Strings.cs:260
 msgid "The message template"
 msgstr "消息模板"
 
-#: Library/Modules/Builtin/Strings.cs:196
+#: Library/Modules/Builtin/Strings.cs:198
 msgid ""
 "Use this option to set a username for the account that will send the "
 "message, including the hostname, e.g. \"account@jabber.org/Home\""
 msgstr "使用此选项为将要发送消息的账户设置用户名，包括主机名，例如：\"account@jabber.org/Home\""
 
-#: Library/Modules/Builtin/Strings.cs:197
+#: Library/Modules/Builtin/Strings.cs:199
 msgid "The XMPP username"
 msgstr "XMPP 用户名"
 
-#: Library/Modules/Builtin/Strings.cs:198
+#: Library/Modules/Builtin/Strings.cs:200
 msgid ""
 "Use this option to set a password for the account that will send the "
 "message."
 msgstr "使用此选项为将要发送消息的账户设置密码。"
 
-#: Library/Modules/Builtin/Strings.cs:199
+#: Library/Modules/Builtin/Strings.cs:201
 msgid "The XMPP password"
 msgstr "XMPP 密码"
 
-#: Library/Modules/Builtin/Strings.cs:200
-#: Library/Modules/Builtin/Strings.cs:234
-#: Library/Modules/Builtin/Strings.cs:263
+#: Library/Modules/Builtin/Strings.cs:202
+#: Library/Modules/Builtin/Strings.cs:236
+#: Library/Modules/Builtin/Strings.cs:265
 #, csharp-format
 msgid ""
 "You can specify one of \"{0}\", \"{1}\", \"{2}\", \"{3}\".\n"
@@ -6858,105 +6926,105 @@ msgstr ""
 "您可以指定\"{0}\"、\"{1}\"、\"{2}\"、\"{3}\"中的一个。\n"
 "您可以使用逗号分隔符提供多个选项，例如\"{0},{1}\"。特殊值\"{4}\"是\"{0},{1},{2},{3}\"的简写，会导致所有备份操作都发送一条信息。"
 
-#: Library/Modules/Builtin/Strings.cs:203
-#: Library/Modules/Builtin/Strings.cs:237
-#: Library/Modules/Builtin/Strings.cs:266
+#: Library/Modules/Builtin/Strings.cs:205
+#: Library/Modules/Builtin/Strings.cs:239
+#: Library/Modules/Builtin/Strings.cs:268
 msgid ""
 "By default, messages will only be sent after a backup operation. Use this "
 "option to send messages for all operations."
 msgstr "默认情况下，只有在备份操作后才会发送消息。使用此选项可以为所有操作发送消息。"
 
-#: Library/Modules/Builtin/Strings.cs:204
-#: Library/Modules/Builtin/Strings.cs:238
-#: Library/Modules/Builtin/Strings.cs:267
+#: Library/Modules/Builtin/Strings.cs:206
+#: Library/Modules/Builtin/Strings.cs:240
+#: Library/Modules/Builtin/Strings.cs:269
 msgid "Send messages for all operations"
 msgstr "为所有操作发送消息"
 
-#: Library/Modules/Builtin/Strings.cs:205
+#: Library/Modules/Builtin/Strings.cs:207
 msgid "Timeout occurred while logging in to jabber server"
 msgstr "登陆 jabber 服务器超时"
 
-#: Library/Modules/Builtin/Strings.cs:212
+#: Library/Modules/Builtin/Strings.cs:214
 msgid ""
 "This module provides support for sending status reports via Telegram "
 "messages"
 msgstr "该模块提供了通过Telegram消息发送状态报告的支持"
 
-#: Library/Modules/Builtin/Strings.cs:213
+#: Library/Modules/Builtin/Strings.cs:215
 msgid "Telegram report module"
 msgstr "Telegram报告模块"
 
-#: Library/Modules/Builtin/Strings.cs:214
+#: Library/Modules/Builtin/Strings.cs:216
 msgid "Use this option to set the channel ID."
 msgstr "使用此选项设置频道ID。"
 
-#: Library/Modules/Builtin/Strings.cs:215
+#: Library/Modules/Builtin/Strings.cs:217
 msgid "Telegram channel ID"
 msgstr "Telegram 频道 ID"
 
-#: Library/Modules/Builtin/Strings.cs:228
+#: Library/Modules/Builtin/Strings.cs:230
 msgid ""
 "Use this option to set a bot ID for the bot that will send the message."
 msgstr "使用此选项为将要发送消息的机器人设置一个机器人ID。"
 
-#: Library/Modules/Builtin/Strings.cs:229
+#: Library/Modules/Builtin/Strings.cs:231
 msgid "The Telegram bot ID"
 msgstr "Telegram机器人ID"
 
-#: Library/Modules/Builtin/Strings.cs:230
+#: Library/Modules/Builtin/Strings.cs:232
 msgid ""
 "Use this option to set a API key for the bot that will send the message."
 msgstr "使用此选项为将要发送消息的机器人设置API密钥。"
 
-#: Library/Modules/Builtin/Strings.cs:231
+#: Library/Modules/Builtin/Strings.cs:233
 msgid "The Telegram API key"
 msgstr "Telegram API key"
 
-#: Library/Modules/Builtin/Strings.cs:232
+#: Library/Modules/Builtin/Strings.cs:234
 msgid "The Telegram topic ID"
 msgstr "Telegram 话题 ID"
 
-#: Library/Modules/Builtin/Strings.cs:233
+#: Library/Modules/Builtin/Strings.cs:235
 msgid ""
 "Topic ID for the Topic in the telegram group. For more information on "
 "Telegram setup, refer to documentation."
 msgstr "Telegram 群组中的话题 ID。有关 Telegram 设置的更多信息，请参阅文档。"
 
-#: Library/Modules/Builtin/Strings.cs:245
+#: Library/Modules/Builtin/Strings.cs:247
 msgid ""
 "This module provides support for sending status reports via HTTP messages"
 msgstr "该模块可以通过 HTTP 消息发送状态报告"
 
-#: Library/Modules/Builtin/Strings.cs:246
+#: Library/Modules/Builtin/Strings.cs:248
 msgid "HTTP report module"
 msgstr "HTTP 报告模块"
 
-#: Library/Modules/Builtin/Strings.cs:247
+#: Library/Modules/Builtin/Strings.cs:249
 msgid "Use this option to set a HTTP report URL."
 msgstr "使用此选项设置HTTP报告URL。"
 
-#: Library/Modules/Builtin/Strings.cs:248
+#: Library/Modules/Builtin/Strings.cs:250
 msgid "HTTP report URL"
 msgstr "HTTP报告URL"
 
-#: Library/Modules/Builtin/Strings.cs:259
+#: Library/Modules/Builtin/Strings.cs:261
 msgid "Use this option to set a name of the parameter to send the message as."
 msgstr "使用此选项设置发送消息时使用的参数名称。"
 
-#: Library/Modules/Builtin/Strings.cs:260
+#: Library/Modules/Builtin/Strings.cs:262
 msgid "The name of the parameter to send the message as"
 msgstr "作为消息发送的参数的名字"
 
-#: Library/Modules/Builtin/Strings.cs:268
+#: Library/Modules/Builtin/Strings.cs:270
 msgid ""
 "Use this option to change the default HTTP verb used to submit a report."
 msgstr "使用此选项更改用于提交报告的默认HTTP动作。"
 
-#: Library/Modules/Builtin/Strings.cs:269
+#: Library/Modules/Builtin/Strings.cs:271
 msgid "Set the HTTP verb to use"
 msgstr "设置 HTTP 动作"
 
-#: Library/Modules/Builtin/Strings.cs:270
+#: Library/Modules/Builtin/Strings.cs:272
 msgid ""
 "Use this option to set HTTP report URLs for sending form-encoded data. This "
 "option accepts multiple URLs, seperated by a semi-colon. All URLs will "
@@ -6965,11 +7033,11 @@ msgid ""
 msgstr ""
 "使用此选项设置用于发送表单编码数据的HTTP报告URL。此选项接受多个URL，用分号分隔。所有URL将接收相同的数据。请注意，此选项会忽略格式和动作设置。"
 
-#: Library/Modules/Builtin/Strings.cs:271
+#: Library/Modules/Builtin/Strings.cs:273
 msgid "HTTP report URLs for sending form data"
 msgstr "用于发送表单数据的HTTP报告URLs"
 
-#: Library/Modules/Builtin/Strings.cs:272
+#: Library/Modules/Builtin/Strings.cs:274
 msgid ""
 "Use this option to set HTTP report URLs for sending JSON data. This option "
 "accepts multiple URLs, seperated by a semi-colon. All URLs will receive the "
@@ -6977,22 +7045,22 @@ msgid ""
 msgstr ""
 "使用此选项设置用于发送JSON数据的HTTP报告URL。此选项接受多个URL，用分号分隔。所有URL将接收相同的数据。请注意，此选项会忽略格式和动作设置。"
 
-#: Library/Modules/Builtin/Strings.cs:273
+#: Library/Modules/Builtin/Strings.cs:275
 msgid "HTTP report URLs for sending JSON data"
 msgstr "用于发送JSON数据的HTTP报告URLs"
 
-#: Library/Modules/Builtin/Strings.cs:274 Library/Utility/Strings.cs:83
+#: Library/Modules/Builtin/Strings.cs:276 Library/Utility/Strings.cs:83
 #, csharp-format
 msgid ""
 "Use this option to accept any server certificate, regardless of what errors "
 "it may have. Please use --{0} instead, whenever possible."
 msgstr "使用此选项接受任何服务器证书，无论它可能存在什么错误。请尽可能使用 --{0} 代替。"
 
-#: Library/Modules/Builtin/Strings.cs:275 Library/Utility/Strings.cs:84
+#: Library/Modules/Builtin/Strings.cs:277 Library/Utility/Strings.cs:84
 msgid "Accept any server certificate"
 msgstr "接受任意服务器证书"
 
-#: Library/Modules/Builtin/Strings.cs:276 Library/Utility/Strings.cs:85
+#: Library/Modules/Builtin/Strings.cs:278 Library/Utility/Strings.cs:85
 msgid ""
 "If your server certificate is reported as invalid (e.g. with self-signed "
 "certificates), you can supply the certificate hash (SHA1) to approve it "
@@ -7001,59 +7069,59 @@ msgid ""
 msgstr ""
 "如果您的服务器证书被报告为无效（例如，使用自签名证书），您可以提供证书哈希（SHA1）以无论如何批准它。哈希值必须以十六进制格式输入，不能有空格或冒号。您可以输入多个哈希，用逗号分隔。"
 
-#: Library/Modules/Builtin/Strings.cs:277 Library/Utility/Strings.cs:86
+#: Library/Modules/Builtin/Strings.cs:279 Library/Utility/Strings.cs:86
 msgid "Optionally accept a known SSL certificate"
 msgstr "视情况接受已知的 SSL 证书"
 
-#: Library/Modules/Builtin/Strings.cs:278
+#: Library/Modules/Builtin/Strings.cs:280
 msgid ""
 "Use this option to set the number of retries to attempt if the HTTP request "
 "fails."
 msgstr "设置 HTTP 请求失败时的重试次数。"
 
-#: Library/Modules/Builtin/Strings.cs:279
+#: Library/Modules/Builtin/Strings.cs:281
 msgid "Set the number of retries"
 msgstr "设置重重试次数"
 
-#: Library/Modules/Builtin/Strings.cs:280
+#: Library/Modules/Builtin/Strings.cs:282
 msgid "Use this option to set the delay between retries."
 msgstr "设置重试之间的延迟时间。"
 
-#: Library/Modules/Builtin/Strings.cs:281
+#: Library/Modules/Builtin/Strings.cs:283
 msgid "Set the retry delay"
 msgstr "设置重试延迟"
 
-#: Library/Modules/Builtin/Strings.cs:286
+#: Library/Modules/Builtin/Strings.cs:288
 #, csharp-format
 msgid "Failed to send message: {0}"
 msgstr "发送消息失败：{0}"
 
-#: Library/Modules/Builtin/Strings.cs:287
+#: Library/Modules/Builtin/Strings.cs:289
 msgid ""
 "Use this option to set the log level for messages to include in the report."
 msgstr "使用此选项设置报告中包含的消息的日志级别。"
 
-#: Library/Modules/Builtin/Strings.cs:288
+#: Library/Modules/Builtin/Strings.cs:290
 msgid "Define a log level for messages"
 msgstr "定义消息的日志级别"
 
-#: Library/Modules/Builtin/Strings.cs:289
+#: Library/Modules/Builtin/Strings.cs:291
 msgid ""
 "Use this option to set a filter expression that defines what options are "
 "included in the report."
 msgstr "使用此选项设置一个过滤表达式，定义报告中包含哪些选项。"
 
-#: Library/Modules/Builtin/Strings.cs:290
+#: Library/Modules/Builtin/Strings.cs:292
 msgid "Log message filter"
 msgstr "过滤消息日志"
 
-#: Library/Modules/Builtin/Strings.cs:291
+#: Library/Modules/Builtin/Strings.cs:293
 msgid ""
 "Use this option to set the maximum number of log lines to include in the "
 "report. Zero or negative values means unlimited."
 msgstr "指定报告中的日志最大行数。0 或负值代表不限制。"
 
-#: Library/Modules/Builtin/Strings.cs:292
+#: Library/Modules/Builtin/Strings.cs:294
 msgid "Limit log lines"
 msgstr "日志长度限制"
 

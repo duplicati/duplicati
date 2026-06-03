@@ -22,6 +22,7 @@
 using System;
 using System.IO;
 using System.Security.Cryptography;
+using System.Threading.Tasks;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.SQLiteHelper;
 using NUnit.Framework;
@@ -32,7 +33,7 @@ namespace Duplicati.UnitTest
     {
         [Test]
         [Category("Targeted")]
-        public void RunCommandsOriginal()
+        public async Task RunCommandsOriginalAsync()
         {
             var testopts = TestOptions.Expand(new { no_encryption = true, keep_versions = 1, dblock_size = "5mb" });
 
@@ -46,7 +47,7 @@ namespace Duplicati.UnitTest
 
             // Backup 1
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Backup([DATAFOLDER]));
+                TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
 
             File.Delete(Path.Combine(DATAFOLDER, "A.txt"));
             File.WriteAllText(Path.Combine(DATAFOLDER, "C.txt"), "C");
@@ -57,7 +58,7 @@ namespace Duplicati.UnitTest
             // Backup 2
             System.Threading.Thread.Sleep(1000); // Ensure different timestamp
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Backup([DATAFOLDER]));
+                TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
 
             File.WriteAllText(Path.Combine(DATAFOLDER, "A.txt"), "A");
             Random.Shared.NextBytes(buffer);
@@ -69,7 +70,7 @@ namespace Duplicati.UnitTest
             // Backup 3
             System.Threading.Thread.Sleep(1000); // Ensure different timestamp
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Backup([DATAFOLDER]));
+                TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
 
             File.Delete(Path.Combine(DATAFOLDER, "b1.bin"));
             File.Delete(Path.Combine(DATAFOLDER, "b2.bin"));
@@ -78,26 +79,26 @@ namespace Duplicati.UnitTest
             System.Threading.Thread.Sleep(1000); // Ensure different timestamp
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                var res = c.Backup([DATAFOLDER]);
+                var res = await c.BackupAsync([DATAFOLDER]);
                 TestUtils.AssertResults(res);
                 Assert.That(res.CompactResults.DeletedFileCount, Is.GreaterThan(0), "Compact was not run");
             }
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Test(long.MaxValue));
+                TestUtils.AssertResults(await c.TestAsync(long.MaxValue));
 
             // Test we can recrate without errors
             File.Delete(DBFILE);
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Repair());
+                TestUtils.AssertResults(await c.RepairAsync());
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Test(long.MaxValue));
+                TestUtils.AssertResults(await c.TestAsync(long.MaxValue));
         }
 
         [Test]
         [Category("Targeted")]
-        public void RunCommandsSimplified()
+        public async Task RunCommandsSimplifiedAsync()
         {
             var testopts = TestOptions.Expand(new { no_encryption = true, keep_versions = 1, dblock_size = "5mb" });
 
@@ -106,7 +107,7 @@ namespace Duplicati.UnitTest
 
             // Backup 1
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Backup([DATAFOLDER]));
+                TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
 
             File.Delete(Path.Combine(DATAFOLDER, "A.txt"));
             File.WriteAllText(Path.Combine(DATAFOLDER, "C.txt"), "C");
@@ -114,25 +115,25 @@ namespace Duplicati.UnitTest
             // Backup 2
             System.Threading.Thread.Sleep(1000); // Ensure different timestamp
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Backup([DATAFOLDER]));
+                TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
 
             File.WriteAllText(Path.Combine(DATAFOLDER, "A.txt"), "A");
 
             // Backup 3
             System.Threading.Thread.Sleep(1000); // Ensure different timestamp
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Backup([DATAFOLDER]));
+                TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Test(long.MaxValue));
+                TestUtils.AssertResults(await c.TestAsync(long.MaxValue));
 
             // Test we can recrate without errors
             File.Delete(DBFILE);
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Repair());
+                TestUtils.AssertResults(await c.RepairAsync());
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Test(long.MaxValue));
+                TestUtils.AssertResults(await c.TestAsync(long.MaxValue));
         }
 
         [Test]
@@ -143,7 +144,7 @@ namespace Duplicati.UnitTest
         [TestCase(0)]
         // Use in-memory cache
         [TestCase(1000)]
-        public void RunWithCaches(int cacheSize)
+        public async Task RunWithCachesAsync(int cacheSize)
         {
             Environment.SetEnvironmentVariable("DUPLICATI_DELETEDBLOCKCACHESIZE", cacheSize.ToString());
             var testopts = TestOptions.Expand(new { no_encryption = true, keep_versions = 1, dblock_size = "5mb" });
@@ -154,9 +155,9 @@ namespace Duplicati.UnitTest
 
             // Backup 1
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Backup([DATAFOLDER]));
+                TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
 
-            using (var db = SQLiteLoader.LoadConnection(DBFILE))
+            using (var db = await SQLiteLoader.LoadConnectionAsync(DBFILE))
             using (var cmd = db.CreateCommand())
             {
                 var deletedBlocks = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""DeletedBlock""");
@@ -170,16 +171,16 @@ namespace Duplicati.UnitTest
             // Backup 2
             System.Threading.Thread.Sleep(1000); // Ensure different timestamp
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Backup([DATAFOLDER]));
+                TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
 
-            using (var db = SQLiteLoader.LoadConnection(DBFILE))
+            using (var db = await SQLiteLoader.LoadConnectionAsync(DBFILE))
             using (var cmd = db.CreateCommand())
             {
                 var deletedBlocks = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""DeletedBlock""");
                 Assert.That(deletedBlocks, Is.GreaterThan(0), "DeletedBlock table is empty");
             }
 
-            using (var db = SQLiteLoader.LoadConnection(DBFILE))
+            using (var db = await SQLiteLoader.LoadConnectionAsync(DBFILE))
             using (var cmd = db.CreateCommand())
             {
                 var deletedBlocks = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""DeletedBlock""");
@@ -191,9 +192,9 @@ namespace Duplicati.UnitTest
             // Backup 3
             System.Threading.Thread.Sleep(1000); // Ensure different timestamp
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Backup([DATAFOLDER]));
+                TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
 
-            using (var db = SQLiteLoader.LoadConnection(DBFILE))
+            using (var db = await SQLiteLoader.LoadConnectionAsync(DBFILE))
             using (var cmd = db.CreateCommand())
             {
                 var alldeletedBlocks = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""DeletedBlock""");
@@ -206,15 +207,15 @@ namespace Duplicati.UnitTest
             }
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Test(long.MaxValue));
+                TestUtils.AssertResults(await c.TestAsync(long.MaxValue));
 
             // Test we can recrate without errors
             File.Delete(DBFILE);
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Repair());
+                TestUtils.AssertResults(await c.RepairAsync());
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(c.Test(long.MaxValue));
+                TestUtils.AssertResults(await c.TestAsync(long.MaxValue));
 
             Environment.SetEnvironmentVariable("DUPLICATI_DELETEDBLOCKCACHESIZE", null);
         }

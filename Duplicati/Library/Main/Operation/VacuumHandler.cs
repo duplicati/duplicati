@@ -42,7 +42,7 @@ namespace Duplicati.Library.Main.Operation
                     .ConfigureAwait(false);
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Vacuum_Running);
             await db.Transaction.CommitAsync("Vacuum", false, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
-            await db.Vacuum(m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+            await db.VacuumAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false);
             m_result.EndTime = DateTime.UtcNow;
         }
     }

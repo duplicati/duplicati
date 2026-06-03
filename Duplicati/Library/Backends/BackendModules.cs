@@ -36,6 +36,26 @@ public static class BackendModules
     public static IReadOnlyList<IBackend> BuiltInBackendModules => SupportedBackends;
 
     /// <summary>
+    /// List of backend modules that are not tested as it was not possible to get a test account
+    /// </summary>
+    public static IReadOnlySet<string> UntestedBackendModules => new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
+        new Backend.AliyunOSS.OSS().ProtocolKey,
+        new Backend.TencentCOS.COS().ProtocolKey,
+        new Backend.MovistarCloud.MovistarCloudBackend().ProtocolKey
+    };
+
+    /// <summary>
+    /// List of backend modules that are deprecated and should be migrated away from
+    /// </summary>
+    public static IReadOnlySet<string> DeprecatedBackendModules => new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
+        new Backend.Mega.MegaBackend().ProtocolKey,
+        new Backend.OneDriveForBusinessBackend().ProtocolKey,
+        new Backend.SharePointBackend().ProtocolKey,
+        new Backend.CIFSBackend().ProtocolKey,
+        new Backend.Filejump().ProtocolKey
+    };
+
+    /// <summary>
     /// Calculate list once and cache it
     /// </summary>
     private static readonly IReadOnlyList<IBackend> SupportedBackends = new IBackend[] {
@@ -54,6 +74,7 @@ public static class BackendModules
         new Backend.Jottacloud(),
         new Backend.Mega.MegaBackend(),
         new Backend.MicrosoftGroup(),
+        new Backend.MovistarCloud.MovistarCloudBackend(),
         new Backend.OneDrive(),
         new Backend.OpenStack.OpenStackStorage(),
         new Backend.Rclone(),
@@ -70,7 +91,8 @@ public static class BackendModules
         new Backend.SMBBackend(),
         new Backend.CIFSBackend(),
         new Backend.Filen.FilenBackend(),
-        new Backend.Filejump()
+        new Backend.Filejump(),
+        new Backend.DrimeCloud.DrimeBackend(),
     }
     .Concat(Proprietary.LoaderHelper.BackendModules.LicensedBackendModules)
 

@@ -281,7 +281,7 @@ public class DuplicatiWebserver
                     OnTokenValidated = context =>
                     {
                         var store = context.HttpContext.RequestServices.GetRequiredService<ITokenFamilyStore>();
-                        return JWTTokenProvider.ValidateAccessToken(context, store);
+                        return JWTTokenProvider.ValidateAccessTokenAsync(context, store);
                     }
                 };
             });
@@ -470,7 +470,7 @@ public class DuplicatiWebserver
     /// Starts the webserver
     /// </summary>
     /// <returns>The task that will be set when the server is terminated</returns>
-    public Task Start()
+    public Task StartAsync()
     {
         App.MapHealthChecks("/health");
         App.AddEndpoints(CorsEnabled)
@@ -483,8 +483,6 @@ public class DuplicatiWebserver
     /// Stops the webserver
     /// </summary>
     /// <returns>An awaitable task</returns>
-    public async Task Stop()
-    {
-        await App.StopAsync();
-    }
+    public Task StopAsync()
+        => App.StopAsync();
 }

@@ -28,6 +28,7 @@ using System.Text;
 using System.Threading;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.DynamicLoader;
+using Duplicati.Library.Utility;
 using FilterGroup = Duplicati.Library.Utility.FilterGroup;
 
 namespace Duplicati.CommandLine
@@ -266,7 +267,7 @@ namespace Duplicati.CommandLine
                     var lines = new List<string>();
                     foreach (var module in SecretProviderLoader.Keys)
                     {
-                        var metadata = SecretProviderLoader.GetProviderMetadata(module, CancellationToken.None).Result;
+                        var metadata = SecretProviderLoader.GetProviderMetadata(module, CancellationToken.None).Await();
                         lines.Add($"- {module}: {metadata.DisplayName}{(metadata.IsSupported ? "" : " (not supported)")}");
                     }
 

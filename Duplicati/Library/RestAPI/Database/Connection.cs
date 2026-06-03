@@ -95,12 +95,18 @@ namespace Duplicati.Server.Database
             m_dataFolder = dataFolder;
             m_encryptSensitiveFields = !disableFieldEncryption;
             m_key = key;
+            if (m_encryptSensitiveFields && m_key == null)
+                throw new ArgumentNullException(nameof(key), "Key must be provided if encryption is enabled");
+
             m_connection = connection;
             m_errorcmd = m_connection.CreateCommand(@"INSERT INTO ""ErrorLog"" (""BackupID"", ""Message"", ""Exception"", ""Timestamp"") VALUES (@BackupId,@Message,@Exception,@Timestamp)");
             m_startOrStopUsageReporter = startOrStopUsageReporter;
 
             this.ApplicationSettings = new ServerSettings(this);
         }
+
+        public void UpdateUsageReporterCallback(Action startOrStopUsageReporter)
+            => m_startOrStopUsageReporter = startOrStopUsageReporter;
 
         /// <summary>
         /// The service provider is used to resolve dependencies
@@ -430,7 +436,9 @@ namespace Duplicati.Server.Database
                 provider?.GetRequiredService<EventPollNotify>()?.SignalNewEvent();
                 provider?.GetRequiredService<EventPollNotify>()?.SignalServerSettingsUpdated();
                 // If throttle options were changed, update now
-                provider?.GetRequiredService<IQueueRunnerService>()?.GetCurrentTask()?.UpdateThrottleSpeeds(ApplicationSettings.UploadSpeedLimit, ApplicationSettings.DownloadSpeedLimit);
+                var currentTask = provider?.GetRequiredService<IQueueRunnerService>()?.GetCurrentTask();
+                if (currentTask != null)
+                    _ = currentTask.UpdateThrottleSpeedsAsync(ApplicationSettings.UploadSpeedLimit, ApplicationSettings.DownloadSpeedLimit);
                 provider?.GetRequiredService<LiveControls>()?.UpdatePowerModeProvider();
             }
 

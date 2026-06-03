@@ -39,7 +39,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             m_res = res;
         }
 
-        private async Task WithLock(Action action)
+        private async Task WithLockAsync(Action action)
         {
             await semaphoreSlim.WaitAsync();
             try
@@ -52,44 +52,44 @@ namespace Duplicati.Library.Main.Operation.Backup
             }
         }
 
-        public Task AddOpenedFile(long size)
+        public Task AddOpenedFileAsync(long size)
         {
-            return WithLock(() =>
+            return WithLockAsync(() =>
             {
                 m_res.SizeOfOpenedFiles += size;
                 m_res.OpenedFiles++;
             });
         }
 
-        public Task AddTimestampChangedFile()
+        public Task AddTimestampChangedFileAsync()
         {
-            return WithLock(() =>
+            return WithLockAsync(() =>
             {
                 m_res.TimestampChangedFiles++;
             });
         }
 
-        public Task AddAddedFile(long size)
+        public Task AddAddedFileAsync(long size)
         {
-            return WithLock(() =>
+            return WithLockAsync(() =>
             {
                 m_res.SizeOfAddedFiles += size;
                 m_res.AddedFiles++;
             });
         }
 
-        public Task AddModifiedFile(long size)
+        public Task AddModifiedFileAsync(long size)
         {
-            return WithLock(() =>
+            return WithLockAsync(() =>
             {
                 m_res.SizeOfModifiedFiles += size;
                 m_res.ModifiedFiles++;
             });
         }
 
-        public Task AddExaminedFile(long size)
+        public Task AddExaminedFileAsync(long size)
         {
-            return WithLock(() =>
+            return WithLockAsync(() =>
             {
                 m_res.SizeOfExaminedFiles += size;
                 m_res.ExaminedFiles++;

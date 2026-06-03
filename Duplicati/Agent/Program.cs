@@ -102,7 +102,7 @@ public static class Program
     }
 
     [STAThread]
-    public static Task<int> Main(string[] args)
+    public static Task<int> MainAsync(string[] args)
     {
         Library.AutoUpdater.PreloadSettingsLoader.ConfigurePreloadSettings(ref args, Library.AutoUpdater.PackageHelper.NamedExecutable.Agent);
 
@@ -131,13 +131,13 @@ public static class Program
             new Option<bool>($"--{DataFolderManager.PORTABLE_MODE_OPTION}", description: "Use portable mode for locating the database and storing configuration", getDefaultValue: () => DataFolderManager.PORTABLE_MODE),
             new Option<DirectoryInfo?>($"--{DataFolderManager.SERVER_DATAFOLDER_OPTION}", description: "The datafolder to use for locating the database and storing configuration", getDefaultValue: () => new DirectoryInfo(DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ProbeOnly))),
         };
-        runcmd.Handler = CommandHandler.Create<CommandLineArguments>(RunAgent);
+        runcmd.Handler = CommandHandler.Create<CommandLineArguments>(RunAgentAsync);
 
         var clearCommand = new Command("clear", "Clears the agent settings")
         {
             new Option<FileInfo>("--agent-settings-file", description: "The file to use for the agent settings", getDefaultValue: () => new FileInfo(Settings.DefaultSettingsFile)),
         };
-        clearCommand.Handler = CommandHandler.Create<FileInfo>(ClearAgentSettings);
+        clearCommand.Handler = CommandHandler.Create<FileInfo>(ClearAgentSettingsAsync);
 
         var registerCommand = new Command("register", "Registers the agent and exits")
         {
@@ -147,7 +147,7 @@ public static class Program
             new Option<string?>("--secret-provider", description: "The secret provider to use", getDefaultValue: () => null),
             new Option<string>("--secret-provider-pattern", description: "The secret provider pattern", getDefaultValue: () => SecretProviderHelper.DEFAULT_PATTERN),
         };
-        registerCommand.Handler = CommandHandler.Create<string, FileInfo, string?, string?, string>(RegisterAgent);
+        registerCommand.Handler = CommandHandler.Create<string, FileInfo, string?, string?, string>(RegisterAgentAsync);
 
         var rootcmd = new RootCommand("Duplicati Agent")
         {
@@ -183,7 +183,7 @@ public static class Program
     /// </summary>
     /// <param name="agentSettingsFile">The file to clear</param>
     /// <returns>The exit code</returns>
-    private static Task<int> ClearAgentSettings(FileInfo agentSettingsFile)
+    private static Task<int> ClearAgentSettingsAsync(FileInfo agentSettingsFile)
     {
         if (File.Exists(agentSettingsFile.FullName))
             File.Delete(agentSettingsFile.FullName);
@@ -199,8 +199,8 @@ public static class Program
     /// <param name="secretProvider">The secret provider to use</param>
     /// <param name="secretProviderPattern">The secret provider pattern</param>
     /// <returns></returns>
-    private static Task<int> RegisterAgent(string agentRegistrationUrl, FileInfo agentSettingsFile, string? agentSettingsFilePassphrase, string? secretProvider, string secretProviderPattern)
-        => RunAgent(new CommandLineArguments(
+    private static Task<int> RegisterAgentAsync(string agentRegistrationUrl, FileInfo agentSettingsFile, string? agentSettingsFilePassphrase, string? secretProvider, string secretProviderPattern)
+        => RunAgentAsync(new CommandLineArguments(
             AgentRegistrationUrl: string.IsNullOrWhiteSpace(agentRegistrationUrl)
                 ? GetDefaultRegistrationUrl()
                 : agentRegistrationUrl,
@@ -230,7 +230,7 @@ public static class Program
     /// </summary>
     /// <param name="agentConfig">The configuration from the commandline</param>
     /// <returns>The exit code</returns>
-    private static async Task<int> RunAgent(CommandLineArguments agentConfig)
+    private static async Task<int> RunAgentAsync(CommandLineArguments agentConfig)
     {
         // Read the environment variable for the encryption key
         if (string.IsNullOrWhiteSpace(agentConfig.SettingsEncryptionKey))
@@ -304,7 +304,7 @@ public static class Program
 
             Log.WriteMessage(LogMessageType.Information, LogTag, "AgentStarting", "Starting agent");
 
-            var settings = await Register(agentConfig.AgentRegistrationUrl, agentConfig.AgentSettingsFile.FullName, agentConfig.AgentSettingsFilePassphrase, cts.Token);
+            var settings = await RegisterAsync(agentConfig.AgentRegistrationUrl, agentConfig.AgentSettingsFile.FullName, agentConfig.AgentSettingsFilePassphrase, cts.Token);
 
             if (agentConfig.AgentRegisterOnly)
             {
@@ -313,8 +313,8 @@ public static class Program
             }
 
             var t = await Task.WhenAny(
-                Task.Run(() => StartLocalServer(agentConfig, applicationSettings, settings, cts.Token)),
-                KeepRemoteConnection.Start(
+                Task.Run(() => StartLocalServerAsync(agentConfig, applicationSettings, settings, cts.Token)),
+                KeepRemoteConnection.StartAsync(
                     settings.ServerUrl,
                     settings.JWT,
                     settings.CertificateUrl,
@@ -322,10 +322,10 @@ public static class Program
                     refreshSettingsBy: null,
                     forceConnect: true,
                     cts.Token,
-                    OnConnect,
-                    m => ReKey(applicationSettings, m, agentConfig),
-                    OnControl,
-                    OnMessage
+                    OnConnectAsync,
+                    m => ReKeyAsync(applicationSettings, m, agentConfig),
+                    OnControlAsync,
+                    OnMessageAsync
                 )
             );
 
@@ -335,17 +335,17 @@ public static class Program
         }
     }
 
-    private static Task<Dictionary<string, string?>> OnConnect(Dictionary<string, string?> metadata)
-        => Server.Program.DuplicatiWebserver.Provider.GetRequiredService<IRemoteControllerHandler>().OnConnect(metadata);
+    private static Task<Dictionary<string, string?>> OnConnectAsync(Dictionary<string, string?> metadata)
+        => Server.Program.DuplicatiWebserver.Provider.GetRequiredService<IRemoteControllerHandler>().OnConnectAsync(metadata);
 
-    private static Task OnControl(KeepRemoteConnection.ControlMessage message)
-        => Server.Program.DuplicatiWebserver.Provider.GetRequiredService<IRemoteControllerHandler>().OnControl(message);
+    private static Task OnControlAsync(KeepRemoteConnection.ControlMessage message)
+        => Server.Program.DuplicatiWebserver.Provider.GetRequiredService<IRemoteControllerHandler>().OnControlAsync(message);
 
-    private static Task OnMessage(KeepRemoteConnection.CommandMessage message)
-        => Server.Program.DuplicatiWebserver.Provider.GetRequiredService<IRemoteControllerHandler>().OnMessage(message);
+    private static Task OnMessageAsync(KeepRemoteConnection.CommandMessage message)
+        => Server.Program.DuplicatiWebserver.Provider.GetRequiredService<IRemoteControllerHandler>().OnMessageAsync(message);
 
 
-    private static Task ReKey(IApplicationSettings applicationSettings, ClaimedClientData keydata, CommandLineArguments agentConfig)
+    private static Task ReKeyAsync(IApplicationSettings applicationSettings, ClaimedClientData keydata, CommandLineArguments agentConfig)
     {
         // ReKey is handled here because we store the config outside of the database
         Log.WriteMessage(LogMessageType.Verbose, LogTag, "ReKey", "Rekeying the settings");
@@ -378,7 +378,7 @@ public static class Program
     /// <param name="args">The commandline arguments passed to the server</param>
     /// <param name="cancellationToken">The cancellation token to use for the process</param>
     /// <returns>An awaitable task</returns>
-    private static async Task RunServer(IApplicationSettings applicationSettings, string[] args, CancellationToken cancellationToken)
+    private static async Task RunServerAsync(IApplicationSettings applicationSettings, string[] args, CancellationToken cancellationToken)
     {
         cancellationToken.Register(() =>
         {
@@ -417,7 +417,7 @@ public static class Program
     /// <param name="settingsPasshrase">The passphrase for the settings file</param>
     /// <param name="cancellationToken">The cancellation token to use for the process</param>
     /// <returns>The settings for the machine</returns>
-    private static async Task<Settings> Register(string registrationUrl, string settingsFile, string? settingsPasshrase, CancellationToken cancellationToken)
+    private static async Task<Settings> RegisterAsync(string registrationUrl, string settingsFile, string? settingsPasshrase, CancellationToken cancellationToken)
     {
         var settings = Settings.Load(settingsFile, settingsPasshrase);
         if (string.IsNullOrWhiteSpace(settings.JWT))
@@ -425,7 +425,7 @@ public static class Program
             Log.WriteMessage(LogMessageType.Information, LogTag, "ClientNoJWT", "No JWT found in settings, starting in registration mode");
             using (var registration = new RegisterForRemote(registrationUrl, null, cancellationToken))
             {
-                var registerClientData = await registration.Register();
+                var registerClientData = await registration.RegisterAsync();
                 if (registerClientData.RegistrationData != null)
                 {
                     Log.WriteMessage(LogMessageType.Information, LogTag, "ClientRegistered", $"Machine registered, claim it by visiting: {registerClientData.RegistrationData.ClaimLink}");
@@ -439,7 +439,7 @@ public static class Program
                         Log.WriteMessage(LogMessageType.Warning, LogTag, "ClientClaimLink", ex, "Failed to open the claim link in system browser");
                     }
                 }
-                var claimedClientData = await registration.Claim();
+                var claimedClientData = await registration.ClaimAsync();
 
                 Log.WriteMessage(LogMessageType.Information, LogTag, "ClientClaimed", "Machine claimed, saving JWT");
                 settings = settings with
@@ -455,7 +455,7 @@ public static class Program
 
                 // If settings are present in the claim data, apply them via the control handler
                 if (claimedClientData.Settings != null && claimedClientData.Settings.Count > 0)
-                    await OnControl(KeepRemoteConnection.ControlMessage.CreateSettingsControlMessage(claimedClientData.Settings));
+                    await OnControlAsync(KeepRemoteConnection.ControlMessage.CreateSettingsControlMessage(claimedClientData.Settings));
             }
         }
 
@@ -470,7 +470,7 @@ public static class Program
     /// <param name="settings">The settings for the agent</param>
     /// <param name="cancellationToken">The cancellation token that stops the server</param>
     /// <returns>An awaitable task</returns>
-    private static async Task StartLocalServer(CommandLineArguments agentConfig, IApplicationSettings applicationSettings, Settings settings, CancellationToken cancellationToken)
+    private static async Task StartLocalServerAsync(CommandLineArguments agentConfig, IApplicationSettings applicationSettings, Settings settings, CancellationToken cancellationToken)
     {
         // TODO: Look into pipes for Kestrel to prevent network access
 
@@ -517,7 +517,7 @@ public static class Program
         applicationSettings.Origin = "Agent";
 
         // Start the server
-        await RunServer(applicationSettings, args, cancellationToken);
+        await RunServerAsync(applicationSettings, args, cancellationToken);
     }
 }
 

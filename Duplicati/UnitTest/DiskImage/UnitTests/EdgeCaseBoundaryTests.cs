@@ -14,7 +14,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     /// Tests reading at offset 0 (first sector) returns correct data.
     /// </summary>
     [Test]
-    public async Task Test_RawDisk_ReadAtOffsetZero_ReturnsCorrectData()
+    public async Task Test_RawDisk_ReadAtOffsetZero_ReturnsCorrectData_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
 
@@ -38,7 +38,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     /// Tests writing at offset 0 (first sector) works correctly.
     /// </summary>
     [Test]
-    public async Task Test_RawDisk_WriteAtOffsetZero_DataMatches()
+    public async Task Test_RawDisk_WriteAtOffsetZero_DataMatches_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
 
@@ -62,7 +62,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     /// Tests reading at the last sector of the disk returns correct data.
     /// </summary>
     [Test]
-    public async Task Test_RawDisk_ReadAtLastSector_ReturnsCorrectData()
+    public async Task Test_RawDisk_ReadAtLastSector_ReturnsCorrectData_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
         var diskSize = _writableRawDisk.Size;
@@ -89,7 +89,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     /// Tests writing at the last sector of the disk works correctly.
     /// </summary>
     [Test]
-    public async Task Test_RawDisk_WriteAtLastSector_DataMatches()
+    public async Task Test_RawDisk_WriteAtLastSector_DataMatches_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
         var diskSize = _writableRawDisk.Size;
@@ -115,7 +115,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     /// Tests reading exactly one sector returns correct data.
     /// </summary>
     [Test]
-    public async Task Test_RawDisk_ReadExactlyOneSector_ReturnsCorrectData()
+    public async Task Test_RawDisk_ReadExactlyOneSector_ReturnsCorrectData_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
 
@@ -141,7 +141,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     /// Tests writing exactly one sector works correctly.
     /// </summary>
     [Test]
-    public async Task Test_RawDisk_WriteExactlyOneSector_DataMatches()
+    public async Task Test_RawDisk_WriteExactlyOneSector_DataMatches_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
 
@@ -167,7 +167,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     /// Tests reading the full disk size works correctly.
     /// </summary>
     [Test]
-    public async Task Test_RawDisk_ReadFullDiskSize_ReturnsCorrectData()
+    public async Task Test_RawDisk_ReadFullDiskSize_ReturnsCorrectData_Async()
     {
         // Use a smaller test disk for this test to avoid memory issues
         var sectorSize = _writableRawDisk.SectorSize;
@@ -198,7 +198,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     /// Tests writing the full disk size works correctly.
     /// </summary>
     [Test]
-    public async Task Test_RawDisk_WriteFullDiskSize_DataMatches()
+    public async Task Test_RawDisk_WriteFullDiskSize_DataMatches_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
         var diskSize = _writableRawDisk.Size;
@@ -231,7 +231,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     /// Tests writing empty data (0 bytes) returns 0 without error.
     /// </summary>
     [Test]
-    public async Task Test_RawDisk_WriteEmptyData_ReturnsZero()
+    public async Task Test_RawDisk_WriteEmptyData_ReturnsZero_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
 
@@ -246,7 +246,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     /// Tests reading empty data (0 bytes) returns 0 without error.
     /// </summary>
     [Test]
-    public async Task Test_RawDisk_ReadEmptyData_ReturnsZero()
+    public async Task Test_RawDisk_ReadEmptyData_ReturnsZero_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
 
@@ -264,7 +264,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     /// Creates a small test disk and verifies read/write operations work.
     /// </summary>
     [Test]
-    public async Task Test_RawDisk_MinimumSizeDisk_OperationsWork()
+    public async Task Test_RawDisk_MinimumSizeDisk_OperationsWork_Async()
     {
         // The minimum practical disk size is at least a few sectors
         // We'll use the writable disk which is already created at 100 MiB
@@ -343,7 +343,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     /// Tests reading/writing a single byte at various boundary positions.
     /// </summary>
     [Test]
-    public async Task Test_RawDisk_SingleByteAtBoundaries_DataMatches()
+    public async Task Test_RawDisk_SingleByteAtBoundaries_DataMatches_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
 

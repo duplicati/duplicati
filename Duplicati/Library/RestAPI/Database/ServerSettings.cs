@@ -128,6 +128,7 @@ namespace Duplicati.Server.Database
             [GuardedInput, GuardedOutput, BooleanOutput]
             public const string CLIENT_LICENSE_KEY = "client-license-key";
             public const string ENABLE_FOLDER_STATUS_SERVICE = "enable-folder-status-service";
+            public const string USE_OUT_OF_PROCESS_CONTROLLER = "use-out-of-process-controller";
 
             // UI support settings
             // public const string SHOWN_WELCOME_PAGE_V1 = "shown-welcome-page-v1";
@@ -879,6 +880,12 @@ namespace Duplicati.Server.Database
             {
                 SetAndSaveSetting(CONST.BACKUP_LIST_SORT_ORDER, value);
             }
+        }
+
+        public bool UseOutOfProcessController
+        {
+            get => Utility.ParseBool(settings[CONST.USE_OUT_OF_PROCESS_CONTROLLER], false);
+            set => SetAndSaveSetting(CONST.USE_OUT_OF_PROCESS_CONTROLLER, value.ToString());
         }
 
         public PowerModeProvider PowerModeProvider

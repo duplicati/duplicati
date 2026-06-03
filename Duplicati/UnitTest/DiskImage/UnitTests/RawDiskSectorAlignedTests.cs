@@ -11,7 +11,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
 {
 
     [Test]
-    public async Task Test_RawDisk_ReadSector_ReturnsNonEmptyData()
+    public async Task Test_RawDisk_ReadSector_ReturnsNonEmptyData_Async()
     {
         var sectorSize = s_gptRawDisk!.SectorSize;
         using var stream = await s_gptRawDisk.ReadSectorsAsync(0, 1, CancellationToken.None);
@@ -23,7 +23,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_RawDisk_ReadBytes_ReturnsData()
+    public async Task Test_RawDisk_ReadBytes_ReturnsData_Async()
     {
         var sectorSize = s_gptRawDisk!.SectorSize;
         using var stream = await s_gptRawDisk.ReadBytesAsync(sectorSize, sectorSize, CancellationToken.None);
@@ -31,7 +31,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_RawDisk_ReadBytesAsync_CallerProvidedBuffer()
+    public async Task Test_RawDisk_ReadBytesAsync_CallerProvidedBuffer_Async()
     {
         var sectorSize = s_gptRawDisk!.SectorSize;
         var buffer = new byte[sectorSize];
@@ -40,7 +40,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_RawDisk_WriteSectors_DataMatches()
+    public async Task Test_RawDisk_WriteSectors_DataMatches_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
         var writeBuffer = new byte[sectorSize];
@@ -54,7 +54,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_RawDisk_WriteBytes_DataMatches()
+    public async Task Test_RawDisk_WriteBytes_DataMatches_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
         var writeBuffer = new byte[sectorSize];
@@ -68,7 +68,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     [Test]
-    public async Task Test_RawDisk_WriteBytes_Memory()
+    public async Task Test_RawDisk_WriteBytes_Memory_Async()
     {
         var sectorSize = _writableRawDisk.SectorSize;
         var writeBuffer = new byte[sectorSize];

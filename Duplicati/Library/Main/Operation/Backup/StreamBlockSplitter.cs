@@ -39,7 +39,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(StreamBlockSplitter));
         private static readonly string FILELOGTAG = LOGTAG + ".FileEntry";
 
-        public static Task Run(Channels channels, Options options, BackupDatabase database, ITaskReader taskreader)
+        public static Task RunAsync(Channels channels, Options options, BackupDatabase database, ITaskReader taskreader)
         {
             return AutomationExtensions.RunTask(
             new
@@ -63,7 +63,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     while (true)
                     {
                         // We ignore the stop signal, but not the pause and terminate
-                        await taskreader.ProgressRendevouz().ConfigureAwait(false);
+                        await taskreader.ProgressRendevouzAsync().ConfigureAwait(false);
                         var send_close = false;
                         var filesize = 0L;
 

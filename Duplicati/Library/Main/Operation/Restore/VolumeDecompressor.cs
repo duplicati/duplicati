@@ -47,7 +47,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// </summary>
         /// <param name="channels">The named channels for the restore operation.</param>
         /// <param name="options">The restore options</param>
-        public static Task Run(Channels channels, Options options)
+        public static Task RunAsync(Channels channels, Options options)
         {
             return AutomationExtensions.RunTask(
             new

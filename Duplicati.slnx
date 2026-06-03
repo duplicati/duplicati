@@ -6,6 +6,7 @@
     <Project Path="Duplicati/Library/Backend/Box/Duplicati.Library.Backend.Box.csproj" />
     <Project Path="Duplicati/Library/Backend/Dropbox/Duplicati.Library.Backend.Dropbox.csproj" />
     <Project Path="Duplicati/Library/Backend/Duplicati/Duplicati.Library.Backend.Duplicati.csproj" />
+    <Project Path="Duplicati/Library/Backend/DrimeCloud/Duplicati.Library.Backend.DrimeCloud.csproj" />
     <Project Path="Duplicati/Library/Backend/File/Duplicati.Library.Backend.File.csproj" />
     <Project Path="Duplicati/Library/Backend/Filejump/Duplicati.Library.Backend.Filejump.csproj" />
     <Project Path="Duplicati/Library/Backend/Filen/Duplicati.Library.Backend.Filen.csproj" />
@@ -16,6 +17,7 @@
     </Project>
     <Project Path="Duplicati/Library/Backend/Jottacloud/Duplicati.Library.Backend.Jottacloud.csproj" />
     <Project Path="Duplicati/Library/Backend/Mega/Duplicati.Library.Backend.Mega.csproj" />
+    <Project Path="Duplicati/Library/Backend/MovistarCloud/Duplicati.Library.Backend.MovistarCloud.csproj" />
     <Project Path="Duplicati/Library/Backend/OneDrive/Duplicati.Library.Backend.OneDrive.csproj" />
     <Project Path="Duplicati/Library/Backend/OpenStack/Duplicati.Library.Backend.OpenStack.csproj" />
     <Project Path="Duplicati/Library/Backend/pCloud/Duplicati.Library.Backend.pCloud.csproj" />

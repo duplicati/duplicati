@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using Duplicati.Proprietary.DiskImage.General;
@@ -17,7 +18,7 @@ public partial class DiskImageTests : BasicSetupHelper
     /// <param name="physicalDrivePath">The physical drive path to backup.</param>
     /// <param name="treatFilesystemAsUnknown">If true, treats filesystem as unknown (forces raw block-based backup).</param>
     /// <returns>The backup results.</returns>
-    protected IBackupResults RunBackup(string physicalDrivePath, bool treatFilesystemAsUnknown = false)
+    protected Task<IBackupResults> RunBackupAsync(string physicalDrivePath, bool treatFilesystemAsUnknown = false)
     {
         var options = new Dictionary<string, string>(TestOptions);
         options["enable-module"] = "diskimage";
@@ -30,7 +31,7 @@ public partial class DiskImageTests : BasicSetupHelper
 
         using var c = new Controller("file://" + TARGETFOLDER, options, null);
         var sourceUrl = $"@/testdisk|diskimage://{physicalDrivePath}";
-        return c.Backup(new[] { sourceUrl });
+        return c.BackupAsync(new[] { sourceUrl });
     }
 
     /// <summary>
@@ -38,7 +39,7 @@ public partial class DiskImageTests : BasicSetupHelper
     /// </summary>
     /// <param name="restoreDrivePath">The physical drive path to restore to.</param>
     /// <returns>The restore results.</returns>
-    protected IRestoreResults RunRestore(string restoreDrivePath)
+    protected Task<IRestoreResults> RunRestoreAsync(string restoreDrivePath)
     {
         var options = new Dictionary<string, string>(TestOptions);
         options["restore-path"] = $"@diskimage://{restoreDrivePath}";
@@ -46,9 +47,7 @@ public partial class DiskImageTests : BasicSetupHelper
         options["restore-file-processors"] = "1";
 
         using var c = new Controller("file://" + TARGETFOLDER, options, null);
-        var results = c.Restore(new[] { "*" });
-
-        return results;
+        return c.RestoreAsync(new[] { "*" });
     }
 
     protected static IEnumerable<string> GetNonSystemFiles(string directoryPath)
@@ -118,13 +117,13 @@ public partial class DiskImageTests : BasicSetupHelper
     /// <param name="target">The backup target URL.</param>
     /// <param name="options">The options to use when accessing the backup.</param>
     /// <param name="partitions">The expected partitions and their sizes.</param>
-    protected void VerifyGeometryMetadata(string target, Dictionary<string, string> options, (FileSystemType, long)[] partitions)
+    protected async Task VerifyGeometryMetadataAsync(string target, Dictionary<string, string> options, (FileSystemType, long)[] partitions)
     {
-        TestContext.Progress.WriteLine("Verifying geometry metadata...");
+        await TestContext.Progress.WriteLineAsync("Verifying geometry metadata...");
 
         using (var c = new Controller("file://" + target, options, null))
         {
-            var listResults = c.List("*");
+            var listResults = await c.ListAsync("*");
             Assert.That(listResults.Files, Is.Not.Null);
 
             var geometryFile = listResults.Files.FirstOrDefault(f => f.Path.EndsWith("geometry.json"));
@@ -142,7 +141,7 @@ public partial class DiskImageTests : BasicSetupHelper
 
                 using (var restoreController = new Controller("file://" + target, restoreOptions, null))
                 {
-                    var restoreResults = restoreController.Restore(new[] { geometryFile!.Path });
+                    var restoreResults = await restoreController.RestoreAsync(new[] { geometryFile!.Path });
                     TestUtils.AssertResults(restoreResults);
                 }
 
@@ -161,14 +160,14 @@ public partial class DiskImageTests : BasicSetupHelper
                     Assert.That(geometry.Partitions, Is.Not.Null, "Partitions list should be present");
                     Assert.That(geometry.Partitions!.Count, Is.GreaterThan(0), "Should have at least one partition");
 
-                    TestContext.Progress.WriteLine($"Geometry metadata verified: Disk size={geometry.Disk.Size}, " +
+                    await TestContext.Progress.WriteLineAsync($"Geometry metadata verified: Disk size={geometry.Disk.Size}, " +
                         $"Sector size={geometry.Disk.SectorSize}, Partitions={geometry.Partitions.Count}, " +
                         $"Table type={geometry.PartitionTable!.Type}");
 
                     for (int i = 0; i < geometry.Partitions.Count; i++)
                     {
                         var partition = geometry.Partitions[i];
-                        TestContext.Progress.WriteLine($"Partition {i}: Type={partition.Type}, Start={partition.StartOffset}, Size={partition.Size}");
+                        await TestContext.Progress.WriteLineAsync($"Partition {i}: Type={partition.Type}, Start={partition.StartOffset}, Size={partition.Size}");
 
                         Assert.That(partition.Size, Is.GreaterThan(0), $"Partition {i} size should be greater than 0");
                         if (partitions[i].Item2 > 0)

@@ -23,6 +23,7 @@ using System.IO;
 using System.Threading;
 using Duplicati.Library.Main;
 using NUnit.Framework;
+using System.Threading.Tasks;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
 
 namespace Duplicati.UnitTest
@@ -31,14 +32,14 @@ namespace Duplicati.UnitTest
     {
         [Test]
         [Category("Controller")]
-        public void RunTest()
+        public async Task RunTestAsync()
         {
             // Add a single file
             File.WriteAllBytes(Path.Combine(this.DATAFOLDER, "file1"), new byte[] { 0, 1, 2 });
 
-            using (Controller c = new Controller("file://" + this.TARGETFOLDER, TestOptions, null))
+            using (var c = new Controller("file://" + this.TARGETFOLDER, TestOptions, null))
             {
-                var backupResults = c.Backup(new[] { this.DATAFOLDER });
+                var backupResults = await c.BackupAsync(new[] { this.DATAFOLDER });
                 TestUtils.AssertResults(backupResults);
                 Assert.AreEqual(1, backupResults.AddedFiles);
                 Assert.AreEqual(0, backupResults.ModifiedFiles);
@@ -57,9 +58,9 @@ namespace Duplicati.UnitTest
 
             Thread.Sleep(1000);
 
-            using (Controller c = new Controller("file://" + this.TARGETFOLDER, TestOptions, null))
+            using (var c = new Controller("file://" + this.TARGETFOLDER, TestOptions, null))
             {
-                var backupResults = c.Backup(new[] { this.DATAFOLDER });
+                var backupResults = await c.BackupAsync(new[] { this.DATAFOLDER });
                 TestUtils.AssertResults(backupResults);
                 Assert.AreEqual(1, backupResults.AddedFiles);
                 Assert.AreEqual(0, backupResults.ModifiedFiles);
@@ -76,9 +77,9 @@ namespace Duplicati.UnitTest
 
             // Modify the first file
             File.WriteAllBytes(Path.Combine(this.DATAFOLDER, "file1"), new byte[] { 0, 1, 2, 3 });
-            using (Controller c = new Controller("file://" + this.TARGETFOLDER, TestOptions, null))
+            using (var c = new Controller("file://" + this.TARGETFOLDER, TestOptions, null))
             {
-                var backupResults = c.Backup(new[] { this.DATAFOLDER });
+                var backupResults = await c.BackupAsync(new[] { this.DATAFOLDER });
                 TestUtils.AssertResults(backupResults);
                 Assert.AreEqual(0, backupResults.AddedFiles);
                 Assert.AreEqual(1, backupResults.ModifiedFiles);
@@ -96,9 +97,9 @@ namespace Duplicati.UnitTest
             // Delete the second file
             File.Delete(Path.Combine(this.DATAFOLDER, "file2"));
 
-            using (Controller c = new Controller("file://" + this.TARGETFOLDER, TestOptions, null))
+            using (var c = new Controller("file://" + this.TARGETFOLDER, TestOptions, null))
             {
-                var backupResults = c.Backup(new[] { this.DATAFOLDER });
+                var backupResults = await c.BackupAsync(new[] { this.DATAFOLDER });
                 TestUtils.AssertResults(backupResults);
                 Assert.AreEqual(0, backupResults.AddedFiles);
                 Assert.AreEqual(1, backupResults.DeletedFiles);
@@ -116,9 +117,9 @@ namespace Duplicati.UnitTest
             // Modify the folder
             Directory.SetLastWriteTime(Path.Combine(this.DATAFOLDER, "folder1"), DateTime.Now.AddDays(1));
 
-            using (Controller c = new Controller("file://" + this.TARGETFOLDER, TestOptions, null))
+            using (var c = new Controller("file://" + this.TARGETFOLDER, TestOptions, null))
             {
-                var backupResults = c.Backup(new[] { this.DATAFOLDER });
+                var backupResults = await c.BackupAsync(new[] { this.DATAFOLDER });
                 TestUtils.AssertResults(backupResults);
                 Assert.AreEqual(0, backupResults.AddedFiles);
                 Assert.AreEqual(0, backupResults.ModifiedFiles);
@@ -135,9 +136,9 @@ namespace Duplicati.UnitTest
 
             // Delete the folder
             Directory.Delete(Path.Combine(this.DATAFOLDER, "folder1"), true);
-            using (Controller c = new Controller("file://" + this.TARGETFOLDER, TestOptions, null))
+            using (var c = new Controller("file://" + this.TARGETFOLDER, TestOptions, null))
             {
-                var backupResults = c.Backup(new[] { this.DATAFOLDER });
+                var backupResults = await c.BackupAsync(new[] { this.DATAFOLDER });
                 TestUtils.AssertResults(backupResults);
                 Assert.AreEqual(0, backupResults.AddedFiles);
                 Assert.AreEqual(0, backupResults.ModifiedFiles);
@@ -159,9 +160,9 @@ namespace Duplicati.UnitTest
             Directory.CreateDirectory(Path.Combine(this.DATAFOLDER, "folder3"));
             Directory.CreateDirectory(Path.Combine(this.DATAFOLDER, "folder4"));
 
-            using (Controller c = new Controller("file://" + this.TARGETFOLDER, TestOptions, null))
+            using (var c = new Controller("file://" + this.TARGETFOLDER, TestOptions, null))
             {
-                var backupResults = c.Backup(new[] { this.DATAFOLDER });
+                var backupResults = await c.BackupAsync(new[] { this.DATAFOLDER });
                 TestUtils.AssertResults(backupResults);
                 Assert.AreEqual(2, backupResults.AddedFiles);
                 Assert.AreEqual(0, backupResults.ModifiedFiles);
@@ -179,9 +180,9 @@ namespace Duplicati.UnitTest
             // Modify two folders
             Directory.SetLastWriteTime(Path.Combine(this.DATAFOLDER, "folder2"), DateTime.Now.AddDays(1));
             Directory.SetLastWriteTime(Path.Combine(this.DATAFOLDER, "folder3"), DateTime.Now.AddDays(2));
-            using (Controller c = new Controller("file://" + this.TARGETFOLDER, TestOptions, null))
+            using (var c = new Controller("file://" + this.TARGETFOLDER, TestOptions, null))
             {
-                var backupResults = c.Backup(new[] { this.DATAFOLDER });
+                var backupResults = await c.BackupAsync(new[] { this.DATAFOLDER });
                 TestUtils.AssertResults(backupResults);
                 Assert.AreEqual(0, backupResults.AddedFiles);
                 Assert.AreEqual(0, backupResults.ModifiedFiles);

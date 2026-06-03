@@ -87,8 +87,9 @@ internal interface IBackendManager : IDisposable
     /// <param name="volume">The file to decrypt</param>
     /// <param name="volume_name">The name of the file. Used for detecting encryption algorithm if not specified in options or if it differs from the options</param>
     /// <param name="options">The Duplicati options</param>
+    /// <param name="dispose">True if the input file should be disposed after decryption</param>
     /// <returns>The decrypted file</returns>
-    TempFile DecryptFile(TempFile volume, string volume_name, Options options);
+    TempFile DecryptFile(TempFile volume, string volume_name, Options options, bool dispose);
 
     /// <summary>
     /// Deletes a file on the backend
@@ -160,6 +161,14 @@ internal interface IBackendManager : IDisposable
     /// <param name="cancelToken">The cancellation token</param>
     /// <returns>The downloaded files, hash, size, and name</returns>
     IAsyncEnumerable<(TempFile File, string Hash, long Size, string Name)> GetFilesOverlappedAsync(IEnumerable<IRemoteVolume> volumes, CancellationToken cancelToken);
+
+    /// <summary>
+    /// Performs a direct download of the files specified, with pre-fetch to overlap the download and processing
+    /// </summary>
+    /// <param name="volumes">The volumes to download</param>
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <returns>The downloaded files and the volume they came from</returns>
+    IAsyncEnumerable<(TempFile File, string Name)> GetFilesOverlappedDirectAsync(IEnumerable<IRemoteVolume> volumes, CancellationToken cancelToken);
 
     /// <summary>
     /// Flushes the database messages to the database

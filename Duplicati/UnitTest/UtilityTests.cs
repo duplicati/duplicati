@@ -112,7 +112,7 @@ namespace Duplicati.UnitTest
             long fixedGrowingStreamLength, limitStreamLength, nextGrowingStreamLength;
             using (CancellationTokenSource tokenSource = new CancellationTokenSource())
             {
-                Task task = TestUtils.GrowingFile(growingFilename, tokenSource.Token);
+                Task task = TestUtils.GrowingFileAsync(growingFilename, tokenSource.Token);
                 Thread.Sleep(100);
                 using (FileStream growingStream = new FileStream(growingFilename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
@@ -135,7 +135,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Utility")]
-        public static void ReadLimitLengthStream()
+        public static async Task ReadLimitLengthStreamAsync()
         {
             Action<IEnumerable<int>, IEnumerable<byte>> assertArray = (expected, actual) =>
             {
@@ -187,12 +187,12 @@ namespace Duplicati.UnitTest
                     Assert.AreEqual(5, stream.Length);
 
                     // Test reading past array bounds
-                    Assert.AreEqual(5, stream.Read(readBuffer, 0, 10), "Read count");
+                    Assert.AreEqual(5, await stream.ReadAsync(readBuffer, 0, 10), "Read count");
                     assertArray(Enumerable.Range(0, 5), readBuffer.Take(5));
 
                     // Set the position directly and read a shorter range
                     stream.Position = 2;
-                    Assert.AreEqual(2, stream.ReadAsync(readBuffer, 0, 2).Await(), "Read count");
+                    Assert.AreEqual(2, await stream.ReadAsync(readBuffer, 0, 2), "Read count");
                     assertArray(Enumerable.Range(2, 2), readBuffer.Take(2));
                 }
 
@@ -204,14 +204,14 @@ namespace Duplicati.UnitTest
                     Assert.AreEqual(0, stream.Position);
 
                     // Test basic read
-                    Assert.AreEqual(4, stream.Read(readBuffer, 0, 4), "Read count");
+                    Assert.AreEqual(4, await stream.ReadAsync(readBuffer, 0, 4), "Read count");
                     assertArray(Enumerable.Range(2, 4), readBuffer.Take(4));
 
                     // Test CopyTo
                     using (MemoryStream destination = new MemoryStream())
                     {
                         stream.Position = 0;
-                        stream.CopyTo(destination);
+                        await stream.CopyToAsync(destination);
                         assertArray(Enumerable.Range(2, 4), destination.ToArray());
                     }
 
@@ -219,7 +219,7 @@ namespace Duplicati.UnitTest
                     using (MemoryStream destination = new MemoryStream())
                     {
                         stream.Position = 0;
-                        stream.CopyToAsync(destination).Await();
+                        await stream.CopyToAsync(destination);
                         assertArray(Enumerable.Range(2, 4), destination.ToArray());
                     }
 
@@ -269,7 +269,7 @@ namespace Duplicati.UnitTest
                     Assert.AreEqual(0, stream.Position);
 
                     // Test basic read
-                    Assert.AreEqual(0, stream.Read(readBuffer, 0, 4), "Read count");
+                    Assert.AreEqual(0, await stream.ReadAsync(readBuffer, 0, 4), "Read count");
 
                     // Test seeking
                     testSeek(stream, 0, -1);

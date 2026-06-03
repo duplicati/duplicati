@@ -156,7 +156,7 @@ public sealed class SynologyDsmAuthMiddleware
             _fullyDisabled = true;
     }
 
-    public async Task Invoke(HttpContext context)
+    public async Task InvokeAsync(HttpContext context)
     {
         // If scripts are missing, return 503, the system is not looking as expected
         if (_fullyDisabled)
@@ -217,7 +217,7 @@ public sealed class SynologyDsmAuthMiddleware
             try
             {
                 // Call login.cgi to get XSRF token
-                var resp = ShellExec(_opt.LoginCgi, env: env).Result;
+                var resp = await ShellExecAsync(_opt.LoginCgi, env: env).ConfigureAwait(false);
 
                 var m = _synoTokenRegex.Match(resp);
                 if (m.Success)
@@ -244,7 +244,7 @@ public sealed class SynologyDsmAuthMiddleware
             try
             {
                 // Call authenticate.cgi to get username
-                username = await ShellExec(_opt.AuthenticateCgi, shell: false, exitcode: 0, env: env, ct: context.RequestAborted);
+                username = await ShellExecAsync(_opt.AuthenticateCgi, shell: false, exitcode: 0, env: env, ct: context.RequestAborted);
             }
             catch
             {
@@ -266,7 +266,7 @@ public sealed class SynologyDsmAuthMiddleware
         // Admin-only check, look up group membership
         if (_opt.AdminOnly)
         {
-            var isAdmin = await IsAdminUser(username, context.RequestAborted);
+            var isAdmin = await IsAdminUserAsync(username, context.RequestAborted);
             if (!isAdmin)
             {
                 context.Response.StatusCode = StatusCodes.Status403Forbidden;
@@ -345,7 +345,7 @@ public sealed class SynologyDsmAuthMiddleware
     private static string BuildAuthCacheKey(string loginId)
         => $"{nameof(SynologyDsmAuthMiddleware)}:auth:{loginId}";
 
-    private async Task<bool> IsAdminUser(string username, CancellationToken ct)
+    private async Task<bool> IsAdminUserAsync(string username, CancellationToken ct)
     {
         // 1) Prefer group-name membership (more robust).
         if (!string.IsNullOrWhiteSpace(_opt.AdminGroupName))
@@ -353,7 +353,7 @@ public sealed class SynologyDsmAuthMiddleware
             try
             {
                 // id -Gn prints group names
-                var groupsByName = await ShellExec("id", $"-Gn {EscapeArg(username)}", shell: false, exitcode: 0, env: null, ct: ct);
+                var groupsByName = await ShellExecAsync("id", $"-Gn {EscapeArg(username)}", shell: false, exitcode: 0, env: null, ct: ct);
                 var names = (groupsByName ?? string.Empty)
                     .Split(new[] { ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
 
@@ -373,7 +373,7 @@ public sealed class SynologyDsmAuthMiddleware
             try
             {
                 // id -G prints numeric group IDs
-                gids = await ShellExec("id", $"-G {EscapeArg(username)}", shell: false, exitcode: 0, env: null, ct: ct) ?? string.Empty;
+                gids = await ShellExecAsync("id", $"-G {EscapeArg(username)}", shell: false, exitcode: 0, env: null, ct: ct) ?? string.Empty;
                 gids = gids.Replace(Environment.NewLine, string.Empty);
             }
             catch
@@ -396,7 +396,7 @@ public sealed class SynologyDsmAuthMiddleware
         return value;
     }
 
-    private static async Task<string> ShellExec(
+    private static async Task<string> ShellExecAsync(
         string command,
         string? args = null,
         bool shell = false,

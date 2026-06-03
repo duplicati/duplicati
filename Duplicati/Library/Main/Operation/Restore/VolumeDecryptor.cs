@@ -48,7 +48,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="channels">The named channels for the restore operation.</param>
         /// <param name="backend">The backend manager.</param>
         /// <param name="options">The restore options.</param>
-        public static Task Run(Channels channels, IBackendManager backend, Options options)
+        public static Task RunAsync(Channels channels, IBackendManager backend, Options options)
         {
             return AutomationExtensions.RunTask(
             new
@@ -76,7 +76,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                         // Decrypt the volume.
                         sw_decrypt?.Start();
-                        var tmpfile = backend.DecryptFile(volume, volume_name, options);
+                        var tmpfile = backend.DecryptFile(volume, volume_name, options, dispose: true);
                         sw_decrypt?.Stop();
                         Logging.Log.WriteExplicitMessage(LOGTAG, "DecryptVolume", null, "Decrypted volume {0} (ID: {1})", volume_name, volume_id);
 

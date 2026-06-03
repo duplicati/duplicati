@@ -13,7 +13,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-22 15:17+0200\n"
+"POT-Creation-Date: 2026-05-04 14:35+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: Milan Marinković <xaoc994@gmail.com>, 2025\n"
 "Language-Team: Serbian (Serbia) (https://app.transifex.com/duplicati/teams/67655/sr_RS/)\n"
@@ -39,17 +39,17 @@ msgstr "AES-256 enkripcija, ugrađena"
 msgid "Empty passphrase not allowed"
 msgstr "Prazna lozinka nije dozvoljena"
 
-#: Library/Encryption/Strings.cs:37
+#: Library/Encryption/Strings.cs:43
 #, csharp-format
 msgid "Failed to decrypt data (invalid passphrase?): {0}"
 msgstr ""
 "Dešifrovanje podataka nije uspelo (nevažeća pristupna fraza lozinke?): {0}"
 
-#: Library/Encryption/Strings.cs:42
+#: Library/Encryption/Strings.cs:48
 msgid "GNU Privacy Guard, external"
 msgstr "GNU Privacy Guard, eksterni"
 
-#: Library/Encryption/Strings.cs:43
+#: Library/Encryption/Strings.cs:49
 msgid ""
 "Use this switch to specify any extra options to GPG. You cannot specify the "
 "--passphrase-fd option here. The --decrypt option is always specified."
@@ -57,11 +57,11 @@ msgstr ""
 "Koristite ovaj prekidač da odredite sve dodatne opcije za GPG. Ovde ne "
 "možete navesti opciju --passphrase-fd. Opcija --decript je uvek navedena."
 
-#: Library/Encryption/Strings.cs:44
+#: Library/Encryption/Strings.cs:50
 msgid "Extra GPG commandline options for decryption"
 msgstr "Dodatne GPG opcije komandne linije za dešifrovanje"
 
-#: Library/Encryption/Strings.cs:45
+#: Library/Encryption/Strings.cs:51
 msgid ""
 "Use this switch to specify any extra options to GPG. You cannot specify the "
 "--passphrase-fd option here. The --encrypt option is always specified."
@@ -69,20 +69,20 @@ msgstr ""
 "Koristite ovaj prekidač da odredite sve dodatne opcije za GPG. Ovde ne "
 "možete navesti opciju --passphrase-fd. Opcija --encript je uvek navedena."
 
-#: Library/Encryption/Strings.cs:46
+#: Library/Encryption/Strings.cs:52
 msgid "Extra GPG commandline options for encryption"
 msgstr "Dodatne GPG opcije komandne linije za šifrovanje"
 
-#: Library/Encryption/Strings.cs:47
+#: Library/Encryption/Strings.cs:53
 #, csharp-format
 msgid "Failed to execute GPG with \"{0} {1}\": {2}"
 msgstr "Izvršavanje GPG-a nije uspelo sa \"{0} {1}\": {2}"
 
-#: Library/Encryption/Strings.cs:49
+#: Library/Encryption/Strings.cs:55
 msgid "The path to GnuPG"
 msgstr "Putanja do GnuPG-a"
 
-#: Library/Encryption/Strings.cs:50
+#: Library/Encryption/Strings.cs:56
 msgid ""
 "Use this option to supply the --armor option to GPG. The files will be "
 "larger but can be sent as pure text files."
@@ -90,28 +90,28 @@ msgstr ""
 "Koristite ovu opciju da obezbedite opciju --armor GPG-u. Fajlovi će biti "
 "veći, ali se mogu poslati kao čisti tekstualni fajlovi."
 
-#: Library/Encryption/Strings.cs:51
+#: Library/Encryption/Strings.cs:57
 msgid "Use GPG Armor"
 msgstr "Koristite GPG Armor kodiranje"
 
-#: Library/Encryption/Strings.cs:53
+#: Library/Encryption/Strings.cs:59
 msgid "The GPG decryption command"
 msgstr "GPG komanda za dešifrovanje"
 
-#: Library/Encryption/Strings.cs:55
+#: Library/Encryption/Strings.cs:61
 msgid "The GPG encryption command"
 msgstr "Komanda za GPG šifrovanje"
 
-#: Library/Encryption/Strings.cs:59
+#: Library/Encryption/Strings.cs:65
 #, csharp-format
 msgid "Decryption failed: {0}"
 msgstr "Dešifrovanje nije uspelo: {0}"
 
-#: Library/Encryption/Strings.cs:60
+#: Library/Encryption/Strings.cs:66
 msgid "Failure while invoking GnuPG, program won't flush output"
 msgstr "Greška prilikom pozivanja GnuPG-a, program neće isprazniti izlaz"
 
-#: Library/Encryption/Strings.cs:61
+#: Library/Encryption/Strings.cs:67
 msgid "Failure while invoking GnuPG, program won't terminate"
 msgstr "Neuspeh pri pozivanju GnuPG-a, program se neće prekinuti"
 
@@ -452,6 +452,7 @@ msgstr "Google disk"
 
 #: Library/Backend/GoogleServices/Strings.cs:53
 #: Library/Backend/File/Strings.cs:42 Library/Compression/Strings.cs:38
+#: Library/Compression/Strings.cs:49 Library/Compression/Strings.cs:60
 #, csharp-format
 msgid "File not found: {0}"
 msgstr "Fajl nije pronađen: {0}"
@@ -2338,75 +2339,75 @@ msgstr "Pokreni skriptu"
 msgid "Run a script on exit"
 msgstr "Pokreni skriptu pri izlasku"
 
-#: Library/Modules/Builtin/Strings.cs:115
+#: Library/Modules/Builtin/Strings.cs:117
 #, csharp-format
 msgid "The script \"{0}\" returned with exit code {1}"
 msgstr "Skripta \"{0}\" je završena sa izlaznim kodom {1}"
 
-#: Library/Modules/Builtin/Strings.cs:116
+#: Library/Modules/Builtin/Strings.cs:118
 #, csharp-format
 msgid "The script \"{0}\" returned with exit code {1}{2}"
 msgstr "Skripta \"{0}\" se vratila sa izlaznim kodom {1}{2}"
 
-#: Library/Modules/Builtin/Strings.cs:118
+#: Library/Modules/Builtin/Strings.cs:120
 msgid "Run a required script on startup"
 msgstr "Pokreni zahtevanu skriptu prilikom pokretanja"
 
-#: Library/Modules/Builtin/Strings.cs:121
+#: Library/Modules/Builtin/Strings.cs:123
 #, csharp-format
 msgid "Error while executing script \"{0}\": {1}"
 msgstr "Greška u toku izvršavanja skripte \"{0}\": {1}"
 
-#: Library/Modules/Builtin/Strings.cs:122
+#: Library/Modules/Builtin/Strings.cs:124
 #, csharp-format
 msgid "Execution of the script \"{0}\" timed out"
 msgstr "Isteklo je vreme za izvršavanje skripte \"{0}\"."
 
-#: Library/Modules/Builtin/Strings.cs:124
+#: Library/Modules/Builtin/Strings.cs:126
 msgid "Run a script on startup"
 msgstr "Pokreni skriptu prilikom pokretanja"
 
-#: Library/Modules/Builtin/Strings.cs:125
+#: Library/Modules/Builtin/Strings.cs:127
 #, csharp-format
 msgid "The script \"{0}\" reported error messages: {1}"
 msgstr "Skripta \"{0}\" je prijavila poruke grešaka: {1}"
 
-#: Library/Modules/Builtin/Strings.cs:133
+#: Library/Modules/Builtin/Strings.cs:135
 msgid "This module can send email after an operation completes"
 msgstr "Ovaj modul može da pošalje email nakon što se operacija završi"
 
-#: Library/Modules/Builtin/Strings.cs:134
+#: Library/Modules/Builtin/Strings.cs:136
 msgid "Send mail"
 msgstr "Pošalji mail"
 
-#: Library/Modules/Builtin/Strings.cs:145
+#: Library/Modules/Builtin/Strings.cs:147
 msgid "The message body"
 msgstr "Telo poruke"
 
-#: Library/Modules/Builtin/Strings.cs:147
+#: Library/Modules/Builtin/Strings.cs:149
 msgid "SMTP Password"
 msgstr "SMTP lozinka"
 
-#: Library/Modules/Builtin/Strings.cs:152
+#: Library/Modules/Builtin/Strings.cs:154
 msgid "Email recipient(s)"
 msgstr "Primaoc(i) e-pošte"
 
-#: Library/Modules/Builtin/Strings.cs:159
+#: Library/Modules/Builtin/Strings.cs:161
 msgid "Email sender"
 msgstr "Pošiljalac e-pošte"
 
-#: Library/Modules/Builtin/Strings.cs:162
-#: Library/Modules/Builtin/Strings.cs:202
-#: Library/Modules/Builtin/Strings.cs:236
-#: Library/Modules/Builtin/Strings.cs:265
+#: Library/Modules/Builtin/Strings.cs:164
+#: Library/Modules/Builtin/Strings.cs:204
+#: Library/Modules/Builtin/Strings.cs:238
+#: Library/Modules/Builtin/Strings.cs:267
 msgid "The messages to send"
 msgstr "Poruke za slanje"
 
-#: Library/Modules/Builtin/Strings.cs:167
+#: Library/Modules/Builtin/Strings.cs:169
 msgid "SMTP Url"
 msgstr "SMTP Url"
 
-#: Library/Modules/Builtin/Strings.cs:168
+#: Library/Modules/Builtin/Strings.cs:170
 #, csharp-format
 msgid ""
 "This setting supplies the email subject. Values are replaced as described in"
@@ -2415,102 +2416,102 @@ msgstr ""
 "Ovo podešavanje daje temu e-pošte. Vrednosti se zamenjuju kao što je opisano"
 " u opisu za --{0}."
 
-#: Library/Modules/Builtin/Strings.cs:169
+#: Library/Modules/Builtin/Strings.cs:171
 msgid "The email subject"
 msgstr "Predmet e-pošte"
 
-#: Library/Modules/Builtin/Strings.cs:171
+#: Library/Modules/Builtin/Strings.cs:173
 msgid "SMTP Username"
 msgstr "SMTP korisničko ime"
 
-#: Library/Modules/Builtin/Strings.cs:172
+#: Library/Modules/Builtin/Strings.cs:174
 #, csharp-format
 msgid "Whole SMTP communication: {0}"
 msgstr "Cela SMTP komunikacija: {0}"
 
-#: Library/Modules/Builtin/Strings.cs:173
+#: Library/Modules/Builtin/Strings.cs:175
 #, csharp-format
 msgid "Failed to send email with server: {0}, message: {1}, retrying with {2}"
 msgstr ""
 "Slanje e-pošte sa servera: {0} nije uspelo, poruka: {1}, ponovni pokušaj sa "
 "{2}"
 
-#: Library/Modules/Builtin/Strings.cs:174
+#: Library/Modules/Builtin/Strings.cs:176
 #, csharp-format
 msgid "Email sent successfully using server: {0}"
 msgstr "E-pošta je uspešno poslata pomoću servera: {0}"
 
-#: Library/Modules/Builtin/Strings.cs:182
+#: Library/Modules/Builtin/Strings.cs:184
 msgid ""
 "This module provides support for sending status reports via XMPP messages"
 msgstr ""
 "Ovaj modul pruža podršku za slanje izveštaja o statusu putem XMPP poruka"
 
-#: Library/Modules/Builtin/Strings.cs:183
+#: Library/Modules/Builtin/Strings.cs:185
 msgid "XMPP report module"
 msgstr "XMPP modul izveštaja"
 
-#: Library/Modules/Builtin/Strings.cs:185
+#: Library/Modules/Builtin/Strings.cs:187
 msgid "XMPP recipient email"
 msgstr "XMPP adresa e-pošte primaoca"
 
-#: Library/Modules/Builtin/Strings.cs:195
-#: Library/Modules/Builtin/Strings.cs:227
-#: Library/Modules/Builtin/Strings.cs:258
+#: Library/Modules/Builtin/Strings.cs:197
+#: Library/Modules/Builtin/Strings.cs:229
+#: Library/Modules/Builtin/Strings.cs:260
 msgid "The message template"
 msgstr "Šablon poruke"
 
-#: Library/Modules/Builtin/Strings.cs:197
+#: Library/Modules/Builtin/Strings.cs:199
 msgid "The XMPP username"
 msgstr "XMPP ime korisnika"
 
-#: Library/Modules/Builtin/Strings.cs:199
+#: Library/Modules/Builtin/Strings.cs:201
 msgid "The XMPP password"
 msgstr "XMPP lozinka"
 
-#: Library/Modules/Builtin/Strings.cs:204
-#: Library/Modules/Builtin/Strings.cs:238
-#: Library/Modules/Builtin/Strings.cs:267
+#: Library/Modules/Builtin/Strings.cs:206
+#: Library/Modules/Builtin/Strings.cs:240
+#: Library/Modules/Builtin/Strings.cs:269
 msgid "Send messages for all operations"
 msgstr "Šalji poruke za sve operacije"
 
-#: Library/Modules/Builtin/Strings.cs:205
+#: Library/Modules/Builtin/Strings.cs:207
 msgid "Timeout occurred while logging in to jabber server"
 msgstr ""
 "Došlo je do vremenskog ograničenja prilikom prijavljivanja na jabber server"
 
-#: Library/Modules/Builtin/Strings.cs:245
+#: Library/Modules/Builtin/Strings.cs:247
 msgid ""
 "This module provides support for sending status reports via HTTP messages"
 msgstr ""
 "Ovaj modul pruža podršku za slanje izveštaja o statusu putem HTTP poruka"
 
-#: Library/Modules/Builtin/Strings.cs:246
+#: Library/Modules/Builtin/Strings.cs:248
 msgid "HTTP report module"
 msgstr "HTTP modul izveštaja"
 
-#: Library/Modules/Builtin/Strings.cs:260
+#: Library/Modules/Builtin/Strings.cs:262
 msgid "The name of the parameter to send the message as"
 msgstr "Naziv parametra za slanje poruke"
 
-#: Library/Modules/Builtin/Strings.cs:275 Library/Utility/Strings.cs:84
+#: Library/Modules/Builtin/Strings.cs:277 Library/Utility/Strings.cs:84
 msgid "Accept any server certificate"
 msgstr "Prihvati bilo koji sertifikat sa servera"
 
-#: Library/Modules/Builtin/Strings.cs:277 Library/Utility/Strings.cs:86
+#: Library/Modules/Builtin/Strings.cs:279 Library/Utility/Strings.cs:86
 msgid "Optionally accept a known SSL certificate"
 msgstr "Opciono prihvati poznat SSL sertifikat"
 
-#: Library/Modules/Builtin/Strings.cs:286
+#: Library/Modules/Builtin/Strings.cs:288
 #, csharp-format
 msgid "Failed to send message: {0}"
 msgstr "Slanje poruke nije uspelo: {0}"
 
-#: Library/Modules/Builtin/Strings.cs:290
+#: Library/Modules/Builtin/Strings.cs:292
 msgid "Log message filter"
 msgstr "Filter za poruke dnevnika"
 
-#: Library/Modules/Builtin/Strings.cs:291
+#: Library/Modules/Builtin/Strings.cs:293
 msgid ""
 "Use this option to set the maximum number of log lines to include in the "
 "report. Zero or negative values means unlimited."

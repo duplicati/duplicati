@@ -47,7 +47,7 @@ namespace Duplicati.UnitTest
         /// </summary>
         [Test]
         [Category("Tools/RemoteSynchronization")]
-        public void TestDryRun()
+        public async Task TestDryRunAsync()
         {
             var l1 = Path.Combine(TARGETFOLDER, "l1");
             var l2 = Path.Combine(TARGETFOLDER, "l2");
@@ -55,12 +55,12 @@ namespace Duplicati.UnitTest
             Directory.CreateDirectory(l1);
             Directory.CreateDirectory(l2);
 
-            GenerateTestData(l1, 5, 0, 0, 1024).Wait();
+            await GenerateTestDataAsync(l1, 5, 0, 0, 1024).ConfigureAwait(false);
 
             var args = new string[] { $"file://{l1}", $"file://{l2}", "--confirm", "--dry-run" };
 
-            var async_call = RemoteSynchronization.Program.Main(args);
-            var return_code = async_call.ConfigureAwait(false).GetAwaiter().GetResult();
+            var async_call = RemoteSynchronization.Program.MainAsync(args);
+            var return_code = await async_call.ConfigureAwait(false);
 
             Assert.AreEqual(0, return_code, "Remote synchronization tool did not return 0.");
             Assert.IsFalse(DirectoriesAndContentsAreEqual(l1, l2), "Synchronized directories are equal");
@@ -72,7 +72,7 @@ namespace Duplicati.UnitTest
         /// </summary>
         [Test]
         [Category("Tools/RemoteSynchronization")]
-        public void TestEmptySourceAndDestination()
+        public async Task TestEmptySourceAndDestinationAsync()
         {
             var l1 = Path.Combine(TARGETFOLDER, "empty_src");
             var l2 = Path.Combine(TARGETFOLDER, "l2");
@@ -82,8 +82,8 @@ namespace Duplicati.UnitTest
 
             var args = new string[] { $"file://{l1}", $"file://{l2}", "--confirm" };
 
-            var async_call = RemoteSynchronization.Program.Main(args);
-            var return_code = async_call.ConfigureAwait(false).GetAwaiter().GetResult();
+            var async_call = RemoteSynchronization.Program.MainAsync(args);
+            var return_code = await async_call.ConfigureAwait(false);
 
             Assert.AreEqual(0, return_code, "Remote synchronization tool did not return 0.");
             Assert.IsTrue(DirectoriesAndContentsAreEqual(l1, l2), "Synchronized directories are not equal");
@@ -94,7 +94,7 @@ namespace Duplicati.UnitTest
         /// </summary>
         [Test]
         [Category("Tools/RemoteSynchronization")]
-        public void TestEmptySourceDeletesDestination()
+        public async Task TestEmptySourceDeletesDestinationAsync()
         {
             var l1 = Path.Combine(TARGETFOLDER, "empty_src");
             var l2 = Path.Combine(TARGETFOLDER, "l2");
@@ -102,12 +102,12 @@ namespace Duplicati.UnitTest
             Directory.CreateDirectory(l1);
             Directory.CreateDirectory(l2);
 
-            GenerateTestData(l2, 5, 0, 0, 1024).Wait();
+            await GenerateTestDataAsync(l2, 5, 0, 0, 1024).ConfigureAwait(false);
 
             var args = new string[] { $"file://{l1}", $"file://{l2}", "--confirm" };
 
-            var async_call = RemoteSynchronization.Program.Main(args);
-            var return_code = async_call.ConfigureAwait(false).GetAwaiter().GetResult();
+            var async_call = RemoteSynchronization.Program.MainAsync(args);
+            var return_code = await async_call.ConfigureAwait(false);
 
             Assert.AreEqual(0, return_code, "Remote synchronization tool did not return 0.");
             Assert.IsTrue(DirectoriesAndContentsAreEqual(l1, l2), "Synchronized directories are not equal");
@@ -118,7 +118,7 @@ namespace Duplicati.UnitTest
         /// </summary>
         [Test]
         [Category("Tools/RemoteSynchronization")]
-        public void TestEmptySourceRenamesDestination()
+        public async Task TestEmptySourceRenamesDestinationAsync()
         {
             var l1 = Path.Combine(TARGETFOLDER, "empty_src");
             var l2 = Path.Combine(TARGETFOLDER, "l2");
@@ -126,15 +126,15 @@ namespace Duplicati.UnitTest
             Directory.CreateDirectory(l1);
             Directory.CreateDirectory(l2);
 
-            GenerateTestData(l2, 5, 0, 0, 1024).Wait();
+            await GenerateTestDataAsync(l2, 5, 0, 0, 1024).ConfigureAwait(false);
 
             var filelist = Directory.EnumerateFiles(l2).ToList();
             var files = filelist.Select(x => File.ReadAllBytes(x)).ToList();
 
             var args = new string[] { $"file://{l1}", $"file://{l2}", "--confirm", "--retention" };
 
-            var async_call = RemoteSynchronization.Program.Main(args);
-            var return_code = async_call.ConfigureAwait(false).GetAwaiter().GetResult();
+            var async_call = RemoteSynchronization.Program.MainAsync(args);
+            var return_code = await async_call.ConfigureAwait(false);
 
             Assert.AreEqual(0, return_code, "Remote synchronization tool did not return 0.");
 
@@ -225,11 +225,11 @@ namespace Duplicati.UnitTest
 
             foreach (var args in testCases)
             {
-                int result = RemoteSynchronization.Program.Main(args).ConfigureAwait(false).GetAwaiter().GetResult();
+                int result = RemoteSynchronization.Program.MainAsync(args).ConfigureAwait(false).GetAwaiter().GetResult();
                 Assert.AreEqual(0, result, $"Failed for args: {string.Join(" ", args)}");
             }
 
-            int failed_result = RemoteSynchronization.Program.Main(["source", "destination", "--bogus-option"]).ConfigureAwait(false).GetAwaiter().GetResult();
+            int failed_result = RemoteSynchronization.Program.MainAsync(["source", "destination", "--bogus-option"]).ConfigureAwait(false).GetAwaiter().GetResult();
             Assert.AreEqual(1, failed_result, "Invalid option did not return 1");
         }
 
@@ -238,7 +238,7 @@ namespace Duplicati.UnitTest
         /// </summary>
         [Test]
         [Category("Tools/RemoteSynchronization")]
-        public void TestRemoteSynchronization()
+        public async Task TestRemoteSynchronizationAsync()
         {
             var l1 = Path.Combine(TARGETFOLDER, "l1");
             var l2 = Path.Combine(TARGETFOLDER, "l2");
@@ -248,7 +248,7 @@ namespace Duplicati.UnitTest
             var options = TestOptions;
 
             var now = DateTime.Now;
-            GenerateTestData(DATAFOLDER, 5, 2, 2, 1024).Wait();
+            await GenerateTestDataAsync(DATAFOLDER, 5, 2, 2, 1024).ConfigureAwait(false);
             Console.WriteLine($"Generated test data in {DATAFOLDER} in {DateTime.Now - now}");
 
             // Create the directories if they do not exist
@@ -262,7 +262,7 @@ namespace Duplicati.UnitTest
             using (var c = new Controller($"file://{l1}", options, null))
             {
                 now = DateTime.Now;
-                var results = c.Backup([DATAFOLDER]);
+                var results = await c.BackupAsync([DATAFOLDER]).ConfigureAwait(false);
                 Assert.AreEqual(0, results.Errors.Count());
                 Assert.AreEqual(0, results.Warnings.Count());
                 Console.WriteLine($"Backed up {results.AddedFiles} files to {l1} in {DateTime.Now - now}");
@@ -270,7 +270,7 @@ namespace Duplicati.UnitTest
 
             // Call the tool
             now = DateTime.Now;
-            var exe = RemoteSynchronization.Program.Main;
+            var exe = RemoteSynchronization.Program.MainAsync;
             string[] args = [
                 $"file://{l1}", $"file://{l2}",
                 "--global-options", ..options.Select(x => $"{x.Key}={x.Value}"),
@@ -280,8 +280,8 @@ namespace Duplicati.UnitTest
                 "--confirm"
             ];
             var async_call = exe(args);
-            async_call.Wait();
-            Assert.AreEqual(0, async_call.Result, "Remote synchronization tool did not return 0.");
+            await async_call.ConfigureAwait(false);
+            Assert.AreEqual(0, await async_call, "Remote synchronization tool did not return 0.");
             Console.WriteLine($"Remote synchronization tool returned 0 in {DateTime.Now - now}");
 
             // Verify that the directories are equal
@@ -292,7 +292,7 @@ namespace Duplicati.UnitTest
             using (var c = new Controller($"file://{l1}", options, null))
             {
                 now = DateTime.Now;
-                var results = c.Restore([]);
+                var results = await c.RestoreAsync([]).ConfigureAwait(false);
                 Assert.AreEqual(0, results.Errors.Count());
                 Assert.AreEqual(0, results.Warnings.Count());
                 Console.WriteLine($"Restored {results.RestoredFiles} files to {options["restore-path"]} in {DateTime.Now - now}");
@@ -304,7 +304,7 @@ namespace Duplicati.UnitTest
             using (var c = new Controller($"file://{l2}", options, null))
             {
                 now = DateTime.Now;
-                var results = c.Restore([]);
+                var results = await c.RestoreAsync([]).ConfigureAwait(false);
                 Assert.AreEqual(0, results.Errors.Count());
                 Assert.AreEqual(0, results.Warnings.Count());
                 Console.WriteLine($"Restored {results.RestoredFiles} files to {options["restore-path"]} in {DateTime.Now - now}");
@@ -325,7 +325,7 @@ namespace Duplicati.UnitTest
                 now = DateTime.Now;
                 try
                 {
-                    var results = c.Restore([]);
+                    var results = await c.RestoreAsync([]).ConfigureAwait(false);
                 }
                 catch (RemoteListVerificationException)
                 {
@@ -336,8 +336,8 @@ namespace Duplicati.UnitTest
             // Run the tool again to copy the missing file
             now = DateTime.Now;
             async_call = exe(args);
-            async_call.Wait();
-            Assert.AreEqual(0, async_call.Result, "Remote synchronization tool did not return 0.");
+            await async_call.ConfigureAwait(false);
+            Assert.AreEqual(0, await async_call, "Remote synchronization tool did not return 0.");
             Console.WriteLine($"Remote synchronization tool returned 0 in {DateTime.Now - now}");
 
             // Try to restore the second level again
@@ -345,7 +345,7 @@ namespace Duplicati.UnitTest
             using (var c = new Controller($"file://{l2}", options, null))
             {
                 now = DateTime.Now;
-                var results = c.Restore([]);
+                var results = await c.RestoreAsync([]).ConfigureAwait(false);
                 Assert.AreEqual(0, results.Errors.Count());
                 Assert.AreEqual(0, results.Warnings.Count());
                 Console.WriteLine($"Restored {results.RestoredFiles} files to {options["restore-path"]} in {DateTime.Now - now}");
@@ -354,13 +354,13 @@ namespace Duplicati.UnitTest
             Assert.IsTrue(DirectoriesAndContentsAreEqual(DATAFOLDER, l2r), "Restored second level files is not equal to original files");
 
             // Add some more files to the source
-            GenerateTestData(Path.Combine(DATAFOLDER, "brand_new_files"), 5, 2, 2, 1024).Wait();
+            await GenerateTestDataAsync(Path.Combine(DATAFOLDER, "brand_new_files"), 5, 2, 2, 1024).ConfigureAwait(false);
 
             // Backup the new files to l1
             using (var c = new Controller($"file://{l1}", options, null))
             {
                 now = DateTime.Now;
-                var results = c.Backup([DATAFOLDER]);
+                var results = await c.BackupAsync([DATAFOLDER]).ConfigureAwait(false);
                 Assert.AreEqual(0, results.Errors.Count());
                 Assert.AreEqual(0, results.Warnings.Count());
                 Console.WriteLine($"Backed up {results.AddedFiles} files to {l1} in {DateTime.Now - now}");
@@ -369,8 +369,8 @@ namespace Duplicati.UnitTest
             // Run the tool again to copy the new files
             now = DateTime.Now;
             async_call = exe(args);
-            async_call.Wait();
-            Assert.AreEqual(0, async_call.Result, "Remote synchronization tool did not return 0.");
+            await async_call.ConfigureAwait(false);
+            Assert.AreEqual(0, await async_call, "Remote synchronization tool did not return 0.");
             Console.WriteLine($"Remote synchronization tool returned 0 in {DateTime.Now - now}");
 
             // Try to restore the second level again
@@ -378,7 +378,7 @@ namespace Duplicati.UnitTest
             using (var c = new Controller($"file://{l2}", options, null))
             {
                 now = DateTime.Now;
-                var results = c.Restore([]);
+                var results = await c.RestoreAsync([]).ConfigureAwait(false);
                 Assert.AreEqual(0, results.Errors.Count());
                 Assert.AreEqual(0, results.Warnings.Count());
                 Console.WriteLine($"Restored {results.RestoredFiles} files to {options["restore-path"]} in {DateTime.Now - now}");
@@ -396,7 +396,7 @@ namespace Duplicati.UnitTest
             using (var c = new Controller($"file://{l1}", options, null))
             {
                 now = DateTime.Now;
-                var results = c.Backup([DATAFOLDER]);
+                var results = await c.BackupAsync([DATAFOLDER]).ConfigureAwait(false);
                 Assert.AreEqual(0, results.Errors.Count());
                 Assert.AreEqual(0, results.Warnings.Count());
                 Console.WriteLine($"Backed up {results.AddedFiles} files to {l1} in {DateTime.Now - now}");
@@ -406,7 +406,7 @@ namespace Duplicati.UnitTest
             using (var c = new Controller($"file://{l1}", options, null))
             {
                 now = DateTime.Now;
-                var results = c.Compact();
+                var results = await c.CompactAsync().ConfigureAwait(false);
                 Assert.AreEqual(0, results.Errors.Count());
                 Assert.AreEqual(0, results.Warnings.Count());
                 Console.WriteLine($"Compacted backup in {DateTime.Now - now}");
@@ -415,15 +415,15 @@ namespace Duplicati.UnitTest
             // Run the tool again to copy the new files
             now = DateTime.Now;
             async_call = exe(args);
-            async_call.Wait();
-            Assert.AreEqual(0, async_call.Result, "Remote synchronization tool did not return 0.");
+            var result = await async_call.ConfigureAwait(false);
+            Assert.AreEqual(0, result, "Remote synchronization tool did not return 0.");
 
             // Try to restore the second level again
             options["restore-path"] = l2r;
             using (var c = new Controller($"file://{l2}", options, null))
             {
                 now = DateTime.Now;
-                var results = c.Restore([]);
+                var results = await c.RestoreAsync([]).ConfigureAwait(false);
                 Assert.AreEqual(0, results.Errors.Count());
                 Assert.AreEqual(0, results.Warnings.Count());
                 Console.WriteLine($"Restored {results.RestoredFiles} files to {options["restore-path"]} in {DateTime.Now - now}");
@@ -437,15 +437,15 @@ namespace Duplicati.UnitTest
             // Perform a forced synchronization with retention to check that retention doesn't break a restore
             now = DateTime.Now;
             async_call = exe([.. args, "--force", "--retention"]);
-            async_call.Wait();
-            Assert.AreEqual(0, async_call.Result, "Remote synchronization tool did not return 0.");
+            var res = await async_call.ConfigureAwait(false);
+            Assert.AreEqual(0, res, "Remote synchronization tool did not return 0.");
 
             // Try to restore the second level again
             options["restore-path"] = l2r;
             using (var c = new Controller($"file://{l2}", options, null))
             {
                 now = DateTime.Now;
-                var results = c.Restore([]);
+                var results = await c.RestoreAsync([]).ConfigureAwait(false);
                 Assert.AreEqual(0, results.Errors.Count());
                 Assert.AreEqual(0, results.Warnings.Count());
                 Console.WriteLine($"Restored {results.RestoredFiles} files to {options["restore-path"]} in {DateTime.Now - now}");
@@ -464,7 +464,7 @@ namespace Duplicati.UnitTest
         [TestCase(false, true, "1,3")] // Fail middle transfers on destination.
         [TestCase(false, true, "4")] // Fail last transfer on destination.
         [TestCase(false, true, "0,1,2,3,4")] // Fail all transfers on destination.
-        public void TestRemoteSynchronizationWithFaultyBackend(bool failSource, bool failDest, string failIndices)
+        public async Task TestRemoteSynchronizationWithFaultyBackendAsync(bool failSource, bool failDest, string failIndices)
         {
             var expect_to_fail = failIndices == "0,1,2,3,4";
 
@@ -495,7 +495,7 @@ namespace Duplicati.UnitTest
                 return false; // No failure
             };
 
-            GenerateTestData(l1, 5, 0, 0, 1024).Wait();
+            await GenerateTestDataAsync(l1, 5, 0, 0, 1024).ConfigureAwait(false);
 
             // Setup backend URLs with failure injection
             var protocol = new DeterministicErrorBackend().ProtocolKey;
@@ -519,8 +519,8 @@ namespace Duplicati.UnitTest
                 Console.SetError(errorBuffer);
             }
 
-            var async_call = RemoteSynchronization.Program.Main(args);
-            var return_code = async_call.ConfigureAwait(false).GetAwaiter().GetResult();
+            var async_call = RemoteSynchronization.Program.MainAsync(args);
+            var return_code = await async_call.ConfigureAwait(false);
 
             // Expect nonzero return code if any backend fails less than the number of retries
             if (expect_to_fail)
@@ -533,7 +533,7 @@ namespace Duplicati.UnitTest
                 catch
                 {
                     Console.SetError(originalError); // Restore standard error
-                    Console.Error.WriteLine(errorBuffer?.ToString());
+                    await Console.Error.WriteLineAsync(errorBuffer?.ToString());
                     throw;
                 }
             }
@@ -549,7 +549,7 @@ namespace Duplicati.UnitTest
         /// </summary>
         [Test]
         [Category("Tools/RemoteSynchronization")]
-        public void TestVerifies()
+        public async Task TestVerifiesAsync()
         {
             var l1 = Path.Combine(TARGETFOLDER, "l1");
             var l2 = Path.Combine(TARGETFOLDER, "l2");
@@ -557,7 +557,7 @@ namespace Duplicati.UnitTest
             Directory.CreateDirectory(l1);
             Directory.CreateDirectory(l2);
 
-            GenerateTestData(l1, 5, 0, 0, 1024).Wait();
+            await GenerateTestDataAsync(l1, 5, 0, 0, 1024).ConfigureAwait(false);
 
             var filenames = Directory.EnumerateFiles(l1).Take(2).ToList();
             var first_file = filenames.First();
@@ -576,8 +576,8 @@ namespace Duplicati.UnitTest
 
             var args = new string[] { $"file://{l1}", $"file://{l2}", "--confirm", "--verify-contents", "--verify-get-after-put" };
 
-            var async_call = RemoteSynchronization.Program.Main(args);
-            var return_code = async_call.ConfigureAwait(false).GetAwaiter().GetResult();
+            var async_call = RemoteSynchronization.Program.MainAsync(args);
+            var return_code = await async_call.ConfigureAwait(false);
 
             Assert.AreEqual(0, return_code, "Remote synchronization tool did not return 0.");
             Assert.IsTrue(DirectoriesAndContentsAreEqual(l1, l2), "Synchronized directories are not equal");
@@ -632,26 +632,26 @@ namespace Duplicati.UnitTest
         /// <param name="n_dirs">How many subdirectories the directory should have.</param>
         /// <param name="n_levels">How deep the number of subdirectories within subdirectories should go.</param>
         /// <param name="max_file_size">The maximum size of the files to generate.</param>
-        public static async Task GenerateTestData(string dir, int n_files, int n_dirs, int n_levels, int max_file_size)
+        public static async Task GenerateTestDataAsync(string dir, int n_files, int n_dirs, int n_levels, int max_file_size)
         {
             if (!SystemIO.IO_OS.DirectoryExists(dir))
                 SystemIO.IO_OS.DirectoryCreate(dir);
 
             var fs = Enumerable.Range(0, n_files)
-                .Select(i => GenerateTestFile(dir, i, max_file_size));
+                .Select(i => GenerateTestFileAsync(dir, i, max_file_size));
             var ds = n_levels > 0 ?
                 Enumerable.Range(0, n_dirs)
                     .Select(i =>
                     {
                         var subdir = Path.Combine(dir, $"dir_{i}");
-                        return GenerateTestData(subdir, n_files, n_dirs, n_levels - 1, max_file_size);
+                        return GenerateTestDataAsync(subdir, n_files, n_dirs, n_levels - 1, max_file_size);
                     })
                 : [];
 
             await Task.WhenAll([.. fs, .. ds]);
         }
 
-        public static async Task GenerateTestFile(string dir, int i, int max_file_size)
+        public static async Task GenerateTestFileAsync(string dir, int i, int max_file_size)
         {
             var rnd = new Random();
             var file = Path.Combine(dir, $"file_{i}.txt");
@@ -683,7 +683,7 @@ namespace Duplicati.UnitTest
         /// </summary>
         [Test]
         [Category("Tools/RemoteSynchronization")]
-        public void TestRemoteSynchronizationQuotaCheckFails()
+        public async Task TestRemoteSynchronizationQuotaCheckFailsAsync()
         {
             var l1 = Path.Combine(TARGETFOLDER, "quota_src");
             var l2 = Path.Combine(TARGETFOLDER, "quota_dst");
@@ -692,7 +692,7 @@ namespace Duplicati.UnitTest
             Directory.CreateDirectory(l2);
 
             // Generate test data: 5 files of ~1KB each, total ~5KB
-            GenerateTestData(l1, 5, 0, 0, 2048).Wait();
+            await GenerateTestDataAsync(l1, 5, 0, 0, 2048).ConfigureAwait(false);
 
             // Register the test backend
             Library.DynamicLoader.BackendLoader.AddBackend(new FileBackendWith1Kb());
@@ -700,8 +700,8 @@ namespace Duplicati.UnitTest
             // Use the test backend for destination with only 1KB free quota
             var args = new string[] { $"file://{l1}", $"quotatest://{l2}", "--confirm" };
 
-            var async_call = RemoteSynchronization.Program.Main(args);
-            var return_code = async_call.ConfigureAwait(false).GetAwaiter().GetResult();
+            var async_call = RemoteSynchronization.Program.MainAsync(args);
+            var return_code = await async_call.ConfigureAwait(false);
 
             Assert.AreNotEqual(0, return_code, "Remote synchronization should fail due to insufficient quota.");
         }
@@ -711,7 +711,7 @@ namespace Duplicati.UnitTest
         /// </summary>
         [Test]
         [Category("Tools/RemoteSynchronization")]
-        public void TestRemoteSynchronizationQuotaCheckSucceeds()
+        public async Task TestRemoteSynchronizationQuotaCheckSucceedsAsync()
         {
             var l1 = Path.Combine(TARGETFOLDER, "quota_src2");
             var l2 = Path.Combine(TARGETFOLDER, "quota_dst2");
@@ -720,7 +720,7 @@ namespace Duplicati.UnitTest
             Directory.CreateDirectory(l2);
 
             // Generate small test data: 1 file of ~500B
-            GenerateTestData(l1, 1, 0, 0, 512).Wait();
+            await GenerateTestDataAsync(l1, 1, 0, 0, 512).ConfigureAwait(false);
 
             // Register the test backend
             Library.DynamicLoader.BackendLoader.AddBackend(new FileBackendWith1Kb());
@@ -728,8 +728,8 @@ namespace Duplicati.UnitTest
             // Use the test backend for destination with 1KB free quota (sufficient)
             var args = new string[] { $"file://{l1}", $"quotatest://{l2}", "--confirm", "--dst-options", "freequota=1024" };
 
-            var async_call = RemoteSynchronization.Program.Main(args);
-            var return_code = async_call.ConfigureAwait(false).GetAwaiter().GetResult();
+            var async_call = RemoteSynchronization.Program.MainAsync(args);
+            var return_code = await async_call.ConfigureAwait(false);
 
             Assert.AreEqual(0, return_code, "Remote synchronization should succeed with sufficient quota.");
             Assert.IsTrue(DirectoriesAndContentsAreEqual(l1, l2), "Directories should be synchronized.");

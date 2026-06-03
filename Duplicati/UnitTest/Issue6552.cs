@@ -5,6 +5,7 @@ using NUnit.Framework;
 using Duplicati.Library.Main;
 using Microsoft.Data.Sqlite;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using System.Threading.Tasks;
 
 namespace Duplicati.UnitTest
 {
@@ -12,7 +13,7 @@ namespace Duplicati.UnitTest
     {
         [Test]
         [Category("Issue6552")]
-        public void RecreateDbShouldNotCreateInvalidDeletedBlockReferences()
+        public async Task RecreateDbShouldNotCreateInvalidDeletedBlockReferencesAsync()
         {
             // Arrange
             var testopts = TestOptions;
@@ -25,17 +26,16 @@ namespace Duplicati.UnitTest
             // Step 1: Create file A.txt and backup
             File.WriteAllText(Path.Combine(sourceFolder, "A.txt"), "Content A");
 
-            string savedDindexPath = null;
             using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                var res = c.Backup(new[] { sourceFolder });
+                var res = await c.BackupAsync(new[] { sourceFolder });
                 Assert.AreEqual(0, res.Errors.Count());
             }
 
             // Save the dindex file from first backup
             var dindexFiles = Directory.GetFiles(TARGETFOLDER, "*.dindex.*");
             Assert.IsTrue(dindexFiles.Length > 0, "Should have at least one dindex file");
-            savedDindexPath = Path.Combine(DATAFOLDER, Path.GetFileName(dindexFiles[0]));
+            var savedDindexPath = Path.Combine(DATAFOLDER, Path.GetFileName(dindexFiles[0]));
             File.Copy(dindexFiles[0], savedDindexPath);
 
             // Identify the dblock and dlist from the first backup
@@ -48,7 +48,7 @@ namespace Duplicati.UnitTest
 
             using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                var res = c.Backup(new[] { sourceFolder });
+                var res = await c.BackupAsync(new[] { sourceFolder });
                 Assert.AreEqual(0, res.Errors.Count());
             }
 
@@ -79,19 +79,19 @@ namespace Duplicati.UnitTest
                 // This should complete but may create invalid references
                 try
                 {
-                    var res = c.Repair();
+                    var res = await c.RepairAsync();
                 }
                 catch (Exception ex)
                 {
                     // Recreate might fail, but we want to check the DB state
-                    TestContext.Progress.WriteLine($"Repair failed: {ex.Message}");
+                    await TestContext.Progress.WriteLineAsync($"Repair failed: {ex.Message}");
                 }
             }
 
             // Step 5: Check for invalid DeletedBlock references
             using (var connection = new SqliteConnection($"Data Source={testopts["dbpath"]};Pooling=false"))
             {
-                connection.Open();
+                await connection.OpenAsync();
                 var command = connection.CreateCommand();
 
                 // Check for DeletedBlock entries with invalid VolumeID
@@ -101,7 +101,7 @@ namespace Duplicati.UnitTest
                     WHERE VolumeID NOT IN (SELECT ID FROM RemoteVolume)
                 ";
 
-                var invalidCount = (long)command.ExecuteScalar();
+                var invalidCount = (long)await command.ExecuteScalarAsync();
 
                 // This assertion will fail with the current bug
                 Assert.AreEqual(0, invalidCount,

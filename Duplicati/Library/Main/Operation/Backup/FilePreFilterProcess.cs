@@ -40,7 +40,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// </summary>
         private static readonly string FILELOGTAG = Logging.Log.LogTagFromType(typeof(FilePreFilterProcess)) + ".FileEntry";
 
-        public static Task Run(Channels channels, Options options, BackupStatsCollector stats, BackupDatabase database, ITaskReader taskreader)
+        public static Task RunAsync(Channels channels, Options options, BackupStatsCollector stats, BackupDatabase database, ITaskReader taskreader)
         {
             return AutomationExtensions.RunTask(
             new
@@ -80,7 +80,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                         LogExceptionHelper.LogCommonWarning(ex, FILELOGTAG, "FailedToReadSize", e.Entry.Path, "Failed to read size on \"{0}\"");
                     }
 
-                    await stats.AddExaminedFile(filestatsize);
+                    await stats.AddExaminedFileAsync(filestatsize);
 
                     // Stop now if the file is too large
                     var tooLargeFile = SKIPFILESLARGERTHAN != 0 && filestatsize >= 0 && filestatsize > SKIPFILESLARGERTHAN;
@@ -130,7 +130,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     }
 
                     // Compute current metadata
-                    e.MetaHashAndSize = SKIPMETADATA ? EMPTY_METADATA : Utility.WrapMetadata(await MetadataGenerator.GenerateMetadata(e.Entry, e.Attributes, options, taskreader.ProgressToken), options);
+                    e.MetaHashAndSize = SKIPMETADATA ? EMPTY_METADATA : Utility.WrapMetadata(await MetadataGenerator.GenerateMetadataAsync(e.Entry, e.Attributes, options, taskreader.ProgressToken), options);
                     e.MetadataChanged = !SKIPMETADATA && (e.MetaHashAndSize.Blob.Length != e.OldMetaSize || e.MetaHashAndSize.FileHash != e.OldMetaHash);
 
                     // Check if the file is new, or something indicates a change

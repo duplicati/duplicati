@@ -81,6 +81,11 @@ namespace Duplicati.Server
         public event EventHandler? ServerSettingsUpdate;
 
         /// <summary>
+        /// An eventhandler for subscribing to remote control status updates without blocking
+        /// </summary>
+        public event EventHandler<EventArgs?>? RemoteControlUpdate;
+
+        /// <summary>
         /// Gets the current event ID
         /// </summary>
         public long EventNo { get { return m_eventNo; } }
@@ -137,6 +142,9 @@ namespace Duplicati.Server
 
         public void SignalServerSettingsUpdated()
             => ServerSettingsUpdate?.Invoke(this, null!);
+
+        public void SignalRemoteControlUpdate()
+            => RemoteControlUpdate?.Invoke(this, null);
 
         public void SignalBackupListUpdate()
             => BackupListUpdate?.Invoke(this, null!);

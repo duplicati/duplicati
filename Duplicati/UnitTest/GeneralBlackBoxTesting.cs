@@ -22,8 +22,8 @@
 using NUnit.Framework;
 using System.Linq;
 using System.IO;
+using System.Threading.Tasks;
 using System.Collections.Generic;
-using Duplicati.Library.Utility;
 
 namespace Duplicati.UnitTest
 {
@@ -66,10 +66,10 @@ namespace Duplicati.UnitTest
 
 
         [OneTimeSetUp]
-        public void OneTimeSetUp()
+        public async Task OneTimeSetUpAsync()
         {
             this.OneTimeTearDown();
-            CommandLineOperationsTests.DownloadS3FileIfNewerAsync(this.zipFilepath, $"{CommandLineOperationsTests.S3_URL}{this.zipFilename}").Await();
+            await CommandLineOperationsTests.DownloadS3FileIfNewerAsync(this.zipFilepath, $"{CommandLineOperationsTests.S3_URL}{this.zipFilename}");
             System.IO.Compression.ZipFile.ExtractToDirectory(this.zipFilepath, BASEFOLDER);
         }
 
@@ -85,26 +85,26 @@ namespace Duplicati.UnitTest
         [Test]
         [Category("SVNData")]
         [TestCase("zip")]
-        public void TestWithSVNShort(string compression)
+        public async Task TestWithSVNShortAsync(string compression)
         {
             var opts = TestOptions;
             opts["compression-module"] = compression;
-            SVNCheckoutTest.RunTest(TestFolders.Take(5).ToArray(), opts, TestTarget);
+            await SVNCheckoutTest.RunTestAsync(TestFolders.Take(5).ToArray(), opts, TestTarget);
         }
 
         [Test]
         [Category("SVNDataLong")]
         [TestCase("zip")]
-        public void TestWithSVNLong(string compression)
+        public async Task TestWithSVNLongAsync(string compression)
         {
             var opts = TestOptions;
             opts["compression-module"] = compression;
-            SVNCheckoutTest.RunTest(TestFolders.ToArray(), opts, TestTarget);
+            await SVNCheckoutTest.RunTestAsync(TestFolders.ToArray(), opts, TestTarget);
         }
 
         [Test]
         [Category("SVNData")]
-        public void TestWithErrors()
+        public async Task TestWithErrorsAsync()
         {
             var u = new Library.Utility.Uri(TestUtils.GetDefaultTarget());
             RandomErrorBackend.WrappedBackend = u.Scheme;
@@ -115,19 +115,19 @@ namespace Duplicati.UnitTest
             // opts["restore-legacy"] = "true";
             opts["retry-delay"] = "0s";
 
-            SVNCheckoutTest.RunTest(TestFolders.Take(5).ToArray(), opts, target);
+            await SVNCheckoutTest.RunTestAsync(TestFolders.Take(5).ToArray(), opts, target);
         }
 
         [Test]
         [Category("SVNData")]
-        public void TestWithoutSizeInfo()
+        public async Task TestWithoutSizeInfoAsync()
         {
             var u = new Library.Utility.Uri(TestUtils.GetDefaultTarget());
             SizeOmittingBackend.WrappedBackend = u.Scheme;
             var target = u.SetScheme(new SizeOmittingBackend().ProtocolKey).ToString();
             Library.DynamicLoader.BackendLoader.AddBackend(new SizeOmittingBackend());
 
-            SVNCheckoutTest.RunTest(TestFolders.Take(5).ToArray(), TestOptions, target);
+            await SVNCheckoutTest.RunTestAsync(TestFolders.Take(5).ToArray(), TestOptions, target);
         }
 
     }

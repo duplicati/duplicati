@@ -97,7 +97,7 @@ partial class BackendManager
 
                 // Perform decryption after hash validation, if needed
                 if (Decrypt)
-                    tmpfile = DecryptFile(tmpfile, RemoteFilename, Context.Options);
+                    tmpfile = DecryptFile(tmpfile, RemoteFilename, Context.Options, true);
 
                 return (tmpfile, fileHash, dataSizeDownloaded);
             }
@@ -140,7 +140,7 @@ partial class BackendManager
                         {
                             await streamingBackend.GetAsync(RemoteFilename, pgs, cancelToken).ConfigureAwait(false);
                         }
-                        ss.Flush();
+                        await ss.FlushAsync();
                         retDownloadSize = ss.TotalBytesWritten;
                         retHashcode = Convert.ToBase64String(hs.GetFinalHash());
                     }
@@ -221,7 +221,7 @@ partial class BackendManager
         /// <param name="tempFile">The encrypted file</param>
         /// <param name="decrypter">Then encryption module to use, or <c>null</c> for no encryption</param>
         /// <returns>The decrypted file</returns>
-        private static TempFile DecryptFile(TempFile tempFile, IEncryption? decrypter)
+        private static TempFile DecryptFile(TempFile tempFile, IEncryption? decrypter, bool dispose)
         {
             // Support no encryption
             if (decrypter == null)
@@ -230,7 +230,7 @@ partial class BackendManager
             TempFile? decryptTarget = null;
 
             // Always dispose the source file
-            using (tempFile)
+            using (dispose ? tempFile : null)
             using (new Logging.Timer(LOGTAG, "DecryptFile", "Decrypting " + tempFile))
             {
                 try
@@ -259,15 +259,16 @@ partial class BackendManager
         /// <param name="tmpfile">The file to decrypt</param>
         /// <param name="filename">The name of the file. Used for detecting encryption algorithm if not specified in options or if it differs from the options</param>
         /// <param name="options">The Duplicati options</param>
+        /// <param name="dispose">If true, the source file will be disposed after decryption</param>
         /// <returns>The decrypted file</returns>
-        public static TempFile DecryptFile(TempFile tmpfile, string filename, Options options)
+        public static TempFile DecryptFile(TempFile tmpfile, string filename, Options options, bool dispose)
         {
             using var encryption = options.NoEncryption
                                     ? null
                                     : (DynamicLoader.EncryptionLoader.GetModule(options.EncryptionModule, options.Passphrase, options.RawOptions)
                                         ?? throw new Exception(Strings.BackendMananger.EncryptionModuleNotFound(options.EncryptionModule))
                                 );
-            return DecryptFile(tmpfile, DetectEncryptionModule(filename, options, encryption));
+            return DecryptFile(tmpfile, DetectEncryptionModule(filename, options, encryption), dispose);
         }
     }
 }

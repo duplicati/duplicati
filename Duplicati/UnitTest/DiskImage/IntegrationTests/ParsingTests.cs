@@ -17,7 +17,7 @@ public class ParsingTests : DiskImageTests
 {
     [Test]
     [Category("DiskImage")]
-    public async Task Test_GeometryMetadata_Verification()
+    public async Task Test_GeometryMetadata_Verification_Async()
     {
         await TestContext.Progress.WriteLineAsync("Test: Full Round-Trip Backup + Restore");
 
@@ -30,13 +30,13 @@ public class ParsingTests : DiskImageTests
         await TestContext.Progress.WriteLineAsync($"Source Disk initialized with partition(s): {string.Join(", ", sourcePartitions)}");
 
         // Backup
-        var backupResults = RunBackup(sourceDrivePath);
+        var backupResults = await RunBackupAsync(sourceDrivePath);
         TestUtils.AssertResults(backupResults);
 
         // List backup contents and verify geometry.json is present
         using (var c = new Controller("file://" + TARGETFOLDER, TestOptions, null))
         {
-            var listResults = c.List("*");
+            var listResults = await c.ListAsync("*");
             TestUtils.AssertResults(listResults);
 
             // Check that geometry.json is in the backup
@@ -47,19 +47,19 @@ public class ParsingTests : DiskImageTests
         }
 
         // Verify geometry metadata contains correct information
-        VerifyGeometryMetadata(TARGETFOLDER, TestOptions, partitions);
+        await VerifyGeometryMetadataAsync(TARGETFOLDER, TestOptions, partitions);
     }
 
     [Test]
     [Category("DiskImage")]
-    public async Task Test_SourceProvider_Enumeration()
+    public async Task Test_SourceProvider_Enumeration_Async()
     {
-        TestContext.Progress.WriteLine("Test: SourceProvider Enumeration");
+        await TestContext.Progress.WriteLineAsync("Test: SourceProvider Enumeration");
 
         // Setup: Create GPT disk with one FAT32 partition
         var sourceDrivePath = _diskHelper.CreateDisk(_sourceImagePath, (100 * MiB));
         var sourcePartitions = _diskHelper.InitializeDisk(sourceDrivePath, PartitionTableType.GPT, [(FileSystemType.FAT32, 0)]);
-        TestContext.Progress.WriteLine($"Source disk image created at: {_sourceImagePath}");
+        await TestContext.Progress.WriteLineAsync($"Source disk image created at: {_sourceImagePath}");
 
         // Directly instantiate SourceProvider
         // Note: When directly instantiating SourceProvider, we don't use the @ prefix
@@ -75,7 +75,7 @@ public class ParsingTests : DiskImageTests
         await foreach (var entry in provider.Enumerate(CancellationToken.None))
         {
             diskEntries.Add(entry);
-            TestContext.Progress.WriteLine($"Found entry: {entry.Path} (IsFolder: {entry.IsFolder}, Size: {entry.Size})");
+            await TestContext.Progress.WriteLineAsync($"Found entry: {entry.Path} (IsFolder: {entry.IsFolder}, Size: {entry.Size})");
         }
 
         // Verify hierarchy: disk → partition → filesystem → files
@@ -90,7 +90,7 @@ public class ParsingTests : DiskImageTests
         await foreach (var entry in diskEntry!.Enumerate(CancellationToken.None))
             entries.Add(entry);
 
-        TestContext.Progress.WriteLine($"Total entries found: {entries.Count}");
+        await TestContext.Progress.WriteLineAsync($"Total entries found: {entries.Count}");
 
         // Check for geometry.json
         var geometryEntry = entries.FirstOrDefault(e => e.Path.EndsWith("geometry.json"));
@@ -113,25 +113,25 @@ public class ParsingTests : DiskImageTests
 
     [Test]
     [Category("DiskImage")]
-    public async Task Test_AutoUnmountOption_RestoreWhileOnline()
+    public async Task Test_AutoUnmountOption_RestoreWhileOnline_Async()
     {
-        TestContext.Progress.WriteLine("Test: Auto Unmount Option - Restore While Disk Online");
+        await TestContext.Progress.WriteLineAsync("Test: Auto Unmount Option - Restore While Disk Online");
 
         // Setup source disk image: 100MB, GPT, single FAT32 partition
         var sourceDrivePath = _diskHelper.CreateDisk(_sourceImagePath, (100 * MiB));
         var sourcePartitions = _diskHelper.InitializeDisk(sourceDrivePath, PartitionTableType.GPT, [(FileSystemType.FAT32, 0)]);
-        TestContext.Progress.WriteLine($"Source disk image created at: {_sourceImagePath}");
+        await TestContext.Progress.WriteLineAsync($"Source disk image created at: {_sourceImagePath}");
 
         // Generate some test data
-        await ToolTests.GenerateTestData(sourcePartitions.First(), 10, 5, 2, 1024);
+        await ToolTests.GenerateTestDataAsync(sourcePartitions.First(), 10, 5, 2, 1024);
         _diskHelper.FlushDisk(sourceDrivePath);
         _diskHelper.Unmount(sourceDrivePath);
-        TestContext.Progress.WriteLine($"Test data generated on source partition");
+        await TestContext.Progress.WriteLineAsync($"Test data generated on source partition");
 
         // Backup
-        var backupResults = RunBackup(sourceDrivePath);
+        var backupResults = await RunBackupAsync(sourceDrivePath);
         TestUtils.AssertResults(backupResults);
-        TestContext.Progress.WriteLine($"Backup completed successfully");
+        await TestContext.Progress.WriteLineAsync($"Backup completed successfully");
 
         // Create and attach disk image
         var restoreDrivePath = _diskHelper.CreateDisk(_restoreImagePath, (100 * MiB));
@@ -139,11 +139,11 @@ public class ParsingTests : DiskImageTests
         // Initialize disk (the restore will overwrite this, but we need it formatted)
         _diskHelper.InitializeDisk(restoreDrivePath, PartitionTableType.GPT, [(FileSystemType.FAT32, 50 * MiB), (FileSystemType.FAT32, 0)]);
         _diskHelper.Mount(restoreDrivePath, _restoreMountPath);
-        TestContext.Progress.WriteLine($"Restore disk image created and kept online at: {_restoreImagePath}");
+        await TestContext.Progress.WriteLineAsync($"Restore disk image created and kept online at: {_restoreImagePath}");
 
         // First attempt: Restore without auto-unmount option should fail
         // because the disk is online and in use
-        TestContext.Progress.WriteLine("Attempting restore without auto-unmount (should fail)...");
+        await TestContext.Progress.WriteLineAsync("Attempting restore without auto-unmount (should fail)...");
         var options = new Dictionary<string, string>(TestOptions)
         {
             ["restore-path"] = $"@diskimage://{restoreDrivePath}",
@@ -157,12 +157,12 @@ public class ParsingTests : DiskImageTests
         {
             try
             {
-                var results = c.Restore(["*"]);
+                var results = await c.RestoreAsync(["*"]);
 
                 // Verify that the restore failed (has errors)
                 Assert.That(results.Errors.Any(), Is.True,
                     "Restore should fail when target disk is online and auto-unmount is not enabled");
-                TestContext.Progress.WriteLine($"Restore failed as expected with errors: {string.Join(", ", results.Errors)}");
+                await TestContext.Progress.WriteLineAsync($"Restore failed as expected with errors: {string.Join(", ", results.Errors)}");
             }
             catch (IOException)
             {
@@ -175,16 +175,16 @@ public class ParsingTests : DiskImageTests
         }
 
         // Second attempt: Restore with auto-unmount option should succeed
-        TestContext.Progress.WriteLine("Attempting restore with auto-unmount enabled (should succeed)...");
+        await TestContext.Progress.WriteLineAsync("Attempting restore with auto-unmount enabled (should succeed)...");
 
         options["diskimage-restore-auto-unmount"] = "true";
         using (var c = new Controller("file://" + TARGETFOLDER, options, null))
         {
-            var results = c.Restore(["*"]);
+            var results = await c.RestoreAsync(["*"]);
 
             Assert.That(!results.Errors.Any() && results.Warnings.Count() <= 1);
         }
-        TestContext.Progress.WriteLine($"Restore completed successfully with auto-unmount option");
+        await TestContext.Progress.WriteLineAsync($"Restore completed successfully with auto-unmount option");
 
         // Mount before verification, to make disks online on Windows.
         sourcePartitions = _diskHelper.Mount(sourceDrivePath, _sourceMountPath, readOnly: true);

@@ -57,12 +57,12 @@ namespace Duplicati.Library.Main.Operation
                 foreach (var fileversion in filteredList)
                     try
                     {
-                        if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
+                        if (!await m_result.TaskControl.ProgressRendevouzAsync().ConfigureAwait(false))
                             return;
 
                         var file = fileversion.Value.File;
                         var entry = await db
-                            .GetRemoteVolume(file.Name, m_result.TaskControl.ProgressToken)
+                            .GetRemoteVolumeAsync(file.Name, m_result.TaskControl.ProgressToken)
                             .ConfigureAwait(false);
 
                         var files = new List<Library.Interface.IListResultFile>();
