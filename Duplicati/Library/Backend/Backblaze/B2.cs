@@ -657,8 +657,8 @@ public class B2 : IStreamingBackend, ILockingBackend, IRenameEnabledBackend
     /// Performs test with backend (internally it uses the List() command, which by definition means the backend is working)
     /// </summary>
     /// <param name="cancelToken">Cancellation Token</param>
-    public Task TestAsync(CancellationToken cancelToken)
-        => this.TestReadWritePermissionsAsync(cancelToken);
+    public Task TestAsync(bool alsoWrite, CancellationToken cancelToken)
+        => this.TestBackendAsync(alsoWrite, cancelToken);
 
     /// <summary>
     /// Create remote folder

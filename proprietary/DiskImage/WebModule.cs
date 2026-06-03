@@ -64,7 +64,7 @@ public class WebModule : IWebModule
         var subpath = parts.Last();
 
         using var client = new SourceProvider("diskimage://" + physicalDrivePath, "", new Dictionary<string, string?>(options));
-        await client.Initialize(cancellationToken);
+        await client.InitializeAsync(cancellationToken);
 
         if (string.IsNullOrWhiteSpace(subpath))
             return new Dictionary<string, string>()
@@ -72,7 +72,7 @@ public class WebModule : IWebModule
                 {$"{physicalDrivePath}{Path.DirectorySeparatorChar}root{Path.DirectorySeparatorChar}", "{}"}
             };
 
-        var targetEntry = await client.GetEntry(subpath, isFolder: true, cancellationToken).ConfigureAwait(false)
+        var targetEntry = await client.GetEntryAsync(subpath, isFolder: true, cancellationToken).ConfigureAwait(false)
             ?? throw new DirectoryNotFoundException($"Path not found: {path}");
 
         var result = new Dictionary<string, string>();

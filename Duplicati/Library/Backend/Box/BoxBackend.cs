@@ -452,8 +452,8 @@ namespace Duplicati.Library.Backend.Box
         }
 
         /// <inheritdoc/>
-        public Task TestAsync(CancellationToken cancelToken)
-            => this.TestReadWritePermissionsAsync(cancelToken);
+        public Task TestAsync(bool alsoWrite, CancellationToken cancelToken)
+            => this.TestBackendAsync(alsoWrite, cancelToken);
 
         /// <inheritdoc/>
         public Task CreateFolderAsync(CancellationToken cancellationToken)

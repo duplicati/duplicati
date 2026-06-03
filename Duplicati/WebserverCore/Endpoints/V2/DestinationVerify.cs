@@ -49,14 +49,11 @@ public class DestinationVerify : IEndpointV2
             {
                 using var wrapper = await SharedRemoteOperation.GetSourceProviderForTestingAsync(connection, applicationSettings, input.DestinationUrl, input.BackupId, input.ConnectionStringId ?? -1, input.SourcePrefix, cancelToken);
 
-                // We do not call TestAsync here, because we may have read-only access to the source, and test will verify write access
-                // Instead we just check if we can enumerate the files, which is the main thing we need to verify for a source provider
-
-                // Technically we also count folders as files here, but really we just want to know if there is data to backup
-                var anyFiles = await wrapper.SourceProvider.Enumerate(cancelToken).AnyAsync(cancelToken);
+                // Call the specific Test method on the ISourceProvider (read-only test)
+                await wrapper.SourceProvider.TestAsync(cancelToken);
 
                 return DestinationTestResponseDto.Create(
-                    anyFiles: anyFiles,
+                    anyFiles: true,
                     anyBackups: false,
                     anyEncryptedFiles: false
                 );
@@ -65,7 +62,7 @@ public class DestinationVerify : IEndpointV2
             {
                 using var wrapper = await SharedRemoteOperation.GetRestoreDestinationProviderForTestingAsync(connection, applicationSettings, input.DestinationUrl, input.BackupId, input.ConnectionStringId ?? -1, input.SourcePrefix, cancelToken);
 
-                // Here we do call TestAsync, because we need to verify write access
+                // Call the specific Test method on the IRestoreDestinationProvider (should be a write test)
                 await wrapper.RestoreDestinationProvider.Test(cancelToken);
 
                 return DestinationTestResponseDto.Create(
@@ -80,14 +77,14 @@ public class DestinationVerify : IEndpointV2
 
                 using (var b = wrapper.Backend)
                 {
-                    try { await b.TestAsync(cancelToken).ConfigureAwait(false); }
+                    try { await b.TestAsync(!input.ReadOnlyTest, cancelToken).ConfigureAwait(false); }
                     catch (Exception ex) when (SharedRemoteOperation.GetInnerException<FolderMissingException>(ex) is FolderMissingException)
                     {
-                        if (!input.AutoCreate)
+                        if (!input.AutoCreate || input.ReadOnlyTest)
                             throw;
 
                         await b.CreateFolderAsync(cancelToken).ConfigureAwait(false);
-                        await b.TestAsync(cancelToken).ConfigureAwait(false);
+                        await b.TestAsync(!input.ReadOnlyTest, cancelToken).ConfigureAwait(false);
                     }
 
                     var anyFiles = false;

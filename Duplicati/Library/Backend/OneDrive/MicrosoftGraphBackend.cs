@@ -650,7 +650,7 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public async Task TestAsync(CancellationToken cancelToken)
+        public async Task TestAsync(bool alsoWrite, CancellationToken cancelToken)
         {
             try
             {
@@ -664,7 +664,7 @@ namespace Duplicati.Library.Backend
                 throw new FolderMissingException(ex);
             }
 
-            await this.TestReadWritePermissionsAsync(cancelToken).ConfigureAwait(false);
+            await this.TestBackendAsync(alsoWrite, cancelToken).ConfigureAwait(false);
         }
 
         public void Dispose()

@@ -102,7 +102,7 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
     internal bool TreatFilesystemAsUnknown => _treatFilesystemAsUnknown;
 
     /// <inheritdoc />
-    public async Task Initialize(CancellationToken cancellationToken)
+    public async Task InitializeAsync(CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(_devicePath))
             throw new UserInformationException("Disk device path is not specified.", "DiskDeviceNotSpecified");
@@ -132,7 +132,7 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
     }
 
     /// <inheritdoc />
-    public Task Test(CancellationToken cancellationToken)
+    public Task TestAsync(CancellationToken cancellationToken)
     {
         if (_disk == null)
             throw new InvalidOperationException("Provider not initialized.");
@@ -140,7 +140,7 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
     }
 
     /// <inheritdoc />
-    public async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
+    public async IAsyncEnumerable<ISourceProviderEntry> EnumerateAsync([EnumeratorCancellation] CancellationToken cancellationToken)
     {
         if (_disk == null)
             throw new InvalidOperationException("Provider not initialized.");
@@ -150,7 +150,7 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
     }
 
     /// <inheritdoc />
-    public async Task<ISourceProviderEntry?> GetEntry(string path, bool isFolder, CancellationToken cancellationToken)
+    public async Task<ISourceProviderEntry?> GetEntryAsync(string path, bool isFolder, CancellationToken cancellationToken)
     {
         if (_disk == null)
             throw new InvalidOperationException("Provider not initialized.");

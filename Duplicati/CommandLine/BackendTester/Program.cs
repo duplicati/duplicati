@@ -176,7 +176,7 @@ namespace Duplicati.CommandLine.BackendTester
                 IEnumerable<Library.Interface.IFileEntry> curlist = null;
                 try
                 {
-                    Retry(() => backend.TestAsync(CancellationToken.None), retries).Await();
+                    Retry(() => backend.TestAsync(true, CancellationToken.None), retries).Await();
                     curlist = Retry(() => backend.ListAsync(CancellationToken.None).ToBlockingEnumerable().ToList(), retries);
                 }
                 catch (FolderMissingException)

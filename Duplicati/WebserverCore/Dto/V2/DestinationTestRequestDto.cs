@@ -68,6 +68,11 @@ public sealed record DestinationTestRequestDto
     public required bool AutoCreate { get; init; } = false;
 
     /// <summary>
+    /// Whether to test read-only access
+    /// </summary>
+    public bool ReadOnlyTest { get; init; } = false;
+
+    /// <summary>
     /// The type of remote destination
     /// </summary>
     public RemoteDestinationType? DestinationType { get; init; }

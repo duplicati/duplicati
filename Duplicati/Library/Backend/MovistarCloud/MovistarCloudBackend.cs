@@ -385,7 +385,7 @@ public sealed class MovistarCloudBackend : IBackend
     }
 
     /// <inheritdoc/>
-    public async Task TestAsync(CancellationToken cancellationToken)
+    public async Task TestAsync(bool alsoWrite, CancellationToken cancellationToken)
     {
         var client = await GetClientAsync(cancellationToken).ConfigureAwait(false);
 
@@ -421,6 +421,8 @@ public sealed class MovistarCloudBackend : IBackend
         {
             await RunDiagnosticsAsync(cancellationToken).ConfigureAwait(false);
         }
+
+        await this.TestBackendAsync(alsoWrite, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>

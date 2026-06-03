@@ -505,8 +505,8 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
     }
 
     /// <inheritdoc/>
-    public Task TestAsync(CancellationToken cancelToken)
-        => this.TestReadWritePermissionsAsync(cancelToken);
+    public Task TestAsync(bool alsoWrite, CancellationToken cancelToken)
+        => this.TestBackendAsync(alsoWrite, cancelToken);
 
     /// <inheritdoc/>
     public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken)

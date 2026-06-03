@@ -79,8 +79,8 @@ namespace Duplicati.UnitTest
             public Task PutAsync(string remotename, string filename, CancellationToken cancellationToken)
                 => backend.PutAsync(remotename, filename, cancellationToken);
 
-            public Task TestAsync(CancellationToken cancellationToken)
-                => backend.TestAsync(cancellationToken);
+            public Task TestAsync(bool alsoWrite, CancellationToken cancellationToken)
+                => backend.TestAsync(alsoWrite, cancellationToken);
         }
 
         [Test]

@@ -214,8 +214,8 @@ namespace Duplicati.Library.Backend
 
         public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(WebApi.Dropbox.Hosts());
 
-        public Task TestAsync(CancellationToken cancelToken)
-            => this.TestReadWritePermissionsAsync(cancelToken);
+        public Task TestAsync(bool alsoWrite, CancellationToken cancelToken)
+            => this.TestBackendAsync(alsoWrite, cancelToken);
 
         public async Task CreateFolderAsync(CancellationToken cancelToken)
         {

@@ -427,11 +427,11 @@ namespace Duplicati.Library.Backend
 
         #region [Public backend methods]
 
-        public async Task TestAsync(CancellationToken cancelToken)
+        public async Task TestAsync(bool alsoWrite, CancellationToken cancelToken)
         {
             var ctx = await GetSpClientContextAsync(true, cancelToken).ConfigureAwait(false);
             await TestContextForWebAsync(ctx, true, m_timeouts.ShortTimeout, cancelToken).ConfigureAwait(false);
-            await this.TestReadWritePermissionsAsync(cancelToken).ConfigureAwait(false);
+            await this.TestBackendAsync(alsoWrite, cancelToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc />

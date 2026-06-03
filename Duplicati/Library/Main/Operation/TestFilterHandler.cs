@@ -86,7 +86,7 @@ namespace Duplicati.Library.Main.Operation
                             // Go for the symlink target, as we know we follow symlinks
                             if (!string.IsNullOrWhiteSpace(symlinkTarget))
                             {
-                                var targetEntry = await provider.GetEntry(symlinkTarget, false, stopToken).ConfigureAwait(false);
+                                var targetEntry = await provider.GetEntryAsync(symlinkTarget, false, stopToken).ConfigureAwait(false);
                                 fa = FileAttributes.Normal;
 
                                 try { fa = targetEntry!.Attributes; }
@@ -94,7 +94,7 @@ namespace Duplicati.Library.Main.Operation
 
                                 // If we guessed wrong and the symlink target is a folder, we need to fetch it with the correct flag
                                 if (fa.HasFlag(FileAttributes.Directory))
-                                    targetEntry = await provider.GetEntry(symlinkTarget, true, stopToken).ConfigureAwait(false);
+                                    targetEntry = await provider.GetEntryAsync(symlinkTarget, true, stopToken).ConfigureAwait(false);
 
                                 // No such target
                                 if (targetEntry == null)

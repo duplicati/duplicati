@@ -262,8 +262,8 @@ namespace Duplicati.Library.Backend.Storj
                 throw new Exception(upload.ErrorMessage);
         }
 
-        public Task TestAsync(CancellationToken cancelToken)
-            => Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, ct => TestImplAsync(ct));
+        public Task TestAsync(bool alsoWrite, CancellationToken cancelToken)
+            => Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, ct => TestImplAsync(alsoWrite, ct));
 
         /// <summary>
         /// Test the connection by:
@@ -271,22 +271,31 @@ namespace Duplicati.Library.Backend.Storj
         /// - uploading 256 random bytes to a test-file
         /// - downloading the file back and expecting 256 bytes
         /// </summary>
+        /// <param name="alsoWrite">If true, the test will also write a file to the backend</param>
+        /// <param name="cancelToken">The cancellation token</param>
         /// <returns>true, if the test was successfull or and exception</returns>
-        private async Task<bool> TestImplAsync(CancellationToken cancelToken)
+        private async Task<bool> TestImplAsync(bool alsoWrite, CancellationToken cancelToken)
         {
             var testFileName = GetBasePath() + "duplicati_test.dat";
 
             var bucket = await GetBucketAsync(cancelToken).ConfigureAwait(false);
-            var upload = await _objectService.UploadObjectAsync(bucket, testFileName, new UploadOptions(), GetRandomBytes(256), false).ConfigureAwait(false);
-            await upload.StartUploadAsync().ConfigureAwait(false);
+            if (alsoWrite)
+            {
+                var upload = await _objectService.UploadObjectAsync(bucket, testFileName, new UploadOptions(), GetRandomBytes(256), false).ConfigureAwait(false);
+                await upload.StartUploadAsync().ConfigureAwait(false);
 
-            var download = await _objectService.DownloadObjectAsync(bucket, testFileName, new DownloadOptions(), false).ConfigureAwait(false);
-            await download.StartDownloadAsync().ConfigureAwait(false);
+                var download = await _objectService.DownloadObjectAsync(bucket, testFileName, new DownloadOptions(), false).ConfigureAwait(false);
+                await download.StartDownloadAsync().ConfigureAwait(false);
 
-            await _objectService.DeleteObjectAsync(bucket, testFileName).ConfigureAwait(false);
+                await _objectService.DeleteObjectAsync(bucket, testFileName).ConfigureAwait(false);
 
-            if (download.Failed || download.BytesReceived != 256)
-                throw new Exception(download.ErrorMessage);
+                if (download.Failed || download.BytesReceived != 256)
+                    throw new Exception(download.ErrorMessage);
+            }
+            else
+            {
+                await _objectService.ListObjectsAsync(bucket, new ListObjectsOptions { Prefix = GetBasePath() }).ConfigureAwait(false);
+            }
 
             return true;
         }

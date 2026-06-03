@@ -902,11 +902,11 @@ public class DiskImageTests : BasicSetupHelper
         using var provider = new SourceProvider(sourceUrl, "", new Dictionary<string, string?>());
 
         // Initialize the provider
-        await provider.Initialize(CancellationToken.None);
+        await provider.InitializeAsync(CancellationToken.None);
 
         // Enumerate entries
         var diskEntries = new List<ISourceProviderEntry>();
-        await foreach (var entry in provider.Enumerate(CancellationToken.None))
+        await foreach (var entry in provider.EnumerateAsync(CancellationToken.None))
         {
             diskEntries.Add(entry);
             await TestContext.Progress.WriteLineAsync($"Found entry: {entry.Path} (IsFolder: {entry.IsFolder}, Size: {entry.Size})");

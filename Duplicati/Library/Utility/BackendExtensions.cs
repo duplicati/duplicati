@@ -46,11 +46,23 @@ public static class BackendExtensions
     public const string TEST_FILE_CONTENT = "This file is used by Duplicati to test access permissions and can be safely deleted.";
 
     /// <summary>
-    /// Tests a backend by invoking the List() method.
-    /// As long as the iteration can either complete or find at least one file without throwing, the test is successful
+    /// Test the backend in either read-only or read-write mode.
+    /// </summary>
+    /// <param name="backend">The backend to test</param>
+    /// <param name="alsoWrite">If the test is also checking the destination for write permissions</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>An awaitable tasks</returns>
+    public static Task TestBackendAsync(this IBackend backend, bool alsoWrite, CancellationToken cancellationToken)
+        => alsoWrite
+            ? TestReadWritePermissionsAsync(backend, cancellationToken)
+            : TestReadPermissionsAsync(backend, cancellationToken);
+
+    /// <summary>
+    /// Tests a backend by invoking the List() method, and attempting to write a small file on the destination.
     /// </summary>
     /// <param name="backend">Backend to test</param>
     /// <param name="cancelToken">Cancellation token</param>
+    /// <returns>An awaitable tasks</returns>
     public static async Task TestReadWritePermissionsAsync(this IBackend backend, CancellationToken cancellationToken)
     {
         // Remove the file if it exists
@@ -140,6 +152,34 @@ public static class BackendExtensions
         catch (Exception e)
         {
             throw new TestAfterConnectException(Strings.BackendExtensions.ErrorDeleteFile(TEST_FILE_NAME, e.Message), "TestCleanupError", e);
+        }
+    }
+
+    /// <summary>
+    /// Tests a backend by invoking the List() method.
+    /// As long as the iteration can return one page, the test is considered successful.
+    /// </summary>
+    /// <param name="backend">Backend to test</param>
+    /// <param name="cancelToken">Cancellation token</param>
+    /// <returns>An awaitable tasks</returns>
+    public static async Task TestReadPermissionsAsync(this IBackend backend, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await foreach (var entry in backend
+                               .ListAsync(cancellationToken)
+                               .WithCancellation(cancellationToken)
+                               .ConfigureAwait(false))
+            {
+                break;
+            }
+        }
+        catch (Exception e)
+            // Don't catch FolderMissingException or FileMissingException
+            // so we can pass those through to the caller
+            when (e is not FolderMissingException && e is not FileMissingException)
+        {
+            throw new UserInformationException(Strings.BackendExtensions.ErrorListContent(e.Message), "TestPreparationError", e);
         }
     }
 }
