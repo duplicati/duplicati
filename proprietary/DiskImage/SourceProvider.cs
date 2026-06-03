@@ -78,7 +78,7 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
         var uri = new Library.Utility.Uri(url);
         _devicePath = uri.HostAndPath;
 
-        _treatFilesystemAsUnknown = Library.Utility.Utility.ParseBoolOption(options, OptionsHelper.DISK_IMAGE_FILESYSTEM_UNKNOWN_OPTION);
+        _treatFilesystemAsUnknown = !Library.Utility.Utility.ParseBoolOption(options, OptionsHelper.DISK_IMAGE_FILESYSTEM_PARSED_OPTION);
     }
 
     /// <inheritdoc />
