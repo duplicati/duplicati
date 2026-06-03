@@ -65,12 +65,19 @@ public static class WixHeatBuilder
     /// <param name="directoryRefName">The name of the directory reference</param>
     /// <param name="componentGroupId">The name of the component group</param>
     /// <param name="fileIdGenerator">A function to generate file IDs.</param>
+    /// <param name="excludeFiles">Optional set of file names (case-insensitive, relative to <paramref name="sourceFolder"/> or by leaf name) that should be skipped. These files are expected to be declared manually in another fragment (typically when they need ServiceInstall/ServiceControl or other Component-level customizations that the harvested output cannot express).</param>
     /// <returns>The wix file xml contents</returns>
-    public static string CreateWixFilelist(string sourceFolder, string version, string folderPrefix = "$(var.HarvestPath)", string directoryRefName = "INSTALLLOCATION", string componentGroupId = "DUPLICATIBIN", string wixNs = "http://schemas.microsoft.com/wix/2006/wi", Func<string, string>? fileIdGenerator = null)
+    public static string CreateWixFilelist(string sourceFolder, string version, string folderPrefix = "$(var.HarvestPath)", string directoryRefName = "INSTALLLOCATION", string componentGroupId = "DUPLICATIBIN", string wixNs = "http://schemas.microsoft.com/wix/2006/wi", Func<string, string>? fileIdGenerator = null, IEnumerable<string>? excludeFiles = null)
     {
         var itemIds = new Dictionary<string, string>();
         fileIdGenerator ??= (x) => ConvertToIdentifier(Path.GetRelativePath(sourceFolder, x));
         Func<string, string> pathTransformer = (x) => $"{folderPrefix}{Path.GetRelativePath(sourceFolder, x)}";
+
+        // Normalize excludes to a case-insensitive set of leaf file names.
+        var excludeSet = new HashSet<string>(
+            (excludeFiles ?? Array.Empty<string>()).Select(Path.GetFileName)!,
+            StringComparer.OrdinalIgnoreCase);
+        bool IsExcluded(string filePath) => excludeSet.Contains(Path.GetFileName(filePath));
 
         var doc = new XmlDocument();
         doc.LoadXml($"<Wix xmlns=\"{wixNs}\"></Wix>");
@@ -83,9 +90,13 @@ public static class WixHeatBuilder
 
         foreach (var f in Directory.EnumerateFileSystemEntries(sourceFolder))
             if (File.Exists(f))
+            {
+                if (IsExcluded(f))
+                    continue;
                 AddFile(doc, directoryRef, f, version, itemIds, fileIdGenerator, pathTransformer);
+            }
             else if (Directory.Exists(f))
-                AddDirectory(doc, directoryRef, f, version, itemIds, fileIdGenerator, pathTransformer);
+                AddDirectory(doc, directoryRef, f, version, itemIds, fileIdGenerator, pathTransformer, IsExcluded);
 
         var fragment2 = doc.CreateElement("Fragment");
         root.AppendChild(fragment2);
@@ -140,7 +151,7 @@ public static class WixHeatBuilder
     /// <param name="version">The version of the directory.</param>
     /// <param name="itemIds">A dictionary to store the mapping between directory paths and their generated IDs.</param>
     /// <param name="fileIdGenerator">A function to generate file IDs.</param>
-    private static void AddDirectory(XmlDocument doc, XmlElement directoryRef, string dir, string version, Dictionary<string, string> itemIds, Func<string, string> fileIdGenerator, Func<string, string> pathTransformer)
+    private static void AddDirectory(XmlDocument doc, XmlElement directoryRef, string dir, string version, Dictionary<string, string> itemIds, Func<string, string> fileIdGenerator, Func<string, string> pathTransformer, Func<string, bool>? isExcluded = null)
     {
         var id = fileIdGenerator.Invoke(dir);
 
@@ -151,9 +162,13 @@ public static class WixHeatBuilder
         directoryRef.AppendChild(directory);
 
         foreach (var file in Directory.GetFiles(dir))
+        {
+            if (isExcluded != null && isExcluded(file))
+                continue;
             AddFile(doc, directory, file, version, itemIds, fileIdGenerator, pathTransformer);
+        }
 
         foreach (var subDir in Directory.GetDirectories(dir))
-            AddDirectory(doc, directory, subDir, version, itemIds, fileIdGenerator, pathTransformer);
+            AddDirectory(doc, directory, subDir, version, itemIds, fileIdGenerator, pathTransformer, isExcluded);
     }
 }

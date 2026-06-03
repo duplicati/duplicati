@@ -2,6 +2,24 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
 	<Fragment>
 
+    <!--
+      Each shortcut is a single component whose Arguments attribute uses the
+      MSI Formatted-string substitution {[NOHOSTEDSERVERARG]}. The
+      SetNoHostedServerArg custom action (see Duplicati.wxs) populates that
+      property in the InstallExecuteSequence right before CreateShortcuts,
+      based on the action state of DuplicatiServiceFeature:
+        * Feature being installed locally : value "no-hosted-server" (with
+          the leading dashes set in Duplicati.wxs)
+        * Feature absent : empty
+      If NOHOSTEDSERVERARG is empty the curly braces collapse and the
+      shortcut is created with no arguments.
+
+      This single-component approach avoids relying on Component-table
+      Conditions referencing &amp;Feature, which are evaluated during CostFinalize
+      before feature action states are stable, and avoids relying on a UI
+      property that wixl 0.106 does not preserve across UAC elevation.
+    -->
+
     <DirectoryRef Id="ProgramMenuFolder">
       <Component Id="DuplicatiProgramMenuShortcutComponent" Guid="1D03AB64-E310-4974-835E-E9E8CFB18BBC">
         <Shortcut Id="DuplicatiProgramMenuShortcut"
@@ -12,6 +30,7 @@
                   Icon="DuplicatiIcon.exe"
                   IconIndex="0"
                   Target="[INSTALLLOCATION]Duplicati.GUI.TrayIcon.exe"
+                  Arguments="{[NOHOSTEDSERVERARG]}"
                   />
         <RegistryKey Root="HKCU" Key="Software\DuplicatiTeam\Duplicati\ProgramMenuShortcut">
           <RegistryValue
@@ -32,6 +51,7 @@
                   Icon="DuplicatiIcon.exe"
                   IconIndex="0"
                   Target="[INSTALLLOCATION]Duplicati.GUI.TrayIcon.exe"
+                  Arguments="{[NOHOSTEDSERVERARG]}"
                 />
         <RegistryKey Root="HKCU" Key="Software\DuplicatiTeam\Duplicati\DesktopFolderShortcut">
           <RegistryValue
@@ -53,6 +73,7 @@
                     Icon="DuplicatiIcon.exe"
                     IconIndex="0"
                     Target="[INSTALLLOCATION]Duplicati.GUI.TrayIcon.exe"
+                    Arguments="{[NOHOSTEDSERVERARG]}"
                 />
           
           <RegistryKey Root="HKCU" Key="Software\DuplicatiTeam\Duplicati\StartupShortcut">

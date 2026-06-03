@@ -26,10 +26,124 @@
     <Package InstallerVersion="405" Compressed="yes" Id="$(var.PackageCode)" InstallScope="perMachine" />
     <Media Id="1" Cabinet="media1.cab" EmbedCab="yes" />
 
-    <UIRef Id="WixUI_FeatureTree"/>
+    <!-- Pull in the custom UI flow defined below in the InstallUI fragment. -->
+    <UIRef Id="DuplicatiInstallUI" />
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLLOCATION" />
 
+    <!-- Properties bound to the InstallOptionsDlg checkboxes. -->
+    <Property Id="ADD_DESKTOP_SHORTCUT" Value="1" Secure="yes" />
+    <Property Id="ADD_PROGRAMMENU_SHORTCUT" Value="1" Secure="yes" />
+    <Property Id="ADD_STARTUP_SHORTCUT" Value="1" Secure="yes" />
+
+    <!-- Legacy command-line-only switch. When passed as FORSERVICE=true on the
+         msiexec command line it suppresses the shortcut features (Desktop /
+         Program Menu / Startup) for unattended/silent service deployments.
+         Not exposed in the UI. -->
     <Property Id="FORSERVICE" Value="false" Secure="yes" />
+
+    <!-- Command-line-only switch. When passed as NOSCRIPT=true on the msiexec
+         command line it suppresses actions that require a script engine.
+         Note that activating this prevents the service install from running.
+         Not exposed in the UI. -->
     <Property Id="NOSCRIPT" Value="false" Secure="yes" />
+
+    <!-- Tracks if the TLS certificates feature was selected in the UI or
+         passed via command line. Secure="yes" allows it to pass through to
+         elevated execution sequence. -->
+    <Property Id="INSTALL_TLS_CERTS" Secure="yes" />
+
+    <!-- LAUNCH_AS_SERVICE is the UI-side property bound to the
+         "Install as Service" checkbox on InstallOptionsDlg. Seeding it
+         from the ServiceInstalled marker in InstallState makes the
+         checkbox default to checked during a major upgrade when the
+         previous version installed the service, preventing the UI
+         from silently signalling "remove" on Next-click. -->
+    <Property Id="LAUNCH_AS_SERVICE" Secure="yes">
+      <RegistrySearch Id="SearchPreviousInstallServiceForUI"
+                      Root="HKLM"
+                      Key="$(var.SoftwareKey)\DuplicatiTeam\Duplicati\InstallState"
+                      Name="ServiceInstalled"
+                      Type="raw" />
+    </Property>
+
+    <!-- Previous-install detection properties consumed by the uninstall
+         custom-action conditions. These mirror the *ForUI searches
+         above but are kept as separate properties so the conditional
+         logic remains decoupled from the UI checkbox state (which the
+         user may toggle). -->
+    <Property Id="PREVIOUS_SERVICE_INSTALLED" Secure="yes">
+      <RegistrySearch Id="SearchPreviousInstallService"
+                      Root="HKLM"
+                      Key="$(var.SoftwareKey)\DuplicatiTeam\Duplicati\InstallState"
+                      Name="ServiceInstalled"
+                      Type="raw" />
+    </Property>
+    <Property Id="PREVIOUS_USER_CERTS_INSTALLED" Secure="yes">
+      <RegistrySearch Id="SearchPreviousInstallUserCerts"
+                      Root="HKLM"
+                      Key="$(var.SoftwareKey)\DuplicatiTeam\Duplicati\InstallState"
+                      Name="TlsCertsUserInstalled"
+                      Type="raw" />
+    </Property>
+    <Property Id="PREVIOUS_SERVICE_CERTS_INSTALLED" Secure="yes">
+      <RegistrySearch Id="SearchPreviousInstallServiceCerts"
+                      Root="HKLM"
+                      Key="$(var.SoftwareKey)\DuplicatiTeam\Duplicati\InstallState"
+                      Name="TlsCertsServiceInstalled"
+                      Type="raw" />
+    </Property>
+
+    <!-- The upgrade sentinel lives in HKCU because WriteUpgradeSentinel runs non-elevated.
+         This value is only used if we are upgrading a service and deselecting certificates -->
+    <Property Id="UPGRADE_DROP_SERVICE_CERTS" Secure="yes">
+      <RegistrySearch Id="SearchUpgradeDropCerts"
+                      Root="HKCU"
+                      Key="SOFTWARE\DuplicatiTeam\Duplicati\InstallState"
+                      Name="UpgradeDropServiceCerts"
+                      Type="raw" />
+    </Property>
+
+    <!-- Opt-in commandline switch for installing a preload.json -->
+    <Property Id="INSTALL_PRELOAD" Secure="yes" />
+
+    <!-- Property from SetPreloadSource pointing to [SourceDir] -->
+    <Property Id="PRELOAD_SOURCE" Secure="yes" />
+
+    <!-- Set to "true" by InstallOptionsDlg when the user opts into installing
+         Duplicati as a Windows Service. Currently used only as a UI hint;
+         the actual server-side behaviour is driven by the action state of
+         DuplicatiServiceFeature (which IS preserved across UAC elevation),
+         while the shortcut argument is driven by NOHOSTEDSERVERARG below. -->
+    <Property Id="INSTALLASSERVICE" Value="false" Secure="yes" />
+
+    <!-- Keeps track of whether the service was selected as a feature
+         so it can be accessed across the UAC elevation boundary,
+         and works in silent installs with no UI. -->
+    <Property Id="DUPLICATI_SERVICE_SELECTED" Secure="yes" />
+
+    <!-- Random alphanumeric password generated for the service install.
+         Generated in the InstallUISequence (client side).
+         No default Value: the property must remain undefined for non-service
+         installs so the ExitDialog password field does not appear. -->
+    <Property Id="DUPLICATI_SERVICE_PASSWORD" Secure="yes" />
+
+    <!-- Redact the password-bearing properties from the verbose MSI log.
+         Without this, the "PROPERTY CHANGE: Adding ..." entries would
+         expose the password in plaintext when:
+           * DUPLICATI_SERVICE_PASSWORD is set by GenerateDuplicatiServicePassword
+             and transferred across the UAC elevation boundary, and
+           * SetInitPassword (a deferred CA's property of the same name)
+             carries the password to the elevated session as part of its
+             CustomActionData payload. -->
+    <Property Id="MsiHiddenProperties" Value="DUPLICATI_SERVICE_PASSWORD;SetInitPassword" />
+
+    <!-- NOHOSTEDSERVERARG is set at runtime by SetNoHostedServerArg /
+         ClearNoHostedServerArg (just before CreateShortcuts). It is consumed
+         by the Shortcut.Arguments column via {[NOHOSTEDSERVERARG]} formatting:
+         when the property is unset/empty the curly braces collapse and the
+         shortcut is created with no arguments. No <Property> default is
+         declared because wixl 0.106 rejects Value="" and a non-empty default
+         would survive the ClearNoHostedServerArg action. -->
 
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Directory Id="ProgramMenuFolder" Name="Programs"/>
@@ -39,34 +153,145 @@
         <Directory Id="INSTALLLOCATION" Name="Duplicati 2" >
           <Component Id="SecureInstallDirComp" Guid="7C52A563-7182-411E-8B57-79F881775E9B">
               <CreateFolder>
-              <!-- WiX supports permssions, wixl uses a .idt table -->
+              <!-- WiX supports permssions, wixl uses sql -->
 <?if $(var.BuildEnv) = "Windows" ?>
                 <util:PermissionEx Sddl="D:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)(A;OICI;GRFX;;;BU)" xmlns:util="http://schemas.microsoft.com/wix/UtilExtension"/>
 <?endif?>
               </CreateFolder>
           </Component>
+
+          <!-- Always-installed component that owns the Service registry
+               key. KeyExists is a stable always-present value used as
+               the component's KeyPath so MSI feature-state machinery
+               has a deterministic anchor.
+
+               The ACL is applied via WindowsService, because the 
+               msi approach has quirks when only locking down parts
+               of the key. -->
+          <Component Id="DuplicatiServiceKeyComponent" Guid="3C2B1A0F-9E8D-7C6B-5A49-382716054321">
+            <RegistryKey Root="HKLM" Key="$(var.SoftwareKey)\DuplicatiTeam\Duplicati\Service">
+              <RegistryValue Id="ServiceKeyHolder" Name="KeyExists" Value="1" Type="string" KeyPath="yes" />
+            </RegistryKey>
+          </Component>
+
+          <!-- Feature-gated values component for DuplicatiServiceFeature. -->
+          <Component Id="DuplicatiServiceFeatureValuesComponent" Guid="6F1E3B8A-2C4D-4F7B-9C5A-3E2D1B0F4A8C">
+            <!-- Contributes the feature-gated values:
+                   * InstallState\ServiceInstalled - readable persisted
+                                                    "feature was installed
+                                                    by this MSI" marker
+                                                    (the KeyPath for this
+                                                    component, so MSI
+                                                    feature-state gates
+                                                    &amp;Feature /
+                                                    !Feature key off it). -->
+            <!-- The InstallState key holds:
+                   * ServiceInstalled  - readable "feature was installed
+                                         by this MSI" marker (KeyPath for
+                                         this component)
+                   * BootstrapApplied  - sentinel that WindowsService
+                                         writes after applying the
+                                         password (managed at runtime;
+                                         the removal below clears any
+                                         stale value at the start of
+                                         each install). -->
+            <RegistryKey Root="HKLM" Key="$(var.SoftwareKey)\DuplicatiTeam\Duplicati\InstallState">
+              <RegistryValue Id="ServiceInstalledMarker"      Name="ServiceInstalled" Value="1" Type="string" KeyPath="yes" />
+              <!-- Make sure we remove the BootstrapApplied value if it exists -->
+              <RegistryValue Id="RemoveStaleBootstrapApplied" Name="BootstrapApplied" Value="unset" Type="string" />
+            </RegistryKey>
+          </Component>
+
+          <!-- TLS certs marker component for user. This is used to track if the TLS certs were installed between installer invocations -->
+          <Component Id="TlsCertsUserMarkerInstallStateComponent" Guid="B8C9D0E1-F2A3-4B5C-6D7E-8F9A0B1C2D3E">
+            <Condition>NOT DUPLICATI_SERVICE_SELECTED</Condition>
+            <RegistryKey Root="HKLM" Key="$(var.SoftwareKey)\DuplicatiTeam\Duplicati\InstallState">
+              <RegistryValue Id="TlsCertsUserInstalledMarker" Name="TlsCertsUserInstalled" Value="1" Type="string" KeyPath="yes" />
+            </RegistryKey>
+          </Component>
+
+          <!-- TLS certs marker component for service. This tracks service cert install state. -->
+          <Component Id="TlsCertsServiceMarkerInstallStateComponent" Guid="D2A9E3C5-1F8B-4C2E-8A3D-B9E4C5D6F7B1">
+            <Condition>DUPLICATI_SERVICE_SELECTED</Condition>
+            <RegistryKey Root="HKLM" Key="$(var.SoftwareKey)\DuplicatiTeam\Duplicati\InstallState">
+              <RegistryValue Id="TlsCertsServiceInstalledMarker" Name="TlsCertsServiceInstalled" Value="1" Type="string" KeyPath="yes" />
+            </RegistryKey>
+          </Component>
+          
+          <!-- TLS certs marker for service -->
+          <Component Id="TlsCertsServiceMarkerServiceComponent" Guid="A3E9D0E1-F2A3-4B5C-6D7E-8F9A0B1C2D3A">
+            <Condition>DUPLICATI_SERVICE_SELECTED</Condition>
+            <RegistryKey Root="HKLM" Key="$(var.SoftwareKey)\DuplicatiTeam\Duplicati\Service">
+              <RegistryValue Id="TlsCertsOptionValue" Name="TlsCertsOption" Value="install" Type="string" KeyPath="yes" />
+            </RegistryKey>
+          </Component>
+
+          <!-- Manage the Duplicati service. -->
+          <Component Id="DuplicatiWindowsServiceComponent" Guid="4A2B7C8D-9E1F-4032-A1B2-C3D4E5F60718">
+            <File Id="Duplicati.WindowsService.exe"
+                  Name="Duplicati.WindowsService.exe"
+                  KeyPath="yes"
+                  Source="$(var.HarvestPath)Duplicati.WindowsService.exe" />
+
+            <ServiceInstall Id="DuplicatiServiceInstall"
+                            Name="Duplicati"
+                            DisplayName="Duplicati service"
+                            Description="Duplicati running as a Windows Service"
+                            Type="ownProcess"
+                            Start="auto"
+                            ErrorControl="normal"
+                            Arguments="SERVER"
+                            Vital="yes" />
+
+            <ServiceControl Id="DuplicatiServiceControl"
+                            Name="Duplicati"
+                            Start="install"
+                            Stop="both"
+                            Remove="uninstall"
+                            Wait="yes" />
+          </Component>
         </Directory>
       </Directory>
     </Directory>
 
-    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLLOCATION" />
-
-    <Feature Id="DuplicatiCore" Title="Duplicati core files" Level="1" Description="Installs the required files for Duplicati." AllowAdvertise="no" Absent="disallow" ConfigurableDirectory="INSTALLLOCATION" >
+    <Feature Id="DuplicatiCore" Level="1" Absent="disallow" ConfigurableDirectory="INSTALLLOCATION" >
       <ComponentRef Id="SecureInstallDirComp" />
-      
-      <Feature Id="DuplicatiDesktopShortCutFeature" Title="Desktop Shortcut" Level="1" Description ="Installs a shortcut to Duplicati on the desktop" Absent="allow" AllowAdvertise="no">
-        <ComponentRef Id="DuplicatiDesktopShortcutComponent"/>
-        <Condition Level="0">FORSERVICE = "true"</Condition>
-      </Feature>
-
-      <Feature Id="DuplicatiProgramMenuShortCutFeature" Title="Program Menu Shortcut" Level="1" Description ="Installs a shortcut to Duplicati in the Program menu" Absent="allow" AllowAdvertise="no">
-        <ComponentRef Id="DuplicatiProgramMenuShortcutComponent"/>
-        <Condition Level="0">FORSERVICE = "true"</Condition>
-      </Feature>
+      <!-- Always-installed: owns the Service registry key. -->
+      <ComponentRef Id="DuplicatiServiceKeyComponent" />
       <ComponentGroupRef Id="DUPLICATIBIN" />
     </Feature>
+      
+    <Feature Id="DuplicatiDesktopShortCutFeature" Level="1" Absent="allow" AllowAdvertise="no">
+      <ComponentRef Id="DuplicatiDesktopShortcutComponent"/>
+      <Condition Level="0">FORSERVICE = "true"</Condition>
+    </Feature>
+
+    <Feature Id="DuplicatiProgramMenuShortCutFeature" Level="1" Absent="allow" AllowAdvertise="no">
+      <ComponentRef Id="DuplicatiProgramMenuShortcutComponent"/>
+      <Condition Level="0">FORSERVICE = "true"</Condition>
+    </Feature>
+
+    <!-- Install Duplicati as a Windows Service. When selected, the
+         TrayIcon shortcut is configured with the no-hosted-server flag so it
+         connects to the service.
+
+         Level=2 keeps the feature out of the default install set (the
+         default INSTALLLEVEL is 1). The InstallOptionsDlg.Next button
+         publishes AddLocal DuplicatiServiceFeature when the user checks the
+         service box, which adds it to ADDLOCAL and overrides the Level
+         exclusion. Without that AddLocal, the feature stays absent. -->
+    <Feature Id="DuplicatiServiceFeature" Level="2" Absent="allow" AllowAdvertise="no">
+      <ComponentRef Id="DuplicatiServiceFeatureValuesComponent"/>
+      <ComponentRef Id="DuplicatiWindowsServiceComponent"/>
+    </Feature>
     
-    <Feature Id="DuplicatiStartupShortCutFeature" Title="Launch Duplicati at startup" Level="1" Description ="Automatically launches Duplicati when you log on to the computer" Absent="allow" AllowAdvertise="no">
+    <Feature Id="DuplicatiTlsCertsFeature" Level="2" Absent="allow" AllowAdvertise="no">
+      <ComponentRef Id="TlsCertsUserMarkerInstallStateComponent"/>
+      <ComponentRef Id="TlsCertsServiceMarkerInstallStateComponent"/>
+      <ComponentRef Id="TlsCertsServiceMarkerServiceComponent"/>
+    </Feature>
+
+    <Feature Id="DuplicatiStartupShortCutFeature" Level="1" Absent="allow" AllowAdvertise="no">
       <ComponentRef Id="StartupMenuItem"/>
       <Condition Level="0">FORSERVICE = "true"</Condition>
     </Feature>
@@ -74,22 +299,130 @@
     <!-- Launch duplicati setup -->
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch Duplicati now" />
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
-    <CustomAction Id="LaunchApplication" FileKey="Duplicati.GUI.TrayIcon.exe" Impersonate="yes" ExeCommand="" Return="asyncNoWait" />
+    <!-- Two LaunchApplication variants:
+           * LaunchApplication           - the standard non-service launch.
+                                           No arguments; the TrayIcon hosts
+                                           its own server.
+           * LaunchApplicationNoHosted   - service-mode launch with
+                                           no-hosted-server so the
+                                           TrayIcon connects to the
+                                           Duplicati Windows Service.
+         The ExitDialog Finish button picks between
+         them via Publish conditions keyed on the service feature's
+         action state (&amp;DuplicatiServiceFeature=3) -->
+    <CustomAction Id="LaunchApplication"          FileKey="Duplicati.GUI.TrayIcon.exe" Impersonate="yes" ExeCommand=""                    Return="asyncNoWait" />
+    <CustomAction Id="LaunchApplicationNoHosted"  FileKey="Duplicati.GUI.TrayIcon.exe" Impersonate="yes" ExeCommand="--no-hosted-server"  Return="asyncNoWait" />
     
     <!-- Set the Add/Remove icon -->
     <Property Id="ARPPRODUCTICON" Value="DuplicatiIcon.exe" />
 
-    <!-- Remove old versions -->
     <InstallExecuteSequence>
+      <Custom Action="Set_INSTALL_TLS_CERTS" After="AppSearch">
+        NOT INSTALL_TLS_CERTS AND (PREVIOUS_USER_CERTS_INSTALLED="1" OR PREVIOUS_SERVICE_CERTS_INSTALLED="1")
+      </Custom>
+
       <!-- Note: This is suboptimal, but the ref counting is not working, so we use Early REP -->
       <RemoveExistingProducts After="FindRelatedProducts" />
 
-      <!-- Check service status early (immediate action, can run anytime) -->
-      <Custom Action="CheckService" After="FindRelatedProducts">NOSCRIPT &lt;&gt; "true" AND NOT UPGRADINGPRODUCTCODE</Custom>
-      <!-- Stop and start service must be deferred actions between InstallInitialize and InstallFinalize -->
-      <Custom Action="StopService" After="InstallInitialize">SERVICE_WAS_STOPPED=1 AND NOT UPGRADINGPRODUCTCODE</Custom>
-      <Custom Action="StartService" After="InstallFiles">SERVICE_WAS_STOPPED=1 AND NOT REMOVE~="ALL" AND NOT UPGRADINGPRODUCTCODE</Custom>
+      <!-- Set NOHOSTEDSERVERARG so the shortcut Arguments column expands to
+           the no-hosted-server flag when the service feature ends up
+           installed locally, and to empty otherwise. The Shortcut.Arguments
+           column is a Formatted string and uses {[NOHOSTEDSERVERARG]} so an
+           empty value produces no arguments at all.
+           Must run before CreateShortcuts (4500). -->
+      <Custom Action="SetNoHostedServerArg"   Before="CreateShortcuts">&amp;DuplicatiServiceFeature=3</Custom>
+      <Custom Action="ClearNoHostedServerArg" Before="CreateShortcuts">NOT (&amp;DuplicatiServiceFeature=3)</Custom>
+
+      <!-- Resolves [SourceDir] into PRELOAD_SOURCE -->
+      <Custom Action="SetPreloadSource" After="CostFinalize">INSTALL_PRELOAD="true" AND NOT Installed</Custom>
+
+      <!--
+        Service install pipeline (only when the service feature is being
+        installed AND no prior install had already registered the service,
+        gated by the same condition):
+          1. Generate random password into DUPLICATI_SERVICE_PASSWORD
+          2. LockServiceRegKey so we are sure the key is protected
+             even if it is not used in this install sequence.
+          3. SetInitPassword also recreates the key and writes InitPassword
+          4. Standard InstallServices (5800) + StartServices (5900) register
+             and start the service via the ServiceInstall/ServiceControl
+          5. After ExecuteAction returns to the UI sequence,
+             CheckBootstrapResult polls for the applied password.
+          6. If password was applied, store password in user's keyring.
+      -->
+      <Custom Action="GenerateDuplicatiServicePassword" Sequence="1505">(&amp;DuplicatiServiceFeature=3) AND (!DuplicatiServiceFeature&lt;&gt;3) AND PREVIOUS_SERVICE_INSTALLED&lt;&gt;"1" AND NOT UPGRADINGPRODUCTCODE AND NOSCRIPT &lt;&gt; "true" AND UILevel &gt;= 5</Custom>
+
+      <!-- Ensure the service key is always locked down. -->
+      <Custom Action="SetLockServiceRegKey" Sequence="4798">(&amp;DuplicatiServiceFeature=3) AND NOT UPGRADINGPRODUCTCODE AND NOSCRIPT &lt;&gt; "true" AND NOT REMOVE~="ALL"</Custom>
+      <Custom Action="LockServiceRegKey"    Sequence="4800">(&amp;DuplicatiServiceFeature=3) AND NOT UPGRADINGPRODUCTCODE AND NOSCRIPT &lt;&gt; "true" AND NOT REMOVE~="ALL"</Custom>
+
+      <!-- Atomic set InitPassword on new service install. -->
+      <Custom Action="SetSetInitPassword" Sequence="4899">(&amp;DuplicatiServiceFeature=3) AND (!DuplicatiServiceFeature&lt;&gt;3) AND PREVIOUS_SERVICE_INSTALLED&lt;&gt;"1" AND DUPLICATI_SERVICE_PASSWORD AND NOT UPGRADINGPRODUCTCODE AND NOSCRIPT &lt;&gt; "true" AND NOT REMOVE~="ALL"</Custom>
+      <Custom Action="SetInitPassword"    Sequence="4900">(&amp;DuplicatiServiceFeature=3) AND (!DuplicatiServiceFeature&lt;&gt;3) AND PREVIOUS_SERVICE_INSTALLED&lt;&gt;"1" AND DUPLICATI_SERVICE_PASSWORD AND NOT UPGRADINGPRODUCTCODE AND NOSCRIPT &lt;&gt; "true" AND NOT REMOVE~="ALL"</Custom>
+
+      <Custom Action="SetInstallTlsCertsUser" Sequence="5501">(NOT &amp;DuplicatiTlsCertsFeature=2) AND ((&amp;DuplicatiTlsCertsFeature=3 AND &amp;DuplicatiServiceFeature&lt;&gt;3) OR (!DuplicatiTlsCertsFeature=3 AND &amp;DuplicatiServiceFeature=2)) AND NOT UPGRADINGPRODUCTCODE AND NOSCRIPT &lt;&gt; "true"</Custom>
+      <Custom Action="InstallTlsCertsUser" Sequence="5502">(NOT &amp;DuplicatiTlsCertsFeature=2) AND ((&amp;DuplicatiTlsCertsFeature=3 AND &amp;DuplicatiServiceFeature&lt;&gt;3) OR (!DuplicatiTlsCertsFeature=3 AND &amp;DuplicatiServiceFeature=2)) AND NOT UPGRADINGPRODUCTCODE AND NOSCRIPT &lt;&gt; "true"</Custom>
+
+      <!-- Track if the service is supposed to be installed -->
+      <Custom Action="EvaluateServiceSelection" Before="CostInitialize">NOSCRIPT &lt;&gt; "true"</Custom>
+
+      <!-- Install TLS certs for the service when certs are added to an
+           ALREADY-INSTALLED service. For new service installs, the certs
+           are installed via the registry key. -->
+      <Custom Action="SetInstallTlsCertsService" Sequence="5950">&amp;DuplicatiServiceFeature=3 AND !DuplicatiServiceFeature=3 AND (&amp;DuplicatiTlsCertsFeature=3 OR (!DuplicatiTlsCertsFeature=3 AND NOT &amp;DuplicatiTlsCertsFeature=2)) AND NOT REMOVE~="ALL" AND NOT UPGRADINGPRODUCTCODE AND NOSCRIPT &lt;&gt; "true"</Custom>
+      <Custom Action="InstallTlsCertsService"    Sequence="5951">&amp;DuplicatiServiceFeature=3 AND !DuplicatiServiceFeature=3 AND (&amp;DuplicatiTlsCertsFeature=3 OR (!DuplicatiTlsCertsFeature=3 AND NOT &amp;DuplicatiTlsCertsFeature=2)) AND NOT REMOVE~="ALL" AND NOT UPGRADINGPRODUCTCODE AND NOSCRIPT &lt;&gt; "true"</Custom>
+
+      <!-- Reconcile the TLS-cert state markers to the END state of this run. -->
+      <Custom Action="SetReconcileTlsCertMarkersUser"    Sequence="5601">(NOT &amp;DuplicatiTlsCertsFeature=2) AND ((&amp;DuplicatiTlsCertsFeature=3 AND &amp;DuplicatiServiceFeature&lt;&gt;3) OR (!DuplicatiTlsCertsFeature=3 AND &amp;DuplicatiServiceFeature=2)) AND NOT REMOVE~="ALL" AND NOT UPGRADINGPRODUCTCODE AND NOSCRIPT &lt;&gt; "true"</Custom>
+      <Custom Action="SetReconcileTlsCertMarkersService" Sequence="5602">(&amp;DuplicatiTlsCertsFeature=3 OR !DuplicatiTlsCertsFeature=3) AND (NOT &amp;DuplicatiTlsCertsFeature=2) AND &amp;DuplicatiServiceFeature=3 AND NOT REMOVE~="ALL" AND NOT UPGRADINGPRODUCTCODE AND NOSCRIPT &lt;&gt; "true"</Custom>
+      <Custom Action="SetReconcileTlsCertMarkersNone"    Sequence="5603">(&amp;DuplicatiTlsCertsFeature=2 AND NOT REMOVE~="ALL") AND NOT UPGRADINGPRODUCTCODE AND NOSCRIPT &lt;&gt; "true"</Custom>
+      <Custom Action="ReconcileTlsCertMarkers"           Sequence="5610">ReconcileTlsCertMarkers AND NOT REMOVE~="ALL" AND NOT UPGRADINGPRODUCTCODE AND NOSCRIPT &lt;&gt; "true"</Custom>
+
+      <!-- Delete all internal markers on uninstall. -->
+      <Custom Action="DeleteTlsCertMarkers" Sequence="1799">(REMOVE="ALL" OR &amp;DuplicatiTlsCertsFeature=2) AND NOT UPGRADINGPRODUCTCODE AND NOT PREVIOUSVERSIONSINSTALLED AND NOSCRIPT &lt;&gt; "true"</Custom>
+
+      <!--
+        TLS cert uninstall has 3 variants:
+          * UninstallRemoveTlsCertsUser    - runs when service was NOT present, regular uninstall
+          * UpgradeRemoveTlsCertsUser    - runs when service was NOT present, major upgrade
+          * UninstallRemoveTlsCertsService - runs when service WAS present, uninstall path
+        
+        For regular uninstall, we need to schedule the uninstall BEFORE the binaries are removed.
+        For upgrade, we wait until the new binaries are installed, and then issue the removal command.
+        For the service, we need to schedule the removal before the service is removed.
+      -->
+      
+      <Custom Action="SetUninstallRemoveTlsCertsUser" Sequence="3401">(((&amp;DuplicatiTlsCertsFeature=2 OR REMOVE="ALL") AND (!DuplicatiTlsCertsFeature=3 OR PREVIOUS_USER_CERTS_INSTALLED="1")) OR (!DuplicatiTlsCertsFeature=3 AND &amp;DuplicatiServiceFeature=3 AND !DuplicatiServiceFeature&lt;&gt;3)) AND NOT PREVIOUSVERSIONSINSTALLED AND NOT UPGRADINGPRODUCTCODE AND NOSCRIPT &lt;&gt; "true"</Custom>
+      <Custom Action="UninstallRemoveTlsCertsUser" Sequence="3402">(((&amp;DuplicatiTlsCertsFeature=2 OR REMOVE="ALL") AND (!DuplicatiTlsCertsFeature=3 OR PREVIOUS_USER_CERTS_INSTALLED="1")) OR (!DuplicatiTlsCertsFeature=3 AND &amp;DuplicatiServiceFeature=3 AND !DuplicatiServiceFeature&lt;&gt;3)) AND NOT PREVIOUSVERSIONSINSTALLED AND NOT UPGRADINGPRODUCTCODE AND NOSCRIPT &lt;&gt; "true"</Custom>
+      <Custom Action="SetUpgradeRemoveTlsCertsUser" Sequence="5401">PREVIOUSVERSIONSINSTALLED AND PREVIOUS_USER_CERTS_INSTALLED="1" AND (NOT &amp;DuplicatiTlsCertsFeature=3 OR &amp;DuplicatiServiceFeature=3) AND NOSCRIPT &lt;&gt; "true"</Custom>
+      <Custom Action="UpgradeRemoveTlsCertsUser" Sequence="5402">PREVIOUSVERSIONSINSTALLED AND PREVIOUS_USER_CERTS_INSTALLED="1" AND (NOT &amp;DuplicatiTlsCertsFeature=3 OR &amp;DuplicatiServiceFeature=3) AND NOSCRIPT &lt;&gt; "true"</Custom>
+
+      <Custom Action="SetUninstallRemoveTlsCertsService" Sequence="1801">((REMOVE="ALL" OR &amp;DuplicatiTlsCertsFeature=2 OR &amp;DuplicatiServiceFeature=2) AND NOT UPGRADINGPRODUCTCODE) OR (REMOVE="ALL" AND UPGRADINGPRODUCTCODE AND UPGRADE_DROP_SERVICE_CERTS="1") AND NOSCRIPT &lt;&gt; "true"</Custom>
+      <Custom Action="UninstallRemoveTlsCertsService" Sequence="1802">((REMOVE="ALL" OR &amp;DuplicatiTlsCertsFeature=2 OR &amp;DuplicatiServiceFeature=2) AND NOT UPGRADINGPRODUCTCODE) OR (REMOVE="ALL" AND UPGRADINGPRODUCTCODE AND UPGRADE_DROP_SERVICE_CERTS="1") AND NOSCRIPT &lt;&gt; "true"</Custom>
+
+      <!-- Upgrade sentinel management; set sentinel for upgrade to drop service certs before removing service -->
+      <Custom Action="WriteUpgradeSentinel" Before="RemoveExistingProducts">PREVIOUSVERSIONSINSTALLED AND PREVIOUS_SERVICE_CERTS_INSTALLED="1" AND NOT (INSTALL_TLS_CERTS="1" AND (INSTALLASSERVICE="true" OR LAUNCH_AS_SERVICE="1")) AND NOSCRIPT &lt;&gt; "true"</Custom>
+      <Custom Action="ClearUpgradeSentinel" After="RemoveExistingProducts">PREVIOUSVERSIONSINSTALLED AND NOSCRIPT &lt;&gt; "true"</Custom>
+      
     </InstallExecuteSequence>
+
+    <!-- Post-ExecuteAction client-side actions:
+         CheckBootstrapResult polls for the BootstrapApplied registry sentinel
+         that ServiceControl writes once Duplicati.Server.exe has consumed
+         InitPassword and committed the password to the database. On timeout
+         it clears DUPLICATI_SERVICE_PASSWORD, hiding the ExitDialog password
+         panel.
+         StoreTrayIconValues then runs - immediate, in the UI process which
+         already runs as the installing user, no impersonation dance needed.
+         Its condition checks DUPLICATI_SERVICE_PASSWORD so it only fires
+         when CheckBootstrapResult confirmed success. -->
+    <InstallUISequence>
+      <Custom Action="GenerateDuplicatiServicePassword" Sequence="1100">NOT Installed AND &amp;DuplicatiServiceFeature=3 AND PREVIOUS_SERVICE_INSTALLED&lt;&gt;"1" AND NOSCRIPT &lt;&gt; "true"</Custom>
+      <Custom Action="CheckBootstrapResult"             Sequence="1305">DUPLICATI_SERVICE_PASSWORD AND PREVIOUS_SERVICE_INSTALLED&lt;&gt;"1" AND NOSCRIPT &lt;&gt; "true"</Custom>
+      <Custom Action="StoreTrayIconValues"              Sequence="1306">DUPLICATI_SERVICE_PASSWORD AND PREVIOUS_SERVICE_INSTALLED&lt;&gt;"1" AND NOSCRIPT &lt;&gt; "true"</Custom>
+
+      <Custom Action="Set_INSTALL_TLS_CERTS" After="AppSearch">NOT INSTALL_TLS_CERTS AND (PREVIOUS_USER_CERTS_INSTALLED="1" OR PREVIOUS_SERVICE_CERTS_INSTALLED="1")</Custom>
+    </InstallUISequence>
 
     <Property Id="PREVIOUSVERSIONSINSTALLED" Secure="yes" />
     <Upgrade Id="$(var.UpgradeCode)">
@@ -97,30 +430,226 @@
     </Upgrade>
 
     <Icon Id="DuplicatiIcon.exe" SourceFile="$(var.HarvestPath)Duplicati.GUI.TrayIcon.exe" />
-    
-    <!-- Service restart code below -->
-    <Binary Id="CheckServiceScript" SourceFile="CheckService.js" />
-    <Binary Id="StopServiceScript" SourceFile="StopService.js" />
-    <Binary Id="StartServiceScript" SourceFile="StartService.js" />
 
-    <CustomAction Id="CheckService"
-              BinaryKey="CheckServiceScript"
+    <!-- Random password generation + service configuration scripts. -->
+    <Binary Id="GeneratePasswordScript"          SourceFile="GeneratePassword.js" />
+    <Binary Id="StoreTrayIconValuesScript"       SourceFile="StoreTrayIconValues.js" />
+    <Binary Id="CheckBootstrapResultScript"      SourceFile="CheckBootstrapResult.js" />
+    <Binary Id="CopyPasswordToClipboardScript"   SourceFile="CopyPasswordToClipboard.js" />
+    <Binary Id="SilentRunScript"                 SourceFile="SilentRun.js" />
+    <Binary Id="SetInitPasswordScript"           SourceFile="SetInitPassword.js" />
+    <Binary Id="ManageCertSentinelScript"        SourceFile="ManageCertSentinel.js" />
+
+    <!-- Type-51 SetProperty custom actions used to populate NOHOSTEDSERVERARG
+         in the InstallExecuteSequence (just before CreateShortcuts) based on
+         the service feature's action state. The value flows into the Shortcut
+         table's Arguments column via {[NOHOSTEDSERVERARG]} formatted-string
+         substitution. -->
+    <CustomAction Id="SetNoHostedServerArg"
+              Property="NOHOSTEDSERVERARG"
+              Value="--no-hosted-server"
+              Execute="immediate"
+              Return="check" />
+
+    <CustomAction Id="ClearNoHostedServerArg"
+              Property="NOHOSTEDSERVERARG"
+              Value=""
+              Execute="immediate"
+              Return="check" />
+
+    <!-- Resolves [SourceDir] into the PRELOAD_SOURCE property -->
+    <CustomAction Id="SetPreloadSource"
+              Property="PRELOAD_SOURCE"
+              Value="[SourceDir]"
+              Execute="immediate"
+              Return="check" />
+
+    <CustomAction Id="Set_INSTALL_TLS_CERTS" 
+              Property="INSTALL_TLS_CERTS" 
+              Value="1" 
+              Execute="immediate"
+              Return="check" />
+
+    <!-- Locks down the Service registry key DACL via
+         Duplicati.WindowsService.exe lock-service-key. See the comment block
+         in InstallExecuteSequence above the action call for the
+         scheduling rationale. -->
+    <CustomAction Id="SetLockServiceRegKey"
+              Property="LockServiceRegKey"
+              Value="&quot;[#Duplicati.WindowsService.exe]&quot; lock-service-key"
+              Execute="immediate"
+              Return="check" />
+
+    <CustomAction Id="LockServiceRegKey"
+              BinaryKey="SilentRunScript"
+              JScriptCall="RunAppHidden"
+              Execute="deferred"
+              Impersonate="no"
+              Return="check" />
+
+    <!-- Type-51 SetProperty that hands the password and the path to
+         Duplicati.WindowsService.exe to the deferred SetInitPassword CA
+         below.
+
+         CRITICAL: the property name 'SetInitPassword' is listed in
+         MsiHiddenProperties above so the password value is redacted in
+         the verbose MSI log. -->
+    <CustomAction Id="SetSetInitPassword"
+              Property="SetInitPassword"
+              Value="[#Duplicati.WindowsService.exe]|[DUPLICATI_SERVICE_PASSWORD]"
+              Execute="immediate"
+              Return="check" />
+
+    <!-- Sets the initial password for the webservice. -->
+    <CustomAction Id="SetInitPassword"
+              BinaryKey="SetInitPasswordScript"
+              JScriptCall="RunSetInitPassword"
+              Execute="deferred"
+              Impersonate="no"
+              Return="check" />
+
+    <CustomAction Id="SetInstallTlsCertsUser" Property="InstallTlsCertsUser" Value="&quot;[#Duplicati.CommandLine.ConfigureTool.exe]&quot; https generate --auto-create-database" Execute="immediate" Return="check" />
+    <CustomAction Id="InstallTlsCertsUser" BinaryKey="SilentRunScript" JScriptCall="RunAppHidden" Execute="deferred" Impersonate="yes" Return="ignore" />
+
+    <!-- Install TLS certs for the service, if it is being reconfigured. -->
+    <CustomAction Id="SetInstallTlsCertsService" Property="InstallTlsCertsService" Value="&quot;[#Duplicati.WindowsService.exe]&quot; install-certs" Execute="immediate" Return="check" />
+    <CustomAction Id="InstallTlsCertsService" BinaryKey="SilentRunScript" JScriptCall="RunAppHidden" Execute="deferred" Impersonate="no" Return="ignore" />
+
+    <!-- Rmove TLS certs on uninstall/upgrade for the user -->
+    <CustomAction Id="SetUninstallRemoveTlsCertsUser" Property="UninstallRemoveTlsCertsUser" Value="&quot;[#Duplicati.CommandLine.ConfigureTool.exe]&quot; https remove" Execute="immediate" Return="check" />
+    <CustomAction Id="UninstallRemoveTlsCertsUser" BinaryKey="SilentRunScript" JScriptCall="RunAppHidden" Execute="deferred" Impersonate="yes" Return="ignore" />
+    <CustomAction Id="SetUpgradeRemoveTlsCertsUser" Property="UpgradeRemoveTlsCertsUser" Value="&quot;[#Duplicati.CommandLine.ConfigureTool.exe]&quot; https remove" Execute="immediate" Return="check" />
+    <CustomAction Id="UpgradeRemoveTlsCertsUser" BinaryKey="SilentRunScript" JScriptCall="RunAppHidden" Execute="deferred" Impersonate="yes" Return="ignore" />
+
+    <!-- Rmove TLS certs on uninstall/upgrade for the service -->
+    <CustomAction Id="SetUninstallRemoveTlsCertsService" Property="UninstallRemoveTlsCertsService" Value="&quot;[#Duplicati.WindowsService.exe]&quot; remove-certs" Execute="immediate" Return="check" />
+    <CustomAction Id="UninstallRemoveTlsCertsService" BinaryKey="SilentRunScript" JScriptCall="RunAppHidden" Execute="deferred" Impersonate="no" Return="ignore" />
+    <CustomAction Id="SetUpgradeRemoveTlsCertsService" Property="UpgradeRemoveTlsCertsService" Value="&quot;[#Duplicati.WindowsService.exe]&quot; remove-certs" Execute="immediate" Return="check" />
+    <CustomAction Id="UpgradeRemoveTlsCertsService" BinaryKey="SilentRunScript" JScriptCall="RunAppHidden" Execute="deferred" Impersonate="no" Return="ignore" />
+
+    <!-- Service install intent management -->
+    <CustomAction Id="EvaluateServiceSelection" BinaryKey="ManageCertSentinelScript" JScriptCall="EvaluateServiceSelection" Execute="immediate" Return="check" />
+    <CustomAction Id="WriteUpgradeSentinel" BinaryKey="ManageCertSentinelScript" JScriptCall="WriteUpgradeSentinel" Execute="immediate" Return="check" />
+    <CustomAction Id="ClearUpgradeSentinel" BinaryKey="ManageCertSentinelScript" JScriptCall="ClearUpgradeSentinel" Execute="immediate" Return="check" />
+
+    <!-- TLS-cert marker reconciliation -->
+    <CustomAction Id="SetReconcileTlsCertMarkersUser"    Property="ReconcileTlsCertMarkers" Value="user"    Execute="immediate" Return="check" />
+    <CustomAction Id="SetReconcileTlsCertMarkersService" Property="ReconcileTlsCertMarkers" Value="service" Execute="immediate" Return="check" />
+    <CustomAction Id="SetReconcileTlsCertMarkersNone"    Property="ReconcileTlsCertMarkers" Value="none"    Execute="immediate" Return="check" />
+    <CustomAction Id="ReconcileTlsCertMarkers" BinaryKey="ManageCertSentinelScript" JScriptCall="ReconcileTlsCertMarkers" Execute="deferred" Impersonate="no" Return="ignore" />
+
+    <!-- Deletes all three TLS-cert marker values on uninstall (deferred,
+         elevated). No CustomActionData needed; it always deletes. -->
+    <CustomAction Id="DeleteTlsCertMarkers" BinaryKey="ManageCertSentinelScript" JScriptCall="DeleteTlsCertMarkers" Execute="deferred" Impersonate="no" Return="ignore" />
+
+    <!-- Generates the random password and stores it in
+         DUPLICATI_SERVICE_PASSWORD. Immediate so the property is set before
+         the SetCustomActionData type-51 actions read it. -->
+    <CustomAction Id="GenerateDuplicatiServicePassword"
+              BinaryKey="GeneratePasswordScript"
+              JScriptCall="CustomAction"
+              Execute="immediate"
+              Return="check" />
+
+    <!-- Runs in the InstallUISequence after ExecuteAction. Polls the
+         registry for the BootstrapApplied sentinel and clears
+         DUPLICATI_SERVICE_PASSWORD client-side if the sentinel does not
+         appear within the script's timeout, which hides the password panel
+         on the ExitDialog. -->
+    <CustomAction Id="CheckBootstrapResult"
+              BinaryKey="CheckBootstrapResultScript"
               JScriptCall="CustomAction"
               Execute="immediate"
               Return="ignore" />
 
-    <CustomAction Id="StopService"
-              BinaryKey="StopServiceScript"
+    <!-- Immediate CA in the InstallUISequence, sequenced AFTER
+         CheckBootstrapResult so it can rely on CheckBootstrapResult having
+         cleared DUPLICATI_SERVICE_PASSWORD on bootstrap failure. Reads the
+         password and the SecretTool path directly from session properties.
+         The UI sequence runs as the installing user (un-elevated), which is
+         exactly the context where the user credential vault entry needs to
+         be written, so no Impersonate dance is needed. -->
+    <CustomAction Id="StoreTrayIconValues"
+              BinaryKey="StoreTrayIconValuesScript"
               JScriptCall="CustomAction"
-              Execute="deferred"
-              Impersonate="no"
+              Execute="immediate"
               Return="ignore" />
 
-    <CustomAction Id="StartService"
-              BinaryKey="StartServiceScript"
+    <!-- Wired to the "Copy" button on the ExitDialog. Immediate so it can
+         read DUPLICATI_SERVICE_PASSWORD directly from the session. -->
+    <CustomAction Id="CopyServicePasswordToClipboard"
+              BinaryKey="CopyPasswordToClipboardScript"
               JScriptCall="CustomAction"
-              Execute="deferred"
-              Return="check" />
+              Execute="immediate"
+              Return="ignore" />
 
   </Product>
+
+  <!--
+    Custom UI flow for the Duplicati installer.
+
+    Dialog sequence on a fresh install:
+       WelcomeDlg -> LicenseAgreementDlg -> InstallOptionsDlg -> VerifyReadyDlg -> ProgressDlg -> ExitDialog
+
+    Maintenance:
+       MaintenanceWelcomeDlg -> MaintenanceTypeDlg
+         + Change   -> InstallOptionsDlg -> VerifyReadyDlg
+         + Repair   -> VerifyReadyDlg
+         + Remove   -> VerifyReadyDlg
+
+    InstallOptionsDlg replaces the standard CustomizeDlg with a simple checkbox dialog
+    (defined in the InstallOptionsDlg.wxs fragment). The checkboxes drive
+    the LAUNCH_AS_SERVICE / ADD_*_SHORTCUT properties, which are translated into
+    feature AddLocal/Remove publishes when the user clicks Next.
+  -->
+  <Fragment>
+    <UI Id="DuplicatiInstallUI">
+      <TextStyle Id="WixUI_Font_Normal" FaceName="Tahoma" Size="8" />
+      <TextStyle Id="WixUI_Font_Bigger" FaceName="Tahoma" Size="12" />
+      <TextStyle Id="WixUI_Font_Title" FaceName="Tahoma" Size="9" Bold="yes" />
+
+      <Property Id="DefaultUIFont" Value="WixUI_Font_Normal" />
+      <Property Id="WixUI_Mode" Value="InstallDir" />
+
+      <DialogRef Id="BrowseDlg" />
+      <DialogRef Id="DiskCostDlg" />
+      <DialogRef Id="ErrorDlg" />
+      <DialogRef Id="FatalError" />
+      <DialogRef Id="FilesInUse" />
+      <DialogRef Id="MsiRMFilesInUse" />
+      <DialogRef Id="PrepareDlg" />
+      <DialogRef Id="ProgressDlg" />
+      <DialogRef Id="ResumeDlg" />
+      <DialogRef Id="UserExit" />
+      <DialogRef Id="InstallOptionsDlg" />
+
+      <Publish Dialog="ExitDialog" Control="Finish" Event="EndDialog" Value="Return" Order="999" />
+
+      <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="LicenseAgreementDlg" Condition="NOT Installed" />
+      <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg" Condition="Installed AND PATCH" />
+
+      <Publish Dialog="LicenseAgreementDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg" />
+      <Publish Dialog="LicenseAgreementDlg" Control="Next" Event="NewDialog" Value="InstallOptionsDlg" Condition="LicenseAccepted = &quot;1&quot;" />
+
+      <!-- The Next button on InstallOptionsDlg also publishes AddLocal/Remove events
+           and the SetTargetPath/FORSERVICE property. Those are defined on the dialog
+           itself; here we only define the navigation. -->
+      <Publish Dialog="InstallOptionsDlg" Control="Back" Event="NewDialog" Value="LicenseAgreementDlg" Order="1" Condition="NOT Installed" />
+      <Publish Dialog="InstallOptionsDlg" Control="Back" Event="NewDialog" Value="MaintenanceTypeDlg"   Order="2" Condition="Installed" />
+      <Publish Dialog="InstallOptionsDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg"      Order="100" />
+
+      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="InstallOptionsDlg"   Order="1" Condition="NOT Installed OR WixUI_InstallMode = &quot;Change&quot;" />
+      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="MaintenanceTypeDlg" Order="2" Condition="Installed AND NOT PATCH" />
+      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg"          Order="3" Condition="Installed AND PATCH" />
+
+      <Publish Dialog="MaintenanceWelcomeDlg" Control="Next" Event="NewDialog" Value="MaintenanceTypeDlg" />
+
+      <Publish Dialog="MaintenanceTypeDlg" Control="ChangeButton" Event="NewDialog" Value="InstallOptionsDlg" />
+      <Publish Dialog="MaintenanceTypeDlg" Control="RepairButton" Event="NewDialog" Value="VerifyReadyDlg" />
+      <Publish Dialog="MaintenanceTypeDlg" Control="RemoveButton" Event="NewDialog" Value="VerifyReadyDlg" />
+      <Publish Dialog="MaintenanceTypeDlg" Control="Back"         Event="NewDialog" Value="MaintenanceWelcomeDlg" />
+    </UI>
+
+    <UIRef Id="WixUI_Common" />
+  </Fragment>
 </Wix>

@@ -494,10 +494,20 @@ public static partial class Command
             if (File.Exists(binFiles))
                 File.Delete(binFiles);
 
+            // For the TrayIcon and Agent MSIs, Duplicati.WindowsService.exe is
+            // declared manually in Duplicati.wxs so the explicit Component can
+            // host the native MSI ServiceInstall/ServiceControl rows. The
+            // harvester is told to skip the file here so we don't end up with
+            // two Components referencing the same source.
+            var harvestExcludes = target.Interface is InterfaceType.GUI or InterfaceType.Agent
+                ? new[] { "Duplicati.WindowsService.exe" }
+                : null;
+
             File.WriteAllText(binFiles, WixHeatBuilder.CreateWixFilelist(
                 sourceFiles,
                 version: rtcfg.ReleaseInfo.Version.ToString(),
-                wixNs: isWindows ? wixv4Namespace : originalNamespace
+                wixNs: isWindows ? wixv4Namespace : originalNamespace,
+                excludeFiles: harvestExcludes
             ));
 
             var msiArch = target.Arch switch
@@ -511,17 +521,27 @@ public static partial class Command
             // Prepare the Wix arguments, different for WiX (Windows) and wixl (Linux/MacOS)
             string[] wixArgs;
 
+            // Include these files explictly if they are present in the resource subdir.
+            var fragments = new[] {
+                    "InstallOptionsDlg.wxs",
+                    "ExitDialog.wxs",
+                    "Shortcuts.wxs",
+                    "Duplicati.wxs"
+                }
+                .Select(x => Path.Combine(resourcesSubDir, x))
+                .Where(File.Exists)
+                .ToArray();
+
             if (isWindows)
             {
                 // Update namespace in the .wxs files for WiX v4
-                var shortcutsTempfile = Path.Combine(buildTmp, "Shortcuts.wxs");
-                var entryTempfile = Path.Combine(buildTmp, "Duplicati.wxs");
-
-                File.WriteAllText(shortcutsTempfile, File.ReadAllText(Path.Combine(resourcesSubDir, "Shortcuts.wxs"))
-                    .Replace(originalNamespace, wixv4Namespace));
-
-                File.WriteAllText(entryTempfile, File.ReadAllText(Path.Combine(resourcesSubDir, "Duplicati.wxs"))
-                    .Replace(originalNamespace, wixv4Namespace));
+                var tempFiles = fragments
+                    .Select(x =>
+                    {
+                        var tempFile = Path.Combine(buildTmp, Path.GetFileName(x));
+                        File.WriteAllText(tempFile, File.ReadAllText(x).Replace(originalNamespace, wixv4Namespace));
+                        return tempFile;
+                    }).ToArray();
 
                 wixArgs = [
                     rtcfg.Configuration.Commands.Wix!,
@@ -529,9 +549,8 @@ public static partial class Command
                     "-define", $"HarvestPath={sourceFiles}",
                     "-arch", msiArch,
                     "-out", msiFile,
-                    shortcutsTempfile,
                     binFiles,
-                    entryTempfile
+                    ..tempFiles
                 ];
             }
             else
@@ -544,27 +563,33 @@ public static partial class Command
                     "--define", $"HarvestPath={sourceFiles}",
                     "--arch", msiArch,
                     "--output", msiFile,
-                    Path.Combine(resourcesSubDir, "Shortcuts.wxs"),
                     binFiles,
-                    Path.Combine(resourcesSubDir, "Duplicati.wxs")
+                    ..fragments,
                 ];
             }
 
             await ProcessHelper.Execute(wixArgs, workingDirectory: buildRoot);
 
-            // Apply any installer data tables present
-            // On Windows, the wxs files include the tables, but on Linux/MacOS, we need to apply them separately
-            // because wixl does not support the tables directly
+            // Apply post-wixl MSI table customizations on Linux/macOS. On Windows the
+            // real WiX toolchain handles all of these natively via WXS elements
             if (!OperatingSystem.IsWindows())
             {
                 if (string.IsNullOrWhiteSpace(rtcfg.Configuration.Commands.MsiBuild))
                 {
-                    Console.WriteLine("WARNING: msiBuild not found, skipping IDT file injection.");
+                    Console.WriteLine("WARNING: msiBuild not found, skipping SQL file injection.");
                 }
                 else
                 {
-                    foreach (var idtFile in Directory.GetFiles(resourcesSubDir, "*.idt"))
-                        await ProcessHelper.Execute([rtcfg.Configuration.Commands.MsiBuild, msiFile, "-i", idtFile]);
+                    foreach (var sqlFile in Directory.GetFiles(resourcesSubDir, "*.sql"))
+                    {
+                        var queries = (await File.ReadAllLinesAsync(sqlFile))
+                            .Select(line => line.Trim())
+                            .Where(line => line.Length > 0 && !line.StartsWith("--"))
+                            .ToArray();
+
+                        foreach (var query in queries)
+                            await ProcessHelper.Execute([rtcfg.Configuration.Commands.MsiBuild, msiFile, "-q", query]);
+                    }
                 }
             }
 
