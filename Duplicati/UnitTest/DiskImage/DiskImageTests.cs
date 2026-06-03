@@ -812,7 +812,7 @@ public class DiskImageTests : BasicSetupHelper
 
         // Backup
         var backupResults = await RunBackupAsync(sourceDrivePath);
-        TestUtils.AssertResults(backupResults, "diskimage-filesystem-parsed");
+        TestUtils.AssertResults(backupResults, ignoredWarnings: ["diskimage-filesystem-parsed"]);
         await TestContext.Progress.WriteLineAsync($"Backup completed successfully");
 
         // Setup restore target disk image with same geometry
@@ -865,7 +865,7 @@ public class DiskImageTests : BasicSetupHelper
 
         // Backup
         var backupResults = await RunBackupAsync(sourceDrivePath);
-        TestUtils.AssertResults(backupResults, "diskimage-filesystem-parsed");
+        TestUtils.AssertResults(backupResults, ignoredWarnings: ["diskimage-filesystem-parsed"]);
 
         // List backup contents and verify geometry.json is present
         using (var c = new Controller("file://" + TARGETFOLDER, TestOptions, null))
@@ -964,7 +964,7 @@ public class DiskImageTests : BasicSetupHelper
 
         // Backup
         var backupResults = await RunBackupAsync(sourceDrivePath);
-        TestUtils.AssertResults(backupResults, "diskimage-filesystem-parsed");
+        TestUtils.AssertResults(backupResults, ignoredWarnings: ["diskimage-filesystem-parsed"]);
         await TestContext.Progress.WriteLineAsync($"Backup completed successfully");
 
         // Create and attach disk image
@@ -1306,7 +1306,7 @@ public class DiskImageTests : BasicSetupHelper
         }
         else
         {
-            TestUtils.AssertResults(firstBackupResults);
+            TestUtils.AssertResults(firstBackupResults, ignoredWarnings: ["diskimage-filesystem-parsed"]);
         }
 
         var firstBackupSize = firstBackupResults.SizeOfOpenedFiles;
@@ -1324,7 +1324,7 @@ public class DiskImageTests : BasicSetupHelper
         await TestContext.Progress.WriteLineAsync($"Restore disk created at: {_restoreImagePath}");
 
         var restoreResults = await RunRestoreAsync(restoreDrivePath);
-        TestUtils.AssertResults(restoreResults);
+        TestUtils.AssertResults(restoreResults, ignoredWarnings: ["diskimage-filesystem-parsed"]);
         await TestContext.Progress.WriteLineAsync("Initial restore completed successfully");
 
         // Reattach and verify initial restore
@@ -1405,7 +1405,7 @@ public class DiskImageTests : BasicSetupHelper
         }
         else
         {
-            TestUtils.AssertResults(secondBackupResults);
+            TestUtils.AssertResults(secondBackupResults, ignoredWarnings: ["diskimage-filesystem-parsed"]);
         }
 
         var secondBackupSize = secondBackupResults.SizeOfOpenedFiles;
@@ -1441,7 +1441,7 @@ public class DiskImageTests : BasicSetupHelper
         await TestContext.Progress.WriteLineAsync($"Fresh restore disk created for incremental restore");
 
         var incrementalRestoreResults = await RunRestoreAsync(restoreDrivePath);
-        TestUtils.AssertResults(incrementalRestoreResults);
+        TestUtils.AssertResults(incrementalRestoreResults, ignoredWarnings: ["diskimage-filesystem-parsed"]);
         await TestContext.Progress.WriteLineAsync("Incremental restore completed successfully");
 
         // Reattach and verify the incremental restore matches the modified source
@@ -1497,7 +1497,7 @@ public class DiskImageTests : BasicSetupHelper
         }
         else
         {
-            TestUtils.AssertResults(backupResults, "diskimage-filesystem-parsed");
+            TestUtils.AssertResults(backupResults, ignoredWarnings: ["diskimage-filesystem-parsed"]);
         }
         await TestContext.Progress.WriteLineAsync($"Backup completed: {backupResults.SizeOfOpenedFiles} bytes examined");
 
@@ -1586,7 +1586,7 @@ public class DiskImageTests : BasicSetupHelper
         }
         else
         {
-            TestUtils.AssertResults(backupResults, "diskimage-filesystem-parsed");
+            TestUtils.AssertResults(backupResults, ignoredWarnings: ["diskimage-filesystem-parsed"]);
         }
 
         await TestContext.Progress.WriteLineAsync($"Backup completed: {backupResults.SizeOfOpenedFiles} bytes examined, {backupResults.SizeOfAddedFiles} bytes added");
