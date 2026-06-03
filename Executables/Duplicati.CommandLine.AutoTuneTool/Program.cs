@@ -27,6 +27,6 @@ namespace Duplicati.Server.Net10
     public static class Program
     {
         public static Task<int> Main(string[] args)
-            => CrashlogHelper.WrapWithCrashLog(() => Duplicati.AutoTune.Program.Main(args));
+            => CrashlogHelper.WrapWithCrashLog(() => Duplicati.AutoTune.Program.MainAsync(args));
     }
 }

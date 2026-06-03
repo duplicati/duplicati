@@ -230,7 +230,7 @@ public class ProfilingCaptureSink : IMessageSink, IDisposable
     /// </summary>
     /// <returns>A fully populated restore timing result.</returns>
     /// <exception cref="InvalidDataException">Thrown when no log lines or no network-wait entries have been captured.</exception>
-    public async Task<ResultsRestore> ParseLines()
+    public async Task<ResultsRestore> ParseLinesAsync()
     {
         if (_log_lines.Count <= 0)
             throw new InvalidDataException("No log lines has been captured.");
@@ -308,11 +308,11 @@ public class Program
     private static readonly string LOGTAG = Duplicati.Library.Logging.Log.LogTagFromType(typeof(Program));
 
     /// <summary>
-    /// Entry point for the AutoTune tool. Parses command-line options and invokes <see cref="RunCore"/>.
+    /// Entry point for the AutoTune tool. Parses command-line options and invokes <see cref="RunCoreAsync"/>.
     /// </summary>
     /// <param name="args">Command-line arguments.</param>
     /// <returns>A process exit code: 0 on success, -1 on error.</returns>
-    public static async Task<int> Main(string[] args)
+    public static async Task<int> MainAsync(string[] args)
     {
         var root_cmd = new RootCommand("Auto tuning of the Duplicati concurrency parameters. Warning, this program will be accessing the source, destination, and restoretarget a lot, potentially degrading them.")
         {
@@ -387,7 +387,7 @@ public class Program
             ensure_dir("Restore target", restoretarget, cfg.Verbose, false);
 
             if (!Directory.EnumerateFiles(source).Any())
-                await GenerateData(source, cfg.TestdataMaxFileSize, cfg.TestdataMaxTotalSize, cfg.TestdataNumFiles, cfg.TestdataSparseFactor, cfg.Verbose);
+                await GenerateDataAsync(source, cfg.TestdataMaxFileSize, cfg.TestdataMaxTotalSize, cfg.TestdataNumFiles, cfg.TestdataSparseFactor, cfg.Verbose);
 
             var opts = ParseOptions(cfg.BackendOptions);
 
@@ -398,7 +398,7 @@ public class Program
                 RestoreTarget = restoretarget,
                 TempFolder = tempfolder
             };
-            var rc = await RunCore(cfg_final, opts);
+            var rc = await RunCoreAsync(cfg_final, opts);
 
             // Cleanup - only delete directories that were created by this tool
             if (source_created)
@@ -427,7 +427,7 @@ public class Program
     /// <param name="cfg">User-supplied tuning options.</param>
     /// <param name="options">Parsed Duplicati key-value options passed to the controller.</param>
     /// <returns>A process exit code: 0 on success, -1 on error.</returns>
-    internal static async Task<int> RunCore(ConfigAutoTune cfg, Dictionary<string, string?> options)
+    internal static async Task<int> RunCoreAsync(ConfigAutoTune cfg, Dictionary<string, string?> options)
     {
         var database = Path.Combine(cfg.TempFolder!, "db.sqlite");
         options["passphrase"] = "1234";
@@ -480,7 +480,7 @@ public class Program
             },
             _ => throw new ArgumentOutOfRangeException($"BaselineParams should be of length either 0, 1, or 4. Got {cfg.BaselineParams.Length}")
         };
-        var profile_baseline = await RunRestore(options, config_baseline, cfg, sink);
+        var profile_baseline = await RunRestoreAsync(options, config_baseline, cfg, sink);
 
         if (cfg.Verbose > 0)
         {
@@ -531,7 +531,7 @@ public class Program
         {
             round++;
 
-            var profile_current = await RunRestore(options, config_current, cfg, sink);
+            var profile_current = await RunRestoreAsync(options, config_current, cfg, sink);
 
             if (cfg.Verbose > 0)
             {
@@ -642,7 +642,7 @@ public class Program
     /// <param name="sparse_factor">Amount of data that should be set to 0 for deduplication.</param>
     /// <param name="verbose">When true, generator output is forwarded to the console.</param>
     /// <exception cref="Exception">Thrown when the generator returns a non-zero exit code.</exception>
-    private static async Task GenerateData(string path, long max_file_size, long max_total_size, long file_count, int sparse_factor, int verbose)
+    private static async Task GenerateDataAsync(string path, long max_file_size, long max_total_size, long file_count, int sparse_factor, int verbose)
     {
         var cmd = TestDataGenerator.Commands.Create.CreateCommand();
         var args = $"\"{path}\" --max-file-size {max_file_size} --max-total-size {max_total_size} --file-count {file_count} --sparse-factor {sparse_factor}";
@@ -719,7 +719,7 @@ public class Program
     /// <param name="cfg">The AutoTune configuration containing all of the paths, warmup runs, and benchmarking runs.</param>
     /// <param name="sink">The sink for capturing log lines.</param>
     /// <returns>Results from running the benchmark.</returns>
-    private static async Task<ResultsRestore> RunRestore(Dictionary<string, string?> options, ConfigRestore config_current, ConfigAutoTune cfg, ProfilingCaptureSink sink)
+    private static async Task<ResultsRestore> RunRestoreAsync(Dictionary<string, string?> options, ConfigRestore config_current, ConfigAutoTune cfg, ProfilingCaptureSink sink)
     {
         SetOptions(options, config_current);
         sink.Reset();
@@ -741,7 +741,7 @@ public class Program
             await c.RestoreAsync(["*"]);
         }
 
-        return await sink.ParseLines();
+        return await sink.ParseLinesAsync();
     }
 
 }
