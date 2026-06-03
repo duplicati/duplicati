@@ -256,8 +256,8 @@ namespace Duplicati.Library.Backend.AzureBlob
 
         public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(_azureBlob.DnsNames);
 
-        public Task TestAsync(CancellationToken cancellationToken)
-            => this.TestReadWritePermissionsAsync(cancellationToken);
+        public Task TestAsync(bool alsoWrite, CancellationToken cancellationToken)
+            => this.TestBackendAsync(alsoWrite, cancellationToken);
 
         public Task CreateFolderAsync(CancellationToken cancellationToken)
         {

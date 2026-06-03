@@ -160,7 +160,7 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
 
 
     /// <inheritdoc />
-    public Task Initialize(CancellationToken cancellationToken)
+    public Task InitializeAsync(CancellationToken cancellationToken)
     {
         if (!_hasSetMetadataStorageOption)
             throw new UserInformationException(Strings.MetadataStorageNotEnabled("store-metadata-content-in-database"), "DatabaseMetadataStorageNotEnabled");
@@ -169,17 +169,17 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
     }
 
     /// <inheritdoc />
-    public Task Test(CancellationToken cancellationToken)
+    public Task TestAsync(CancellationToken cancellationToken)
         => _apiHelper.AcquireAccessTokenAsync(false, cancellationToken);
 
     /// <inheritdoc />
-    public async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
+    public async IAsyncEnumerable<ISourceProviderEntry> EnumerateAsync([EnumeratorCancellation] CancellationToken cancellationToken)
     {
         yield return new RootSourceEntry(this, _mountPoint);
     }
 
     /// <inheritdoc />
-    public async Task<ISourceProviderEntry?> GetEntry(string path, bool isFolder, CancellationToken cancellationToken)
+    public async Task<ISourceProviderEntry?> GetEntryAsync(string path, bool isFolder, CancellationToken cancellationToken)
     {
         if (_entryCache.TryGetValue(path, out var cachedEntry))
             return cachedEntry;

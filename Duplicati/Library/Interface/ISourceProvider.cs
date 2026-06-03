@@ -43,21 +43,21 @@ public interface ISourceProvider : IDisposable
     /// </summary>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>An awaitable task</returns>
-    Task Initialize(CancellationToken cancellationToken);
+    Task InitializeAsync(CancellationToken cancellationToken);
 
     /// <summary>
     /// Tests the provider connection
     /// </summary>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>An awaitable task</returns>
-    Task Test(CancellationToken cancellationToken);
+    Task TestAsync(CancellationToken cancellationToken);
 
     /// <summary>
     /// Gets the root entries
     /// </summary>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>An enumerable of file entries</returns>
-    IAsyncEnumerable<ISourceProviderEntry> Enumerate(CancellationToken cancellationToken);
+    IAsyncEnumerable<ISourceProviderEntry> EnumerateAsync(CancellationToken cancellationToken);
 
     /// <summary>
     /// Gets a specific entry
@@ -66,5 +66,5 @@ public interface ISourceProvider : IDisposable
     /// <param name="isFolder">True if the path is a folder</param>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>The file entry</returns>
-    Task<ISourceProviderEntry?> GetEntry(string path, bool isFolder, CancellationToken cancellationToken);
+    Task<ISourceProviderEntry?> GetEntryAsync(string path, bool isFolder, CancellationToken cancellationToken);
 }

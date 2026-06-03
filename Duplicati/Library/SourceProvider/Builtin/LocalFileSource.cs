@@ -33,10 +33,10 @@ public class LocalFileSource(ISnapshotService snapshotService) : ISourceProvider
     public string MountedPath => string.Empty;
 
     /// <inheritdoc/>
-    public Task Initialize(CancellationToken cancellationToken) => Task.CompletedTask;
+    public Task InitializeAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
     /// <inheritdoc/>
-    public IAsyncEnumerable<ISourceProviderEntry> Enumerate(CancellationToken cancellationToken)
+    public IAsyncEnumerable<ISourceProviderEntry> EnumerateAsync(CancellationToken cancellationToken)
         => snapshotService.EnumerateFilesystemEntries().ToAsyncEnumerable();
 
     /// <summary>
@@ -45,11 +45,11 @@ public class LocalFileSource(ISnapshotService snapshotService) : ISourceProvider
     public ISnapshotService SnapshotService => snapshotService;
 
     /// <inheritdoc/>
-    public Task<ISourceProviderEntry?> GetEntry(string path, bool isFolder, CancellationToken cancellationToken)
+    public Task<ISourceProviderEntry?> GetEntryAsync(string path, bool isFolder, CancellationToken cancellationToken)
         => Task.FromResult(snapshotService.GetFilesystemEntry(path, isFolder));
 
     /// <inheritdoc/>
-    public Task Test(CancellationToken cancellationToken)
+    public Task TestAsync(CancellationToken cancellationToken)
         => snapshotService.DirectoryExists(MountedPath) ? Task.CompletedTask : throw new Exception($"The path {MountedPath} does not exist");
 
     /// <inheritdoc/>

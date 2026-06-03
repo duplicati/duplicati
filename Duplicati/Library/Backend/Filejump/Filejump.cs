@@ -517,8 +517,8 @@ namespace Duplicati.Library.Backend
         }
 
         ///<inheritdoc/>
-        public Task TestAsync(CancellationToken token)
-            => this.TestReadWritePermissionsAsync(token);
+        public Task TestAsync(bool alsoWrite, CancellationToken token)
+            => this.TestBackendAsync(alsoWrite, token);
 
         ///<inheritdoc/>
         public Task<string[]> GetDNSNamesAsync(CancellationToken token)

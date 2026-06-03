@@ -284,8 +284,8 @@ public class SMBBackend : IStreamingBackend, IFolderEnabledBackend, IRenameEnabl
     /// </summary>
     /// <param name="cancellationToken">The cancellation token (not used)</param>
     /// <exception cref="FolderMissingException">Thrown when configured path does not exist</exception>
-    public Task TestAsync(CancellationToken cancellationToken)
-        => this.TestReadWritePermissionsAsync(cancellationToken);
+    public Task TestAsync(bool alsoWrite, CancellationToken cancellationToken)
+        => this.TestBackendAsync(alsoWrite, cancellationToken);
 
     /// <summary>
     /// Creates the configured remote folder path if it doesn't exist
@@ -350,7 +350,7 @@ public class SMBBackend : IStreamingBackend, IFolderEnabledBackend, IRenameEnabl
         var con = await GetConnectionAsync(cancellationToken).ConfigureAwait(false);
         await con.RenameAsync(oldname, newname, cancellationToken).ConfigureAwait(false);
     }
-    
+
     /// <inheritdoc/>
     public async Task<IFileEntry?> GetEntryAsync(string path, CancellationToken cancellationToken)
     {

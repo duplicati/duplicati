@@ -113,7 +113,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                         {
                             foreach (var s in list)
                             {
-                                var r = await sourceProvider.GetEntry(s, s.EndsWith(Path.DirectorySeparatorChar), token).ConfigureAwait(false);
+                                var r = await sourceProvider.GetEntryAsync(s, s.EndsWith(Path.DirectorySeparatorChar), token).ConfigureAwait(false);
                                 if (r != null)
                                 {
                                     //TODO: Set r.IsRoot = true for source elements
@@ -166,7 +166,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     }
                     else
                     {
-                        worklist = RecurseEntriesAsync(sourceProvider.Enumerate(token),
+                        worklist = RecurseEntriesAsync(sourceProvider.EnumerateAsync(token),
                             FilterEntry,
                             token
                         );

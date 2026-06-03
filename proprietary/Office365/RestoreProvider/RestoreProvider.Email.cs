@@ -76,7 +76,7 @@ partial class RestoreProvider
                 Uri.EscapeDataString(Office365UserType.Mailbox.ToString().ToLowerInvariant())
             });
 
-            var mailbox = await Provider.SourceProvider.GetEntry(path, true, cancel);
+            var mailbox = await Provider.SourceProvider.GetEntryAsync(path, true, cancel);
             if (mailbox == null)
                 throw new InvalidOperationException($"Mailbox not found for user {userId}");
 

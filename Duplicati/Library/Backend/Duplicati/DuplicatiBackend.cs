@@ -478,8 +478,8 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
         ];
 
     /// <inheritdoc />
-    public Task TestAsync(CancellationToken cancelToken)
-        => this.TestReadWritePermissionsAsync(cancelToken);
+    public Task TestAsync(bool alsoWrite, CancellationToken cancelToken)
+        => this.TestBackendAsync(alsoWrite, cancelToken);
 
     /// <summary>
     /// Response from getting credentials

@@ -220,7 +220,7 @@ namespace Duplicati.Library.DynamicLoader
             {
                 // In test mode, we do not initialize the provider
                 if (!getForTesting)
-                    await provider.Initialize(cancellationToken).ConfigureAwait(false);
+                    await provider.InitializeAsync(cancellationToken).ConfigureAwait(false);
                 return provider;
             }
             catch

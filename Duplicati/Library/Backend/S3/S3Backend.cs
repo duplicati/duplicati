@@ -438,8 +438,8 @@ namespace Duplicati.Library.Backend
         public string Description => Strings.S3Backend.Description_v2;
 
         /// <inheritdoc/>
-        public Task TestAsync(CancellationToken cancelToken)
-            => this.TestReadWritePermissionsAsync(cancelToken);
+        public Task TestAsync(bool alsoWrite, CancellationToken cancelToken)
+            => this.TestBackendAsync(alsoWrite, cancelToken);
 
         /// <inheritdoc/>
         public Task CreateFolderAsync(CancellationToken cancelToken)

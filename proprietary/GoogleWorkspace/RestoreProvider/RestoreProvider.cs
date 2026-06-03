@@ -145,8 +145,8 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         if (!_hasSetOverwriteOption)
             throw new UserInformationException(Strings.RestoreTargetMissingOverwriteOption("overwrite", OptionsHelper.GOOGLE_IGNORE_EXISTING_OPTION), "OverwriteOptionNotSet");
 
-        await SourceProvider.Initialize(cancel);
-        var entry = await SourceProvider.GetEntry(_restorePath, isFolder: true, cancel);
+        await SourceProvider.InitializeAsync(cancel);
+        var entry = await SourceProvider.GetEntryAsync(_restorePath, isFolder: true, cancel);
         if (entry == null)
             throw new UserInformationException(Strings.RestoreTargetNotFound(_restorePath), "RestoreTargetNotFound");
         var metadata = await entry.GetMinorMetadata(cancel);
@@ -197,7 +197,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         if (_temporaryFiles.ContainsKey(path))
             return true;
 
-        var entry = await SourceProvider.GetEntry(path, isFolder: false, cancel).ConfigureAwait(false);
+        var entry = await SourceProvider.GetEntryAsync(path, isFolder: false, cancel).ConfigureAwait(false);
         return entry != null;
     }
 
@@ -218,7 +218,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         if (_temporaryFiles.ContainsKey(path))
             return SystemIO.IO_OS.FileOpenRead(_temporaryFiles[path]);
 
-        var entry = await SourceProvider.GetEntry(path, isFolder: false, cancel).ConfigureAwait(false);
+        var entry = await SourceProvider.GetEntryAsync(path, isFolder: false, cancel).ConfigureAwait(false);
         if (entry != null)
             return await entry.OpenRead(cancel).ConfigureAwait(false);
 
@@ -233,7 +233,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         if (_temporaryFiles.ContainsKey(path))
             return SystemIO.IO_OS.FileOpenReadWrite(_temporaryFiles[path]);
 
-        var entry = await SourceProvider.GetEntry(path, isFolder: false, cancel).ConfigureAwait(false);
+        var entry = await SourceProvider.GetEntryAsync(path, isFolder: false, cancel).ConfigureAwait(false);
         if (entry == null)
         {
             _temporaryFiles.GetOrAdd(path, _ => new TempFile());
@@ -260,7 +260,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         if (_temporaryFiles.ContainsKey(path))
             return SystemIO.IO_OS.FileLength(_temporaryFiles[path]);
 
-        var entry = await SourceProvider.GetEntry(path, isFolder: false, cancel).ConfigureAwait(false);
+        var entry = await SourceProvider.GetEntryAsync(path, isFolder: false, cancel).ConfigureAwait(false);
         if (entry == null)
             throw new FileNotFoundException($"File not found: {path}");
 

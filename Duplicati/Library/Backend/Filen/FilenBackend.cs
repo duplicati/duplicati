@@ -243,8 +243,8 @@ public class FilenBackend : IStreamingBackend, IRenameEnabledBackend
     );
 
     /// <inheritdoc/>
-    public Task TestAsync(CancellationToken cancellationToken)
-        => this.TestReadWritePermissionsAsync(cancellationToken);
+    public Task TestAsync(bool alsoWrite, CancellationToken cancellationToken)
+        => this.TestBackendAsync(alsoWrite, cancellationToken);
 
     /// <inheritdoc/>
     public async Task CreateFolderAsync(CancellationToken cancellationToken)

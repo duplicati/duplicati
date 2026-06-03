@@ -95,9 +95,9 @@ public class WebModule : IWebModule
             forwardoptions[key!] = uri.QueryParameters[key];
 
         using var client = new SourceProvider(url, "", forwardoptions, true);
-        await client.Initialize(cancellationToken);
+        await client.InitializeAsync(cancellationToken);
 
-        var targetEntry = await client.GetEntry((path ?? "").TrimStart('/'), isFolder: true, cancellationToken).ConfigureAwait(false);
+        var targetEntry = await client.GetEntryAsync((path ?? "").TrimStart('/'), isFolder: true, cancellationToken).ConfigureAwait(false);
         if (targetEntry == null)
             throw new DirectoryNotFoundException($"Path not found: {path}");
 

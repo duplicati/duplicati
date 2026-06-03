@@ -506,9 +506,9 @@ namespace Duplicati.UnitTest
             return m_backend.DeleteAsync(remotename, cancelToken);
         }
 
-        public Task TestAsync(CancellationToken cancelToken)
+        public Task TestAsync(bool alsoWrite, CancellationToken cancelToken)
         {
-            return m_backend.TestAsync(cancelToken);
+            return m_backend.TestAsync(alsoWrite, cancelToken);
         }
 
         public Task CreateFolderAsync(CancellationToken cancelToken)
