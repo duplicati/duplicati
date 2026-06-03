@@ -812,7 +812,7 @@ public class DiskImageTests : BasicSetupHelper
 
         // Backup
         var backupResults = await RunBackupAsync(sourceDrivePath);
-        TestUtils.AssertResults(backupResults);
+        TestUtils.AssertResults(backupResults, "diskimage-filesystem-parsed");
         await TestContext.Progress.WriteLineAsync($"Backup completed successfully");
 
         // Setup restore target disk image with same geometry
@@ -865,7 +865,7 @@ public class DiskImageTests : BasicSetupHelper
 
         // Backup
         var backupResults = await RunBackupAsync(sourceDrivePath);
-        TestUtils.AssertResults(backupResults);
+        TestUtils.AssertResults(backupResults, "diskimage-filesystem-parsed");
 
         // List backup contents and verify geometry.json is present
         using (var c = new Controller("file://" + TARGETFOLDER, TestOptions, null))
@@ -964,7 +964,7 @@ public class DiskImageTests : BasicSetupHelper
 
         // Backup
         var backupResults = await RunBackupAsync(sourceDrivePath);
-        TestUtils.AssertResults(backupResults);
+        TestUtils.AssertResults(backupResults, "diskimage-filesystem-parsed");
         await TestContext.Progress.WriteLineAsync($"Backup completed successfully");
 
         // Create and attach disk image
@@ -1497,7 +1497,7 @@ public class DiskImageTests : BasicSetupHelper
         }
         else
         {
-            TestUtils.AssertResults(backupResults);
+            TestUtils.AssertResults(backupResults, "diskimage-filesystem-parsed");
         }
         await TestContext.Progress.WriteLineAsync($"Backup completed: {backupResults.SizeOfOpenedFiles} bytes examined");
 
@@ -1586,7 +1586,7 @@ public class DiskImageTests : BasicSetupHelper
         }
         else
         {
-            TestUtils.AssertResults(backupResults);
+            TestUtils.AssertResults(backupResults, "diskimage-filesystem-parsed");
         }
 
         await TestContext.Progress.WriteLineAsync($"Backup completed: {backupResults.SizeOfOpenedFiles} bytes examined, {backupResults.SizeOfAddedFiles} bytes added");

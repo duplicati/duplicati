@@ -287,7 +287,7 @@ namespace Duplicati.UnitTest
         {
         }
 
-        public static void AssertResults(IBasicResults results)
+        public static void AssertResults(IBasicResults results, params string[] ignoredWarnings)
         {
             string operation = "Result";
             // Use dynamic property access for MainOperation, because it is only exposed in internal classes
@@ -330,11 +330,12 @@ namespace Duplicati.UnitTest
                 throw new TestVerificationException(sb.ToString());
             }
 
-            if (results.Warnings.Count() != 0)
+            var remainingWarnings = results.Warnings.Where(w => !ignoredWarnings.Any(ignored => w.Contains(ignored)));
+            if (remainingWarnings.Any())
             {
                 var sb = new StringBuilder();
                 sb.AppendLine($"Warnings - {operation}:");
-                foreach (var w in results.Warnings)
+                foreach (var w in remainingWarnings)
                     sb.AppendLine(w.ToString());
                 throw new TestVerificationException(sb.ToString());
             }
