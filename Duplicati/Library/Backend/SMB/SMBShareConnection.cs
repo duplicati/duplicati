@@ -282,7 +282,7 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
                             info.LastAccessTime,
                             info.LastWriteTime)
                         {
-                            IsFolder = (info.FileAttributes && FileAttributes.Directory) == FileAttributes.Directory,
+                            IsFolder = info.FileAttributes.HasFlag(FileAttributes.Directory),
                             Created = info.CreationTime
                         })
                         .ToList()
@@ -346,7 +346,7 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
                     var name = path.TrimEnd('/').Split('/').Last();
                     if (string.IsNullOrEmpty(name)) name = "";
 
-                    var isFolder = (basic.FileAttributes & FileAttributes.Directory) == FileAttributes.Directory;
+                    var isFolder = basic.FileAttributes.HasFlag(FileAttributes.Directory);
                     if (isFolder && !name.EndsWith("/")) name += "/";
 
                     return (IFileEntry)new FileEntry(
