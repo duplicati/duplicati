@@ -426,14 +426,15 @@ public class pCloudBackend : IStreamingBackend, IRenameEnabledBackend
     /// <summary>
     /// Tests backend connectivity by verifying the configured path exists
     /// </summary>
+    /// <param name="alsoWrite">If true, also test write permissions</param>
     /// <param name="cancellationToken">The cancellation token (not used)</param>
     /// <exception cref="FolderMissingException">Thrown when configured path does not exist</exception>
-    public async Task TestAsync(CancellationToken cancellationToken)
+    public async Task TestAsync(bool alsoWrite, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(_Path) || _Path.Split(PATH_SEPARATORS, StringSplitOptions.RemoveEmptyEntries).Length == 0)
             return;
 
-        await this.TestReadWritePermissionsAsync(cancellationToken).ConfigureAwait(false);
+        await this.TestBackendAsync(alsoWrite, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>

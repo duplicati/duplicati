@@ -38,19 +38,19 @@ public class Combiner(IEnumerable<ISourceProvider> providers) : ISourceProvider
     private readonly List<ISourceProvider> providers = providers.SelectMany(x => x is Combiner c ? c.providers.AsEnumerable() : [x]).ToList();
 
     /// <inheritdoc/>
-    public Task Initialize(CancellationToken cancellationToken)
-        => Task.WhenAll(providers.Select(x => x.Initialize(cancellationToken)));
+    public Task InitializeAsync(CancellationToken cancellationToken)
+        => Task.WhenAll(providers.Select(x => x.InitializeAsync(cancellationToken)));
 
     /// <inheritdoc/>
-    public Task Test(CancellationToken cancellationToken)
-        => Task.WhenAll(providers.Select(x => x.Test(cancellationToken)));
+    public Task TestAsync(CancellationToken cancellationToken)
+        => Task.WhenAll(providers.Select(x => x.TestAsync(cancellationToken)));
 
     /// <inheritdoc />
-    public async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
+    public async IAsyncEnumerable<ISourceProviderEntry> EnumerateAsync([EnumeratorCancellation] CancellationToken cancellationToken)
     {
         foreach (var provider in providers)
         {
-            await foreach (var entry in provider.Enumerate(cancellationToken).ConfigureAwait(false))
+            await foreach (var entry in provider.EnumerateAsync(cancellationToken).ConfigureAwait(false))
                 yield return entry;
         }
     }
@@ -67,18 +67,18 @@ public class Combiner(IEnumerable<ISourceProvider> providers) : ISourceProvider
     /// <param name="isFolder">True if the path is a folder</param>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>The filesystem entry</returns>
-    public async Task<ISourceProviderEntry?> GetEntry(string path, bool isFolder, CancellationToken cancellationToken)
+    public async Task<ISourceProviderEntry?> GetEntryAsync(string path, bool isFolder, CancellationToken cancellationToken)
     {
         foreach (var provider in providers)
             if (!string.IsNullOrWhiteSpace(MountedPath) && provider.MountedPath.StartsWith(path))
             {
                 var subpath = provider.MountedPath.Substring(path.Length);
-                return await provider.GetEntry(subpath, isFolder, cancellationToken).ConfigureAwait(false);
+                return await provider.GetEntryAsync(subpath, isFolder, cancellationToken).ConfigureAwait(false);
             }
 
         foreach (var provider in providers.Where(x => string.IsNullOrWhiteSpace(x.MountedPath)))
         {
-            var res = await provider.GetEntry(path, isFolder, cancellationToken).ConfigureAwait(false);
+            var res = await provider.GetEntryAsync(path, isFolder, cancellationToken).ConfigureAwait(false);
             if (res != null)
                 return res;
         }

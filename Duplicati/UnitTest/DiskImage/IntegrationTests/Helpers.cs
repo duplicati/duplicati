@@ -24,9 +24,9 @@ public partial class DiskImageTests : BasicSetupHelper
         options["enable-module"] = "diskimage";
         options["concurrency-fileprocessors"] = "1";
 
-        if (treatFilesystemAsUnknown)
+        if (!treatFilesystemAsUnknown)
         {
-            options["diskimage-filesystem-unknown"] = "true";
+            options["diskimage-filesystem-parsed"] = "true";
         }
 
         using var c = new Controller("file://" + TARGETFOLDER, options, null);

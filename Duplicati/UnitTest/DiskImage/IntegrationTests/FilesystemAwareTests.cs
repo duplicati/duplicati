@@ -68,7 +68,7 @@ public class FilesystemAwareTests : DiskImageTests
         }
         else
         {
-            TestUtils.AssertResults(firstBackupResults);
+            TestUtils.AssertResults(firstBackupResults, ignoredWarnings: ["diskimage-filesystem-parsed"]);
         }
 
         var firstBackupSize = firstBackupResults.SizeOfOpenedFiles;
@@ -90,7 +90,7 @@ public class FilesystemAwareTests : DiskImageTests
         stopwatch.Restart();
 
         var restoreResults = await RunRestoreAsync(restoreDrivePath);
-        TestUtils.AssertResults(restoreResults);
+        TestUtils.AssertResults(restoreResults, ignoredWarnings: ["diskimage-filesystem-parsed"]);
         stopwatch.Stop();
         await TestContext.Progress.WriteLineAsync($"Initial restore completed successfully ({stopwatch.ElapsedMilliseconds}ms)");
         stopwatch.Restart();
@@ -188,7 +188,7 @@ public class FilesystemAwareTests : DiskImageTests
         }
         else
         {
-            TestUtils.AssertResults(secondBackupResults);
+            TestUtils.AssertResults(secondBackupResults, ignoredWarnings: ["diskimage-filesystem-parsed"]);
         }
 
         var secondBackupSize = secondBackupResults.SizeOfOpenedFiles;
@@ -231,7 +231,7 @@ public class FilesystemAwareTests : DiskImageTests
         stopwatch.Restart();
 
         var incrementalRestoreResults = await RunRestoreAsync(restoreDrivePath);
-        TestUtils.AssertResults(incrementalRestoreResults);
+        TestUtils.AssertResults(incrementalRestoreResults, ignoredWarnings: ["diskimage-filesystem-parsed"]);
         stopwatch.Stop();
         await TestContext.Progress.WriteLineAsync($"Incremental restore completed successfully ({stopwatch.ElapsedMilliseconds}ms)");
         stopwatch.Restart();
@@ -296,7 +296,7 @@ public class FilesystemAwareTests : DiskImageTests
         }
         else
         {
-            TestUtils.AssertResults(backupResults);
+            TestUtils.AssertResults(backupResults, ignoredWarnings: ["diskimage-filesystem-parsed"]);
         }
         await TestContext.Progress.WriteLineAsync($"Backup completed: {backupResults.SizeOfOpenedFiles} bytes examined");
 
@@ -390,7 +390,7 @@ public class FilesystemAwareTests : DiskImageTests
         }
         else
         {
-            TestUtils.AssertResults(backupResults);
+            TestUtils.AssertResults(backupResults, ignoredWarnings: ["diskimage-filesystem-parsed"]);
         }
 
         await TestContext.Progress.WriteLineAsync($"Backup completed: {backupResults.SizeOfOpenedFiles} bytes examined, {backupResults.SizeOfAddedFiles} bytes added");

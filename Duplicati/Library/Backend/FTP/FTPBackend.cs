@@ -515,7 +515,7 @@ namespace Duplicati.Library.Backend
         public bool SupportsStreaming => true;
 
         /// <inheritdoc />
-        public async Task TestAsync(CancellationToken cancellationToken)
+        public async Task TestAsync(bool alsoWrite, CancellationToken cancellationToken)
         {
             // Start with a simple list and pureFTP detection
             try
@@ -556,7 +556,8 @@ namespace Duplicati.Library.Backend
             }
 
             // Test the read/write permissions in folder
-            await this.TestReadWritePermissionsAsync(cancellationToken).ConfigureAwait(false);
+            if (alsoWrite)
+                await this.TestReadWritePermissionsAsync(cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc />

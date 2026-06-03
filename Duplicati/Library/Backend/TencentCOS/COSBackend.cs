@@ -243,7 +243,7 @@ namespace Duplicati.Library.Backend.TencentCOS
             }
         }
 
-        public async Task TestAsync(CancellationToken cancelToken)
+        public async Task TestAsync(bool alsoWrite, CancellationToken cancelToken)
         {
             var json = JsonConvert.SerializeObject(_cosOptions);
             try
@@ -271,7 +271,8 @@ namespace Duplicati.Library.Backend.TencentCOS
                 throw;
             }
 
-            await this.TestReadWritePermissionsAsync(cancelToken).ConfigureAwait(false);
+            if (alsoWrite)
+                await this.TestReadWritePermissionsAsync(cancelToken).ConfigureAwait(false);
         }
 
         public Task CreateFolderAsync(CancellationToken cancelToken)

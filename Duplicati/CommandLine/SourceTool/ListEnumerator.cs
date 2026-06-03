@@ -38,7 +38,7 @@ public static partial class Common
     public static async Task Visit(ISourceProvider source, int maxdepth, Func<ISourceProviderEntry, int, Task<bool>> visitor, CancellationToken token)
     {
         var visit = new Stack<(ISourceProviderEntry Entry, int Level)>();
-        await foreach (var item in source.Enumerate(token))
+        await foreach (var item in source.EnumerateAsync(token))
             visit.Push((item, 0));
 
         while (visit.Count() != 0)

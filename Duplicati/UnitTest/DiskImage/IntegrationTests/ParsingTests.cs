@@ -31,7 +31,7 @@ public class ParsingTests : DiskImageTests
 
         // Backup
         var backupResults = await RunBackupAsync(sourceDrivePath);
-        TestUtils.AssertResults(backupResults);
+        TestUtils.AssertResults(backupResults, ignoredWarnings: ["diskimage-filesystem-parsed"]);
 
         // List backup contents and verify geometry.json is present
         using (var c = new Controller("file://" + TARGETFOLDER, TestOptions, null))
@@ -68,11 +68,11 @@ public class ParsingTests : DiskImageTests
         using var provider = new SourceProvider(sourceUrl, "", new Dictionary<string, string?>());
 
         // Initialize the provider
-        await provider.Initialize(CancellationToken.None);
+        await provider.InitializeAsync(CancellationToken.None);
 
         // Enumerate entries
         var diskEntries = new List<ISourceProviderEntry>();
-        await foreach (var entry in provider.Enumerate(CancellationToken.None))
+        await foreach (var entry in provider.EnumerateAsync(CancellationToken.None))
         {
             diskEntries.Add(entry);
             await TestContext.Progress.WriteLineAsync($"Found entry: {entry.Path} (IsFolder: {entry.IsFolder}, Size: {entry.Size})");
@@ -130,7 +130,7 @@ public class ParsingTests : DiskImageTests
 
         // Backup
         var backupResults = await RunBackupAsync(sourceDrivePath);
-        TestUtils.AssertResults(backupResults);
+        TestUtils.AssertResults(backupResults, ignoredWarnings: ["diskimage-filesystem-parsed"]);
         await TestContext.Progress.WriteLineAsync($"Backup completed successfully");
 
         // Create and attach disk image

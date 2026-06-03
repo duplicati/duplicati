@@ -140,4 +140,14 @@ internal static class Strings
     /// Long description for the filesystem unknown option.
     /// </summary>
     public static string DiskImageFilesystemUnknownLong => LC.L("If set, the filesystem on partitions will be treated as unknown, rather than trying to detect it. This forces raw block-based backup instead of filesystem-aware backup.");
+
+    /// <summary>
+    /// Short description for the filesystem parsed option.
+    /// </summary>
+    public static string DiskImageFilesystemParsedShort => LC.L("Enable filesystem-aware backup.");
+
+    /// <summary>
+    /// Long description for the filesystem parsed option.
+    /// </summary>
+    public static string DiskImageFilesystemParsedLong => LC.L("If set, the filesystem on partitions will be parsed, rather than treating the disk as a raw block device. This enables filesystem-aware backup instead of raw block-based backup.");
 }

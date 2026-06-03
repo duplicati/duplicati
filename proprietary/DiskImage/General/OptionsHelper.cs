@@ -31,7 +31,12 @@ internal static class OptionsHelper
     /// <summary>
     /// Option to treat filesystem as unknown (force raw block-based backup).
     /// </summary>
-    internal const string DISK_IMAGE_FILESYSTEM_UNKNOWN_OPTION = "diskimage-filesystem-unknown";
+    // internal const string DISK_IMAGE_FILESYSTEM_UNKNOWN_OPTION = "diskimage-filesystem-unknown";
+
+    /// <summary>
+    /// Option to opt-in to filesystem parsing (enables filesystem-aware backup).
+    /// </summary>
+    internal const string DISK_IMAGE_FILESYSTEM_PARSED_OPTION = "diskimage-filesystem-parsed";
 
     /// <summary>
     /// Gets the list of supported command-line arguments for the DiskImage module.
@@ -41,6 +46,7 @@ internal static class OptionsHelper
         new CommandLineArgument(DISK_RESTORE_AUTO_UNMOUNT_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.DiskRestoreAutoUnmountShort, Strings.DiskRestoreAutoUnmountLong, "false"),
         new CommandLineArgument(DISK_RESTORE_SKIP_PARTITION_TABLE_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.DiskRestoreSkipPartitionTableShort, Strings.DiskRestoreSkipPartitionTableLong, "false"),
         new CommandLineArgument(DISK_RESTORE_VALIDATE_SIZE_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.DiskRestoreValidateSizeShort, Strings.DiskRestoreValidateSizeLong, "true"),
-        new CommandLineArgument(DISK_IMAGE_FILESYSTEM_UNKNOWN_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.DiskImageFilesystemUnknownShort, Strings.DiskImageFilesystemUnknownLong, "false")
+        //new CommandLineArgument(DISK_IMAGE_FILESYSTEM_UNKNOWN_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.DiskImageFilesystemUnknownShort, Strings.DiskImageFilesystemUnknownLong, "false"),
+        new CommandLineArgument(DISK_IMAGE_FILESYSTEM_PARSED_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.DiskImageFilesystemParsedShort, Strings.DiskImageFilesystemParsedLong, "false"),
     ];
 }

@@ -215,8 +215,8 @@ namespace Duplicati.Library.Backend
         public string Description => Strings.Idrivee2Backend.Description;
 
         /// <inheritdoc />
-        public Task TestAsync(CancellationToken cancelToken)
-            => this.TestReadWritePermissionsAsync(cancelToken);
+        public Task TestAsync(bool alsoWrite, CancellationToken cancelToken)
+            => this.TestBackendAsync(alsoWrite, cancelToken);
 
         /// <inheritdoc/>
         public bool SupportsStreaming => true;

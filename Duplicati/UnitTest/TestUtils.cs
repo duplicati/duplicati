@@ -287,15 +287,15 @@ namespace Duplicati.UnitTest
         {
         }
 
-        public static void AssertResults(IBasicResults results)
+        public static void AssertResults(IBasicResults results, string[] ignoredWarnings = null)
         {
-            string operation = "Result";
+            var operation = "Result";
+            ignoredWarnings ??= [];
+
             // Use dynamic property access for MainOperation, because it is only exposed in internal classes
-            PropertyInfo operationProperty = results.GetType().GetProperty("MainOperation", typeof(Library.Main.OperationMode));
+            var operationProperty = results.GetType().GetProperty("MainOperation", typeof(Library.Main.OperationMode));
             if (operationProperty != null)
-            {
                 operation = ((Library.Main.OperationMode)operationProperty.GetValue(results)).ToString();
-            }
 
             if (results is ITestResults testResults)
             {
@@ -330,11 +330,12 @@ namespace Duplicati.UnitTest
                 throw new TestVerificationException(sb.ToString());
             }
 
-            if (results.Warnings.Count() != 0)
+            var remainingWarnings = results.Warnings.Where(w => !ignoredWarnings.Any(ignored => w.Contains(ignored)));
+            if (remainingWarnings.Any())
             {
                 var sb = new StringBuilder();
                 sb.AppendLine($"Warnings - {operation}:");
-                foreach (var w in results.Warnings)
+                foreach (var w in remainingWarnings)
                     sb.AppendLine(w.ToString());
                 throw new TestVerificationException(sb.ToString());
             }

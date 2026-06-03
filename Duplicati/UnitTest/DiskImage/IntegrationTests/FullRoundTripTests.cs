@@ -486,7 +486,7 @@ public class FullRoundTripTests : DiskImageTests
 
         // Backup
         var backupResults = await RunBackupAsync(sourceDrivePath);
-        TestUtils.AssertResults(backupResults);
+        TestUtils.AssertResults(backupResults, ignoredWarnings: ["diskimage-filesystem-parsed"]);
         await TestContext.Progress.WriteLineAsync($"Backup completed successfully");
 
         // Setup restore target disk image with same geometry

@@ -403,8 +403,8 @@ namespace Duplicati.Library.Backend.GoogleDrive
             }
         }
 
-        public Task TestAsync(CancellationToken cancelToken)
-            => this.TestReadWritePermissionsAsync(cancelToken);
+        public Task TestAsync(bool alsoWrite, CancellationToken cancelToken)
+            => this.TestBackendAsync(alsoWrite, cancelToken);
 
         public async Task CreateFolderAsync(CancellationToken cancelToken)
         {

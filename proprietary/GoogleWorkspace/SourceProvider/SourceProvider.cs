@@ -114,12 +114,12 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
     {
     }
 
-    public IAsyncEnumerable<ISourceProviderEntry> Enumerate(CancellationToken cancellationToken)
+    public IAsyncEnumerable<ISourceProviderEntry> EnumerateAsync(CancellationToken cancellationToken)
     {
         return new RootSourceEntry(this).Enumerate(cancellationToken);
     }
 
-    public async Task<ISourceProviderEntry?> GetEntry(string path, bool isFolder, CancellationToken cancellationToken)
+    public async Task<ISourceProviderEntry?> GetEntryAsync(string path, bool isFolder, CancellationToken cancellationToken)
     {
         if (_entryCache.TryGetValue(path, out var cachedEntry))
             return cachedEntry;
@@ -179,7 +179,7 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
         return resultEntry;
     }
 
-    public Task Initialize(CancellationToken cancellationToken)
+    public Task InitializeAsync(CancellationToken cancellationToken)
     {
         if (!_hasSetMetadataStorageOption)
             throw new UserInformationException(Strings.MetadataStorageNotEnabled("store-metadata-content-in-database"), "DatabaseMetadataStorageNotEnabled");
@@ -187,7 +187,7 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
         return Task.CompletedTask;
     }
 
-    public Task Test(CancellationToken cancellationToken)
+    public Task TestAsync(CancellationToken cancellationToken)
     {
         _apiHelper.TestConnection();
         return Task.CompletedTask;

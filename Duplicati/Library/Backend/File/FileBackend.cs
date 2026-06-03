@@ -410,8 +410,8 @@ namespace Duplicati.Library.Backend
         public string Description => Strings.FileBackend.Description;
 
         /// <inheritdoc />
-        public Task TestAsync(CancellationToken cancelToken)
-            => this.TestReadWritePermissionsAsync(cancelToken);
+        public Task TestAsync(bool alsoWrite, CancellationToken cancelToken)
+            => this.TestBackendAsync(alsoWrite, cancelToken);
 
         /// <inheritdoc />
         public async Task CreateFolderAsync(CancellationToken cancelToken)

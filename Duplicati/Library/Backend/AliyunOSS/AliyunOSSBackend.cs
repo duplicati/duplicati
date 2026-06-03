@@ -175,8 +175,8 @@ namespace Duplicati.Library.Backend.AliyunOSS
             }
         }
 
-        public Task TestAsync(CancellationToken cancelToken)
-            => this.TestReadWritePermissionsAsync(cancelToken);
+        public Task TestAsync(bool alsoWrite, CancellationToken cancelToken)
+            => this.TestBackendAsync(alsoWrite, cancelToken);
 
         public Task CreateFolderAsync(CancellationToken cancelToken)
             // No need to create folders

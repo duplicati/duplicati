@@ -39,8 +39,8 @@ namespace Duplicati.WebserverCore.Endpoints.V1
                 => ExecuteDbPath(input.path))
                 .RequireAuthorization();
 
-            group.MapPost("/remoteoperation/test", ([FromServices] Connection connection, [FromServices] IApplicationSettings applicationSettings, [FromQuery] bool? autocreate, [FromQuery] Dto.V2.RemoteDestinationType? type, [FromBody] RemoteOperationInput input, CancellationToken cancelToken)
-                => ExecuteTestAsync(connection, applicationSettings, input.path, input.backupId, input.connectionStringId, input.sourcePrefix, autocreate ?? false, type ?? Dto.V2.RemoteDestinationType.Backend, cancelToken))
+            group.MapPost("/remoteoperation/test", ([FromServices] Connection connection, [FromServices] IApplicationSettings applicationSettings, [FromQuery] bool? autocreate, [FromQuery] bool? readOnlyTest, [FromQuery] Dto.V2.RemoteDestinationType? type, [FromBody] RemoteOperationInput input, CancellationToken cancelToken)
+                => ExecuteTestAsync(connection, applicationSettings, input.path, input.backupId, input.connectionStringId, input.sourcePrefix, autocreate ?? false, readOnlyTest ?? false, type ?? Dto.V2.RemoteDestinationType.Backend, cancelToken))
                 .RequireAuthorization();
 
             group.MapPost("/remoteoperation/create", ([FromServices] Connection connection, [FromServices] IApplicationSettings applicationSettings, [FromBody] RemoteOperationInput input, CancellationToken cancelToken)
@@ -54,7 +54,7 @@ namespace Duplicati.WebserverCore.Endpoints.V1
             return new Dto.GetDbPathDto(!string.IsNullOrWhiteSpace(path), path);
         }
 
-        private static async Task ExecuteTestAsync(Connection connection, IApplicationSettings applicationSettings, string maskedurl, string? backupId, long? connectionStringId, string? sourcePrefix, bool autoCreate, Dto.V2.RemoteDestinationType type, CancellationToken cancelToken)
+        private static async Task ExecuteTestAsync(Connection connection, IApplicationSettings applicationSettings, string maskedurl, string? backupId, long? connectionStringId, string? sourcePrefix, bool autoCreate, bool readOnlyTest, Dto.V2.RemoteDestinationType type, CancellationToken cancelToken)
         {
             try
             {
@@ -62,7 +62,7 @@ namespace Duplicati.WebserverCore.Endpoints.V1
                 {
                     using var wrapper = await SharedRemoteOperation.GetSourceProviderForTestingAsync(connection, applicationSettings, maskedurl, backupId, connectionStringId ?? -1, sourcePrefix, cancelToken);
                     using (var s = wrapper.SourceProvider)
-                        await s.Test(cancelToken).ConfigureAwait(false);
+                        await s.TestAsync(cancelToken).ConfigureAwait(false);
                 }
                 else if (type == Dto.V2.RemoteDestinationType.RestoreDestinationProvider)
                 {
@@ -75,14 +75,14 @@ namespace Duplicati.WebserverCore.Endpoints.V1
                     using var wrapper = await SharedRemoteOperation.GetBackendAsync(connection, applicationSettings, maskedurl, backupId, connectionStringId ?? -1, cancelToken);
                     using (var b = wrapper.Backend)
                     {
-                        try { await b.TestAsync(cancelToken).ConfigureAwait(false); }
+                        try { await b.TestAsync(!readOnlyTest, cancelToken).ConfigureAwait(false); }
                         catch (Exception ex) when (SharedRemoteOperation.GetInnerException<FolderMissingException>(ex) is FolderMissingException)
                         {
-                            if (!autoCreate)
+                            if (!autoCreate || readOnlyTest)
                                 throw;
 
                             await b.CreateFolderAsync(cancelToken).ConfigureAwait(false);
-                            await b.TestAsync(cancelToken).ConfigureAwait(false);
+                            await b.TestAsync(!readOnlyTest, cancelToken).ConfigureAwait(false);
                         }
                     }
                 }

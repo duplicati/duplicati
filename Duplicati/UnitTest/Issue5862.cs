@@ -75,8 +75,8 @@ namespace Duplicati.UnitTest
             public Task PutAsync(string remotename, string filename, CancellationToken cancellationToken)
                 => throw new DeterministicErrorBackend.DeterministicErrorBackendException("Prevent");
 
-            public Task TestAsync(CancellationToken cancellationToken)
-                => backend.TestAsync(cancellationToken);
+            public Task TestAsync(bool alsoWrite, CancellationToken cancellationToken)
+                => backend.TestAsync(alsoWrite, cancellationToken);
         }
 
         [Test]

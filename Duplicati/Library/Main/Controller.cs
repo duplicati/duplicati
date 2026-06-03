@@ -1023,6 +1023,10 @@ namespace Duplicati.Library.Main
             if (BackendModules.DeprecatedBackendModules.Contains(scheme))
                 Logging.Log.WriteWarningMessage(LOGTAG, "BackendDeprecated", null, $"The backend {scheme} is deprecated and should be migrated away from.");
 
+            //Warn about experimental diskimage filesystem parsing
+            if (m_options.RawOptions.ContainsKey("diskimage-filesystem-parsed"))
+                Logging.Log.WriteWarningMessage(LOGTAG, "ExperimentalDiskImageFilesystemParsed", null, "The option 'diskimage-filesystem-parsed' is experimental and should be used with caution.");
+
             //TODO: Based on the action, see if all options are relevant
         }
 
