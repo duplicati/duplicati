@@ -34,6 +34,8 @@ internal static class DuplicatiBackend
     public static string AuthKeyOptionsLong { get { return LC.L(@"Specifies the API Key to use when authenticating with the Duplicati storage server."); } }
     public static string BackupIdOptionsShort { get { return LC.L(@"The Backup ID to use on the Duplicati storage server."); } }
     public static string BackupIdOptionsLong { get { return LC.L(@"Each backupID identifies a separate backup set on the Duplicati storage server."); } }
+    public static string EndpointOptionsShort { get { return LC.L(@"The URL of the Duplicati storage server."); } }
+    public static string EndpointOptionsLong { get { return LC.L(@"Specifies the URL of the Duplicati storage server."); } }
     public static string ErrorMissingBackupId { get { return LC.L(@"A unique backup id must be specified"); } }
 }
 

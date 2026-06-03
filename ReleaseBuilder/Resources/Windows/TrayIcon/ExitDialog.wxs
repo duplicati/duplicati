@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  TrayIcon-specific override of the standard WixUI_Common ExitDialog.
+
+  Both this file and the shared WixUIExtension/ui/ExitDialog.wxs end up in
+  the wixl input set. wixl resolves the Dialog/Control tables from the
+  later-loaded definition, so this file takes precedence (it is passed on
+  the wixl command line after the extdir loads).
+
+  The dialog adds, on top of the regular "Launch Duplicati now" checkbox,
+  a service password panel that is only shown when DUPLICATI_SERVICE_PASSWORD
+  is set (i.e. the user installed Duplicati as a Windows Service and the
+  GenerateDuplicatiServicePassword custom action has populated the property).
+-->
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Fragment>
+    <UI>
+      <Dialog Id="ExitDialog" Width="370" Height="270" Title="[ProductName] Setup">
+        <Control Id="Finish" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Cancel="yes" Text="Finish">
+          <!-- Service mode (the user opted into the Windows Service
+               install, i.e. DuplicatiServiceFeature has been marked for
+               local install): launch with the no-hosted-server flag so
+               the TrayIcon connects to the freshly-installed Windows
+               Service instead of port-conflicting by hosting its own
+               server. -->
+          <Publish Event="DoAction" Value="LaunchApplicationNoHosted" Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = &quot;1&quot; AND FORSERVICE = &quot;false&quot; AND NOT Installed AND &amp;DuplicatiServiceFeature=3" />
+          <!-- Non-service mode: standard launch with no extra arguments. -->
+          <Publish Event="DoAction" Value="LaunchApplication"         Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = &quot;1&quot; AND FORSERVICE = &quot;false&quot; AND NOT Installed AND NOT (&amp;DuplicatiServiceFeature=3)" />
+        </Control>
+        <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Disabled="yes" Text="Cancel" />
+        <Control Id="Bitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="234" TabSkip="no" Text="WixUI_Bmp_Dialog" />
+        <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Disabled="yes" Text="Back" />
+        <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
+        <Control Id="Title" Type="Text" X="135" Y="20" Width="220" Height="60" Transparent="yes" NoPrefix="yes" Text="{\WixUI_Font_Bigger}Completed the [ProductName] Setup Wizard" />
+        <Control Id="Description" Type="Text" X="135" Y="70" Width="220" Height="20" Transparent="yes" NoPrefix="yes" Text="Click the Finish button to exit the Setup Wizard." />
+
+        <Control Id="OptionalText" Type="Text" X="135" Y="200" Width="220" Height="30" Transparent="yes" NoPrefix="yes" Hidden="yes" Text="[WIXUI_EXITDIALOGOPTIONALTEXT]" ShowCondition="WIXUI_EXITDIALOGOPTIONALTEXT AND NOT Installed" />
+        <Control Id="OptionalCheckBox" Type="CheckBox" X="135" Y="200" Width="220" Height="20" Hidden="yes" Property="WIXUI_EXITDIALOGOPTIONALCHECKBOX" CheckBoxValue="1" Text="[WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT]" ShowCondition="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT AND FORSERVICE = &quot;false&quot; AND NOT Installed" />
+
+        <!--
+          Service password panel. Visible only when the installer generated
+          a random password for the Windows Service install, i.e. when
+          DUPLICATI_SERVICE_PASSWORD has been populated by
+          GenerateDuplicatiServicePassword (which only runs in the service
+          install path).
+        -->
+        <Control Id="ServicePasswordLabel" Type="Text" X="135" Y="100" Width="220" Height="45" Transparent="yes" NoPrefix="yes" Hidden="yes" Text="Duplicati was installed as a Windows Service and a random password was generated for it. If you need the password, copy it now as it is not accessible later. It has also been installed into Windows Credential Manager." ShowCondition="DUPLICATI_SERVICE_PASSWORD AND NOT Installed" />
+        <Control Id="ServicePasswordCopy" Type="PushButton" X="275" Y="155" Width="80" Height="17" Text="Copy password" Hidden="yes" ShowCondition="DUPLICATI_SERVICE_PASSWORD AND NOT Installed AND NOSCRIPT &lt;&gt; &quot;true&quot;">
+          <Publish Event="DoAction" Value="CopyServicePasswordToClipboard" Condition="DUPLICATI_SERVICE_PASSWORD" />
+        </Control>
+      </Dialog>
+
+      <InstallUISequence>
+        <Show Dialog="ExitDialog" OnExit="success" Overridable="yes" />
+      </InstallUISequence>
+
+      <AdminUISequence>
+        <Show Dialog="ExitDialog" OnExit="success" Overridable="yes" />
+      </AdminUISequence>
+    </UI>
+  </Fragment>
+</Wix>

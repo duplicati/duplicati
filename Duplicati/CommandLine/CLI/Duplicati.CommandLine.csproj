@@ -29,4 +29,8 @@
     <EmbeddedResource Include="help.txt" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="StreamJsonRpc" Version="2.17.8" />
+  </ItemGroup>
+
 </Project>

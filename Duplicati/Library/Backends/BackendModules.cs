@@ -40,7 +40,8 @@ public static class BackendModules
     /// </summary>
     public static IReadOnlySet<string> UntestedBackendModules => new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
         new Backend.AliyunOSS.OSS().ProtocolKey,
-        new Backend.TencentCOS.COS().ProtocolKey
+        new Backend.TencentCOS.COS().ProtocolKey,
+        new Backend.MovistarCloud.MovistarCloudBackend().ProtocolKey
     };
 
     /// <summary>
@@ -73,6 +74,7 @@ public static class BackendModules
         new Backend.Jottacloud(),
         new Backend.Mega.MegaBackend(),
         new Backend.MicrosoftGroup(),
+        new Backend.MovistarCloud.MovistarCloudBackend(),
         new Backend.OneDrive(),
         new Backend.OpenStack.OpenStackStorage(),
         new Backend.Rclone(),

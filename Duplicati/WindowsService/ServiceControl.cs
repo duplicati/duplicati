@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Service;
+using Microsoft.Win32;
 using System;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -40,6 +41,53 @@ namespace Duplicati.WindowsService
         public const string SERVICE_NAME_AGENT = "Duplicati.Agent";
         public const string DISPLAY_NAME_AGENT = "Duplicati Agent service";
         public const string SERVICE_DESCRIPTION_AGENT = "The Duplicati Agent service";
+
+        /// <summary>
+        /// Registry key holding the one-shot init password written by the
+        /// MSI installer. The value is readable only by SYSTEM and
+        /// Administrators (the MSI hardens the ACL via
+        /// MsiLockPermissionsEx). On first start of the service we promote
+        /// it to a process-scoped environment variable for the child
+        /// Duplicati.Server.exe (which the option-loader maps to
+        /// --webservice-password).
+        /// After the server has stayed up for a few seconds we delete the
+        /// value so the password no longer lives on disk.
+        /// </summary>
+        internal const string INIT_REGISTRY_KEY = @"SOFTWARE\DuplicatiTeam\Duplicati\Service";
+        /// <summary>
+        /// The name of the registry value holding the init password.
+        /// </summary>
+        internal const string INIT_REGISTRY_VALUE = "InitPassword";
+
+        /// <summary>
+        /// The name of the registry value holding the reset password.
+        /// </summary>
+        internal const string RESET_REGISTRY_VALUE = "ResetPassword";
+
+        /// <summary>
+        /// The name of the registry value holding the TLS certs install/uninstall instruction.
+        /// </summary>
+        internal const string TLS_CERTS_REGISTRY_VALUE = "TlsCertsOption";
+
+        /// <summary>
+        /// Separate registry key for the BootstrapApplied sentinel. This key
+        /// retains its default inheritable ACL (Authenticated Users have
+        /// Read), unlike INIT_REGISTRY_KEY which is locked down to admins
+        /// because it briefly holds the password. The sentinel only stores
+        /// "1" with no secret content, so read access for non-admin users
+        /// is fine - and is required because the MSI's CheckBootstrapResult
+        /// CA polls this value from the un-elevated UI process.
+        /// </summary>
+        private const string SERVICE_STATE_REGISTRY_KEY = @"SOFTWARE\DuplicatiTeam\Duplicati\InstallState";
+
+        /// <summary>
+        /// Sentinel value the installer (CheckBootstrapResult) polls for to
+        /// confirm that the service actually applied the password. We write
+        /// "1" once we have successfully deleted InitPassword. The installer
+        /// removes any pre-existing copy at the start of WriteServicePassword
+        /// so this is always a fresh signal.
+        /// </summary>
+        private const string BOOTSTRAP_APPLIED_VALUE = "BootstrapApplied";
 
         private readonly System.Diagnostics.EventLog m_eventLog;
 
@@ -65,7 +113,6 @@ namespace Duplicati.WindowsService
             };
             m_verbose_messages = args != null && args.Any(x => string.Equals("--debug-service", x, StringComparison.OrdinalIgnoreCase));
             m_cmdargs = (args ?? new string[0]).Where(x => !string.Equals("--debug-service", x, StringComparison.OrdinalIgnoreCase)).ToArray();
-
         }
 
         protected override void OnStart(string[] args)
@@ -96,6 +143,18 @@ namespace Duplicati.WindowsService
                     : SERVER_LOG_NAME)
                 }).ToArray();
 
+            // Pick up the one-shot init password planted by the MSI installer,
+            // the certificate control command,
+            // or the reset password planted by the reset-password command,
+            // (only relevant for the Server service, not the Agent service).
+            string resetPassword = null;
+            if (m_executable == PackageHelper.NamedExecutable.Server)
+            {
+                ReadAndExecuteTlsCertsCommandFromRegistry();
+                ReadAndExecuteInitPasswordFromRegistry();
+                resetPassword = ConsumeResetPasswordFromRegistry();
+            }
+
             if (m_verbose_messages)
                 m_eventLog.WriteEntry("Starting...");
             lock (m_lock)
@@ -116,6 +175,7 @@ namespace Duplicati.WindowsService
                     m_runner = new Runner(
                         m_executable,
                         startargs,
+                        true,
                         () =>
                         {
                             if (m_verbose_messages)
@@ -143,6 +203,15 @@ namespace Duplicati.WindowsService
                         {
                             if (important || m_verbose_messages)
                                 m_eventLog.WriteEntry(msg);
+                        },
+                        (startInfo) =>
+                        {
+                            // If we have a reset password, pass it to the server once
+                            if (!string.IsNullOrEmpty(resetPassword) && startInfo != null)
+                            {
+                                startInfo.EnvironmentVariables["DUPLICATI__WEBSERVICE_PASSWORD"] = resetPassword;
+                                resetPassword = null;
+                            }
                         }
                     );
                 }
@@ -166,7 +235,7 @@ namespace Duplicati.WindowsService
 
                     if (m_verbose_messages)
                         m_eventLog.WriteEntry("Soft stop invoked...");
-                    m_runner.Stop(false);
+                    m_runner.Stop();
                 }
 
         }
@@ -196,5 +265,224 @@ namespace Duplicati.WindowsService
 
         [DllImport("advapi32.dll", SetLastError = true)]
         private static extern bool SetServiceStatus(IntPtr handle, ref ServiceStatus serviceStatus);
+
+        private void ReadAndExecuteTlsCertsCommandFromRegistry()
+        {
+            try
+            {
+                using (var key = ServiceRegistryKey.OpenIfTrusted(writable: true, out var reason))
+                {
+                    if (key == null)
+                    {
+                        if (reason != null && reason != "key-missing")
+                            m_eventLog.WriteEntry(
+                                $"Refusing to process TLS certs registry command: {reason}",
+                                System.Diagnostics.EventLogEntryType.Warning);
+                        return;
+                    }
+
+                    var raw = key.GetValue(TLS_CERTS_REGISTRY_VALUE);
+                    if (raw == null)
+                        return;
+
+                    var value = raw as string;
+                    if (string.IsNullOrEmpty(value))
+                        return;
+
+                    var installDir = UpdaterManager.INSTALLATIONDIR;
+                    var exeName = PackageHelper.GetExecutableName(PackageHelper.NamedExecutable.ConfigureTool);
+                    string configureToolExe = System.IO.Path.Combine(installDir, exeName);
+                    if (System.IO.File.Exists(configureToolExe))
+                    {
+                        var startInfo = new System.Diagnostics.ProcessStartInfo
+                        {
+                            FileName = configureToolExe,
+                            UseShellExecute = false,
+                            CreateNoWindow = true,
+                            RedirectStandardOutput = true,
+                            RedirectStandardError = true
+                        };
+
+                        if (string.Equals(value, "install", StringComparison.OrdinalIgnoreCase))
+                        {
+                            startInfo.Arguments = "https generate --auto-create-database";
+                            m_eventLog.WriteEntry("Running ConfigureTool to generate TLS certificates.", System.Diagnostics.EventLogEntryType.Information);
+                        }
+                        else if (string.Equals(value, "uninstall", StringComparison.OrdinalIgnoreCase))
+                        {
+                            startInfo.Arguments = "https remove";
+                            m_eventLog.WriteEntry("Running ConfigureTool to remove TLS certificates.", System.Diagnostics.EventLogEntryType.Information);
+                        }
+                        else
+                        {
+                            m_eventLog.WriteEntry($"Unknown TLS certs command: {value}", System.Diagnostics.EventLogEntryType.Warning);
+                            return;
+                        }
+
+                        using (var process = new System.Diagnostics.Process { StartInfo = startInfo })
+                        {
+                            var outputBuilder = new System.Text.StringBuilder();
+                            var errorBuilder = new System.Text.StringBuilder();
+
+                            if (m_verbose_messages)
+                            {
+                                process.OutputDataReceived += (s, e) => { if (e.Data != null) outputBuilder.AppendLine(e.Data); };
+                                process.ErrorDataReceived += (s, e) => { if (e.Data != null) errorBuilder.AppendLine(e.Data); };
+                            }
+
+                            if (process.Start())
+                            {
+                                if (m_verbose_messages)
+                                {
+                                    process.BeginOutputReadLine();
+                                    process.BeginErrorReadLine();
+                                }
+
+                                var timeout = TimeSpan.FromSeconds(60);
+                                if (process.WaitForExit(timeout))
+                                {
+                                    process.WaitForExit(); // Ensure async streams are fully read
+                                    if (process.ExitCode != 0)
+                                        m_eventLog.WriteEntry($"ConfigureTool failed with exit code {process.ExitCode}", System.Diagnostics.EventLogEntryType.Warning);
+
+                                    if (m_verbose_messages)
+                                        m_eventLog.WriteEntry($"ConfigureTool output was:.\n\nSTDOUT:\n{outputBuilder}\n\nSTDERR:\n{errorBuilder}", System.Diagnostics.EventLogEntryType.Information);
+                                }
+                                else
+                                {
+                                    m_eventLog.WriteEntry($"ConfigureTool timed out after {timeout.TotalSeconds} seconds.", System.Diagnostics.EventLogEntryType.Warning);
+                                    try { process.Kill(); } catch { }
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        m_eventLog.WriteEntry("ConfigureTool not found, cannot configure TLS certificates.", System.Diagnostics.EventLogEntryType.Warning);
+                    }
+
+                    key.DeleteValue(TLS_CERTS_REGISTRY_VALUE, throwOnMissingValue: false);
+                }
+            }
+            catch (Exception ex)
+            {
+                m_eventLog.WriteEntry("Failed to process TLS certs registry command: " + ex.Message, System.Diagnostics.EventLogEntryType.Warning);
+            }
+        }
+
+        /// <summary>
+        /// Reads the initial password from the registry if present, and then starts the server with the password.
+        /// If the password is present, it is removed from the registry after the server has started.
+        /// Starting the server with the password will cause the server to reset the password to the new value,
+        /// and then immediately exit with exit code 0 if the password was reset successfully.
+        /// </summary>
+        private void ReadAndExecuteInitPasswordFromRegistry()
+        {
+            try
+            {
+                if (m_verbose_messages)
+                    m_eventLog.WriteEntry("Checking for init password in registry...", System.Diagnostics.EventLogEntryType.Information);
+
+                using (var key = ServiceRegistryKey.OpenIfTrusted(writable: true, out var reason))
+                {
+                    if (key == null)
+                    {
+                        if (reason != null && reason != "key-missing")
+                            m_eventLog.WriteEntry(
+                                $"Refusing to consume init password: {reason}",
+                                System.Diagnostics.EventLogEntryType.Warning);
+
+                        return;
+                    }
+
+                    var rawPwd = key.GetValue(INIT_REGISTRY_VALUE);
+                    if (rawPwd != null)
+                    {
+                        var password = rawPwd as string;
+                        var success = false;
+
+                        if (!string.IsNullOrWhiteSpace(password))
+                        {
+                            m_eventLog.WriteEntry("Found init password in registry, applying...", System.Diagnostics.EventLogEntryType.Information);
+
+                            if (m_verbose_messages)
+                                m_eventLog.WriteEntry($"Starting server in-process to apply init password...", System.Diagnostics.EventLogEntryType.Information);
+
+                            try
+                            {
+                                var res = Server.Program.Main(["--webservice-password-init=" + password]);
+                                if (res == Server.Program.EXITCODE_INITPASSWORD_SUCCESS)
+                                    success = true;
+                            }
+                            catch (Exception ex)
+                            {
+                                m_eventLog.WriteEntry($"Exception from applying init password: {ex.Message}", System.Diagnostics.EventLogEntryType.Warning);
+                            }
+
+                            if (m_verbose_messages)
+                                m_eventLog.WriteEntry($"Result from applying init password: {success}", System.Diagnostics.EventLogEntryType.Information);
+                        }
+
+                        // Always delete the InitPassword key if found
+                        key.DeleteValue(INIT_REGISTRY_VALUE, throwOnMissingValue: false);
+
+                        // Always write sentinel if the key was present.
+                        // This is not locked down because the MSI must be able to read it.
+                        using (var stateView = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64))
+                        using (var stateKey = stateView.CreateSubKey(SERVICE_STATE_REGISTRY_KEY, writable: true))
+                            stateKey.SetValue(BOOTSTRAP_APPLIED_VALUE, success ? "1" : "0", RegistryValueKind.String);
+                    }
+                }
+
+            }
+            catch (Exception ex)
+            {
+                m_eventLog.WriteEntry("Failed to apply init password: " + ex.Message, System.Diagnostics.EventLogEntryType.Warning);
+            }
+        }
+
+        /// <summary>
+        /// Reads the reset password from the registry if present, and then returns it.
+        /// If the password is present, it is removed from the registry after being read.
+        /// </summary>
+        private string ConsumeResetPasswordFromRegistry()
+        {
+            try
+            {
+                if (m_verbose_messages)
+                    m_eventLog.WriteEntry("Checking for reset password in registry...", System.Diagnostics.EventLogEntryType.Information);
+
+                using (var key = ServiceRegistryKey.OpenIfTrusted(writable: true, out var reason))
+                {
+                    if (key == null)
+                    {
+                        if (reason != null && reason != "key-missing")
+                            m_eventLog.WriteEntry(
+                                $"Refusing to consume reset password: {reason}",
+                                System.Diagnostics.EventLogEntryType.Warning);
+                        return null;
+                    }
+
+                    var rawPwd = key.GetValue(RESET_REGISTRY_VALUE);
+                    key.DeleteValue(RESET_REGISTRY_VALUE, throwOnMissingValue: false);
+
+                    if (m_verbose_messages)
+                        m_eventLog.WriteEntry($"Found reset password in registry: {rawPwd as string != null}", System.Diagnostics.EventLogEntryType.Information);
+
+                    if (rawPwd != null)
+                    {
+                        var password = rawPwd as string;
+                        if (m_verbose_messages && !string.IsNullOrWhiteSpace(password))
+                            m_eventLog.WriteEntry($"Found reset password in registry, applying", System.Diagnostics.EventLogEntryType.Information);
+                        return string.IsNullOrWhiteSpace(password) ? null : password;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                m_eventLog.WriteEntry("Failed to read reset password: " + ex.Message, System.Diagnostics.EventLogEntryType.Warning);
+            }
+            return null;
+        }
     }
 }

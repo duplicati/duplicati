@@ -79,7 +79,7 @@
                 "--disable-discourse-announce", "true",
                 "--disable-clean-source", "true",
                 "--password", "test1234",
-                "--version", "2.0.8.104"                
+                "--version", "2.0.8.104"
             ],
             "env": {
                 "UPDATER_KEYFILE": "${workspaceFolder}/testfile.key1:${workspaceFolder}/testfile.key2"

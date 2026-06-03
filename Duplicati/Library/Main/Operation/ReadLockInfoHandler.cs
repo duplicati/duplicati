@@ -73,14 +73,14 @@ namespace Duplicati.Library.Main.Operation
             if (!backendManager.SupportsObjectLocking)
                 throw new UserInformationException("Backend does not support object locking", "BackendDoesNotSupportLocking");
 
-            if (!File.Exists(m_options.Dbpath))
+            var ownsDatabase = databaseOverride is null;
+            if (ownsDatabase && !File.Exists(m_options.Dbpath))
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseFileDoesNotExist");
 
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.ReadLockInfo_Running);
 
-            var ownsDatabase = databaseOverride is null;
             await using var db = ownsDatabase
-                ? await LocalLockDatabase.CreateAsync(m_options.Dbpath, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false)
+                ? await LocalLockDatabase.CreateAsync(m_options.Dbpath!, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false)
                 : null;
             var database = databaseOverride ?? db!;
 
@@ -118,6 +118,7 @@ namespace Duplicati.Library.Main.Operation
 
             m_result.VolumesRead = readCount;
             m_result.VolumesUpdated = updatedCount;
+            m_result.EndTime = DateTime.UtcNow;
 
             if (updatedCount > 0 || errorCount > 0)
                 Log.WriteInformationMessage(LOGTAG, "ReadLockInfoComplete", "Read lock info complete: {0} updated, {1} errors", updatedCount, errorCount);
