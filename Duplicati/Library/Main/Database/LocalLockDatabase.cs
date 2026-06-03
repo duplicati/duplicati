@@ -55,6 +55,23 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
+        /// Creates a new instance of the <see cref="LocalLockDatabase"/> class.
+        /// </summary>
+        /// <param name="database">The database to create the new instance on.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>The <see cref="LocalLockDatabase"/> instance</returns>
+        public static async Task<LocalLockDatabase> CreateAsync(LocalDatabase database, CancellationToken token)
+        {
+            var db = (LocalLockDatabase)await LocalDatabase.CreateLocalDatabaseAsync(
+                        database,
+                        new LocalLockDatabase(),
+                        token
+                    ).ConfigureAwait(false);
+            db.ShouldCloseConnection = false;
+            return db;
+        }
+
+        /// <summary>
         /// Updates the lock expiration time for a remote volume.
         /// </summary>
         /// <param name="name">The name of the remote volume.</param>

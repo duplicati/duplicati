@@ -604,9 +604,10 @@ namespace Duplicati.Library.Main.Operation
                 return;
             }
 
-            m_result.LockResults = new SetLockResults(m_result);
+            using var lockDb = await LocalLockDatabase.CreateAsync(m_database, m_taskReader.StopToken);
+            m_result.LockResults ??= new SetLockResults();
             await new SetLocksHandler(m_options, (SetLockResults)m_result.LockResults)
-                .RunAsync(backendManager, versionTimestamps)
+                .RunAsync(backendManager, lockDb, versionTimestamps)
                 .ConfigureAwait(false);
         }
 
