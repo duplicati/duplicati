@@ -1,10 +1,16 @@
 ﻿using System.CommandLine;
 
-var rootCommand = new RootCommand("Test Data Generator")
+public static class Program
 {
-    TestDataGenerator.Commands.Create.CreateCommand(),
-    TestDataGenerator.Commands.Update.CreateCommand()
-};
+    public static int Main(string[] args)
+    {
+        var rootCommand = new RootCommand("Test Data Generator")
+        {
+            TestDataGenerator.Commands.Create.CreateCommand(),
+            TestDataGenerator.Commands.Update.CreateCommand()
+        };
 
-return rootCommand.Invoke(args);
+        return rootCommand.Invoke(args);
+    }
+}
 
