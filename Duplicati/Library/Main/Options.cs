@@ -1181,7 +1181,7 @@ namespace Duplicati.Library.Main
             get
             {
                 var result = Common.IO.ExtendedFileAttributes.Parse(m_options.GetValueOrDefault("exclude-files-attributes"));
-                var excludeNonLocalFiles = GetBool("exclude-nonlocal-files");
+                var excludeNonLocalFiles = GetBool("exclude-non-local-files");
                 if (excludeNonLocalFiles)
                     result |= Common.IO.ExtendedFileAttributes.NonLocalAttributes;
                 return result;
