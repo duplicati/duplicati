@@ -242,6 +242,10 @@ namespace Duplicati.Server
                     connection.FixInvalidBackupId();
 
                 connection.ApplicationSettings.UpgradePasswordToKBDF();
+
+                if (Library.Utility.Utility.ParseBoolOption(commandlineOptions, WebServerLoader.OPTION_SUPPRESS_WELCOME_PAGE))
+                    connection.ApplicationSettings.SuppressWelcomePage();
+
                 CreateApplicationInstance(applicationSettings.DataFolder, writeToConsoleOnException);
 
                 applicationSettings.StartOrStopUsageReporter = () => StartOrStopUsageReporter(connection);
@@ -1287,6 +1291,7 @@ namespace Duplicati.Server
             new CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_PRE_AUTH_TOKENS, CommandLineArgument.ArgumentType.String, Strings.Program.WebserverPreAuthTokensDescription, Strings.Program.WebserverPreAuthTokensDescription),
             new CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_TOKENDURATION, CommandLineArgument.ArgumentType.Timespan, Strings.Program.WebserverTokenDurationDescription, Strings.Program.WebserverTokenDurationDescription, WebServerLoader.DEFAULT_OPTION_TOKENDURATION),
             new CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_ENABLE_FOLDER_STATUS_SERVICE, CommandLineArgument.ArgumentType.Boolean, Strings.Program.WebserverEnableFolderStatusServiceDescription, Strings.Program.WebserverEnableFolderStatusServiceDescription),
+            new CommandLineArgument(WebServerLoader.OPTION_SUPPRESS_WELCOME_PAGE, CommandLineArgument.ArgumentType.Boolean, Strings.Program.SuppressWelcomePageShort, Strings.Program.SuppressWelcomePageLong),
             new CommandLineArgument(PING_PONG_KEEPALIVE_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Program.PingpongkeepaliveShort, Strings.Program.PingpongkeepaliveLong),
             new CommandLineArgument(DISABLE_UPDATE_CHECK_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Program.DisableupdatecheckShort, Strings.Program.DisableupdatecheckLong),
             new CommandLineArgument(LOG_RETENTION_OPTION, CommandLineArgument.ArgumentType.Timespan, Strings.Program.LogretentionShort, Strings.Program.LogretentionLong, DEFAULT_LOG_RETENTION),

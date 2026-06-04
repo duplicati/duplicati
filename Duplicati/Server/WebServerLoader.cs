@@ -112,6 +112,11 @@ public static class WebServerLoader
     public const string OPTION_WEBSERVICE_TOKENDURATION = "webservice-token-duration";
 
     /// <summary>
+    /// Option for suppressing the welcome page
+    /// </summary>
+    public const string OPTION_SUPPRESS_WELCOME_PAGE = "webservice-suppress-welcome-page";
+
+    /// <summary>
     /// The default path to the web root
     /// </summary>
     public const string DEFAULT_OPTION_WEBROOT = "webroot";
