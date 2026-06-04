@@ -572,7 +572,7 @@ public static partial class Command
         if (string.IsNullOrWhiteSpace(keyfilePassword))
             keyfilePassword = EnvHelper.GetEnvKey("KEYFILE_PASSWORD", "");
         if (string.IsNullOrWhiteSpace(keyfilePassword))
-            keyfilePassword = ConsoleHelper.ReadPassword("Enter keyfile password");
+            keyfilePassword = ConsoleHelper.ReadPassword("Enter keyfile password: ");
 
         var primarySignKey = LoadKeyFile(configuration.ConfigFiles.UpdaterKeyfile.FirstOrDefault(), keyfilePassword, false);
         var additionalKeys = configuration.ConfigFiles.UpdaterKeyfile
@@ -1078,7 +1078,7 @@ public static partial class Command
                 throw;
         }
 
-        password = ConsoleHelper.ReadPassword($"Enter password for {keyfile}");
+        password = ConsoleHelper.ReadPassword($"Enter password for {keyfile}: ");
         return LoadKeyFile(keyfile, password, false);
     }
 
