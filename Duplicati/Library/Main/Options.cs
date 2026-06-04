@@ -371,6 +371,7 @@ namespace Duplicati.Library.Main
                 yield return new CommandLineArgument("vss-use-mapping", CommandLineArgument.ArgumentType.Boolean, Strings.Options.VssusemappingShort, Strings.Options.VssusemappingLong, "false");
                 yield return new CommandLineArgument("usn-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.UsnpolicyShort, Strings.Options.UsnpolicyLong, "off", null, Enum.GetNames(typeof(OptimizationStrategy)));
                 yield return new CommandLineArgument("backupread-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.BackupreadpolicyShort, Strings.Options.BackupreadpolicyLong, DEFAULT_BACKUPREAD_POLICY.ToString(), null, Enum.GetNames(typeof(OptimizationStrategy)));
+                yield return new CommandLineArgument("exclude-non-local-files", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ExcludenonlocalfilesShort, Strings.Options.ExcludenonlocalfilesLong, "false");
             }
 
             if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
@@ -480,7 +481,7 @@ namespace Duplicati.Library.Main
 
             new CommandLineArgument("symlink-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SymlinkpolicyShort, Strings.Options.SymlinkpolicyLong("store", "ignore", "follow"), Enum.GetName(typeof(SymlinkStrategy), SymlinkStrategy.Store), null, Enum.GetNames(typeof(SymlinkStrategy))),
             new CommandLineArgument("hardlink-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.HardlinkpolicyShort, Strings.Options.HardlinkpolicyLong("first", "all", "none"), Enum.GetName(typeof(HardlinkStrategy), HardlinkStrategy.All), null, Enum.GetNames(typeof(HardlinkStrategy))),
-            new CommandLineArgument("exclude-files-attributes", CommandLineArgument.ArgumentType.String, Strings.Options.ExcludefilesattributesShort, Strings.Options.ExcludefilesattributesLong(Enum.GetNames(typeof(System.IO.FileAttributes)))),
+            new CommandLineArgument("exclude-files-attributes", CommandLineArgument.ArgumentType.Flags, Strings.Options.ExcludefilesattributesShort, Strings.Options.ExcludefilesattributesLong, null, null, Common.IO.ExtendedFileAttributes.GetNames(false).ToArray()),
             new CommandLineArgument("compression-extension-file", CommandLineArgument.ArgumentType.Path, Strings.Options.CompressionextensionfileShort, Strings.Options.CompressionextensionfileLong(DEFAULT_COMPRESSED_EXTENSION_FILE), DEFAULT_COMPRESSED_EXTENSION_FILE),
 
             new CommandLineArgument("machine-id", CommandLineArgument.ArgumentType.String, Strings.Options.MachineidShort, Strings.Options.MachineidLong, Library.AutoUpdater.DataFolderManager.InstallID),
@@ -1157,7 +1158,16 @@ namespace Duplicati.Library.Main
         /// Gets the attribute filter used to exclude files and folders.
         /// </summary>
         public System.IO.FileAttributes FileAttributeFilter
-            => Library.Utility.Utility.ParseFlagsOption(m_options, "exclude-files-attributes", default(System.IO.FileAttributes));
+        {
+            get
+            {
+                var result = Common.IO.ExtendedFileAttributes.Parse(m_options.GetValueOrDefault("exclude-files-attributes"));
+                var excludeNonLocalFiles = GetBool("exclude-non-local-files");
+                if (excludeNonLocalFiles)
+                    result |= Common.IO.ExtendedFileAttributes.NonLocalAttributes;
+                return result;
+            }
+        }
 
         /// <summary>
         /// A value indicating if server uploads are verified by listing the folder contents
