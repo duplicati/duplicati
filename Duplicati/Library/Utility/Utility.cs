@@ -813,10 +813,9 @@ namespace Duplicati.Library.Utility
                 return @default;
 
             var flags = 0;
-            foreach (var s in value.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+            foreach (var s in value.Split([','], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
             {
-                var trimmed = s.Trim();
-                if (Enum.TryParse(trimmed, true, out T flag))
+                if (Enum.TryParse(s, true, out T flag))
                     flags = flags | (int)(object)flag;
             }
 
