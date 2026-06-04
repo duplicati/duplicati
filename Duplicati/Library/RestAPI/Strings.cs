@@ -125,6 +125,8 @@ Error message: {0}", error); }
         public static string ConfigureHttpsLong { get { return LC.L(@"Automatically generate and configure HTTPS certificates for the server"); } }
         public static string ConfigureHttpsHostnamesShort { get { return LC.L(@"HTTPS hostnames"); } }
         public static string ConfigureHttpsHostnamesLong { get { return LC.L(@"Comma-separated list of hostnames to include in the HTTPS certificate (used with --configure-https)"); } }
+        public static string SuppressWelcomePageShort { get { return LC.L(@"Suppress the initial welcome page"); } }
+        public static string SuppressWelcomePageLong { get { return LC.L(@"Suppress the welcome page that is shown when first using the web interface"); } }
     }
     internal static class Scheduler
     {
