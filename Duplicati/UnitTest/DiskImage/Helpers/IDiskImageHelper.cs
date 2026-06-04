@@ -109,4 +109,12 @@ public interface IDiskImageHelper : IDisposable
     /// <param name="readOnly">Indicates whether the disk should be re-attached as read-only.</param>
     /// <returns>The identifier of the re-attached disk.</returns>
     string ReAttach(string imagePath, string diskIdentifier, PartitionTableType tableType, bool readOnly = false);
+
+    /// <summary>
+    /// Checks if a specific file system type is supported on the current platform. This can be used to conditionally run tests that require certain file systems, or to skip tests if the required file system is not available.
+    /// It also returns a message indicating the reason if the file system type is not supported.
+    /// </summary>
+    /// <param name="fsType">The file system type to check.</param>
+    /// <returns><c>true</c> if the file system type is supported; otherwise, <c>false</c>.</returns>
+    (bool, string) IsFileSystemTypeSupported(FileSystemType fsType);
 }

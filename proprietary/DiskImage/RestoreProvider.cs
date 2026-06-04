@@ -13,6 +13,7 @@ using Duplicati.Library.Utility;
 using Duplicati.Proprietary.DiskImage.Disk;
 using Duplicati.Proprietary.DiskImage.Filesystem;
 using Duplicati.Proprietary.DiskImage.Filesystem.Fat32;
+using Duplicati.Proprietary.DiskImage.Filesystem.Ntfs;
 using Duplicati.Proprietary.DiskImage.General;
 using Duplicati.Proprietary.DiskImage.Partition;
 
@@ -778,6 +779,7 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
             return fsGeom.Type switch
             {
                 FileSystemType.FAT32 => new Fat32Filesystem(partition, fsGeom.BlockSize),
+                FileSystemType.NTFS => new NtfsFilesystem(partition, fsGeom.BlockSize),
                 _ => new UnknownFilesystem(partition, fsGeom.BlockSize)
             };
         }

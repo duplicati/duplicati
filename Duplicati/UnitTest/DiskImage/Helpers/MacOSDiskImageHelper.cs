@@ -640,6 +640,26 @@ internal class MacOSDiskImageHelper : IDiskImageHelper
                 .First().First();
     }
 
+    /// <summary>
+    /// Set of file system types that are supported on macOS.
+    /// </summary>
+    private readonly HashSet<FileSystemType> _supportedFileSystems = [
+        FileSystemType.APFS,
+        FileSystemType.ExFAT,
+        FileSystemType.FAT32,
+        FileSystemType.HFSPlus,
+        FileSystemType.Unknown
+    ];
+
+    /// <inheritdoc />
+    public (bool, string) IsFileSystemTypeSupported(FileSystemType fsType)
+    {
+        if (_supportedFileSystems.Contains(fsType))
+            return (true, $"{fsType} is supported on macOS");
+
+        return (false, $"{fsType} is not supported on macOS");
+    }
+
     public static string RunProcess(string fileName, string arguments, int retryCount = 0)
     {
         for (int i = 0; i <= retryCount; i++)

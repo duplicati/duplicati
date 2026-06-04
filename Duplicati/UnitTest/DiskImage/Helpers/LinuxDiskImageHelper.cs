@@ -526,6 +526,29 @@ internal class LinuxDiskImageHelper : IDiskImageHelper
         return newLoopDevice;
     }
 
+    /// <summary>
+    /// Set of file system types that are supported on Linux.
+    /// </summary>
+    private readonly HashSet<FileSystemType> _supportedFileSystems = [
+        FileSystemType.Btrfs,
+        FileSystemType.Ext2,
+        FileSystemType.Ext3,
+        FileSystemType.Ext4,
+        FileSystemType.ExFAT,
+        FileSystemType.FAT32,
+        FileSystemType.XFS,
+        FileSystemType.Unknown
+    ];
+
+    /// <inheritdoc />
+    public (bool, string) IsFileSystemTypeSupported(FileSystemType fsType)
+    {
+        if (_supportedFileSystems.Contains(fsType))
+            return (true, $"{fsType} is supported on Linux");
+
+        return (false, $"{fsType} is not supported on Linux");
+    }
+
     /// <inheritdoc />
     public void Dispose()
     {

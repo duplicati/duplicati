@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Proprietary.DiskImage.Filesystem;
 using Duplicati.Proprietary.DiskImage.Filesystem.Fat32;
+using Duplicati.Proprietary.DiskImage.Filesystem.Ntfs;
 using Duplicati.Proprietary.DiskImage.General;
 
 namespace Duplicati.Proprietary.DiskImage.SourceItems;
@@ -50,13 +51,11 @@ internal class FilesystemSourceEntry(string parentPath, IFilesystem filesystem)
         int blockSize = 1024 * 1024; // Default 1MB blocks
 
         if (fsMetadata is UnkownFilesystemMetadata unknownMeta)
-        {
             blockSize = unknownMeta.BlockSize;
-        }
         else if (fsMetadata is Fat32FilesystemMetadata fat32Meta)
-        {
             blockSize = fat32Meta.BlockSize;
-        }
+        else if (fsMetadata is NtfsFilesystemMetadata ntfsMeta)
+            blockSize = ntfsMeta.BlockSize;
 
         return new FilesystemGeometry
         {
@@ -100,6 +99,17 @@ internal class FilesystemSourceEntry(string parentPath, IFilesystem filesystem)
                     metadata["filesystem:TotalClusters"] = fat32Meta.TotalClusters.ToString();
                     metadata["filesystem:AllocatedClusters"] = fat32Meta.AllocatedClusters.ToString();
                     metadata["filesystem:FreeClusters"] = fat32Meta.FreeClusters.ToString();
+                }
+                // For NTFS, extract cluster and MFT information
+                else if (fsMetadata is NtfsFilesystemMetadata ntfsMeta)
+                {
+                    metadata["filesystem:BlockSize"] = ntfsMeta.BlockSize.ToString();
+                    metadata["filesystem:ClusterSize"] = ntfsMeta.ClusterSize.ToString();
+                    metadata["filesystem:TotalClusters"] = ntfsMeta.TotalClusters.ToString();
+                    metadata["filesystem:AllocatedClusters"] = ntfsMeta.AllocatedClusters.ToString();
+                    metadata["filesystem:FreeClusters"] = ntfsMeta.FreeClusters.ToString();
+                    metadata["filesystem:MftRecordSize"] = ntfsMeta.MftRecordSize.ToString();
+                    metadata["filesystem:HasJournal"] = ntfsMeta.HasJournal.ToString();
                 }
             }
         }

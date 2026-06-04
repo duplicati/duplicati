@@ -79,19 +79,19 @@ internal class BasePartition : IPartition
     public long Attributes { get; init; }
 
     /// <inheritdoc />
-    public Task<Stream> OpenReadAsync(CancellationToken cancellationToken)
+    public async Task<Stream> OpenReadAsync(CancellationToken cancellationToken)
     {
         if (RawDisk == null)
             throw new InvalidOperationException("RawDisk not available.");
-        return RawDisk.ReadBytesAsync(StartOffset, (int)Math.Min(Size, int.MaxValue), cancellationToken);
+        return new PartitionReadStream(RawDisk, StartOffset, Size);
     }
 
     /// <inheritdoc />
-    public Task<Stream> OpenWriteAsync(CancellationToken cancellationToken)
+    public async Task<Stream> OpenWriteAsync(CancellationToken cancellationToken)
     {
         if (RawDisk == null)
             throw new InvalidOperationException("RawDisk not available.");
-        return Task.FromResult<Stream>(new PartitionWriteStream(RawDisk, StartOffset, Size));
+        return new PartitionWriteStream(RawDisk, StartOffset, Size);
     }
 
     /// <inheritdoc />

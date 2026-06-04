@@ -12,6 +12,7 @@ using Duplicati.Proprietary.DiskImage.Filesystem;
 using Duplicati.Library.Utility;
 using Duplicati.Proprietary.DiskImage.General;
 using Duplicati.Proprietary.DiskImage.Filesystem.Fat32;
+using Duplicati.Proprietary.DiskImage.Filesystem.Ntfs;
 
 namespace Duplicati.Proprietary.DiskImage.SourceItems;
 
@@ -46,6 +47,7 @@ internal class PartitionSourceEntry(string parentPath, IPartition partition, boo
             : partition.FilesystemType switch
             {
                 FileSystemType.FAT32 => new Fat32Filesystem(partition),
+                FileSystemType.NTFS => new NtfsFilesystem(partition),
                 _ => new UnknownFilesystem(partition)
             };
         yield return new FilesystemSourceEntry(this.Path, fs);

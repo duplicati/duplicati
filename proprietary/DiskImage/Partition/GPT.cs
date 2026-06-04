@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Duplicati.Library.Utility;
 using Duplicati.Proprietary.DiskImage.Disk;
 using Duplicati.Proprietary.DiskImage.Filesystem.Fat32;
+using Duplicati.Proprietary.DiskImage.Filesystem.Ntfs;
 using Duplicati.Proprietary.DiskImage.General;
 
 namespace Duplicati.Proprietary.DiskImage.Partition;
@@ -393,7 +394,7 @@ internal class GPT : IPartitionTable
         PartitionType partitionType = DeterminePartitionType(typeGuid);
 
         // Determine filesystem type based on partition name and known patterns
-        FileSystemType fsType = DetermineFilesystemType(startOffset, (int)size, typeGuid.ToString(), CancellationToken.None);
+        FileSystemType fsType = DetermineFilesystemType(startOffset, (int)size, typeGuid.ToString().ToUpper(), CancellationToken.None);
 
         return new BasePartition
         {
@@ -426,19 +427,21 @@ internal class GPT : IPartitionTable
     /// Determines the filesystem type based on the partition type GUID and partition data.
     /// </summary>
     /// <param name="name">The partition name.</param>
-    /// <param name="typeGuid">The partition type GUID.</param>
+    /// <param name="typeGuid">The partition type GUID string in upper case.</param>
     /// <returns>The corresponding <see cref="FileSystemType"/>.</returns>
     private FileSystemType DetermineFilesystemType(long offset, int size, string typeGuid, CancellationToken cancellationToken)
     {
-        // First, we try to look at the GUID
         if (typeGuid == "48465300-0000-11AA-AA11-00306543ECAC")
             return FileSystemType.HFSPlus;
 
         if (typeGuid == "7C3457EF-0000-11AA-AA11-00306543ECAC")
             return FileSystemType.APFS;
 
-        if (m_rawDisk is not null)
+        if (typeGuid == "EBD0A0A2-B9E5-4433-87C0-68B6B72699C7" && m_rawDisk is not null)
         {
+            if (NtfsFilesystem.DetectAsync(m_rawDisk, offset, size, cancellationToken).Await())
+                return FileSystemType.NTFS;
+
             if (Fat32Filesystem.DetectAsync(m_rawDisk, offset, size, cancellationToken).Await())
                 return FileSystemType.FAT32;
         }

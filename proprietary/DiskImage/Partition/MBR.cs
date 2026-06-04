@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Duplicati.Library.Utility;
 using Duplicati.Proprietary.DiskImage.Disk;
 using Duplicati.Proprietary.DiskImage.Filesystem.Fat32;
+using Duplicati.Proprietary.DiskImage.Filesystem.Ntfs;
 using Duplicati.Proprietary.DiskImage.General;
 
 namespace Duplicati.Proprietary.DiskImage.Partition;
@@ -220,11 +221,22 @@ internal class MBR : IPartitionTable
     private FileSystemType DetermineFilesystemType(byte typeByte, long offset, int size)
     {
         var typeByByte = MbrPartitionTypes.ToFilesystemType(typeByte);
-        if (typeByByte is FileSystemType.Unknown && m_rawDisk != null)
+
+        if (m_rawDisk != null)
         {
-            // If the partition type byte is unknown, attempt to detect the filesystem by reading the partition data
-            if (Fat32Filesystem.DetectAsync(m_rawDisk, offset, size, CancellationToken.None).Await())
-                return FileSystemType.FAT32;
+            if (typeByByte == FileSystemType.NTFS)
+            {
+                if (NtfsFilesystem.DetectAsync(m_rawDisk, offset, size, CancellationToken.None).Await())
+                    return FileSystemType.NTFS;
+
+                return FileSystemType.Unknown;
+            }
+
+            if (typeByByte is FileSystemType.Unknown)
+            {
+                if (Fat32Filesystem.DetectAsync(m_rawDisk, offset, size, CancellationToken.None).Await())
+                    return FileSystemType.FAT32;
+            }
         }
 
         return typeByByte;

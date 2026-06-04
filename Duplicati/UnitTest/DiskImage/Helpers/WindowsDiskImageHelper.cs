@@ -846,6 +846,25 @@ internal class WindowsDiskImageHelper : IDiskImageHelper
         return $@"\\.\PhysicalDrive{newDiskNumber}";
     }
 
+    /// <summary>
+    /// Defines the set of supported filesystem types on Windows.
+    /// </summary>
+    private readonly HashSet<FileSystemType> _supportedFileSystems = [
+        FileSystemType.ExFAT,
+        FileSystemType.FAT32,
+        FileSystemType.NTFS,
+        FileSystemType.Unknown
+    ];
+
+    /// <inheritdoc />
+    public (bool, string) IsFileSystemTypeSupported(FileSystemType fsType)
+    {
+        if (_supportedFileSystems.Contains(fsType))
+            return (true, $"{fsType} is supported on Windows");
+
+        return (false, $"{fsType} is not supported on Windows");
+    }
+
     /// <inheritdoc />
     public void Dispose()
     {
