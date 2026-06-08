@@ -52,11 +52,11 @@ public class RemoteControl : IEndpointV1
             .RequireAuthorization();
 
         group.MapPost("/remotecontrol/register", ([FromBody] Dto.StartRegistrationInput input, [FromServices] IRemoteControllerRegistration registration, [FromServices] IRemoteController remoteController, CancellationToken cancellationToken)
-            => BeginRegisterMachine(registration, remoteController, input.RegistrationUrl, cancellationToken))
+            => BeginRegisterMachineAsync(registration, remoteController, input.RegistrationUrl, cancellationToken))
             .RequireAuthorization();
 
         group.MapPost("/remotecontrol/register/wait", ([FromServices] IRemoteControllerRegistration registration, [FromServices] IRemoteController remoteController, CancellationToken cancellationToken)
-            => WaitForRegistration(registration, remoteController, cancellationToken))
+            => WaitForRegistrationAsync(registration, remoteController, cancellationToken))
             .RequireAuthorization();
 
         group.MapDelete("/remotecontrol/register", ([FromServices] IRemoteControllerRegistration registration, [FromServices] IRemoteController remoteController)
@@ -64,7 +64,7 @@ public class RemoteControl : IEndpointV1
             .RequireAuthorization();
     }
 
-    private static async Task<Dto.RemoteControlStatusOutput> BeginRegisterMachine(IRemoteControllerRegistration registration, IRemoteController remoteController, string? registrationUrl, CancellationToken cancellationToken)
+    private static async Task<Dto.RemoteControlStatusOutput> BeginRegisterMachineAsync(IRemoteControllerRegistration registration, IRemoteController remoteController, string? registrationUrl, CancellationToken cancellationToken)
     {
         if (remoteController.CanEnable)
             throw new BadRequestException("Existing remote control must be removed before registering");
@@ -84,7 +84,7 @@ public class RemoteControl : IEndpointV1
         return GetStatus(registration, remoteController);
     }
 
-    private static async Task<Dto.RemoteControlStatusOutput> WaitForRegistration(IRemoteControllerRegistration registration, IRemoteController remoteController, CancellationToken cancellationToken)
+    private static async Task<Dto.RemoteControlStatusOutput> WaitForRegistrationAsync(IRemoteControllerRegistration registration, IRemoteController remoteController, CancellationToken cancellationToken)
     {
         if (remoteController.CanEnable)
             throw new BadRequestException("Existing remote control must be removed before waiting for registration");

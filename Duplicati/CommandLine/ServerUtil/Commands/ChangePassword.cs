@@ -36,7 +36,7 @@ public static class ChangePassword
         .WithHandler(CommandHandler.Create<Settings, OutputInterceptor, string>(async (settings, output, newPassword) =>
         {
             // Ask for previous password first, if needed
-            var connection = await settings.GetConnection(output);
+            var connection = await settings.GetConnectionAsync(output);
 
             if (string.IsNullOrWhiteSpace(newPassword))
             {
@@ -52,11 +52,11 @@ public static class ChangePassword
             if (settings.SecretProvider != null)
             {
                 var opts = new Dictionary<string, string?> { { "password", newPassword } };
-                await settings.ReplaceSecrets(opts).ConfigureAwait(false);
+                await settings.ReplaceSecretsAsync(opts).ConfigureAwait(false);
                 newPassword = opts["password"]!;
             }
 
-            await connection.ChangePassword(newPassword);
+            await connection.ChangePasswordAsync(newPassword);
             output.SetResult(true);
         }));
 }

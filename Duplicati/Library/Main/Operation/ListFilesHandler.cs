@@ -143,7 +143,7 @@ namespace Duplicati.Library.Main.Operation
                 if (filteredList.Count == 0)
                     throw new UserInformationException("No filesets found on remote target", "EmptyRemoteFolder");
 
-                var numberSeq = await CreateResultSequence(filteredList, backendManager, m_options, cancellationToken)
+                var numberSeq = await CreateResultSequenceAsync(filteredList, backendManager, m_options, cancellationToken)
                     .ConfigureAwait(false);
                 if (filter.Empty)
                 {
@@ -251,7 +251,7 @@ namespace Duplicati.Library.Main.Operation
             public long Size => Volume.File.Size;
         }
 
-        private static async Task<IEnumerable<IListResultFileset>> CreateResultSequence(IEnumerable<KeyValuePair<long, IParsedVolume>> filteredList, IBackendManager backendManager, Options options, CancellationToken cancelToken)
+        private static async Task<IEnumerable<IListResultFileset>> CreateResultSequenceAsync(IEnumerable<KeyValuePair<long, IParsedVolume>> filteredList, IBackendManager backendManager, Options options, CancellationToken cancelToken)
         {
             var list = new List<IListResultFileset>();
             var map = filteredList.ToDictionary(x => x.Value.File.Name, x => x);

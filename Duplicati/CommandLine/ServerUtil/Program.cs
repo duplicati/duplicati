@@ -38,7 +38,7 @@ public static class Program
     /// </summary>
     /// <param name="args"></param>
     /// <returns>The return code</returns>
-    public static async Task<int> Main(string[] args)
+    public static async Task<int> MainAsync(string[] args)
     {
         PreloadSettingsLoader.ConfigurePreloadSettings(ref args, PackageHelper.NamedExecutable.ServerUtil);
 
@@ -66,7 +66,7 @@ public static class Program
             .UseExceptionHandler((ex, context) =>
             {
                 OutputInterceptorBinder.Instance?.SetResult(false);
-                
+
                 if (ex is UserReportedException ure)
                 {
                     OutputInterceptorBinder.Instance?.AppendExceptionMessage(ure.Message);
@@ -89,9 +89,9 @@ public static class Program
                 // Inject settings with custom binder
                 if (context.ParseResult.CommandResult.Command is { } cmd)
                     context.BindingContext.AddService(_ => SettingsBinder.GetSettings(context.BindingContext));
-                
+
                 context.BindingContext.AddService(_ => OutputInterceptorBinder.GetConsoleInterceptor(context.BindingContext));
-                
+
                 await next(context);
                 Console.WriteLine(OutputInterceptorBinder.Instance?.GetSerializedResult());
             })

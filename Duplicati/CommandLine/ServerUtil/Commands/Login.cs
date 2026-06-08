@@ -31,7 +31,7 @@ public static class Login
         .WithHandler(CommandHandler.Create<Settings, OutputInterceptor>(async (settings, output) =>
             {
                 output.AppendConsoleMessage("Logging in to the server");
-                await Connection.Connect(settings, true, output);
+                await Connection.ConnectAsync(settings, true, output);
                 output.AppendConsoleMessage("Logged in, persistent token saved");
                 output.SetResult(true);
             })

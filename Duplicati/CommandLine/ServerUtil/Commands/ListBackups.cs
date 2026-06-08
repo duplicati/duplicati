@@ -37,7 +37,7 @@ public static class ListBackups
         }
         .WithHandler(CommandHandler.Create<Settings, OutputInterceptor, bool>(async (settings, output, detailed) =>
         {
-            var bks = await (await settings.GetConnection(output)).ListBackups();
+            var bks = await (await settings.GetConnectionAsync(output)).ListBackupsAsync();
 
             var backupEntries = bks as Connection.BackupEntry[] ?? bks.ToArray();
             if (backupEntries.Any())

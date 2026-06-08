@@ -30,11 +30,11 @@ public static class ServerStatus
         new Command("status", "Gets the server status")
         .WithHandler(CommandHandler.Create<Settings, OutputInterceptor>(async (settings, output) =>
         {
-            var state = await (await settings.GetConnection(output)).GetServerState();
-            
+            var state = await (await settings.GetConnectionAsync(output)).GetServerStateAsync();
+
             output.AppendConsoleMessage($"Server state: {state.ProgramState}");
             output.AppendCustomObject("ServerState", state.ProgramState);
-            
+
             if (state.ActiveTask != null)
             {
                 output.AppendConsoleMessage(
@@ -59,7 +59,7 @@ public static class ServerStatus
                 output.AppendConsoleMessage("Scheduler tasks: Empty");
                 output.AppendCustomObject("SchedulerTasks", null);
             }
-            
+
             output.SetResult(true);
         }));
 }

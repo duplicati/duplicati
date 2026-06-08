@@ -192,8 +192,8 @@ namespace Duplicati.GUI.TrayIcon
                 }
             };
 
-            m_requestHandlerTask = ThreadRunner();
-            m_pollThread = LongPollRunner();
+            m_requestHandlerTask = ThreadRunnerAsync();
+            m_pollThread = LongPollRunnerAsync();
 
             m_requestHandlerTask.ContinueWith(t =>
             {
@@ -214,9 +214,9 @@ namespace Duplicati.GUI.TrayIcon
             });
         }
 
-        public async Task UpdateStatus()
+        public async Task UpdateStatusAsync()
         {
-            await PasswordAvailableIfNeeded().ConfigureAwait(false);
+            await PasswordAvailableIfNeededAsync().ConfigureAwait(false);
             await UpdateStatusAsync(false).ConfigureAwait(false);
         }
 
@@ -267,7 +267,7 @@ namespace Duplicati.GUI.TrayIcon
                 m_disableTrayIconLogin = Library.Utility.Utility.ParseBool(str, false);
         }
 
-        private async Task PasswordAvailableIfNeeded()
+        private async Task PasswordAvailableIfNeededAsync()
         {
             if (m_passwordSource == Program.PasswordSource.SuppliedPassword && string.IsNullOrWhiteSpace(_passwordStorageHelper.Password))
             {
@@ -276,7 +276,7 @@ namespace Duplicati.GUI.TrayIcon
             }
         }
 
-        private async Task LongPollRunner()
+        private async Task LongPollRunnerAsync()
         {
             var started = DateTime.Now;
             var errorCount = 0;
@@ -294,7 +294,7 @@ namespace Duplicati.GUI.TrayIcon
                         await Task.Delay(waitTime, cts.Token).ConfigureAwait(false);
                     }
 
-                    await PasswordAvailableIfNeeded().ConfigureAwait(false);
+                    await PasswordAvailableIfNeededAsync().ConfigureAwait(false);
 
                     started = DateTime.Now;
                     await UpdateStatusAsync(true).ConfigureAwait(false);
@@ -329,7 +329,7 @@ namespace Duplicati.GUI.TrayIcon
             }
         }
 
-        private async Task ThreadRunner()
+        private async Task ThreadRunnerAsync()
         {
             while (true)
             {

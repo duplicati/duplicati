@@ -27,6 +27,6 @@ namespace Duplicati.CommandLine.ConfigureTool.Net10
     public static class Program
     {
         public static Task<int> Main(string[] args)
-            => CrashlogHelper.WrapWithCrashLog(() => Duplicati.CommandLine.ConfigureTool.Program.Main(args));
+            => CrashlogHelper.WrapWithCrashLog(() => Duplicati.CommandLine.ConfigureTool.Program.MainAsync(args));
     }
 }

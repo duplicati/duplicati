@@ -166,7 +166,7 @@ public sealed record Settings(
     /// <param name="args">The arguments to replace</param>
     /// <param name="options">The options to replace</param>
     /// <returns>The task to await</returns>
-    public Task ReplaceSecrets(Dictionary<string, string?> options)
+    public Task ReplaceSecretsAsync(Dictionary<string, string?> options)
     {
         if (SecretProvider == null)
             return Task.CompletedTask;
@@ -216,18 +216,18 @@ public sealed record Settings(
     /// Gets a connection to the server
     /// </summary>
     /// <returns>The connection</returns>
-    public Task<Connection> GetConnection()
+    public Task<Connection> GetConnectionAsync()
     {
-        return Connection.Connect(this);
+        return Connection.ConnectAsync(this);
     }
 
     /// <summary>
     /// Gets a connection to the server
     /// </summary>
     /// <returns>The connection</returns>
-    public Task<Connection> GetConnection(OutputInterceptor output)
+    public Task<Connection> GetConnectionAsync(OutputInterceptor output)
     {
-        return Connection.Connect(this, false, output);
+        return Connection.ConnectAsync(this, false, output);
     }
 
     /// <summary>

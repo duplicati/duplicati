@@ -35,7 +35,7 @@ public class PasswordStorageHelper
 
     public static async Task<PasswordStorageHelper> CreateAsync(string? hostUrl, bool customUrl, string? password, Program.PasswordSource passwordSource, Dictionary<string, string?> options)
     {
-        var secretProvider = await SecretProviderHelper.GetDefaultSecretProvider(options, CancellationToken.None);
+        var secretProvider = await SecretProviderHelper.GetDefaultSecretProviderAsync(options, CancellationToken.None);
 
         // If we get the password from the secret provider, we should save it back to the secret provider
         var shouldSavePassword = false;

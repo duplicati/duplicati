@@ -27,6 +27,6 @@ namespace Duplicati.CommandLine.ServerUtil.Net10
     public static class Program
     {
         public static Task<int> Main(string[] args)
-            => CrashlogHelper.WrapWithCrashLog(() => Duplicati.CommandLine.ServerUtil.Program.Main(args));
+            => CrashlogHelper.WrapWithCrashLog(() => Duplicati.CommandLine.ServerUtil.Program.MainAsync(args));
     }
 }

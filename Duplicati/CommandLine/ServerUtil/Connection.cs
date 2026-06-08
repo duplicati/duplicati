@@ -158,7 +158,7 @@ public class Connection
     /// <param name="obtainRefreshToken">Whether to obtain a refresh token</param>
     /// <param name="console">Console messages interceptor</param>
     /// <returns>The connection</returns>
-    public static async Task<Connection> Connect(Settings settings, bool obtainRefreshToken = false, OutputInterceptor? console = null)
+    public static async Task<Connection> ConnectAsync(Settings settings, bool obtainRefreshToken = false, OutputInterceptor? console = null)
     {
         if (console != null)
             console.AppendConsoleMessage($"Connecting to {settings.HostUrl}...");
@@ -192,7 +192,7 @@ public class Connection
         {
             if (!string.IsNullOrWhiteSpace(settings.RefreshToken))
             {
-                var (accessToken, refreshToken, refreshNonce) = await LoginWithRefreshToken(client, settings.RefreshToken, settings.RefreshNonce);
+                var (accessToken, refreshToken, refreshNonce) = await LoginWithRefreshTokenAsync(client, settings.RefreshToken, settings.RefreshNonce);
                 if (string.IsNullOrWhiteSpace(accessToken))
                     throw new InvalidOperationException("Failed to get access token");
                 if (string.IsNullOrWhiteSpace(refreshToken))
@@ -241,7 +241,7 @@ public class Connection
                         ).CreateSigninToken("server-cli");
 
                         var responseTask = client.PostAsync("auth/signin", JsonContent.Create(new { SigninToken = signinjwt, RememberMe = obtainRefreshToken }));
-                        var (accessToken, refreshToken, refreshNonce) = await ParseAuthResponse(responseTask);
+                        var (accessToken, refreshToken, refreshNonce) = await ParseAuthResponseAsync(responseTask);
                         if (string.IsNullOrWhiteSpace(accessToken))
                             throw new InvalidOperationException("Failed to get access token");
 
@@ -278,7 +278,7 @@ public class Connection
             if (string.IsNullOrWhiteSpace(settings.Password))
                 throw new UserReportedException("Password is required");
 
-            var (accessToken, refreshToken, refreshNonce) = await LoginWithPassword(client, settings.Password, obtainRefreshToken);
+            var (accessToken, refreshToken, refreshNonce) = await LoginWithPasswordAsync(client, settings.Password, obtainRefreshToken);
             if (string.IsNullOrWhiteSpace(accessToken))
                 throw new InvalidOperationException("Failed to get access token");
 
@@ -313,8 +313,8 @@ public class Connection
     /// <param name="password">The password to use</param>
     /// <param name="obtainRefreshToken">Whether to obtain a refresh token</param>
     /// <returns>The access and refresh tokens</returns>
-    private static Task<(string AccessToken, string? RefreshToken, string? RefreshNonce)> LoginWithPassword(HttpClient client, string password, bool obtainRefreshToken)
-        => ParseAuthResponse(
+    private static Task<(string AccessToken, string? RefreshToken, string? RefreshNonce)> LoginWithPasswordAsync(HttpClient client, string password, bool obtainRefreshToken)
+        => ParseAuthResponseAsync(
             client.PostAsync("auth/login", JsonContent.Create(new { Password = password, RememberMe = obtainRefreshToken }))
         );
 
@@ -324,9 +324,9 @@ public class Connection
     /// <param name="client">The HTTP client</param>
     /// <param name="refreshToken">The refresh token to use</param>
     /// <returns>The access token, refresh tokens, and nonce</returns>
-    private static Task<(string AccessToken, string? RefreshToken, string? RefreshNonce)> LoginWithRefreshToken(HttpClient client, string refreshToken, string? nonce)
+    private static Task<(string AccessToken, string? RefreshToken, string? RefreshNonce)> LoginWithRefreshTokenAsync(HttpClient client, string refreshToken, string? nonce)
     {
-        return ParseAuthResponse(client.SendAsync(new HttpRequestMessage(HttpMethod.Post, "auth/refresh")
+        return ParseAuthResponseAsync(client.SendAsync(new HttpRequestMessage(HttpMethod.Post, "auth/refresh")
         {
             Headers = { { "Cookie", $"RefreshToken_{client.BaseAddress!.Port}={refreshToken}" } },
             Content = string.IsNullOrWhiteSpace(nonce) ? null : JsonContent.Create(new { Nonce = nonce })
@@ -339,11 +339,11 @@ public class Connection
     /// </summary>
     /// <param name="response">The response to parse</param>
     /// <returns>The access and refresh tokens</returns>
-    private static async Task<(string AccessToken, string? RefreshToken, string? RefreshNonce)> ParseAuthResponse(Task<HttpResponseMessage> responseTask)
+    private static async Task<(string AccessToken, string? RefreshToken, string? RefreshNonce)> ParseAuthResponseAsync(Task<HttpResponseMessage> responseTask)
     {
         var response = await responseTask;
-        await EnsureSuccessStatusCodeWithParsing(response);
-        var json = JsonSerializer.Deserialize<Dictionary<string, string>>(response.Content.ReadAsStringAsync().Result)
+        await EnsureSuccessStatusCodeWithParsingAsync(response);
+        var json = JsonSerializer.Deserialize<Dictionary<string, string>>(await response.Content.ReadAsStringAsync())
             ?? throw new InvalidOperationException("Failed to parse response");
 
         if (!json.TryGetValue("AccessToken", out var accessToken))
@@ -362,31 +362,31 @@ public class Connection
     /// </summary>
     /// <param name="duration">The duration to pause for</param>
     /// <returns>The task</returns>
-    public async Task Pause(string? duration)
+    public async Task PauseAsync(string? duration)
     {
         var query = string.IsNullOrWhiteSpace(duration) ? "" : $"?duration={Uri.EscapeDataString(duration)}";
         var response = await client.PostAsync($"serverstate/pause{query}", null);
-        await EnsureSuccessStatusCodeWithParsing(response);
+        await EnsureSuccessStatusCodeWithParsingAsync(response);
     }
 
     /// <summary>
     /// Resumes the server
     /// </summary>
     /// <returns>The task</returns>
-    public async Task Resume()
+    public async Task ResumeAsync()
     {
         var response = await client.PostAsync("serverstate/resume", null);
-        await EnsureSuccessStatusCodeWithParsing(response);
+        await EnsureSuccessStatusCodeWithParsingAsync(response);
     }
 
     /// <summary>
     /// Lists the backups configured on the server
     /// </summary>
     /// <returns>The backups</returns>
-    public async Task<IEnumerable<BackupEntry>> ListBackups()
+    public async Task<IEnumerable<BackupEntry>> ListBackupsAsync()
     {
         var response = await client.GetAsync("backups");
-        await EnsureSuccessStatusCodeWithParsing(response);
+        await EnsureSuccessStatusCodeWithParsingAsync(response);
 
         return (JsonSerializer.Deserialize<IEnumerable<ResponseBackupEntry>>(await response.Content.ReadAsStringAsync())
             ?? throw new UserReportedException("Failed to parse response"))
@@ -399,10 +399,10 @@ public class Connection
     /// </summary>
     /// <param name="backupId">The ID of the backup</param>
     /// <returns>The backup</returns>
-    public async Task<BackupEntry> GetBackup(string backupId)
+    public async Task<BackupEntry> GetBackupAsync(string backupId)
     {
         var response = await client.GetAsync($"backup/{Uri.EscapeDataString(backupId)}");
-        await EnsureSuccessStatusCodeWithParsing(response);
+        await EnsureSuccessStatusCodeWithParsingAsync(response);
 
         return (JsonSerializer.Deserialize<ResponseBackupEntry>(await response.Content.ReadAsStringAsync())
             ?? throw new UserReportedException("Failed to parse response"))
@@ -415,10 +415,10 @@ public class Connection
     /// <param name="backupId">The ID of the backup</param>
     /// <param name="skipQueue">Whether to skip the queue</param>
     /// <returns>The task</returns>
-    public async Task RunBackup(string backupId, bool skipQueue)
+    public async Task RunBackupAsync(string backupId, bool skipQueue)
     {
         var response = await client.PostAsync($"backup/{Uri.EscapeDataString(backupId)}/run?skipqueue={skipQueue}", null);
-        await EnsureSuccessStatusCodeWithParsing(response);
+        await EnsureSuccessStatusCodeWithParsingAsync(response);
     }
 
     /// <summary>
@@ -429,20 +429,20 @@ public class Connection
     /// <param name="deleteLocalDb">Whether to delete the local database</param>
     /// <param name="force">Whether to force the deletion even if the backup is running at the moment</param>
     /// <returns>The task</returns>
-    public async Task DeleteBackup(string backupId, bool deleteRemoteFiles, bool deleteLocalDb, bool force)
+    public async Task DeleteBackupAsync(string backupId, bool deleteRemoteFiles, bool deleteLocalDb, bool force)
     {
         var response = await client.DeleteAsync($"backup/{Uri.EscapeDataString(backupId)}?delete-remote-files={deleteRemoteFiles}&delete-local-db={deleteLocalDb}&force={force}");
-        await EnsureSuccessStatusCodeWithParsing(response);
+        await EnsureSuccessStatusCodeWithParsingAsync(response);
     }
 
     /// <summary>
     /// Gets the server state
     /// </summary>
     /// <returns>The server state</returns>
-    public async Task<ServerState> GetServerState()
+    public async Task<ServerState> GetServerStateAsync()
     {
         var response = await client.GetAsync("serverstate");
-        await EnsureSuccessStatusCodeWithParsing(response);
+        await EnsureSuccessStatusCodeWithParsingAsync(response);
         return await response.Content.ReadFromJsonAsync<ServerState>()
             ?? throw new InvalidDataException("Failed to parse server response");
     }
@@ -452,10 +452,10 @@ public class Connection
     /// </summary>
     /// <param name="backupId">The ID of the backup</param>
     /// <returns>The status of the most recent backup log</returns>
-    public async Task<string> GetBackupStatus(string backupId)
+    public async Task<string> GetBackupStatusAsync(string backupId)
     {
         var response = await client.GetAsync($"backup/{Uri.EscapeDataString(backupId)}/log");
-        await EnsureSuccessStatusCodeWithParsing(response);
+        await EnsureSuccessStatusCodeWithParsingAsync(response);
 
         var parsedLogs = await response.Content.ReadFromJsonAsync<List<Dictionary<string, object>>>()
             ?? throw new UserReportedException("Failed to parse response");
@@ -480,9 +480,9 @@ public class Connection
     /// </summary>
     /// <param name="backupId">The ID of the backup</param>
     /// <returns>The task</returns>
-    public async Task WaitForBackup(string backupId, TimeSpan delay, Action<string> statusMessage)
+    public async Task WaitForBackupAsync(string backupId, TimeSpan delay, Action<string> statusMessage)
     {
-        var state = await GetServerState();
+        var state = await GetServerStateAsync();
 
         if (!state.SchedulerQueueIds.Any(x => x.Item2 == backupId) && state.ActiveTask?.Item2 != backupId)
             throw new UserReportedException("Backup is not queued or running");
@@ -492,7 +492,7 @@ public class Connection
         while (true)
         {
             await Task.Delay(delay);
-            state = await GetServerState();
+            state = await GetServerStateAsync();
 
             if (state.ActiveTask?.Item2 == backupId)
             {
@@ -515,10 +515,10 @@ public class Connection
     /// Lists the active tasks
     /// </summary>
     /// <returns>The tasks</returns>
-    public async Task<IEnumerable<TaskEntry>> ListTasks()
+    public async Task<IEnumerable<TaskEntry>> ListTasksAsync()
     {
         var response = await client.GetAsync("tasks");
-        await EnsureSuccessStatusCodeWithParsing(response);
+        await EnsureSuccessStatusCodeWithParsingAsync(response);
 
         return JsonSerializer.Deserialize<IEnumerable<TaskEntry>>(await response.Content.ReadAsStringAsync())
             ?? throw new InvalidOperationException("Failed to parse response");
@@ -530,7 +530,7 @@ public class Connection
     /// <param name="taskId">The ID of the task</param>
     /// <param name="level">The level to stop at</param>
     /// <returns>The task</returns>
-    public async Task StopTask(string taskId, StopLevel level = StopLevel.AfterCurrentFile)
+    public async Task StopTaskAsync(string taskId, StopLevel level = StopLevel.AfterCurrentFile)
     {
         var levelString = level switch
         {
@@ -540,7 +540,7 @@ public class Connection
             _ => throw new ArgumentOutOfRangeException(nameof(level))
         };
         var response = await client.PostAsync($"task/{Uri.EscapeDataString(taskId)}/{levelString}", null);
-        await EnsureSuccessStatusCodeWithParsing(response);
+        await EnsureSuccessStatusCodeWithParsingAsync(response);
     }
 
     /// <summary>
@@ -549,13 +549,13 @@ public class Connection
     /// <param name="settings">The settings to use</param>
     /// <param name="output"></param>
     /// <returns>The task</returns>
-    public async Task Logout(Settings settings, OutputInterceptor output)
+    public async Task LogoutAsync(Settings settings, OutputInterceptor output)
     {
         var response = await client.SendAsync(new HttpRequestMessage(HttpMethod.Post, "auth/refresh/logout")
         {
             Headers = { { "Cookie", $"RefreshToken_{client.BaseAddress!.Port}={settings.RefreshToken}" } }
         });
-        await EnsureSuccessStatusCodeWithParsing(response);
+        await EnsureSuccessStatusCodeWithParsingAsync(response);
         (settings with { RefreshToken = null }).Save(output);
     }
 
@@ -564,10 +564,10 @@ public class Connection
     /// </summary>
     /// <param name="newPassword">The new password to use</param>
     /// <returns>The task</returns>
-    public async Task ChangePassword(string newPassword)
+    public async Task ChangePasswordAsync(string newPassword)
     {
         var response = await client.PutAsync("serversetting/server-passphrase", JsonContent.Create(newPassword));
-        await EnsureSuccessStatusCodeWithParsing(response);
+        await EnsureSuccessStatusCodeWithParsingAsync(response);
     }
 
     /// <summary>
@@ -578,7 +578,7 @@ public class Connection
     /// <param name="importMetadata">Whether to import metadata</param>
     /// <param name="extraSettings">Extra settings to apply to the imported backup</param>
     /// <returns>The backup</returns>
-    public async Task<BackupEntry> ImportBackup(string file, string? password, bool importMetadata, Dictionary<string, string> extraSettings)
+    public async Task<BackupEntry> ImportBackupAsync(string file, string? password, bool importMetadata, Dictionary<string, string> extraSettings)
     {
         var payload = JsonContent.Create(new
         {
@@ -589,14 +589,14 @@ public class Connection
             replace_settings = extraSettings
         });
         var response = await client.PostAsync("backups/import", payload);
-        await EnsureSuccessStatusCodeWithParsing(response);
+        await EnsureSuccessStatusCodeWithParsingAsync(response);
 
         var json = JsonSerializer.Deserialize<Dictionary<string, string>>(await response.Content.ReadAsStringAsync())
             ?? throw new UserReportedException("Failed to parse response");
         if (!json.TryGetValue("Id", out var id))
             throw new UserReportedException("Added backup but failed to get from response");
 
-        return await GetBackup(id);
+        return await GetBackupAsync(id);
     }
 
     /// <summary>
@@ -606,10 +606,10 @@ public class Connection
     /// <param name="passphrase">The passphrase to use, if encrypting</param>
     /// <param name="includeKeys">Whether to include sensitive keys</param>
     /// <returns>The stream with the exported backup</returns>
-    public async Task<Stream> ExportBackup(string backupId, string? passphrase, bool includeKeys)
+    public async Task<Stream> ExportBackupAsync(string backupId, string? passphrase, bool includeKeys)
     {
         var exportTokenResponse = await client.PostAsync("auth/issuetoken/export", null);
-        await EnsureSuccessStatusCodeWithParsing(exportTokenResponse);
+        await EnsureSuccessStatusCodeWithParsingAsync(exportTokenResponse);
         var values = JsonSerializer.Deserialize<Dictionary<string, string>>(await exportTokenResponse.Content.ReadAsStringAsync())
             ?? throw new UserReportedException("Failed to parse response");
 
@@ -617,7 +617,7 @@ public class Connection
             throw new UserReportedException("Failed to get export token");
 
         var response = await client.GetAsync($"backup/{Uri.EscapeDataString(backupId)}/export?passphrase={Uri.EscapeDataString(passphrase ?? "")}&export-passwords={includeKeys}&token={token}");
-        await EnsureSuccessStatusCodeWithParsing(response);
+        await EnsureSuccessStatusCodeWithParsingAsync(response);
 
         return await response.Content.ReadAsStreamAsync();
     }
@@ -626,9 +626,9 @@ public class Connection
     /// Creates a forever token
     /// </summary>
     /// <returns>The token</returns>
-    public async Task<string> CreateForeverToken()
+    public async Task<string> CreateForeverTokenAsync()
     {
-        var (accessToken, _, _) = await ParseAuthResponse(client.PostAsync("auth/issue-forever-token", null));
+        var (accessToken, _, _) = await ParseAuthResponseAsync(client.PostAsync("auth/issue-forever-token", null));
         return accessToken;
     }
 
@@ -645,7 +645,7 @@ public class Connection
     /// </summary>
     /// <param name="message">The message to check</param>
     /// <returns>The task</returns>
-    private static async Task EnsureSuccessStatusCodeWithParsing(HttpResponseMessage? message)
+    private static async Task EnsureSuccessStatusCodeWithParsingAsync(HttpResponseMessage? message)
     {
         if (message is null)
             throw new UserReportedException("No response received");
