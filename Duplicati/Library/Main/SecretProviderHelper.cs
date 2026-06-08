@@ -110,7 +110,7 @@ public static class SecretProviderHelper
     /// <param name="options">The options passed</param>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>The default secret provider, or null if none is available</returns>
-    public static async Task<ISecretProvider?> GetDefaultSecretProvider(Dictionary<string, string?> options, CancellationToken cancellationToken)
+    public static async Task<ISecretProvider?> GetDefaultSecretProviderAsync(Dictionary<string, string?> options, CancellationToken cancellationToken)
     {
         var providerConfig = options.GetValueOrDefault("secret-provider");
         if (!string.IsNullOrWhiteSpace(providerConfig))

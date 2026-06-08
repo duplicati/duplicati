@@ -340,7 +340,7 @@ public class NtfsMftWalkerTests
     }
 
     [Test]
-    public async Task Test_NtfsMftWalker_SkipDeletedRecords()
+    public async Task Test_NtfsMftWalker_SkipDeletedRecords_Async()
     {
         var bootSectorData = CreateValidBootSector();
         var bootSector = new NtfsBootSector(bootSectorData);
@@ -386,7 +386,7 @@ public class NtfsMftWalkerTests
     }
 
     [Test]
-    public async Task Test_NtfsMftWalker_ClusterTimestampMap_Correct()
+    public async Task Test_NtfsMftWalker_ClusterTimestampMap_Correct_Async()
     {
         var bootSectorData = CreateValidBootSector();
         var bootSector = new NtfsBootSector(bootSectorData);
@@ -434,7 +434,7 @@ public class NtfsMftWalkerTests
     }
 
     [Test]
-    public async Task Test_NtfsMftWalker_SystemMetafiles_UseCurrentTimestamp()
+    public async Task Test_NtfsMftWalker_SystemMetafiles_UseCurrentTimestamp_Async()
     {
         var bootSectorData = CreateValidBootSector();
         var bootSector = new NtfsBootSector(bootSectorData);
@@ -475,7 +475,7 @@ public class NtfsMftWalkerTests
     }
 
     [Test]
-    public async Task Test_NtfsMftWalker_OverlappingClusters_UsesMostRecentTimestamp()
+    public async Task Test_NtfsMftWalker_OverlappingClusters_UsesMostRecentTimestamp_Async()
     {
         var bootSectorData = CreateValidBootSector();
         var bootSector = new NtfsBootSector(bootSectorData);
@@ -539,7 +539,7 @@ public class NtfsMftWalkerTests
     }
 
     [Test]
-    public async Task Test_NtfsMftWalker_DataRunParsing_MultipleRuns()
+    public async Task Test_NtfsMftWalker_DataRunParsing_MultipleRuns_Async()
     {
         var bootSectorData = CreateValidBootSector();
         var bootSector = new NtfsBootSector(bootSectorData);
@@ -597,7 +597,7 @@ public class NtfsMftWalkerTests
     }
 
     [Test]
-    public async Task Test_NtfsMftWalker_EmptyDataRun_Skipped()
+    public async Task Test_NtfsMftWalker_EmptyDataRun_Skipped_Async()
     {
         var bootSectorData = CreateValidBootSector();
         var bootSector = new NtfsBootSector(bootSectorData);
@@ -639,7 +639,7 @@ public class NtfsMftWalkerTests
     }
 
     [Test]
-    public async Task Test_NtfsMftWalker_JournalClusters_AlwaysAllocated()
+    public async Task Test_NtfsMftWalker_JournalClusters_AlwaysAllocated_Async()
     {
         var bootSectorData = CreateValidBootSector();
         var bootSector = new NtfsBootSector(bootSectorData);

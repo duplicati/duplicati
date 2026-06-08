@@ -81,7 +81,7 @@ namespace Duplicati.UnitTest
             /// <param name="fileId">The file ID of the entry to remove.</param>
             /// <param name="token">Cancellation token to monitor for cancellation requests.</param>
             /// <returns>The number of rows that were removed.</returns>
-            public async Task<int> RemoveFilesetEntry(long filesetId, long fileId, CancellationToken token)
+            public async Task<int> RemoveFilesetEntryAsync(long filesetId, long fileId, CancellationToken token)
             {
                 await using var cmd = await m_connection.CreateCommandAsync(@"
                     DELETE FROM ""FilesetEntry""
@@ -107,7 +107,7 @@ namespace Duplicati.UnitTest
             /// <param name="filesetId">The fileset ID to query.</param>
             /// <param name="token">Cancellation token to monitor for cancellation requests.</param>
             /// <returns>An async enumerable of (FileID, FullPath) pairs.</returns>
-            public async IAsyncEnumerable<(long FileId, string FullPath)> GetFilesetEntries(long filesetId, [EnumeratorCancellation] CancellationToken token)
+            public async IAsyncEnumerable<(long FileId, string FullPath)> GetFilesetEntriesAsync(long filesetId, [EnumeratorCancellation] CancellationToken token)
             {
                 await using var cmd = await m_connection.CreateCommandAsync(@"
                     SELECT ""fe"".""FileID"", ""p"".""Prefix"" || ""f"".""Path"" AS ""FullPath""
@@ -224,7 +224,7 @@ namespace Duplicati.UnitTest
         [Category("Disruption")]
         [Category("SyntheticFilelist")]
         [Category("ExcludedFromCLI")]
-        public async Task SyntheticFilelistShouldIncludeMetadata()
+        public async Task SyntheticFilelistShouldIncludeMetadataAsync()
         {
             // Use no-encryption so we can read the dlist files directly
             var options = new Dictionary<string, string>(this.TestOptions)
@@ -314,7 +314,7 @@ namespace Duplicati.UnitTest
                 .ToList();
 
             var syntheticDlist = orderedDlists[1].Path;
-            TestContext.Progress.WriteLine($"Synthetic dlist: {Path.GetFileName(syntheticDlist)}");
+            await TestContext.Progress.WriteLineAsync($"Synthetic dlist: {Path.GetFileName(syntheticDlist)}");
 
             // 6. Parse the synthetic dlist and verify all files have metahash and metasize
             var entries = ParseDlistFile(syntheticDlist, options);
@@ -322,7 +322,7 @@ namespace Duplicati.UnitTest
 
             foreach (var entry in entries)
             {
-                TestContext.Progress.WriteLine(
+                await TestContext.Progress.WriteLineAsync(
                     $"Entry: {entry.Path}, Hash: {entry.Hash}, Size: {entry.Size}, Metahash: {entry.Metahash ?? "NULL"}, Metasize: {entry.Metasize}");
 
                 Assert.That(entry.Metahash, Is.Not.Null,
@@ -339,7 +339,7 @@ namespace Duplicati.UnitTest
         [Category("Disruption")]
         [Category("SyntheticFilelist")]
         [Category("ExcludedFromCLI")]
-        public async Task SyntheticFilelistShouldPassTestOperation()
+        public async Task SyntheticFilelistShouldPassTestOperationAsync()
         {
             var options = new Dictionary<string, string>(this.TestOptions)
             {
@@ -505,17 +505,17 @@ namespace Duplicati.UnitTest
                 // fileset. There should be exactly one such row (one for the
                 // directory and one for the file; we want the file).
                 long candidateFileId = -1;
-                await foreach (var entry in db.GetFilesetEntries(interruptedFilesetId, default).ConfigureAwait(false))
+                await foreach (var entry in db.GetFilesetEntriesAsync(interruptedFilesetId, default).ConfigureAwait(false))
                 {
-                    TestContext.Progress.WriteLine($"  FS{interruptedFilesetId} entry: F{entry.FileId} {entry.FullPath}");
+                    await TestContext.Progress.WriteLineAsync($"  FS{interruptedFilesetId} entry: F{entry.FileId} {entry.FullPath}");
                     if (entry.FullPath.EndsWith("testfile.txt"))
                         candidateFileId = entry.FileId;
                 }
                 Assert.That(candidateFileId, Is.GreaterThan(0), "Expected to find testfile.txt FileLookup in the interrupted fileset");
                 orphanFileId = candidateFileId;
 
-                TestContext.Progress.WriteLine($"Detaching F{candidateFileId} from FS{interruptedFilesetId} (will become orphan FileLookup)");
-                var removed = await db.RemoveFilesetEntry(interruptedFilesetId, candidateFileId, default).ConfigureAwait(false);
+                await TestContext.Progress.WriteLineAsync($"Detaching F{candidateFileId} from FS{interruptedFilesetId} (will become orphan FileLookup)");
+                var removed = await db.RemoveFilesetEntryAsync(interruptedFilesetId, candidateFileId, default).ConfigureAwait(false);
                 Assert.AreEqual(1, removed, "Expected exactly one FilesetEntry row to be removed");
                 await db.Transaction.CommitAsync("test-detach-orphan", true, default).ConfigureAwait(false);
             }
@@ -528,7 +528,7 @@ namespace Duplicati.UnitTest
             var allDblocks = Directory.EnumerateFiles(this.TARGETFOLDER, "*.dblock.*")
                 .OrderBy(File.GetCreationTimeUtc)
                 .ToList();
-            TestContext.Progress.WriteLine($"Dblock candidates ({allDblocks.Count}): " +
+            await TestContext.Progress.WriteLineAsync($"Dblock candidates ({allDblocks.Count}): " +
                 string.Join(", ", allDblocks.Select(Path.GetFileName)));
             Assert.That(allDblocks.Count, Is.GreaterThanOrEqualTo(2),
                 "Expected at least two dblocks (one per backup attempt)");
@@ -536,7 +536,7 @@ namespace Duplicati.UnitTest
             var dblockToRemove = allDblocks.Last();
             await using (var db = await TestDatabase.CreateAsync(this.DBFILE, default).ConfigureAwait(false))
             {
-                TestContext.Progress.WriteLine($"Removing dblock from DB: {Path.GetFileName(dblockToRemove)}");
+                await TestContext.Progress.WriteLineAsync($"Removing dblock from DB: {Path.GetFileName(dblockToRemove)}");
                 await db.RemoveRemoteVolumesAsync(new[] { Path.GetFileName(dblockToRemove) }, default)
                     .ConfigureAwait(false);
                 await db.Transaction.CommitAsync("test-remove-dblock", true, default).ConfigureAwait(false);
@@ -565,7 +565,7 @@ namespace Duplicati.UnitTest
             DumpDatabaseState(this.DBFILE, "After recovery backup");
 
             var dlistFiles = Directory.EnumerateFiles(this.TARGETFOLDER, "*.dlist.*").ToList();
-            TestContext.Progress.WriteLine($"Dlists on backend: {dlistFiles.Count}");
+            await TestContext.Progress.WriteLineAsync($"Dlists on backend: {dlistFiles.Count}");
 
             int missingMetahash = 0;
             foreach (var dlist in dlistFiles)
@@ -573,7 +573,7 @@ namespace Duplicati.UnitTest
                 var entries = ParseDlistFile(dlist, options);
                 foreach (var entry in entries)
                 {
-                    TestContext.Progress.WriteLine(
+                    await TestContext.Progress.WriteLineAsync(
                         $"Dlist: {Path.GetFileName(dlist)}, Entry: {entry.Path}, Metahash: {entry.Metahash ?? "NULL"}, Metasize: {entry.Metasize}");
                     if (entry.Metahash == null)
                         missingMetahash++;
@@ -611,7 +611,7 @@ namespace Duplicati.UnitTest
         [Category("Disruption")]
         [Category("SyntheticFilelist")]
         [Category("ExcludedFromCLI")]
-        public async Task SyntheticFilelistAfterDeletingOldVersions()
+        public async Task SyntheticFilelistAfterDeletingOldVersionsAsync()
         {
             var options = new Dictionary<string, string>(this.TestOptions)
             {
@@ -652,8 +652,8 @@ namespace Duplicati.UnitTest
 
             using (var c = new Controller(failtarget, options, null))
             {
-                Assert.Throws<DeterministicErrorBackend.DeterministicErrorBackendException>(async () =>
-                    await c.BackupAsync(new[] { this.DATAFOLDER }));
+                Assert.ThrowsAsync<DeterministicErrorBackend.DeterministicErrorBackendException>(() =>
+                    c.BackupAsync(new[] { this.DATAFOLDER }));
             }
             Assert.IsTrue(failed, "Expected dlist upload to fail");
 
@@ -705,7 +705,7 @@ namespace Duplicati.UnitTest
                 var entries = ParseDlistFile(dlist, options);
                 foreach (var entry in entries)
                 {
-                    TestContext.Progress.WriteLine(
+                    await TestContext.Progress.WriteLineAsync(
                         $"Dlist: {Path.GetFileName(dlist)}, Entry: {entry.Path}, Metahash: {entry.Metahash ?? "NULL"}, Metasize: {entry.Metasize}");
 
                     Assert.That(entry.Metahash, Is.Not.Null,

@@ -92,7 +92,7 @@ namespace Duplicati.GUI.TrayIcon
             RegisterNotificationCallback();
             m_onDoubleClick = ShowStatusWindow;
             m_onNotificationClick = ShowStatusWindow;
-            OnStatusUpdated(Program.Connection.Status)
+            OnStatusUpdatedAsync(Program.Connection.Status)
                 .FireAndForget();
             Run(args);
         }
@@ -101,14 +101,14 @@ namespace Duplicati.GUI.TrayIcon
 
         public void InvokeExit()
         {
-            UpdateUIState(() =>
+            UpdateUIStateAsync(() =>
             {
                 Program.Connection?.Close();
                 this.Exit();
             });
         }
 
-        protected virtual Task UpdateUIState(Action action)
+        protected virtual Task UpdateUIStateAsync(Action action)
         {
             action();
             return Task.CompletedTask;
@@ -126,7 +126,7 @@ namespace Duplicati.GUI.TrayIcon
 
         protected virtual void RegisterStatusUpdateCallback()
         {
-            Program.Connection.OnStatusUpdated = OnStatusUpdated;
+            Program.Connection.OnStatusUpdated = OnStatusUpdatedAsync;
         }
 
         protected virtual void RegisterNotificationCallback()
@@ -150,7 +150,7 @@ namespace Duplicati.GUI.TrayIcon
                     break;
             }
 
-            UpdateUIState(() =>
+            UpdateUIStateAsync(() =>
             {
                 NotifyUser(notification.Title, notification.Message, type);
             });
@@ -185,12 +185,12 @@ namespace Duplicati.GUI.TrayIcon
         {
             var res = await PasswordPrompt.ShowPasswordDialogAsync(isChangePassword: true);
             if (res)
-                await OnStatusUpdated(Program.Connection.Status);
+                await OnStatusUpdatedAsync(Program.Connection.Status);
         }
 
         private void Reconnect()
         {
-            Program.Connection.UpdateStatus().ContinueWith(t =>
+            Program.Connection.UpdateStatusAsync().ContinueWith(t =>
             {
                 if (t.IsFaulted)
                 {
@@ -247,10 +247,10 @@ namespace Duplicati.GUI.TrayIcon
             ? Task.Delay(1000)
             : Task.CompletedTask;
 
-        protected async Task OnStatusUpdated(IServerStatus status)
+        protected async Task OnStatusUpdatedAsync(IServerStatus status)
         {
             await m_startupDelay;
-            await this.UpdateUIState(()
+            await this.UpdateUIStateAsync(()
             =>
             {
                 switch (status.SuggestedStatusIcon)

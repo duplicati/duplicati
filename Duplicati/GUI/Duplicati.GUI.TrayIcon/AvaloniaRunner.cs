@@ -57,16 +57,16 @@ namespace Duplicati.GUI.TrayIcon
             base.Init(args);
         }
 
-        protected override Task UpdateUIState(Action action)
-            => RunOnUIThread(action);
+        protected override Task UpdateUIStateAsync(Action action)
+            => RunOnUIThreadAsync(action);
 
 
-        internal Task RunOnUIThread(Action action)
+        internal Task RunOnUIThreadAsync(Action action)
         {
             if (_disposed != 0)
                 return Task.CompletedTask;
 
-            return actionDelayer.ExecuteAction(() =>
+            return actionDelayer.ExecuteActionAsync(() =>
               {
                   try
                   {
@@ -101,7 +101,7 @@ namespace Duplicati.GUI.TrayIcon
 
         protected override void RegisterStatusUpdateCallback()
         {
-            Program.Connection.OnStatusUpdated += this.OnStatusUpdated;
+            Program.Connection.OnStatusUpdated += this.OnStatusUpdatedAsync;
         }
 
         #region implemented abstract members of Duplicati.GUI.TrayIcon.TrayIconBase
@@ -277,7 +277,7 @@ namespace Duplicati.GUI.TrayIcon
 
         protected override void SetIcon(TrayIcons icon)
         {
-            UpdateUIState(() => this.application?.SetIcon(icon));
+            UpdateUIStateAsync(() => this.application?.SetIcon(icon)).FireAndForget();
         }
 
         protected override void SetMenu(IEnumerable<IMenuItem> items)
@@ -288,7 +288,7 @@ namespace Duplicati.GUI.TrayIcon
             }
             this.menuItems = items.Select(i => (AvaloniaMenuItem)i);
             if (this.application != null)
-                UpdateUIState(() => this.application?.SetMenu(menuItems));
+                UpdateUIStateAsync(() => this.application?.SetMenu(menuItems)).FireAndForget();
         }
 
         public override void Dispose()
@@ -362,14 +362,14 @@ namespace Duplicati.GUI.TrayIcon
         {
             this.Text = text;
             if (nativeMenuItem != null)
-                parent.RunOnUIThread(() => nativeMenuItem.Header = text);
+                parent.RunOnUIThreadAsync(() => nativeMenuItem.Header = text).FireAndForget();
         }
 
         public void SetIcon(MenuIcons icon)
         {
             this.Icon = icon;
             if (nativeMenuItem != null)
-                parent.RunOnUIThread(() => this.UpdateIcon());
+                parent.RunOnUIThreadAsync(() => this.UpdateIcon()).FireAndForget();
         }
 
         /// <summary>
@@ -397,7 +397,7 @@ namespace Duplicati.GUI.TrayIcon
         {
             this.Enabled = isEnabled;
             if (nativeMenuItem != null)
-                parent.RunOnUIThread(() => nativeMenuItem.IsEnabled = this.Enabled);
+                parent.RunOnUIThreadAsync(() => nativeMenuItem.IsEnabled = this.Enabled).FireAndForget();
         }
 
         public void SetDefault(bool value)
@@ -411,7 +411,7 @@ namespace Duplicati.GUI.TrayIcon
         {
             this.Hidden = hidden;
             if (nativeMenuItem != null)
-                parent.RunOnUIThread(() => nativeMenuItem.IsVisible = !this.Hidden);
+                parent.RunOnUIThreadAsync(() => nativeMenuItem.IsVisible = !this.Hidden).FireAndForget();
 
         }
         #endregion

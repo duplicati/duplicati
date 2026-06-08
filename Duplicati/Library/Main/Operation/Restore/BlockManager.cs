@@ -221,7 +221,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// the VolumeDownloader will be notified.
             /// </summary>
             /// <param name="blockRequest">The block request to check.</param>
-            public async Task CheckCounts(BlockRequest blockRequest)
+            public async Task CheckCountsAsync(BlockRequest blockRequest)
             {
                 long error_block_id = -1;
                 long error_volume_id = -1;
@@ -290,7 +290,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// </summary>
             /// <param name="block_request">The requested block.</param>
             /// <returns>A `Task` holding the data block.</returns>
-            public async Task<DataBlock> Get(BlockRequest block_request)
+            public async Task<DataBlock> GetAsync(BlockRequest block_request)
             {
                 Logging.Log.WriteExplicitMessage(LOGTAG, "BlockCacheGet", "Getting block {0} from cache", block_request.BlockID);
 
@@ -565,7 +565,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                             {
                                 case BlockRequestType.Download:
                                     sw_get?.Start();
-                                    var datatask = cache.Get(block_request);
+                                    var datatask = cache.GetAsync(block_request);
                                     sw_get?.Stop();
                                     Logging.Log.WriteExplicitMessage(LOGTAG, "BlockHandler", null, "Retrieved data for block {0} and volume {1}", block_request.BlockID, block_request.VolumeID);
 
@@ -577,7 +577,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 case BlockRequestType.CacheEvict:
                                     sw_cache?.Start();
                                     // Target file already had the block.
-                                    await cache.CheckCounts(block_request).ConfigureAwait(false);
+                                    await cache.CheckCountsAsync(block_request).ConfigureAwait(false);
                                     sw_cache?.Stop();
 
                                     Logging.Log.WriteExplicitMessage(LOGTAG, "BlockHandler", null, "Decremented counts for block {0} and volume {1}", block_request.BlockID, block_request.VolumeID);

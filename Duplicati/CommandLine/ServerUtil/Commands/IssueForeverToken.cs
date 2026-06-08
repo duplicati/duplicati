@@ -29,7 +29,7 @@ public static class IssueForeverToken
     public static Command Create() =>
         new Command("issue-forever-token", "Issues a long-lived access token").WithHandler(CommandHandler.Create<Settings, OutputInterceptor>(async (settings, output) =>
         {
-            var token = await (await settings.GetConnection(output)).CreateForeverToken();
+            var token = await (await settings.GetConnectionAsync(output)).CreateForeverTokenAsync();
             output.AppendConsoleMessage("Token issued with a lifetime of 10 years.");
             output.AppendConsoleMessage("Make sure you disable the forever token API on the server, to avoid generating new tokens.");
             output.AppendConsoleMessage(string.Empty);
@@ -38,7 +38,7 @@ public static class IssueForeverToken
             output.AppendConsoleMessage("The issued token is:");
             output.AppendConsoleMessage($"Authorization: Bearer {token}");
             output.AppendConsoleMessage(string.Empty);
-            output.AppendCustomObject( "Token" ,new { Token = token });;
+            output.AppendCustomObject("Token", new { Token = token }); ;
             output.SetResult(true);
         }));
 }

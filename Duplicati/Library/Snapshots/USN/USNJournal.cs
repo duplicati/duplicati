@@ -555,7 +555,12 @@ namespace Duplicati.Library.Snapshots.USN
                 FlushRecords(tempRecords, result);
             }
 
-            return result.Values;
+            // We rely on the USN record order,
+            // specifically for rename where the old name
+            // is emitted before the new name
+            var sorted = result.Values.ToList();
+            sorted.Sort((a, b) => a.UsnRecord.Usn.CompareTo(b.UsnRecord.Usn));
+            return sorted;
         }
 
         private static void FlushRecords(List<Record> tempRecords, Dictionary<string, Record> resultRecords)

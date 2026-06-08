@@ -39,8 +39,8 @@ public static class Pause
                 ? "Pausing the server indefinitely"
                 : $"Pausing the server for {duration}");
 
-            await (await settings.GetConnection(output)).Pause(duration);
-            
+            await (await settings.GetConnectionAsync(output)).PauseAsync(duration);
+
             // If no exception we presume success
             output.SetResult(true);
         }));

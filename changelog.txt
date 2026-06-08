@@ -1,3 +1,59 @@
+2026-06-04 - 2.3.0.104_canary_2026-06-04
+==========
+This release is a canary release intended to be used for testing.
+
+# Improved Windows installer
+
+This change brings a major update to the Windows installers, which now integrates the ability to run as a service, as well as generate and use TLS (https). The service feature has been present for a while in the `WindowsService.exe` tool and the TLS certificates were added as part of the `Duplicati.CommandLine.ConfigureTool.exe`. With this update these things are now integrated into the installer, and exposed as simple checkboxes to toggle the features. Installing the service from a regular user account, will also auto-generate a secure password and configure the TrayIcon to connect to the service (only for the current user).
+
+If you have installed the service manually, do not activate the new checkbox as it only works if there is no pre-existing service.
+
+# NTFS full-disk backup
+
+This release extends the full disk backup feature to include NTFS support on Windows. With this support it is more efficient to make backups of NTFS formatted disks. To enable this feature, add the advanced option `--diskimage-filesystem-parsed=true` and the backups will attempt to parse the disk, and if it is one of the supported formats, it will only read the relevant sectors.
+
+# New Auto-Tune tool
+
+This release also introduces a new AutoTune tool (`Duplicati.CommandLine.AutoTuneTool` / `duplicati-autotune`), designed to help evaluate and optimize performance-related settings automatically based on the system.
+
+# Read-only testing of backends
+
+Backends now support read-only context-aware testing, which allows testing connections safely without risking unintended changes to the storage. The read-only testing is applied when testing a restore destination or a remote source, such that no files are attempted written to the remote storage.
+
+# New welcome page and start
+
+The UI will now show a welcome page showing how to connect to the console with an option to continue without. 
+This can be suppressed with the option `--webservice-suppress-welcome-page=true` or environment variable `DUPLICATI__SUPPRESS_WELCOME_PAGE=true`.
+
+If the connection is made from the TrayIcon, the initial dialog asking to set a password is no longer shown, as the intention is to use the TrayIcon to connect.
+It is still possible to change the password from the Settings page if needed.
+
+## Detailed list of changes
+
+- Added handling for extended Win32 file attributes and option to ignore non-local files, such as OneDrive and Dropbox files
+- Fixed showing correct S3 lock mode values
+- Added full disk NTFS support
+- Added AutoTune tool
+- Added read-only testing to backends, thanks @realtek2017
+- Made FS parsing experimental
+- Fixed remote file locking on Windows
+- Fixed SMB source listing misclassifying directories as files, thanks @realtek2017
+- Improved MSI installer package for Service
+- Simplified console handling
+- Cleaned up state after registering
+- Removed explicit defaults in backup config
+- Hardened MSI installer
+
+## Changes in ngclient
+
+- Added toggle to show advanced option names instead of descriptions
+- Added confirmation popup before exporting configuration without encryption
+- Now showing remote lock results on log page
+- Toggling read-only testing of backends based on context
+- Fixed websocket not connecting on welcome page
+- Added a welcome page for simpler console connections
+- Removed attributes filter options on source page, in favor of using advanced options
+
 2026-05-22 - 2.3.0.103_canary_2026-05-22
 ==========
 This release is a canary release intended to be used for testing.

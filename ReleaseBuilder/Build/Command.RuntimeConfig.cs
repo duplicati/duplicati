@@ -122,7 +122,7 @@ public static partial class Command
                     {
                         var signKeyPin = EnvHelper.GetEnvKey("SIGNKEY_PIN", "");
                         if (string.IsNullOrWhiteSpace(signKeyPin))
-                            signKeyPin = ConsoleHelper.ReadPassword("Enter the pin for the signing key");
+                            signKeyPin = ConsoleHelper.ReadPassword("Enter the pin for the signing key: ");
                         input = input with { SignkeyPin = signKeyPin };
                     }
 

@@ -51,7 +51,7 @@ public static class Command
             }
 
             var keyfilePassword = string.IsNullOrEmpty(password)
-                ? ConsoleHelper.ReadPassword("Enter keyfile password")
+                ? ConsoleHelper.ReadPassword("Enter keyfile password: ")
                 : password;
 
             var newkey = RSA.Create(2048).ToXmlString(true);

@@ -59,7 +59,7 @@ public static class Import
                 if (settings.SecretProvider != null)
                 {
                     var opts = new Dictionary<string, string?> { { "password", passphrase } };
-                    await settings.ReplaceSecrets(opts).ConfigureAwait(false);
+                    await settings.ReplaceSecretsAsync(opts).ConfigureAwait(false);
                     passphrase = opts["password"]!;
                 }
             }
@@ -70,8 +70,8 @@ public static class Import
             if (!string.IsNullOrWhiteSpace(backupUrl))
                 extraSettings.Add("targeturl", backupUrl);
 
-            var connection = await settings.GetConnection(output);
-            var result = await connection.ImportBackup(file.FullName, passphrase, importMetadata, extraSettings);
+            var connection = await settings.GetConnectionAsync(output);
+            var result = await connection.ImportBackupAsync(file.FullName, passphrase, importMetadata, extraSettings);
 
             output.AppendConsoleMessage($"Imported \"{result.Name}\" with ID {result.ID}");
             output.AppendCustomObject("Imported", new { Id = result.ID, Name = result.Name });

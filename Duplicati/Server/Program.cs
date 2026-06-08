@@ -256,6 +256,9 @@ namespace Duplicati.Server
 
                 connection.ApplicationSettings.UpgradePasswordToKBDF();
 
+                if (Library.Utility.Utility.ParseBoolOption(commandlineOptions, WebServerLoader.OPTION_SUPPRESS_WELCOME_PAGE))
+                    connection.ApplicationSettings.SuppressWelcomePage();
+
                 // Handle --configure-https option before starting the webserver
                 if (Library.Utility.Utility.ParseBoolOption(commandlineOptions, WebServerLoader.OPTION_CONFIGURE_HTTPS))
                     HandleConfigureHttps(connection, commandlineOptions);
@@ -1155,7 +1158,7 @@ namespace Duplicati.Server
                     disableDbEncryption = true;
             }
 
-            var defaultSecretProvider = SecretProviderHelper.GetDefaultSecretProvider(commandlineOptions, CancellationToken.None).Await();
+            var defaultSecretProvider = SecretProviderHelper.GetDefaultSecretProviderAsync(commandlineOptions, CancellationToken.None).Await();
 
             // If we are supposed to have an encryption key, but do not, try to get it from the (default) secret provider
             if (!hasValidEncryptionKey && defaultSecretProvider != null)
@@ -1567,6 +1570,7 @@ namespace Duplicati.Server
             new CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_ENABLE_FOLDER_STATUS_SERVICE, CommandLineArgument.ArgumentType.Boolean, Strings.Program.WebserverEnableFolderStatusServiceDescription, Strings.Program.WebserverEnableFolderStatusServiceDescription),
             new CommandLineArgument(WebServerLoader.OPTION_CONFIGURE_HTTPS, CommandLineArgument.ArgumentType.Boolean, Strings.Program.ConfigureHttpsShort, Strings.Program.ConfigureHttpsLong),
             new CommandLineArgument(WebServerLoader.OPTION_CONFIGURE_HTTPS_HOSTNAMES, CommandLineArgument.ArgumentType.String, Strings.Program.ConfigureHttpsHostnamesShort, Strings.Program.ConfigureHttpsHostnamesLong),
+            new CommandLineArgument(WebServerLoader.OPTION_SUPPRESS_WELCOME_PAGE, CommandLineArgument.ArgumentType.Boolean, Strings.Program.SuppressWelcomePageShort, Strings.Program.SuppressWelcomePageLong),
             new CommandLineArgument(PING_PONG_KEEPALIVE_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Program.PingpongkeepaliveShort, Strings.Program.PingpongkeepaliveLong),
             new CommandLineArgument(DISABLE_UPDATE_CHECK_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Program.DisableupdatecheckShort, Strings.Program.DisableupdatecheckLong),
             new CommandLineArgument(LOG_RETENTION_OPTION, CommandLineArgument.ArgumentType.Timespan, Strings.Program.LogretentionShort, Strings.Program.LogretentionLong, DEFAULT_LOG_RETENTION),

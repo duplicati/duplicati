@@ -47,8 +47,8 @@ public static class Export
                 destination.Create();
             }
 
-            var connection = await settings.GetConnection(output);
-            var serverbackups = await connection.ListBackups();
+            var connection = await settings.GetConnectionAsync(output);
+            var serverbackups = await connection.ListBackupsAsync();
             var includeAllBackups = backups.Any(x => string.Equals(x, "all", StringComparison.OrdinalIgnoreCase));
             var targetbackups = serverbackups.Where(b => includeAllBackups || backups.Any(x => b.Name.Contains(x, StringComparison.OrdinalIgnoreCase)) || backups.Contains(b.ID.ToString())).ToArray();
             if (targetbackups.Length == 0)
@@ -83,7 +83,7 @@ public static class Export
                 if (settings.SecretProvider != null)
                 {
                     var opts = new Dictionary<string, string?> { { "password", encryptionPassphrase } };
-                    await settings.ReplaceSecrets(opts).ConfigureAwait(false);
+                    await settings.ReplaceSecretsAsync(opts).ConfigureAwait(false);
                     encryptionPassphrase = opts["password"]!;
                 }
 
@@ -107,7 +107,7 @@ public static class Export
                     continue;
                 }
 
-                await using (var s = await connection.ExportBackup(backup.ID, encryptionPassphrase, exportPasswords.Value))
+                await using (var s = await connection.ExportBackupAsync(backup.ID, encryptionPassphrase, exportPasswords.Value))
                 await using (var fs = file.Create())
                     await s.CopyToAsync(fs);
                 exportedBackups.Add(new { Id = backup.ID, Name = backup.Name, File = file.FullName });
