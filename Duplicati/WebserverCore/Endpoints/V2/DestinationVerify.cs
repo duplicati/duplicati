@@ -35,11 +35,11 @@ public class DestinationVerify : IEndpointV2
     public static void Map(RouteGroupBuilder group)
     {
         group.MapPost("/destination/test", ([FromServices] Connection connection, [FromServices] IApplicationSettings applicationSettings, [FromBody] Dto.V2.DestinationTestRequestDto input, CancellationToken cancelToken)
-            => ExecuteTest(connection, applicationSettings, input, cancelToken))
+            => ExecuteTestAsync(connection, applicationSettings, input, cancelToken))
             .RequireAuthorization();
     }
 
-    private static async Task<DestinationTestResponseDto> ExecuteTest(Connection connection, IApplicationSettings applicationSettings, DestinationTestRequestDto input, CancellationToken cancelToken)
+    private static async Task<DestinationTestResponseDto> ExecuteTestAsync(Connection connection, IApplicationSettings applicationSettings, DestinationTestRequestDto input, CancellationToken cancelToken)
     {
         var destinationType = input.DestinationType ?? RemoteDestinationType.Backend;
 

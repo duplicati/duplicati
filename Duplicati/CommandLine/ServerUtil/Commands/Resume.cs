@@ -30,8 +30,8 @@ public static class Resume
         => new Command("resume", "Resumes the server")
             .WithHandler(CommandHandler.Create<Settings, OutputInterceptor>(async (settings, output) =>
             {
-               output.AppendConsoleMessage("Resuming the server...");
-               await (await settings.GetConnection(output)).Resume();
-               output.SetResult(true);
+                output.AppendConsoleMessage("Resuming the server...");
+                await (await settings.GetConnectionAsync(output)).ResumeAsync();
+                output.SetResult(true);
             }));
 }

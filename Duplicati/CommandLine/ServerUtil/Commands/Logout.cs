@@ -31,7 +31,7 @@ public static class Logout
         .WithHandler(CommandHandler.Create<Settings, OutputInterceptor>(async (settings, output) =>
             {
                 output.AppendConsoleMessage("Logging out of the server...");
-                await (await settings.GetConnection(output)).Logout(settings, output);
+                await (await settings.GetConnectionAsync(output)).LogoutAsync(settings, output);
                 // If no exception we presume success
                 output.SetResult(true);
             })

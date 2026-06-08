@@ -50,9 +50,9 @@ public static class RunBackup
             if (pollinterval < 1)
                 throw new UserReportedException("Poll interval must be at least 1 second");
 
-            var connection = await settings.GetConnection(output);
+            var connection = await settings.GetConnectionAsync(output);
 
-            var matchingBackup = (await connection.ListBackups())
+            var matchingBackup = (await connection.ListBackupsAsync())
                 .FirstOrDefault(b => string.Equals(b.Name, backup, StringComparison.OrdinalIgnoreCase) || string.Equals(b.ID, backup));
 
             if (matchingBackup == null)
@@ -61,19 +61,19 @@ public static class RunBackup
             if (!quiet)
                 output.AppendConsoleMessage($"Running backup {matchingBackup.Name} (ID: {matchingBackup.ID})");
 
-            await connection.RunBackup(matchingBackup.ID, skipqueue);
+            await connection.RunBackupAsync(matchingBackup.ID, skipqueue);
 
             if (wait)
             {
                 if (!quiet)
                     output.AppendConsoleMessage("Waiting for backup to finish...");
 
-                await WaitForBackupWithRetries(connection, settings, matchingBackup.ID, pollinterval, output, msg =>
+                await WaitForBackupWithRetriesAsync(connection, settings, matchingBackup.ID, pollinterval, output, msg =>
                 {
                     if (!quiet)
                         output.AppendConsoleMessage($"[{DateTime.Now}]: {msg}");
                 });
-                var response = await connection.GetBackupStatus(matchingBackup.ID);
+                var response = await connection.GetBackupStatusAsync(matchingBackup.ID);
                 if (!quiet)
                     output.AppendConsoleMessage("Backup status: " + response);
             }
@@ -90,7 +90,7 @@ public static class RunBackup
     /// <param name="output">The output interceptor to use</param>
     /// <param name="onPoll">The action to perform on each poll</param>
     /// <returns>A task that represents the asynchronous operation</returns>
-    private static async Task WaitForBackupWithRetries(Connection connection, Settings settings, string backupId, int pollInterval, OutputInterceptor output, Action<string> onPoll)
+    private static async Task WaitForBackupWithRetriesAsync(Connection connection, Settings settings, string backupId, int pollInterval, OutputInterceptor output, Action<string> onPoll)
     {
         var retry = true;
 
@@ -98,7 +98,7 @@ public static class RunBackup
         {
             try
             {
-                await connection.WaitForBackup(backupId, TimeSpan.FromSeconds(pollInterval), onPoll);
+                await connection.WaitForBackupAsync(backupId, TimeSpan.FromSeconds(pollInterval), onPoll);
                 return;
             }
             catch (Exception)
@@ -108,7 +108,7 @@ public static class RunBackup
                 {
                     // See if we can get a new connection (re-connect)
                     onPoll("Re-authenticating...");
-                    connection = await settings.ReloadPersistedSettings().GetConnection(output);
+                    connection = await settings.ReloadPersistedSettings().GetConnectionAsync(output);
                     retry = true;
                 }
                 catch (Exception)

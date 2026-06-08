@@ -41,9 +41,9 @@ public static class DeleteBackup
         }
         .WithHandler(CommandHandler.Create<Settings, OutputInterceptor, string, bool, bool, bool, bool>(async (settings, output, backup, deleteRemoteFiles, deleteLocalDb, force, quiet) =>
         {
-            var connection = await settings.GetConnection(output);
+            var connection = await settings.GetConnectionAsync(output);
 
-            var matchingBackup = (await connection.ListBackups())
+            var matchingBackup = (await connection.ListBackupsAsync())
                 .FirstOrDefault(b => string.Equals(b.Name, backup, StringComparison.OrdinalIgnoreCase) || string.Equals(b.ID, backup));
 
             if (matchingBackup == null)
@@ -52,7 +52,7 @@ public static class DeleteBackup
             if (!quiet)
                 output.AppendConsoleMessage($"Queueing delete for backup {matchingBackup.Name} (ID: {matchingBackup.ID})");
 
-            await connection.DeleteBackup(matchingBackup.ID, deleteRemoteFiles: deleteRemoteFiles, deleteLocalDb: deleteLocalDb, force: force);
+            await connection.DeleteBackupAsync(matchingBackup.ID, deleteRemoteFiles: deleteRemoteFiles, deleteLocalDb: deleteLocalDb, force: force);
 
             if (!quiet)
                 output.AppendConsoleMessage("Delete task queued");

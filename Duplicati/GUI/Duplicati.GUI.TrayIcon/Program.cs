@@ -278,7 +278,7 @@ namespace Duplicati.GUI.TrayIcon
                         using (Connection = new HttpServerConnection(hosted?.applicationSettings, passwordSource, disableTrayIconLogin, acceptedHostCertificate, options, PasswordStorage))
                         {
                             // Make sure we have the latest status, but don't care if it fails
-                            Connection.UpdateStatus().FireAndForget();
+                            Connection.UpdateStatusAsync().FireAndForget();
                             using (var tk = RunTrayIcon())
                             {
                                 if (Server.Program.ApplicationInstance != null)

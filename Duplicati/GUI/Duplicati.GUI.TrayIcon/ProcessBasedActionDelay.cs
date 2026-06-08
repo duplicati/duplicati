@@ -45,7 +45,7 @@ public class ProcessBasedActionDelay : IDisposable
     /// Reference to the task running
     /// </summary>
     private readonly Task m_task;
-    
+
     /// <summary>
     /// CancellationToken for the running task
     /// </summary>
@@ -56,7 +56,7 @@ public class ProcessBasedActionDelay : IDisposable
     /// </summary>
     public ProcessBasedActionDelay()
     {
-        m_task = RunProcessor(m_inboundActionChannel.AsReadOnly(), m_initializedChannel.AsReadOnly(), _cancellationToken.Token);
+        m_task = RunProcessorAsync(m_inboundActionChannel.AsReadOnly(), m_initializedChannel.AsReadOnly(), _cancellationToken.Token);
     }
 
     /// <summary>
@@ -66,7 +66,7 @@ public class ProcessBasedActionDelay : IDisposable
     /// <param name="initializedChannel">The channel that sends the start signal.</param>
     /// <param name="cancellationToken">A cancelationToken</param>
     /// <returns>The task running the processor process.</returns>
-    private static Task RunProcessor(IReadChannelEnd<Action> inboundChannel, IReadChannelEnd<bool> initializedChannel, CancellationToken cancellationToken)
+    private static Task RunProcessorAsync(IReadChannelEnd<Action> inboundChannel, IReadChannelEnd<bool> initializedChannel, CancellationToken cancellationToken)
         => AutomationExtensions.RunTask(new
         {
             inboundChannel,
@@ -87,14 +87,14 @@ public class ProcessBasedActionDelay : IDisposable
     /// Adds a new task to the processor
     /// </summary>
     /// <param name="action">The action to execute</param>
-    public async Task ExecuteAction(Action action)
+    public async Task ExecuteActionAsync(Action action)
     {
         if (_cancellationToken.IsCancellationRequested)
         {
             // If the processor is cancelled, we do not queue the action
             return;
         }
-        
+
         // Note: WriteNoWait() is used to avoid waiting for the action to be read,
         // as this would cause deadlocks if called from within the processor.
         // The buffer size should be sufficient to allow for a reasonable number of actions to be queued.

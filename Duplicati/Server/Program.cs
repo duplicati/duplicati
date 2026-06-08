@@ -1158,7 +1158,7 @@ namespace Duplicati.Server
                     disableDbEncryption = true;
             }
 
-            var defaultSecretProvider = SecretProviderHelper.GetDefaultSecretProvider(commandlineOptions, CancellationToken.None).Await();
+            var defaultSecretProvider = SecretProviderHelper.GetDefaultSecretProviderAsync(commandlineOptions, CancellationToken.None).Await();
 
             // If we are supposed to have an encryption key, but do not, try to get it from the (default) secret provider
             if (!hasValidEncryptionKey && defaultSecretProvider != null)
