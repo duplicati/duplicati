@@ -57,6 +57,8 @@ namespace Duplicati.Server
         private const string WINDOWS_EVENTLOG_LEVEL_OPTION = "windows-eventlog-level";
         /// <summary>The commandline argument name for disabling database encryption.</summary>
         private const string DISABLE_DB_ENCRYPTION_OPTION = "disable-db-encryption";
+        /// <summary>The commandline argument name for disabling the default secret provider.</summary>
+        private const string DISABLE_DEFAULT_SECRET_PROVIDER_OPTION = "disable-default-secret-provider";
         /// <summary>The commandline argument name for requiring database encryption key.</summary>
         private const string REQUIRE_DB_ENCRYPTION_KEY_OPTION = "require-db-encryption-key";
         /// <summary>The commandline argument name for settings encryption key.</summary>
@@ -1576,6 +1578,7 @@ namespace Duplicati.Server
             new CommandLineArgument(LOG_RETENTION_OPTION, CommandLineArgument.ArgumentType.Timespan, Strings.Program.LogretentionShort, Strings.Program.LogretentionLong, DEFAULT_LOG_RETENTION),
             new CommandLineArgument(DataFolderManager.SERVER_DATAFOLDER_OPTION, CommandLineArgument.ArgumentType.Path, Strings.Program.ServerdatafolderShort, Strings.Program.ServerdatafolderLong(DataFolderManager.DATAFOLDER_ENV_NAME), DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ProbeOnly)),
             new CommandLineArgument(DISABLE_DB_ENCRYPTION_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Program.DisabledbencryptionShort, Strings.Program.DisabledbencryptionLong),
+            new CommandLineArgument(DISABLE_DEFAULT_SECRET_PROVIDER_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Program.DisabledefaultsecretproviderShort, Strings.Program.DisabledefaultsecretproviderLong),
             new CommandLineArgument(REQUIRE_DB_ENCRYPTION_KEY_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Program.RequiredbencryptionShort, Strings.Program.RequiredbencryptionLong),
             new CommandLineArgument(SETTINGS_ENCRYPTION_KEY_OPTION, CommandLineArgument.ArgumentType.Password, Strings.Program.SettingsencryptionkeyShort, Strings.Program.SettingsencryptionkeyLong(EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME)),
             new CommandLineArgument(REGISTER_REMOTE_CONTROL_OPTION, CommandLineArgument.ArgumentType.String, Strings.Program.RegisterRemoteControlShort, Strings.Program.RegisterRemoteControlLong),
