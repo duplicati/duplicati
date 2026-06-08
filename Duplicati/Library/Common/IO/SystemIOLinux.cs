@@ -402,6 +402,18 @@ namespace Duplicati.Library.Common.IO
                 Convert.ToInt32("700", 8) /* FilePermissions.S_IRUSR | FilePermissions.S_IWUSR | FilePermissions.S_IXUSR */
             );
         }
+
+        /// <summary>
+        /// Enumerates the alternate data streams for a file (not supported on Linux/macOS).
+        /// </summary>
+        public IEnumerable<string> EnumerateAlternateDataStreams(string path)
+            => Enumerable.Empty<string>();
+
+        /// <summary>
+        /// Determines whether the specified path is an alternate data stream (always false on Linux/macOS).
+        /// </summary>
+        public bool IsAlternateDataStream(string path)
+            => false;
     }
 }
 

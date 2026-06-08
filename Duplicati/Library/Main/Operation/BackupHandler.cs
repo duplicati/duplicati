@@ -124,7 +124,7 @@ namespace Duplicati.Library.Main.Operation
                 }
             }
 
-            return SnapshotUtility.CreateNoSnapshot(sources, options.IgnoreAdvisoryLocking, options.SymlinkPolicy == Options.SymlinkStrategy.Follow, useSeBackup, options.HandleMacOSPhotoLibrary, options.MacOSPhotoLibraryPath);
+            return SnapshotUtility.CreateNoSnapshot(sources, options.IgnoreAdvisoryLocking, options.SymlinkPolicy == Options.SymlinkStrategy.Follow, useSeBackup, options.EnableAdsBackup, options.HandleMacOSPhotoLibrary, options.MacOSPhotoLibraryPath);
         }
 
         /// <summary>

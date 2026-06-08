@@ -404,6 +404,10 @@ namespace Duplicati.Library.Main.Strings
         public static string RepairRefreshLockInfoLong { get { return LC.L("Use this option to refresh the object lock expiration information from the backend during a repair operation. This will query the backend for the current lock status of each remote volume and update the local database accordingly. If the backend does not support locking, this option will be ignored."); } }
         public static string RefreshLockInfoCompleteShort { get { return LC.L("Perform a complete refresh of lock information"); } }
         public static string RefreshLockInfoCompleteLong { get { return LC.L("Use this option to perform a complete refresh of lock information from the backend. This will query the backend for the current lock status of each remote volume and update the local database accordingly. If this option is not specified, only the lock information for the remote volumes with no lock information will be refreshed."); } }
+        public static string EnableAdsBackupShort { get { return LC.L("Enable backup of NTFS alternate data streams"); } }
+        public static string EnableAdsBackupLong { get { return LC.L("Use this option to enable backup of NTFS alternate data streams (ADS). This is a Windows-only feature that allows backing up hidden data attached to files."); } }
+        public static string DisableAdsRestoreShort { get { return LC.L("Disable restore of NTFS alternate data streams"); } }
+        public static string DisableAdsRestoreLong { get { return LC.L("Use this option to skip restoring NTFS alternate data streams (ADS) during a restore operation. The main file content will still be restored."); } }
     }
 
     internal static class Common

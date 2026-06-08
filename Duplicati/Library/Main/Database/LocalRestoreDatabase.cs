@@ -725,6 +725,46 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
+        /// Removes alternate data stream entries from the temporary file table.
+        /// </summary>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
+        public async Task RemoveAlternateDataStreamsAsync(CancellationToken token)
+        {
+            if (string.IsNullOrWhiteSpace(m_tempfiletable))
+                return;
+
+            var adsIds = new List<long>();
+            await using var cmd = m_connection.CreateCommand($@"
+                SELECT ""ID"", ""Path""
+                FROM ""{m_tempfiletable}""
+            ")
+                .SetTransaction(m_rtr);
+
+            await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+            while (await rd.ReadAsync(token).ConfigureAwait(false))
+            {
+                var id = rd.ConvertValueToInt64(0);
+                var path = rd.ConvertValueToString(1);
+                if (path != null && SystemIO.IO_OS.IsAlternateDataStream(path))
+                    adsIds.Add(id);
+            }
+
+            if (adsIds.Count == 0)
+                return;
+
+            await using var tmptable = await TemporaryDbValueList.CreateAsync(this, adsIds, token).ConfigureAwait(false);
+
+            await using var delCmd = m_connection.CreateCommand($@"
+                DELETE FROM ""{m_tempfiletable}""
+                WHERE ""ID"" IN (@Ids)
+            ")
+                .SetTransaction(m_rtr);
+
+            await delCmd.ExpandInClauseParameterMssqliteAsync("@Ids", tmptable, token).ConfigureAwait(false);
+            await delCmd.ExecuteNonQueryAsync(token).ConfigureAwait(false);
+        }
+
+        /// <summary>
         /// Retrieves the first path from the temporary file table.
         /// </summary>
         /// <param name="token">A cancellation token to monitor for cancellation requests.</param>

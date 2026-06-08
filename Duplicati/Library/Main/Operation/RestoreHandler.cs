@@ -1066,6 +1066,12 @@ namespace Duplicati.Library.Main.Operation
                 result.OperationProgressUpdater.UpdatefileCount(c.Item1, c.Item2, true);
             }
 
+            if (options.DisableAdsRestore)
+            {
+                using (new Logging.Timer(LOGTAG, "FilterAds", "Filtering alternate data streams from restore list"))
+                    await database.RemoveAlternateDataStreamsAsync(result.TaskControl.ProgressToken).ConfigureAwait(false);
+            }
+
             using (new Logging.Timer(LOGTAG, "SetTargetPaths", "SetTargetPaths"))
                 if (!string.IsNullOrEmpty(restoreDestination.TargetDestination))
                 {

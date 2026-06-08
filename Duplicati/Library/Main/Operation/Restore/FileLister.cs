@@ -25,7 +25,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using CoCoL;
-using Duplicati.Library.Interface;
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Main.Database;
 
 #nullable enable
@@ -72,13 +72,26 @@ namespace Duplicati.Library.Main.Operation.Restore
                 {
                     sw_get_files?.Start();
                     // The enumerables are cast to arrays to force the query to be executed and release the database lock.
-                    var files = await db
+                    var files = (await db
                         .GetFilesAndSymlinksToRestoreAsync(result.TaskControl.ProgressToken)
                         .ToArrayAsync()
-                        .ConfigureAwait(false);
+                        .ConfigureAwait(false))
+                        .AsEnumerable();
 
                     result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_DownloadingRemoteFiles);
                     sw_get_files?.Stop();
+
+                    if (options.DisableAdsRestore)
+                    {
+                        var newlist = new List<FileRequest>(files.Count());
+                        foreach (var f in files)
+                            if (SystemIO.IO_OS.IsAlternateDataStream(f.TargetPath))
+                                Logging.Log.WriteVerboseMessage(LOGTAG, "SkipAdsRestore", "Skipping ADS restore for {0}", f.TargetPath);
+                            else
+                                newlist.Add(f);
+
+                        files = newlist;
+                    }
 
                     sw_write_file?.Start();
 

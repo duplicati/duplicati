@@ -376,6 +376,8 @@ namespace Duplicati.Library.Main
                 yield return new CommandLineArgument("vss-use-mapping", CommandLineArgument.ArgumentType.Boolean, Strings.Options.VssusemappingShort, Strings.Options.VssusemappingLong, "false");
                 yield return new CommandLineArgument("usn-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.UsnpolicyShort, Strings.Options.UsnpolicyLong, "off", null, Enum.GetNames(typeof(OptimizationStrategy)));
                 yield return new CommandLineArgument("backupread-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.BackupreadpolicyShort, Strings.Options.BackupreadpolicyLong, DEFAULT_BACKUPREAD_POLICY.ToString(), null, Enum.GetNames(typeof(OptimizationStrategy)));
+                yield return new CommandLineArgument("enable-ads-backup", CommandLineArgument.ArgumentType.Boolean, Strings.Options.EnableAdsBackupShort, Strings.Options.EnableAdsBackupLong, "false");
+                yield return new CommandLineArgument("disable-ads-restore", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableAdsRestoreShort, Strings.Options.DisableAdsRestoreLong, "false");
             }
 
             if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
@@ -1877,6 +1879,16 @@ namespace Duplicati.Library.Main
         /// Gets the size of the buffer used for the restore channel
         /// </summary>
         public int RestoreChannelBufferSize => GetInt("restore-channel-buffer-size", DEFAULT_RESTORE_CHANNEL_BUFFER_SIZE);
+
+        /// <summary>
+        /// Gets a value indicating whether NTFS alternate data streams should be backed up
+        /// </summary>
+        public bool EnableAdsBackup => GetBool("enable-ads-backup");
+
+        /// <summary>
+        /// Gets a value indicating whether NTFS alternate data streams should be skipped during restore
+        /// </summary>
+        public bool DisableAdsRestore => GetBool("disable-ads-restore");
 
         /// <summary>
         /// Toggles whether internal profiling is enabled and should be logged.
