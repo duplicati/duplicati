@@ -57,6 +57,7 @@ public static class Program
     /// <param name="SettingsEncryptionKey">The encryption key for the database settings</param>
     /// <param name="WindowsEventLog">The Windows event log to write to</param>
     /// <param name="DisableDbEncryption">Disable database encryption</param>
+    /// <param name="DisableDefaultSecretProvider">Disable default secret provider</param>
     /// <param name="WebserviceResetJwtConfig">Reset the JWT configuration</param>
     /// <param name="WebserviceAllowedHostnames">The allowed hostnames for the webserver</param>
     /// <param name="WebserviceApiOnly">Only allow API access to the webserver</param>
@@ -78,6 +79,7 @@ public static class Program
         string? SettingsEncryptionKey,
         string WindowsEventLog,
         bool DisableDbEncryption,
+        bool DisableDefaultSecretProvider,
         bool WebserviceResetJwtConfig,
         string WebserviceAllowedHostnames,
         bool WebserviceApiOnly,
@@ -118,6 +120,7 @@ public static class Program
             new Option<string?>("--settings-encryption-key", description: "The encryption key for the database settings", getDefaultValue: () => null),
             new Option<string>("--windows-eventlog", description: "The Windows event log to use as source.", getDefaultValue: () => ""),
             new Option<bool>("--disable-db-encryption", description: "Disable database encryption", getDefaultValue: () => false),
+            new Option<bool>("--disable-default-secret-provider", description: "Disable the default secret provider", getDefaultValue: () => false),
             new Option<bool>("--webservice-reset-jwt-config", description: "Reset the JWT configuration", getDefaultValue: () => true),
             new Option<string>("--webservice-allowed-hostnames", description: "The allowed hostnames for the webserver", getDefaultValue: () => "127.0.0.1"),
             new Option<bool>("--webservice-api-only", description: "Only allow API access to the webserver", getDefaultValue: () => true),
@@ -213,6 +216,7 @@ public static class Program
             SettingsEncryptionKey: null,
             WindowsEventLog: "",
             DisableDbEncryption: false,
+            DisableDefaultSecretProvider: false,
             WebserviceResetJwtConfig: false,
             WebserviceAllowedHostnames: "",
             WebserviceApiOnly: true,
@@ -507,6 +511,7 @@ public static class Program
             EncodeOption("--webservice-api-only", agentConfig.WebserviceApiOnly.ToString()),
             EncodeOption("--webservice-disable-signin-tokens", agentConfig.WebserviceDisableSigninTokens.ToString()),
             EncodeOption("--disable-db-encryption", agentConfig.DisableDbEncryption.ToString()),
+            EncodeOption("--disable-default-secret-provider", agentConfig.DisableDefaultSecretProvider.ToString()),
             EncodeOption("--settings-encryption-key", settingsEncryptionKey),
             EncodeOption("--webservice-disable-api-extensions", string.Join(",", disabledExtensions))
             }

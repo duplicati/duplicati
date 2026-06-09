@@ -83,6 +83,8 @@ Error message: {0}", error); }
                 public static string WebserverEnableFolderStatusServiceDescription { get { return LC.L(@"Enable the folder status service for showing overlay icons in the file explorer"); } }
                 public static string DisabledbencryptionLong { get { return LC.L(@"Use this option to disable database encryption of sensitive fields"); } }
                 public static string DisabledbencryptionShort { get { return LC.L(@"Disable database encryption"); } }
+                public static string DisabledefaultsecretproviderLong { get { return LC.L(@"Use this option to disable the default secret provider"); } }
+                public static string DisabledefaultsecretproviderShort { get { return LC.L(@"Disable the default secret provider"); } }
                 public static string LogwindowseventlogLong { get { return LC.L(@"Use this option to log to the Windows event log. The provided name is in the format Log:Source. If no log name is provided, ""Duplicati 2"" is used."); } }
                 public static string LogwindowseventlogShort { get { return LC.L(@"Log to the Windows event log"); } }
                 public static string LogwindowseventloglevelLong { get { return LC.L(@"Use this option to set the log level for the Windows event log."); } }
