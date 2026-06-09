@@ -899,6 +899,8 @@ namespace Duplicati.Library.Main.Operation
                     // and sources are disposed, but before verification
                     if (await m_result.TaskControl.ProgressRendevouzAsync().ConfigureAwait(false) && m_options.LoadedModules != null)
                     {
+                        // Make filter available to modules
+                        using var _ = Controller.PushFilterToOptions(m_options, filter);
                         foreach (var mx in m_options.LoadedModules)
                             if (mx is IBackupCallbackModule module)
                                 try { module.OnFinishBackup(m_result, null); }

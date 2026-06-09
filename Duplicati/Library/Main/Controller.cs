@@ -114,7 +114,7 @@ namespace Duplicati.Library.Main
         }
 
         /// <inheritdoc />
-        public async Task<IBackupResults> BackupAsync(string[] inputsources, IFilter filter = null)
+        public async Task<IBackupResults> BackupAsync(string[] inputsources, IFilter inputFilter = null)
         {
             UsageReporter.Reporter.Report("USE_BACKEND", new Library.Utility.Uri(m_backendUrl).Scheme);
             UsageReporter.Reporter.Report("USE_COMPRESSION", m_options.CompressionModule);
@@ -130,9 +130,8 @@ namespace Duplicati.Library.Main
             CheckAutoCompactInterval();
             CheckAutoVacuumInterval();
 
-            return await RunActionAsync(new BackupResults(), inputsources, filter, async (result, backendManager) =>
+            return await RunActionAsync(new BackupResults(), inputsources, inputFilter, async (result, backendManager, filter) =>
             {
-
                 using (var h = new Operation.BackupHandler(m_options, result))
                     await h.RunAsync(ExpandInputSources(inputsources, filter), backendManager, filter)
                         .ConfigureAwait(false);
@@ -148,9 +147,9 @@ namespace Duplicati.Library.Main
         }
 
         /// <inheritdoc />
-        public async Task<IRestoreResults> RestoreAsync(string[] paths, IFilter filter = null)
+        public async Task<IRestoreResults> RestoreAsync(string[] paths, IFilter inputFilter = null)
         {
-            return await RunActionAsync(new RestoreResults(), paths, filter, async (result, backendManager) =>
+            return await RunActionAsync(new RestoreResults(), paths, inputFilter, async (result, backendManager, filter) =>
             {
                 using var restoreDestination =
                     (m_options.Restorepath ?? "").StartsWith("@")
@@ -186,9 +185,9 @@ namespace Duplicati.Library.Main
         }
 
         /// <inheritdoc />
-        public async Task<IRestoreControlFilesResults> RestoreControlFilesAsync(IEnumerable<string> files = null, IFilter filter = null)
+        public async Task<IRestoreControlFilesResults> RestoreControlFilesAsync(IEnumerable<string> files = null, IFilter inputFilter = null)
         {
-            return await RunActionAsync(new RestoreControlFilesResults(), filter, (result, backendManager) =>
+            return await RunActionAsync(new RestoreControlFilesResults(), inputFilter, (result, backendManager, filter) =>
                 new Operation.RestoreControlFilesHandler(m_options, result)
                     .RunAsync(files, backendManager, filter)
             ).ConfigureAwait(false);
@@ -197,16 +196,16 @@ namespace Duplicati.Library.Main
         /// <inheritdoc />
         public async Task<IDeleteResults> DeleteAsync()
         {
-            return await RunActionAsync(new DeleteResults(), (result, backendManager) =>
+            return await RunActionAsync(new DeleteResults(), (result, backendManager, filter) =>
                 new Operation.DeleteHandler(m_options, result)
                     .RunAsync(backendManager)
             ).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
-        public async Task<IRepairResults> RepairAsync(IFilter filter = null)
+        public async Task<IRepairResults> RepairAsync(IFilter inputFilter = null)
         {
-            return await RunActionAsync(new RepairResults(), filter, (result, backendManager) =>
+            return await RunActionAsync(new RepairResults(), inputFilter, (result, backendManager, filter) =>
                 new Operation.RepairHandler(m_options, result)
                     .RunAsync(backendManager, filter)
             ).ConfigureAwait(false);
@@ -214,25 +213,25 @@ namespace Duplicati.Library.Main
 
         /// <inheritdoc />
         public async Task<IListFilesetResults> ListFilesetsAsync()
-            => await RunActionAsync(new ListFilesetResults(), (result, backendManager) =>
+            => await RunActionAsync(new ListFilesetResults(), (result, backendManager, _) =>
                 Operation.ListFilesetsHandler.RunAsync(m_options, result, backendManager)
             ).ConfigureAwait(false);
 
         /// <inheritdoc />
         public async Task<IListFolderResults> ListFolderAsync(string[] folders, long offset, long limit, bool extendedData)
-            => await RunActionAsync(new ListFolderResults(), (result, _) =>
+            => await RunActionAsync(new ListFolderResults(), (result, _, _) =>
                 Operation.ListFolderHandler.RunAsync(m_options, result, folders, offset, limit, extendedData)
             ).ConfigureAwait(false);
 
         /// <inheritdoc />
         public async Task<IListFileVersionsResults> ListFileVersionsAsync(string[] files, long offset, long limit)
-            => await RunActionAsync(new ListFileVersionsResults(), (result, backendManager) =>
+            => await RunActionAsync(new ListFileVersionsResults(), (result, backendManager, _) =>
                 Operation.ListFileVersionsHandler.RunAsync(m_options, result, files, offset, limit)
             ).ConfigureAwait(false);
 
         /// <inheritdoc />
-        public async Task<ISearchFilesResults> SearchEntriesAsync(string[] pathprefixes, IFilter filter, long offset, long limit, bool extendedData)
-            => await RunActionAsync(new SearchFilesResults(), filter, (result, backendManager) =>
+        public async Task<ISearchFilesResults> SearchEntriesAsync(string[] pathprefixes, IFilter inputFilter, long offset, long limit, bool extendedData)
+            => await RunActionAsync(new SearchFilesResults(), inputFilter, (result, backendManager, filter) =>
                 Operation.SearchEntriesHandler.RunAsync(m_options, result, pathprefixes, filter, offset, limit, extendedData)
             ).ConfigureAwait(false);
 
@@ -245,18 +244,18 @@ namespace Duplicati.Library.Main
             => ListAsync(filterstring == null ? null : new string[] { filterstring }, null);
 
         /// <inheritdoc />
-        public async Task<IListResults> ListAsync(IEnumerable<string> filterstrings, IFilter filter)
+        public async Task<IListResults> ListAsync(IEnumerable<string> filterstrings, IFilter inputFilter)
         {
-            return await RunActionAsync(new ListResults(), filter, (result, backendManager) =>
+            return await RunActionAsync(new ListResults(), inputFilter, (result, backendManager, filter) =>
                 new Operation.ListFilesHandler(m_options, result)
                     .RunAsync(backendManager, filterstrings, filter)
             ).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
-        public async Task<IListResults> ListControlFilesAsync(IEnumerable<string> filterstrings, IFilter filter)
+        public async Task<IListResults> ListControlFilesAsync(IEnumerable<string> filterstrings, IFilter inputFilter)
         {
-            return await RunActionAsync(new ListResults(), filter, (result, backendManager) =>
+            return await RunActionAsync(new ListResults(), inputFilter, (result, backendManager, filter) =>
                 new Operation.ListControlFilesHandler(m_options, result)
                     .RunAsync(backendManager, filterstrings, filter)
             ).ConfigureAwait(false);
@@ -265,7 +264,7 @@ namespace Duplicati.Library.Main
         /// <inheritdoc />
         public async Task<IListRemoteResults> ListRemoteAsync()
         {
-            return await RunActionAsync(new ListRemoteResults(), async (result, backendManager) =>
+            return await RunActionAsync(new ListRemoteResults(), async (result, backendManager, _) =>
             {
                 using var tf = File.Exists(m_options.Dbpath) ? null : new TempFile();
                 await using var db = await LocalDatabase.CreateLocalDatabaseAsync(((string)tf) ?? m_options.Dbpath, "list-remote", true, null, result.TaskControl.ProgressToken).ConfigureAwait(false);
@@ -276,7 +275,7 @@ namespace Duplicati.Library.Main
         /// <inheritdoc />
         public async Task<IListRemoteResults> DeleteAllRemoteFilesAsync()
         {
-            return await RunActionAsync(new ListRemoteResults(), async (result, backendManager) =>
+            return await RunActionAsync(new ListRemoteResults(), async (result, backendManager, _) =>
             {
                 result.OperationProgressUpdater.UpdatePhase(OperationPhase.Delete_Listing);
                 {
@@ -335,7 +334,7 @@ namespace Duplicati.Library.Main
         {
             CheckAutoVacuumInterval();
 
-            return await RunActionAsync(new CompactResults(), (result, backendManager) =>
+            return await RunActionAsync(new CompactResults(), (result, backendManager, _) =>
                 new Operation.CompactHandler(m_options, result)
                     .RunAsync(backendManager)
             ).ConfigureAwait(false);
@@ -344,7 +343,7 @@ namespace Duplicati.Library.Main
         /// <inheritdoc />
         public async Task<ISetLockResults> SetLocksAsync()
         {
-            return await RunActionAsync(new SetLockResults(), (result, backendManager) =>
+            return await RunActionAsync(new SetLockResults(), (result, backendManager, _) =>
                 new Operation.SetLocksHandler(m_options, result)
                     .RunAsync(backendManager)
             ).ConfigureAwait(false);
@@ -353,18 +352,18 @@ namespace Duplicati.Library.Main
         /// <inheritdoc />
         public async Task<IReadLockInfoResults> ReadLockInfoAsync()
         {
-            return await RunActionAsync(new ReadLockInfoResults(), (result, backendManager) =>
+            return await RunActionAsync(new ReadLockInfoResults(), (result, backendManager, _) =>
                 new Operation.ReadLockInfoHandler(m_options, result)
                     .RunAsync(backendManager)
             ).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
-        public async Task<IRecreateDatabaseResults> UpdateDatabaseWithVersionsAsync(IFilter filter = null)
+        public async Task<IRecreateDatabaseResults> UpdateDatabaseWithVersionsAsync(IFilter inputFilter = null)
         {
             var filelistfilter = Operation.RestoreHandler.GetNumberedFilelistFilterDelegate(m_options.Time, m_options.Version, singleTimeMatch: true);
 
-            return await RunActionAsync(new RecreateDatabaseResults(), filter, async (result, backendManager) =>
+            return await RunActionAsync(new RecreateDatabaseResults(), inputFilter, async (result, backendManager, filter) =>
             {
                 using (var h = new Operation.RecreateDatabaseHandler(m_options, result))
                     await h.RunUpdateAsync(backendManager, filter, filelistfilter, null)
@@ -377,17 +376,17 @@ namespace Duplicati.Library.Main
         {
             var t = new string[] { targetpath };
 
-            return await RunActionAsync(new CreateLogDatabaseResults(), t, async (result, backendManager) =>
+            return await RunActionAsync(new CreateLogDatabaseResults(), t, async (result, backendManager, _) =>
                 await new Operation.CreateBugReportHandler(t[0], m_options, result).RunAsync()
             ).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
-        public async Task<IListChangesResults> ListChangesAsync(string baseVersion, string targetVersion, IEnumerable<string> filterstrings = null, IFilter filter = null, Action<IListChangesResults, IEnumerable<Tuple<ListChangesChangeType, ListChangesElementType, string>>> callback = null)
+        public async Task<IListChangesResults> ListChangesAsync(string baseVersion, string targetVersion, IEnumerable<string> filterstrings = null, IFilter inputFilter = null, Action<IListChangesResults, IEnumerable<Tuple<ListChangesChangeType, ListChangesElementType, string>>> callback = null)
         {
             var t = new string[] { baseVersion, targetVersion };
 
-            return await RunActionAsync(new ListChangesResults(), t, filter, async (result, backendManager) =>
+            return await RunActionAsync(new ListChangesResults(), t, inputFilter, async (result, backendManager, filter) =>
                 await new Operation.ListChangesHandler(m_options, result)
                     .RunAsync(t[0], t[1], backendManager, filterstrings, filter, callback)
             ).ConfigureAwait(false);
@@ -396,7 +395,7 @@ namespace Duplicati.Library.Main
         /// <inheritdoc />
         public async Task<IListAffectedResults> ListAffectedAsync(List<string> args, Action<IListAffectedResults> callback = null)
         {
-            return await RunActionAsync(new ListAffectedResults(), (result, backendManager) =>
+            return await RunActionAsync(new ListAffectedResults(), (result, backendManager, _) =>
                 new Operation.ListAffected(m_options, result)
                     .RunAsync(args, callback)
             ).ConfigureAwait(false);
@@ -408,14 +407,14 @@ namespace Duplicati.Library.Main
             if (!m_options.RawOptions.ContainsKey("full-remote-verification"))
                 m_options.RawOptions["full-remote-verification"] = "true";
 
-            return await RunActionAsync(new TestResults(), (result, backendManager) =>
+            return await RunActionAsync(new TestResults(), (result, backendManager, _) =>
                 new Operation.TestHandler(m_options, result)
                     .RunAsync(samples, backendManager)
             ).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
-        public async Task<ITestFilterResults> TestFilterAsync(string[] paths, IFilter filter = null)
+        public async Task<ITestFilterResults> TestFilterAsync(string[] paths, IFilter inputFilter = null)
         {
             m_options.RawOptions["dry-run"] = "true";
             m_options.RawOptions["dbpath"] = "INVALID!";
@@ -424,7 +423,7 @@ namespace Duplicati.Library.Main
             var filtertag = Logging.Log.LogTagFromType(typeof(Operation.Backup.FileEnumerationProcess));
             using (Logging.Log.StartScope(m_messageSink.WriteMessage, x => x.FilterTag.Contains(filtertag)))
             {
-                return await RunActionAsync(new TestFilterResults(), paths, filter, (result, backendManager) =>
+                return await RunActionAsync(new TestFilterResults(), paths, inputFilter, (result, backendManager, filter) =>
                     new Operation.TestFilterHandler(m_options, result)
                         .RunAsync(ExpandInputSources(paths, filter), filter)
                 ).ConfigureAwait(false);
@@ -434,33 +433,33 @@ namespace Duplicati.Library.Main
         /// <inheritdoc />
         public async Task<ISystemInfoResults> SystemInfoAsync()
         {
-            return await RunActionAsync(new SystemInfoResults(), (result, backendManager) =>
+            return await RunActionAsync(new SystemInfoResults(), (result, backendManager, _) =>
                 Operation.SystemInfoHandler.RunAsync(result)
             ).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
-        public async Task<IPurgeFilesResults> PurgeFilesAsync(IFilter filter)
+        public async Task<IPurgeFilesResults> PurgeFilesAsync(IFilter inputFilter)
         {
-            return await RunActionAsync(new PurgeFilesResults(), (result, backendManager) =>
+            return await RunActionAsync(new PurgeFilesResults(), (result, backendManager, filter) =>
                 new Operation.PurgeFilesHandler(m_options, result)
                     .RunAsync(backendManager, filter)
             ).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
-        public async Task<IListBrokenFilesResults> ListBrokenFilesAsync(IFilter filter, Func<long, DateTime, long, string, long, bool> callbackhandler = null)
+        public async Task<IListBrokenFilesResults> ListBrokenFilesAsync(IFilter inputFilter, Func<long, DateTime, long, string, long, bool> callbackhandler = null)
         {
-            return await RunActionAsync(new ListBrokenFilesResults(), (result, backendManager) =>
+            return await RunActionAsync(new ListBrokenFilesResults(), (result, backendManager, filter) =>
                 new Operation.ListBrokenFilesHandler(m_options, result)
                     .RunAsync(backendManager, filter, callbackhandler)
             ).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
-        public async Task<IPurgeBrokenFilesResults> PurgeBrokenFilesAsync(IFilter filter)
+        public async Task<IPurgeBrokenFilesResults> PurgeBrokenFilesAsync(IFilter inputFilter)
         {
-            return await RunActionAsync(new PurgeBrokenFilesResults(), (result, backendManager) =>
+            return await RunActionAsync(new PurgeBrokenFilesResults(), (result, backendManager, filter) =>
                 new Operation.PurgeBrokenFilesHandler(m_options, result)
                     .RunAsync(backendManager, filter)
             ).ConfigureAwait(false);
@@ -489,7 +488,7 @@ namespace Duplicati.Library.Main
             var filtertag = Logging.Log.LogTagFromType(DynamicLoader.GenericLoader.GetModule(sendMailModuleKey).GetType());
             using (Logging.Log.StartScope(m_messageSink.WriteMessage, x => x.FilterTag.Contains(filtertag)))
             {
-                return await RunActionAsync(new SendMailResults(), (result, backendManager) =>
+                return await RunActionAsync(new SendMailResults(), (result, backendManager, _) =>
                     Task.Run(() =>
                     {
                         result.Lines = new string[0];
@@ -502,13 +501,13 @@ namespace Duplicati.Library.Main
         /// <inheritdoc />
         public async Task<IVacuumResults> VacuumAsync()
         {
-            return await RunActionAsync(new VacuumResults(), (result, backendManager) =>
+            return await RunActionAsync(new VacuumResults(), (result, backendManager, _) =>
                 new Operation.VacuumHandler(m_options, result)
                     .RunAsync()
             ).ConfigureAwait(false);
         }
 
-        private Task<T> RunActionAsync<T>(T result, Func<T, IBackendManager, Task> method)
+        private Task<T> RunActionAsync<T>(T result, Func<T, IBackendManager, IFilter, Task> method)
             where T : ISetCommonOptions, ITaskControlProvider, Logging.ILogDestination, IBasicResults, IBackendWriterProvider
         {
             var tmp = new string[0];
@@ -516,21 +515,21 @@ namespace Duplicati.Library.Main
             return RunActionAsync<T>(result, tmp, tempfilter, method);
         }
 
-        private Task<T> RunActionAsync<T>(T result, string[] paths, Func<T, IBackendManager, Task> method)
+        private Task<T> RunActionAsync<T>(T result, string[] paths, Func<T, IBackendManager, IFilter, Task> method)
             where T : ISetCommonOptions, ITaskControlProvider, Logging.ILogDestination, IBasicResults, IBackendWriterProvider
         {
             IFilter tempfilter = null;
             return RunActionAsync<T>(result, paths, tempfilter, method);
         }
 
-        private Task<T> RunActionAsync<T>(T result, IFilter filter, Func<T, IBackendManager, Task> method)
+        private Task<T> RunActionAsync<T>(T result, IFilter filter, Func<T, IBackendManager, IFilter, Task> method)
             where T : ISetCommonOptions, ITaskControlProvider, Logging.ILogDestination, IBasicResults, IBackendWriterProvider
         {
             var tmp = new string[0];
             return RunActionAsync<T>(result, tmp, filter, method);
         }
 
-        private async Task<T> RunActionAsync<T>(T result, string[] paths, IFilter filter, Func<T, IBackendManager, Task> method)
+        private async Task<T> RunActionAsync<T>(T result, string[] paths, IFilter filter, Func<T, IBackendManager, IFilter, Task> method)
             where T : ISetCommonOptions, ITaskControlProvider, Logging.ILogDestination, IBasicResults, IBackendWriterProvider
         {
             OnOperationStarted?.Invoke(result);
@@ -563,7 +562,7 @@ namespace Duplicati.Library.Main
                         {
                             backend.UpdateThrottleValues(m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond);
                             m_currentBackendManager = backend;
-                            await method(result, backend).ConfigureAwait(false);
+                            await method(result, backend, filter).ConfigureAwait(false);
                         }
                         finally
                         {
@@ -633,7 +632,7 @@ namespace Duplicati.Library.Main
                         }
                     }
 
-                    OperationComplete(result, null);
+                    OperationComplete(result, null, filter);
 
                     Logging.Log.WriteInformationMessage(LOGTAG, "CompletedOperation", Strings.Controller.CompletedOperationMessage(m_options.MainAction));
 
@@ -661,7 +660,7 @@ namespace Duplicati.Library.Main
                     }
 
                     // Do not propagate the cancel exception
-                    OperationComplete(result, null);
+                    OperationComplete(result, null, filter);
 
                     return result;
                 }
@@ -686,7 +685,7 @@ namespace Duplicati.Library.Main
                     }
 
                     // Report the result, and the failure
-                    OperationComplete(result, ex);
+                    OperationComplete(result, ex, filter);
 
                     throw;
                 }
@@ -697,8 +696,45 @@ namespace Duplicati.Library.Main
             }
         }
 
-        private void OperationComplete(IBasicResults result, Exception exception)
+        /// <summary>
+        /// Temporarily pushes the filter into the raw options so modules can read it.
+        /// Returns a disposable that removes the key when disposed.
+        /// </summary>
+        /// <param name="options">The options to push the filter into</param>
+        /// <param name="filter">The filter to push</param>
+        /// <returns>A disposable that removes the key when disposed</returns>
+        internal static IDisposable PushFilterToOptions(Options options, IFilter filter)
+            => PushFilterToOptions(options, filter, out var _);
+        /// <summary>
+        /// Temporarily pushes the filter into the raw options so modules can read it.
+        /// Returns a disposable that removes the key when disposed.
+        /// </summary>
+        /// <param name="options">The options to push the filter into</param>
+        /// <param name="filter">The filter to push</param>
+        /// <returns>A disposable that removes the key when disposed</returns>
+        internal static IDisposable PushFilterToOptions(Options options, IFilter filter, out string filterString)
         {
+            filterString = filter != null && !filter.Empty
+                ? string.Join(Path.PathSeparator.ToString(), FilterExpression.Serialize(filter))
+                : null;
+
+            options.RawOptions["filter"] = filterString;
+            return new FilterOptionScope(options);
+        }
+
+        /// <summary>
+        /// Helper to remove the filter option on dispose
+        /// </summary>
+        private sealed class FilterOptionScope : IDisposable
+        {
+            private readonly Options m_opts;
+            public FilterOptionScope(Options opts) => m_opts = opts;
+            public void Dispose() => m_opts?.RawOptions.Remove("filter");
+        }
+
+        private void OperationComplete(IBasicResults result, Exception exception, IFilter filter)
+        {
+            using var _ = PushFilterToOptions(m_options, filter);
             if (m_options?.LoadedModules != null)
             {
                 foreach (var mx in m_options.LoadedModules)
@@ -756,44 +792,41 @@ namespace Duplicati.Library.Main
                 m_options.AddLoadedModule(DynamicLoader.GenericLoader.GetModule(m.Key));
             }
 
-            // Make the filter read-n-write able in the generic modules
-            var pristinefilter = string.Join(Path.PathSeparator.ToString(), FilterExpression.Serialize(filter));
-            m_options.RawOptions["filter"] = pristinefilter;
-
             // Store the URL connection options separately, as these should only be visible to modules implementing IConnectionModule
             var conopts = new Dictionary<string, string>(m_options.RawOptions);
             var qp = new Library.Utility.Uri(m_backendUrl).QueryParameters;
             foreach (var k in qp.Keys)
                 conopts[(string)k] = qp[(string)k];
 
-            foreach (var mx in m_options.LoadedModules)
+            // Make the filter read-n-write able in the generic modules
+            using (PushFilterToOptions(m_options, filter, out var pristinefilter))
             {
-                if (mx is IConnectionModule)
-                    mx.Configure(conopts);
-                else
-                    mx.Configure(m_options.RawOptions);
-
-                if (mx is IGenericSourceModule sourcemodule)
+                foreach (var mx in m_options.LoadedModules)
                 {
-                    if (sourcemodule.ContainFilesForBackup(paths))
-                    {
-                        var sourceoptions = sourcemodule.ParseSourcePaths(ref paths, ref pristinefilter, m_options.RawOptions);
+                    if (mx is IConnectionModule)
+                        mx.Configure(conopts);
+                    else
+                        mx.Configure(m_options.RawOptions);
 
-                        foreach (var sourceoption in sourceoptions)
-                            m_options.RawOptions[sourceoption.Key] = sourceoption.Value;
+                    if (mx is IGenericSourceModule sourcemodule)
+                    {
+                        if (sourcemodule.ContainFilesForBackup(paths))
+                        {
+                            var sourceoptions = sourcemodule.ParseSourcePaths(ref paths, ref pristinefilter, m_options.RawOptions);
+
+                            foreach (var sourceoption in sourceoptions)
+                                m_options.RawOptions[sourceoption.Key] = sourceoption.Value;
+                        }
                     }
+
+                    if (mx is IGenericCallbackModule module)
+                        module.OnStart(result.MainOperation.ToString(), ref m_backendUrl, ref paths);
                 }
 
-                if (mx is IGenericCallbackModule module)
-                    module.OnStart(result.MainOperation.ToString(), ref m_backendUrl, ref paths);
+                // If the filters were changed by a module, read them back in
+                if (pristinefilter != m_options.RawOptions["filter"])
+                    filter = FilterExpression.Deserialize(m_options.RawOptions["filter"].Split(new string[] { Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries));
             }
-
-            // If the filters were changed by a module, read them back in
-            if (pristinefilter != m_options.RawOptions["filter"])
-            {
-                filter = FilterExpression.Deserialize(m_options.RawOptions["filter"].Split(new string[] { Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries));
-            }
-            m_options.RawOptions.Remove("filter"); // "--filter" is not a supported command line option
 
             if (!string.IsNullOrEmpty(m_options.Logfile))
             {
