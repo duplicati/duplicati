@@ -112,6 +112,9 @@ public static class SecretProviderHelper
     /// <returns>The default secret provider, or null if none is available</returns>
     public static async Task<ISecretProvider?> GetDefaultSecretProviderAsync(Dictionary<string, string?> options, CancellationToken cancellationToken)
     {
+        if (Library.Utility.Utility.ParseBoolOption(options, "disable-default-secret-provider"))
+            return null;
+
         var providerConfig = options.GetValueOrDefault("secret-provider");
         if (!string.IsNullOrWhiteSpace(providerConfig))
         {
