@@ -103,6 +103,7 @@ namespace Duplicati.CommandLine.RecoveryTool
 
             var useIndexMap = !Library.Utility.Utility.ParseBoolOption(options, "reduce-memory-use");
             var disableFileVerify = Library.Utility.Utility.ParseBoolOption(options, "disable-file-verify");
+            var allowPathTraversal = Library.Utility.Utility.ParseBoolOption(options, "allow-restore-outside-target-directory");
 
             var startedCount = 0L;
             var restoredCount = 0L;
@@ -151,6 +152,10 @@ namespace Duplicati.CommandLine.RecoveryTool
                         try
                         {
                             var targetfile = MapToRestorePath(f.Path, largestprefix, targetpath, sourceDirsep);
+
+                            if (!allowPathTraversal && !string.IsNullOrWhiteSpace(targetpath) && !Util.IsPathInsideTarget(targetfile, targetpath))
+                                throw new UserInformationException($"Path traversal detected: {targetfile} resolves outside {targetpath}", "RestorePathTraversal");
+
                             if (!systemIO.DirectoryExists(systemIO.PathGetDirectoryName(targetfile)))
                                 systemIO.DirectoryCreate(systemIO.PathGetDirectoryName(targetfile));
 
