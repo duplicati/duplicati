@@ -1,3 +1,76 @@
+2026-06-10 - 2.3.0.2_stable_2026-06-10
+==========
+# About this release
+
+This release patches version 2.3.0.1 with fixes for a few issues that were discovered after the release.
+
+## Reliability Fixes
+
+This release optimizes the synthetic filelist creation process to improve performance significantly. Additionally, there are a few added failsafe checks to ensure syntehtic filelists are always valid.
+
+We also fixed an issue with remote-file locking that could (ironically) cause database locking issues in some cases. And we fixed the S3 lock mode configuration to show the correct values.
+
+## Backend Fixes and Improvements
+
+We fixed an issue where the SMB backend could incorrectly treat files as folders giving warnings when attempting to enumerate them. We also fixed a timeout issue for OneDrive where slow transfers could trigger an unexpected timeout.
+
+The OneDrive for Business and SharePoint backends have been deprecated in favor of the Microsoft Graph backend, as the older backends relied on an API that is no longer supported.
+
+We also made the Duplicati storage backend publicly available, so you can now use Duplicati storage for your backups. Duplicati storage is integrated with the Duplicati Console, so there is zero storage configuration needed on the client.
+
+## Platform and Restore Improvements
+
+This release also features a new option `--exclude-non-local-files` that can be used to exclude files that are stored in the cloud, such as OneDrive, Dropbox, etc.
+
+We also fixed an issue causing warnings when doing backups of the MacOS Photos folder, and improved some error messages to include more guidance on how to resolve them.
+
+## Detailed list of changes:
+
+- Renamed Office 365 branding to Microsoft 365
+- Optimized synthetic filelist creation to prevent dangling metadata entries
+- Improved Docker image build configuration
+- Persist the used compression module in backup metadata
+- Updated usage reporter integration
+- Improved websocket handling for remote management connections
+- Fixed Filen backend CI and authentication issues
+- Added failsafe checks for synthetic filelist metadata
+- Improved restore messages with additional result details
+- Deprecated older OneDrive and SharePoint backends
+- Fixed folders incorrectly showing as files in the filesystem API
+- Added defensive handling for macOS Photos library timestamps
+- Updated MEGA S4 endpoints for S3 backend
+- Improved snapshot error messages with permission guidance
+- Fixed timeout handling in OneDrive backend
+- Updated Duplicati backend with improved timeout options
+- Removed explicit defaults from new backup template
+- Cleaned up remote controller registration state handling
+- Fixed SMB backend issue where files could be treated as folders
+- Fixed remote file locking on Windows
+- Fixed S3 lock mode configuration
+- Added support for extended Win32 file attributes in backups
+
+## Updates to ngclient
+
+- Added toggle to show advanced option names instead of descriptions
+- Added confirmation popup before exporting configuration without encryption
+- Now showing remote lock results on log page
+- Fixed websocket not connecting on welcome page
+- Added a welcome page for simpler console connections
+- Removed attributes filter options on source page, in favor of using advanced options
+- Prevent iteration of non-folder paths
+- Enable selecting hidden items
+- Added path resolving on the "dynamic paths", such as "My documents"
+- Fixed compression option not being visible
+- Added support for showing backends as deprecated or untested
+- Fixed an issue where file size would not be shown in the file tree
+- Added an option to retry loading a backup list
+- Show "last backup" with the same date in both detail and grid view
+- Show actual scheduled time for backups
+- Fixed an issue with using stored destinations which would fail to create folders
+- Fixed an issue with importing backups where the schedule edits would be ignored
+- Fixed an issue where the date for a scheduled backup would be off-by-one when edited
+- Optimized query flow to use websockets instead of polling/fetching
+
 2026-04-24 - 2.3.0.1_stable_2026-04-24
 ==========
 # About this release
