@@ -441,7 +441,7 @@ namespace Duplicati.Library.Main
         /// <inheritdoc />
         public async Task<IPurgeFilesResults> PurgeFilesAsync(IFilter inputFilter)
         {
-            return await RunActionAsync(new PurgeFilesResults(), (result, backendManager, filter) =>
+            return await RunActionAsync(new PurgeFilesResults(), inputFilter, (result, backendManager, filter) =>
                 new Operation.PurgeFilesHandler(m_options, result)
                     .RunAsync(backendManager, filter)
             ).ConfigureAwait(false);
@@ -450,7 +450,7 @@ namespace Duplicati.Library.Main
         /// <inheritdoc />
         public async Task<IListBrokenFilesResults> ListBrokenFilesAsync(IFilter inputFilter, Func<long, DateTime, long, string, long, bool> callbackhandler = null)
         {
-            return await RunActionAsync(new ListBrokenFilesResults(), (result, backendManager, filter) =>
+            return await RunActionAsync(new ListBrokenFilesResults(), inputFilter, (result, backendManager, filter) =>
                 new Operation.ListBrokenFilesHandler(m_options, result)
                     .RunAsync(backendManager, filter, callbackhandler)
             ).ConfigureAwait(false);
@@ -459,7 +459,7 @@ namespace Duplicati.Library.Main
         /// <inheritdoc />
         public async Task<IPurgeBrokenFilesResults> PurgeBrokenFilesAsync(IFilter inputFilter)
         {
-            return await RunActionAsync(new PurgeBrokenFilesResults(), (result, backendManager, filter) =>
+            return await RunActionAsync(new PurgeBrokenFilesResults(), inputFilter, (result, backendManager, filter) =>
                 new Operation.PurgeBrokenFilesHandler(m_options, result)
                     .RunAsync(backendManager, filter)
             ).ConfigureAwait(false);
