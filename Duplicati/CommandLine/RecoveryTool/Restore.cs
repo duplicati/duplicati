@@ -156,7 +156,11 @@ namespace Duplicati.CommandLine.RecoveryTool
                             var targetfile = MapToRestorePath(f.Path, largestprefix, targetpath, sourceDirsep);
 
                             if (!allowPathTraversal && !string.IsNullOrWhiteSpace(targetpath) && !Util.IsPathInsideTarget(targetfile, targetpath))
-                                throw new UserInformationException($"Path traversal detected: {targetfile} resolves outside {targetpath}", "RestorePathTraversal");
+                            {
+                                Console.WriteLine($"WARNING: Path traversal detected: {targetfile} resolves outside {targetpath}, skipping entry. Use --allow-restore-outside-target-directory if you are sure this is safe.");
+                                errorCount++;
+                                continue;
+                            }
 
                             if (!systemIO.DirectoryExists(systemIO.PathGetDirectoryName(targetfile)))
                                 systemIO.DirectoryCreate(systemIO.PathGetDirectoryName(targetfile));

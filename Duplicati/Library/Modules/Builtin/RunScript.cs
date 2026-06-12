@@ -265,13 +265,11 @@ namespace Duplicati.Library.Modules.Builtin
             else
                 level = ParsedResultType.Error;
 
-            using (TempFile tmpfile = new TempFile())
-            {
-                using (var streamWriter = new StreamWriter(tmpfile))
-                    streamWriter.Write(resultFormatSerializer.Serialize(result, exception, m_logstorage, null));
+            using var tmpfile = new TempFile();
+            using (var streamWriter = new StreamWriter(tmpfile))
+                streamWriter.Write(resultFormatSerializer.Serialize(result, exception, m_logstorage, null));
 
-                Execute(m_finishScript, "AFTER", m_operationName, ref m_remoteurl, ref m_localpath, m_timeout, false, m_enableArguments, m_options, tmpfile, level);
-            }
+            Execute(m_finishScript, "AFTER", m_operationName, ref m_remoteurl, ref m_localpath, m_timeout, false, m_enableArguments, m_options, tmpfile, level);
         }
 
         /// <summary>

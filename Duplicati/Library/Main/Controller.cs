@@ -114,7 +114,7 @@ namespace Duplicati.Library.Main
         }
 
         /// <inheritdoc />
-        public async Task<IBackupResults> BackupAsync(string[] inputsources, IFilter filter = null)
+        public async Task<IBackupResults> BackupAsync(string[] inputsources, IFilter inputFilter = null)
         {
             UsageReporter.Reporter.Report("USE_BACKEND", new Library.Utility.Uri(m_backendUrl).Scheme);
             UsageReporter.Reporter.Report("USE_COMPRESSION", m_options.CompressionModule);
@@ -130,110 +130,109 @@ namespace Duplicati.Library.Main
             CheckAutoCompactInterval();
             CheckAutoVacuumInterval();
 
-            return await RunActionAsync(new BackupResults(), inputsources, filter, async (result, backendManager) =>
+            return await RunActionAsync(new BackupResults(), inputsources, inputFilter, false, static async config =>
             {
-
-                using (var h = new Operation.BackupHandler(m_options, result))
-                    await h.RunAsync(ExpandInputSources(inputsources, filter), backendManager, filter)
+                using (var h = new Operation.BackupHandler(config.Options, config.Result))
+                    await h.RunAsync(ExpandInputSources(config.Paths, config.Filter, config.Options), config.BackendManager, config.Filter)
                         .ConfigureAwait(false);
 
-                UsageReporter.Reporter.Report("BACKUP_FILECOUNT", result.ExaminedFiles);
-                UsageReporter.Reporter.Report("BACKUP_FILESIZE", result.SizeOfExaminedFiles);
-                UsageReporter.Reporter.Report("BACKUP_DURATION", (long)result.Duration.TotalSeconds);
+                UsageReporter.Reporter.Report("BACKUP_FILECOUNT", config.Result.ExaminedFiles);
+                UsageReporter.Reporter.Report("BACKUP_FILESIZE", config.Result.SizeOfExaminedFiles);
+                UsageReporter.Reporter.Report("BACKUP_DURATION", (long)config.Result.Duration.TotalSeconds);
 
-                using (var h = new Operation.RemoteSynchronizationHandler(m_backendUrl, m_options, result))
+                using (var h = new Operation.RemoteSynchronizationHandler(config.BackendUrl, config.Options, config.Result))
                     await h.RunAsync()
                         .ConfigureAwait(false);
             }).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
-        public async Task<IRestoreResults> RestoreAsync(string[] paths, IFilter filter = null)
+        public async Task<IRestoreResults> RestoreAsync(string[] paths, IFilter inputFilter = null)
         {
-            return await RunActionAsync(new RestoreResults(), paths, filter, async (result, backendManager) =>
+            return await RunActionAsync(new RestoreResults(), paths, inputFilter, false, static async config =>
             {
                 using var restoreDestination =
-                    (m_options.Restorepath ?? "").StartsWith("@")
+                    (config.Options.Restorepath ?? "").StartsWith("@")
 
                     // Remote destination
                     ? await DynamicLoader.RestoreDestinationProviderLoader.GetRestoreDestinationProvider(
-                        m_options.Restorepath.Substring(1),
-                        m_options.RawOptions,
-                        result.TaskControl.ProgressToken)
+                        config.Options.Restorepath.Substring(1),
+                        config.Options.RawOptions,
+                        config.Result.TaskControl.ProgressToken)
                         .ConfigureAwait(false)
 
                     // Local destination
-                    : new SourceProvider.FileRestoreDestinationProvider(m_options.Restorepath ?? "", m_options.AllowRestoreOutsideTargetDirectory);
+                    : new SourceProvider.FileRestoreDestinationProvider(config.Options.Restorepath ?? "", config.Options.AllowRestoreOutsideTargetDirectory);
 
                 if (restoreDestination == null)
-                    throw new UserInformationException($"Could not find restore destination for path: {m_options.Restorepath}", "InvalidRestoreDestination");
+                    throw new UserInformationException($"Could not find restore destination for path: {config.Options.Restorepath}", "InvalidRestoreDestination");
 
-                await new Operation.RestoreHandler(m_options, result)
-                    .RunAsync(paths, backendManager, filter, restoreDestination)
+                await new Operation.RestoreHandler(config.Options, config.Result)
+                    .RunAsync(config.Paths, config.BackendManager, config.Filter, restoreDestination)
                     .ConfigureAwait(false);
 
                 await restoreDestination.Finalize((pg) =>
                 {
-                    result.OperationProgressUpdater.UpdateProgress((float)pg);
-                }, result.TaskControl.ProgressToken).ConfigureAwait(false);
-                result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_Complete);
-                result.EndTime = DateTime.UtcNow;
+                    config.Result.OperationProgressUpdater.UpdateProgress((float)pg);
+                }, config.Result.TaskControl.ProgressToken).ConfigureAwait(false);
+                config.Result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_Complete);
+                config.Result.EndTime = DateTime.UtcNow;
 
-                UsageReporter.Reporter.Report("RESTORE_FILECOUNT", result.RestoredFiles);
-                UsageReporter.Reporter.Report("RESTORE_FILESIZE", result.SizeOfRestoredFiles);
-                UsageReporter.Reporter.Report("RESTORE_DURATION", (long)result.Duration.TotalSeconds);
+                UsageReporter.Reporter.Report("RESTORE_FILECOUNT", config.Result.RestoredFiles);
+                UsageReporter.Reporter.Report("RESTORE_FILESIZE", config.Result.SizeOfRestoredFiles);
+                UsageReporter.Reporter.Report("RESTORE_DURATION", (long)config.Result.Duration.TotalSeconds);
             }).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
-        public async Task<IRestoreControlFilesResults> RestoreControlFilesAsync(IEnumerable<string> files = null, IFilter filter = null)
+        public async Task<IRestoreControlFilesResults> RestoreControlFilesAsync(IEnumerable<string> files = null, IFilter inputFilter = null)
         {
-            return await RunActionAsync(new RestoreControlFilesResults(), filter, (result, backendManager) =>
-                new Operation.RestoreControlFilesHandler(m_options, result)
-                    .RunAsync(files, backendManager, filter)
+            return await RunActionAsync(new RestoreControlFilesResults(), files?.ToArray(), inputFilter, false, static config =>
+                new Operation.RestoreControlFilesHandler(config.Options, config.Result)
+                    .RunAsync(config.Paths, config.BackendManager, config.Filter)
             ).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
         public async Task<IDeleteResults> DeleteAsync()
         {
-            return await RunActionAsync(new DeleteResults(), (result, backendManager) =>
-                new Operation.DeleteHandler(m_options, result)
-                    .RunAsync(backendManager)
+            return await RunActionAsync(new DeleteResults(), null, null, false, static config =>
+                new Operation.DeleteHandler(config.Options, config.Result)
+                    .RunAsync(config.BackendManager)
             ).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
-        public async Task<IRepairResults> RepairAsync(IFilter filter = null)
+        public async Task<IRepairResults> RepairAsync(IFilter inputFilter = null)
         {
-            return await RunActionAsync(new RepairResults(), filter, (result, backendManager) =>
-                new Operation.RepairHandler(m_options, result)
-                    .RunAsync(backendManager, filter)
+            return await RunActionAsync(new RepairResults(), null, inputFilter, false, static config =>
+                new Operation.RepairHandler(config.Options, config.Result)
+                    .RunAsync(config.BackendManager, config.Filter)
             ).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
         public async Task<IListFilesetResults> ListFilesetsAsync()
-            => await RunActionAsync(new ListFilesetResults(), (result, backendManager) =>
-                Operation.ListFilesetsHandler.RunAsync(m_options, result, backendManager)
+            => await RunActionAsync(new ListFilesetResults(), null, null, false, static config =>
+                Operation.ListFilesetsHandler.RunAsync(config.Options, config.Result, config.BackendManager)
             ).ConfigureAwait(false);
 
         /// <inheritdoc />
         public async Task<IListFolderResults> ListFolderAsync(string[] folders, long offset, long limit, bool extendedData)
-            => await RunActionAsync(new ListFolderResults(), (result, _) =>
-                Operation.ListFolderHandler.RunAsync(m_options, result, folders, offset, limit, extendedData)
+            => await RunActionAsync(new ListFolderResults(), folders, null, new { offset, limit, extendedData }, static config =>
+                Operation.ListFolderHandler.RunAsync(config.Options, config.Result, config.Paths, config.Context.offset, config.Context.limit, config.Context.extendedData)
             ).ConfigureAwait(false);
 
         /// <inheritdoc />
         public async Task<IListFileVersionsResults> ListFileVersionsAsync(string[] files, long offset, long limit)
-            => await RunActionAsync(new ListFileVersionsResults(), (result, backendManager) =>
-                Operation.ListFileVersionsHandler.RunAsync(m_options, result, files, offset, limit)
+            => await RunActionAsync(new ListFileVersionsResults(), files, null, new { offset, limit }, static config =>
+                Operation.ListFileVersionsHandler.RunAsync(config.Options, config.Result, config.Paths, config.Context.offset, config.Context.limit)
             ).ConfigureAwait(false);
 
         /// <inheritdoc />
-        public async Task<ISearchFilesResults> SearchEntriesAsync(string[] pathprefixes, IFilter filter, long offset, long limit, bool extendedData)
-            => await RunActionAsync(new SearchFilesResults(), filter, (result, backendManager) =>
-                Operation.SearchEntriesHandler.RunAsync(m_options, result, pathprefixes, filter, offset, limit, extendedData)
+        public async Task<ISearchFilesResults> SearchEntriesAsync(string[] pathprefixes, IFilter inputFilter, long offset, long limit, bool extendedData)
+            => await RunActionAsync(new SearchFilesResults(), pathprefixes, inputFilter, new { offset, limit, extendedData }, static config =>
+                Operation.SearchEntriesHandler.RunAsync(config.Options, config.Result, config.Paths, config.Filter, config.Context.offset, config.Context.limit, config.Context.extendedData)
             ).ConfigureAwait(false);
 
         /// <inheritdoc />
@@ -245,87 +244,87 @@ namespace Duplicati.Library.Main
             => ListAsync(filterstring == null ? null : new string[] { filterstring }, null);
 
         /// <inheritdoc />
-        public async Task<IListResults> ListAsync(IEnumerable<string> filterstrings, IFilter filter)
+        public async Task<IListResults> ListAsync(IEnumerable<string> filterstrings, IFilter inputFilter)
         {
-            return await RunActionAsync(new ListResults(), filter, (result, backendManager) =>
-                new Operation.ListFilesHandler(m_options, result)
-                    .RunAsync(backendManager, filterstrings, filter)
+            return await RunActionAsync(new ListResults(), filterstrings?.ToArray(), inputFilter, false, static config =>
+                new Operation.ListFilesHandler(config.Options, config.Result)
+                    .RunAsync(config.BackendManager, config.Paths, config.Filter)
             ).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
-        public async Task<IListResults> ListControlFilesAsync(IEnumerable<string> filterstrings, IFilter filter)
+        public async Task<IListResults> ListControlFilesAsync(IEnumerable<string> filterstrings, IFilter inputFilter)
         {
-            return await RunActionAsync(new ListResults(), filter, (result, backendManager) =>
-                new Operation.ListControlFilesHandler(m_options, result)
-                    .RunAsync(backendManager, filterstrings, filter)
+            return await RunActionAsync(new ListResults(), filterstrings?.ToArray(), inputFilter, false, static config =>
+                new Operation.ListControlFilesHandler(config.Options, config.Result)
+                    .RunAsync(config.BackendManager, config.Paths, config.Filter)
             ).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
         public async Task<IListRemoteResults> ListRemoteAsync()
         {
-            return await RunActionAsync(new ListRemoteResults(), async (result, backendManager) =>
+            return await RunActionAsync(new ListRemoteResults(), null, null, false, static async config =>
             {
-                using var tf = File.Exists(m_options.Dbpath) ? null : new TempFile();
-                await using var db = await LocalDatabase.CreateLocalDatabaseAsync(((string)tf) ?? m_options.Dbpath, "list-remote", true, null, result.TaskControl.ProgressToken).ConfigureAwait(false);
-                result.SetResult(await backendManager.ListAsync(CancellationToken.None).ConfigureAwait(false));
+                using var tf = File.Exists(config.Options.Dbpath) ? null : new TempFile();
+                await using var db = await LocalDatabase.CreateLocalDatabaseAsync(((string)tf) ?? config.Options.Dbpath, "list-remote", true, null, config.Result.TaskControl.ProgressToken).ConfigureAwait(false);
+                config.Result.SetResult(await config.BackendManager.ListAsync(CancellationToken.None).ConfigureAwait(false));
             }).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
         public async Task<IListRemoteResults> DeleteAllRemoteFilesAsync()
         {
-            return await RunActionAsync(new ListRemoteResults(), async (result, backendManager) =>
+            return await RunActionAsync(new ListRemoteResults(), null, null, false, static async config =>
             {
-                result.OperationProgressUpdater.UpdatePhase(OperationPhase.Delete_Listing);
+                config.Result.OperationProgressUpdater.UpdatePhase(OperationPhase.Delete_Listing);
                 {
                     // Only delete files that match the expected pattern and prefix
-                    var list = (await backendManager.ListAsync(result.TaskControl.ProgressToken).ConfigureAwait(false))
+                    var list = (await config.BackendManager.ListAsync(config.Result.TaskControl.ProgressToken).ConfigureAwait(false))
                         .Select(x => Volumes.VolumeBase.ParseFilename(x))
                         .Where(x => x != null)
-                        .Where(x => x.Prefix == m_options.Prefix)
+                        .Where(x => x.Prefix == config.Options.Prefix)
                         .ToList();
 
                     // If the local database is available, we will use it to avoid deleting unrelated files
                     // from the backend. Otherwise, we may accidentally delete non-Duplicati files, or
                     // files from a different Duplicati configuration that points to the same backend location
                     // and uses the same prefix (see issues #2678, #3845, and #4244).
-                    if (File.Exists(m_options.Dbpath))
+                    if (File.Exists(config.Options.Dbpath))
                     {
-                        await using LocalDatabase db = await LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, "list-remote", true, null, result.TaskControl.ProgressToken).ConfigureAwait(false);
-                        var dbRemoteVolumes = db.GetRemoteVolumesAsync(result.TaskControl.ProgressToken);
+                        await using LocalDatabase db = await LocalDatabase.CreateLocalDatabaseAsync(config.Options.Dbpath, "list-remote", true, null, config.Result.TaskControl.ProgressToken).ConfigureAwait(false);
+                        var dbRemoteVolumes = db.GetRemoteVolumesAsync(config.Result.TaskControl.ProgressToken);
                         var dbRemoteFiles = await dbRemoteVolumes
                             .Select(x => x.Name)
-                            .ToHashSetAsync(cancellationToken: result.TaskControl.ProgressToken)
+                            .ToHashSetAsync(cancellationToken: config.Result.TaskControl.ProgressToken)
                             .ConfigureAwait(false);
                         list = list.Where(x =>
                             dbRemoteFiles.Contains(x.File.Name)
                         ).ToList();
                     }
 
-                    result.OperationProgressUpdater.UpdatePhase(OperationPhase.Delete_Deleting);
-                    result.OperationProgressUpdater.UpdateProgress(0);
+                    config.Result.OperationProgressUpdater.UpdatePhase(OperationPhase.Delete_Deleting);
+                    config.Result.OperationProgressUpdater.UpdateProgress(0);
                     for (var i = 0; i < list.Count; i++)
                     {
                         try
                         {
-                            if (m_options.Dryrun)
+                            if (config.Options.Dryrun)
                             {
                                 Logging.Log.WriteDryrunMessage(LOGTAG, "WouldDeleteFile", "Would delete file: {0}", list[i].File.Name);
                             }
                             else
                             {
-                                await backendManager.DeleteAsync(list[i].File.Name, list[i].File.Size, true, result.TaskControl.ProgressToken).ConfigureAwait(false);
+                                await config.BackendManager.DeleteAsync(list[i].File.Name, list[i].File.Size, true, config.Result.TaskControl.ProgressToken).ConfigureAwait(false);
                             }
                         }
                         catch (Exception ex)
                         {
                             Logging.Log.WriteWarningMessage(LOGTAG, "DeleteFilesetError", ex, "Failed to delete remote file: {0}", list[i].File.Name);
                         }
-                        result.OperationProgressUpdater.UpdateProgress((float)i / list.Count);
+                        config.Result.OperationProgressUpdater.UpdateProgress((float)i / list.Count);
                     }
-                    result.OperationProgressUpdater.UpdateProgress(1);
+                    config.Result.OperationProgressUpdater.UpdateProgress(1);
                 }
             }).ConfigureAwait(false);
         }
@@ -335,39 +334,38 @@ namespace Duplicati.Library.Main
         {
             CheckAutoVacuumInterval();
 
-            return await RunActionAsync(new CompactResults(), (result, backendManager) =>
-                new Operation.CompactHandler(m_options, result)
-                    .RunAsync(backendManager)
+            return await RunActionAsync(new CompactResults(), null, null, false, static config =>
+                new Operation.CompactHandler(config.Options, config.Result)
+                    .RunAsync(config.BackendManager)
             ).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
         public async Task<ISetLockResults> SetLocksAsync()
         {
-            return await RunActionAsync(new SetLockResults(), (result, backendManager) =>
-                new Operation.SetLocksHandler(m_options, result)
-                    .RunAsync(backendManager)
+            return await RunActionAsync(new SetLockResults(), null, null, false, static config =>
+                new Operation.SetLocksHandler(config.Options, config.Result)
+                    .RunAsync(config.BackendManager)
             ).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
         public async Task<IReadLockInfoResults> ReadLockInfoAsync()
         {
-            return await RunActionAsync(new ReadLockInfoResults(), (result, backendManager) =>
-                new Operation.ReadLockInfoHandler(m_options, result)
-                    .RunAsync(backendManager)
+            return await RunActionAsync(new ReadLockInfoResults(), null, null, false, static config =>
+                new Operation.ReadLockInfoHandler(config.Options, config.Result)
+                    .RunAsync(config.BackendManager)
             ).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
-        public async Task<IRecreateDatabaseResults> UpdateDatabaseWithVersionsAsync(IFilter filter = null)
+        public async Task<IRecreateDatabaseResults> UpdateDatabaseWithVersionsAsync(IFilter inputFilter = null)
         {
-            var filelistfilter = Operation.RestoreHandler.GetNumberedFilelistFilterDelegate(m_options.Time, m_options.Version, singleTimeMatch: true);
-
-            return await RunActionAsync(new RecreateDatabaseResults(), filter, async (result, backendManager) =>
+            return await RunActionAsync(new RecreateDatabaseResults(), null, inputFilter, false, static async config =>
             {
-                using (var h = new Operation.RecreateDatabaseHandler(m_options, result))
-                    await h.RunUpdateAsync(backendManager, filter, filelistfilter, null)
+                var filelistfilter = Operation.RestoreHandler.GetNumberedFilelistFilterDelegate(config.Options.Time, config.Options.Version, singleTimeMatch: true);
+                using (var h = new Operation.RecreateDatabaseHandler(config.Options, config.Result))
+                    await h.RunUpdateAsync(config.BackendManager, config.Filter, filelistfilter, null)
                         .ConfigureAwait(false);
             }).ConfigureAwait(false);
         }
@@ -375,30 +373,27 @@ namespace Duplicati.Library.Main
         /// <inheritdoc />
         public async Task<ICreateLogDatabaseResults> CreateLogDatabaseAsync(string targetpath)
         {
-            var t = new string[] { targetpath };
-
-            return await RunActionAsync(new CreateLogDatabaseResults(), t, async (result, backendManager) =>
-                await new Operation.CreateBugReportHandler(t[0], m_options, result).RunAsync()
+            return await RunActionAsync(new CreateLogDatabaseResults(), [targetpath], null, false, static async config =>
+                await new Operation.CreateBugReportHandler(config.Paths[0], config.Options, config.Result).RunAsync()
             ).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
-        public async Task<IListChangesResults> ListChangesAsync(string baseVersion, string targetVersion, IEnumerable<string> filterstrings = null, IFilter filter = null, Action<IListChangesResults, IEnumerable<Tuple<ListChangesChangeType, ListChangesElementType, string>>> callback = null)
+        public async Task<IListChangesResults> ListChangesAsync(string baseVersion, string targetVersion, IEnumerable<string> filterstrings = null, IFilter inputFilter = null, Action<IListChangesResults, IEnumerable<Tuple<ListChangesChangeType, ListChangesElementType, string>>> callback = null)
         {
-            var t = new string[] { baseVersion, targetVersion };
 
-            return await RunActionAsync(new ListChangesResults(), t, filter, async (result, backendManager) =>
-                await new Operation.ListChangesHandler(m_options, result)
-                    .RunAsync(t[0], t[1], backendManager, filterstrings, filter, callback)
+            return await RunActionAsync(new ListChangesResults(), [baseVersion, targetVersion], inputFilter, new { filterstrings, callback }, async static config =>
+                await new Operation.ListChangesHandler(config.Options, config.Result)
+                    .RunAsync(config.Paths[0], config.Paths[1], config.BackendManager, config.Context.filterstrings, config.Filter, config.Context.callback)
             ).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
         public async Task<IListAffectedResults> ListAffectedAsync(List<string> args, Action<IListAffectedResults> callback = null)
         {
-            return await RunActionAsync(new ListAffectedResults(), (result, backendManager) =>
-                new Operation.ListAffected(m_options, result)
-                    .RunAsync(args, callback)
+            return await RunActionAsync(new ListAffectedResults(), args?.ToArray(), null, new { callback }, static config =>
+                new Operation.ListAffected(config.Options, config.Result)
+                    .RunAsync(config.Paths, config.Context.callback)
             ).ConfigureAwait(false);
         }
 
@@ -408,14 +403,14 @@ namespace Duplicati.Library.Main
             if (!m_options.RawOptions.ContainsKey("full-remote-verification"))
                 m_options.RawOptions["full-remote-verification"] = "true";
 
-            return await RunActionAsync(new TestResults(), (result, backendManager) =>
-                new Operation.TestHandler(m_options, result)
-                    .RunAsync(samples, backendManager)
+            return await RunActionAsync(new TestResults(), null, null, new { samples }, static config =>
+                new Operation.TestHandler(config.Options, config.Result)
+                    .RunAsync(config.Context.samples, config.BackendManager)
             ).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
-        public async Task<ITestFilterResults> TestFilterAsync(string[] paths, IFilter filter = null)
+        public async Task<ITestFilterResults> TestFilterAsync(string[] paths, IFilter inputFilter = null)
         {
             m_options.RawOptions["dry-run"] = "true";
             m_options.RawOptions["dbpath"] = "INVALID!";
@@ -424,9 +419,9 @@ namespace Duplicati.Library.Main
             var filtertag = Logging.Log.LogTagFromType(typeof(Operation.Backup.FileEnumerationProcess));
             using (Logging.Log.StartScope(m_messageSink.WriteMessage, x => x.FilterTag.Contains(filtertag)))
             {
-                return await RunActionAsync(new TestFilterResults(), paths, filter, (result, backendManager) =>
-                    new Operation.TestFilterHandler(m_options, result)
-                        .RunAsync(ExpandInputSources(paths, filter), filter)
+                return await RunActionAsync(new TestFilterResults(), paths, inputFilter, false, static config =>
+                    new Operation.TestFilterHandler(config.Options, config.Result)
+                        .RunAsync(ExpandInputSources(config.Paths, config.Filter, config.Options), config.Filter)
                 ).ConfigureAwait(false);
             }
         }
@@ -434,35 +429,35 @@ namespace Duplicati.Library.Main
         /// <inheritdoc />
         public async Task<ISystemInfoResults> SystemInfoAsync()
         {
-            return await RunActionAsync(new SystemInfoResults(), (result, backendManager) =>
-                Operation.SystemInfoHandler.RunAsync(result)
+            return await RunActionAsync(new SystemInfoResults(), null, null, false, static config =>
+                Operation.SystemInfoHandler.RunAsync(config.Result)
             ).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
-        public async Task<IPurgeFilesResults> PurgeFilesAsync(IFilter filter)
+        public async Task<IPurgeFilesResults> PurgeFilesAsync(IFilter inputFilter)
         {
-            return await RunActionAsync(new PurgeFilesResults(), (result, backendManager) =>
-                new Operation.PurgeFilesHandler(m_options, result)
-                    .RunAsync(backendManager, filter)
+            return await RunActionAsync(new PurgeFilesResults(), null, inputFilter, false, static config =>
+                new Operation.PurgeFilesHandler(config.Options, config.Result)
+                    .RunAsync(config.BackendManager, config.Filter)
             ).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
-        public async Task<IListBrokenFilesResults> ListBrokenFilesAsync(IFilter filter, Func<long, DateTime, long, string, long, bool> callbackhandler = null)
+        public async Task<IListBrokenFilesResults> ListBrokenFilesAsync(IFilter inputFilter, Func<long, DateTime, long, string, long, bool> callbackhandler = null)
         {
-            return await RunActionAsync(new ListBrokenFilesResults(), (result, backendManager) =>
-                new Operation.ListBrokenFilesHandler(m_options, result)
-                    .RunAsync(backendManager, filter, callbackhandler)
+            return await RunActionAsync(new ListBrokenFilesResults(), null, inputFilter, new { callbackhandler }, static config =>
+                new Operation.ListBrokenFilesHandler(config.Options, config.Result)
+                    .RunAsync(config.BackendManager, config.Filter, config.Context.callbackhandler)
             ).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
-        public async Task<IPurgeBrokenFilesResults> PurgeBrokenFilesAsync(IFilter filter)
+        public async Task<IPurgeBrokenFilesResults> PurgeBrokenFilesAsync(IFilter inputFilter)
         {
-            return await RunActionAsync(new PurgeBrokenFilesResults(), (result, backendManager) =>
-                new Operation.PurgeBrokenFilesHandler(m_options, result)
-                    .RunAsync(backendManager, filter)
+            return await RunActionAsync(new PurgeBrokenFilesResults(), null, inputFilter, false, static config =>
+                new Operation.PurgeBrokenFilesHandler(config.Options, config.Result)
+                    .RunAsync(config.BackendManager, config.Filter)
             ).ConfigureAwait(false);
         }
 
@@ -489,11 +484,11 @@ namespace Duplicati.Library.Main
             var filtertag = Logging.Log.LogTagFromType(DynamicLoader.GenericLoader.GetModule(sendMailModuleKey).GetType());
             using (Logging.Log.StartScope(m_messageSink.WriteMessage, x => x.FilterTag.Contains(filtertag)))
             {
-                return await RunActionAsync(new SendMailResults(), (result, backendManager) =>
+                return await RunActionAsync(new SendMailResults(), null, null, false, static config =>
                     Task.Run(() =>
                     {
-                        result.Lines = new string[0];
-                        System.Threading.Thread.Sleep(5);
+                        config.Result.Lines = [];
+                        Thread.Sleep(5);
                     })
                 ).ConfigureAwait(false);
             }
@@ -502,36 +497,23 @@ namespace Duplicati.Library.Main
         /// <inheritdoc />
         public async Task<IVacuumResults> VacuumAsync()
         {
-            return await RunActionAsync(new VacuumResults(), (result, backendManager) =>
-                new Operation.VacuumHandler(m_options, result)
+            return await RunActionAsync(new VacuumResults(), null, null, false, static config =>
+                new Operation.VacuumHandler(config.Options, config.Result)
                     .RunAsync()
             ).ConfigureAwait(false);
         }
 
-        private Task<T> RunActionAsync<T>(T result, Func<T, IBackendManager, Task> method)
-            where T : ISetCommonOptions, ITaskControlProvider, Logging.ILogDestination, IBasicResults, IBackendWriterProvider
-        {
-            var tmp = new string[0];
-            IFilter tempfilter = null;
-            return RunActionAsync<T>(result, tmp, tempfilter, method);
-        }
+        private sealed record RunActionData<TRes, TCon>(
+            TRes Result,
+            TCon Context,
+            string BackendUrl,
+            string[] Paths,
+            Options Options,
+            IFilter Filter,
+            IBackendManager BackendManager);
 
-        private Task<T> RunActionAsync<T>(T result, string[] paths, Func<T, IBackendManager, Task> method)
-            where T : ISetCommonOptions, ITaskControlProvider, Logging.ILogDestination, IBasicResults, IBackendWriterProvider
-        {
-            IFilter tempfilter = null;
-            return RunActionAsync<T>(result, paths, tempfilter, method);
-        }
-
-        private Task<T> RunActionAsync<T>(T result, IFilter filter, Func<T, IBackendManager, Task> method)
-            where T : ISetCommonOptions, ITaskControlProvider, Logging.ILogDestination, IBasicResults, IBackendWriterProvider
-        {
-            var tmp = new string[0];
-            return RunActionAsync<T>(result, tmp, filter, method);
-        }
-
-        private async Task<T> RunActionAsync<T>(T result, string[] paths, IFilter filter, Func<T, IBackendManager, Task> method)
-            where T : ISetCommonOptions, ITaskControlProvider, Logging.ILogDestination, IBasicResults, IBackendWriterProvider
+        private async Task<TRes> RunActionAsync<TRes, TCon>(TRes result, string[] paths, IFilter filter, TCon context, Func<RunActionData<TRes, TCon>, Task> method)
+            where TRes : ISetCommonOptions, ITaskControlProvider, Logging.ILogDestination, IBasicResults, IBackendWriterProvider
         {
             OnOperationStarted?.Invoke(result);
             var resultSetter = result as ISetCommonOptions;
@@ -563,7 +545,8 @@ namespace Duplicati.Library.Main
                         {
                             backend.UpdateThrottleValues(m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond);
                             m_currentBackendManager = backend;
-                            await method(result, backend).ConfigureAwait(false);
+                            var config = new RunActionData<TRes, TCon>(result, context, m_backendUrl, paths, m_options, filter, backend);
+                            await method(config).ConfigureAwait(false);
                         }
                         finally
                         {
@@ -633,7 +616,7 @@ namespace Duplicati.Library.Main
                         }
                     }
 
-                    OperationComplete(result, null);
+                    OperationComplete(result, null, filter);
 
                     Logging.Log.WriteInformationMessage(LOGTAG, "CompletedOperation", Strings.Controller.CompletedOperationMessage(m_options.MainAction));
 
@@ -661,7 +644,7 @@ namespace Duplicati.Library.Main
                     }
 
                     // Do not propagate the cancel exception
-                    OperationComplete(result, null);
+                    OperationComplete(result, null, filter);
 
                     return result;
                 }
@@ -686,7 +669,7 @@ namespace Duplicati.Library.Main
                     }
 
                     // Report the result, and the failure
-                    OperationComplete(result, ex);
+                    OperationComplete(result, ex, filter);
 
                     throw;
                 }
@@ -697,8 +680,45 @@ namespace Duplicati.Library.Main
             }
         }
 
-        private void OperationComplete(IBasicResults result, Exception exception)
+        /// <summary>
+        /// Temporarily pushes the filter into the raw options so modules can read it.
+        /// Returns a disposable that removes the key when disposed.
+        /// </summary>
+        /// <param name="options">The options to push the filter into</param>
+        /// <param name="filter">The filter to push</param>
+        /// <returns>A disposable that removes the key when disposed</returns>
+        internal static IDisposable PushFilterToOptions(Options options, IFilter filter)
+            => PushFilterToOptions(options, filter, out var _);
+        /// <summary>
+        /// Temporarily pushes the filter into the raw options so modules can read it.
+        /// Returns a disposable that removes the key when disposed.
+        /// </summary>
+        /// <param name="options">The options to push the filter into</param>
+        /// <param name="filter">The filter to push</param>
+        /// <returns>A disposable that removes the key when disposed</returns>
+        internal static IDisposable PushFilterToOptions(Options options, IFilter filter, out string filterString)
         {
+            filterString = filter != null && !filter.Empty
+                ? string.Join(Path.PathSeparator.ToString(), FilterExpression.Serialize(filter))
+                : null;
+
+            options.RawOptions["filter"] = filterString;
+            return new FilterOptionScope(options);
+        }
+
+        /// <summary>
+        /// Helper to remove the filter option on dispose
+        /// </summary>
+        private sealed class FilterOptionScope : IDisposable
+        {
+            private readonly Options m_opts;
+            public FilterOptionScope(Options opts) => m_opts = opts;
+            public void Dispose() => m_opts?.RawOptions.Remove("filter");
+        }
+
+        private void OperationComplete(IBasicResults result, Exception exception, IFilter filter)
+        {
+            using var _ = PushFilterToOptions(m_options, filter);
             if (m_options?.LoadedModules != null)
             {
                 foreach (var mx in m_options.LoadedModules)
@@ -756,44 +776,41 @@ namespace Duplicati.Library.Main
                 m_options.AddLoadedModule(DynamicLoader.GenericLoader.GetModule(m.Key));
             }
 
-            // Make the filter read-n-write able in the generic modules
-            var pristinefilter = string.Join(Path.PathSeparator.ToString(), FilterExpression.Serialize(filter));
-            m_options.RawOptions["filter"] = pristinefilter;
-
             // Store the URL connection options separately, as these should only be visible to modules implementing IConnectionModule
             var conopts = new Dictionary<string, string>(m_options.RawOptions);
             var qp = new Library.Utility.Uri(m_backendUrl).QueryParameters;
             foreach (var k in qp.Keys)
                 conopts[(string)k] = qp[(string)k];
 
-            foreach (var mx in m_options.LoadedModules)
+            // Make the filter read-n-write able in the generic modules
+            using (PushFilterToOptions(m_options, filter, out var pristinefilter))
             {
-                if (mx is IConnectionModule)
-                    mx.Configure(conopts);
-                else
-                    mx.Configure(m_options.RawOptions);
-
-                if (mx is IGenericSourceModule sourcemodule)
+                foreach (var mx in m_options.LoadedModules)
                 {
-                    if (sourcemodule.ContainFilesForBackup(paths))
-                    {
-                        var sourceoptions = sourcemodule.ParseSourcePaths(ref paths, ref pristinefilter, m_options.RawOptions);
+                    if (mx is IConnectionModule)
+                        mx.Configure(conopts);
+                    else
+                        mx.Configure(m_options.RawOptions);
 
-                        foreach (var sourceoption in sourceoptions)
-                            m_options.RawOptions[sourceoption.Key] = sourceoption.Value;
+                    if (mx is IGenericSourceModule sourcemodule)
+                    {
+                        if (sourcemodule.ContainFilesForBackup(paths))
+                        {
+                            var sourceoptions = sourcemodule.ParseSourcePaths(ref paths, ref pristinefilter, m_options.RawOptions);
+
+                            foreach (var sourceoption in sourceoptions)
+                                m_options.RawOptions[sourceoption.Key] = sourceoption.Value;
+                        }
                     }
+
+                    if (mx is IGenericCallbackModule module)
+                        module.OnStart(result.MainOperation.ToString(), ref m_backendUrl, ref paths);
                 }
 
-                if (mx is IGenericCallbackModule module)
-                    module.OnStart(result.MainOperation.ToString(), ref m_backendUrl, ref paths);
+                // If the filters were changed by a module, read them back in
+                if (pristinefilter != m_options.RawOptions["filter"])
+                    filter = FilterExpression.Deserialize(m_options.RawOptions["filter"].Split(new string[] { Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries));
             }
-
-            // If the filters were changed by a module, read them back in
-            if (pristinefilter != m_options.RawOptions["filter"])
-            {
-                filter = FilterExpression.Deserialize(m_options.RawOptions["filter"].Split(new string[] { Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries));
-            }
-            m_options.RawOptions.Remove("filter"); // "--filter" is not a supported command line option
 
             if (!string.IsNullOrEmpty(m_options.Logfile))
             {
@@ -1034,8 +1051,11 @@ namespace Duplicati.Library.Main
         /// Helper method that expands the users chosen source input paths,
         /// and removes duplicate paths
         /// </summary>
+        /// <param name="inputsources">The input sources.</param>
+        /// <param name="filter">The filter.</param>
+        /// <param name="options">The options.</param>
         /// <returns>The expanded and filtered sources.</returns>
-        private string[] ExpandInputSources(string[] inputsources, IFilter filter)
+        private static string[] ExpandInputSources(string[] inputsources, IFilter filter, Options options)
         {
             if (inputsources == null || inputsources.Length == 0)
                 throw new UserInformationException(Strings.Controller.NoSourceFoldersError, "NoSourceFolders");
@@ -1083,14 +1103,14 @@ namespace Duplicati.Library.Main
                         else
                         {
                             // If we aren't allow to have missing sources, throw an exception indicating we couldn't find a drive where this volume is mounted
-                            if (!m_options.AllowMissingSource)
+                            if (!options.AllowMissingSource)
                                 throw new UserInformationException(Strings.Controller.SourceVolumeNameNotFoundError(inputsource, volumeGuid), "MissingSourceFolder");
                         }
                     }
                     else
                     {
                         // If we aren't allow to have missing sources, throw an exception indicating we couldn't find this volume
-                        if (!m_options.AllowMissingSource)
+                        if (!options.AllowMissingSource)
                             throw new UserInformationException(Strings.Controller.SourceVolumeNameInvalidError(inputsource), "SourceVolumeNameInvalid");
                     }
                 }
@@ -1142,7 +1162,7 @@ namespace Duplicati.Library.Main
                             // If the directory exists, but is empty, and we are not allowed to have empty sources, throw an error
                             try
                             {
-                                if (m_options.PreventEmptySource && di.Exists && !di.EnumerateFileSystemInfos().Any())
+                                if (options.PreventEmptySource && di.Exists && !di.EnumerateFileSystemInfos().Any())
                                     throw new UserInformationException(Strings.Controller.SourceFolderEmptyError(inputsource), "SourceFolderEmpty");
                             }
                             catch (UnauthorizedAccessException ex)
@@ -1173,7 +1193,7 @@ namespace Duplicati.Library.Main
                 }
 
                 // If no paths were found, and we aren't allowed to have missing sources, throw an error
-                if (!foundAnyPaths && !m_options.AllowMissingSource)
+                if (!foundAnyPaths && !options.AllowMissingSource)
                 {
                     if (unauthorized)
                         throw new UserInformationException(Strings.Controller.SourceUnauthorizedError(inputsource), "SourceUnauthorized");
