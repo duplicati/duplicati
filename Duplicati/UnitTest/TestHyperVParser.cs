@@ -393,5 +393,29 @@ namespace Duplicati.UnitTest
             Assert.That(paths, Does.Contain(gWanted.DataPaths.First()), "wanted VM missing");
             Assert.That(paths, Does.Not.Contain(gOther.DataPaths.First()), "unexpected VM leaked in");
         }
+
+        [Test]
+        public void Handles_null_filter_gracefully()
+        {
+            if (!OperatingSystem.IsWindows())
+                return; // Hyper-V is only available on Windows
+
+            var g = new HyperVGuest("VM", Guid.NewGuid(),
+                                    [@$"C:{DS}VMs{DS}VM{DS}disk.vhdx"]);
+
+            var paths = new[] { "%HYPERV%" };
+            string filter = null;
+            var options = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            { ["snapshot-policy"] = "required" };
+
+            var util = new MockHyperVUtility { Guests = new List<HyperVGuest> { g } };
+
+            using var _ = Duplicati.Library.Logging.Log.StartScope(new LogSink());
+            new Duplicati.Library.Modules.Builtin.HyperVOptions()
+                .RealParseSourcePaths(ref paths, ref filter, options, util);
+
+            Assert.That(paths, Does.Contain(g.DataPaths.First()),
+                        "Guest data paths should be included when filter is null");
+        }
     }
 }
