@@ -415,7 +415,7 @@ namespace Duplicati.UnitTest
 
             var customCommandsBefore = new List<string>
             {
-                $"echo --filter=\"{expectedFilter}\""
+                $"echo --filter=\"+{expectedFilter}\""
             };
 
             var customCommandsAfter = new List<string>();
@@ -451,6 +451,7 @@ namespace Duplicati.UnitTest
             }
 
             var linesAfter = File.ReadAllLines(parsedResultFileAfter);
+            Console.WriteLine($"linesAfter: {string.Join(",", linesAfter)}");
             Assert.AreEqual(1, linesAfter.Length);
             Assert.IsTrue(linesAfter[0].Contains(expectedFilter, StringComparison.OrdinalIgnoreCase));
 
