@@ -28,8 +28,9 @@
     <Package InstallerVersion="405" Compressed="yes" Id="$(var.PackageCode)" InstallScope="perMachine" />
     <Media Id="1" Cabinet="media1.cab" EmbedCab="yes" />
 
-    <!-- TODO: Swith to <UIRef Id="WixUI_InstallDir"/> -->
-    <UIRef Id="WixUI_FeatureTree"/>
+    <!-- Pull in the custom UI flow defined below in the AgentInstallUI fragment. -->
+    <UIRef Id="DuplicatiAgentInstallUI"/>
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLLOCATION" />
 
     <Property Id="FORSERVICE" Value="false" Secure="yes" />
     <Property Id="NOSCRIPT" Value="false" Secure="yes" />
@@ -83,24 +84,12 @@
       </Directory>
     </Directory>
 
-    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLLOCATION" />
-
     <Feature Id="DuplicatiCore" Title="Duplicati Agent files" Level="1" Description="Installs the required files for the Duplicati Agent." AllowAdvertise="no" Absent="disallow" ConfigurableDirectory="INSTALLLOCATION" >
       <ComponentRef Id="SecureInstallDirComp" />
       <ComponentRef Id="DuplicatiAgentServiceComponent" />
       <ComponentGroupRef Id="DUPLICATIBIN" />
     </Feature>
-    
-    <Feature Id="DuplicatiStartupShortCutFeature" Title="Launch Duplicati Agent at startup" Level="1" Description ="Automatically launches the Duplicati Agent when you log on to the computer" Absent="allow" AllowAdvertise="no">
-      <ComponentRef Id="StartupMenuItem"/>
-      <Condition Level="0">FORSERVICE = "true"</Condition>
-    </Feature>
-
-    <!-- Launch duplicati setup -->
-    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch Duplicati now" />
-    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
-    <CustomAction Id="LaunchApplication" FileKey="Duplicati.Agent.exe" Impersonate="yes" ExeCommand="run" Return="asyncNoWait" />
- 
+     
     <!-- Not suppored by wixl, so we do not validate the path -->
     <!-- <CustomAction Id="WixUIValidatePath$(var.Suffix)" BinaryRef="WixUiCa$(var.Suffix)" DllEntry="ValidatePath" Return="ignore" Execute="immediate" /> -->
     <Property Id="WIXUI_DONTVALIDATEPATH" Value="true" />
@@ -131,4 +120,71 @@
               Execute="immediate"
               Return="check" />
   </Product>
+
+  <!--
+    Custom UI flow for the Duplicati Agent installer.
+
+    There are no install options, so the standard install-directory dialog is
+    used instead of the feature tree (WixUI_FeatureTree) or the TrayIcon's
+    InstallOptionsDlg checkbox dialog.
+
+    Dialog sequence on a fresh install:
+       WelcomeDlg -> LicenseAgreementDlg -> InstallDirDlg -> VerifyReadyDlg -> ProgressDlg -> ExitDialog
+
+    Maintenance:
+       MaintenanceWelcomeDlg -> MaintenanceTypeDlg
+         + Change   -> InstallDirDlg -> VerifyReadyDlg
+         + Repair   -> VerifyReadyDlg
+         + Remove   -> VerifyReadyDlg
+  -->
+  <Fragment>
+    <UI Id="DuplicatiAgentInstallUI">
+      <TextStyle Id="WixUI_Font_Normal" FaceName="Tahoma" Size="8" />
+      <TextStyle Id="WixUI_Font_Bigger" FaceName="Tahoma" Size="12" />
+      <TextStyle Id="WixUI_Font_Title" FaceName="Tahoma" Size="9" Bold="yes" />
+
+      <Property Id="DefaultUIFont" Value="WixUI_Font_Normal" />
+      <Property Id="WixUI_Mode" Value="InstallDir" />
+
+      <DialogRef Id="BrowseDlg" />
+      <DialogRef Id="DiskCostDlg" />
+      <DialogRef Id="ErrorDlg" />
+      <DialogRef Id="FatalError" />
+      <DialogRef Id="FilesInUse" />
+      <DialogRef Id="MsiRMFilesInUse" />
+      <DialogRef Id="PrepareDlg" />
+      <DialogRef Id="ProgressDlg" />
+      <DialogRef Id="ResumeDlg" />
+      <DialogRef Id="UserExit" />
+      <DialogRef Id="InstallDirDlg" />
+
+      <Publish Dialog="ExitDialog" Control="Finish" Event="EndDialog" Value="Return" Order="999" />
+
+      <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="LicenseAgreementDlg" Condition="NOT Installed" />
+      <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg" Condition="Installed AND PATCH" />
+
+      <Publish Dialog="LicenseAgreementDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg" />
+      <Publish Dialog="LicenseAgreementDlg" Control="Next" Event="NewDialog" Value="InstallDirDlg" Condition="LicenseAccepted = &quot;1&quot;" />
+
+      <Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="LicenseAgreementDlg" Order="1" Condition="NOT Installed" />
+      <Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="MaintenanceTypeDlg"   Order="2" Condition="Installed" />
+      <Publish Dialog="InstallDirDlg" Control="Next" Event="SetTargetPath" Value="[WIXUI_INSTALLDIR]" Order="1" />
+      <Publish Dialog="InstallDirDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg" Order="2" />
+      <Publish Dialog="InstallDirDlg" Control="ChangeFolder" Property="_BrowseProperty" Value="[WIXUI_INSTALLDIR]" Order="1" />
+      <Publish Dialog="InstallDirDlg" Control="ChangeFolder" Event="SpawnDialog" Value="BrowseDlg" Order="2" />
+
+      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="InstallDirDlg"     Order="1" Condition="NOT Installed OR WixUI_InstallMode = &quot;Change&quot;" />
+      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="MaintenanceTypeDlg" Order="2" Condition="Installed AND NOT PATCH" />
+      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg"          Order="3" Condition="Installed AND PATCH" />
+
+      <Publish Dialog="MaintenanceWelcomeDlg" Control="Next" Event="NewDialog" Value="MaintenanceTypeDlg" />
+
+      <Publish Dialog="MaintenanceTypeDlg" Control="ChangeButton" Event="NewDialog" Value="InstallDirDlg" />
+      <Publish Dialog="MaintenanceTypeDlg" Control="RepairButton" Event="NewDialog" Value="VerifyReadyDlg" />
+      <Publish Dialog="MaintenanceTypeDlg" Control="RemoveButton" Event="NewDialog" Value="VerifyReadyDlg" />
+      <Publish Dialog="MaintenanceTypeDlg" Control="Back"         Event="NewDialog" Value="MaintenanceWelcomeDlg" />
+    </UI>
+
+    <UIRef Id="WixUI_Common" />
+  </Fragment>
 </Wix>

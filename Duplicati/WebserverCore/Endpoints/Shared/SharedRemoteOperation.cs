@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using Duplicati.Library.Utility;
@@ -98,28 +99,45 @@ public class SharedRemoteOperation
         return (url, opts);
     }
 
-    public static async Task<BackendTupleDisposeWrapper> GetBackendAsync(Connection connection, IApplicationSettings applicationSettings, string url, string? backupId, long connectionStringId, CancellationToken cancelToken)
+    [return: NotNullIfNotNull(nameof(url))]
+    private static string? AppendAdditionalPath(string? url, string? additionalPath)
+    {
+        if (string.IsNullOrEmpty(additionalPath))
+            return url;
+
+        if (additionalPath.Contains('?') || additionalPath.Contains('#') || additionalPath.Contains('*') || additionalPath.Contains(".."))
+            throw new UserInformationException("The additional path contains invalid characters", "InvalidPath");
+
+        if (string.IsNullOrEmpty(url))
+            return url;
+
+        var source = new Library.Utility.Uri(url);
+        var path = (source.Path ?? "").TrimEnd('/') + "/" + additionalPath.TrimStart('/');
+        return new UriBuilder(url) { Path = path }.Uri.AbsoluteUri;
+    }
+
+    public static async Task<BackendTupleDisposeWrapper> GetBackendAsync(Connection connection, IApplicationSettings applicationSettings, string url, string? additionalPath, string? backupId, long connectionStringId, CancellationToken cancelToken)
     {
         (url, var opts) = await ExpandUrlAsync(connection, applicationSettings, url, backupId, connectionStringId, null, cancelToken);
         var modules = ConfigureModules(opts);
-        var backend = Library.DynamicLoader.BackendLoader.GetBackend(url, opts);
+        var backend = Library.DynamicLoader.BackendLoader.GetBackend(AppendAdditionalPath(url, additionalPath), opts);
         return new BackendTupleDisposeWrapper(backend, modules);
     }
 
-    public static async Task<SourceProviderTupleDisposeWrapper> GetSourceProviderForTestingAsync(Connection connection, IApplicationSettings applicationSettings, string url, string? backupId, long connectionStringId, string? sourcePrefix, CancellationToken cancelToken)
+    public static async Task<SourceProviderTupleDisposeWrapper> GetSourceProviderForTestingAsync(Connection connection, IApplicationSettings applicationSettings, string url, string? additionalPath, string? backupId, long connectionStringId, string? sourcePrefix, CancellationToken cancelToken)
     {
         (url, var opts) = await ExpandUrlAsync(connection, applicationSettings, url, backupId, connectionStringId, sourcePrefix, cancelToken);
         var modules = ConfigureModules(opts);
-        var sourceProvider = await Library.DynamicLoader.SourceProviderLoader.GetSourceProviderForTesting(url, "", opts, cancelToken);
+        var sourceProvider = await Library.DynamicLoader.SourceProviderLoader.GetSourceProviderForTesting(AppendAdditionalPath(url, additionalPath), "", opts, cancelToken);
 
         return new SourceProviderTupleDisposeWrapper(sourceProvider, modules);
     }
 
-    public static async Task<RestoreDestinationProviderTupleDisposeWrapper> GetRestoreDestinationProviderForTestingAsync(Connection connection, IApplicationSettings applicationSettings, string url, string? backupId, long connectionStringId, string? sourcePrefix, CancellationToken cancelToken)
+    public static async Task<RestoreDestinationProviderTupleDisposeWrapper> GetRestoreDestinationProviderForTestingAsync(Connection connection, IApplicationSettings applicationSettings, string url, string? additionalPath, string? backupId, long connectionStringId, string? sourcePrefix, CancellationToken cancelToken)
     {
         (url, var opts) = await ExpandUrlAsync(connection, applicationSettings, url, backupId, connectionStringId, sourcePrefix, cancelToken);
         var modules = ConfigureModules(opts);
-        var restoreDestinationProvider = await Library.DynamicLoader.RestoreDestinationProviderLoader.GetRestoreDestinationProviderForTesting(url, opts, cancelToken);
+        var restoreDestinationProvider = await Library.DynamicLoader.RestoreDestinationProviderLoader.GetRestoreDestinationProviderForTesting(AppendAdditionalPath(url, additionalPath), opts, cancelToken);
 
         return new RestoreDestinationProviderTupleDisposeWrapper(restoreDestinationProvider, modules);
     }
