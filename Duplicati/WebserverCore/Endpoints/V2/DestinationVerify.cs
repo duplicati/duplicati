@@ -47,7 +47,7 @@ public class DestinationVerify : IEndpointV2
         {
             if (destinationType == RemoteDestinationType.SourceProvider)
             {
-                using var wrapper = await SharedRemoteOperation.GetSourceProviderForTestingAsync(connection, applicationSettings, input.DestinationUrl, input.BackupId, input.ConnectionStringId ?? -1, input.SourcePrefix, cancelToken);
+                using var wrapper = await SharedRemoteOperation.GetSourceProviderForTestingAsync(connection, applicationSettings, input.DestinationUrl, null, input.BackupId, input.ConnectionStringId ?? -1, input.SourcePrefix, cancelToken);
 
                 // Call the specific Test method on the ISourceProvider (read-only test)
                 await wrapper.SourceProvider.TestAsync(cancelToken);
@@ -60,7 +60,7 @@ public class DestinationVerify : IEndpointV2
             }
             else if (destinationType == RemoteDestinationType.RestoreDestinationProvider)
             {
-                using var wrapper = await SharedRemoteOperation.GetRestoreDestinationProviderForTestingAsync(connection, applicationSettings, input.DestinationUrl, input.BackupId, input.ConnectionStringId ?? -1, input.SourcePrefix, cancelToken);
+                using var wrapper = await SharedRemoteOperation.GetRestoreDestinationProviderForTestingAsync(connection, applicationSettings, input.DestinationUrl, null, input.BackupId, input.ConnectionStringId ?? -1, input.SourcePrefix, cancelToken);
 
                 // Call the specific Test method on the IRestoreDestinationProvider (should be a write test)
                 await wrapper.RestoreDestinationProvider.Test(cancelToken);
@@ -73,7 +73,7 @@ public class DestinationVerify : IEndpointV2
             }
             else
             {
-                using var wrapper = await SharedRemoteOperation.GetBackendAsync(connection, applicationSettings, input.DestinationUrl, input.BackupId, input.ConnectionStringId ?? -1, cancelToken);
+                using var wrapper = await SharedRemoteOperation.GetBackendAsync(connection, applicationSettings, input.DestinationUrl, null, input.BackupId, input.ConnectionStringId ?? -1, cancelToken);
 
                 using (var b = wrapper.Backend)
                 {
