@@ -451,13 +451,14 @@ namespace Duplicati.UnitTest
             }
 
             var linesAfter = File.ReadAllLines(parsedResultFileAfter);
-            Console.WriteLine($"linesAfter: {string.Join(",", linesAfter)}");
             Assert.AreEqual(1, linesAfter.Length);
-            Assert.IsTrue(linesAfter[0].Contains(expectedFilter, StringComparison.OrdinalIgnoreCase));
+            Assert.IsTrue(linesAfter[0].Contains(expectedFilter, StringComparison.OrdinalIgnoreCase),
+                $"Expected the after-script filter output to contain '{expectedFilter}', but got: '{linesAfter[0]}'");
 
             var linesPostBackup = File.ReadAllLines(parsedResultFilePostBackup);
             Assert.AreEqual(1, linesPostBackup.Length);
-            Assert.IsTrue(linesPostBackup[0].Contains(expectedFilter, StringComparison.OrdinalIgnoreCase));
+            Assert.IsTrue(linesPostBackup[0].Contains(expectedFilter, StringComparison.OrdinalIgnoreCase),
+                $"Expected the post-backup-script filter output to contain '{expectedFilter}', but got: '{linesPostBackup[0]}'");
         }
 
         [Test]

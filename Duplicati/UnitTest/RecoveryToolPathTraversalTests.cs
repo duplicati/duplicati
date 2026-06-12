@@ -89,8 +89,14 @@ namespace Duplicati.UnitTest
 
             var filelistPath = Directory.GetFiles(tempDir, "*filelist*").FirstOrDefault();
             var json = File.ReadAllText(filelistPath);
-            // Replace ONLY ONE file with traversal, keep the other
-            json = json.Replace("subdir/file2.txt", "subdir/../../../../../../../../../../../tmp/evil.txt");
+            // Replace ONLY ONE file with traversal, keep the other.
+            var sep = Path.DirectorySeparatorChar;
+            // Deal with JSON escape of backslash
+            var jsonSep = sep == '\\' ? "\\\\" : sep.ToString();
+            var traversal = string.Concat(Enumerable.Repeat(".." + jsonSep, 11));
+            json = json.Replace(
+                $"subdir{jsonSep}file2.txt",
+                $"subdir{jsonSep}{traversal}tmp{jsonSep}evil.txt");
             File.WriteAllText(filelistPath, json);
 
             ZipFile.CreateFromDirectory(tempDir, dlistPath);
