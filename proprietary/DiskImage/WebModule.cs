@@ -1,14 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.IO.Pipelines;
 using System.Linq;
-using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Logging;
 using Duplicati.Library.Utility;
@@ -54,7 +50,8 @@ public class WebModule : IWebModule
         {
             var res = new Dictionary<string, string>();
             await foreach (var drive in SourceProvider.ListPhysicalDrives(cancellationToken))
-                AddDiskToResult(drive, res);
+                res[drive.Path] = JsonSerializer.Serialize(await drive.GetMinorMetadata(cancellationToken));
+
             return res;
         }
 
@@ -88,23 +85,6 @@ public class WebModule : IWebModule
         }
 
         return result;
-    }
-
-    private void AddDiskToResult(PhysicalDriveInfo drive, Dictionary<string, string> result)
-    {
-        // For now, we only allow picking full disks, not individual partitions
-        // var resultpath = Util.AppendDirSeparator(drive.Path);
-        var resultpath = drive.Path.TrimEnd(Path.DirectorySeparatorChar);
-        var metadata = new Dictionary<string, string?>
-        {
-            { "diskimage:Number", drive.Number },
-            { "diskimage:FriendlyName", drive.DisplayName },
-            { "diskimage:Size", drive.Size.ToString() },
-            { "diskimage:DevicePath", drive.Path },
-            { "diskimage:Name", $"{drive.DisplayName} ({Library.Utility.Utility.FormatSizeString(drive.Size)})" },
-        };
-
-        result[resultpath] = JsonSerializer.Serialize(metadata);
     }
 
     public IDictionary<string, IDictionary<string, string>> GetLookups()
