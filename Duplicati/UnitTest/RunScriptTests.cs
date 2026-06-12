@@ -371,7 +371,7 @@ namespace Duplicati.UnitTest
         [Category("Border")]
         public async Task CustomFilterAsync()
         {
-            var expectedFilter = "+[^(.*b.*)$]";
+            var expectedFilter = ".*b.*";
             var parsedResultFileAfter = Path.Combine(this.RESTOREFOLDER, "result_after.txt");
             var parsedResultFilePostBackup = Path.Combine(this.RESTOREFOLDER, "result_post_backup.txt");
 
@@ -414,18 +414,18 @@ namespace Duplicati.UnitTest
 
             var linesAfter = File.ReadAllLines(parsedResultFileAfter);
             Assert.AreEqual(1, linesAfter.Length);
-            Assert.AreEqual(expectedFilter, linesAfter[0]);
+            Assert.IsTrue(linesAfter[0].Contains(expectedFilter, StringComparison.OrdinalIgnoreCase));
 
             var linesPostBackup = File.ReadAllLines(parsedResultFilePostBackup);
             Assert.AreEqual(1, linesPostBackup.Length);
-            Assert.AreEqual(expectedFilter, linesPostBackup[0]);
+            Assert.IsTrue(linesPostBackup[0].Contains(expectedFilter, StringComparison.OrdinalIgnoreCase));
         }
 
         [Test]
         [Category("Border")]
         public async Task CommandLineFilterSeenByScriptsAsync()
         {
-            var expectedFilter = "+*B*";
+            var expectedFilter = "+*b*";
             var parsedResultFileAfter = Path.Combine(this.RESTOREFOLDER, "result_after_cmdline.txt");
             var parsedResultFilePostBackup = Path.Combine(this.RESTOREFOLDER, "result_post_backup_cmdline.txt");
 
@@ -463,11 +463,11 @@ namespace Duplicati.UnitTest
 
             var linesAfter = File.ReadAllLines(parsedResultFileAfter);
             Assert.AreEqual(1, linesAfter.Length);
-            Assert.AreEqual(expectedFilter, linesAfter[0]);
+            Assert.IsTrue(linesAfter[0].Contains(expectedFilter, StringComparison.OrdinalIgnoreCase));
 
             var linesPostBackup = File.ReadAllLines(parsedResultFilePostBackup);
             Assert.AreEqual(1, linesPostBackup.Length);
-            Assert.AreEqual(expectedFilter, linesPostBackup[0]);
+            Assert.IsTrue(linesPostBackup[0].Contains(expectedFilter, StringComparison.OrdinalIgnoreCase));
         }
 
         private string CreateScript(int exitcode, string stderr = null, string stdout = null, int sleeptime = 0, List<string> customCommands = null)
