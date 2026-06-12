@@ -369,6 +369,44 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Border")]
+        public async Task CustomLocalPathAsync()
+        {
+            var customSourceFolder = Path.Combine(this.DATAFOLDER, "source2");
+            Directory.CreateDirectory(customSourceFolder);
+            var expectedFile = Path.Combine(customSourceFolder, "file2.txt");
+            File.WriteAllText(expectedFile, "some content");
+
+            var customCommands = new List<string>
+            {
+                $"echo --localpath=\"{customSourceFolder}\""
+            };
+
+            var options = new Dictionary<string, string>(this.TestOptions);
+            options["run-script-before"] = CreateScript(0, null, null, 0, customCommands);
+            using (var c = new Library.Main.Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                var backupResults = await c.BackupAsync(new[] { this.DATAFOLDER });
+                Assert.AreEqual(0, backupResults.Errors.Count());
+                Assert.AreEqual(0, backupResults.Warnings.Count());
+                Assert.AreEqual(1, backupResults.ExaminedFiles);
+            }
+
+            using (var c = new Library.Main.Controller("file://" + this.TARGETFOLDER, this.TestOptions, null))
+            {
+                // Restore to a specific folder so we don't mess up original, 
+                // or just restore exactly since it's a test environment.
+                var restoreOptions = new Dictionary<string, string>(this.TestOptions);
+                restoreOptions["restore-path"] = this.RESTOREFOLDER;
+                var c2 = new Library.Main.Controller("file://" + this.TARGETFOLDER, restoreOptions, null);
+                var restoreResults = await c2.RestoreAsync(new[] { expectedFile });
+                Assert.AreEqual(0, restoreResults.Errors.Count());
+                Assert.AreEqual(0, restoreResults.Warnings.Count());
+                Assert.AreEqual(1, restoreResults.RestoredFiles);
+            }
+        }
+
+        [Test]
+        [Category("Border")]
         public async Task CustomFilterAsync()
         {
             var expectedFilter = ".*b.*";
