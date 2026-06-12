@@ -4,6 +4,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -104,8 +105,10 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
     /// <inheritdoc />
     public async Task InitializeAsync(CancellationToken cancellationToken)
     {
+        // TODO: Should we redesign this? 
+        // To support enumerating physical drives, we accept init with no disk
         if (string.IsNullOrEmpty(_devicePath))
-            throw new UserInformationException("Disk device path is not specified.", "DiskDeviceNotSpecified");
+            return;
 
         if (OperatingSystem.IsWindows())
         {
@@ -152,6 +155,9 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
     /// <inheritdoc />
     public async Task<ISourceProviderEntry?> GetEntryAsync(string path, bool isFolder, CancellationToken cancellationToken)
     {
+        if (string.IsNullOrWhiteSpace(path) || path == "/")
+            return new MachineRootSourceEntry();
+
         if (_disk == null)
             throw new InvalidOperationException("Provider not initialized.");
 
@@ -195,14 +201,17 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A list of physical drive information.</returns>
     /// <exception cref="PlatformNotSupportedException">Thrown when the platform is not supported.</exception>
-    public static IAsyncEnumerable<PhysicalDriveInfo> ListPhysicalDrives(CancellationToken cancellationToken)
+    public static IAsyncEnumerable<PhysicalDriveSourceEntry> ListPhysicalDrives(CancellationToken cancellationToken)
     {
         if (OperatingSystem.IsWindows())
-            return Windows.ListPhysicalDrivesAsync(cancellationToken);
+            return Windows.ListPhysicalDrivesAsync(cancellationToken)
+                .Select(x => new PhysicalDriveSourceEntry(x));
         else if (OperatingSystem.IsMacOS())
-            return Mac.ListPhysicalDrivesAsync(cancellationToken);
+            return Mac.ListPhysicalDrivesAsync(cancellationToken)
+                .Select(x => new PhysicalDriveSourceEntry(x));
         else if (OperatingSystem.IsLinux())
-            return Linux.ListPhysicalDrivesAsync(cancellationToken);
+            return Linux.ListPhysicalDrivesAsync(cancellationToken)
+                .Select(x => new PhysicalDriveSourceEntry(x));
         else
             throw new PlatformNotSupportedException(Strings.PlatformNotSupported);
     }

@@ -60,19 +60,19 @@ namespace Duplicati.WebserverCore.Endpoints.V1
             {
                 if (type == Dto.V2.RemoteDestinationType.SourceProvider)
                 {
-                    using var wrapper = await SharedRemoteOperation.GetSourceProviderForTestingAsync(connection, applicationSettings, maskedurl, backupId, connectionStringId ?? -1, sourcePrefix, cancelToken);
+                    using var wrapper = await SharedRemoteOperation.GetSourceProviderForTestingAsync(connection, applicationSettings, maskedurl, null, backupId, connectionStringId ?? -1, sourcePrefix, cancelToken);
                     using (var s = wrapper.SourceProvider)
                         await s.TestAsync(cancelToken).ConfigureAwait(false);
                 }
                 else if (type == Dto.V2.RemoteDestinationType.RestoreDestinationProvider)
                 {
-                    using var wrapper = await SharedRemoteOperation.GetRestoreDestinationProviderForTestingAsync(connection, applicationSettings, maskedurl, backupId, connectionStringId ?? -1, sourcePrefix, cancelToken);
+                    using var wrapper = await SharedRemoteOperation.GetRestoreDestinationProviderForTestingAsync(connection, applicationSettings, maskedurl, null, backupId, connectionStringId ?? -1, sourcePrefix, cancelToken);
                     using (var r = wrapper.RestoreDestinationProvider)
                         await r.Test(cancelToken).ConfigureAwait(false);
                 }
                 else
                 {
-                    using var wrapper = await SharedRemoteOperation.GetBackendAsync(connection, applicationSettings, maskedurl, backupId, connectionStringId ?? -1, cancelToken);
+                    using var wrapper = await SharedRemoteOperation.GetBackendAsync(connection, applicationSettings, maskedurl, null, backupId, connectionStringId ?? -1, cancelToken);
                     using (var b = wrapper.Backend)
                     {
                         try { await b.TestAsync(!readOnlyTest, cancelToken).ConfigureAwait(false); }
@@ -124,7 +124,7 @@ namespace Duplicati.WebserverCore.Endpoints.V1
         {
             try
             {
-                using var wrapper = await SharedRemoteOperation.GetBackendAsync(connection, applicationSettings, maskedurl, backupId, connectionStringId ?? -1, cancelToken);
+                using var wrapper = await SharedRemoteOperation.GetBackendAsync(connection, applicationSettings, maskedurl, null, backupId, connectionStringId ?? -1, cancelToken);
                 using (var b = wrapper.Backend)
                     await b.CreateFolderAsync(cancelToken).ConfigureAwait(false);
             }

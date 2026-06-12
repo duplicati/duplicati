@@ -56,4 +56,5 @@ internal static class Strings
 
     public static string InvalidRestoreTargetType(string? type) => LC.L($"Invalid restore target type: {type}");
     public static string RestoreTargetNotFound(string path) => LC.L($"Restore target path not found: {path}");
+    public static string LicenseWarning(GoogleRootType type, int approved) => LC.L($"Licensed Microsoft 365 feature seats exceeded for {type} ({approved}). Some items will not be backed up, and some folders may be empty.");
 }

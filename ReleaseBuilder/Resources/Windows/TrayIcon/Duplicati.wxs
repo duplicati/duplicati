@@ -228,6 +228,7 @@
 
           <!-- Manage the Duplicati service. -->
           <Component Id="DuplicatiWindowsServiceComponent" Guid="4A2B7C8D-9E1F-4032-A1B2-C3D4E5F60718">
+            <Condition>DUPLICATI_SERVICE_SELECTED</Condition>
             <File Id="Duplicati.WindowsService.exe"
                   Name="Duplicati.WindowsService.exe"
                   KeyPath="yes"
@@ -250,6 +251,16 @@
                             Remove="uninstall"
                             Wait="yes" />
           </Component>
+
+          <!-- File-only copy of Duplicati.WindowsService.exe for the case
+               where the service feature is NOT selected. -->
+          <Component Id="DuplicatiWindowsServiceFileComponent" Guid="5B3C8D9E-AF20-4143-B2C3-D4E5F6071829">
+            <Condition>NOT DUPLICATI_SERVICE_SELECTED</Condition>
+            <File Id="Duplicati.WindowsService.exe.FileOnly"
+                  Name="Duplicati.WindowsService.exe"
+                  KeyPath="yes"
+                  Source="$(var.HarvestPath)Duplicati.WindowsService.exe" />
+          </Component>
         </Directory>
       </Directory>
     </Directory>
@@ -258,6 +269,8 @@
       <ComponentRef Id="SecureInstallDirComp" />
       <!-- Always-installed: owns the Service registry key. -->
       <ComponentRef Id="DuplicatiServiceKeyComponent" />
+      <!-- Always-installed file-only copy of Duplicati.WindowsService.exe -->
+      <ComponentRef Id="DuplicatiWindowsServiceFileComponent" />
       <ComponentGroupRef Id="DUPLICATIBIN" />
     </Feature>
       

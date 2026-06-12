@@ -57,10 +57,8 @@ internal class MetaRootSourceEntry(SourceProvider provider, string mountPoint, O
                     if (cancellationToken.IsCancellationRequested)
                         yield break;
 
-                    if (!provider.LicenseApprovedForEntry(Path, type, user.Id))
-                        yield break;
-
-                    yield return new UserSourceEntry(provider, Path, user);
+                    if (provider.LicenseApprovedForEntry(Path, type, user.Id, false))
+                        yield return new UserSourceEntry(provider, Path, user);
                 }
                 break;
             case Office365MetaType.Groups:
@@ -69,10 +67,8 @@ internal class MetaRootSourceEntry(SourceProvider provider, string mountPoint, O
                     if (cancellationToken.IsCancellationRequested)
                         yield break;
 
-                    if (!provider.LicenseApprovedForEntry(Path, type, group.Id))
-                        yield break;
-
-                    yield return new GroupSourceEntry(provider, this.Path, group);
+                    if (provider.LicenseApprovedForEntry(Path, type, group.Id, false))
+                        yield return new GroupSourceEntry(provider, this.Path, group);
                 }
                 break;
             case Office365MetaType.Sites:
@@ -81,10 +77,8 @@ internal class MetaRootSourceEntry(SourceProvider provider, string mountPoint, O
                     if (cancellationToken.IsCancellationRequested)
                         yield break;
 
-                    if (!provider.LicenseApprovedForEntry(Path, type, site.Id))
-                        yield break;
-
-                    yield return new SiteSourceEntry(provider, this.Path, site);
+                    if (provider.LicenseApprovedForEntry(Path, type, site.Id, false))
+                        yield return new SiteSourceEntry(provider, this.Path, site);
                 }
                 break;
             default:

@@ -71,4 +71,5 @@ internal static class Strings
     public static string OfficeIncludedGroupTypesShort => LC.L("Included group types.");
     public static string OfficeIncludedGroupTypesLong => LC.L("The group types to include in the backup (e.g. Mailbox, OneDrive, Calendar).");
 
+    public static string LicenseWarning(SourceItems.Office365MetaType type, int approved) => LC.L($"Licensed Microsoft 365 feature seats exceeded for {type} ({approved}). Some items will not be backed up, and some folders may be empty.");
 }
