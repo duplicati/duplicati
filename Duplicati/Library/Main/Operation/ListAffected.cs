@@ -39,7 +39,7 @@ namespace Duplicati.Library.Main.Operation
             m_result = result;
         }
 
-        public async Task RunAsync(List<string> args, Action<IListAffectedResults> callback = null)
+        public async Task RunAsync(string[] args, Action<IListAffectedResults> callback = null)
         {
             if (!File.Exists(m_options.Dbpath))
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
