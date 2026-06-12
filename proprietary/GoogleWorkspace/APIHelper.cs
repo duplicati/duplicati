@@ -99,8 +99,8 @@ public class APIHelper
         else
         {
             // Test connection by getting the Gmail service
-            var gmailService = GetGmailService("me");
-            gmailService.Users.GetProfile("me").Execute();
+            var gmailService = GetGmailService(_adminEmail ?? "me");
+            gmailService.Users.GetProfile(_adminEmail ?? "me").Execute();
         }
     }
     public GmailService GetGmailService(string userId)
