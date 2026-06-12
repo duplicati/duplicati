@@ -6,8 +6,8 @@ using Duplicati.Library.Interface;
 
 namespace Duplicati.Proprietary.Office365.SourceItems;
 
-internal class SiteSourceEntry(SourceProvider provider, string path, GraphSite site)
-    : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(path, site.Id)), null, null)
+internal class SiteSourceEntry(SourceProvider provider, string parentPath, GraphSite site)
+    : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, site.Id)), null, null)
 {
     public override Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)
         => Task.FromResult(new Dictionary<string, string?>()
@@ -26,6 +26,9 @@ internal class SiteSourceEntry(SourceProvider provider, string path, GraphSite s
 
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        if (!provider.LicenseApprovedForEntry(parentPath, Office365MetaType.Sites, site.Id, true))
+            yield break;
+
         yield return new StreamResourceEntryFunction(
             SystemIO.IO_OS.PathCombine(this.Path, "metadata.json"),
             createdUtc: DateTime.UnixEpoch,

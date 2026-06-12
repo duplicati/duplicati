@@ -30,10 +30,8 @@ internal class SharedDrivesSourceEntry(SourceProvider provider, string parentPat
                 {
                     if (cancellationToken.IsCancellationRequested) yield break;
 
-                    if (!provider.LicenseApprovedForEntry(path, GoogleRootType.SharedDrives, drive.Id))
-                        yield break;
-
-                    yield return new SharedDriveSourceEntry(path, userId!, drive, driveService);
+                    if (provider.LicenseApprovedForEntry(path, GoogleRootType.SharedDrives, drive.Id, false))
+                        yield return new SharedDriveSourceEntry(provider, path, userId!, drive, driveService);
                 }
             }
             nextPageToken = drives.NextPageToken;

@@ -20,11 +20,14 @@ internal enum Office365GroupType
     Notes = 32
 }
 
-internal class GroupSourceEntry(SourceProvider provider, string path, GraphGroup group)
-    : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(path, group.Id)), group.CreatedDateTime.FromGraphDateTime(), null)
+internal class GroupSourceEntry(SourceProvider provider, string parentPath, GraphGroup group)
+    : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, group.Id)), group.CreatedDateTime.FromGraphDateTime(), null)
 {
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        if (!provider.LicenseApprovedForEntry(parentPath, Office365MetaType.Groups, group.Id, true))
+            yield break;
+
         await foreach (var entry in MetadataEntries(cancellationToken))
         {
             if (cancellationToken.IsCancellationRequested)

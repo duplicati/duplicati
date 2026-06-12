@@ -8,11 +8,14 @@ using System.Runtime.CompilerServices;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class SharedDriveSourceEntry(string parentPath, string userId, Drive drive, DriveService driveService)
+internal class SharedDriveSourceEntry(SourceProvider provider, string parentPath, string userId, Drive drive, DriveService driveService)
     : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, drive.Id)), drive.CreatedTimeDateTimeOffset.HasValue ? drive.CreatedTimeDateTimeOffset.Value.UtcDateTime : DateTime.UnixEpoch, DateTime.UnixEpoch)
 {
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        if (!provider.LicenseApprovedForEntry(parentPath, GoogleRootType.SharedDrives, drive.Id, true))
+            yield break;
+
         if (cancellationToken.IsCancellationRequested) yield break;
         yield return new SharedDriveMetadataSourceEntry(this.Path, drive);
 

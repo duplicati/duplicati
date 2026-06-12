@@ -12,6 +12,9 @@ internal class GroupSourceEntry(SourceProvider provider, string parentPath, Grou
 {
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        if (!provider.LicenseApprovedForEntry(parentPath, GoogleRootType.Groups, group.Id, true))
+            yield break;
+
         if (cancellationToken.IsCancellationRequested) yield break;
         yield return new GroupSettingsSourceEntry(provider, this.Path, group.Email);
 

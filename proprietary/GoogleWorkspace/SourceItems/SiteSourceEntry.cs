@@ -6,13 +6,16 @@ using File = Google.Apis.Drive.v3.Data.File;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class SiteSourceEntry(string parentPath, File file)
+internal class SiteSourceEntry(SourceProvider provider, string parentPath, File file)
     : StreamResourceEntryBase(SystemIO.IO_OS.PathCombine(parentPath, file.Name + ".site"), file.CreatedTimeDateTimeOffset.HasValue ? file.CreatedTimeDateTimeOffset.Value.UtcDateTime : DateTime.UnixEpoch, file.ModifiedTimeDateTimeOffset.HasValue ? file.ModifiedTimeDateTimeOffset.Value.UtcDateTime : DateTime.UnixEpoch)
 {
     public override long Size => -1;
 
     public override Task<Stream> OpenRead(CancellationToken cancellationToken)
     {
+        if (!provider.LicenseApprovedForEntry(parentPath, GoogleRootType.Sites, file.Id, true))
+            return null!;
+
         // Google Sites cannot be exported via Drive API.
         // We serialize the metadata to JSON so we at least have a record of it.
         var json = JsonSerializer.Serialize(file, new JsonSerializerOptions { WriteIndented = true });

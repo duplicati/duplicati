@@ -11,6 +11,9 @@ internal class UserSourceEntry(SourceProvider provider, string parentPath, strin
 {
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        if (!provider.LicenseApprovedForEntry(parentPath, GoogleRootType.Users, userId, true))
+            yield break;
+
         if (cancellationToken.IsCancellationRequested)
             yield break;
 

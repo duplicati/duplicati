@@ -199,8 +199,9 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
     /// <param name="path">The path to verify.</param>
     /// <param name="type">The type of entry.</param>
     /// <param name="id">The ID of the entry.</param>
+    /// <param name="increment">Whether to increment the count if the license is approved.</param>
     /// <returns><c>true</c> if the license is approved; otherwise, <c>false</c>.</returns>
-    internal bool LicenseApprovedForEntry(string path, GoogleRootType type, string id)
+    internal bool LicenseApprovedForEntry(string path, GoogleRootType type, string id, bool increment)
     {
         // We do not limit restores
         if (UsedForRestoreOperation)
@@ -218,8 +219,8 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
             var current = _userCount;
             if (current >= approved)
             {
-                if (Interlocked.Exchange(ref _userLicenseWarningIssued, 1) == 0)
-                    Log.WriteWarningMessage(LOGTAG, "LicenseWarning", null, $"Licensed Google Workspace feature seats exceeded for {type} ({approved}). Some items will not be backed up.");
+                if (increment && Interlocked.Exchange(ref _userLicenseWarningIssued, 1) == 0)
+                    Log.WriteWarningMessage(LOGTAG, "LicenseWarning", null, Strings.LicenseWarning(type, approved));
                 return false;
             }
         }
@@ -229,8 +230,8 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
             var current = _groupCount;
             if (current >= approved)
             {
-                if (Interlocked.Exchange(ref _groupLicenseWarningIssued, 1) == 0)
-                    Log.WriteWarningMessage(LOGTAG, "LicenseWarning", null, $"Licensed Google Workspace feature seats exceeded for {type} ({approved}). Some items will not be backed up.");
+                if (increment && Interlocked.Exchange(ref _groupLicenseWarningIssued, 1) == 0)
+                    Log.WriteWarningMessage(LOGTAG, "LicenseWarning", null, Strings.LicenseWarning(type, approved));
                 return false;
             }
         }
@@ -240,8 +241,8 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
             var current = _sharedDriveCount;
             if (current >= approved)
             {
-                if (Interlocked.Exchange(ref _sharedDriveLicenseWarningIssued, 1) == 0)
-                    Log.WriteWarningMessage(LOGTAG, "LicenseWarning", null, $"Licensed Google Workspace feature seats exceeded for {type} ({approved}). Some items will not be backed up.");
+                if (increment && Interlocked.Exchange(ref _sharedDriveLicenseWarningIssued, 1) == 0)
+                    Log.WriteWarningMessage(LOGTAG, "LicenseWarning", null, Strings.LicenseWarning(type, approved));
                 return false;
             }
         }
@@ -251,8 +252,8 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
             var current = _siteCount;
             if (current >= approved)
             {
-                if (Interlocked.Exchange(ref _siteLicenseWarningIssued, 1) == 0)
-                    Log.WriteWarningMessage(LOGTAG, "LicenseWarning", null, $"Licensed Google Workspace feature seats exceeded for {type} ({approved}). Some items will not be backed up.");
+                if (increment && Interlocked.Exchange(ref _siteLicenseWarningIssued, 1) == 0)
+                    Log.WriteWarningMessage(LOGTAG, "LicenseWarning", null, Strings.LicenseWarning(type, approved));
                 return false;
             }
         }
@@ -262,7 +263,7 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
             return true;
         }
 
-        if (_enumerationCounter.TryAdd(targetpath, true))
+        if (increment && _enumerationCounter.TryAdd(targetpath, true))
         {
             if (type == GoogleRootType.Users)
                 Interlocked.Increment(ref _userCount);
