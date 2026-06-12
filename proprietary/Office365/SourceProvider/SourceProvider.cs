@@ -245,8 +245,9 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
     /// <param name="path">The path to verify.</param>
     /// <param name="type">The type of entry.</param>
     /// <param name="id">The ID of the entry.</param>
+    /// <param name="increment">Whether to increment the counter if the license is approved.</param>
     /// <returns><c>true</c> if the license is approved; otherwise, <c>false</c>.</returns>
-    internal bool LicenseApprovedForEntry(string path, Office365MetaType type, string id)
+    internal bool LicenseApprovedForEntry(string path, Office365MetaType type, string id, bool increment)
     {
         // We do not limit restores
         if (UsedForRestoreOperation)
@@ -258,39 +259,36 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
         if (_enumerationCounter.ContainsKey(targetpath))
             return true;
 
-        int approved = 0;
-        int current = 0;
-
         if (type.HasFlag(Office365MetaType.Users))
         {
-            approved = LicenseChecker.LicenseHelper.AvailableOffice365UserSeats;
-            current = _userCount;
+            var approved = LicenseChecker.LicenseHelper.AvailableOffice365UserSeats;
+            var current = _userCount;
             if (current >= approved)
             {
-                if (Interlocked.Exchange(ref _userLicenseWarningIssued, 1) == 0)
-                    Library.Logging.Log.WriteWarningMessage(LOGTAG, "LicenseWarning", null, $"Licensed Microsoft 365 feature seats exceeded for {type} ({approved}). Some items will not be backed up.");
+                if (increment && Interlocked.Exchange(ref _userLicenseWarningIssued, 1) == 0)
+                    Library.Logging.Log.WriteWarningMessage(LOGTAG, "LicenseWarning", null, Strings.LicenseWarning(type, approved));
                 return false;
             }
         }
         else if (type.HasFlag(Office365MetaType.Groups))
         {
-            approved = LicenseChecker.LicenseHelper.AvailableOffice365GroupSeats;
-            current = _groupCount;
+            var approved = LicenseChecker.LicenseHelper.AvailableOffice365GroupSeats;
+            var current = _groupCount;
             if (current >= approved)
             {
-                if (Interlocked.Exchange(ref _groupLicenseWarningIssued, 1) == 0)
-                    Library.Logging.Log.WriteWarningMessage(LOGTAG, "LicenseWarning", null, $"Licensed Microsoft 365 feature seats exceeded for {type} ({approved}). Some items will not be backed up.");
+                if (increment && Interlocked.Exchange(ref _groupLicenseWarningIssued, 1) == 0)
+                    Library.Logging.Log.WriteWarningMessage(LOGTAG, "LicenseWarning", null, Strings.LicenseWarning(type, approved));
                 return false;
             }
         }
         else if (type.HasFlag(Office365MetaType.Sites))
         {
-            approved = LicenseChecker.LicenseHelper.AvailableOffice365SiteSeats;
-            current = _siteCount;
+            var approved = LicenseChecker.LicenseHelper.AvailableOffice365SiteSeats;
+            var current = _siteCount;
             if (current >= approved)
             {
-                if (Interlocked.Exchange(ref _siteLicenseWarningIssued, 1) == 0)
-                    Library.Logging.Log.WriteWarningMessage(LOGTAG, "LicenseWarning", null, $"Licensed Microsoft 365 feature seats exceeded for {type} ({approved}). Some items will not be backed up.");
+                if (increment && Interlocked.Exchange(ref _siteLicenseWarningIssued, 1) == 0)
+                    Library.Logging.Log.WriteWarningMessage(LOGTAG, "LicenseWarning", null, Strings.LicenseWarning(type, approved));
                 return false;
             }
         }
@@ -300,7 +298,7 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
             return true;
         }
 
-        if (_enumerationCounter.TryAdd(targetpath, true))
+        if (increment && _enumerationCounter.TryAdd(targetpath, true))
         {
             if (type.HasFlag(Office365MetaType.Users))
                 Interlocked.Increment(ref _userCount);

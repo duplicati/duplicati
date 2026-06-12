@@ -19,11 +19,14 @@ internal enum Office365UserType
     Chats = 128
 }
 
-internal class UserSourceEntry(SourceProvider provider, string path, GraphUser user)
-    : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(path, user.Id)), user.CreatedDateTime.FromGraphDateTime(), null)
+internal class UserSourceEntry(SourceProvider provider, string parentPath, GraphUser user)
+    : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, user.Id)), user.CreatedDateTime.FromGraphDateTime(), null)
 {
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        if (!provider.LicenseApprovedForEntry(parentPath, Office365MetaType.Users, user.Id, true))
+            yield break;
+
         foreach (var type in provider.IncludedUserTypes)
         {
             if (cancellationToken.IsCancellationRequested)
