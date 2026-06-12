@@ -109,8 +109,10 @@ public class SharedRemoteOperation
     public static async Task<SourceProviderTupleDisposeWrapper> GetSourceProviderForTesting(Connection connection, IApplicationSettings applicationSettings, string url, string? backupId, long connectionStringId, string? sourcePrefix, CancellationToken cancelToken)
     {
         (url, var opts) = await ExpandUrl(connection, applicationSettings, url, backupId, connectionStringId, sourcePrefix, cancelToken);
+        // Prevent the source provider from rejecting requests when we are simply testing
+        opts["store-metadata-content-in-database"] = "true";
         var modules = ConfigureModules(opts);
-        var sourceProvider = await Library.DynamicLoader.SourceProviderLoader.GetSourceProviderForTesting(url, "", opts, cancelToken);
+        var sourceProvider = await Library.DynamicLoader.SourceProviderLoader.GetSourceProvider(url, "", opts, cancelToken);
 
         return new SourceProviderTupleDisposeWrapper(sourceProvider, modules);
     }

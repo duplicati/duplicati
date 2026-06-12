@@ -19,7 +19,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using Duplicati.Library.Interface;
-using Duplicati.Library.Main;
 using Duplicati.Server;
 using Duplicati.Server.Database;
 using Duplicati.WebserverCore.Abstractions;
@@ -61,10 +60,20 @@ public record WebModules : IEndpointV1
                 options[k] = opts[k];
         }
 
-        return new Dto.WebModuleOutputDto(
-            Status: "OK",
-            Result: await m.Execute(options, cancellationToken).ConfigureAwait(false)
-        );
+        try
+        {
+            return new Dto.WebModuleOutputDto(
+                Status: "OK",
+                Result: await m.Execute(options, cancellationToken).ConfigureAwait(false)
+            );
+        }
+        catch (Exception ex)
+        {
+            return new Dto.WebModuleOutputDto(
+                Status: "FAILED",
+                Result: new Dictionary<string, string> { { "error", ex.Message } }
+            );
+        }
     }
 
 }
