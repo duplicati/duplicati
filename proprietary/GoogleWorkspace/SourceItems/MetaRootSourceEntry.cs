@@ -35,10 +35,8 @@ internal class MetaRootSourceEntry(SourceProvider provider, string parentPath, s
                     {
                         if (cancellationToken.IsCancellationRequested) yield break;
 
-                        if (!provider.LicenseApprovedForEntry(Path, GoogleRootType.Users, user.Id))
-                            yield break;
-
-                        yield return new UserSourceEntry(provider, this.Path, user.PrimaryEmail);
+                        if (provider.LicenseApprovedForEntry(Path, GoogleRootType.Users, user.Id, false))
+                            yield return new UserSourceEntry(provider, this.Path, user.PrimaryEmail);
                     }
                 }
 
@@ -64,10 +62,8 @@ internal class MetaRootSourceEntry(SourceProvider provider, string parentPath, s
                     {
                         if (cancellationToken.IsCancellationRequested) yield break;
 
-                        if (!provider.LicenseApprovedForEntry(Path, GoogleRootType.Groups, group.Id))
-                            yield break;
-
-                        yield return new GroupSourceEntry(provider, this.Path, group);
+                        if (provider.LicenseApprovedForEntry(Path, GoogleRootType.Groups, group.Id, false))
+                            yield return new GroupSourceEntry(provider, this.Path, group);
                     }
                 }
                 nextPageToken = groups.NextPageToken;
@@ -112,10 +108,8 @@ internal class MetaRootSourceEntry(SourceProvider provider, string parentPath, s
                     {
                         if (cancellationToken.IsCancellationRequested) yield break;
 
-                        if (!provider.LicenseApprovedForEntry(Path, GoogleRootType.Sites, file.Id))
-                            yield break;
-
-                        yield return new SiteSourceEntry(this.Path, file);
+                        if (provider.LicenseApprovedForEntry(Path, GoogleRootType.Sites, file.Id, false))
+                            yield return new SiteSourceEntry(provider, this.Path, file);
                     }
                 }
                 nextPageToken = files?.NextPageToken;
