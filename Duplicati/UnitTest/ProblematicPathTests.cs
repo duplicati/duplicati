@@ -89,31 +89,23 @@ namespace Duplicati.UnitTest
             // Backup all files.
             var options = new Dictionary<string, string>(this.TestOptions);
             using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
-            {
-                var backupResults = await c.BackupAsync(new[] { this.DATAFOLDER });
-                Assert.AreEqual(0, backupResults.Errors.Count());
-                Assert.AreEqual(0, backupResults.Warnings.Count());
-            }
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
 
             // Restore all files.
             var restoreOptions = new Dictionary<string, string>(options) { ["restore-path"] = this.RESTOREFOLDER };
             using (var c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
             {
-                var restoreResults = await c.RestoreAsync(null);
-                Assert.AreEqual(0, restoreResults.Errors.Count());
-                Assert.AreEqual(0, restoreResults.Warnings.Count());
+                TestUtils.AssertResults(await c.RestoreAsync(null));
 
                 TestUtils.AssertDirectoryTreesAreEquivalent(this.DATAFOLDER, this.RESTOREFOLDER, true, "Restore");
 
                 // List results using * should return a match for each directory.
                 var listResults = await c.ListAsync(SystemIO.IO_OS.PathCombine(dirWithAsterisk, file));
-                Assert.AreEqual(0, listResults.Errors.Count());
-                Assert.AreEqual(0, listResults.Warnings.Count());
+                TestUtils.AssertResults(listResults);
                 Assert.AreEqual(directories.Count, listResults.Files.Count());
 
                 listResults = await c.ListAsync(SystemIO.IO_OS.PathCombine(dirWithQuestionMark, file));
-                Assert.AreEqual(0, listResults.Errors.Count());
-                Assert.AreEqual(0, listResults.Warnings.Count());
+                TestUtils.AssertResults(listResults);
                 // List results using ? should return 3 matches in Linux,
                 // one for the directory with '*' and one for the directory
                 // with '?', plus one for directory 'X'; but should return
@@ -134,14 +126,11 @@ namespace Duplicati.UnitTest
 
                         // Verify that list result using verbatim identifier contains only one file.
                         var listResults = await c.ListAsync(verbatimFilePath);
-                        Assert.AreEqual(0, listResults.Errors.Count());
-                        Assert.AreEqual(0, listResults.Warnings.Count());
+                        TestUtils.AssertResults(listResults);
                         Assert.AreEqual(1, listResults.Files.Count());
                         Assert.AreEqual(expectedFilePath, listResults.Files.Single().Path);
 
-                        var restoreResults = await c.RestoreAsync(new[] { verbatimFilePath });
-                        Assert.AreEqual(0, restoreResults.Errors.Count());
-                        Assert.AreEqual(0, restoreResults.Warnings.Count());
+                        TestUtils.AssertResults(await c.RestoreAsync(new[] { verbatimFilePath }));
 
                         var fileName = SystemIO.IO_OS.PathGetFileName(expectedFilePath);
                         var restoredFilePath = SystemIO.IO_OS.PathCombine(this.RESTOREFOLDER, fileName);
@@ -157,8 +146,7 @@ namespace Duplicati.UnitTest
             using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
                 var backupResults = await c.BackupAsync(new[] { this.DATAFOLDER }, filter);
-                Assert.AreEqual(0, backupResults.Errors.Count());
-                Assert.AreEqual(0, backupResults.Warnings.Count());
+                TestUtils.AssertResults(backupResults);
                 Assert.AreEqual(directories.Count, backupResults.ExaminedFiles);
             }
 
@@ -171,8 +159,7 @@ namespace Duplicati.UnitTest
             using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
                 var backupResults = await c.BackupAsync(new[] { this.DATAFOLDER }, filter);
-                Assert.AreEqual(0, backupResults.Errors.Count());
-                Assert.AreEqual(0, backupResults.Warnings.Count());
+                TestUtils.AssertResults(backupResults);
                 Assert.AreEqual(verbatimAsteriskShouldMatchCount, backupResults.ExaminedFiles);
             }
         }
@@ -213,17 +200,12 @@ namespace Duplicati.UnitTest
 
             var options = new Dictionary<string, string>(this.TestOptions);
             using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
-            {
-                var backupResults = await c.BackupAsync(new[] { this.DATAFOLDER }, filter);
-                Assert.AreEqual(0, backupResults.Errors.Count());
-                Assert.AreEqual(0, backupResults.Warnings.Count());
-            }
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }, filter));
 
             using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
                 var listResults = await c.ListAsync("*");
-                Assert.AreEqual(0, listResults.Errors.Count());
-                Assert.AreEqual(0, listResults.Warnings.Count());
+                TestUtils.AssertResults(listResults);
 
                 var backedUpPaths = listResults.Files.Select(x => x.Path).ToArray();
                 Assert.AreEqual(2, backedUpPaths.Length);
@@ -246,28 +228,18 @@ namespace Duplicati.UnitTest
 
             var options = new Dictionary<string, string>(this.TestOptions);
             using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
-            {
-                var backupResults = await c.BackupAsync(new[] { this.DATAFOLDER });
-                Assert.AreEqual(0, backupResults.Errors.Count());
-                Assert.AreEqual(0, backupResults.Warnings.Count());
-            }
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
 
             var restoreOptions = new Dictionary<string, string>(this.TestOptions) { ["restore-path"] = this.RESTOREFOLDER };
             using (var c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
-            {
-                var restoreResults = await c.RestoreAsync(new[] { filePath });
-                Assert.AreEqual(0, restoreResults.Errors.Count());
-                Assert.AreEqual(0, restoreResults.Warnings.Count());
-            }
+                TestUtils.AssertResults(await c.RestoreAsync(new[] { filePath }));
 
             var restoreFilePath = SystemIO.IO_OS.PathCombine(this.RESTOREFOLDER, fileName);
             Assert.IsTrue(SystemIO.IO_OS.FileExists(restoreFilePath));
 
             var restoredStream = new MemoryStream();
-            using (FileStream fileStream = SystemIO.IO_OS.FileOpenRead(restoreFilePath))
-            {
+            using (var fileStream = SystemIO.IO_OS.FileOpenRead(restoreFilePath))
                 Utility.CopyStream(fileStream, restoredStream);
-            }
 
             Assert.AreEqual(fileBytes, restoredStream.ToArray());
         }
@@ -282,9 +254,8 @@ namespace Duplicati.UnitTest
         public async Task ProblematicSuffixesAsync(string pathComponent, bool skipOnWindows)
         {
             if (OperatingSystem.IsWindows() && skipOnWindows)
-            {
-                return;
-            }
+                Assert.Ignore("This test is not for Windows.");
+
 
             var folderPath = SystemIO.IO_OS.PathCombine(this.DATAFOLDER, pathComponent);
             SystemIO.IO_OS.DirectoryCreate(folderPath);
@@ -295,21 +266,13 @@ namespace Duplicati.UnitTest
 
             var options = new Dictionary<string, string>(this.TestOptions);
             using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
-            {
-                var backupResults = await c.BackupAsync(new[] { this.DATAFOLDER });
-                Assert.AreEqual(0, backupResults.Errors.Count());
-                Assert.AreEqual(0, backupResults.Warnings.Count());
-            }
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
 
             var restoreOptions = new Dictionary<string, string>(this.TestOptions) { ["restore-path"] = this.RESTOREFOLDER };
 
             // Restore just the file.
             using (var c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
-            {
-                var restoreResults = await c.RestoreAsync(new[] { filePath });
-                Assert.AreEqual(0, restoreResults.Errors.Count());
-                Assert.AreEqual(0, restoreResults.Warnings.Count());
-            }
+                TestUtils.AssertResults(await c.RestoreAsync(new[] { filePath }));
 
             var restoreFilePath = SystemIO.IO_OS.PathCombine(this.RESTOREFOLDER, pathComponent);
             TestUtils.AssertFilesAreEqual(filePath, restoreFilePath, true, pathComponent);
@@ -318,11 +281,7 @@ namespace Duplicati.UnitTest
             // Restore the entire directory.
             var pathSpec = $"[{Regex.Escape(Util.AppendDirSeparator(this.DATAFOLDER))}.*]";
             using (var c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
-            {
-                var restoreResults = await c.RestoreAsync(new[] { pathSpec });
-                Assert.AreEqual(0, restoreResults.Errors.Count());
-                Assert.AreEqual(0, restoreResults.Warnings.Count());
-            }
+                TestUtils.AssertResults(await c.RestoreAsync(new[] { pathSpec }));
 
             TestUtils.AssertDirectoryTreesAreEquivalent(this.DATAFOLDER, this.RESTOREFOLDER, true, pathComponent);
         }
