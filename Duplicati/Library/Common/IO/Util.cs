@@ -165,10 +165,14 @@ namespace Duplicati.Library.Common.IO
         {
             if (string.IsNullOrEmpty(path)) return path;
 
-            var current = Path.GetFullPath(path);
+            // 1. Separate the Alternate Data Stream suffix if it exists
+            var basePath = SystemIO.IO_OS.GetAlternateDataStreamParent(path);
+            var streamSuffix = path.Substring(basePath.Length);
+
+            var current = Path.GetFullPath(basePath);
             var ghostSegments = new Stack<string>();
 
-            // 1. Walk up the tree until we find a segment that exists on disk
+            // 2. Walk up the tree until we find a segment that exists on disk
             while (!Path.Exists(current))
             {
                 var parent = Path.GetDirectoryName(current);
@@ -183,7 +187,7 @@ namespace Duplicati.Library.Common.IO
                 current = parent;
             }
 
-            // 2. Resolve symlinks for the part of the path that actually exists
+            // 3. Resolve symlinks for the part of the path that actually exists
             // Skip symlink resolution for Windows drive roots (e.g., "C:\") as
             // ResolveLinkTarget can throw DirectoryNotFoundException on some systems
             var resolvedPath = current;
@@ -203,11 +207,12 @@ namespace Duplicati.Library.Common.IO
                 }
             }
 
-            // 3. Re-attach the non-existent segments to the resolved base path
+            // 4. Re-attach the non-existent segments to the resolved base path
             while (ghostSegments.Count > 0)
                 resolvedPath = Path.Combine(resolvedPath, ghostSegments.Pop());
 
-            return resolvedPath;
+            // 5. Re-attach the alternate data stream suffix at the very end
+            return resolvedPath + streamSuffix;
         }
     }
 }
