@@ -96,6 +96,10 @@ namespace Duplicati.UnitTest
             File.WriteAllText(filePath, "main content");
             CreateAlternateDataStream(filePath, "hiddenstream", "hidden content");
 
+            var dirPath = Path.Combine(DATAFOLDER, "testdir");
+            Directory.CreateDirectory(dirPath);
+            CreateAlternateDataStream(dirPath, "dirstream", "dir hidden content");
+
             var backupOptions = new Dictionary<string, string>(TestOptions)
             {
                 ["enable-ads-backup"] = "true",
@@ -122,6 +126,11 @@ namespace Duplicati.UnitTest
             Assert.AreEqual("main content", File.ReadAllText(restoredFilePath));
             Assert.IsTrue(AlternateDataStreamExists(restoredFilePath, "hiddenstream"));
             Assert.AreEqual("hidden content", ReadAlternateDataStream(restoredFilePath, "hiddenstream"));
+
+            var restoredDirPath = Path.Combine(RESTOREFOLDER, "testdir");
+            Assert.IsTrue(Directory.Exists(restoredDirPath));
+            Assert.IsTrue(AlternateDataStreamExists(restoredDirPath, "dirstream"));
+            Assert.AreEqual("dir hidden content", ReadAlternateDataStream(restoredDirPath, "dirstream"));
         }
 
         [Test]
