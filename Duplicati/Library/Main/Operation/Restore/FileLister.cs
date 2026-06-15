@@ -81,16 +81,23 @@ namespace Duplicati.Library.Main.Operation.Restore
                     result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_DownloadingRemoteFiles);
                     sw_get_files?.Stop();
 
-                    if (options.DisableAdsRestore)
+                    // Separate out alternate data streams so they are restored last
+                    var adsStreams = new List<FileRequest>();
+                    if (SystemIO.IO_OS.SupportsAlternateDataStreams)
                     {
-                        var newlist = new List<FileRequest>(files.Count());
+                        var hostFiles = new List<FileRequest>();
                         foreach (var f in files)
                             if (SystemIO.IO_OS.IsAlternateDataStream(f.TargetPath))
-                                Logging.Log.WriteVerboseMessage(LOGTAG, "SkipAdsRestore", "Skipping ADS restore for {0}", f.TargetPath);
+                            {
+                                if (options.DisableAdsRestore)
+                                    Logging.Log.WriteVerboseMessage(LOGTAG, "SkipAdsRestore", "Skipping ADS restore for {0}", f.TargetPath);
+                                else
+                                    adsStreams.Add(f);
+                            }
                             else
-                                newlist.Add(f);
+                                hostFiles.Add(f);
 
-                        files = newlist;
+                        files = hostFiles;
                     }
 
                     sw_write_file?.Start();
@@ -137,6 +144,12 @@ namespace Duplicati.Library.Main.Operation.Restore
                             await self.Output.WriteAsync(folder).ConfigureAwait(false);
                         sw_write_folder?.Stop();
                     }
+
+                    // Send the alternate data streams last, so their hosts are restored
+                    sw_write_file?.Start();
+                    foreach (var file in adsStreams)
+                        await self.Output.WriteAsync(new FileRequest(file.ID, file.OriginalPath, file.TargetPath, file.Hash, file.Length, file.BlocksetID, IsAlternateDataStream: true)).ConfigureAwait(false);
+                    sw_write_file?.Stop();
                 }
                 catch (Exception ex)
                 {

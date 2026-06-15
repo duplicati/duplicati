@@ -129,7 +129,10 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                         Logging.Log.WriteExplicitMessage(LOGTAG, "FileRestored", null, "{0} Restoring file {1}", my_id, file.TargetPath);
 
-                        if (file.BlocksetID == LocalDatabase.FOLDER_BLOCKSET_ID && !options.SkipMetadata)
+                        // Alternate data streams and folder metadata are restored only after all
+                        // main file content has been restored.
+                        // We rendezvous with all other processors to guarantee the main content is complete.
+                        if ((file.BlocksetID == LocalDatabase.FOLDER_BLOCKSET_ID && !options.SkipMetadata) || file.IsAlternateDataStream)
                         {
                             // Check if there are other FileProcessor's still restoring files
                             if (!decremented)
@@ -142,10 +145,16 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 decremented = true;
                             }
 
-                            await RestoreMetadataAsync(db, file, restoreDestination, block_request, block_response, options, sw_meta, sw_work_meta, sw_req, sw_resp, results.TaskControl.ProgressToken)
-                                .ConfigureAwait(false);
+                            if (file.BlocksetID == LocalDatabase.FOLDER_BLOCKSET_ID)
+                            {
+                                if (!options.SkipMetadata)
+                                    await RestoreMetadataAsync(db, file, restoreDestination, block_request, block_response, options, sw_meta, sw_work_meta, sw_req, sw_resp, results.TaskControl.ProgressToken)
+                                        .ConfigureAwait(false);
 
-                            continue;
+                                continue;
+                            }
+
+                            // ADS stream: fall through to normal file restoration now that the host is restored.
                         }
 
                         // Get information about the blocks for the file
