@@ -84,7 +84,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Windows")]
-        public async Task BackupAndRestoreAlternateDataStreamsAsync()
+        public async Task BackupAndRestoreAlternateDataStreamsAsync([Values(true, false)] bool useLegacyRestore)
         {
             if (!OperatingSystem.IsWindows())
             {
@@ -98,7 +98,8 @@ namespace Duplicati.UnitTest
 
             var backupOptions = new Dictionary<string, string>(TestOptions)
             {
-                ["enable-ads-backup"] = "true"
+                ["enable-ads-backup"] = "true",
+                ["restore-legacy"] = useLegacyRestore.ToString()
             };
 
             using (var c = new Controller("file://" + TARGETFOLDER, backupOptions, null))
@@ -110,8 +111,11 @@ namespace Duplicati.UnitTest
                 ["restore-path"] = RESTOREFOLDER
             };
 
+            if (Directory.Exists(RESTOREFOLDER))
+                Directory.Delete(RESTOREFOLDER);
+
             using (var c = new Controller("file://" + TARGETFOLDER, restoreOptions, null))
-                TestUtils.AssertResults(await c.RestoreAsync(new[] { filePath }));
+                TestUtils.AssertResults(await c.RestoreAsync(new[] { "*" }));
 
             var restoredFilePath = Path.Combine(RESTOREFOLDER, "testfile.txt");
             Assert.IsTrue(File.Exists(restoredFilePath));
@@ -290,6 +294,8 @@ namespace Duplicati.UnitTest
             Directory.CreateDirectory(dirPath);
             CreateAlternateDataStream(dirPath, "hiddenstream", "hidden content");
 
+            await File.WriteAllTextAsync(Path.Combine(DATAFOLDER, "onefile.txt"), "content");
+
             var backupOptions = new Dictionary<string, string>(TestOptions)
             {
                 ["enable-ads-backup"] = "true"
@@ -305,7 +311,7 @@ namespace Duplicati.UnitTest
             };
 
             using (var c = new Controller("file://" + TARGETFOLDER, restoreOptions, null))
-                TestUtils.AssertResults(await c.RestoreAsync(new[] { dirPath }));
+                TestUtils.AssertResults(await c.RestoreAsync(new[] { "*" }));
 
             var restoredDirPath = Path.Combine(RESTOREFOLDER, "testdir");
             Assert.IsTrue(Directory.Exists(restoredDirPath));
@@ -363,6 +369,8 @@ namespace Duplicati.UnitTest
             Directory.CreateDirectory(dirPath);
             CreateAlternateDataStream(dirPath, "hiddenstream", "hidden content");
 
+            await File.WriteAllTextAsync(Path.Combine(DATAFOLDER, "onefile.txt"), "content");
+
             var backupOptions = new Dictionary<string, string>(TestOptions)
             {
                 ["enable-ads-backup"] = "true"
@@ -379,7 +387,7 @@ namespace Duplicati.UnitTest
             };
 
             using (var c = new Controller("file://" + TARGETFOLDER, restoreOptions, null))
-                TestUtils.AssertResults(await c.RestoreAsync(new[] { dirPath }));
+                TestUtils.AssertResults(await c.RestoreAsync(new[] { "*" }));
 
             var restoredDirPath = Path.Combine(RESTOREFOLDER, "testdir");
             Assert.IsTrue(Directory.Exists(restoredDirPath));
@@ -400,6 +408,8 @@ namespace Duplicati.UnitTest
             Directory.CreateDirectory(dirPath);
             CreateAlternateDataStream(dirPath, "hiddenstream", "hidden content");
 
+            await File.WriteAllTextAsync(Path.Combine(DATAFOLDER, "onefile.txt"), "content");
+
             var backupOptions = new Dictionary<string, string>(TestOptions);
             // enable-ads-backup is not set (defaults to false)
 
@@ -412,7 +422,7 @@ namespace Duplicati.UnitTest
             };
 
             using (var c = new Controller("file://" + TARGETFOLDER, restoreOptions, null))
-                TestUtils.AssertResults(await c.RestoreAsync(new[] { dirPath }));
+                TestUtils.AssertResults(await c.RestoreAsync(new[] { "*" }));
 
             var restoredDirPath = Path.Combine(RESTOREFOLDER, "testdir");
             Assert.IsTrue(Directory.Exists(restoredDirPath));
