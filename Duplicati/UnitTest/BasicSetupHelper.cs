@@ -37,7 +37,7 @@ namespace Duplicati.UnitTest
         /// </summary>
         protected static readonly string BASEFOLDER = Path.GetFullPath(
             string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("UNITTEST_BASEFOLDER"))
-            ? "C:\\duplicati_testdata"
+            ? "duplicati_testdata"
             : Environment.GetEnvironmentVariable("UNITTEST_BASEFOLDER")
             );
 
