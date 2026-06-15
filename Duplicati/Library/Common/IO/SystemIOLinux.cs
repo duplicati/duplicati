@@ -403,17 +403,20 @@ namespace Duplicati.Library.Common.IO
             );
         }
 
-        /// <summary>
-        /// Enumerates the alternate data streams for a file (not supported on Linux/macOS).
-        /// </summary>
-        public IEnumerable<string> EnumerateAlternateDataStreams(string path)
-            => Enumerable.Empty<string>();
+        /// <inheritdoc />
+        public bool SupportsAlternateDataStreams => false;
 
-        /// <summary>
-        /// Determines whether the specified path is an alternate data stream (always false on Linux/macOS).
-        /// </summary>
+        /// <inheritdoc />
+        public IEnumerable<string> EnumerateAlternateDataStreams(string path)
+            => [];
+
+        /// <inheritdoc />
         public bool IsAlternateDataStream(string path)
             => false;
+
+        /// <inheritdoc />
+        public string GetAlternateDataStreamParent(string path)
+            => path;
     }
 }
 

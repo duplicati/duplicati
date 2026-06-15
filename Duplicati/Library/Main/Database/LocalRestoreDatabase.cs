@@ -407,12 +407,15 @@ namespace Duplicati.Library.Main.Database
         /// <param name="restoretime">The time at which the restore operation is being performed.</param>
         /// <param name="versions">An array of version identifiers to filter the filesets.</param>
         /// <param name="filter">An optional filter to apply to the files being restored.</param>
+        /// <param name="disableAdsRestore">A flag indicating whether to disable the restoration of alternate data streams.</param>
         /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
         /// <returns>A task that, when awaited, returns a tuple containing the count of files to restore and the total size of those files.</returns>
-        public async Task<Tuple<long, long>> PrepareRestoreFilelistAsync(DateTime restoretime, long[] versions, IFilter filter, CancellationToken token)
+        public async Task<Tuple<long, long>> PrepareRestoreFilelistAsync(DateTime restoretime, long[] versions, IFilter filter, bool disableAdsRestore, CancellationToken token)
         {
             m_tempfiletable = $"Fileset-{m_temptabsetguid}";
             m_tempblocktable = $"Blocks-{m_temptabsetguid}";
+
+            var enableAds = !disableAdsRestore && SystemIO.IO_OS.SupportsAlternateDataStreams;
 
             await using (var cmd = m_connection.CreateCommand())
             {
@@ -657,7 +660,15 @@ namespace Duplicati.Library.Main.Database
                             {
                                 rd.GetValues(values);
                                 var path = values[1] as string;
-                                if (path != null && FilterExpression.Matches(filter, path.ToString()!))
+
+                                if (path == null)
+                                    continue;
+
+                                var matches = FilterExpression.Matches(filter, path);
+                                if (!matches && enableAds && SystemIO.IO_OS.IsAlternateDataStream(path))
+                                    matches = FilterExpression.Matches(filter, SystemIO.IO_OS.GetAlternateDataStreamParent(path));
+
+                                if (matches)
                                 {
                                     await cmd2
                                         .SetParameterValue("@ID", values[0])
@@ -670,6 +681,10 @@ namespace Duplicati.Library.Main.Database
                             }
                         }
                     }
+
+                    // Ensure ADS targets exist before we attempt to write them
+                    if (enableAds)
+                        await EnsureAlternateDataStreamParentsAsync(filesetId, cmd, token).ConfigureAwait(false);
 
                     //creating indexes after insertion is much faster
                     await cmd.ExecuteNonQueryAsync($@"
@@ -722,6 +737,93 @@ namespace Duplicati.Library.Main.Database
             }
 
             return new Tuple<long, long>(0, 0);
+        }
+
+        /// <summary>
+        /// Ensures that the parent file or folder entry of any selected alternate data stream
+        /// is also present in the temporary file table for the given fileset. Alternate data
+        /// streams are stored as <c>&lt;parent&gt;:&lt;stream&gt;</c> entries and a filter that targets
+        /// the parent file or folder will not match them directly (and vice versa); this makes
+        /// sure both ends are restored together.
+        /// </summary>
+        /// <param name="filesetId">The fileset being restored.</param>
+        /// <param name="cmd">The command used for reading the current selection.</param>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
+        private async Task EnsureAlternateDataStreamParentsAsync(long filesetId, SqliteCommand cmd, CancellationToken token)
+        {
+            // Nothing to do on platforms that do not support alternate data streams.
+            if (!SystemIO.IO_OS.SupportsAlternateDataStreams)
+                return;
+
+            // Collect the parent paths of any alternate data streams currently selected.
+            // Folder entries are stored with a trailing directory separator ("folder\"), while
+            // file entries are not ("file.txt"), so include both forms as lookup candidates.
+            var dirsep = Util.DirectorySeparatorString;
+            var parentPaths = new HashSet<string>(
+                Library.Utility.Utility.IsFSCaseSensitive
+                    ? StringComparer.Ordinal
+                    : StringComparer.OrdinalIgnoreCase);
+
+            cmd.SetCommandAndParameters($@"
+                SELECT ""Path""
+                FROM ""{m_tempfiletable}""
+            ");
+            await using (var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false))
+                while (await rd.ReadAsync(token).ConfigureAwait(false))
+                {
+                    var path = rd.ConvertValueToString(0);
+                    if (path != null && SystemIO.IO_OS.IsAlternateDataStream(path))
+                    {
+                        // At this point, we do not know if the ADS target is a file or folder
+                        // On Windows, if the ADS target is a folder, the path does not end with a trailing backslash,
+                        // but Duplicati stores all directory paths with a trailing backslash.
+                        // To ensure we match folders, we append the trailing backslash to the path,
+                        // even though this gives a false positive for files with the same path as a folder,
+                        // but that *should* not happen, and side-effects are minimal.
+                        var parent = SystemIO.IO_OS.GetAlternateDataStreamParent(path);
+                        parentPaths.Add(parent);
+                        parentPaths.Add(parent + dirsep);
+                    }
+                }
+
+            if (parentPaths.Count == 0)
+                return;
+
+            // Push the candidate paths into a temporary table and let the database perform the
+            // entire insert in a single statement, which is much faster for larger sets.
+            await using var parentTable = await TemporaryDbValueList.CreateAsync(this, parentPaths, token).ConfigureAwait(false);
+
+            await using var insertCmd = m_connection.CreateCommand($@"
+                INSERT INTO ""{m_tempfiletable}"" (
+                    ""ID"",
+                    ""Path"",
+                    ""BlocksetID"",
+                    ""MetadataID"",
+                    ""DataVerified""
+                )
+                SELECT
+                    ""File"".""ID"",
+                    ""File"".""Path"",
+                    ""File"".""BlocksetID"",
+                    ""File"".""MetadataID"",
+                    0
+                FROM
+                    ""File"",
+                    ""FilesetEntry""
+                WHERE
+                    ""File"".""ID"" = ""FilesetEntry"".""FileID""
+                    AND ""FilesetEntry"".""FilesetID"" = @FilesetId
+                    AND ""File"".""Path"" IN (@ParentPaths)
+                    AND ""File"".""ID"" NOT IN (
+                        SELECT ""ID""
+                        FROM ""{m_tempfiletable}""
+                    )
+            ")
+                .SetTransaction(m_rtr)
+                .SetParameterValue("@FilesetId", filesetId);
+
+            await insertCmd.ExpandInClauseParameterMssqliteAsync("@ParentPaths", parentTable, token).ConfigureAwait(false);
+            await insertCmd.ExecuteNonQueryAsync(token).ConfigureAwait(false);
         }
 
         /// <summary>

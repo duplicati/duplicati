@@ -28,6 +28,7 @@ using Duplicati.Library.Interface;
 using System.Threading.Tasks;
 using System.Threading;
 using Duplicati.Library.Common.IO;
+using System.Linq;
 
 namespace Duplicati.Library.Snapshots
 {
@@ -231,14 +232,11 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The expanded list of files</returns>
         protected static IEnumerable<string> ExpandAlternateDataStreams(IEnumerable<string> files, Func<string, IEnumerable<string>> enumerateStreams)
         {
-            var result = new List<string>();
-            foreach (var file in files)
-            {
-                result.Add(file);
-                foreach (var stream in enumerateStreams(file))
-                    result.Add(file + stream);
-            }
-            return result;
+            // With no ADS support, just return the original list
+            if (!SystemIO.IO_OS.SupportsAlternateDataStreams)
+                return files;
+
+            return files.SelectMany(file => new[] { file }.Concat(enumerateStreams(file).Select(stream => file + stream)));
         }
 
         #region IDisposable interface

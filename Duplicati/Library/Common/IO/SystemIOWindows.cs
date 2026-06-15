@@ -627,26 +627,39 @@ namespace Duplicati.Library.Common.IO
         public string PathCombine(params string[] paths)
             => Path.Combine(paths);
 
-        /// <summary>
-        /// Determines whether the specified path is an alternate data stream.
-        /// </summary>
+        /// <inheritdoc />
+        public bool SupportsAlternateDataStreams => true;
+
+        /// <inheritdoc />
         public bool IsAlternateDataStream(string path)
         {
             if (string.IsNullOrWhiteSpace(path)) return false;
 
             // Extracts the root component (e.g., "C:\", "C:", "\\server\share\", or "\\?\C:\")
-            string root = Path.GetPathRoot(path);
-
-            // Isolate the remaining file/folder portion of the path
-            string relativePath = path.Substring(root.Length);
+            var root = Path.GetPathRoot(path) ?? string.Empty;
 
             // If a colon exists outside of the root structure, it's an alternate data stream
-            return relativePath.Contains(':');
+            return path.AsSpan(root.Length).Contains(':');
         }
 
-        /// <summary>
-        /// Enumerates the alternate data streams for a file.
-        /// </summary>
+        /// <inheritdoc />
+        public string GetAlternateDataStreamParent(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                return path;
+
+            // Extracts the root component (e.g., "C:\", "C:", "\\server\share\", or "\\?\C:\")
+            var root = Path.GetPathRoot(path) ?? string.Empty;
+            var relativePath = path.AsSpan(root.Length);
+
+            var idx = relativePath.IndexOf(':');
+            if (idx < 0)
+                return path;
+
+            return root + relativePath.Slice(0, idx).ToString();
+        }
+
+        /// <inheritdoc />
         [SupportedOSPlatform("windows")]
         public IEnumerable<string> EnumerateAlternateDataStreams(string path)
         {

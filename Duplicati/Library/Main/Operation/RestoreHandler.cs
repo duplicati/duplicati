@@ -500,7 +500,9 @@ namespace Duplicati.Library.Main.Operation
             }
             else if (m_result.RestoredFiles == 0)
             {
-                if (m_result.UnmodifiedFiles == 0)
+                if (m_result.UnmodifiedFiles == 0 && m_result.RestoredFolders == 0)
+                    Logging.Log.WriteWarningMessage(LOGTAG, "NoFilesOrFoldersRestored", null, "Restore completed without errors but no files or folders were restored");
+                else if (m_result.UnmodifiedFiles == 0)
                     Logging.Log.WriteWarningMessage(LOGTAG, "NoFilesRestored", null, "Restore completed without errors but no files were restored");
                 else
                     Logging.Log.WriteInformationMessage(LOGTAG, "NoFilesNeededRestore", null, "Restore completed but all files were already present");
@@ -606,7 +608,9 @@ namespace Duplicati.Library.Main.Operation
 
             if (m_result.RestoredFiles == 0)
             {
-                if (m_result.UnmodifiedFiles == 0)
+                if (m_result.UnmodifiedFiles == 0 && m_result.RestoredFolders == 0)
+                    Logging.Log.WriteWarningMessage(LOGTAG, "NoFilesOrFoldersRestored", null, "Restore completed without errors but no files or folders were restored");
+                else if (m_result.UnmodifiedFiles == 0)
                     Logging.Log.WriteWarningMessage(LOGTAG, "NoFilesRestored", null, "Restore completed without errors but no files were restored");
                 else
                     Logging.Log.WriteInformationMessage(LOGTAG, "NoFilesNeededRestore", null, "Restore completed but all files were already present");
@@ -1061,7 +1065,7 @@ namespace Duplicati.Library.Main.Operation
             using (new Logging.Timer(LOGTAG, "PrepareRestoreFileList", "PrepareRestoreFileList"))
             {
                 var c = await database
-                    .PrepareRestoreFilelistAsync(options.Time, options.Version, filter, result.TaskControl.ProgressToken)
+                    .PrepareRestoreFilelistAsync(options.Time, options.Version, filter, options.DisableAdsRestore, result.TaskControl.ProgressToken)
                     .ConfigureAwait(false);
                 result.OperationProgressUpdater.UpdatefileCount(c.Item1, c.Item2, true);
             }

@@ -202,19 +202,17 @@ namespace Duplicati.Library.Snapshots
             for (var i = 0; i < files.Length; i++)
                 files[i] = root + SystemIOWindows.AddExtendedDevicePathPrefix(files[i]).Substring(volumePath.Length);
 
-            if (!_enableAdsBackup)
+            if (!_enableAdsBackup || !SystemIO.IO_OS.SupportsAlternateDataStreams)
                 return files;
 
             // Expand ADS for each file
-            var expanded = ExpandAlternateDataStreams(files, f => SystemIO.IO_OS.EnumerateAlternateDataStreams(ConvertToSnapshotPath(f))).ToList();
+            var expanded = ExpandAlternateDataStreams(files, f => SystemIO.IO_OS.EnumerateAlternateDataStreams(ConvertToSnapshotPath(f)));
 
             // Also include ADS on the parent folder itself
             var folderPath = localFolderPath.TrimEnd(Path.DirectorySeparatorChar);
             var folderShadowPath = ConvertToSnapshotPath(folderPath);
-            foreach (var stream in SystemIO.IO_OS.EnumerateAlternateDataStreams(folderShadowPath))
-                expanded.Add(folderPath + stream);
 
-            return expanded;
+            return expanded.Concat(SystemIO.IO_OS.EnumerateAlternateDataStreams(folderShadowPath).Select(stream => folderPath + stream));
         }
         #endregion
 
