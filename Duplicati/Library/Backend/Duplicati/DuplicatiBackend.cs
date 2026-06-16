@@ -47,6 +47,15 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     /// The endpoint option name
     /// </summary>
     public const string ENDPOINT_OPTION = "duplicati-endpoint";
+    /// <summary>
+    /// The authentication timeout option name
+    /// </summary>
+    public const string AUTH_TIMEOUT_OPTION = "duplicati-auth-timeout";
+
+    /// <summary>
+    /// The default authentication timeout
+    /// </summary>
+    public const string DEFAULT_AUTH_TIMEOUT = "120s";
 
     /// <summary>
     /// The protocol key for this backend
@@ -79,6 +88,10 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     /// The backup id
     /// </summary>
     private readonly string _backup_id;
+    /// <summary>
+    /// The authentication timeout
+    /// </summary>
+    private readonly TimeSpan _authTimeout;
 
     /// <summary>
     /// The HttpClient used for requests
@@ -146,6 +159,8 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
             throw new ArgumentException(Strings.DuplicatiBackend.ErrorMissingBackupId, BACKUP_ID_OPTION);
         _auth = AuthOptionsHelper.ParseWithAlias(options, new Utility.Uri(url), AUTH_API_ID_OPTION, AUTH_API_KEY_OPTION)
             .RequireCredentials();
+
+        _authTimeout = Utility.Utility.ParseTimespanOption(options, AUTH_TIMEOUT_OPTION, DEFAULT_AUTH_TIMEOUT);
 
         _client.DefaultRequestHeaders.Add("X-Api-Key", _auth.Password);
         _client.DefaultRequestHeaders.Add("X-Organization-Id", _auth.Username);
@@ -237,7 +252,7 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
                 return;
 
             using var request = new HttpRequestMessage(HttpMethod.Get, "/credentials");
-            using var response = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, ct =>
+            using var response = await Utility.Utility.WithTimeout(_authTimeout, cancelToken, ct =>
                 _client.SendAsync(request, ct)
             ).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
@@ -474,6 +489,7 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
             new CommandLineArgument(AUTH_API_KEY_OPTION, CommandLineArgument.ArgumentType.Password, Strings.DuplicatiBackend.AuthKeyOptionsShort, Strings.DuplicatiBackend.AuthKeyOptionsLong, null, [AuthOptionsHelper.AuthPasswordOption]),
             new CommandLineArgument(BACKUP_ID_OPTION, CommandLineArgument.ArgumentType.String, Strings.DuplicatiBackend.BackupIdOptionsShort, Strings.DuplicatiBackend.BackupIdOptionsLong),
             new CommandLineArgument(ENDPOINT_OPTION, CommandLineArgument.ArgumentType.String, Strings.DuplicatiBackend.EndpointOptionsShort, Strings.DuplicatiBackend.EndpointOptionsLong),
+            new CommandLineArgument(AUTH_TIMEOUT_OPTION, CommandLineArgument.ArgumentType.Timespan, Strings.DuplicatiBackend.AuthTimeoutOptionsShort, Strings.DuplicatiBackend.AuthTimeoutOptionsLong, DEFAULT_AUTH_TIMEOUT),
             .. TimeoutOptionsHelper.GetOptions()
         ];
 
