@@ -1173,7 +1173,19 @@ namespace Duplicati.Library.Main.Operation
                 var targetfileid = restorelist.TargetFileID;
                 var targetfilehash = restorelist.TargetHash;
                 var targetfilelength = restorelist.Length;
-                if (await restoreDestination.FileExists(targetpath, result.TaskControl.ProgressToken).ConfigureAwait(false))
+                var fileExists = false;
+                try
+                {
+                    fileExists = await restoreDestination.FileExists(targetpath, result.TaskControl.ProgressToken).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "FileExistsFailed", ex, "Failed to check if file exists: \"{0}\", message: {1}", targetpath, ex.Message);
+                    if (options.UnittestMode)
+                        throw;
+                }
+
+                if (fileExists)
                 {
                     try
                     {
@@ -1208,7 +1220,7 @@ namespace Duplicati.Library.Main.Operation
                         {
                             // a file hash for verification will only be necessary if the file has exactly
                             // the wanted size so we have a chance to already mark the file as data-verified.
-                            bool calcFileHash = (currentfilelength == targetfilelength);
+                            var calcFileHash = currentfilelength == targetfilelength;
                             if (calcFileHash) filehasher.Initialize();
 
                             using (var file = await restoreDestination.OpenRead(targetpath, result.TaskControl.ProgressToken).ConfigureAwait(false))
