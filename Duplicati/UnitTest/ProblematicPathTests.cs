@@ -254,8 +254,10 @@ namespace Duplicati.UnitTest
         public async Task ProblematicSuffixesAsync(string pathComponent, bool skipOnWindows)
         {
             if (OperatingSystem.IsWindows() && skipOnWindows)
+            {
                 Assert.Ignore("This test is not for Windows.");
-
+                return;
+            }
 
             var folderPath = SystemIO.IO_OS.PathCombine(this.DATAFOLDER, pathComponent);
             SystemIO.IO_OS.DirectoryCreate(folderPath);
