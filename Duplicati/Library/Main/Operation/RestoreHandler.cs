@@ -1068,6 +1068,10 @@ namespace Duplicati.Library.Main.Operation
                     .PrepareRestoreFilelistAsync(options.Time, options.Version, filter, options.DisableAdsRestore, result.TaskControl.ProgressToken)
                     .ConfigureAwait(false);
                 result.OperationProgressUpdater.UpdatefileCount(c.Item1, c.Item2, true);
+                
+                // If there are no files to restore, just stop now, most likely not what is desired
+                if (c.Item1 == 0)
+                    throw new UserInformationException("Restore selection matched zero files, nothing to restore", "EmptyRestoreOperation");
             }
 
             if (options.DisableAdsRestore)
