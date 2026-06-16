@@ -266,7 +266,11 @@ namespace Duplicati.UnitTest
 
             var options = new Dictionary<string, string>(this.TestOptions);
             using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
-                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+            {
+                var r = await c.BackupAsync(new[] { this.DATAFOLDER });
+                Assert.AreNotEqual(r.AddedFiles, 0, "No files added");
+                TestUtils.AssertResults(r);
+            }
 
             var restoreOptions = new Dictionary<string, string>(this.TestOptions) { ["restore-path"] = this.RESTOREFOLDER };
 
