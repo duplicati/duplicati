@@ -138,6 +138,14 @@ namespace Duplicati.Library.Snapshots
         public override Stream OpenRead(string localPath)
             => SystemIO.IO_OS.FileOpenRead(localPath);
 
+        /// <inheritdoc/>
+        public override bool DirectoryExists(string localFolderPath)
+            => SystemIO.IO_OS.DirectoryExists(localFolderPath);
+
+        /// <inheritdoc/>
+        public override bool FileExists(string localFilePath)
+            => SystemIO.IO_OS.FileExists(localFilePath);
+
         /// <inheritdoc />
         public override ISourceProviderEntry GetFilesystemEntry(string path, bool isFolder)
         {
