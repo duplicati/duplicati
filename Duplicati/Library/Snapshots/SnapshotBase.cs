@@ -19,6 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -26,6 +28,7 @@ using Duplicati.Library.Interface;
 using System.Threading.Tasks;
 using System.Threading;
 using Duplicati.Library.Common.IO;
+using System.Linq;
 
 namespace Duplicati.Library.Snapshots
 {
@@ -72,14 +75,14 @@ namespace Duplicati.Library.Snapshots
         /// <param name="path">The path to get the entry for</param>
         /// <param name="isFolder">A flag indicating if the path is a folder</param>
         /// <returns>The filesystem entry</returns>
-        public virtual ISourceProviderEntry GetFilesystemEntry(string path, bool isFolder)
+        public virtual ISourceProviderEntry? GetFilesystemEntry(string path, bool isFolder)
         {
             if (isFolder && !DirectoryExists(path))
                 return null;
             else if (!isFolder && !FileExists(path))
                 return null;
 
-            return new SnapshotSourceFileEntry(this, isFolder ? Util.AppendDirSeparator(path) : path, isFolder, false);
+            return new SnapshotSourceFileEntry(this, isFolder ? Util.AppendDirSeparator(path) : path, isFolder, false, false);
         }
 
         /// <summary>
@@ -94,10 +97,18 @@ namespace Duplicati.Library.Snapshots
                 // Removing the null characters is a workaround for a bug in .NET core:
                 // https://github.com/dotnet/runtime/issues/49803
                 foreach (var f in ListFiles(source.Path))
-                    yield return new SnapshotSourceFileEntry(this, f.Trim('\0'), false, false);
+                {
+                    var entry = GetFilesystemEntry(f.Trim('\0'), false);
+                    if (entry != null)
+                        yield return entry;
+                }
 
                 foreach (var d in ListFolders(source.Path))
-                    yield return new SnapshotSourceFileEntry(this, Util.AppendDirSeparator(d.Trim('\0')), true, false);
+                {
+                    var entry = GetFilesystemEntry(Util.AppendDirSeparator(d.Trim('\0')), true);
+                    if (entry != null)
+                        yield return entry;
+                }
             }
         }
 
@@ -163,7 +174,7 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The metadata for the given file or folder</returns>
         /// <param name="localPath">The file or folder to examine</param>
         /// <param name="isSymlink">A flag indicating if the target is a symlink</param>
-        public abstract Dictionary<string, string> GetMetadata(string localPath, bool isSymlink);
+        public abstract Dictionary<string, string?> GetMetadata(string localPath, bool isSymlink);
 
         /// <summary>
         /// Gets a value indicating if the path points to a block device
@@ -178,7 +189,7 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         /// <returns>The hardlink ID</returns>
         /// <param name="localPath">The file or folder to examine</param>
-        public virtual string HardlinkTargetID(string localPath)
+        public virtual string? HardlinkTargetID(string localPath)
             => null;
 
         /// <inheritdoc />
@@ -202,7 +213,7 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         /// <returns>All folders found in the folder</returns>
         /// <param name='localFolderPath'>The folder to examinate</param>
-        protected virtual string[] ListFolders(string localFolderPath)
+        protected virtual IEnumerable<string> ListFolders(string localFolderPath)
             => Directory.GetDirectories(localFolderPath);
 
         /// <summary>
@@ -210,8 +221,23 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         /// <returns>All folders found in the folder</returns>
         /// <param name='localFolderPath'>The folder to examinate</param>
-        protected virtual string[] ListFiles(string localFolderPath)
+        protected virtual IEnumerable<string> ListFiles(string localFolderPath)
             => Directory.GetFiles(localFolderPath);
+
+        /// <summary>
+        /// Expands a list of files to include alternate data streams
+        /// </summary>
+        /// <param name="files">The list of files</param>
+        /// <param name="enumerateStreams">A function that enumerates streams for a given file path</param>
+        /// <returns>The expanded list of files</returns>
+        protected static IEnumerable<string> ExpandAlternateDataStreams(IEnumerable<string> files, Func<string, IEnumerable<string>> enumerateStreams)
+        {
+            // With no ADS support, just return the original list
+            if (!SystemIO.IO_OS.SupportsAlternateDataStreams)
+                return files;
+
+            return files.SelectMany(file => new[] { file }.Concat(enumerateStreams(file).Select(stream => file + stream)));
+        }
 
         #region IDisposable interface
 

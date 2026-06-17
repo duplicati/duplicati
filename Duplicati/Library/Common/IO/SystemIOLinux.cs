@@ -402,6 +402,21 @@ namespace Duplicati.Library.Common.IO
                 Convert.ToInt32("700", 8) /* FilePermissions.S_IRUSR | FilePermissions.S_IWUSR | FilePermissions.S_IXUSR */
             );
         }
+
+        /// <inheritdoc />
+        public bool SupportsAlternateDataStreams => false;
+
+        /// <inheritdoc />
+        public IEnumerable<string> EnumerateAlternateDataStreams(string path)
+            => [];
+
+        /// <inheritdoc />
+        public bool IsAlternateDataStream(string path)
+            => false;
+
+        /// <inheritdoc />
+        public string GetAlternateDataStreamParent(string path)
+            => path;
     }
 }
 

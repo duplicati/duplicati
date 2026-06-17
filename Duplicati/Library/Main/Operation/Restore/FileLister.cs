@@ -25,7 +25,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using CoCoL;
-using Duplicati.Library.Interface;
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Main.Database;
 
 #nullable enable
@@ -72,13 +72,33 @@ namespace Duplicati.Library.Main.Operation.Restore
                 {
                     sw_get_files?.Start();
                     // The enumerables are cast to arrays to force the query to be executed and release the database lock.
-                    var files = await db
+                    var files = (await db
                         .GetFilesAndSymlinksToRestoreAsync(result.TaskControl.ProgressToken)
                         .ToArrayAsync()
-                        .ConfigureAwait(false);
+                        .ConfigureAwait(false))
+                        .AsEnumerable();
 
                     result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_DownloadingRemoteFiles);
                     sw_get_files?.Stop();
+
+                    // Separate out alternate data streams so they are restored last
+                    var adsStreams = new List<FileRequest>();
+                    if (SystemIO.IO_OS.SupportsAlternateDataStreams)
+                    {
+                        var hostFiles = new List<FileRequest>();
+                        foreach (var f in files)
+                            if (SystemIO.IO_OS.IsAlternateDataStream(f.TargetPath))
+                            {
+                                if (options.DisableAdsRestore)
+                                    Logging.Log.WriteVerboseMessage(LOGTAG, "SkipAdsRestore", "Skipping ADS restore for {0}", f.TargetPath);
+                                else
+                                    adsStreams.Add(f);
+                            }
+                            else
+                                hostFiles.Add(f);
+
+                        files = hostFiles;
+                    }
 
                     sw_write_file?.Start();
 
@@ -124,6 +144,12 @@ namespace Duplicati.Library.Main.Operation.Restore
                             await self.Output.WriteAsync(folder).ConfigureAwait(false);
                         sw_write_folder?.Stop();
                     }
+
+                    // Send the alternate data streams last, so their hosts are restored
+                    sw_write_file?.Start();
+                    foreach (var file in adsStreams)
+                        await self.Output.WriteAsync(new FileRequest(file.ID, file.OriginalPath, file.TargetPath, file.Hash, file.Length, file.BlocksetID, IsAlternateDataStream: true)).ConfigureAwait(false);
+                    sw_write_file?.Stop();
                 }
                 catch (Exception ex)
                 {

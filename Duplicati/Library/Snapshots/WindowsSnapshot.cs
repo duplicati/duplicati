@@ -78,6 +78,11 @@ namespace Duplicati.Library.Snapshots
         private readonly IReadOnlyList<string> _sourceEntries;
 
         /// <summary>
+        /// A flag indicating if alternate data streams should be backed up
+        /// </summary>
+        private readonly bool _enableAdsBackup;
+
+        /// <summary>
         /// Constructs a new backup snapshot, using all the required disks
         /// </summary>
         /// <param name="sources">Sources to determine which volumes to include in snapshot</param>
@@ -86,6 +91,7 @@ namespace Duplicati.Library.Snapshots
         public WindowsSnapshot(IEnumerable<string> sources, IDictionary<string, string> options, bool followSymlinks)
             : base(followSymlinks)
         {
+            _enableAdsBackup = Utility.Utility.ParseBoolOption(options.AsReadOnly(), "enable-ads-backup");
             // For Windows, ensure we don't store paths with extended device path prefixes (i.e., @"\\?\" or @"\\?\UNC\")
             _sourceEntries = sources.Select(SystemIOWindows.RemoveExtendedDevicePathPrefix).ToList();
             try
@@ -148,9 +154,9 @@ namespace Duplicati.Library.Snapshots
             foreach (var folder in _sourceEntries)
             {
                 if (folder.EndsWith(Path.DirectorySeparatorChar) || DirectoryExists(folder))
-                    yield return new SnapshotSourceFileEntry(this, Util.AppendDirSeparator(folder), true, true);
+                    yield return new SnapshotSourceFileEntry(this, Util.AppendDirSeparator(folder), true, true, false);
                 else
-                    yield return new SnapshotSourceFileEntry(this, folder, false, true);
+                    yield return new SnapshotSourceFileEntry(this, folder, false, true, IO_WIN.IsAlternateDataStream(folder));
             }
         }
 
@@ -162,19 +168,16 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         /// <param name="localFolderPath">The non-shadow path of the folder to list</param>
         /// <returns>A list of non-shadow paths</returns>
-        protected override string[] ListFolders(string localFolderPath)
+        protected override IEnumerable<string> ListFolders(string localFolderPath)
         {
-            string[] tmp = null;
             var spath = ConvertToSnapshotPath(localFolderPath);
-            tmp = IO_WIN.GetDirectories(spath);
+            var tmp = IO_WIN.GetDirectories(spath);
             var root = Util.AppendDirSeparator(IO_WIN.GetPathRoot(localFolderPath));
             var volumePath = Util.AppendDirSeparator(ConvertToSnapshotPath(root));
             volumePath = SystemIOWindows.AddExtendedDevicePathPrefix(volumePath);
 
             for (var i = 0; i < tmp.Length; i++)
-            {
                 tmp[i] = root + SystemIOWindows.AddExtendedDevicePathPrefix(tmp[i]).Substring(volumePath.Length);
-            }
 
             return tmp;
         }
@@ -186,12 +189,10 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         /// <param name="localFolderPath">The non-shadow path of the folder to list</param>
         /// <returns>A list of non-shadow paths</returns>
-        protected override string[] ListFiles(string localFolderPath)
+        protected override IEnumerable<string> ListFiles(string localFolderPath)
         {
-
-            string[] files = null;
             var spath = ConvertToSnapshotPath(localFolderPath);
-            files = IO_WIN.GetFiles(spath);
+            var files = IO_WIN.GetFiles(spath);
 
             // convert back to non-shadow, i.e., non-vss version
             var root = Util.AppendDirSeparator(IO_WIN.GetPathRoot(localFolderPath));
@@ -199,11 +200,19 @@ namespace Duplicati.Library.Snapshots
             volumePath = SystemIOWindows.AddExtendedDevicePathPrefix(volumePath);
 
             for (var i = 0; i < files.Length; i++)
-            {
                 files[i] = root + SystemIOWindows.AddExtendedDevicePathPrefix(files[i]).Substring(volumePath.Length);
-            }
 
-            return files;
+            if (!_enableAdsBackup || !SystemIO.IO_OS.SupportsAlternateDataStreams)
+                return files;
+
+            // Expand ADS for each file
+            var expanded = ExpandAlternateDataStreams(files, f => SystemIO.IO_OS.EnumerateAlternateDataStreams(ConvertToSnapshotPath(f)));
+
+            // Also include ADS on the parent folder itself
+            var folderPath = localFolderPath.TrimEnd(Path.DirectorySeparatorChar);
+            var folderShadowPath = ConvertToSnapshotPath(folderPath);
+
+            return expanded.Concat(SystemIO.IO_OS.EnumerateAlternateDataStreams(folderShadowPath).Select(stream => folderPath + stream));
         }
         #endregion
 
@@ -231,6 +240,20 @@ namespace Duplicati.Library.Snapshots
             var spath = ConvertToSnapshotPath(localPath);
 
             return IO_WIN.GetCreationTimeUtc(SystemIOWindows.AddExtendedDevicePathPrefix(spath));
+        }
+
+        /// <inheritdoc />
+        public override ISourceProviderEntry GetFilesystemEntry(string path, bool isFolder)
+        {
+            if (_enableAdsBackup && SystemIO.IO_OS.IsAlternateDataStream(path))
+            {
+                var entry = base.GetFilesystemEntry(path, false);
+                if (entry != null)
+                    entry = new SnapshotSourceFileEntry(this, entry.Path, false, entry.IsRootEntry, true);
+                return entry;
+            }
+
+            return base.GetFilesystemEntry(path, isFolder);
         }
 
         /// <summary>

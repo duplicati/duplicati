@@ -116,9 +116,9 @@ namespace Duplicati.Library.Snapshots
             foreach (var sourceEntry in SourceEntries)
             {
                 if (DirectoryExists(sourceEntry) || sourceEntry.EndsWith(System.IO.Path.DirectorySeparatorChar.ToString()))
-                    yield return new SnapshotSourceFileEntry(this, Util.AppendDirSeparator(sourceEntry), true, true);
+                    yield return new SnapshotSourceFileEntry(this, Util.AppendDirSeparator(sourceEntry), true, true, false);
                 else
-                    yield return new SnapshotSourceFileEntry(this, sourceEntry, false, true);
+                    yield return new SnapshotSourceFileEntry(this, sourceEntry, false, true, false);
             }
         }
 
@@ -393,12 +393,12 @@ namespace Duplicati.Library.Snapshots
                     if (isFolder)
                     {
                         if (System.IO.Directory.Exists(snapPath))
-                            return new SnapshotSourceFileEntry(this, isFolder ? Util.AppendDirSeparator(path) : path, isFolder, false);
+                            return new SnapshotSourceFileEntry(this, isFolder ? Util.AppendDirSeparator(path) : path, isFolder, false, false);
                     }
                     else
                     {
                         if (System.IO.File.Exists(snapPath))
-                            return new SnapshotSourceFileEntry(this, isFolder ? Util.AppendDirSeparator(path) : path, isFolder, false);
+                            return new SnapshotSourceFileEntry(this, isFolder ? Util.AppendDirSeparator(path) : path, isFolder, false, false);
                     }
                 }
                 catch

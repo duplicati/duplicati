@@ -39,7 +39,8 @@ namespace Duplicati.Library.Snapshots;
 /// <param name="path">The path of the file</param>
 /// <param name="isFolder">True if the entry is a folder, false otherwise</param>
 /// <param name="isRoot">True if the entry is the root entry, false otherwise</param>
-public class SnapshotSourceFileEntry(ISnapshotService service, string path, bool isFolder, bool isRoot) : ISourceProviderEntry
+/// <param name="isAlternateStream">True if the entry is an alternate data stream, false otherwise</param>
+public class SnapshotSourceFileEntry(ISnapshotService service, string path, bool isFolder, bool isRoot, bool isAlternateStream) : ISourceProviderEntry
 {
     /// <summary>
     /// The symlink target
@@ -99,7 +100,7 @@ public class SnapshotSourceFileEntry(ISnapshotService service, string path, bool
     /// <summary>
     /// Gets a value indicating if the entry is an alternate stream
     /// </summary>
-    public bool IsAlternateStream => false;
+    public bool IsAlternateStream => isAlternateStream;
 
     /// <summary>
     /// Gets the hardlink target ID, or null if the entry is not a hardlink

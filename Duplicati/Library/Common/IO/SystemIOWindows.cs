@@ -24,11 +24,14 @@ using System.Collections.Generic;
 using System.Security.AccessControl;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 using Duplicati.Library.Interface;
 using Newtonsoft.Json;
 using System.Runtime.Versioning;
 using System.Security.Principal;
+using Microsoft.Win32.SafeHandles;
+using System.ComponentModel;
 
 namespace Duplicati.Library.Common.IO
 {
@@ -43,6 +46,93 @@ namespace Duplicati.Library.Common.IO
         private const string UncExtendedPathPrefix = @"\\?\UNC\";
 
         private static readonly string DIRSEP = Util.DirectorySeparatorString;
+
+        /// <summary>
+        /// Encapsulation of Win32 calls
+        /// </summary>
+        private static class Win32API
+        {
+            /// <summary>
+            /// The stream info levels for FindFirstStreamW
+            /// </summary>
+            public enum STREAM_INFO_LEVELS
+            {
+                FindStreamInfoStandard = 0,
+                FindStreamInfoMaxInfoLevel = 1
+            }
+
+            /// <summary>
+            /// The access mode for CreateFile to only read attributes
+            /// </summary>
+            public const uint FILE_READ_ATTRIBUTES = 0x0080;
+            /// <summary>
+            /// Open only an existing file
+            /// </summary>
+            public const uint OPEN_EXISTING = 3;
+            /// <summary>
+            /// The share mode for CreateFile to allow read access
+            /// </summary>
+            public const uint FILE_SHARE_READ = 0x00000001;
+            /// <summary>
+            /// The share mode for CreateFile to allow write access
+            /// </summary>
+            public const uint FILE_SHARE_WRITE = 0x00000002;
+            /// <summary>
+            /// The share mode for CreateFile to allow delete access
+            /// </summary>
+            public const uint FILE_SHARE_DELETE = 0x00000004;
+
+            /// <summary>
+            /// Creates a file handle
+            /// </summary>
+            /// <param name="lpFileName">The filename</param>
+            /// <param name="dwDesiredAccess">The access mode</param>
+            /// <param name="dwShareMode">The share mode</param>
+            /// <param name="lpSecurityAttributes">Pointer to security attributes</param>
+            /// <param name="dwCreationDisposition">Create mode flags</param>
+            /// <param name="dwFlagsAndAttributes">Flags and attributes</param>
+            /// <param name="hTemplateFile">Handle to a template file</param>
+            /// <returns>A filehandle for the entry</returns>
+            [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+            public static extern SafeFileHandle CreateFileW(
+                string lpFileName,
+                uint dwDesiredAccess,
+                uint dwShareMode,
+                IntPtr lpSecurityAttributes,
+                uint dwCreationDisposition,
+                uint dwFlagsAndAttributes,
+                IntPtr hTemplateFile);
+
+            /// <summary>
+            /// Gets the file size
+            /// </summary>
+            /// <param name="hFile">The file handle</param>
+            /// <param name="lpFileSize">The size of the file</param>
+            /// <returns><c>true</c> if the call succeeds, <c>false</c> otherwise
+            [DllImport("kernel32.dll", SetLastError = true)]
+            [return: MarshalAs(UnmanagedType.Bool)]
+            public static extern bool GetFileSizeEx(SafeFileHandle hFile, out long lpFileSize);
+
+            /// <summary>
+            /// The WIN32_FIND_STREAM_DATA structure
+            /// </summary>
+            [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+            public struct WIN32_FIND_STREAM_DATA
+            {
+                public long StreamSize;
+                [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 296)]
+                public string cStreamName;
+            }
+
+            [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+            public static extern IntPtr FindFirstStreamW(string lpFileName, STREAM_INFO_LEVELS InfoLevel, out WIN32_FIND_STREAM_DATA lpFindStreamData, uint dwFlags);
+
+            [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+            public static extern bool FindNextStreamW(IntPtr hFindStream, out WIN32_FIND_STREAM_DATA lpFindStreamData);
+
+            [DllImport("kernel32.dll", SetLastError = true)]
+            public static extern bool FindClose(IntPtr hFindFile);
+        }
 
         /// <summary>
         /// The current user SID
@@ -370,9 +460,6 @@ namespace Duplicati.Library.Common.IO
             File.Move(AddExtendedDevicePathPrefix(source), AddExtendedDevicePathPrefix(target));
         }
 
-        public long FileLength(string path)
-            => new FileInfo(AddExtendedDevicePathPrefix(path)).Length;
-
         public string GetPathRoot(string path)
             => IsPrefixedWithExtendedDevicePathPrefix(path)
                 ? Path.GetPathRoot(path)
@@ -539,6 +626,100 @@ namespace Duplicati.Library.Common.IO
 
         public string PathCombine(params string[] paths)
             => Path.Combine(paths);
+
+        /// <inheritdoc />
+        public bool SupportsAlternateDataStreams => true;
+
+        /// <inheritdoc />
+        public bool IsAlternateDataStream(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path)) return false;
+
+            // Extracts the root component (e.g., "C:\", "C:", "\\server\share\", or "\\?\C:\")
+            var root = Path.GetPathRoot(path) ?? string.Empty;
+
+            // If a colon exists outside of the root structure, it's an alternate data stream
+            return path.AsSpan(root.Length).Contains(':');
+        }
+
+        /// <inheritdoc />
+        public string GetAlternateDataStreamParent(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                return path;
+
+            // Extracts the root component (e.g., "C:\", "C:", "\\server\share\", or "\\?\C:\")
+            var root = Path.GetPathRoot(path) ?? string.Empty;
+            var relativePath = path.AsSpan(root.Length);
+
+            var idx = relativePath.IndexOf(':');
+            if (idx < 0)
+                return path;
+
+            return root + relativePath.Slice(0, idx).ToString();
+        }
+
+        /// <inheritdoc />
+        [SupportedOSPlatform("windows")]
+        public IEnumerable<string> EnumerateAlternateDataStreams(string path)
+        {
+            var prefixed = AddExtendedDevicePathPrefix(path);
+            var data = new Win32API.WIN32_FIND_STREAM_DATA();
+            IntPtr handle = IntPtr.Zero;
+            try
+            {
+                handle = Win32API.FindFirstStreamW(prefixed, Win32API.STREAM_INFO_LEVELS.FindStreamInfoStandard, out data, 0);
+                if (handle == new IntPtr(-1))
+                    yield break;
+
+                do
+                {
+                    // Skip the main stream (::$DATA)
+                    if (data.cStreamName == "::$DATA")
+                        continue;
+
+                    // Clean the stream name by removing the :$DATA suffix
+                    var streamName = data.cStreamName;
+                    if (streamName.EndsWith(":$DATA", StringComparison.OrdinalIgnoreCase))
+                        streamName = streamName.Substring(0, streamName.Length - ":$DATA".Length);
+
+                    yield return streamName;
+                }
+                while (Win32API.FindNextStreamW(handle, out data));
+            }
+            finally
+            {
+                if (handle != IntPtr.Zero && handle != new IntPtr(-1))
+                    Win32API.FindClose(handle);
+            }
+        }
+
+        /// <summary>
+        /// Returns the length of a file or alternate data stream.
+        /// </summary>
+        public long FileLength(string path)
+        {
+            if (!IsAlternateDataStream(path))
+                return new FileInfo(AddExtendedDevicePathPrefix(path)).Length;
+
+            using SafeFileHandle handle = Win32API.CreateFileW(
+                        AddExtendedDevicePathPrefix(path),
+                        Win32API.FILE_READ_ATTRIBUTES,
+                        Win32API.FILE_SHARE_READ | Win32API.FILE_SHARE_WRITE | Win32API.FILE_SHARE_DELETE, // Broad sharing flags avoid collisions
+                        IntPtr.Zero,
+                        Win32API.OPEN_EXISTING,
+                        0,
+                        IntPtr.Zero);
+
+            if (handle.IsInvalid)
+                throw new Win32Exception(Marshal.GetLastWin32Error(), "Failed to open handle to alternative data stream ");
+
+            // Retrieve the size directly from the stream handle
+            if (!Win32API.GetFileSizeEx(handle, out long streamSize))
+                throw new Win32Exception(Marshal.GetLastWin32Error(), "Failed to retrieve alternate data stream size.");
+
+            return streamSize;
+        }
 
         public void CreateSymlink(string symlinkfile, string target, bool asDir)
         {
