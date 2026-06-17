@@ -259,42 +259,42 @@ namespace Duplicati.UnitTest
                 TestUtils.AssertResults(await c.BackupAsync(rootItems(initial).Select(x => Path.Combine(this.DATAFOLDER, x.Replace("/", Path.DirectorySeparatorChar.ToString()))).ToArray()));
 
                 // Simple Search for 'file'
-                var search = await c.SearchEntriesAsync(null, ParseFilters("+file"), 0, 0, false);
+                var search = await c.SearchEntriesAsync(null, ParseFilters("+file"), false, 0, 0, false);
                 Assert.That(search.FileVersions.Items.Count(), Is.EqualTo(3)); // file1.txt, file2.txt, file3.txt
 
                 // Simple Search for 'notes'
-                var searchNotes = await c.SearchEntriesAsync(null, ParseFilters("+notes"), 0, 0, false);
+                var searchNotes = await c.SearchEntriesAsync(null, ParseFilters("+notes"), false, 0, 0, false);
                 Assert.That(searchNotes.FileVersions.Items.Count(), Is.EqualTo(1));
                 Assert.That(searchNotes.FileVersions.Items.First().Path.EndsWith("notes.txt"));
 
                 // Simple Search for NOT 'notes'
-                var searchNotNotes = await c.SearchEntriesAsync(null, ParseFilters("-notes"), 0, 0, false);
+                var searchNotNotes = await c.SearchEntriesAsync(null, ParseFilters("-notes"), false, 0, 0, false);
                 Assert.That(searchNotNotes.FileVersions.Items.Count(), Is.EqualTo(5));
                 Assert.That(searchNotNotes.FileVersions.Items.All(x => !x.Path.Contains("notes")), Is.True);
 
                 // Simple Search for 'folder1' folder contents
-                var searchFolder = await c.SearchEntriesAsync(null, ParseFilters("+folder1"), 0, 0, false);
+                var searchFolder = await c.SearchEntriesAsync(null, ParseFilters("+folder1"), false, 0, 0, false);
                 Assert.That(searchFolder.FileVersions.Items.All(x => x.Path.Contains("folder1")), Is.True);
 
                 // Simple Search with exact file name
-                var searchExact = await c.SearchEntriesAsync(null, ParseFilters("+file1.txt"), 0, 0, false);
+                var searchExact = await c.SearchEntriesAsync(null, ParseFilters("+file1.txt"), false, 0, 0, false);
                 Assert.That(searchExact.FileVersions.Items.Count(), Is.EqualTo(1));
                 Assert.That(searchExact.FileVersions.Items.First().Path.EndsWith("file1.txt"));
 
                 // Mixed include and exclude
-                var searchMixed = await c.SearchEntriesAsync(null, ParseFilters("+file;-file2"), 0, 0, false);
+                var searchMixed = await c.SearchEntriesAsync(null, ParseFilters("+file;-file2"), false, 0, 0, false);
                 // Include has precedence over exclude, but we include non-matches as well
                 Assert.That(searchMixed.FileVersions.Items.Count(), Is.EqualTo(6));
                 Assert.That(searchMixed.FileVersions.Items.Any(x => x.Path.Contains("file2")), Is.True);
 
                 // Mixed include and exclude
-                var searchMixed2 = await c.SearchEntriesAsync(null, ParseFilters("+file2;-file"), 0, 0, false);
+                var searchMixed2 = await c.SearchEntriesAsync(null, ParseFilters("+file2;-file"), false, 0, 0, false);
                 // Include has precedence over exclude, but we include non-matches as well
                 Assert.That(searchMixed2.FileVersions.Items.Count(), Is.EqualTo(4));
                 Assert.That(searchMixed2.FileVersions.Items.Any(x => x.Path.Contains("file2")), Is.True);
 
                 // Mixed include and exclude, wildcards
-                var searchMixed3 = await c.SearchEntriesAsync(null, ParseFilters("+file2;-*"), 0, 0, false);
+                var searchMixed3 = await c.SearchEntriesAsync(null, ParseFilters("+file2;-*"), false, 0, 0, false);
                 // Include has precedence over exclude, but we include non-matches as well
                 Assert.That(searchMixed3.FileVersions.Items.Count(), Is.EqualTo(1));
                 Assert.That(searchMixed3.FileVersions.Items.All(x => x.Path.Contains("file2")), Is.True);
@@ -302,7 +302,7 @@ namespace Duplicati.UnitTest
                 // NEW: Search inside specific folder prefix: folder1
                 var searchInFolder1 = await c.SearchEntriesAsync(
                     new[] { Path.Combine(this.DATAFOLDER, "folder1") },
-                    ParseFilters("+file"),
+                    ParseFilters("+file"), false,
                     0, 0, false);
                 Assert.That(searchInFolder1.FileVersions.Items.Count(), Is.EqualTo(2)); // file2.txt, file3.txt inside folder1
                 Assert.That(searchInFolder1.FileVersions.Items.All(x => x.Path.Contains("folder1")), Is.True);
@@ -314,7 +314,7 @@ namespace Duplicati.UnitTest
                 Path.Combine(this.DATAFOLDER, "folder1"),
                 Path.Combine(this.DATAFOLDER, "folder2")
                     },
-                    ParseFilters("+file;+notes"),
+                    ParseFilters("+file;+notes"), false,
                     0, 0, false);
                 Assert.That(searchInFolders.FileVersions.Items.Count(), Is.EqualTo(3)); // file2.txt, file3.txt, notes.txt
                 Assert.That(searchInFolders.FileVersions.Items.Any(x => x.Path.Contains("folder1")), Is.True);
@@ -847,6 +847,7 @@ namespace Duplicati.UnitTest
             var result = await db.SearchEntriesAsync(
                 null,
                 new FilterExpression("*", true),
+                false,
                 filesetIds.ToArray(),
                 0,
                 2000,

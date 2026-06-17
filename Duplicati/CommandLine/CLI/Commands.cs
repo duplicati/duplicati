@@ -476,7 +476,7 @@ namespace Duplicati.CommandLine
 
                 HandleDbAccessWithoutPassphrase(backend, options);
 
-                var res = i.SearchEntriesAsync(args.ToArray(), filter, 0, 0, false).Await();
+                var res = i.SearchEntriesAsync(args.ToArray(), filter, false, 0, 0, false).Await();
                 outwriter.WriteLine("File versions:");
                 var prevFile = string.Empty;
                 foreach (var e in res.FileVersions.Items)
