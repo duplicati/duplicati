@@ -410,6 +410,8 @@ namespace Duplicati.Library.Main.Strings
         public static string EnableAdsBackupLong { get { return LC.L("Use this option to enable backup of NTFS alternate data streams (ADS). This is a Windows-only feature that allows backing up hidden data attached to files."); } }
         public static string DisableAdsRestoreShort { get { return LC.L("Disable restore of NTFS alternate data streams"); } }
         public static string DisableAdsRestoreLong { get { return LC.L("Use this option to skip restoring NTFS alternate data streams (ADS) during a restore operation. The main file content will still be restored."); } }
+        public static string AllowPathsInLogMessagesShort { get { return LC.L("Allow paths in log messages"); } }
+        public static string AllowPathsInLogMessagesLong { get { return LC.L("Use this option to allow paths to be included in log messages sent to remote servers. By default, paths are redacted to protect sensitive information."); } }
     }
 
     internal static class Common

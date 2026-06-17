@@ -55,7 +55,7 @@ namespace Duplicati.Library.UsageReporter
         public static void Report(string key, string data = null, ReportType type = ReportType.Information)
         {
             if (_eventChannel != null && type >= MaxReportLevel)
-                try { _eventChannel.WriteNoWait(new ReportItem(type, null, key, data)); }
+                try { _eventChannel.WriteNoWait(new ReportItem(type, null, key, SensitiveDataFilter.RedactPaths(data))); }
                 catch { }
         }
 
@@ -80,7 +80,7 @@ namespace Duplicati.Library.UsageReporter
         public static void Report(Exception ex, ReportType type = ReportType.Warning)
         {
             if (_eventChannel != null && type >= MaxReportLevel)
-                try { _eventChannel.WriteNoWait(new ReportItem(type, null, "EXCEPTION", ex.ToString())); }
+                try { _eventChannel.WriteNoWait(new ReportItem(type, null, "EXCEPTION", SensitiveDataFilter.RedactPaths(ex.ToString()))); }
                 catch { }
         }
 

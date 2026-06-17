@@ -51,8 +51,9 @@ namespace Duplicati.Server
             string[]? ExtraArguments { get; }
             int PageSize { get; }
             int PageOffset { get; }
-            bool ReturnExtended { get; }
+            bool ReturnExtendedData { get; }
             bool CaseSensitiveSearch { get; }
+            bool SearchMetadata { get; }
             void SetController(Library.Main.IController? controller);
         }
 
@@ -80,8 +81,9 @@ namespace Duplicati.Server
             public string[]? ExtraArguments { get; internal set; }
             public int PageSize { get; internal set; } = 0;
             public int PageOffset { get; internal set; } = 0;
-            public bool ReturnExtended { get; internal set; } = false;
+            public bool ReturnExtendedData { get; internal set; } = false;
             public bool CaseSensitiveSearch { get; internal set; } = false;
+            public bool SearchMetadata { get; internal set; } = false;
 
             public DateTime? TaskStarted { get; set; }
             public DateTime? TaskFinished { get; set; }
@@ -258,7 +260,7 @@ namespace Duplicati.Server
             return exported;
         }
 
-        public static IRunnerData CreateTask(DuplicatiOperation operation, IBackup backup, IDictionary<string, string?>? extraOptions = null, string[]? filterStrings = null, string[]? extraArguments = null, int pageSize = 0, int pageOffset = 0, bool returnExtended = false, bool caseSensitiveSearch = false)
+        public static IRunnerData CreateTask(DuplicatiOperation operation, IBackup backup, IDictionary<string, string?>? extraOptions = null, string[]? filterStrings = null, string[]? extraArguments = null, int pageSize = 0, int pageOffset = 0, bool returnExtended = false, bool caseSensitiveSearch = false, bool includeMetadata = false)
         {
             return new RunnerData()
             {
@@ -269,8 +271,9 @@ namespace Duplicati.Server
                 ExtraArguments = extraArguments,
                 PageSize = pageSize,
                 PageOffset = pageOffset,
-                ReturnExtended = returnExtended,
-                CaseSensitiveSearch = caseSensitiveSearch
+                ReturnExtendedData = returnExtended,
+                CaseSensitiveSearch = caseSensitiveSearch,
+                SearchMetadata = includeMetadata
             };
         }
 
@@ -340,7 +343,7 @@ namespace Duplicati.Server
                 pageOffset: pageOffset);
         }
 
-        public static IRunnerData CreateSearchEntriesTask(IBackup backup, string[]? filters, bool caseSensitive, string[]? folders, DateTime time, long[]? version, int pageSize, int pageOffset, bool returnExtended)
+        public static IRunnerData CreateSearchEntriesTask(IBackup backup, string[]? filters, bool caseSensitive, string[]? folders, DateTime time, long[]? version, int pageSize, int pageOffset, bool returnExtendedData, bool searchMetadata)
         {
             var dict = new Dictionary<string, string?>();
             if (time.Ticks > 0)
@@ -356,8 +359,9 @@ namespace Duplicati.Server
                 extraArguments: folders,
                 pageSize: pageSize,
                 pageOffset: pageOffset,
-                returnExtended: returnExtended,
-                caseSensitiveSearch: caseSensitive);
+                returnExtended: returnExtendedData,
+                caseSensitiveSearch: caseSensitive,
+                includeMetadata: searchMetadata);
         }
 
 
@@ -928,7 +932,7 @@ namespace Duplicati.Server
                             }
                         case DuplicatiOperation.ListFolderContents:
                             {
-                                return await controller.ListFolderAsync(data.ExtraArguments, data.PageOffset * data.PageSize, data.PageSize, data.ReturnExtended).ConfigureAwait(false);
+                                return await controller.ListFolderAsync(data.ExtraArguments, data.PageOffset * data.PageSize, data.PageSize, data.ReturnExtendedData).ConfigureAwait(false);
                             }
 
                         case DuplicatiOperation.ListFileVersions:
@@ -938,7 +942,7 @@ namespace Duplicati.Server
                         case DuplicatiOperation.SearchEntries:
                             {
                                 var parsedfilter = new FilterExpression(data.FilterStrings);
-                                return await controller.SearchEntriesAsync(data.ExtraArguments, parsedfilter, data.CaseSensitiveSearch, data.PageOffset * data.PageSize, data.PageSize, data.ReturnExtended).ConfigureAwait(false);
+                                return await controller.SearchEntriesAsync(data.ExtraArguments, parsedfilter, data.CaseSensitiveSearch, data.PageOffset * data.PageSize, data.PageSize, data.ReturnExtendedData, data.SearchMetadata).ConfigureAwait(false);
                             }
                         default:
                             //TODO: Log this
