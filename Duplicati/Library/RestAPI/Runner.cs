@@ -228,49 +228,23 @@ namespace Duplicati.Server
         }
 
         /// <summary>
-        /// Resolves the effective store-task-config mode based on encryption settings.
-        /// </summary>
-        /// <param name="mode">The requested mode.</param>
-        /// <param name="encryptionEnabled">Whether backup encryption is enabled.</param>
-        /// <returns>The effective mode to use.</returns>
-        private static StoreTaskConfigMode ResolveEffectiveMode(StoreTaskConfigMode mode, bool encryptionEnabled)
-        {
-            if (encryptionEnabled)
-            {
-                return mode switch
-                {
-                    StoreTaskConfigMode.Auto => StoreTaskConfigMode.SelfWithForcedSecrets,
-                    StoreTaskConfigMode.Self => StoreTaskConfigMode.SelfWithForcedSecrets,
-                    StoreTaskConfigMode.All => StoreTaskConfigMode.AllWithForcedSecrets,
-                    _ => mode
-                };
-            }
-            else
-            {
-                return mode switch
-                {
-                    StoreTaskConfigMode.Auto => StoreTaskConfigMode.None,
-                    StoreTaskConfigMode.Self => StoreTaskConfigMode.Self,
-                    StoreTaskConfigMode.All => StoreTaskConfigMode.All,
-                    _ => mode
-                };
-            }
-        }
-
-        /// <summary>
         /// Prepares a backup for export, optionally removing sensitive information.
         /// </summary>
         /// <param name="databaseConnection">The database connection.</param>
         /// <param name="backup">The backup to export.</param>
-        /// <param name="includeSecrets">Whether to include secrets in the export.</param>
+        /// <param name="removeSecrets">Whether to remove secrets in the export.</param>
+        /// <param name="removeAdditionalTargets">Whether to exclude additional targets from the export.</param>
         /// <returns>The import/export structure.</returns>
-        private static Serializable.ImportExportStructure PrepareBackupForExport(Connection databaseConnection, IBackup backup, bool includeSecrets)
+        private static Serializable.ImportExportStructure PrepareBackupForExport(Connection databaseConnection, IBackup backup, bool removeSecrets, bool removeAdditionalTargets)
         {
             var exported = databaseConnection.PrepareBackupForExport(backup);
-            if (!includeSecrets && exported.Backup != null)
+            if ((removeSecrets || removeAdditionalTargets) && exported.Backup != null)
             {
                 var clone = exported.Backup.Clone();
-                clone.RemoveSensitiveInformation();
+                if (removeSecrets)
+                    clone.RemoveSensitiveInformation();
+                if (removeAdditionalTargets)
+                    clone.AdditionalTargetURLs = new List<ITargetUrlEntry>();
                 exported = new Serializable.ImportExportStructure()
                 {
                     CreatedByVersion = exported.CreatedByVersion,
@@ -982,30 +956,27 @@ namespace Duplicati.Server
 
             var mode = ParseStoreTaskConfigMode(options.GetValueOrDefault("store-task-config"));
             var encryptionEnabled = IsBackupEncryptionEnabled(options);
-            var effectiveMode = ResolveEffectiveMode(mode, encryptionEnabled);
+            var effectiveMode = mode.ResolvedTaskConfigMode(encryptionEnabled);
 
             options.Remove("store-task-config");
 
-            if (effectiveMode == StoreTaskConfigMode.None)
+            if (effectiveMode == null)
                 return null;
-
-            bool includeAllTasks = effectiveMode == StoreTaskConfigMode.All || effectiveMode == StoreTaskConfigMode.AllWithForcedSecrets;
-            bool includeSecrets = effectiveMode == StoreTaskConfigMode.SelfWithForcedSecrets || effectiveMode == StoreTaskConfigMode.AllWithForcedSecrets;
 
             var tempfolder = new TempFolder();
             var temppath = System.IO.Path.Combine(tempfolder, "task-setup.json");
             using (var tempfile = Library.Utility.TempFile.WrapExistingFile(temppath))
             {
                 IEnumerable<Serializable.ImportExportStructure>? taskdata = null;
-                if (includeAllTasks)
+                if (effectiveMode.IncludeAllTasks)
                 {
                     taskdata = databaseConnection.Backups
                         .Where(x => !x.IsTemporary)
-                        .Select(x => PrepareBackupForExport(databaseConnection, databaseConnection.GetBackup(x.ID)!, includeSecrets));
+                        .Select(x => PrepareBackupForExport(databaseConnection, databaseConnection.GetBackup(x.ID)!, effectiveMode.RemoveSecrets, effectiveMode.RemoveAdditionalTargets));
                 }
                 else
                 {
-                    taskdata = [PrepareBackupForExport(databaseConnection, data.Backup, includeSecrets)];
+                    taskdata = [PrepareBackupForExport(databaseConnection, data.Backup, effectiveMode.RemoveSecrets, effectiveMode.RemoveAdditionalTargets)];
                 }
 
                 using (var fs = System.IO.File.OpenWrite(tempfile))
