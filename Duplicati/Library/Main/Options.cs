@@ -606,6 +606,8 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("internal-profiling", CommandLineArgument.ArgumentType.Boolean, Strings.Options.InternalProfilingShort, Strings.Options.InternalProfilingLong, "false"),
             new CommandLineArgument("ignore-update-if-version-exists", CommandLineArgument.ArgumentType.Boolean, Strings.Options.IgnoreUpdateIfVersionExistsShort, Strings.Options.IgnoreUpdateIfVersionExistsLong, "false"),
 
+            new CommandLineArgument("allow-paths-in-log-messages", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowPathsInLogMessagesShort, Strings.Options.AllowPathsInLogMessagesLong, "false"),
+
             .. GetOSConditionalCommands(),
             .. GetDebugConditionalCommands(),
         ];
