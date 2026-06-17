@@ -61,6 +61,7 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
         "v1:ipc:controller",
         "v2:filesystem:test-filter",
         "v2:destination:list",
+        "v1:backup:restorecontrolfiles",
 
         // "v1:subscribe:scheduler",
     ];

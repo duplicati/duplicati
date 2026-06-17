@@ -41,6 +41,7 @@ namespace Duplicati.Server.Serialization
                     new SettingsCreator(),
                     new FilterCreator(),
                     new NotificationCreator(),
+                    new TargetUrlEntryCreator()
                 }.ToList()
             };
         }

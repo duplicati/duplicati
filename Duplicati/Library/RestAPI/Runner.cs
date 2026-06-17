@@ -41,6 +41,8 @@ namespace Duplicati.Server
 {
     public static class Runner
     {
+        public const string TaskSetupFilename = "task-setup.json";
+
         public interface IRunnerData : Serialization.Interface.IQueuedTask
         {
             Serialization.Interface.IBackup? Backup { get; }
@@ -381,6 +383,20 @@ namespace Duplicati.Server
                 backup,
                 dict,
                 filters);
+        }
+
+        public static IRunnerData CreateRestoreControlFilesTask(IBackup backup, string restorePath, string[] files)
+        {
+            var dict = new Dictionary<string, string?>
+            {
+                ["restore-path"] = restorePath
+            };
+
+            return CreateTask(
+                DuplicatiOperation.RestoreControlFiles,
+                backup,
+                dict,
+                files);
         }
         private class MessageSink : Library.Main.IMessageSink
         {
@@ -827,6 +843,11 @@ namespace Duplicati.Server
                                 UpdateMetadataBase(databaseConnection, eventPollNotify, notificationUpdateService, backup, r);
                                 return r;
                             }
+                        case DuplicatiOperation.RestoreControlFiles:
+                            {
+                                var r = await controller.RestoreControlFilesAsync(data.FilterStrings).ConfigureAwait(false);
+                                return r;
+                            }
                         case DuplicatiOperation.Verify:
                             {
                                 var r = await controller.TestAsync().ConfigureAwait(false);
@@ -964,7 +985,7 @@ namespace Duplicati.Server
                 return null;
 
             var tempfolder = new TempFolder();
-            var temppath = System.IO.Path.Combine(tempfolder, "task-setup.json");
+            var temppath = System.IO.Path.Combine(tempfolder, TaskSetupFilename);
             using (var tempfile = Library.Utility.TempFile.WrapExistingFile(temppath))
             {
                 IEnumerable<Serializable.ImportExportStructure>? taskdata = null;

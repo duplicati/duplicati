@@ -102,7 +102,7 @@ public class BackupListService(Connection connection) : IBackupListService
                 using (var tf = new Library.Utility.TempFile())
                     backup.SetDBPath(tf);
 
-                connection.RegisterTemporaryBackup(backup);
+                connection.RegisterTemporaryBackup(backup, schedule);
             }
             else
             {
@@ -192,7 +192,7 @@ public class BackupListService(Connection connection) : IBackupListService
                         throw new BadRequestException(err);
 
                     if (temporary)
-                        connection.RegisterTemporaryBackup(ipx.Backup);
+                        connection.RegisterTemporaryBackup(ipx.Backup, ipx.Schedule);
                     else
                         connection.AddOrUpdateBackupAndSchedule(ipx.Backup, ipx.Schedule);
                 }

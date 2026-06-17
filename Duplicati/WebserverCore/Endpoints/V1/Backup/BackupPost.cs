@@ -18,11 +18,14 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+using Duplicati.Library.RestAPI;
 using Duplicati.Server;
 using Duplicati.Server.Database;
+using Duplicati.Server.Serializable;
 using Duplicati.Server.Serialization;
 using Duplicati.Server.Serialization.Interface;
 using Duplicati.WebserverCore.Abstractions;
+using Duplicati.WebserverCore.Dto;
 using Duplicati.WebserverCore.Endpoints.Shared;
 using Duplicati.WebserverCore.Exceptions;
 using Microsoft.AspNetCore.Mvc;
@@ -87,6 +90,14 @@ public class BackupPost : IEndpointV1
 
         group.MapPost("/backup/{id}/copytotemp", ([FromServices] Connection connection, [FromRoute] string id)
             => ExecuteCopyToTemp(GetBackup(connection, id), connection))
+            .RequireAuthorization();
+
+        group.MapPost("/backup/{id}/restore-task-config", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromRoute] string id)
+            => ExecuteRestoreTaskConfigAsync(connection, queueRunnerService, GetBackup(connection, id)))
+            .RequireAuthorization();
+
+        group.MapPost("/backup/{id}/importfromtemp", ([FromServices] Connection connection, [FromServices] IBackupListService backupListService, [FromBody] ImportBackupFromTempDto input)
+            => ExecuteImportFromTemp(input, connection, backupListService))
             .RequireAuthorization();
     }
 
@@ -242,7 +253,67 @@ public class BackupPost : IEndpointV1
             ipx.SetDBPath(tf);
         ipx.ID = null;
 
-        connection.RegisterTemporaryBackup(ipx);
+        connection.RegisterTemporaryBackup(ipx, null);
         return new Dto.CreateBackupDto(ipx.ID, ipx.IsTemporary);
+    }
+
+    private static async Task<IEnumerable<RestoreTaskConfigElementDto>> ExecuteRestoreTaskConfigAsync(Connection connection, IQueueRunnerService queueRunnerService, IBackup backup)
+    {
+        using var tempFolder = new Library.Utility.TempFolder();
+        var r = await queueRunnerService.RunImmediatelyAsync(Runner.CreateRestoreControlFilesTask(backup, tempFolder, [Runner.TaskSetupFilename])).ConfigureAwait(false) as Library.Interface.IRestoreControlFilesResults;
+
+        var restoredFile = r?.Files?.Where(x => x.EndsWith(Runner.TaskSetupFilename))?.FirstOrDefault();
+        if (string.IsNullOrWhiteSpace(restoredFile) || !File.Exists(restoredFile))
+            return [];
+
+        using var sr = new StreamReader(restoredFile);
+        var taskData = Serializer.Deserialize<Server.Serializable.ImportExportStructure[]>(sr);
+
+        var result = new List<RestoreTaskConfigElementDto>();
+        foreach (var item in taskData ?? [])
+        {
+            if (item.Backup == null)
+                continue;
+
+            item.Backup.ID = null;
+            item.Backup.SetDBPath(null);
+
+            connection.RegisterTemporaryBackup(item.Backup, item.Schedule);
+            var tempBk = item.Backup.Clone();
+            tempBk.RemoveSensitiveInformation();
+
+            result.Add(new RestoreTaskConfigElementDto()
+            {
+                BackupId = item.Backup.ID!,
+                Name = item.Backup.Name,
+                TargetURLDisplay = tempBk.TargetURL,
+                Metadata = item.Backup.Metadata
+            });
+        }
+        return result;
+    }
+
+    private static ImportBackupOutputDto ExecuteImportFromTemp(ImportBackupFromTempDto input, Connection connection, IBackupListService backupListService)
+    {
+        var source = connection.GetTemporaryBackup(input.BackupId);
+        if (source == null)
+            throw new ArgumentException("No such temporary backup");
+
+        var ipx = new ImportExportStructure()
+        {
+            CreatedByVersion = Library.AutoUpdater.UpdaterManager.SelfVersion.Version ?? "Unknown",
+            Backup = (Server.Database.Backup)source.Value.Backup,
+            Schedule = (Server.Database.Schedule?)source.Value.Schedule,
+            DisplayNames = new Dictionary<string, string>()
+        };
+
+        using var tempfile = new Library.Utility.TempFile();
+        var passphrase = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32));
+        File.WriteAllBytes(tempfile, BackupImportExportHandler.ExportToJSON(ipx, passphrase));
+
+        var res = backupListService.Import(false, input.ImportMetadata, input.Direct, false, passphrase, tempfile, null);
+        connection.UnregisterTemporaryBackup(source.Value.Backup);
+
+        return res;
     }
 }
