@@ -230,9 +230,9 @@ namespace Duplicati.Library.Main
             ).ConfigureAwait(false);
 
         /// <inheritdoc />
-        public async Task<ISearchFilesResults> SearchEntriesAsync(string[] pathprefixes, IFilter inputFilter, bool caseSensitive, long offset, long limit, bool extendedData)
-            => await RunActionAsync(new SearchFilesResults(), pathprefixes, inputFilter, new { caseSensitive, offset, limit, extendedData }, static config =>
-                Operation.SearchEntriesHandler.RunAsync(config.Options, config.Result, config.Paths, config.Filter, config.Context.caseSensitive, config.Context.offset, config.Context.limit, config.Context.extendedData)
+        public async Task<ISearchFilesResults> SearchEntriesAsync(string[] pathprefixes, IFilter inputFilter, bool caseSensitive, long offset, long limit, bool returnExtendedData, bool searchMetadata)
+            => await RunActionAsync(new SearchFilesResults(), pathprefixes, inputFilter, new { caseSensitive, offset, limit, returnExtendedData, searchMetadata }, static config =>
+                Operation.SearchEntriesHandler.RunAsync(config.Options, config.Result, config.Paths, config.Filter, config.Context.caseSensitive, config.Context.offset, config.Context.limit, config.Context.returnExtendedData, config.Context.searchMetadata)
             ).ConfigureAwait(false);
 
         /// <inheritdoc />

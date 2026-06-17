@@ -403,8 +403,8 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
         => await Rpc.InvokeAsync<IListFileVersionsResults>(nameof(IController.ListFileVersionsAsync), files, offset, limit).ConfigureAwait(false);
 
     /// <inheritdoc />
-    public async Task<ISearchFilesResults> SearchEntriesAsync(string[]? pathprefixes, IFilter? filter, bool caseSensitive, long offset, long limit, bool extendedData)
-        => await Rpc.InvokeAsync<ISearchFilesResults>(nameof(IController.SearchEntriesAsync), pathprefixes, filter, caseSensitive, offset, limit, extendedData).ConfigureAwait(false);
+    public async Task<ISearchFilesResults> SearchEntriesAsync(string[]? pathprefixes, IFilter? filter, bool caseSensitive, long offset, long limit, bool returnExtendedData, bool searchMetadata)
+        => await Rpc.InvokeAsync<ISearchFilesResults>(nameof(IController.SearchEntriesAsync), pathprefixes, filter, caseSensitive, offset, limit, returnExtendedData, searchMetadata).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<ICreateLogDatabaseResults> CreateLogDatabaseAsync(string targetpath)
