@@ -53,4 +53,8 @@ public sealed record SearchEntriesRequestDto : PaginatedRequest
     /// If true, the search will be case sensitive
     /// </summary>
     public bool? CaseSensitiveSearch { get; init; }
+    /// <summary>
+    /// If true, the search will also look in the metadata JSON
+    /// </summary>
+    public bool? SearchMetadata { get; init; }
 }
