@@ -49,4 +49,8 @@ public sealed record SearchEntriesRequestDto : PaginatedRequest
     /// The version(s) to search in
     /// </summary>
     public long[]? Version { get; init; }
+    /// <summary>
+    /// If true, the search will be case sensitive
+    /// </summary>
+    public bool? CaseSensitiveSearch { get; init; }
 }

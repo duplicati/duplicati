@@ -1385,7 +1385,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="limit">The limit for pagination.</param>
         /// <param name="token"> A cancellation token to cancel the operation.</param>
         /// <returns>A task that when awaited returns all matching file versions ordered by path and then version time.</returns>
-        public async Task<IPaginatedResults<ISearchFileVersion>> SearchEntriesAsync(IEnumerable<string>? pathprefixes, IFilter filter, long[]? filesetIds, long offset, long limit, CancellationToken token)
+        public async Task<IPaginatedResults<ISearchFileVersion>> SearchEntriesAsync(IEnumerable<string>? pathprefixes, IFilter filter, bool caseSensitive, long[]? filesetIds, long offset, long limit, CancellationToken token)
         {
             if (offset != 0 && limit <= 0)
                 throw new ArgumentException("Cannot use offset without limit specified.", nameof(offset));
@@ -1408,7 +1408,6 @@ namespace Duplicati.Library.Main.Database
             FilterExpression.AnalyzeFilters(filter, out var includes, out var excludes);
             var defaultExclude = includes && !excludes; // true = exclude unmatched, false = include unmatched
             var defaultBehavior = defaultExclude ? 1 : 0;
-            var caseSensitive = false; //TODO: Should we expose this? Or use: Library.Utility.Utility.IsFSCaseSensitive?
 
             var filterProps = new Dictionary<string, object?>();
             var caseWhenParts = new List<string>();
@@ -1455,12 +1454,12 @@ namespace Duplicati.Library.Main.Database
                         filterProps[propName] = part;
                         if (caseSensitive)
                             caseWhenParts.Add($@"
-                                WHEN instr(LOWER(pp.""Prefix"" || fl.""Path""), LOWER({propName})) > 0
+                                WHEN instr(pp.""Prefix"" || fl.""Path"", {propName}) > 0
                                 THEN {(filterExpression.Result ? "0" : "1")}
                             ");
                         else
                             caseWhenParts.Add($@"
-                                WHEN instr(pp.""Prefix"" || fl.""Path"", {propName}) > 0
+                                WHEN instr(LOWER(pp.""Prefix"" || fl.""Path""), LOWER({propName})) > 0
                                 THEN {(filterExpression.Result ? "0" : "1")}
                             ");
                     }
@@ -1474,14 +1473,14 @@ namespace Duplicati.Library.Main.Database
                         filterProps[propName] = part;
                         if (caseSensitive)
                             caseWhenParts.Add($@"
-                                WHEN LOWER(pp.""Prefix"" || fl.""Path"") GLOB LOWER({propName})
-                                THEN {(filterExpression.Result ? "0" : "1")}
-                            ");
-                        else
-                            caseWhenParts.Add($@"
                             WHEN pp.""Prefix"" || fl.""Path"" GLOB {propName}
                             THEN {(filterExpression.Result ? "0" : "1")}
                         ");
+                        else
+                            caseWhenParts.Add($@"
+                                WHEN LOWER(pp.""Prefix"" || fl.""Path"") GLOB LOWER({propName})
+                                THEN {(filterExpression.Result ? "0" : "1")}
+                            ");
                     }
                 }
                 else

@@ -235,7 +235,7 @@ public interface IController : IDisposable
     /// <param name="limit">The maximum number of results to return</param>
     /// <param name="extendedData">Whether to include extended data</param>
     /// <returns>The search results</returns>
-    Task<ISearchFilesResults> SearchEntriesAsync(string[]? pathprefixes, IFilter? filter, long offset, long limit, bool extendedData);
+    Task<ISearchFilesResults> SearchEntriesAsync(string[]? pathprefixes, IFilter? filter, bool caseSensitive, long offset, long limit, bool extendedData);
 
     /// <summary>
     /// Sends an email notification
