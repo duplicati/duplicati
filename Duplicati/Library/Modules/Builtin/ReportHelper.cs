@@ -90,6 +90,11 @@ namespace Duplicati.Library.Modules.Builtin
         protected abstract string ExtraDataOptionName { get; }
 
         /// <summary>
+        /// The option used to disable path redaction in log messages, mirrored from Options.cs
+        /// </summary>
+        protected const string OPTION_ALLOW_PATHS_IN_LOG_MESSAGES = "allow-paths-in-log-messages";
+
+        /// <summary>
         /// The default subject or title line
         /// </summary>
         protected virtual string DEFAULT_SUBJECT { get; } = "Duplicati %OPERATIONNAME% report for %backup-name%";
@@ -206,6 +211,11 @@ namespace Duplicati.Library.Modules.Builtin
         private IResultFormatSerializer m_resultFormatSerializer;
 
         /// <summary>
+        /// True if paths are allowed in log messages
+        /// </summary>
+        private bool m_allowPathsInLogMessages;
+
+        /// <summary>
         /// Configures the module
         /// </summary>
         /// <returns><c>true</c>, if module should be used, <c>false</c> otherwise.</returns>
@@ -232,6 +242,7 @@ namespace Duplicati.Library.Modules.Builtin
 
             m_options = commandlineOptions.AsReadOnly();
             m_isConfigured = true;
+            m_allowPathsInLogMessages = Utility.Utility.ParseBoolOption(m_options, OPTION_ALLOW_PATHS_IN_LOG_MESSAGES);
             m_options.TryGetValue(SubjectOptionName, out m_subject);
             m_options.TryGetValue(BodyOptionName, out m_body);
             m_options.TryGetValue(ExtraDataOptionName, out var extraData);
@@ -547,6 +558,9 @@ namespace Duplicati.Library.Modules.Builtin
                         logdata = logdata.Concat(new string[] { $"... and {m_logstorage.Count - m_maxmimumLogLines} more" });
                 }
 
+                if (!m_allowPathsInLogMessages)
+                    logdata = logdata.Select(x => SensitiveDataFilter.RedactPaths(x));
+
                 return logdata;
             }
         }
@@ -607,6 +621,12 @@ namespace Duplicati.Library.Modules.Builtin
 
                 body = ReplaceTemplate(body, result, exception, false);
                 subject = ReplaceTemplate(subject, result, exception, true);
+
+                if (!m_allowPathsInLogMessages)
+                {
+                    body = SensitiveDataFilter.RedactPaths(body);
+                    subject = SensitiveDataFilter.RedactPaths(subject);
+                }
 
                 SendMessage(subject, body);
             }

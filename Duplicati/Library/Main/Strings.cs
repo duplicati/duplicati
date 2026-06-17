@@ -404,6 +404,8 @@ namespace Duplicati.Library.Main.Strings
         public static string RepairRefreshLockInfoLong { get { return LC.L("Use this option to refresh the object lock expiration information from the backend during a repair operation. This will query the backend for the current lock status of each remote volume and update the local database accordingly. If the backend does not support locking, this option will be ignored."); } }
         public static string RefreshLockInfoCompleteShort { get { return LC.L("Perform a complete refresh of lock information"); } }
         public static string RefreshLockInfoCompleteLong { get { return LC.L("Use this option to perform a complete refresh of lock information from the backend. This will query the backend for the current lock status of each remote volume and update the local database accordingly. If this option is not specified, only the lock information for the remote volumes with no lock information will be refreshed."); } }
+        public static string AllowPathsInLogMessagesShort { get { return LC.L("Allow paths in log messages"); } }
+        public static string AllowPathsInLogMessagesLong { get { return LC.L("Use this option to allow paths to be included in log messages sent to remote servers. By default, paths are redacted to protect sensitive information."); } }
     }
 
     internal static class Common
