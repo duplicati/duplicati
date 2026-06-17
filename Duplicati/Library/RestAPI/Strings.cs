@@ -129,6 +129,8 @@ Error message: {0}", error); }
         public static string ConfigureHttpsHostnamesLong { get { return LC.L(@"Comma-separated list of hostnames to include in the HTTPS certificate (used with --configure-https)"); } }
         public static string SuppressWelcomePageShort { get { return LC.L(@"Suppress the initial welcome page"); } }
         public static string SuppressWelcomePageLong { get { return LC.L(@"Suppress the welcome page that is shown when first using the web interface"); } }
+        public static string StoretaskconfigShort { get { return LC.L(@"Store task configuration with backup"); } }
+        public static string StoretaskconfigLong { get { return LC.L(@$"Controls whether the backup configuration is stored as a control file in the backup. When encryption is enabled, {StoreTaskConfigMode.Auto} stores the current job with secrets. When encryption is not enabled, {StoreTaskConfigMode.Auto} does not store anything. When encryption is not enabled {StoreTaskConfigMode.Self} and {StoreTaskConfigMode.All} store the configuration without secrets. Note that configuration is only uploaded if the backup has changed, and a configuration change alone will not be treated as a new backup version."); } }
     }
     internal static class Scheduler
     {

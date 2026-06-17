@@ -176,6 +176,11 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
         public required Library.Interface.ICommandLineArgument[] Options { get; init; }
 
         /// <summary>
+        /// Gets or sets the server-only options.
+        /// </summary>
+        public required Library.Interface.ICommandLineArgument[] ServerOnlyOptions { get; init; }
+
+        /// <summary>
         /// Gets or sets the compression modules.
         /// </summary>
         public required IDynamicModule[] CompressionModules { get; init; }
@@ -283,6 +288,7 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
             NewLine = Environment.NewLine,
             CLRVersion = Environment.Version.ToString(),
             Options = Server.Serializable.ServerSettings.Options,
+            ServerOnlyOptions = DuplicatiWebserver.ServerOnlyOptions,
             CompressionModules = Server.Serializable.ServerSettings.CompressionModules,
             EncryptionModules = Server.Serializable.ServerSettings.EncryptionModules,
             BackendModules = Server.Serializable.ServerSettings.BackendModules,
@@ -372,6 +378,7 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
             NewLine = systeminfo.NewLine,
             CLRVersion = systeminfo.CLRVersion,
             Options = systeminfo.Options,
+            ServerOnlyOptions = systeminfo.ServerOnlyOptions,
             CompressionModules = systeminfo.CompressionModules,
             EncryptionModules = systeminfo.EncryptionModules,
             BackendModules = systeminfo.BackendModules,

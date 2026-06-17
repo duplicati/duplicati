@@ -140,6 +140,11 @@ public sealed record SystemInfoDto
     public required IEnumerable<Library.Interface.ICommandLineArgument> Options { get; init; }
 
     /// <summary>
+    /// Gets or sets the server-only options.
+    /// </summary>
+    public required IEnumerable<Library.Interface.ICommandLineArgument> ServerOnlyOptions { get; init; }
+
+    /// <summary>
     /// Gets or sets the compression modules.
     /// </summary>
     public required IEnumerable<IDynamicModule> CompressionModules { get; init; }

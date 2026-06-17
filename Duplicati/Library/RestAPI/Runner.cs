@@ -184,6 +184,104 @@ namespace Duplicati.Server
             return new CustomRunnerTask(runner);
         }
 
+        /// <summary>
+        /// Parses the raw option value into a <see cref="StoreTaskConfigMode"/>.
+        /// For backwards compatibility, boolean true is treated as <see cref="StoreTaskConfigMode.Self"/>,
+        /// boolean false as <see cref="StoreTaskConfigMode.None"/>, and null/whitespace as <see cref="StoreTaskConfigMode.Auto"/>.
+        /// </summary>
+        /// <param name="rawValue">The raw option value.</param>
+        /// <returns>The parsed mode.</returns>
+        public static StoreTaskConfigMode ParseStoreTaskConfigMode(string? rawValue)
+        {
+            if (string.IsNullOrWhiteSpace(rawValue))
+                return StoreTaskConfigMode.Auto;
+
+            // Handle boolean values for backwards compatibility, use a lambda capture to see if we hit the default case
+            var usedDefault = false;
+            var parsedBool = Utility.ParseBool(rawValue, () => { usedDefault = true; return false; });
+            if (!usedDefault)
+                return parsedBool ? StoreTaskConfigMode.Self : StoreTaskConfigMode.None;
+
+            return Utility.ParseEnum(rawValue, StoreTaskConfigMode.Auto);
+        }
+
+        /// <summary>
+        /// Determines whether the backup is configured to use encryption.
+        /// </summary>
+        /// <param name="options">The backup options dictionary.</param>
+        /// <returns>True if encryption is enabled; otherwise, false.</returns>
+        private static bool IsBackupEncryptionEnabled(Dictionary<string, string?> options)
+        {
+            // In principle, this check should be enough
+            if (Utility.ParseBoolOption(options, "no-encryption"))
+                return false;
+
+            // But since we explicitly set the encryption module, we also check that this is set
+            if (string.IsNullOrWhiteSpace(options.GetValueOrDefault("encryption-module")))
+                return false;
+
+            // Also, we need a passphrase
+            if (string.IsNullOrWhiteSpace(options.GetValueOrDefault("passphrase")))
+                return false;
+
+            return true;
+        }
+
+        /// <summary>
+        /// Resolves the effective store-task-config mode based on encryption settings.
+        /// </summary>
+        /// <param name="mode">The requested mode.</param>
+        /// <param name="encryptionEnabled">Whether backup encryption is enabled.</param>
+        /// <returns>The effective mode to use.</returns>
+        private static StoreTaskConfigMode ResolveEffectiveMode(StoreTaskConfigMode mode, bool encryptionEnabled)
+        {
+            if (encryptionEnabled)
+            {
+                return mode switch
+                {
+                    StoreTaskConfigMode.Auto => StoreTaskConfigMode.SelfWithForcedSecrets,
+                    StoreTaskConfigMode.Self => StoreTaskConfigMode.SelfWithForcedSecrets,
+                    StoreTaskConfigMode.All => StoreTaskConfigMode.AllWithForcedSecrets,
+                    _ => mode
+                };
+            }
+            else
+            {
+                return mode switch
+                {
+                    StoreTaskConfigMode.Auto => StoreTaskConfigMode.None,
+                    StoreTaskConfigMode.Self => StoreTaskConfigMode.Self,
+                    StoreTaskConfigMode.All => StoreTaskConfigMode.All,
+                    _ => mode
+                };
+            }
+        }
+
+        /// <summary>
+        /// Prepares a backup for export, optionally removing sensitive information.
+        /// </summary>
+        /// <param name="databaseConnection">The database connection.</param>
+        /// <param name="backup">The backup to export.</param>
+        /// <param name="includeSecrets">Whether to include secrets in the export.</param>
+        /// <returns>The import/export structure.</returns>
+        private static Serializable.ImportExportStructure PrepareBackupForExport(Connection databaseConnection, IBackup backup, bool includeSecrets)
+        {
+            var exported = databaseConnection.PrepareBackupForExport(backup);
+            if (!includeSecrets && exported.Backup != null)
+            {
+                var clone = exported.Backup.Clone();
+                clone.RemoveSensitiveInformation();
+                exported = new Serializable.ImportExportStructure()
+                {
+                    CreatedByVersion = exported.CreatedByVersion,
+                    Backup = clone,
+                    Schedule = exported.Schedule,
+                    DisplayNames = exported.DisplayNames
+                };
+            }
+            return exported;
+        }
+
         public static IRunnerData CreateTask(DuplicatiOperation operation, IBackup backup, IDictionary<string, string?>? extraOptions = null, string[]? filterStrings = null, string[]? extraArguments = null, int pageSize = 0, int pageOffset = 0, bool returnExtended = false, bool caseSensitiveSearch = false)
         {
             return new RunnerData()
@@ -670,7 +768,7 @@ namespace Duplicati.Server
                     ApplyAdditionalTargetUrls(backup, options);
 
                 // Pack in the system or task config for easy restore
-                if (data.Operation == DuplicatiOperation.Backup && options.ContainsKey("store-task-config"))
+                if (data.Operation == DuplicatiOperation.Backup)
                     tempfolder = StoreTaskConfigAndGetTempFolder(databaseConnection, data, options);
 
                 var useOutOfProcess = databaseConnection.ApplicationSettings.UseOutOfProcessController;
@@ -882,39 +980,47 @@ namespace Duplicati.Server
             if (data.Backup == null)
                 throw new ArgumentNullException(nameof(data.Backup));
 
-            var all_tasks = string.Equals(options["store-task-config"], "all", StringComparison.OrdinalIgnoreCase) || string.Equals(options["store-task-config"], "*", StringComparison.OrdinalIgnoreCase);
-            var this_task = Utility.ParseBool(options["store-task-config"], false);
+            var mode = ParseStoreTaskConfigMode(options.GetValueOrDefault("store-task-config"));
+            var encryptionEnabled = IsBackupEncryptionEnabled(options);
+            var effectiveMode = ResolveEffectiveMode(mode, encryptionEnabled);
 
             options.Remove("store-task-config");
 
-            TempFolder? tempfolder = null;
-            if (all_tasks || this_task)
+            if (effectiveMode == StoreTaskConfigMode.None)
+                return null;
+
+            bool includeAllTasks = effectiveMode == StoreTaskConfigMode.All || effectiveMode == StoreTaskConfigMode.AllWithForcedSecrets;
+            bool includeSecrets = effectiveMode == StoreTaskConfigMode.SelfWithForcedSecrets || effectiveMode == StoreTaskConfigMode.AllWithForcedSecrets;
+
+            var tempfolder = new TempFolder();
+            var temppath = System.IO.Path.Combine(tempfolder, "task-setup.json");
+            using (var tempfile = Library.Utility.TempFile.WrapExistingFile(temppath))
             {
-                tempfolder = new TempFolder();
-                var temppath = System.IO.Path.Combine(tempfolder, "task-setup.json");
-                using (var tempfile = Library.Utility.TempFile.WrapExistingFile(temppath))
+                IEnumerable<Serializable.ImportExportStructure>? taskdata = null;
+                if (includeAllTasks)
                 {
-                    object? taskdata = null;
-                    if (all_tasks)
-                        taskdata = databaseConnection.Backups.Where(x => !x.IsTemporary).Select(x => databaseConnection.PrepareBackupForExport(databaseConnection.GetBackup(x.ID)!));
-                    else
-                        taskdata = new[] { databaseConnection.PrepareBackupForExport(data.Backup) };
-
-                    using (var fs = System.IO.File.OpenWrite(tempfile))
-                    using (var sw = new System.IO.StreamWriter(fs, System.Text.Encoding.UTF8))
-                        Serializer.SerializeJson(sw, taskdata, true);
-
-                    tempfile.Protected = true;
-
-                    options.TryGetValue("control-files", out var controlfiles);
-
-                    if (string.IsNullOrWhiteSpace(controlfiles))
-                        controlfiles = tempfile;
-                    else
-                        controlfiles += System.IO.Path.PathSeparator + tempfile;
-
-                    options["control-files"] = controlfiles;
+                    taskdata = databaseConnection.Backups
+                        .Where(x => !x.IsTemporary)
+                        .Select(x => PrepareBackupForExport(databaseConnection, databaseConnection.GetBackup(x.ID)!, includeSecrets));
                 }
+                else
+                {
+                    taskdata = [PrepareBackupForExport(databaseConnection, data.Backup, includeSecrets)];
+                }
+
+                using (var fs = System.IO.File.OpenWrite(tempfile))
+                using (var sw = new System.IO.StreamWriter(fs, System.Text.Encoding.UTF8))
+                    Serializer.SerializeJson(sw, taskdata, true);
+
+                options.TryGetValue("control-files", out var controlfiles);
+
+                // Append this to any other control files
+                options["control-files"] = string.IsNullOrWhiteSpace(controlfiles)
+                    ? controlfiles = tempfile
+                    : controlfiles += System.IO.Path.PathSeparator + tempfile;
+
+                // Don't delete the file now, leave it for when the folder is deleted
+                tempfile.Protected = true;
             }
             return tempfolder;
         }
