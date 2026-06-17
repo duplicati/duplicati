@@ -779,7 +779,15 @@ namespace Duplicati.Library.Main.Operation.Restore
             }
             ms.Seek(0, SeekOrigin.Begin);
 
-            return await RestoreHandler.ApplyMetadata(file.TargetPath, ms, options, restoreDestination, cancellationToken);
+            try
+            {
+                return await RestoreHandler.ApplyMetadata(file.TargetPath, ms, options, restoreDestination, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                Logging.Log.WriteWarningMessage(LOGTAG, "MetadataWriteFailed", ex, "Failed to apply metadata to file: \"{0}\", message: {1}", file.TargetPath, ex.Message);
+                return false;
+            }
         }
 
         /// <summary>
