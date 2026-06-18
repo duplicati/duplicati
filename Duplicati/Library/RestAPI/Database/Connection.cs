@@ -220,9 +220,14 @@ namespace Duplicati.Server.Database
                 if (backup.ID != null)
                     throw new ArgumentException("Backup is already active, cannot make temporary");
 
-                backup.ID = Guid.NewGuid().ToString("D");
-                m_temporaryBackups.Add(backup.ID, ((Backup)backup, (Schedule?)schedule));
-                return backup.ID;
+                // Detach from input
+                var bk = ((Backup)backup).Clone();
+                var sc = ((Schedule?)schedule)?.Clone();
+
+                bk.ID = Guid.NewGuid().ToString("D");
+                m_temporaryBackups.Add(bk.ID, (bk, sc));
+
+                return bk.ID;
             }
         }
 

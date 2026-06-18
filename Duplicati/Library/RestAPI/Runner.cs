@@ -237,27 +237,14 @@ namespace Duplicati.Server
         /// <param name="databaseConnection">The database connection.</param>
         /// <param name="backup">The backup to export.</param>
         /// <param name="removeSecrets">Whether to remove secrets in the export.</param>
-        /// <param name="removeAdditionalTargets">Whether to exclude additional targets from the export.</param>
         /// <returns>The import/export structure.</returns>
-        private static Serializable.ImportExportStructure PrepareBackupForExport(Connection databaseConnection, IBackup backup, bool removeSecrets, bool removeAdditionalTargets)
+        private static Serializable.ImportExportStructure PrepareBackupForExport(Connection databaseConnection, IBackup backup, bool removeSecrets)
         {
-            var exported = databaseConnection.PrepareBackupForExport(backup);
-            if ((removeSecrets || removeAdditionalTargets) && exported.Backup != null)
-            {
-                var clone = exported.Backup.Clone();
-                if (removeSecrets)
-                    clone.RemoveSensitiveInformation();
-                if (removeAdditionalTargets)
-                    clone.AdditionalTargetURLs = new List<ITargetUrlEntry>();
-                exported = new Serializable.ImportExportStructure()
-                {
-                    CreatedByVersion = exported.CreatedByVersion,
-                    Backup = clone,
-                    Schedule = exported.Schedule,
-                    DisplayNames = exported.DisplayNames
-                };
-            }
-            return exported;
+            var prepped = ((Backup)backup).Clone();
+            if (removeSecrets)
+                prepped.RemoveSensitiveInformation();
+
+            return databaseConnection.PrepareBackupForExport(prepped);
         }
 
         public static IRunnerData CreateTask(DuplicatiOperation operation, IBackup backup, IDictionary<string, string?>? extraOptions = null, string[]? filterStrings = null, string[]? extraArguments = null, int pageSize = 0, int pageOffset = 0, bool returnExtended = false, bool caseSensitiveSearch = false, bool includeMetadata = false)
@@ -997,11 +984,11 @@ namespace Duplicati.Server
                 {
                     taskdata = databaseConnection.Backups
                         .Where(x => !x.IsTemporary)
-                        .Select(x => PrepareBackupForExport(databaseConnection, databaseConnection.GetBackup(x.ID)!, effectiveMode.RemoveSecrets, effectiveMode.RemoveAdditionalTargets));
+                        .Select(x => PrepareBackupForExport(databaseConnection, databaseConnection.GetBackup(x.ID)!, effectiveMode.RemoveSecrets));
                 }
                 else
                 {
-                    taskdata = [PrepareBackupForExport(databaseConnection, data.Backup, effectiveMode.RemoveSecrets, effectiveMode.RemoveAdditionalTargets)];
+                    taskdata = [PrepareBackupForExport(databaseConnection, data.Backup, effectiveMode.RemoveSecrets)];
                 }
 
                 using (var fs = System.IO.File.OpenWrite(tempfile))

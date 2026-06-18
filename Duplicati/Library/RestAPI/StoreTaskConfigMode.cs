@@ -32,16 +32,14 @@ public enum StoreTaskConfigMode
 {
     /// <summary>
     /// Automatically determine behavior based on encryption settings.
-    /// When encryption is enabled, behaves as <see cref="SelfOnly"/>.
+    /// When encryption is enabled, behaves as <see cref="SelfLimited"/>.
     /// When encryption is not enabled, behaves as <see cref="None"/>.
     /// </summary>
     Auto,
     /// <summary>
-    /// Include the current job's backup configuration, excluding additional targets.
-    /// When encryption is enabled, includes secrets.
-    /// When encryption is not enabled, excludes secrets.
+    /// Include the current job's backup configuration, excluding secrets.
     /// </summary>
-    SelfOnly,
+    SelfLimited,
     /// <summary>
     /// Include the current job's backup configuration.
     /// When encryption is enabled, includes all secrets.
@@ -59,10 +57,6 @@ public enum StoreTaskConfigMode
     /// </summary>
     None,
     /// <summary>
-    /// Include the current job's backup configuration with all secrets included, but excluding additional targets.
-    /// </summary>
-    SelfOnlyWithUnencryptedSecrets,
-    /// <summary>
     /// Include the current job's backup configuration with all secrets included.
     /// </summary>
     SelfWithUnencryptedSecrets,
@@ -77,11 +71,9 @@ public enum StoreTaskConfigMode
 /// </summary>
 /// <param name="IncludeAllTasks">A value indicating whether to include all tasks.</param>
 /// <param name="RemoveSecrets">A value indicating whether to remove secrets.</param>
-/// <param name="RemoveAdditionalTargets">A value indicating whether to remove additional targets.</param>
 public record ResolvedTaskConfigMode(
     bool IncludeAllTasks,
-    bool RemoveSecrets,
-    bool RemoveAdditionalTargets
+    bool RemoveSecrets
 );
 
 /// <summary>
@@ -98,8 +90,7 @@ public static class StoreTaskConfigModeExtensions
     private static StoreTaskConfigMode ResolveEffectiveMode(this StoreTaskConfigMode mode, bool encryptionEnabled)
         => mode switch
         {
-            StoreTaskConfigMode.Auto => encryptionEnabled ? StoreTaskConfigMode.SelfOnlyWithUnencryptedSecrets : StoreTaskConfigMode.None,
-            StoreTaskConfigMode.SelfOnly when encryptionEnabled => StoreTaskConfigMode.SelfOnlyWithUnencryptedSecrets,
+            StoreTaskConfigMode.Auto => encryptionEnabled ? StoreTaskConfigMode.SelfLimited : StoreTaskConfigMode.None,
             StoreTaskConfigMode.Self when encryptionEnabled => StoreTaskConfigMode.SelfWithUnencryptedSecrets,
             StoreTaskConfigMode.All when encryptionEnabled => StoreTaskConfigMode.AllWithUnencryptedSecrets,
             _ => mode
@@ -121,22 +112,9 @@ public static class StoreTaskConfigModeExtensions
 
         return new ResolvedTaskConfigMode(
             effectiveMode.IncludeAllTasks(),
-            effectiveMode.RemoveSecrets(),
-            effectiveMode.RemoveAdditionalTargets()
+            effectiveMode.RemoveSecrets()
         );
     }
-
-    /// <summary>
-    /// Determines whether additional targets should be removed based on the current mode.
-    /// </summary>
-    /// <param name="mode">The mode to check.</param>
-    /// <returns><c>true</c> if additional targets should be removed; otherwise, <c>false</c>.</returns>
-    private static bool RemoveAdditionalTargets(this StoreTaskConfigMode mode)
-        => mode switch
-        {
-            StoreTaskConfigMode.SelfOnlyWithUnencryptedSecrets or StoreTaskConfigMode.SelfOnly => true,
-            _ => false
-        };
 
     /// <summary>
     /// Determines whether secrets should be removed based on the current mode.
@@ -146,7 +124,7 @@ public static class StoreTaskConfigModeExtensions
     private static bool RemoveSecrets(this StoreTaskConfigMode mode)
         => mode switch
         {
-            StoreTaskConfigMode.SelfOnlyWithUnencryptedSecrets or StoreTaskConfigMode.SelfWithUnencryptedSecrets or StoreTaskConfigMode.AllWithUnencryptedSecrets => false,
+            StoreTaskConfigMode.SelfWithUnencryptedSecrets or StoreTaskConfigMode.AllWithUnencryptedSecrets => false,
             _ => true
         };
 

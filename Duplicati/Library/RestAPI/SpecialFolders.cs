@@ -174,7 +174,7 @@ namespace Duplicati.Server
             if (backup.Sources == null || backup.Sources.Length == 0)
                 return new Dictionary<string, string>();
 
-            var sources = backup.Sources.Distinct().Select(x =>
+            return backup.Sources.Distinct().Where(x => !string.IsNullOrWhiteSpace(x) && !x.StartsWith("@")).Select(x =>
             {
                 var sp = SpecialFolders.TranslateToDisplayString(x);
                 if (sp != null)
@@ -199,14 +199,8 @@ namespace Duplicati.Server
                 else
                     return new KeyValuePair<string, string>(x, x);
 
-            });
-
-            // Handle duplicates
-            var result = new Dictionary<string, string>();
-            foreach (var x in sources)
-                result[x.Key] = x.Value;
-
-            return result;
+            }).DistinctBy(x => x.Key)
+            .ToDictionary(x => x.Key, x => x.Value);
         }
     }
 }

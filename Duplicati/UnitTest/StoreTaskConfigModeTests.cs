@@ -18,6 +18,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+#nullable enable
 
 using Duplicati.Server;
 using NUnit.Framework;
@@ -37,7 +38,7 @@ public class StoreTaskConfigModeTests
     [TestCase("false", StoreTaskConfigMode.None)]
     [TestCase("False", StoreTaskConfigMode.None)]
     [TestCase("Auto", StoreTaskConfigMode.Auto)]
-    [TestCase("SelfOnly", StoreTaskConfigMode.SelfOnly)]
+    [TestCase("SelfLimited", StoreTaskConfigMode.SelfLimited)]
     [TestCase("Self", StoreTaskConfigMode.Self)]
     [TestCase("All", StoreTaskConfigMode.All)]
     [TestCase("None", StoreTaskConfigMode.None)]
@@ -63,58 +64,46 @@ public class StoreTaskConfigModeTests
         Assert.IsNull(mode.ResolvedTaskConfigMode(encryptionEnabled));
     }
 
-    // Full behavior matrix: mode x encryption -> (IncludeAllTasks, RemoveSecrets, RemoveAdditionalTargets)
+    // Full behavior matrix: mode x encryption -> (IncludeAllTasks, RemoveSecrets)
     // Secrets are only kept (RemoveSecrets == false) when encryption is enabled or the mode explicitly forces secrets.
-    // Additional targets are only removed for the SelfOnly family.
 
-    // Auto with encryption behaves like SelfOnly with forced secrets.
+    // Auto with encryption behaves like SelfLimited without secrets.
     [Category("Utility")]
-    [TestCase(StoreTaskConfigMode.Auto, true, false, false, true)]
-    // SelfOnly: never includes all tasks, always removes additional targets,
-    // keeps secrets only when encryption is enabled.
-    [TestCase(StoreTaskConfigMode.SelfOnly, false, false, true, true)]
-    [TestCase(StoreTaskConfigMode.SelfOnly, true, false, false, true)]
-    // Self: never includes all tasks, never removes additional targets,
-    // keeps secrets only when encryption is enabled.
-    [TestCase(StoreTaskConfigMode.Self, false, false, true, false)]
-    [TestCase(StoreTaskConfigMode.Self, true, false, false, false)]
-    // All: includes all tasks, never removes additional targets,
-    // keeps secrets only when encryption is enabled.
-    [TestCase(StoreTaskConfigMode.All, false, true, true, false)]
-    [TestCase(StoreTaskConfigMode.All, true, true, false, false)]
+    [TestCase(StoreTaskConfigMode.Auto, true, false, true)]
+    // SelfLimited: never includes all tasks, always removes secrets
+    [TestCase(StoreTaskConfigMode.SelfLimited, false, false, true)]
+    [TestCase(StoreTaskConfigMode.SelfLimited, true, false, true)]
+    // Self: never includes all tasks, keeps secrets only when encryption is enabled.
+    [TestCase(StoreTaskConfigMode.Self, false, false, true)]
+    [TestCase(StoreTaskConfigMode.Self, true, false, false)]
+    // All: includes all tasks, keeps secrets only when encryption is enabled.
+    [TestCase(StoreTaskConfigMode.All, false, true, true)]
+    [TestCase(StoreTaskConfigMode.All, true, true, false)]
     // Explicit forced-secret modes always keep secrets regardless of encryption.
-    [TestCase(StoreTaskConfigMode.SelfOnlyWithUnencryptedSecrets, false, false, false, true)]
-    [TestCase(StoreTaskConfigMode.SelfOnlyWithUnencryptedSecrets, true, false, false, true)]
-    [TestCase(StoreTaskConfigMode.SelfWithUnencryptedSecrets, false, false, false, false)]
-    [TestCase(StoreTaskConfigMode.SelfWithUnencryptedSecrets, true, false, false, false)]
-    [TestCase(StoreTaskConfigMode.AllWithUnencryptedSecrets, false, true, false, false)]
-    [TestCase(StoreTaskConfigMode.AllWithUnencryptedSecrets, true, true, false, false)]
+    [TestCase(StoreTaskConfigMode.SelfWithUnencryptedSecrets, false, false, false)]
+    [TestCase(StoreTaskConfigMode.SelfWithUnencryptedSecrets, true, false, false)]
+    [TestCase(StoreTaskConfigMode.AllWithUnencryptedSecrets, false, true, false)]
+    [TestCase(StoreTaskConfigMode.AllWithUnencryptedSecrets, true, true, false)]
     public void ResolvedTaskConfigMode_ReturnsExpectedFlags(
         StoreTaskConfigMode mode,
         bool encryptionEnabled,
         bool expectedIncludeAllTasks,
-        bool expectedRemoveSecrets,
-        bool expectedRemoveAdditionalTargets)
+        bool expectedRemoveSecrets)
     {
         var resolved = mode.ResolvedTaskConfigMode(encryptionEnabled);
 
         Assert.IsNotNull(resolved);
         Assert.AreEqual(expectedIncludeAllTasks, resolved!.IncludeAllTasks, nameof(resolved.IncludeAllTasks));
         Assert.AreEqual(expectedRemoveSecrets, resolved.RemoveSecrets, nameof(resolved.RemoveSecrets));
-        Assert.AreEqual(expectedRemoveAdditionalTargets, resolved.RemoveAdditionalTargets, nameof(resolved.RemoveAdditionalTargets));
     }
 
-    [Test]
     [Category("Utility")]
-    public void ResolvedTaskConfigMode_SelfOnly_ExcludesAdditionalTargetsButNotForSelf()
+    [Test]
+    public void AutoWithoutEncryption_ReturnsNull()
     {
-        // The defining behavior of SelfOnly vs Self: additional destinations are excluded.
-        var selfOnly = StoreTaskConfigMode.SelfOnly.ResolvedTaskConfigMode(false);
-        var self = StoreTaskConfigMode.Self.ResolvedTaskConfigMode(false);
+        var mode = StoreTaskConfigMode.Auto;
+        var resolved = mode.ResolvedTaskConfigMode(false);
 
-        Assert.IsNotNull(selfOnly);
-        Assert.IsNotNull(self);
-        Assert.IsTrue(selfOnly!.RemoveAdditionalTargets, "SelfOnly must remove additional targets");
-        Assert.IsFalse(self!.RemoveAdditionalTargets, "Self must keep additional targets");
+        Assert.IsNull(resolved);
     }
 }

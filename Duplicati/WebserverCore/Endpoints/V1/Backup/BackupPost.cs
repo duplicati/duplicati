@@ -253,8 +253,8 @@ public class BackupPost : IEndpointV1
             ipx.SetDBPath(tf);
         ipx.ID = null;
 
-        connection.RegisterTemporaryBackup(ipx, null);
-        return new Dto.CreateBackupDto(ipx.ID, ipx.IsTemporary);
+        var assignedId = connection.RegisterTemporaryBackup(ipx, null);
+        return new Dto.CreateBackupDto(assignedId, ipx.IsTemporary);
     }
 
     private static async Task<IEnumerable<RestoreTaskConfigElementDto>> ExecuteRestoreTaskConfigAsync(Connection connection, IQueueRunnerService queueRunnerService, IBackup backup)
@@ -278,16 +278,20 @@ public class BackupPost : IEndpointV1
             item.Backup.ID = null;
             item.Backup.SetDBPath(null);
 
-            connection.RegisterTemporaryBackup(item.Backup, item.Schedule);
+            var assignedId = connection.RegisterTemporaryBackup(item.Backup, item.Schedule);
+
+            // Create a version without sensitive information for display purposes
             var tempBk = item.Backup.Clone();
             tempBk.RemoveSensitiveInformation();
 
             result.Add(new RestoreTaskConfigElementDto()
             {
-                BackupId = item.Backup.ID!,
-                Name = item.Backup.Name,
+                BackupId = assignedId,
+                Name = tempBk.Name,
+                DisplayNames = item.DisplayNames,
+                AdditionalTargetUrls = (tempBk.AdditionalTargetURLs ?? []).Select(x => x.TargetUrl).ToList(),
                 TargetURLDisplay = tempBk.TargetURL,
-                Metadata = item.Backup.Metadata
+                Metadata = tempBk.Metadata
             });
         }
         return result;
@@ -297,7 +301,7 @@ public class BackupPost : IEndpointV1
     {
         var source = connection.GetTemporaryBackup(input.BackupId);
         if (source == null)
-            throw new ArgumentException("No such temporary backup");
+            throw new BadRequestException("No such temporary backup");
 
         var ipx = new ImportExportStructure()
         {
