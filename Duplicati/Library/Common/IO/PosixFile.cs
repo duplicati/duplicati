@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using Mono.Unix.Native;
 
@@ -31,6 +32,73 @@ namespace Duplicati.Library.Common.IO
     {
 
         private static readonly bool SUPPORTS_LLISTXATTR;
+
+        /// <summary>
+        /// macOS-specific P/Invoke methods for file flags and ACLs
+        /// </summary>
+        [SupportedOSPlatform("macos")]
+        private static class MacOS
+        {
+            private const string LIBC = "libc";
+
+            // On x86_64 macOS the bare "stat"/"lstat" symbols are the legacy 32-bit-inode
+            // variants using a smaller (120-byte) struct layout. The 64-bit-inode variants
+            // (matching the MacOSStat layout used here) are exported with the "$INODE64"
+            // suffix. On arm64 there is no legacy variant, so the bare symbol is the
+            // 64-bit-inode variant. See xamarin-macios#11892.
+            [DllImport(LIBC, EntryPoint = "stat$INODE64", SetLastError = true)]
+            private static extern int stat_inode64(string path, out MacOSStat buf);
+
+            [DllImport(LIBC, EntryPoint = "lstat$INODE64", SetLastError = true)]
+            private static extern int lstat_inode64(string path, out MacOSStat buf);
+
+            [DllImport(LIBC, EntryPoint = "stat", SetLastError = true)]
+            private static extern int stat_native(string path, out MacOSStat buf);
+
+            [DllImport(LIBC, EntryPoint = "lstat", SetLastError = true)]
+            private static extern int lstat_native(string path, out MacOSStat buf);
+
+            /// <summary>
+            /// True if the legacy "$INODE64" symbol variants must be used (x86/x86_64).
+            /// </summary>
+            private static readonly bool UseInode64Symbols =
+                RuntimeInformation.ProcessArchitecture is Architecture.X86 or Architecture.X64;
+
+            public static int stat(string path, out MacOSStat buf)
+                => UseInode64Symbols ? stat_inode64(path, out buf) : stat_native(path, out buf);
+
+            public static int lstat(string path, out MacOSStat buf)
+                => UseInode64Symbols ? lstat_inode64(path, out buf) : lstat_native(path, out buf);
+
+            [DllImport(LIBC, SetLastError = true)]
+            public static extern int chflags(string path, uint flags);
+
+            [DllImport(LIBC, SetLastError = true)]
+            public static extern int lchflags(string path, uint flags);
+
+            [DllImport(LIBC, SetLastError = true)]
+            public static extern IntPtr acl_get_file(string path, int type);
+
+            [DllImport(LIBC, SetLastError = true)]
+            public static extern IntPtr acl_get_link_np(string path, int type);
+
+            [DllImport(LIBC, SetLastError = true)]
+            public static extern int acl_set_file(string path, int type, IntPtr acl);
+
+            [DllImport(LIBC, SetLastError = true)]
+            public static extern int acl_set_link_np(string path, int type, IntPtr acl);
+
+            [DllImport(LIBC, SetLastError = true)]
+            public static extern IntPtr acl_to_text(IntPtr acl, out IntPtr len);
+
+            [DllImport(LIBC, SetLastError = true)]
+            public static extern IntPtr acl_from_text(string buf);
+
+            [DllImport(LIBC, SetLastError = true)]
+            public static extern int acl_free(IntPtr obj);
+
+            public const int ACL_TYPE_EXTENDED = 0x00000100;
+        }
 
         static PosixFile()
         {
@@ -380,6 +448,170 @@ namespace Duplicati.Library.Common.IO
         {
             var fse = Mono.Unix.UnixFileInfo.GetFileSystemEntry(path);
             return fse.Device + ":" + fse.Inode;
+        }
+
+        /// <summary>
+        /// macOS stat struct layout for 64-bit systems
+        /// </summary>
+        [SupportedOSPlatform("macos")]
+        [StructLayout(LayoutKind.Explicit, Size = 144)]
+        private struct MacOSStat
+        {
+            [FieldOffset(0)] public uint st_dev;
+            [FieldOffset(4)] public ushort st_mode;
+            [FieldOffset(6)] public ushort st_nlink;
+            [FieldOffset(8)] public ulong st_ino;
+            [FieldOffset(16)] public uint st_uid;
+            [FieldOffset(20)] public uint st_gid;
+            [FieldOffset(24)] public uint st_rdev;
+            [FieldOffset(32)] public long st_atime_sec;
+            [FieldOffset(40)] public long st_atime_nsec;
+            [FieldOffset(48)] public long st_mtime_sec;
+            [FieldOffset(56)] public long st_mtime_nsec;
+            [FieldOffset(64)] public long st_ctime_sec;
+            [FieldOffset(72)] public long st_ctime_nsec;
+            [FieldOffset(80)] public long st_birthtime_sec;
+            [FieldOffset(88)] public long st_birthtime_nsec;
+            [FieldOffset(96)] public long st_size;
+            [FieldOffset(104)] public long st_blocks;
+            [FieldOffset(112)] public int st_blksize;
+            [FieldOffset(116)] public uint st_flags;
+            [FieldOffset(120)] public uint st_gen;
+        }
+
+        /// <summary>
+        /// Gets the macOS file flags (e.g., uchg, hidden) for the given path.
+        /// When the path is a symlink that should not be followed, the flags of
+        /// the link itself are returned rather than those of the target.
+        /// </summary>
+        /// <returns>The file flags, or null if not supported or an error occurred.</returns>
+        /// <param name="path">The full path to look up</param>
+        /// <param name="isSymlink">A flag indicating if the target is a symlink</param>
+        /// <param name="followSymlink">A flag indicating if a symlink should be followed</param>
+        [SupportedOSPlatform("macos")]
+        public static uint? GetFileFlags(string path, bool isSymlink, bool followSymlink)
+        {
+            if (!OperatingSystem.IsMacOS())
+                return null;
+
+            var useLink = isSymlink && !followSymlink;
+            var res = useLink ? MacOS.lstat(path, out var buf) : MacOS.stat(path, out buf);
+            if (res == 0)
+                return buf.st_flags;
+
+            return null;
+        }
+
+        /// <summary>
+        /// Sets the macOS file flags (e.g., uchg, hidden) for the given path.
+        /// When the path is a symlink that should not be followed, the flags are
+        /// applied to the link itself rather than to the target.
+        /// </summary>
+        /// <param name="path">The full path to set flags for</param>
+        /// <param name="flags">The flags to set</param>
+        /// <param name="isSymlink">A flag indicating if the target is a symlink</param>
+        /// <param name="followSymlink">A flag indicating if a symlink should be followed</param>
+        [SupportedOSPlatform("macos")]
+        public static void SetFileFlags(string path, uint flags, bool isSymlink, bool followSymlink)
+        {
+            if (!OperatingSystem.IsMacOS())
+                return;
+
+            var useLink = isSymlink && !followSymlink;
+            var res = useLink ? MacOS.lchflags(path, flags) : MacOS.chflags(path, flags);
+            if (res != 0)
+            {
+                var errno = Marshal.GetLastWin32Error();
+                throw new System.IO.IOException($"Unable to set file flags on \"{path}\", error: {errno}");
+            }
+        }
+
+        /// <summary>
+        /// Gets the macOS ACL as a text string for the given path.
+        /// </summary>
+        /// <returns>The ACL text, or null if no ACL or not supported.</returns>
+        /// <param name="path">The full path to look up</param>
+        /// <param name="isSymlink">A flag indicating if the target is a symlink</param>
+        /// <param name="followSymlink">A flag indicating if a symlink should be followed</param>
+        [SupportedOSPlatform("macos")]
+        public static string GetAcl(string path, bool isSymlink, bool followSymlink)
+        {
+            if (!OperatingSystem.IsMacOS())
+                return null;
+
+            IntPtr acl = IntPtr.Zero;
+            try
+            {
+                var useLink = isSymlink && !followSymlink;
+                acl = useLink ? MacOS.acl_get_link_np(path, MacOS.ACL_TYPE_EXTENDED) : MacOS.acl_get_file(path, MacOS.ACL_TYPE_EXTENDED);
+                // A null result means there is no ACL, the file does not exist,
+                // or ACLs are not supported on the filesystem; in all cases there
+                // is nothing to capture.
+                if (acl == IntPtr.Zero)
+                    return null;
+
+                var textPtr = MacOS.acl_to_text(acl, out var length);
+                if (textPtr == IntPtr.Zero)
+                    return null;
+
+                try
+                {
+                    var text = Marshal.PtrToStringUTF8(textPtr, (int)length);
+                    // ACL text can be empty or just whitespace for no ACL
+                    if (string.IsNullOrWhiteSpace(text))
+                        return null;
+                    return text;
+                }
+                finally
+                {
+                    MacOS.acl_free(textPtr);
+                }
+            }
+            finally
+            {
+                if (acl != IntPtr.Zero)
+                    MacOS.acl_free(acl);
+            }
+        }
+
+        /// <summary>
+        /// Sets the macOS ACL from a text string for the given path.
+        /// When the path is a symlink that should not be followed, the ACL is
+        /// applied to the link itself rather than to the target.
+        /// </summary>
+        /// <param name="path">The full path to set ACL for</param>
+        /// <param name="aclText">The ACL text</param>
+        /// <param name="isSymlink">A flag indicating if the target is a symlink</param>
+        /// <param name="followSymlink">A flag indicating if a symlink should be followed</param>
+        [SupportedOSPlatform("macos")]
+        public static void SetAcl(string path, string aclText, bool isSymlink, bool followSymlink)
+        {
+            if (!OperatingSystem.IsMacOS() || string.IsNullOrWhiteSpace(aclText))
+                return;
+
+            IntPtr acl = IntPtr.Zero;
+            try
+            {
+                acl = MacOS.acl_from_text(aclText);
+                if (acl == IntPtr.Zero)
+                {
+                    var errno = Marshal.GetLastWin32Error();
+                    throw new System.IO.IOException($"Unable to parse ACL text for \"{path}\", error: {errno}");
+                }
+
+                var useLink = isSymlink && !followSymlink;
+                var res = useLink ? MacOS.acl_set_link_np(path, MacOS.ACL_TYPE_EXTENDED, acl) : MacOS.acl_set_file(path, MacOS.ACL_TYPE_EXTENDED, acl);
+                if (res != 0)
+                {
+                    var errno = Marshal.GetLastWin32Error();
+                    throw new System.IO.IOException($"Unable to set ACL on \"{path}\", error: {errno}");
+                }
+            }
+            finally
+            {
+                if (acl != IntPtr.Zero)
+                    MacOS.acl_free(acl);
+            }
         }
     }
 }
