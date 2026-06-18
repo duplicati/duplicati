@@ -32,38 +32,38 @@ public enum StoreTaskConfigMode
 {
     /// <summary>
     /// Automatically determine behavior based on encryption settings.
-    /// When encryption is enabled, behaves as <see cref="SelfLimited"/>.
+    /// When encryption is enabled, behaves as <see cref="Self"/>.
     /// When encryption is not enabled, behaves as <see cref="None"/>.
     /// </summary>
     Auto,
-    /// <summary>
-    /// Include the current job's backup configuration, excluding secrets.
-    /// </summary>
-    SelfLimited,
-    /// <summary>
-    /// Include the current job's backup configuration.
-    /// When encryption is enabled, includes all secrets.
-    /// When encryption is not enabled, excludes secrets.
-    /// </summary>
-    Self,
-    /// <summary>
-    /// Include all job backup configurations.
-    /// When encryption is enabled, includes all secrets.
-    /// When encryption is not enabled, excludes secrets.
-    /// </summary>
-    All,
     /// <summary>
     /// Do not include any task configuration.
     /// </summary>
     None,
     /// <summary>
+    /// Include the current job's backup configuration without secrets.
+    /// </summary>
+    Self,
+    /// <summary>
+    /// Include all job backup configurations without secrets.
+    /// </summary>
+    All,
+    /// <summary>
     /// Include the current job's backup configuration with all secrets included.
     /// </summary>
-    SelfWithUnencryptedSecrets,
+    SelfWithSecrets,
     /// <summary>
     /// Include all job backup configurations with all secrets included.
     /// </summary>
-    AllWithUnencryptedSecrets
+    AllWithSecrets,
+    /// <summary>
+    /// Include the current job's backup configuration with all secrets included, even if encryption is disabled.
+    /// </summary>
+    SelfWithUnencryptedSecrets,
+    /// <summary>
+    /// Include all job backup configurations with all secrets included, even if encryption is disabled.
+    /// </summary>
+    AllWithUnencryptedSecrets,
 }
 
 /// <summary>
@@ -82,19 +82,9 @@ public record ResolvedTaskConfigMode(
 public static class StoreTaskConfigModeExtensions
 {
     /// <summary>
-    /// Resolves the effective mode based on the current mode and encryption settings.
+    /// The log tag for this class.
     /// </summary>
-    /// <param name="mode">The mode to resolve.</param>
-    /// <param name="encryptionEnabled">A flag indicating whether encryption is enabled.</param>
-    /// <returns>The effective mode</returns>
-    private static StoreTaskConfigMode ResolveEffectiveMode(this StoreTaskConfigMode mode, bool encryptionEnabled)
-        => mode switch
-        {
-            StoreTaskConfigMode.Auto => encryptionEnabled ? StoreTaskConfigMode.SelfLimited : StoreTaskConfigMode.None,
-            StoreTaskConfigMode.Self when encryptionEnabled => StoreTaskConfigMode.SelfWithUnencryptedSecrets,
-            StoreTaskConfigMode.All when encryptionEnabled => StoreTaskConfigMode.AllWithUnencryptedSecrets,
-            _ => mode
-        };
+    private static readonly string LOGTAG = Library.Logging.Log.LogTagFromType(typeof(StoreTaskConfigModeExtensions));
 
     /// <summary>
     /// Resolves the effective mode based on the current mode and encryption settings.
@@ -104,15 +94,44 @@ public static class StoreTaskConfigModeExtensions
     /// <returns>The effective mode</returns>
     public static ResolvedTaskConfigMode? ResolvedTaskConfigMode(this StoreTaskConfigMode mode, bool encryptionEnabled)
     {
-        var effectiveMode = mode.ResolveEffectiveMode(encryptionEnabled);
+        var effectiveMode = mode switch
+        {
+            StoreTaskConfigMode.Auto => encryptionEnabled ? StoreTaskConfigMode.Self : StoreTaskConfigMode.None,
+            _ => mode
+        };
+
+        if (!encryptionEnabled && effectiveMode is StoreTaskConfigMode.SelfWithSecrets or StoreTaskConfigMode.AllWithSecrets)
+        {
+            if (effectiveMode is StoreTaskConfigMode.SelfWithSecrets)
+            {
+                effectiveMode = StoreTaskConfigMode.Self;
+                Library.Logging.Log.WriteWarningMessage(LOGTAG, "NotStoringUnencryptedSecrets", null, $"Refusing to store secrets in an unencrypted backup, reverting to {effectiveMode}");
+            }
+            else if (effectiveMode is StoreTaskConfigMode.AllWithSecrets)
+            {
+                effectiveMode = StoreTaskConfigMode.All;
+                Library.Logging.Log.WriteWarningMessage(LOGTAG, "NotStoringUnencryptedSecrets", null, $"Refusing to store secrets in an unencrypted backup, reverting to {effectiveMode}");
+            }
+        }
+
         if (effectiveMode == StoreTaskConfigMode.None)
             return null;
         if (effectiveMode == StoreTaskConfigMode.Auto)
             throw new InvalidOperationException("Auto mode should have been resolved to a concrete mode");
 
+        var removeSecrets = effectiveMode.RemoveSecrets();
+        var includeAllTasks = effectiveMode.IncludeAllTasks();
+
+        // Sanity check: if encryption is disabled, we should not be storing secrets. Effectively unreachable.
+        if (!encryptionEnabled && !removeSecrets)
+        {
+            if (!(effectiveMode is StoreTaskConfigMode.SelfWithUnencryptedSecrets or StoreTaskConfigMode.AllWithUnencryptedSecrets))
+                throw new InvalidOperationException($"Mode {effectiveMode} is not allowed when encryption is disabled");
+        }
+
         return new ResolvedTaskConfigMode(
-            effectiveMode.IncludeAllTasks(),
-            effectiveMode.RemoveSecrets()
+            includeAllTasks,
+            removeSecrets
         );
     }
 
@@ -124,7 +143,10 @@ public static class StoreTaskConfigModeExtensions
     private static bool RemoveSecrets(this StoreTaskConfigMode mode)
         => mode switch
         {
-            StoreTaskConfigMode.SelfWithUnencryptedSecrets or StoreTaskConfigMode.AllWithUnencryptedSecrets => false,
+            StoreTaskConfigMode.SelfWithSecrets
+            or StoreTaskConfigMode.AllWithSecrets
+            or StoreTaskConfigMode.SelfWithUnencryptedSecrets
+            or StoreTaskConfigMode.AllWithUnencryptedSecrets => false,
             _ => true
         };
 
@@ -136,7 +158,7 @@ public static class StoreTaskConfigModeExtensions
     private static bool IncludeAllTasks(this StoreTaskConfigMode mode)
         => mode switch
         {
-            StoreTaskConfigMode.All or StoreTaskConfigMode.AllWithUnencryptedSecrets => true,
+            StoreTaskConfigMode.All or StoreTaskConfigMode.AllWithSecrets or StoreTaskConfigMode.AllWithUnencryptedSecrets => true,
             _ => false
         };
 }

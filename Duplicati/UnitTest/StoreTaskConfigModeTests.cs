@@ -38,10 +38,13 @@ public class StoreTaskConfigModeTests
     [TestCase("false", StoreTaskConfigMode.None)]
     [TestCase("False", StoreTaskConfigMode.None)]
     [TestCase("Auto", StoreTaskConfigMode.Auto)]
-    [TestCase("SelfLimited", StoreTaskConfigMode.SelfLimited)]
     [TestCase("Self", StoreTaskConfigMode.Self)]
     [TestCase("All", StoreTaskConfigMode.All)]
     [TestCase("None", StoreTaskConfigMode.None)]
+    [TestCase("SelfWithSecrets", StoreTaskConfigMode.SelfWithSecrets)]
+    [TestCase("AllWithSecrets", StoreTaskConfigMode.AllWithSecrets)]
+    [TestCase("SelfWithUnencryptedSecrets", StoreTaskConfigMode.SelfWithUnencryptedSecrets)]
+    [TestCase("AllWithUnencryptedSecrets", StoreTaskConfigMode.AllWithUnencryptedSecrets)]
     public void ParseStoreTaskConfigMode_ReturnsExpectedMode(string? rawValue, StoreTaskConfigMode expected)
     {
         Assert.AreEqual(expected, Runner.ParseStoreTaskConfigMode(rawValue));
@@ -65,20 +68,25 @@ public class StoreTaskConfigModeTests
     }
 
     // Full behavior matrix: mode x encryption -> (IncludeAllTasks, RemoveSecrets)
-    // Secrets are only kept (RemoveSecrets == false) when encryption is enabled or the mode explicitly forces secrets.
+    // Secrets are only kept (RemoveSecrets == false) when explicitly requested or the mode forces secrets.
 
-    // Auto with encryption behaves like SelfLimited without secrets.
+    // Auto with encryption maps to Self which removes secrets.
     [Category("Utility")]
     [TestCase(StoreTaskConfigMode.Auto, true, false, true)]
-    // SelfLimited: never includes all tasks, always removes secrets
-    [TestCase(StoreTaskConfigMode.SelfLimited, false, false, true)]
-    [TestCase(StoreTaskConfigMode.SelfLimited, true, false, true)]
-    // Self: never includes all tasks, keeps secrets only when encryption is enabled.
+    // Self: never includes all tasks, always removes secrets.
     [TestCase(StoreTaskConfigMode.Self, false, false, true)]
-    [TestCase(StoreTaskConfigMode.Self, true, false, false)]
-    // All: includes all tasks, keeps secrets only when encryption is enabled.
+    [TestCase(StoreTaskConfigMode.Self, true, false, true)]
+    // All: includes all tasks, always removes secrets.
     [TestCase(StoreTaskConfigMode.All, false, true, true)]
-    [TestCase(StoreTaskConfigMode.All, true, true, false)]
+    [TestCase(StoreTaskConfigMode.All, true, true, true)]
+    // SelfWithSecrets without encryption reverts to Self (removes secrets).
+    [TestCase(StoreTaskConfigMode.SelfWithSecrets, false, false, true)]
+    // SelfWithSecrets with encryption keeps secrets.
+    [TestCase(StoreTaskConfigMode.SelfWithSecrets, true, false, false)]
+    // AllWithSecrets without encryption reverts to All (removes secrets).
+    [TestCase(StoreTaskConfigMode.AllWithSecrets, false, true, true)]
+    // AllWithSecrets with encryption keeps secrets.
+    [TestCase(StoreTaskConfigMode.AllWithSecrets, true, true, false)]
     // Explicit forced-secret modes always keep secrets regardless of encryption.
     [TestCase(StoreTaskConfigMode.SelfWithUnencryptedSecrets, false, false, false)]
     [TestCase(StoreTaskConfigMode.SelfWithUnencryptedSecrets, true, false, false)]
