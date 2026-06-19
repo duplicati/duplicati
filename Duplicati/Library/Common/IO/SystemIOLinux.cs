@@ -24,6 +24,7 @@ using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Logging;
 using System.Runtime.Versioning;
 using System.Runtime.InteropServices;
 
@@ -33,6 +34,11 @@ namespace Duplicati.Library.Common.IO
     [SupportedOSPlatform("macOS")]
     public struct SystemIOLinux : ISystemIO
     {
+        /// <summary>
+        /// The log tag for messages
+        /// </summary>
+        private static readonly string LOGTAG = Log.LogTagFromType(typeof(SystemIOLinux));
+
         /// <summary>
         /// PInvoke methods
         /// </summary>
@@ -250,6 +256,31 @@ namespace Duplicati.Library.Common.IO
                 dict["unix:group-name"] = fse.GroupName;
             }
 
+            if (OperatingSystem.IsMacOS())
+            {
+                try
+                {
+                    var flags = PosixFile.GetFileFlags(f, isSymlink, followSymlink);
+                    if (flags.HasValue)
+                        dict["macos:flags"] = flags.Value.ToString();
+                }
+                catch (Exception ex)
+                {
+                    Log.WriteVerboseMessage(LOGTAG, "GetFileFlagsFailed", ex, "Failed to get file flags for \"{0}\"", f);
+                }
+
+                try
+                {
+                    var acl = PosixFile.GetAcl(f, isSymlink, followSymlink);
+                    if (!string.IsNullOrEmpty(acl))
+                        dict["macos:acl"] = acl;
+                }
+                catch (Exception ex)
+                {
+                    Log.WriteVerboseMessage(LOGTAG, "GetAclFailed", ex, "Failed to get ACL for \"{0}\"", f);
+                }
+            }
+
             return dict;
         }
 
@@ -283,6 +314,39 @@ namespace Duplicati.Library.Common.IO
                             catch { }
 
                         PosixFile.SetUserGroupAndPermissions(f, uid, gid, perm);
+                    }
+                }
+            }
+
+            if (OperatingSystem.IsMacOS())
+            {
+                // SetMetadata is only reached for a symlink when the metadata should be
+                // applied to the link itself (the restore destination skips symlinks
+                // otherwise), so operate on the link rather than following it.
+                var isSymlink = false;
+                try { isSymlink = PosixFile.GetFileType(f) == PosixFile.FileType.Symlink; }
+                catch { }
+
+                if (restorePermissions)
+                {
+                    // Apply ACL before file flags, as flags like uchg (immutable) can prevent ACL changes
+                    if (data.TryGetValue("macos:acl", out var acl) && !string.IsNullOrWhiteSpace(acl))
+                    {
+                        try { PosixFile.SetAcl(f, acl, isSymlink, followSymlink: false); }
+                        catch (Exception ex)
+                        {
+                            Log.WriteWarningMessage(LOGTAG, "SetAclFailed", ex, "Failed to restore ACL on \"{0}\": {1}", f, ex.Message);
+                        }
+                    }
+
+                    // We consider file flags to be part of the permissions
+                    if (data.TryGetValue("macos:flags", out var flagsStr) && uint.TryParse(flagsStr, out var flags))
+                    {
+                        try { PosixFile.SetFileFlags(f, flags, isSymlink, followSymlink: false); }
+                        catch (Exception ex)
+                        {
+                            Log.WriteWarningMessage(LOGTAG, "SetFileFlagsFailed", ex, "Failed to restore file flags on \"{0}\": {1}", f, ex.Message);
+                        }
                     }
                 }
             }
