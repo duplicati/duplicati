@@ -442,6 +442,75 @@ INSERT INTO ""Version"" (""Version"") VALUES (12);
 
         [Test]
         [Category("DatabaseTool")]
+        public async Task TestVerifyCommandWithRelativeDbPathAsync()
+        {
+            using var tempFolder = new Library.Utility.TempFolder();
+            string tempDir = tempFolder;
+
+            var serverDb = Path.Combine(tempDir, "server.sqlite");
+            var localDb1 = Path.Combine(tempDir, "local1.sqlite");
+            var relativeDbPath = "local1.sqlite";
+            var orphanDb = Path.Combine(tempDir, "ABCDEFGHIJ.sqlite");
+
+            // Create server database
+            using (var db = await SQLiteLoader.LoadConnectionAsync(serverDb))
+            using (var cmd = db.CreateCommand())
+            {
+                cmd.CommandText = ServerSchemaV6;
+                await cmd.ExecuteNonQueryAsync();
+
+                // Insert a backup with a relative DBPath
+                cmd.CommandText = $@"
+                    INSERT INTO ""Backup"" (""Name"", ""Tags"", ""TargetURL"", ""DBPath"")
+                    VALUES ('Test Backup', '', 'file:///test', '{relativeDbPath.Replace("'", "''")}');
+                ";
+                await cmd.ExecuteNonQueryAsync();
+            }
+
+            // Create local database
+            using (var db = await SQLiteLoader.LoadConnectionAsync(localDb1))
+            using (var cmd = db.CreateCommand())
+            {
+                cmd.CommandText = LocalSchemaV12;
+                await cmd.ExecuteNonQueryAsync();
+            }
+
+            // Create orphan database
+            using (var db = await SQLiteLoader.LoadConnectionAsync(orphanDb))
+            using (var cmd = db.CreateCommand())
+            {
+                cmd.CommandText = LocalSchemaV12;
+                await cmd.ExecuteNonQueryAsync();
+            }
+
+            // Copy server database to expected location
+            var serverTargetPath = Path.Combine(tempDir, "Duplicati-server.sqlite");
+            File.Copy(serverDb, serverTargetPath);
+
+            // Test verify command with JSON output
+            var output = new StringWriter();
+            var originalOut = Console.Out;
+            Console.SetOut(output);
+
+            try
+            {
+                Assert.AreEqual(0, await Program.MainAsync(["verify", "--datafolder", tempDir, "--output-json"]));
+            }
+            finally
+            {
+                Console.SetOut(originalOut);
+            }
+
+            var result = output.ToString();
+
+            // Should report localDb1 as Found (referenced with relative path but resolved)
+            Assert.That(result, Does.Contain("\"Status\": \"Found\""));
+            // Should report orphanDb as Orphaned (exists but not referenced)
+            Assert.That(result, Does.Contain("\"Status\": \"Orphaned\""));
+        }
+
+        [Test]
+        [Category("DatabaseTool")]
         [TestCase(true)]  // Dry run - no files should be deleted
         [TestCase(false)] // Force - only orphaned files should be deleted
         public async Task TestCleanupCommandAsync(bool dryRun)
