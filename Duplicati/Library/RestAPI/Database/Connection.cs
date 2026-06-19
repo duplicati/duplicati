@@ -53,7 +53,7 @@ namespace Duplicati.Server.Database
         public readonly object m_lock = new object();
         public const int ANY_BACKUP_ID = -1;
         public const int SERVER_SETTINGS_ID = -2;
-        private readonly Dictionary<string, Backup> m_temporaryBackups = new Dictionary<string, Backup>();
+        private readonly Dictionary<string, (Backup Backup, Schedule? Schedule)> m_temporaryBackups = new();
         private readonly bool m_encryptSensitiveFields;
         private readonly EncryptedFieldHelper.KeyInstance? m_key;
         private IServiceProvider? m_serviceProvider;
@@ -211,7 +211,7 @@ namespace Duplicati.Server.Database
             };
         }
 
-        public string RegisterTemporaryBackup(IBackup backup)
+        public string RegisterTemporaryBackup(IBackup backup, ISchedule? schedule)
         {
             lock (m_lock)
             {
@@ -220,9 +220,14 @@ namespace Duplicati.Server.Database
                 if (backup.ID != null)
                     throw new ArgumentException("Backup is already active, cannot make temporary");
 
-                backup.ID = Guid.NewGuid().ToString("D");
-                m_temporaryBackups.Add(backup.ID, (Backup)backup);
-                return backup.ID;
+                // Detach from input
+                var bk = ((Backup)backup).Clone();
+                var sc = ((Schedule?)schedule)?.Clone();
+
+                bk.ID = Guid.NewGuid().ToString("D");
+                m_temporaryBackups.Add(bk.ID, (bk, sc));
+
+                return bk.ID;
             }
         }
 
@@ -232,22 +237,17 @@ namespace Duplicati.Server.Database
                 m_temporaryBackups.Remove(backup.ID);
         }
 
-        public void UpdateTemporaryBackup(IBackup backup)
-        {
-            lock (m_lock)
-                if (m_temporaryBackups.Remove(backup.ID))
-                    m_temporaryBackups.Add(backup.ID, (Backup)backup);
-        }
-
-        public IBackup? GetTemporaryBackup(string id)
+        public (IBackup Backup, ISchedule? Schedule)? GetTemporaryBackup(string id)
         {
             if (string.IsNullOrEmpty(id))
                 return null;
 
             lock (m_lock)
             {
-                m_temporaryBackups.TryGetValue(id, out var b);
-                return b?.Clone();
+                if (!m_temporaryBackups.TryGetValue(id, out var b))
+                    return null;
+
+                return (b.Backup.Clone(), b.Schedule?.Clone());
             }
         }
 
@@ -535,7 +535,7 @@ namespace Duplicati.Server.Database
             if (string.IsNullOrWhiteSpace(id))
                 throw new ArgumentNullException(nameof(id));
 
-            return long.TryParse(id, out long lid) ? GetBackup(lid) : GetTemporaryBackup(id);
+            return long.TryParse(id, out long lid) ? GetBackup(lid) : GetTemporaryBackup(id)?.Backup;
         }
 
         internal IBackup? GetBackup(long id)
@@ -843,7 +843,7 @@ namespace Duplicati.Server.Database
 
                     // Save additional target URLs if present
                     if (item.AdditionalTargetURLs != null)
-                        SetBackupTargetUrls(id, item.AdditionalTargetURLs.Cast<TargetUrlEntry>(), tr);
+                        SetBackupTargetUrls(id, item.AdditionalTargetURLs, tr);
 
                     if (updateSchedule)
                     {
@@ -1722,7 +1722,7 @@ namespace Duplicati.Server.Database
         /// <param name="backupId">The backup ID</param>
         /// <param name="targets">The target URLs to set</param>
         /// <param name="transaction">The database transaction</param>
-        internal void SetBackupTargetUrls(long backupId, IEnumerable<TargetUrlEntry> targets, IDbTransaction? transaction = null)
+        internal void SetBackupTargetUrls(long backupId, IEnumerable<ITargetUrlEntry> targets, IDbTransaction? transaction = null)
         {
             lock (m_lock)
             {

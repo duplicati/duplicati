@@ -48,6 +48,14 @@ namespace Duplicati.Server.Serialization
         }
     }
 
+    public class TargetUrlEntryCreator : CustomCreationConverter<Interface.ITargetUrlEntry>
+    {
+        public override Interface.ITargetUrlEntry Create(Type objectType)
+        {
+            return new Implementations.TargetUrlEntry();
+        }
+    }
+
     public class DayOfWeekConcerter : JsonConverter
     {
         #region implemented abstract members of JsonConverter
