@@ -176,13 +176,19 @@ namespace Duplicati.Library.Main.Operation
                                 }
                                 catch (Exception ex)
                                 {
-                                    if (options.AllowMissingSource)
+                                    if (options.AbortIfSourceMissing)
+                                    {
+                                        throw new UserInformationException($"Failed to load source provider for \"{sanitizedUrl}\": {ex.Message}", "SourceProviderFailed", ex);
+                                    }
+                                    else if (options.AllowMissingSource)
+                                    {
+                                        continue;
+                                    }
+                                    else
                                     {
                                         Log.WriteWarningMessage(LOGTAG, "SourceProviderFailed", ex, "Failed to load source provider for \"{0}\"", sanitizedUrl);
                                         continue;
                                     }
-
-                                    throw new UserInformationException($"Failed to load source provider for \"{sanitizedUrl}\": {ex.Message}", "SourceProviderFailed", ex);
                                 }
 
                                 // Don't accept missing providers
@@ -204,6 +210,7 @@ namespace Duplicati.Library.Main.Operation
                 throw;
             }
 
+            // If no source providers could be resolved the backup would be empty. 
             if (results.Count == 0)
                 throw new UserInformationException("No sources were available for the backup", "NoSourcesAvailable");
 

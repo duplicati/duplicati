@@ -424,6 +424,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("list-sets-only", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ListsetsonlyShort, Strings.Options.ListsetsonlyLong, "false"),
             new CommandLineArgument("disable-autocreate-folder", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableautocreatefolderShort, Strings.Options.DisableautocreatefolderLong, "false"),
             new CommandLineArgument("allow-missing-source", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowmissingsourceShort, Strings.Options.AllowmissingsourceLong, "false"),
+            new CommandLineArgument("abort-if-source-missing", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AbortifsourcemissingShort, Strings.Options.AbortifsourcemissingLong, "false"),
             new CommandLineArgument("prevent-empty-source", CommandLineArgument.ArgumentType.Boolean, Strings.Options.PreventemptysourceShort, Strings.Options.PreventemptysourceLong, "false"),
 
             new CommandLineArgument("disable-filetime-check", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefiletimecheckShort, Strings.Options.DisablefiletimecheckLong, "false"),
@@ -1461,6 +1462,10 @@ namespace Duplicati.Library.Main
         /// Gets a flag indicating if missing source elements should be ignored
         /// </summary>
         public bool AllowMissingSource => GetBool("allow-missing-source");
+        /// <summary>
+        /// Gets a flag indicating if missing source elements should cause backups to fail
+        /// </summary>
+        public bool AbortIfSourceMissing => GetBool("abort-if-source-missing");
         /// <summary>
         /// Gets a flag indicating if empty source elements should cause backups to fail
         /// </summary>
