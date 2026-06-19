@@ -1,7 +1,30 @@
 FROM debian:latest
 
+ARG TARGETARCH
+ARG TARGETVARIANT
+
 RUN apt update -y && \
-    apt install -y libssl3t64 ca-certificates libicu76 libgssapi-krb5-2 rclone gnupg tini
+    apt install -y libssl3t64 ca-certificates libicu76 libgssapi-krb5-2 gnupg tini curl unzip && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN case "${TARGETARCH}" in \
+        "amd64")  RCLONE_ARCH="amd64" ;; \
+        "arm64")  RCLONE_ARCH="arm64" ;; \
+        "arm") \
+            case "${TARGETVARIANT}" in \
+                "v6") RCLONE_ARCH="arm-v6" ;; \
+                "v7") RCLONE_ARCH="arm-v7" ;; \
+                *)    RCLONE_ARCH="arm" ;; \
+            esac ;; \
+        "386")    RCLONE_ARCH="386" ;; \
+        *)        RCLONE_ARCH="${TARGETARCH}" ;; \
+    esac && \
+    curl -fsSL "https://downloads.rclone.org/rclone-current-linux-${RCLONE_ARCH}.zip" -o /tmp/rclone.zip && \
+    unzip -q /tmp/rclone.zip -d /tmp && \
+    cp /tmp/rclone-*/rclone /usr/bin/rclone && \
+    chmod +x /usr/bin/rclone && \
+    rm -rf /tmp/rclone*
 
 ENTRYPOINT [ "/usr/bin/tini", "--", "/run-as-user.sh" ]
 
