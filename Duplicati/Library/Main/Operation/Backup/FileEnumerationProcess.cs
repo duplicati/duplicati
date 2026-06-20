@@ -513,13 +513,6 @@ namespace Duplicati.Library.Main.Operation.Backup
                 return false;
             }
 
-            // Filter entries that are marked as excluded from backups via filesystem extended attributes
-            if (!disableBackupExclusionXattr && await HasBackupExclusionAttributeAsync(entry, cancellationToken).ConfigureAwait(false))
-            {
-                Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingPathFromBackupAttribute", "Excluding path marked as excluded from backups via filesystem attribute: {0}", entry.Path);
-                return false;
-            }
-
             // Then check if the filename is not explicitly excluded by a filter
             var filtermatch = false;
             if (!Library.Utility.FilterExpression.Matches(enumeratefilter, entry.Path, out var match))
@@ -531,6 +524,13 @@ namespace Duplicati.Library.Main.Operation.Backup
             {
                 filtermatch = true;
                 Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "IncludingPathFromFilter", "Including path due to filter: {0} => {1}", entry.Path, match.ToString());
+            }
+
+            // Filter entries that are marked as excluded from backups via filesystem extended attributes
+            if (!disableBackupExclusionXattr && await HasBackupExclusionAttributeAsync(entry, cancellationToken).ConfigureAwait(false))
+            {
+                Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingPathFromBackupAttribute", "Excluding path marked as excluded from backups via filesystem attribute: {0}", entry.Path);
+                return false;
             }
 
             // If the file is a symlink, apply special handling
