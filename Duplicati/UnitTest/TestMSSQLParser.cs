@@ -307,8 +307,8 @@ namespace Duplicati.UnitTest
             var util = new MockMSSQLUtility { DBs = [dbSales, dbHr] };
 
             var paths = new[] { MSSQL };
-            // Exclude HR on the default instance; the virtual path uses an empty instance segment
-            var filter = $"-{MSSQL}{DS}SRV1{DS}{DS}HR";
+            // Exclude HR on the default instance (no instance segment in the virtual path)
+            var filter = $"-{MSSQL}{DS}SRV1{DS}HR";
 
             Run(util, ref paths, ref filter);
 
@@ -328,7 +328,7 @@ namespace Duplicati.UnitTest
 
             var paths = new[] { MSSQL };
             // Include-only filter: anything not matched is excluded
-            var filter = $"+{MSSQL}{DS}SRV1{DS}{DS}Sales";
+            var filter = $"+{MSSQL}{DS}SRV1{DS}Sales";
 
             Run(util, ref paths, ref filter);
 
