@@ -348,7 +348,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
                     .. AuthIdOptionsHelper.GetOptions(TOKEN_URL),
                     new CommandLineArgument(SERVICE_ACCOUNT_JSON_OPTION, CommandLineArgument.ArgumentType.Password, Strings.GoogleCloudStorage.ServiceAccountJsonDescriptionShort, Strings.GoogleCloudStorage.ServiceAccountJsonDescriptionLong),
                     new CommandLineArgument(SERVICE_ACCOUNT_FILE_OPTION, CommandLineArgument.ArgumentType.String, Strings.GoogleCloudStorage.ServiceAccountFileDescriptionShort, Strings.GoogleCloudStorage.ServiceAccountFileDescriptionLong),
-                    new CommandLineArgument(RETENTION_POLICY_MODE_OPTION, CommandLineArgument.ArgumentType.String, Strings.GoogleCloudStorage.RetentionPolicyModeDescriptionShort, Strings.GoogleCloudStorage.RetentionPolicyModeDescriptionLong, DEFAULT_RETENTION_POLICY_MODE.ToString(), null, Enum.GetNames(typeof(RetentionPolicyMode))),
+                    new CommandLineArgument(RETENTION_POLICY_MODE_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.GoogleCloudStorage.RetentionPolicyModeDescriptionShort, Strings.GoogleCloudStorage.RetentionPolicyModeDescriptionLong, DEFAULT_RETENTION_POLICY_MODE.ToString(), null, Enum.GetNames(typeof(RetentionPolicyMode))),
                     new CommandLineArgument(PROJECT_OPTION, CommandLineArgument.ArgumentType.String, Strings.GoogleCloudStorage.ProjectDescriptionShort, Strings.GoogleCloudStorage.ProjectDescriptionLong),
                     .. TimeoutOptionsHelper.GetOptions(),
                 ];

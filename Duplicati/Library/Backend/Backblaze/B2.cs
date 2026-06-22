@@ -93,6 +93,11 @@ public class B2 : IStreamingBackend, ILockingBackend, IRenameEnabledBackend
     private const int DEFAULT_PAGE_SIZE = 500;
 
     /// <summary>
+    /// The default lock mode for the backend
+    /// </summary>
+    private const B2LockMode DEFAULT_LOCK_MODE = B2LockMode.Governance;
+
+    /// <summary>
     /// Default retry-after time in seconds for B2 API requests
     /// </summary>
     private const int B2_RETRY_AFTER_SECONDS = 5;
@@ -224,18 +229,7 @@ public class B2 : IStreamingBackend, ILockingBackend, IRenameEnabledBackend
         if (options.TryGetValue(B2_DOWNLOAD_URL_OPTION, out var option)) _downloadUrl = option;
 
         // Parse lock mode option, default to Governance
-        _lockMode = B2LockMode.Governance; // Default to governance
-        if (options.TryGetValue(B2_LOCK_MODE_OPTION, out var lockModeOption))
-        {
-            if (Enum.TryParse<B2LockMode>(lockModeOption, true, out var parsedMode))
-            {
-                _lockMode = parsedMode;
-            }
-            else
-            {
-                throw new UserInformationException(Strings.B2.InvalidLockModeError(B2_LOCK_MODE_OPTION, lockModeOption), "B2InvalidLockMode");
-            }
-        }
+        _lockMode = Library.Utility.Utility.ParseEnumOption(options, B2_LOCK_MODE_OPTION, DEFAULT_LOCK_MODE);
 
         _httpClient = HttpClientHelper.CreateClient();
         _httpClient.Timeout = Timeout.InfiniteTimeSpan;
@@ -338,7 +332,7 @@ public class B2 : IStreamingBackend, ILockingBackend, IRenameEnabledBackend
             new CommandLineArgument(B2_CREATE_BUCKET_TYPE_OPTION, CommandLineArgument.ArgumentType.String, Strings.B2.B2createbuckettypeDescriptionShort, Strings.B2.B2createbuckettypeDescriptionLong, DEFAULT_BUCKET_TYPE),
             new CommandLineArgument(B2_PAGESIZE_OPTION, CommandLineArgument.ArgumentType.Integer, Strings.B2.B2pagesizeDescriptionShort, Strings.B2.B2pagesizeDescriptionLong, DEFAULT_PAGE_SIZE.ToString()),
             new CommandLineArgument(B2_DOWNLOAD_URL_OPTION, CommandLineArgument.ArgumentType.String, Strings.B2.B2downloadurlDescriptionShort, Strings.B2.B2downloadurlDescriptionLong),
-            new CommandLineArgument(B2_LOCK_MODE_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.B2.B2lockmodeDescriptionShort, Strings.B2.B2lockmodeDescriptionLong, B2LockMode.Governance.ToString()),
+            new CommandLineArgument(B2_LOCK_MODE_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.B2.B2lockmodeDescriptionShort, Strings.B2.B2lockmodeDescriptionLong, DEFAULT_LOCK_MODE.ToString(), null, Enum.GetNames(typeof(B2LockMode))),
             ..TimeoutOptionsHelper.GetOptions()
         ]);
 
