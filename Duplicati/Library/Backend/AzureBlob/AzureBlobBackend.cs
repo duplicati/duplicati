@@ -71,6 +71,11 @@ namespace Duplicati.Library.Backend.AzureBlob
         public const int DEFAULT_INTERNAL_RETRIES = 3;
 
         /// <summary>
+        /// The default immutability policy mode
+        /// </summary>
+        private const BlobImmutabilityPolicyMode DEFAULT_IMMUTABILITY_MODE = BlobImmutabilityPolicyMode.Unlocked;
+
+        /// <summary>
         /// The immutability policy mode
         /// </summary>
         private readonly BlobImmutabilityPolicyMode _immutabilityPolicyMode;
@@ -124,10 +129,9 @@ namespace Duplicati.Library.Backend.AzureBlob
                 ? null
                 // Warning: The cast here is required to avoid implicit casting null to AccessTier
                 : (AccessTier?)new AccessTier(accessTierValue);
-            var internalRetries = Library.Utility.Utility.ParseIntOption(options, AZURE_INTERNAL_RETRIES_OPTION, DEFAULT_INTERNAL_RETRIES);
+            var internalRetries = Utility.Utility.ParseIntOption(options, AZURE_INTERNAL_RETRIES_OPTION, DEFAULT_INTERNAL_RETRIES);
 
-            var immutabilityPolicyModeValue = options.GetValueOrDefault(AZURE_BLOB_IMMUTABILITY_POLICY_MODE_OPTION);
-            _immutabilityPolicyMode = Library.Utility.Utility.ParseEnumOption(options, AZURE_BLOB_IMMUTABILITY_POLICY_MODE_OPTION, BlobImmutabilityPolicyMode.Unlocked);
+            _immutabilityPolicyMode = Utility.Utility.ParseEnumOption(options, AZURE_BLOB_IMMUTABILITY_POLICY_MODE_OPTION, DEFAULT_IMMUTABILITY_MODE);
 
             _azureBlob = new AzureBlobWrapper(auth.Username!, auth.Password, sasToken, containerName, accessTier, archiveClasses, timeouts, internalRetries);
         }
@@ -241,10 +245,10 @@ namespace Duplicati.Library.Backend.AzureBlob
                         Strings.AzureBlobBackend.InternalRetriesDescriptionLong,
                         Library.Utility.Utility.FormatInvariantValue(DEFAULT_INTERNAL_RETRIES)),
                     new CommandLineArgument(AZURE_BLOB_IMMUTABILITY_POLICY_MODE_OPTION,
-                        CommandLineArgument.ArgumentType.String,
+                        CommandLineArgument.ArgumentType.Enumeration,
                         Strings.AzureBlobBackend.ImmutabilityPolicyModeDescriptionShort,
                         Strings.AzureBlobBackend.ImmutabilityPolicyModeDescriptionLong,
-                        "Unlocked",
+                        DEFAULT_IMMUTABILITY_MODE.ToString(),
                         null,
                         Enum.GetNames(typeof(BlobImmutabilityPolicyMode))),
                     .. TimeoutOptionsHelper.GetOptions()
