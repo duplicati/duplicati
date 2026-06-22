@@ -73,7 +73,7 @@ public class MSSQL : IFilesystemPlugin
             // Tier 2: Server/Instance Node Generation
             if (pathSegments.Length == 1)
             {
-                var serverNames = mssqlUtility.DBs.Select(x => x.ServerInstanceId).Distinct();
+                var serverNames = mssqlUtility.DBs.Select(x => x.Server).Distinct();
 
                 var servers = serverNames.Select(x => new Dto.TreeNodeDto
                 {
@@ -93,28 +93,71 @@ public class MSSQL : IFilesystemPlugin
                 return servers;
             }
 
-            // Tier 3: Database Leaf Node Generation
-            var serverToDatabases = mssqlUtility.DBs.ToLookup(x => x.ServerInstanceId, db => db, StringComparer.OrdinalIgnoreCase);
+            // Tier 4: Instance ids
+            if (pathSegments.Length == 3)
+            {
+                var instanceDbList = mssqlUtility.DBs.Where(x => x.Server == pathSegments[1] && x.InstanceId == pathSegments[2]);
+                return instanceDbList.Select(x => new Dto.TreeNodeDto
+                {
+                    text = x.Database,
+                    id = string.Join(Path.DirectorySeparatorChar, pathSegments.Append(x.Database)),
+                    cls = "file",
+                    iconCls = "x-tree-icon-mssqldb",
+                    check = false,
+                    leaf = true,
+                    hidden = false,
+                    systemFile = false,
+                    temporary = false,
+                    symlink = false,
+                    fileSize = -1,
+                    resolvedpath = null
+                });
+            }
+
+            // Tier 3: Server Instance + Database Leaf Node Generation
+            var serverToDatabases = mssqlUtility.DBs.ToLookup(x => x.Server, db => db, StringComparer.OrdinalIgnoreCase);
             var targetServerKey = string.Join(Path.DirectorySeparatorChar, pathSegments.Skip(1));
             var selectedServer = serverToDatabases[targetServerKey];
 
-            var databases = selectedServer.Select(x => new Dto.TreeNodeDto()
-            {
-                text = x.Database, // Updated from x.Name to x.Database
-                id = string.Join(Path.DirectorySeparatorChar, pathSegments.Append(x.Database)), // Updated from x.Name to x.Database
-                cls = "file",
-                iconCls = "x-tree-icon-mssqldb",
-                check = false,
-                leaf = true,
-                hidden = false,
-                systemFile = false,
-                temporary = false,
-                symlink = false,
-                fileSize = -1,
-                resolvedpath = null
-            }).ToList();
+            var databases = selectedServer
+                .Where(x => string.IsNullOrWhiteSpace(x.InstanceId))
+                .Select(x => new Dto.TreeNodeDto()
+                {
+                    text = x.Database,
+                    id = string.Join(Path.DirectorySeparatorChar, pathSegments.Append(x.Database)),
+                    cls = "file",
+                    iconCls = "x-tree-icon-mssqldb",
+                    check = false,
+                    leaf = true,
+                    hidden = false,
+                    systemFile = false,
+                    temporary = false,
+                    symlink = false,
+                    fileSize = -1,
+                    resolvedpath = null
+                });
 
-            return databases;
+            var instances = selectedServer
+                .Where(x => !string.IsNullOrWhiteSpace(x.InstanceId))
+                .Select(x => x.InstanceId)
+                .Distinct()
+                .Select(x => new Dto.TreeNodeDto()
+                {
+                    text = x,
+                    id = Util.AppendDirSeparator(string.Join(Path.DirectorySeparatorChar, pathSegments.Append(x))),
+                    cls = "file",
+                    iconCls = "x-tree-icon-mssqldb",
+                    check = false,
+                    leaf = true,
+                    hidden = false,
+                    systemFile = false,
+                    temporary = false,
+                    symlink = false,
+                    fileSize = -1,
+                    resolvedpath = null
+                });
+
+            return instances.Concat(databases);
         }
         catch (Exception ex)
         {
