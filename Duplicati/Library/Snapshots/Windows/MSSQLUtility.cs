@@ -26,59 +26,32 @@ using System.Runtime.Versioning;
 
 namespace Duplicati.Library.Snapshots.Windows
 {
-    public class MSSQLDB : IEquatable<MSSQLDB>
+    /// <summary>
+    /// An MSSQL instance
+    /// </summary>
+    public sealed record MSSQLDB
     {
-        public string Name { get; }
-        public string ID { get; }
-        public List<string> DataPaths { get; }
+        /// <summary>
+        /// The database name
+        /// </summary>
+        public required string Database { get; init; }
+        /// <summary>
+        /// The server name
+        /// </summary>
+        public required string Server { get; init; }
+        /// <summary>
+        /// The instance id (empty for default instance)
+        /// </summary>
+        public required string InstanceId { get; init; }
+        /// <summary>
+        /// The paths related to the database
+        /// </summary>
+        public required List<string> DataPaths { get; init; }
 
-        public MSSQLDB(string Name, string ID, List<string> DataPaths)
-        {
-            this.Name = Name;
-            this.ID = ID;
-            this.DataPaths = DataPaths;
-        }
-
-        bool IEquatable<MSSQLDB>.Equals(MSSQLDB other)
-        {
-            return ID.Equals(other.ID);
-        }
-
-        public override int GetHashCode()
-        {
-            return ID.GetHashCode();
-        }
-
-        public override bool Equals(object obj)
-        {
-            MSSQLDB db = obj as MSSQLDB;
-            if (db != null)
-            {
-                return Equals(db);
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        public static bool operator ==(MSSQLDB db1, MSSQLDB db2)
-        {
-            if (object.ReferenceEquals(db1, db2)) return true;
-            if (object.ReferenceEquals(db1, null)) return false;
-            if (object.ReferenceEquals(db2, null)) return false;
-
-            return db1.Equals(db2);
-        }
-
-        public static bool operator !=(MSSQLDB db1, MSSQLDB db2)
-        {
-            if (object.ReferenceEquals(db1, db2)) return false;
-            if (object.ReferenceEquals(db1, null)) return true;
-            if (object.ReferenceEquals(db2, null)) return true;
-
-            return !db1.Equals(db2);
-        }
+        /// <summary>
+        /// The server instance id, e.g. "Server\Instance" or just "Server"
+        /// </summary>
+        public string ServerInstanceId => string.IsNullOrEmpty(InstanceId) ? Server : $"{Server}\\{InstanceId}";
     }
 
     public interface IMSSQLUtility
@@ -126,12 +99,10 @@ namespace Duplicati.Library.Snapshots.Windows
         /// Enumerated MS SQL DBs
         /// </summary>
         public List<MSSQLDB> DBs { get { return m_DBs; } }
-        private readonly List<MSSQLDB> m_DBs;
+        private readonly List<MSSQLDB> m_DBs = new();
 
         public MSSQLUtility()
         {
-            m_DBs = new List<MSSQLDB>();
-
             if (!OperatingSystem.IsWindows())
             {
                 IsMSSQLInstalled = false;
@@ -198,9 +169,22 @@ namespace Duplicati.Library.Snapshots.Windows
 
                 foreach (var o in vssBackupComponents.ParseWriterMetaData(writerGUIDS))
                 {
-                    m_DBs.Add(new MSSQLDB(o.Name, o.LogicalPath + "\\" + o.Name, o.Paths.ConvertAll(m => m[0].ToString().ToUpperInvariant() + m.Substring(1))
-                                           .Distinct(Utility.Utility.ClientFilenameStringComparer)
-                                          .OrderBy(a => a).ToList()));
+                    if (string.IsNullOrWhiteSpace(o.LogicalPath))
+                        continue;
+
+                    // The logical path is in the format "SERVERNAME\INSTANCENAME" or "SERVERNAME"
+                    // We need to split it into the server name and the instance name (if any)
+                    var pathcomp = o.LogicalPath.Split(['\\'], 2, StringSplitOptions.RemoveEmptyEntries);
+                    m_DBs.Add(new MSSQLDB()
+                    {
+                        Database = o.Name,
+                        Server = pathcomp[0],
+                        InstanceId = pathcomp.Length > 1 ? pathcomp[1] : string.Empty,
+                        DataPaths = o.Paths
+                            .ConvertAll(m => m[0].ToString().ToUpperInvariant() + m.Substring(1))
+                            .Distinct(Utility.Utility.ClientFilenameStringComparer)
+                            .OrderBy(a => a).ToList()
+                    });
                 }
             }
         }

@@ -23,8 +23,6 @@ using System.Security.Principal;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Snapshots;
 using Duplicati.Library.Snapshots.Windows;
-using Duplicati.WebserverCore.Dto;
-using Duplicati.WebserverCore.Exceptions;
 
 namespace Duplicati.WebserverCore.Endpoints.V1.FilesystemPlugins;
 
@@ -45,6 +43,8 @@ public class MSSQL : IFilesystemPlugin
         try
         {
             mssqlUtility.QueryDBsInfo(WindowsSnapshot.DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER);
+
+            // Tier 1: Root Node Selection (%MSSQL%)
             if (pathSegments.Length == 0)
             {
                 if (mssqlUtility.DBs.Count == 0)
@@ -70,9 +70,10 @@ public class MSSQL : IFilesystemPlugin
                 ];
             }
 
+            // Tier 2: Server/Instance Node Generation
             if (pathSegments.Length == 1)
             {
-                var serverNames = mssqlUtility.DBs.Select(x => x.ID.Replace(Path.DirectorySeparatorChar + x.Name, string.Empty)).Distinct();
+                var serverNames = mssqlUtility.DBs.Select(x => x.ServerInstanceId).Distinct();
 
                 var servers = serverNames.Select(x => new Dto.TreeNodeDto
                 {
@@ -92,12 +93,15 @@ public class MSSQL : IFilesystemPlugin
                 return servers;
             }
 
-            var serverToDatabases = mssqlUtility.DBs.ToLookup(db => db.ID.Replace(Path.DirectorySeparatorChar + db.Name, string.Empty), db => db);
-            var selectedServer = serverToDatabases[string.Join(Path.DirectorySeparatorChar, pathSegments.Skip(1))];
+            // Tier 3: Database Leaf Node Generation
+            var serverToDatabases = mssqlUtility.DBs.ToLookup(x => x.ServerInstanceId, db => db, StringComparer.OrdinalIgnoreCase);
+            var targetServerKey = string.Join(Path.DirectorySeparatorChar, pathSegments.Skip(1));
+            var selectedServer = serverToDatabases[targetServerKey];
+
             var databases = selectedServer.Select(x => new Dto.TreeNodeDto()
             {
-                text = x.Name,
-                id = string.Join(Path.DirectorySeparatorChar, pathSegments.Append(x.Name)),
+                text = x.Database, // Updated from x.Name to x.Database
+                id = string.Join(Path.DirectorySeparatorChar, pathSegments.Append(x.Database)), // Updated from x.Name to x.Database
                 cls = "file",
                 iconCls = "x-tree-icon-mssqldb",
                 check = false,
@@ -109,6 +113,7 @@ public class MSSQL : IFilesystemPlugin
                 fileSize = -1,
                 resolvedpath = null
             }).ToList();
+
             return databases;
         }
         catch (Exception ex)
