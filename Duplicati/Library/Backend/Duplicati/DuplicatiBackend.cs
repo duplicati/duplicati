@@ -255,7 +255,37 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
             using var response = await Utility.Utility.WithTimeout(_authTimeout, cancelToken, ct =>
                 _client.SendAsync(request, ct)
             ).ConfigureAwait(false);
-            response.EnsureSuccessStatusCode();
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorMessge = $"{(int)response.StatusCode} {response.ReasonPhrase}";
+                var extendedMessage = string.Empty;
+                try
+                {
+                    var responseContent = await response.Content.ReadAsStringAsync(cancelToken).ConfigureAwait(false);
+                    if (!string.IsNullOrWhiteSpace(responseContent))
+                    {
+                        extendedMessage = responseContent;
+
+                        if (responseContent.StartsWith("{") && responseContent.EndsWith("}"))
+                        {
+                            var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(responseContent);
+                            if (dict != null && dict.TryGetValue("error", out var message))
+                                extendedMessage = message;
+                            if (dict != null && dict.TryGetValue("message", out message))
+                                extendedMessage = message;
+                        }
+                    }
+                }
+                catch
+                {
+                    // Ignore, it is an error and we have no additional information anyway
+                }
+
+                if (!string.IsNullOrWhiteSpace(extendedMessage))
+                    errorMessge += $": {extendedMessage}";
+
+                throw new UserInformationException(errorMessge, "LoginFailed");
+            }
 
             var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
             var creds = await response.Content.ReadFromJsonAsync<CredentialsResponse>(options, cancellationToken: cancelToken).ConfigureAwait(false);
