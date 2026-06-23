@@ -1102,16 +1102,22 @@ namespace Duplicati.Library.Main
                         }
                         else
                         {
-                            // If we aren't allow to have missing sources, throw an exception indicating we couldn't find a drive where this volume is mounted
-                            if (!options.AllowMissingSource)
+                            // Couldn't find a drive where this volume is mounted: abort if requested,
+                            // otherwise warn (unless missing sources are silently allowed)
+                            if (options.AbortIfSourceMissing)
                                 throw new UserInformationException(Strings.Controller.SourceVolumeNameNotFoundError(inputsource, volumeGuid), "MissingSourceFolder");
+                            else if (!options.AllowMissingSource)
+                                Logging.Log.WriteWarningMessage(LOGTAG, "SourceVolumeNotFound", null, Strings.Controller.SourceVolumeNameNotFoundError(inputsource, volumeGuid));
                         }
                     }
                     else
                     {
-                        // If we aren't allow to have missing sources, throw an exception indicating we couldn't find this volume
-                        if (!options.AllowMissingSource)
+                        // Couldn't parse/find this volume: abort if requested, otherwise warn
+                        // (unless missing sources are silently allowed)
+                        if (options.AbortIfSourceMissing)
                             throw new UserInformationException(Strings.Controller.SourceVolumeNameInvalidError(inputsource), "SourceVolumeNameInvalid");
+                        else if (!options.AllowMissingSource)
+                            Logging.Log.WriteWarningMessage(LOGTAG, "SourceVolumeInvalid", null, Strings.Controller.SourceVolumeNameInvalidError(inputsource));
                     }
                 }
                 else
@@ -1124,24 +1130,24 @@ namespace Duplicati.Library.Main
                 foreach (var expandedSource in expandedSources)
                 {
                     string source;
+                    // Check if this is a mounted path, avoid logging the source if something fails here
+                    if (expandedSource.StartsWith("@"))
+                    {
+                        // NOTE: If the remote source fails to load,
+                        // this will be an enumeration warning, but will result
+                        // in the backup being recorded without files from the source
+                        // Eventually, this could lead to retention deletion,
+                        // causing the last backup with the data from the source to be deleted
+
+                        // TODO: We do not honor the PreventEmptySource option here,
+                        // as we do not know if the source is empty or not
+                        foundAnyPaths = true;
+                        sources.Add(expandedSource);
+                        continue;
+                    }
+
                     try
                     {
-                        // Check if this is a mounted path
-                        if (expandedSource.StartsWith("@"))
-                        {
-                            // TODO: If the remote source fails to load,
-                            // this will be an enumeration warning, but will result
-                            // in the backup being recorded without files from the source
-                            // Eventually, this could lead to retention deletion,
-                            // causing the last backup with the data from the source to be deleted
-
-                            // TODO: We do not honor the PreventEmptySource option here,
-                            // as we do not know if the source is empty or not
-                            foundAnyPaths = true;
-                            sources.Add(expandedSource);
-                            continue;
-                        }
-
                         // TODO: This expands "C:" to CWD, but not C:\
                         source = Path.GetFullPath(expandedSource);
                     }
@@ -1192,13 +1198,23 @@ namespace Duplicati.Library.Main
                     }
                 }
 
-                // If no paths were found, and we aren't allowed to have missing sources, throw an error
-                if (!foundAnyPaths && !options.AllowMissingSource)
+                // If no paths were found, handle according to options
+                if (!foundAnyPaths)
                 {
-                    if (unauthorized)
-                        throw new UserInformationException(Strings.Controller.SourceUnauthorizedError(inputsource), "SourceUnauthorized");
+                    if (options.AbortIfSourceMissing)
+                    {
+                        if (unauthorized)
+                            throw new UserInformationException(Strings.Controller.SourceUnauthorizedError(inputsource), "SourceUnauthorized");
 
-                    throw new UserInformationException(Strings.Controller.SourceIsMissingError(inputsource), "SourceIsMissing");
+                        throw new UserInformationException(Strings.Controller.SourceIsMissingError(inputsource), "SourceIsMissing");
+                    }
+                    else if (!options.AllowMissingSource)
+                    {
+                        if (unauthorized)
+                            throw new UserInformationException(Strings.Controller.SourceUnauthorizedError(inputsource), "SourceUnauthorized");
+
+                        Logging.Log.WriteWarningMessage(LOGTAG, "SourceIsMissing", null, Strings.Controller.SourceIsMissingWarning(inputsource));
+                    }
                 }
             }
 
@@ -1236,6 +1252,10 @@ namespace Duplicati.Library.Main
                         i--;
                         break;
                     }
+
+            // If there is nothing to do, don't run the backup
+            if (sources.Count == 0)
+                throw new UserInformationException(Strings.Controller.NoSourcesError, "NoSources");
 
             return sources.ToArray();
         }
