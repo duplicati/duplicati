@@ -21,10 +21,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Runtime.Versioning;
-using System.Text.RegularExpressions;
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Snapshots;
 using Duplicati.Library.Snapshots.Windows;
 
@@ -40,50 +39,60 @@ namespace Duplicati.Library.Modules.Builtin
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<MSSQLOptions>();
 
-        private const string m_MSSQLPathDBRegExp = @"\%MSSQL\%\\(?<server>[^\\]+\\[^\\]+)(?:\\(?<database>[^\\]+))?\\?$";
-        private const string m_MSSQLPathAllRegExp = @"%MSSQL%";
+        /// <summary>
+        /// The prefix used for MSSQL paths.
+        /// </summary>
+        private const string MSSQLPrefix = @"%MSSQL%";
+
+        /// <summary>
+        /// A target database from a source path
+        /// </summary>
+        public sealed record TargetDb
+        {
+            /// <summary>
+            /// The original path
+            /// </summary>
+            public required string Path { get; init; }
+            /// <summary>
+            /// The database name
+            /// </summary>
+            public required string Database { get; init; }
+            /// <summary>
+            /// The server name
+            /// </summary>
+            public required string Server { get; init; }
+            /// <summary>
+            /// The instance id
+            /// </summary>
+            public required string InstanceId { get; init; }
+        }
 
         #region IGenericModule Members
 
         /// <summary>
         /// Gets the key identifier for this module.
         /// </summary>
-        public string Key
-        {
-            get { return "mssql-options"; }
-        }
+        public string Key => "mssql-options";
 
         /// <summary>
         /// Gets the display name for this module.
         /// </summary>
-        public string DisplayName
-        {
-            get { return Strings.MSSQLOptions.DisplayName; }
-        }
+        public string DisplayName => Strings.MSSQLOptions.DisplayName;
 
         /// <summary>
         /// Gets the description of this module.
         /// </summary>
-        public string Description
-        {
-            get { return Strings.MSSQLOptions.Description; }
-        }
+        public string Description => Strings.MSSQLOptions.Description;
 
         /// <summary>
         /// Gets whether this module should be loaded by default.
         /// </summary>
-        public bool LoadAsDefault
-        {
-            get { return OperatingSystem.IsWindows(); }
-        }
+        public bool LoadAsDefault => OperatingSystem.IsWindows();
 
         /// <summary>
         /// Gets the list of supported command line arguments.
         /// </summary>
-        public IList<Interface.ICommandLineArgument> SupportedCommands
-        {
-            get { return null; }
-        }
+        public IList<Interface.ICommandLineArgument> SupportedCommands => null;
 
         /// <summary>
         /// Configures the module with the provided command line options.
@@ -112,13 +121,14 @@ namespace Duplicati.Library.Modules.Builtin
             {
                 Logging.Log.WriteWarningMessage(LOGTAG, "MSSqlWindowsOnly", null, "Microsoft SQL Server databases backup works only on Windows OS");
 
+                // The code here is a bit defensive, but it basically removes any traces of MSSQL paths
                 if (paths != null)
-                    paths = paths.Where(x => !x.Equals(m_MSSQLPathAllRegExp, StringComparison.OrdinalIgnoreCase) && !Regex.IsMatch(x, m_MSSQLPathDBRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).ToArray();
+                    paths = paths.Where(x => !x.StartsWith(MSSQLPrefix, StringComparison.OrdinalIgnoreCase)).ToArray();
 
                 if (!string.IsNullOrEmpty(filter))
                 {
                     var filters = filter.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries);
-                    var remainingfilters = filters.Where(x => !Regex.IsMatch(x, m_MSSQLPathDBRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).ToArray();
+                    var remainingfilters = filters.Where(x => x.Length > 1 && !x.Substring(1).StartsWith(MSSQLPrefix, StringComparison.OrdinalIgnoreCase)).ToArray();
                     filter = string.Join(System.IO.Path.PathSeparator.ToString(), remainingfilters);
                 }
 
@@ -127,6 +137,29 @@ namespace Duplicati.Library.Modules.Builtin
 
             // Windows, do the real stuff!
             return RealParseSourcePaths(ref paths, ref filter, commandlineOptions);
+        }
+
+        private static TargetDb ParsePathEntry(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path) || !path.StartsWith(MSSQLPrefix, StringComparison.OrdinalIgnoreCase))
+                return null;
+
+            var parts = path.Split(['\\'], StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length < 1 || !parts[0].Equals(MSSQLPrefix, StringComparison.OrdinalIgnoreCase))
+                return null;
+
+            return parts.Length switch
+            {
+                // Match all MSSQL databases
+                1 => new TargetDb() { Path = path, Server = "", InstanceId = "", Database = "" },
+                // Match a server
+                2 => new TargetDb() { Path = path, Server = parts[1], InstanceId = "", Database = "" },
+                // Match a server instance, or database on default server instance
+                3 => new TargetDb() { Path = path, Server = parts[1], InstanceId = parts[2], Database = "" },
+                // Match a database on a server instance
+                4 => new TargetDb() { Path = path, Server = parts[1], InstanceId = parts[2], Database = parts[3] },
+                _ => null
+            };
         }
 
         /// <summary>
@@ -140,34 +173,28 @@ namespace Duplicati.Library.Modules.Builtin
         // referenced types from System.Management here
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         [SupportedOSPlatform("windows")]
-        private Dictionary<string, string> RealParseSourcePaths(ref string[] paths, ref string filter, Dictionary<string, string> commandlineOptions)
+        public Dictionary<string, string> RealParseSourcePaths(ref string[] paths, ref string filter, Dictionary<string, string> commandlineOptions, IMSSQLUtility mssqlUtility = null)
         {
             var changedOptions = new Dictionary<string, string>();
-            var filtersInclude = new List<string>();
-            var filtersExclude = new List<string>();
+            var mssqlfilters = new List<string>();
 
             if (!string.IsNullOrEmpty(filter))
             {
+                var remainingFilters = new List<string>();
                 var filters = filter.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries);
 
-                filtersInclude = filters.Where(x => x.StartsWith("+", StringComparison.Ordinal) && Regex.IsMatch(x, m_MSSQLPathDBRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
-                    .Select(x =>
-                    {
-                        var match = Regex.Match(x.Substring(1), m_MSSQLPathDBRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-                        return Path.Combine(match.Groups["server"].Value, match.Groups["database"].Value);
-                    }).ToList();
-                filtersExclude = filters.Where(x => x.StartsWith("-", StringComparison.Ordinal) && Regex.IsMatch(x, m_MSSQLPathDBRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
-                    .Select(x =>
-                    {
-                        var match = Regex.Match(x.Substring(1), m_MSSQLPathDBRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-                        return Path.Combine(match.Groups["server"].Value, match.Groups["database"].Value);
-                    }).ToList();
+                foreach (var f in filters)
+                {
+                    if (f.Contains(MSSQLPrefix, StringComparison.OrdinalIgnoreCase))
+                        mssqlfilters.Add(f);
+                    else
+                        remainingFilters.Add(f);
+                }
 
-                var remainingfilters = filters.Where(x => !Regex.IsMatch(x, m_MSSQLPathDBRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).ToArray();
-                filter = string.Join(System.IO.Path.PathSeparator.ToString(), remainingfilters);
+                filter = string.Join(System.IO.Path.PathSeparator.ToString(), remainingFilters);
             }
 
-            var mssqlUtility = new MSSQLUtility();
+            mssqlUtility ??= new MSSQLUtility();
 
             if (paths == null || !ContainFilesForBackup(paths) || !mssqlUtility.IsMSSQLInstalled)
                 return changedOptions;
@@ -195,90 +222,130 @@ namespace Duplicati.Library.Modules.Builtin
             Logging.Log.WriteInformationMessage(LOGTAG, "MsSqlDatabaseCount", "Found {0} databases on Microsoft SQL Server", mssqlUtility.DBs.Count);
 
             foreach (var db in mssqlUtility.DBs)
-                Logging.Log.WriteProfilingMessage(LOGTAG, "MsSqlDatabaseName", "Found DB name {0}, ID {1}, files {2}", db.Name, db.ID, string.Join(";", db.DataPaths));
+                Logging.Log.WriteProfilingMessage(LOGTAG, "MsSqlDatabaseName", "Found DB name {0}, Server {1}, Instance {2}, files {3}", db.Database, db.Server, db.InstanceId, string.Join(";", db.DataPaths));
 
-            List<MSSQLDB> dbsForBackup = new List<MSSQLDB>();
+            var includedDbs = new List<TargetDb>();
+            var nonMatchedPaths = new List<string>();
 
-            if (paths.Contains(m_MSSQLPathAllRegExp, StringComparer.OrdinalIgnoreCase))
+            foreach (var path in paths)
             {
-                dbsForBackup = mssqlUtility.DBs;
+                var match = ParsePathEntry(path);
+                if (match == null)
+                    nonMatchedPaths.Add(path);
+                else
+                    includedDbs.Add(match);
             }
-            else
+
+            var dbsForBackup = new List<MSSQLDB>();
+            var serverInstanceMap = mssqlUtility.DBs
+                .GroupBy(x => x.ServerInstanceId)
+                .ToDictionary(x => x.Key, x => x.GroupBy(y => y.Database).ToDictionary(y => y.Key, y => y.ToList(), StringComparer.OrdinalIgnoreCase), StringComparer.OrdinalIgnoreCase);
+
+            var serverMap = mssqlUtility.DBs
+                .GroupBy(x => x.Server)
+                .ToDictionary(x => x.Key, x => x.GroupBy(y => y.Database).ToDictionary(y => y.Key, y => y.ToList(), StringComparer.OrdinalIgnoreCase), StringComparer.OrdinalIgnoreCase);
+
+            foreach (var db in includedDbs)
             {
-                var serverToDatabases = mssqlUtility.DBs.ToLookup(db => db.ID.Replace(Path.DirectorySeparatorChar + db.Name, string.Empty), db => db);
-                var guestEntries = paths.Where(x => Regex.IsMatch(x, m_MSSQLPathDBRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
-                    .Select(x =>
-                    {
-                        var m = Regex.Match(x, m_MSSQLPathDBRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-                        return (Server: m.Groups["server"].Value, Database: m.Groups["database"].Value);
-                    });
-
-
-                foreach (var (server, database) in guestEntries)
+                // Catch-all case
+                if (string.IsNullOrWhiteSpace(db.Server))
                 {
-                    var databases = serverToDatabases[server];
-                    if (string.IsNullOrWhiteSpace(database))
+                    dbsForBackup.AddRange(mssqlUtility.DBs);
+                    continue;
+                }
+
+                if (!serverMap.TryGetValue(db.Server, out var serverDbs))
+                    throw new Duplicati.Library.Interface.UserInformationException($"Server name specified in path as \"{db.Path}\" cannot be found", "MsSqlServerNotFound");
+
+
+                // No instance id, so grab everything from that server
+                if (string.IsNullOrWhiteSpace(db.InstanceId))
+                {
+                    dbsForBackup.AddRange(serverDbs.SelectMany(x => x.Value));
+                    continue;
+                }
+
+                // Fully qualified name server\instance\database
+                if (!string.IsNullOrWhiteSpace(db.Database))
+                {
+                    if (!serverInstanceMap.TryGetValue($"{db.Server}\\{db.InstanceId}", out var mappedServerInstance))
+                        throw new Library.Interface.UserInformationException($"Server instance id specified in path as \"{db.Path}\" cannot be found", "MsSqlServerInstanceNotFound");
+
+                    if (!mappedServerInstance.TryGetValue(db.Database, out var mappedList))
+                        throw new Library.Interface.UserInformationException($"Database name specified in path as \"{db.Path}\" cannot be found", "MsSqlDatabaseNotFound");
+
+                    dbsForBackup.AddRange(mappedList);
+                    continue;
+                }
+
+                // At this point we have a server name and one more identifier
+                // It could be a database name or an instance id
+                // Either server\instance or server\database, but we don't know which one it is
+
+                // If we match on the instance id, grab that
+                var matchesInstance = serverInstanceMap.TryGetValue($"{db.Server}\\{db.InstanceId}", out var serverInstanceDbs);
+                var matchesDb = serverDbs.TryGetValue(db.InstanceId, out var dbList);
+
+                if (matchesInstance && matchesDb)
+                    throw new Library.Interface.UserInformationException($"Server instance id specified in path as \"{db.Path}\" is ambiguous", "MsSqlServerInstanceAmbiguous");
+
+                if (matchesInstance)
+                    dbsForBackup.AddRange(serverInstanceDbs.SelectMany(x => x.Value));
+                else if (matchesDb)
+                    dbsForBackup.AddRange(dbList);
+                else
+                    throw new Library.Interface.UserInformationException($"Server instance id specified in path as \"{db.Path}\" cannot be found", "MsSqlServerInstanceNotFound");
+
+            }
+
+            // Merge duplicates that we may have picked up prior to applying the filter
+            dbsForBackup = dbsForBackup
+                .GroupBy(x => (x.Server, x.InstanceId, x.Database), x => x.DataPaths)
+                .Select(x => new MSSQLDB
+                {
+                    Server = x.Key.Server,
+                    InstanceId = x.Key.InstanceId,
+                    Database = x.Key.Database,
+                    DataPaths = x.SelectMany(y => y).Distinct(StringComparer.OrdinalIgnoreCase).ToList()
+                })
+                .ToList();
+
+
+            if (mssqlfilters.Count > 0)
+            {
+                var resolvedFilter = Utility.FilterExpression.Deserialize(mssqlfilters.ToArray());
+                Utility.FilterExpression.AnalyzeFilters(resolvedFilter, out var filtersInclude, out var filtersExclude);
+
+                var defaultExclude = filtersInclude && !filtersExclude; // true = exclude unmatched, false = include unmatched
+
+                dbsForBackup = dbsForBackup
+                    .Where(x =>
                     {
-                        dbsForBackup.AddRange(databases);
-                    }
-                    else
-                    {
-                        var databaseId = Path.Combine(server, database);
-                        var foundDb = databases.FirstOrDefault(x => x.ID.Equals(databaseId, StringComparison.OrdinalIgnoreCase));
-                        if (foundDb is null)
+                        // We need to emulate walking the tree
+                        var virtualPath = $"{MSSQLPrefix}\\{x.ServerInstanceId}\\{x.Database}";
+                        var segments = virtualPath.Split(['\\'], StringSplitOptions.RemoveEmptyEntries);
+                        var current = string.Empty;
+
+                        for (var i = 0; i < segments.Length - 1; i++)
                         {
-                            throw new Duplicati.Library.Interface.UserInformationException($"DB name specified in source with ID {databaseId} cannot be found", "MsSqlDatabaseNotFound");
+                            current += Util.AppendDirSeparator(segments[i]);
+                            // If a parent path is filtered, exit
+                            if (resolvedFilter.Matches(current, out var treeResult, out var _) && !treeResult)
+                                return false;
                         }
 
-                        dbsForBackup.Add(foundDb);
-                    }
-                }
+                        // Check the actual path
+                        if (!resolvedFilter.Matches(virtualPath, out var result, out var _))
+                            return !defaultExclude;
+
+                        return result;
+                    }).ToList();
             }
-
-            if (filtersInclude.Count > 0)
-                foreach (var dbID in filtersInclude)
-                {
-                    var foundDB = mssqlUtility.DBs.Where(x => x.ID.Equals(dbID, StringComparison.OrdinalIgnoreCase));
-
-                    if (foundDB.Count() != 1)
-                        throw new Duplicati.Library.Interface.UserInformationException(string.Format("DB name specified in include filter with ID {0} cannot be found", dbID), "MsSqlDatabaseNotFound");
-
-                    dbsForBackup.Add(foundDB.First());
-                    Logging.Log.WriteInformationMessage(LOGTAG, "IncludeByFilter", "Including {0} based on including filters", dbID);
-                }
-
-            dbsForBackup = dbsForBackup.Distinct().ToList();
-
-            if (filtersExclude.Count > 0)
-                foreach (var dbID in filtersExclude)
-                {
-                    var foundDB = dbsForBackup.Where(x => x.ID.Equals(dbID, StringComparison.OrdinalIgnoreCase));
-
-                    if (foundDB.Count() != 1)
-                        throw new Duplicati.Library.Interface.UserInformationException(string.Format("DB name specified in exclude filter with ID {0} cannot be found", dbID), "MsSqlDatabaseNotFound");
-
-                    dbsForBackup.Remove(foundDB.First());
-                    Logging.Log.WriteInformationMessage(LOGTAG, "ExcludeByFilter", "Excluding {0} based on excluding filters", dbID);
-                }
-
-            var pathsForBackup = new List<string>(paths);
-            var filterhandler = new Utility.FilterExpression(
-                filter.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries).Where(x => x.StartsWith("-", StringComparison.Ordinal)).Select(x => x.Substring(1)).ToList());
-
-            foreach (var dbForBackup in dbsForBackup)
-                foreach (var pathForBackup in dbForBackup.DataPaths)
-                {
-                    if (!filterhandler.Matches(pathForBackup, out _, out _))
-                    {
-                        Logging.Log.WriteInformationMessage(LOGTAG, "IncludeDatabase", "For DB {0} - adding {1}", dbForBackup.Name, pathForBackup);
-                        pathsForBackup.Add(pathForBackup);
-                    }
-                    else
-                        Logging.Log.WriteInformationMessage(LOGTAG, "ExcludeByFilter", "Excluding {0} based on excluding filters", pathForBackup);
-                }
-
-            paths = pathsForBackup.Where(x => !x.Equals(m_MSSQLPathAllRegExp, StringComparison.OrdinalIgnoreCase) && !Regex.IsMatch(x, m_MSSQLPathDBRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
-                .Distinct(Utility.Utility.ClientFilenameStringComparer).OrderBy(a => a).ToArray();
+            var dbPaths = dbsForBackup.SelectMany(x => x.DataPaths).ToList();
+            paths = nonMatchedPaths
+                .Concat(dbPaths)
+                .Distinct(Utility.Utility.ClientFilenameStringComparer)
+                .ToArray();
 
             return changedOptions;
         }
@@ -293,7 +360,8 @@ namespace Duplicati.Library.Modules.Builtin
             if (paths == null || !OperatingSystem.IsWindows())
                 return false;
 
-            return paths.Where(x => !string.IsNullOrWhiteSpace(x)).Any(x => x.Equals(m_MSSQLPathAllRegExp, StringComparison.OrdinalIgnoreCase) || Regex.IsMatch(x, m_MSSQLPathDBRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant));
+            return paths.Where(x => !string.IsNullOrWhiteSpace(x))
+                .Any(x => x.StartsWith(MSSQLPrefix, StringComparison.OrdinalIgnoreCase));
         }
 
         #endregion
