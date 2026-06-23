@@ -120,6 +120,13 @@ namespace Duplicati.UnitTest
 
             Assert.That(failed, Is.True, "Failed to trigger the dlist upload failure");
 
+            // Wait a moment to ensure the resumed backup's operation timestamp is
+            // strictly after the synthetic filelist timestamp created from the
+            // interrupted backup. Fileset filenames have one-second resolution, so
+            // a sub-second gap between backups can otherwise place the synthetic
+            // fileset timestamp ahead of the current operation timestamp.
+            await Task.Delay(TimeSpan.FromSeconds(1));
+
             // Verify that dblock files were uploaded but no dlist exists
             var dblockFilesAfterFail = Directory.EnumerateFiles(this.TARGETFOLDER, "*.dblock.*").ToList();
             Assert.That(dblockFilesAfterFail.Count, Is.GreaterThan(0), "At least one dblock file should have been uploaded");
