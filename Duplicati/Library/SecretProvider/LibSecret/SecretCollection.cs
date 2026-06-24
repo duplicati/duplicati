@@ -43,9 +43,13 @@ public class SecretCollection : IDisposable
     /// </summary>
     private const string SchemaAttribute = "xdg:schema";
     /// <summary>
-    /// The schema name applied to created items. Uses the standard generic secret schema.
+    /// The schema name applied to created items.
     /// </summary>
-    private const string GenericSchema = "org.freedesktop.Secret.Generic";
+    private const string AppliedSchema = "com.duplicati.Secret";
+    /// <summary>
+    /// The value used for the "display" attribute.
+    /// </summary>
+    private const string DuplicatiDisplayAttribute = "Duplicati Secrets";
     /// <summary>
     /// The log tag for the secret collection
     /// </summary>
@@ -410,10 +414,12 @@ public class SecretCollection : IDisposable
             return;
         }
 
-        // Cosmetic attributes
+        // KDE's KeepSecret groups by the "server" attribute
+        // Seahorse shows the "user" attribute underneath
         var attributes = new Dictionary<string, string>
         {
-            [SchemaAttribute] = GenericSchema
+            [SchemaAttribute] = AppliedSchema,
+            ["server"] = DuplicatiDisplayAttribute,
         };
 
         var properties = new Dictionary<string, VariantValue>
