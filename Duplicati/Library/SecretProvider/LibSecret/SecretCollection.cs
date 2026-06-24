@@ -420,6 +420,7 @@ public class SecretCollection : IDisposable
         {
             [SchemaAttribute] = AppliedSchema,
             ["server"] = DuplicatiDisplayAttribute,
+            ["user"] = DuplicatiDisplayAttribute,
         };
 
         var properties = new Dictionary<string, VariantValue>
