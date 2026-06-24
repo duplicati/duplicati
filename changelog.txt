@@ -1,3 +1,115 @@
+2026-06-24 - 2.3.0.105_canary_2026-06-24
+==========
+# 2026-06-24 - 2.3.0.105_canary_2026-06-24
+
+This release is a canary release intended to be used for testing.
+
+# Store configuration with backup
+
+This release revives the `store-task-config` option and makes it enabled by default for encrypted backups. The backup configuration is stored with the backup data, making it easier to restore a configuration later.
+
+For unencrypted backups, no secrets are stored by default. The behavior can be customized with options to store none, self, or all configurations, with or without secrets. The UI has been updated to allow restoring from the destination config. If multiple configurations are found, the user can select one or more backup configurations to restore.
+
+# Support for MacOS ACLs
+
+This release adds support for reading MacOS attributes and ACL strings during backup, and restoring them when permission restores are selected.
+
+# Support for Windows Alternate Data Streams
+
+This release implements support for reading and writing alternate data streams (ADS) on Windows. This feature is disabled by default and can be enabled with the advanced option `--enable-ads-backup`. If ADS content is found in the source, this is restored by default but can be disabled with `--disable-ads-restore`.
+
+# Fixed MSSQL backups
+
+Since 2.1 the MSSQL backups would produce errors if attempting to back up an MSSQL server that was running as the default instance, but would work with a named instance. This release fixes the issue and now handles both default- and named instances.
+
+# Improved missing source handling
+
+The default behavior when sources are missing has changed. Previously, a missing source would abort the backup. Now, a missing source will only trigger a warning unless the option `--abort-if-source-missing` is set. The option `--allow-missing-source` can still be used to suppress warnings entirely. If no sources are found at all, the backup will still abort.
+
+# Relative database paths
+
+Database paths are now stored relative to the data folder by default. This makes it simpler to move the data folder as the paths are not stored in full. Existing backups retain their full paths, but manually updating a database path will make it relative if it is within the data folder.
+
+# Updated LibSecret support for KDE
+
+The LibSecret support has been updated to work correctly on KDE Plasma 5+6. The default collection alias is now properly resolved, fixing issues where a new collection named `default` would be created incorrectly.
+
+# License flexibility in MS365 and Google Workspace
+
+The way license usage is calculated has been updated. Enumeration is now applied without imposing limitations, but actually reading the items is limited. This allows filtering unwanted items before they count towards usage.
+
+# Improved source tree
+
+To make it easier to see what data is included, the source tree will now show the content of remote sources, including Microsoft 365 tenants, Google workspace subscriptions and full-disk content.
+
+## Easier filter configuration
+
+Expanding the content will show item inclusion state. Clicking items will toggle them, similar to how regular file select works. This allows selective backup of remote data, such as picking which MS365 mailboxes to include.
+
+For the full-disk selection is now possible to select an entire disk as the source, or select the individual partitions.
+
+## Server-side filters
+
+Additionally, the filter evaluation will now be performed server-side if the filters are not "simple filters". When a non-trivial filter is in the list, the C# code will be asked to evaluate the list and produces the filtered results which are then displayed. This increases the correctness of the displayed filter state because the same code is now used for both display and actual backup operations.
+
+## Resolve helper entries
+
+The helper entries, like "My Documents" are now show in all picker situations and resolve to the full path. This makes it possible to use these shortcuts to pick things like log-file location or SSH keyfiles, without having to traverse the full tree to find the locations.
+
+## Browse remote destinations
+
+The destination configuration has been updated to include a browse button for finding the remote destination path. Once the connection details are in place, the browse button can be used to navigate the remote file system and select the desired destination folder. This works both for configuring a backup and for picking the restore location.
+
+## Detailed list of changes
+
+- Updated LibSecret support to work correctly on KDE Plasma 6
+- Improved missing source handling, missing sources now warn instead of abort by default
+- Fixed MSSQL default instance handling
+- Fixed incorrect option types for lock mode, now showing as enums in the UI
+- Fixed retry of HTTP messages
+- Fixed ordering issue where filtered paths were accessed before filtering
+- Use relative database paths by default
+- Updated rclone in Docker images to use recent releases
+- Store configuration with backup with flexible options for encrypted and unencrypted backups
+- Added support for MacOS ACLs
+- Added searching in metadata for remote sources
+- Filter paths in reported log data to avoid leaking sensitive information
+- Prevent crash on metadata error during restore
+- Fixed case-insensitive search and exposed the flag in the API
+- Implemented support for ADS on Windows
+- Added auth timeout to Duplicati backend
+- Handle script modified filters correctly
+- Fix minor issues with remote sources
+- Improve license flexibility, allowing filtering before usage limits
+- Added unified interface for remote browsing
+- Always install WindowsService.exe in MSI
+- Add server-side filter evaluation
+- Block path traversal in recovery tool
+- Allow disabling default secret provider
+- Fixed case-change issue with USN on Windows
+
+## Updates to ngclient
+
+### New Features
+
+- Added support for restoring from remote config.
+- Added ability to browse for a destination path.
+- Added support for the new destination list API (auto-toggled if server supports it).
+- Added support for browsing MS365 and Google Workspace, so filters can be applied while content is visible.
+- Added support for server-side filters in treeview.
+- Showing shortcuts in pickers as we can now resolve them.
+- Added a debouncer to filter calls.
+- Added error indicator to tree view.
+
+### Improvements
+
+- Clean up target disk layout.
+- Apply extended search only if we are restoring from a destination that needs it.
+- Include server-only options, if any.
+- Better Google Workspace error messages.
+- Fixes to allow listing full disks on Windows.
+- Fixed issue with evaluating globbing.
+
 2026-06-04 - 2.3.0.104_canary_2026-06-04
 ==========
 This release is a canary release intended to be used for testing.
