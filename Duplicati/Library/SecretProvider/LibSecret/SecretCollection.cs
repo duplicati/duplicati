@@ -420,7 +420,7 @@ public class SecretCollection : IDisposable
         {
             [SchemaAttribute] = AppliedSchema,
             ["server"] = DuplicatiDisplayAttribute,
-            ["user"] = DuplicatiDisplayAttribute,
+            ["user"] = label,
             ["type"] = "plaintext"
         };
 
