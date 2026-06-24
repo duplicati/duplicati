@@ -421,6 +421,7 @@ public class SecretCollection : IDisposable
             [SchemaAttribute] = AppliedSchema,
             ["server"] = DuplicatiDisplayAttribute,
             ["user"] = DuplicatiDisplayAttribute,
+            ["type"] = "plaintext"
         };
 
         var properties = new Dictionary<string, VariantValue>
