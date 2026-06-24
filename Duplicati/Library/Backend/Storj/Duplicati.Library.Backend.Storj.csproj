@@ -10,7 +10,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="SQLitePCLRaw.bundle_green" Version="2.1.10" />
+    <!-- Force these versions to avoid a version with vulnerabilities -->
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3" />
+    <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" Version="2.1.11" ExcludeAssets="All" NoWarn="NU1903" />
+
     <PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="uplink.NET" Version="2.14.3623" />
