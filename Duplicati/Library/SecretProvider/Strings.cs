@@ -201,10 +201,12 @@ internal static class LibSecretLinuxProvider
     public static string DisplayName => LC.L("Secrets from libsecret");
     public static string Description => LC.L("Secret provider that reads and writes secrets from the libsecret password manager");
     public static string CollectionDescriptionShort => LC.L("The collection name");
-    public static string CollectionDescriptionLong => LC.L("The collection name to use for retrieving secrets from the libsecret password manager. The value \"default\" can be used to access the default collection, and will resolve to \"login\" if the system does not have a default collection.");
+    public static string CollectionDescriptionLong => LC.L("The collection (keyring/wallet) name to use for retrieving secrets from the libsecret password manager. Leave empty for the system default.");
     public static string CaseSensitiveDescriptionShort => LC.L("Case sensitivity");
     public static string CaseSensitiveDescriptionLong => LC.L("Whether to use case-sensitive matching for secret names");
     public static string NoAutoCreateCollectionDescriptionShort => LC.L("Disable auto-create collection");
     public static string NoAutoCreateCollectionDescriptionLong => LC.L("Disables the automatic creation of the collection if it does not exist when accessing libsecret");
+    public static string ServiceNameDescriptionShort => LC.L("The D-Bus service name");
+    public static string ServiceNameDescriptionLong => LC.L("The D-Bus service name implementing the freedesktop Secret Service API.");
 }
 
