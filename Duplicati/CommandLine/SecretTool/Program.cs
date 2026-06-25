@@ -102,9 +102,8 @@ public static class Program
     /// <returns>The exit code.</returns>
     private static async Task<int> RunTest(string secretUrl, string[] secrets)
     {
-        var secretProvider = SecretProviderLoader.CreateInstance(secretUrl);
-        await secretProvider.InitializeAsync(new Uri(secretUrl), CancellationToken.None);
-        var result = await secretProvider.ResolveSecretsAsync(secrets, CancellationToken.None);
+        var secretProvider = await SecretProviderLoader.CreateInstanceAsync(secretUrl, true, CancellationToken.None).ConfigureAwait(false);
+        var result = await secretProvider.ResolveSecretsAsync(secrets, CancellationToken.None).ConfigureAwait(false);
         Console.WriteLine("NOTE: Secret values are not displayed for security reasons");
 
         Console.WriteLine("Secrets:");
@@ -140,7 +139,7 @@ public static class Program
         {
             if (string.IsNullOrWhiteSpace(secretUrl))
             {
-                var defaultProvider = await SecretProviderLoader.GetDefaultSecretProviderForOperatingSystem(CancellationToken.None);
+                var defaultProvider = await SecretProviderLoader.GetDefaultSecretProviderForOperatingSystem(true, CancellationToken.None);
                 if (defaultProvider == null)
                     throw new UserInformationException("No working default secret provider found", "NoDefaultSecretProvider");
 
@@ -204,12 +203,11 @@ public static class Program
                 throw new UserInformationException("Secret values do not match", "SecretMismatch");
         }
 
-        var secretProvider = SecretProviderLoader.CreateInstance(secretUrl);
-        await secretProvider.InitializeAsync(new Uri(secretUrl), CancellationToken.None);
+        var secretProvider = await SecretProviderLoader.CreateInstanceAsync(secretUrl, true, CancellationToken.None).ConfigureAwait(false);
         await secretProvider.SetSecretAsync(key, value, overwrite, CancellationToken.None);
 
         // Verify that the secret was stored correctly
-        var result = await secretProvider.ResolveSecretsAsync([key], CancellationToken.None);
+        var result = await secretProvider.ResolveSecretsAsync([key], CancellationToken.None).ConfigureAwait(false);
         if (!result.ContainsKey(key) || result[key] != value)
             throw new UserInformationException("Failed to verify that the secret was stored correctly", "SecretVerificationFailed");
         Console.WriteLine($"Secret '{key}' stored.");

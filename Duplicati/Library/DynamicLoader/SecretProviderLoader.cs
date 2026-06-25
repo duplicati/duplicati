@@ -117,8 +117,10 @@ public class SecretProviderLoader
     /// Creates an instance of a secret provider
     /// </summary>
     /// <param name="config">The configuration string</param>
+    /// <param name="initialize">Whether to initialize the provider</param>
+    /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>The secret provider instance</returns>
-    public static ISecretProvider CreateInstance(string config)
+    public static async Task<ISecretProvider> CreateInstanceAsync(string config, bool initialize, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(config))
             throw new ArgumentNullException(nameof(config));
@@ -145,6 +147,15 @@ public class SecretProviderLoader
             config = result;
         }
 
+        if (string.Equals(config, "default://", StringComparison.OrdinalIgnoreCase))
+        {
+            var defaultProvider = await GetDefaultSecretProviderForOperatingSystem(initialize, cancellationToken).ConfigureAwait(false);
+            if (defaultProvider == null)
+                throw new InvalidOperationException("No default secret provider is available for this system");
+
+            return defaultProvider;
+        }
+
         var uri = new Uri(config);
         var key = uri.Scheme;
 
@@ -154,6 +165,9 @@ public class SecretProviderLoader
         if (Activator.CreateInstance(providerType.GetType()) is not ISecretProvider provider)
             throw new InvalidOperationException($"Failed to create an instance of {providerType}");
 
+        if (initialize)
+            await provider.InitializeAsync(uri, cancellationToken).ConfigureAwait(false);
+
         return provider;
     }
 
@@ -161,37 +175,34 @@ public class SecretProviderLoader
     /// Gets the default secret provider for the current operating system
     /// </summary>
     /// <returns>The secret provider or null if none is available</returns>
-    public static async Task<ISecretProvider?> GetDefaultSecretProviderForOperatingSystem(CancellationToken cancellationToken)
+    public static async Task<ISecretProvider?> GetDefaultSecretProviderForOperatingSystem(bool initialize, CancellationToken cancellationToken)
     {
         if (OperatingSystem.IsWindows())
         {
             var res = new WindowsCredentialManagerProvider();
-            await res.InitializeAsync(new Uri("wincred://"), cancellationToken);
+            if (initialize)
+                await res.InitializeAsync(new Uri("wincred://"), cancellationToken).ConfigureAwait(false);
             return res;
         }
         if (OperatingSystem.IsMacOS())
         {
             var res = new MacOSKeyChainProvider();
-            await res.InitializeAsync(new Uri("keychain://"), cancellationToken);
+            if (initialize)
+                await res.InitializeAsync(new Uri("keychain://"), cancellationToken).ConfigureAwait(false);
             return res;
         }
 
         if (OperatingSystem.IsLinux())
         {
-            ISecretProvider tmp = new LibSecretLinuxProvider();
-            if (await tmp.IsSupported(cancellationToken))
+            var res = new LibSecretLinuxProvider();
+            if (await res.IsSupported(cancellationToken).ConfigureAwait(false))
             {
-                var res = new LibSecretLinuxProvider();
-                await res.InitializeAsync(new Uri("libsecret://"), cancellationToken);
-                if (await res.DoesCollectionExist(cancellationToken))
+                if (!initialize)
                     return res;
-            }
 
-            tmp = new UnixPassProvider();
-            if (await tmp.IsSupported(cancellationToken))
-            {
-                await tmp.InitializeAsync(new Uri("pass://"), cancellationToken);
-                return tmp;
+                await res.InitializeAsync(new Uri("libsecret://"), cancellationToken).ConfigureAwait(false);
+                if (await res.DoesCollectionExist(cancellationToken).ConfigureAwait(false))
+                    return res;
             }
         }
 

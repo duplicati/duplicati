@@ -7,6 +7,7 @@ namespace Duplicati.Proprietary.LicenseChecker;
 
 public static class LicenseHelper
 {
+    private static readonly string LOGTAG = Library.Logging.Log.LogTagFromType(typeof(LicenseHelper));
     private static readonly object _licenseLock = new();
     private static LicenseData? _cachedLicenseData;
     private static string? _remoteClientLicenseKey;
@@ -59,7 +60,22 @@ public static class LicenseHelper
         // Check for a license file in the installation directory (highest priority)
         var keyfilepath = Path.Combine(UpdaterManager.INSTALLATIONDIR, "license.key");
         if (File.Exists(keyfilepath))
+        {
+            // Fallback to assume we have a direct license key
             key = $"file://{keyfilepath}";
+
+            try
+            {
+                // Probe if the file has base64 encoded data
+                var content = File.ReadAllText(keyfilepath);
+                if (content.TrimStart().StartsWith("base64:", StringComparison.OrdinalIgnoreCase) || content.TrimStart().StartsWith("jwt:", StringComparison.OrdinalIgnoreCase))
+                    key = content;
+            }
+            catch (Exception ex)
+            {
+                Library.Logging.Log.WriteVerboseMessage(LOGTAG, "FailedToLoadLicenseFile", ex, "Failed to open the existing license file, check permissions");
+            }
+        }
 
         // Check for a license key in the environment variables
         if (string.IsNullOrWhiteSpace(key))
