@@ -118,7 +118,7 @@ partial class BackendManager
         /// <param name="db">The database to write pending messages to.</param>
         /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
         /// <returns>A task that when awaited contains whether any messages were flushed.</returns>
-        public async Task<bool> FlushPendingMessagesAsync(LocalDatabase db, CancellationToken cancellationToken)
+        public async Task<bool> FlushPendingMessagesAsync(IBackendManagerDatabase db, CancellationToken cancellationToken)
         {
             List<IRemoteOperationEntry> entries;
             lock (m_dbqueuelock)
@@ -160,7 +160,7 @@ partial class BackendManager
                 // This commit is to mimic the pre Microsoft.Data.Sqlite backend
                 // behavior, in which RemoveRemoteVolumes started a new
                 // transaction, if none was passed down.
-                await db.Transaction.CommitAsync(token: cancellationToken).ConfigureAwait(false);
+                await db.CommitAsync(cancellationToken).ConfigureAwait(false);
             }
 
             return true;

@@ -29,7 +29,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CoCoL;
-using Duplicati.Library.Main.Database;
+using Duplicati.Library.Main.Database.Local;
 using Microsoft.Extensions.Caching.Memory;
 
 #nullable enable

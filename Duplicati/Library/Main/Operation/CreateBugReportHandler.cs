@@ -20,11 +20,10 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
-using Duplicati.Library.Main.Database;
+using Duplicati.Library.Main.Database.Local;
 using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation

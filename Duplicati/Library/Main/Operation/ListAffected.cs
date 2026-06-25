@@ -21,7 +21,6 @@
 
 using System;
 using System.Linq;
-using System.Collections.Generic;
 using Duplicati.Library.Interface;
 using System.Threading.Tasks;
 using System.IO;
@@ -44,7 +43,7 @@ namespace Duplicati.Library.Main.Operation
             if (!File.Exists(m_options.Dbpath))
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
 
-            await using var db = await Database.LocalListAffectedDatabase.CreateAsync(m_options.Dbpath, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+            await using var db = await Database.Local.LocalListAffectedDatabase.CreateAsync(m_options.Dbpath, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
             if (callback == null)
             {
                 m_result.SetResult(

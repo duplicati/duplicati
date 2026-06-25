@@ -50,7 +50,7 @@ namespace Duplicati.WebserverCore.Endpoints.V1
 
         private static Dto.GetDbPathDto ExecuteDbPath(string uri)
         {
-            var path = CLIDatabaseLocator.GetDatabasePathForCLI(uri, null, false, false);
+            var path = CLIDatabaseLocator.GetDatabasePathForCLI(uri, null, false, false, false);
             return new Dto.GetDbPathDto(!string.IsNullOrWhiteSpace(path), path);
         }
 

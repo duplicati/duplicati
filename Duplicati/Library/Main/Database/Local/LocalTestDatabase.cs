@@ -30,7 +30,7 @@ using Duplicati.Library.Utility;
 using System.Threading;
 using System.Runtime.CompilerServices;
 
-namespace Duplicati.Library.Main.Database
+namespace Duplicati.Library.Main.Database.Local
 {
     /// <summary>
     /// Represents a  local database used for testing and verification.

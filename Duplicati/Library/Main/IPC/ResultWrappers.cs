@@ -157,6 +157,14 @@ public class VacuumResultsWrapper : BasicResultsWrapper, IVacuumResults
 }
 
 /// <summary>
+/// Wrapper for sync results
+/// </summary>
+public class SyncResultsWrapper : BasicResultsWrapper, ISyncResults
+{
+    public SyncResultsWrapper(SyncResultsDto dto) : base(dto) { }
+}
+
+/// <summary>
 /// Wrapper for delete results
 /// </summary>
 public class DeleteResultsWrapper : BasicResultsWrapper, IDeleteResults

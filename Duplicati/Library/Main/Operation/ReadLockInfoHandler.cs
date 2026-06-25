@@ -26,7 +26,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Logging;
-using Duplicati.Library.Main.Database;
+using Duplicati.Library.Main.Database.Local;
 
 namespace Duplicati.Library.Main.Operation
 {

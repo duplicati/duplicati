@@ -30,7 +30,7 @@ using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Microsoft.Data.Sqlite;
 
-namespace Duplicati.Library.Main.Database
+namespace Duplicati.Library.Main.Database.Local
 {
     /// <summary>
     /// A local database for deleting filesets and blocks.

@@ -23,7 +23,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
-using Duplicati.Library.Main.Database;
+using Duplicati.Library.Main.Database.Local;
 using Duplicati.Library.SQLiteHelper;
 using Duplicati.Library.Utility;
 using NUnit.Framework;

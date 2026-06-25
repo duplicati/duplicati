@@ -29,7 +29,7 @@ using System.Threading.Tasks;
 using Duplicati.Library.Utility;
 using Microsoft.Data.Sqlite;
 
-namespace Duplicati.Library.Main.Database
+namespace Duplicati.Library.Main.Database.Local
 {
     /// <summary>
     /// A local database for tracking changes in file lists, such as added, deleted, or modified files.

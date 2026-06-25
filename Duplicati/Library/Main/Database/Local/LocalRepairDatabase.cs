@@ -29,7 +29,7 @@ using System.Threading.Tasks;
 using Duplicati.Library.Utility;
 using Microsoft.Data.Sqlite;
 
-namespace Duplicati.Library.Main.Database
+namespace Duplicati.Library.Main.Database.Local
 {
     /// <summary>
     /// Represents a specialized local database used for repair operations in Duplicati.

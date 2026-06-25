@@ -28,7 +28,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Duplicati.Library.Main.Database
+namespace Duplicati.Library.Main.Database.Local
 {
     /// <summary>
     /// A local database specialized for object lock operations.

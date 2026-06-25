@@ -280,6 +280,12 @@ partial class BackendManager
         /// <returns>An awaitable task</returns>
         private async Task PerformUploadAsync(IBackend backend, string hash, long size, CancellationToken cancelToken)
         {
+            // The effective remote name is the name passed to the backend. For
+            // folder-enabled backends it equals RemoteFilename (the full relative
+            // path); for non-folder backends the backend is pointed at the file's
+            // sub-folder (via BackendUrlOverride) and this is just the filename.
+            var effectiveName = GetEffectiveRemoteName();
+
             Context.Database.LogRemoteOperation("put", RemoteFilename, JsonConvert.SerializeObject(new { Size = size, Hash = hash }));
             Context.Statwriter.SendEvent(BackendActionType.Put, BackendEventType.Started, RemoteFilename, size);
             if (TrackedInDb)
@@ -294,10 +300,10 @@ partial class BackendManager
                     using var fs = System.IO.File.OpenRead(LocalFilename);
                     using var ts = new ThrottleEnabledStream(fs, Context.UploadThrottleManager, Context.DownloadThrottleManager);
                     using var pgs = new ProgressReportingStream(ts, pg => Context.ProgressHandler.HandleProgress(pg, RemoteFilename));
-                    await streamingBackend.PutAsync(RemoteFilename, pgs, cancelToken).ConfigureAwait(false);
+                    await streamingBackend.PutAsync(effectiveName, pgs, cancelToken).ConfigureAwait(false);
                 }
                 else
-                    await backend.PutAsync(RemoteFilename, LocalFilename, cancelToken).ConfigureAwait(false);
+                    await backend.PutAsync(effectiveName, LocalFilename, cancelToken).ConfigureAwait(false);
             }
             finally
             {
@@ -317,7 +323,10 @@ partial class BackendManager
 
             if (Context.Options.ListVerifyUploads)
             {
-                var f = await backend.ListAsync(cancelToken).FirstOrDefaultAsync(n => n.Name.Equals(RemoteFilename, StringComparison.OrdinalIgnoreCase)).ConfigureAwait(false);
+                // The backend is bound to the file's folder (for non-folder backends) or
+                // the root (for folder-enabled backends using a flat verify), so the
+                // listing returns names comparable to the effective remote name.
+                var f = await backend.ListAsync(cancelToken).FirstOrDefaultAsync(n => n.Name.Equals(effectiveName, StringComparison.OrdinalIgnoreCase)).ConfigureAwait(false);
                 if (f == null)
                     throw new Exception(string.Format($"List verify failed, file was not found after upload: {RemoteFilename}"));
                 else if (f.Size != size && f.Size >= 0)

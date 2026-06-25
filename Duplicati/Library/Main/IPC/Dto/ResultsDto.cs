@@ -261,6 +261,29 @@ public class VacuumResultsDto : BasicResultsDto
 }
 
 /// <summary>
+/// DTO for sync results
+/// </summary>
+[Serializable]
+public class SyncResultsDto : BasicResultsDto
+{
+    public static SyncResultsDto FromResults(ISyncResults results)
+    {
+        if (results == null) return null;
+        return new SyncResultsDto
+        {
+            BeginTime = results.BeginTime,
+            EndTime = results.EndTime,
+            Duration = results.Duration,
+            Errors = results.Errors?.ToList() ?? new List<string>(),
+            Warnings = results.Warnings?.ToList() ?? new List<string>(),
+            Messages = results.Messages?.ToList() ?? new List<string>(),
+            ParsedResult = results.ParsedResult,
+            Interrupted = results.Interrupted
+        };
+    }
+}
+
+/// <summary>
 /// DTO for delete results
 /// </summary>
 [Serializable]

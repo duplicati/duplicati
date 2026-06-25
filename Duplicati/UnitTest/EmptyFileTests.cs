@@ -21,7 +21,7 @@
 
 using System.IO;
 using Duplicati.Library.Main;
-using Duplicati.Library.Main.Database;
+using Duplicati.Library.Main.Database.Local;
 using Duplicati.Library.Interface;
 using NUnit.Framework;
 using System.Threading;

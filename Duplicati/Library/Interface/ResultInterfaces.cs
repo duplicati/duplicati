@@ -579,6 +579,10 @@ namespace Duplicati.Library.Interface
     {
     }
 
+    public interface ISyncResults : IBasicResults
+    {
+    }
+
     public interface ISetLockResults : IBasicResults
     {
         /// <summary>

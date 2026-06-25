@@ -29,6 +29,7 @@ using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using Duplicati.Library.Main.Database;
+using Duplicati.Library.Main.Database.Local;
 using Duplicati.Library.Main.Volumes;
 using Duplicati.Library.SQLiteHelper;
 using Duplicati.Library.Utility;

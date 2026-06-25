@@ -25,6 +25,7 @@ using System.Linq;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Main.Database;
+using Duplicati.Library.Main.Database.Local;
 using Duplicati.Library.Main.Volumes;
 using Duplicati.Library.Utility;
 using CoCoL;

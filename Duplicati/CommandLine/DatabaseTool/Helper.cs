@@ -7,6 +7,14 @@ using Duplicati.Library.SQLiteHelper;
 
 namespace Duplicati.CommandLine.DatabaseTool;
 
+
+public enum DatabaseType
+{
+    Server,
+    Backup,
+    Sync
+}
+
 public static class Helper
 {
     /// <summary>
@@ -91,7 +99,7 @@ public static class Helper
     /// </summary>
     /// <param name="db">The path to the database</param>
     /// <returns>A task that when awaited contains a tuple with the version and whether it is a server database</returns>
-    public static async Task<(int Version, bool isserver)> ExamineDatabaseAsync(string db)
+    public static async Task<(int Version, DatabaseType)> ExamineDatabaseAsync(string db)
     {
         await using var con = await SQLiteLoader.LoadConnectionAsync(db)
             .ConfigureAwait(false);
@@ -107,13 +115,32 @@ public static class Helper
             ", CancellationToken.None)
             .ConfigureAwait(false) == 2;
 
+        bool issyncdb = false;
+        if (!isserverdb)
+        {
+            var remoteInventoryCount = await cmd.ExecuteScalarInt64Async(@"
+                SELECT COUNT(*)
+                FROM sqlite_master
+                WHERE type='table' AND name='RemoteInventory'
+            ", CancellationToken.None).ConfigureAwait(false);
+
+            var remoteVolumeCount = await cmd.ExecuteScalarInt64Async(@"
+                SELECT COUNT(*)
+                FROM sqlite_master
+                WHERE type='table' AND name='Remotevolume'
+            ", CancellationToken.None).ConfigureAwait(false);
+
+            issyncdb = remoteInventoryCount == 1 && remoteVolumeCount == 0;
+        }
+
         var version = (int)await cmd.ExecuteScalarInt64Async(@"
                 SELECT MAX(Version)
                 FROM Version
             ", CancellationToken.None)
             .ConfigureAwait(false);
 
-        return (version, isserverdb);
+        var type = isserverdb ? DatabaseType.Server : issyncdb ? DatabaseType.Sync : DatabaseType.Backup;
+        return (version, type);
     }
 
     /// <summary>

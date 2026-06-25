@@ -22,7 +22,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
@@ -80,7 +79,7 @@ namespace Duplicati.Library.Main.Operation
             DateTime compareVersionTime;
 
             using var tmpdb = useLocalDb ? null : new TempFile();
-            await using var db = await Database.LocalListChangesDatabase.CreateAsync(useLocalDb ? m_options.Dbpath : (string)tmpdb, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+            await using var db = await Database.Local.LocalListChangesDatabase.CreateAsync(useLocalDb ? m_options.Dbpath : (string)tmpdb, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
             await using var storageKeeper = await db.CreateStorageHelperAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false);
             if (useLocalDb)
             {
@@ -111,7 +110,7 @@ namespace Duplicati.Library.Main.Operation
             {
                 Logging.Log.WriteInformationMessage(LOGTAG, "NoLocalDatabase", "No local database, accessing remote store");
 
-                var parsedlist = (await backendManager.ListAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false))
+                var parsedlist = (await backendManager.ListAsync(null, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                     .Select(n => Volumes.VolumeBase.ParseFilename(n))
                     .Where(p => p != null && p.FileType == RemoteVolumeType.Files)
                     .OrderByDescending(p => p.Time)

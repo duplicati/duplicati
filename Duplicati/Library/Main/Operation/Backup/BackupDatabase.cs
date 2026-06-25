@@ -22,7 +22,7 @@
 using System;
 using System.Threading.Tasks;
 using Duplicati.Library.Main.Database;
-using CoCoL;
+using Duplicati.Library.Main.Database.Local;
 using Duplicati.Library.Main.Operation.Common;
 using System.Collections.Generic;
 using Duplicati.Library.Main.Volumes;

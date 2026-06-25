@@ -29,7 +29,7 @@ using System.Threading.Tasks;
 using Duplicati.Library.Utility;
 using Microsoft.Data.Sqlite;
 
-namespace Duplicati.Library.Main.Database
+namespace Duplicati.Library.Main.Database.Local
 {
     /// <summary>
     /// This class is used to recreate a local database from a backup.

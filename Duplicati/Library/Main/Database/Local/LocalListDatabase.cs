@@ -33,7 +33,7 @@ using System.Threading;
 using System.Runtime.CompilerServices;
 using Duplicati.Library.Logging;
 
-namespace Duplicati.Library.Main.Database
+namespace Duplicati.Library.Main.Database.Local
 {
     /// <summary>
     /// A local database that stores file lists and filesets.

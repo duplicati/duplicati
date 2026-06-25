@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using Duplicati.Library.Main.Database;
+using Duplicati.Library.Main.Database.Local;
 using Duplicati.Library.Main.Volumes;
 using System;
 using System.Collections.Generic;

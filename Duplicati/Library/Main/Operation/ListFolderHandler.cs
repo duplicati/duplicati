@@ -47,7 +47,7 @@ internal static class ListFolderHandler
         if (!System.IO.File.Exists(options.Dbpath) || options.NoLocalDb)
             throw new UserInformationException("No local database found, this operation requires a local database", "NoLocalDatabase");
 
-        await using var db = await Database.LocalListDatabase.CreateAsync(options.Dbpath, null, result.TaskControl.ProgressToken)
+        await using var db = await Database.Local.LocalListDatabase.CreateAsync(options.Dbpath, null, result.TaskControl.ProgressToken)
             .ConfigureAwait(false);
 
         var filesetIds = await db
@@ -87,7 +87,7 @@ internal static class ListFolderHandler
 
         if (extendedData)
         {
-            var coreentries = result.Entries.Items.Cast<Database.LocalListDatabase.FolderEntry>().ToArray();
+            var coreentries = result.Entries.Items.Cast<Database.Local.LocalListDatabase.FolderEntry>().ToArray();
             var metadata = await db.GetMetadataForFilesetIdsAsync(coreentries.Select(e => e.FileId), result.TaskControl.ProgressToken).ConfigureAwait(false);
             for (int i = 0; i < coreentries.Length; i++)
             {

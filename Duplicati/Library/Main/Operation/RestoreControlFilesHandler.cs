@@ -21,7 +21,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Utility;
 
@@ -46,7 +45,7 @@ namespace Duplicati.Library.Main.Operation
                 Directory.CreateDirectory(m_options.Restorepath);
 
             using var tmpdb = new TempFile();
-            await using var db = await Database.LocalDatabase.CreateLocalDatabaseAsync(
+            await using var db = await Database.Local.LocalDatabase.CreateLocalDatabaseAsync(
                 File.Exists(m_options.Dbpath) ? m_options.Dbpath : (string)tmpdb, "RestoreControlFiles",
                 true,
                 null,
@@ -57,7 +56,7 @@ namespace Duplicati.Library.Main.Operation
 
             try
             {
-                var filteredList = ListFilesHandler.ParseAndFilterFilesets(await backendManager.ListAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false), m_options);
+                var filteredList = ListFilesHandler.ParseAndFilterFilesets(await backendManager.ListAsync(null, m_result.TaskControl.ProgressToken).ConfigureAwait(false), m_options);
                 if (filteredList.Count == 0)
                     throw new Exception("No filesets found on remote target");
 

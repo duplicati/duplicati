@@ -54,7 +54,7 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
     public Action<IBasicResults>? OnOperationStarted { get; set; }
 
     /// <inheritdoc />
-    public Action<IBasicResults, Exception>? OnOperationCompleted { get; set; }
+    public Action<IBasicResults, Exception?>? OnOperationCompleted { get; set; }
 
     /// <inheritdoc />
     public Task SetLastCompactAsync(DateTime lastCompact)
@@ -385,6 +385,10 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
     /// <inheritdoc />
     public async Task<IVacuumResults> VacuumAsync()
         => await Rpc.InvokeAsync<IVacuumResults>(nameof(IController.VacuumAsync)).ConfigureAwait(false);
+
+    /// <inheritdoc />
+    public async Task<ISyncResults> SyncAsync(string[] sources, IFilter? filter)
+        => await Rpc.InvokeAsync<ISyncResults>(nameof(IController.SyncAsync), sources, filter).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<ITestResults> TestAsync(long samples = 1)

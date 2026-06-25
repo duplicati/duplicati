@@ -26,6 +26,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
+using Duplicati.Library.Main.Database.Local;
 using Duplicati.Library.Main.Volumes;
 using Duplicati.Library.Utility;
 
@@ -151,7 +152,7 @@ namespace Duplicati.Library.Main.Operation
                 expRecreateDb = true;
             }
 
-            var rawlist = await backendManager.ListAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+            var rawlist = await backendManager.ListAsync(null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
 
             //First step is to examine the remote storage to see what
             // kind of data we can find

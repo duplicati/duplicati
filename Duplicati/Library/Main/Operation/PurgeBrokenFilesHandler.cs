@@ -26,8 +26,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
-using Duplicati.Library.Main.Database;
-using Duplicati.Library.Utility;
+using Duplicati.Library.Main.Database.Local;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -164,7 +163,7 @@ namespace Duplicati.Library.Main.Operation
                         Logging.Log.WriteInformationMessage(LOGTAG, "PurgingFiles", "Purging {0} file(s) from fileset {1}", bs.RemoveCount, bs.Timestamp.ToLocalTime());
                         var opts = new Options(new Dictionary<string, string?>(m_options.RawOptions));
 
-                        await using (var pgdb = await Database.LocalPurgeDatabase.CreateAsync(db, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
+                        await using (var pgdb = await LocalPurgeDatabase.CreateAsync(db, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                         {
                             // Recompute the version number after we deleted the versions before
                             filesets = await pgdb

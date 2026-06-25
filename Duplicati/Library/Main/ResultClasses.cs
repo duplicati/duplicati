@@ -27,7 +27,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Logging;
-using Duplicati.Library.Main.Database;
+using Duplicati.Library.Main.Database.Local;
 using Duplicati.Library.Main.Operation.Common;
 using Newtonsoft.Json;
 
@@ -1050,5 +1050,13 @@ namespace Duplicati.Library.Main
         public VacuumResults(BasicResults p) : base(p) { }
 
         public override OperationMode MainOperation { get { return OperationMode.Vacuum; } }
+    }
+
+    internal class SyncResults : BasicResults, ISyncResults
+    {
+        public SyncResults() : base() { }
+        public SyncResults(BasicResults p) : base(p) { }
+
+        public override OperationMode MainOperation { get { return OperationMode.Sync; } }
     }
 }

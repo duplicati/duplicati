@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Main;
 using Duplicati.Library.Main.Database;
+using Duplicati.Library.Main.Database.Local;
 using Duplicati.Library.Utility;
 using NUnit.Framework;
 

@@ -24,6 +24,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Utility;
 using Microsoft.Data.Sqlite;
+using Duplicati.Library.Main.Database.Local;
 
 #nullable enable
 

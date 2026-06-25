@@ -51,7 +51,7 @@ internal static class SearchEntriesHandler
             throw new UserInformationException("No local database found, this operation requires a local database", "NoLocalDatabase");
 
         await using var db =
-            await Database.LocalListDatabase.CreateAsync(options.Dbpath, null, result.TaskControl.ProgressToken)
+            await Database.Local.LocalListDatabase.CreateAsync(options.Dbpath, null, result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);
         long[]? filesetIds = null;
         if (!options.AllVersions)

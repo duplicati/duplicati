@@ -21,7 +21,7 @@
 
 using System;
 using System.Collections.Generic;
-using Duplicati.Library.Main.Database;
+using Duplicati.Library.Main.Database.Local;
 using Duplicati.Library.Utility;
 using System.Threading;
 using System.Threading.Tasks;
@@ -48,7 +48,7 @@ namespace Duplicati.Library.Main.Operation
 
             try
             {
-                var filteredList = ListFilesHandler.ParseAndFilterFilesets(await backendManager.ListAsync(cancellationToken).ConfigureAwait(false), m_options);
+                var filteredList = ListFilesHandler.ParseAndFilterFilesets(await backendManager.ListAsync(null, cancellationToken).ConfigureAwait(false), m_options);
                 if (filteredList.Count == 0)
                     throw new Exception("No filesets found on remote target");
 

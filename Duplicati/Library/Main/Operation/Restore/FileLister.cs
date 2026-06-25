@@ -25,8 +25,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using CoCoL;
-using Duplicati.Library.Interface;
-using Duplicati.Library.Main.Database;
+using Duplicati.Library.Main.Database.Local;
 
 #nullable enable
 

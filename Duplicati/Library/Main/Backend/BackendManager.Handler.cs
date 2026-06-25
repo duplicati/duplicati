@@ -14,7 +14,10 @@ namespace Duplicati.Library.Main.Backend;
 partial class BackendManager
 {
     /// <summary>
-    /// Wrapper class for making a backend disposable and reclaimable
+    /// Wrapper class for making a backend disposable and reclaimable.
+    /// Backends are pooled by the URL they were created for, so that a backend
+    /// bound to a sub-folder URL is only reused for operations targeting that
+    /// same sub-folder (see <see cref="Handler.CreateBackend"/>).
     /// </summary>
     private sealed class ReclaimableBackend : IDisposable
     {
@@ -28,9 +31,14 @@ partial class BackendManager
         /// </summary>
         public IBackend Backend { get; }
         /// <summary>
-        /// The pool where the backend should be returned to
+        /// The URL the backend was created for; used as the pool key so the
+        /// backend is returned to the queue for the same URL.
         /// </summary>
-        private readonly ConcurrentQueue<IBackend> pool;
+        private readonly string backendUrl;
+        /// <summary>
+        /// The URL-keyed pool where the backend should be returned to
+        /// </summary>
+        private readonly ConcurrentDictionary<string, ConcurrentQueue<IBackend>> pool;
         /// <summary>
         /// Whether the backend should be reused
         /// </summary>
@@ -44,11 +52,13 @@ partial class BackendManager
         /// Creates a new instance of the <see cref="ReclaimableBackend"/> class
         /// </summary>
         /// <param name="backend">The backend to wrap</param>
-        /// <param name="pool">The pool where the backend should be returned to</param>
+        /// <param name="backendUrl">The URL the backend was created for</param>
+        /// <param name="pool">The URL-keyed pool where the backend should be returned to</param>
         /// <param name="reuse">Whether the backend should be reused or disposed</param>
-        public ReclaimableBackend(IBackend backend, ConcurrentQueue<IBackend> pool, bool reuse)
+        public ReclaimableBackend(IBackend backend, string backendUrl, ConcurrentDictionary<string, ConcurrentQueue<IBackend>> pool, bool reuse)
         {
             Backend = backend;
+            this.backendUrl = backendUrl;
             this.pool = pool;
             this.reuse = reuse;
         }
@@ -71,7 +81,15 @@ partial class BackendManager
             disposed = true;
 
             if (reuse)
-                pool.Enqueue(Backend);
+            {
+                // Return the backend to the pool queue for the URL it was created for.
+                if (!pool.TryGetValue(backendUrl, out var queue))
+                {
+                    queue = new ConcurrentQueue<IBackend>();
+                    queue = pool.GetOrAdd(backendUrl, queue);
+                }
+                queue.Enqueue(Backend);
+            }
             else
                 try { Backend.Dispose(); }
                 catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "BackendDisposeError", ex, "Failed to dispose backend instance: {0}", ex.Message); }
@@ -97,9 +115,14 @@ partial class BackendManager
         /// </summary>
         private readonly List<Task> activeUploads = [];
         /// <summary>
-        /// The pool of backends currently created
+        /// The pool of backends currently created, keyed by the URL each backend was
+        /// created for. The base URL is the default key; backends bound to a sub-folder
+        /// URL (for non-folder-enabled backends, see
+        /// <see cref="BackendManager.ApplyPathTranslation"/>) are keyed by that
+        /// sub-folder URL so they are only reused for operations targeting the same
+        /// sub-folder.
         /// </summary>
-        private readonly ConcurrentQueue<IBackend> backendPool = new();
+        private readonly ConcurrentDictionary<string, ConcurrentQueue<IBackend>> backendPool = new();
         /// <summary>
         /// The URL of the backend
         /// </summary>
@@ -177,17 +200,26 @@ partial class BackendManager
         }
 
         /// <summary>
-        /// Creates a new backend instance or reuses an existing one
+        /// Creates a new backend instance or reuses an existing one. The backend is
+        /// created for (and pooled by) the URL the operation targets: the base backend
+        /// URL by default, or the operation's <see cref="PendingOperationBase.BackendUrlOverride"/>
+        /// when set (used to point non-folder backends at a sub-folder).
         /// </summary>
+        /// <param name="op">The operation the backend is created for, used to resolve the target URL.</param>
         /// <returns>The backend instance</returns>
-        private ReclaimableBackend CreateBackend()
+        private ReclaimableBackend CreateBackend(PendingOperationBase op)
         {
-            backendPool.TryDequeue(out var backend);
+            var url = op.BackendUrlOverride ?? backendUrl;
+
+            // Reuse a pooled backend for this URL if one is available; otherwise create one.
+            var queue = backendPool.GetOrAdd(url, _ => new ConcurrentQueue<IBackend>());
+            queue.TryDequeue(out var backend);
             if (backend == null)
-                backend = DynamicLoader.BackendLoader.GetBackend(backendUrl, context.Options.RawOptions);
+                backend = DynamicLoader.BackendLoader.GetBackend(url, context.Options.RawOptions);
 
             return new ReclaimableBackend(
                 backend,
+                url,
                 backendPool,
                 allowBackendReuse
             );
@@ -315,11 +347,20 @@ partial class BackendManager
                 await WaitForPendingItemsAsync("upload", activeUploads).ConfigureAwait(false);
                 await WaitForPendingItemsAsync("download", activeDownloads).ConfigureAwait(false);
 
-                // Dispose of any remaining backends
-                while (backendPool.TryDequeue(out var backend))
+                // Dispose of any remaining backends across all pooled URLs.
+                DrainBackendPool();
+            }
+        }
+
+        /// <summary>
+        /// Disposes every backend currently held in the URL-keyed pool, across all URLs.
+        /// </summary>
+        private void DrainBackendPool()
+        {
+            foreach (var queue in backendPool.Values)
+                while (queue.TryDequeue(out var backend))
                     try { backend.Dispose(); }
                     catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeError", ex, "Failed to dispose backend instance: {0}", ex.Message); }
-            }
         }
 
         /// <summary>
@@ -367,12 +408,16 @@ partial class BackendManager
         }
 
         /// <summary>
-        /// Tries to create a folder, handling errors
+        /// Tries to create a folder, handling errors. The folder is created at the
+        /// URL the operation targets (its <see cref="PendingOperationBase.BackendUrlOverride"/>,
+        /// or the base backend URL), so that auto-creating folders works for non-folder
+        /// backends pointed at a sub-folder too.
         /// </summary>
+        /// <param name="op">The operation whose target folder should be created.</param>
         /// <returns><c>true</c> if the folder was created, <c>false</c> otherwise</returns>
-        private async Task<bool> TryCreateFolderAsync()
+        private async Task<bool> TryCreateFolderAsync(PendingOperationBase op)
         {
-            using var backend = CreateBackend();
+            using var backend = CreateBackend(op);
             try
             {
                 // If we successfully create the folder, we can re-use the connection
@@ -435,7 +480,7 @@ partial class BackendManager
                     {
                         try
                         {
-                            using (var backend = CreateBackend())
+                            using (var backend = CreateBackend(op))
                                 foreach (var name in await backend.Backend.GetDNSNamesAsync(context.TaskReader.TransferToken).ConfigureAwait(false) ?? [])
                                     if (!string.IsNullOrWhiteSpace(name))
                                         await System.Net.Dns.GetHostEntryAsync(name);
@@ -453,7 +498,7 @@ partial class BackendManager
                     // Check if this was a folder missing exception and we are allowed to autocreate folders
                     if (!(anyDownloaded || anyUploaded) && context.Options.AutocreateFolders && Library.Utility.ExceptionExtensions.FlattenException(ex).Any(x => x is FolderMissingException))
                     {
-                        if (await TryCreateFolderAsync().ConfigureAwait(false))
+                        if (await TryCreateFolderAsync(op).ConfigureAwait(false))
                             recovered = true;
                     }
 
@@ -518,6 +563,9 @@ partial class BackendManager
                     case QuotaInfoOperation quotaOp:
                         await ExecuteAsync(quotaOp, cancellationToken).ConfigureAwait(false);
                         return;
+                    case CreateFolderOperation createFolderOp:
+                        await ExecuteAsync(createFolderOp, cancellationToken).ConfigureAwait(false);
+                        return;
                     case WaitForEmptyOperation waitOp:
                         waitOp.SetComplete(true);
                         return;
@@ -541,7 +589,7 @@ partial class BackendManager
         /// <returns>An awaitable task</returns>
         private async Task ExecuteAsync<TResult>(PendingOperation<TResult> op, CancellationToken cancellationToken)
         {
-            using var backend = CreateBackend();
+            using var backend = CreateBackend(op);
             using var token = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, op.CancelToken, context.TaskReader.TransferToken);
 
             try
@@ -574,7 +622,7 @@ partial class BackendManager
 
         public void Dispose()
         {
-            while (backendPool.TryDequeue(out var backend)) backend?.Dispose();
+            DrainBackendPool();
         }
     }
 }

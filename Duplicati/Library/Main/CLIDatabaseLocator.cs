@@ -73,6 +73,10 @@ namespace Duplicati.Library.Main
             /// The path to the parameter file
             /// </summary>
             public required string? ParameterFile;
+            /// <summary>
+            /// Flag to indicate if the database is for sync operations
+            /// </summary>
+            public bool IsSyncDb = false;
         }
 
         /// <summary>
@@ -105,8 +109,9 @@ namespace Duplicati.Library.Main
         /// <param name="options">The options to use</param>
         /// <param name="autoCreate">If <c>true</c>, a new database is created if none is found</param>
         /// <param name="anyUsername">If <c>true</c>, any username is accepted</param>
+        /// <param name="isSyncDb">If <c>true</c>, the database is for sync operations</param>
         /// <returns>The database path or null</returns>
-        public static string? GetDatabasePathForCLI(string backend, Options? options, bool autoCreate = true, bool anyUsername = false)
+        public static string? GetDatabasePathForCLI(string backend, Options? options, bool autoCreate, bool anyUsername, bool isSyncDb)
         {
             options ??= new Options(new Dictionary<string, string?>());
 
@@ -168,7 +173,8 @@ namespace Duplicati.Library.Main
                                n.Port == port &&
                                n.Server == server &&
                                n.Path == path &&
-                               n.Prefix == prefix
+                               n.Prefix == prefix &&
+                               n.IsSyncDb == isSyncDb
                            select n).ToList();
 
             if (matches.Count > 1)
@@ -223,7 +229,8 @@ namespace Duplicati.Library.Main
                     //Passwordhash = password,
                     Port = port,
                     Databasepath = newpath,
-                    ParameterFile = null
+                    ParameterFile = null,
+                    IsSyncDb = isSyncDb
                 });
 
                 var settings = new Newtonsoft.Json.JsonSerializerSettings();

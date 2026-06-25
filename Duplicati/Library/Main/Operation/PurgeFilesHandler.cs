@@ -52,17 +52,17 @@ namespace Duplicati.Library.Main.Operation
             if (!System.IO.File.Exists(m_options.Dbpath))
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
 
-            await using var db = await Database.LocalPurgeDatabase.CreateAsync(m_options.Dbpath, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+            await using var db = await Database.Local.LocalPurgeDatabase.CreateAsync(m_options.Dbpath, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
             await DoRunAsync(backendManager, db, filter, null, 0, 1).ConfigureAwait(false);
             await db
                 .VerifyConsistencyAsync(m_options.Blocksize, m_options.BlockhashSize, true, m_result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);
         }
 
-        public Task RunAsync(IBackendManager backendManager, Database.LocalPurgeDatabase db, float pgoffset, float pgspan, Func<SqliteCommand, long, string, Task<int>> filtercommand)
+        public Task RunAsync(IBackendManager backendManager, Database.Local.LocalPurgeDatabase db, float pgoffset, float pgspan, Func<SqliteCommand, long, string, Task<int>> filtercommand)
             => DoRunAsync(backendManager, db, null, filtercommand, pgoffset, pgspan);
 
-        private async Task DoRunAsync(IBackendManager backendManager, Database.LocalPurgeDatabase db, IFilter filter, Func<SqliteCommand, long, string, Task<int>> filtercommand, float pgoffset, float pgspan)
+        private async Task DoRunAsync(IBackendManager backendManager, Database.Local.LocalPurgeDatabase db, IFilter filter, Func<SqliteCommand, long, string, Task<int>> filtercommand, float pgoffset, float pgspan)
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.PurgeFiles_Begin);
             Logging.Log.WriteInformationMessage(LOGTAG, "StartingPurge", "Starting purge operation");
@@ -266,7 +266,7 @@ namespace Duplicati.Library.Main.Operation
                     m_result.OperationProgressUpdater.UpdateProgress(pgoffset + (0.75f * pgspan));
                     m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.PurgeFiles_Compact);
                     m_result.CompactResults = new CompactResults(m_result);
-                    await using var cdb = await Database.LocalDeleteDatabase.CreateAsync(db, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+                    await using var cdb = await Database.Local.LocalDeleteDatabase.CreateAsync(db, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                     await new CompactHandler(m_options, (CompactResults)m_result.CompactResults)
                         .DoCompactAsync(cdb, true, backendManager)
                         .ConfigureAwait(false);

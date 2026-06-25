@@ -22,7 +22,6 @@
 #nullable enable
 
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 
@@ -50,7 +49,7 @@ internal static class ListFilesetsHandler
         // Use a speedy local query
         if (System.IO.File.Exists(options.Dbpath) && !options.NoLocalDb)
         {
-            await using var db = await Database.LocalListDatabase.CreateAsync(options.Dbpath, null, result.TaskControl.ProgressToken)
+            await using var db = await Database.Local.LocalListDatabase.CreateAsync(options.Dbpath, null, result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);
 
             result.Filesets = await db
@@ -63,7 +62,7 @@ internal static class ListFilesetsHandler
 
         Logging.Log.WriteInformationMessage(LOGTAG, "NoLocalDatabase", "No local database, accessing remote store");
 
-        var filteredList = ListFilesHandler.ParseAndFilterFilesets(await backendManager.ListAsync(result.TaskControl.ProgressToken).ConfigureAwait(false), options);
+        var filteredList = ListFilesHandler.ParseAndFilterFilesets(await backendManager.ListAsync(null, result.TaskControl.ProgressToken).ConfigureAwait(false), options);
         if (filteredList.Count == 0)
             throw new UserInformationException("No filesets found on remote target", "EmptyRemoteFolder");
 

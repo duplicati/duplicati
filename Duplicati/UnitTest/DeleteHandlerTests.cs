@@ -23,7 +23,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
-using Duplicati.Library.Main.Database;
+using Duplicati.Library.Main.Database.Local;
 using Duplicati.Library.Main.Operation;
 using NUnit.Framework;
 using NUnit.Framework.Legacy;

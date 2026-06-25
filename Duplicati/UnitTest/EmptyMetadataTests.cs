@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using System.IO;
 using Duplicati.Library.Main;
 using Duplicati.Library.Main.Database;
+using Duplicati.Library.Main.Database.Local;
 using Duplicati.Library.Interface;
 using Duplicati.Library.SQLiteHelper;
 using NUnit.Framework;

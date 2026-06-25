@@ -345,7 +345,7 @@ namespace Duplicati.UnitTest
 
             // The recreated database should have compression-module set to tzstd,
             // because that is the actual compression format now used on the remote.
-            using (var db = await Duplicati.Library.Main.Database.LocalDatabase.CreateLocalDatabaseAsync(options["dbpath"], "Test", true, null, System.Threading.CancellationToken.None))
+            using (var db = await Library.Main.Database.Local.LocalDatabase.CreateLocalDatabaseAsync(options["dbpath"], "Test", true, null, System.Threading.CancellationToken.None))
             {
                 var dbOptions = await db.GetDbOptionsAsync(System.Threading.CancellationToken.None);
                 Assert.That(dbOptions.ContainsKey("compression-module"), Is.True, "Database should contain compression-module option.");

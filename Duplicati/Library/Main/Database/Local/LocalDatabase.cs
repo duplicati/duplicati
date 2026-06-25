@@ -38,14 +38,14 @@ using System.Threading;
 // Expose internal classes to UnitTests, so that Database classes can be tested
 [assembly: InternalsVisibleTo("Duplicati.UnitTest")]
 
-namespace Duplicati.Library.Main.Database
+namespace Duplicati.Library.Main.Database.Local
 {
     /// <summary>
     /// Represents a local database for Duplicati operations.
     /// This class provides methods to interact with the local SQLite database, including
     /// managing remote volumes, logging operations, and handling transactions.
     /// </summary>
-    internal class LocalDatabase : IDisposable, IAsyncDisposable
+    internal class LocalDatabase : IDisposable, IAsyncDisposable, IBackendManagerDatabase
     {
         /// <summary>
         /// The tag used for logging
@@ -83,6 +83,14 @@ namespace Duplicati.Library.Main.Database
         /// A read-only property that provides access to the current transaction.
         /// </summary>
         public ReusableTransaction Transaction { get { return m_rtr; } }
+
+        /// <summary>
+        /// Commits the current transaction.
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token to monitor for cancellation requests.</param>
+        /// <returns>A task that completes when the transaction has been committed.</returns>
+        public Task CommitAsync(CancellationToken cancellationToken)
+            => m_rtr.CommitAsync(cancellationToken);
 
         /// <summary>
         /// The command used to update a remote volume in the database.

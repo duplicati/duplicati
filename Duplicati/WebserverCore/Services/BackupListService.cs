@@ -108,7 +108,7 @@ public class BackupListService(Connection connection) : IBackupListService
             {
                 if (existingDb)
                 {
-                    backup.SetDBPath(Library.Main.CLIDatabaseLocator.GetDatabasePathForCLI(data.Backup.TargetURL, null, false, false));
+                    backup.SetDBPath(Library.Main.CLIDatabaseLocator.GetDatabasePathForCLI(data.Backup.TargetURL, null, false, false, false));
                     if (string.IsNullOrWhiteSpace(data.Backup.DBPath))
                         throw new Exception("Unable to find remote db path?");
                 }

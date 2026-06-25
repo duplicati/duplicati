@@ -604,6 +604,11 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("internal-profiling", CommandLineArgument.ArgumentType.Boolean, Strings.Options.InternalProfilingShort, Strings.Options.InternalProfilingLong, "false"),
             new CommandLineArgument("ignore-update-if-version-exists", CommandLineArgument.ArgumentType.Boolean, Strings.Options.IgnoreUpdateIfVersionExistsShort, Strings.Options.IgnoreUpdateIfVersionExistsLong, "false"),
 
+            new CommandLineArgument("sync-recheck", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SyncRecheckShort, Strings.Options.SyncRecheckLong, "false"),
+            new CommandLineArgument("sync-then-delete", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SyncThenDeleteShort, Strings.Options.SyncThenDeleteLong, "false"),
+            new CommandLineArgument("sync-verify-hash", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SyncVerifyHashShort, Strings.Options.SyncVerifyHashLong, "false"),
+            new CommandLineArgument("sync-remote-state", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SyncRemoteStateShort, Strings.Options.SyncRemoteStateLong, Enum.GetName(typeof(SyncRemoteState), SyncRemoteState.UseRemoteState), null, Enum.GetNames(typeof(SyncRemoteState))),
+
             .. GetOSConditionalCommands(),
             .. GetDebugConditionalCommands(),
         ];
@@ -1898,6 +1903,28 @@ namespace Duplicati.Library.Main
         /// </summary>
         public bool IgnoreUpdateIfVersionExists
             => GetBool("ignore-update-if-version-exists");
+
+        /// <summary>
+        /// Forces a full remote listing to rebuild the local sync cache.
+        /// </summary>
+        public bool SyncRecheck => GetBool("sync-recheck");
+
+        /// <summary>
+        /// Deletes files on the remote that no longer exist locally.
+        /// </summary>
+        public bool SyncThenDelete => GetBool("sync-then-delete");
+
+        /// <summary>
+        /// Verifies file content using SHA-256 hashes when size and time match.
+        /// </summary>
+        public bool SyncVerifyHash => GetBool("sync-verify-hash");
+
+        /// <summary>
+        /// Controls how the sync operation determines the remote state of each folder:
+        /// enumerate the remote destination, consult the local database, or upload
+        /// blindly. See <see cref="SyncRemoteState"/> for the trade-offs.
+        /// </summary>
+        public SyncRemoteState SyncRemoteState => GetEnum("sync-remote-state", SyncRemoteState.UseRemoteState);
 
         /// <summary>
         /// Class for handling a single RetentionPolicy timeframe-interval-pair

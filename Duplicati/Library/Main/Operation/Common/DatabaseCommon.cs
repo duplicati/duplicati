@@ -24,7 +24,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Main.Database;
-using Duplicati.Library.Utility;
+using Duplicati.Library.Main.Database.Local;
 
 namespace Duplicati.Library.Main.Operation.Common
 {

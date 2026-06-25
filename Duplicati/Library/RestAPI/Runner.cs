@@ -720,6 +720,18 @@ namespace Duplicati.Server
                                 UpdateMetadataBase(databaseConnection, eventPollNotify, notificationUpdateService, backup, r);
                                 return r;
                             }
+                        case DuplicatiOperation.Sync:
+                            {
+                                var filter = ApplyFilter(backup, GetCommonFilter(databaseConnection));
+                                var sources = backup.Sources
+                                    .Select(n => SpecialFolders.ExpandEnvironmentVariables(n))
+                                    .WhereNotNullOrWhiteSpace()
+                                    .ToArray();
+
+                                var r = await controller.SyncAsync(sources, filter).ConfigureAwait(false);
+                                UpdateMetadataBase(databaseConnection, eventPollNotify, notificationUpdateService, backup, r);
+                                return r;
+                            }
                         case DuplicatiOperation.List:
                             {
                                 var r = await controller.ListAsync(data.FilterStrings, null).ConfigureAwait(false);
@@ -965,6 +977,16 @@ namespace Duplicati.Server
             }
         }
 
+        private static void UpdateMetadataLastSync(IBackup backup, ISyncResults r)
+        {
+            if (r != null)
+            {
+                backup.Metadata["LastSyncDuration"] = r.Duration.ToString();
+                backup.Metadata["LastSyncStarted"] = Utility.SerializeDateTime(r.BeginTime.ToUniversalTime());
+                backup.Metadata["LastSyncFinished"] = Utility.SerializeDateTime(r.EndTime.ToUniversalTime());
+            }
+        }
+
         private static void UpdateMetadataStatistics(IBackup backup, IParsedBackendStatistics r)
         {
             if (r != null)
@@ -1013,6 +1035,11 @@ namespace Duplicati.Server
             if (result is IVacuumResults r5 && !result.Interrupted)
             {
                 UpdateMetadataLastVacuum(backup, r5);
+            }
+
+            if (result is ISyncResults r6)
+            {
+                UpdateMetadataLastSync(backup, r6);
             }
 
             if (result is IBackupResults r)
