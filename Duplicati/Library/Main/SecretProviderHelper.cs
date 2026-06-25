@@ -72,25 +72,6 @@ public static class SecretProviderHelper
     }
 
     /// <summary>
-    /// Creates an instance of a secret provider with caching enabled
-    /// </summary>
-    /// <param name="config">The configuration string</param>
-    /// <param name="cachingLevel">The caching level</param>
-    /// <param name="persistedFolder">The folder to persist the cache to</param>
-    /// <param name="salt">The salt to use for hashing</param>
-    /// <param name="pattern">The pattern to use for matching</param>
-    /// <param name="cancelToken">The cancellation token</param>
-    /// <returns>The secret provider instance</returns>
-    public static async Task<ISecretProvider> CreateInstanceAsync(string config, CachingLevel cachingLevel, string persistedFolder, string salt, string pattern, CancellationToken cancelToken)
-    {
-        var provider = SecretProviderLoader.CreateInstance(config);
-        var sp = WrapWithCache(config, provider, cachingLevel, persistedFolder, salt, pattern);
-        await sp.InitializeAsync(new System.Uri(config), cancelToken).ConfigureAwait(false);
-
-        return sp;
-    }
-
-    /// <summary>
     /// Wraps a secret provider with caching
     /// </summary>
     /// <param name="config">The configuration string</param>
@@ -118,14 +99,14 @@ public static class SecretProviderHelper
         var providerConfig = options.GetValueOrDefault("secret-provider");
         if (!string.IsNullOrWhiteSpace(providerConfig))
         {
-            var provider = SecretProviderLoader.CreateInstance(providerConfig);
+            var provider = await SecretProviderLoader.CreateInstanceAsync(providerConfig, true, cancellationToken).ConfigureAwait(false);
             if (provider?.IsSetSupported == true)
                 return provider;
         }
 
         try
         {
-            return await SecretProviderLoader.GetDefaultSecretProviderForOperatingSystem(cancellationToken).ConfigureAwait(false);
+            return await SecretProviderLoader.GetDefaultSecretProviderForOperatingSystem(true, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -161,7 +142,7 @@ public static class SecretProviderHelper
         }
         else
         {
-            var newProvider = SecretProviderLoader.CreateInstance(provider);
+            var newProvider = await SecretProviderLoader.CreateInstanceAsync(provider, false, cancellationToken);
 
             // Weak salt, but semi-static
             string salt;
