@@ -99,8 +99,6 @@ public sealed record Settings(
         ISecretProvider? secretInstance = null;
         if (!string.IsNullOrWhiteSpace(secretProvider))
         {
-            var secretProviderInstance = SecretProviderLoader.CreateInstance(secretProvider);
-
             // Map into expected structure
             var opts = new Dictionary<string, string?>
             {

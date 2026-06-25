@@ -72,9 +72,9 @@ public static class LicenseChecker
         if (string.IsNullOrWhiteSpace(licenseKey))
             throw new ArgumentException("License key cannot be null or empty", nameof(licenseKey));
 
-        if (licenseKey.StartsWith("file:", StringComparison.OrdinalIgnoreCase))
+        if (licenseKey.StartsWith("file://", StringComparison.OrdinalIgnoreCase))
         {
-            var filePath = licenseKey[5..];
+            var filePath = licenseKey[7..];
             if (string.IsNullOrWhiteSpace(filePath))
                 throw new ArgumentException("License file path cannot be null or empty", nameof(licenseKey));
             if (!File.Exists(filePath))
@@ -104,6 +104,9 @@ public static class LicenseChecker
         }
         else
         {
+            if (licenseKey.StartsWith("jwt:", StringComparison.OrdinalIgnoreCase))
+                licenseKey = licenseKey[4..];
+
             using var httpClient = new HttpClient();
             using var content = JsonContent.Create(new LicenseRequestData(licenseKey));
             using var response = await httpClient.PostAsync(ServerUrl, content, cancellationToken);
