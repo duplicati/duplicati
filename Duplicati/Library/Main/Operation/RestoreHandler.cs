@@ -501,7 +501,9 @@ namespace Duplicati.Library.Main.Operation
             }
             else if (m_result.RestoredFiles == 0)
             {
-                if (m_result.UnmodifiedFiles == 0)
+                if (m_result.UnmodifiedFiles == 0 && m_result.RestoredFolders == 0)
+                    Logging.Log.WriteWarningMessage(LOGTAG, "NoFilesOrFoldersRestored", null, "Restore completed without errors but no files or folders were restored");
+                else if (m_result.UnmodifiedFiles == 0)
                     Logging.Log.WriteWarningMessage(LOGTAG, "NoFilesRestored", null, "Restore completed without errors but no files were restored");
                 else
                     Logging.Log.WriteInformationMessage(LOGTAG, "NoFilesNeededRestore", null, "Restore completed but all files were already present");
@@ -607,7 +609,9 @@ namespace Duplicati.Library.Main.Operation
 
             if (m_result.RestoredFiles == 0)
             {
-                if (m_result.UnmodifiedFiles == 0)
+                if (m_result.UnmodifiedFiles == 0 && m_result.RestoredFolders == 0)
+                    Logging.Log.WriteWarningMessage(LOGTAG, "NoFilesOrFoldersRestored", null, "Restore completed without errors but no files or folders were restored");
+                else if (m_result.UnmodifiedFiles == 0)
                     Logging.Log.WriteWarningMessage(LOGTAG, "NoFilesRestored", null, "Restore completed without errors but no files were restored");
                 else
                     Logging.Log.WriteInformationMessage(LOGTAG, "NoFilesNeededRestore", null, "Restore completed but all files were already present");
@@ -1062,9 +1066,23 @@ namespace Duplicati.Library.Main.Operation
             using (new Logging.Timer(LOGTAG, "PrepareRestoreFileList", "PrepareRestoreFileList"))
             {
                 var c = await database
-                    .PrepareRestoreFilelistAsync(options.Time, options.Version, filter, result.TaskControl.ProgressToken)
+                    .PrepareRestoreFilelistAsync(options.Time, options.Version, filter, options.DisableAdsRestore, result.TaskControl.ProgressToken)
                     .ConfigureAwait(false);
                 result.OperationProgressUpdater.UpdatefileCount(c.Item1, c.Item2, true);
+
+                // If the selection is completely empty (no files, folders, or symlinks),
+                // stop now as this is most likely not what is desired.
+                var firstPath = await database
+                    .GetFirstPathAsync(result.TaskControl.ProgressToken)
+                    .ConfigureAwait(false);
+                if (string.IsNullOrWhiteSpace(firstPath))
+                    throw new UserInformationException("Restore selection matched zero files, nothing to restore", "EmptyRestoreOperation");
+            }
+
+            if (options.DisableAdsRestore)
+            {
+                using (new Logging.Timer(LOGTAG, "FilterAds", "Filtering alternate data streams from restore list"))
+                    await database.RemoveAlternateDataStreamsAsync(result.TaskControl.ProgressToken).ConfigureAwait(false);
             }
 
             using (new Logging.Timer(LOGTAG, "SetTargetPaths", "SetTargetPaths"))
@@ -1164,7 +1182,19 @@ namespace Duplicati.Library.Main.Operation
                 var targetfileid = restorelist.TargetFileID;
                 var targetfilehash = restorelist.TargetHash;
                 var targetfilelength = restorelist.Length;
-                if (await restoreDestination.FileExists(targetpath, result.TaskControl.ProgressToken).ConfigureAwait(false))
+                var fileExists = false;
+                try
+                {
+                    fileExists = await restoreDestination.FileExists(targetpath, result.TaskControl.ProgressToken).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "FileExistsFailed", ex, "Failed to check if file exists: \"{0}\", message: {1}", targetpath, ex.Message);
+                    if (options.UnittestMode)
+                        throw;
+                }
+
+                if (fileExists)
                 {
                     try
                     {
@@ -1199,7 +1229,7 @@ namespace Duplicati.Library.Main.Operation
                         {
                             // a file hash for verification will only be necessary if the file has exactly
                             // the wanted size so we have a chance to already mark the file as data-verified.
-                            bool calcFileHash = (currentfilelength == targetfilelength);
+                            var calcFileHash = currentfilelength == targetfilelength;
                             if (calcFileHash) filehasher.Initialize();
 
                             using (var file = await restoreDestination.OpenRead(targetpath, result.TaskControl.ProgressToken).ConfigureAwait(false))

@@ -25,6 +25,7 @@ using Microsoft.Data.Sqlite;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.Versioning;
@@ -932,6 +933,106 @@ namespace Duplicati.UnitTest
             // Recreate the database, which would fail if the filename is not handled correctly
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, TestOptions, null))
                 TestUtils.AssertResults(await c.RepairAsync());
+        }
+
+        [Test]
+        [Category("Targeted")]
+        [Category("Bug")]
+        [SupportedOSPlatform("macOS")]
+        public async Task Issue4562MacOSAclAndFileFlagsAsync()
+        {
+            // Reproduction for issue #4562
+            // ACL and file flag "uchg" are not saved or restored on macOS
+
+            // macOS user-immutable file flag (UF_IMMUTABLE), set by "chflags uchg"
+            const uint UF_IMMUTABLE = 0x00000002;
+
+            var testopts = new Dictionary<string, string>(TestOptions)
+            {
+                ["no-encryption"] = "true",
+                ["restore-permissions"] = "true"
+            };
+
+            var sourceFile = Path.Combine(DATAFOLDER, "file.txt");
+            var restoredFile = sourceFile.Replace(DATAFOLDER, RESTOREFOLDER);
+            File.WriteAllText(sourceFile, "test content");
+
+            // Helper to run a tool and return its exit code and stderr
+            static async Task<(int ExitCode, string StdErr)> RunAsync(string fileName, string arguments)
+            {
+                using var process = new Process();
+                process.StartInfo.FileName = fileName;
+                process.StartInfo.Arguments = arguments;
+                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.RedirectStandardOutput = true;
+                process.StartInfo.RedirectStandardError = true;
+                process.Start();
+                var stderr = await process.StandardError.ReadToEndAsync();
+                await process.WaitForExitAsync();
+                return (process.ExitCode, stderr);
+            }
+
+            try
+            {
+                // Set ACL using chmod +a FIRST (before uchg, which would block this)
+                var chmod = await RunAsync("chmod", $"+a \"everyone allow read,write\" \"{sourceFile}\"");
+                Assert.That(chmod.ExitCode, Is.EqualTo(0), $"chmod +a failed: {chmod.StdErr}");
+
+                // Set macOS file flag "uchg" (user immutable) using chflags
+                var chflags = await RunAsync("chflags", $"uchg \"{sourceFile}\"");
+                Assert.That(chflags.ExitCode, Is.EqualTo(0), $"chflags failed: {chflags.StdErr}");
+
+                // Verify the flags and ACL are set on the source
+                var originalFlags = Duplicati.Library.Common.IO.PosixFile.GetFileFlags(sourceFile, false, true);
+                Assert.That(originalFlags.HasValue, Is.True, "Source file should have flags set");
+                Assert.That(originalFlags.Value & UF_IMMUTABLE, Is.Not.EqualTo(0), "Source file should have uchg flag set");
+
+                var originalAcl = Duplicati.Library.Common.IO.PosixFile.GetAcl(sourceFile, false, true);
+                Assert.That(originalAcl, Is.Not.Null, "Source file should have ACL set");
+                Assert.That(originalAcl, Is.Not.Empty, "Source file should have ACL set");
+
+                // Backup
+                using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+                    TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
+
+                // Restore
+                var restoreOpts = new Dictionary<string, string>(testopts)
+                {
+                    ["restore-path"] = RESTOREFOLDER
+                };
+                using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, restoreOpts, null))
+                {
+                    var restoreResults = await c.RestoreAsync([sourceFile]);
+                    Assert.That(restoreResults.RestoredFiles, Is.EqualTo(1), "File should have been restored");
+                }
+
+                Assert.That(File.Exists(restoredFile), Is.True, "Restored file should exist");
+
+                // Verify flags are restored
+                var restoredFlags = Duplicati.Library.Common.IO.PosixFile.GetFileFlags(restoredFile, false, true);
+                Assert.That(restoredFlags.HasValue, Is.True, "Restored file should have flags");
+                Assert.That(restoredFlags.Value & UF_IMMUTABLE, Is.Not.EqualTo(0), "Restored file should have uchg flag set");
+
+                // Verify ACL is restored
+                var restoredAcl = Duplicati.Library.Common.IO.PosixFile.GetAcl(restoredFile, false, true);
+                Assert.That(restoredAcl, Is.Not.Null, "Restored file should have ACL set");
+                Assert.That(restoredAcl, Is.Not.Empty, "Restored file should have ACL set");
+                Assert.That(restoredAcl, Does.Contain("everyone"), "Restored ACL should contain 'everyone'");
+            }
+            finally
+            {
+                // Clean up: recursively clear the uchg flag on every entry under the data
+                // and restore folders so the test teardown can delete them. Doing this per
+                // existing path (and recursively) avoids leaving an immutable file behind if
+                // the test failed partway through, which would otherwise break DirectoryDelete.
+                foreach (var dir in new[] { DATAFOLDER, RESTOREFOLDER })
+                {
+                    if (!Directory.Exists(dir))
+                        continue;
+                    try { await RunAsync("chflags", $"-R nouchg \"{dir}\""); }
+                    catch { }
+                }
+            }
         }
     }
 }

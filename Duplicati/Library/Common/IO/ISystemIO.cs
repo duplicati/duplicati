@@ -92,6 +92,34 @@ namespace Duplicati.Library.Common.IO
         /// </summary>
         /// <param name="path">The directory to set permissions on.</param>
         void DirectorySetPermissionUserRWOnly(string path);
+
+        /// <summary>
+        /// Gets a value indicating whether the operating system supports alternate data streams.
+        /// </summary>
+        bool SupportsAlternateDataStreams { get; }
+
+        /// <summary>
+        /// Enumerates the alternate data streams for a file (Windows-only).
+        /// </summary>
+        /// <param name="path">The path to the file.</param>
+        /// <returns>An enumerable of stream names (e.g., ":streamname").</returns>
+        IEnumerable<string> EnumerateAlternateDataStreams(string path);
+
+        /// <summary>
+        /// Determines whether the specified path is an alternate data stream.
+        /// </summary>
+        /// <param name="path">The path to check.</param>
+        /// <returns>True if the path is an alternate data stream; otherwise, false.</returns>
+        bool IsAlternateDataStream(string path);
+
+        /// <summary>
+        /// Returns the parent file or folder path of an alternate data stream path.
+        /// For a path such as <c>C:\file.txt:stream</c> this returns <c>C:\file.txt</c>.
+        /// If the path is not an alternate data stream, the path is returned unchanged.
+        /// </summary>
+        /// <param name="path">The alternate data stream path.</param>
+        /// <returns>The parent file or folder path.</returns>
+        string GetAlternateDataStreamParent(string path);
     }
 
 }

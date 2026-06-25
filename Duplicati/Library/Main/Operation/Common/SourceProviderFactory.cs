@@ -100,7 +100,14 @@ namespace Duplicati.Library.Main.Operation.Common
                 }
             }
 
-            return SnapshotUtility.CreateNoSnapshot(sources, options.IgnoreAdvisoryLocking, options.SymlinkPolicy == Options.SymlinkStrategy.Follow, useSeBackup, options.HandleMacOSPhotoLibrary, options.MacOSPhotoLibraryPath);
+            return SnapshotUtility.CreateNoSnapshot(
+                paths: sources,
+                ignoreAdvisoryLocking: options.IgnoreAdvisoryLocking,
+                followSymlinks: options.SymlinkPolicy == Options.SymlinkStrategy.Follow,
+                useSeBackup: useSeBackup,
+                enableAdsBackup: options.EnableAdsBackup,
+                macOSPhotosHandling: options.HandleMacOSPhotoLibrary,
+                photosLibraryPath: options.MacOSPhotoLibraryPath);
         }
 
         /// <summary>
@@ -151,13 +158,15 @@ namespace Duplicati.Library.Main.Operation.Common
                                 }
                                 catch (Exception ex)
                                 {
-                                    if (options.AllowMissingSource)
+                                    if (options.AbortIfSourceMissing)
+                                        throw new UserInformationException($"Failed to load source provider for \"{sanitizedUrl}\": {ex.Message}", "SourceProviderFailed", ex);
+                                    else if (options.AllowMissingSource)
+                                        continue;
+                                    else
                                     {
                                         Log.WriteWarningMessage(LOGTAG, "SourceProviderFailed", ex, "Failed to load source provider for \"{0}\"", sanitizedUrl);
                                         continue;
                                     }
-
-                                    throw new UserInformationException($"Failed to load source provider for \"{sanitizedUrl}\": {ex.Message}", "SourceProviderFailed", ex);
                                 }
 
                                 // Don't accept missing providers

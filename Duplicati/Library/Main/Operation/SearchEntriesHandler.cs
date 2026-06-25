@@ -41,11 +41,13 @@ internal static class SearchEntriesHandler
     /// <param name="result">The result class</param>
     /// <param name="paths">The paths to search</param>
     /// <param name="filter">The filter to use for searching</param>
+    /// <param name="caseSensitive">Whether the search should be case sensitive</param>
     /// <param name="offset">The offset to start searching from</param>
     /// <param name="limit">The maximum number of results to return</param>
-    /// <param name="extendedData">Whether to include extended data</param>
+    /// <param name="returnExtendedData">Whether to include extended data</param>
+    /// <param name="searchMetadata">Whether to also search in metadata JSON</param>
     /// <returns>A task representing the asynchronous operation</returns>
-    public static async Task RunAsync(Options options, SearchFilesResults result, string[] paths, IFilter filter, long offset, long limit, bool extendedData)
+    public static async Task RunAsync(Options options, SearchFilesResults result, string[] paths, IFilter filter, bool caseSensitive, long offset, long limit, bool returnExtendedData, bool searchMetadata)
     {
         if (!System.IO.File.Exists(options.Dbpath))
             throw new UserInformationException("No local database found, this operation requires a local database", "NoLocalDatabase");
@@ -69,10 +71,10 @@ internal static class SearchEntriesHandler
             paths = paths.Select(path => Util.AppendDirSeparator(path)).ToArray();
 
         result.FileVersions = await db
-            .SearchEntriesAsync(paths, filter, filesetIds, offset, limit, result.TaskControl.ProgressToken)
+            .SearchEntriesAsync(paths, filter, caseSensitive, filesetIds, searchMetadata, offset, limit, result.TaskControl.ProgressToken)
             .ConfigureAwait(false);
 
-        if (extendedData)
+        if (returnExtendedData)
         {
             var coreentries = result.FileVersions.Items.Cast<SearchFileVersion>().ToArray();
             var metadata = await db.GetMetadataForFilesetIdsAsync(coreentries.Select(e => e.FileId), result.TaskControl.ProgressToken).ConfigureAwait(false);

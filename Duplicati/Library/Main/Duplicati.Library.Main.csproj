@@ -10,7 +10,7 @@
   <ItemGroup>
     <PackageReference Include="CoCoL" Version="1.8.4" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="StreamJsonRpc" Version="2.17.8" />
+    <PackageReference Include="StreamJsonRpc" Version="2.25.29" />
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
     <PackageReference Include="System.CommandLine.NamingConventionBinder" Version="2.0.0-beta4.22272.1" />
   </ItemGroup>

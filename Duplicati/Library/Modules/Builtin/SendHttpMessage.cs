@@ -338,18 +338,18 @@ namespace Duplicati.Library.Modules.Builtin
                 data = Encoding.UTF8.GetBytes(sb.ToString());
             }
 
-            var request = new HttpRequestMessage
-            {
-                RequestUri = new Uri(target.Url),
-                Method = new HttpMethod(target.Verb),
-                Content = new ByteArrayContent(data)
-            };
-            request.Content.Headers.ContentType = contenttype;
-
             Exception lastEx = null;
 
             await RetryHelper.Retry(async () =>
             {
+                var request = new HttpRequestMessage
+                {
+                    RequestUri = new Uri(target.Url),
+                    Method = new HttpMethod(target.Verb),
+                    Content = new ByteArrayContent(data)
+                };
+                request.Content.Headers.ContentType = contenttype;
+
                 var response = await client.SendAsync(request);
                 var responseContent = await response.Content.ReadAsStringAsync();
 

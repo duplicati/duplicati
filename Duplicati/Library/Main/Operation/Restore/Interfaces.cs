@@ -176,7 +176,8 @@ namespace Duplicati.Library.Main.Operation.Restore
     /// <param name="Length">The length of the file.</param>
     /// <param name="BlocksetID">The BlocksetID of the file.</param>
     /// <param name="IsPriorityFile">Whether this is a priority file that should be processed before other files.</param>
-    public class FileRequest(long ID, string OriginalPath, string TargetPath, string Hash, long Length, long BlocksetID, bool IsPriorityFile = false)
+    /// <param name="IsAlternateDataStream">Whether this request is for an alternate data stream that must be restored after its host file/folder.</param>
+    public class FileRequest(long ID, string OriginalPath, string TargetPath, string Hash, long Length, long BlocksetID, bool IsPriorityFile = false, bool IsAlternateDataStream = false)
     {
         public long ID { get; } = ID;
         public string OriginalPath { get; } = OriginalPath;
@@ -185,6 +186,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         public long Length { get; } = Length;
         public long BlocksetID { get; } = BlocksetID;
         public bool IsPriorityFile { get; } = IsPriorityFile;
+        public bool IsAlternateDataStream { get; } = IsAlternateDataStream;
     }
 
 }

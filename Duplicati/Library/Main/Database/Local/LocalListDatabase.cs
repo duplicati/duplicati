@@ -41,6 +41,21 @@ namespace Duplicati.Library.Main.Database.Local
     internal class LocalListDatabase : LocalDatabase
     {
         private static readonly string LOGTAG = Log.LogTagFromType<LocalListDatabase>();
+
+        /// <summary>
+        /// Metadata JSON keys that are searched when SearchMetadata is enabled.
+        /// </summary>
+        private static readonly string[] METADATA_SEARCH_KEYS =
+        [
+            "o365:Name",
+            "o365:DisplayName",
+            "o365:Type",
+            "gsuite:Name",
+            "gsuite:DisplayName",
+            "gsuite:SpaceName",
+            "gsuite:Type"
+        ];
+
         /// <summary>
         /// Creates a new instance of the LocalListDatabase.
         /// </summary>
@@ -1376,16 +1391,44 @@ namespace Duplicati.Library.Main.Database.Local
         }
 
         /// <summary>
+        /// Builds a SQL condition that checks if any metadata search key matches the given filter part.
+        /// </summary>
+        private static string BuildMetadataCondition(string propName, bool caseSensitive, bool isWildcard)
+        {
+            var conditions = new List<string>();
+            foreach (var key in METADATA_SEARCH_KEYS)
+            {
+                var extract = $"json_extract(md.\"Content\", '$.\"{key}\"')";
+                if (isWildcard)
+                {
+                    if (caseSensitive)
+                        conditions.Add($"{extract} GLOB {propName}");
+                    else
+                        conditions.Add($"LOWER({extract}) GLOB LOWER({propName})");
+                }
+                else
+                {
+                    if (caseSensitive)
+                        conditions.Add($"instr({extract}, {propName}) > 0");
+                    else
+                        conditions.Add($"instr(LOWER({extract}), LOWER({propName})) > 0");
+                }
+            }
+            return string.Join("\n                                OR ", conditions);
+        }
+
+        /// <summary>
         /// Searches for file versions matching a filter in the specified path prefixes.
         /// </summary>
         /// <param name="pathprefixes">The path prefixes to search in, or search in all if empty.</param>
         /// <param name="filter">The filter to match against file paths.</param>
         /// <param name="filesetIds">Optional fileset IDs to restrict the search to.</param>
+        /// <param name="searchMetadata">Whether to also search in metadata JSON values.</param>
         /// <param name="offset">The offset for pagination.</param>
         /// <param name="limit">The limit for pagination.</param>
         /// <param name="token"> A cancellation token to cancel the operation.</param>
         /// <returns>A task that when awaited returns all matching file versions ordered by path and then version time.</returns>
-        public async Task<IPaginatedResults<ISearchFileVersion>> SearchEntriesAsync(IEnumerable<string>? pathprefixes, IFilter filter, long[]? filesetIds, long offset, long limit, CancellationToken token)
+        public async Task<IPaginatedResults<ISearchFileVersion>> SearchEntriesAsync(IEnumerable<string>? pathprefixes, IFilter filter, bool caseSensitive, long[]? filesetIds, bool searchMetadata, long offset, long limit, CancellationToken token)
         {
             if (offset != 0 && limit <= 0)
                 throw new ArgumentException("Cannot use offset without limit specified.", nameof(offset));
@@ -1408,7 +1451,6 @@ namespace Duplicati.Library.Main.Database.Local
             FilterExpression.AnalyzeFilters(filter, out var includes, out var excludes);
             var defaultExclude = includes && !excludes; // true = exclude unmatched, false = include unmatched
             var defaultBehavior = defaultExclude ? 1 : 0;
-            var caseSensitive = false; //TODO: Should we expose this? Or use: Library.Utility.Utility.IsFSCaseSensitive?
 
             var filterProps = new Dictionary<string, object?>();
             var caseWhenParts = new List<string>();
@@ -1454,15 +1496,37 @@ namespace Duplicati.Library.Main.Database.Local
                         var propName = $"@Part{Library.Utility.Utility.FormatInvariantValue(filterProps.Count)}";
                         filterProps[propName] = part;
                         if (caseSensitive)
-                            caseWhenParts.Add($@"
-                                WHEN instr(LOWER(pp.""Prefix"" || fl.""Path""), LOWER({propName})) > 0
-                                THEN {(filterExpression.Result ? "0" : "1")}
-                            ");
-                        else
+                        {
                             caseWhenParts.Add($@"
                                 WHEN instr(pp.""Prefix"" || fl.""Path"", {propName}) > 0
                                 THEN {(filterExpression.Result ? "0" : "1")}
                             ");
+                            if (searchMetadata)
+                            {
+                                caseWhenParts.Add($@"
+                                    WHEN md.""Content"" IS NOT NULL AND (
+                                        {BuildMetadataCondition(propName, true, false)}
+                                    )
+                                    THEN {(filterExpression.Result ? "0" : "1")}
+                                ");
+                            }
+                        }
+                        else
+                        {
+                            caseWhenParts.Add($@"
+                                WHEN instr(LOWER(pp.""Prefix"" || fl.""Path""), LOWER({propName})) > 0
+                                THEN {(filterExpression.Result ? "0" : "1")}
+                            ");
+                            if (searchMetadata)
+                            {
+                                caseWhenParts.Add($@"
+                                    WHEN md.""Content"" IS NOT NULL AND (
+                                        {BuildMetadataCondition(propName, false, false)}
+                                    )
+                                    THEN {(filterExpression.Result ? "0" : "1")}
+                                ");
+                            }
+                        }
                     }
                 }
                 else if (filterExpression.Type == FilterType.Wildcard)
@@ -1473,15 +1537,37 @@ namespace Duplicati.Library.Main.Database.Local
                         var propName = $"@Part{Library.Utility.Utility.FormatInvariantValue(filterProps.Count)}";
                         filterProps[propName] = part;
                         if (caseSensitive)
-                            caseWhenParts.Add($@"
-                                WHEN LOWER(pp.""Prefix"" || fl.""Path"") GLOB LOWER({propName})
-                                THEN {(filterExpression.Result ? "0" : "1")}
-                            ");
-                        else
+                        {
                             caseWhenParts.Add($@"
                             WHEN pp.""Prefix"" || fl.""Path"" GLOB {propName}
                             THEN {(filterExpression.Result ? "0" : "1")}
                         ");
+                            if (searchMetadata)
+                            {
+                                caseWhenParts.Add($@"
+                                    WHEN md.""Content"" IS NOT NULL AND (
+                                        {BuildMetadataCondition(propName, true, true)}
+                                    )
+                                    THEN {(filterExpression.Result ? "0" : "1")}
+                                ");
+                            }
+                        }
+                        else
+                        {
+                            caseWhenParts.Add($@"
+                                WHEN LOWER(pp.""Prefix"" || fl.""Path"") GLOB LOWER({propName})
+                                THEN {(filterExpression.Result ? "0" : "1")}
+                            ");
+                            if (searchMetadata)
+                            {
+                                caseWhenParts.Add($@"
+                                    WHEN md.""Content"" IS NOT NULL AND (
+                                        {BuildMetadataCondition(propName, false, true)}
+                                    )
+                                    THEN {(filterExpression.Result ? "0" : "1")}
+                                ");
+                            }
+                        }
                     }
                 }
                 else
@@ -1560,6 +1646,8 @@ namespace Duplicati.Library.Main.Database.Local
                     ON ""fe"".""FilesetID"" = ""f"".""ID""
                 LEFT JOIN ""Blockset"" ""b""
                     ON ""fl"".""BlocksetID"" = ""b"".""ID""
+                LEFT JOIN ""Metadataset"" ""md""
+                    ON ""fl"".""MetadataID"" = ""md"".""ID""
                 INNER JOIN ""PathPrefix"" ""pp""
                     ON ""fl"".""PrefixID"" = ""pp"".""ID""
                 WHERE {whereClause}
@@ -1623,6 +1711,8 @@ namespace Duplicati.Library.Main.Database.Local
                     FROM ""FilesetEntry"" ""fe""
                     INNER JOIN ""FileLookup"" ""fl""
                         ON ""fe"".""FileID"" = ""fl"".""ID""
+                    LEFT JOIN ""Metadataset"" ""md""
+                        ON ""fl"".""MetadataID"" = ""md"".""ID""
                     INNER JOIN ""PathPrefix"" ""pp""
                         ON ""fl"".""PrefixID"" = ""pp"".""ID""
                     WHERE {whereClause}

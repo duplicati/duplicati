@@ -75,7 +75,14 @@ public static class Helper
                     FROM ""Backup""
                 ");
                 await foreach (var rd in cmd.ExecuteReaderEnumerableAsync(CancellationToken.None).ConfigureAwait(false))
-                    dbpaths.Add(rd.ConvertValueToString(0) ?? "");
+                {
+                    var rawPath = rd.ConvertValueToString(0) ?? "";
+                    if (!string.IsNullOrEmpty(rawPath))
+                    {
+                        var resolvedPath = Path.IsPathRooted(rawPath) ? rawPath : Path.Combine(datafolder, rawPath);
+                        dbpaths.Add(Path.GetFullPath(resolvedPath));
+                    }
+                }
             }
             catch
             {

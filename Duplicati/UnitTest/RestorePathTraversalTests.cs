@@ -16,7 +16,7 @@ namespace Duplicati.UnitTest
     {
         [Test]
         [Category("RestoreHandler")]
-        public async Task RestoreToSymlinkTargetAsync()
+        public async Task RestoreToSymlinkTargetAsync([Values(true, false)] bool legacyRestore)
         {
             if (OperatingSystem.IsWindows())
                 Assert.Ignore("Symlink tests are not supported on Windows");
@@ -53,12 +53,25 @@ namespace Duplicati.UnitTest
             var restoreOptions = new Dictionary<string, string>(this.TestOptions);
             restoreOptions["restore-path"] = restoreTarget;
             restoreOptions["overwrite"] = "true";
+            restoreOptions["restore-legacy"] = legacyRestore.ToString();
+            restoreOptions["unittest-mode"] = "false";
 
             using (var c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
             {
-                // We expect a UserInformationException due to path traversal detection
-                var ex = NUnit.Framework.Assert.ThrowsAsync<UserInformationException>(() => c.RestoreAsync(null));
-                NUnit.Framework.Assert.That(ex.Message.Contains("Path traversal detected"), "Expected path traversal error message");
+                // Verify that path traversal is detected
+                var restoreResults = await c.RestoreAsync(null);
+                var foundError = restoreResults.Errors.Any(e => e.Contains("Path traversal detected"));
+                if (!foundError)
+                {
+                    Console.WriteLine("Errors found:");
+                    foreach (var e in restoreResults.Errors)
+                        Console.WriteLine(e);
+
+                    Console.WriteLine("Warnings found:");
+                    foreach (var e in restoreResults.Warnings)
+                        Console.WriteLine(e);
+                }
+                Assert.IsTrue(foundError, "Expected path traversal error message");
             }
 
             // 5. Verify vulnerability

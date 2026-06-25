@@ -27,6 +27,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
+using Duplicati.Server;
 using Duplicati.Server.Database;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Dto.V2;
@@ -102,6 +103,21 @@ public class DuplicatiWebserver
 #else
     private static readonly bool EnableSwagger = false;
 #endif
+
+    /// <summary>
+    /// Gets server-only options that are consumed by the server and not passed to the command-line client.
+    /// </summary>
+    public static ICommandLineArgument[] ServerOnlyOptions =>
+    [
+        new CommandLineArgument(
+            "store-task-config",
+            CommandLineArgument.ArgumentType.Enumeration,
+            Server.Strings.Program.StoretaskconfigShort,
+            Server.Strings.Program.StoretaskconfigLong,
+            StoreTaskConfigMode.Auto.ToString(),
+            null,
+            Enum.GetNames(typeof(StoreTaskConfigMode)))
+    ];
 
     /// <summary>
     /// The settings used for stating the server

@@ -97,8 +97,8 @@ public class BackupGet : IEndpointV1
     {
         var scheduleId = connection.GetScheduleIDsFromTags(new string[] { "ID=" + bk.ID });
         var schedule = scheduleId.Any() ? connection.GetSchedule(scheduleId.First()) : null;
-        var sourcenames = SpecialFolders.GetSourceNames(bk);
         bk.MaskSensitiveInformation();
+        var sourcenames = SpecialFolders.GetSourceNames(bk);
 
         return new GetBackupResultDto(
             schedule == null ? null : new Dto.ScheduleDto()

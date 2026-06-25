@@ -78,6 +78,19 @@ namespace Duplicati.Server.Database
                 this.Rule = string.Join(";", parts);
             }
         }
+
+        public Schedule Clone()
+        {
+            return new Schedule
+            {
+                ID = this.ID,
+                Tags = this.Tags?.ToArray(),
+                Time = this.Time,
+                Repeat = this.Repeat,
+                LastRun = this.LastRun,
+                Rule = this.Rule
+            };
+        }
     }
 }
 

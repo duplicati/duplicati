@@ -31,7 +31,9 @@ namespace Duplicati.Library.Main.Strings
         public static string DuplicateOptionNameWarning(string optionname) { return LC.L(@"The option --{0} exists more than once. Please report this to the developers", optionname); }
         public static string WrongDefaultBooleanOptionWarning(string optionname) { return LC.L(@"The option --{0} is a boolean option with a default value of true. Please report this to the developers", optionname); }
         public static string NoSourceFoldersError { get { return LC.L(@"No source folders specified for backup"); } }
-        public static string SourceIsMissingError(string foldername) { return LC.L(@"Backup aborted since the source path {0} does not exist. Please verify that the source path exists, or remove the source path from the backup configuration, or set the allow-missing-source option.", foldername); }
+        public static string SourceIsMissingError(string foldername) { return LC.L(@"Backup aborted since the source path {0} does not exist. Please verify that the source path exists, or remove the source path from the backup configuration, or unset the abort-if-source-missing option.", foldername); }
+        public static string SourceIsMissingWarning(string foldername) { return LC.L(@"The source path {0} does not exist, skipping", foldername); }
+        public static string NoSourcesError => LC.L(@"No valid source folders found, aborting backup as it would be empty");
         public static string SourceUnauthorizedError(string foldername) { return LC.L(@"Unauthorized to access source folder {0}, aborting backup", foldername); }
         public static string UnsupportedOptionDisabledModuleWarning(string optionname, string modulename) { return LC.L(@"The option --{0} is not supported because the module {1} is not currently loaded", optionname, modulename); }
         public static string UnsupportedOptionWarning(string optionname) { return LC.L(@"The supplied option --{0} is not supported and will be ignored", optionname); }
@@ -233,8 +235,10 @@ namespace Duplicati.Library.Main.Strings
         public static string RemotefilelockdurationShort { get { return LC.L(@"Lock duration for remote backup files"); } }
         public static string RetentionPolicyLong { get { return LC.L(@"Use this option to reduce the number of versions that are kept with increasing version age by deleting most of the old backups. The expected format is a comma separated list of colon separated time frame and interval pairs. For example the value ""7D:0s,3M:1D,10Y:2M"" means ""For 7 day keep all backups, for 3 months keep one backup every day, for 10 years one backup every 2nd month and delete every backup older than this."". This option also supports using the specifier ""U"" to indicate an unlimited time interval."); } }
         public static string RetentionPolicyShort { get { return LC.L(@"Reduce number of versions by deleting old intermediate backups"); } }
-        public static string AllowmissingsourceLong { get { return LC.L(@"Use this option to continue even if some source entries are missing."); } }
+        public static string AllowmissingsourceLong { get { return LC.L(@"Use this option to continue even if some source entries are missing. When this option is set, no warning is emitted for missing sources."); } }
         public static string AllowmissingsourceShort { get { return LC.L(@"Ignore missing source elements"); } }
+        public static string AbortifsourcemissingLong { get { return LC.L(@"Use this option to abort the backup if any source path is missing. This overrides the default behavior of logging a warning and continuing."); } }
+        public static string AbortifsourcemissingShort { get { return LC.L(@"Abort backup if a source is missing"); } }
         public static string PreventemptysourceLong { get { return LC.L(@"Use this option to prevent backups from running if one or more source folders are empty. This is useful to prevent backups from running when the source is not available, such as when a USB drive is not mounted. This only works for filesystem source paths."); } }
         public static string PreventemptysourceShort { get { return LC.L(@"Prevent backups from running if source folders are empty"); } }
         public static string OverwriteLong { get { return LC.L(@"Use this option to overwrite target files when restoring. If this option is not set, the files will be restored with a timestamp and a number appended."); } }
@@ -414,6 +418,12 @@ namespace Duplicati.Library.Main.Strings
         public static string SyncVerifyHashLong { get { return LC.L("Verifies file content using SHA-256 hashes when size and time match"); } }
         public static string SyncRemoteStateShort { get { return LC.L("Remote state source"); } }
         public static string SyncRemoteStateLong { get { return LC.L($"Controls how the sync operation determines the remote state of each folder: '{SyncRemoteState.UseRemoteState}' enumerates the remote destination per folder (safest, one listing per folder), '{SyncRemoteState.UseLocalState}' uses the local database and assumes it is up to date (faster, no extra listings), '{SyncRemoteState.BlindlyUpload}' uploads every local file unconditionally without checking remote state (fastest, deletes are skipped with a warning)."); } }
+        public static string EnableAdsBackupShort { get { return LC.L("Enable backup of NTFS alternate data streams"); } }
+        public static string EnableAdsBackupLong { get { return LC.L("Use this option to enable backup of NTFS alternate data streams (ADS). This is a Windows-only feature that allows backing up hidden data attached to files."); } }
+        public static string DisableAdsRestoreShort { get { return LC.L("Disable restore of NTFS alternate data streams"); } }
+        public static string DisableAdsRestoreLong { get { return LC.L("Use this option to skip restoring NTFS alternate data streams (ADS) during a restore operation. The main file content will still be restored."); } }
+        public static string AllowPathsInLogMessagesShort { get { return LC.L("Allow paths in log messages"); } }
+        public static string AllowPathsInLogMessagesLong { get { return LC.L("Use this option to allow paths to be included in log messages sent to remote servers. By default, paths are redacted to protect sensitive information."); } }
     }
 
     internal static class Common

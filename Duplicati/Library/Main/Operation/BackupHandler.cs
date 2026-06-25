@@ -79,7 +79,7 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="cancellationToken">The cancellation token</param>
         /// <returns>The source providers</returns>
         public static Task<ISourceProvider> GetSourceProviderAsync(IEnumerable<string> sources, Options options, CancellationToken cancellationToken)
-            => Common.SourceProviderFactory.GetSourceProviderAsync(sources, options, cancellationToken);
+            => SourceProviderFactory.GetSourceProviderAsync(sources, options, cancellationToken);
 
         public UsnJournalService GetJournalService(ISourceProvider provider, IFilter filter, long lastfilesetid)
         {

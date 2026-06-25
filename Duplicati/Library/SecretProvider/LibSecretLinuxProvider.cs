@@ -33,6 +33,11 @@ namespace Duplicati.Library.SecretProvider;
 [SupportedOSPlatform("linux")]
 public class LibSecretLinuxProvider : ISecretProvider
 {
+    /// <summary>
+    /// The default D-Bus service name implementing the freedesktop Secret Service API.
+    /// </summary>
+    public const string DefaultServiceName = "org.freedesktop.secrets";
+
     /// <inheritdoc />
     public string Key => "libsecret";
 
@@ -49,7 +54,7 @@ public class LibSecretLinuxProvider : ISecretProvider
     {
         if (!OperatingSystem.IsLinux())
             return Task.FromResult(false);
-        return SecretCollection.IsSupported(CancellationToken.None);
+        return SecretCollection.IsSupported(DefaultServiceName, CancellationToken.None);
     });
 
     /// <inheritdoc />
@@ -64,9 +69,11 @@ public class LibSecretLinuxProvider : ISecretProvider
     private class LibSecretConfig : ICommandLineArgumentMapper
     {
         /// <summary>
-        /// The collection to use
+        /// The collection to use. When left empty, the canonical default collection is
+        /// resolved via the Secret Service "default" alias. When set to an explicit value
+        /// (including the literal "default"), that collection name is matched literally.
         /// </summary>
-        public string Collection { get; set; } = "default";
+        public string Collection { get; set; } = string.Empty;
 
         /// <summary>
         /// Whether the collection name is case sensitive
@@ -79,6 +86,11 @@ public class LibSecretLinuxProvider : ISecretProvider
         public bool NoAutoCreateCollection { get; set; }
 
         /// <summary>
+        /// The D-Bus service name implementing the freedesktop Secret Service API.
+        /// </summary>
+        public string ServiceName { get; set; } = DefaultServiceName;
+
+        /// <summary>
         /// Gets the command line argument description for the given name
         /// </summary>
         /// <param name="name">The name of the argument</param>
@@ -89,6 +101,7 @@ public class LibSecretLinuxProvider : ISecretProvider
                 nameof(Collection) => new CommandLineArgumentDescriptionAttribute() { Name = "collection", Type = CommandLineArgument.ArgumentType.String, ShortDescription = Strings.LibSecretLinuxProvider.CollectionDescriptionShort, LongDescription = Strings.LibSecretLinuxProvider.CollectionDescriptionLong },
                 nameof(CaseSensitive) => new CommandLineArgumentDescriptionAttribute() { Name = "case-sensitive", Type = CommandLineArgument.ArgumentType.Boolean, ShortDescription = Strings.LibSecretLinuxProvider.CaseSensitiveDescriptionShort, LongDescription = Strings.LibSecretLinuxProvider.CaseSensitiveDescriptionLong },
                 nameof(NoAutoCreateCollection) => new CommandLineArgumentDescriptionAttribute() { Name = "no-autocreate-collection", Type = CommandLineArgument.ArgumentType.Boolean, ShortDescription = Strings.LibSecretLinuxProvider.NoAutoCreateCollectionDescriptionShort, LongDescription = Strings.LibSecretLinuxProvider.NoAutoCreateCollectionDescriptionLong },
+                nameof(ServiceName) => new CommandLineArgumentDescriptionAttribute() { Name = "service-name", Type = CommandLineArgument.ArgumentType.String, ShortDescription = Strings.LibSecretLinuxProvider.ServiceNameDescriptionShort, LongDescription = Strings.LibSecretLinuxProvider.ServiceNameDescriptionLong, DefaultValue = DefaultServiceName },
                 _ => null,
             };
 
@@ -120,10 +133,11 @@ public class LibSecretLinuxProvider : ISecretProvider
 
         var args = HttpUtility.ParseQueryString(config.Query);
         _cfg = CommandLineArgumentMapper.ApplyArguments(new LibSecretConfig(), args);
-        if (string.IsNullOrWhiteSpace(_cfg.Collection))
-            throw new UserInformationException("The collection must be specified", "CollectionRequired");
+        if (string.IsNullOrWhiteSpace(_cfg.ServiceName))
+            throw new UserInformationException("The service name must be specified", "ServiceNameRequired");
 
-        _collection = await SecretCollection.CreateAsync(_cfg.Collection, !_cfg.NoAutoCreateCollection, cancellationToken).ConfigureAwait(false);
+        // An empty collection means "resolve the canonical default collection via the alias".
+        _collection = await SecretCollection.CreateAsync(_cfg.Collection, !_cfg.NoAutoCreateCollection, _cfg.ServiceName, cancellationToken).ConfigureAwait(false);
         await _collection.UnlockAsync().ConfigureAwait(false);
     }
 
@@ -135,7 +149,7 @@ public class LibSecretLinuxProvider : ISecretProvider
         if (!OperatingSystem.IsLinux())
             throw new PlatformNotSupportedException("LibSecret is only supported on Linux");
 
-        return _collection.GetSecretsAsync(keys, _cfg.CaseSensitive ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase);
+        return _collection.GetSecretsAsync(keys, _cfg.CaseSensitive ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -162,11 +176,7 @@ public class LibSecretLinuxProvider : ISecretProvider
         if (!OperatingSystem.IsLinux())
             throw new PlatformNotSupportedException("LibSecret is only supported on Linux");
 
-        var actual = await SecretCollection.CollectionExists(_cfg.Collection, cancellationToken);
-        if (actual || !_cfg.Collection.Equals("default", StringComparison.OrdinalIgnoreCase))
-            return actual;
-
-        return await SecretCollection.CollectionExists(SecretCollection.DefaultCollectionActualName, cancellationToken);
+        return await SecretCollection.CollectionExists(_cfg.Collection, _cfg.ServiceName, cancellationToken);
     }
 
 }

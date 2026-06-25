@@ -260,42 +260,42 @@ namespace Duplicati.UnitTest
                 TestUtils.AssertResults(await c.BackupAsync(rootItems(initial).Select(x => Path.Combine(this.DATAFOLDER, x.Replace("/", Path.DirectorySeparatorChar.ToString()))).ToArray()));
 
                 // Simple Search for 'file'
-                var search = await c.SearchEntriesAsync(null, ParseFilters("+file"), 0, 0, false);
+                var search = await c.SearchEntriesAsync(null, ParseFilters("+file"), false, 0, 0, false, false);
                 Assert.That(search.FileVersions.Items.Count(), Is.EqualTo(3)); // file1.txt, file2.txt, file3.txt
 
                 // Simple Search for 'notes'
-                var searchNotes = await c.SearchEntriesAsync(null, ParseFilters("+notes"), 0, 0, false);
+                var searchNotes = await c.SearchEntriesAsync(null, ParseFilters("+notes"), false, 0, 0, false, false);
                 Assert.That(searchNotes.FileVersions.Items.Count(), Is.EqualTo(1));
                 Assert.That(searchNotes.FileVersions.Items.First().Path.EndsWith("notes.txt"));
 
                 // Simple Search for NOT 'notes'
-                var searchNotNotes = await c.SearchEntriesAsync(null, ParseFilters("-notes"), 0, 0, false);
+                var searchNotNotes = await c.SearchEntriesAsync(null, ParseFilters("-notes"), false, 0, 0, false, false);
                 Assert.That(searchNotNotes.FileVersions.Items.Count(), Is.EqualTo(5));
                 Assert.That(searchNotNotes.FileVersions.Items.All(x => !x.Path.Contains("notes")), Is.True);
 
                 // Simple Search for 'folder1' folder contents
-                var searchFolder = await c.SearchEntriesAsync(null, ParseFilters("+folder1"), 0, 0, false);
+                var searchFolder = await c.SearchEntriesAsync(null, ParseFilters("+folder1"), false, 0, 0, false, false);
                 Assert.That(searchFolder.FileVersions.Items.All(x => x.Path.Contains("folder1")), Is.True);
 
                 // Simple Search with exact file name
-                var searchExact = await c.SearchEntriesAsync(null, ParseFilters("+file1.txt"), 0, 0, false);
+                var searchExact = await c.SearchEntriesAsync(null, ParseFilters("+file1.txt"), false, 0, 0, false, false);
                 Assert.That(searchExact.FileVersions.Items.Count(), Is.EqualTo(1));
                 Assert.That(searchExact.FileVersions.Items.First().Path.EndsWith("file1.txt"));
 
                 // Mixed include and exclude
-                var searchMixed = await c.SearchEntriesAsync(null, ParseFilters("+file;-file2"), 0, 0, false);
+                var searchMixed = await c.SearchEntriesAsync(null, ParseFilters("+file;-file2"), false, 0, 0, false, false);
                 // Include has precedence over exclude, but we include non-matches as well
                 Assert.That(searchMixed.FileVersions.Items.Count(), Is.EqualTo(6));
                 Assert.That(searchMixed.FileVersions.Items.Any(x => x.Path.Contains("file2")), Is.True);
 
                 // Mixed include and exclude
-                var searchMixed2 = await c.SearchEntriesAsync(null, ParseFilters("+file2;-file"), 0, 0, false);
+                var searchMixed2 = await c.SearchEntriesAsync(null, ParseFilters("+file2;-file"), false, 0, 0, false, false);
                 // Include has precedence over exclude, but we include non-matches as well
                 Assert.That(searchMixed2.FileVersions.Items.Count(), Is.EqualTo(4));
                 Assert.That(searchMixed2.FileVersions.Items.Any(x => x.Path.Contains("file2")), Is.True);
 
                 // Mixed include and exclude, wildcards
-                var searchMixed3 = await c.SearchEntriesAsync(null, ParseFilters("+file2;-*"), 0, 0, false);
+                var searchMixed3 = await c.SearchEntriesAsync(null, ParseFilters("+file2;-*"), false, 0, 0, false, false);
                 // Include has precedence over exclude, but we include non-matches as well
                 Assert.That(searchMixed3.FileVersions.Items.Count(), Is.EqualTo(1));
                 Assert.That(searchMixed3.FileVersions.Items.All(x => x.Path.Contains("file2")), Is.True);
@@ -303,8 +303,8 @@ namespace Duplicati.UnitTest
                 // NEW: Search inside specific folder prefix: folder1
                 var searchInFolder1 = await c.SearchEntriesAsync(
                     new[] { Path.Combine(this.DATAFOLDER, "folder1") },
-                    ParseFilters("+file"),
-                    0, 0, false);
+                    ParseFilters("+file"), false,
+                    0, 0, false, false);
                 Assert.That(searchInFolder1.FileVersions.Items.Count(), Is.EqualTo(2)); // file2.txt, file3.txt inside folder1
                 Assert.That(searchInFolder1.FileVersions.Items.All(x => x.Path.Contains("folder1")), Is.True);
 
@@ -315,8 +315,8 @@ namespace Duplicati.UnitTest
                 Path.Combine(this.DATAFOLDER, "folder1"),
                 Path.Combine(this.DATAFOLDER, "folder2")
                     },
-                    ParseFilters("+file;+notes"),
-                    0, 0, false);
+                    ParseFilters("+file;+notes"), false,
+                    0, 0, false, false);
                 Assert.That(searchInFolders.FileVersions.Items.Count(), Is.EqualTo(3)); // file2.txt, file3.txt, notes.txt
                 Assert.That(searchInFolders.FileVersions.Items.Any(x => x.Path.Contains("folder1")), Is.True);
                 Assert.That(searchInFolders.FileVersions.Items.Any(x => x.Path.Contains("folder2")), Is.True);
@@ -848,7 +848,9 @@ namespace Duplicati.UnitTest
             var result = await db.SearchEntriesAsync(
                 null,
                 new FilterExpression("*", true),
+                false,
                 filesetIds.ToArray(),
+                false,
                 0,
                 2000,
                 CancellationToken.None)
@@ -856,6 +858,157 @@ namespace Duplicati.UnitTest
 
             // Assert: Should return all 1500 file versions (150 filesets * 10 files)
             Assert.That(result.Items.Count(), Is.EqualTo(1500));
+        }
+
+        /// <summary>
+        /// Tests that <see cref="LocalListDatabase.SearchEntriesAsync"/> can match values inside
+        /// metadata JSON when <paramref name="searchMetadata"/> is <c>true</c>.
+        /// </summary>
+        [Test]
+        [Category("Database")]
+        public async Task SearchEntries_WithMetadataSearch_MatchesMetadataValuesAsync()
+        {
+            // Arrange
+            using var tempFile = new TempFile();
+            await using var db = await LocalListDatabase.CreateAsync(tempFile, null, CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // Insert operation entry
+            using (var cmd = db.Connection.CreateCommand())
+            {
+                await cmd.SetCommandAndParameters(@"
+                    INSERT OR IGNORE INTO Operation (ID, Description, Timestamp)
+                    VALUES (1, 'TestOperation', 0);")
+                    .ExecuteNonQueryAsync();
+            }
+
+            // Insert RemoteVolume and Fileset
+            using (var cmd = db.Connection.CreateCommand())
+            {
+                await cmd.SetCommandAndParameters(@"
+                    INSERT INTO RemoteVolume (ID, OperationID, Name, Type, State, Size, VerificationCount, DeleteGraceTime, ArchiveTime, LockExpirationTime)
+                    VALUES (1, 1, 'volume.zip', 'Files', 'Verified', 1024, 0, 0, 0, 0);")
+                    .ExecuteNonQueryAsync();
+
+                await cmd.SetCommandAndParameters(@"
+                    INSERT INTO Fileset (ID, OperationID, VolumeID, IsFullBackup, Timestamp)
+                    VALUES (1, 1, 1, 1, 0);")
+                    .ExecuteNonQueryAsync();
+            }
+
+            using (var cmd = db.Connection.CreateCommand())
+            {
+                // Insert Blockset for the Metadataset
+                await cmd.SetCommandAndParameters(@"
+                    INSERT INTO Blockset (ID, Length, FullHash)
+                    VALUES (1, 1024, 'fullhash');")
+                    .ExecuteNonQueryAsync();
+
+                // Insert two metadata entries
+                await cmd.SetCommandAndParameters(@"
+                    INSERT INTO Metadataset (ID, BlocksetID, Content)
+                    VALUES (1, 1, '{""o365:Name"": ""MyDocument"", ""o365:Type"": ""DriveFile""}');")
+                    .ExecuteNonQueryAsync();
+
+                await cmd.SetCommandAndParameters(@"
+                    INSERT INTO Metadataset (ID, BlocksetID, Content)
+                    VALUES (2, 1, '{""gsuite:Name"": ""MySheet"", ""gsuite:Type"": ""Spreadsheet""}');")
+                    .ExecuteNonQueryAsync();
+
+                // Insert PathPrefix
+                await cmd.SetCommandAndParameters(@"
+                    INSERT INTO PathPrefix (ID, Prefix)
+                    VALUES (1, '/test/');")
+                    .ExecuteNonQueryAsync();
+
+                // Insert FileLookup entries: one with metadata, one without
+                // File 1: has metadata matching "MyDocument"
+                await cmd.SetCommandAndParameters(@"
+                    INSERT INTO FileLookup (ID, PrefixID, Path, BlocksetID, MetadataID)
+                    VALUES (1, 1, 'file1.txt', 1, 1);")
+                    .ExecuteNonQueryAsync();
+
+                // File 2: has metadata matching "MySheet" (different key)
+                await cmd.SetCommandAndParameters(@"
+                    INSERT INTO FileLookup (ID, PrefixID, Path, BlocksetID, MetadataID)
+                    VALUES (2, 1, 'file2.txt', 1, 2);")
+                    .ExecuteNonQueryAsync();
+
+                // File 3: no metadata
+                await cmd.SetCommandAndParameters(@"
+                    INSERT INTO FileLookup (ID, PrefixID, Path, BlocksetID, MetadataID)
+                    VALUES (3, 1, 'file3.txt', 1, 0);")
+                    .ExecuteNonQueryAsync();
+
+                // Folder 4: folder with metadata matching "MyDocument"
+                // BlocksetID = -100 is FOLDER_BLOCKSET_ID
+                await cmd.SetCommandAndParameters(@"
+                    INSERT INTO FileLookup (ID, PrefixID, Path, BlocksetID, MetadataID)
+                    VALUES (4, 1, 'folder1', -100, 1);")
+                    .ExecuteNonQueryAsync();
+
+                // Insert FilesetEntry for all four entries
+                for (int fileId = 1; fileId <= 4; fileId++)
+                {
+                    await cmd.SetCommandAndParameters(@"
+                        INSERT INTO FilesetEntry (FilesetID, FileID, Lastmodified)
+                        VALUES (@filesetId, @fileId, @lastModified);")
+                        .SetParameterValue("@filesetId", 1)
+                        .SetParameterValue("@fileId", fileId)
+                        .SetParameterValue("@lastModified", 0)
+                        .ExecuteNonQueryAsync();
+                }
+            }
+
+            // Act: Search for "MyDocument" with metadata search enabled
+            var result = await db.SearchEntriesAsync(
+                null,
+                new FilterExpression("MyDocument", true),
+                false,
+                [1],
+                true, // searchMetadata
+                0,
+                100,
+                CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // Assert: Both file1.txt and folder1 should match (via o365:Name metadata)
+            Assert.That(result.Items.Count(), Is.EqualTo(2));
+            var paths = result.Items.Select(x => x.Path).OrderBy(x => x).ToList();
+            Assert.That(paths[0], Is.EqualTo("/test/file1.txt"));
+            Assert.That(paths[1], Is.EqualTo("/test/folder1"));
+            Assert.That(result.Items.First(x => x.Path == "/test/folder1").IsDirectory, Is.True);
+
+            // Act: Search for "MySheet" with metadata search enabled
+            result = await db.SearchEntriesAsync(
+                null,
+                new FilterExpression("MySheet", true),
+                false,
+                [1],
+                true, // searchMetadata
+                0,
+                100,
+                CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // Assert: Only file2.txt should match (via gsuite:Name metadata)
+            Assert.That(result.Items.Count(), Is.EqualTo(1));
+            Assert.That(result.Items.First().Path, Is.EqualTo("/test/file2.txt"));
+
+            // Act: Search for "MyDocument" with metadata search DISABLED
+            result = await db.SearchEntriesAsync(
+                null,
+                new FilterExpression("MyDocument", true),
+                false,
+                [1],
+                false, // searchMetadata disabled
+                0,
+                100,
+                CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // Assert: No files should match (path doesn't contain "MyDocument")
+            Assert.That(result.Items.Count(), Is.EqualTo(0));
         }
     }
 }

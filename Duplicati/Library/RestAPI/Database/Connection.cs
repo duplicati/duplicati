@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Duplicati.Server.Serialization.Interface;
 using System.Text;
@@ -36,6 +37,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Text.RegularExpressions;
 using Duplicati.WebserverCore.Abstractions;
 using System.Text.Json;
+using Duplicati.Library.Common.IO;
 
 #nullable enable
 
@@ -53,7 +55,7 @@ namespace Duplicati.Server.Database
         public readonly object m_lock = new object();
         public const int ANY_BACKUP_ID = -1;
         public const int SERVER_SETTINGS_ID = -2;
-        private readonly Dictionary<string, Backup> m_temporaryBackups = new Dictionary<string, Backup>();
+        private readonly Dictionary<string, (Backup Backup, Schedule? Schedule)> m_temporaryBackups = new();
         private readonly bool m_encryptSensitiveFields;
         private readonly EncryptedFieldHelper.KeyInstance? m_key;
         private IServiceProvider? m_serviceProvider;
@@ -202,16 +204,18 @@ namespace Duplicati.Server.Database
         public Serializable.ImportExportStructure PrepareBackupForExport(IBackup backup)
         {
             var scheduleId = GetScheduleIDsFromTags(new string[] { "ID=" + backup.ID });
+            var exportBackup = ((Database.Backup)backup).Clone();
+            exportBackup.SetDBPath(GetRelativeDbPath(backup.DBPath));
             return new Serializable.ImportExportStructure()
             {
                 CreatedByVersion = UpdaterManager.SelfVersion.Version ?? "Unknown",
-                Backup = (Database.Backup)backup,
+                Backup = exportBackup,
                 Schedule = scheduleId != null && scheduleId.Any() ? (Schedule?)GetSchedule(scheduleId.First()) : null,
                 DisplayNames = SpecialFolders.GetSourceNames(backup)
             };
         }
 
-        public string RegisterTemporaryBackup(IBackup backup)
+        public string RegisterTemporaryBackup(IBackup backup, ISchedule? schedule)
         {
             lock (m_lock)
             {
@@ -220,9 +224,14 @@ namespace Duplicati.Server.Database
                 if (backup.ID != null)
                     throw new ArgumentException("Backup is already active, cannot make temporary");
 
-                backup.ID = Guid.NewGuid().ToString("D");
-                m_temporaryBackups.Add(backup.ID, (Backup)backup);
-                return backup.ID;
+                // Detach from input
+                var bk = ((Backup)backup).Clone();
+                var sc = ((Schedule?)schedule)?.Clone();
+
+                bk.ID = Guid.NewGuid().ToString("D");
+                m_temporaryBackups.Add(bk.ID, (bk, sc));
+
+                return bk.ID;
             }
         }
 
@@ -232,22 +241,17 @@ namespace Duplicati.Server.Database
                 m_temporaryBackups.Remove(backup.ID);
         }
 
-        public void UpdateTemporaryBackup(IBackup backup)
-        {
-            lock (m_lock)
-                if (m_temporaryBackups.Remove(backup.ID))
-                    m_temporaryBackups.Add(backup.ID, (Backup)backup);
-        }
-
-        public IBackup? GetTemporaryBackup(string id)
+        public (IBackup Backup, ISchedule? Schedule)? GetTemporaryBackup(string id)
         {
             if (string.IsNullOrEmpty(id))
                 return null;
 
             lock (m_lock)
             {
-                m_temporaryBackups.TryGetValue(id, out var b);
-                return b?.Clone();
+                if (!m_temporaryBackups.TryGetValue(id, out var b))
+                    return null;
+
+                return (b.Backup.Clone(), b.Schedule?.Clone());
             }
         }
 
@@ -535,7 +539,7 @@ namespace Duplicati.Server.Database
             if (string.IsNullOrWhiteSpace(id))
                 throw new ArgumentNullException(nameof(id));
 
-            return long.TryParse(id, out long lid) ? GetBackup(lid) : GetTemporaryBackup(id);
+            return long.TryParse(id, out long lid) ? GetBackup(lid) : GetTemporaryBackup(id)?.Backup;
         }
 
         internal IBackup? GetBackup(long id)
@@ -550,7 +554,7 @@ namespace Duplicati.Server.Database
                         Description = ConvertToString(rd, 2),
                         Tags = (ConvertToString(rd, 3) ?? "").Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries),
                         TargetURL = EncryptedFieldHelper.Decrypt(ConvertToString(rd, 4), m_key),
-                        DBPath = ConvertToString(rd, 5),
+                        DBPath = ResolveDbPath(ConvertToString(rd, 5)),
                         OperationType = Library.Utility.Utility.ParseEnum(ConvertToString(rd, 6), Serialization.OperationType.Backup),
                     },
                     cmd => cmd.SetCommandAndParameters(@"SELECT ""ID"", ""Name"", ""Description"", ""Tags"", ""TargetURL"", ""DBPath"", ""OperationType"" FROM ""Backup"" WHERE ID = @Id")
@@ -754,6 +758,38 @@ namespace Duplicati.Server.Database
             return null;
         }
 
+        /// <summary>
+        /// Resolves a DB path, converting relative paths to absolute paths based on the data folder.
+        /// </summary>
+        /// <param name="dbPath">The DB path to resolve.</param>
+        /// <returns>The absolute DB path.</returns>
+        private string ResolveDbPath(string? dbPath)
+        {
+            if (string.IsNullOrWhiteSpace(dbPath) || Path.IsPathRooted(dbPath))
+                return dbPath ?? "";
+
+            return Path.GetFullPath(Path.Combine(m_dataFolder, dbPath));
+        }
+
+        /// <summary>
+        /// Converts an absolute DB path to a relative path if it is under the data folder.
+        /// </summary>
+        /// <param name="dbPath">The DB path to convert.</param>
+        /// <returns>The relative DB path if under the data folder, otherwise the original path.</returns>
+        private string GetRelativeDbPath(string? dbPath)
+        {
+            if (string.IsNullOrWhiteSpace(dbPath) || !Path.IsPathRooted(dbPath))
+                return dbPath ?? "";
+
+            var fullDataFolder = Util.AppendDirSeparator(Path.GetFullPath(m_dataFolder));
+            var fullDbPath = Path.GetFullPath(dbPath);
+
+            if (fullDbPath.StartsWith(fullDataFolder, Library.Utility.Utility.ClientFilenameStringComparison))
+                return fullDbPath.Substring(fullDataFolder.Length);
+
+            return dbPath;
+        }
+
         public void UpdateBackupDBPath(IBackup item, string path)
         {
             lock (m_lock)
@@ -762,7 +798,7 @@ namespace Duplicati.Server.Database
                 {
                     using (var cmd = m_connection.CreateCommand(tr, @"UPDATE ""Backup"" SET ""DBPath""= @Dbpath WHERE ""ID""= @Id"))
                     {
-                        cmd.SetParameterValue("@Dbpath", path)
+                        cmd.SetParameterValue("@Dbpath", GetRelativeDbPath(path))
                             .SetParameterValue("@Id", item.ID)
                             .ExecuteNonQuery();
                         tr.Commit();
@@ -782,13 +818,14 @@ namespace Duplicati.Server.Database
                 if (!update && item.DBPath == null)
                 {
                     var folder = m_dataFolder;
-                    if (!System.IO.Directory.Exists(folder))
-                        System.IO.Directory.CreateDirectory(folder);
+                    if (!Directory.Exists(folder))
+                        Directory.CreateDirectory(folder);
 
                     for (var i = 0; i < 100; i++)
                     {
-                        var guess = System.IO.Path.Combine(folder, System.IO.Path.ChangeExtension(CLIDatabaseLocator.GenerateRandomName(), ".sqlite"));
-                        if (!System.IO.File.Exists(guess))
+                        var guess = Path.ChangeExtension(CLIDatabaseLocator.GenerateRandomName(), ".sqlite");
+                        var fullGuess = Path.GetFullPath(Path.Combine(folder, guess));
+                        if (!File.Exists(fullGuess))
                         {
                             ((Backup)item).DBPath = guess;
                             break;
@@ -828,7 +865,7 @@ namespace Duplicati.Server.Database
                             if (update)
                                 cmd.SetParameterValue("@Id", item.ID);
                             else
-                                cmd.SetParameterValue("@DbPath", n.DBPath)
+                                cmd.SetParameterValue("@DbPath", GetRelativeDbPath(n.DBPath))
                                     .SetParameterValue("@ExternalID", n.ExternalID ?? "");
 
                         });
@@ -853,7 +890,7 @@ namespace Duplicati.Server.Database
 
                     // Save additional target URLs if present
                     if (item.AdditionalTargetURLs != null)
-                        SetBackupTargetUrls(id, item.AdditionalTargetURLs.Cast<TargetUrlEntry>(), tr);
+                        SetBackupTargetUrls(id, item.AdditionalTargetURLs, tr);
 
                     if (updateSchedule)
                     {
@@ -1016,7 +1053,7 @@ namespace Duplicati.Server.Database
                             Description = ConvertToString(rd, 3),
                             Tags = (ConvertToString(rd, 4) ?? "").Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries),
                             TargetURL = EncryptedFieldHelper.Decrypt(ConvertToString(rd, 5), m_key),
-                            DBPath = ConvertToString(rd, 6),
+                            DBPath = ResolveDbPath(ConvertToString(rd, 6)),
                             OperationType = Library.Utility.Utility.ParseEnum(ConvertToString(rd, 7), Serialization.OperationType.Backup),
                         },
                         cmd => cmd.SetCommandAndParameters(@"SELECT ""ID"", ""Name"", ""ExternalID"", ""Description"", ""Tags"", ""TargetURL"", ""DBPath"", ""OperationType"" FROM ""Backup"" "))
@@ -1733,7 +1770,7 @@ namespace Duplicati.Server.Database
         /// <param name="backupId">The backup ID</param>
         /// <param name="targets">The target URLs to set</param>
         /// <param name="transaction">The database transaction</param>
-        internal void SetBackupTargetUrls(long backupId, IEnumerable<TargetUrlEntry> targets, IDbTransaction? transaction = null)
+        internal void SetBackupTargetUrls(long backupId, IEnumerable<ITargetUrlEntry> targets, IDbTransaction? transaction = null)
         {
             lock (m_lock)
             {

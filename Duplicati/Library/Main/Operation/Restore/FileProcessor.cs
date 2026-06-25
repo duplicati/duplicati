@@ -129,7 +129,10 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                         Logging.Log.WriteExplicitMessage(LOGTAG, "FileRestored", null, "{0} Restoring file {1}", my_id, file.TargetPath);
 
-                        if (file.BlocksetID == LocalDatabase.FOLDER_BLOCKSET_ID && !options.SkipMetadata)
+                        // Alternate data streams and folder metadata are restored only after all
+                        // main file content has been restored.
+                        // We rendezvous with all other processors to guarantee the main content is complete.
+                        if ((file.BlocksetID == LocalDatabase.FOLDER_BLOCKSET_ID && !options.SkipMetadata) || file.IsAlternateDataStream)
                         {
                             // Check if there are other FileProcessor's still restoring files
                             if (!decremented)
@@ -142,10 +145,16 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 decremented = true;
                             }
 
-                            await RestoreMetadataAsync(db, file, restoreDestination, block_request, block_response, options, sw_meta, sw_work_meta, sw_req, sw_resp, results.TaskControl.ProgressToken)
-                                .ConfigureAwait(false);
+                            if (file.BlocksetID == LocalDatabase.FOLDER_BLOCKSET_ID)
+                            {
+                                if (!options.SkipMetadata)
+                                    await RestoreMetadataAsync(db, file, restoreDestination, block_request, block_response, options, sw_meta, sw_work_meta, sw_req, sw_resp, results.TaskControl.ProgressToken)
+                                        .ConfigureAwait(false);
 
-                            continue;
+                                continue;
+                            }
+
+                            // ADS stream: fall through to normal file restoration now that the host is restored.
                         }
 
                         // Get information about the blocks for the file
@@ -779,7 +788,15 @@ namespace Duplicati.Library.Main.Operation.Restore
             }
             ms.Seek(0, SeekOrigin.Begin);
 
-            return await RestoreHandler.ApplyMetadataAsync(file.TargetPath, ms, options, restoreDestination, cancellationToken);
+            try
+            {
+                return await RestoreHandler.ApplyMetadataAsync(file.TargetPath, ms, options, restoreDestination, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                Logging.Log.WriteWarningMessage(LOGTAG, "MetadataWriteFailed", ex, "Failed to apply metadata to file: \"{0}\", message: {1}", file.TargetPath, ex.Message);
+                return false;
+            }
         }
 
         /// <summary>
@@ -802,7 +819,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             List<BlockRequest> verified_blocks = [];
 
             // Check if the file exists
-            if (File.Exists(file.TargetPath))
+            if (await restoreDestination.FileExists(file.TargetPath, cancellationToken).ConfigureAwait(false))
             {
                 filehasher.Initialize();
                 try
@@ -858,17 +875,19 @@ namespace Duplicati.Library.Main.Operation.Restore
                     if (filehasher.Hash != null && Convert.ToBase64String(filehasher.Hash) == file.Hash)
                     {
                         // Truncate the file if it is larger than the expected size.
-                        FileInfo fi = new(file.TargetPath);
-                        if (file.Length < fi.Length)
+                        var currentLength = await restoreDestination.GetFileLength(file.TargetPath, cancellationToken).ConfigureAwait(false);
+                        if (file.Length < currentLength)
                         {
                             if (options.Dryrun)
                             {
-                                Logging.Log.WriteDryrunMessage(LOGTAG, "DryrunRestore", @$"Would have truncated ""{file.TargetPath}"" from {fi.Length} to {file.Length}");
+                                Logging.Log.WriteDryrunMessage(LOGTAG, "DryrunRestore", @$"Would have truncated ""{file.TargetPath}"" from {currentLength} to {file.Length}");
                             }
                             else
                             {
                                 // Reopen file with write permission
-                                fi.IsReadOnly = false; // The metadata handler will revert this back later.
+                                // The metadata handler will revert this back later.
+                                if (await restoreDestination.HasReadOnlyAttribute(file.TargetPath, cancellationToken).ConfigureAwait(false))
+                                    await restoreDestination.ClearReadOnlyAttribute(file.TargetPath, cancellationToken).ConfigureAwait(false);
                                 try
                                 {
                                     using var f = await restoreDestination.OpenWrite(file.TargetPath, cancellationToken).ConfigureAwait(false);
@@ -922,15 +941,14 @@ namespace Duplicati.Library.Main.Operation.Restore
             List<BlockRequest> missing_blocks = [];
             List<BlockRequest> verified_blocks = [];
 
-            // Check if the file exists
-            if (File.Exists(file.OriginalPath))
+            // Check if the file exists (ignore if this was a remote source)
+            if (SystemIO.IO_OS.FileExists(file.OriginalPath))
             {
                 filehasher.Initialize();
 
                 // Open both files, as the target file is still being read to produce the overall file hash, if all the blocks are present across both the target and original files.
                 // Note: The original file is the source file on the local system (not within the restore destination),
-                // so we use File.OpenRead directly instead of restoreDestination.OpenRead
-                using var f_original = File.OpenRead(file.OriginalPath);
+                using var f_original = SystemIO.IO_OS.FileOpenRead(file.OriginalPath);
                 using var f_target = options.Dryrun ?
                     (await restoreDestination.FileExists(file.TargetPath, cancellationToken).ConfigureAwait(false) ?
                         await restoreDestination.OpenRead(file.TargetPath, cancellationToken).ConfigureAwait(false) :

@@ -181,8 +181,8 @@ public class ControllerRpcServer : IController, IDisposable
         => Controller.ListFileVersionsAsync(files, offset, limit);
 
     /// <inheritdoc />
-    public Task<ISearchFilesResults> SearchEntriesAsync(string[]? pathprefixes, IFilter? filter, long offset, long limit, bool extendedData)
-        => Controller.SearchEntriesAsync(pathprefixes, filter, offset, limit, extendedData);
+    public Task<ISearchFilesResults> SearchEntriesAsync(string[]? pathprefixes, IFilter? filter, bool caseSensitive, long offset, long limit, bool returnExtendedData, bool searchMetadata)
+        => Controller.SearchEntriesAsync(pathprefixes, filter, caseSensitive, offset, limit, returnExtendedData, searchMetadata);
 
     /// <inheritdoc />
     public Task<ICreateLogDatabaseResults> CreateLogDatabaseAsync(string targetpath)

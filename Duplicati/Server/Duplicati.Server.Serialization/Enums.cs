@@ -43,6 +43,7 @@ namespace Duplicati.Server.Serialization
         ListRemote,
         Delete,
         Vacuum,
+        RestoreControlFiles,
         CustomRunner,
         ListFilesets,
         ListFolderContents,

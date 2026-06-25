@@ -98,12 +98,13 @@ public class BackupListService(Connection connection) : IBackupListService
                 AllowedDays = data.Schedule.AllowedDays
             };
 
+            string assignedId;
             if (temporary)
             {
                 using (var tf = new Library.Utility.TempFile())
                     backup.SetDBPath(tf);
 
-                connection.RegisterTemporaryBackup(backup);
+                assignedId = connection.RegisterTemporaryBackup(backup, schedule);
             }
             else
             {
@@ -124,10 +125,11 @@ public class BackupListService(Connection connection) : IBackupListService
                         throw new BadRequestException(err);
 
                     connection.AddOrUpdateBackupAndSchedule(backup, schedule);
+                    assignedId = backup.ID!;
                 }
             }
 
-            return new Dto.CreateBackupDto(backup.ID, backup.IsTemporary);
+            return new Dto.CreateBackupDto(assignedId, backup.IsTemporary);
         }
         catch (Exception ex)
         {
@@ -178,6 +180,7 @@ public class BackupListService(Connection connection) : IBackupListService
             }
             if (direct)
             {
+                string assignedId;
                 lock (connection.m_lock)
                 {
                     var basename = ipx.Backup.Name;
@@ -193,12 +196,15 @@ public class BackupListService(Connection connection) : IBackupListService
                         throw new BadRequestException(err);
 
                     if (temporary)
-                        connection.RegisterTemporaryBackup(ipx.Backup);
+                        assignedId = connection.RegisterTemporaryBackup(ipx.Backup, ipx.Schedule);
                     else
+                    {
                         connection.AddOrUpdateBackupAndSchedule(ipx.Backup, ipx.Schedule);
+                        assignedId = ipx.Backup.ID;
+                    }
                 }
 
-                return new ImportBackupOutputDto(ipx.Backup.ID, null);
+                return new ImportBackupOutputDto(assignedId, null);
             }
             else
             {

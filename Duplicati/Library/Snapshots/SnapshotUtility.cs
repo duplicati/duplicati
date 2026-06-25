@@ -72,9 +72,10 @@ namespace Duplicati.Library.Snapshots
         /// <param name="useSeBackup">Whether to use SeBackupPrivilege on Windows</param>
         /// <param name="macOSPhotosHandling">Whether to handle MacOS Photos libraries specially</param>
         /// <param name="photosLibraryPath">The user specified MacOS Photos library path</param>
+        /// <param name="enableAdsBackup">Whether to backup alternate data streams on Windows</param>
         /// <returns>The ISnapshotService implementation</returns>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
-        public static ISnapshotService CreateNoSnapshot(IEnumerable<string> paths, bool ignoreAdvisoryLocking, bool followSymlinks, bool useSeBackup, MacOSPhotosHandling macOSPhotosHandling, string photosLibraryPath)
+        public static ISnapshotService CreateNoSnapshot(IEnumerable<string> paths, bool ignoreAdvisoryLocking, bool followSymlinks, bool useSeBackup, bool enableAdsBackup, MacOSPhotosHandling macOSPhotosHandling, string photosLibraryPath)
         {
             // MacOS implementation only handles photo libraries specially if requested
             // Otherwise, it behaves like the Linux implementation
@@ -83,7 +84,7 @@ namespace Duplicati.Library.Snapshots
             else if (OperatingSystem.IsLinux())
                 return new NoSnapshotLinux(paths, ignoreAdvisoryLocking, followSymlinks);
             else if (OperatingSystem.IsWindows())
-                return new NoSnapshotWindows(paths, followSymlinks, useSeBackup);
+                return new NoSnapshotWindows(paths, followSymlinks, useSeBackup, enableAdsBackup);
             else
                 throw new NotSupportedException("Unsupported Operating System");
 

@@ -91,7 +91,7 @@ namespace Duplicati.UnitTest
                 await connection.OpenAsync();
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = "UPDATE RemoteVolume SET State = \"Uploading\" WHERE Type = \"Files\"";
+                    command.CommandText = "UPDATE RemoteVolume SET State = 'Uploading' WHERE Type = 'Files'";
                     await command.ExecuteNonQueryAsync();
                 }
             }

@@ -48,15 +48,22 @@ namespace Duplicati.Library.Snapshots
         private readonly IDisposable m_seBackupPrivilege;
 
         /// <summary>
+        /// A flag indicating if alternate data streams should be backed up
+        /// </summary>
+        private readonly bool m_enableAdsBackup;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="NoSnapshotWindows"/> class.
         /// </summary>
         /// <param name="sources">The list of entries to create snapshots of</param>
         /// <param name="followSymlinks">A flag indicating if symlinks should be followed</param>
         /// <param name="useSeBackup">A flag indicating if the SeBackupPrivilege should be used</param>
-        public NoSnapshotWindows(IEnumerable<string> sources, bool followSymlinks, bool useSeBackup)
+        /// <param name="enableAdsBackup">A flag indicating if alternate data streams should be backed up</param>
+        public NoSnapshotWindows(IEnumerable<string> sources, bool followSymlinks, bool useSeBackup, bool enableAdsBackup)
             : base(followSymlinks)
         {
             m_sources = sources;
+            m_enableAdsBackup = enableAdsBackup;
             if (useSeBackup)
                 m_seBackupPrivilege = WindowsShimLoader.NewSeBackupPrivilegeScope();
         }
@@ -100,9 +107,9 @@ namespace Duplicati.Library.Snapshots
             foreach (var folder in m_sources.Select(SystemIOWindows.RemoveExtendedDevicePathPrefix))
             {
                 if (DirectoryExists(folder) || folder.EndsWith(System.IO.Path.DirectorySeparatorChar))
-                    yield return new SnapshotSourceFileEntry(this, Util.AppendDirSeparator(folder), true, true);
+                    yield return new SnapshotSourceFileEntry(this, Util.AppendDirSeparator(folder), true, true, false);
                 else
-                    yield return new SnapshotSourceFileEntry(this, folder, false, true);
+                    yield return new SnapshotSourceFileEntry(this, folder, false, true, SystemIO.IO_OS.IsAlternateDataStream(folder));
             }
         }
 
@@ -128,34 +135,63 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         /// <param name="localPath">The full path to the file in non-snapshot format</param>
         /// <returns>An open filestream that can be read</returns>
-        public override System.IO.Stream OpenRead(string localPath)
+        public override Stream OpenRead(string localPath)
             => SystemIO.IO_OS.FileOpenRead(localPath);
+
+        /// <inheritdoc/>
+        public override bool DirectoryExists(string localFolderPath)
+            => SystemIO.IO_OS.DirectoryExists(localFolderPath);
+
+        /// <inheritdoc/>
+        public override bool FileExists(string localFilePath)
+            => SystemIO.IO_OS.FileExists(localFilePath);
+
+        /// <inheritdoc />
+        public override ISourceProviderEntry GetFilesystemEntry(string path, bool isFolder)
+        {
+            if (m_enableAdsBackup && SystemIO.IO_OS.IsAlternateDataStream(path))
+            {
+                var entry = base.GetFilesystemEntry(path, false);
+                if (entry != null)
+                    entry = new SnapshotSourceFileEntry(this, entry.Path, false, entry.IsRootEntry, true);
+                return entry;
+            }
+
+            return base.GetFilesystemEntry(path, isFolder);
+        }
 
         /// <summary>
         /// Lists all files in the given folder
         /// </summary>
         /// <returns>All folders found in the folder</returns>
         /// <param name='localFolderPath'>The folder to examinate</param>
-        protected override string[] ListFiles(string localFolderPath)
+        protected override IEnumerable<string> ListFiles(string localFolderPath)
         {
-            string[] tmp = SystemIO.IO_OS.GetFiles(localFolderPath);
-            string[] res = new string[tmp.Length];
-            for (int i = 0; i < tmp.Length; i++)
-                res[i] = SystemIOWindows.RemoveExtendedDevicePathPrefix(tmp[i]);
+            var tmp = SystemIO.IO_OS.GetFiles(localFolderPath);
+            var res = new List<string>(tmp.Length);
+            foreach (var p in tmp)
+                res.Add(SystemIOWindows.RemoveExtendedDevicePathPrefix(p));
 
-            return res;
+            if (!m_enableAdsBackup || !SystemIO.IO_OS.SupportsAlternateDataStreams)
+                return res;
+
+            // Expand ADS for each file
+            var expanded = ExpandAlternateDataStreams(res, SystemIO.IO_OS.EnumerateAlternateDataStreams);
+
+            // Also include ADS on the parent folder itself
+            var folderPath = localFolderPath.TrimEnd(Path.DirectorySeparatorChar);
+            return expanded.Concat(SystemIO.IO_OS.EnumerateAlternateDataStreams(folderPath).Select(stream => folderPath + stream));
         }
-
 
         /// <summary>
         /// Lists all folders in the given folder
         /// </summary>
         /// <returns>All folders found in the folder</returns>
         /// <param name='localFolderPath'>The folder to examinate</param>
-        protected override string[] ListFolders(string localFolderPath)
+        protected override IEnumerable<string> ListFolders(string localFolderPath)
         {
-            string[] tmp = SystemIO.IO_OS.GetDirectories(SystemIOWindows.AddExtendedDevicePathPrefix(localFolderPath));
-            string[] res = new string[tmp.Length];
+            var tmp = SystemIO.IO_OS.GetDirectories(SystemIOWindows.AddExtendedDevicePathPrefix(localFolderPath));
+            var res = new string[tmp.Length];
             for (int i = 0; i < tmp.Length; i++)
                 res[i] = SystemIOWindows.RemoveExtendedDevicePathPrefix(tmp[i]);
 

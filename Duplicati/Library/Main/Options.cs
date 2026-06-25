@@ -377,6 +377,8 @@ namespace Duplicati.Library.Main
                 yield return new CommandLineArgument("usn-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.UsnpolicyShort, Strings.Options.UsnpolicyLong, "off", null, Enum.GetNames(typeof(OptimizationStrategy)));
                 yield return new CommandLineArgument("backupread-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.BackupreadpolicyShort, Strings.Options.BackupreadpolicyLong, DEFAULT_BACKUPREAD_POLICY.ToString(), null, Enum.GetNames(typeof(OptimizationStrategy)));
                 yield return new CommandLineArgument("exclude-non-local-files", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ExcludenonlocalfilesShort, Strings.Options.ExcludenonlocalfilesLong, "false");
+                yield return new CommandLineArgument("enable-ads-backup", CommandLineArgument.ArgumentType.Boolean, Strings.Options.EnableAdsBackupShort, Strings.Options.EnableAdsBackupLong, "false");
+                yield return new CommandLineArgument("disable-ads-restore", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableAdsRestoreShort, Strings.Options.DisableAdsRestoreLong, "false");
             }
 
             if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
@@ -422,6 +424,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("list-sets-only", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ListsetsonlyShort, Strings.Options.ListsetsonlyLong, "false"),
             new CommandLineArgument("disable-autocreate-folder", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableautocreatefolderShort, Strings.Options.DisableautocreatefolderLong, "false"),
             new CommandLineArgument("allow-missing-source", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowmissingsourceShort, Strings.Options.AllowmissingsourceLong, "false"),
+            new CommandLineArgument("abort-if-source-missing", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AbortifsourcemissingShort, Strings.Options.AbortifsourcemissingLong, "false"),
             new CommandLineArgument("prevent-empty-source", CommandLineArgument.ArgumentType.Boolean, Strings.Options.PreventemptysourceShort, Strings.Options.PreventemptysourceLong, "false"),
 
             new CommandLineArgument("disable-filetime-check", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefiletimecheckShort, Strings.Options.DisablefiletimecheckLong, "false"),
@@ -603,6 +606,8 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("restore-channel-buffer-size", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreChannelBufferSizeShort, Strings.Options.RestoreChannelBufferSizeLong, DEFAULT_RESTORE_CHANNEL_BUFFER_SIZE.ToString()),
             new CommandLineArgument("internal-profiling", CommandLineArgument.ArgumentType.Boolean, Strings.Options.InternalProfilingShort, Strings.Options.InternalProfilingLong, "false"),
             new CommandLineArgument("ignore-update-if-version-exists", CommandLineArgument.ArgumentType.Boolean, Strings.Options.IgnoreUpdateIfVersionExistsShort, Strings.Options.IgnoreUpdateIfVersionExistsLong, "false"),
+
+            new CommandLineArgument("allow-paths-in-log-messages", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowPathsInLogMessagesShort, Strings.Options.AllowPathsInLogMessagesLong, "false"),
 
             new CommandLineArgument("sync-recheck", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SyncRecheckShort, Strings.Options.SyncRecheckLong, "false"),
             new CommandLineArgument("sync-then-delete", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SyncThenDeleteShort, Strings.Options.SyncThenDeleteLong, "false"),
@@ -1463,6 +1468,10 @@ namespace Duplicati.Library.Main
         /// </summary>
         public bool AllowMissingSource => GetBool("allow-missing-source");
         /// <summary>
+        /// Gets a flag indicating if missing source elements should cause backups to fail
+        /// </summary>
+        public bool AbortIfSourceMissing => GetBool("abort-if-source-missing");
+        /// <summary>
         /// Gets a flag indicating if empty source elements should cause backups to fail
         /// </summary>
         public bool PreventEmptySource => GetBool("prevent-empty-source");
@@ -1892,6 +1901,16 @@ namespace Duplicati.Library.Main
         /// Gets the size of the buffer used for the restore channel
         /// </summary>
         public int RestoreChannelBufferSize => GetInt("restore-channel-buffer-size", DEFAULT_RESTORE_CHANNEL_BUFFER_SIZE);
+
+        /// <summary>
+        /// Gets a value indicating whether NTFS alternate data streams should be backed up
+        /// </summary>
+        public bool EnableAdsBackup => GetBool("enable-ads-backup");
+
+        /// <summary>
+        /// Gets a value indicating whether NTFS alternate data streams should be skipped during restore
+        /// </summary>
+        public bool DisableAdsRestore => GetBool("disable-ads-restore");
 
         /// <summary>
         /// Toggles whether internal profiling is enabled and should be logged.
