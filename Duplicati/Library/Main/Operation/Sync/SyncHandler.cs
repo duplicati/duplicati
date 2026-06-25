@@ -32,6 +32,11 @@ internal class SyncHandler
         var ct = m_results.TaskControl.ProgressToken;
         Logging.Log.WriteInformationMessage(LOGTAG, "SyncStarted", "Starting sync");
 
+        // Sync mirrors files to the destination unencrypted, so a passphrase is
+        // meaningless here and must never be used.
+        if (!m_options.NoEncryption)
+            throw new UserInformationException("Encryption must be disabled for sync as it is not supported.", "EncryptionNotAllowed");
+
         var dbPath = m_options.Dbpath
             ?? throw new InvalidOperationException("Unable to locate sync database");
 

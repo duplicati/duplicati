@@ -57,6 +57,10 @@ namespace Duplicati.Server.Serialization.Interface
         /// </summary>
         public long ConnectionStringID { get; set; }
         /// <summary>
+        /// The operation this backup performs when it runs.
+        /// </summary>
+        OperationType OperationType { get; set; }
+        /// <summary>
         /// The path to the local database
         /// </summary>
         string DBPath { get; }

@@ -313,11 +313,11 @@ namespace Duplicati.Server
                             {
                                 //See if it is already queued
                                 var tmplst = from n in m_queueRunnerService.GetCurrentTasks()
-                                             where n.Operation == Serialization.DuplicatiOperation.Backup
+                                             where n.Operation == Serialization.DuplicatiOperation.BackupOrSync
                                              select n.BackupID;
                                 var tastTemp = m_queueRunnerService.GetCurrentTask();
                                 if (tastTemp != null && tastTemp.Operation ==
-                                    Serialization.DuplicatiOperation.Backup)
+                                    Serialization.DuplicatiOperation.BackupOrSync)
                                     tmplst = tmplst.Union(new[] { tastTemp.BackupID });
 
                                 //If it is not already in queue, put it there
@@ -353,7 +353,7 @@ namespace Duplicati.Server
                                             {
                                             }
 
-                                            var job = Server.Runner.CreateTask(Serialization.DuplicatiOperation.Backup, entry, taskOptions);
+                                            var job = Server.Runner.CreateTask(Serialization.DuplicatiOperation.BackupOrSync, entry, taskOptions);
                                             job.OnStarting = () => OnStartingWorkAsync(job);
                                             job.OnFinished = (_) => OnCompletedAsync(job);
                                             collectedJobs.Add((start, job));

@@ -157,7 +157,7 @@ public class FolderStatusService : IFolderStatusService
         // Check current task
         var currentTask = _queueRunnerService.GetCurrentTask();
         if (currentTask?.BackupID != null &&
-            currentTask.Operation == Server.Serialization.DuplicatiOperation.Backup)
+            currentTask.Operation == Server.Serialization.DuplicatiOperation.BackupOrSync)
         {
             activeIds.Add(currentTask.BackupID);
         }
@@ -167,7 +167,7 @@ public class FolderStatusService : IFolderStatusService
         foreach (var task in queuedTasks)
         {
             if (task.BackupID != null &&
-                task.Operation == Server.Serialization.DuplicatiOperation.Backup)
+                task.Operation == Server.Serialization.DuplicatiOperation.BackupOrSync)
             {
                 activeIds.Add(task.BackupID);
             }

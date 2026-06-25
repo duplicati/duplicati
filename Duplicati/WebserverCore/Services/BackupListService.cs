@@ -52,6 +52,7 @@ public class BackupListService(Connection connection) : IBackupListService
                 Tags = data.Backup.Tags,
                 TargetURL = data.Backup.TargetURL,
                 ConnectionStringID = data.Backup.ConnectionStringID,
+                OperationType = data.Backup.OperationType,
                 Sources = data.Backup.Sources,
                 Settings = settings.Select(x => new Setting()
                 {
@@ -337,6 +338,8 @@ public class BackupListService(Connection connection) : IBackupListService
                     Expression = y.Expression,
                 }),
                 TargetURL = x.Backup.TargetURL,
+                ConnectionStringID = x.Backup.ConnectionStringID,
+                OperationType = x.Backup.OperationType,
                 DBPath = x.Backup.DBPath,
                 DBPathExists = File.Exists(x.Backup.DBPath),
                 Tags = x.Backup.Tags,

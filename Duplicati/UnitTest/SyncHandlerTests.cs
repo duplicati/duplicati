@@ -54,7 +54,6 @@ public class SyncHandlerTests : BasicSetupHelper
         var opts = new Dictionary<string, string>
         {
             ["no-encryption"] = "true",
-            ["passphrase"] = "test",
             ["snapshot-policy"] = "off",
             ["sync-then-delete"] = "true",
             ["log-level"] = "Profiling",
@@ -102,7 +101,6 @@ public class SyncHandlerTests : BasicSetupHelper
         var opts = new Dictionary<string, string>
         {
             ["no-encryption"] = "true",
-            ["passphrase"] = "test",
             ["snapshot-policy"] = "off",
             ["delete"] = "true",
             ["log-level"] = "Profiling",
@@ -141,7 +139,6 @@ public class SyncHandlerTests : BasicSetupHelper
         var opts = new Dictionary<string, string>
         {
             ["no-encryption"] = "true",
-            ["passphrase"] = "test",
             ["snapshot-policy"] = "off",
             ["sync-then-delete"] = "true",
             ["log-level"] = "Profiling",
@@ -191,7 +188,6 @@ public class SyncHandlerTests : BasicSetupHelper
         var opts = new Dictionary<string, string>
         {
             ["no-encryption"] = "true",
-            ["passphrase"] = "test",
             ["snapshot-policy"] = "off"
             // Default is delete=false usually but we didn't specify it
         };
@@ -238,7 +234,6 @@ public class SyncHandlerTests : BasicSetupHelper
         var opts = new Dictionary<string, string>
         {
             ["no-encryption"] = "true",
-            ["passphrase"] = "test",
             ["snapshot-policy"] = "off",
             ["sync-verify-hash"] = "true"
         };
@@ -286,7 +281,6 @@ public class SyncHandlerTests : BasicSetupHelper
         var opts = new Dictionary<string, string>
         {
             ["no-encryption"] = "true",
-            ["passphrase"] = "test",
             ["snapshot-policy"] = "off",
             ["sync-remote-state"] = "use-local-state",
         };
@@ -333,7 +327,6 @@ public class SyncHandlerTests : BasicSetupHelper
         var opts = new Dictionary<string, string>
         {
             ["no-encryption"] = "true",
-            ["passphrase"] = "test",
             ["snapshot-policy"] = "off",
             ["sync-remote-state"] = "blindly-upload",
             // Deletes must be ignored under blind upload.
@@ -356,6 +349,45 @@ public class SyncHandlerTests : BasicSetupHelper
         }
         Assert.AreEqual("Hello", File.ReadAllText(Path.Combine(targetDir, "file1.txt")));
         Assert.AreEqual("World", File.ReadAllText(Path.Combine(targetDir, "sub", "file2.txt")));
+    }
+
+    /// <summary>
+    /// A sync operation mirrors files unencrypted, so encryption must be disabled.
+    /// This verifies the SyncHandler run-time enforcement: when encryption is not
+    /// disabled (the default, or when a passphrase is supplied without
+    /// <c>--no-encryption</c>), the run throws a
+    /// <see cref="Duplicati.Library.Interface.UserInformationException"/> rather
+    /// than encrypting the upload.
+    /// </summary>
+    [Test]
+    [Category("Sync")]
+    public void TestEncryptionIsRejectedForSync()
+    {
+        var dataFolder = Path.Combine(BASEFOLDER, "sync_encryption_data");
+        if (Directory.Exists(dataFolder)) Directory.Delete(dataFolder, true);
+        Directory.CreateDirectory(dataFolder);
+
+        File.WriteAllText(Path.Combine(dataFolder, "plain.txt"), "Encryption should be rejected by sync");
+
+        // Supply a passphrase and leave encryption enabled (no "no-encryption" flag).
+        // The sync path must reject this rather than encrypt the upload.
+        var opts = new Dictionary<string, string>
+        {
+            ["passphrase"] = "should-be-rejected",
+            ["snapshot-policy"] = "off",
+            ["log-level"] = "Profiling",
+        };
+
+        using var c = new Controller(backendUrl, opts, null);
+        var ex = Assert.Throws<Duplicati.Library.Interface.UserInformationException>(
+            () => c.SyncAsync(new[] { dataFolder }, null).GetAwaiter().GetResult(),
+            "A sync operation with encryption enabled must throw UserInformationException.");
+        StringAssert.IsMatch("encryption", (ex.Message ?? string.Empty).ToLowerInvariant(),
+            "The error message should mention that encryption must be disabled for sync.");
+
+        // Nothing should have been mirrored: the run failed before any upload.
+        Assert.IsFalse(File.Exists(Path.Combine(targetDir, "plain.txt")),
+            "No file should be mirrored when the sync is rejected for having encryption enabled.");
     }
 }
 
@@ -417,7 +449,6 @@ public class NonFolderSyncHandlerTests : BasicSetupHelper
         var opts = new Dictionary<string, string>
         {
             ["no-encryption"] = "true",
-            ["passphrase"] = "test",
             ["snapshot-policy"] = "off",
             ["sync-then-delete"] = "true",
             ["log-level"] = "Profiling",
@@ -456,7 +487,6 @@ public class NonFolderSyncHandlerTests : BasicSetupHelper
         var opts = new Dictionary<string, string>
         {
             ["no-encryption"] = "true",
-            ["passphrase"] = "test",
             ["snapshot-policy"] = "off",
             ["sync-then-delete"] = "true",
             ["log-level"] = "Profiling",
@@ -503,7 +533,6 @@ public class NonFolderSyncHandlerTests : BasicSetupHelper
         var deleteOpts = new Dictionary<string, string>
         {
             ["no-encryption"] = "true",
-            ["passphrase"] = "test",
             ["snapshot-policy"] = "off",
             ["sync-then-delete"] = "true",
             ["log-level"] = "Profiling",

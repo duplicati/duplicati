@@ -54,6 +54,10 @@ public sealed record BackupDto
     /// </summary>
     public long ConnectionStringID { get; init; } = -1;
     /// <summary>
+    /// The operation this backup performs when it runs.
+    /// </summary>
+    public Duplicati.Server.Serialization.OperationType OperationType { get; init; } = Duplicati.Server.Serialization.OperationType.Backup;
+    /// <summary>
     /// The path to the local database
     /// </summary>
     public required string DBPath { get; init; }

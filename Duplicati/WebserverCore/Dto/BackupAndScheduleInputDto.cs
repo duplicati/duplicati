@@ -65,6 +65,10 @@ public sealed record BackupAndScheduleInputDto
         /// </summary>
         public long ConnectionStringID { get; init; } = -1;
         /// <summary>
+        /// The operation this backup performs when it runs.
+        /// </summary>
+        public Duplicati.Server.Serialization.OperationType OperationType { get; init; } = Duplicati.Server.Serialization.OperationType.Backup;
+        /// <summary>
         /// The backup source folders and files
         /// </summary>
         public string[] Sources { get; init; } = [];

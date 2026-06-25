@@ -231,7 +231,7 @@ public class BackupPost : IEndpointV1
         if (t != null)
             return new Dto.TaskStartedDto("OK", t.TaskID);
 
-        return new Dto.TaskStartedDto("OK", queueRunnerService.AddTask(Runner.CreateTask(DuplicatiOperation.Backup, backup), skipQueue));
+        return new Dto.TaskStartedDto("OK", queueRunnerService.AddTask(Runner.CreateTask(DuplicatiOperation.BackupOrSync, backup), skipQueue));
     }
 
     private static Dto.CreateBackupDto ExecuteCopyToTemp(IBackup backup, Connection connection)

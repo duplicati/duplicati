@@ -135,6 +135,7 @@ public class BackupGet : IEndpointV1
                 Tags = bk.Tags,
                 TargetURL = bk.TargetURL,
                 ConnectionStringID = bk.ConnectionStringID,
+                OperationType = bk.OperationType,
                 DBPath = bk.DBPath,
                 DBPathExists = File.Exists(bk.DBPath),
                 IsTemporary = bk.IsTemporary,
@@ -254,7 +255,7 @@ public class BackupGet : IEndpointV1
         if (!exportPasswords)
             RemovePasswords(backup);
 
-        return new Dto.ExportCommandlineDto(Runner.GetCommandLine(connection, Runner.CreateTask(DuplicatiOperation.Backup, backup)));
+        return new Dto.ExportCommandlineDto(Runner.GetCommandLine(connection, Runner.CreateTask(DuplicatiOperation.BackupOrSync, backup)));
     }
 
     private static Dto.ExportArgsOnlyDto ExecuteGetExportArgsOnly(Connection connection, IBackup backup, bool exportPasswords)
@@ -262,7 +263,7 @@ public class BackupGet : IEndpointV1
         if (!exportPasswords)
             RemovePasswords(backup);
 
-        var parts = Runner.GetCommandLineParts(connection, Runner.CreateTask(DuplicatiOperation.Backup, backup));
+        var parts = Runner.GetCommandLineParts(connection, Runner.CreateTask(DuplicatiOperation.BackupOrSync, backup));
         return new Dto.ExportArgsOnlyDto(
             parts.First(),
             parts.Skip(1).Where(x => !x.StartsWith("--", StringComparison.Ordinal)),
