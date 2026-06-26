@@ -579,8 +579,64 @@ namespace Duplicati.Library.Interface
     {
     }
 
+    /// <summary>
+    /// Results of a sync operation.
+    /// </summary>
     public interface ISyncResults : IBasicResults
     {
+        /// <summary>
+        /// The number of folders created on the remote destination.
+        /// </summary>
+        long FoldersCreated { get; }
+
+        /// <summary>
+        /// The number of folders deleted from the remote destination.
+        /// </summary>
+        long FoldersDeleted { get; }
+
+        /// <summary>
+        /// The number of files uploaded to the remote destination (new files plus
+        /// updated files whose content changed).
+        /// </summary>
+        long FilesUploaded { get; }
+
+        /// <summary>
+        /// The number of files that were examined but left unchanged because the
+        /// local and remote content already matched (size/mtime, or hash when
+        /// <c>--sync-verify-hash</c> is set).
+        /// </summary>
+        long UnchangedFiles { get; }
+
+        /// <summary>
+        /// The number of files deleted from the remote destination (unknown remote
+        /// files removed when <c>--sync-then-delete</c> is set).
+        /// </summary>
+        long FilesDeleted { get; }
+
+        /// <summary>
+        /// The total number of local source files encountered during enumeration
+        /// across all folders, regardless of whether they were uploaded, unchanged,
+        /// or skipped.
+        /// </summary>
+        long SourceFiles { get; }
+
+        /// <summary>
+        /// The total size in bytes of all local source files encountered during
+        /// enumeration, regardless of whether they were uploaded or left unchanged.
+        /// </summary>
+        long SizeOfSourceFiles { get; }
+
+        /// <summary>
+        /// The total size in bytes of the files uploaded to the remote destination
+        /// (new files plus updated files whose content changed).
+        /// </summary>
+        long SizeOfUploadedFiles { get; }
+
+        /// <summary>
+        /// The total size in bytes of the files deleted from the remote destination
+        /// (unknown remote files removed when <c>--sync-then-delete</c> is set).
+        /// </summary>
+        long SizeOfDeletedFiles { get; }
     }
 
     public interface ISetLockResults : IBasicResults

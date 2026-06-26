@@ -266,6 +266,16 @@ public class VacuumResultsDto : BasicResultsDto
 [Serializable]
 public class SyncResultsDto : BasicResultsDto
 {
+    public long FoldersCreated { get; set; }
+    public long FoldersDeleted { get; set; }
+    public long FilesUploaded { get; set; }
+    public long UnchangedFiles { get; set; }
+    public long FilesDeleted { get; set; }
+    public long SourceFiles { get; set; }
+    public long SizeOfSourceFiles { get; set; }
+    public long SizeOfUploadedFiles { get; set; }
+    public long SizeOfDeletedFiles { get; set; }
+
     public static SyncResultsDto FromResults(ISyncResults results)
     {
         if (results == null) return null;
@@ -278,7 +288,16 @@ public class SyncResultsDto : BasicResultsDto
             Warnings = results.Warnings?.ToList() ?? new List<string>(),
             Messages = results.Messages?.ToList() ?? new List<string>(),
             ParsedResult = results.ParsedResult,
-            Interrupted = results.Interrupted
+            Interrupted = results.Interrupted,
+            FoldersCreated = results.FoldersCreated,
+            FoldersDeleted = results.FoldersDeleted,
+            FilesUploaded = results.FilesUploaded,
+            UnchangedFiles = results.UnchangedFiles,
+            FilesDeleted = results.FilesDeleted,
+            SourceFiles = results.SourceFiles,
+            SizeOfSourceFiles = results.SizeOfSourceFiles,
+            SizeOfUploadedFiles = results.SizeOfUploadedFiles,
+            SizeOfDeletedFiles = results.SizeOfDeletedFiles
         };
     }
 }

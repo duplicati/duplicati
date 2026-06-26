@@ -162,6 +162,18 @@ public class VacuumResultsWrapper : BasicResultsWrapper, IVacuumResults
 public class SyncResultsWrapper : BasicResultsWrapper, ISyncResults
 {
     public SyncResultsWrapper(SyncResultsDto dto) : base(dto) { }
+
+    protected new SyncResultsDto _dto => (SyncResultsDto)base._dto;
+
+    public long FoldersCreated => _dto.FoldersCreated;
+    public long FoldersDeleted => _dto.FoldersDeleted;
+    public long FilesUploaded => _dto.FilesUploaded;
+    public long UnchangedFiles => _dto.UnchangedFiles;
+    public long FilesDeleted => _dto.FilesDeleted;
+    public long SourceFiles => _dto.SourceFiles;
+    public long SizeOfSourceFiles => _dto.SizeOfSourceFiles;
+    public long SizeOfUploadedFiles => _dto.SizeOfUploadedFiles;
+    public long SizeOfDeletedFiles => _dto.SizeOfDeletedFiles;
 }
 
 /// <summary>

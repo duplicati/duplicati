@@ -1058,5 +1058,24 @@ namespace Duplicati.Library.Main
         public SyncResults(BasicResults p) : base(p) { }
 
         public override OperationMode MainOperation { get { return OperationMode.Sync; } }
+
+        /// <inheritdoc/>
+        public long FoldersCreated { get; internal set; }
+        /// <inheritdoc/>
+        public long FoldersDeleted { get; internal set; }
+        /// <inheritdoc/>
+        public long FilesUploaded { get; internal set; }
+        /// <inheritdoc/>
+        public long UnchangedFiles { get; internal set; }
+        /// <inheritdoc/>
+        public long FilesDeleted { get; internal set; }
+        /// <inheritdoc/>
+        public long SourceFiles { get; internal set; }
+        /// <inheritdoc/>
+        public long SizeOfSourceFiles { get; internal set; }
+        /// <inheritdoc/>
+        public long SizeOfUploadedFiles { get; internal set; }
+        /// <inheritdoc/>
+        public long SizeOfDeletedFiles { get; internal set; }
     }
 }

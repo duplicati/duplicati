@@ -168,6 +168,24 @@ internal class SyncHandler
         }
 
         Logging.Log.WriteInformationMessage(LOGTAG, "SyncPlan", "Plan: Upload {0}, Update {1}, Delete {2}", planSummary.Upload, planSummary.Update, planSummary.Delete);
+
+        // Flush the running counters into the results so callers (CLI, IPC, web UI)
+        // see folders created, files uploaded/unchanged/deleted, and the total
+        // files/size encountered. Upload+Update is the combined "files uploaded"
+        // count; Delete maps to files deleted from the remote.
+        m_results.FoldersCreated = planSummary.FoldersCreated;
+        // The handler deletes unknown remote files only, never remote folders, so
+        // the folders-deleted count is always zero today; the field is exposed for
+        // completeness and future folder-deletion support.
+        m_results.FoldersDeleted = 0;
+        m_results.FilesUploaded = planSummary.Upload + planSummary.Update;
+        m_results.UnchangedFiles = planSummary.UnchangedFiles;
+        m_results.FilesDeleted = planSummary.Delete;
+        m_results.SourceFiles = planSummary.SourceFiles;
+        m_results.SizeOfSourceFiles = planSummary.SizeOfSourceFiles;
+        m_results.SizeOfUploadedFiles = planSummary.SizeOfUploadedFiles;
+        m_results.SizeOfDeletedFiles = planSummary.SizeOfDeletedFiles;
+
         Logging.Log.WriteInformationMessage(LOGTAG, "SyncFinished", "Sync completed successfully.");
     }
 
@@ -241,6 +259,12 @@ internal class SyncHandler
             }
             else
             {
+                // Count every local source file encountered (regardless of whether it
+                // ends up uploaded, unchanged, or de-duplicated) so SourceFiles and
+                // SizeOfSourceFiles reflect the full local inventory scanned this run.
+                planSummary.SourceFiles++;
+                planSummary.SizeOfSourceFiles += Math.Max(child.Size, 0);
+
                 // INSERT OR IGNORE semantics: the first entry seen for a path wins, so a
                 // later duplicate in the same folder is ignored (paths are unique within
                 // a single folder in practice).
@@ -403,6 +427,7 @@ internal class SyncHandler
                     Logging.Log.WriteDryrunMessage(LOGTAG, "DryRun", "Would create folder: {0}", subRelPath);
                 else
                     await backendManager.EnsureFolderAsync(subRelPath, ct).ConfigureAwait(false);
+                planSummary.FoldersCreated++;
             }
 
             folderQueue.Enqueue(new FolderWorkItem(subEntry, subRelPath));
@@ -416,8 +441,14 @@ internal class SyncHandler
         // either already has files (so it exists) or is brand new, in which case the
         // sub-folder ensure above created it when it was enqueued as a child. The
         // backend root (folderRelPath == "") is assumed to exist for all modes.
-        if (stateMode == SyncRemoteState.BlindlyUpload && !string.IsNullOrEmpty(folderRelPath) && !isDryRun)
-            await backendManager.EnsureFolderAsync(folderRelPath, ct).ConfigureAwait(false);
+        // BlindlyUpload always treats the current folder as new (we have no listing
+        // to prove it exists), so it counts as a created folder when not a dry run.
+        if (stateMode == SyncRemoteState.BlindlyUpload && !string.IsNullOrEmpty(folderRelPath))
+        {
+            if (!isDryRun)
+                await backendManager.EnsureFolderAsync(folderRelPath, ct).ConfigureAwait(false);
+            planSummary.FoldersCreated++;
+        }
 
         // 5. Upload all new or changed files in this folder. The caller guarantees the
         // current folder exists, so UploadOrUpdateAsync does not call EnsureFolderAsync.
@@ -459,7 +490,10 @@ internal class SyncHandler
             }
 
             if (!needsUpload)
+            {
+                planSummary.UnchangedFiles++;
                 continue;
+            }
 
             if (hashRecheck)
             {
@@ -470,7 +504,10 @@ internal class SyncHandler
                     {
                         var hash = Convert.ToBase64String(hasher.ComputeHash(s));
                         if (hash == remoteHash)
+                        {
+                            planSummary.UnchangedFiles++;
                             continue; // Content unchanged; no upload needed.
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -530,6 +567,7 @@ internal class SyncHandler
                 {
                     Logging.Log.WriteDryrunMessage(LOGTAG, "DryRun", "Would delete: {0}", relPath);
                     planSummary.Delete++;
+                    planSummary.SizeOfDeletedFiles += Math.Max(rc.Size, 0);
                     continue;
                 }
 
@@ -542,6 +580,7 @@ internal class SyncHandler
                 await backendManager.DeleteAsync(relPath, 0, true, ct).ConfigureAwait(false);
                 deletedPaths.Add(relPath);
                 planSummary.Delete++;
+                planSummary.SizeOfDeletedFiles += Math.Max(rc.Size, 0);
             }
 
             // Commit the inventory removals and intent clearances for all files deleted
@@ -613,6 +652,7 @@ internal class SyncHandler
                 planSummary.Upload++;
             else
                 planSummary.Update++;
+            planSummary.SizeOfUploadedFiles += Math.Max(lf.Size, 0);
             return;
         }
 
@@ -655,6 +695,7 @@ internal class SyncHandler
             planSummary.Upload++;
         else
             planSummary.Update++;
+        planSummary.SizeOfUploadedFiles += Math.Max(lf.Size, 0);
     }
 
     /// <summary>
@@ -759,12 +800,19 @@ internal class SyncHandler
 
     /// <summary>
     /// Running counters for the plan summary log, bumped per operation as it is
-    /// planned/performed so the final log line reflects the whole run.
+    /// planned/performed so the final log line reflects the whole run. The same
+    /// counters are flushed into <see cref="SyncResults"/> at the end of the run.
     /// </summary>
     private sealed class PlanSummary
     {
         public long Upload;
         public long Update;
         public long Delete;
+        public long FoldersCreated;
+        public long UnchangedFiles;
+        public long SourceFiles;
+        public long SizeOfSourceFiles;
+        public long SizeOfUploadedFiles;
+        public long SizeOfDeletedFiles;
     }
 }
