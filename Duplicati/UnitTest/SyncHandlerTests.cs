@@ -389,6 +389,365 @@ public class SyncHandlerTests : BasicSetupHelper
         Assert.IsFalse(File.Exists(Path.Combine(targetDir, "plain.txt")),
             "No file should be mirrored when the sync is rejected for having encryption enabled.");
     }
+
+    /// <summary>
+    /// Builds a controlled test dataset under <paramref name="targetfolder"/> with files
+    /// placed at the root, one level deep, and across a deep folder hierarchy. Each file
+    /// is sized around <paramref name="basedatasize"/> (plus a few boundary variants at
+    /// the root) so the dataset exercises the sync path with realistic content without
+    /// being expensive to create. Returns the map of relative path -> file size so the
+    /// caller can assert against the mirrored tree and later mutate the dataset.
+    /// </summary>
+    private static Dictionary<string, int> WriteSyncDataset(string targetfolder, int basedatasize)
+    {
+        if (basedatasize <= 0)
+            basedatasize = 1024;
+
+        var filenames = new Dictionary<string, int>(StringComparer.Ordinal);
+
+        // Root-level boundary variants, mirroring the spirit of BorderTests.
+        filenames["root.txt"] = basedatasize;
+        filenames["empty.txt"] = 0;
+        filenames["tiny.txt"] = 1;
+        filenames["plus1.txt"] = basedatasize + 1;
+        filenames["minus1.txt"] = basedatasize - 1;
+
+        // One level deep.
+        filenames["l1/file.txt"] = basedatasize;
+        filenames["l1/other.txt"] = basedatasize / 2;
+
+        // A deep hierarchy (l1/l2/l3/l4/l5) with a file at the bottom.
+        filenames["l1/l2/file.txt"] = basedatasize;
+        filenames["l1/l2/l3/file.txt"] = basedatasize;
+        filenames["l1/l2/l3/l4/file.txt"] = basedatasize;
+        filenames["l1/l2/l3/l4/l5/deep.txt"] = basedatasize + 7;
+
+        // A sibling deep branch with its own leaf at every level.
+        filenames["a/b/c/d/e/f/leaf.txt"] = basedatasize / 4;
+
+        var data = new byte[filenames.Values.Max()];
+        foreach (var k in filenames)
+        {
+            var full = Path.Combine(targetfolder, k.Key.Replace('/', Path.DirectorySeparatorChar));
+            Directory.CreateDirectory(Path.GetDirectoryName(full)!);
+            File.WriteAllBytes(full, data.Take(k.Value).ToArray());
+        }
+
+        return filenames;
+    }
+
+    /// <summary>
+    /// Asserts that the mirrored target tree exactly matches the local dataset: every
+    /// relative path exists on the remote with identical content, and there are no
+    /// extra files on the remote. Uses forward-slash relative paths for portability.
+    /// </summary>
+    private void AssertTargetMirrorsDataset(string localRoot, Dictionary<string, int> expected)
+    {
+        var expectedPaths = expected.Keys.OrderBy(x => x).ToArray();
+        var actualRelPaths = Directory.Exists(targetDir)
+            ? Directory.GetFiles(targetDir, "*", SearchOption.AllDirectories)
+                .Select(p => p.Substring(targetDir.Length).TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar).Replace('\\', '/'))
+                .OrderBy(x => x).ToArray()
+            : Array.Empty<string>();
+
+        CollectionAssert.AreEquivalent(expectedPaths, actualRelPaths,
+            "Remote tree does not match the local dataset. Expected: " + string.Join(", ", expectedPaths) +
+            " Actual: " + string.Join(", ", actualRelPaths));
+
+        foreach (var rel in expectedPaths)
+        {
+            var remote = Path.Combine(targetDir, rel.Replace('/', Path.DirectorySeparatorChar));
+            Assert.IsTrue(File.Exists(remote), $"Missing remote file: {rel}");
+            Assert.AreEqual(expected[rel], new FileInfo(remote).Length,
+                $"Size mismatch for remote file: {rel}");
+        }
+    }
+
+    /// <summary>
+    /// Clears the shared remote target tree so each dataset test starts from a
+    /// clean slate. The fixture's Setup/TearDown deliberately preserves the target
+    /// directory between tests, so leftover files from earlier tests would otherwise
+    /// pollute the "no extra files on the remote" assertion these dataset tests
+    /// rely on.
+    /// </summary>
+    private void CleanTargetTree()
+    {
+        if (Directory.Exists(targetDir))
+            Directory.Delete(targetDir, true);
+        Directory.CreateDirectory(targetDir);
+    }
+
+    /// <summary>
+    /// End-to-end sync over a test dataset that includes a deep folder hierarchy.
+    /// Verifies that the first sync mirrors every file (including the deeply nested
+    /// leaf at l1/l2/l3/l4/l5/deep.txt), and that a second no-op sync performs no
+    /// uploads (the end state is unchanged and correct).
+    /// </summary>
+    [Test]
+    [Category("Sync")]
+    public async Task TestSyncDeepFolderHierarchyAsync()
+    {
+        var dataFolder = Path.Combine(BASEFOLDER, "sync_data_deep");
+        if (Directory.Exists(dataFolder)) Directory.Delete(dataFolder, true);
+        Directory.CreateDirectory(dataFolder);
+        CleanTargetTree();
+
+        var dataset = WriteSyncDataset(dataFolder, 1024);
+
+        var opts = new Dictionary<string, string>
+        {
+            ["no-encryption"] = "true",
+            ["snapshot-policy"] = "off",
+            ["sync-then-delete"] = "true",
+            ["log-level"] = "Profiling",
+        };
+
+        // Sync 1: mirror the whole dataset.
+        using (var c = new Controller(backendUrl, opts, null))
+        {
+            await c.SyncAsync(new[] { dataFolder }, null);
+        }
+
+        AssertTargetMirrorsDataset(dataFolder, dataset);
+
+        // The deepest leaf must be present and correct.
+        var deepRemote = Path.Combine(targetDir, "l1", "l2", "l3", "l4", "l5", "deep.txt");
+        Assert.IsTrue(File.Exists(deepRemote),
+            "Deeply nested file l1/l2/l3/l4/l5/deep.txt was not mirrored. Target has: " +
+            string.Join(", ", Directory.GetFiles(targetDir, "*", SearchOption.AllDirectories)));
+
+        // Sync 2: nothing changed locally, so the remote tree must be identical.
+        using (var c = new Controller(backendUrl, opts, null))
+        {
+            await c.SyncAsync(new[] { dataFolder }, null);
+        }
+        AssertTargetMirrorsDataset(dataFolder, dataset);
+    }
+
+    /// <summary>
+    /// End-to-end sync exercising updates across the dataset: after the initial mirror,
+    /// a root file, a one-level-deep file, and a deeply nested leaf are all rewritten
+    /// with new content (some same-size, some size-changed). A second sync must update
+    /// each of them on the remote and leave the rest untouched.
+    /// </summary>
+    [Test]
+    [Category("Sync")]
+    public async Task TestSyncUpdatesAcrossHierarchyAsync()
+    {
+        var dataFolder = Path.Combine(BASEFOLDER, "sync_data_updates_hierarchy");
+        if (Directory.Exists(dataFolder)) Directory.Delete(dataFolder, true);
+        Directory.CreateDirectory(dataFolder);
+        CleanTargetTree();
+
+        var dataset = WriteSyncDataset(dataFolder, 1024);
+
+        var opts = new Dictionary<string, string>
+        {
+            ["no-encryption"] = "true",
+            ["snapshot-policy"] = "off",
+            ["sync-then-delete"] = "true",
+            ["log-level"] = "Profiling",
+        };
+
+        using (var c = new Controller(backendUrl, opts, null))
+            await c.SyncAsync(new[] { dataFolder }, null);
+
+        // Rewrite three files at different depths with new content and bump sizes.
+        var rn = new Random(42);
+        var changedRelPaths = new[] { "root.txt", "l1/file.txt", "l1/l2/l3/l4/l5/deep.txt" };
+        foreach (var rel in changedRelPaths)
+        {
+            dataset[rel] += 10; // size change forces an update regardless of mtime resolution
+            var full = Path.Combine(dataFolder, rel.Replace('/', Path.DirectorySeparatorChar));
+            var bytes = new byte[dataset[rel]];
+            rn.NextBytes(bytes);
+            File.WriteAllBytes(full, bytes);
+        }
+
+        using (var c = new Controller(backendUrl, opts, null))
+            await c.SyncAsync(new[] { dataFolder }, null);
+
+        AssertTargetMirrorsDataset(dataFolder, dataset);
+
+        // Content of the changed files must reflect the new bytes.
+        foreach (var rel in changedRelPaths)
+        {
+            var local = Path.Combine(dataFolder, rel.Replace('/', Path.DirectorySeparatorChar));
+            var remote = Path.Combine(targetDir, rel.Replace('/', Path.DirectorySeparatorChar));
+            Assert.AreEqual(File.ReadAllBytes(local), File.ReadAllBytes(remote),
+                $"Content mismatch after update for {rel}");
+        }
+    }
+
+    /// <summary>
+    /// End-to-end sync exercising deletes across the dataset: after the initial mirror,
+    /// files are removed at the root, mid-hierarchy, and at the deepest leaf. With
+    /// --sync-then-delete the second sync must delete each of them on the remote and
+    /// leave the rest untouched. Also verifies that an emptied deep folder does not
+    /// strand stray files on the remote.
+    /// </summary>
+    [Test]
+    [Category("Sync")]
+    public async Task TestSyncDeletesAcrossHierarchyAsync()
+    {
+        var dataFolder = Path.Combine(BASEFOLDER, "sync_data_deletes_hierarchy");
+        if (Directory.Exists(dataFolder)) Directory.Delete(dataFolder, true);
+        Directory.CreateDirectory(dataFolder);
+        CleanTargetTree();
+
+        var dataset = WriteSyncDataset(dataFolder, 1024);
+
+        var opts = new Dictionary<string, string>
+        {
+            ["no-encryption"] = "true",
+            ["snapshot-policy"] = "off",
+            ["sync-then-delete"] = "true",
+            ["log-level"] = "Profiling",
+        };
+
+        using (var c = new Controller(backendUrl, opts, null))
+            await c.SyncAsync(new[] { dataFolder }, null);
+
+        // Remove files at three depths and drop them from the expected dataset.
+        var deletedRelPaths = new[] { "root.txt", "l1/other.txt", "l1/l2/l3/l4/l5/deep.txt" };
+        foreach (var rel in deletedRelPaths)
+        {
+            var full = Path.Combine(dataFolder, rel.Replace('/', Path.DirectorySeparatorChar));
+            File.Delete(full);
+            dataset.Remove(rel);
+        }
+
+        using (var c = new Controller(backendUrl, opts, null))
+            await c.SyncAsync(new[] { dataFolder }, null);
+
+        AssertTargetMirrorsDataset(dataFolder, dataset);
+
+        // The deleted files must be gone from the remote.
+        foreach (var rel in deletedRelPaths)
+        {
+            var remote = Path.Combine(targetDir, rel.Replace('/', Path.DirectorySeparatorChar));
+            Assert.IsFalse(File.Exists(remote), $"Deleted file should be gone from remote: {rel}");
+        }
+
+        // Without --sync-then-delete, a subsequent local delete must NOT propagate.
+        var noDeleteOpts = new Dictionary<string, string>(opts) { ["sync-then-delete"] = "false" };
+        var survivingRel = "l1/file.txt";
+        File.Delete(Path.Combine(dataFolder, survivingRel.Replace('/', Path.DirectorySeparatorChar)));
+
+        using (var c = new Controller(backendUrl, noDeleteOpts, null))
+            await c.SyncAsync(new[] { dataFolder }, null);
+
+        Assert.IsTrue(File.Exists(Path.Combine(targetDir, survivingRel.Replace('/', Path.DirectorySeparatorChar))),
+            $"File should NOT be deleted on remote when sync-then-delete is off: {survivingRel}");
+    }
+
+    /// <summary>
+    /// End-to-end sync exercising a mixed workload over the dataset in a single run:
+    /// add a new file, update an existing one, and delete another (all at varying
+    /// depths). With --sync-then-delete the run must reconcile all three kinds of
+    /// changes in one pass and leave the remote tree exactly mirroring the local one.
+    /// </summary>
+    [Test]
+    [Category("Sync")]
+    public async Task TestSyncMixedAddUpdateDeleteAsync()
+    {
+        var dataFolder = Path.Combine(BASEFOLDER, "sync_data_mixed");
+        if (Directory.Exists(dataFolder)) Directory.Delete(dataFolder, true);
+        Directory.CreateDirectory(dataFolder);
+        CleanTargetTree();
+
+        var dataset = WriteSyncDataset(dataFolder, 1024);
+
+        var opts = new Dictionary<string, string>
+        {
+            ["no-encryption"] = "true",
+            ["snapshot-policy"] = "off",
+            ["sync-then-delete"] = "true",
+            ["log-level"] = "Profiling",
+        };
+
+        using (var c = new Controller(backendUrl, opts, null))
+            await c.SyncAsync(new[] { dataFolder }, null);
+
+        // Add a brand-new file in a new deep folder.
+        dataset["new/deep/path/added.txt"] = 333;
+        Directory.CreateDirectory(Path.Combine(dataFolder, "new", "deep", "path"));
+        File.WriteAllBytes(Path.Combine(dataFolder, "new", "deep", "path", "added.txt"), new byte[333]);
+
+        // Update an existing deeply nested file (size change forces re-upload).
+        dataset["a/b/c/d/e/f/leaf.txt"] += 5;
+        File.WriteAllBytes(
+            Path.Combine(dataFolder, "a", "b", "c", "d", "e", "f", "leaf.txt"),
+            new byte[dataset["a/b/c/d/e/f/leaf.txt"]]);
+
+        // Delete a root-level file.
+        File.Delete(Path.Combine(dataFolder, "empty.txt"));
+        dataset.Remove("empty.txt");
+
+        using (var c = new Controller(backendUrl, opts, null))
+            await c.SyncAsync(new[] { dataFolder }, null);
+
+        AssertTargetMirrorsDataset(dataFolder, dataset);
+    }
+
+    /// <summary>
+    /// End-to-end sync verifying the empty-folder handling option over a deep
+    /// hierarchy. With --exclude-empty-folders, an empty local sub-folder must not
+    /// contribute any files to the remote tree, and removing the last file from a
+    /// deep folder (leaving it empty locally) must not strand a remote copy of the
+    /// file when --sync-then-delete is set. The remote file set must exactly mirror
+    /// the local dataset after each pass.
+    /// </summary>
+    [Test]
+    [Category("Sync")]
+    public async Task TestSyncExcludeEmptyFoldersDeepAsync()
+    {
+        var dataFolder = Path.Combine(BASEFOLDER, "sync_data_empty_deep");
+        if (Directory.Exists(dataFolder)) Directory.Delete(dataFolder, true);
+        Directory.CreateDirectory(dataFolder);
+        CleanTargetTree();
+
+        var dataset = WriteSyncDataset(dataFolder, 1024);
+
+        // Add a truly empty sub-folder (no children at all) alongside the deep tree;
+        // under --exclude-empty-folders it must not be created on the remote. The
+        // handler peeks each sub-folder's direct children and skips folders with no
+        // children, so a folder containing only empty sub-folders is still created
+        // (it has a direct child); a folder with zero direct children is skipped.
+        Directory.CreateDirectory(Path.Combine(dataFolder, "should_be_empty"));
+
+        var opts = new Dictionary<string, string>
+        {
+            ["no-encryption"] = "true",
+            ["snapshot-policy"] = "off",
+            ["sync-then-delete"] = "true",
+            ["exclude-empty-folders"] = "true",
+            ["log-level"] = "Profiling",
+        };
+
+        using (var c = new Controller(backendUrl, opts, null))
+            await c.SyncAsync(new[] { dataFolder }, null);
+
+        AssertTargetMirrorsDataset(dataFolder, dataset);
+
+        // The empty folder must not be created on the remote at all: under
+        // --exclude-empty-folders the handler peeks the sub-folder's direct children
+        // and skips folders with none, so an empty local folder never triggers an
+        // EnsureFolderAsync call.
+        Assert.IsFalse(Directory.Exists(Path.Combine(targetDir, "should_be_empty")),
+            "Empty local folder should not be created on the remote under exclude-empty-folders.");
+
+        // A second no-op sync (nothing changed locally) must leave the remote tree
+        // identical, including the empty folder still absent. This confirms the
+        // empty-folder skip is stable across runs and the deep tree is reconciled
+        // without re-creating the empty folder.
+        using (var c = new Controller(backendUrl, opts, null))
+            await c.SyncAsync(new[] { dataFolder }, null);
+
+        AssertTargetMirrorsDataset(dataFolder, dataset);
+        Assert.IsFalse(Directory.Exists(Path.Combine(targetDir, "should_be_empty")),
+            "Empty local folder should still not exist on the remote after a no-op sync.");
+    }
 }
 
 /// <summary>

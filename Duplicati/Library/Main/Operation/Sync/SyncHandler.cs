@@ -361,38 +361,16 @@ internal class SyncHandler
         // folder that already exists is a no-op on the backend (CreateFolder treats
         // FolderAlreadyExisted as success) but still a network call, so we avoid it
         // when we have positive evidence the folder exists.
+        //
+        // ExcludeEmptyFolders: a sub-folder with no local children must not be
+        // created on the remote, matching the backup behavior of not creating empty
+        // folders at all. We peek the sub-folder's direct children FIRST and, if it
+        // is empty, skip it entirely (neither ensured nor queued) - this is one
+        // extra enumeration per sub-folder but keeps memory bounded and ensures an
+        // empty folder never triggers a CreateFolder call. The peek only runs when
+        // the option is set; without it every sub-folder is ensured/queued as before.
         foreach (var (subEntry, subRelPath) in localSubfolders)
         {
-            var subName = GetEntryName(subRelPath);
-            var existsRemotely = stateMode switch
-            {
-                SyncRemoteState.UseRemoteState => remoteFolderNames.Contains(subName),
-                SyncRemoteState.UseLocalState => await FolderHasInventoryAsync(db, subRelPath, ct).ConfigureAwait(false),
-                SyncRemoteState.BlindlyUpload => false, // always ensure under blind upload
-                _ => false
-            };
-
-            if (!existsRemotely)
-            {
-                if (isDryRun)
-                    Logging.Log.WriteDryrunMessage(LOGTAG, "DryRun", "Would create folder: {0}", subRelPath);
-                else
-                    await backendManager.EnsureFolderAsync(subRelPath, ct).ConfigureAwait(false);
-            }
-
-            // ExcludeEmptyFolders: skip enqueueing a sub-folder that has no local
-            // children. We can't know that without enumerating it, so we defer the
-            // check to when we process it: an empty folder simply contributes no
-            // files and no further sub-folders. To match the backup behavior of not
-            // creating empty folders at all, we drop the queued entry here if it
-            // would be empty. Since enumerating now defeats the bounded-memory goal,
-            // we instead let it be processed and rely on the remote folder having
-            // been created only if it had at least one file. To honor the option
-            // precisely we do a quick peek: enumerate the sub-folder's direct
-            // children and only queue/enforce-create if non-empty. This is one extra
-            // enumeration per sub-folder but keeps memory bounded and matches the
-            // backup semantics. The peek is skipped under BlindlyUpload (we always
-            // create) unless excludeEmptyFolders is set.
             if (excludeEmptyFolders)
             {
                 bool hasAny = false;
@@ -408,6 +386,23 @@ internal class SyncHandler
                     Logging.Log.WriteVerboseMessage(LOGTAG, "SkippingEmptyFolder", "Skipping empty folder: {0}", subRelPath);
                     continue;
                 }
+            }
+
+            var subName = GetEntryName(subRelPath);
+            var existsRemotely = stateMode switch
+            {
+                SyncRemoteState.UseRemoteState => remoteFolderNames.Contains(subName),
+                SyncRemoteState.UseLocalState => await FolderHasInventoryAsync(db, subRelPath, ct).ConfigureAwait(false),
+                SyncRemoteState.BlindlyUpload => false, // always ensure under blind upload
+                _ => false
+            };
+
+            if (!existsRemotely)
+            {
+                if (isDryRun)
+                    Logging.Log.WriteDryrunMessage(LOGTAG, "DryRun", "Would create folder: {0}", subRelPath);
+                else
+                    await backendManager.EnsureFolderAsync(subRelPath, ct).ConfigureAwait(false);
             }
 
             folderQueue.Enqueue(new FolderWorkItem(subEntry, subRelPath));
