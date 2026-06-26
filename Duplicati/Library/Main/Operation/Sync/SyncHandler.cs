@@ -30,6 +30,7 @@ internal class SyncHandler
     public async Task RunAsync(IBackendManager backendManager, IFilter filter)
     {
         var ct = m_results.TaskControl.ProgressToken;
+        m_results.OperationProgressUpdater.UpdatePhase(OperationPhase.Sync_Begin);
         Logging.Log.WriteInformationMessage(LOGTAG, "SyncStarted", "Starting sync");
 
         // Sync mirrors files to the destination unencrypted, so a passphrase is
@@ -117,6 +118,27 @@ internal class SyncHandler
         var excludeEmptyFolders = m_options.ExcludeEmptyFolders;
         var ignoreNames = m_options.IgnoreFilenames;
 
+        // Start a parallel background counter that walks the whole source tree
+        using var counterCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        Task? counterTask = null;
+        if (!m_options.DisableFileScanner)
+        {
+            m_results.OperationProgressUpdater.UpdatePhase(OperationPhase.Sync_CountingFiles);
+            counterTask = CountFilesHandler.RunAsync(
+                sourceProvider,
+                journalService: null,
+                m_results,
+                fileAttributeFilter,
+                filter,
+                symlinkPolicy,
+                hardlinkPolicy,
+                disableBackupExclusionXattr,
+                excludeEmptyFolders,
+                ignoreNames,
+                blacklistPaths,
+                counterCts.Token);
+        }
+
         // Seed the folder queue with one entry per source root. The relative path of a
         // source root follows the relative-path convention used throughout the handler:
         // for a single source the source's contents map directly onto the backend root
@@ -138,34 +160,64 @@ internal class SyncHandler
 
         var planSummary = new PlanSummary();
 
-        while (folderQueue.Count > 0)
+        m_results.OperationProgressUpdater.UpdatePhase(OperationPhase.Sync_ProcessingFiles);
+        try
         {
-            if (ct.IsCancellationRequested)
-                break;
+            while (folderQueue.Count > 0)
+            {
+                if (ct.IsCancellationRequested)
+                    break;
 
-            var current = folderQueue.Dequeue();
-            await ProcessFolderAsync(
-                current,
-                sourceProvider,
-                backendManager,
-                db,
-                filter,
-                fileAttributeFilter,
-                symlinkPolicy,
-                hardlinkPolicy,
-                disableBackupExclusionXattr,
-                excludeEmptyFolders,
-                ignoreNames,
-                blacklistPaths,
-                stateMode,
-                maintainInventory,
-                isDryRun,
-                isDelete,
-                verifyHash,
-                planSummary,
-                folderQueue,
-                ct).ConfigureAwait(false);
+                var current = folderQueue.Dequeue();
+                await ProcessFolderAsync(
+                    current,
+                    sourceProvider,
+                    backendManager,
+                    db,
+                    m_results,
+                    filter,
+                    fileAttributeFilter,
+                    symlinkPolicy,
+                    hardlinkPolicy,
+                    disableBackupExclusionXattr,
+                    excludeEmptyFolders,
+                    ignoreNames,
+                    blacklistPaths,
+                    stateMode,
+                    maintainInventory,
+                    isDryRun,
+                    isDelete,
+                    verifyHash,
+                    planSummary,
+                    folderQueue,
+                    ct).ConfigureAwait(false);
+            }
         }
+        finally
+        {
+            // Stop the background counter so it does not outlive the run
+            await counterCts.CancelAsync().ConfigureAwait(false);
+            if (counterTask != null)
+            {
+                try
+                {
+                    await counterTask.ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    // Expected: the counter was cancelled to stop the enumeration.
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "FileCountFailed", ex, "Background file count failed; progress totals may be incomplete.");
+                }
+            }
+        }
+
+        // The per-folder work is committed; the remaining steps (flushing backend
+        // messages, the plan summary log, and the results flush) are bookkeeping
+        // rather than uploads, so report the wait-for-upload phase here.
+        m_results.OperationProgressUpdater.UpdatePhase(OperationPhase.Sync_WaitForUpload);
 
         Logging.Log.WriteInformationMessage(LOGTAG, "SyncPlan", "Plan: Upload {0}, Update {1}, Delete {2}", planSummary.Upload, planSummary.Update, planSummary.Delete);
 
@@ -186,6 +238,10 @@ internal class SyncHandler
         m_results.SizeOfUploadedFiles = planSummary.SizeOfUploadedFiles;
         m_results.SizeOfDeletedFiles = planSummary.SizeOfDeletedFiles;
 
+        m_results.OperationProgressUpdater.UpdatePhase(OperationPhase.Sync_Complete);
+        // Final tally: the count is no longer in flux, so mark it done.
+        m_results.OperationProgressUpdater.UpdatefileCount(m_results.SourceFiles, m_results.SizeOfSourceFiles, true);
+
         Logging.Log.WriteInformationMessage(LOGTAG, "SyncFinished", "Sync completed successfully.");
     }
 
@@ -201,6 +257,7 @@ internal class SyncHandler
         ISourceProvider sourceProvider,
         IBackendManager backendManager,
         LocalSyncDatabase db,
+        SyncResults results,
         IFilter filter,
         FileAttributes fileAttributeFilter,
         Options.SymlinkStrategy symlinkPolicy,
@@ -492,6 +549,9 @@ internal class SyncHandler
             if (!needsUpload)
             {
                 planSummary.UnchangedFiles++;
+                // Count an unchanged file as processed too, so the processed-files
+                // tally advances even when no upload is performed.
+                results.OperationProgressUpdater.UpdatefilesProcessed(planSummary.Upload + planSummary.Update + planSummary.UnchangedFiles, planSummary.SizeOfUploadedFiles);
                 continue;
             }
 
@@ -506,6 +566,7 @@ internal class SyncHandler
                         if (hash == remoteHash)
                         {
                             planSummary.UnchangedFiles++;
+                            results.OperationProgressUpdater.UpdatefilesProcessed(planSummary.Upload + planSummary.Update + planSummary.UnchangedFiles, planSummary.SizeOfUploadedFiles);
                             continue; // Content unchanged; no upload needed.
                         }
                     }
@@ -521,7 +582,7 @@ internal class SyncHandler
 
             try
             {
-                await UploadOrUpdateAsync(db, backendManager, relPath, entry, operation, label, verifyHash, maintainInventory, isDryRun, planSummary, ct).ConfigureAwait(false);
+                await UploadOrUpdateAsync(db, backendManager, results, relPath, entry, operation, label, verifyHash, maintainInventory, isDryRun, planSummary, ct).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -583,6 +644,12 @@ internal class SyncHandler
                 planSummary.SizeOfDeletedFiles += Math.Max(rc.Size, 0);
             }
 
+            // Advance the processed-files counter by the files deleted in this folder
+            // so the UI progress reflects deletes too. Deletes do not contribute to
+            // the uploaded size, so only the count side moves relative to uploads.
+            if (planSummary.Delete > 0)
+                results.OperationProgressUpdater.UpdatefilesProcessed(planSummary.Upload + planSummary.Update + planSummary.UnchangedFiles + planSummary.Delete, planSummary.SizeOfUploadedFiles + planSummary.SizeOfDeletedFiles);
+
             // Commit the inventory removals and intent clearances for all files deleted
             // in this folder in one transaction, so only one fsync covers the folder.
             // Under UseRemoteState (not maintaining inventory) the inventory removal is
@@ -623,6 +690,7 @@ internal class SyncHandler
     /// </summary>
     /// <param name="db">The sync database.</param>
     /// <param name="backendManager">The backend manager used to perform the upload.</param>
+    /// <param name="results">The sync results whose progress updater receives per-file progress.</param>
     /// <param name="relPath">The relative path on the remote destination.</param>
     /// <param name="lf">The local source entry to upload.</param>
     /// <param name="operation">The intent operation to record (<see cref="SyncOperation.Upload"/> or <see cref="SyncOperation.Update"/>).</param>
@@ -635,6 +703,7 @@ internal class SyncHandler
     private static async Task UploadOrUpdateAsync(
         LocalSyncDatabase db,
         IBackendManager backendManager,
+        SyncResults results,
         string relPath,
         ISourceProviderEntry lf,
         SyncOperation operation,
@@ -657,6 +726,12 @@ internal class SyncHandler
         }
 
         Logging.Log.WriteInformationMessage(LOGTAG, logLabel, "{0} {1}", logLabel, relPath);
+
+        // Tell the progress reporter we are starting on this file so the UI can show
+        // the current filename and the total size we expect to write for it. The
+        // matching UpdatefilesProcessed below advances the processed count by one
+        // file and its size once the upload (or its failure) is accounted for.
+        results.OperationProgressUpdater.StartFile(relPath, Math.Max(lf.Size, 0));
 
         // Record intent BEFORE the upload so a crash during the put is recoverable.
         // This row is cleared at the start of the next run (the journal is reconciled
@@ -696,6 +771,11 @@ internal class SyncHandler
         else
             planSummary.Update++;
         planSummary.SizeOfUploadedFiles += Math.Max(lf.Size, 0);
+
+        // The file has been fully processed (uploaded or its attempt is accounted for),
+        // so advance the processed-files counter by one file and its size. This pairs
+        // with the StartFile call above and lets the UI show N of M files processed.
+        results.OperationProgressUpdater.UpdatefilesProcessed(planSummary.Upload + planSummary.Update + planSummary.UnchangedFiles, planSummary.SizeOfUploadedFiles);
     }
 
     /// <summary>

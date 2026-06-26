@@ -67,6 +67,12 @@ namespace Duplicati.Library.Main
         PurgeFiles_Compact,
         PurgeFiles_Complete,
 
+        Sync_Begin,
+        Sync_CountingFiles,
+        Sync_ProcessingFiles,
+        Sync_WaitForUpload,
+        Sync_Complete,
+
         Error
     }
 }

@@ -85,7 +85,105 @@ public class SyncHandlerTests : BasicSetupHelper
         Assert.IsTrue(File.Exists(Path.Combine(targetDir, "subfolder/file3.txt")));
 
         Assert.AreEqual("Hello World", File.ReadAllText(Path.Combine(targetDir, "file1.txt")));
-        Assert.AreEqual("File 3 content", File.ReadAllText(Path.Combine(targetDir, "subfolder/file3.txt")));
+        Assert.AreEqual("File 3 content", File.ReadAllText(Path.Combine(targetDir, "subfolder", "file3.txt")));
+    }
+
+    /// <summary>
+    /// Verifies that the sync handler reports its progress via
+    /// <see cref="SyncResults.OperationProgressUpdater"/>: the phase transitions through
+    /// the new <c>Sync_*</c> phases (<c>Sync_Begin</c> -> <c>Sync_CountingFiles</c> ->
+    /// <c>Sync_ProcessingFiles</c> -> <c>Sync_WaitForUpload</c> -> <c>Sync_Complete</c>),
+    /// the parallel file counter feeds a non-zero file count + size into the updater,
+    /// and the per-file processing advances the processed-files counter. This mirrors
+    /// how the backup handler reports progress through <c>CountFilesHandler</c>.
+    /// </summary>
+    [Test]
+    [Category("Sync")]
+    public async Task TestSyncReportsProgressViaOperationProgressUpdaterAsync()
+    {
+        var dataFolder = Path.Combine(BASEFOLDER, "sync_data_progress");
+        if (Directory.Exists(dataFolder)) Directory.Delete(dataFolder, true);
+        Directory.CreateDirectory(dataFolder);
+
+        File.WriteAllText(Path.Combine(dataFolder, "file1.txt"), "Hello World");
+        File.WriteAllText(Path.Combine(dataFolder, "file2.txt"), "File 2 content");
+        Directory.CreateDirectory(Path.Combine(dataFolder, "subfolder"));
+        File.WriteAllText(Path.Combine(dataFolder, "subfolder", "file3.txt"), "File 3 content");
+
+        var opts = new Dictionary<string, string>
+        {
+            ["no-encryption"] = "true",
+            ["snapshot-policy"] = "off",
+            ["sync-then-delete"] = "true",
+            ["log-level"] = "Profiling",
+        };
+
+        var observedPhases = new List<OperationPhase>();
+        long reportedFileCount = -1;
+        long reportedFileSize = -1;
+        long reportedFilesProcessed = -1;
+
+        using (var c = new Controller(backendUrl, opts, null))
+        {
+            c.OnOperationStarted += results =>
+            {
+                ((SyncResults)results).OperationProgressUpdater.PhaseChanged += (phase, _) =>
+                {
+                    observedPhases.Add(phase);
+                };
+            };
+
+            await c.SyncAsync(new[] { dataFolder }, null);
+        }
+
+        // The begin phase is the first reported, and complete is the last.
+        CollectionAssert.Contains(observedPhases, OperationPhase.Sync_Begin,
+            "Sync should report the Sync_Begin phase via the operation progress updater.");
+        CollectionAssert.Contains(observedPhases, OperationPhase.Sync_ProcessingFiles,
+            "Sync should report the Sync_ProcessingFiles phase via the operation progress updater.");
+        CollectionAssert.Contains(observedPhases, OperationPhase.Sync_WaitForUpload,
+            "Sync should report the Sync_WaitForUpload phase via the operation progress updater.");
+        CollectionAssert.Contains(observedPhases, OperationPhase.Sync_Complete,
+            "Sync should report the Sync_Complete phase via the operation progress updater.");
+
+        // When the file scanner is not disabled, the parallel counter runs and reports a
+        // count + size. Three source files (file1.txt, file2.txt, subfolder/file3.txt) were
+        // created, so the updater's final file count must be at least 3 and the size > 0.
+        // (The counter is best-effort and may slightly lag, but a completed sync always
+        // flushes the final tally via UpdatefileCount(SourceFiles, SizeOfSourceFiles, true).)
+        using (var c = new Controller(backendUrl, opts, null))
+        {
+            c.OnOperationStarted += results =>
+            {
+                var updater = ((SyncResults)results).OperationProgressUpdater;
+                updater.PhaseChanged += (phase, _) =>
+                {
+                    if (phase == OperationPhase.Sync_Complete)
+                    {
+                        ((IOperationProgress)updater).UpdateOverall(
+                            out OperationPhase _phase,
+                            out float _progress,
+                            out long filesprocessed,
+                            out long _filesizeprocessed,
+                            out long filecount,
+                            out long filesize,
+                            out bool _countingfiles);
+                        reportedFileCount = filecount;
+                        reportedFileSize = filesize;
+                        reportedFilesProcessed = filesprocessed;
+                    }
+                };
+            };
+
+            await c.SyncAsync(new[] { dataFolder }, null);
+        }
+
+        Assert.AreEqual(3, reportedFileCount,
+            "The sync progress updater should report the three source files as the file count.");
+        Assert.IsTrue(reportedFileSize > 0,
+            "The sync progress updater should report a non-zero total source size.");
+        Assert.AreEqual(3, reportedFilesProcessed,
+            "The sync progress updater should report all three files as processed.");
     }
 
     [Test]
