@@ -497,8 +497,8 @@ namespace Duplicati.Library.Main
 
         public async Task<ISyncResults> SyncAsync(string[] sourcePaths, IFilter filter)
         {
-            return await RunActionAsync(new SyncResults(), sourcePaths, filter, false, static config =>
-                new Operation.Sync.SyncHandler(config.Paths, config.Options, config.Result)
+            return await RunActionAsync(new SyncResults(), sourcePaths, filter, false, config =>
+                new Operation.Sync.SyncHandler(config.Paths, config.Options, config.Result, config.BackendUrl)
                     .RunAsync(config.BackendManager, config.Filter)
             );
         }

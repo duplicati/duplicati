@@ -27,9 +27,9 @@ internal partial class BackendManager : IBackendManager
     private static readonly string LOGTAG = Logging.Log.LogTagFromType<BackendManager>();
 
     /// <summary>
-    /// The channel for issuing and handling requests
+    /// The channel for issuing and handling requests.
     /// </summary>
-    private readonly IChannel<PendingOperationBase> requestChannel = ChannelManager.CreateChannel<PendingOperationBase>(name: "BackendManager");
+    private readonly IChannel<PendingOperationBase> requestChannel = ChannelManager.CreateChannel<PendingOperationBase>(name: "BackendManager-" + Guid.NewGuid().ToString("N"));
 
     /// <summary>
     /// The queue runner task

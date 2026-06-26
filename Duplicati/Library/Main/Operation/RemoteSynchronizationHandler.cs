@@ -84,7 +84,8 @@ public record RemoteSyncDestinationConfigRaw(
     bool Retention = false,
     int Retry = 3,
     bool VerifyContents = false,
-    bool VerifyGetAfterPut = false
+    bool VerifyGetAfterPut = false,
+    string? SyncDatabasePath = null
 )
 {
     public string? Url { get; init; }

@@ -846,6 +846,207 @@ public class SyncHandlerTests : BasicSetupHelper
         Assert.IsFalse(Directory.Exists(Path.Combine(targetDir, "should_be_empty")),
             "Empty local folder should still not exist on the remote after a no-op sync.");
     }
+
+    [Test]
+    [Category("Sync")]
+    public async Task TestMultipleTargetsAsync()
+    {
+        var dataFolder = Path.Combine(BASEFOLDER, "sync_data_multi");
+        if (Directory.Exists(dataFolder)) Directory.Delete(dataFolder, true);
+        Directory.CreateDirectory(dataFolder);
+
+        File.WriteAllText(Path.Combine(dataFolder, "file1.txt"), "Hello World");
+        File.WriteAllText(Path.Combine(dataFolder, "file2.txt"), "File 2 content");
+        Directory.CreateDirectory(Path.Combine(dataFolder, "subfolder"));
+        File.WriteAllText(Path.Combine(dataFolder, "subfolder", "file3.txt"), "File 3 content");
+
+        var targetDir2 = Path.Combine(BASEFOLDER, "target2");
+        if (Directory.Exists(targetDir2)) Directory.Delete(targetDir2, true);
+        Assert.IsFalse(Directory.Exists(targetDir2), "target2 should be deleted before test");
+        Directory.CreateDirectory(targetDir2);
+        Directory.CreateDirectory(Path.Combine(targetDir2, "subfolder"));
+        var backendUrl2 = "file://" + targetDir2.Replace("\\", "/");
+
+        var opts = new Dictionary<string, string>
+        {
+            ["no-encryption"] = "true",
+            ["snapshot-policy"] = "off",
+            ["sync-remote-state"] = "BlindlyUpload",
+            ["remote-sync-json-config"] = @$"{{""destinations"": [{{""url"": ""{backendUrl2}""}}]}}"
+        };
+
+        using (var c = new Controller(backendUrl, opts, null))
+        {
+            await c.SyncAsync(new[] { dataFolder }, null);
+        }
+
+        // Verify primary target
+        Assert.IsTrue(File.Exists(Path.Combine(targetDir, "file1.txt")));
+        Assert.IsTrue(File.Exists(Path.Combine(targetDir, "file2.txt")));
+        Assert.IsTrue(File.Exists(Path.Combine(targetDir, "subfolder", "file3.txt")));
+
+        // Verify secondary target
+        Assert.IsTrue(File.Exists(Path.Combine(targetDir2, "file1.txt")));
+        Assert.IsTrue(File.Exists(Path.Combine(targetDir2, "file2.txt")));
+        Assert.IsTrue(File.Exists(Path.Combine(targetDir2, "subfolder", "file3.txt")));
+    }
+
+    /// <summary>
+    /// Verifies that a single source enumeration is replicated identically to
+    /// multiple destinations, including across a second run that adds, updates,
+    /// and deletes files. This is the core guarantee of the shared single-
+    /// enumeration sync: every destination ends up byte-identical to the source
+    /// and byte-identical to each other, so the destinations cannot diverge even
+    /// when the source changes between runs. Uses UseRemoteState + sync-then-delete
+    /// so updates and deletes are actually exercised (the existing
+    /// <see cref="TestMultipleTargetsAsync"/> only covers a BlindlyUpload create).
+    /// </summary>
+    [Test]
+    [Category("Sync")]
+    public async Task TestMultipleTargetsReplicateSingleEnumerationAsync()
+    {
+        var dataFolder = Path.Combine(BASEFOLDER, "sync_data_multi_repl");
+        if (Directory.Exists(dataFolder)) Directory.Delete(dataFolder, true);
+        Directory.CreateDirectory(dataFolder);
+
+        // Initial source dataset: a couple of files plus a sub-folder.
+        File.WriteAllText(Path.Combine(dataFolder, "file1.txt"), "Hello World");
+        File.WriteAllText(Path.Combine(dataFolder, "file2.txt"), "File 2 content");
+        Directory.CreateDirectory(Path.Combine(dataFolder, "subfolder"));
+        File.WriteAllText(Path.Combine(dataFolder, "subfolder", "file3.txt"), "File 3 content");
+
+        // The primary targetDir is shared across tests and its Setup/TearDown does
+        // not clean it, so wipe both destinations here to start from a clean slate
+        // (the existing dataset tests do the same via CleanTargetTree). The secondary
+        // target is private to this test but is wiped for determinism.
+        CleanTargetTree();
+        var targetDir2 = Path.Combine(BASEFOLDER, "target2_repl");
+        if (Directory.Exists(targetDir2)) Directory.Delete(targetDir2, true);
+        Directory.CreateDirectory(targetDir2);
+        var backendUrl2 = "file://" + targetDir2.Replace("\\", "/");
+
+        // UseRemoteState lists each remote folder fresh and sync-then-delete removes
+        // remote files no longer present locally, so the second run exercises both
+        // the update and the delete paths on every destination.
+        var opts = new Dictionary<string, string>
+        {
+            ["no-encryption"] = "true",
+            ["snapshot-policy"] = "off",
+            ["sync-remote-state"] = "UseRemoteState",
+            ["sync-then-delete"] = "true",
+            ["log-level"] = "Profiling",
+            ["remote-sync-json-config"] = @$"{{""destinations"": [{{""url"": ""{backendUrl2}""}}]}}"
+        };
+
+        // Run 1: initial mirror to both destinations.
+        using (var c = new Controller(backendUrl, opts, null))
+            await c.SyncAsync(new[] { dataFolder }, null);
+
+        AssertTargetMirrorsSource(dataFolder, targetDir);
+        AssertTargetMirrorsSource(dataFolder, targetDir2);
+        AssertTargetsIdentical(targetDir, targetDir2);
+
+        // Mutate the source: update an existing file, add a new file, and delete one.
+        File.WriteAllText(Path.Combine(dataFolder, "file1.txt"), "Hello World UPDATED");
+        File.WriteAllText(Path.Combine(dataFolder, "file4.txt"), "File 4 content");
+        File.Delete(Path.Combine(dataFolder, "file2.txt"));
+        Directory.CreateDirectory(Path.Combine(dataFolder, "subfolder", "nested"));
+        File.WriteAllText(Path.Combine(dataFolder, "subfolder", "nested", "file5.txt"), "File 5 content");
+
+        // Run 2: re-sync. Because the source is enumerated once and replicated to
+        // every destination, both targets must reflect the SAME mutated state (the
+        // updated file1, the new file4, the deleted file2, and the new nested file5).
+        using (var c = new Controller(backendUrl, opts, null))
+            await c.SyncAsync(new[] { dataFolder }, null);
+
+        AssertTargetMirrorsSource(dataFolder, targetDir);
+        AssertTargetMirrorsSource(dataFolder, targetDir2);
+        AssertTargetsIdentical(targetDir, targetDir2);
+
+        // The deleted file must be gone from BOTH destinations, confirming that the
+        // single observed (post-delete) source state was applied everywhere.
+        Assert.IsFalse(File.Exists(Path.Combine(targetDir, "file2.txt")),
+            "Deleted local file should be removed from the primary target.");
+        Assert.IsFalse(File.Exists(Path.Combine(targetDir2, "file2.txt")),
+            "Deleted local file should be removed from the secondary target.");
+
+        // The updated file must carry the new content on BOTH destinations.
+        Assert.AreEqual("Hello World UPDATED", File.ReadAllText(Path.Combine(targetDir, "file1.txt")));
+        Assert.AreEqual("Hello World UPDATED", File.ReadAllText(Path.Combine(targetDir2, "file1.txt")));
+
+        // Run 3: a no-op re-sync must not change anything and must keep the two
+        // destinations identical (no per-backend divergence from a stray re-enumeration).
+        using (var c = new Controller(backendUrl, opts, null))
+            await c.SyncAsync(new[] { dataFolder }, null);
+
+        AssertTargetMirrorsSource(dataFolder, targetDir);
+        AssertTargetMirrorsSource(dataFolder, targetDir2);
+        AssertTargetsIdentical(targetDir, targetDir2);
+    }
+
+    /// <summary>
+    /// Asserts that every file under <paramref name="source"/> exists at the same
+    /// relative path under <paramref name="target"/> with identical content, and
+    /// that <paramref name="target"/> contains no extra files. Folder-only entries
+    /// are implicit (derived from file presence), so only files are compared.
+    /// </summary>
+    private static void AssertTargetMirrorsSource(string source, string target)
+    {
+        var sourceRelPaths = Directory.Exists(source)
+            ? Directory.GetFiles(source, "*", SearchOption.AllDirectories)
+                .Select(p => p.Substring(source.Length).TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar).Replace('\\', '/'))
+                .OrderBy(x => x).ToArray()
+            : Array.Empty<string>();
+        var targetRelPaths = Directory.Exists(target)
+            ? Directory.GetFiles(target, "*", SearchOption.AllDirectories)
+                .Select(p => p.Substring(target.Length).TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar).Replace('\\', '/'))
+                .OrderBy(x => x).ToArray()
+            : Array.Empty<string>();
+
+        CollectionAssert.AreEquivalent(sourceRelPaths, targetRelPaths,
+            $"Target {target} does not mirror source {source}. Expected: " + string.Join(", ", sourceRelPaths) +
+            " Actual: " + string.Join(", ", targetRelPaths));
+
+        foreach (var rel in sourceRelPaths)
+        {
+            var sourceFile = Path.Combine(source, rel.Replace('/', Path.DirectorySeparatorChar));
+            var targetFile = Path.Combine(target, rel.Replace('/', Path.DirectorySeparatorChar));
+            Assert.IsTrue(File.Exists(targetFile), $"Missing target file: {rel} in {target}");
+            CollectionAssert.AreEqual(File.ReadAllBytes(sourceFile), File.ReadAllBytes(targetFile),
+                $"Content mismatch for {rel} in {target}");
+        }
+    }
+
+    /// <summary>
+    /// Asserts that two destination trees are byte-identical: the same set of
+    /// relative file paths, and identical bytes for each. This is the cross-
+    /// destination consistency guarantee of the single-enumeration sync.
+    /// </summary>
+    private static void AssertTargetsIdentical(string targetA, string targetB)
+    {
+        var relPathsA = Directory.Exists(targetA)
+            ? Directory.GetFiles(targetA, "*", SearchOption.AllDirectories)
+                .Select(p => p.Substring(targetA.Length).TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar).Replace('\\', '/'))
+                .OrderBy(x => x).ToArray()
+            : Array.Empty<string>();
+        var relPathsB = Directory.Exists(targetB)
+            ? Directory.GetFiles(targetB, "*", SearchOption.AllDirectories)
+                .Select(p => p.Substring(targetB.Length).TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar).Replace('\\', '/'))
+                .OrderBy(x => x).ToArray()
+            : Array.Empty<string>();
+
+        CollectionAssert.AreEquivalent(relPathsA, relPathsB,
+            $"Targets {targetA} and {targetB} differ in file set. A: " + string.Join(", ", relPathsA) +
+            " B: " + string.Join(", ", relPathsB));
+
+        foreach (var rel in relPathsA)
+        {
+            var fileA = Path.Combine(targetA, rel.Replace('/', Path.DirectorySeparatorChar));
+            var fileB = Path.Combine(targetB, rel.Replace('/', Path.DirectorySeparatorChar));
+            CollectionAssert.AreEqual(File.ReadAllBytes(fileA), File.ReadAllBytes(fileB),
+                $"Targets {targetA} and {targetB} differ in content for {rel}.");
+        }
+    }
 }
 
 /// <summary>

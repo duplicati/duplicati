@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
@@ -8,6 +9,7 @@ using Duplicati.Library.Main.Database.Sync;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Main.Operation.Backup;
 using Duplicati.Library.Main.Operation.Common;
+using Duplicati.Library.Main.Backend;
 
 #nullable enable
 
@@ -19,12 +21,14 @@ internal class SyncHandler
     private readonly Options m_options;
     private readonly SyncResults m_results;
     private readonly string[] m_sources;
+    private readonly string? m_backendUrl;
 
-    public SyncHandler(string[] sources, Options options, SyncResults results)
+    public SyncHandler(string[] sources, Options options, SyncResults results, string? backendUrl = null)
     {
         m_sources = sources;
         m_options = options;
         m_results = results;
+        m_backendUrl = backendUrl;
     }
 
     public async Task RunAsync(IBackendManager backendManager, IFilter filter)
@@ -38,7 +42,7 @@ internal class SyncHandler
         if (!m_options.NoEncryption)
             throw new UserInformationException("Encryption must be disabled for sync as it is not supported.", "EncryptionNotAllowed");
 
-        var dbPath = m_options.Dbpath
+        var primaryDbPath = m_options.Dbpath
             ?? throw new InvalidOperationException("Unable to locate sync database");
 
         var isDryRun = m_options.Dryrun;
@@ -53,60 +57,15 @@ internal class SyncHandler
         // go, so the next UseLocalState run starts from a fresh baseline. Under
         // UseRemoteState and BlindlyUpload the flag is a no-op (UseRemoteState already
         // lists fresh; BlindlyUpload ignores remote state entirely).
-        var stateMode = (configuredStateMode == SyncRemoteState.UseLocalState && m_options.SyncRecheck)
+        var initialStateMode = (configuredStateMode == SyncRemoteState.UseLocalState && m_options.SyncRecheck)
             ? SyncRemoteState.UseRemoteState
             : configuredStateMode;
 
         // BlindlyUpload has no remote state to diff against, so deleting remote files
         // is not meaningful. Warn once at the start so the user is not surprised that
         // --sync-then-delete is ignored for the run.
-        if (stateMode == SyncRemoteState.BlindlyUpload && isDelete)
+        if (initialStateMode == SyncRemoteState.BlindlyUpload && isDelete)
             Logging.Log.WriteWarningMessage(LOGTAG, "BlindlyUploadIgnoresDelete", null, $"sync-remote-state={SyncRemoteState.BlindlyUpload} cannot determine which remote files to delete; --sync-then-delete will be ignored for this run.");
-
-        // Under BlindlyUpload we never read or write the inventory cache, so the
-        // observed-state table is left untouched. Under UseRemoteState we list each
-        // folder fresh and do not use the inventory as the diff baseline (the remote is
-        // authoritative per folder) - but we still write-through the inventory when
-        // --sync-verify-hash is set, so the content hashes computed during uploads are
-        // remembered and can drive hash re-checks on later runs (a listing carries no
-        // hash). Under UseLocalState the inventory is both the diff baseline and kept
-        // write-through as we upload/delete.
-        using var db = new LocalSyncDatabase(dbPath);
-
-        // Resume: leftover PendingOperation rows mean a previous run was interrupted
-        // mid-operation. Under UseRemoteState each folder is listed fresh this run, so
-        // any in-flight intent is naturally superseded by the live remote state and the
-        // leftover rows can simply be cleared. Under UseLocalState the inventory may be
-        // stale for the interrupted paths; we clear the rows but warn the user that a
-        // recheck (UseRemoteState) is the way to reconcile fully. Under BlindlyUpload
-        // the journal is never consulted, so leftover rows are just noise; clear them.
-        if (await db.HasAnyPendingOperationsAsync(ct).ConfigureAwait(false))
-        {
-            Logging.Log.WriteWarningMessage(LOGTAG, "InflightDetected", null, "Detected incomplete operations from a previous run. Clearing the intent journal; {0}.", stateMode == SyncRemoteState.UseLocalState ? "run with --sync-recheck (or sync-remote-state=use-remote-state) to reconcile against a fresh remote listing" : "the current run will re-establish remote state per folder");
-            await db.ClearPendingOperationsAsync(ct).ConfigureAwait(false);
-        }
-
-        // If UseLocalState is configured but the inventory is empty (e.g. first run, or
-        // the database was deleted), there is no baseline to diff against. Fall back to
-        // UseRemoteState for this run so each folder is listed fresh; the inventory is
-        // populated as we go, so the next UseLocalState run has a baseline. This keeps
-        // the first run correct without forcing the user to pass a flag.
-        var forcePopulateInventory = false;
-        if (stateMode == SyncRemoteState.UseLocalState && !await db.HasAnyInventoryAsync(ct).ConfigureAwait(false))
-        {
-            Logging.Log.WriteInformationMessage(LOGTAG, "InventoryEmpty", "Local sync inventory is empty; listing remote folders fresh for this run to establish a baseline.");
-            stateMode = SyncRemoteState.UseRemoteState;
-            forcePopulateInventory = true;
-        }
-
-        // Whether to write the observed state back into the inventory cache as we go.
-        // True under UseLocalState (the cache is the baseline and must stay current),
-        // under UseRemoteState + verifyHash (so computed hashes are remembered for
-        // later hash re-checks), and under the UseLocalState-fallback (so the empty
-        // cache gets seeded for the next run).
-        var maintainInventory = stateMode == SyncRemoteState.UseLocalState
-            || (stateMode == SyncRemoteState.UseRemoteState && verifyHash)
-            || forcePopulateInventory;
 
         using var sourceProvider = await SourceProviderFactory.GetSourceProviderAsync(m_sources, m_options, ct).ConfigureAwait(false);
 
@@ -139,30 +98,89 @@ internal class SyncHandler
                 counterCts.Token);
         }
 
-        // Seed the folder queue with one entry per source root. The relative path of a
-        // source root follows the relative-path convention used throughout the handler:
-        // for a single source the source's contents map directly onto the backend root
-        // (relative root ""); for multiple sources each source contributes its own name
-        // as a top-level sub-folder on the remote. The local folder entry for each
-        // queued root is the source root itself, resolved through the source provider.
-        var folderQueue = new Queue<FolderWorkItem>();
-        foreach (var src in m_sources)
-        {
-            var relRoot = GetSourceRelativeRoot(src, m_sources);
-            var entry = await sourceProvider.GetEntryAsync(src, true, ct).ConfigureAwait(false);
-            if (entry == null || !entry.IsFolder)
-            {
-                Logging.Log.WriteWarningMessage(LOGTAG, "SourceRootMissing", null, "Source folder could not be resolved, skipping: {0}", src);
-                continue;
-            }
-            folderQueue.Enqueue(new FolderWorkItem(entry, relRoot));
-        }
-
         var planSummary = new PlanSummary();
+        var additionalManagers = CreateAdditionalBackendManagers();
+        var allManagers = new List<ManagerInstance>([
+            new ManagerInstance(backendManager, new LocalSyncDatabase(primaryDbPath)),
+            .. additionalManagers
+            ]);
 
-        m_results.OperationProgressUpdater.UpdatePhase(OperationPhase.Sync_ProcessingFiles);
+        // Per-backend run state: each destination has its own database (its own inventory
+        // and intent journal) and its own per-run state-mode resolution (the UseLocalState
+        // fallback depends on whether THIS backend's inventory is empty). Computing these
+        // once per backend before the shared folder loop keeps the per-folder fan-out cheap
+        // and makes a single source enumeration feed every backend, so the same observed
+        // local state is replicated to all destinations instead of re-enumerating the
+        // source once per backend (where the source could change between enumerations).
+        var backendStates = new List<BackendRunState>(allManagers.Count);
         try
         {
+            // Collect all initial states from all managers
+            foreach (var mgr in allManagers)
+            {
+                var stateMode = initialStateMode;
+                var forcePopulateInventory = false;
+
+                // Resume: leftover PendingOperation rows mean a previous run was interrupted
+                // mid-operation. Under UseRemoteState each folder is listed fresh this run, so
+                // any in-flight intent is naturally superseded by the live remote state and the
+                // leftover rows can simply be cleared. Under UseLocalState the inventory may be
+                // stale for the interrupted paths; we clear the rows but warn the user that a
+                // recheck (UseRemoteState) is the way to reconcile fully. Under BlindlyUpload
+                // the journal is never consulted, so leftover rows are just noise; clear them.
+                if (await mgr.Database.HasAnyPendingOperationsAsync(ct).ConfigureAwait(false))
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "InflightDetected", null, "Detected incomplete operations from a previous run. Clearing the intent journal; {0}.", stateMode == SyncRemoteState.UseLocalState ? "run with --sync-recheck (or sync-remote-state=use-remote-state) to reconcile against a fresh remote listing" : "the current run will re-establish remote state per folder");
+                    await mgr.Database.ClearPendingOperationsAsync(ct).ConfigureAwait(false);
+                }
+
+                // If UseLocalState is configured but the inventory is empty (e.g. first run, or
+                // the database was deleted), there is no baseline to diff against. Fall back to
+                // UseRemoteState for this run so each folder is listed fresh; the inventory is
+                // populated as we go, so the next UseLocalState run has a baseline. This keeps
+                // the first run correct without forcing the user to pass a flag.
+                if (stateMode == SyncRemoteState.UseLocalState && !await mgr.Database.HasAnyInventoryAsync(ct).ConfigureAwait(false))
+                {
+                    Logging.Log.WriteInformationMessage(LOGTAG, "InventoryEmpty", "Local sync inventory is empty; listing remote folders fresh for this run to establish a baseline.");
+                    stateMode = SyncRemoteState.UseRemoteState;
+                    forcePopulateInventory = true;
+                }
+
+                // Whether to write the observed state back into the inventory cache as we go.
+                // True under UseLocalState (the cache is the baseline and must stay current),
+                // under UseRemoteState + verifyHash (so computed hashes are remembered for
+                // later hash re-checks), and under the UseLocalState-fallback (so the empty
+                // cache gets seeded for the next run).
+                var maintainInventory = stateMode == SyncRemoteState.UseLocalState
+                    || (stateMode == SyncRemoteState.UseRemoteState && verifyHash)
+                    || forcePopulateInventory;
+
+                backendStates.Add(new BackendRunState(mgr.BackendManager, mgr.Database, stateMode, maintainInventory));
+            }
+
+            // Seed the folder queue with one entry per source root. The relative path of a
+            // source root follows the relative-path convention used throughout the handler:
+            // for a single source the source's contents map directly onto the backend root
+            // (relative root ""); for multiple sources each source contributes its own name
+            // as a top-level sub-folder on the remote. The local folder entry for each
+            // queued root is the source root itself, resolved through the source provider.
+            // The queue is shared across all backends: each folder is enumerated ONCE and
+            // the observed local children are then replicated to every backend, so the same
+            // source state is applied to all destinations from a single enumeration.
+            var folderQueue = new Queue<FolderWorkItem>();
+            foreach (var src in m_sources)
+            {
+                var relRoot = GetSourceRelativeRoot(src, m_sources);
+                var entry = await sourceProvider.GetEntryAsync(src, true, ct).ConfigureAwait(false);
+                if (entry == null || !entry.IsFolder)
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "SourceRootMissing", null, "Source folder could not be resolved, skipping: {0}", src);
+                    continue;
+                }
+                folderQueue.Enqueue(new FolderWorkItem(entry, relRoot));
+            }
+
+            m_results.OperationProgressUpdater.UpdatePhase(OperationPhase.Sync_ProcessingFiles);
             while (folderQueue.Count > 0)
             {
                 if (ct.IsCancellationRequested)
@@ -171,9 +189,7 @@ internal class SyncHandler
                 var current = folderQueue.Dequeue();
                 await ProcessFolderAsync(
                     current,
-                    sourceProvider,
-                    backendManager,
-                    db,
+                    backendStates,
                     m_results,
                     filter,
                     fileAttributeFilter,
@@ -183,8 +199,6 @@ internal class SyncHandler
                     excludeEmptyFolders,
                     ignoreNames,
                     blacklistPaths,
-                    stateMode,
-                    maintainInventory,
                     isDryRun,
                     isDelete,
                     verifyHash,
@@ -210,6 +224,19 @@ internal class SyncHandler
                 catch (Exception ex)
                 {
                     Logging.Log.WriteWarningMessage(LOGTAG, "FileCountFailed", ex, "Background file count failed; progress totals may be incomplete.");
+                }
+            }
+
+            foreach (var bm in additionalManagers)
+            {
+                try
+                {
+                    bm.BackendManager.Dispose();
+                    bm.Database.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "BackendDisposeFailed", ex, "Failed to dispose additional backend manager: {0}", ex.Message);
                 }
             }
         }
@@ -246,17 +273,89 @@ internal class SyncHandler
     }
 
     /// <summary>
-    /// Processes a single folder: enumerates its local children, checks the remote
-    /// state of the folder, creates any missing sub-folders, uploads new/changed
-    /// files, and (optionally) deletes unknown remote files. Sub-folders are enqueued
-    /// for later processing. This is the per-folder unit of work that keeps the
-    /// memory footprint bounded: only one folder's children are resident at a time.
+    /// Parses the <see cref="Options.RemoteSyncJsonConfig" /> value and creates
+    /// <see cref="BackendManager" /> instances for any additional destinations.
+    /// In this version all options are ignored except the destination URL.
+    /// </summary>
+    private List<ManagerInstance> CreateAdditionalBackendManagers()
+    {
+        var managers = new List<ManagerInstance>();
+        if (string.IsNullOrWhiteSpace(m_options.RemoteSyncJsonConfig))
+            return managers;
+
+        string jsonContent;
+        var trimmed = m_options.RemoteSyncJsonConfig.TrimStart();
+        if (trimmed.StartsWith("{"))
+        {
+            jsonContent = m_options.RemoteSyncJsonConfig;
+        }
+        else
+        {
+            try
+            {
+                jsonContent = File.ReadAllText(m_options.RemoteSyncJsonConfig);
+            }
+            catch (Exception ex)
+            {
+                Logging.Log.WriteWarningMessage(LOGTAG, "RemoteSyncConfigFileReadError", ex, "Failed to read remote sync configuration file '{0}': {1}", m_options.RemoteSyncJsonConfig, ex.Message);
+                return managers;
+            }
+        }
+
+        try
+        {
+            var deserializeOpts = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                PropertyNamingPolicy = JsonNamingPolicy.KebabCaseLower
+            };
+            var toplevel = JsonSerializer.Deserialize<TopLevelRemoteSyncConfig>(jsonContent, deserializeOpts);
+            if (toplevel == null)
+                return managers;
+
+            foreach (var dest in toplevel.Destinations)
+            {
+                if (!string.IsNullOrWhiteSpace(dest.Url) && !string.Equals(dest.Url, m_backendUrl, StringComparison.OrdinalIgnoreCase))
+                {
+                    try
+                    {
+
+                        var bm = new BackendManager(dest.Url, m_options, m_results.BackendWriter, m_results.TaskControl);
+                        var db = dest.SyncDatabasePath;
+                        if (string.IsNullOrWhiteSpace(db))
+                            db = CLIDatabaseLocator.GetDatabasePathForCLI(dest.Url, m_options, true, false, true);
+                        if (string.IsNullOrWhiteSpace(db))
+                            throw new UserInformationException($"Failed to locate database for {Library.Utility.Utility.GetUrlWithoutCredentials(dest.Url)}", "DatabaseLocateFailed");
+                        managers.Add(new ManagerInstance(bm, new LocalSyncDatabase(db)));
+                    }
+                    catch (Exception ex)
+                    {
+                        Logging.Log.WriteWarningMessage(LOGTAG, "AdditionalBackendCreateFailed", ex, "Failed to create backend manager for additional target {0}: {1}", Library.Utility.Utility.GetUrlWithoutCredentials(dest.Url), ex.Message);
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logging.Log.WriteWarningMessage(LOGTAG, "RemoteSyncConfigParseError", ex, "Failed to parse remote sync JSON configuration: {0}", ex.Message);
+        }
+
+        return managers;
+    }
+
+    /// <summary>
+    /// Processes a single folder across ALL backends from a single source
+    /// enumeration: the folder's local children are enumerated ONCE and then the
+    /// observed local state is replicated to every backend. Sub-folders are enqueued
+    /// once (the queue is shared across backends) so each folder is enumerated a
+    /// single time for the whole run. Only one folder's children are resident in
+    /// memory at a time. This guarantees the same source state is applied to every
+    /// destination, instead of re-enumerating the source once per backend (where the
+    /// source could change between enumerations and the backends would diverge).
     /// </summary>
     private static async Task ProcessFolderAsync(
         FolderWorkItem current,
-        ISourceProvider sourceProvider,
-        IBackendManager backendManager,
-        LocalSyncDatabase db,
+        IReadOnlyList<BackendRunState> backendStates,
         SyncResults results,
         IFilter filter,
         FileAttributes fileAttributeFilter,
@@ -266,8 +365,6 @@ internal class SyncHandler
         bool excludeEmptyFolders,
         string[]? ignoreNames,
         HashSet<string> blacklistPaths,
-        SyncRemoteState stateMode,
-        bool maintainInventory,
         bool isDryRun,
         bool isDelete,
         bool verifyHash,
@@ -278,11 +375,13 @@ internal class SyncHandler
         var folderRelPath = current.RelativePath;
         var folderEntry = current.Entry;
 
-        // 1+2. Enumerate the local folder's direct children (non-recursive) and split
-        // them into sub-folders (to enqueue) and files (to upload this pass). The
-        // filter reuses the backup enumeration filter so attribute/symlink/hardlink/
-        // blacklist/xattr/ignore-name behavior is identical between backup and sync.
-        // Only this folder's children are resident in memory at once.
+        // 1. Enumerate the local folder's direct children (non-recursive) ONCE and
+        // split them into sub-folders (to enqueue) and files (to upload this pass).
+        // The filter reuses the backup enumeration filter so attribute/symlink/
+        // hardlink/blacklist/xattr/ignore-name behavior is identical between backup
+        // and sync. Only this folder's children are resident in memory at once, and
+        // the same captured children feed every backend so the source is read a single
+        // time for the whole run.
         var localSubfolders = new List<(ISourceProviderEntry Entry, string RelativePath)>();
         var localFiles = new Dictionary<string, (ISourceProviderEntry Entry, long Size, DateTime ModifiedUtc)>(StringComparer.Ordinal);
 
@@ -319,6 +418,8 @@ internal class SyncHandler
                 // Count every local source file encountered (regardless of whether it
                 // ends up uploaded, unchanged, or de-duplicated) so SourceFiles and
                 // SizeOfSourceFiles reflect the full local inventory scanned this run.
+                // The source is enumerated once for the whole run, so the count is the
+                // true source total regardless of how many backends receive it.
                 planSummary.SourceFiles++;
                 planSummary.SizeOfSourceFiles += Math.Max(child.Size, 0);
 
@@ -330,7 +431,88 @@ internal class SyncHandler
             }
         }
 
-        // 3. Check remote state for the current folder. Under UseRemoteState we list
+        // 2. Enqueue sub-folders ONCE for the shared queue, after the (single)
+        // empty-folder peek. Each backend then independently ensures a sub-folder
+        // exists based on its OWN remote state in the per-backend fan-out below, but
+        // the sub-folder is processed (enumerated) only once for the whole run.
+        //
+        // ExcludeEmptyFolders: a sub-folder with no local children must not be
+        // created on the remote, matching the backup behavior of not creating empty
+        // folders at all. We peek the sub-folder's direct children FIRST and, if it
+        // is empty, skip it entirely (neither ensured nor queued) - this is one
+        // extra enumeration per sub-folder but keeps memory bounded and ensures an
+        // empty folder never triggers a CreateFolder call. The peek only runs when
+        // the option is set; without it every sub-folder is ensured/queued as before.
+        var enqueuedSubfolders = new List<(ISourceProviderEntry Entry, string RelativePath)>();
+        foreach (var (subEntry, subRelPath) in localSubfolders)
+        {
+            if (excludeEmptyFolders)
+            {
+                bool hasAny = false;
+                await foreach (var _ in FileEnumerationProcess.EnumerateFolderAsync(
+                    subEntry, fileAttributeFilter, filter, symlinkPolicy, hardlinkPolicy,
+                    disableBackupExclusionXattr, ignoreNames, blacklistPaths, ct).ConfigureAwait(false))
+                {
+                    hasAny = true;
+                    break;
+                }
+                if (!hasAny)
+                {
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "SkippingEmptyFolder", "Skipping empty folder: {0}", subRelPath);
+                    continue;
+                }
+            }
+
+            enqueuedSubfolders.Add((subEntry, subRelPath));
+            folderQueue.Enqueue(new FolderWorkItem(subEntry, subRelPath));
+        }
+
+        // 3. Replicate the captured local state to each backend. For every backend we
+        // resolve that backend's remote state for this folder, ensure any missing
+        // sub-folders, upload/update files, and (optionally) delete unknown remote
+        // files. The local children (localFiles / enqueuedSubfolders) are shared, so
+        // each backend applies the SAME observed source state; the source is not
+        // re-enumerated per backend, which keeps the destinations mutually consistent
+        // even if the source were to change mid-run.
+        foreach (var bs in backendStates)
+        {
+            await ProcessFolderForBackendAsync(
+                folderRelPath,
+                localFiles,
+                enqueuedSubfolders,
+                bs,
+                results,
+                isDryRun,
+                isDelete,
+                verifyHash,
+                planSummary,
+                ct).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// Applies the already-enumerated local state of a single folder to one backend:
+    /// resolves the backend's remote state for the folder, ensures any missing
+    /// sub-folders, uploads/updates the shared local files, and (optionally) deletes
+    /// unknown remote files. The local children are supplied by the caller (captured
+    /// once for the whole folder) so this method performs no source enumeration; it
+    /// only touches the backend and this backend's own database.
+    /// </summary>
+    private static async Task ProcessFolderForBackendAsync(
+        string folderRelPath,
+        Dictionary<string, (ISourceProviderEntry Entry, long Size, DateTime ModifiedUtc)> localFiles,
+        List<(ISourceProviderEntry Entry, string RelativePath)> enqueuedSubfolders,
+        BackendRunState bs,
+        SyncResults results,
+        bool isDryRun,
+        bool isDelete,
+        bool verifyHash,
+        PlanSummary planSummary,
+        CancellationToken ct)
+    {
+        var (backendManager, db, stateMode, maintainInventory) = bs;
+
+        // Check remote state for the current folder. Under UseRemoteState we list
         // the remote folder; under UseLocalState we read the inventory cache; under
         // BlindlyUpload we have no remote state. The remote state is keyed by the
         // child's name (not relative path) for easy lookup against the local files,
@@ -434,41 +616,17 @@ internal class SyncHandler
         }
         // BlindlyUpload: no remote state. remoteFileState and remoteFolderNames stay empty.
 
-        // 4. Create any sub-folders that are missing on the remote. Under UseRemoteState
+        // Create any sub-folders that are missing on THIS backend. Under UseRemoteState
         // we know exactly which sub-folders already exist (from the listing); under
         // UseLocalState we treat a sub-folder as existing if the inventory has any file
         // under it, otherwise we ensure it; under BlindlyUpload we ensure every
         // sub-folder unconditionally (the root is also ensured below). Ensuring a
         // folder that already exists is a no-op on the backend (CreateFolder treats
         // FolderAlreadyExisted as success) but still a network call, so we avoid it
-        // when we have positive evidence the folder exists.
-        //
-        // ExcludeEmptyFolders: a sub-folder with no local children must not be
-        // created on the remote, matching the backup behavior of not creating empty
-        // folders at all. We peek the sub-folder's direct children FIRST and, if it
-        // is empty, skip it entirely (neither ensured nor queued) - this is one
-        // extra enumeration per sub-folder but keeps memory bounded and ensures an
-        // empty folder never triggers a CreateFolder call. The peek only runs when
-        // the option is set; without it every sub-folder is ensured/queued as before.
-        foreach (var (subEntry, subRelPath) in localSubfolders)
+        // when we have positive evidence the folder exists. The sub-folder set is the
+        // shared, once-enumerated set; only the existence check is per-backend.
+        foreach (var (_, subRelPath) in enqueuedSubfolders)
         {
-            if (excludeEmptyFolders)
-            {
-                bool hasAny = false;
-                await foreach (var _ in FileEnumerationProcess.EnumerateFolderAsync(
-                    subEntry, fileAttributeFilter, filter, symlinkPolicy, hardlinkPolicy,
-                    disableBackupExclusionXattr, ignoreNames, blacklistPaths, ct).ConfigureAwait(false))
-                {
-                    hasAny = true;
-                    break;
-                }
-                if (!hasAny)
-                {
-                    Logging.Log.WriteVerboseMessage(LOGTAG, "SkippingEmptyFolder", "Skipping empty folder: {0}", subRelPath);
-                    continue;
-                }
-            }
-
             var subName = GetEntryName(subRelPath);
             var existsRemotely = stateMode switch
             {
@@ -483,11 +641,11 @@ internal class SyncHandler
                 if (isDryRun)
                     Logging.Log.WriteDryrunMessage(LOGTAG, "DryRun", "Would create folder: {0}", subRelPath);
                 else
+                {
                     await backendManager.EnsureFolderAsync(subRelPath, ct).ConfigureAwait(false);
+                }
                 planSummary.FoldersCreated++;
             }
-
-            folderQueue.Enqueue(new FolderWorkItem(subEntry, subRelPath));
         }
 
         // Under BlindlyUpload the current folder must also be ensured to exist before
@@ -507,8 +665,12 @@ internal class SyncHandler
             planSummary.FoldersCreated++;
         }
 
-        // 5. Upload all new or changed files in this folder. The caller guarantees the
-        // current folder exists, so UploadOrUpdateAsync does not call EnsureFolderAsync.
+        // Upload all new or changed files in this folder to THIS backend. The caller
+        // guarantees the current folder exists, so UploadOrUpdateAsync does not call
+        // EnsureFolderAsync. The local file entries are shared across backends; each
+        // backend opens its own read stream from the same entry (OpenRead is
+        // repeatable) and writes its own temp file / hash, so backends do not share
+        // mutable upload state.
         foreach (var (relPath, (entry, size, modifiedUtc)) in localFiles)
         {
             var name = GetEntryName(relPath);
@@ -590,13 +752,13 @@ internal class SyncHandler
             }
         }
 
-        // 6. (Optionally) delete unknown remote files in this folder. A remote file is
-        // "unknown" if no local file with the same name exists in this folder. Under
-        // BlindlyUpload we have no remote state, so deletes are skipped (the warning
-        // was logged at the start of the run). Pending-operation intent rows are not
-        // relevant here since the journal was cleared at the start of the run; a
-        // delete cannot race its own upload because the upload for this folder
-        // completed above before we delete.
+        // (Optionally) delete unknown remote files in this folder on THIS backend. A
+        // remote file is "unknown" if no local file with the same name exists in this
+        // folder. Under BlindlyUpload we have no remote state, so deletes are skipped
+        // (the warning was logged at the start of the run). Pending-operation intent
+        // rows are not relevant here since the journal was cleared at the start of
+        // the run; a delete cannot race its own upload because the upload for this
+        // folder completed above before we delete.
         if (isDelete && stateMode != SyncRemoteState.BlindlyUpload)
         {
             // Collect the paths of files actually deleted from the remote so their
@@ -780,7 +942,7 @@ internal class SyncHandler
 
     /// <summary>
     /// Computes the relative root path on the remote destination for a source root,
-    /// matching the relative-path convention used throughout the sync handler. For a
+    /// matching the relative-path convention used throughout the handler. For a
     /// single source the source's contents map directly onto the backend root
     /// (relative root ""); for multiple sources each source contributes its own name
     /// as a top-level sub-folder.
@@ -895,4 +1057,29 @@ internal class SyncHandler
         public long SizeOfUploadedFiles;
         public long SizeOfDeletedFiles;
     }
+
+    /// <summary>
+    /// Intermediate record holding a manager and the associated database
+    /// </summary>
+    /// <param name="BackendManager">The backend manager</param>
+    /// <param name="Database">The database for the manager</param>
+    private sealed record ManagerInstance(
+        IBackendManager BackendManager,
+        LocalSyncDatabase Database
+    );
+
+    /// <summary>
+    /// Per-backend run state for the shared single-enumeration sync: the backend
+    /// manager + database pair, the resolved <see cref="SyncRemoteState"/> for this
+    /// run (after the UseLocalState-fallback is applied), and whether the inventory
+    /// cache is maintained for this backend. Computed once per backend before the
+    /// shared folder loop so the per-folder fan-out applies the same observed local
+    /// state to every backend without re-resolving (or re-enumerating) per backend.
+    /// </summary>
+    private sealed record BackendRunState(
+        IBackendManager BackendManager,
+        LocalSyncDatabase Database,
+        SyncRemoteState StateMode,
+        bool MaintainInventory
+    );
 }
