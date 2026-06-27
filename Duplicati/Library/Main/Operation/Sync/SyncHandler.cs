@@ -710,6 +710,8 @@ internal class SyncHandler
 
             if (!needsUpload)
             {
+                // Verbose trace of the skip decision.
+                Logging.Log.WriteVerboseMessage(LOGTAG, "SyncSkipUnchanged", "Skipping unchanged file: {0} (local size={1}, mtime={2:O}; remote size={3}, mtime={4:O})", relPath, size, modifiedUtc, remoteEntry?.Size, remoteEntry?.LastModified);
                 planSummary.UnchangedFiles++;
                 // Count an unchanged file as processed too, so the processed-files
                 // tally advances even when no upload is performed.

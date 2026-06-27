@@ -195,9 +195,20 @@ internal partial class BackendManager : IBackendManager
             return backendUrl;
 
         var uri = new Library.Utility.Uri(backendUrl);
-        var mergedPath = string.IsNullOrEmpty(uri.Path)
-            ? subPath
-            : uri.Path.TrimEnd('/') + "/" + subPath.Trim('/');
+        // Trim trailing path separators from the existing path AND the sub-path before
+        // joining with a single '/'. The URL path can end with a backslash on Windows
+        // (e.g. a file:// URL built from a TempFolder path, which always carries a
+        // trailing directory separator); only trimming '/' would leave that backslash in
+        // place and produce a doubled separator (e.g. "D:\...\temp\Stage1" -> "...\temp\\Stage1"
+        // after the OS normalizes the '/'), which on Windows yields an invalid path
+        // ("\\?\D:\...\temp\\Stage1"). Trimming both separators and joining with a single
+        // '/' keeps the merged path well-formed regardless of the host OS or how the
+        // backend URL was constructed.
+        var basePath = uri.Path?.TrimEnd('/', '\\') ?? "";
+        var sub = subPath.Trim('/', '\\');
+        var mergedPath = string.IsNullOrEmpty(basePath)
+            ? sub
+            : basePath + "/" + sub;
         return uri.SetPath(mergedPath).ToString();
     }
 

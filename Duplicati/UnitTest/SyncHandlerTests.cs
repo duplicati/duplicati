@@ -1148,6 +1148,13 @@ public class NonFolderSyncHandlerTests : BasicSetupHelper
             ["snapshot-policy"] = "off",
             ["sync-then-delete"] = "true",
             ["log-level"] = "Profiling",
+            // The nested file is rewritten with same-size content below, so size+mtime
+            // alone cannot reliably detect the change (the remote mtime is the sync-1
+            // copy time, which can be indistinguishable from the local rewrite time when
+            // both fall inside the filesystem's mtime resolution window - this flakes on
+            // Windows in CI). --sync-verify-hash makes sync re-check the content hash when
+            // size and mtime are unchanged, so same-size updates are detected reliably.
+            ["sync-verify-hash"] = "true",
         };
 
         // Sync 1: create.
@@ -1158,7 +1165,9 @@ public class NonFolderSyncHandlerTests : BasicSetupHelper
         Assert.AreEqual("Hello World", File.ReadAllText(Path.Combine(targetDir, "file1.txt")));
         Assert.AreEqual("File 3 content", File.ReadAllText(Path.Combine(targetDir, "subfolder", "file3.txt")));
 
-        // Modify both a top-level file and a nested file.
+        // Modify both a top-level file and a nested file. The nested file keeps the same
+        // byte length on purpose to exercise hash-based change detection (size+mtime are
+        // not enough); --sync-verify-hash (set above) is what makes this update reliable.
         File.WriteAllText(Path.Combine(dataFolder, "file1.txt"), "Hello Sync");
         File.WriteAllText(Path.Combine(dataFolder, "subfolder", "file3.txt"), "File 3 updated");
 
