@@ -84,11 +84,16 @@ public class SettingsBinder : BinderBase<Settings>
     public static readonly Option<string> acceptedHostCertificateOption = new Option<string>("--host-cert", description: "The SHA1 hash of the host certificate to accept. Use * for any certificate, same as --insecure (dangerous)", getDefaultValue: () => string.Empty);
 
     /// <summary>
+    /// The ignore revocation failure option.
+    /// </summary>
+    public static readonly Option<bool> ignoreRevocationFailureOption = new Option<bool>("--ignore-revocation-failure", description: "Ignore certificate revocation check failures, such as when the revocation server is offline or the status is unknown", getDefaultValue: () => false);
+
+    /// <summary>
     /// Option to wrap stdout as a json.
     /// </summary>
     public static readonly Option<bool> jsonOutputOption =
         new Option<bool>("--json", description: "Wraps stdout as a json", getDefaultValue: () => false);
-    
+
     /// <summary>
     /// Adds global options to the root command.
     /// </summary>
@@ -107,6 +112,7 @@ public class SettingsBinder : BinderBase<Settings>
         rootCommand.AddGlobalOption(secretProviderCacheOption);
         rootCommand.AddGlobalOption(secretProviderPatternOption);
         rootCommand.AddGlobalOption(acceptedHostCertificateOption);
+        rootCommand.AddGlobalOption(ignoreRevocationFailureOption);
         rootCommand.AddGlobalOption(jsonOutputOption);
         return rootCommand;
     }
@@ -126,7 +132,8 @@ public class SettingsBinder : BinderBase<Settings>
             bindingContext.ParseResult.GetValueForOption(secretProviderOption),
             bindingContext.ParseResult.GetValueForOption(secretProviderCacheOption),
             bindingContext.ParseResult.GetValueForOption(secretProviderPatternOption) ?? SecretProviderHelper.DEFAULT_PATTERN,
-            bindingContext.ParseResult.GetValueForOption(acceptedHostCertificateOption)
+            bindingContext.ParseResult.GetValueForOption(acceptedHostCertificateOption),
+            bindingContext.ParseResult.GetValueForOption(ignoreRevocationFailureOption)
         );
 
     /// <summary>

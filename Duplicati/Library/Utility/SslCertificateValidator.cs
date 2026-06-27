@@ -28,7 +28,7 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace Duplicati.Library.Utility;
 
-public class SslCertificateValidator(bool acceptAll, string[]? validHashes)
+public class SslCertificateValidator(bool acceptAll, string[]? validHashes, bool ignoreRevocationFailure = false)
 {
     [Serializable]
     public class InvalidCertificateException(string certificate, SslPolicyErrors error)
@@ -41,6 +41,13 @@ public class SslCertificateValidator(bool acceptAll, string[]? validHashes)
         public SslPolicyErrors SslError => _mErrors;
     }
 
+    /// <summary>
+    /// The chain status flags that are treated as revocation check failures
+    /// and ignored when <see cref="ignoreRevocationFailure"/> is set.
+    /// </summary>
+    private static readonly X509ChainStatusFlags RevocationFailureFlags =
+        X509ChainStatusFlags.RevocationStatusUnknown | X509ChainStatusFlags.OfflineRevocation;
+
     public bool ValidateServerCertificate(object sender, X509Certificate? cert, X509Chain? chain, SslPolicyErrors sslPolicyErrors)
     {
         if (acceptAll)
@@ -52,9 +59,11 @@ public class SslCertificateValidator(bool acceptAll, string[]? validHashes)
 
             using var certificate = cert as X509Certificate2 ?? new X509Certificate2(cert ?? throw new ArgumentNullException(nameof(cert)));
 
+            // Validate date range before anything else, reject expired certs
             if (!IsDateValid(certificate, now))
                 return false;
 
+            // Check if the certificate is directly approved by comparing the hash
             if (validHashes != null)
             {
                 // Check main certificate hash
@@ -67,16 +76,50 @@ public class SslCertificateValidator(bool acceptAll, string[]? validHashes)
                         return true;
             }
 
+
+            // If requested, ignore revocation check failures (e.g. OCSP server offline or status unknown)
+            if (ignoreRevocationFailure)
+                sslPolicyErrors = FilterRevocationErrors(sslPolicyErrors, chain);
+
             if (sslPolicyErrors.HasFlag(SslPolicyErrors.RemoteCertificateNameMismatch) || sslPolicyErrors.HasFlag(SslPolicyErrors.RemoteCertificateChainErrors))
                 throw new InvalidCertificateException(certificate.GetCertHashString(), sslPolicyErrors);
 
             // If no hash is found, perform the standard validations
             return sslPolicyErrors == SslPolicyErrors.None && certificate.Verify();
         }
+        catch (InvalidCertificateException)
+        {
+            // Propagate the typed certificate exception directly so that backend call-sites
+            // can detect it without relying on unwrapping exceptions
+            throw;
+        }
         catch (Exception ex)
         {
             throw new Exception(Strings.SslCertificateValidator.VerifyCertificateHashError(ex, sslPolicyErrors), ex);
         }
+    }
+
+    /// <summary>
+    /// Removes the revocation-related chain errors from the reported SSL policy errors
+    /// when the caller has requested that revocation failures be ignored.
+    /// </summary>
+    /// <param name="sslPolicyErrors">The original SSL policy errors</param>
+    /// <param name="chain">The certificate chain, if any</param>
+    /// <returns>The filtered SSL policy errors</returns>
+    private static SslPolicyErrors FilterRevocationErrors(SslPolicyErrors sslPolicyErrors, X509Chain? chain)
+    {
+        if (chain?.ChainStatus == null || chain.ChainStatus.Length == 0)
+            return sslPolicyErrors;
+
+        // Strip the revocation flags from each chain status entry. If no entry retains any
+        // non-revocation status afterwards, the RemoteCertificateChainErrors flag was set
+        // solely due to revocation check failures and can be cleared. Entries that carry an
+        // unrelated status (e.g. UntrustedRoot, PartialChain) keep it, so genuine chain
+        // errors are still reported and the connection is rejected.
+        if (chain.ChainStatus.All(s => (s.Status & ~RevocationFailureFlags) == 0))
+            return sslPolicyErrors & ~SslPolicyErrors.RemoteCertificateChainErrors;
+
+        return sslPolicyErrors;
     }
 
     private bool IsTrustedHash(string hash) =>

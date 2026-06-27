@@ -20,7 +20,6 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System.Net.Http.Json;
-using System.Net.Security;
 using System.Text.Json;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.WebserverCore.Middlewares;
@@ -169,20 +168,56 @@ public class Connection
         if (!string.IsNullOrWhiteSpace(settings.AcceptedHostCertificate))
             trustedCertificateHashes.UnionWith(settings.AcceptedHostCertificate.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
 
-        // Configure the client for requests
-        var client = new HttpClient(new HttpClientHandler
+        // If we can read the server database and the user has not supplied any certificate
+        // hashes, discover the server's self-signed certificate hash from the local database.
+        // Don't try to look at the database if the password is already set.
+        if (string.IsNullOrWhiteSpace(settings.Password) && settings.HostUrl.Scheme == "https" && trustedCertificateHashes.Count == 0)
         {
-            ServerCertificateCustomValidationCallback = settings.Insecure || trustedCertificateHashes.Contains("*")
-               ? HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
-               : ((message, cert, chain, sslPolicyErrors) =>
+            try
+            {
+                if (File.Exists(Path.Combine(DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ProbeOnly), DataFolderManager.SERVER_DATABASE_FILENAME)))
                 {
-                    if (sslPolicyErrors == SslPolicyErrors.None)
-                        return true;
-                    if (cert == null)
-                        return false;
-                    return trustedCertificateHashes.Contains(cert.GetCertHashString());
-                })
-        })
+                    var opts = new Dictionary<string, string>();
+                    if (settings.Key != null)
+                        opts["settings-encryption-key"] = settings.Key.Key;
+                    using (var dbConnection = Server.Program.GetDatabaseConnection(new ApplicationSettings(), opts, true, false))
+                    {
+                        if (dbConnection.ApplicationSettings.ServerSSLCertificate != null)
+                        {
+                            var selfSignedCertHash = dbConnection.ApplicationSettings.ServerSSLCertificate?.FirstOrDefault(x => x.HasPrivateKey)?.GetCertHashString();
+                            if (!string.IsNullOrWhiteSpace(selfSignedCertHash))
+                                trustedCertificateHashes.Add(selfSignedCertHash);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                if (console != null)
+                    console.AppendExceptionMessage($"Failed to read server certificate from local database: {ex.Message}");
+                else
+                    Console.WriteLine($"Failed to read server certificate from local database: {ex.Message}");
+            }
+        }
+
+        // Configure the client for requests using the shared certificate validator.
+        // The validator handles accept-all, specific hashes and the ignore-revocation-failure
+        // option in a single place, instead of each call-site replicating the logic.
+        // Only install the custom callback when the user actually requested a certificate
+        // override; otherwise leave it unset so the OS default validation (which includes
+        // revocation/CRL checks) is preserved.
+        var httpHandler = new HttpClientHandler();
+        var acceptAll = settings.Insecure || trustedCertificateHashes.Contains("*");
+        if (acceptAll || trustedCertificateHashes.Count > 0 || settings.IgnoreRevocationFailure)
+        {
+            Duplicati.Library.Utility.HttpClientHelper.ConfigureHandlerCertificateValidator(
+                httpHandler,
+                acceptAll,
+                acceptAll ? null : [.. trustedCertificateHashes],
+                settings.IgnoreRevocationFailure);
+        }
+
+        var client = new HttpClient(httpHandler)
         {
             BaseAddress = new Uri(settings.HostUrl + "api/v1/")
         };
@@ -225,12 +260,6 @@ public class Connection
                     using (var connection = Server.Program.GetDatabaseConnection(new ApplicationSettings(), opts, true, false))
                     {
                         cfg = connection.ApplicationSettings.JWTConfig;
-                        if (settings.HostUrl.Scheme == "https" && connection.ApplicationSettings.ServerSSLCertificate != null && trustedCertificateHashes.Count == 0)
-                        {
-                            var selfSignedCertHash = connection.ApplicationSettings.ServerSSLCertificate?.FirstOrDefault(x => x.HasPrivateKey)?.GetCertHashString();
-                            if (!string.IsNullOrWhiteSpace(selfSignedCertHash))
-                                trustedCertificateHashes.Add(selfSignedCertHash);
-                        }
                     }
 
                     if (!string.IsNullOrWhiteSpace(cfg))

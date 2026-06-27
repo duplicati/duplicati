@@ -86,6 +86,8 @@ namespace Duplicati.Library.Utility.Strings
         public static string DescriptionAcceptHashShort { get { return LC.L(@"Optionally accept a known SSL certificate"); } }
         public static string DescriptionUseSSLLong { get { return LC.L(@"Use this option to communicate using Secure Socket Layer (SSL) over http (https)."); } }
         public static string DescriptionUseSSLShort { get { return LC.L(@"Instruct Duplicati to use an SSL (https) connection"); } }
+        public static string DescriptionIgnoreRevocationFailureLong { get { return LC.L(@"Use this option to ignore certificate revocation check failures, such as when the revocation server is offline or the revocation status is unknown."); } }
+        public static string DescriptionIgnoreRevocationFailureShort { get { return LC.L(@"Ignore certificate revocation check failures"); } }
     }
 
     internal static class AuthSettingsHelper

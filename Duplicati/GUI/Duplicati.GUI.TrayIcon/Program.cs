@@ -73,6 +73,7 @@ namespace Duplicati.GUI.TrayIcon
         private const string NOHOSTEDSERVER_OPTION = "no-hosted-server";
         private const string READCONFIGFROMDB_OPTION = "read-config-from-db";
         private const string ACCEPTED_SSL_CERTIFICATE = "host-cert-hash";
+        private const string IGNORE_REVOCATION_FAILURE = "ignore-revocation-failure";
 
         private const string DETACHED_PROCESS = "detached-process";
         private const string BROWSER_COMMAND_OPTION = "browser-command";
@@ -150,6 +151,7 @@ namespace Duplicati.GUI.TrayIcon
             string password = null;
             var passwordSource = PasswordSource.SuppliedPassword;
             var acceptedHostCertificate = options.GetValueOrDefault(ACCEPTED_SSL_CERTIFICATE, null);
+            var ignoreRevocationFailure = Utility.ParseBoolOption(options, IGNORE_REVOCATION_FAILURE);
             var detached = Utility.ParseBoolOption(options, NOHOSTEDSERVER_OPTION);
 
             var supportedCommands = BasicSupportedCommands.AsEnumerable();
@@ -254,12 +256,12 @@ namespace Duplicati.GUI.TrayIcon
                 customUrl = true;
             }
 
-            StartTray(_args, options, hosted, passwordSource, password, serverURL, customUrl, acceptedHostCertificate);
+            StartTray(_args, options, hosted, passwordSource, password, serverURL, customUrl, acceptedHostCertificate, ignoreRevocationFailure);
 
             return 0;
         }
 
-        private static void StartTray(string[] _args, Dictionary<string, string> options, HostedInstanceKeeper hosted, PasswordSource passwordSource, string password, Uri serverURL, bool customUrl, string acceptedHostCertificate)
+        private static void StartTray(string[] _args, Dictionary<string, string> options, HostedInstanceKeeper hosted, PasswordSource passwordSource, string password, Uri serverURL, bool customUrl, string acceptedHostCertificate, bool ignoreRevocationFailure)
         {
             PasswordStorage = PasswordStorageHelper.CreateAsync(serverURL.ToString(), customUrl, password, passwordSource, options)
                 .Await();
@@ -275,7 +277,7 @@ namespace Duplicati.GUI.TrayIcon
 
                     try
                     {
-                        using (Connection = new HttpServerConnection(hosted?.applicationSettings, passwordSource, disableTrayIconLogin, acceptedHostCertificate, options, PasswordStorage))
+                        using (Connection = new HttpServerConnection(hosted?.applicationSettings, passwordSource, disableTrayIconLogin, acceptedHostCertificate, ignoreRevocationFailure, options, PasswordStorage))
                         {
                             // Make sure we have the latest status, but don't care if it fails
                             Connection.UpdateStatusAsync().FireAndForget();
@@ -365,6 +367,7 @@ namespace Duplicati.GUI.TrayIcon
             new CommandLineArgument(HOSTURL_OPTION, CommandLineArgument.ArgumentType.String, "Selects the url to connect to", "Supply the url that the TrayIcon will connect to and show status for", DEFAULT_HOSTURL),
             new CommandLineArgument(BROWSER_COMMAND_OPTION, CommandLineArgument.ArgumentType.String, "Sets the browser command", "Set this option to override the default browser detection"),
             new CommandLineArgument(ACCEPTED_SSL_CERTIFICATE, CommandLineArgument.ArgumentType.String, "Accepts a specific SSL certificate", "Set this option to accept a specific SSL certificate, the value should be the hash of the certificate in hexadecimal format. Use * to accept any certificate (dangerous)"),
+            new CommandLineArgument(IGNORE_REVOCATION_FAILURE, CommandLineArgument.ArgumentType.Boolean, "Ignore certificate revocation check failures", "Set this option to ignore certificate revocation check failures, such as when the revocation server is offline or the revocation status is unknown"),
             .. WindowsSupportedCommands
         ];
 

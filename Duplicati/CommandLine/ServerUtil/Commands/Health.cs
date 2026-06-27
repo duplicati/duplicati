@@ -21,6 +21,7 @@
 
 using System.CommandLine;
 using System.CommandLine.NamingConventionBinder;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.CommandLine.ServerUtil.Commands;
 
@@ -30,12 +31,21 @@ public static class Health
         new Command("health", "Checks the server health endpoint")
         .WithHandler(CommandHandler.Create<Settings, OutputInterceptor>(async (settings, output) =>
         {
-            using var client = new HttpClient(new HttpClientHandler
-            {
-                ServerCertificateCustomValidationCallback = settings.Insecure
-                       ? HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
-                       : null
-            });
+            // The health endpoint only needs to know if the server is reachable.
+            // When the user has not requested any certificate overrides, the
+            // default OS validation is used by leaving the callback unset.
+            // Mirror Connection.cs: --host-cert "*" is treated as accept-all, the same
+            // as --insecure, so the documented wildcard is honored consistently.
+            var trustedCertificateHashes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (!string.IsNullOrWhiteSpace(settings.AcceptedHostCertificate))
+                trustedCertificateHashes.UnionWith(settings.AcceptedHostCertificate.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+
+            using var handler = new HttpClientHandler();
+            var acceptAll = settings.Insecure || trustedCertificateHashes.Contains("*");
+            if (acceptAll || trustedCertificateHashes.Count > 0 || settings.IgnoreRevocationFailure)
+                HttpClientHelper.ConfigureHandlerCertificateValidator(handler, acceptAll, acceptAll ? null : [.. trustedCertificateHashes], settings.IgnoreRevocationFailure);
+
+            using var client = new HttpClient(handler);
             client.BaseAddress = settings.HostUrl;
             client.Timeout = TimeSpan.FromSeconds(10);
 

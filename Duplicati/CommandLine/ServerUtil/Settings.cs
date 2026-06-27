@@ -44,6 +44,7 @@ namespace Duplicati.CommandLine.ServerUtil;
 /// <param name="SecretProvider">The secret provider to use for reading secrets</param>
 /// <param name="SecretProviderPattern">The pattern to use for the secret provider</param>
 /// <param name="AcceptedHostCertificate">The SHA1 hash of the host certificate to accept</param>
+/// <param name="IgnoreRevocationFailure">Whether to ignore certificate revocation check failures</param>
 public sealed record Settings(
     string? Password,
     string? RefreshToken,
@@ -54,7 +55,8 @@ public sealed record Settings(
     EncryptedFieldHelper.KeyInstance? Key,
     ISecretProvider? SecretProvider,
     string SecretProviderPattern,
-    string? AcceptedHostCertificate
+    string? AcceptedHostCertificate,
+    bool IgnoreRevocationFailure
 )
 {
     /// <summary>
@@ -91,8 +93,9 @@ public sealed record Settings(
     /// <param name="secretProviderCache">The secret provider cache level to use</param>
     /// <param name="secretProviderPattern">The secret provider pattern to use</param>
     /// <param name="acceptedHostCertificate">The SHA1 hash of the host certificate to accept</param>
+    /// <param name="ignoreRevocationFailure">Whether to ignore certificate revocation check failures</param>
     /// <returns>The loaded settings</returns>
-    public static Settings Load(string? password, Uri? hostUrl, string settingsFile, bool insecure, string? settingsPassphrase, string? secretProvider, SecretProviderHelper.CachingLevel secretProviderCache, string secretProviderPattern, string? acceptedHostCertificate)
+    public static Settings Load(string? password, Uri? hostUrl, string settingsFile, bool insecure, string? settingsPassphrase, string? secretProvider, SecretProviderHelper.CachingLevel secretProviderCache, string secretProviderPattern, string? acceptedHostCertificate, bool ignoreRevocationFailure)
     {
         hostUrl ??= new Uri($"http://{Utility.IpVersionCompatibleLoopback}:8200");
 
@@ -135,7 +138,8 @@ public sealed record Settings(
             key,
             secretInstance,
             secretProviderPattern,
-            acceptedHostCertificate
+            acceptedHostCertificate,
+            ignoreRevocationFailure
         );
     }
 
