@@ -47,6 +47,11 @@ public static class SslOptionsHelper
     public const string AcceptSpecifiedSslHashOption = "accept-specified-ssl-hash";
 
     /// <summary>
+    /// The name of the ignore revocation failure option without a prefix
+    /// </summary>
+    public const string IgnoreRevocationFailureOption = "ignore-revocation-failure";
+
+    /// <summary>
     /// Gets the SSL certificate options for certificate only
     /// </summary>
     /// <param name="prefix">An optional prefix for the options</param>
@@ -54,7 +59,8 @@ public static class SslOptionsHelper
     public static CommandLineArgument[] GetCertOnlyOptions(string? prefix = null) =>
     [
         new CommandLineArgument($"{prefix}{AcceptAnySslCertificateOption}", CommandLineArgument.ArgumentType.Boolean, Strings.SslOptionsHelper.DescriptionAcceptAnyCertificateShort, Strings.SslOptionsHelper.DescriptionAcceptAnyCertificateLong, "false"),
-        new CommandLineArgument($"{prefix}{AcceptSpecifiedSslHashOption}", CommandLineArgument.ArgumentType.String, Strings.SslOptionsHelper.DescriptionAcceptHashShort, Strings.SslOptionsHelper.DescriptionAcceptHashLong)
+        new CommandLineArgument($"{prefix}{AcceptSpecifiedSslHashOption}", CommandLineArgument.ArgumentType.String, Strings.SslOptionsHelper.DescriptionAcceptHashShort, Strings.SslOptionsHelper.DescriptionAcceptHashLong),
+        new CommandLineArgument($"{prefix}{IgnoreRevocationFailureOption}", CommandLineArgument.ArgumentType.Boolean, Strings.SslOptionsHelper.DescriptionIgnoreRevocationFailureShort, Strings.SslOptionsHelper.DescriptionIgnoreRevocationFailureLong, "false")
     ];
 
     /// <summary>
@@ -90,7 +96,8 @@ public static class SslOptionsHelper
         return new SslCertificateOptions(
             Utility.ParseBoolOption(options, $"{prefix}{UseSSLOption}"),
             Utility.ParseBoolOption(options, $"{prefix}{AcceptAnySslCertificateOption}"),
-            string.IsNullOrWhiteSpace(acceptSpecificCertificatesString) ? Array.Empty<string>() : acceptSpecificCertificatesString.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
+            string.IsNullOrWhiteSpace(acceptSpecificCertificatesString) ? Array.Empty<string>() : acceptSpecificCertificatesString.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries),
+            Utility.ParseBoolOption(options, $"{prefix}{IgnoreRevocationFailureOption}")
         );
     }
 
@@ -100,7 +107,8 @@ public static class SslOptionsHelper
     /// <param name="UseSSL">Flag to indicate if SSL is used</param>
     /// <param name="AcceptAllCertificates">Flag to accept all certificates</param>
     /// <param name="AcceptSpecificCertificateHashes">Array of specific certificate hashes to accept</param>
-    public sealed record SslCertificateOptions(bool UseSSL, bool AcceptAllCertificates, string[] AcceptSpecificCertificateHashes)
+    /// <param name="IgnoreRevocationFailure">Flag to ignore certificate revocation check failures</param>
+    public sealed record SslCertificateOptions(bool UseSSL, bool AcceptAllCertificates, string[] AcceptSpecificCertificateHashes, bool IgnoreRevocationFailure)
     {
         /// <summary>
         /// Creates a handler with the SSL certificate options
@@ -119,7 +127,7 @@ public static class SslOptionsHelper
         /// <returns>The configured handler</returns>
         public HttpClientHandler ConfigureHandler(HttpClientHandler handler)
         {
-            HttpClientHelper.ConfigureHandlerCertificateValidator(handler, AcceptAllCertificates, AcceptSpecificCertificateHashes);
+            HttpClientHelper.ConfigureHandlerCertificateValidator(handler, AcceptAllCertificates, AcceptSpecificCertificateHashes, IgnoreRevocationFailure);
             return handler;
         }
     }

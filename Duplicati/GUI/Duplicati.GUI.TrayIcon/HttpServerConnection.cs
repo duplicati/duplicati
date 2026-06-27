@@ -27,7 +27,6 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Net.Security;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -138,6 +137,7 @@ namespace Duplicati.GUI.TrayIcon
 
         public HttpServerConnection(IApplicationSettings? applicationSettings,
             Program.PasswordSource passwordSource, bool disableTrayIconLogin, string acceptedHostCertificate,
+            bool ignoreRevocationFailure,
             Dictionary<string, string> options,
             PasswordStorageHelper passwordStorageHelper)
         {
@@ -157,28 +157,19 @@ namespace Duplicati.GUI.TrayIcon
                 acceptedCertificates.UnionWith(acceptedHostCertificate.Split(new char[] { ',', ';' },
                     StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
 
-            HTTPCLIENT = new(new HttpClientHandler
-            {
-                ServerCertificateCustomValidationCallback = acceptedCertificates switch
-                {
-                    { Count: 0 } or null => null,
+            // Configure the certificate validator using the shared helper, which handles
+            // accept-all, specific hashes and the ignore-revocation-failure option in a
+            // single place instead of replicating the logic here.
+            var httpHandler = new HttpClientHandler();
+            var acceptAll = acceptedCertificates.Contains("*");
+            if (acceptAll || acceptedCertificates.Count > 0 || ignoreRevocationFailure)
+                Duplicati.Library.Utility.HttpClientHelper.ConfigureHandlerCertificateValidator(
+                    httpHandler,
+                    acceptAll,
+                    acceptAll ? null : [.. acceptedCertificates],
+                    ignoreRevocationFailure);
 
-                    { } when acceptedCertificates.Contains("*") => HttpClientHandler
-                        .DangerousAcceptAnyServerCertificateValidator,
-
-                    _ => (sender, cert, chain, sslPolicyErrors) =>
-                    {
-                        if (sslPolicyErrors == SslPolicyErrors.None)
-                            return true;
-
-                        if (cert == null)
-                            return false;
-
-                        var certHash = cert.GetCertHashString();
-                        return acceptedCertificates.Contains(certHash);
-                    }
-                }
-            })
+            HTTPCLIENT = new HttpClient(httpHandler)
             {
                 // Max time a request can be pending, actual requests can set a lower limit
                 Timeout = Library.Utility.Timeparser.ParseTimeSpan(LONGPOLL_TIMEOUT) + TimeSpan.FromSeconds(10),
