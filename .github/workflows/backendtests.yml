@@ -22,7 +22,6 @@ jobs:
       filen_secrets_available: "${{ steps.check_filen.outputs.available }}"
       filejump_secrets_available: "${{ steps.check_filejump.outputs.available }}"
       onedrive_secrets_available: "${{ steps.check_onedrive.outputs.available }}"
-      idrivee2_secrets_available: "${{ steps.check_idrivee2.outputs.available }}"
       gcs_secrets_available: "${{ steps.check_gcs.outputs.available }}"
       cloudstack_secrets_available: "${{ steps.check_cloudstack.outputs.available }}"
       drime_secrets_available: "${{ steps.check_drime.outputs.available }}"
@@ -189,22 +188,6 @@ jobs:
             echo "available=false" >> $GITHUB_OUTPUT
           fi
           echo "OneDrive check completed"
-      - id: check_idrivee2
-        name: Check iDrivee2 secrets
-        shell: bash
-        run: |
-          echo "Starting iDrivee2 secrets check..."
-          if [[ -n "${{ secrets.TESTCREDENTIAL_IDRIVEE2_BUCKET }}" ]] && \
-             [[ -n "${{ secrets.TESTCREDENTIAL_IDRIVEE2_ACCESS_KEY }}" ]] && \
-             [[ -n "${{ secrets.TESTCREDENTIAL_IDRIVEE2_SECRET_KEY }}" ]] && \
-             [[ -n "${{ secrets.TESTCREDENTIAL_IDRIVEE2_FOLDER }}" ]]; then
-            echo "All iDrivee2 secrets found"
-            echo "available=true" >> $GITHUB_OUTPUT
-          else
-            echo "Missing some iDrivee2 secrets"
-            echo "available=false" >> $GITHUB_OUTPUT
-          fi
-          echo "iDrivee2 check completed"
       - id: check_gcs
         name: Check GCS secrets
         shell: bash
@@ -268,7 +251,6 @@ jobs:
           echo "Filen.io Available: ${{ steps.check_filen.outputs.available }}"
           echo "Filejump Available: ${{ steps.check_filejump.outputs.available }}"
           echo "OneDrive Available: ${{ steps.check_onedrive.outputs.available }}"
-          echo "iDrivee2 Available: ${{ steps.check_idrivee2.outputs.available }}"
           echo "GCS Available: ${{ steps.check_gcs.outputs.available }}"
           echo "CloudStack Available: ${{ steps.check_cloudstack.outputs.available }}"
           echo "Drime Available: ${{ steps.check_drime.outputs.available }}"
@@ -834,45 +816,6 @@ jobs:
           --logger:"console;verbosity=detailed"
           LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.slnx
 
-  test_idrivee2:
-    needs: check_secrets
-    if: needs.check_secrets.outputs.idrivee2_secrets_available == 'true'
-    name: iDrivee2 Tests
-    runs-on: "${{ matrix.os }}"
-    strategy:
-      max-parallel: 1
-      fail-fast: false
-      matrix:
-        os:
-          - ubuntu-latest
-          - windows-latest
-          - macos-latest
-    steps:
-      - name: Set up .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 10.x
-      - name: Checkout source
-        uses: actions/checkout@v4
-      - name: Restore NuGet dependencies
-        run: >-
-          dotnet restore
-          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.slnx
-      - name: Build project
-        run: >-
-          dotnet build --no-restore
-          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.slnx
-      - name: Run iDrivee2 tests
-        env:
-          TESTCREDENTIAL_IDRIVEE2_BUCKET: "${{ secrets.TESTCREDENTIAL_IDRIVEE2_BUCKET }}"
-          TESTCREDENTIAL_IDRIVEE2_ACCESS_KEY: "${{ secrets.TESTCREDENTIAL_IDRIVEE2_ACCESS_KEY }}"
-          TESTCREDENTIAL_IDRIVEE2_SECRET_KEY: "${{ secrets.TESTCREDENTIAL_IDRIVEE2_SECRET_KEY }}"
-          TESTCREDENTIAL_IDRIVEE2_FOLDER: "${{ secrets.TESTCREDENTIAL_IDRIVEE2_FOLDER }}"
-
-        run: >-
-          dotnet test --no-build --filter="ClassName~iDrivee2.iDrivee2Tests"
-          --logger:"console;verbosity=detailed"
-          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.slnx
   test_gcs:
     needs: check_secrets
     if: needs.check_secrets.outputs.gcs_secrets_available == 'true'
