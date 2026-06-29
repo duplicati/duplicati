@@ -2226,14 +2226,25 @@ namespace Duplicati.Library.Main.Database.Local
         /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
         public async Task MarkFileDataVerifiedAsync(long targetfileid, CancellationToken token)
         {
-            await using var cmd = m_connection.CreateCommand($@"
-                UPDATE ""{m_tempfiletable}""
-                SET ""DataVerified"" = 1
-                WHERE ""ID"" = @TargetFileId
-            ")
-                .SetTransaction(m_rtr)
-                .SetParameterValue("@TargetFileId", targetfileid);
-            await cmd.ExecuteNonQueryAsync(token).ConfigureAwait(false);
+            // This is called concurrently from multiple FileProcessor instances. SqliteConnection's
+            // tracked-command list (and the reusable transaction) are not safe for concurrent access,
+            // so serialize on m_dbLock, just like the other m_connection-based enumerators.
+            await m_dbLock.WaitAsync(token).ConfigureAwait(false);
+            try
+            {
+                await using var cmd = m_connection.CreateCommand($@"
+                    UPDATE ""{m_tempfiletable}""
+                    SET ""DataVerified"" = 1
+                    WHERE ""ID"" = @TargetFileId
+                ")
+                    .SetTransaction(m_rtr)
+                    .SetParameterValue("@TargetFileId", targetfileid);
+                await cmd.ExecuteNonQueryAsync(token).ConfigureAwait(false);
+            }
+            finally
+            {
+                m_dbLock.Release();
+            }
         }
 
         /// <summary>
