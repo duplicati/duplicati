@@ -218,4 +218,31 @@ namespace Duplicati.Library.Main
         /// </summary>
         BlindlyUpload
     }
+
+    /// <summary>
+    /// Controls how the <c>--restore-all-files</c> option behaves during a restore.
+    /// </summary>
+    public enum RestoreAllFilesMode
+    {
+        /// <summary>
+        /// The option is not active; restore proceeds as a normal single-version
+        /// restore (the most recent matching version, or the version selected by
+        /// <c>--version</c>/<c>--time</c>).
+        /// </summary>
+        False = 0,
+
+        /// <summary>
+        /// Restore every targeted version into its own timestamp-named subfolder
+        /// below the restore target. Every (non-filtered) file is restored in
+        /// every version; no cross-version de-duplication is performed.
+        /// </summary>
+        True = 1,
+
+        /// <summary>
+        /// Like <see cref="True"/>, but subsequent versions skip any file whose
+        /// content (file hash) was already restored in a previous version. The
+        /// uniqueness check is performed on the file hash only, not on metadata.
+        /// </summary>
+        Unique = 2
+    }
 }

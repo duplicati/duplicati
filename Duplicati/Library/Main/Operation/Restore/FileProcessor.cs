@@ -511,6 +511,21 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                         // TODO legacy restore doesn't count metadata restore as a restored file.
 
+                        // Mark the file's data as verified in the prepared restore file list.
+                        // The --restore-all-files=unique feature harvests only DataVerified=1
+                        // files for cross-version de-duplication, so files that failed to
+                        // restore (which throw above and never reach here) are not recorded and
+                        // remain eligible for restore in subsequent versions. A failure to mark
+                        // is non-fatal: it only affects de-dup, not the restore itself.
+                        try
+                        {
+                            await db.MarkFileDataVerifiedAsync(file.ID, results.TaskControl.ProgressToken).ConfigureAwait(false);
+                        }
+                        catch (Exception ex)
+                        {
+                            Logging.Log.WriteWarningMessage(LOGTAG, "MarkFileDataVerifiedFailed", ex, "Failed to mark file as data verified: {0}", ex.Message);
+                        }
+
                         sw_work_results?.Start();
                         if (empty_file_or_symlink || bytes_written > 0)
                         {

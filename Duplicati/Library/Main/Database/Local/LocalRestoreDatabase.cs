@@ -410,7 +410,7 @@ namespace Duplicati.Library.Main.Database.Local
         /// <param name="disableAdsRestore">A flag indicating whether to disable the restoration of alternate data streams.</param>
         /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
         /// <returns>A task that, when awaited, returns a tuple containing the count of files to restore and the total size of those files.</returns>
-        public async Task<Tuple<long, long>> PrepareRestoreFilelistAsync(DateTime restoretime, long[] versions, IFilter filter, bool disableAdsRestore, CancellationToken token)
+        public async Task<Tuple<long, long>> PrepareRestoreFilelistAsync(DateTime restoretime, long[]? versions, IFilter? filter, bool disableAdsRestore, CancellationToken token)
         {
             m_tempfiletable = $"Fileset-{m_temptabsetguid}";
             m_tempblocktable = $"Blocks-{m_temptabsetguid}";
@@ -737,6 +737,40 @@ namespace Duplicati.Library.Main.Database.Local
             }
 
             return new Tuple<long, long>(0, 0);
+        }
+
+        /// <summary>
+        /// Recomputes the (file count, total size) tuple for the currently prepared restore
+        /// file list, e.g. after rows have been removed by <see cref="RemoveFilesByRestoredHashesAsync"/>.
+        /// </summary>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
+        /// <returns>A tuple of the file count and total size of the files remaining in the restore list.</returns>
+        public async Task<Tuple<long, long>> PrepareRestoreFilelistCountAsync(CancellationToken token)
+        {
+            if (m_tempfiletable == null)
+                return new Tuple<long, long>(0, 0);
+
+            await using var cmd = m_connection.CreateCommand($@"
+                SELECT
+                    COUNT(DISTINCT ""{m_tempfiletable}"".""Path""),
+                    SUM(""Blockset"".""Length"")
+                FROM
+                    ""{m_tempfiletable}"",
+                    ""Blockset""
+                WHERE ""{m_tempfiletable}"".""BlocksetID"" = ""Blockset"".""ID""
+            ")
+                .SetTransaction(m_rtr);
+
+            await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+            var filecount = 0L;
+            var filesize = 0L;
+            if (await rd.ReadAsync(token).ConfigureAwait(false))
+            {
+                filecount = rd.ConvertValueToInt64(0, 0);
+                filesize = rd.ConvertValueToInt64(1, 0);
+            }
+
+            return new Tuple<long, long>(filecount, filesize);
         }
 
         /// <summary>
@@ -2139,6 +2173,132 @@ namespace Duplicati.Library.Main.Database.Local
             while (await rd.ReadAsync(token).ConfigureAwait(false))
                 yield return new FileToRestore(
                     rd.ConvertValueToInt64(0), rd.ConvertValueToString(1) ?? "", rd.ConvertValueToString(2) ?? "", rd.ConvertValueToInt64(3));
+        }
+
+        /// <summary>
+        /// Creates a persistent scratch table (a regular table in the database file, visible
+        /// across connections) that records the file hashes already restored in previous
+        /// versions during a <c>--restore-all-files=unique</c> run. The table is keyed by a
+        /// caller-supplied unique name. Keeping the restored hashes in the database (rather
+        /// than in memory) avoids unbounded memory growth when many files/versions are
+        /// restored. The caller is responsible for dropping the table via
+        /// <see cref="DropRestoredHashesTableAsync"/> when the multi-version run completes.
+        /// </summary>
+        /// <param name="tableName">The unique name of the scratch table to create.</param>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
+        public async Task CreateRestoredHashesTableAsync(string tableName, CancellationToken token)
+        {
+            await using var cmd = m_connection.CreateCommand().SetTransaction(m_rtr);
+            await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{tableName}""", token).ConfigureAwait(false);
+            await cmd.ExecuteNonQueryAsync($@"
+                CREATE TABLE ""{tableName}"" (
+                    ""Hash"" TEXT NOT NULL
+                )
+            ", token).ConfigureAwait(false);
+            await cmd.ExecuteNonQueryAsync($@"CREATE UNIQUE INDEX ""{tableName}_Hash"" ON ""{tableName}"" (""Hash"")", token).ConfigureAwait(false);
+            await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Drops the persistent scratch table created by
+        /// <see cref="CreateRestoredHashesTableAsync"/>.
+        /// </summary>
+        /// <param name="tableName">The unique name of the scratch table to drop.</param>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
+        public async Task DropRestoredHashesTableAsync(string tableName, CancellationToken token)
+        {
+            await using var cmd = m_connection.CreateCommand($@"DROP TABLE IF EXISTS ""{tableName}""")
+                .SetTransaction(m_rtr);
+            await cmd.ExecuteNonQueryAsync(token).ConfigureAwait(false);
+            await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Marks the data of a file in the prepared restore file list as verified, by setting
+        /// its <c>DataVerified</c> flag to 1. Used by the new restore path
+        /// (<c>Restore.FileProcessor</c>) after a file's content has been successfully
+        /// restored and its hash verified, so that <see cref="AddCurrentFilesToRestoredHashesAsync"/>
+        /// can record only successfully restored files for de-duplication. The legacy restore
+        /// path sets this flag via the block marker; this method exposes the same update for
+        /// callers that do not have a block marker.
+        /// </summary>
+        /// <param name="targetfileid">The ID of the file in the prepared restore file list.</param>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
+        public async Task MarkFileDataVerifiedAsync(long targetfileid, CancellationToken token)
+        {
+            await using var cmd = m_connection.CreateCommand($@"
+                UPDATE ""{m_tempfiletable}""
+                SET ""DataVerified"" = 1
+                WHERE ""ID"" = @TargetFileId
+            ")
+                .SetTransaction(m_rtr)
+                .SetParameterValue("@TargetFileId", targetfileid);
+            await cmd.ExecuteNonQueryAsync(token).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Appends the file hashes of the files that were successfully restored (or verified
+        /// in place) in the just-completed version into the persistent restored-hashes table.
+        /// Only files whose <c>DataVerified</c> flag is 1 are recorded, so files whose restore
+        /// failed are not harvested and remain eligible for restore in subsequent versions.
+        /// Only the file hash is recorded, not metadata. Folder entries (which have no
+        /// blockset hash) are not recorded.
+        /// </summary>
+        /// <param name="tableName">The unique name of the restored-hashes scratch table.</param>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
+        /// <returns>The number of hashes appended.</returns>
+        public async Task<long> AddCurrentFilesToRestoredHashesAsync(string tableName, CancellationToken token)
+        {
+            if (m_tempfiletable == null)
+                return 0;
+
+            await using var cmd = m_connection.CreateCommand($@"
+                INSERT OR IGNORE INTO ""{tableName}"" (""Hash"")
+                SELECT ""Blockset"".""Fullhash""
+                FROM ""{m_tempfiletable}""
+                INNER JOIN ""Blockset"" ON ""{m_tempfiletable}"".""BlocksetID"" = ""Blockset"".""ID""
+                WHERE ""Blockset"".""Fullhash"" != ''
+                    AND ""{m_tempfiletable}"".""DataVerified"" = 1
+            ")
+                .SetTransaction(m_rtr);
+            var added = await cmd.ExecuteNonQueryAsync(token).ConfigureAwait(false);
+            // Commit so the appended hashes are durable and visible to the separate
+            // connection used by the next version's restore (which reads this table to
+            // exclude already-restored files).
+            await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
+            return added;
+        }
+
+        /// <summary>
+        /// Removes files from the prepared restore file list whose content hash (the
+        /// <c>Blockset.Fullhash</c>) is present in the persistent restored-hashes scratch
+        /// table. Used by the <c>--restore-all-files=unique</c> feature to skip files already
+        /// restored in a previous version. Only the file hash is considered, not metadata.
+        /// Folder entries (which have no blockset hash) are never removed by this call.
+        /// </summary>
+        /// <param name="restoredHashesTable">The name of the persistent restored-hashes scratch table. If null or empty, nothing is removed.</param>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
+        /// <returns>The number of files removed from the restore list.</returns>
+        public async Task<long> RemoveFilesByRestoredHashesAsync(string restoredHashesTable, CancellationToken token)
+        {
+            if (m_tempfiletable == null)
+                return 0;
+            if (string.IsNullOrEmpty(restoredHashesTable))
+                return 0;
+
+            await using var cmd = m_connection.CreateCommand($@"
+                DELETE FROM ""{m_tempfiletable}""
+                WHERE ""ID"" IN (
+                    SELECT ""{m_tempfiletable}"".""ID""
+                    FROM ""{m_tempfiletable}""
+                    INNER JOIN ""Blockset""
+                        ON ""{m_tempfiletable}"".""BlocksetID"" = ""Blockset"".""ID""
+                    INNER JOIN ""{restoredHashesTable}""
+                        ON ""Blockset"".""Fullhash"" = ""{restoredHashesTable}"".""Hash""
+                )
+            ")
+                .SetTransaction(m_rtr);
+            return await cmd.ExecuteNonQueryAsync(token).ConfigureAwait(false);
         }
 
         /// <summary>

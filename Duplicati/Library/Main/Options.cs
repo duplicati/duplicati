@@ -596,6 +596,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("restore-cache-max", CommandLineArgument.ArgumentType.Size, Strings.Options.RestoreCacheMaxShort, Strings.Options.RestoreCacheMaxLong, DEFAULT_RESTORE_CACHE_MAX),
             new CommandLineArgument("restore-cache-evict", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreCacheEvictShort, Strings.Options.RestoreCacheEvictLong, DEFAULT_RESTORE_CACHE_EVICT.ToString()),
             new CommandLineArgument("restore-file-processors", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreFileprocessorsShort, Strings.Options.RestoreFileprocessorsLong, DEFAULT_RESTORE_FILE_PROCESSORS.ToString()),
+            new CommandLineArgument("restore-all-files", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.RestoreAllFilesShort, Strings.Options.RestoreAllFilesLong("restore-path"), nameof(RestoreAllFilesMode.False), null, Enum.GetNames(typeof(RestoreAllFilesMode))),
             new CommandLineArgument("restore-legacy", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestoreLegacyShort, Strings.Options.RestoreLegacyLong, "false"),
             new CommandLineArgument("restore-preallocate-size", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestorePreallocateSizeShort, Strings.Options.RestorePreallocateSizeLong, "false"),
             new CommandLineArgument("restore-volume-cache-hint", CommandLineArgument.ArgumentType.Size, Strings.Options.RestoreVolumeCacheHintShort, Strings.Options.RestoreVolumeCacheHintLong, DEFAULT_RESTORE_VOLUME_CACHE_HINT),
@@ -1407,6 +1408,15 @@ namespace Duplicati.Library.Main
         /// Alternate restore path
         /// </summary>
         public string? Restorepath => m_options.GetValueOrDefault("restore-path");
+
+        /// <summary>
+        /// Gets the <c>--restore-all-files</c> mode controlling multi-version restore behavior.
+        /// When set to <see cref="RestoreAllFilesMode.True"/> or <see cref="RestoreAllFilesMode.Unique"/>,
+        /// every targeted version is restored into its own timestamp-named subfolder below
+        /// <see cref="Restorepath"/>. <see cref="RestoreAllFilesMode.False"/> performs a normal
+        /// single-version restore.
+        /// </summary>
+        public RestoreAllFilesMode RestoreAllFiles => GetEnum("restore-all-files", RestoreAllFilesMode.False);
 
         /// <summary>
         /// Gets the index file usage method
