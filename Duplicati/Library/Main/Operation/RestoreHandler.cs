@@ -287,7 +287,11 @@ namespace Duplicati.Library.Main.Operation
             // Apply the same time/version selection as GetFilesetIDsAsync would, producing
             // the list of filesets to restore, newest first. This selects the full set of
             // versions to restore up front, before "time" is cleared for the per-version loop.
-            var selectedFilesets = SelectTargetedFilesets(allFilesets, m_options.Time, m_options.Version);
+            // Restore oldest version first, to be more true to the "unique" mode, 
+            // where the first time a file existed, it is restored.
+            var selectedFilesets = SelectTargetedFilesets(allFilesets, m_options.Time, m_options.Version)
+                .OrderByDescending(x => x.VersionIndex)
+                .ToList();
 
             if (selectedFilesets.Count == 0)
                 throw new UserInformationException("No backup versions matched the restore selection", "NoBackupAtDate");
