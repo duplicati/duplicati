@@ -216,24 +216,28 @@ namespace Duplicati.UnitTest
                 .ToArray();
             Assert.AreEqual(3, subFolders.Length, "Expected three timestamp subfolders (one per version)");
 
-            // subFolders[0] = oldest, subFolders[2] = newest. The first version restored is
-            // the newest (versions[0]); it contains both files. Each subsequent (older) version
-            // restores only files whose content hash was not restored in a previous version.
+            // subFolders[0] = oldest, subFolders[2] = newest. Versions are processed
+            // oldest-first, so the first version restored is the oldest (versions[2]); it
+            // contains both files. Each subsequent (newer) version restores only files whose
+            // content hash was not restored in a previous (older) version. This makes the
+            // "unique" mode true to its name: each file is restored at the first version in
+            // which its content appeared.
             //
             // Content timeline (version -> file -> content):
             //   newest (v0): file1="v2-file1", file2="v2-file2"
             //   middle (v1): file1="v1-file1", file2="v0-file2"
             //   oldest (v2): file1="v0-file1", file2="v0-file2"
             //
-            // Unique de-dup, processed newest-first, with the set of hashes already restored:
+            // Unique de-dup, processed oldest-first, with the set of hashes already restored:
             //   | Version | file1 content | file2 content | file1 restored? | file2 restored? |
             //   |---------|---------------|---------------|-----------------|-----------------|
+            //   | oldest  | v0-file1      | v0-file2      | yes (new)       | yes (new)       |
+            //   | middle  | v1-file1      | v0-file2      | yes (new)       | no (dup of oldest's file2) |
             //   | newest  | v2-file1      | v2-file2      | yes (new)       | yes (new)       |
-            //   | middle  | v1-file1      | v0-file2      | yes (new)      | yes (new)       |
-            //   | oldest  | v0-file1      | v0-file2      | yes (new)      | no (dup of middle's file2) |
             //
-            // After the middle version, {v2-file1, v2-file2, v1-file1, v0-file2} are recorded.
-            // The oldest version's file2 ("v0-file2") is already in that set, so it is skipped.
+            // After the oldest version, {v0-file1, v0-file2} are recorded. The middle version's
+            // file2 ("v0-file2") is already in that set, so it is skipped. The newest version's
+            // files have hashes not seen before, so both are restored.
 
             // Map folder -> version content. Folders oldest->newest map to versions newest-first reversed:
             var folderVersionContent = new List<(string Folder, string File1Content, string File2Content, string VersionLabel)>
@@ -243,7 +247,8 @@ namespace Duplicati.UnitTest
                 (subFolders[0], versions[2].File1Content, versions[2].File2Content, "oldest"),
             };
 
-            // Newest folder: both files restored (first version, nothing de-duped yet).
+            // Newest folder: both files restored (v2-file1 and v2-file2 are both new hashes,
+            // not seen in the older versions which had v0-file1/v1-file1 and v0-file2).
             var newest = folderVersionContent[0];
             Assert.IsTrue(File.Exists(Path.Combine(newest.Folder, "file1.txt")), "newest: file1 should be restored");
             Assert.IsTrue(File.Exists(Path.Combine(newest.Folder, "file2.txt")), "newest: file2 should be restored");
@@ -251,20 +256,18 @@ namespace Duplicati.UnitTest
             Assert.AreEqual(newest.File2Content, File.ReadAllText(Path.Combine(newest.Folder, "file2.txt")));
 
             // Middle folder: file1 has a new hash (v1-file1) => restored. file2 has content
-            // v0-file2, whose hash was not restored in the newest version (which had v2-file2),
-            // so it is new => restored.
+            // v0-file2, whose hash was already restored in the oldest version => SKIPPED.
             var middle = folderVersionContent[1];
             Assert.IsTrue(File.Exists(Path.Combine(middle.Folder, "file1.txt")), "middle: file1 should be restored (new content)");
-            Assert.IsTrue(File.Exists(Path.Combine(middle.Folder, "file2.txt")), "middle: file2 should be restored (content not seen before)");
+            Assert.IsFalse(File.Exists(Path.Combine(middle.Folder, "file2.txt")), "middle: file2 should be skipped (content already restored in oldest folder)");
             Assert.AreEqual(middle.File1Content, File.ReadAllText(Path.Combine(middle.Folder, "file1.txt")));
-            Assert.AreEqual(middle.File2Content, File.ReadAllText(Path.Combine(middle.Folder, "file2.txt")));
 
-            // Oldest folder: file1 has a new hash (v0-file1) => restored. file2 has content
-            // v0-file2, whose hash was already restored in the middle folder => SKIPPED.
+            // Oldest folder: both files restored (first version processed, nothing de-duped yet).
             var oldest = folderVersionContent[2];
-            Assert.IsTrue(File.Exists(Path.Combine(oldest.Folder, "file1.txt")), "oldest: file1 should be restored (new content)");
+            Assert.IsTrue(File.Exists(Path.Combine(oldest.Folder, "file1.txt")), "oldest: file1 should be restored (first version)");
+            Assert.IsTrue(File.Exists(Path.Combine(oldest.Folder, "file2.txt")), "oldest: file2 should be restored (first version)");
             Assert.AreEqual(oldest.File1Content, File.ReadAllText(Path.Combine(oldest.Folder, "file1.txt")));
-            Assert.IsFalse(File.Exists(Path.Combine(oldest.Folder, "file2.txt")), "oldest: file2 should be skipped (content already restored in middle folder)");
+            Assert.AreEqual(oldest.File2Content, File.ReadAllText(Path.Combine(oldest.Folder, "file2.txt")));
         }
 
         [Test]
