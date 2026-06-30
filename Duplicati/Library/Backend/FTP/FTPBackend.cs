@@ -195,6 +195,11 @@ namespace Duplicati.Library.Backend
         /// </summary>
         private readonly SslOptionsHelper.SslCertificateOptions _sslOptions;
         /// <summary>
+        /// The cached SSL certificate validator built from <see cref="_sslOptions"/>.
+        /// Reused across certificate validation events to avoid per-handshake allocation.
+        /// </summary>
+        private readonly SslCertificateValidator _sslValidator;
+        /// <summary>
         /// The timeout options to use
         /// </summary>
         private readonly TimeoutOptionsHelper.Timeouts _timeouts;
@@ -247,6 +252,7 @@ namespace Duplicati.Library.Backend
         {
             // TODO: Remove this constructor once static properties are introduced on IBackend
             _sslOptions = null!;
+            _sslValidator = null!;
             _timeouts = null!;
             _ftpConfig = null!;
             _url = null!;
@@ -261,6 +267,7 @@ namespace Duplicati.Library.Backend
         public FTP(string url, Dictionary<string, string?> options)
         {
             _sslOptions = SslOptionsHelper.Parse(options);
+            _sslValidator = new SslCertificateValidator(_sslOptions.AcceptAllCertificates, _sslOptions.AcceptSpecificCertificateHashes, _sslOptions.IgnoreRevocationFailure);
 
             var u = new Utility.Uri(url);
             u.RequireHost();
@@ -656,25 +663,22 @@ namespace Duplicati.Library.Backend
         /// <param name="e">The event arguments.</param>
         private void HandleValidateCertificate(BaseFtpClient control, FtpSslValidationEventArgs e)
         {
-            if (e.PolicyErrors == SslPolicyErrors.None || _sslOptions.AcceptAllCertificates)
-            {
-                e.Accept = true;
-                return;
-            }
-
-            e.Accept = false;
+            // Delegate to the cached shared validator which handles accept-all, specific hashes
+            // and the ignore-revocation-failure option consistently across backends.
             try
             {
-                var certHash = (_sslOptions.AcceptSpecificCertificateHashes != null && _sslOptions.AcceptSpecificCertificateHashes.Length > 0) ? e.Certificate?.GetCertHashString() : null;
-                if (certHash != null && _sslOptions.AcceptSpecificCertificateHashes != null && _sslOptions.AcceptSpecificCertificateHashes.Any(hash => !string.IsNullOrEmpty(hash) && certHash.Equals(hash, StringComparison.OrdinalIgnoreCase)))
-                    e.Accept = true;
+                e.Accept = _sslValidator.ValidateServerCertificate(control, e.Certificate, e.Chain, e.PolicyErrors);
+            }
+            catch (SslCertificateValidator.InvalidCertificateException)
+            {
+                e.Accept = false;
+                throw;
             }
             catch
             {
+                e.Accept = false;
+                throw;
             }
-
-            if (e.Accept == false && e.Certificate != null)
-                throw new SslCertificateValidator.InvalidCertificateException(e.Certificate?.GetCertHashString() ?? "<unknown>", e.PolicyErrors);
         }
 
         /// <summary>
