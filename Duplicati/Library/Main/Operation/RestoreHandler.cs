@@ -228,10 +228,16 @@ namespace Duplicati.Library.Main.Operation
                         m_options.RawOptions["version"] = string.Join(",", Enumerable.Range(0, versions.Length).Select(x => x.ToString()));
                 }
 
+                // Resolve the backup version index (0 = newest) and timestamp (UTC) for the
+                // version being restored, forwarding them to the restore callback modules so
+                // the engine methods below do not need to look them up. When the caller already
+                // knows the timestamp (the --restore-all-files path), it is used directly.
+                var (restoreVersion, restoreBackupTimestamp) = await ResolveRestoreVersionAndTimestampAsync(db, versions, time, cancellationToken).ConfigureAwait(false);
+
                 if (m_options.RestoreLegacy)
-                    await DoRunAsync(backendManager, db, filter, restoreDestination, cancellationToken).ConfigureAwait(false);
+                    await DoRunAsync(backendManager, db, filter, restoreDestination, restoreVersion, restoreBackupTimestamp, cancellationToken).ConfigureAwait(false);
                 else
-                    await DoRunNewAsync(backendManager, db, filter, restoreDestination, cancellationToken).ConfigureAwait(false);
+                    await DoRunNewAsync(backendManager, db, filter, restoreDestination, restoreVersion, restoreBackupTimestamp, cancellationToken).ConfigureAwait(false);
             }
             finally
             {
@@ -340,6 +346,9 @@ namespace Duplicati.Library.Main.Operation
                     // provider's path validation continues to accept them.
                     var versionDestination = new VersionedRestoreDestinationProvider(restoreDestination, versionTarget);
 
+                    // Forward the already-known version index so the engine methods and restore
+                    // callback modules receive it without any lookup. The backup timestamp is
+                    // resolved from the fileset list inside RunSingleVersionRestoreAsync.
                     await RunSingleVersionRestoreAsync(backendManager, filter, versionDestination, m_options.Time, [fileset.VersionIndex], cancellationToken)
                         .ConfigureAwait(false);
                 }
@@ -667,14 +676,150 @@ namespace Duplicati.Library.Main.Operation
         }
 
         /// <summary>
+        /// The tag used for logging restore-callback module invocations.
+        /// </summary>
+        private static readonly string RESTORE_CALLBACK_LOGTAG = Logging.Log.LogTagFromType<RestoreHandler>() + ".RestoreCallback";
+
+        /// <summary>
+        /// Invokes <see cref="IRestoreCallbackModule.OnFileRestoredAsync"/> on every loaded
+        /// <see cref="IRestoreCallbackModule"/> module, passing the backup version index, the backup
+        /// timestamp and the restored file's target path. Exceptions are logged and isolated.
+        /// </summary>
+        /// <param name="modules">The loaded generic modules, in their activation order.</param>
+        /// <param name="version">The 0-based backup version index the file was restored from (0 = newest).</param>
+        /// <param name="path">The target path of the restored file.</param>
+        /// <param name="backupTimestamp">The timestamp of the backup version the file was restored from, in UTC.</param>
+        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+        /// <returns>A task that represents the asynchronous dispatch operation.</returns>
+        internal static async Task InvokeFileRestoredAsync(IEnumerable<IGenericModule>? modules, long version, string path, DateTime backupTimestamp, CancellationToken cancellationToken)
+        {
+            if (modules == null)
+                return;
+            foreach (var mx in modules)
+            {
+                if (mx is not IRestoreCallbackModule module)
+                    continue;
+                try { await module.OnFileRestoredAsync(version, path, backupTimestamp, cancellationToken).ConfigureAwait(false); }
+                catch (Exception ex) { Logging.Log.WriteWarningMessage(RESTORE_CALLBACK_LOGTAG, $"OnFileRestoredError{mx.Key}", ex, "OnFileRestored callback {0} failed: {1}", mx.Key, ex.Message); }
+            }
+        }
+
+        /// <summary>
+        /// Invokes <see cref="IRestoreCallbackModule.OnPreparePriorityFilesAsync"/> on every loaded
+        /// <see cref="IRestoreCallbackModule"/> module, passing the priority-files list by reference
+        /// so the modules may modify it, along with the backup version index and timestamp being
+        /// restored. Exceptions thrown by a module are logged and isolated so a single misbehaving
+        /// module cannot abort the restore.
+        /// </summary>
+        /// <param name="modules">The loaded generic modules, in their activation order.</param>
+        /// <param name="priorityFiles">The priority-files list that modules may modify in place.</param>
+        /// <param name="version">The 0-based backup version index being restored (0 = newest).</param>
+        /// <param name="backupTimestamp">The timestamp of the backup version being restored, in UTC.</param>
+        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+        /// <returns>A task that represents the asynchronous dispatch operation.</returns>
+        internal static async Task InvokePreparePriorityFilesAsync(IEnumerable<IGenericModule>? modules, IList<string> priorityFiles, long version, DateTime backupTimestamp, CancellationToken cancellationToken)
+        {
+            if (modules == null)
+                return;
+            foreach (var mx in modules)
+            {
+                if (mx is not IRestoreCallbackModule module)
+                    continue;
+                try { await module.OnPreparePriorityFilesAsync(priorityFiles, version, backupTimestamp, cancellationToken).ConfigureAwait(false); }
+                catch (Exception ex) { Logging.Log.WriteWarningMessage(RESTORE_CALLBACK_LOGTAG, $"OnPreparePriorityFilesError{mx.Key}", ex, "OnPreparePriorityFiles callback {0} failed: {1}", mx.Key, ex.Message); }
+            }
+        }
+
+        /// <summary>
+        /// Invokes <see cref="IRestoreCallbackModule.OnBulkRestoreStartAsync"/> on every loaded
+        /// <see cref="IRestoreCallbackModule"/> module. Exceptions are logged and isolated.
+        /// </summary>
+        /// <param name="modules">The loaded generic modules, in their activation order.</param>
+        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+        /// <returns>A task that represents the asynchronous dispatch operation.</returns>
+        internal static async Task InvokeBulkRestoreStartAsync(IEnumerable<IGenericModule>? modules, CancellationToken cancellationToken)
+        {
+            if (modules == null)
+                return;
+            foreach (var mx in modules)
+            {
+                if (mx is not IRestoreCallbackModule module)
+                    continue;
+                try { await module.OnBulkRestoreStartAsync(cancellationToken).ConfigureAwait(false); }
+                catch (Exception ex) { Logging.Log.WriteWarningMessage(RESTORE_CALLBACK_LOGTAG, $"OnBulkRestoreStartError{mx.Key}", ex, "OnBulkRestoreStart callback {0} failed: {1}", mx.Key, ex.Message); }
+            }
+        }
+
+        /// <summary>
+        /// Resolves the 0-based backup version index (0 = newest) and the backup timestamp
+        /// (UTC) for the version being restored, so the value can be forwarded to the restore
+        /// callback modules rather than reverse-looked-up inside the engine methods.
+        /// </summary>
+        /// <remarks>
+        /// This is a forward resolution: it reads the fileset list (newest first) once and
+        /// picks the entry matching the requested <paramref name="versions"/>/<paramref name="time"/>.
+        /// </remarks>
+        /// <param name="database">The restore database.</param>
+        /// <param name="versions">The requested version indices (0 = newest), or null for a time-based restore.</param>
+        /// <param name="time">The restore time, used when <paramref name="versions"/> is null/empty.</param>
+        /// <param name="cancellationToken">The cancellation token to monitor for cancellation requests.</param>
+        /// <returns>A tuple with the 0-based backup version index and the backup timestamp (UTC).</returns>
+        private static async Task<(long version, DateTime backupTimestamp)> ResolveRestoreVersionAndTimestampAsync(LocalRestoreDatabase database, long[]? versions, DateTime time, CancellationToken cancellationToken)
+        {
+            try
+            {
+                // Filesets ordered newest-first; the 0-based position is the version index.
+                var filesets = await database.FilesetTimesAsync(cancellationToken)
+                    .ToArrayAsync(cancellationToken: cancellationToken)
+                    .ConfigureAwait(false);
+
+                if (filesets.Length == 0)
+                    return (0, DateTime.MinValue);
+
+                // Explicit version indices take precedence: the caller passes the absolute index.
+                if (versions is { Length: > 0 })
+                {
+                    var requestedIndex = versions[0];
+                    // On a recreated (no-local-db) database the list may contain fewer entries
+                    // than the absolute index; the single present entry is the requested version.
+                    var timestamp = requestedIndex >= 0 && requestedIndex < filesets.Length
+                        ? filesets[requestedIndex].Value
+                        : filesets[0].Value;
+                    return (requestedIndex, timestamp.ToUniversalTime());
+                }
+
+                // Time-based restore: pick the newest fileset at or before the requested time.
+                if (time.Ticks > 0)
+                {
+                    var compareTime = time.ToUniversalTime();
+                    for (int i = 0; i < filesets.Length; i++)
+                    {
+                        if (filesets[i].Value.ToUniversalTime() <= compareTime)
+                            return (i, filesets[i].Value.ToUniversalTime());
+                    }
+                }
+
+                // Default: the newest backup (version 0).
+                return (0, filesets[0].Value.ToUniversalTime());
+            }
+            catch (Exception ex)
+            {
+                Logging.Log.WriteWarningMessage(LOGTAG, "ResolveRestoreVersionFailed", ex, "Failed to resolve restore version info: {0}", ex.Message);
+                return (0, DateTime.MinValue);
+            }
+        }
+
+        /// <summary>
         /// Perform the restore operation.
         /// This is the new implementation, which utilizes a CSP network of processes to perform the restore.
         /// </summary>
         /// <param name="database">The database containing information about the restore.</param>
         /// <param name="filter">The filter of which files to restore.</param>
         /// <param name="restoreDestination">The destination to restore to.</param>
+        /// <param name="restoreVersion">The forwarded 0-based backup version index being restored (0 = newest), reported to restore callback modules.</param>
+        /// <param name="restoreBackupTimestamp">The forwarded backup timestamp (UTC) being restored, reported to restore callback modules.</param>
         /// <param name="cancellationToken">The cancellation token to monitor for cancellation requests.</param>
-        private async Task DoRunNewAsync(IBackendManager backendManager, LocalRestoreDatabase database, IFilter? filter, IRestoreDestinationProvider restoreDestination, CancellationToken cancellationToken)
+        private async Task DoRunNewAsync(IBackendManager backendManager, LocalRestoreDatabase database, IFilter? filter, IRestoreDestinationProvider restoreDestination, long restoreVersion, DateTime restoreBackupTimestamp, CancellationToken cancellationToken)
         {
             // Perform initial setup
             await Utility.UpdateOptionsFromDbAsync(database, m_options, cancellationToken)
@@ -724,14 +869,17 @@ namespace Duplicati.Library.Main.Operation
             Restore.DeadlockTimer.initial_threshold = (int)TimeSpan.FromMinutes(1).TotalMilliseconds * Math.Max(1, (int)(volsize / (10L * 1024L * 1024L)));
             Restore.FileProcessor.file_processors_restoring_files = m_options.RestoreFileProcessors;
 
-            // Initialize priority files synchronization
-            var priorityFiles = restoreDestination.GetPriorityFiles();
-            Restore.FileProcessor.priority_files_remaining = priorityFiles.Count;
-            Restore.FileProcessor.priority_files_completed = new TaskCompletionSource();
+            // Initialize priority files synchronization.
+            // Wrap in a List<> so restore callback modules can freely modify the list
+            // (the destination provider may return a fixed-size array).
+            var priorityFiles = new List<string>(restoreDestination.GetPriorityFiles());
+            // Allow restore callback modules to inspect and modify the priority-files list
+            // before any files are restored, passing the forwarded version and backup timestamp.
+            await InvokePreparePriorityFilesAsync(m_options.LoadedModules, priorityFiles, restoreVersion, restoreBackupTimestamp, cancellationToken).ConfigureAwait(false);
 
             // Create the process network
-            var filelister = Restore.FileLister.RunAsync(channels, database, m_options, m_result, priorityFiles);
-            var fileprocessors = Enumerable.Range(0, m_options.RestoreFileProcessors).Select(i => Restore.FileProcessor.RunAsync(channels, database, fileprocessor_requests[i], fileprocessor_responses[i], restoreDestination, m_options, m_result)).ToArray();
+            var filelister = Restore.FileLister.RunAsync(channels, database, m_options, m_result, priorityFiles, restoreVersion, restoreBackupTimestamp, m_options.LoadedModules);
+            var fileprocessors = Enumerable.Range(0, m_options.RestoreFileProcessors).Select(i => Restore.FileProcessor.RunAsync(channels, database, fileprocessor_requests[i], fileprocessor_responses[i], restoreDestination, m_options, m_result, m_options.LoadedModules)).ToArray();
             var blockmanager = Restore.BlockManager.RunAsync(channels, database, fileprocessor_requests, fileprocessor_responses, m_options, m_result);
             var volumecache = Restore.VolumeManager.RunAsync(channels, m_options, m_result);
             var volumedownloaders = Enumerable.Range(0, m_options.RestoreVolumeDownloaders).Select(i => Restore.VolumeDownloader.RunAsync(channels, database, backendManager, m_options, m_result)).ToArray();
@@ -856,7 +1004,7 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="filter">The filter of which files to restore.</param>
         /// <param name="restoreDestination">The destination to restore to.</param>
         /// <param name="cancellationToken">The cancellation token to monitor for cancellation requests.</param>
-        private async Task DoRunAsync(IBackendManager backendManager, LocalRestoreDatabase database, Library.Utility.IFilter? filter, IRestoreDestinationProvider restoreDestination, CancellationToken cancellationToken)
+        private async Task DoRunAsync(IBackendManager backendManager, LocalRestoreDatabase database, Library.Utility.IFilter? filter, IRestoreDestinationProvider restoreDestination, long restoreVersion, DateTime restoreBackupTimestamp, CancellationToken cancellationToken)
         {
             using (var metadatastorage = new RestoreHandlerMetadataStorage())
             {
@@ -873,8 +1021,13 @@ namespace Duplicati.Library.Main.Operation
                     await FilelistProcessor.VerifyRemoteListAsync(backendManager, m_options, database, m_result.BackendWriter, latestVolumesOnly: false, verifyMode: FilelistProcessor.VerifyMode.VerifyOnly, cancellationToken).ConfigureAwait(false);
                 }
 
-                // Get priority files from restore destination
-                var priorityFiles = restoreDestination.GetPriorityFiles();
+                // Get priority files from restore destination.
+                // Wrap in a List<> so restore callback modules can freely modify the list
+                // (the destination provider may return a fixed-size array).
+                var priorityFiles = new List<string>(restoreDestination.GetPriorityFiles());
+                // Allow restore callback modules to inspect and modify the priority-files list
+                // before any files are restored, passing the forwarded version and backup timestamp.
+                await InvokePreparePriorityFilesAsync(m_options.LoadedModules, priorityFiles, restoreVersion, restoreBackupTimestamp, cancellationToken).ConfigureAwait(false);
 
                 if (priorityFiles.Count > 0)
                 {
@@ -897,13 +1050,16 @@ namespace Duplicati.Library.Main.Operation
 
                     // Phase 2: Restore remaining files (excluding priority files)
                     Logging.Log.WriteInformationMessage(LOGTAG, "RemainingFilesRestore", "Restoring remaining files (excluding priority files)");
+                    // All priority files have been restored and the bulk restore is starting.
+                    await InvokeBulkRestoreStartAsync(m_options.LoadedModules, cancellationToken).ConfigureAwait(false);
                     var phase2Filter = BuildExcludePriorityFilter(priorityFiles, filter);
                     await RestoreCoreAsync(backendManager, database, phase2Filter, restoreDestination, metadatastorage, cancellationToken)
                         .ConfigureAwait(false);
                 }
                 else
                 {
-                    // No priority files — single phase
+                    // No priority files — single phase, the bulk restore starts immediately.
+                    await InvokeBulkRestoreStartAsync(m_options.LoadedModules, cancellationToken).ConfigureAwait(false);
                     await RestoreCoreAsync(backendManager, database, filter, restoreDestination, metadatastorage, cancellationToken)
                         .ConfigureAwait(false);
                 }
