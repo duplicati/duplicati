@@ -110,6 +110,7 @@ public class ResultsDtoConverterFactory : JsonConverterFactory
         [typeof(IRepairResults)] = (typeof(RepairResultsDto), typeof(RepairResultsWrapper)),
         [typeof(ICompactResults)] = (typeof(CompactResultsDto), typeof(CompactResultsWrapper)),
         [typeof(IVacuumResults)] = (typeof(VacuumResultsDto), typeof(VacuumResultsWrapper)),
+        [typeof(ISyncResults)] = (typeof(SyncResultsDto), typeof(SyncResultsWrapper)),
         [typeof(ITestResults)] = (typeof(TestResultsDto), typeof(TestResultsWrapper)),
         [typeof(IListFilesetResults)] = (typeof(ListFilesetResultsDto), typeof(ListFilesetResultsWrapper)),
         [typeof(IListFolderResults)] = (typeof(ListFolderResultsDto), typeof(ListFolderResultsWrapper)),

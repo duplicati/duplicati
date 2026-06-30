@@ -25,6 +25,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
+using Duplicati.Library.Main.Database.Local;
 using Duplicati.Library.Main.Volumes;
 using Duplicati.Library.Utility;
 
@@ -55,7 +56,7 @@ namespace Duplicati.Library.Main.Operation
 
             //Use a speedy local query
             if (!m_options.NoLocalDb && System.IO.File.Exists(m_options.Dbpath))
-                await using (var db = await Database.LocalListDatabase.CreateAsync(m_options.Dbpath, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
+                await using (var db = await LocalListDatabase.CreateAsync(m_options.Dbpath, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                 {
                     await using var filesets = await db.SelectFileSetsAsync(m_options.Time, m_options.Version, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                     if (!filter.Empty)
@@ -68,7 +69,7 @@ namespace Duplicati.Library.Main.Operation
                         }
                     }
 
-                    IAsyncEnumerable<Database.LocalListDatabase.IFileversion> files;
+                    IAsyncEnumerable<LocalListDatabase.IFileversion> files;
                     if (m_options.ListFolderContents)
                     {
                         files = filesets.SelectFolderContentsAsync(filter, m_result.TaskControl.ProgressToken);
@@ -139,7 +140,7 @@ namespace Duplicati.Library.Main.Operation
             using (var tmpdb = new TempFile())
             await using (var db = await LocalDatabase.CreateLocalDatabaseAsync(tmpdb, "List", true, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
             {
-                var filteredList = ParseAndFilterFilesets(await backendManager.ListAsync(cancellationToken).ConfigureAwait(false), m_options);
+                var filteredList = ParseAndFilterFilesets(await backendManager.ListAsync(null, cancellationToken).ConfigureAwait(false), m_options);
                 if (filteredList.Count == 0)
                     throw new UserInformationException("No filesets found on remote target", "EmptyRemoteFolder");
 

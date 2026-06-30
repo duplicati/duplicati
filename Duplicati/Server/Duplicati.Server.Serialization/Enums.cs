@@ -31,7 +31,7 @@ namespace Duplicati.Server.Serialization
 
     public enum DuplicatiOperation
     {
-        Backup,
+        BackupOrSync,
         Restore,
         List,
         Remove,
@@ -60,6 +60,21 @@ namespace Duplicati.Server.Serialization
         Active,
         ActivePaused,
         Disconnected
+    }
+
+    /// <summary>
+    /// The kind of operation a backup configuration performs when it runs.
+    /// </summary>
+    public enum OperationType
+    {
+        /// <summary>
+        /// Run a regular encrypted/deduplicating backup (the default).
+        /// </summary>
+        Backup,
+        /// <summary>
+        /// Run the sync handler, mirroring files to the destination
+        /// </summary>
+        Sync
     }
 
 

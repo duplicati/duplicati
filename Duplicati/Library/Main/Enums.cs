@@ -69,6 +69,7 @@ namespace Duplicati.Library.Main
         PurgeFiles,
         SendMail,
         Vacuum,
+        Sync,
         ListFilesets,
         ListFolder,
         ListFileVersions,
@@ -157,5 +158,64 @@ namespace Duplicati.Library.Main
         /// The entry is a symbolic link
         /// </summary>
         Symlink
+    }
+
+    /// <summary>
+    /// Describes the operations tracked by the sync <c>PendingOperation</c> journal.
+    /// Each value corresponds to an in-flight intent recorded before the operation
+    /// is performed on the remote destination, so a crash can be reconciled on resume.
+    /// </summary>
+    public enum SyncOperation
+    {
+        /// <summary>
+        /// The file is being uploaded to the remote destination for the first time.
+        /// </summary>
+        Upload,
+
+        /// <summary>
+        /// The file is being updated on the remote destination (overwriting an existing entry).
+        /// </summary>
+        Update,
+
+        /// <summary>
+        /// The file is being deleted from the remote destination.
+        /// </summary>
+        Delete
+    }
+
+    /// <summary>
+    /// Controls how the sync operation determines the remote state of each folder
+    /// it processes. The choice trades off remote listing calls against local
+    /// database freshness, and bounds how much work is done per folder.
+    /// </summary>
+    public enum SyncRemoteState
+    {
+        /// <summary>
+        /// Always enumerate the remote target folder to obtain its current contents.
+        /// The local database is not used as a diff baseline, so the database never
+        /// holds a full inventory. This is the safest option: the remote destination
+        /// is authoritative for each folder, at the cost of one listing per folder.
+        /// </summary>
+        UseRemoteState,
+
+        /// <summary>
+        /// Use the local database as the diff baseline and assume it is up to date,
+        /// saving the remote listing calls. The inventory table is queried per
+        /// folder instead of listing the remote destination. This is faster but can
+        /// miss changes made to the remote destination outside of Duplicati; use
+        /// <see cref="UseRemoteState"/> (or a recheck) when the remote may have
+        /// drifted.
+        /// </summary>
+        UseLocalState,
+
+        /// <summary>
+        /// Do not enumerate the remote destination and do not consult the local
+        /// database: upload every local file unconditionally, recreating folders as
+        /// needed. This is the fastest path for an initial upload to an empty or
+        /// disposable destination. Deleting remote files is not meaningful under
+        /// this mode (there is no remote state to diff against); a request to delete
+        /// is logged as a warning and skipped.
+        /// </summary>
+        BlindlyUpload
     }
 }

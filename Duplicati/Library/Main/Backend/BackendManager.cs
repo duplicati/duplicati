@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -28,9 +27,9 @@ internal partial class BackendManager : IBackendManager
     private static readonly string LOGTAG = Logging.Log.LogTagFromType<BackendManager>();
 
     /// <summary>
-    /// The channel for issuing and handling requests
+    /// The channel for issuing and handling requests.
     /// </summary>
-    private readonly IChannel<PendingOperationBase> requestChannel = ChannelManager.CreateChannel<PendingOperationBase>(name: "BackendManager");
+    private readonly IChannel<PendingOperationBase> requestChannel = ChannelManager.CreateChannel<PendingOperationBase>(name: "BackendManager-" + Guid.NewGuid().ToString("N"));
 
     /// <summary>
     /// The queue runner task
@@ -43,9 +42,24 @@ internal partial class BackendManager : IBackendManager
     private readonly ExecuteContext context;
 
     /// <summary>
+    /// The backend URL this manager is bound to. Used as the base URL when
+    /// computing per-operation URL overrides for backends that do not support
+    /// folder operations (see <see cref="ApplyPathTranslation"/>).
+    /// </summary>
+    private readonly string backendUrl;
+
+    /// <summary>
     /// Indicates whether the backend supports object locking
     /// </summary>
     private readonly Lazy<bool> supportsObjectLocking;
+
+    /// <summary>
+    /// Indicates whether the backend supports folder operations. Kept internal:
+    /// the <see cref="IBackendManager"/> interface no longer exposes it, but the
+    /// backend manager still needs it to decide how to translate relative paths
+    /// for backends that only understand a single flat namespace per URL.
+    /// </summary>
+    private readonly Lazy<bool> supportsFolderOperations;
 
     /// <summary>
     /// Flag keeping track of whether the object has been disposed
@@ -63,6 +77,8 @@ internal partial class BackendManager : IBackendManager
     {
         if (string.IsNullOrWhiteSpace(backendUrl))
             throw new ArgumentNullException(nameof(backendUrl));
+
+        this.backendUrl = backendUrl;
 
         var isThrottleDisabled = options.DisableThrottle || options.ThrottleDisabledBackends.Contains(Library.Utility.Utility.GuessScheme(backendUrl) ?? string.Empty);
 
@@ -86,6 +102,21 @@ internal partial class BackendManager : IBackendManager
             try
             {
                 return backend is ILockingBackend;
+            }
+            finally
+            {
+                (backend as IDisposable)?.Dispose();
+            }
+        }, isThreadSafe: true);
+
+        supportsFolderOperations = new Lazy<bool>(() =>
+        {
+            var backend = DynamicLoader.BackendLoader.GetBackend(backendUrl, context.Options.RawOptions);
+            if (backend == null)
+                return false;
+            try
+            {
+                return backend is IFolderEnabledBackend;
             }
             finally
             {
@@ -151,6 +182,73 @@ internal partial class BackendManager : IBackendManager
     }
 
     /// <summary>
+    /// Merges a relative sub-path onto the backend URL, returning a new backend URL
+    /// that points at the sub-path. The merge is done on the path component of the
+    /// URL so it works across schemes (file://, s3://, ssh://, ...). An empty or null
+    /// sub-path returns the original URL unchanged.
+    /// </summary>
+    /// <param name="subPath">The relative sub-path to append (using '/' as separator), or null/empty for the root.</param>
+    /// <returns>A backend URL that points at <paramref name="subPath"/> under the backend root.</returns>
+    private string MergeBackendPath(string? subPath)
+    {
+        if (string.IsNullOrWhiteSpace(subPath))
+            return backendUrl;
+
+        var uri = new Library.Utility.Uri(backendUrl);
+        // Trim trailing path separators from the existing path AND the sub-path before
+        // joining with a single '/'. The URL path can end with a backslash on Windows
+        // (e.g. a file:// URL built from a TempFolder path, which always carries a
+        // trailing directory separator); only trimming '/' would leave that backslash in
+        // place and produce a doubled separator (e.g. "D:\...\temp\Stage1" -> "...\temp\\Stage1"
+        // after the OS normalizes the '/'), which on Windows yields an invalid path
+        // ("\\?\D:\...\temp\\Stage1"). Trimming both separators and joining with a single
+        // '/' keeps the merged path well-formed regardless of the host OS or how the
+        // backend URL was constructed.
+        var basePath = uri.Path?.TrimEnd('/', '\\') ?? "";
+        var sub = subPath.Trim('/', '\\');
+        var mergedPath = string.IsNullOrEmpty(basePath)
+            ? sub
+            : basePath + "/" + sub;
+        return uri.SetPath(mergedPath).ToString();
+    }
+
+    /// <summary>
+    /// Applies path translation to a file-oriented operation (put/get/delete) for
+    /// backends that do not support folder operations.
+    ///
+    /// Backends that implement <see cref="IFolderEnabledBackend"/> accept a relative
+    /// path (including sub-folders) directly in their put/get/delete calls, so no
+    /// translation is applied and the operation runs against the base backend URL with
+    /// the full relative path as the remote name.
+    ///
+    /// Backends that do NOT support folder operations only understand a flat namespace
+    /// of filenames relative to a single backend URL. For those, the relative path is
+    /// split into a directory part and a filename part: the backend is pointed at the
+    /// directory (via <see cref="PendingOperationBase.BackendUrlOverride"/>) and the
+    /// operation passes only the filename to the backend (via
+    /// <see cref="PendingOperationBase.EffectiveRemoteName"/>). The operation keeps
+    /// using the full relative path for all bookkeeping (database, progress, logging).
+    /// </summary>
+    /// <param name="op">The operation to translate. Its <see cref="PendingOperationBase.RemoteFilename"/> must be set.</param>
+    private void ApplyPathTranslation(PendingOperationBase op)
+    {
+        if (supportsFolderOperations.Value)
+            return; // Folder-enabled backends take the full relative path directly.
+
+        // Non-folder backend: split the relative path into (subPath, filename).
+        var relPath = op.RemoteFilename;
+        var lastSlash = relPath.LastIndexOf('/');
+        if (lastSlash < 0)
+            return; // Flat filename, no sub-path: use the base backend URL as-is.
+
+        var subPath = relPath.Substring(0, lastSlash);
+        var filename = relPath.Substring(lastSlash + 1);
+
+        op.BackendUrlOverride = MergeBackendPath(subPath);
+        op.EffectiveRemoteName = filename;
+    }
+
+    /// <summary>
     /// Decrypts a file using the specified options
     /// </summary>
     /// <param name="tmpfile">The file to decrypt</param>
@@ -172,6 +270,7 @@ internal partial class BackendManager : IBackendManager
     public async Task DeleteAsync(string remotename, long size, bool waitForComplete, CancellationToken cancelToken)
     {
         var op = new DeleteOperation(remotename, size, context, waitForComplete, cancelToken);
+        ApplyPathTranslation(op);
         await QueueTaskAsync(op).ConfigureAwait(false);
         await op.GetResultAsync().ConfigureAwait(false);
     }
@@ -218,6 +317,7 @@ internal partial class BackendManager : IBackendManager
             Hash = hash,
             Decrypt = true
         };
+        ApplyPathTranslation(op);
         await QueueTaskAsync(op).ConfigureAwait(false);
         (var file, var _, var _) = await op.GetResultAsync().ConfigureAwait(false);
         return file;
@@ -238,6 +338,7 @@ internal partial class BackendManager : IBackendManager
             Hash = hash,
             Decrypt = false
         };
+        ApplyPathTranslation(op);
         await QueueTaskAsync(op).ConfigureAwait(false);
         (var file, var _, var _) = await op.GetResultAsync().ConfigureAwait(false);
         return file;
@@ -270,21 +371,63 @@ internal partial class BackendManager : IBackendManager
             Hash = hash,
             Decrypt = true
         };
+        ApplyPathTranslation(op);
         await QueueTaskAsync(op).ConfigureAwait(false);
         (var file, var downloadHash, var downloadSize) = await op.GetResultAsync().ConfigureAwait(false);
         return (file, downloadHash, downloadSize);
     }
 
     /// <summary>
-    /// Lists files on the remote destination
+    /// Lists files on the remote destination at the specified path
     /// </summary>
+    /// <param name="path">The path to list, or null for the root folder</param>
     /// <param name="cancelToken">The cancellation token</param>
     /// <returns>The list of files</returns>
-    public async Task<IEnumerable<Interface.IFileEntry>> ListAsync(CancellationToken cancelToken)
+    public async Task<IEnumerable<Interface.IFileEntry>> ListAsync(string? path, CancellationToken cancelToken)
     {
-        var op = new ListOperation(context, cancelToken);
+        // For folder-enabled backends, ListAsync(path) lists the direct children of
+        // the sub-folder (the backend supports folder-scoped listing). For backends
+        // that do not support folder operations, there is no folder-scoped list call,
+        // so we point the backend at the sub-folder URL (via BackendUrlOverride) and
+        // ask for a flat listing of that folder instead (UseRootList = true,
+        // listPath = null). When listing the root (path == null) both kinds behave
+        // the same: flat listing of the base backend URL.
+        var useRootList = !supportsFolderOperations.Value;
+        string? listPath = useRootList ? null : path;
+        string? urlOverride = useRootList && !string.IsNullOrEmpty(path) ? MergeBackendPath(path) : null;
+
+        var op = new ListOperation(listPath, context, cancelToken)
+        {
+            BackendUrlOverride = urlOverride,
+            UseRootList = useRootList,
+        };
         await QueueTaskAsync(op).ConfigureAwait(false);
         return await op.GetResultAsync().ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Ensures the folder at the specified relative path exists on the backend.
+    ///
+    /// The backend is created bound to the sub-folder URL (the path merged onto the
+    /// backend URL, the same resolution used for put/get/delete on non-folder backends)
+    /// and <see cref="IBackend.CreateFolderAsync"/> is invoked. A
+    /// <see cref="FolderAreadyExistedException"/> is treated as success. This works
+    /// for both folder-enabled and non-folder backends: pointing the backend at the
+    /// sub-folder URL means <c>CreateFolderAsync</c> creates that sub-folder
+    /// (backends create the folder at their bound URL).
+    /// </summary>
+    /// <param name="path">The relative path of the folder to ensure, or null/empty for the backend root.</param>
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <returns>An awaitable task</returns>
+    public async Task EnsureFolderAsync(string? path, CancellationToken cancelToken)
+    {
+        var urlOverride = string.IsNullOrEmpty(path) ? null : MergeBackendPath(path);
+        var op = new CreateFolderOperation(context, cancelToken)
+        {
+            BackendUrlOverride = urlOverride,
+        };
+        await QueueTaskAsync(op).ConfigureAwait(false);
+        await op.GetResultAsync().ConfigureAwait(false);
     }
 
     /// <summary>
@@ -313,18 +456,19 @@ internal partial class BackendManager : IBackendManager
 
         // Prepare encryption
         op.StartEncryptionAndHashing();
+        ApplyPathTranslation(op);
         await QueueTaskAsync(op).ConfigureAwait(false);
         await op.GetResultAsync().ConfigureAwait(false);
     }
 
     /// <summary>
-    /// Uploads a verification file to the remote location without encryption
+    /// Uploads a file to the remote location without encryption
     /// </summary>
     /// <param name="remotename">The name of the remote file</param>
     /// <param name="tempFile">The temporary file to upload</param>
     /// <param name="cancelToken">The cancellation token</param>
     /// <returns>An awaitable task</returns>
-    public async Task PutVerificationFileAsync(string remotename, TempFile tempFile, CancellationToken cancelToken)
+    public async Task PutFileUnencryptedAsync(string remotename, TempFile tempFile, CancellationToken cancelToken)
     {
         var op = new PutOperation(remotename, context, true, cancelToken)
         {
@@ -338,6 +482,7 @@ internal partial class BackendManager : IBackendManager
 
         // Sets the task as already completed
         op.StartEncryptionAndHashing();
+        ApplyPathTranslation(op);
         await QueueTaskAsync(op).ConfigureAwait(false);
         await op.GetResultAsync().ConfigureAwait(false);
     }
@@ -348,7 +493,7 @@ internal partial class BackendManager : IBackendManager
     /// <param name="database">The database to write to.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task that completes when the messages are flushed.</returns>
-    public async Task FlushPendingMessagesAsync(LocalDatabase database, CancellationToken cancellationToken)
+    public async Task FlushPendingMessagesAsync(IBackendManagerDatabase database, CancellationToken cancellationToken)
     {
         await context.Database.FlushPendingMessagesAsync(database, cancellationToken).ConfigureAwait(false);
     }
@@ -372,7 +517,7 @@ internal partial class BackendManager : IBackendManager
     /// <param name="transaction">The transaction to use</param>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>An awaitable task</returns>
-    public async Task WaitForEmptyAsync(LocalDatabase database, CancellationToken cancellationToken)
+    public async Task WaitForEmptyAsync(IBackendManagerDatabase database, CancellationToken cancellationToken)
     {
         await FlushPendingMessagesAsync(database, cancellationToken).ConfigureAwait(false);
         await WaitForEmptyAsync(cancellationToken).ConfigureAwait(false);
@@ -384,7 +529,7 @@ internal partial class BackendManager : IBackendManager
     /// </summary>
     /// <param name="database">The database to write pending messages to.</param>
     /// <returns>A task that completes when the runner is stopped and messages are flushed.</returns>
-    public async Task StopRunnerAndFlushMessagesAsync(LocalDatabase database)
+    public async Task StopRunnerAndFlushMessagesAsync(IBackendManagerDatabase database)
     {
         await requestChannel.RetireAsync().ConfigureAwait(false);
         await FlushPendingMessagesAsync(database, CancellationToken.None).ConfigureAwait(false);

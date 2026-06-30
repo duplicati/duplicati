@@ -63,6 +63,22 @@ public class DatabaseStatus
     /// Whether the database is referenced in the server database
     /// </summary>
     public bool InServerDb { get; set; }
+
+    /// <summary>
+    /// Whether the database is referenced in dbconfig.json as a sync database
+    /// (i.e. its <c>BackendEntry.IsSyncDb</c> flag is set). Backup databases
+    /// referenced in dbconfig.json have this set to <c>false</c>.
+    /// </summary>
+    public bool InDbConfigAsSync { get; set; }
+
+    /// <summary>
+    /// The type of the database: Server, Backup, or Sync. For databases that exist
+    /// on disk this is determined by examining the schema; for databases that are
+    /// only referenced (and the file is missing) it is inferred from the reference
+    /// source (dbconfig.json <c>IsSyncDb</c> flag for dbconfig references, Backup
+    /// for server-database references).
+    /// </summary>
+    public DatabaseType Type { get; set; } = DatabaseType.Backup;
 }
 
 /// <summary>
@@ -102,16 +118,38 @@ public static class Verify
         }));
 
     /// <summary>
-    /// Analyzes all databases and returns their status
+    /// Analyzes all databases and returns their status.
+    ///
+    /// Databases are discovered from three sources: <c>dbconfig.json</c> (which
+    /// distinguishes backup databases from sync databases via the
+    /// <see cref="CLIDatabaseLocator.BackendEntry.IsSyncDb"/> flag), the server
+    /// database (which only references backup databases through its
+    /// <c>Backup</c> table), and a filesystem scan of the data folder. Each
+    /// discovered database is classified as <see cref="DatabaseType.Server"/>,
+    /// <see cref="DatabaseType.Backup"/>, or <see cref="DatabaseType.Sync"/>:
+    /// for databases that exist on disk the type is determined by examining the
+    /// schema (see <see cref="Helper.ExamineDatabaseAsync"/>); for databases that
+    /// are only referenced and missing from disk the type is inferred from the
+    /// reference source (sync for <c>dbconfig.json</c> entries with
+    /// <c>IsSyncDb</c>, backup otherwise, including server-database references
+    /// since the server database only tracks backup databases).
     /// </summary>
+    /// <param name="datafolder">The folder containing the databases.</param>
+    /// <param name="includeServer">Whether to include the server database in the results.</param>
+    /// <returns>A list of database statuses, ordered by status then path.</returns>
     public static async Task<List<DatabaseStatus>> AnalyzeDatabasesAsync(string datafolder, bool includeServer)
     {
         var results = new List<DatabaseStatus>();
         var serverDbPath = Path.Combine(datafolder, DataFolderManager.SERVER_DATABASE_FILENAME);
 
-        // Get databases referenced in dbconfig.json
+        // Get databases referenced in dbconfig.json, splitting them into backup
+        // and sync entries so the IsSyncDb flag is preserved per path. A path can
+        // in principle appear under both flags (e.g. a dbconfig misconfiguration);
+        // in that case the sync flag wins for classification, but the path is still
+        // recorded once in dbConfigPaths so it is not double-counted.
         var dbConfigPath = Path.Combine(datafolder, CONFIG_FILE);
         var dbConfigPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var dbConfigSyncPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         if (File.Exists(dbConfigPath))
         {
             try
@@ -123,7 +161,12 @@ public static class Verify
                     foreach (var config in configs)
                     {
                         if (!string.IsNullOrEmpty(config.Databasepath))
-                            dbConfigPaths.Add(Path.GetFullPath(config.Databasepath));
+                        {
+                            var full = Path.GetFullPath(config.Databasepath);
+                            dbConfigPaths.Add(full);
+                            if (config.IsSyncDb)
+                                dbConfigSyncPaths.Add(full);
+                        }
                     }
                 }
             }
@@ -133,7 +176,9 @@ public static class Verify
             }
         }
 
-        // Get databases referenced in server database
+        // Get databases referenced in the server database. The server database only
+        // ever references backup databases (sync databases are not registered there),
+        // so every path collected here is a backup database by construction.
         var serverDbPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         if (File.Exists(serverDbPath))
         {
@@ -187,6 +232,7 @@ public static class Verify
             var fileExists = File.Exists(path);
             var inDbConfig = dbConfigPaths.Contains(path);
             var inServerDb = serverDbPaths.Contains(path);
+            var inDbConfigAsSync = dbConfigSyncPaths.Contains(path);
 
             string status;
             string source;
@@ -224,11 +270,64 @@ public static class Verify
                 Source = source,
                 FileExists = fileExists,
                 InDbConfig = inDbConfig,
-                InServerDb = inServerDb
+                InServerDb = inServerDb,
+                InDbConfigAsSync = inDbConfigAsSync,
+                Type = await ResolveDatabaseTypeAsync(path, fileExists, inDbConfigAsSync, inServerDb, serverDbPath)
             });
         }
 
         return results.OrderBy(r => r.Status).ThenBy(r => r.Path).ToList();
+    }
+
+    /// <summary>
+    /// Resolves the <see cref="DatabaseType"/> for a discovered database path.
+    ///
+    /// For databases that exist on disk the type is determined by examining the
+    /// schema via <see cref="Helper.ExamineDatabaseAsync"/> (Server/Backup/Sync).
+    /// For databases that are missing from disk the type is inferred from the
+    /// reference source: sync for dbconfig.json entries with the <c>IsSyncDb</c>
+    /// flag, backup otherwise (including server-database references, since the
+    /// server database only tracks backup databases).
+    /// </summary>
+    /// <param name="path">The database path.</param>
+    /// <param name="fileExists">Whether the database file exists on disk.</param>
+    /// <param name="inDbConfigAsSync">Whether the path is referenced in dbconfig.json as a sync database.</param>
+    /// <param name="inServerDb">Whether the path is referenced in the server database.</param>
+    /// <param name="serverDbPath">The path to the server database, used to recognize it without opening it twice.</param>
+    /// <returns>The resolved database type.</returns>
+    private static async Task<DatabaseType> ResolveDatabaseTypeAsync(string path, bool fileExists, bool inDbConfigAsSync, bool inServerDb, string serverDbPath)
+    {
+        // The server database is recognized by its filename before any schema
+        // inspection; examining it would also classify it as Server, but the
+        // filename check is cheaper and avoids opening the file when it is the
+        // one we already have a connection to above.
+        if (Path.GetFileName(path).Equals(DataFolderManager.SERVER_DATABASE_FILENAME, StringComparison.OrdinalIgnoreCase))
+            return DatabaseType.Server;
+
+        if (fileExists)
+        {
+            try
+            {
+                var (_, type) = await Helper.ExamineDatabaseAsync(path).ConfigureAwait(false);
+                return type;
+            }
+            catch (Exception ex)
+            {
+                // The file exists but could not be opened (corrupt, locked, or not a
+                // SQLite database at all). Fall back to the reference-source inference
+                // so the entry is still reported, and warn so the user can investigate.
+                Console.WriteLine($"Warning: Could not examine database {path}: {ex.Message}");
+            }
+        }
+
+        // Missing or unopenable: infer from the reference source. The server
+        // database only ever references backup databases, so a server reference
+        // (with or without a dbconfig reference) is a backup database. A dbconfig
+        // reference with IsSyncDb is a sync database; anything else is a backup.
+        if (inDbConfigAsSync && !inServerDb)
+            return DatabaseType.Sync;
+
+        return DatabaseType.Backup;
     }
 
     /// <summary>
@@ -262,6 +361,10 @@ public static class Verify
         Console.WriteLine($"  Found: {found.Count}");
         Console.WriteLine($"  Missing: {missing.Count}");
         Console.WriteLine($"  Orphaned: {orphaned.Count}");
+        // Break down the totals by database type so it is clear at a glance how
+        // many of each kind (Server, Backup, Sync) were seen, regardless of status.
+        foreach (var grp in results.GroupBy(r => r.Type).OrderBy(g => g.Key))
+            Console.WriteLine($"  {grp.Key}: {grp.Count()}");
         Console.WriteLine();
 
         if (found.Count > 0)
@@ -271,6 +374,7 @@ public static class Verify
             foreach (var db in found)
             {
                 Console.WriteLine($"  {db.Path}");
+                Console.WriteLine($"    Type: {db.Type}");
                 Console.WriteLine($"    Source: {db.Source}");
             }
             Console.WriteLine();
@@ -283,6 +387,7 @@ public static class Verify
             foreach (var db in missing)
             {
                 Console.WriteLine($"  {db.Path}");
+                Console.WriteLine($"    Type: {db.Type}");
                 Console.WriteLine($"    Expected in: {db.Source}");
             }
             Console.WriteLine();
@@ -295,6 +400,7 @@ public static class Verify
             foreach (var db in orphaned)
             {
                 Console.WriteLine($"  {db.Path}");
+                Console.WriteLine($"    Type: {db.Type}");
                 Console.WriteLine($"    Not referenced in dbconfig.json or server database");
             }
             Console.WriteLine();

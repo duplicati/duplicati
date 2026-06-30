@@ -338,7 +338,7 @@ namespace Duplicati.CommandLine.RecoveryTool
 
         private static void RestoreOptionsFromLocalDatabaseIfAvailable(string backendUrl, Options options)
         {
-            var dbpath = CLIDatabaseLocator.GetDatabasePathForCLI(backendUrl, options, false, false);
+            var dbpath = CLIDatabaseLocator.GetDatabasePathForCLI(backendUrl, options, false, false, false);
             if (string.IsNullOrWhiteSpace(dbpath) || !File.Exists(dbpath))
                 return;
 

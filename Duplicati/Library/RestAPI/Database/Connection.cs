@@ -555,8 +555,9 @@ namespace Duplicati.Server.Database
                         Tags = (ConvertToString(rd, 3) ?? "").Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries),
                         TargetURL = EncryptedFieldHelper.Decrypt(ConvertToString(rd, 4), m_key),
                         DBPath = ResolveDbPath(ConvertToString(rd, 5)),
+                        OperationType = Library.Utility.Utility.ParseEnum(ConvertToString(rd, 6), Serialization.OperationType.Backup),
                     },
-                    cmd => cmd.SetCommandAndParameters(@"SELECT ""ID"", ""Name"", ""Description"", ""Tags"", ""TargetURL"", ""DBPath"" FROM ""Backup"" WHERE ID = @Id")
+                    cmd => cmd.SetCommandAndParameters(@"SELECT ""ID"", ""Name"", ""Description"", ""Tags"", ""TargetURL"", ""DBPath"", ""OperationType"" FROM ""Backup"" WHERE ID = @Id")
                         .SetParameterValue("@Id", id))
                     .FirstOrDefault();
 
@@ -728,8 +729,16 @@ namespace Duplicati.Server.Database
                     }
             }
 
-            if (!disabled_encryption && !gpgAsymmetricEncryption && string.IsNullOrWhiteSpace(passphrase))
-                return "Missing passphrase";
+            if (item.OperationType == Serialization.OperationType.Sync)
+            {
+                if (!disabled_encryption)
+                    return "Encryption not allowed for sync operations";
+            }
+            else
+            {
+                if (!disabled_encryption && !gpgAsymmetricEncryption && string.IsNullOrWhiteSpace(passphrase))
+                    return "Missing passphrase";
+            }
 
             if (schedule != null)
             {
@@ -836,9 +845,9 @@ namespace Duplicati.Server.Database
                         cmd =>
                         {
                             if (update)
-                                cmd.SetCommandAndParameters(@"UPDATE ""Backup"" SET ""Name""=@Name, ""Description""=@Description, ""Tags""=@Tags, ""TargetURL""=@TargetUrl WHERE ""ID""=@Id");
+                                cmd.SetCommandAndParameters(@"UPDATE ""Backup"" SET ""Name""=@Name, ""Description""=@Description, ""Tags""=@Tags, ""TargetURL""=@TargetUrl, ""OperationType""=@OperationType WHERE ""ID""=@Id");
                             else
-                                cmd.SetCommandAndParameters(@"INSERT INTO ""Backup"" (""Name"", ""ExternalID"", ""Description"", ""Tags"", ""TargetURL"", ""DBPath"") VALUES (@Name,@ExternalID,@Description,@Tags,@TargetUrl,@DbPath)");
+                                cmd.SetCommandAndParameters(@"INSERT INTO ""Backup"" (""Name"", ""ExternalID"", ""Description"", ""Tags"", ""TargetURL"", ""DBPath"", ""OperationType"") VALUES (@Name,@ExternalID,@Description,@Tags,@TargetUrl,@DbPath,@OperationType)");
                         },
                         (cmd, n) =>
                         {
@@ -850,7 +859,8 @@ namespace Duplicati.Server.Database
                             cmd.SetParameterValue("@Name", n.Name)
                                 .SetParameterValue("@Description", n.Description ?? "")
                                 .SetParameterValue("@Tags", string.Join(",", n.Tags ?? new string[0]))
-                                .SetParameterValue("@TargetUrl", m_encryptSensitiveFields ? EncryptedFieldHelper.Encrypt(n.TargetURL, m_key) : n.TargetURL);
+                                .SetParameterValue("@TargetUrl", m_encryptSensitiveFields ? EncryptedFieldHelper.Encrypt(n.TargetURL, m_key) : n.TargetURL)
+                                .SetParameterValue("@OperationType", n.OperationType.ToString());
 
                             if (update)
                                 cmd.SetParameterValue("@Id", item.ID);
@@ -1044,8 +1054,9 @@ namespace Duplicati.Server.Database
                             Tags = (ConvertToString(rd, 4) ?? "").Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries),
                             TargetURL = EncryptedFieldHelper.Decrypt(ConvertToString(rd, 5), m_key),
                             DBPath = ResolveDbPath(ConvertToString(rd, 6)),
+                            OperationType = Library.Utility.Utility.ParseEnum(ConvertToString(rd, 7), Serialization.OperationType.Backup),
                         },
-                        cmd => cmd.SetCommandAndParameters(@"SELECT ""ID"", ""Name"", ""ExternalID"", ""Description"", ""Tags"", ""TargetURL"", ""DBPath"" FROM ""Backup"" "))
+                        cmd => cmd.SetCommandAndParameters(@"SELECT ""ID"", ""Name"", ""ExternalID"", ""Description"", ""Tags"", ""TargetURL"", ""DBPath"", ""OperationType"" FROM ""Backup"" "))
                         .ToArray();
 
                     foreach (var n in lst)

@@ -27,6 +27,7 @@ using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using Duplicati.Library.Main.Database;
+using Duplicati.Library.Main.Database.Local;
 using Duplicati.Library.Main.Operation;
 using Duplicati.Library.Utility;
 using NUnit.Framework;
@@ -50,15 +51,16 @@ namespace Duplicati.UnitTest
             public Task WaitForEmptyAsync(CancellationToken cancellationToken)
                 => Task.CompletedTask;
 
-            public Task WaitForEmptyAsync(LocalDatabase database, CancellationToken cancellationToken)
+            public Task WaitForEmptyAsync(IBackendManagerDatabase database, CancellationToken cancellationToken)
                 => Task.CompletedTask;
 
             public void Dispose() { }
 
             #region Unused interface members
             public Task PutAsync(Duplicati.Library.Main.Volumes.VolumeWriterBase blockVolume, Duplicati.Library.Main.Volumes.IndexVolumeWriter? indexVolume, Func<Task>? indexVolumeFinished, bool waitForComplete, Func<Task>? onDbUpdate, CancellationToken cancelToken) => throw new NotImplementedException();
-            public Task PutVerificationFileAsync(string remotename, TempFile tempFile, CancellationToken cancelToken) => throw new NotImplementedException();
-            public Task<System.Collections.Generic.IEnumerable<Duplicati.Library.Interface.IFileEntry>> ListAsync(CancellationToken cancelToken) => throw new NotImplementedException();
+            public Task PutFileUnencryptedAsync(string remotename, TempFile tempFile, CancellationToken cancelToken) => throw new NotImplementedException();
+            public Task<System.Collections.Generic.IEnumerable<Duplicati.Library.Interface.IFileEntry>> ListAsync(string? path, CancellationToken cancelToken) => throw new NotImplementedException();
+            public Task EnsureFolderAsync(string? path, CancellationToken cancelToken) => throw new NotImplementedException();
             public TempFile DecryptFile(TempFile volume, string volume_name, Options options, bool dispose) => throw new NotImplementedException();
             public Task DeleteAsync(string remotename, long size, bool waitForComplete, CancellationToken cancelToken) => throw new NotImplementedException();
             public Task<IQuotaInfo?> GetQuotaInfoAsync(CancellationToken cancelToken) => throw new NotImplementedException();
@@ -67,7 +69,7 @@ namespace Duplicati.UnitTest
             public Task<TempFile> GetDirectAsync(string remotename, string hash, long size, CancellationToken cancelToken) => throw new NotImplementedException();
             public System.Collections.Generic.IAsyncEnumerable<(TempFile File, string Hash, long Size, string Name)> GetFilesOverlappedAsync(System.Collections.Generic.IEnumerable<IRemoteVolume> volumes, CancellationToken cancelToken) => throw new NotImplementedException();
             public System.Collections.Generic.IAsyncEnumerable<(TempFile File, string Name)> GetFilesOverlappedDirectAsync(System.Collections.Generic.IEnumerable<IRemoteVolume> volumes, CancellationToken cancelToken) => throw new NotImplementedException();
-            public Task FlushPendingMessagesAsync(LocalDatabase database, CancellationToken cancellationToken) => Task.CompletedTask;
+            public Task FlushPendingMessagesAsync(IBackendManagerDatabase database, CancellationToken cancellationToken) => Task.CompletedTask;
             public void UpdateThrottleValues(long maxUploadPrSecond, long maxDownloadPrSecond) => throw new NotImplementedException();
             #endregion
         }

@@ -27,7 +27,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Logging;
-using Duplicati.Library.Main.Database;
+using Duplicati.Library.Main.Database.Local;
 using Duplicati.Library.Main.Operation.Common;
 using Newtonsoft.Json;
 
@@ -1050,5 +1050,32 @@ namespace Duplicati.Library.Main
         public VacuumResults(BasicResults p) : base(p) { }
 
         public override OperationMode MainOperation { get { return OperationMode.Vacuum; } }
+    }
+
+    internal class SyncResults : BasicResults, ISyncResults
+    {
+        public SyncResults() : base() { }
+        public SyncResults(BasicResults p) : base(p) { }
+
+        public override OperationMode MainOperation { get { return OperationMode.Sync; } }
+
+        /// <inheritdoc/>
+        public long FoldersCreated { get; internal set; }
+        /// <inheritdoc/>
+        public long FoldersDeleted { get; internal set; }
+        /// <inheritdoc/>
+        public long FilesUploaded { get; internal set; }
+        /// <inheritdoc/>
+        public long UnchangedFiles { get; internal set; }
+        /// <inheritdoc/>
+        public long FilesDeleted { get; internal set; }
+        /// <inheritdoc/>
+        public long SourceFiles { get; internal set; }
+        /// <inheritdoc/>
+        public long SizeOfSourceFiles { get; internal set; }
+        /// <inheritdoc/>
+        public long SizeOfUploadedFiles { get; internal set; }
+        /// <inheritdoc/>
+        public long SizeOfDeletedFiles { get; internal set; }
     }
 }

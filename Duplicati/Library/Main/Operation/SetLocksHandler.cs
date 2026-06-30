@@ -28,7 +28,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Logging;
-using Duplicati.Library.Main.Database;
+using Duplicati.Library.Main.Database.Local;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -50,7 +50,7 @@ namespace Duplicati.Library.Main.Operation
         public Task RunAsync(IBackendManager backendManager, IEnumerable<DateTime>? versionTimestamps = null)
             => RunAsync(backendManager, null, versionTimestamps);
 
-        public async Task RunAsync(IBackendManager backendManager, Database.LocalLockDatabase? databaseOverride, IEnumerable<DateTime>? versionTimestamps = null)
+        public async Task RunAsync(IBackendManager backendManager, LocalLockDatabase? databaseOverride, IEnumerable<DateTime>? versionTimestamps = null)
         {
             if (m_options.RemoteFileLockDuration is null)
                 throw new UserInformationException("No lock duration specified", "MissingLockDuration");
@@ -126,7 +126,7 @@ namespace Duplicati.Library.Main.Operation
             m_result.EndTime = DateTime.UtcNow;
         }
 
-        private async Task<List<long>> ResolveFilesetIdsAsync(Database.LocalListDatabase db, IEnumerable<DateTime>? suppliedVersions)
+        private async Task<List<long>> ResolveFilesetIdsAsync(LocalListDatabase db, IEnumerable<DateTime>? suppliedVersions)
         {
             var filesetIds = new List<long>();
             var token = m_result.TaskControl.ProgressToken;

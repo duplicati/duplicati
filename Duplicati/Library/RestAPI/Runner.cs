@@ -36,6 +36,7 @@ using System.Threading;
 using System.Text.Json;
 using System.Globalization;
 using CoCoL;
+using System.ComponentModel;
 
 namespace Duplicati.Server
 {
@@ -593,7 +594,13 @@ namespace Duplicati.Server
             );
 
             var cmd = new System.Text.StringBuilder();
-            cmd.Append(Utility.WrapAsCommandLine([exe, "backup", url], false));
+            var mainOp = backup.OperationType switch
+            {
+                OperationType.Backup => "backup",
+                OperationType.Sync => "sync",
+                _ => throw new InvalidEnumArgumentException(nameof(backup.OperationType), (int)backup.OperationType, typeof(OperationType))
+            };
+            cmd.Append(Utility.WrapAsCommandLine([exe, mainOp, url], false));
 
             cmd.Append(" ");
             cmd.Append(Utility.WrapAsCommandLine(sources, true));
@@ -745,11 +752,11 @@ namespace Duplicati.Server
                         options[k.Key] = k.Value;
 
                 // Map AdditionalTargetURLs to remote-sync-json-config option for backup operations
-                if (data.Operation == DuplicatiOperation.Backup)
+                if (data.Operation == DuplicatiOperation.BackupOrSync)
                     ApplyAdditionalTargetUrls(backup, options);
 
                 // Pack in the system or task config for easy restore
-                if (data.Operation == DuplicatiOperation.Backup)
+                if (data.Operation == DuplicatiOperation.BackupOrSync)
                     tempfolder = StoreTaskConfigAndGetTempFolder(databaseConnection, data, options);
 
                 var useOutOfProcess = databaseConnection.ApplicationSettings.UseOutOfProcessController;
@@ -792,7 +799,7 @@ namespace Duplicati.Server
 
                     switch (data.Operation)
                     {
-                        case DuplicatiOperation.Backup:
+                        case DuplicatiOperation.BackupOrSync:
                             {
                                 var filter = ApplyFilter(backup, GetCommonFilter(databaseConnection));
                                 var sources = backup.Sources
@@ -800,7 +807,11 @@ namespace Duplicati.Server
                                     .WhereNotNullOrWhiteSpace()
                                     .ToArray();
 
-                                var r = await controller.BackupAsync(sources, filter).ConfigureAwait(false);
+                                IBasicResults r;
+                                if (backup.OperationType == OperationType.Sync)
+                                    r = await controller.SyncAsync(sources, filter).ConfigureAwait(false);
+                                else
+                                    r = await controller.BackupAsync(sources, filter).ConfigureAwait(false);
                                 UpdateMetadataBase(databaseConnection, eventPollNotify, notificationUpdateService, backup, r);
                                 return r;
                             }
@@ -1059,6 +1070,16 @@ namespace Duplicati.Server
             }
         }
 
+        private static void UpdateMetadataLastSync(IBackup backup, ISyncResults r)
+        {
+            if (r != null)
+            {
+                backup.Metadata["LastSyncDuration"] = r.Duration.ToString();
+                backup.Metadata["LastSyncStarted"] = Utility.SerializeDateTime(r.BeginTime.ToUniversalTime());
+                backup.Metadata["LastSyncFinished"] = Utility.SerializeDateTime(r.EndTime.ToUniversalTime());
+            }
+        }
+
         private static void UpdateMetadataStatistics(IBackup backup, IParsedBackendStatistics r)
         {
             if (r != null)
@@ -1107,6 +1128,11 @@ namespace Duplicati.Server
             if (result is IVacuumResults r5 && !result.Interrupted)
             {
                 UpdateMetadataLastVacuum(backup, r5);
+            }
+
+            if (result is ISyncResults r6)
+            {
+                UpdateMetadataLastSync(backup, r6);
             }
 
             if (result is IBackupResults r)

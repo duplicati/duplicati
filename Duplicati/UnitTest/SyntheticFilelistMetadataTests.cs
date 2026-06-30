@@ -28,6 +28,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Main;
 using Duplicati.Library.Main.Database;
+using Duplicati.Library.Main.Database.Local;
 using Duplicati.Library.Main.Volumes;
 using Microsoft.Data.Sqlite;
 using NUnit.Framework;
@@ -73,7 +74,7 @@ namespace Duplicati.UnitTest
             /// composite (FilesetID, FileID) key. The matching FileLookup row
             /// is left in place; if no other FilesetEntry references it, it
             /// becomes an orphan – exactly the state that
-            /// <see cref="Duplicati.Library.Main.Database.LocalBackupDatabase"/>
+            /// <see cref="Duplicati.Library.Main.Database.Local.LocalBackupDatabase"/>
             /// produces when <c>RemoveDuplicatePathsFromFileset</c> /
             /// <c>FixDuplicatePathsInFilesets</c> trims duplicates.
             /// </summary>
@@ -432,7 +433,7 @@ namespace Duplicati.UnitTest
         [Category("Disruption")]
         [Category("SyntheticFilelist")]
         [Category("ExcludedFromCLI")]
-        public async Task SyntheticFilelistWithMultipleInterruptedBackups()
+        public async Task SyntheticFilelistWithMultipleInterruptedBackupsAsync()
         {
             var options = new Dictionary<string, string>(this.TestOptions)
             {

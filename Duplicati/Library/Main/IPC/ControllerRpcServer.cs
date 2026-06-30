@@ -51,7 +51,7 @@ public class ControllerRpcServer : IController, IDisposable
     /// <summary>
     /// Gets or sets the callback for when an operation is completed
     /// </summary>
-    public Action<IBasicResults, Exception>? OnOperationCompleted { get; set; }
+    public Action<IBasicResults, Exception?>? OnOperationCompleted { get; set; }
 
     /// <summary>
     /// Creates a new controller RPC server
@@ -91,6 +91,8 @@ public class ControllerRpcServer : IController, IDisposable
                         operation = OperationMode.Compact;
                     else if (results is IVacuumResults)
                         operation = OperationMode.Vacuum;
+                    else if (results is ISyncResults)
+                        operation = OperationMode.Sync;
                     else if (results is ITestResults)
                         operation = OperationMode.Test;
                     else if (results is ICreateLogDatabaseResults)
@@ -157,6 +159,10 @@ public class ControllerRpcServer : IController, IDisposable
     /// <inheritdoc />
     public Task<IVacuumResults> VacuumAsync()
         => Controller.VacuumAsync();
+
+    /// <inheritdoc />
+    public Task<ISyncResults> SyncAsync(string[] sourcePaths, IFilter? filter = null)
+        => Controller.SyncAsync(sourcePaths, filter);
 
     /// <inheritdoc />
     public Task<ITestResults> TestAsync(long samples = 1)

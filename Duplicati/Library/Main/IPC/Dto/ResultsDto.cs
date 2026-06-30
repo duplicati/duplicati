@@ -261,6 +261,48 @@ public class VacuumResultsDto : BasicResultsDto
 }
 
 /// <summary>
+/// DTO for sync results
+/// </summary>
+[Serializable]
+public class SyncResultsDto : BasicResultsDto
+{
+    public long FoldersCreated { get; set; }
+    public long FoldersDeleted { get; set; }
+    public long FilesUploaded { get; set; }
+    public long UnchangedFiles { get; set; }
+    public long FilesDeleted { get; set; }
+    public long SourceFiles { get; set; }
+    public long SizeOfSourceFiles { get; set; }
+    public long SizeOfUploadedFiles { get; set; }
+    public long SizeOfDeletedFiles { get; set; }
+
+    public static SyncResultsDto FromResults(ISyncResults results)
+    {
+        if (results == null) return null;
+        return new SyncResultsDto
+        {
+            BeginTime = results.BeginTime,
+            EndTime = results.EndTime,
+            Duration = results.Duration,
+            Errors = results.Errors?.ToList() ?? new List<string>(),
+            Warnings = results.Warnings?.ToList() ?? new List<string>(),
+            Messages = results.Messages?.ToList() ?? new List<string>(),
+            ParsedResult = results.ParsedResult,
+            Interrupted = results.Interrupted,
+            FoldersCreated = results.FoldersCreated,
+            FoldersDeleted = results.FoldersDeleted,
+            FilesUploaded = results.FilesUploaded,
+            UnchangedFiles = results.UnchangedFiles,
+            FilesDeleted = results.FilesDeleted,
+            SourceFiles = results.SourceFiles,
+            SizeOfSourceFiles = results.SizeOfSourceFiles,
+            SizeOfUploadedFiles = results.SizeOfUploadedFiles,
+            SizeOfDeletedFiles = results.SizeOfDeletedFiles
+        };
+    }
+}
+
+/// <summary>
 /// DTO for delete results
 /// </summary>
 [Serializable]

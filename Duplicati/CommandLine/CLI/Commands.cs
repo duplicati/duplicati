@@ -171,7 +171,7 @@ namespace Duplicati.CommandLine
             options.TryGetValue("dbpath", out dbpath);
             if (string.IsNullOrEmpty(dbpath))
             {
-                dbpath = Library.Main.CLIDatabaseLocator.GetDatabasePathForCLI(backend, new Library.Main.Options(options), false, true);
+                dbpath = Library.Main.CLIDatabaseLocator.GetDatabasePathForCLI(backend, new Library.Main.Options(options), false, true, false);
                 if (dbpath != null)
                     options["dbpath"] = dbpath;
             }
@@ -334,7 +334,7 @@ namespace Duplicati.CommandLine
             options.TryGetValue("dbpath", out dbpath);
             if (string.IsNullOrEmpty(dbpath))
             {
-                dbpath = Library.Main.CLIDatabaseLocator.GetDatabasePathForCLI(backend, new Duplicati.Library.Main.Options(options), false, true);
+                dbpath = Library.Main.CLIDatabaseLocator.GetDatabasePathForCLI(backend, new Duplicati.Library.Main.Options(options), false, true, false);
                 if (dbpath != null)
                     options["dbpath"] = dbpath;
             }
@@ -984,7 +984,7 @@ namespace Duplicati.CommandLine
             if (string.IsNullOrEmpty(dbpath))
             {
                 if (args.Count > 0)
-                    dbpath = Library.Main.CLIDatabaseLocator.GetDatabasePathForCLI(args[0], new Duplicati.Library.Main.Options(options), false, true);
+                    dbpath = Library.Main.CLIDatabaseLocator.GetDatabasePathForCLI(args[0], new Duplicati.Library.Main.Options(options), false, true, false);
 
                 if (dbpath == null)
                 {
@@ -1030,7 +1030,7 @@ namespace Duplicati.CommandLine
             options.TryGetValue("dbpath", out dbpath);
             if (string.IsNullOrEmpty(dbpath))
             {
-                dbpath = Library.Main.CLIDatabaseLocator.GetDatabasePathForCLI(args[0], new Duplicati.Library.Main.Options(options), false, true);
+                dbpath = Library.Main.CLIDatabaseLocator.GetDatabasePathForCLI(args[0], new Duplicati.Library.Main.Options(options), false, true, false);
                 if (dbpath != null)
                     options["dbpath"] = dbpath;
             }
@@ -1155,6 +1155,23 @@ namespace Duplicati.CommandLine
                     i.ListChangesAsync(args.Count > 1 ? args[1] : null, args.Count > 2 ? args[2] : null, null, filter, handler).Await();
             }
 
+            return 0;
+        }
+
+        public static int Sync(TextWriter outwriter, Action<Duplicati.Library.Main.Controller> setup, List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
+        {
+            if (args.Count < 2)
+                return PrintWrongNumberOfArguments(outwriter, args, 2);
+
+            var backendUrl = args[0];
+            var sourcePaths = args.Skip(1).ToArray();
+
+            using (var output = new ConsoleOutput(outwriter, options))
+            using (var c = new Duplicati.Library.Main.Controller(backendUrl, options, output))
+            {
+                setup(c);
+                c.SyncAsync(sourcePaths, filter).Await();
+            }
             return 0;
         }
 

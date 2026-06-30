@@ -28,6 +28,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
+using Duplicati.Library.Main.Database.Local;
 using Duplicati.Library.Main.Operation.Backup;
 using Duplicati.Library.Main.Volumes;
 using Duplicati.Library.Utility;

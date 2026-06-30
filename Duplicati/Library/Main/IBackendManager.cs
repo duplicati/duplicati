@@ -57,7 +57,7 @@ internal interface IBackendManager : IDisposable
     /// <param name="tempFile">The file to upload</param>
     /// <param name="cancelToken">The cancellation token</param>
     /// <returns>An awaitable task</returns>
-    Task PutVerificationFileAsync(string remotename, TempFile tempFile, CancellationToken cancelToken);
+    Task PutFileUnencryptedAsync(string remotename, TempFile tempFile, CancellationToken cancelToken);
 
     /// <summary>
     /// Waits for the backend queue to be empty
@@ -72,14 +72,28 @@ internal interface IBackendManager : IDisposable
     /// <param name="database">The database to write pending messages to</param>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>An awaitable task</returns>
-    Task WaitForEmptyAsync(LocalDatabase database, CancellationToken cancellationToken);
+    Task WaitForEmptyAsync(IBackendManagerDatabase database, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Lists the files on the backend
+    /// Lists the files on the backend at the specified path
     /// </summary>
+    /// <param name="path">The path to list, or null for the root folder</param>
     /// <param name="cancelToken">The cancellation token</param>
     /// <returns>An enumerable of file entries</returns>
-    Task<IEnumerable<IFileEntry>> ListAsync(CancellationToken cancelToken);
+    Task<IEnumerable<IFileEntry>> ListAsync(string? path, CancellationToken cancelToken);
+
+    /// <summary>
+    /// Ensures the folder at the specified relative path exists on the backend,
+    /// creating it (and any missing ancestors as required by the backend) if needed.
+    /// A <c>null</c> or empty path targets the backend root. Callers that upload a
+    /// file into a sub-folder should invoke this first so the destination folder is
+    /// present, since backends are no longer expected to create missing parent
+    /// folders themselves during a put.
+    /// </summary>
+    /// <param name="path">The relative path of the folder to ensure, or null/empty for the backend root.</param>
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <returns>An awaitable task</returns>
+    Task EnsureFolderAsync(string? path, CancellationToken cancelToken);
 
     /// <summary>
     /// Decrypts the given file and returns the decrypted file
@@ -176,7 +190,7 @@ internal interface IBackendManager : IDisposable
     /// <param name="database">The database to write to</param>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns></returns>
-    Task FlushPendingMessagesAsync(LocalDatabase database, CancellationToken cancellationToken);
+    Task FlushPendingMessagesAsync(IBackendManagerDatabase database, CancellationToken cancellationToken);
 
     /// <summary>
     /// Updates the throttle values for upload and download

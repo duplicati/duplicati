@@ -127,6 +127,11 @@ partial class BackendManager
                 string retHashcode;
                 dlTarget = new TempFile();
                 Context.ProgressHandler.BeginTransfer(BackendActionType.Get, Size, RemoteFilename);
+                // The effective remote name is the name passed to the backend. For
+                // folder-enabled backends it equals RemoteFilename (the full relative
+                // path); for non-folder backends the backend is pointed at the file's
+                // sub-folder (via BackendUrlOverride) and this is just the filename.
+                var effectiveName = GetEffectiveRemoteName();
                 if (backend is IStreamingBackend streamingBackend && streamingBackend.SupportsStreaming && !Context.Options.DisableStreamingTransfers)
                 {
                     // extended to use stacked streams
@@ -138,7 +143,7 @@ partial class BackendManager
                         using (var ts = new ThrottleEnabledStream(ss, Context.UploadThrottleManager, Context.DownloadThrottleManager))
                         using (var pgs = new ProgressReportingStream(ts, pg => Context.ProgressHandler.HandleProgress(pg, RemoteFilename)))
                         {
-                            await streamingBackend.GetAsync(RemoteFilename, pgs, cancelToken).ConfigureAwait(false);
+                            await streamingBackend.GetAsync(effectiveName, pgs, cancelToken).ConfigureAwait(false);
                         }
                         await ss.FlushAsync();
                         retDownloadSize = ss.TotalBytesWritten;
@@ -147,7 +152,7 @@ partial class BackendManager
                 }
                 else
                 {
-                    await backend.GetAsync(RemoteFilename, dlTarget, cancelToken).ConfigureAwait(false);
+                    await backend.GetAsync(effectiveName, dlTarget, cancelToken).ConfigureAwait(false);
                     retDownloadSize = new System.IO.FileInfo(dlTarget).Length;
                     retHashcode = CalculateFileHash(dlTarget, Context.Options);
                 }

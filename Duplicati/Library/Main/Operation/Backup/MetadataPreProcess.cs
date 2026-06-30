@@ -116,7 +116,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     {
                         try
                         {
-                            var split = Database.LocalDatabase.SplitIntoPrefixAndName(entry.Path);
+                            var split = Database.Local.LocalDatabase.SplitIntoPrefixAndName(entry.Path);
 
                             long prefixid;
                             if (string.Equals(prevprefix.Key, split.Key, StringComparison.Ordinal))

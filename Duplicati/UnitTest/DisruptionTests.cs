@@ -28,10 +28,9 @@ using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Logging;
 using Duplicati.Library.Main;
-using Duplicati.Library.Main.Database;
+using Duplicati.Library.Main.Database.Local;
 using Duplicati.Library.Main.Volumes;
 using NUnit.Framework;
-using IFileEntry = Duplicati.Library.Interface.IFileEntry;
 using Utility = Duplicati.Library.Utility.Utility;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
 

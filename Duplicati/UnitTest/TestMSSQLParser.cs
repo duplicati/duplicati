@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Versioning;
 using Duplicati.Library.Logging;
 using Duplicati.Library.Snapshots;
 using Duplicati.Library.Snapshots.Windows;
@@ -69,6 +70,7 @@ namespace Duplicati.UnitTest
         private static Dictionary<string, string> RequiredPolicyOptions()
             => new(StringComparer.OrdinalIgnoreCase) { ["snapshot-policy"] = "required" };
 
+        [SupportedOSPlatform("windows")]
         private static Dictionary<string, string> Run(MockMSSQLUtility util, ref string[] paths, ref string filter, Dictionary<string, string> options = null)
         {
             options ??= RequiredPolicyOptions();
@@ -197,6 +199,7 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
+        [SupportedOSPlatform("windows")]
         public void Ambiguous_instance_and_default_database_name_throws()
         {
             if (!OperatingSystem.IsWindows())
@@ -242,6 +245,7 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
+        [SupportedOSPlatform("windows")]
         public void Unknown_server_throws()
         {
             if (!OperatingSystem.IsWindows())
@@ -260,6 +264,7 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
+        [SupportedOSPlatform("windows")]
         public void Unknown_instance_or_database_throws()
         {
             if (!OperatingSystem.IsWindows())
@@ -279,6 +284,7 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
+        [SupportedOSPlatform("windows")]
         public void Unknown_database_on_named_instance_throws()
         {
             if (!OperatingSystem.IsWindows())

@@ -410,6 +410,14 @@ namespace Duplicati.Library.Main.Strings
         public static string RepairRefreshLockInfoLong { get { return LC.L("Use this option to refresh the object lock expiration information from the backend during a repair operation. This will query the backend for the current lock status of each remote volume and update the local database accordingly. If the backend does not support locking, this option will be ignored."); } }
         public static string RefreshLockInfoCompleteShort { get { return LC.L("Perform a complete refresh of lock information"); } }
         public static string RefreshLockInfoCompleteLong { get { return LC.L("Use this option to perform a complete refresh of lock information from the backend. This will query the backend for the current lock status of each remote volume and update the local database accordingly. If this option is not specified, only the lock information for the remote volumes with no lock information will be refreshed."); } }
+        public static string SyncRecheckShort { get { return LC.L("Force remote recheck"); } }
+        public static string SyncRecheckLong { get { return LC.L("Forces a full remote listing to rebuild the local sync cache"); } }
+        public static string SyncThenDeleteShort { get { return LC.L("Delete orphaned files"); } }
+        public static string SyncThenDeleteLong { get { return LC.L("Deletes files on the remote that no longer exist locally"); } }
+        public static string SyncVerifyHashShort { get { return LC.L("Verify file hashes"); } }
+        public static string SyncVerifyHashLong { get { return LC.L("Verifies file content using SHA-256 hashes when size and time match"); } }
+        public static string SyncRemoteStateShort { get { return LC.L("Remote state source"); } }
+        public static string SyncRemoteStateLong { get { return LC.L($"Controls how the sync operation determines the remote state of each folder: '{SyncRemoteState.UseRemoteState}' enumerates the remote destination per folder (safest, one listing per folder), '{SyncRemoteState.UseLocalState}' uses the local database and assumes it is up to date (faster, no extra listings), '{SyncRemoteState.BlindlyUpload}' uploads every local file unconditionally without checking remote state (fastest, deletes are skipped with a warning)."); } }
         public static string EnableAdsBackupShort { get { return LC.L("Enable backup of NTFS alternate data streams"); } }
         public static string EnableAdsBackupLong { get { return LC.L("Use this option to enable backup of NTFS alternate data streams (ADS). This is a Windows-only feature that allows backing up hidden data attached to files."); } }
         public static string DisableAdsRestoreShort { get { return LC.L("Disable restore of NTFS alternate data streams"); } }

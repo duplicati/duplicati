@@ -257,11 +257,41 @@ namespace Duplicati.Library.Backend.GoogleDrive
         {
             try
             {
-                // Figure out if we update or create the file
-                if (m_filecache.Count == 0)
-                    await foreach (var file in ListAsync(cancelToken).ConfigureAwait(false)) { /* Enumerate the full listing */ }
+                // Resolve the target folder and the actual file name, supporting
+                // a remotename that contains a path (e.g. "subfolder/file.txt").
+                string targetFolderId;
+                string fileName;
+                if (remotename.Contains('/'))
+                {
+                    var parts = GetAbsolutePath(remotename).Split('/', StringSplitOptions.RemoveEmptyEntries);
+                    if (parts.Length == 0)
+                        throw new FileMissingException();
 
-                m_filecache.TryGetValue(remotename, out var files);
+                    fileName = parts.Last();
+                    var folderPath = string.Join("/", parts.Take(parts.Length - 1));
+                    targetFolderId = await GetFolderIdAsync(folderPath, true, cancelToken).ConfigureAwait(false);
+                }
+                else
+                {
+                    fileName = remotename;
+                    targetFolderId = await GetCurrentFolderIdAsync(cancelToken).ConfigureAwait(false);
+                }
+
+                // Figure out if we update or create the file
+                GoogleDriveFolderItem[]? files;
+                if (remotename.Contains('/'))
+                {
+                    // The flat listing from ListAsync only populates the cache for files
+                    // directly in the current folder, so resolve the nested path explicitly.
+                    files = await GetFileEntriesAsync(remotename, false, cancelToken).ConfigureAwait(false);
+                }
+                else
+                {
+                    if (m_filecache.Count == 0)
+                        await foreach (var file in ListAsync(cancelToken).ConfigureAwait(false)) { /* Enumerate the full listing */ }
+
+                    m_filecache.TryGetValue(remotename, out files);
+                }
 
                 string? fileId = null;
                 if (files != null)
@@ -275,15 +305,14 @@ namespace Duplicati.Library.Backend.GoogleDrive
                 var isUpdate = !string.IsNullOrWhiteSpace(fileId);
 
                 var url = WebApi.GoogleDrive.PutUrl(fileId, m_teamDriveID != null);
-                var currentFolderId = await GetCurrentFolderIdAsync(cancelToken).ConfigureAwait(false);
 
                 var item = new GoogleDriveFolderItem
                 {
-                    title = remotename,
-                    description = remotename,
+                    title = fileName,
+                    description = fileName,
                     mimeType = "application/octet-stream",
                     labels = new GoogleDriveFolderItemLabels { hidden = true },
-                    parents = [new GoogleDriveParentReference { id = currentFolderId }],
+                    parents = [new GoogleDriveParentReference { id = targetFolderId }],
                     teamDriveId = m_teamDriveID
                 };
 

@@ -46,10 +46,11 @@ public static class Downgrade
             new Option<DirectoryInfo>("--server-datafolder", description: "The folder with databases", getDefaultValue: () => new DirectoryInfo(DataFolderLocator.GetDefaultStorageFolder(DataFolderManager.SERVER_DATABASE_FILENAME, false, true))),
             new Option<int>("--server-version", description: "The version to downgrade the server database to", getDefaultValue: () => 9),
             new Option<int>("--local-version", description: "The version to downgrade local databases to", getDefaultValue: () => 14),
+            new Option<int>("--sync-version", description: "The version to downgrade sync databases to", getDefaultValue: () => 1),
             new Option<bool>("--no-backups", description: "Do not create backups before downgrade", getDefaultValue: () => false),
             new Option<bool>("--include-untracked-databases", description: "Include untracked databases in the downgrade process", getDefaultValue: () => false)
         }
-        .WithHandler(CommandHandler.Create<string[], DirectoryInfo, int, int, bool, bool>((databases, serverdatafolder, serverversion, localversion, nobackups, includeuntrackeddatabases) =>
+        .WithHandler(CommandHandler.Create<string[], DirectoryInfo, int, int, int, bool, bool>((databases, serverdatafolder, serverversion, localversion, syncversion, nobackups, includeuntrackeddatabases) =>
             {
                 databases = Helper.FindAllDatabasesAsync(databases, serverdatafolder.FullName, includeuntrackeddatabases).Await();
                 if (databases.Length == 0)
@@ -68,7 +69,8 @@ public static class Downgrade
                 {
                     var prefixes = new[] {
                         typeof(Program).Namespace + ".Scripts.Local.",
-                        typeof(Program).Namespace + ".Scripts.Server."
+                        typeof(Program).Namespace + ".Scripts.Server.",
+                        typeof(Program).Namespace + ".Scripts.Sync."
                     };
 
                     foreach (var prefix in prefixes)
@@ -88,6 +90,11 @@ public static class Downgrade
                     .Select(x => new DowngradeScript(Version: int.Parse(ResourceNameToPath(x).Split('.').First()), Filename: ResourceNameToPath(x), Content: ReadStream(x)))
                     .ToList();
 
+                var syncVersions = typeof(Downgrade).Assembly.GetManifestResourceNames()
+                    .Where(x => x.Contains(".Scripts.Sync."))
+                    .Select(x => new DowngradeScript(Version: int.Parse(ResourceNameToPath(x).Split('.').First()), Filename: ResourceNameToPath(x), Content: ReadStream(x)))
+                    .ToList();
+
                 foreach (var db in databases)
                 {
                     Console.WriteLine($"Examining {db} ...");
@@ -98,10 +105,10 @@ public static class Downgrade
                     }
 
                     int version;
-                    bool isserverdb;
+                    DatabaseType type;
                     try
                     {
-                        (version, isserverdb) = Helper.ExamineDatabaseAsync(db).Await();
+                        (version, type) = Helper.ExamineDatabaseAsync(db).Await();
                     }
                     catch (Exception ex)
                     {
@@ -109,12 +116,24 @@ public static class Downgrade
                         continue;
                     }
 
-                    Console.WriteLine($"Database {db} is version {version} and is a {(isserverdb ? "server" : "local")} database");
-                    ApplyDowngradeAsync(db, version,
-                        isserverdb ? serverversion : localversion,
-                        isserverdb ? serverVersions : localVersions,
-                    nobackups)
-                        .Await();
+                    var targetVersion = type switch
+                    {
+                        DatabaseType.Server => serverversion,
+                        DatabaseType.Sync => syncversion,
+                        DatabaseType.Backup => localversion,
+                        _ => throw new Exception($"Unknown database type: {type}")
+                    };
+
+                    var scripts = type switch
+                    {
+                        DatabaseType.Server => serverVersions,
+                        DatabaseType.Sync => syncVersions,
+                        DatabaseType.Backup => localVersions,
+                        _ => throw new Exception($"Unknown database type: {type}")
+                    };
+
+                    Console.WriteLine($"Database {db} is version {version} and is a {type} database");
+                    ApplyDowngradeAsync(db, version, targetVersion, scripts, nobackups).Await();
                 }
             }));
 

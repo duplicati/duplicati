@@ -69,6 +69,7 @@ public class BackupPutDelete : IEndpointV1
                 Tags = input.Backup.Tags,
                 TargetURL = input.Backup.TargetURL,
                 ConnectionStringID = input.Backup.ConnectionStringID,
+                OperationType = input.Backup.OperationType,
                 Sources = input.Backup.Sources,
                 Settings = settings.Select(x => new Setting()
                 {

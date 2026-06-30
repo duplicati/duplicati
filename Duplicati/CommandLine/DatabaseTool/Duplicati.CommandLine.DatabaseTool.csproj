@@ -17,6 +17,7 @@
   <ItemGroup>
     <EmbeddedResource Include="Scripts/Local/*.sql" />
     <EmbeddedResource Include="Scripts/Server/*.sql" />
+    <EmbeddedResource Include="Scripts/Sync/*.sql" />
   </ItemGroup>
 
   <ItemGroup>

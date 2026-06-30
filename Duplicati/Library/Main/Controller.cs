@@ -31,6 +31,7 @@ using System.Threading.Tasks;
 using Duplicati.Library.Main.Operation.Common;
 using System.IO;
 using Duplicati.Library.Backends;
+using Duplicati.Library.Main.Database.Local;
 
 namespace Duplicati.Library.Main
 {
@@ -268,7 +269,7 @@ namespace Duplicati.Library.Main
             {
                 using var tf = File.Exists(config.Options.Dbpath) ? null : new TempFile();
                 await using var db = await LocalDatabase.CreateLocalDatabaseAsync(((string)tf) ?? config.Options.Dbpath, "list-remote", true, null, config.Result.TaskControl.ProgressToken).ConfigureAwait(false);
-                config.Result.SetResult(await config.BackendManager.ListAsync(CancellationToken.None).ConfigureAwait(false));
+                config.Result.SetResult(await config.BackendManager.ListAsync(null, CancellationToken.None).ConfigureAwait(false));
             }).ConfigureAwait(false);
         }
 
@@ -280,7 +281,7 @@ namespace Duplicati.Library.Main
                 config.Result.OperationProgressUpdater.UpdatePhase(OperationPhase.Delete_Listing);
                 {
                     // Only delete files that match the expected pattern and prefix
-                    var list = (await config.BackendManager.ListAsync(config.Result.TaskControl.ProgressToken).ConfigureAwait(false))
+                    var list = (await config.BackendManager.ListAsync(null, config.Result.TaskControl.ProgressToken).ConfigureAwait(false))
                         .Select(x => Volumes.VolumeBase.ParseFilename(x))
                         .Where(x => x != null)
                         .Where(x => x.Prefix == config.Options.Prefix)
@@ -494,7 +495,14 @@ namespace Duplicati.Library.Main
             }
         }
 
-        /// <inheritdoc />
+        public async Task<ISyncResults> SyncAsync(string[] sourcePaths, IFilter filter)
+        {
+            return await RunActionAsync(new SyncResults(), sourcePaths, filter, false, config =>
+                new Operation.Sync.SyncHandler(config.Paths, config.Options, config.Result, config.BackendUrl)
+                    .RunAsync(config.BackendManager, config.Filter)
+            );
+        }
+
         public async Task<IVacuumResults> VacuumAsync()
         {
             return await RunActionAsync(new VacuumResults(), null, null, false, static config =>
@@ -561,7 +569,9 @@ namespace Duplicati.Library.Main
                             // This would also allow us to control the unclean shutdown flag,
                             // by toggling this on start and completion of transfers in the manager,
                             // instead of relying on the operations to correctly toggle the flag
-                            if (File.Exists(m_options.Dbpath) && !m_options.NoLocalDb)
+                            //
+                            // The sync operation owns its own database and records its own audit log.
+                            if (File.Exists(m_options.Dbpath) && !m_options.NoLocalDb && m_options.MainAction != OperationMode.Sync)
                             {
                                 try
                                 {
@@ -584,7 +594,11 @@ namespace Duplicati.Library.Main
                         resultSetter.EndTime = DateTime.UtcNow;
                     resultSetter.Interrupted = false;
 
-                    if (File.Exists(m_options.Dbpath) && !m_options.Dryrun)
+                    // The post-operation result/log writes target the backup LocalDatabase schema
+                    // (Operation, LogData, DeletedVolume tables). The sync database has its own
+                    // schema and does not store these, so skip the backup-specific cleanup for
+                    // sync operations instead of running incompatible SQL against the sync DB.
+                    if (File.Exists(m_options.Dbpath) && !m_options.Dryrun && m_options.MainAction != OperationMode.Sync)
                     {
                         try
                         {
@@ -633,8 +647,9 @@ namespace Duplicati.Library.Main
                     resultSetter.Interrupted = true;
                     try
                     {
-                        // No operation was started in database, so write logs to new operation
-                        if (File.Exists(m_options.Dbpath) && !m_options.Dryrun)
+                        // No operation was started in database, so write logs to new operation.
+                        // Sync uses its own database schema
+                        if (File.Exists(m_options.Dbpath) && !m_options.Dryrun && m_options.MainAction != OperationMode.Sync)
                             await using (var db = await LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, result.MainOperation.ToString(), true, null, CancellationToken.None).ConfigureAwait(false))
                                 await db.WriteResultsAndCommitAsync(result, CancellationToken.None).ConfigureAwait(false);
                     }
@@ -658,8 +673,9 @@ namespace Duplicati.Library.Main
                             basicResults.OperationProgressUpdater.UpdatePhase(OperationPhase.Error);
 
                         resultSetter.Fatal = true;
-                        // Write logs to previous operation if database exists
-                        if (File.Exists(m_options.Dbpath) && !m_options.Dryrun)
+                        // Write logs to previous operation if database exists.
+                        // Sync uses its own database schema
+                        if (File.Exists(m_options.Dbpath) && !m_options.Dryrun && m_options.MainAction != OperationMode.Sync)
                             await using (var db = await LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, null, true, null, CancellationToken.None).ConfigureAwait(false))
                                 await db.WriteResultsAndCommitAsync(result, CancellationToken.None).ConfigureAwait(false);
                     }
@@ -760,7 +776,7 @@ namespace Duplicati.Library.Main
             }
 
             if (string.IsNullOrEmpty(m_options.Dbpath))
-                m_options.Dbpath = CLIDatabaseLocator.GetDatabasePathForCLI(m_backendUrl, m_options);
+                m_options.Dbpath = CLIDatabaseLocator.GetDatabasePathForCLI(m_backendUrl, m_options, true, false, m_options.MainAction == OperationMode.Sync);
 
             RestoreOptionsFromExistingDatabase(result.MainOperation);
 
@@ -850,6 +866,13 @@ namespace Duplicati.Library.Main
 
         private void RestoreOptionsFromExistingDatabase(OperationMode operation)
         {
+            // The sync database (LocalSyncDatabase) has its own schema, distinct from the
+            // backup LocalDatabase, and does not store options to restore. Opening it as a
+            // backup database would run the backup schema upgrade against an incompatible
+            // schema and throw. Sync reads its options directly from the command-line dict.
+            if (operation == OperationMode.Sync)
+                return;
+
             if (m_options.NoLocalDb || string.IsNullOrWhiteSpace(m_options.Dbpath) || !File.Exists(m_options.Dbpath))
                 return;
 

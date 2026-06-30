@@ -21,6 +21,7 @@
 
 using System;
 using Duplicati.Library.Main.Database;
+using Duplicati.Library.Main.Database.Local;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -258,7 +259,7 @@ namespace Duplicati.Library.Main.Operation
                 }
                 else
                 {
-                    await backendManager.PutVerificationFileAsync(remotename, tempfile, cancellationToken).ConfigureAwait(false);
+                    await backendManager.PutFileUnencryptedAsync(remotename, tempfile, cancellationToken).ConfigureAwait(false);
                     await backendManager.WaitForEmptyAsync(db, cancellationToken).ConfigureAwait(false);
                 }
             }
@@ -287,7 +288,7 @@ namespace Duplicati.Library.Main.Operation
             if (verifyMode == VerifyMode.VerifyAndCleanForced)
                 verifyMode = VerifyMode.VerifyAndClean;
 
-            var rawlist = await backendManager.ListAsync(cancellationToken).ConfigureAwait(false);
+            var rawlist = await backendManager.ListAsync(null, cancellationToken).ConfigureAwait(false);
             var lookup = new Dictionary<string, Volumes.IParsedVolume>();
             protectedFiles = protectedFiles ?? [];
             strictExcemptFiles = strictExcemptFiles ?? [];

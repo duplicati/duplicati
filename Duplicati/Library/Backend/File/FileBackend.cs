@@ -32,7 +32,7 @@ namespace Duplicati.Library.Backend
     /// <summary>
     /// The file backend implementation
     /// </summary>
-    public class File : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend
+    public class File : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend, IFolderEnabledBackend
     {
         /// <summary>
         /// The option key for the destination marker file
@@ -260,6 +260,108 @@ namespace Duplicati.Library.Backend
 
             foreach (var entry in res)
                 yield return entry;
+        }
+
+        /// <summary>
+        /// Resolves a relative sub-path (using '/' or the OS separator) against the
+        /// backend root <see cref="m_path"/>, returning the canonicalized absolute
+        /// filesystem path. The path is constrained to remain within the backend root:
+        /// segments that would escape it (<c>..</c>, absolute paths, or alternate
+        /// roots) are rejected to prevent directory traversal outside the configured
+        /// destination via backend-supplied or caller-supplied names.
+        /// </summary>
+        /// <param name="subPath">The relative sub-path to resolve; null/empty/whitespace returns the backend root.</param>
+        /// <returns>The canonicalized absolute path under <see cref="m_path"/>.</returns>
+        /// <exception cref="DirectoryNotFoundException">Thrown when <paramref name="subPath"/> would resolve to a path outside the backend root.</exception>
+        private string ResolveContainedPath(string? subPath)
+        {
+            if (string.IsNullOrWhiteSpace(subPath))
+                return m_path;
+
+            // Reject absolute or alternate-rooted paths before joining, since
+            // Path.Combine would replace m_path with them rather than append.
+            // On Windows a path like "C:\x" or "\x" is rooted; on Unix "/x" is.
+            if (System.IO.Path.IsPathRooted(subPath))
+                throw new DirectoryNotFoundException($"Refusing to resolve rooted path outside backend root: {subPath}");
+
+            // Normalize separators and trim leading/trailing separators, then reject
+            // any ".." segment. Path.Combine does not collapse "..", so a segment of
+            // ".." would resolve above m_path; rejecting it (rather than relying on a
+            // post-canonicalization check) keeps the intent explicit and cross-platform.
+            var sep = System.IO.Path.DirectorySeparatorChar;
+            var altSep = System.IO.Path.AltDirectorySeparatorChar;
+            var normalized = subPath.Replace(altSep, sep).Trim(sep);
+            var segments = normalized.Split(sep);
+            foreach (var segment in segments)
+                if (segment == "..")
+                    throw new DirectoryNotFoundException($"Refusing to resolve path containing a parent-directory segment ('..') outside backend root: {subPath}");
+
+            var combined = systemIO.PathCombine(m_path, normalized);
+
+            // Final containment guard: canonicalize both sides and verify the result
+            // remains under the backend root. This catches any remaining edge cases
+            // (e.g. symlinks resolved by the OS, or future path shapes).
+            var fullCombined = systemIO.PathGetFullPath(combined);
+            var fullRoot = systemIO.PathGetFullPath(m_path);
+            if (!fullCombined.StartsWith(fullRoot, OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal))
+                throw new DirectoryNotFoundException($"Refusing to resolve path outside backend root: {subPath}");
+
+            return combined;
+        }
+
+        /// <inheritdoc />
+        public async IAsyncEnumerable<IFileEntry> ListAsync(string? path, [EnumeratorCancellation] CancellationToken cancelToken)
+        {
+            PreAuthenticate();
+
+            if (!systemIO.DirectoryExists(m_path))
+                throw new FolderMissingException(Strings.FileBackend.FolderMissingError(m_path));
+
+            // Resolve the folder to list: the backend root when path is null/empty,
+            // otherwise the subfolder joined onto the backend root. ResolveContainedPath
+            // constrains the result to remain within the backend root (rejecting ".."
+            // and absolute paths) so a caller-supplied or backend-supplied name cannot
+            // list outside the configured destination.
+            var listPath = ResolveContainedPath(path);
+
+            if (!systemIO.DirectoryExists(listPath))
+                throw new FolderMissingException(Strings.FileBackend.FolderMissingError(listPath));
+
+            var res = await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken, _ =>
+                systemIO.EnumerateFileEntries(listPath)
+                    .Select(entry => new FileEntry(SanitizeFilename(entry.Name), entry.Size, entry.LastAccess, entry.LastModification, entry.IsFolder, entry.IsArchived))
+            ).ConfigureAwait(false);
+
+            foreach (var entry in res)
+                yield return entry;
+        }
+
+        /// <inheritdoc />
+        public Task<IFileEntry?> GetEntryAsync(string path, CancellationToken cancellationToken)
+        {
+            PreAuthenticate();
+
+            if (!systemIO.DirectoryExists(m_path))
+                throw new FolderMissingException(Strings.FileBackend.FolderMissingError(m_path));
+
+            // ResolveContainedPath constrains the result to remain within the backend
+            // root (rejecting ".." and absolute paths) so a caller-supplied or
+            // backend-supplied name cannot stat outside the configured destination.
+            var fullPath = ResolveContainedPath(SanitizeFilename(path));
+
+            if (systemIO.FileExists(fullPath))
+            {
+                var fi = new FileInfo(fullPath);
+                return Task.FromResult<IFileEntry?>(new FileEntry(SanitizeFilename(fi.Name), fi.Length, fi.LastAccessTime, fi.LastWriteTime, false, (fi.Attributes & System.IO.FileAttributes.Archive) != 0));
+            }
+
+            if (systemIO.DirectoryExists(fullPath))
+            {
+                var di = new DirectoryInfo(fullPath);
+                return Task.FromResult<IFileEntry?>(new FileEntry(SanitizeFilename(di.Name), 0, di.LastAccessTime, di.LastWriteTime, true, false));
+            }
+
+            return Task.FromResult<IFileEntry?>(null);
         }
 
 #if DEBUG_RETRY

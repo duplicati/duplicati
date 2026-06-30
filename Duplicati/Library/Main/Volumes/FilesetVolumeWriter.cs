@@ -23,11 +23,9 @@ using System.Collections.Generic;
 using System.IO;
 using Newtonsoft.Json;
 using Duplicati.Library.Interface;
-using Duplicati.Library.Main.Database;
+using Duplicati.Library.Main.Database.Local;
 using Duplicati.Library.Main.Operation.Common;
 using System.Threading.Tasks;
-using Duplicati.Library.Utility;
-using System.Data;
 using System.Threading;
 
 namespace Duplicati.Library.Main.Volumes

@@ -25,6 +25,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
+using Duplicati.Library.Main.Database.Local;
 
 namespace Duplicati.Library.Main.Database;
 

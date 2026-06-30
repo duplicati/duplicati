@@ -150,13 +150,13 @@ namespace Duplicati.Library.SQLiteHelper
             //This enables upgrading through several versions
             //ea, from 1 to 8, by stepping 2->3->4->5->6->7->8
             SortedDictionary<int, string> upgrades = new SortedDictionary<int, string>();
-            string prefix = FOLDER_NAME + ".";
-            foreach (string s in asm.GetManifestResourceNames())
+            var prefix = (eltype.Namespace ?? "") + "." + FOLDER_NAME + ".";
+            foreach (var s in asm.GetManifestResourceNames())
             {
                 //The resource name will be "Duplicati.Library.Main.Database.Database_schema.1.Sample upgrade.sql"
                 //The number indicates the version that will be upgraded to
                 //Could be ""Duplicati.Server.Database.Database_schema.1. Add Notifications.sql""
-                if ((s.IndexOf(prefix, 0, StringComparison.Ordinal) >= 0) && !s.EndsWith(prefix + SCHEMA_NAME))
+                if (s.StartsWith(prefix, StringComparison.Ordinal) && !s.EndsWith(prefix + SCHEMA_NAME))
                 {
                     try
                     {

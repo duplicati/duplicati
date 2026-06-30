@@ -42,7 +42,7 @@ public interface IController : IDisposable
     /// <summary>
     /// Gets or sets the callback for when an operation is completed
     /// </summary>
-    Action<IBasicResults, Exception>? OnOperationCompleted { get; set; }
+    Action<IBasicResults, Exception?>? OnOperationCompleted { get; set; }
 
     /// <summary>
     /// Sets the time of the last compact operation
@@ -318,4 +318,12 @@ public interface IController : IDisposable
     /// </summary>
     /// <returns>The vacuum results</returns>
     Task<IVacuumResults> VacuumAsync();
+
+    /// <summary>
+    /// Performs a sync operation on the source path
+    /// </summary>
+    /// <param name="sourcePaths">The source paths to sync</param>
+    /// <param name="filter">The filter to apply</param>
+    /// <returns>The sync results</returns>
+    Task<ISyncResults> SyncAsync(string[] sourcePaths, IFilter? filter = null);
 }

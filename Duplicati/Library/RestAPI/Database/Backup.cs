@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using Duplicati.Server.Serialization;
 using Duplicati.Server.Serialization.Interface;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -89,6 +90,11 @@ namespace Duplicati.Server.Database
         /// The connection string ID, or -1 if not used
         /// </summary>
         public long ConnectionStringID { get; set; } = -1;
+
+        /// <summary>
+        /// The operation this backup performs when it runs.
+        /// </summary>
+        public OperationType OperationType { get; set; } = OperationType.Backup;
 
         /// <summary>
         /// The backup source folders and files
@@ -295,6 +301,8 @@ namespace Duplicati.Server.Database
                 Description = this.Description,
                 Tags = (string[])this.Tags?.Clone() ?? [],
                 TargetURL = this.TargetURL,
+                ConnectionStringID = this.ConnectionStringID,
+                OperationType = this.OperationType,
                 DBPath = this.DBPath,
                 Sources = (string[])this.Sources?.Clone() ?? [],
                 Settings = this.Settings?.Select(s => new Setting { Name = s.Name, Value = s.Value, Filter = s.Filter }).ToArray() ?? [],

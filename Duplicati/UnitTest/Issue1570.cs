@@ -25,10 +25,10 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Duplicati.Library.Main;
-using Duplicati.Library.Main.Database;
 using NUnit.Framework;
 using Utility = Duplicati.Library.Utility.Utility;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using Duplicati.Library.Main.Database.Local;
 
 namespace Duplicati.UnitTest
 {

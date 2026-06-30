@@ -29,7 +29,7 @@ using System.Threading.Tasks;
 using CoCoL;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
-using Duplicati.Library.Main.Database;
+using Duplicati.Library.Main.Database.Local;
 using Duplicati.Library.Utility;
 
 #nullable enable

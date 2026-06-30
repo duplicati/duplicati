@@ -93,6 +93,14 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
+        [Category("SVNData")]
+        public async Task TestSyncWithSVNShortAsync()
+        {
+            var opts = new Dictionary<string, string>(TestOptions);
+            await SyncCheckoutTest.RunTestAsync(TestFolders.Take(5).ToArray(), opts, TestTarget);
+        }
+
+        [Test]
         [Category("SVNDataLong")]
         [TestCase("zip")]
         public async Task TestWithSVNLongAsync(string compression)
@@ -100,6 +108,14 @@ namespace Duplicati.UnitTest
             var opts = TestOptions;
             opts["compression-module"] = compression;
             await SVNCheckoutTest.RunTestAsync(TestFolders.ToArray(), opts, TestTarget);
+        }
+
+        [Test]
+        [Category("SVNDataLong")]
+        public async Task TestSyncWithSVNLongAsync()
+        {
+            var opts = new Dictionary<string, string>(TestOptions);
+            await SyncCheckoutTest.RunTestAsync(TestFolders.ToArray(), opts, TestTarget);
         }
 
         [Test]

@@ -31,7 +31,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Database\Database schema\*.sql" />
+    <EmbeddedResource Include="Database\Local\Database schema\*.sql" />
+    <EmbeddedResource Include="Database\Sync\Database schema\*.sql" />
   </ItemGroup>
 
   <ItemGroup>

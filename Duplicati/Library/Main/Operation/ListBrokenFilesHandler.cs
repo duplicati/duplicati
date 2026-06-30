@@ -52,7 +52,7 @@ namespace Duplicati.Library.Main.Operation
             if (!File.Exists(m_options.Dbpath))
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
 
-            await using var db = await Database.LocalListBrokenFilesDatabase.CreateAsync(m_options.Dbpath, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+            await using var db = await Database.Local.LocalListBrokenFilesDatabase.CreateAsync(m_options.Dbpath, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
             await Utility.UpdateOptionsFromDbAsync(db, m_options, m_result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);
             await Utility.VerifyOptionsAndUpdateDatabaseAsync(db, m_options, m_result.TaskControl.ProgressToken)
@@ -61,7 +61,7 @@ namespace Duplicati.Library.Main.Operation
             await db.Transaction.RollBackAsync().ConfigureAwait(false);
         }
 
-        public static async Task<((DateTime FilesetTime, long FilesetID, long RemoveCount)[]?, List<Database.RemoteVolumeEntry>? Missing)> GetBrokenFilesetsFromRemoteAsync(IBackendManager backendManager, BasicResults result, Database.LocalListBrokenFilesDatabase db, Options options)
+        public static async Task<((DateTime FilesetTime, long FilesetID, long RemoveCount)[]?, List<Database.RemoteVolumeEntry>? Missing)> GetBrokenFilesetsFromRemoteAsync(IBackendManager backendManager, BasicResults result, Database.Local.LocalListBrokenFilesDatabase db, Options options)
         {
             List<Database.RemoteVolumeEntry>? missing = null;
             var brokensets = await db
@@ -115,7 +115,7 @@ namespace Duplicati.Library.Main.Operation
             return (brokensets, missing);
         }
 
-        private async Task DoRunAsync(IBackendManager backendManager, Database.LocalListBrokenFilesDatabase db, IFilter filter, Func<long, DateTime, long, string, long, bool>? callbackhandler)
+        private async Task DoRunAsync(IBackendManager backendManager, Database.Local.LocalListBrokenFilesDatabase db, IFilter filter, Func<long, DateTime, long, string, long, bool>? callbackhandler)
         {
             if (filter != null && !filter.Empty)
                 throw new UserInformationException("Filters are not supported for this operation", "FiltersAreNotSupportedForListBrokenFiles");

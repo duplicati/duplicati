@@ -90,8 +90,13 @@ partial class BackendManager
         /// <returns>True if the operation succeeded</returns>
         private async Task<bool> PerformSoftDeleteAsync(IBackend backend, CancellationToken cancelToken)
         {
+            // The effective name is the name the backend understands (the filename part
+            // for non-folder backends, the full relative path for folder-enabled ones).
+            // The soft-delete prefix is applied to this effective name, and the rename/
+            // copy happens within the backend URL the operation is bound to.
+            var effectiveName = GetEffectiveRemoteName();
             var softDeletePrefix = Context.Options.SoftDeletePrefix!;
-            var newName = softDeletePrefix + RemoteFilename;
+            var newName = softDeletePrefix + effectiveName;
             var newNameWithSuffix = newName;
             const int maxAttempts = 3;
 
@@ -102,18 +107,18 @@ partial class BackendManager
                 {
                     if (backend is IRenameEnabledBackend renameBackend && !Context.Options.PreventBackendRename)
                     {
-                        await renameBackend.RenameAsync(RemoteFilename, newNameWithSuffix, cancelToken).ConfigureAwait(false);
+                        await renameBackend.RenameAsync(effectiveName, newNameWithSuffix, cancelToken).ConfigureAwait(false);
                     }
                     else
                     {
                         // Soft-delete fallback: download, upload with new name, and delete old file
                         using (var tempFile = new Library.Utility.TempFile())
                         {
-                            await backend.GetAsync(RemoteFilename, tempFile, cancelToken).ConfigureAwait(false);
+                            await backend.GetAsync(effectiveName, tempFile, cancelToken).ConfigureAwait(false);
                             await backend.PutAsync(newName, tempFile, cancelToken).ConfigureAwait(false);
                         }
 
-                        await backend.DeleteAsync(RemoteFilename, cancelToken).ConfigureAwait(false);
+                        await backend.DeleteAsync(effectiveName, cancelToken).ConfigureAwait(false);
                     }
                     return true;
                 }
@@ -135,6 +140,10 @@ partial class BackendManager
         /// <inheritdoc/>
         public override async Task<bool> ExecuteAsync(IBackend backend, CancellationToken cancelToken)
         {
+            // The effective name is the name the backend understands (the filename part
+            // for non-folder backends, the full relative path for folder-enabled ones).
+            var effectiveName = GetEffectiveRemoteName();
+
             Context.Statwriter.SendEvent(BackendActionType.Delete, BackendEventType.Started, RemoteFilename, Size);
 
             string? result = null;
@@ -147,7 +156,7 @@ partial class BackendManager
                 }
                 else
                 {
-                    await backend.DeleteAsync(RemoteFilename, cancelToken).ConfigureAwait(false);
+                    await backend.DeleteAsync(effectiveName, cancelToken).ConfigureAwait(false);
                 }
                 deleteSucceeded = true;
             }
@@ -166,7 +175,10 @@ partial class BackendManager
 
                     try
                     {
-                        recovered = !await backend.ListAsync(cancelToken).Select(x => x.Name).ContainsAsync(RemoteFilename).ConfigureAwait(false);
+                        // The backend is bound to the file's folder (for non-folder backends)
+                        // or the root (for folder-enabled backends), so the listing returns
+                        // names comparable to the effective remote name.
+                        recovered = !await backend.ListAsync(cancelToken).Select(x => x.Name).ContainsAsync(effectiveName).ConfigureAwait(false);
                     }
                     catch
                     {

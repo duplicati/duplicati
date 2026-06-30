@@ -97,6 +97,7 @@ public class FolderStatusServiceTests
         public string[] Tags { get; set; } = Array.Empty<string>();
         public string TargetURL { get; set; } = string.Empty;
         public long ConnectionStringID { get; set; } = -1;
+        public OperationType OperationType { get; set; } = OperationType.Backup;
         public string DBPath => string.Empty;
         public string[] Sources { get; set; } = Array.Empty<string>();
         public ISetting[] Settings { get; set; } = Array.Empty<ISetting>();
@@ -214,7 +215,7 @@ public class FolderStatusServiceTests
 
             var currentTask = _queueRunnerService.GetCurrentTask();
             if (currentTask?.BackupID != null &&
-                currentTask.Operation == DuplicatiOperation.Backup)
+                currentTask.Operation == DuplicatiOperation.BackupOrSync)
             {
                 activeIds.Add(currentTask.BackupID);
             }
@@ -223,7 +224,7 @@ public class FolderStatusServiceTests
             foreach (var task in queuedTasks)
             {
                 if (task.BackupID != null &&
-                    task.Operation == DuplicatiOperation.Backup)
+                    task.Operation == DuplicatiOperation.BackupOrSync)
                 {
                     activeIds.Add(task.BackupID);
                 }
@@ -543,7 +544,7 @@ public class FolderStatusServiceTests
             CurrentTask = new MockQueuedTask
             {
                 BackupID = "1",
-                Operation = DuplicatiOperation.Backup
+                Operation = DuplicatiOperation.BackupOrSync
             }
         };
         var backups = new[]
@@ -793,7 +794,7 @@ public class FolderStatusServiceTests
                 new MockQueuedTask
                 {
                     BackupID = "1",
-                    Operation = DuplicatiOperation.Backup
+                    Operation = DuplicatiOperation.BackupOrSync
                 }
             }
         };
@@ -1028,7 +1029,7 @@ public class FolderStatusServiceTests
             CurrentTask = new MockQueuedTask
             {
                 BackupID = "different-id",
-                Operation = DuplicatiOperation.Backup
+                Operation = DuplicatiOperation.BackupOrSync
             }
         };
         var backups = new[]

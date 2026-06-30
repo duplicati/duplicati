@@ -107,7 +107,8 @@ namespace Duplicati.CommandLine
                         ["readlockinfo"] = Commands.ReadLockInfo,
                         ["system-info"] = Commands.SystemInfo,
                         ["systeminfo"] = Commands.SystemInfo,
-                        ["send-mail"] = Commands.SendMail
+                        ["send-mail"] = Commands.SendMail,
+                        ["sync"] = Commands.Sync
                     };
 
                 return knownCommands;
