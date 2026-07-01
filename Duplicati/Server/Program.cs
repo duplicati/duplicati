@@ -1160,6 +1160,29 @@ namespace Duplicati.Server
                     disableDbEncryption = true;
             }
 
+            var hasEncryptedFields = false;
+            var warnedAboutEncryptedDb = false;
+            try
+            {
+                using (var cmd = con.CreateCommand(@$"SELECT ""Value"" FROM ""Option"" WHERE ""Name"" = @Name AND ""BackupID"" = @BackupId"))
+                    hasEncryptedFields = Library.Utility.Utility.ParseBool(cmd
+                        .SetParameterValue("@Name", Database.ServerSettings.CONST.ENCRYPTED_FIELDS)
+                        .SetParameterValue("@BackupId", Connection.SERVER_SETTINGS_ID).ExecuteScalar()?.ToString(), false);
+
+                if (hasEncryptedFields && !hasValidEncryptionKey)
+                {
+                    warnedAboutEncryptedDb = true;
+                    Log.WriteWarningMessage(LOGTAG, "EncryptionKeyMissing", null, Strings.Program.EncryptionKeyMissing(EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME));
+                    if (!silentConsole)
+                        Console.WriteLine(Strings.Program.EncryptionKeyMissing(EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME));
+                }
+            }
+            catch
+            {
+                // Ignore errors here, as we are just checking for a potential issue
+                // Only negative effect is that we do not show a potentially helpful warning
+            }
+
             var defaultSecretProvider = SecretProviderHelper.GetDefaultSecretProviderAsync(commandlineOptions, CancellationToken.None).Await();
 
             // If we are supposed to have an encryption key, but do not, try to get it from the (default) secret provider
@@ -1178,7 +1201,8 @@ namespace Duplicati.Server
                 }
 
                 // If there is no encryption key, and the secret provider supports setting secrets, try to set the encryption key
-                if (!disableDbEncryption && string.IsNullOrWhiteSpace(encryptionKey) && defaultSecretProvider.IsSetSupported)
+                // Avoid generating a new key if the database is already encrypted as this will make a new key that will not work
+                if (!disableDbEncryption && string.IsNullOrWhiteSpace(encryptionKey) && defaultSecretProvider.IsSetSupported && !hasEncryptedFields)
                 {
                     var tmpkey = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32));
                     try
@@ -1218,28 +1242,6 @@ namespace Duplicati.Server
 
             applicationSettings.SettingsEncryptionKeyProvidedExternally = hasValidEncryptionKey;
 
-            var hasEncryptedFields = false;
-            var warnedAboutEncryptedDb = false;
-            try
-            {
-                using (var cmd = con.CreateCommand(@$"SELECT ""Value"" FROM ""Option"" WHERE ""Name"" = @Name AND ""BackupID"" = @BackupId"))
-                    hasEncryptedFields = Library.Utility.Utility.ParseBool(cmd
-                        .SetParameterValue("@Name", Database.ServerSettings.CONST.ENCRYPTED_FIELDS)
-                        .SetParameterValue("@BackupId", Connection.SERVER_SETTINGS_ID).ExecuteScalar()?.ToString(), false);
-
-                if (hasEncryptedFields && !hasValidEncryptionKey)
-                {
-                    warnedAboutEncryptedDb = true;
-                    Log.WriteWarningMessage(LOGTAG, "EncryptionKeyMissing", null, Strings.Program.EncryptionKeyMissing(EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME));
-                    if (!silentConsole)
-                        Console.WriteLine(Strings.Program.EncryptionKeyMissing(EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME));
-                }
-            }
-            catch
-            {
-                // Ignore errors here, as we are just checking for a potential issue
-                // Only negative effect is that we do not show a potentially helpful warning
-            }
 
             if (!hasValidEncryptionKey && !disableDbEncryption)
             {

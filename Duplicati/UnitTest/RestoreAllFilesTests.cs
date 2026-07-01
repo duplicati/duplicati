@@ -441,7 +441,7 @@ namespace Duplicati.UnitTest
                 TestUtils.AssertResults(await c.RestoreAsync(new[] { "*" }));
 
             // Inspect the local database for any leftover "RestoredHashes-*" scratch tables.
-            using var connection = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={this.DBFILE}");
+            using var connection = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={this.DBFILE};Pooling=false");
             await connection.OpenAsync();
             await using var cmd = connection.CreateCommand();
             cmd.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'RestoredHashes-%'";

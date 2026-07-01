@@ -115,6 +115,10 @@ namespace Duplicati.Library.Modules.Builtin
         /// The option used to accept any SSL certificate
         /// </summary>
         private const string OPTION_ACCEPT_ANY_CERTIFICATE = "send-http-accept-any-ssl-certificate";
+        /// <summary>
+        /// The option used to ignore certificate revocation check failures
+        /// </summary>
+        private const string OPTION_IGNORE_REVOCATION_FAILURE = "send-http-ignore-revocation-failure";
 
         /// <summary>
         /// The option used to specify the number of retries for sending the HTTP request
@@ -173,6 +177,11 @@ namespace Duplicati.Library.Modules.Builtin
         /// Specific hashes to be accepted by the certificate validator
         /// </summary>
         private string[] m_acceptSpecificCertificates;
+
+        /// <summary>
+        /// Option to ignore certificate revocation check failures
+        /// </summary>
+        private bool m_ignoreRevocationFailure;
 
         /// <summary>
         /// The number of retries to attempt
@@ -234,6 +243,7 @@ namespace Duplicati.Library.Modules.Builtin
 
             new CommandLineArgument(OPTION_ACCEPT_ANY_CERTIFICATE, CommandLineArgument.ArgumentType.Boolean, Strings.SendHttpMessage.AcceptAnyCertificateShort, Strings.SendHttpMessage.AcceptAnyCertificateLong),
             new CommandLineArgument(OPTION_ACCEPT_SPECIFIED_CERTIFICATE, CommandLineArgument.ArgumentType.String, Strings.SendHttpMessage.AcceptSpecifiedCertificateShort, Strings.SendHttpMessage.AcceptSpecifiedCertificateLong),
+            new CommandLineArgument(OPTION_IGNORE_REVOCATION_FAILURE, CommandLineArgument.ArgumentType.Boolean, Strings.SendHttpMessage.IgnoreRevocationFailureShort, Strings.SendHttpMessage.IgnoreRevocationFailureLong, "false"),
 
             new CommandLineArgument(OPTION_SEND_HTTP_RETRIES, CommandLineArgument.ArgumentType.Integer, Strings.SendHttpMessage.SendHttpRetriesShort, Strings.SendHttpMessage.SendHttpRetriesLong, DEFAULT_RETRIES.ToString()),
             new CommandLineArgument(OPTION_SEND_HTTP_RETRY_DELAY, CommandLineArgument.ArgumentType.Integer, Strings.SendHttpMessage.SendHttpRetryDelayShort, Strings.SendHttpMessage.SendHttpRetryDelayLong, DEFAULT_RETRY_DELAY),
@@ -296,6 +306,7 @@ namespace Duplicati.Library.Modules.Builtin
             commandlineOptions.TryGetValue(OPTION_EXTRA_PARAMETERS, out m_extraParameters);
             m_acceptAnyCertificate = Utility.Utility.ParseBoolOption(commandlineOptions.AsReadOnly(), OPTION_ACCEPT_ANY_CERTIFICATE);
             m_acceptSpecificCertificates = commandlineOptions.ContainsKey(OPTION_ACCEPT_SPECIFIED_CERTIFICATE) ? commandlineOptions[OPTION_ACCEPT_SPECIFIED_CERTIFICATE].Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries) : null;
+            m_ignoreRevocationFailure = Utility.Utility.ParseBoolOption(commandlineOptions.AsReadOnly(), OPTION_IGNORE_REVOCATION_FAILURE);
 
             m_retries = Utility.Utility.ParseIntOption(commandlineOptions.AsReadOnly(), OPTION_SEND_HTTP_RETRIES, DEFAULT_RETRIES);
             m_retryDelay = Utility.Utility.ParseTimespanOption(commandlineOptions.AsReadOnly(), OPTION_SEND_HTTP_RETRY_DELAY, DEFAULT_RETRY_DELAY);
@@ -401,7 +412,7 @@ namespace Duplicati.Library.Modules.Builtin
                 return;
 
             using HttpClientHandler httpHandler = new HttpClientHandler();
-            HttpClientHelper.ConfigureHandlerCertificateValidator(httpHandler, m_acceptAnyCertificate, m_acceptSpecificCertificates);
+            HttpClientHelper.ConfigureHandlerCertificateValidator(httpHandler, m_acceptAnyCertificate, m_acceptSpecificCertificates, m_ignoreRevocationFailure);
 
             using var client = HttpClientHelper.CreateClient(httpHandler);
             // Explicitly keeping the default 100s timeout

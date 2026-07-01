@@ -367,7 +367,7 @@ namespace Duplicati.Library.Backend
                 var httpHandler = new HttpClientHandler();
 
                 // Custom certificate validation to throw exception on failure
-                var validator = new SslCertificateValidator(m_certificateOptions.AcceptAllCertificates, m_certificateOptions.AcceptSpecificCertificateHashes);
+                var validator = new SslCertificateValidator(m_certificateOptions.AcceptAllCertificates, m_certificateOptions.AcceptSpecificCertificateHashes, m_certificateOptions.IgnoreRevocationFailure);
                 httpHandler.ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) =>
                     validator.ValidateServerCertificate(sender, cert, chain, sslPolicyErrors);
 

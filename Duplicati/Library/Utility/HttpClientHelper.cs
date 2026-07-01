@@ -71,14 +71,15 @@ public static class HttpClientHelper
     /// Configures the httphandler with the certificate validator, if needed.
     ///
     /// The parameters indicate if it should accept all certificates or only the ones specified in the
-    /// hashes array.
+    /// hashes array, and whether revocation check failures should be ignored.
     /// </summary>
     /// <param name="handler">The HttpClientHandler to be configured</param>
     /// <param name="acceptAllCertificates">If all certificates will be considered valid</param>
     /// <param name="acceptSpecificCertificateHashes">List of hashes of certificates that will be accepted</param>
-    public static void ConfigureHandlerCertificateValidator(HttpClientHandler handler, bool acceptAllCertificates, string[]? acceptSpecificCertificateHashes)
+    /// <param name="ignoreRevocationFailure">If revocation check failures (offline or unknown status) should be ignored</param>
+    public static void ConfigureHandlerCertificateValidator(HttpClientHandler handler, bool acceptAllCertificates, string[]? acceptSpecificCertificateHashes, bool ignoreRevocationFailure)
     {
-        var validator = new SslCertificateValidator(acceptAllCertificates, acceptSpecificCertificateHashes);
+        var validator = new SslCertificateValidator(acceptAllCertificates, acceptSpecificCertificateHashes, ignoreRevocationFailure);
         handler.ServerCertificateCustomValidationCallback = validator.ValidateServerCertificate;
     }
 }
