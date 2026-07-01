@@ -97,8 +97,8 @@ namespace Duplicati.Library.Main.Strings
         public static string ControlfilesShort { get { return LC.L(@"Set control files"); } }
         public static string SkipfilehashchecksLong { get { return LC.L(@"If the hash for the volume does not match, Duplicati will refuse to use the backup. Activate this option to allow Duplicati to proceed anyway."); } }
         public static string SkipfilehashchecksShort { get { return LC.L(@"Skip hash checks"); } }
-        public static string SkipfileslargerthanLong { get { return LC.L(@"This option allows you to exclude files that are larger than the given value. Use this to prevent backups becoming extremely large."); } }
-        public static string SkipfileslargerthanShort { get { return LC.L(@"Limit the size of files being backed up"); } }
+        public static string SkipfileslargerthanLong { get { return LC.L(@"This option allows you to exclude files that are larger than the given value. Use this to prevent backups becoming extremely large. When restoring, files larger than this value are not restored."); } }
+        public static string SkipfileslargerthanShort { get { return LC.L(@"Limit the size of files being backed up or restored"); } }
         public static string TempdirLong { get { return LC.L(@"Use this option to supply an alternative folder for temporary storage. By default the system default temporary folder is used. Note that also SQLite will put temporary files in this temporary folder."); } }
         public static string TempdirShort { get { return LC.L(@"Temporary storage folder"); } }
         public static string ThreadpriorityDeprecated { get { return LC.L(@"The option --thread-priority has no effect, use the operating system controls to set the process priority"); } }

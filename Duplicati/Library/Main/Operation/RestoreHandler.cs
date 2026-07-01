@@ -1559,6 +1559,32 @@ namespace Duplicati.Library.Main.Operation
                     }
                 }
 
+                // When --skip-files-larger-than is set, remove files whose size exceeds the
+                // threshold from the prepared file list. Doing it here (before the missing-blocks
+                // table is built and before any file is queued for restore) means neither the new
+                // channel-based flow nor the legacy flow attempts to restore them, and the blocks
+                // belonging to the skipped files are never requested. Folders and symlinks are not
+                // affected (they use special blockset IDs without a matching Blockset row).
+                var skipFilesLargerThan = options.SkipFilesLargerThan;
+                if (skipFilesLargerThan > 0 && skipFilesLargerThan != long.MaxValue && c.Item1 > 0)
+                {
+                    using (new Logging.Timer(LOGTAG, "RemoveFilesLargerThan", "Removing files larger than the skip threshold"))
+                    {
+                        var removed = await database
+                            .RemoveFilesLargerThanAsync(skipFilesLargerThan, result.TaskControl.ProgressToken)
+                            .ConfigureAwait(false);
+                        if (removed > 0)
+                        {
+                            Logging.Log.WriteVerboseMessage(LOGTAG, "SkippedLargeFiles", "Skipped {0} file(s) larger than {1}", removed, Library.Utility.Utility.FormatSizeString(skipFilesLargerThan));
+
+                            // Recompute the file count after removal.
+                            c = await database
+                                .PrepareRestoreFilelistCountAsync(result.TaskControl.ProgressToken)
+                                .ConfigureAwait(false);
+                        }
+                    }
+                }
+
                 result.OperationProgressUpdater.UpdatefileCount(c.Item1, c.Item2, true);
 
                 // If the selection is completely empty (no files, folders, or symlinks),

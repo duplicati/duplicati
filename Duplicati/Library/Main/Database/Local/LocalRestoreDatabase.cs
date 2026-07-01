@@ -2313,6 +2313,40 @@ namespace Duplicati.Library.Main.Database.Local
         }
 
         /// <summary>
+        /// Removes files from the prepared restore file list whose size exceeds the given
+        /// threshold. Used by the <c>--skip-files-larger-than</c> option to skip restoring
+        /// files larger than the configured limit. The size is taken from the joined
+        /// <c>Blockset.Length</c> column, so folders and symlinks (which use special blockset
+        /// IDs without a corresponding <c>Blockset</c> row) are never removed by this call.
+        /// </summary>
+        /// <param name="maxSize">The maximum file size, in bytes. Files whose size is strictly greater than this value are removed. A value of 0 or <see cref="long.MaxValue"/> disables the filter and removes nothing, matching the semantics of <see cref="Options.SkipFilesLargerThan"/>.</param>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
+        /// <returns>The number of files removed from the restore list.</returns>
+        public async Task<long> RemoveFilesLargerThanAsync(long maxSize, CancellationToken token)
+        {
+            if (m_tempfiletable == null)
+                return 0;
+            // Zero and MaxValue both indicate no size limit, matching the semantics
+            // of the --skip-files-larger-than option (see Options.SkipFilesLargerThan).
+            if (maxSize <= 0 || maxSize == long.MaxValue)
+                return 0;
+
+            await using var cmd = m_connection.CreateCommand($@"
+                DELETE FROM ""{m_tempfiletable}""
+                WHERE ""ID"" IN (
+                    SELECT ""{m_tempfiletable}"".""ID""
+                    FROM ""{m_tempfiletable}""
+                    INNER JOIN ""Blockset""
+                        ON ""{m_tempfiletable}"".""BlocksetID"" = ""Blockset"".""ID""
+                    WHERE ""Blockset"".""Length"" > @MaxSize
+                )
+            ")
+                .SetTransaction(m_rtr)
+                .SetParameterValue("@MaxSize", maxSize);
+            return await cmd.ExecuteNonQueryAsync(token).ConfigureAwait(false);
+        }
+
+        /// <summary>
         /// Returns a list of files and symlinks to restore.
         /// </summary>
         /// <remarks>At its current state, this method is designed to be called by Duplicati.Library.Main.Operation.Restore.FileLister. It locks the database to ensure that calls from Duplicati.Library.Main.Operation.Restore.BlockManager do not interfere with each other.</remarks>
