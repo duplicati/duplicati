@@ -19,8 +19,11 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Common.IO;
@@ -42,9 +45,19 @@ namespace Duplicati.Library.Main.Operation
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<RestoreHandler>();
 
         private readonly Options m_options;
-        private byte[] m_blockbuffer;
+        private byte[]? m_blockbuffer;
         private readonly RestoreResults m_result;
-        private static readonly string DIRSEP = Util.DirectorySeparatorString;
+
+        /// <summary>
+        /// When non-null, names a persistent scratch table (in the local database file) that
+        /// records the file hashes already restored in previous versions during a
+        /// <c>--restore-all-files=unique</c> run. The per-version file-list preparation
+        /// excludes files whose hash is present in this table, and each completed version
+        /// appends its restored hashes to it. The table is created once at the start of the
+        /// multi-version run and dropped at the end. Keeping this in the database (rather than
+        /// in memory) avoids unbounded memory growth when many files/versions are involved.
+        /// </summary>
+        private string? m_restoredHashesTable;
 
         public RestoreHandler(Options options, RestoreResults result)
         {
@@ -102,7 +115,7 @@ namespace Duplicati.Library.Main.Operation
             return tmp.CompressionModule;
         }
 
-        public static RecreateDatabaseHandler.NumberedFilterFilelistDelegate GetNumberedFilelistFilterDelegate(DateTime time, long[] versions, bool singleTimeMatch = false)
+        public static RecreateDatabaseHandler.NumberedFilterFilelistDelegate? GetNumberedFilelistFilterDelegate(DateTime time, long[]? versions, bool singleTimeMatch = false)
         {
             versions ??= [];
             if (versions.Length == 0 && time.Ticks == 0)
@@ -145,7 +158,7 @@ namespace Duplicati.Library.Main.Operation
                 return numbers;
         }
 
-        public async Task RunAsync(string[] paths, IBackendManager backendManager, Library.Utility.IFilter filter, IRestoreDestinationProvider restoreDestination)
+        public async Task RunAsync(string[] paths, IBackendManager backendManager, Library.Utility.IFilter? filter, IRestoreDestinationProvider restoreDestination)
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_Begin);
 
@@ -161,20 +174,43 @@ namespace Duplicati.Library.Main.Operation
             // If we have both target paths and a filter, combine them into a single filter
             filter = JoinedFilterExpression.Join(new FilterExpression(paths), filter);
 
-            LocalRestoreDatabase db = null;
-            TempFile tmpdb = null;
+            // The --restore-all-files option activates a multi-version restore. When active,
+            // every targeted version is restored into its own timestamp-named subfolder below
+            // the restore target, instead of restoring a single version. The single-version
+            // restore logic below is reused verbatim for each version.
+            if (m_options.RestoreAllFiles is RestoreAllFilesMode.True or RestoreAllFilesMode.Unique)
+            {
+                await RunRestoreAllFilesAsync(backendManager, filter, restoreDestination).ConfigureAwait(false);
+                return;
+            }
+
+            await RunSingleVersionRestoreAsync(backendManager, filter, restoreDestination, m_options.Time, m_options.Version, m_result.TaskControl.ProgressToken)
+                .ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Performs a normal single-version restore, recreating the local database (if needed)
+        /// for the given time/versions and dispatching to the legacy or new restore flow.
+        /// </summary>
+        private async Task RunSingleVersionRestoreAsync(IBackendManager backendManager, Library.Utility.IFilter? filter, IRestoreDestinationProvider restoreDestination, DateTime time, long[]? versions, CancellationToken cancellationToken)
+        {
+            LocalRestoreDatabase? db = null;
+            TempFile? tmpdb = null;
             try
             {
-                if (!m_options.NoLocalDb && SystemIO.IO_OS.FileExists(m_options.Dbpath))
+                var dbpath = m_options.Dbpath;
+                if (!m_options.NoLocalDb && SystemIO.IO_OS.FileExists(dbpath))
                 {
-                    db = await LocalRestoreDatabase.CreateAsync(m_options.Dbpath, null, m_result.TaskControl.ProgressToken)
+                    if (string.IsNullOrWhiteSpace(dbpath))
+                        throw new InvalidOperationException("Unexpected empty database path");
+                    db = await LocalRestoreDatabase.CreateAsync(dbpath, null, m_result.TaskControl.ProgressToken)
                         .ConfigureAwait(false);
                 }
                 else
                 {
                     Logging.Log.WriteInformationMessage(LOGTAG, "NoLocalDatabase", "No local database, building a temporary database");
                     tmpdb = new TempFile();
-                    RecreateDatabaseHandler.NumberedFilterFilelistDelegate filelistfilter = GetNumberedFilelistFilterDelegate(m_options.Time, m_options.Version);
+                    var filelistfilter = GetNumberedFilelistFilterDelegate(time, versions);
                     db = await LocalRestoreDatabase.CreateAsync(tmpdb, null, m_result.TaskControl.ProgressToken)
                         .ConfigureAwait(false);
                     m_result.RecreateDatabaseResults = new RecreateDatabaseResults(m_result);
@@ -188,14 +224,14 @@ namespace Duplicati.Library.Main.Operation
 
                     //If we have --version set, we need to adjust, as the db has only the required versions
                     //TODO: Bit of a hack to set options that way
-                    if (m_options.Version != null && m_options.Version.Length > 0)
-                        m_options.RawOptions["version"] = string.Join(",", Enumerable.Range(0, m_options.Version.Length).Select(x => x.ToString()));
+                    if (versions != null && versions.Length > 0)
+                        m_options.RawOptions["version"] = string.Join(",", Enumerable.Range(0, versions.Length).Select(x => x.ToString()));
                 }
 
                 if (m_options.RestoreLegacy)
-                    await DoRunAsync(backendManager, db, filter, restoreDestination, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+                    await DoRunAsync(backendManager, db, filter, restoreDestination, cancellationToken).ConfigureAwait(false);
                 else
-                    await DoRunNewAsync(backendManager, db, filter, restoreDestination, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+                    await DoRunNewAsync(backendManager, db, filter, restoreDestination, cancellationToken).ConfigureAwait(false);
             }
             finally
             {
@@ -204,6 +240,268 @@ namespace Duplicati.Library.Main.Operation
                 tmpdb?.Dispose();
             }
         }
+
+        /// <summary>
+        /// Implements the <c>--restore-all-files</c> multi-version restore.
+        /// The set of targeted versions is computed using the same logic as a normal
+        /// restore (the versions matching <c>--time</c>/<c>--version</c>, newest first).
+        /// Each targeted version is restored into its own timestamp-named subfolder below
+        /// the restore target. The first version restores all (non-filtered) files.
+        /// Subsequent versions apply the usual filter and, when the mode is
+        /// <see cref="RestoreAllFilesMode.Unique"/>, additionally skip any file whose
+        /// content (file hash) was already restored in a previous version.
+        /// </summary>
+        private async Task RunRestoreAllFilesAsync(IBackendManager backendManager, Library.Utility.IFilter? filter, IRestoreDestinationProvider restoreDestination)
+        {
+            var cancellationToken = m_result.TaskControl.ProgressToken;
+
+            // The option requires a definitive restore target.
+            if (string.IsNullOrEmpty(restoreDestination.TargetDestination))
+                throw new UserInformationException("The --restore-all-files option requires --restore-path to be set", "RestoreAllFilesRequiresRestorePath");
+
+            var dbpath = m_options.Dbpath;
+            // Enumerating the targeted versions requires the local database. The per-version
+            // restore below can recreate a database when none exists, but discovering the
+            // available filesets needs an existing database.
+            if (m_options.NoLocalDb || string.IsNullOrWhiteSpace(dbpath) || !SystemIO.IO_OS.FileExists(dbpath))
+                throw new UserInformationException("The --restore-all-files option requires a local database", "RestoreAllFilesRequiresLocalDb");
+
+            // Snapshot the original version/time options so they can be restored after the loop.
+            // The per-version loop below drives selection solely via the per-iteration "version"
+            // option, so "time" is cleared for the duration of the loop and restored afterwards.
+            var originalVersionValue = m_options.RawOptions.GetValueOrDefault("version");
+            var originalTimeValue = m_options.RawOptions.GetValueOrDefault("time");
+
+            // Resolve the targeted filesets using the same logic as a normal restore. The
+            // filesets are returned ordered by timestamp descending (newest first), which
+            // matches the version-index ordering used by --version (version 0 = newest).
+            KeyValuePair<long, DateTime>[] allFilesets;
+            using (var db = await LocalRestoreDatabase.CreateAsync(dbpath, null, cancellationToken).ConfigureAwait(false))
+            {
+                allFilesets = await db
+                    .FilesetTimesAsync(cancellationToken)
+                    .ToArrayAsync(cancellationToken: cancellationToken)
+                    .ConfigureAwait(false);
+            }
+
+            // Apply the same time/version selection as GetFilesetIDsAsync would, producing
+            // the list of filesets to restore, newest first. This selects the full set of
+            // versions to restore up front, before "time" is cleared for the per-version loop.
+            // Restore oldest version first, to be more true to the "unique" mode, 
+            // where the first time a file existed, it is restored.
+            var selectedFilesets = SelectTargetedFilesets(allFilesets, m_options.Time, m_options.Version)
+                .OrderByDescending(x => x.VersionIndex)
+                .ToList();
+
+            if (selectedFilesets.Count == 0)
+                throw new UserInformationException("No backup versions matched the restore selection", "NoBackupAtDate");
+
+            Logging.Log.WriteInformationMessage(LOGTAG, "RestoreAllFiles", "Restoring {0} version(s) with --restore-all-files={1}", selectedFilesets.Count, m_options.RestoreAllFiles);
+
+            // For "unique" mode, the file hashes restored across previous versions are
+            // accumulated in a persistent scratch table in the local database (not in memory,
+            // to avoid unbounded growth). The table is created once here and dropped in the
+            // finally below. Each completed version appends its restored hashes to it, and
+            // subsequent versions exclude files whose hash is already present.
+            if (m_options.RestoreAllFiles == RestoreAllFilesMode.Unique)
+            {
+                m_restoredHashesTable = $"RestoredHashes-{Library.Utility.Utility.GetHexGuid()}";
+                using (var setupDb = await LocalRestoreDatabase.CreateAsync(dbpath, null, cancellationToken).ConfigureAwait(false))
+                    await setupDb.CreateRestoredHashesTableAsync(m_restoredHashesTable, cancellationToken).ConfigureAwait(false);
+            }
+
+            // Clear the "time" option for the duration of the per-version loop. The per-version
+            // restore below selects its fileset via the per-iteration "version" option, but the
+            // underlying file-list query combines "time" and "version" with OR. If "time"
+            // remained set, every iteration would also pull in all filesets at or before that
+            // time, breaking the per-version isolation (each subfolder would contain files from
+            // multiple versions). "time" is restored in the finally below.
+            if (originalTimeValue != null)
+                m_options.RawOptions.Remove("time");
+
+            try
+            {
+                for (var i = 0; i < selectedFilesets.Count; i++)
+                {
+                    var fileset = selectedFilesets[i];
+                    var timestampFolder = fileset.Timestamp.ToString("yyyyMMdd-HHmmss");
+                    var versionTarget = SystemIO.IO_OS.PathCombine(restoreDestination.TargetDestination, timestampFolder);
+
+                    Logging.Log.WriteInformationMessage(LOGTAG, "RestoreAllFilesVersion", "Restoring version {0} ({1}) into {2}", i, fileset.Timestamp, versionTarget);
+
+                    // Target this single version only. The version index is the position in the
+                    // newest-first fileset list (0 = newest), which is what --version uses.
+                    m_options.RawOptions["version"] = fileset.VersionIndex.ToString();
+
+                    // Build the per-version restore destination. A thin wrapper remaps
+                    // TargetDestination to the timestamp subfolder; all other operations are
+                    // delegated to the original provider. The mapped paths handed to the
+                    // provider are already inside the original target, so the underlying
+                    // provider's path validation continues to accept them.
+                    var versionDestination = new VersionedRestoreDestinationProvider(restoreDestination, versionTarget);
+
+                    await RunSingleVersionRestoreAsync(backendManager, filter, versionDestination, m_options.Time, [fileset.VersionIndex], cancellationToken)
+                        .ConfigureAwait(false);
+                }
+            }
+            finally
+            {
+                // Drop the persistent restored-hashes scratch table if it was created. Use a
+                // dedicated timeout token (30s) rather than the restore's cancellation token so
+                // cleanup still runs if the restore was cancelled, and does not hang forever.
+                if (!string.IsNullOrEmpty(m_restoredHashesTable))
+                {
+                    try
+                    {
+                        using var cleanupCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                        using (var cleanupDb = await LocalRestoreDatabase.CreateAsync(dbpath, null, cleanupCts.Token).ConfigureAwait(false))
+                            await cleanupDb.DropRestoredHashesTableAsync(m_restoredHashesTable, cleanupCts.Token).ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logging.Log.WriteWarningMessage(LOGTAG, "DropRestoredHashesFailed", ex, "Failed to drop restored-hashes scratch table: {0}", ex.Message);
+                    }
+                    m_restoredHashesTable = null;
+                }
+
+                // Restore the original options.
+                if (originalVersionValue != null)
+                    m_options.RawOptions["version"] = originalVersionValue;
+                else
+                    m_options.RawOptions.Remove("version");
+
+                if (originalTimeValue != null)
+                    m_options.RawOptions["time"] = originalTimeValue;
+                else
+                    m_options.RawOptions.Remove("time");
+            }
+        }
+
+        /// <summary>
+        /// Appends the file hashes of the files that were successfully restored (or verified
+        /// in place) in the just-completed version into the persistent restored-hashes scratch
+        /// table (<see cref="m_restoredHashesTable"/>). Called by the restore flow after a
+        /// version's file list is processed (and before the temp tables are dropped), so the
+        /// next version can skip files with the same content. Only files whose
+        /// <c>DataVerified</c> flag is 1 are recorded; files whose restore failed are not
+        /// harvested and remain eligible for restore in subsequent versions. Only the file hash
+        /// is recorded, not metadata. The hashes are stored in the database rather than in
+        /// memory to avoid unbounded memory growth across many files/versions.
+        /// </summary>
+        private async Task HarvestRestoredHashesAsync(LocalRestoreDatabase database, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrEmpty(m_restoredHashesTable))
+                return;
+
+            try
+            {
+                var added = await database
+                    .AddCurrentFilesToRestoredHashesAsync(m_restoredHashesTable, cancellationToken)
+                    .ConfigureAwait(false);
+                if (added > 0)
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "RecordedRestoredHashes", "Recorded {0} file hash(es) restored in this version for de-duplication", added);
+            }
+            catch (Exception ex)
+            {
+                Logging.Log.WriteWarningMessage(LOGTAG, "HarvestRestoredHashesFailed", ex, "Failed to harvest restored file hashes for de-duplication: {0}", ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Selects the targeted filesets from the full newest-first fileset list, applying the
+        /// same time/version selection logic as <see cref="LocalDatabase.GetFilesetIDsAsync"/>.
+        /// Returns the selected filesets as a list of (filesetId, timestamp, versionIndex)
+        /// triples, newest first.
+        /// </summary>
+        private static List<FilesetSelection> SelectTargetedFilesets(IReadOnlyList<KeyValuePair<long, DateTime>> allFilesets, DateTime time, long[]? versions)
+        {
+            var result = new List<FilesetSelection>();
+
+            // Version indices take precedence: if specific versions are requested, select those
+            // indices from the newest-first list (matching GetFilelistWhereClauseAsync which
+            // selects filesets by ID derived from the version index).
+            if (versions != null && versions.Length > 0)
+            {
+                foreach (var v in versions)
+                {
+                    if (v >= 0 && v < allFilesets.Count)
+                        result.Add(new FilesetSelection(allFilesets[(int)v].Key, allFilesets[(int)v].Value, (int)v));
+                    else
+                        Logging.Log.WriteWarningMessage(LOGTAG, "SkipInvalidVersion", null, "Skipping invalid version: {0}", v);
+                }
+
+                if (result.Count > 0)
+                    return result;
+            }
+
+            // Otherwise, select by time (all filesets at or before the given time), or, when no
+            // time is set either, the single newest fileset (the normal default restore).
+            if (time.Ticks > 0)
+            {
+                // Compare in UTC to avoid kind mismatches; allFilesets timestamps are local
+                // (as returned by FilesetTimesAsync) and `time` may be local or UTC.
+                var compareTime = time.ToUniversalTime();
+                for (var idx = 0; idx < allFilesets.Count; idx++)
+                {
+                    var fs = allFilesets[idx];
+                    if (fs.Value.ToUniversalTime() <= compareTime)
+                        result.Add(new FilesetSelection(fs.Key, fs.Value, idx));
+                }
+            }
+            else
+            {
+                // No version or time filter: target every fileset. The --restore-all-files
+                // option is "restore all files across all versions", so without an explicit
+                // version/time selection every available version is targeted.
+                for (var idx = 0; idx < allFilesets.Count; idx++)
+                    result.Add(new FilesetSelection(allFilesets[idx].Key, allFilesets[idx].Value, idx));
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// A thin <see cref="IRestoreDestinationProvider"/> wrapper that reports a per-version
+        /// <see cref="TargetDestination"/> (the timestamp subfolder) while delegating every
+        /// operation to the original provider. The restore path-mapping logic maps all target
+        /// paths into the per-version subfolder, and those mapped paths are inside the
+        /// original target, so the underlying provider's path validation still accepts them.
+        /// </summary>
+        private sealed class VersionedRestoreDestinationProvider : IRestoreDestinationProvider
+        {
+            private readonly IRestoreDestinationProvider _inner;
+            private readonly string _targetDestination;
+
+            public VersionedRestoreDestinationProvider(IRestoreDestinationProvider inner, string targetDestination)
+            {
+                _inner = inner;
+                _targetDestination = targetDestination;
+            }
+
+            public string TargetDestination => _targetDestination;
+            public Task Initialize(CancellationToken cancel) => _inner.Initialize(cancel);
+            public Task Finalize(Action<double>? progressCallback, CancellationToken cancel) => _inner.Finalize(progressCallback, cancel);
+            public Task Test(CancellationToken cancellationToken) => _inner.Test(cancellationToken);
+            public Task<bool> CreateFolderIfNotExists(string path, CancellationToken cancel) => _inner.CreateFolderIfNotExists(path, cancel);
+            public Task<bool> FileExists(string path, CancellationToken cancel) => _inner.FileExists(path, cancel);
+            public Task<Stream> OpenWrite(string path, CancellationToken cancel) => _inner.OpenWrite(path, cancel);
+            public Task<Stream> OpenRead(string path, CancellationToken cancel) => _inner.OpenRead(path, cancel);
+            public Task<Stream> OpenReadWrite(string path, CancellationToken cancel) => _inner.OpenReadWrite(path, cancel);
+            public Task<long> GetFileLength(string path, CancellationToken cancel) => _inner.GetFileLength(path, cancel);
+            public Task<bool> HasReadOnlyAttribute(string path, CancellationToken cancel) => _inner.HasReadOnlyAttribute(path, cancel);
+            public Task ClearReadOnlyAttribute(string path, CancellationToken cancel) => _inner.ClearReadOnlyAttribute(path, cancel);
+            public Task<bool> WriteMetadata(string path, Dictionary<string, string?> metadata, bool restoreSymlinkMetadata, bool restorePermissions, CancellationToken cancel) => _inner.WriteMetadata(path, metadata, restoreSymlinkMetadata, restorePermissions, cancel);
+            public Task DeleteFolder(string path, CancellationToken cancel) => _inner.DeleteFolder(path, cancel);
+            public Task DeleteFile(string path, CancellationToken cancel) => _inner.DeleteFile(path, cancel);
+            public IList<string> GetPriorityFiles() => _inner.GetPriorityFiles();
+            public void Dispose() => _inner.Dispose();
+        }
+
+        /// <summary>
+        /// A selected fileset: its database ID, its timestamp, and its version index (position
+        /// in the newest-first fileset list, where 0 is the newest).
+        /// </summary>
+        private readonly record struct FilesetSelection(long FilesetId, DateTime Timestamp, int VersionIndex);
 
         private static async Task PatchWithBlocklistAsync(LocalRestoreDatabase database, BlockVolumeReader blocks, Options options, RestoreResults result, byte[] blockbuffer, RestoreHandlerMetadataStorage metadatastorage, IRestoreDestinationProvider restoreDestination, CancellationToken cancellationToken)
         {
@@ -376,7 +674,7 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="filter">The filter of which files to restore.</param>
         /// <param name="restoreDestination">The destination to restore to.</param>
         /// <param name="cancellationToken">The cancellation token to monitor for cancellation requests.</param>
-        private async Task DoRunNewAsync(IBackendManager backendManager, LocalRestoreDatabase database, IFilter filter, IRestoreDestinationProvider restoreDestination, CancellationToken cancellationToken)
+        private async Task DoRunNewAsync(IBackendManager backendManager, LocalRestoreDatabase database, IFilter? filter, IRestoreDestinationProvider restoreDestination, CancellationToken cancellationToken)
         {
             // Perform initial setup
             await Utility.UpdateOptionsFromDbAsync(database, m_options, cancellationToken)
@@ -403,7 +701,7 @@ namespace Duplicati.Library.Main.Operation
             // Prepare the block and file list and create the directory structure
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_CreateFileList);
             using (new Logging.Timer(LOGTAG, "PrepareBlockList", "PrepareBlockList"))
-                await PrepareBlockAndFileListAsync(database, m_options, filter, restoreDestination, m_result)
+                await PrepareBlockAndFileListAsync(database, m_options, filter, restoreDestination, m_result, m_restoredHashesTable)
                     .ConfigureAwait(false);
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_CreateTargetFolders);
             using (new Logging.Timer(LOGTAG, "CreateDirectory", "CreateDirectory"))
@@ -509,6 +807,10 @@ namespace Duplicati.Library.Main.Operation
                     Logging.Log.WriteInformationMessage(LOGTAG, "NoFilesNeededRestore", null, "Restore completed but all files were already present");
             }
 
+            // Harvest restored file hashes for --restore-all-files=unique before the temp
+            // tables are dropped, so subsequent versions can skip files with the same content.
+            await HarvestRestoredHashesAsync(database, cancellationToken).ConfigureAwait(false);
+
             // Drop the temp tables
             await database.DropRestoreTableAsync(cancellationToken).ConfigureAwait(false);
             await backendManager.WaitForEmptyAsync(database, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
@@ -537,7 +839,7 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="priorityFiles">The list of priority file names to exclude.</param>
         /// <param name="originalFilter">The original filter to combine with.</param>
         /// <returns>A filter that matches the original filter but excludes priority files.</returns>
-        private static Library.Utility.IFilter BuildExcludePriorityFilter(IList<string> priorityFiles, Library.Utility.IFilter originalFilter)
+        private static Library.Utility.IFilter? BuildExcludePriorityFilter(IList<string> priorityFiles, Library.Utility.IFilter? originalFilter)
         {
             var excludePatterns = priorityFiles.Select(pf => "*" + pf);
             var excludeFilter = new FilterExpression(excludePatterns, false);
@@ -554,7 +856,7 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="filter">The filter of which files to restore.</param>
         /// <param name="restoreDestination">The destination to restore to.</param>
         /// <param name="cancellationToken">The cancellation token to monitor for cancellation requests.</param>
-        private async Task DoRunAsync(IBackendManager backendManager, LocalRestoreDatabase database, Library.Utility.IFilter filter, IRestoreDestinationProvider restoreDestination, CancellationToken cancellationToken)
+        private async Task DoRunAsync(IBackendManager backendManager, LocalRestoreDatabase database, Library.Utility.IFilter? filter, IRestoreDestinationProvider restoreDestination, CancellationToken cancellationToken)
         {
             using (var metadatastorage = new RestoreHandlerMetadataStorage())
             {
@@ -632,12 +934,12 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="restoreDestination">The destination to restore to.</param>
         /// <param name="metadatastorage">Shared metadata storage across phases.</param>
         /// <param name="cancellationToken">The cancellation token to monitor for cancellation requests.</param>
-        private async Task RestoreCoreAsync(IBackendManager backendManager, LocalRestoreDatabase database, Library.Utility.IFilter filter, IRestoreDestinationProvider restoreDestination, RestoreHandlerMetadataStorage metadatastorage, CancellationToken cancellationToken)
+        private async Task RestoreCoreAsync(IBackendManager backendManager, LocalRestoreDatabase database, Library.Utility.IFilter? filter, IRestoreDestinationProvider restoreDestination, RestoreHandlerMetadataStorage metadatastorage, CancellationToken cancellationToken)
         {
             //Figure out what files are to be patched, and what blocks are needed
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_CreateFileList);
             using (new Logging.Timer(LOGTAG, "PrepareBlockList", "PrepareBlockList"))
-                await PrepareBlockAndFileListAsync(database, m_options, filter, restoreDestination, m_result)
+                await PrepareBlockAndFileListAsync(database, m_options, filter, restoreDestination, m_result, m_restoredHashesTable)
                     .ConfigureAwait(false);
 
             //Make the entire output setup
@@ -645,6 +947,9 @@ namespace Duplicati.Library.Main.Operation
             using (new Logging.Timer(LOGTAG, "CreateDirectory", "CreateDirectory"))
                 await CreateDirectoryStructureAsync(database, restoreDestination, string.IsNullOrEmpty(restoreDestination.TargetDestination), m_options, m_result)
                     .ConfigureAwait(false);
+
+            if (m_blockbuffer == null)
+                throw new InvalidOperationException("Block buffer has not been initialized");
 
             //If we are patching an existing target folder, do not touch stuff that is already updated
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_ScanForExistingFiles);
@@ -819,6 +1124,10 @@ namespace Duplicati.Library.Main.Operation
             else if (fileErrors > 0)
                 Logging.Log.WriteInformationMessage(LOGTAG, "RestoreFailures", "Failed to restore {0} files", fileErrors);
 
+            // Harvest restored file hashes for --restore-all-files=unique before the temp
+            // tables are dropped, so subsequent versions can skip files with the same content.
+            await HarvestRestoredHashesAsync(database, cancellationToken).ConfigureAwait(false);
+
             // Drop the temp tables
             await database.DropRestoreTableAsync(cancellationToken).ConfigureAwait(false);
             await backendManager.WaitForEmptyAsync(database, cancellationToken).ConfigureAwait(false);
@@ -826,13 +1135,12 @@ namespace Duplicati.Library.Main.Operation
 
         public static async Task<bool> ApplyMetadataAsync(string path, System.IO.Stream stream, Options options, IRestoreDestinationProvider restoreDestination, CancellationToken cancellationToken)
         {
-            // TODO This has been modified to return a bool indicating if anything was written to properly report the number of files restored. The legacy restore doesn't check this, which produces an error in the CI where it reports that no files have been restored, even though one have. It's in Duplicati/UnitTests/SymLinkTests.cs the test SymLinkTests.SymLinkExists() that fails on the very last assert that there are 0 warnings.
             using (var tr = new System.IO.StreamReader(stream))
             using (var jr = new Newtonsoft.Json.JsonTextReader(tr))
             {
-                var metadata = new Newtonsoft.Json.JsonSerializer().Deserialize<Dictionary<string, string>>(jr);
+                var metadata = new Newtonsoft.Json.JsonSerializer().Deserialize<Dictionary<string, string?>>(jr);
                 // If this is dry-run, we stop after having deserialized the metadata
-                if (options.Dryrun)
+                if (metadata == null || options.Dryrun)
                     return false;
 
                 return await restoreDestination.WriteMetadata(path, metadata, options.RestoreSymlinkMetadata, options.RestorePermissions, cancellationToken).ConfigureAwait(false);
@@ -890,6 +1198,8 @@ namespace Duplicati.Library.Main.Operation
                                                 patched = true;
                                                 if (!options.Dryrun)
                                                 {
+                                                    if (targetstream == null)
+                                                        throw new InvalidOperationException("Did not expect stream to be null");
                                                     targetstream.Position = block.Offset;
                                                     await targetstream.WriteAsync(blockbuffer, 0, size);
                                                 }
@@ -1008,6 +1318,9 @@ namespace Duplicati.Library.Main.Operation
                                                             metadatastorage.Add(targetpath, new System.IO.MemoryStream(blockbuffer, 0, size));
                                                         else
                                                         {
+                                                            if (file == null)
+                                                                throw new InvalidOperationException("Did not expect file to be null");
+
                                                             file.Position = targetblock.Offset;
                                                             await file.WriteAsync(blockbuffer, 0, size);
                                                         }
@@ -1059,7 +1372,7 @@ namespace Duplicati.Library.Main.Operation
             await blockmarker.CommitAsync(result.TaskControl.ProgressToken).ConfigureAwait(false);
         }
 
-        private static async Task PrepareBlockAndFileListAsync(LocalRestoreDatabase database, Options options, Library.Utility.IFilter filter, IRestoreDestinationProvider restoreDestination, RestoreResults result)
+        private static async Task PrepareBlockAndFileListAsync(LocalRestoreDatabase database, Options options, Library.Utility.IFilter? filter, IRestoreDestinationProvider restoreDestination, RestoreResults result, string? restoredHashesTable)
         {
             // Create a temporary table FILES by selecting the files from fileset that matches a specific operation id
             // Delete all entries from the temp table that are excluded by the filter(s)
@@ -1068,6 +1381,28 @@ namespace Duplicati.Library.Main.Operation
                 var c = await database
                     .PrepareRestoreFilelistAsync(options.Time, options.Version, filter, options.DisableAdsRestore, result.TaskControl.ProgressToken)
                     .ConfigureAwait(false);
+
+                // When --restore-all-files=unique is active, remove files already restored in
+                // a previous version. The uniqueness check is on the file hash only. The set of
+                // already-restored hashes is kept in a persistent database table (named by
+                // restoredHashesTable) so it does not grow unbounded in memory.
+                if (!string.IsNullOrEmpty(restoredHashesTable) && c.Item1 > 0)
+                {
+                    using (new Logging.Timer(LOGTAG, "RemoveRestoredHashes", "Removing files already restored in a previous version"))
+                    {
+                        var removed = await database
+                            .RemoveFilesByRestoredHashesAsync(restoredHashesTable, result.TaskControl.ProgressToken)
+                            .ConfigureAwait(false);
+                        if (removed > 0)
+                            Logging.Log.WriteVerboseMessage(LOGTAG, "SkippedAlreadyRestored", "Skipped {0} file(s) already restored in a previous version", removed);
+
+                        // Recompute the file count after removal.
+                        c = await database
+                            .PrepareRestoreFilelistCountAsync(result.TaskControl.ProgressToken)
+                            .ConfigureAwait(false);
+                    }
+                }
+
                 result.OperationProgressUpdater.UpdatefileCount(c.Item1, c.Item2, true);
 
                 // If the selection is completely empty (no files, folders, or symlinks),
@@ -1248,14 +1583,14 @@ namespace Duplicati.Library.Main.Operation
                                         // Parallelize file hash calculation on rename. Running read-only on same array should not cause conflicts or races.
                                         // Actually, in future always calculate the file hash and mark the file data as already verified.
 
-                                        System.Threading.Tasks.Task calcFileHashTask = null;
+                                        var calcFileHashTask = Task.CompletedTask;
                                         if (calcFileHash)
-                                            calcFileHashTask = System.Threading.Tasks.Task.Run(
+                                            calcFileHashTask = Task.Run(
                                                 () => filehasher.TransformBlock(blockbuffer, 0, size, blockbuffer, 0));
 
                                         var key = Convert.ToBase64String(blockhasher.ComputeHash(blockbuffer, 0, size));
 
-                                        if (calcFileHashTask != null) await calcFileHashTask.ConfigureAwait(false); // wait because blockbuffer will be overwritten.
+                                        await calcFileHashTask.ConfigureAwait(false); // wait because blockbuffer will be overwritten.
 
                                         if (key == targetblock.Hash)
                                         {
@@ -1278,7 +1613,7 @@ namespace Duplicati.Library.Main.Operation
                             if (calcFileHash) // now check if files are identical
                             {
                                 filehasher.TransformFinalBlock(blockbuffer, 0, 0);
-                                var filekey = Convert.ToBase64String(filehasher.Hash);
+                                var filekey = Convert.ToBase64String(filehasher.Hash ?? throw new InvalidDataException("Unexpected null hash result"));
                                 fullfilehashmatch = (filekey == targetfilehash);
                             }
 
