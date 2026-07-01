@@ -437,5 +437,42 @@ namespace Duplicati.UnitTest
 
             TestUtils.AssertDirectoryTreesAreEquivalent(this.DATAFOLDER, this.RESTOREFOLDER, true, "Restoring with disk pressure eviction");
         }
+
+        [Test]
+        [Category("RestoreHandler")]
+        public async Task RestoreSkipFilesLargerThanAsync([Values("true", "false")] string restoreLegacy)
+        {
+            var smallFilePath = Path.Combine(this.DATAFOLDER, "small");
+            File.WriteAllBytes(smallFilePath, new byte[1 * 1024]); // 1 KB
+
+            var largeFilePath = Path.Combine(this.DATAFOLDER, "large");
+            File.WriteAllBytes(largeFilePath, new byte[100 * 1024]); // 100 KB
+
+            var backupOptions = new Dictionary<string, string>(this.TestOptions)
+            {
+                ["dblock-size"] = "1mb",
+                ["blocksize"] = "10kb"
+            };
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, backupOptions, null))
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+
+            // Skip files larger than 10 KB: the small file (1 KB) is restored, the large file (100 KB) is not.
+            var restoreOptions = new Dictionary<string, string>(backupOptions)
+            {
+                ["restore-path"] = this.RESTOREFOLDER,
+                ["restore-legacy"] = restoreLegacy,
+                ["skip-files-larger-than"] = "10kb"
+            };
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
+                TestUtils.AssertResults(await c.RestoreAsync(new[] { "*" }));
+
+            var restoredSmallFilePath = Path.Combine(this.RESTOREFOLDER, "small");
+            var restoredLargeFilePath = Path.Combine(this.RESTOREFOLDER, "large");
+
+            Assert.IsTrue(File.Exists(restoredSmallFilePath), "The small file should have been restored");
+            Assert.IsFalse(File.Exists(restoredLargeFilePath), "The large file should not have been restored");
+        }
     }
 }

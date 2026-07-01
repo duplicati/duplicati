@@ -80,7 +80,8 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="block_response">The channel to receive blocks from the block manager.</param>
         /// <param name="options">The restore options.</param>
         /// <param name="results">The restore results.</param>
-        public static Task RunAsync(Channels channels, LocalRestoreDatabase db, IChannel<BlockRequest> block_request, IChannel<Task<DataBlock>> block_response, IRestoreDestinationProvider restoreDestination, Options options, RestoreResults results)
+        /// <param name="modules">The loaded generic modules, used to dispatch restore callbacks. May be null.</param>
+        public static Task RunAsync(Channels channels, LocalRestoreDatabase db, IChannel<BlockRequest> block_request, IChannel<Task<DataBlock>> block_response, IRestoreDestinationProvider restoreDestination, Options options, RestoreResults results, IEnumerable<IGenericModule>? modules)
         {
             return AutomationExtensions.RunTask(
             new
@@ -125,7 +126,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         sw_file?.Stop();
 
                         // Check if this is a priority file and wait for all priority files to complete before processing non-priority files
-                        await WaitForPriorityFilesIfNeededAsync(file).ConfigureAwait(false);
+                        await WaitForPriorityFilesIfNeededAsync(file, modules, results.TaskControl.ProgressToken).ConfigureAwait(false);
 
                         Logging.Log.WriteExplicitMessage(LOGTAG, "FileRestored", null, "{0} Restoring file {1}", my_id, file.TargetPath);
 
@@ -548,6 +549,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                         }
                         sw_work_results?.Stop();
 
+                        await RestoreHandler.InvokeFileRestoredAsync(modules, file.Version, file.TargetPath, file.BackupTimestamp, results.TaskControl.ProgressToken).ConfigureAwait(false);
+
                         Logging.Log.WriteVerboseMessage(LOGTAG, "RestoredFile", $"{my_id} Restored file {{0}}", file.TargetPath);
                     }
                 }
@@ -693,9 +696,13 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// Waits for all priority files to be processed before allowing non-priority files to be processed.
         /// If the current file is a priority file, it decrements the counter and signals completion when all priority files are done.
         /// If the current file is not a priority file, it waits until all priority files have been processed.
+        /// When the last priority file is processed, <see cref="RestoreHandler.InvokeBulkRestoreStartAsync"/> is
+        /// invoked to notify restore callback modules that the bulk restore is starting.
         /// </summary>
         /// <param name="file">The file request being processed.</param>
-        private static async Task WaitForPriorityFilesIfNeededAsync(FileRequest file)
+        /// <param name="modules">The loaded generic modules, used to dispatch the bulk-restore-start callback. May be null.</param>
+        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+        private static async Task WaitForPriorityFilesIfNeededAsync(FileRequest file, IEnumerable<IGenericModule>? modules, CancellationToken cancellationToken)
         {
             if (file.IsPriorityFile)
             {
@@ -710,7 +717,17 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                 if (shouldSignal)
                 {
-                    priority_files_completed.SetResult();
+                    // All priority files have been restored and the bulk restore is starting.
+                    // The first processor to detect completion notifies the restore callback
+                    // modules before signaling the other processors to continue.
+                    try
+                    {
+                        await RestoreHandler.InvokeBulkRestoreStartAsync(modules, cancellationToken).ConfigureAwait(false);
+                    }
+                    finally
+                    {
+                        priority_files_completed.SetResult();
+                    }
                 }
             }
             else

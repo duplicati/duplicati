@@ -25,6 +25,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using CoCoL;
+using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database.Local;
 using Duplicati.Library.Common.IO;
 
@@ -51,8 +52,11 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="db">The restore database, which is queried for the file list.</param>
         /// <param name="options">The restore options</param>
         /// <param name="result">The restore results</param>
-        /// <param name="restoreDestination">The restore destination provider, used to get priority files.</param>
-        public static Task RunAsync(Channels channels, LocalRestoreDatabase db, Options options, RestoreResults result, IList<string> priorityFiles)
+        /// <param name="priorityFiles">The list of priority file names to include.</param>
+        /// <param name="version">The 0-based backup version index being restored (0 = newest), reported to restore callback modules.</param>
+        /// <param name="backupTimestamp">The timestamp of the backup version being restored, in UTC, reported to restore callback modules.</param>
+        /// <param name="modules">The loaded generic modules, used to dispatch the bulk-restore-start callback. May be null.</param>
+        public static Task RunAsync(Channels channels, LocalRestoreDatabase db, Options options, RestoreResults result, IList<string> priorityFiles, long version, DateTime backupTimestamp, IEnumerable<IGenericModule>? modules)
         {
             return AutomationExtensions.RunTask(
             new
@@ -102,30 +106,50 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                     sw_write_file?.Start();
 
-                    // First, send priority files (if any) to be restored first
+                    // Resolve which files are priority files. A priority entry only counts
+                    // if it matches at least one restorable target; entries a restore callback
+                    // module added that match nothing are ignored so the priority-file counter
+                    // below stays consistent with the number of priority FileRequests actually
+                    // emitted. Without this, a non-matching entry would leave the non-priority
+                    // FileProcessors waiting forever for a priority file that never arrives.
+                    List<FileRequest> priorityFileList;
+                    IEnumerable<FileRequest> remainingFiles;
                     if (priorityFiles.Count > 0)
                     {
                         var priorityFileSet = new HashSet<string>(priorityFiles, StringComparer.OrdinalIgnoreCase);
-                        var priorityFileList = files.Where(f => priorityFileSet.Any(pf => f.TargetPath.EndsWith(pf, StringComparison.OrdinalIgnoreCase))).ToList();
-                        var remainingFiles = files.Where(f => !priorityFileSet.Any(pf => f.TargetPath.EndsWith(pf, StringComparison.OrdinalIgnoreCase))).ToList();
-
-                        // Send priority files first (marked with IsPriorityFile=true)
-                        foreach (var file in priorityFileList)
-                        {
-                            var priorityFileRequest = new FileRequest(file.ID, file.OriginalPath, file.TargetPath, file.Hash, file.Length, file.BlocksetID, IsPriorityFile: true);
-                            await self.Output.WriteAsync(priorityFileRequest).ConfigureAwait(false);
-                        }
-
-                        // Then send remaining files
-                        foreach (var file in remainingFiles)
-                            await self.Output.WriteAsync(file).ConfigureAwait(false);
+                        priorityFileList = files.Where(f => priorityFileSet.Any(pf => f.TargetPath.EndsWith(pf, StringComparison.OrdinalIgnoreCase))).ToList();
+                        remainingFiles = files.Where(f => !priorityFileSet.Any(pf => f.TargetPath.EndsWith(pf, StringComparison.OrdinalIgnoreCase)));
                     }
                     else
                     {
-                        // No priority files, send all files in order
-                        foreach (var file in files)
-                            await self.Output.WriteAsync(file).ConfigureAwait(false);
+                        priorityFileList = new List<FileRequest>();
+                        remainingFiles = files;
                     }
+
+                    // The priority-file counter must reflect the number of priority
+                    // FileRequests actually emitted below, not the size of the (module-mutable)
+                    // priority-files list. Resetting the completion source here (the producer)
+                    // is safe: the FileProcessors only await it for non-priority files, which are
+                    // emitted afterwards, and they cannot read a file until it has been written.
+                    FileProcessor.priority_files_remaining = priorityFileList.Count;
+                    FileProcessor.priority_files_completed = new TaskCompletionSource();
+
+                    // When no priority files will be processed, the bulk restore starts
+                    // immediately; notify restore callback modules now. When priority files
+                    // exist, the FileProcessor that finishes the last one notifies the modules.
+                    if (priorityFileList.Count == 0)
+                        await RestoreHandler.InvokeBulkRestoreStartAsync(modules, result.TaskControl.ProgressToken).ConfigureAwait(false);
+
+                    // Send priority files first (marked with IsPriorityFile=true)
+                    foreach (var file in priorityFileList)
+                    {
+                        var priorityFileRequest = new FileRequest(file.ID, file.OriginalPath, file.TargetPath, file.Hash, file.Length, file.BlocksetID, IsPriorityFile: true, Version: version, BackupTimestamp: backupTimestamp);
+                        await self.Output.WriteAsync(priorityFileRequest).ConfigureAwait(false);
+                    }
+
+                    // Then send remaining files
+                    foreach (var file in remainingFiles)
+                        await self.Output.WriteAsync(file.WithVersion(version, backupTimestamp)).ConfigureAwait(false);
 
                     sw_write_file?.Stop();
 
@@ -141,14 +165,14 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                         sw_write_folder?.Start();
                         foreach (var folder in folders)
-                            await self.Output.WriteAsync(folder).ConfigureAwait(false);
+                            await self.Output.WriteAsync(folder.WithVersion(version, backupTimestamp)).ConfigureAwait(false);
                         sw_write_folder?.Stop();
                     }
 
                     // Send the alternate data streams last, so their hosts are restored
                     sw_write_file?.Start();
                     foreach (var file in adsStreams)
-                        await self.Output.WriteAsync(new FileRequest(file.ID, file.OriginalPath, file.TargetPath, file.Hash, file.Length, file.BlocksetID, IsAlternateDataStream: true)).ConfigureAwait(false);
+                        await self.Output.WriteAsync(new FileRequest(file.ID, file.OriginalPath, file.TargetPath, file.Hash, file.Length, file.BlocksetID, IsAlternateDataStream: true, Version: version, BackupTimestamp: backupTimestamp)).ConfigureAwait(false);
                     sw_write_file?.Stop();
                 }
                 catch (Exception ex)
