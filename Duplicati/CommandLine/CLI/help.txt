@@ -372,7 +372,7 @@ Usage: %CLI_EXE% set-locks <storage-URL> [<options>]
     --time=<time>
     --all-versions=true
 
-  --file-lock-duration=<time>
+  --remote-file-lock-duration=<time>
     Sets how long the remote volumes should be protected (for example, 30D).
     The lock expiration is computed as: now + file-lock-duration.
 
