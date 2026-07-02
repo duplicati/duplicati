@@ -2972,6 +2972,18 @@ msgstr "Nie"
 msgid "Symbolic link"
 msgstr "Link symboliczny"
 
+#: scripts/controllers/StateController.js:80
+msgid ""
+"Synchronizing remote destination: {{files}} files ({{size}}) to "
+"go{{speed_txt}}"
+msgstr ""
+"Synchronizacja zdalnej lokalizacji: {{files}} plików ({{size}}) do "
+"przesłania z szybkością{{speed_txt}}"
+
+#: scripts/services/ServerStatus.js:48
+msgid "Synchronizing secondary destination …"
+msgstr "Synchronizacja drugorzędnej lokalizacji …"
+
 #: scripts/services/AppUtils.js:200
 msgid "System Files"
 msgstr "Pliki systemowe"

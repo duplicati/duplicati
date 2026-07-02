@@ -1032,11 +1032,11 @@ msgstr "Disattivato"
 #: templates/notificationarea.html:10 templates/notificationarea.html:29
 #: templates/notificationarea.html:40
 msgid "Dismiss"
-msgstr "Rifiuta"
+msgstr "Ignora"
 
 #: templates/notificationarea.html:50
 msgid "Dismiss all"
-msgstr "Rifiuta tutto"
+msgstr "Ignora tutto"
 
 #: templates/settings.html:108
 msgid "Display and color theme"

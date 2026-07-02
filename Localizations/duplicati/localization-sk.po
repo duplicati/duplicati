@@ -16,7 +16,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-04 14:35+0200\n"
+"POT-Creation-Date: 2026-07-02 11:34+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: Martin Rovňák <rovnakm@gmail.com>, 2026\n"
 "Language-Team: Slovak (https://app.transifex.com/duplicati/teams/67655/sk/)\n"
@@ -53,8 +53,8 @@ msgstr ""
 msgid "Set thread level utilized for crypting"
 msgstr "Nastavte úroveň vlákna používanú na šifrovanie"
 
-#: Library/Encryption/Strings.cs:33 Library/Main/Strings.cs:202
-#: Library/Main/Strings.cs:257
+#: Library/Encryption/Strings.cs:33 Library/Main/Strings.cs:206
+#: Library/Main/Strings.cs:263
 #, csharp-format
 msgid "The option --{0} is no longer used and has been deprecated."
 msgstr "Možnosť --{0} sa už nepoužíva a bola zrušená."
@@ -418,7 +418,7 @@ msgid "S3 compatible"
 msgstr "S3 kompatibilné "
 
 #: Library/Backend/S3/Strings.cs:32 Library/Backend/Mega/Strings.cs:26
-#: Library/Utility/Strings.cs:93
+#: Library/Utility/Strings.cs:95
 msgid ""
 "The password used to connect to the server. This may also be supplied as the"
 " environment variable \"AUTH_PASSWORD\"."
@@ -472,6 +472,10 @@ msgstr "B2 Cloud úložisko"
 msgid "Microsoft OneDrive"
 msgstr "Microsoft OneDrive"
 
+#: Library/Backend/OneDrive/Strings.cs:48
+msgid "Microsoft SharePoint"
+msgstr "Microsoft SharePoint"
+
 #: Library/Backend/AzureBlob/Strings.cs:36
 msgid "The access key"
 msgstr "Prístupový kód"
@@ -492,24 +496,16 @@ msgstr "Nezadané heslo"
 msgid "No username given"
 msgstr "Nezadané užívateľské meno"
 
-#: Library/Backend/SharePoint/Strings.cs:27
-msgid "Microsoft SharePoint"
-msgstr "Microsoft SharePoint"
-
 #: Library/Backend/SharePoint/Strings.cs:31
 msgid "Move deleted files to the recycle bin"
 msgstr "Presun zmazaných súborov do koša"
-
-#: Library/Backend/SharePoint/Strings.cs:50
-msgid "Microsoft OneDrive for Business"
-msgstr "Microsoft OneDrive for Business"
 
 #: Library/Backend/Dropbox/Strings.cs:28
 msgid "Dropbox"
 msgstr "Dropbox"
 
 #: Library/Backend/Dropbox/Strings.cs:30
-#: Library/Backend/OAuthHelper/Strings.cs:30 Library/Utility/Strings.cs:103
+#: Library/Backend/OAuthHelper/Strings.cs:30 Library/Utility/Strings.cs:105
 msgid "The authorization code"
 msgstr "Autorizačný kód"
 
@@ -578,11 +574,11 @@ msgstr "Vážna chyba v Duplicati: {0}"
 msgid "Unsupported version of SQLite detected ({0}), must be {1} or higher"
 msgstr "Zistená nepodporovaná verzia SQLite ({0}), musí byť {1} alebo vyššia"
 
-#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:278
+#: Library/RestAPI/Strings.cs:67 Library/Main/Strings.cs:284
 msgid "Clean up old log data"
 msgstr "Vyčistiť staré záznamy"
 
-#: Library/RestAPI/Strings.cs:72 Library/Main/Strings.cs:101
+#: Library/RestAPI/Strings.cs:73 Library/Main/Strings.cs:103
 msgid "Temporary storage folder"
 msgstr "Dočasný adresár"
 
@@ -594,61 +590,61 @@ msgstr "záloha"
 msgid "No source folders specified for backup"
 msgstr "Nešpecifikované zdrojové adresáre pre zálohovanie "
 
-#: Library/Main/Strings.cs:39
+#: Library/Main/Strings.cs:41
 #, csharp-format
 msgid "The operation {0} has completed"
 msgstr "Operácia {0} kompletná"
 
-#: Library/Main/Strings.cs:41
+#: Library/Main/Strings.cs:43
 #, csharp-format
 msgid "Invalid path: \"{0}\" ({1})"
 msgstr "nesprávna cesta: \"{0}\" ({1})"
 
-#: Library/Main/Strings.cs:59
+#: Library/Main/Strings.cs:61
 msgid "Restore to another folder"
 msgstr "Obnovenie do iného adresára"
 
-#: Library/Main/Strings.cs:71
+#: Library/Main/Strings.cs:73
 msgid "Disable encryption"
 msgstr "Nešifrovať"
 
-#: Library/Main/Strings.cs:75
+#: Library/Main/Strings.cs:77
 msgid "Passphrase used to encrypt backups"
 msgstr "Heslo použité pre šifrované zálohy"
 
-#: Library/Main/Strings.cs:81
+#: Library/Main/Strings.cs:83
 msgid "Show all versions"
 msgstr "Zobraziť všetky verzie"
 
-#: Library/Main/Strings.cs:89
+#: Library/Main/Strings.cs:91
 msgid "Show folder contents"
 msgstr "Zobraziť obsah adresára"
 
-#: Library/Main/Strings.cs:91
+#: Library/Main/Strings.cs:93
 msgid "Time to wait between retries"
 msgstr "Čas medzi opakovaniami"
 
-#: Library/Main/Strings.cs:134
+#: Library/Main/Strings.cs:136
 msgid "Log information level"
 msgstr "Log informačná úroveň"
 
-#: Library/Main/Strings.cs:177
+#: Library/Main/Strings.cs:179
 msgid "Exclude files by attribute"
 msgstr "Vylúčenie súborov podľa atribútov"
 
-#: Library/Main/Strings.cs:181
+#: Library/Main/Strings.cs:185
 msgid "Name of the backup"
 msgstr "Názov zálohy"
 
-#: Library/Main/Strings.cs:199
+#: Library/Main/Strings.cs:203
 msgid "List of deleted files"
 msgstr "Zoznam zmazaných súborov"
 
-#: Library/Main/Strings.cs:220
+#: Library/Main/Strings.cs:224
 msgid "Maximum number of small volumes"
 msgstr "Maximálny počet malých častí"
 
-#: Library/Main/Strings.cs:239
+#: Library/Main/Strings.cs:245
 msgid "Overwrite files when restoring"
 msgstr "Prepísanie súborov pri obnove"
 

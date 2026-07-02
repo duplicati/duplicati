@@ -6,11 +6,12 @@
 # Steve Link, 2025
 # vishun, 2026
 # boshu tu, 2026
+# Tobby Wang, 2026
 # 
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"Last-Translator: boshu tu, 2026\n"
+"Last-Translator: Tobby Wang, 2026\n"
 "Language-Team: Chinese (China) (https://app.transifex.com/duplicati/teams/67655/zh_CN/)\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -44,15 +45,15 @@ msgstr "- 选择一个选项 -"
 
 #: scripts/controllers/SystemSettingsController.js:217 templates/delete.html:7
 msgid "...loading..."
-msgstr "…正在加载中…"
+msgstr "…正在加载…"
 
 #: templates/commandline.html:25
 msgid "<i class=\"fa fa-check\"></i> Edit as text"
-msgstr "<i class=\"fa fa-check\"></i> 以文本编辑"
+msgstr "<i class=\"fa fa-check\"></i> 作为文本编辑"
 
 #: templates/commandline.html:32
 msgid "<i class=\"fa\"></i> Edit as text"
-msgstr "<i class=\"fa\"></i> 以文本编辑"
+msgstr "<i class=\"fa\"></i> 作为文本编辑"
 
 #: templates/addoredit.html:312
 msgid ""
