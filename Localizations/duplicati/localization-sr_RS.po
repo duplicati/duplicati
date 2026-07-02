@@ -13,7 +13,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-04 14:35+0200\n"
+"POT-Creation-Date: 2026-07-02 11:34+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: Milan Marinković <xaoc994@gmail.com>, 2025\n"
 "Language-Team: Serbian (Serbia) (https://app.transifex.com/duplicati/teams/67655/sr_RS/)\n"
@@ -307,7 +307,7 @@ msgid "The domain name of the user used to connect to the server."
 msgstr "Ime domena korisnika koji se koristi za povezivanje sa serverom."
 
 #: Library/Backend/OpenStack/Strings.cs:34 Library/Backend/S3/Strings.cs:34
-#: Library/Backend/Mega/Strings.cs:28 Library/Utility/Strings.cs:95
+#: Library/Backend/Mega/Strings.cs:28 Library/Utility/Strings.cs:97
 msgid ""
 "The username used to connect to the server. This may also be supplied as the"
 " environment variable \"AUTH_USERNAME\"."
@@ -466,7 +466,7 @@ msgid "S3 compatible"
 msgstr "S3 kompatibilan"
 
 #: Library/Backend/S3/Strings.cs:32 Library/Backend/Mega/Strings.cs:26
-#: Library/Utility/Strings.cs:93
+#: Library/Utility/Strings.cs:95
 msgid ""
 "The password used to connect to the server. This may also be supplied as the"
 " environment variable \"AUTH_PASSWORD\"."
@@ -786,8 +786,8 @@ msgid "Optional ID of the drive"
 msgstr "Opcioni ID disk jedinice"
 
 #: Library/Backend/OneDrive/Strings.cs:48
-msgid "Microsoft SharePoint v2"
-msgstr "Microsoft SharePoint v2"
+msgid "Microsoft SharePoint"
+msgstr "Microsoft SharePoint"
 
 #: Library/Backend/OneDrive/Strings.cs:50
 msgid "ID of the site"
@@ -915,10 +915,6 @@ msgstr "Nije data lozinka"
 msgid "No username given"
 msgstr "Nije dato korisničko ime"
 
-#: Library/Backend/SharePoint/Strings.cs:27
-msgid "Microsoft SharePoint"
-msgstr "Microsoft SharePoint"
-
 #: Library/Backend/SharePoint/Strings.cs:28
 #: Library/Backend/WEBDAV/Strings.cs:30
 msgid ""
@@ -1000,22 +996,18 @@ msgstr ""
 "Činilo se da je sve u redu, ali tada veb naslov nije mogao da se pročita da "
 "bi se testirala veza. Nešto nije u redu."
 
-#: Library/Backend/SharePoint/Strings.cs:50
-msgid "Microsoft OneDrive for Business"
-msgstr "Microsoft OneDrive for Business"
-
 #: Library/Backend/Dropbox/Strings.cs:28
 msgid "Dropbox"
 msgstr "Dropbox"
 
 #: Library/Backend/Dropbox/Strings.cs:29
-#: Library/Backend/OAuthHelper/Strings.cs:29 Library/Utility/Strings.cs:102
+#: Library/Backend/OAuthHelper/Strings.cs:29 Library/Utility/Strings.cs:104
 #, csharp-format
 msgid "The authorization token retrieved from {0}"
 msgstr "Token autorizacije preuzet sa {0}"
 
 #: Library/Backend/Dropbox/Strings.cs:30
-#: Library/Backend/OAuthHelper/Strings.cs:30 Library/Utility/Strings.cs:103
+#: Library/Backend/OAuthHelper/Strings.cs:30 Library/Utility/Strings.cs:105
 msgid "The authorization code"
 msgstr "Autorizacioni kod"
 
@@ -1193,7 +1185,7 @@ msgstr ""
 "označavaju bilo koji interfejs. Posebna vrednost \"loopback\" označava "
 "adapter za hvatanje petlje."
 
-#: Library/RestAPI/Strings.cs:60
+#: Library/RestAPI/Strings.cs:61
 msgid ""
 "The hostnames that are accepted, separated with semicolons. If any of the "
 "hostnames are \"*\", all hostnames are allowed and the hostname checking is "
@@ -1203,17 +1195,17 @@ msgstr ""
 "od imena hosta \"*\", sva imena hostova su dozvoljena i provera imena hosta "
 "je onemogućena."
 
-#: Library/RestAPI/Strings.cs:65 Library/Main/Strings.cs:277
+#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:283
 msgid "Set the time after which log data will be purged from the database."
 msgstr ""
 "Podesite vreme nakon kojeg će podaci dnevnika biti očišćeni iz baze "
 "podataka."
 
-#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:278
+#: Library/RestAPI/Strings.cs:67 Library/Main/Strings.cs:284
 msgid "Clean up old log data"
 msgstr "Očistite stare podatke dnevnika"
 
-#: Library/RestAPI/Strings.cs:67
+#: Library/RestAPI/Strings.cs:68
 #, csharp-format
 msgid ""
 "Duplicati needs to store a small database with all settings. Use this option"
@@ -1225,7 +1217,7 @@ msgstr ""
 "čuvati. Ova opcija se takođe može podesiti pomoću promenljive okruženja "
 "{0}."
 
-#: Library/RestAPI/Strings.cs:69
+#: Library/RestAPI/Strings.cs:70
 #, csharp-format
 msgid ""
 "This option sets the encryption key used to scramble the local settings "
@@ -1237,16 +1229,16 @@ msgstr ""
 "pomoću promenljive okruženja {0}. Koristite opciju --{1} da biste "
 "onemogućili skremblovanje baze podataka."
 
-#: Library/RestAPI/Strings.cs:72 Library/Main/Strings.cs:101
+#: Library/RestAPI/Strings.cs:73 Library/Main/Strings.cs:103
 msgid "Temporary storage folder"
 msgstr "Fascikla privremenog skladišta"
 
-#: Library/RestAPI/Strings.cs:93 Library/RestAPI/Strings.cs:134
+#: Library/RestAPI/Strings.cs:96 Library/RestAPI/Strings.cs:141
 #, csharp-format
 msgid "Server has started and is listening on {0}, port {1}"
 msgstr "Server je pokrenut i osluškuje na {0}, port {1}"
 
-#: Library/RestAPI/Strings.cs:130
+#: Library/RestAPI/Strings.cs:137
 #, csharp-format
 msgid ""
 "Unable to find a valid date, given the start date {0}, the repetition "
@@ -1255,7 +1247,7 @@ msgstr ""
 "Nije moguće pronaći važeći datum, s obzirom na datum početka {0}, "
 "interval ponavljanja {1} i dozvoljene dane {2}"
 
-#: Library/RestAPI/Strings.cs:136
+#: Library/RestAPI/Strings.cs:143
 #, csharp-format
 msgid "Unable to open a socket for listening, tried ports: {0}"
 msgstr ""
@@ -1335,41 +1327,41 @@ msgstr "Heš nepodudaranje u fajlu „{0}“, zabeleženi heš: {1}, stvarni he�
 msgid "No source folders specified for backup"
 msgstr "Nema navedenih izvorišnih fascikli za rezervnu kopiju"
 
-#: Library/Main/Strings.cs:35
+#: Library/Main/Strings.cs:37
 #, csharp-format
 msgid "Unauthorized to access source folder {0}, aborting backup"
 msgstr ""
 "Neovlašćen pristup izvornoj fascikli {0}, prekidanje pravljenja rezervne "
 "kopije"
 
-#: Library/Main/Strings.cs:36
+#: Library/Main/Strings.cs:38
 #, csharp-format
 msgid ""
 "The option --{0} is not supported because the module {1} is not currently "
 "loaded"
 msgstr "Opcija --{0} nije podržana jer modul {1} trenutno nije učitan"
 
-#: Library/Main/Strings.cs:37
+#: Library/Main/Strings.cs:39
 #, csharp-format
 msgid "The supplied option --{0} is not supported and will be ignored"
 msgstr "Dostavljena opcija --{0} nije podržana i biće ignorisana"
 
-#: Library/Main/Strings.cs:38
+#: Library/Main/Strings.cs:40
 #, csharp-format
 msgid "The operation {0} has started"
 msgstr "Operacija {0} je počela"
 
-#: Library/Main/Strings.cs:39
+#: Library/Main/Strings.cs:41
 #, csharp-format
 msgid "The operation {0} has completed"
 msgstr "Operacija {0} je završena"
 
-#: Library/Main/Strings.cs:41
+#: Library/Main/Strings.cs:43
 #, csharp-format
 msgid "Invalid path: \"{0}\" ({1})"
 msgstr "Nevažeća putanja: \"{0}\" ({1})"
 
-#: Library/Main/Strings.cs:43
+#: Library/Main/Strings.cs:45
 #, csharp-format
 msgid ""
 "Failed to apply 'force-locale' setting. Please try to update .NET-Framework."
@@ -1378,14 +1370,14 @@ msgstr ""
 "Primena podešavanja 'force-locale' nije uspela. Pokušajte da ažurirate .NET-"
 "Framevork. Izuzetak je bio: \"{0}\""
 
-#: Library/Main/Strings.cs:44
+#: Library/Main/Strings.cs:46
 #, csharp-format
 msgid "The source {0} uses an invalid volume name, aborting backup"
 msgstr ""
 "Izvor {0} koristi nevažeće ime volumena, čime se prekida pravljenje "
 "rezervne kopije"
 
-#: Library/Main/Strings.cs:45
+#: Library/Main/Strings.cs:47
 #, csharp-format
 msgid ""
 "The source {0} is on volume {1}, which could not be found, aborting backup"
@@ -1393,7 +1385,7 @@ msgstr ""
 "Izvor {0} je na volumenu {1}, koji nije mogao biti pronađen, pa se rezervna "
 "kopija prekida"
 
-#: Library/Main/Strings.cs:54
+#: Library/Main/Strings.cs:56
 msgid ""
 "A string used to prefix the filenames of the remote volumes, can be used to "
 "store multiple backups in the same remote folder. The prefix cannot contain "
@@ -1405,19 +1397,19 @@ msgstr ""
 "Prefiks ne može da sadrži crticu (-), ali može da sadrži sve druge znakove "
 "koje dozvoljava udaljeno skladište."
 
-#: Library/Main/Strings.cs:55
+#: Library/Main/Strings.cs:57
 msgid "Remote filename prefix"
 msgstr "Prefiks udaljenog naziva fajla"
 
-#: Library/Main/Strings.cs:57
+#: Library/Main/Strings.cs:59
 msgid "Disable checks based on file time"
 msgstr "Onemogućite provere na osnovu vremena fajla"
 
-#: Library/Main/Strings.cs:59
+#: Library/Main/Strings.cs:61
 msgid "Restore to another folder"
 msgstr "Vratite u drugu fasciklu"
 
-#: Library/Main/Strings.cs:60
+#: Library/Main/Strings.cs:62
 msgid ""
 "Allow system to enter sleep power modes for inactivity during backup/restore"
 " operations (Windows/OSX only)"
@@ -1425,7 +1417,7 @@ msgstr ""
 "Dozvolite sistemu da uđe u režim spavanja radi neaktivnosti tokom operacija "
 "pravljenja rezervnih kopija/vraćanja (samo za Vindouz/OSX)"
 
-#: Library/Main/Strings.cs:62
+#: Library/Main/Strings.cs:64
 msgid ""
 "By setting this value you can limit how much bandwidth Duplicati consumes "
 "for downloads. Setting this limit can make the backups take longer, but will"
@@ -1435,11 +1427,11 @@ msgstr ""
 "Duplicati troši za preuzimanja. Podešavanje ovog ograničenja može produžiti "
 "pravljenje rezervnih kopija, ali će Duplicati učiniti manje nametljivim."
 
-#: Library/Main/Strings.cs:63
+#: Library/Main/Strings.cs:65
 msgid "Max number of kilobytes to download pr. second"
 msgstr "Maksimalni broj kilobajta za preuzimanje u sekundi"
 
-#: Library/Main/Strings.cs:64
+#: Library/Main/Strings.cs:66
 msgid ""
 "By setting this value you can limit how much bandwidth Duplicati consumes "
 "for uploads. Setting this limit can make the backups take longer, but will "
@@ -1449,11 +1441,11 @@ msgstr ""
 "Duplicati troši za otpremanje. Podešavanje ovog ograničenja može produžiti "
 "pravljenje rezervnih kopija, ali će Duplicati učiniti manje nametljivim."
 
-#: Library/Main/Strings.cs:65
+#: Library/Main/Strings.cs:67
 msgid "Max number of kilobytes to upload pr. second"
 msgstr "Maksimalan broj kilobajta za otpremanje u sekundi"
 
-#: Library/Main/Strings.cs:70
+#: Library/Main/Strings.cs:72
 msgid ""
 "If you store the backups on a local disk, and prefer that they are kept "
 "unencrypted, you can turn of encryption completely by using this switch."
@@ -1462,11 +1454,11 @@ msgstr ""
 "nešifrovane, možete u potpunosti da isključite šifrovanje pomoću ovog "
 "prekidača."
 
-#: Library/Main/Strings.cs:71
+#: Library/Main/Strings.cs:73
 msgid "Disable encryption"
 msgstr "Onemogući šifrovanje"
 
-#: Library/Main/Strings.cs:72
+#: Library/Main/Strings.cs:74
 msgid ""
 "If an upload or download fails, Duplicati will retry a number of times "
 "before failing. Use this to handle unstable network connections better."
@@ -1475,11 +1467,11 @@ msgstr ""
 " pre nego što ne uspe. Koristite ovo za bolje rukovanje nestabilnim mrežnim "
 "vezama."
 
-#: Library/Main/Strings.cs:73
+#: Library/Main/Strings.cs:75
 msgid "Number of times to retry a failed transmission"
 msgstr "Broj ponavljanja neuspelog prenosa"
 
-#: Library/Main/Strings.cs:74
+#: Library/Main/Strings.cs:76
 msgid ""
 "Supply a passphrase that Duplicati will use to encrypt the backup volumes, "
 "making them unreadable without the passphrase. This variable can also be "
@@ -1490,19 +1482,19 @@ msgstr ""
 "promenljiva se takođe može dostaviti preko promenljive okruženja "
 "PASSPHRASE.."
 
-#: Library/Main/Strings.cs:75
+#: Library/Main/Strings.cs:77
 msgid "Passphrase used to encrypt backups"
 msgstr "Pristupna fraza koja se koristi za šifrovanje rezervnih kopija"
 
-#: Library/Main/Strings.cs:77
+#: Library/Main/Strings.cs:79
 msgid "The time to list/restore files"
 msgstr "Vreme za listanje/vraćanje fajlova"
 
-#: Library/Main/Strings.cs:79
+#: Library/Main/Strings.cs:81
 msgid "The version to list/restore files"
 msgstr "Verzija za listanje/vraćanje fajlova"
 
-#: Library/Main/Strings.cs:80
+#: Library/Main/Strings.cs:82
 msgid ""
 "When searching for files, only the most recent backup is searched. Use this "
 "option to show all previous versions too."
@@ -1510,11 +1502,11 @@ msgstr ""
 "Kada se traže fajlovi, traži se samo najnovija rezervna kopija. Koristite "
 "ovu opciju da prikažete i sve prethodne verzije"
 
-#: Library/Main/Strings.cs:81
+#: Library/Main/Strings.cs:83
 msgid "Show all versions"
 msgstr "Prikaži sve verzije"
 
-#: Library/Main/Strings.cs:82
+#: Library/Main/Strings.cs:84
 msgid ""
 "When searching for files, all matching files are returned. Use this option "
 "to return only the largest common prefix path."
@@ -1522,11 +1514,11 @@ msgstr ""
 "Kada tražite fajlove, vraćaju se svi odgovarajući fajlovi. Koristite ovu "
 "opciju da biste vratili samo najveću putanju uobičajenog prefiksa."
 
-#: Library/Main/Strings.cs:83
+#: Library/Main/Strings.cs:85
 msgid "Show largest prefix"
 msgstr "Prikaži najveći prefiks"
 
-#: Library/Main/Strings.cs:88
+#: Library/Main/Strings.cs:90
 msgid ""
 "When searching for files, all matching files are returned. Use this option "
 "to return only the entries found in the folder specified as filter."
@@ -1535,11 +1527,11 @@ msgstr ""
 "opciju da biste vratili samo unose pronađene u fascikli navedenoj kao "
 "filter."
 
-#: Library/Main/Strings.cs:89
+#: Library/Main/Strings.cs:91
 msgid "Show folder contents"
 msgstr "Prikaži sadržaj fascikle"
 
-#: Library/Main/Strings.cs:90
+#: Library/Main/Strings.cs:92
 msgid ""
 "After a failed transmission, Duplicati will wait a short period before "
 "attempting again. This is useful if the network drops out occasionally "
@@ -1548,36 +1540,23 @@ msgstr ""
 "Nakon neuspelog prenosa, Duplicati će sačekati kratko vreme pre nego što "
 "pokuša ponovo. Ovo je korisno ako mreža povremeno ispadne tokom prenosa."
 
-#: Library/Main/Strings.cs:91
+#: Library/Main/Strings.cs:93
 msgid "Time to wait between retries"
 msgstr "Vreme čekanja između pokušaja"
 
-#: Library/Main/Strings.cs:95
+#: Library/Main/Strings.cs:97
 msgid "Set control files"
 msgstr "Podesite kontrolne fajlove"
 
-#: Library/Main/Strings.cs:98
-msgid ""
-"This option allows you to exclude files that are larger than the given "
-"value. Use this to prevent backups becoming extremely large."
-msgstr ""
-"Ova opcija vam omogućava da isključite fajlove koji su veći od date "
-"vrednosti. Koristite ovo da sprečite da rezervne kopije postanu izuzetno "
-"velike."
-
-#: Library/Main/Strings.cs:99
-msgid "Limit the size of files being backed up"
-msgstr "Ograničite veličinu fajlova za koje se pravi rezervna kopija"
-
-#: Library/Main/Strings.cs:104
+#: Library/Main/Strings.cs:106
 msgid "Thread priority"
 msgstr "Prioritet niti"
 
-#: Library/Main/Strings.cs:106
+#: Library/Main/Strings.cs:108
 msgid "Limit the size of the volumes"
 msgstr "Ograničite veličinu volumena"
 
-#: Library/Main/Strings.cs:113
+#: Library/Main/Strings.cs:115
 msgid ""
 "Duplicati supports pluggable compression modules. Use this option to select "
 "a module to use for compression. This is only applied when creating new "
@@ -1589,11 +1568,11 @@ msgstr ""
 "primenjuje samo kada se kreiraju novi volumeni, kada se čita postojeći "
 "fajl, ime fajla se koristi za izbor modula kompresije."
 
-#: Library/Main/Strings.cs:114
+#: Library/Main/Strings.cs:116
 msgid "Select what module to use for compression"
 msgstr "Izaberite koji modul želite da koristite za kompresiju"
 
-#: Library/Main/Strings.cs:115
+#: Library/Main/Strings.cs:117
 msgid ""
 "Duplicati supports pluggable encryption modules. Use this option to select a"
 " module to use for encryption. This is only applied when creating new "
@@ -1605,15 +1584,15 @@ msgstr ""
 "primenjuje samo kada se kreiraju novi volumeni, kada se čita postojeći "
 "fajl, ime fajla se koristi za izbor modula za šifrovanje."
 
-#: Library/Main/Strings.cs:116
+#: Library/Main/Strings.cs:118
 msgid "Select what module to use for encryption"
 msgstr "Izaberite koji modul želite da koristite za šifrovanje"
 
-#: Library/Main/Strings.cs:126
+#: Library/Main/Strings.cs:128
 msgid "The path where ready volumes are placed until uploaded"
 msgstr "Putanja na koju se spremni volumeni postavljaju do učitavanja"
 
-#: Library/Main/Strings.cs:127
+#: Library/Main/Strings.cs:129
 msgid ""
 "When performing asynchronous uploads, the maximum number of concurrent "
 "uploads allowed. Set to zero to disable the limit."
@@ -1621,19 +1600,19 @@ msgstr ""
 "Prilikom asinhronog otpremanja, dozvoljen je maksimalan broj istovremenih "
 "otpremanja. Postavite na nulu da biste onemogućili ograničenje."
 
-#: Library/Main/Strings.cs:128
+#: Library/Main/Strings.cs:130
 msgid "The number of concurrent uploads allowed"
 msgstr "Broj dozvoljenih istovremenih otpremanja"
 
-#: Library/Main/Strings.cs:132
+#: Library/Main/Strings.cs:134
 msgid "Log internal information to a file"
 msgstr "Zabeležite interne informacije u fajl"
 
-#: Library/Main/Strings.cs:134
+#: Library/Main/Strings.cs:136
 msgid "Log information level"
 msgstr "Nivo informacija dnevnika"
 
-#: Library/Main/Strings.cs:142
+#: Library/Main/Strings.cs:144
 msgid ""
 "If Duplicati detects that the target folder is missing, it will create it "
 "automatically. Activate this option to prevent automatic folder creation."
@@ -1641,7 +1620,7 @@ msgstr ""
 "Ako Duplicati otkrije da ciljni folder nedostaje, automatski će ga "
 "kreirati. Aktivirajte ovu opciju da sprečite automatsko kreiranje fascikli."
 
-#: Library/Main/Strings.cs:144
+#: Library/Main/Strings.cs:146
 msgid ""
 "Use this option to exclude faulty writers from a snapshot. This is "
 "equivalent to the -wx flag of the vshadow.exe tool, except that it only "
@@ -1655,26 +1634,26 @@ msgstr ""
 "mora biti odvojeno tačkom i zarezom, a većina oblika GUID-a je dozvoljena, "
 "uključujući sa i bez vitičastih zagrada."
 
-#: Library/Main/Strings.cs:145
+#: Library/Main/Strings.cs:147
 msgid ""
 "A semicolon separated list of guids of VSS writers to exclude (Windows only)"
 msgstr ""
 "Lista vodiča VSS pisaca odvojenih tačkom i zarezom za izuzimanje (samo za "
 "Vindouz)"
 
-#: Library/Main/Strings.cs:157
+#: Library/Main/Strings.cs:159
 msgid "Verify uploads by listing contents"
 msgstr "Potvrdite otpremanja navođenjem sadržaja"
 
-#: Library/Main/Strings.cs:159
+#: Library/Main/Strings.cs:161
 msgid "Upload files synchronously"
 msgstr "Sinhrono otpremajte fajlove"
 
-#: Library/Main/Strings.cs:161
+#: Library/Main/Strings.cs:163
 msgid "Do not re-use connections"
 msgstr "Nemojte ponovo koristiti veze"
 
-#: Library/Main/Strings.cs:162
+#: Library/Main/Strings.cs:164
 msgid ""
 "When an error occurs, Duplicati will silently retry, and only report the "
 "number of retries. Enable this option to have the error messages displayed "
@@ -1684,23 +1663,23 @@ msgstr ""
 "broj ponovnih pokušaja. Omogućite ovu opciju da bi se poruke o grešci "
 "prikazivale kada se izvrši ponovni pokušaj."
 
-#: Library/Main/Strings.cs:163
+#: Library/Main/Strings.cs:165
 msgid "Show error messages when a retry is performed"
 msgstr "Prikaži poruke o grešci kada se izvrši ponovni pokušaj"
 
-#: Library/Main/Strings.cs:165
+#: Library/Main/Strings.cs:167
 msgid "Upload empty backup files"
 msgstr "Otpremite prazne fajlove rezervnih kopija"
 
-#: Library/Main/Strings.cs:169
+#: Library/Main/Strings.cs:171
 msgid "Threshold for warning about low quota"
 msgstr "Prag za upozorenje o niskoj kvoti"
 
-#: Library/Main/Strings.cs:173
+#: Library/Main/Strings.cs:175
 msgid "Symlink handling"
 msgstr "Upravljanje simboličkim vezama"
 
-#: Library/Main/Strings.cs:174
+#: Library/Main/Strings.cs:176
 #, csharp-format
 msgid ""
 "Use this option to handle hardlinks (only works on Linux/OSX). The \"{0}\" "
@@ -1716,15 +1695,15 @@ msgstr ""
 "jedinstvenu putanju. Opcija \"{2}\" će ignorisati sve tvrde veze sa više od"
 " jedne veze."
 
-#: Library/Main/Strings.cs:175
+#: Library/Main/Strings.cs:177
 msgid "Hardlink handling"
 msgstr "Rukovanje čvrstim vezama"
 
-#: Library/Main/Strings.cs:177
+#: Library/Main/Strings.cs:179
 msgid "Exclude files by attribute"
 msgstr "Izuzmi fajlove prema atributima"
 
-#: Library/Main/Strings.cs:178
+#: Library/Main/Strings.cs:182
 msgid ""
 "Activate this option to map VSS snapshots to a drive (similar to SUBST, "
 "using Win32 DefineDosDevice). This will create temporary drives that are "
@@ -1736,19 +1715,19 @@ msgstr ""
 "disk jedinice koje se zatim koriste za pristup sadržaju snimka. Ovo rešenje "
 "može da ubrza pristup fajlu u operativnom sistemu Vindouz XP."
 
-#: Library/Main/Strings.cs:179
+#: Library/Main/Strings.cs:183
 msgid "Map snapshots to a drive (Windows only)"
 msgstr "Mapirajte snimke na disk (samo za Vindouz)"
 
-#: Library/Main/Strings.cs:181
+#: Library/Main/Strings.cs:185
 msgid "Name of the backup"
 msgstr "Naziv rezervne kopije"
 
-#: Library/Main/Strings.cs:191
+#: Library/Main/Strings.cs:195
 msgid "Manage non-compressible file extensions"
 msgstr "Upravljajte ekstenzijama fajlova koji nisu komprimovani"
 
-#: Library/Main/Strings.cs:192
+#: Library/Main/Strings.cs:196
 msgid ""
 "The block size determines how files are fragmented. Choosing a large value "
 "will cause a larger overhead on file changes, choosing a small value will "
@@ -1760,32 +1739,32 @@ msgstr ""
 "vrednosti će izazvati velike troškove skladištenja lista fajlova. Imajte na"
 " umu da se vrednost ne može promeniti nakon kreiranja udaljenih fajlova."
 
-#: Library/Main/Strings.cs:193
+#: Library/Main/Strings.cs:197
 msgid "Block size used in hashing"
 msgstr "Veličina bloka korišćena za heširanje"
 
-#: Library/Main/Strings.cs:195
+#: Library/Main/Strings.cs:199
 msgid "List of files to examine for changes"
 msgstr "Lista fajlova koje treba pregledati za promene"
 
-#: Library/Main/Strings.cs:197
+#: Library/Main/Strings.cs:201
 msgid "Path to the local state database"
 msgstr "Putanja do baze podataka lokalne države"
 
-#: Library/Main/Strings.cs:199
+#: Library/Main/Strings.cs:203
 msgid "List of deleted files"
 msgstr "Lista obrisanih fajlova"
 
-#: Library/Main/Strings.cs:201
+#: Library/Main/Strings.cs:205
 msgid "Reduce memory footprint by disabling in-memory lookups"
 msgstr ""
 "Smanjite memorijskog otiska tako što ćete onemogućiti pretrage u memoriji"
 
-#: Library/Main/Strings.cs:204
+#: Library/Main/Strings.cs:208
 msgid "Do not query backend at startup"
 msgstr "Nemojte postavljati upite pozadini pri pokretanju"
 
-#: Library/Main/Strings.cs:205
+#: Library/Main/Strings.cs:209
 msgid ""
 "The index files are used to limit the need for downloading dblock files when"
 " there is no local database present. The more information is recorded in the"
@@ -1799,7 +1778,7 @@ msgstr ""
 "podataka. Kompromis je u tome što veći indeksni fajlovi zauzimaju više "
 "udaljenog prostora i koji se možda nikada neće koristiti."
 
-#: Library/Main/Strings.cs:207
+#: Library/Main/Strings.cs:211
 msgid ""
 "As files are changed, some data stored at the remote destination may not be "
 "required. This option controls how much wasted space the destination can "
@@ -1811,19 +1790,19 @@ msgstr ""
 " odredište može da sadrži pre nego što bude zauzeto. Ova vrednost je "
 "procenat koji se koristi za svaki volumen i ukupno skladište."
 
-#: Library/Main/Strings.cs:208
+#: Library/Main/Strings.cs:212
 msgid "The maximum wasted space in percent"
 msgstr "Maksimalni izgubljeni prostor u procentima"
 
-#: Library/Main/Strings.cs:212
+#: Library/Main/Strings.cs:216
 msgid "The hash algorithm used on blocks"
 msgstr "Heš algoritam korišćen na blokovima"
 
-#: Library/Main/Strings.cs:214
+#: Library/Main/Strings.cs:218
 msgid "The hash algorithm used on files"
 msgstr "Heš algoritam korišćen na fajlovima"
 
-#: Library/Main/Strings.cs:215
+#: Library/Main/Strings.cs:219
 msgid ""
 "If a large number of small files are detected during a backup, or wasted "
 "space is found after deleting backups, the remote data will be compacted. "
@@ -1836,11 +1815,11 @@ msgstr ""
 "automatsko sažimanje i samo kompaktiranje kada se izvodi komanda za "
 "sažimanje."
 
-#: Library/Main/Strings.cs:216
+#: Library/Main/Strings.cs:220
 msgid "Disable automatic compacting"
 msgstr "Onemogućite automatsko sažimanje"
 
-#: Library/Main/Strings.cs:217
+#: Library/Main/Strings.cs:221
 msgid ""
 "When examining the size of a volume in consideration for compacting, a small"
 " tolerance value is used, by default 20 percent of the volume size. This "
@@ -1852,11 +1831,11 @@ msgstr ""
 "Ovo osigurava da se veliki volumeni koji mogu imati nekoliko bajtova "
 "izgubljenog prostora ne preuzimaju i ponovo pišu."
 
-#: Library/Main/Strings.cs:218
+#: Library/Main/Strings.cs:222
 msgid "Volume size threshold"
 msgstr "Prag veličine volumena"
 
-#: Library/Main/Strings.cs:219
+#: Library/Main/Strings.cs:223
 msgid ""
 "To avoid filling the remote storage with small files, this value can force "
 "grouping small files. The small volumes will always be combined when they "
@@ -1866,11 +1845,11 @@ msgstr ""
 "vrednost može prinudno grupisati male fajlove. Male količine će uvek biti "
 "kombinovane kada mogu da popune ceo volumen."
 
-#: Library/Main/Strings.cs:220
+#: Library/Main/Strings.cs:224
 msgid "Maximum number of small volumes"
 msgstr "Maksimalan broj malih volumna"
 
-#: Library/Main/Strings.cs:221
+#: Library/Main/Strings.cs:225
 msgid ""
 "Enable this option to look into other files on this machine to find existing"
 " blocks. This is a fairly slow operation but can limit the size of "
@@ -1880,25 +1859,25 @@ msgstr ""
 "biste pronašli postojeće blokove. Ovo je prilično spora operacija, ali može"
 " ograničiti veličinu preuzimanja."
 
-#: Library/Main/Strings.cs:222
+#: Library/Main/Strings.cs:226
 msgid "Use local file data when restoring"
 msgstr "Prilikom vraćanja koristite lokalne podatke o fajlu"
 
-#: Library/Main/Strings.cs:227
+#: Library/Main/Strings.cs:231
 msgid "Keep a number of versions"
 msgstr "Čuvajte nekoliko verzija"
 
-#: Library/Main/Strings.cs:228
+#: Library/Main/Strings.cs:232
 msgid "Use this option to set the timespan in which backups are kept."
 msgstr ""
 "Koristite ovu opciju da postavite vremenski interval iz kojeg će rezervne "
 "kopije biti zadžane."
 
-#: Library/Main/Strings.cs:229
+#: Library/Main/Strings.cs:233
 msgid "Keep all versions within a timespan"
 msgstr "Zadrži sve verzije iz vremenskog intervala"
 
-#: Library/Main/Strings.cs:232
+#: Library/Main/Strings.cs:236
 msgid ""
 "Use this option to reduce the number of versions that are kept with "
 "increasing version age by deleting most of the old backups. The expected "
@@ -1919,24 +1898,19 @@ msgstr ""
 "podržava korišćenje specifikacije \"U\" za označavanje neograničenog "
 "vremenskog intervala."
 
-#: Library/Main/Strings.cs:233
+#: Library/Main/Strings.cs:237
 msgid "Reduce number of versions by deleting old intermediate backups"
 msgstr "Smanjite broj verzija brisanjem starih srednjih rezervnih kopija"
 
-#: Library/Main/Strings.cs:234
-msgid "Use this option to continue even if some source entries are missing."
-msgstr ""
-"Koristite ovu opciju da nastavite čak i ako neki izvorni unosi nedostaju."
-
-#: Library/Main/Strings.cs:235
+#: Library/Main/Strings.cs:239
 msgid "Ignore missing source elements"
 msgstr "Zanemarite izvorne elemente koji nedostaju"
 
-#: Library/Main/Strings.cs:239
+#: Library/Main/Strings.cs:245
 msgid "Overwrite files when restoring"
 msgstr "Prepiši fajlove kad vraćaš"
 
-#: Library/Main/Strings.cs:240
+#: Library/Main/Strings.cs:246
 msgid ""
 "Use this option to increase the amount of output generated when running an "
 "option. Generally this option will produce a line for each file processed."
@@ -1945,11 +1919,11 @@ msgstr ""
 "pokrene opcija. Generalno, ova opcija će proizvesti liniju za svaku "
 "obrađeni fajl."
 
-#: Library/Main/Strings.cs:241
+#: Library/Main/Strings.cs:247
 msgid "Output more progress information"
 msgstr "Ispiši više informacija o napretku"
 
-#: Library/Main/Strings.cs:243
+#: Library/Main/Strings.cs:249
 msgid ""
 "Use this option to increase the amount of output generated as the result of "
 "the operation, including all filenames."
@@ -1957,11 +1931,11 @@ msgstr ""
 "Koristite ovu opciju da povećate količinu izlaza generisanog kao rezultat "
 "operacije, uključujući sva imena datoteka."
 
-#: Library/Main/Strings.cs:244
+#: Library/Main/Strings.cs:250
 msgid "Output full results"
 msgstr "Ispiši pune rezultate"
 
-#: Library/Main/Strings.cs:245
+#: Library/Main/Strings.cs:251
 msgid ""
 "Use this option to upload a verification file after changing the remote "
 "storage. The file is not encrypted and contains the size and SHA256 hashes "
@@ -1972,31 +1946,31 @@ msgstr ""
 " skladišta. Fajl nije šifrovan i sadrži veličinu i SHA256 hešove svih "
 "udaljenih fajlova i može se koristiti za proveru integriteta fajlova."
 
-#: Library/Main/Strings.cs:246
+#: Library/Main/Strings.cs:252
 msgid "Determine if verification files are uploaded"
 msgstr "Utvrdite da li su fajlovi za verifikaciju otpremljeni"
 
-#: Library/Main/Strings.cs:248
+#: Library/Main/Strings.cs:254
 msgid "The number of samples to test after a backup"
 msgstr "Broj uzoraka za testiranje nakon pravljenja rezervne kopije"
 
-#: Library/Main/Strings.cs:250
+#: Library/Main/Strings.cs:256
 msgid "The percentage of samples to test after a backup"
 msgstr "Procenat uzoraka za testiranje nakon pravljenja rezervne kopije"
 
-#: Library/Main/Strings.cs:256
+#: Library/Main/Strings.cs:262
 msgid "Size of the file read buffer"
 msgstr "Veličina bafera za čitanje fajla"
 
-#: Library/Main/Strings.cs:259
+#: Library/Main/Strings.cs:265
 msgid "Allow the passphrase to change"
 msgstr "Dozvolite da se pristupna fraza promeni"
 
-#: Library/Main/Strings.cs:261
+#: Library/Main/Strings.cs:267
 msgid "List only filesets"
 msgstr "Navedite samo setove fajlova"
 
-#: Library/Main/Strings.cs:263
+#: Library/Main/Strings.cs:269
 msgid ""
 "Use this option to disable the storage of metadata, such as file timestamps."
 " Disabling metadata storage will speed up the backup and restore operations,"
@@ -2007,7 +1981,7 @@ msgstr ""
 "ubrzaće operacije pravljenja rezervnih kopija i vraćanja, ali ne utiče "
 "mnogo na veličinu fajla."
 
-#: Library/Main/Strings.cs:265
+#: Library/Main/Strings.cs:271
 msgid ""
 "By default permissions are not restored as they might prevent you from "
 "accessing your files. Use this option to restore the permissions as well."
@@ -2015,11 +1989,11 @@ msgstr ""
 "Podrazumevano se dozvole ne vraćaju jer bi vas mogle sprečiti da pristupite"
 " vašim fajlovima. Koristite ovu opciju i da vratite dozvole."
 
-#: Library/Main/Strings.cs:266
+#: Library/Main/Strings.cs:272
 msgid "Restore file permissions"
 msgstr "Vrati dozvole fajla"
 
-#: Library/Main/Strings.cs:267
+#: Library/Main/Strings.cs:273
 msgid ""
 "After restoring files, the file hash of all restored files are checked to "
 "verify that the restore was successful. Use this option to disable the check"
@@ -2029,11 +2003,11 @@ msgstr ""
 "se potvrdilo da je vraćanje bilo uspešno. Koristite ovu opciju da biste "
 "onemogućili proveru i izbegli čekanje na verifikaciju."
 
-#: Library/Main/Strings.cs:268
+#: Library/Main/Strings.cs:274
 msgid "Skip restored file check"
 msgstr "Preskoči proveru vraćenih fajlova"
 
-#: Library/Main/Strings.cs:269
+#: Library/Main/Strings.cs:275
 msgid ""
 "Duplicati will attempt to use data from source files to minimize the amount "
 "of downloaded data. Use this option to skip this optimization and only use "
@@ -2043,11 +2017,11 @@ msgstr ""
 "minimizirao količinu preuzetih podataka. Koristite ovu opciju da preskočite "
 "ovu optimizaciju i koristite samo udaljene podatke."
 
-#: Library/Main/Strings.cs:270
+#: Library/Main/Strings.cs:276
 msgid "Do not use local data"
 msgstr "Ne koristi lokalne podatke"
 
-#: Library/Main/Strings.cs:275
+#: Library/Main/Strings.cs:281
 msgid ""
 "Use this option to increase verification by checking the hash of blocks read"
 " from a volume before patching restored files with the data."
@@ -2056,11 +2030,11 @@ msgstr ""
 "blokova pročitanih sa volumena pre nego što zakrpite vraćene fajlove sa "
 "podacima."
 
-#: Library/Main/Strings.cs:276
+#: Library/Main/Strings.cs:282
 msgid "Check block hashes"
 msgstr "Proveri heševe blokova"
 
-#: Library/Main/Strings.cs:279
+#: Library/Main/Strings.cs:285
 msgid ""
 "Use this option to build a searchable local database which only contains "
 "path information. This option is usable for quickly building a database to "
@@ -2073,15 +2047,15 @@ msgstr ""
 " bez potrebe za rekonstruisanjem svih informacija. Dobijena baza podataka "
 "može se pretraživati, ali se ne može koristiti za vraćanje podataka."
 
-#: Library/Main/Strings.cs:280
+#: Library/Main/Strings.cs:286
 msgid "Repair database with paths"
 msgstr "Popravite bazu podataka sa putanjama"
 
-#: Library/Main/Strings.cs:284
+#: Library/Main/Strings.cs:290
 msgid "Force the locale setting"
 msgstr "Prisilno podesite lokalizaciju"
 
-#: Library/Main/Strings.cs:285
+#: Library/Main/Strings.cs:291
 msgid ""
 "By default, dates are displayed in the calendar format, meaning \"Today\" or"
 " \"Last Thursday\". By setting this option, only the actual dates are "
@@ -2091,11 +2065,11 @@ msgstr ""
 "\"Danas\" ili \"Prošli četvrtak\". Podešavanjem ove opcije, prikazuju se "
 "samo stvarni datumi, na primer „12. novembar 2018, 20:01“."
 
-#: Library/Main/Strings.cs:288
+#: Library/Main/Strings.cs:294
 msgid "Handle file communication with backend using threaded pipes"
 msgstr "Rukujte komunikacijom fajla sa pozadinom koristeći niti"
 
-#: Library/Main/Strings.cs:289
+#: Library/Main/Strings.cs:295
 msgid ""
 "Use this option to set the maximum number of threads used. Setting this "
 "value to zero or less will dynamically balance the number of active threads "
@@ -2105,22 +2079,22 @@ msgstr ""
 "Postavljanje ove vrednosti na nulu ili manje će dinamički izbalansirati "
 "broj aktivnih niti kako bi odgovarao hardveru."
 
-#: Library/Main/Strings.cs:290
+#: Library/Main/Strings.cs:296
 msgid "Limit number of concurrent threads"
 msgstr "Ograničenje broja istovremenih niti"
 
-#: Library/Main/Strings.cs:291
+#: Library/Main/Strings.cs:297
 msgid ""
 "Use this option to set the number of processes that perform hashing of data."
 msgstr ""
 "Koristite ovu opciju da podesite broj procesa koji obavljaju heširanje "
 "podataka."
 
-#: Library/Main/Strings.cs:292
+#: Library/Main/Strings.cs:298
 msgid "Specify the number of concurrent hashing processes"
 msgstr "Navedite broj istovremenih procesa heširanja"
 
-#: Library/Main/Strings.cs:293
+#: Library/Main/Strings.cs:299
 msgid ""
 "Use this option to set the number of processes that perform compression of "
 "output data."
@@ -2128,11 +2102,11 @@ msgstr ""
 "Koristite ovu opciju da podesite broj procesa koji vrše kompresiju izlaznih "
 "podataka."
 
-#: Library/Main/Strings.cs:294
+#: Library/Main/Strings.cs:300
 msgid "Specify the number of concurrent compression processes"
 msgstr "Odredite broj istovremenih procesa kompresije"
 
-#: Library/Main/Strings.cs:297
+#: Library/Main/Strings.cs:303
 msgid ""
 "If Duplicati detects that the previous backup did not complete, it will "
 "generate a filelist that is a merge of the last completed backup and the "
@@ -2143,11 +2117,11 @@ msgstr ""
 "rezervne kopije i sadržaja koji je učitan u nepotpunoj sesiji pravljenja "
 "rezervne kopije."
 
-#: Library/Main/Strings.cs:304
+#: Library/Main/Strings.cs:310
 msgid "Allow removing all filesets"
 msgstr "Dozvoli uklanjanje svih skupova set fajlova"
 
-#: Library/Main/Strings.cs:305
+#: Library/Main/Strings.cs:311
 msgid ""
 "Some operations that manipulate the local database leave unused entries "
 "behind. These entries are not deleted from a hard drive until a VACUUM "
@@ -2163,11 +2137,11 @@ msgstr ""
 "Podešavanje ovog na true će omogućiti Duplicati-ju da izvrši VACUUM "
 "operacije po sopstvenom nahođenju."
 
-#: Library/Main/Strings.cs:308
+#: Library/Main/Strings.cs:314
 msgid "Disable the read-ahead scanner"
 msgstr "Onemogućite skener za čitanje unapred"
 
-#: Library/Main/Strings.cs:309
+#: Library/Main/Strings.cs:315
 msgid ""
 "In backups with a large number of filesets, the verification can take up a "
 "large part of the backup time. If you disable the checks, make sure you run "
@@ -2178,19 +2152,19 @@ msgstr ""
 "provere, uverite se da pokrećete redovne komande za proveru da biste bili "
 "sigurni da sve funkcioniše kako se očekuje."
 
-#: Library/Main/Strings.cs:310
+#: Library/Main/Strings.cs:316
 msgid "Disable filelist consistency checks"
 msgstr "Onemogućite proveru doslednosti liste fajlova"
 
-#: Library/Main/Strings.cs:312
+#: Library/Main/Strings.cs:318
 msgid "Disable the backup when on battery power"
 msgstr "Onemogućite rezervnu kopiju kada je napajanje preko baterije"
 
-#: Library/Main/Strings.cs:315
+#: Library/Main/Strings.cs:321
 msgid "Log file information level"
 msgstr "Nivo podataka o fajlu dnevnika"
 
-#: Library/Main/Strings.cs:316
+#: Library/Main/Strings.cs:322
 #, csharp-format
 msgid ""
 "This option accepts filters that removes or includes messages regardless of "
@@ -2205,11 +2179,11 @@ msgstr ""
 "osim ako ne počinju sa '-'. Regularni izrazi su podržani u uglasim "
 "zagradama. Primer: \"+Path*{0}+*Mail*{0}-[.*DNS]\" "
 
-#: Library/Main/Strings.cs:321
+#: Library/Main/Strings.cs:327
 msgid "Console information level"
 msgstr "Nivo informacija konzole"
 
-#: Library/Main/Strings.cs:332
+#: Library/Main/Strings.cs:338
 msgid ""
 "Use this option to set a filename, or list of filenames, that indicate "
 "exclusion of a folder which contains it. A common use would be to have a "
@@ -2221,11 +2195,11 @@ msgstr ""
 "bila da se fajlovi zovu nešto poput „.nobackup“ i da se ovaj fajl smešta u "
 "fascikle za koje ne treba praviti rezervnu kopiju."
 
-#: Library/Main/Strings.cs:333
+#: Library/Main/Strings.cs:339
 msgid "List of filenames that exclude folders"
 msgstr "Lista imena fajlova koji isključuju fascikle"
 
-#: Library/Main/Strings.cs:339
+#: Library/Main/Strings.cs:345
 #, csharp-format
 msgid ""
 "To improve performance of the backups, frequent database queries are not "
@@ -2238,7 +2212,7 @@ msgstr ""
 "evidentirali sve upite baze podataka i ne zaboravite da podesite --{0}={2} "
 "ili --{1}={2} da biste prijavili dodatne podatke evidencije"
 
-#: Library/Main/Strings.cs:409
+#: Library/Main/Strings.cs:433
 #, csharp-format
 msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
@@ -2247,19 +2221,14 @@ msgstr ""
 "Kriptoteka ne podržava transformacije koje se mogu ponovo koristiti za heš "
 "algoritam {0}"
 
-#: Library/Main/Strings.cs:410
+#: Library/Main/Strings.cs:434
 #, csharp-format
 msgid "The cryptolibrary does not support the hash algorithm {0}"
 msgstr "Kriptoteka ne podržava heš algoritam {0}"
 
-#: Library/Main/Strings.cs:411
+#: Library/Main/Strings.cs:435
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr "Pristupna fraza se ne može promeniti za postojeću rezervnu kopiju"
-
-#: Library/Main/Strings.cs:412
-#, csharp-format
-msgid "Failed to create a snapshot: {0}"
-msgstr "Pravljenje snimka nije uspelo: {0}"
 
 #: Library/Modules/Builtin/Strings.cs:30
 msgid ""
@@ -2502,16 +2471,16 @@ msgstr "Prihvati bilo koji sertifikat sa servera"
 msgid "Optionally accept a known SSL certificate"
 msgstr "Opciono prihvati poznat SSL sertifikat"
 
-#: Library/Modules/Builtin/Strings.cs:288
+#: Library/Modules/Builtin/Strings.cs:290
 #, csharp-format
 msgid "Failed to send message: {0}"
 msgstr "Slanje poruke nije uspelo: {0}"
 
-#: Library/Modules/Builtin/Strings.cs:292
+#: Library/Modules/Builtin/Strings.cs:294
 msgid "Log message filter"
 msgstr "Filter za poruke dnevnika"
 
-#: Library/Modules/Builtin/Strings.cs:293
+#: Library/Modules/Builtin/Strings.cs:295
 msgid ""
 "Use this option to set the maximum number of log lines to include in the "
 "report. Zero or negative values means unlimited."
@@ -2594,31 +2563,31 @@ msgid ""
 msgstr ""
 "Niz {0} ne predstavlja poznato ime grupe filtera. Važeće vrednosti su: {1}"
 
-#: Library/Utility/Strings.cs:106
+#: Library/Utility/Strings.cs:108
 msgid "Alternate OAuth URL"
 msgstr "Alternativni OAuth URL"
 
-#: Library/Utility/Strings.cs:115
+#: Library/Utility/Strings.cs:117
 #, csharp-format
 msgid "The value \"{1}\" supplied to --{0} does not represent a valid integer"
 msgstr "Vrednost \"{1}\" dostavljena u --{0} ne predstavlja važeći ceo broj"
 
-#: Library/Utility/Strings.cs:116
+#: Library/Utility/Strings.cs:118
 #, csharp-format
 msgid "The value \"{1}\" supplied to --{0} does not represent a valid path"
 msgstr "Vrednost \"{1}\" dostavljena u --{0} ne predstavlja ispravnu putanju"
 
-#: Library/Utility/Strings.cs:117
+#: Library/Utility/Strings.cs:119
 #, csharp-format
 msgid "The value \"{1}\" supplied to --{0} does not represent a valid size"
 msgstr "Vrednost \"{1}\" dostavljena u --{0} ne predstavlja ispravnu veličinu"
 
-#: Library/Utility/Strings.cs:118
+#: Library/Utility/Strings.cs:120
 #, csharp-format
 msgid "The value \"{1}\" supplied to --{0} does not represent a valid time"
 msgstr "Vrednost \"{1}\" dostavljena u --{0} ne predstavlja važeće vreme"
 
-#: Library/Utility/Strings.cs:119
+#: Library/Utility/Strings.cs:121
 #, csharp-format
 msgid ""
 "The size \"{1}\" supplied to --{0} does not have a multiplier (b, kb, mb, "

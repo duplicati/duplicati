@@ -1916,6 +1916,10 @@ msgstr "Fáze znovuvytváření databáze"
 msgid "Recreating database …"
 msgstr "Znovuvytváření databáze…"
 
+#: templates/backends/cos.html:20
+msgid "Region"
+msgstr "Region"
+
 #: scripts/controllers/RestoreDirectController.js:40
 msgid "Registering temporary backup …"
 msgstr "Registrace dočasné zálohy…"
