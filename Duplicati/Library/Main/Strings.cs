@@ -433,8 +433,13 @@ namespace Duplicati.Library.Main.Strings
         public static string InvalidCryptoSystem(string algorithm) { return LC.L(@"The cryptolibrary does not support re-usable transforms for the hash algorithm {0}", algorithm); }
         public static string InvalidHashAlgorithm(string algorithm) { return LC.L(@"The cryptolibrary does not support the hash algorithm {0}", algorithm); }
         public static string PassphraseChangeUnsupported { get { return LC.L(@"The passphrase cannot be changed for an existing backup"); } }
-        public static string SnapshotFailedError(string message, bool seemsToHavePermissions)
+        public static string SnapshotFailedError(string message, bool seemsToHavePermissions, bool needsVisualCRedist)
         {
+            if (needsVisualCRedist)
+                return seemsToHavePermissions
+                    ? LC.L(@"Failed to create a snapshot. The snapshot provider requires the Microsoft Visual C++ Redistributable, which does not appear to be installed. Please install the latest Visual C++ Redistributable. Error message: {0}", message)
+                    : LC.L(@"Failed to create a snapshot. The process seems to not have the necessary permissions and the Microsoft Visual C++ Redistributable is not installed. Error message: {0}", message);
+
             return seemsToHavePermissions
                 ? LC.L(@"Failed to create a snapshot. The process appears to have the necessary permissions, but the snapshot failed anyway. Error message: {0}", message)
                 : LC.L(@"Failed to create a snapshot. This may be caused by insufficient permissions. Try running Duplicati with elevated privileges. Error message: {0}", message);
