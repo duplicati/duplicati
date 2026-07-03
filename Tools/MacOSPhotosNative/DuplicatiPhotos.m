@@ -287,8 +287,22 @@ void DuplicatiPhotosFreeAssets(DuplicatiPhotosAssetMetadata *assets, size_t coun
     free(assets);
 }
 
+// Maximum number of bytes that may be buffered in memory before the
+// PhotoKit data-received handler is throttled. PhotoKit delivers data on a
+// background thread as fast as it can (especially when downloading from
+// iCloud), while the managed consumer drains it much more slowly during
+// deduplication/compression/upload. Without a cap the entire asset (or many
+// concurrent assets) accumulates in memory, which previously led to the
+// process being killed by the OS out-of-memory reaper. 8 MiB is a generous
+// window that keeps throughput high while bounding memory use.
+static const NSUInteger kDuplicatiPhotosMaxBufferBytes = 8 * 1024 * 1024;
+
 @interface DuplicatiPhotosReader : NSObject
 @property (nonatomic, strong) NSMutableData *buffer;
+// Number of bytes at the front of `buffer` that have already been consumed.
+// Tracking a read offset avoids repeatedly shifting the whole buffer (and
+// avoids NSMutableData holding onto peak capacity) until we compact.
+@property (nonatomic, assign) NSUInteger readOffset;
 @property (nonatomic, strong) NSCondition *condition;
 @property (nonatomic, assign) BOOL completed;
 @property (nonatomic, assign) BOOL cancelled;
@@ -305,6 +319,7 @@ void DuplicatiPhotosFreeAssets(DuplicatiPhotosAssetMetadata *assets, size_t coun
     if (self) {
         _resource = resource;
         _buffer = [NSMutableData data];
+        _readOffset = 0;
         _condition = [[NSCondition alloc] init];
         _completed = NO;
         _cancelled = NO;
@@ -329,9 +344,27 @@ void DuplicatiPhotosFreeAssets(DuplicatiPhotosAssetMetadata *assets, size_t coun
 
                 DLog(@"DuplicatiPhotos: Received data chunk of size: %lu", (unsigned long)data.length);
                 [strongSelf.condition lock];
-                DLog(@"DuplicatiPhotos: Locked condition, current buffer size: %lu, appending data", (unsigned long)strongSelf.buffer.length);
+
+                // Apply back-pressure: if the amount of buffered-but-unread
+                // data has grown past the cap, block this handler until the
+                // consumer has drained enough to make room. This throttles
+                // PhotoKit so it does not read the whole (potentially
+                // multi-gigabyte) asset into memory ahead of the consumer.
+                while (!strongSelf.cancelled &&
+                       (strongSelf.buffer.length - strongSelf.readOffset) >= kDuplicatiPhotosMaxBufferBytes) {
+                    DLog(@"DuplicatiPhotos: Buffer full (%lu bytes), waiting for consumer to drain", (unsigned long)(strongSelf.buffer.length - strongSelf.readOffset));
+                    [strongSelf.condition wait];
+                }
+
+                if (strongSelf.cancelled) {
+                    DLog(@"DuplicatiPhotos: Cancelled while waiting to append, dropping data");
+                    [strongSelf.condition unlock];
+                    return;
+                }
+
+                DLog(@"DuplicatiPhotos: Locked condition, current unread size: %lu, appending data", (unsigned long)(strongSelf.buffer.length - strongSelf.readOffset));
                 [strongSelf.buffer appendData:data];
-                DLog(@"DuplicatiPhotos: Data appended, new buffer size: %lu", (unsigned long)strongSelf.buffer.length);
+                DLog(@"DuplicatiPhotos: Data appended, new unread size: %lu", (unsigned long)(strongSelf.buffer.length - strongSelf.readOffset));
                 [strongSelf.condition signal];
                 DLog(@"DuplicatiPhotos: Signaled condition, unlocking");
                 [strongSelf.condition unlock];
@@ -402,14 +435,16 @@ void DuplicatiPhotosFreeAssets(DuplicatiPhotosAssetMetadata *assets, size_t coun
 
     DLog(@"DuplicatiPhotos: Locking condition for read on thread %@", [NSThread currentThread]);
     [self.condition lock];
-    DLog(@"DuplicatiPhotos: Condition locked, buffer length: %lu, completed: %d", (unsigned long)self.buffer.length, self.completed);
-    while (self.buffer.length == 0 && !self.completed) {
+    NSUInteger available = self.buffer.length - self.readOffset;
+    DLog(@"DuplicatiPhotos: Condition locked, available: %lu, completed: %d", (unsigned long)available, self.completed);
+    while (available == 0 && !self.completed) {
         DLog(@"DuplicatiPhotos: Waiting for data...");
         [self.condition wait];
-        DLog(@"DuplicatiPhotos: Woke up from wait, buffer length: %lu, completed: %d", (unsigned long)self.buffer.length, self.completed);
+        available = self.buffer.length - self.readOffset;
+        DLog(@"DuplicatiPhotos: Woke up from wait, available: %lu, completed: %d", (unsigned long)available, self.completed);
     }
 
-    if (self.buffer.length == 0) {
+    if (available == 0) {
         DLog(@"DuplicatiPhotos: Buffer is empty after wait");
         NSError *error = self.error;
         [self.condition unlock];
@@ -426,12 +461,30 @@ void DuplicatiPhotosFreeAssets(DuplicatiPhotosAssetMetadata *assets, size_t coun
         return 0;
     }
 
-    size_t toCopy = MIN((size_t)self.buffer.length, length);
-    DLog(@"DuplicatiPhotos: Copying %zu bytes to destination from buffer of size %lu", toCopy, (unsigned long)self.buffer.length);
-    memcpy(destination, self.buffer.bytes, toCopy);
-    DLog(@"DuplicatiPhotos: memcpy completed, removing copied bytes from buffer");
-    [self.buffer replaceBytesInRange:NSMakeRange(0, toCopy) withBytes:NULL length:0];
-    DLog(@"DuplicatiPhotos: Buffer updated, new size: %lu, unlocking", (unsigned long)self.buffer.length);
+    size_t toCopy = MIN((size_t)available, length);
+    DLog(@"DuplicatiPhotos: Copying %zu bytes to destination from available %lu", toCopy, (unsigned long)available);
+    memcpy(destination, (const uint8_t *)self.buffer.bytes + self.readOffset, toCopy);
+    self.readOffset += toCopy;
+    DLog(@"DuplicatiPhotos: memcpy completed, advancing read offset to %lu", (unsigned long)self.readOffset);
+
+    // Reclaim memory. If everything buffered so far has been consumed, reset
+    // the buffer to zero length (releasing peak capacity). Otherwise, once the
+    // consumed prefix grows large, drop it from the front so the backing store
+    // does not grow without bound for large assets. Using a read offset avoids
+    // shifting bytes on every single read.
+    if (self.readOffset == self.buffer.length) {
+        self.buffer.length = 0;
+        self.readOffset = 0;
+        DLog(@"DuplicatiPhotos: Buffer fully drained, reset to empty");
+    } else if (self.readOffset >= kDuplicatiPhotosMaxBufferBytes) {
+        [self.buffer replaceBytesInRange:NSMakeRange(0, self.readOffset) withBytes:NULL length:0];
+        self.readOffset = 0;
+        DLog(@"DuplicatiPhotos: Compacted buffer, new size: %lu", (unsigned long)self.buffer.length);
+    }
+
+    // Wake the (possibly throttled) data-received handler now that space is free.
+    [self.condition signal];
+    DLog(@"DuplicatiPhotos: Signaled producer, unlocking, new unread size: %lu", (unsigned long)(self.buffer.length - self.readOffset));
     [self.condition unlock];
     DLog(@"DuplicatiPhotos: Returning %zd bytes", (ssize_t)toCopy);
     return (ssize_t)toCopy;
