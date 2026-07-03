@@ -156,27 +156,84 @@ internal static class MacOSPhotosNative
         if (buffer.Length == 0)
             return 0;
 
-        var errorPtr = IntPtr.Zero;
-        int bytesRead;
-
-        // TODO: Optimize to read directly into the provided buffer
-        var tempbuffer = new byte[buffer.Length];
-        var result = NativeMethods.DuplicatiPhotosReadAsset(handle, tempbuffer, (nuint)tempbuffer.Length, out errorPtr);
-        if (result < 0)
+        // A Span cannot be pinned via a GCHandle, so use a pooled rented array
+        // as a bounce buffer. Callers that hold an array or Memory use the
+        // allocation-free overload below.
+        var rented = System.Buffers.ArrayPool<byte>.Shared.Rent(buffer.Length);
+        try
         {
-            var message = ConsumeErrorMessage(ref errorPtr) ?? "Failed to read Photos asset data.";
-            throw new MacOSPhotosException(message);
+            var read = ReadIntoArray(handle, rented, 0, buffer.Length);
+            if (read > 0)
+                rented.AsSpan(0, read).CopyTo(buffer);
+            return read;
         }
-        tempbuffer.AsSpan(0, (int)result).CopyTo(buffer);
-        bytesRead = checked((int)result);
-
-        if (errorPtr != IntPtr.Zero)
+        finally
         {
-            NativeMethods.DuplicatiPhotosFreeString(errorPtr);
-            errorPtr = IntPtr.Zero;
+            System.Buffers.ArrayPool<byte>.Shared.Return(rented);
         }
+    }
 
-        return bytesRead;
+    /// <summary>
+    /// Reads data from the asset into the provided buffer
+    /// </summary>
+    /// <param name="handle">The asset handle</param>
+    /// <param name="buffer">The buffer to read data into</param>
+    /// <returns>The number of bytes read</returns>
+    internal static int ReadAsset(SafeAssetHandle handle, Memory<byte> buffer)
+    {
+        if (handle.IsInvalid)
+            throw new ObjectDisposedException(nameof(SafeAssetHandle));
+
+        if (buffer.Length == 0)
+            return 0;
+
+        // Try to read directly into the caller-provided array by pinning it,
+        // avoiding an intermediate managed allocation on every read. If the
+        // buffer is not array-backed, fall back to the Span overload, which
+        // uses a pooled rented array.
+        if (MemoryMarshal.TryGetArray<byte>(buffer, out var segment) && segment.Array != null)
+            return ReadIntoArray(handle, segment.Array, segment.Offset, segment.Count);
+
+        return ReadAsset(handle, buffer.Span);
+    }
+
+    /// <summary>
+    /// Reads data into a pinned region of the provided array
+    /// </summary>
+    /// <param name="handle">The asset handle</param>
+    /// <param name="array">The backing array to read into</param>
+    /// <param name="offset">The offset within the array</param>
+    /// <param name="count">The number of bytes to read</param>
+    /// <returns>The number of bytes read</returns>
+    private static int ReadIntoArray(SafeAssetHandle handle, byte[] array, int offset, int count)
+    {
+        // Pin the array and pass the element address to the native reader. Using
+        // a pinned GCHandle keeps this allocation-free and does not require the
+        // project to enable unsafe code blocks.
+        var gch = GCHandle.Alloc(array, GCHandleType.Pinned);
+        try
+        {
+            var bufferPtr = Marshal.UnsafeAddrOfPinnedArrayElement(array, offset);
+            var result = NativeMethods.DuplicatiPhotosReadAsset(handle, bufferPtr, (nuint)count, out var errorPtr);
+
+            if (result < 0)
+            {
+                var message = ConsumeErrorMessage(ref errorPtr) ?? "Failed to read Photos asset data.";
+                throw new MacOSPhotosException(message);
+            }
+
+            if (errorPtr != IntPtr.Zero)
+            {
+                NativeMethods.DuplicatiPhotosFreeString(errorPtr);
+                errorPtr = IntPtr.Zero;
+            }
+
+            return checked((int)result);
+        }
+        finally
+        {
+            gch.Free();
+        }
     }
 
     /// <summary>
@@ -355,7 +412,7 @@ internal static class MacOSPhotosNative
         /// <param name="errorMessage"> The error message, if any</param>
         /// <returns>The number of bytes read</returns>
         [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern nint DuplicatiPhotosReadAsset(SafeAssetHandle handle, byte[] buffer, nuint length, out IntPtr errorMessage);
+        internal static extern nint DuplicatiPhotosReadAsset(SafeAssetHandle handle, IntPtr buffer, nuint length, out IntPtr errorMessage);
 
         /// <summary>
         /// Closes the asset handle

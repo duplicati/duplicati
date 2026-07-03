@@ -71,7 +71,7 @@ internal sealed class MacOSPhotosNativeStream : Stream
         if (count == 0)
             return 0;
 
-        var bytesRead = MacOSPhotosNative.ReadAsset(handle, new Span<byte>(buffer, offset, count));
+        var bytesRead = MacOSPhotosNative.ReadAsset(handle, new Memory<byte>(buffer, offset, count));
         position += bytesRead;
         return bytesRead;
     }
@@ -92,7 +92,7 @@ internal sealed class MacOSPhotosNativeStream : Stream
         if (disposed)
             throw new ObjectDisposedException(nameof(MacOSPhotosNativeStream));
 
-        var bytesRead = MacOSPhotosNative.ReadAsset(handle, buffer.Span);
+        var bytesRead = MacOSPhotosNative.ReadAsset(handle, buffer);
         position += bytesRead;
         return ValueTask.FromResult(bytesRead);
     }
@@ -108,7 +108,7 @@ internal sealed class MacOSPhotosNativeStream : Stream
         if (count == 0)
             return Task.FromResult(0);
 
-        var bytesRead = MacOSPhotosNative.ReadAsset(handle, new Span<byte>(buffer, offset, count));
+        var bytesRead = MacOSPhotosNative.ReadAsset(handle, new Memory<byte>(buffer, offset, count));
         position += bytesRead;
         return Task.FromResult(bytesRead);
     }

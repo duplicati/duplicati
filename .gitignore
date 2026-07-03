@@ -21,3 +21,4 @@ changelog-news.txt
 ReleaseBuilder/build-temp/
 ReleaseBuilder/Resources/Windows/TrayIcon/binfiles.wxs
 ReleaseBuilder/Resources/Windows/Agent/binfiles.wxs
+Tools/MacOSPhotosNative/build/
