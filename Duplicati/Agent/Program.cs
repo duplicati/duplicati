@@ -46,6 +46,12 @@ public static class Program
     private static readonly string LogTag = Log.LogTagFromType(typeof(Program));
 
     /// <summary>
+    /// The cancellation token that signals the agent is shutting down.
+    /// Used by the remote-control callbacks to stop waiting for the local webserver.
+    /// </summary>
+    private static CancellationToken s_shutdownToken;
+
+    /// <summary>
     /// Commandline arguments for the agent
     /// </summary>
     /// <param name="AgentRegistrationUrl">The server URL to connect to</param>
@@ -289,6 +295,7 @@ public static class Program
             WebserverCore.Middlewares.PreSharedKeyFilter.PreSharedKey = RandomNumberGenerator.GetHexString(128);
 
         using var cts = new CancellationTokenSource();
+        s_shutdownToken = cts.Token;
 
         var target = new ControllerMultiLogTarget(new ConsoleLogDestination(), LogMessageType.Information, null, null);
         using (Log.StartScope(target))
@@ -326,10 +333,10 @@ public static class Program
                     refreshSettingsBy: null,
                     forceConnect: true,
                     cts.Token,
-                    OnConnect,
+                    OnConnectAsync,
                     m => ReKey(applicationSettings, m, agentConfig),
-                    OnControl,
-                    OnMessage
+                    OnControlAsync,
+                    OnMessageAsync
                 )
             );
 
@@ -339,15 +346,67 @@ public static class Program
         }
     }
 
-    private static Task<Dictionary<string, string?>> OnConnect(Dictionary<string, string?> metadata)
-        => Server.Program.DuplicatiWebserver.Provider.GetRequiredService<IRemoteControllerHandler>().OnConnect(metadata);
+    private static async Task<Duplicati.WebserverCore.DuplicatiWebserver?> WaitForServerAsync()
+    {
+        var cancellationToken = s_shutdownToken;
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            var server = Server.Program.DuplicatiWebserver;
+            if (server != null
+                && Server.Program.ServerStartedEvent.WaitOne(0, false)
+                && !server.TerminationTask.IsCompleted)
+            {
+                return server;
+            }
 
-    private static Task OnControl(KeepRemoteConnection.ControlMessage message)
-        => Server.Program.DuplicatiWebserver.Provider.GetRequiredService<IRemoteControllerHandler>().OnControl(message);
+            try
+            {
+                await Task.Delay(500, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                break;
+            }
+        }
 
-    private static Task OnMessage(KeepRemoteConnection.CommandMessage message)
-        => Server.Program.DuplicatiWebserver.Provider.GetRequiredService<IRemoteControllerHandler>().OnMessage(message);
+        return null;
+    }
 
+    private static async Task<Dictionary<string, string?>> OnConnectAsync(Dictionary<string, string?> metadata)
+    {
+        var server = await WaitForServerAsync();
+        if (server == null)
+        {
+            Log.WriteMessage(LogMessageType.Warning, LogTag, "RemoteControlNoServer", null, "Local webserver not available, returning empty response to OnConnect");
+            return new Dictionary<string, string?>();
+        }
+
+        return await server.Provider.GetRequiredService<IRemoteControllerHandler>().OnConnect(metadata);
+    }
+
+    private static async Task OnControlAsync(KeepRemoteConnection.ControlMessage message)
+    {
+        var server = await WaitForServerAsync();
+        if (server == null)
+        {
+            Log.WriteMessage(LogMessageType.Warning, LogTag, "RemoteControlNoServer", null, "Local webserver not available, dropping control message");
+            return;
+        }
+
+        await server.Provider.GetRequiredService<IRemoteControllerHandler>().OnControl(message);
+    }
+
+    private static async Task OnMessageAsync(KeepRemoteConnection.CommandMessage message)
+    {
+        var server = await WaitForServerAsync();
+        if (server == null)
+        {
+            Log.WriteMessage(LogMessageType.Warning, LogTag, "RemoteControlNoServer", null, "Local webserver not available, dropping command message");
+            return;
+        }
+
+        await server.Provider.GetRequiredService<IRemoteControllerHandler>().OnMessage(message);
+    }
 
     private static Task ReKey(IApplicationSettings applicationSettings, ClaimedClientData keydata, CommandLineArguments agentConfig)
     {
@@ -459,7 +518,7 @@ public static class Program
 
                 // If settings are present in the claim data, apply them via the control handler
                 if (claimedClientData.Settings != null && claimedClientData.Settings.Count > 0)
-                    await OnControl(KeepRemoteConnection.ControlMessage.CreateSettingsControlMessage(claimedClientData.Settings));
+                    await OnControlAsync(KeepRemoteConnection.ControlMessage.CreateSettingsControlMessage(claimedClientData.Settings));
             }
         }
 

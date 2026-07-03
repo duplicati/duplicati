@@ -174,6 +174,12 @@ namespace Duplicati.Server
         [STAThread]
         public static int Main(IApplicationSettings applicationSettings, string[] _args)
         {
+            // Reset the started event and clear any stale webserver reference so that
+            // waiters (e.g. the agent's remote-control callbacks) do not observe a
+            // previous, now-stopped, instance when the local server is restarted.
+            ServerStartedEvent.Reset();
+            DuplicatiWebserver = null;
+
             PreloadSettingsLoader.ConfigurePreloadSettings(ref _args, PackageHelper.NamedExecutable.Server, out var preloadDbSettings);
 
             applicationSettings ??= new ApplicationSettings();
