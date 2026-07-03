@@ -74,12 +74,14 @@ namespace Duplicati.Library.Main.Operation.Common
             }
             catch (Exception ex)
             {
+                var needsVisualCRedist = !PermissionHelper.IsVisualCRedistInstalled();
+
                 if (options.SnapShotStrategy == Options.OptimizationStrategy.Required)
-                    throw new UserInformationException(Strings.Common.SnapshotFailedError(ex.Message, PermissionHelper.HasSnapshotPrivilege()), "SnapshotFailed", ex);
+                    throw new UserInformationException(Strings.Common.SnapshotFailedError(ex.Message, PermissionHelper.HasSnapshotPrivilege(), needsVisualCRedist), "SnapshotFailed", ex);
                 else if (options.SnapShotStrategy == Options.OptimizationStrategy.On)
-                    Log.WriteWarningMessage(LOGTAG, "SnapshotFailed", ex, Strings.Common.SnapshotFailedError(ex.Message, PermissionHelper.HasSnapshotPrivilege()));
+                    Log.WriteWarningMessage(LOGTAG, "SnapshotFailed", ex, Strings.Common.SnapshotFailedError(ex.Message, PermissionHelper.HasSnapshotPrivilege(), needsVisualCRedist));
                 else if (options.SnapShotStrategy == Options.OptimizationStrategy.Auto)
-                    Log.WriteInformationMessage(LOGTAG, "SnapshotFailed", Strings.Common.SnapshotFailedError(ex.Message, PermissionHelper.HasSnapshotPrivilege()));
+                    Log.WriteInformationMessage(LOGTAG, "SnapshotFailed", Strings.Common.SnapshotFailedError(ex.Message, PermissionHelper.HasSnapshotPrivilege(), needsVisualCRedist));
             }
 
             var useSeBackup = false;

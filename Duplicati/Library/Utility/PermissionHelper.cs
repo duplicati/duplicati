@@ -25,6 +25,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Security.Principal;
+using Microsoft.Win32;
 
 namespace Duplicati.Library.Utility;
 
@@ -51,6 +52,68 @@ public static class PermissionHelper
         { }
 
         return false;
+    }
+
+    /// <summary>
+    /// Checks if the Microsoft Visual C++ Redistributable matching the current process architecture
+    /// (x64 or x86) is installed on the machine. The VC++ 2015-2022 runtime ships architecture-specific
+    /// binaries (VCRUNTIME140.dll / VCRUNTIME140_1.dll), and the VSS snapshot providers load mixed-mode
+    /// C++/CLI assemblies that link against them, so the check must match the running process architecture.
+    /// </summary>
+    /// <returns>
+    /// <c>true</c> if a matching Visual C++ Redistributable package is installed, <c>false</c> otherwise.
+    /// Always returns <c>true</c> on non-Windows platforms where the check does not apply.
+    /// </returns>
+    public static bool IsVisualCRedistInstalled()
+    {
+        if (!OperatingSystem.IsWindows())
+            return true;
+
+        // The VC++ 2015-2022 runtime uses architecture-specific registry subkey names.
+        // For older runtimes (VC++ 2010/2013) the key lives elsewhere, but the mixed-mode
+        // snapshot assemblies are built against the VC++ 2015-2022 toolset, so checking
+        // the 14.0 key for the matching architecture is the relevant test.
+        var arch = RuntimeInformation.ProcessArchitecture switch
+        {
+            Architecture.X86 => "x86",
+            Architecture.X64 => "x64",
+            Architecture.Arm64 => "arm64",
+            _ => "x64",
+        };
+
+        // The VC++ Runtimes keys are not WOW6432Node-redirected, so both registry views
+        // resolve to the same physical location. RegistryView.Default follows the
+        // process architecture
+        try
+        {
+            using var baseKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Default);
+            return HasVisualCRedistInRegistry(baseKey, $@"SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\{arch}");
+        }
+        catch
+        {
+            // Fail open: if registry access itself fails we cannot reliably determine
+            // whether the redistributable is installed, so we report it as present
+            // rather than misdirecting the user toward an irrelevant install step.
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// Checks if a Visual C++ Redistributable runtime entry exists in the given registry location.
+    /// </summary>
+    /// <param name="root">The registry root key.</param>
+    /// <param name="path">The path to the runtime registry key.</param>
+    /// <returns><c>true</c> if the entry exists and reports an installed version, <c>false</c> otherwise.</returns>
+    [SupportedOSPlatform("windows")]
+    private static bool HasVisualCRedistInRegistry(RegistryKey root, string path)
+    {
+        using var key = root.OpenSubKey(path);
+        if (key == null)
+            return false;
+
+        // The "Installed" value is a DWORD (1 = installed). Some installers only write "Version".
+        return key.GetValue("Installed") is int installed && installed != 0
+            || key.GetValue("Version") != null;
     }
 
     /// <summary>
