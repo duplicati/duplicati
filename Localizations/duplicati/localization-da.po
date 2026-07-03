@@ -19,7 +19,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-04 14:35+0200\n"
+"POT-Creation-Date: 2026-07-02 11:34+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: jhertel <jesper.hertel@gmail.com>, 2025\n"
 "Language-Team: Danish (https://app.transifex.com/duplicati/teams/67655/da/)\n"
@@ -290,7 +290,7 @@ msgid "The domain name of the user used to connect to the server."
 msgstr "Domæne navnet på brugeren som forbinder til serveren"
 
 #: Library/Backend/OpenStack/Strings.cs:34 Library/Backend/S3/Strings.cs:34
-#: Library/Backend/Mega/Strings.cs:28 Library/Utility/Strings.cs:95
+#: Library/Backend/Mega/Strings.cs:28 Library/Utility/Strings.cs:97
 msgid ""
 "The username used to connect to the server. This may also be supplied as the"
 " environment variable \"AUTH_USERNAME\"."
@@ -437,7 +437,7 @@ msgid "S3 compatible"
 msgstr "S3 kompatibel"
 
 #: Library/Backend/S3/Strings.cs:32 Library/Backend/Mega/Strings.cs:26
-#: Library/Utility/Strings.cs:93
+#: Library/Utility/Strings.cs:95
 msgid ""
 "The password used to connect to the server. This may also be supplied as the"
 " environment variable \"AUTH_PASSWORD\"."
@@ -592,8 +592,8 @@ msgid "Microsoft OneDrive"
 msgstr "Microsoft OneDrive"
 
 #: Library/Backend/OneDrive/Strings.cs:48
-msgid "Microsoft SharePoint v2"
-msgstr "Microsoft SharePoint v2"
+msgid "Microsoft SharePoint"
+msgstr "Microsoft SharePoint"
 
 #: Library/Backend/OneDrive/Strings.cs:58
 msgid "Microsoft Office 365 Group"
@@ -671,10 +671,6 @@ msgstr "Password ikke sat"
 msgid "No username given"
 msgstr "Brugernavn ikke sat"
 
-#: Library/Backend/SharePoint/Strings.cs:27
-msgid "Microsoft SharePoint"
-msgstr "Microsoft SharePoint"
-
 #: Library/Backend/SharePoint/Strings.cs:29
 #: Library/Backend/WEBDAV/Strings.cs:31
 msgid "Use windows integrated authentication to connect to the server"
@@ -692,22 +688,18 @@ msgstr ""
 msgid "Move deleted files to the recycle bin"
 msgstr "Flyt slettede filer til papirkurven"
 
-#: Library/Backend/SharePoint/Strings.cs:50
-msgid "Microsoft OneDrive for Business"
-msgstr "Microsoft OneDrive for Business"
-
 #: Library/Backend/Dropbox/Strings.cs:28
 msgid "Dropbox"
 msgstr "Dropbox"
 
 #: Library/Backend/Dropbox/Strings.cs:29
-#: Library/Backend/OAuthHelper/Strings.cs:29 Library/Utility/Strings.cs:102
+#: Library/Backend/OAuthHelper/Strings.cs:29 Library/Utility/Strings.cs:104
 #, csharp-format
 msgid "The authorization token retrieved from {0}"
 msgstr "Autorizationskoden fra {0}"
 
 #: Library/Backend/Dropbox/Strings.cs:30
-#: Library/Backend/OAuthHelper/Strings.cs:30 Library/Utility/Strings.cs:103
+#: Library/Backend/OAuthHelper/Strings.cs:30 Library/Utility/Strings.cs:105
 msgid "The authorization code"
 msgstr "Autorizationskoden"
 
@@ -841,7 +833,7 @@ msgstr ""
 " \"any\" betyder all interfaces. Specialværdien \"loopback\" betyder "
 "loopback-adapteren."
 
-#: Library/RestAPI/Strings.cs:60
+#: Library/RestAPI/Strings.cs:61
 msgid ""
 "The hostnames that are accepted, separated with semicolons. If any of the "
 "hostnames are \"*\", all hostnames are allowed and the hostname checking is "
@@ -850,15 +842,15 @@ msgstr ""
 "Hostnavne der er accepteret, separeret med semikolon. Hvis nogle af "
 "hostnavne er \"*\" vil alle hostnavne være tilladt."
 
-#: Library/RestAPI/Strings.cs:65 Library/Main/Strings.cs:277
+#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:283
 msgid "Set the time after which log data will be purged from the database."
 msgstr "Indstil den tid, hvorefter logdata vil blive fjernet fra databasen."
 
-#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:278
+#: Library/RestAPI/Strings.cs:67 Library/Main/Strings.cs:284
 msgid "Clean up old log data"
 msgstr "Ryd gammel logdata"
 
-#: Library/RestAPI/Strings.cs:67
+#: Library/RestAPI/Strings.cs:68
 #, csharp-format
 msgid ""
 "Duplicati needs to store a small database with all settings. Use this option"
@@ -869,7 +861,7 @@ msgstr ""
 "indstilling til at vælge, hvor indstillingerne er gemt. Denne mulighed kan "
 "også indstilles med miljøvariablen {0}."
 
-#: Library/RestAPI/Strings.cs:69
+#: Library/RestAPI/Strings.cs:70
 #, csharp-format
 msgid ""
 "This option sets the encryption key used to scramble the local settings "
@@ -881,16 +873,16 @@ msgstr ""
 "miljøvariablen {0}. Brug indstillingen --{1} for at deaktivere "
 "obfuskeringen."
 
-#: Library/RestAPI/Strings.cs:72 Library/Main/Strings.cs:101
+#: Library/RestAPI/Strings.cs:73 Library/Main/Strings.cs:103
 msgid "Temporary storage folder"
 msgstr "Midlertidig mappe"
 
-#: Library/RestAPI/Strings.cs:93 Library/RestAPI/Strings.cs:134
+#: Library/RestAPI/Strings.cs:96 Library/RestAPI/Strings.cs:141
 #, csharp-format
 msgid "Server has started and is listening on {0}, port {1}"
 msgstr "Serveren er startet og lytter på {0}, port {1}"
 
-#: Library/RestAPI/Strings.cs:130
+#: Library/RestAPI/Strings.cs:137
 #, csharp-format
 msgid ""
 "Unable to find a valid date, given the start date {0}, the repetition "
@@ -899,7 +891,7 @@ msgstr ""
 "Kan ikke finde en gyldig dato, givet startdatoen {0}, gentagelsesintervallet"
 " {1} og de tilladte dage {2}"
 
-#: Library/RestAPI/Strings.cs:136
+#: Library/RestAPI/Strings.cs:143
 #, csharp-format
 msgid "Unable to open a socket for listening, tried ports: {0}"
 msgstr "Kunne ikke åbne et socket til at lytte på, forsøgte disse porte: {0}"
@@ -923,127 +915,122 @@ msgstr ""
 "Dette skyldes sandsynligvis opgradering til en nyere version og derefter nedgradering.\n"
 "Hvis dette er tilfældet, er der sandsynligvis en backupfil af den tidligere databaseversion i mappen {2}."
 
-#: Library/Main/Strings.cs:41
+#: Library/Main/Strings.cs:43
 #, csharp-format
 msgid "Invalid path: \"{0}\" ({1})"
 msgstr "Ugyldig sti: \"{0}\" ({1})"
 
-#: Library/Main/Strings.cs:59
+#: Library/Main/Strings.cs:61
 msgid "Restore to another folder"
 msgstr "Gendan til en anden mappe"
 
-#: Library/Main/Strings.cs:71
+#: Library/Main/Strings.cs:73
 msgid "Disable encryption"
 msgstr "Deaktiver kryptering"
 
-#: Library/Main/Strings.cs:75
+#: Library/Main/Strings.cs:77
 msgid "Passphrase used to encrypt backups"
 msgstr "Kodeord brugt til kryptering af backup"
 
-#: Library/Main/Strings.cs:81
+#: Library/Main/Strings.cs:83
 msgid "Show all versions"
 msgstr "Vis alle versioner"
 
-#: Library/Main/Strings.cs:89
+#: Library/Main/Strings.cs:91
 msgid "Show folder contents"
 msgstr "Vis mappeindhold"
 
-#: Library/Main/Strings.cs:91
+#: Library/Main/Strings.cs:93
 msgid "Time to wait between retries"
 msgstr "Tid til at vente mellem forsøg"
 
-#: Library/Main/Strings.cs:104
+#: Library/Main/Strings.cs:106
 msgid "Thread priority"
 msgstr "Tråd prioritet"
 
-#: Library/Main/Strings.cs:114
+#: Library/Main/Strings.cs:116
 msgid "Select what module to use for compression"
 msgstr "Vælg hvilket modul, der skal bruges til komprimering"
 
-#: Library/Main/Strings.cs:116
+#: Library/Main/Strings.cs:118
 msgid "Select what module to use for encryption"
 msgstr "Vælg det modul, der skal bruges til kryptering"
 
-#: Library/Main/Strings.cs:128
+#: Library/Main/Strings.cs:130
 msgid "The number of concurrent uploads allowed"
 msgstr "Antal samtidige uploads tilladt"
 
-#: Library/Main/Strings.cs:132
+#: Library/Main/Strings.cs:134
 msgid "Log internal information to a file"
 msgstr "Log interne oplysninger til en fil"
 
-#: Library/Main/Strings.cs:134
+#: Library/Main/Strings.cs:136
 msgid "Log information level"
 msgstr "Log informationsniveau"
 
-#: Library/Main/Strings.cs:161
+#: Library/Main/Strings.cs:163
 msgid "Do not re-use connections"
 msgstr "Genbrug ikke forbindelser"
 
-#: Library/Main/Strings.cs:165
+#: Library/Main/Strings.cs:167
 msgid "Upload empty backup files"
 msgstr "Upload tomme backup filer"
 
-#: Library/Main/Strings.cs:173
+#: Library/Main/Strings.cs:175
 msgid "Symlink handling"
 msgstr "Symlink håndtering"
 
-#: Library/Main/Strings.cs:175
+#: Library/Main/Strings.cs:177
 msgid "Hardlink handling"
 msgstr "Hardlink håndtering"
 
-#: Library/Main/Strings.cs:181
+#: Library/Main/Strings.cs:185
 msgid "Name of the backup"
 msgstr "Navn på backupen"
 
-#: Library/Main/Strings.cs:183
+#: Library/Main/Strings.cs:187
 msgid "Backup ID"
 msgstr "Backup ID"
 
-#: Library/Main/Strings.cs:191
+#: Library/Main/Strings.cs:195
 msgid "Manage non-compressible file extensions"
 msgstr "Administrer ikke-komprimerbare filtyper"
 
-#: Library/Main/Strings.cs:195
+#: Library/Main/Strings.cs:199
 msgid "List of files to examine for changes"
 msgstr "Liste over filer, der skal undersøges for ændringer"
 
-#: Library/Main/Strings.cs:197
+#: Library/Main/Strings.cs:201
 msgid "Path to the local state database"
 msgstr "Sti til den lokale tilstandsdatabase"
 
-#: Library/Main/Strings.cs:199
+#: Library/Main/Strings.cs:203
 msgid "List of deleted files"
 msgstr "Liste over slettede filer"
 
-#: Library/Main/Strings.cs:212
+#: Library/Main/Strings.cs:216
 msgid "The hash algorithm used on blocks"
 msgstr "Hash-algoritme, der anvendes til blokke"
 
-#: Library/Main/Strings.cs:214
+#: Library/Main/Strings.cs:218
 msgid "The hash algorithm used on files"
 msgstr "Hashalgoritmen der bruges til filer"
 
-#: Library/Main/Strings.cs:218
+#: Library/Main/Strings.cs:222
 msgid "Volume size threshold"
 msgstr "Volumenstørrelsestærskel"
 
-#: Library/Main/Strings.cs:222
+#: Library/Main/Strings.cs:226
 msgid "Use local file data when restoring"
 msgstr "Brug lokale fildata, ved gendannelse"
 
-#: Library/Main/Strings.cs:227
+#: Library/Main/Strings.cs:231
 msgid "Keep a number of versions"
 msgstr "Antal versioner, der skal beholdes"
 
-#: Library/Main/Strings.cs:239
+#: Library/Main/Strings.cs:245
 msgid "Overwrite files when restoring"
 msgstr "Overskriv filer ved genoprettelse"
-
-#: Library/Main/Strings.cs:412
-#, csharp-format
-msgid "Failed to create a snapshot: {0}"
-msgstr "Kunne ikke oprette snapshot: {0}"
 
 #: Library/Modules/Builtin/Strings.cs:32
 msgid "Confirm encryption passphrase"
@@ -1259,7 +1246,7 @@ msgstr "Strengen \"{0}\" kunne ikke oversættes til en dato"
 msgid "Cannot read and write on the same stream"
 msgstr "Kan ikke læse og skrive på den samme stream"
 
-#: Library/Utility/Strings.cs:106
+#: Library/Utility/Strings.cs:108
 msgid "Alternate OAuth URL"
 msgstr "Alternativ OAuth-URL"
 
