@@ -1,3 +1,49 @@
+2026-07-03 - 2.3.0.106_canary_2026-07-03
+==========
+This release is a canary release intended to be used for testing.
+
+# Sync copy mode
+
+This release adds a often requested feature that enables simple copying of files from source to destination.
+Where the regular backups are deduplicated, compressed, encrypted and versioned, the new sync mode will instead simply copy from source to destination.
+
+The copy is currently a one-way sync, where the source is replicated on the destination. Files can be deleted on the destination during sync (use `--sync-then-delete`), but destination folders will not be deleted.
+
+The option `--sync-remote-state` is by default be set to `UseRemoteState` which will list the destination and figure out what to upload. The setting `UseLocalState` uses a local database, similar to how backups work, to keep track of known remote files, and reduce the amount of remote listings done. Finally, the `BlindlyUpload` setting will just copy everything as-is to the remote.
+
+The sync jobs support remote sources, snapshots, and multiple destinations. If snapshots are enabled, the copy is done from the snapshot, ensuring reliable reads.
+
+Configuration of such a sync job is done the same way as with backup, but using a toggle option in the first step of the UI. Note that backup and sync jobs are not compatible as they use very different storage logic, so it is not possible to change the job mode after creating a job.
+
+CLI mode also supports sync.
+
+# Multi version restore
+
+A new option, `--restore-all-files` can be used to restore files matching a filter from multiple versions. This can be used to select specific versions and then restore a set of files in all versions. This option does not currently have a UI component.
+
+## Detailed list of changes
+
+- Fix MacOS Photos memory usage.
+- Fix Agent startup race condition.
+- Warn when VCRedist is missing on VSS failure.
+- Update localizations.
+- Fix incorrect help text for remote locks.
+- Added a restore callback module.
+- Added support for restoring files across multiple versions.
+- Added a sync command to the Controller and CLI.
+- Prevent creating a useless encryption key on startup.
+- Added an option to control OCSP/CRL failure handling.
+- Improved the secret provider loader and license checker.
+- Bumped SQLite and StreamJson dependencies.
+
+## UI changes
+
+- Added support for editing sync jobs
+- Show multiple destinations on overview
+- Updated localizations
+- Fixed issue with forcing lock refresh
+- Updated ShipUI and Angular
+
 2026-06-24 - 2.3.0.105_canary_2026-06-24
 ==========
 # 2026-06-24 - 2.3.0.105_canary_2026-06-24
