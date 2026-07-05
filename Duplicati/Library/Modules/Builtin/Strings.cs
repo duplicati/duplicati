@@ -297,4 +297,24 @@ You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The sp
         public static string ResultFormatLong(IEnumerable<string> options) { return LC.L(@"Use this option to select the output format for results. Available formats: {0}", string.Join(", ", options)); }
         public static string ResultFormatShort { get { return LC.L(@"Select the output format for results"); } }
     }
+
+    internal static class HttpReportStatus
+    {
+        public static string Description { get { return LC.L(@"This module periodically posts the current operation status (progress, observed backend events and log entries) to a remote URL as JSON while the operation is running."); } }
+        public static string DisplayName { get { return LC.L(@"HTTP status report module"); } }
+        public static string UrlLong { get { return LC.L(@"Use this option to set the remote URL that the periodic status reports are posted to as JSON. The module is inactive unless this option is set."); } }
+        public static string UrlShort { get { return LC.L(@"Status report URL"); } }
+        public static string IntervalLong { get { return LC.L(@"Use this option to set the interval between status reports. The engine pushes progress updates at a fixed cadence; the module posts at most one report per interval."); } }
+        public static string IntervalShort { get { return LC.L(@"Status report interval"); } }
+        public static string MaxLogLinesLong { get { return LC.L(@"Use this option to set the maximum number of recent log lines to include in each status report."); } }
+        public static string MaxLogLinesShort { get { return LC.L(@"Maximum log lines per report"); } }
+        public static string AcceptAnyCertificateLong { get { return LC.L(@"Use this option to accept any server certificate, regardless of what errors it may have. Please use --{0} instead, whenever possible.", "accept-specified-ssl-hash"); } }
+        public static string AcceptAnyCertificateShort { get { return LC.L(@"Accept any server certificate"); } }
+        public static string AcceptSpecifiedCertificateLong { get { return LC.L(@"If your server certificate is reported as invalid (e.g. with self-signed certificates), you can supply the certificate hash (SHA1) to approve it anyway. The hash value must be entered in hex format without spaces or colons. You can enter multiple hashes separated by commas."); } }
+        public static string AcceptSpecifiedCertificateShort { get { return LC.L(@"Optionally accept a known SSL certificate"); } }
+        public static string IgnoreRevocationFailureLong { get { return LC.L(@"Use this option to ignore certificate revocation check failures, such as when the revocation server is offline or the revocation status is unknown."); } }
+        public static string IgnoreRevocationFailureShort { get { return LC.L(@"Ignore certificate revocation check failures"); } }
+        public static string AllowPathsInLogMessagesLong { get { return LC.L(@"By default, file paths are redacted from the log lines included in status reports. Enable this option to include the unredacted paths. When this option is not set, the global --{0} setting is used.", "allow-paths-in-log-messages"); } }
+        public static string AllowPathsInLogMessagesShort { get { return LC.L(@"Allow paths in log messages"); } }
+    }
 }
