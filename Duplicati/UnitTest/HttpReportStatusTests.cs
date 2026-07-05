@@ -130,10 +130,24 @@ namespace Duplicati.UnitTest
             // The completed report carries a final progress snapshot at 100%.
             Assert.IsNotNull(module.Reports[1].Progress);
             Assert.AreEqual(1f, module.Reports[1].Progress!.Progress);
+            // The Started report is not completed, the Completed report is.
+            Assert.IsFalse(module.Reports[0].IsCompleted, "Started report should not be completed");
+            Assert.IsTrue(module.Reports[1].IsCompleted, "Completed report should be marked completed");
             // The JSON is serialized with camelCase property names.
             Assert.That(module.PostedJsons[0], Does.Contain("\"operation\""), "JSON keys should be camelCase");
             Assert.That(module.PostedJsons[0], Does.Contain("\"startedUtc\""));
             Assert.That(module.PostedJsons[0], Does.Not.Contain("\"StartedUtc\""));
+        }
+
+        [Test]
+        public async Task FailedReportIsCompletedAsync()
+        {
+            using var module = CreateConfigured();
+            await module.OnOperationStartedAsync("Backup", null!, CancellationToken.None);
+            await module.OnOperationCompletedAsync(null!, new InvalidOperationException("boom"), CancellationToken.None);
+
+            Assert.AreEqual("Failed", module.Reports[1].Status);
+            Assert.IsTrue(module.Reports[1].IsCompleted, "Failed report should be marked completed");
         }
 
         [Test]
@@ -235,6 +249,83 @@ namespace Duplicati.UnitTest
             // The module is loaded by default but stays inactive (see IsActive) until a URL
             // is configured, so there is no overhead unless it actually has something to do.
             Assert.IsTrue(module.LoadAsDefault, "The module should load by default");
+        }
+
+        [Test]
+        public async Task ReportIncludesEnvironmentMetadataAsync()
+        {
+            using var module = CreateConfigured();
+
+            // The remote URL is captured via the IGenericCallbackModule.OnStart hook, mirroring
+            // ReportHelper. Drive it to populate the backup id and destination type.
+            var remoteUrl = "s3://mybucket/path";
+            var localPaths = new[] { "/data/source" };
+            module.OnStart("Backup", ref remoteUrl, ref localPaths);
+            await module.OnOperationStartedAsync("Backup", null!, CancellationToken.None);
+
+            var report = module.Reports[0];
+            Assert.IsNotNull(report.Metadata, "Report should include environment metadata");
+            var metadata = report.Metadata!;
+            Assert.IsFalse(string.IsNullOrEmpty(metadata.DuplicatiVersion), "DuplicatiVersion should be populated");
+            Assert.IsFalse(string.IsNullOrEmpty(metadata.MachineId), "MachineId should be populated");
+            Assert.IsFalse(string.IsNullOrEmpty(metadata.BackupId), "BackupId should be populated from the remote URL");
+            Assert.IsFalse(string.IsNullOrEmpty(metadata.BackupName), "BackupName should be populated");
+            Assert.IsFalse(string.IsNullOrEmpty(metadata.MachineName), "MachineName should be populated");
+            Assert.AreEqual("s3", metadata.DestinationType, "DestinationType should be the remote URL scheme");
+            Assert.IsFalse(string.IsNullOrEmpty(metadata.OperatingSystem), "OperatingSystem should be populated");
+            Assert.IsFalse(string.IsNullOrEmpty(metadata.OperatingSystemDetailed), "OperatingSystemDetailed should be populated");
+            Assert.IsFalse(string.IsNullOrEmpty(metadata.InstallationType), "InstallationType should be populated");
+
+            // The backup id is a stable hex string derived from the remote URL.
+            Assert.That(metadata.BackupId, Does.Match("^[0-9a-fA-F]+$"));
+
+            // An s3 URL against a known public-cloud host yields a safe host suffix; an
+            // unknown host yields null. The helper is shared with ReportHelper.
+            Assert.IsNull(metadata.DestinationHostSuffix, "DestinationHostSuffix should be null for an unknown host");
+        }
+
+        [Test]
+        public async Task DestinationHostSuffixKnownCloudAsync()
+        {
+            using var module = CreateConfigured();
+
+            // An s3 URL against a recognized public-cloud host suffix yields that suffix.
+            var remoteUrl = "s3://mybucket.s3.amazonaws.com/path";
+            var localPaths = new[] { "/data/source" };
+            module.OnStart("Backup", ref remoteUrl, ref localPaths);
+            await module.OnOperationStartedAsync("Backup", null!, CancellationToken.None);
+
+            var metadata = module.Reports[0].Metadata!;
+            Assert.AreEqual(".amazonaws.com", metadata.DestinationHostSuffix,
+                "DestinationHostSuffix should be the matched safe cloud suffix");
+        }
+
+        [Test]
+        public async Task MetadataHonorsOptionOverridesAsync()
+        {
+            // MachineId, BackupId, BackupName and MachineName honor explicit option values
+            // before falling back to the computed defaults, mirroring ReportHelper.
+            var module = new CapturingHttpReportStatus();
+            module.Configure(new Dictionary<string, string>
+            {
+                ["http-report-status-url"] = "http://localhost/example",
+                ["http-report-status-interval"] = "1s",
+                ["machine-id"] = "custom-machine-id",
+                ["backup-id"] = "custom-backup-id",
+                ["backup-name"] = "custom-backup-name",
+                ["machine-name"] = "custom-machine-name",
+            });
+
+            var remoteUrl = "s3://mybucket/path";
+            var localPaths = new[] { "/data/source" };
+            module.OnStart("Backup", ref remoteUrl, ref localPaths);
+            await module.OnOperationStartedAsync("Backup", null!, CancellationToken.None);
+
+            var metadata = module.Reports[0].Metadata!;
+            Assert.AreEqual("custom-machine-id", metadata.MachineId, "MachineId should use the option override");
+            Assert.AreEqual("custom-backup-id", metadata.BackupId, "BackupId should use the option override");
+            Assert.AreEqual("custom-backup-name", metadata.BackupName, "BackupName should use the option override");
+            Assert.AreEqual("custom-machine-name", metadata.MachineName, "MachineName should use the option override");
         }
 
         [Test]

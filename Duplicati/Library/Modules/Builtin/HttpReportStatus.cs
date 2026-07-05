@@ -27,6 +27,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
+using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using Uri = System.Uri;
@@ -41,7 +42,7 @@ namespace Duplicati.Library.Modules.Builtin
     /// (default 30 seconds), including the latest progress snapshot, the counts of
     /// backend events and log entries observed so far, and the last few log lines.
     /// </summary>
-    public class HttpReportStatus : IReportModule, IDisposable
+    public class HttpReportStatus : IReportModule, IGenericCallbackModule, IDisposable
     {
         /// <summary>
         /// The tag used for logging
@@ -171,9 +172,22 @@ namespace Duplicati.Library.Modules.Builtin
         private bool m_allowPathsInLogMessages;
 
         /// <summary>
+        /// A read-only copy of the commandline options, used to look up optional overrides
+        /// for the report metadata (e.g. <c>machine-id</c>, <c>backup-id</c>), mirroring
+        /// <see cref="ReportHelper"/>.
+        /// </summary>
+        private IReadOnlyDictionary<string, string> m_options;
+
+        /// <summary>
         /// The operation name reported in <see cref="OnOperationStartedAsync"/>.
         /// </summary>
         private string m_operationName;
+
+        /// <summary>
+        /// The remote backend URL, captured in <see cref="OnStart"/> and used to compute
+        /// the backup id and destination type, mirroring <see cref="ReportHelper"/>.
+        /// </summary>
+        private string m_remoteUrl;
 
         /// <summary>
         /// The time the operation started, in UTC.
@@ -206,6 +220,13 @@ namespace Duplicati.Library.Modules.Builtin
         private DateTime m_nextReportTime;
 
         /// <summary>
+        /// The lazily-computed environment metadata. The metadata only depends on the
+        /// options and the remote URL (both fixed before an operation starts), so it is
+        /// computed once per operation and reused across every report.
+        /// </summary>
+        private Lazy<ReportMetadata> m_metadata;
+
+        /// <summary>
         /// Lock protecting the mutable counters and buffers.
         /// </summary>
         private readonly object m_lock = new();
@@ -234,6 +255,10 @@ namespace Duplicati.Library.Modules.Builtin
                 return;
             }
 
+            // Keep a read-only copy of the options so BuildMetadata can honor optional
+            // overrides (machine-id, backup-id, backup-name, machine-name) like ReportHelper.
+            m_options = commandlineOptions.AsReadOnly();
+
             m_interval = Utility.Utility.ParseTimespanOption(commandlineOptions.AsReadOnly(), OPTION_INTERVAL, DEFAULT_INTERVAL);
             if (m_interval <= TimeSpan.Zero)
                 m_interval = TimeSpan.FromSeconds(30);
@@ -260,6 +285,30 @@ namespace Duplicati.Library.Modules.Builtin
                 m_allowPathsInLogMessages = Utility.Utility.ParseBoolOption(commandlineOptions.AsReadOnly(), OPTION_GLOBAL_ALLOW_PATHS_IN_LOG_MESSAGES);
         }
 
+        /// <summary>
+        /// Captures the operation name, remote backend URL and local paths. The remote URL
+        /// is used to compute the backup id and destination type included in each report,
+        /// mirroring <see cref="ReportHelper.OnStart"/>.
+        /// </summary>
+        /// <param name="operationname">The full name of the operation.</param>
+        /// <param name="remoteurl">The remote backend url.</param>
+        /// <param name="localpath">The local path, if required.</param>
+        public void OnStart(string operationname, ref string remoteurl, ref string[] localpath)
+        {
+            m_operationName = operationname;
+            m_remoteUrl = remoteurl;
+        }
+
+        /// <summary>
+        /// No-op; completion is reported via <see cref="OnOperationCompletedAsync"/> instead.
+        /// </summary>
+        /// <param name="result">The result object.</param>
+        /// <param name="exception">The exception that stopped the operation, or null.</param>
+        public void OnFinish(IBasicResults result, Exception exception)
+        {
+            // Completion is handled by the IReportModule lifecycle; nothing to do here.
+        }
+
         /// <inheritdoc />
         public Task OnOperationStartedAsync(string operationName, IBasicResults result, CancellationToken cancellationToken)
         {
@@ -275,6 +324,7 @@ namespace Duplicati.Library.Modules.Builtin
                 m_latestSnapshot = null;
                 m_recentLogLines.Clear();
                 m_nextReportTime = DateTime.UtcNow;
+                m_metadata = new Lazy<ReportMetadata>(() => BuildMetadata(), isThreadSafe: true);
             }
 
             return PostAsync(BuildReport("Started", null), cancellationToken);
@@ -364,6 +414,43 @@ namespace Duplicati.Library.Modules.Builtin
         public bool IsActive => !string.IsNullOrWhiteSpace(m_url);
 
         /// <summary>
+        /// Computes the environment metadata included in each report, mirroring the
+        /// template keys resolved by <see cref="ReportHelper.GetDefaultValue"/>. The
+        /// remote URL captured in <see cref="OnStart"/> drives the backup id, the
+        /// destination type and the destination host suffix.
+        /// </summary>
+        /// <returns>The metadata for the current report.</returns>
+        private ReportMetadata BuildMetadata()
+            => new ReportMetadata
+            {
+                DuplicatiVersion = UpdaterManager.SelfVersion.Version,
+                MachineId = OptionOrDefault("machine-id", DataFolderManager.MachineID),
+                BackupId = OptionOrDefault("backup-id", Utility.Utility.CalculateBackupId(m_remoteUrl)),
+                BackupName = OptionOrDefault("backup-name", System.IO.Path.GetFileNameWithoutExtension(Utility.Utility.getEntryAssembly().Location)),
+                MachineName = OptionOrDefault("machine-name", DataFolderManager.MachineName),
+                DestinationType = Utility.Utility.GuessScheme(m_remoteUrl) ?? "file",
+                DestinationHostSuffix = Utility.Utility.GuessHostSuffixSafe(m_remoteUrl),
+                InstallationType = UpdaterManager.PackageTypeId,
+                OperatingSystem = UpdaterManager.OperatingSystemName,
+                OperatingSystemDetailed = OSInfoHelper.PlatformString,
+            };
+
+        /// <summary>
+        /// Returns the configured value for the given option key, or the supplied default
+        /// when the option is absent or empty. Used to honor user-supplied overrides for
+        /// the report metadata, mirroring <see cref="ReportHelper"/>.
+        /// </summary>
+        /// <param name="key">The option key to look up.</param>
+        /// <param name="defaultValue">The default value to use when the option is not set.</param>
+        /// <returns>The option value, or the default.</returns>
+        private string OptionOrDefault(string key, string defaultValue)
+        {
+            if (m_options != null && m_options.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value))
+                return value;
+            return defaultValue;
+        }
+
+        /// <summary>
         /// Builds the JSON-serializable status report from the current state.
         /// </summary>
         /// <param name="status">The status label for this report (e.g. <c>Started</c>, <c>Progress</c>, <c>Completed</c>).</param>
@@ -380,10 +467,14 @@ namespace Duplicati.Library.Modules.Builtin
                     StartedUtc = m_operationStarted,
                     ReportedUtc = DateTime.UtcNow,
                     ErrorMessage = errorMessage,
+                    IsCompleted = status is "Completed" or "Failed",
                     BackendEvents = m_backendEvents,
                     LogEntries = m_logEntries,
                     Progress = m_latestSnapshot == null ? null : new ProgressSnapshot(m_latestSnapshot),
                     RecentLogLines = [.. m_recentLogLines],
+                    // Metadata is lazily computed once per operation (see OnOperationStartedAsync)
+                    // since it only depends on the options and remote URL.
+                    Metadata = m_metadata?.Value,
                 };
             }
         }
@@ -469,6 +560,9 @@ namespace Duplicati.Library.Modules.Builtin
             /// <summary>An error message, if the operation failed.</summary>
             public string ErrorMessage { get; set; }
 
+            /// <summary><c>true</c> once the operation has finished running (Completed/Failed).</summary>
+            public bool IsCompleted { get; set; }
+
             /// <summary>The number of backend events observed so far.</summary>
             public int BackendEvents { get; set; }
 
@@ -480,6 +574,46 @@ namespace Duplicati.Library.Modules.Builtin
 
             /// <summary>The most recent log lines observed.</summary>
             public List<string> RecentLogLines { get; set; }
+
+            /// <summary>Environment metadata included in every report.</summary>
+            public ReportMetadata Metadata { get; set; }
+        }
+
+        /// <summary>
+        /// Environment metadata included in every status report, mirroring the template
+        /// keys resolved by <see cref="ReportHelper.GetDefaultValue"/>.
+        /// </summary>
+        public sealed class ReportMetadata
+        {
+            /// <summary>The running Duplicati version.</summary>
+            public string DuplicatiVersion { get; set; }
+
+            /// <summary>The stable machine id.</summary>
+            public string MachineId { get; set; }
+
+            /// <summary>A stable id derived from the backup's remote URL.</summary>
+            public string BackupId { get; set; }
+
+            /// <summary>The backup name (entry assembly name).</summary>
+            public string BackupName { get; set; }
+
+            /// <summary>The machine name.</summary>
+            public string MachineName { get; set; }
+
+            /// <summary>The destination type (the remote URL scheme).</summary>
+            public string DestinationType { get; set; }
+
+            /// <summary>A safe destination host suffix (known public cloud only), or null.</summary>
+            public string DestinationHostSuffix { get; set; }
+
+            /// <summary>The installation type (e.g. package type id).</summary>
+            public string InstallationType { get; set; }
+
+            /// <summary>The operating system name (e.g. <c>Windows</c>, <c>Linux</c>, <c>MacOS</c>).</summary>
+            public string OperatingSystem { get; set; }
+
+            /// <summary>A detailed operating system platform string.</summary>
+            public string OperatingSystemDetailed { get; set; }
         }
 
         /// <summary>
