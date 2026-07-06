@@ -254,7 +254,13 @@ namespace Duplicati.UnitTest
         [Test]
         public async Task ReportIncludesEnvironmentMetadataAsync()
         {
-            using var module = CreateConfigured();
+            var module = new CapturingHttpReportStatus();
+            module.Configure(new Dictionary<string, string>
+            {
+                ["http-report-status-url"] = "http://localhost/example",
+                ["http-report-status-interval"] = "1s",
+                ["machine-id"] = "test-machine-id",
+            });
 
             // The remote URL is captured via the IGenericCallbackModule.OnStart hook, mirroring
             // ReportHelper. Drive it to populate the backup id and destination type.
