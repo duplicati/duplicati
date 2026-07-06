@@ -355,6 +355,7 @@ namespace Duplicati.Library.Utility
                 yield return FilterGroups.CreateWildcardFilter(@"?:/Recycled/");
                 yield return FilterGroups.CreateWildcardFilter(@"?:/Recycler/");
                 yield return FilterGroups.CreateWildcardFilter(@"?:/System Volume Information/");
+                yield return FilterGroups.CreateWildcardFilter(@"*/DfsrPrivate/"); // DFS Replication private folder
                 yield return FilterGroups.CreateWildcardFilter(FilterGroups.CreateSpecialFolderFilter(Environment.SpecialFolder.Windows) + "Installer/");
 
                 foreach (var s in GetWindowsRegistryFilters() ?? new string[0])
