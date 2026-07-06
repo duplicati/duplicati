@@ -176,9 +176,10 @@ public class BackupPost : IEndpointV1
                 extra["ignore-update-if-version-exists"] = "true";
             }
 
-            // If the call explicitly asks for a refresh lock info, we use that
-            if (input.refresh_lock_info != null)
-                extra["repair-refresh-lock-info"] = input.refresh_lock_info.Value.ToString();
+            // Avoid setting refresh lock info even if the client requests it
+            // as the UI does not have a toggle for it
+            // if (input.refresh_lock_info != null)
+            //     extra["repair-refresh-lock-info"] = input.refresh_lock_info.Value.ToString();
         }
 
         if (!extra.ContainsKey("repair-refresh-lock-info"))
