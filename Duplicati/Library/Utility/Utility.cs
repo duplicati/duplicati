@@ -41,6 +41,8 @@ using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
 using Duplicati.StreamUtil;
 
+[assembly: InternalsVisibleTo("Duplicati.UnitTest")]
+
 namespace Duplicati.Library.Utility
 {
     public static class Utility
@@ -1466,11 +1468,22 @@ namespace Duplicati.Library.Utility
         /// <param name="allowEnvExpansion">A flag indicating if environment variables are allowed to be expanded</param>
         [return: NotNullIfNotNull("arg")]
         public static string? WrapCommandLineElement(string? arg, bool allowEnvExpansion)
+            => WrapCommandLineElement(arg, allowEnvExpansion, OperatingSystem.IsWindows());
+
+        /// <summary>
+        /// Wraps a single argument in quotes suitable for passing on a commandline.
+        /// </summary>
+        /// <returns>The wrapped commandline element.</returns>
+        /// <param name="arg">The argument to wrap.</param>
+        /// <param name="allowEnvExpansion">A flag indicating if environment variables are allowed to be expanded.</param>
+        /// <param name="isWindows">A flag indicating if Windows commandline escaping should be used.</param>
+        [return: NotNullIfNotNull("arg")]
+        internal static string? WrapCommandLineElement(string? arg, bool allowEnvExpansion, bool isWindows)
         {
             if (string.IsNullOrWhiteSpace(arg))
                 return arg;
 
-            if (!OperatingSystem.IsWindows())
+            if (!isWindows)
             {
                 // We could consider using single quotes that prevents all expansions
                 //if (!allowEnvExpansion)
@@ -1490,16 +1503,13 @@ namespace Duplicati.Library.Utility
             }
             else
             {
-                // Windows needs only needs " replaced with "",
-                // but is prone to %var% expansion when used in
-                // immediate mode (i.e. from command prompt)
+                // Windows needs " replaced with "", but is prone to %var%
+                // expansion when used in immediate mode (i.e. from command prompt)
                 // Fortunately it does not expand when processes
                 // are started from within .Net
+                if (!allowEnvExpansion)
+                    arg = arg.Replace("%", "%%");
 
-                // TODO: I have not found a way to avoid escaping %varname%,
-                // and sadly it expands only if the variable exists
-                // making it even rarer and harder to diagnose when
-                // it happens
                 arg = arg.Replace(@"""", @"""""");
 
                 // Also fix the case where the argument ends with a slash
