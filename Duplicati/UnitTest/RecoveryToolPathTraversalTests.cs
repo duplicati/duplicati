@@ -74,7 +74,7 @@ namespace Duplicati.UnitTest
             // 2. Backup
             using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IBackupResults backupResults = await c.BackupAsync(new[] { sourceFolder });
+                IBackupResults backupResults = c.Backup(new[] { sourceFolder });
                 Assert.AreEqual(0, backupResults.Errors.Count());
             }
 
