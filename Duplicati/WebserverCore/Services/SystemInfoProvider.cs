@@ -63,6 +63,9 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
         "v2:destination:list",
         "v1:backup:restorecontrolfiles",
         "v1:backup:sync-mode",
+        "v2:backup:list-broken-files",
+        "v2:backup:purge-broken-files",
+        "v2:backup:delete-versions",
 
         // "v1:subscribe:scheduler",
     ];
