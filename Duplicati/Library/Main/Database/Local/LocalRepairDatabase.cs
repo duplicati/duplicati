@@ -2080,7 +2080,7 @@ namespace Duplicati.Library.Main.Database.Local
                 var remaining = await cmd.ExecuteScalarInt64Async(0, token);
                 if (remaining > 0)
                     throw new Interface.UserInformationException(
-                        "Some zero-length metadata entries could not be repaired.",
+                        $"{remaining} zero-length metadata entries could not be repaired.",
                         "MetadataRepairFailed");
 
                 Logging.Log.WriteInformationMessage(LOGTAG, "ZeroLengthMetadataRepaired", "Zero length metadata entries repaired successfully");

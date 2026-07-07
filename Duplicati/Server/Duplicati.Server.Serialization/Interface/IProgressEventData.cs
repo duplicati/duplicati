@@ -21,6 +21,8 @@
 
 #nullable enable
 
+using System;
+
 namespace Duplicati.Server.Serialization.Interface
 {
     /// <summary>
@@ -79,5 +81,11 @@ namespace Duplicati.Server.Serialization.Interface
         /// 0 when not in a remote sync phase.
         /// </summary>
         int RemoteSyncDestinationCount { get; }
+
+        /// <summary>
+        /// The EWMA-smoothed estimated time remaining for the current operation,
+        /// or <c>null</c> when no estimate is available.
+        /// </summary>
+        TimeSpan? EstimatedTimeToCompletion { get; }
     }
 }

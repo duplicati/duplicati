@@ -1,6 +1,6 @@
 <div class="commandline form" ng-controller="CommandlineController">
     <form class="styled" ng-hide="Mode == 'view'">
-        <backup-edit-uri uri="TargetURL" hide="HideEditUri" ng-show="EditUriState"></backup-edit-uri>
+        <backup-edit-uri uri="TargetURL" hide="HideEditUri()" ng-show="EditUriState"></backup-edit-uri>
 
         <div ng-hide="EditUriState">
 

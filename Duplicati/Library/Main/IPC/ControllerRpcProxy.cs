@@ -621,6 +621,7 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
         private bool _countingFiles;
         private int _remoteSyncDestinationIndex;
         private int _remoteSyncDestinationCount;
+        private TimeSpan? _estimatedTimeToCompletion;
 
         public event PhaseChangedDelegate? PhaseChanged;
 
@@ -639,7 +640,10 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
             _currentFileComplete = dto.CurrentFileComplete;
             _remoteSyncDestinationIndex = dto.RemoteSyncDestinationIndex;
             _remoteSyncDestinationCount = dto.RemoteSyncDestinationCount;
+            _estimatedTimeToCompletion = dto.EstimatedTimeToCompletion;
         }
+
+        public TimeSpan? EstimatedTimeToCompletion => _estimatedTimeToCompletion;
 
         public void SetPhase(OperationPhase phase, OperationPhase previousPhase)
         {

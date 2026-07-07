@@ -476,6 +476,7 @@ namespace Duplicati.Server
 
                 internal int m_remoteSyncDestinationIndex;
                 internal int m_remoteSyncDestinationCount;
+                internal TimeSpan? m_estimatedTimeToCompletion;
 
                 public ProgressState(long taskId, string? backupId)
                 {
@@ -513,6 +514,7 @@ namespace Duplicati.Server
                 public ActiveTransfer[] ActiveTransfers => m_activeTransfers;
                 public int RemoteSyncDestinationIndex { get { return m_remoteSyncDestinationIndex; } }
                 public int RemoteSyncDestinationCount { get { return m_remoteSyncDestinationCount; } }
+                public TimeSpan? EstimatedTimeToCompletion { get { return m_estimatedTimeToCompletion; } }
 
                 #endregion
             }
@@ -570,6 +572,7 @@ namespace Duplicati.Server
                         m_operationProgress.UpdateFile(out m_state.m_currentFilename, out m_state.m_currentFilesize, out m_state.m_currentFileoffset, out m_state.m_currentFilecomplete);
                         m_operationProgress.UpdateOverall(out m_state.m_phase, out m_state.m_overallProgress, out m_state.m_processedFileCount, out m_state.m_processedFileSize, out m_state.m_totalFileCount, out m_state.m_totalFileSize, out m_state.m_stillCounting);
                         m_operationProgress.UpdateRemoteSyncDestination(out m_state.m_remoteSyncDestinationIndex, out m_state.m_remoteSyncDestinationCount);
+                        m_state.m_estimatedTimeToCompletion = m_operationProgress.EstimatedTimeToCompletion;
                     }
 
                     return m_state.Clone();
