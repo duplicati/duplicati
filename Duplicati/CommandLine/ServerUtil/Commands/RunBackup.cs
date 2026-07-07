@@ -21,6 +21,7 @@
 
 using System.CommandLine;
 using System.CommandLine.NamingConventionBinder;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.CommandLine.ServerUtil.Commands;
 
@@ -76,8 +77,28 @@ public static class RunBackup
                 var response = await connection.GetBackupStatusAsync(matchingBackup.ID);
                 if (!quiet)
                     output.AppendConsoleMessage("Backup status: " + response);
+
+                // Map the parsed backup result to a process exit code so that callers
+                // (scripts, CI) can detect a backup that finished with warnings/errors.
+                // Codes mirror the main Duplicati CLI: warnings = 2, errors = 3, fatal = 4.
+                var parsedResult = Enum.TryParse<ParsedResultType>(response, ignoreCase: true, out var pr)
+                    ? pr
+                    : ParsedResultType.Unknown;
+
+                output.ExitCode = parsedResult switch
+                {
+                    ParsedResultType.Warning => 2,
+                    ParsedResultType.Error => 3,
+                    ParsedResultType.Fatal => 4,
+                    _ => 0
+                };
+                output.SetResult(output.ExitCode == 0);
             }
-            output.SetResult(true);
+            else
+            {
+                // Without --wait the backup is only queued; its outcome is unknown here.
+                output.SetResult(true);
+            }
         }));
 
     /// <summary>
