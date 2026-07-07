@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
@@ -146,9 +147,9 @@ namespace Duplicati.Library.Modules.Builtin
         ];
 
         /// <summary>
-        /// The remote URL to post status reports to.
+        /// The remote URLs to post status reports to.
         /// </summary>
-        private string m_url;
+        private string[] m_urls;
 
         /// <summary>
         /// The HTTP handler created during <see cref="Configure"/>, reused for every post
@@ -247,13 +248,22 @@ namespace Duplicati.Library.Modules.Builtin
         /// <param name="commandlineOptions">A set of commandline options passed to Duplicati.</param>
         public void Configure(IDictionary<string, string> commandlineOptions)
         {
-            commandlineOptions.TryGetValue(OPTION_URL, out m_url);
-            if (string.IsNullOrWhiteSpace(m_url))
+            commandlineOptions.TryGetValue(OPTION_URL, out var url);
+            if (string.IsNullOrWhiteSpace(url))
             {
                 // Without a URL there is nothing to report to; leave the module inactive.
-                m_url = null;
-                return;
+                m_urls = [];
             }
+            else
+            {
+                m_urls = url
+                    .Split([',', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .Distinct()
+                    .ToArray();
+            }
+
+            if (!IsActive)
+                return;
 
             // Keep a read-only copy of the options so BuildMetadata can honor optional
             // overrides (machine-id, backup-id, backup-name, machine-name) like ReportHelper.
@@ -411,7 +421,7 @@ namespace Duplicati.Library.Modules.Builtin
         /// <remarks>The module is only active when a target URL has been configured,
         /// so that no per-event interception happens unless there is somewhere to
         /// report to.</remarks>
-        public bool IsActive => !string.IsNullOrWhiteSpace(m_url);
+        public bool IsActive => m_urls != null && m_urls.Length > 0;
 
         /// <summary>
         /// Computes the environment metadata included in each report, mirroring the
@@ -494,11 +504,12 @@ namespace Duplicati.Library.Modules.Builtin
             try
             {
                 var json = JsonSerializer.Serialize(report, typeof(StatusReport), SerializerOptions);
-                await SendAsync(json, cancellationToken).ConfigureAwait(false);
+                foreach (var url in m_urls)
+                    await SendAsync(url, json, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
-                Logging.Log.WriteWarningMessage(LOGTAG, "HttpReportStatusSendError", ex, "Failed to post status report to {0}: {1}", m_url, ex.Message);
+                Logging.Log.WriteWarningMessage(LOGTAG, "HttpReportStatusSendError", ex, "Failed to post status report to {0}: {1}", string.Join(", ", m_urls), ex.Message);
             }
         }
 
@@ -506,14 +517,15 @@ namespace Duplicati.Library.Modules.Builtin
         /// Sends the JSON body to the configured URL. This is virtual so tests can
         /// intercept the request without performing real network I/O.
         /// </summary>
+        /// <param name="url">The url to POST to.</param>
         /// <param name="json">The JSON body to send.</param>
         /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
-        protected virtual async Task SendAsync(string json, CancellationToken cancellationToken)
+        protected virtual async Task SendAsync(string url, string json, CancellationToken cancellationToken)
         {
             using var client = HttpClientHelper.CreateClient(m_httpHandler);
             using var content = new StringContent(json, Encoding.UTF8, "application/json");
-            using var response = await client.PostAsync(new Uri(m_url), content, cancellationToken).ConfigureAwait(false);
+            using var response = await client.PostAsync(new Uri(url), content, cancellationToken).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
         }
 

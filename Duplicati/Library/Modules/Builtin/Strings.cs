@@ -302,7 +302,7 @@ You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The sp
     {
         public static string Description { get { return LC.L(@"This module periodically posts the current operation status (progress, observed backend events and log entries) to a remote URL as JSON while the operation is running."); } }
         public static string DisplayName { get { return LC.L(@"HTTP status report module"); } }
-        public static string UrlLong { get { return LC.L(@"Use this option to set the remote URL that the periodic status reports are posted to as JSON. The module is inactive unless this option is set."); } }
+        public static string UrlLong { get { return LC.L(@"Use this option to set the remote URL that the periodic status reports are posted to as JSON. The module is inactive unless this option is set. Multiple URL targets can be set with semicolon separators."); } }
         public static string UrlShort { get { return LC.L(@"Status report URL"); } }
         public static string IntervalLong { get { return LC.L(@"Use this option to set the interval between status reports. The engine pushes progress updates at a fixed cadence; the module posts at most one report per interval."); } }
         public static string IntervalShort { get { return LC.L(@"Status report interval"); } }
