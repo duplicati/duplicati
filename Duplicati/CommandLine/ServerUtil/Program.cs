@@ -93,6 +93,13 @@ public static class Program
                 context.BindingContext.AddService(_ => OutputInterceptorBinder.GetConsoleInterceptor(context.BindingContext));
 
                 await next(context);
+
+                // Propagate a non-zero result from the command (e.g. a backup that
+                // finished with warnings/errors) to the process exit code. The exception
+                // path already sets context.ExitCode directly and never reaches here.
+                if (OutputInterceptorBinder.Instance is { ExitCode: not 0 } instance)
+                    context.ExitCode = instance.ExitCode;
+
                 Console.WriteLine(OutputInterceptorBinder.Instance?.GetSerializedResult());
             })
             .UseAdditionalHelpAliases()
