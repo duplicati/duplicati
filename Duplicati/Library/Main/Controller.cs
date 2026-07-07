@@ -77,8 +77,8 @@ namespace Duplicati.Library.Main
 
         /// <summary>
         /// The handle for the report modules loaded for the current operation. Set in
-        /// <see cref="ReportModuleController.Setup"/> and disposed in
-        /// <see cref="OperationComplete"/> so the completion callbacks fire before the
+        /// <see cref="ReportModuleController.SetupAsync"/> and disposed in
+        /// <see cref="OperationCompleteAsync"/> so the completion callbacks fire before the
         /// module instances themselves are disposed.
         /// </summary>
         private ReportModuleController.ReportModulesHandle ReportModulesHandler;
@@ -547,7 +547,7 @@ namespace Duplicati.Library.Main
                     await ApplySecretProviderAsync(CancellationToken.None).ConfigureAwait(false);
                     (paths, filter) = SetupCommonOptions(result, paths, filter, logTarget);
 
-                    ReportModulesHandler = ReportModuleController.Setup(this, result, m_options);
+                    ReportModulesHandler = await ReportModuleController.SetupAsync(this, result, m_options, m_currentTaskControl.StopToken);
 
                     logTarget.AddTarget(m_messageSink, m_options.ConsoleLoglevel, m_options.ConsoleLogFilter);
                     result.MessageSink = m_messageSink;
@@ -641,7 +641,7 @@ namespace Duplicati.Library.Main
                         }
                     }
 
-                    OperationComplete(result, null, filter);
+                    await OperationCompleteAsync(result, null, filter).ConfigureAwait(false);
 
                     Logging.Log.WriteInformationMessage(LOGTAG, "CompletedOperation", Strings.Controller.CompletedOperationMessage(m_options.MainAction));
 
@@ -671,7 +671,7 @@ namespace Duplicati.Library.Main
                     }
 
                     // Do not propagate the cancel exception
-                    OperationComplete(result, null, filter);
+                    await OperationCompleteAsync(result, null, filter).ConfigureAwait(false);
 
                     return result;
                 }
@@ -698,7 +698,7 @@ namespace Duplicati.Library.Main
                     }
 
                     // Report the result, and the failure
-                    OperationComplete(result, ex, filter);
+                    await OperationCompleteAsync(result, ex, filter).ConfigureAwait(false);
 
                     throw;
                 }
@@ -745,15 +745,24 @@ namespace Duplicati.Library.Main
             public void Dispose() => m_opts?.RawOptions.Remove("filter");
         }
 
-        private void OperationComplete(IBasicResults result, Exception exception, IFilter filter)
+        private async Task OperationCompleteAsync(IBasicResults result, Exception exception, IFilter filter)
         {
             using var _ = PushFilterToOptions(m_options, filter);
 
             // Fire the report modules' completion callbacks and stop their progress ticker
             // before the module instances themselves are disposed below. The handle reads
             // the exception captured in the RunActionAsync catch blocks via the field.
-            try { this.ReportModulesHandler?.Dispose(); }
-            catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "ReportModuleHandleDisposeError", ex, "Report module handle dispose failed: {0}", ex.Message); }
+            try
+            {
+                // Wait at most 30s for the report modules to stop
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                await this.ReportModulesHandler?.StopAsync(cts.Token);
+            }
+            catch (Exception ex)
+            {
+                Logging.Log.WriteWarningMessage(LOGTAG, "ReportModuleHandleDisposeError", ex, "Report module handle dispose failed: {0}", ex.Message);
+            }
+
             this.ReportModulesHandler = default;
 
             if (m_options?.LoadedModules != null)

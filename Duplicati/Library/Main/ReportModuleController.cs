@@ -27,6 +27,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using CoCoL;
 using Duplicati.Library.Interface;
+using Microsoft.VisualStudio.Threading;
 
 namespace Duplicati.Library.Main;
 
@@ -58,8 +59,10 @@ internal static class ReportModuleController
     /// </summary>
     /// <param name="controller">The controller running the operation.</param>
     /// <param name="result">The result object for the operation.</param>
+    /// <param name="options">The options containing the loaded report modules.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A handle that completes the report modules when disposed.</returns>
-    public static ReportModulesHandle? Setup(Controller controller, IBasicResults result, Options options)
+    public static async Task<ReportModulesHandle?> SetupAsync(Controller controller, IBasicResults result, Options options, CancellationToken cancellationToken)
     {
         var adapters = new List<ReportModuleAdapter>();
         var loadedModules = options.LoadedModules;
@@ -70,12 +73,18 @@ internal static class ReportModuleController
                 if (mx is not IReportModule reportModule || !reportModule.IsActive)
                     continue;
 
-                var adapter = new ReportModuleAdapter(reportModule, CancellationToken.None);
+                var adapter = new ReportModuleAdapter(reportModule, cancellationToken);
                 adapters.Add(adapter);
                 controller.AppendSinkAsync(adapter).FireAndForget();
 
-                try { reportModule.OnOperationStartedAsync(options.MainAction.ToString(), result, CancellationToken.None).FireAndForget(); }
-                catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, $"ReportModuleStartError{reportModule.Key}", ex, "Report module {0} OnOperationStartedAsync failed: {1}", reportModule.Key, ex.Message); }
+                try
+                {
+                    await reportModule.OnOperationStartedAsync(options.MainAction.ToString(), result, cancellationToken).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, $"ReportModuleStartError{reportModule.Key}", ex, "Report module {0} OnOperationStartedAsync failed: {1}", reportModule.Key, ex.Message);
+                }
             }
         }
 
@@ -126,7 +135,7 @@ internal static class ReportModuleController
     /// <summary>
     /// Handle that completes report modules when disposed: it stops the progress
     /// ticker and fires <see cref="IReportModule.OnOperationCompletedAsync"/> on each
-    /// module. It is disposed in <see cref="Controller.OperationComplete"/> before
+    /// module. It is disposed in <see cref="Controller.OperationCompleteAsync"/> before
     /// the module instances themselves are disposed.
     /// </summary>
     public class ReportModulesHandle : IDisposable
@@ -146,22 +155,53 @@ internal static class ReportModuleController
 
         public Exception? OperationException { get; set; }
 
-        public void Dispose()
+        public async Task StopAsync(CancellationToken cancellationToken)
         {
             // Stop the ticker first so no more progress ticks race the completion callbacks.
             try { m_tickerCts?.Cancel(); } catch { }
-            try { m_ticker?.Wait(); } catch { }
+
+            if (m_ticker != null)
+                try { await m_ticker.WithCancellation(cancellationToken); } catch { }
 
             if (m_adapters != null)
             {
+                // Signal all modules to stop processing
+                var tasks = new List<Task>();
                 foreach (var adapter in m_adapters)
                 {
-                    try { adapter.Module.OnOperationCompletedAsync(m_result, OperationException, CancellationToken.None).FireAndForget(); }
-                    catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, $"ReportModuleCompleteError{adapter.Module.Key}", ex, "Report module {0} OnOperationCompletedAsync failed: {1}", adapter.Module.Key, ex.Message); }
+                    try
+                    {
+                        tasks.Add(adapter.Module.OnOperationCompletedAsync(m_result, OperationException, cancellationToken));
+                    }
+                    catch (Exception ex)
+                    {
+                        Logging.Log.WriteWarningMessage(LOGTAG, $"ReportModuleCompleteError{adapter.Module.Key}", ex, "Report module {0} OnOperationCompletedAsync failed: {1}", adapter.Module.Key, ex.Message);
+                    }
+                }
+
+                if (tasks.Count > 0)
+                {
+                    try
+                    {
+                        await Task.WhenAll(tasks)
+                            .WithCancellation(cancellationToken)
+                            .ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logging.Log.WriteWarningMessage(LOGTAG, "ReportModuleCompletionError", ex, "Report module completion callbacks failed: {0}", ex.Message);
+                    }
                 }
             }
 
             m_tickerCts?.Dispose();
+        }
+
+        public void Dispose()
+        {
+            try { m_tickerCts?.Cancel(); } catch { }
+            m_tickerCts?.Dispose();
+
         }
     }
 }

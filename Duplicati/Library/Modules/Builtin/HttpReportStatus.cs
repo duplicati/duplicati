@@ -152,10 +152,16 @@ namespace Duplicati.Library.Modules.Builtin
         private string[] m_urls;
 
         /// <summary>
-        /// The HTTP handler created during <see cref="Configure"/>, reused for every post
-        /// and disposed when the module is disposed.
+        /// The HTTP handler created during <see cref="Configure"/>, owned by
+        /// <see cref="m_httpClient"/> and disposed with it when the module is disposed.
         /// </summary>
         private HttpClientHandler m_httpHandler;
+
+        /// <summary>
+        /// The HTTP client created during <see cref="Configure"/>, reused for every post
+        /// and disposed when the module is disposed.
+        /// </summary>
+        private HttpClient m_httpClient;
 
         /// <summary>
         /// The interval between status reports.
@@ -285,6 +291,7 @@ namespace Duplicati.Library.Modules.Builtin
 
             m_httpHandler = new HttpClientHandler();
             HttpClientHelper.ConfigureHandlerCertificateValidator(m_httpHandler, acceptAnyCertificate, acceptSpecificCertificates, ignoreRevocationFailure);
+            m_httpClient = new HttpClient(m_httpHandler);
 
             // Paths in log lines are redacted by default. The module-specific option takes
             // precedence and falls back to the global allow-paths-in-log-messages setting,
@@ -523,9 +530,8 @@ namespace Duplicati.Library.Modules.Builtin
         /// <returns>A task that represents the asynchronous operation.</returns>
         protected virtual async Task SendAsync(string url, string json, CancellationToken cancellationToken)
         {
-            using var client = HttpClientHelper.CreateClient(m_httpHandler);
             using var content = new StringContent(json, Encoding.UTF8, "application/json");
-            using var response = await client.PostAsync(new Uri(url), content, cancellationToken).ConfigureAwait(false);
+            using var response = await m_httpClient.PostAsync(new Uri(url), content, cancellationToken).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
         }
 
@@ -547,8 +553,9 @@ namespace Duplicati.Library.Modules.Builtin
             if (!disposing)
                 return;
 
-            try { m_httpHandler?.Dispose(); }
+            try { m_httpClient?.Dispose(); }
             catch { }
+            m_httpClient = null;
             m_httpHandler = null;
         }
 
