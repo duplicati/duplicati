@@ -49,6 +49,9 @@ namespace Duplicati.Server.Serialization
         ListFolderContents,
         ListFileVersions,
         SearchEntries,
+        DeleteVersions,
+        ListBrokenFiles,
+        PurgeBrokenFiles,
     }
 
     public enum SuggestedStatusIcon
