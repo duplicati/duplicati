@@ -352,6 +352,61 @@ namespace Duplicati.Server
                 includeMetadata: searchMetadata);
         }
 
+        /// <summary>
+        /// Creates a task that deletes the specified backup versions from the remote storage.
+        /// </summary>
+        /// <param name="backup">The backup to delete versions from</param>
+        /// <param name="versions">The versions to delete</param>
+        /// <param name="extraOptions">Optional extra options</param>
+        /// <returns>The runner task</returns>
+        public static IRunnerData CreateDeleteVersionsTask(IBackup backup, long[] versions, IDictionary<string, string?>? extraOptions = null)
+        {
+            var dict = extraOptions ?? new Dictionary<string, string?>();
+            if (versions != null && versions.Length > 0)
+                dict["version"] = string.Join(",", versions.Select(v => v.ToString(CultureInfo.InvariantCulture)));
+
+            return CreateTask(
+                DuplicatiOperation.DeleteVersions,
+                backup,
+                dict);
+        }
+
+        /// <summary>
+        /// Creates a task that lists broken files in the backup.
+        /// </summary>
+        /// <param name="backup">The backup to list broken files for</param>
+        /// <param name="filterStrings">Optional filter strings to apply</param>
+        /// <param name="extraOptions">Optional extra options</param>
+        /// <returns>The runner task</returns>
+        public static IRunnerData CreateListBrokenFilesTask(IBackup backup, string[]? filterStrings, IDictionary<string, string?>? extraOptions = null)
+        {
+            var dict = extraOptions ?? new Dictionary<string, string?>();
+
+            return CreateTask(
+                DuplicatiOperation.ListBrokenFiles,
+                backup,
+                dict,
+                filterStrings);
+        }
+
+        /// <summary>
+        /// Creates a task that purges broken files from the backup.
+        /// </summary>
+        /// <param name="backup">The backup to purge broken files from</param>
+        /// <param name="filterStrings">Optional filter strings to apply</param>
+        /// <param name="extraOptions">Optional extra options</param>
+        /// <returns>The runner task</returns>
+        public static IRunnerData CreatePurgeBrokenFilesTask(IBackup backup, string[]? filterStrings, IDictionary<string, string?>? extraOptions = null)
+        {
+            var dict = extraOptions ?? new Dictionary<string, string?>();
+
+            return CreateTask(
+                DuplicatiOperation.PurgeBrokenFiles,
+                backup,
+                dict,
+                filterStrings);
+        }
+
 
         public static IRunnerData CreateRestoreTask(IBackup backup, string[]? filters,
                                                     DateTime time, string? restoreTarget, bool overwrite, bool restore_permissions,
@@ -942,6 +997,30 @@ namespace Duplicati.Server
                                 var parsedfilter = new FilterExpression(data.FilterStrings);
                                 return await controller.SearchEntriesAsync(data.ExtraArguments, parsedfilter, data.CaseSensitiveSearch, data.PageOffset * data.PageSize, data.PageSize, data.ReturnExtendedData, data.SearchMetadata).ConfigureAwait(false);
                             }
+
+                        case DuplicatiOperation.DeleteVersions:
+                            {
+                                var r = await controller.DeleteAsync().ConfigureAwait(false);
+                                UpdateMetadataBase(databaseConnection, eventPollNotify, notificationUpdateService, backup, r);
+                                return r;
+                            }
+
+                        case DuplicatiOperation.ListBrokenFiles:
+                            {
+                                var filter = data.FilterStrings == null ? null : new FilterExpression(data.FilterStrings);
+                                var r = await controller.ListBrokenFilesAsync(filter).ConfigureAwait(false);
+                                UpdateMetadataBase(databaseConnection, eventPollNotify, notificationUpdateService, backup, r);
+                                return r;
+                            }
+
+                        case DuplicatiOperation.PurgeBrokenFiles:
+                            {
+                                var filter = data.FilterStrings == null ? null : new FilterExpression(data.FilterStrings);
+                                var r = await controller.PurgeBrokenFilesAsync(filter).ConfigureAwait(false);
+                                UpdateMetadataBase(databaseConnection, eventPollNotify, notificationUpdateService, backup, r);
+                                return r;
+                            }
+
                         default:
                             //TODO: Log this
                             return null;
