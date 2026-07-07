@@ -591,18 +591,15 @@ namespace Duplicati.UnitTest
 
             if (OperatingSystem.IsWindows())
             {
-                // Set only the current user to have access to both the file and the directory
+                // Use protected ACLs so inherited runner-specific permissions do not affect the comparison.
                 var dir_info = new DirectoryInfo(os_special_dir);
                 var rules_dir = dir_info.GetAccessControl();
-                rules_dir.GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount));
-                rules_dir.AddAccessRule(new FileSystemAccessRule(Environment.UserName, FileSystemRights.FullControl, AccessControlType.Allow));
-                rules_dir.AddAccessRule(new FileSystemAccessRule(new SecurityIdentifier(WellKnownSidType.WorldSid, null), FileSystemRights.ReadAndExecute, AccessControlType.Allow));
+                SetDeterministicWindowsAccessRules(rules_dir);
                 dir_info.SetAccessControl(rules_dir);
 
                 var file_info = new FileInfo(os_special_file);
                 var rules_file = file_info.GetAccessControl();
-                rules_file.AddAccessRule(new FileSystemAccessRule(Environment.UserName, FileSystemRights.FullControl, AccessControlType.Allow));
-                rules_file.AddAccessRule(new FileSystemAccessRule(new SecurityIdentifier(WellKnownSidType.WorldSid, null), FileSystemRights.ReadAndExecute, AccessControlType.Allow));
+                SetDeterministicWindowsAccessRules(rules_file);
                 file_info.SetAccessControl(rules_file);
             }
             else // Mac and Linux
@@ -662,8 +659,8 @@ namespace Duplicati.UnitTest
                 {
                     var original_dir_info = new DirectoryInfo(os_special_dir);
                     var restored_dir_info = new DirectoryInfo(os_special_dir.Replace(DATAFOLDER, RESTOREFOLDER));
-                    var original_dir_rules = original_dir_info.GetAccessControl().GetAccessRules(true, false, typeof(System.Security.Principal.NTAccount));
-                    var restored_dir_rules = restored_dir_info.GetAccessControl().GetAccessRules(true, false, typeof(System.Security.Principal.NTAccount));
+                    var original_dir_rules = original_dir_info.GetAccessControl().GetAccessRules(true, false, typeof(SecurityIdentifier));
+                    var restored_dir_rules = restored_dir_info.GetAccessControl().GetAccessRules(true, false, typeof(SecurityIdentifier));
 
                     if (skip_metadata && original_dir_info.Attributes != default_dir_attrs)
                         Assert.That(original_dir_info.Attributes, Is.Not.EqualTo(restored_dir_info.Attributes), "Directory attributes should not be equal");
@@ -672,14 +669,14 @@ namespace Duplicati.UnitTest
 
                     var dir_permissions_equal = CompareCollection(original_dir_rules, restored_dir_rules);
                     if (restorePermissions && !skip_metadata)
-                        Assert.That(dir_permissions_equal, Is.True, "Directory permissions should be equal");
+                        Assert.That(dir_permissions_equal, Is.True, $"Directory permissions should be equal{Environment.NewLine}{DescribeRuleComparison(original_dir_rules, restored_dir_rules)}");
                     else
-                        Assert.That(dir_permissions_equal, Is.False, "Directory permissions should not be equal");
+                        Assert.That(dir_permissions_equal, Is.False, $"Directory permissions should not be equal{Environment.NewLine}{DescribeRuleComparison(original_dir_rules, restored_dir_rules)}");
 
                     var original_file_info = new FileInfo(os_special_file);
                     var restored_file_info = new FileInfo(os_special_file.Replace(DATAFOLDER, RESTOREFOLDER));
-                    var original_file_rules = original_file_info.GetAccessControl().GetAccessRules(true, false, typeof(System.Security.Principal.NTAccount));
-                    var restored_file_rules = restored_file_info.GetAccessControl().GetAccessRules(true, false, typeof(System.Security.Principal.NTAccount));
+                    var original_file_rules = original_file_info.GetAccessControl().GetAccessRules(true, false, typeof(SecurityIdentifier));
+                    var restored_file_rules = restored_file_info.GetAccessControl().GetAccessRules(true, false, typeof(SecurityIdentifier));
 
                     if (skip_metadata && original_file_info.Attributes != default_file_attrs)
                         Assert.That(original_file_info.Attributes, Is.Not.EqualTo(restored_file_info.Attributes), "File attributes should not be equal");
@@ -688,9 +685,9 @@ namespace Duplicati.UnitTest
 
                     var file_permissions_equal = CompareCollection(original_file_rules, restored_file_rules);
                     if (restorePermissions && !skip_metadata)
-                        Assert.That(file_permissions_equal, Is.True, "File permissions should be equal");
+                        Assert.That(file_permissions_equal, Is.True, $"File permissions should be equal{Environment.NewLine}{DescribeRuleComparison(original_file_rules, restored_file_rules)}");
                     else
-                        Assert.That(file_permissions_equal, Is.False, "File permissions should not be equal");
+                        Assert.That(file_permissions_equal, Is.False, $"File permissions should not be equal{Environment.NewLine}{DescribeRuleComparison(original_file_rules, restored_file_rules)}");
                 }
                 else
                 {
@@ -754,10 +751,25 @@ namespace Duplicati.UnitTest
         }
 
         [SupportedOSPlatform("windows")]
+        static void SetDeterministicWindowsAccessRules(FileSystemSecurity rules)
+        {
+            rules.SetAccessRuleProtection(true, false);
+            foreach (var rule in rules.GetAccessRules(true, false, typeof(SecurityIdentifier)).Cast<FileSystemAccessRule>().ToArray())
+                rules.RemoveAccessRuleSpecific(rule);
+
+            var currentUser = WindowsIdentity.GetCurrent().User ?? throw new InvalidOperationException("Unable to determine current Windows user");
+            rules.AddAccessRule(new FileSystemAccessRule(currentUser, FileSystemRights.FullControl, AccessControlType.Allow));
+            rules.AddAccessRule(new FileSystemAccessRule(new SecurityIdentifier(WellKnownSidType.WorldSid, null), FileSystemRights.ReadAndExecute, AccessControlType.Allow));
+        }
+
+        [SupportedOSPlatform("windows")]
         static bool CompareElement(FileSystemAccessRule a, FileSystemAccessRule b) =>
             a.IdentityReference.Value == b.IdentityReference.Value &&
             a.FileSystemRights == b.FileSystemRights &&
-            a.AccessControlType == b.AccessControlType;
+            a.AccessControlType == b.AccessControlType &&
+            a.InheritanceFlags == b.InheritanceFlags &&
+            a.PropagationFlags == b.PropagationFlags &&
+            a.IsInherited == b.IsInherited;
 
         // Use order-independent comparison since ACL rules may be returned in different orders
         [SupportedOSPlatform("windows")]
@@ -765,6 +777,15 @@ namespace Duplicati.UnitTest
             a.Count == b.Count &&
             a.Cast<FileSystemAccessRule>().All(ruleA =>
                 b.Cast<FileSystemAccessRule>().Any(ruleB => CompareElement(ruleA, ruleB)));
+
+        [SupportedOSPlatform("windows")]
+        static string DescribeRuleComparison(AuthorizationRuleCollection original, AuthorizationRuleCollection restored) =>
+            $"Original:{Environment.NewLine}{DescribeRules(original)}{Environment.NewLine}Restored:{Environment.NewLine}{DescribeRules(restored)}";
+
+        [SupportedOSPlatform("windows")]
+        static string DescribeRules(AuthorizationRuleCollection rules) =>
+            string.Join(Environment.NewLine, rules.Cast<FileSystemAccessRule>().Select(rule =>
+                $"{rule.IdentityReference.Value}: {rule.FileSystemRights}, {rule.AccessControlType}, inherited={rule.IsInherited}, inheritance={rule.InheritanceFlags}, propagation={rule.PropagationFlags}"));
 
 
 
