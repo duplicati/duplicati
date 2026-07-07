@@ -57,7 +57,7 @@ namespace Duplicati.UnitTest
                 PropertyNameCaseInsensitive = true,
             };
 
-            protected override Task SendAsync(string json, CancellationToken cancellationToken)
+            protected override Task SendAsync(string url, string json, CancellationToken cancellationToken)
             {
                 PostedJsons.Add(json);
                 Reports.Add(JsonSerializer.Deserialize<HttpReportStatus.StatusReport>(json, DeserializerOptions)!);
