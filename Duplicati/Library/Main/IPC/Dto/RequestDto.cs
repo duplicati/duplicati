@@ -362,6 +362,7 @@ public class OperationProgressDto
     public bool CurrentFileComplete { get; set; }
     public int RemoteSyncDestinationIndex { get; set; }
     public int RemoteSyncDestinationCount { get; set; }
+    public TimeSpan? EstimatedTimeToCompletion { get; set; }
 
     public static OperationProgressDto? FromProgress(IOperationProgress? progress)
     {
@@ -383,6 +384,7 @@ public class OperationProgressDto
         progress.UpdateRemoteSyncDestination(out var destinationIndex, out var destinationCount);
         dto.RemoteSyncDestinationIndex = destinationIndex;
         dto.RemoteSyncDestinationCount = destinationCount;
+        dto.EstimatedTimeToCompletion = progress.EstimatedTimeToCompletion;
         return dto;
     }
 }

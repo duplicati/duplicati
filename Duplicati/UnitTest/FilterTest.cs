@@ -192,6 +192,22 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Filter")]
+        public static void WindowsDefaultExcludesDfsrPrivate()
+        {
+            if (!OperatingSystem.IsWindows())
+                return;
+
+            var expectedFilter = $"*{Util.DirectorySeparatorString}DfsrPrivate{Util.DirectorySeparatorString}";
+            var systemFilters = FilterGroups.GetFilterStrings(FilterGroup.SystemFiles).ToList();
+            Assert.IsTrue(systemFilters.Contains(expectedFilter, StringComparer.OrdinalIgnoreCase), $"Expected filter {expectedFilter} was not found.");
+
+            IFilter defaultExcludes = new FilterExpression("{DefaultExcludes}");
+            Assert.IsTrue(defaultExcludes.Matches(@"C:\Replicated\DfsrPrivate\", out _, out _));
+            Assert.IsFalse(defaultExcludes.Matches(@"C:\Replicated\.DfsrPrivate\", out _, out _));
+        }
+
+        [Test]
+        [Category("Filter")]
         public static void WildcardPatterns()
         {
             // These examples were taken from https://www.c-sharpcorner.com/uploadfile/b81385/efficient-string-matching-algorithm-with-use-of-wildcard-characters/.
