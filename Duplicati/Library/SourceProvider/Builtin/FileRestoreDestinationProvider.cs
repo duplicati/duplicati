@@ -193,26 +193,86 @@ public class FileRestoreDestinationProvider(string mountedPath, bool allowRestor
             return Task.FromResult(wrote_something);
         }
 
+        // The read-only attribute prevents setting timestamps on files on Windows
+        var clearedReadOnly = false;
+        if (!isDirTarget && OperatingSystem.IsWindows())
+        {
+            try
+            {
+                var currentAttr = SystemIO.IO_OS.GetFileAttributes(targetpath);
+                if (currentAttr.HasFlag(FileAttributes.ReadOnly))
+                {
+                    SystemIO.IO_OS.SetFileAttributes(targetpath, currentAttr & ~FileAttributes.ReadOnly);
+                    clearedReadOnly = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logging.Log.WriteVerboseMessage(LOGTAG, "ClearReadOnlyBeforeMetadataFailed", ex, "Failed to clear read-only attribute before applying metadata to: {0}", targetpath);
+            }
+        }
+
+        // Applies the stored permissions/ACLs. On some platforms (notably Windows) the current
+        // DACL on the restored entry may deny the write access needed to set timestamps, e.g. when
+        // the parent directory has a protected ACL without inheritable entries, so the freshly
+        // created child inherits no rights. Restoring the stored permissions grants the correct
+        // access again. This is invoked lazily as a fallback if a timestamp write is denied.
+        var permissionsApplied = false;
+        void ApplyStoredPermissions()
+        {
+            if (permissionsApplied)
+                return;
+            SystemIO.IO_OS.SetMetadata(path, metadata, restorePermissions);
+            permissionsApplied = true;
+        }
+
+        // Sets a timestamp, retrying once after applying the stored permissions if access is denied.
+        void SetTimestampWithRetry(Action apply)
+        {
+            try
+            {
+                apply();
+            }
+            catch (UnauthorizedAccessException) when (!permissionsApplied)
+            {
+                Logging.Log.WriteVerboseMessage(LOGTAG, "TimestampAccessDenied", "Access denied setting timestamp on {0}, applying stored permissions and retrying", targetpath);
+                ApplyStoredPermissions();
+                apply();
+            }
+        }
+
         if (metadata.TryGetValue("CoreLastWritetime", out k) && long.TryParse(k, out var t))
         {
+            var time = new DateTime(t, DateTimeKind.Utc);
             if (isDirTarget)
-                SystemIO.IO_OS.DirectorySetLastWriteTimeUtc(targetpath, new DateTime(t, DateTimeKind.Utc));
+                SetTimestampWithRetry(() => SystemIO.IO_OS.DirectorySetLastWriteTimeUtc(targetpath, time));
             else
-                SystemIO.IO_OS.FileSetLastWriteTimeUtc(targetpath, new DateTime(t, DateTimeKind.Utc));
+                SetTimestampWithRetry(() => SystemIO.IO_OS.FileSetLastWriteTimeUtc(targetpath, time));
         }
 
         if (metadata.TryGetValue("CoreCreatetime", out k) && long.TryParse(k, out t))
         {
+            var time = new DateTime(t, DateTimeKind.Utc);
             if (isDirTarget)
-                SystemIO.IO_OS.DirectorySetCreationTimeUtc(targetpath, new DateTime(t, DateTimeKind.Utc));
+                SetTimestampWithRetry(() => SystemIO.IO_OS.DirectorySetCreationTimeUtc(targetpath, time));
             else
-                SystemIO.IO_OS.FileSetCreationTimeUtc(targetpath, new DateTime(t, DateTimeKind.Utc));
+                SetTimestampWithRetry(() => SystemIO.IO_OS.FileSetCreationTimeUtc(targetpath, time));
         }
 
         if (metadata.TryGetValue("CoreAttributes", out k) && Enum.TryParse<FileAttributes>(k, true, out var fa))
+        {
+            // Apply the stored attributes, which also restores the read-only attribute if it was set.
             SystemIO.IO_OS.SetFileAttributes(targetpath, fa);
+        }
+        else if (clearedReadOnly)
+        {
+            // No attributes were stored, but we cleared read-only above, so restore it.
+            SystemIO.IO_OS.SetFileAttributes(targetpath, SystemIO.IO_OS.GetFileAttributes(targetpath) | FileAttributes.ReadOnly);
+        }
 
-        SystemIO.IO_OS.SetMetadata(path, metadata, restorePermissions);
+        // Apply permissions last (if not already applied by the timestamp fallback above) so the
+        // final ACL state matches the backup.
+        ApplyStoredPermissions();
         return Task.FromResult(wrote_something);
     }
 
