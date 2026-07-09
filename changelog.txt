@@ -1,3 +1,72 @@
+2026-07-09 - 2.3.0.4_stable_2026-07-09
+==========
+# About this release
+
+This release patches version 2.3.0.3 with fixes for a number of issues that were discovered after the release.
+The main focus of this release is stability and security hardening, along with a few backend and configuration improvements.
+
+## Security and Privacy
+
+We improved handling of filtered paths so that paths excluded by filters are no longer accessed, and sensitive paths are now filtered out of reported log data. For reports we now rely on the OS default certificate validator.
+
+## Stability Fixes
+
+We fixed a memory leak that could occur when backing up the macOS Photos library, and fixed a startup race condition in the Agent that could cause instability on launch.
+We also made the backup process more robust against metadata errors, preventing a crash that could otherwise abort the backup.
+
+## Backend and Configuration Improvements
+
+The Duplicati backend now has a configurable authentication timeout, and the HTTP message sending logic now retries transient failures correctly.
+We also fixed the handling of MSSQL default instances, and corrected the option types for the S3 lock mode so the correct values are displayed.
+
+## Secret Provider and Licensing
+
+It is now possible to disable the default secret provider, and the secret provider loader has been improved together with the license checker for greater flexibility.
+The libsecret integration was updated to work better with KDE, and we now prevent creating a useless encryption key in certain scenarios.
+
+## Other Changes
+
+This release adds server-side filter evaluation, fixes a few minor issues with remote sources, updates rclone in the Docker images, and corrects some incorrect help text.
+
+## Detailed list of changes:
+
+- Allow disable default secret provider
+- Block path traversal in recovery tool
+- Add server-side filter eval
+- Improve license flexibility
+- Add an auth timeout to the Duplicati backend
+- Avoid crash on metadata error
+- Filter paths in reported log data
+- Don't access filtered path
+- Fixed retry of HTTP messages
+- Fix incorrect option types for lock mode
+- Fix MSSQL default instance handling
+- Update libsecret for KDE
+- Improve secret provider and license checker
+- Prevent creating a useless key
+- Fix incorrect help text
+- Fix Agent startup race
+- Fix MacOS Photos memory usage
+- Update rclone in Docker images
+- Fix minor issues with remote sources
+- Use default OS certificate validator
+
+## Updates to ngclient
+
+- Prevent frontend from requesting lock repair override
+- Added ability to browse for a destination path.
+- Added support for browsing MS365 and Google Workspace, so filters can be applied while content is visible.
+- Added support for server-side filters in treeview.
+- Showing shortcuts in pickers as we can now resolve them.
+- Added a debouncer to filter calls.
+- Added error indicator to tree view.
+- Clean up target disk layout.
+- Apply extended search only if we are restoring from a destination that needs it.
+- Include server-only options, if any.
+- Better Google Workspace error messages.
+- Fixes to allow listing full disks on Windows.
+- Fixed issue with evaluating globbing.
+
 2026-06-10 - 2.3.0.3_stable_2026-06-10
 ==========
 # About this release
