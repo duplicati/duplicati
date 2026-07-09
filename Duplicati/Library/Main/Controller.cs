@@ -739,7 +739,7 @@ namespace Duplicati.Library.Main
             {
                 foreach (var mx in m_options.LoadedModules)
                     if (mx is IGenericCallbackModule module)
-                        try { module.OnFinish(result, exception); }
+                        try { RunScriptCallbackWithStatus(result, mx, () => module.OnFinish(result, exception)); }
                         catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, $"OnFinishError{mx.Key}", ex, "OnFinish callback {0} failed: {1}", mx.Key, ex.Message); }
 
                 foreach (var mx in m_options.LoadedModules)
@@ -820,7 +820,7 @@ namespace Duplicati.Library.Main
                     }
 
                     if (mx is IGenericCallbackModule module)
-                        module.OnStart(result.MainOperation.ToString(), ref m_backendUrl, ref paths);
+                        RunScriptCallbackWithStatus(result, mx, () => module.OnStart(result.MainOperation.ToString(), ref m_backendUrl, ref paths));
                 }
 
                 // If the filters were changed by a module, read them back in
@@ -861,6 +861,28 @@ namespace Duplicati.Library.Main
             ValidateOptions();
 
             return (paths, filter);
+        }
+
+        internal static void RunScriptCallbackWithStatus(object result, IGenericModule module, Action callback)
+        {
+            if (!string.Equals(module?.Key, "runscript", StringComparison.OrdinalIgnoreCase) || result is not BasicResults basicResults)
+            {
+                callback();
+                return;
+            }
+
+            var progress = basicResults.OperationProgressUpdater;
+            progress.UpdateOverall(out var previousPhase, out _, out _, out _, out _, out _, out _);
+
+            progress.UpdatePhase(OperationPhase.RunScript_Running);
+            try
+            {
+                callback();
+            }
+            finally
+            {
+                progress.UpdatePhase(previousPhase);
+            }
         }
 
 
