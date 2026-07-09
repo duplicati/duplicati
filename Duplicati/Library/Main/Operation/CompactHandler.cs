@@ -307,6 +307,13 @@ namespace Duplicati.Library.Main.Operation
                         }
                     }
 
+                    // Wait for any in-flight uploads (and their index-volume blocklist
+                    // callbacks) to complete before committing/restarting the transaction,
+                    // since the callbacks hold a reference to the current transaction and
+                    // would otherwise fail once it is disposed by the commit below.
+                    await backendManager.WaitForEmptyAsync(db, m_result.TaskControl.ProgressToken)
+                        .ConfigureAwait(false);
+
                     // The remainder of the operation cannot leave partial files
                     if (!m_options.Dryrun)
                         await db
