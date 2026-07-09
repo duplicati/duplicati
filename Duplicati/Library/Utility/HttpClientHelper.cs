@@ -79,6 +79,10 @@ public static class HttpClientHelper
     /// <param name="ignoreRevocationFailure">If revocation check failures (offline or unknown status) should be ignored</param>
     public static void ConfigureHandlerCertificateValidator(HttpClientHandler handler, bool acceptAllCertificates, string[]? acceptSpecificCertificateHashes, bool ignoreRevocationFailure)
     {
+        // If no special handling is applied, use the OS default validation
+        if (!acceptAllCertificates && acceptSpecificCertificateHashes == null && !ignoreRevocationFailure)
+            return;
+
         var validator = new SslCertificateValidator(acceptAllCertificates, acceptSpecificCertificateHashes, ignoreRevocationFailure);
         handler.ServerCertificateCustomValidationCallback = validator.ValidateServerCertificate;
     }
