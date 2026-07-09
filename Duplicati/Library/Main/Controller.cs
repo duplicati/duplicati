@@ -754,9 +754,12 @@ namespace Duplicati.Library.Main
             // the exception captured in the RunActionAsync catch blocks via the field.
             try
             {
-                // Wait at most 30s for the report modules to stop
-                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-                await this.ReportModulesHandler?.StopAsync(cts.Token);
+                if (this.ReportModulesHandler != null)
+                {
+                    // Wait at most 30s for the report modules to stop
+                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                    await this.ReportModulesHandler.StopAsync(cts.Token);
+                }
             }
             catch (Exception ex)
             {
