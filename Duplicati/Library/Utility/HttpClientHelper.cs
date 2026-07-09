@@ -78,6 +78,10 @@ public static class HttpClientHelper
     /// <param name="acceptSpecificCertificateHashes">List of hashes of certificates that will be accepted</param>
     public static void ConfigureHandlerCertificateValidator(HttpClientHandler handler, bool acceptAllCertificates, string[]? acceptSpecificCertificateHashes)
     {
+        // If no special handling is applied, use the OS default validation
+        if (!acceptAllCertificates && acceptSpecificCertificateHashes == null)
+            return;
+
         var validator = new SslCertificateValidator(acceptAllCertificates, acceptSpecificCertificateHashes);
         handler.ServerCertificateCustomValidationCallback = validator.ValidateServerCertificate;
     }
