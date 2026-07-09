@@ -433,12 +433,13 @@ internal class MacOSDiskImageHelper : IDiskImageHelper
         {
             try
             {
-                // Unmount all volumes on the disk
-                RunProcess("diskutil", $"unmountDisk {diskIdentifier}");
+                // Unmount all volumes on the disk (force, since a volume can still be busy right after writing)
+                RunProcess("diskutil", $"unmountDisk force {diskIdentifier}");
+                return;
             }
             catch
             {
-                // Sometimes an unmount is issued too fast after writing data, which makes diskutil throw an errory.
+                // Sometimes an unmount is issued too fast after writing data, which makes diskutil throw an error.
                 Thread.Sleep(500);
             }
         }
@@ -494,7 +495,7 @@ internal class MacOSDiskImageHelper : IDiskImageHelper
 
         try
         {
-            RunProcess("diskutil", $"eject {diskIdentifier}");
+            EjectDisk(diskIdentifier);
         }
         catch (Exception ex)
         {
@@ -621,8 +622,10 @@ internal class MacOSDiskImageHelper : IDiskImageHelper
 
     public string ReAttach(string imagePath, string diskIdentifier, PartitionTableType tableType, bool readOnly = false)
     {
-        // Eject can fail if issued too fast after writing data, which makes diskutil throw an error. Retry a few times with a delay to mitigate this.
-        RunProcess("diskutil", $"eject {diskIdentifier}", retryCount: 3);
+        // Detach before re-attaching. `diskutil eject` can fail with "Volume failed to eject" if a
+        // volume is still busy right after writing, so EjectDisk flushes, force-unmounts and retries
+        // with exponential backoff (falling back to a forced hdiutil detach) to avoid CI flakiness.
+        EjectDisk(diskIdentifier);
         var readOnlyArg = readOnly ? " -readonly" : "";
         var reattachoutput = RunProcess("hdiutil", $"attach -nomount -noautofsck{readOnlyArg} \"{imagePath}\"");
         if (tableType == PartitionTableType.Unknown)
@@ -638,6 +641,46 @@ internal class MacOSDiskImageHelper : IDiskImageHelper
                 )
                 .Where(x => x.Length > 0 && x[^1].EndsWith("_partition_scheme"))
                 .First().First();
+    }
+
+    /// <summary>
+    /// Robustly ejects/detaches a disk image. macOS <c>diskutil eject</c> can fail with
+    /// "Volume failed to eject" when a volume is still busy right after writing, which is a common
+    /// source of CI flakiness. To make this deterministic we flush pending writes, force-unmount all
+    /// volumes first, then eject with exponential backoff, and finally fall back to a forced
+    /// <c>hdiutil detach</c> of the image-backed device.
+    /// </summary>
+    private static void EjectDisk(string diskIdentifier)
+    {
+        // Flush filesystem buffers so the volume is not busy when we try to eject.
+        try { RunProcess("sync", ""); }
+        catch { /* best effort */ }
+
+        // Force-unmount all volumes first; the disk may already be offline, so ignore failures here.
+        try { RunProcess("diskutil", $"unmountDisk force {diskIdentifier}"); }
+        catch { /* best effort */ }
+
+        const int maxAttempts = 5;
+        var baseDelay = TimeSpan.FromMilliseconds(500);
+        for (int attempt = 1; attempt <= maxAttempts; attempt++)
+        {
+            try
+            {
+                RunProcess("diskutil", $"eject {diskIdentifier}");
+                return;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Warning: Failed to eject {diskIdentifier} (attempt {attempt}/{maxAttempts}): {ex.Message}");
+                if (attempt < maxAttempts)
+                    Thread.Sleep(Utility.GetRetryDelay(baseDelay, attempt, useExponentialBackoff: true));
+            }
+        }
+
+        // Last resort: force-detach the image-backed device. diskutil expects "disk4" rather than
+        // "/dev/rdisk4" (see the partitionDisk normalization above); reuse the same normalization.
+        var normalizedDiskId = diskIdentifier.Replace("/dev/rdisk", "disk").Replace("/dev/disk", "disk");
+        RunProcess("hdiutil", $"detach /dev/{normalizedDiskId} -force");
     }
 
     /// <summary>
