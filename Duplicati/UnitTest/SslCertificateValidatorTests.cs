@@ -67,8 +67,8 @@ public class SslCertificateValidatorTests
         var notBefore = DateTimeOffset.UtcNow.AddDays(-2);
         var notAfter = DateTimeOffset.UtcNow.AddDays(-1);
 
-        var certificate = request.CreateSelfSigned(notBefore, notAfter);
-        return new X509Certificate2(certificate.Export(X509ContentType.Cert));
+        using var certificate = request.CreateSelfSigned(notBefore, notAfter);
+        return X509CertificateLoader.LoadCertificate(certificate.RawData);
     }
 
     /// <summary>
@@ -89,8 +89,8 @@ public class SslCertificateValidatorTests
         var notBefore = DateTimeOffset.UtcNow.AddDays(1);
         var notAfter = DateTimeOffset.UtcNow.AddDays(365);
 
-        var certificate = request.CreateSelfSigned(notBefore, notAfter);
-        return new X509Certificate2(certificate.Export(X509ContentType.Cert));
+        using var certificate = request.CreateSelfSigned(notBefore, notAfter);
+        return X509CertificateLoader.LoadCertificate(certificate.RawData);
     }
 
     /// <summary>
