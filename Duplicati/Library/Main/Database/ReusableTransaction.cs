@@ -121,16 +121,36 @@ internal class ReusableTransaction(SqliteConnection con, SqliteTransaction? tran
             }
             catch (Exception ex)
             {
-                Logging.Log.WriteErrorMessage(LOGTAG, "ReusableTransaction dispose", ex, "Transaction disposed with error: {0}", ex.Message);
-                throw;
+                if (!IsInactiveTransactionException(ex))
+                {
+                    Logging.Log.WriteErrorMessage(LOGTAG, "ReusableTransaction dispose", ex, "Transaction disposed with error: {0}", ex.Message);
+                    throw;
+                }
+
+                Logging.Log.WriteVerboseMessage(LOGTAG, "ReusableTransactionAlreadyCompleted", ex, "Transaction was already completed during dispose: {0}", ex.Message);
             }
             finally
             {
                 m_disposed = true;
-                await m_transaction.DisposeAsync().ConfigureAwait(false);
+                try
+                {
+                    await m_transaction.DisposeAsync().ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    if (!IsInactiveTransactionException(ex))
+                        throw;
+
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "ReusableTransactionAlreadyDisposed", ex, "Transaction was already completed before dispose: {0}", ex.Message);
+                }
             }
         }
     }
+
+    private static bool IsInactiveTransactionException(Exception ex)
+        => ex.Message.Contains("No transaction is active", StringComparison.OrdinalIgnoreCase)
+        || ex.Message.Contains("transaction has completed", StringComparison.OrdinalIgnoreCase)
+        || ex.Message.Contains("no longer usable", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     /// Rolls back the transaction and restarts it.
