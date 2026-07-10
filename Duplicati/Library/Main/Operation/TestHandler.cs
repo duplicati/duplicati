@@ -85,7 +85,9 @@ namespace Duplicati.Library.Main.Operation
             if (m_options.FullRemoteVerification != Options.RemoteTestStrategy.False)
             {
                 var faultyIndexFiles = new List<IRemoteVolume>();
-                await foreach (var (tf, hash, size, name) in backend.GetFilesOverlappedAsync(files, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
+                // Do not repair with parity during verification: a repairable download would
+                // otherwise mask that the remote copy is actually damaged.
+                await foreach (var (tf, hash, size, name) in backend.GetFilesOverlappedAsync(files, m_result.TaskControl.ProgressToken, allowParityRepair: false).ConfigureAwait(false))
                 {
                     var vol = new RemoteVolume(name, hash, size);
                     try
@@ -198,7 +200,7 @@ namespace Duplicati.Library.Main.Operation
                             Logging.Log.WriteInformationMessage(LOGTAG, "MissingRemoteHash", LC.L("No hash or size recorded for {0}, performing full verification", f.Name));
                             KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>> res;
 
-                            (var tf, var hash, var size) = await backend.GetWithInfoAsync(f.Name, f.Hash, f.Size, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+                            (var tf, var hash, var size) = await backend.GetWithInfoAsync(f.Name, f.Hash, f.Size, m_result.TaskControl.ProgressToken, allowParityRepair: false).ConfigureAwait(false);
 
                             using (tf)
                                 res = await TestVolumeInternalsAsync(db, f, tf, m_options, 1, m_result.TaskControl.ProgressToken)
@@ -225,7 +227,7 @@ namespace Duplicati.Library.Main.Operation
                         }
                         else
                         {
-                            using (var tf = await backend.GetAsync(f.Name, f.Hash, f.Size, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
+                            using (var tf = await backend.GetAsync(f.Name, f.Hash, f.Size, m_result.TaskControl.ProgressToken, allowParityRepair: false).ConfigureAwait(false))
                             { }
                         }
 

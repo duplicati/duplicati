@@ -365,7 +365,9 @@ partial class BackendManager
 
             try
             {
-                using var parity = DynamicLoader.ParityLoader.GetModule(parityModule, Context.Options.RawOptions);
+                // The shared parity instance lives for the whole operation, so the
+                // availability probe and any "not found" warning happen once, not per volume.
+                var parity = Context.Parity.Get();
                 if (parity == null || !parity.IsAvailable)
                     return;
 
@@ -373,7 +375,7 @@ partial class BackendManager
                 var parityTemp = new TempFile();
                 try
                 {
-                    parity.Create(LocalFilename, parityTemp);
+                    await parity.CreateAsync(LocalFilename, parityTemp, cancelToken).ConfigureAwait(false);
                 }
                 catch
                 {
@@ -383,6 +385,9 @@ partial class BackendManager
 
                 // Upload the parity file as an unencrypted, untracked companion,
                 // inline on the currently-held backend (never re-queued).
+                // The parity protects the already-encrypted data volume (parity is created
+                // from the encrypted file on disk), so the parity file itself needs no
+                // encryption: it cannot leak information about the source data.
                 var parityOp = new PutOperation(parityName, Context, false, cancelToken)
                 {
                     LocalTempfile = parityTemp,

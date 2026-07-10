@@ -229,8 +229,7 @@ partial class BackendManager
         /// <param name="cancelToken">The cancellation token</param>
         private async Task MaybeDeleteParityAsync(IBackend backend, CancellationToken cancelToken)
         {
-            var parityModule = Context.Options.ParityModule;
-            if (string.IsNullOrEmpty(parityModule))
+            if (string.IsNullOrEmpty(Context.Options.ParityModule))
                 return;
 
             // Only data volumes (dblock/dlist) have parity companions; skip index files,
@@ -241,8 +240,13 @@ partial class BackendManager
             if (parsed.FileType != RemoteVolumeType.Blocks && parsed.FileType != RemoteVolumeType.Files)
                 return;
 
-            // The parity module key is also its filename extension.
-            var parityEffectiveName = GetEffectiveRemoteName() + "." + parityModule;
+            // Use the shared parity instance to derive the companion filename extension,
+            // so the name matches what the upload/download paths use.
+            var parity = Context.Parity.Get();
+            if (parity == null)
+                return;
+
+            var parityEffectiveName = GetEffectiveRemoteName() + "." + parity.FilenameExtension;
             try
             {
                 await backend.DeleteAsync(parityEffectiveName, cancelToken).ConfigureAwait(false);

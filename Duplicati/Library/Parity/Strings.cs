@@ -31,7 +31,10 @@ namespace Duplicati.Library.Parity.Strings
         public static string Par2programpathLong { get { return LC.L(@"The path to the par2 (par2cmdline) program. If not supplied, Duplicati will search for ""par2"" on the system path."); } }
         public static string Par2extraoptionsShort { get { return LC.L(@"Extra options for the par2 program"); } }
         public static string Par2extraoptionsLong { get { return LC.L(@"Use this option to supply extra commandline options to the par2 program when creating parity data."); } }
+        public static string Par2redundancylevelShort { get { return LC.L(@"The parity redundancy level in percent"); } }
+        public static string Par2redundancylevelLong { get { return LC.L(@"Sets the amount of error-correction (parity) data to create for each remote volume, as a percentage of the volume size. Higher values allow recovering from more damage, at the cost of extra storage and upload time. Must be a positive value."); } }
         public static string Par2ExecuteError(string program, string args, string message) { return LC.L(@"Failed to execute par2 with ""{0} {1}"": {2}", program, args, message); }
         public static string Par2NotFound { get { return LC.L(@"The par2 program was not found; parity data will not be created. Install par2cmdline or set the --par2-program-path option."); } }
+        public static string Par2InvalidRedundancy(string option, int value) { return LC.L(@"The parity redundancy level (--{0}) must be a positive value, but was {1}.", option, value); }
     }
 }

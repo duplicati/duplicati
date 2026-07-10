@@ -22,6 +22,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using Duplicati.Library.Parity;
 using Duplicati.Library.Utility;
 using NUnit.Framework;
@@ -75,7 +77,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Parity")]
-        public void CreateVerifyRepairRestoresContent()
+        public async Task CreateVerifyRepairRestoresContent()
         {
             using var parity = RequirePar2();
             using var data = new TempFile();
@@ -85,21 +87,21 @@ namespace Duplicati.UnitTest
             WriteRandomData(data, 2_000_000, 1);
             File.Copy(data, original, true);
 
-            parity.Create(data, parityfile);
+            await parity.CreateAsync(data, parityfile, CancellationToken.None);
             Assert.IsTrue(new FileInfo(parityfile).Length > 0, "Parity file should not be empty");
-            Assert.IsTrue(parity.Verify(data, parityfile), "Intact file should verify");
+            Assert.IsTrue(await parity.VerifyAsync(data, parityfile, CancellationToken.None), "Intact file should verify");
 
             Corrupt(data, 500_000, 4000);
-            Assert.IsFalse(parity.Verify(data, parityfile), "Corrupted file should fail verification");
+            Assert.IsFalse(await parity.VerifyAsync(data, parityfile, CancellationToken.None), "Corrupted file should fail verification");
 
-            Assert.IsTrue(parity.Repair(data, parityfile), "Repair should succeed");
-            Assert.IsTrue(parity.Verify(data, parityfile), "Repaired file should verify");
+            Assert.IsTrue(await parity.RepairAsync(data, parityfile, CancellationToken.None), "Repair should succeed");
+            Assert.IsTrue(await parity.VerifyAsync(data, parityfile, CancellationToken.None), "Repaired file should verify");
             CollectionAssert.AreEqual(File.ReadAllBytes(original), File.ReadAllBytes(data), "Repaired content should match original");
         }
 
         [Test]
         [Category("Parity")]
-        public void RepairWorksWithDifferentInputName()
+        public async Task RepairWorksWithDifferentInputName()
         {
             // In the real pipeline the file is created under one temp name (on upload)
             // and repaired under a different temp name (on download). par2 stores the
@@ -112,31 +114,31 @@ namespace Duplicati.UnitTest
 
             WriteRandomData(uploadFile, 2_000_000, 2);
             File.Copy(uploadFile, original, true);
-            parity.Create(uploadFile, parityfile);
+            await parity.CreateAsync(uploadFile, parityfile, CancellationToken.None);
 
             // Simulate the same content downloaded under a different name, then corrupted
             File.Copy(original, downloadFile, true);
             Corrupt(downloadFile, 800_000, 5000);
 
-            Assert.IsTrue(parity.Repair(downloadFile, parityfile), "Repair should succeed despite the different filename");
+            Assert.IsTrue(await parity.RepairAsync(downloadFile, parityfile, CancellationToken.None), "Repair should succeed despite the different filename");
             CollectionAssert.AreEqual(File.ReadAllBytes(original), File.ReadAllBytes(downloadFile), "Repaired content should match original");
         }
 
         [Test]
         [Category("Parity")]
-        public void RepairFailsWhenDamageExceedsRedundancy()
+        public async Task RepairFailsWhenDamageExceedsRedundancy()
         {
             using var parity = RequirePar2();
             using var data = new TempFile();
             using var parityfile = new TempFile();
 
             WriteRandomData(data, 1_000_000, 3);
-            parity.Create(data, parityfile);
+            await parity.CreateAsync(data, parityfile, CancellationToken.None);
 
             // Overwrite most of the file; 10% redundancy cannot recover this
             WriteRandomData(data, 1_000_000, 4);
 
-            Assert.IsFalse(parity.Repair(data, parityfile), "Repair should fail when damage exceeds redundancy");
+            Assert.IsFalse(await parity.RepairAsync(data, parityfile, CancellationToken.None), "Repair should fail when damage exceeds redundancy");
         }
     }
 }

@@ -20,6 +20,8 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Interface
 {
@@ -42,23 +44,26 @@ namespace Duplicati.Library.Interface
         /// </summary>
         /// <param name="inputfile">The file to protect</param>
         /// <param name="parityfile">The parity file to create</param>
-        void Create(string inputfile, string parityfile);
+        /// <param name="cancellationToken">The cancellation token</param>
+        Task CreateAsync(string inputfile, string parityfile, CancellationToken cancellationToken);
 
         /// <summary>
         /// Verifies the integrity of <paramref name="inputfile"/> using the parity data.
         /// </summary>
         /// <param name="inputfile">The file to verify</param>
         /// <param name="parityfile">The parity file protecting the input file</param>
+        /// <param name="cancellationToken">The cancellation token</param>
         /// <returns><c>true</c> if the input file is intact</returns>
-        bool Verify(string inputfile, string parityfile);
+        Task<bool> VerifyAsync(string inputfile, string parityfile, CancellationToken cancellationToken);
 
         /// <summary>
         /// Attempts to repair <paramref name="inputfile"/> in place using the parity data.
         /// </summary>
         /// <param name="inputfile">The file to repair, modified in place if repairable</param>
         /// <param name="parityfile">The parity file protecting the input file</param>
+        /// <param name="cancellationToken">The cancellation token</param>
         /// <returns><c>true</c> if the file is intact after the operation</returns>
-        bool Repair(string inputfile, string parityfile);
+        Task<bool> RepairAsync(string inputfile, string parityfile, CancellationToken cancellationToken);
 
         /// <summary>
         /// Returns whether the underlying parity engine is available for use

@@ -91,7 +91,8 @@ internal partial class BackendManager : IBackendManager
             new ThrottleManager() { Limit = isThrottleDisabled ? 0 : options.MaxDownloadPrSecond },
             taskReader ?? throw new ArgumentNullException(nameof(taskReader)),
             isThrottleDisabled,
-            options ?? throw new ArgumentNullException(nameof(options))
+            options ?? throw new ArgumentNullException(nameof(options)),
+            new SharedParityProvider(options)
         );
 
         supportsObjectLocking = new Lazy<bool>(() =>
@@ -310,12 +311,13 @@ internal partial class BackendManager : IBackendManager
     /// <param name="size">The size of the remote file, for verification</param>
     /// <param name="cancelToken">The cancellation token</param>
     /// <returns>A temporary file with the contents of the remote file</returns>
-    public async Task<TempFile> GetAsync(string remotename, string hash, long size, CancellationToken cancelToken)
+    public async Task<TempFile> GetAsync(string remotename, string hash, long size, CancellationToken cancelToken, bool allowParityRepair = true)
     {
         var op = new GetOperation(remotename, size, context, cancelToken)
         {
             Hash = hash,
-            Decrypt = true
+            Decrypt = true,
+            AllowParityRepair = allowParityRepair
         };
         ApplyPathTranslation(op);
         await QueueTaskAsync(op).ConfigureAwait(false);
@@ -331,12 +333,13 @@ internal partial class BackendManager : IBackendManager
     /// <param name="size">The size of the remote file, for verification</param>
     /// <param name="cancelToken">The cancellation token</param>
     /// <returns>A temporary file with the contents of the remote file</returns>
-    public async Task<TempFile> GetDirectAsync(string remotename, string hash, long size, CancellationToken cancelToken)
+    public async Task<TempFile> GetDirectAsync(string remotename, string hash, long size, CancellationToken cancelToken, bool allowParityRepair = true)
     {
         var op = new GetOperation(remotename, size, context, cancelToken)
         {
             Hash = hash,
-            Decrypt = false
+            Decrypt = false,
+            AllowParityRepair = allowParityRepair
         };
         ApplyPathTranslation(op);
         await QueueTaskAsync(op).ConfigureAwait(false);
@@ -364,12 +367,13 @@ internal partial class BackendManager : IBackendManager
     /// <param name="size">The size of the remote file, or -1 if not known</param>
     /// <param name="cancelToken">The cancellation token</param>
     /// <returns>A tuple containing the temporary file, the hash of the file, and the size of the file</returns>
-    public async Task<(TempFile File, string Hash, long Size)> GetWithInfoAsync(string remotename, string hash, long size, CancellationToken cancelToken)
+    public async Task<(TempFile File, string Hash, long Size)> GetWithInfoAsync(string remotename, string hash, long size, CancellationToken cancelToken, bool allowParityRepair = true)
     {
         var op = new GetOperation(remotename, size, context, cancelToken)
         {
             Hash = hash,
-            Decrypt = true
+            Decrypt = true,
+            AllowParityRepair = allowParityRepair
         };
         ApplyPathTranslation(op);
         await QueueTaskAsync(op).ConfigureAwait(false);
@@ -555,20 +559,20 @@ internal partial class BackendManager : IBackendManager
     /// <param name="volumes">The volumes to download</param>
     /// <param name="cancelToken">The cancellation token</param>
     /// <returns>The downloaded files and the volume they came from</returns>
-    public async IAsyncEnumerable<(TempFile File, string Hash, long Size, string Name)> GetFilesOverlappedAsync(IEnumerable<IRemoteVolume> volumes, [EnumeratorCancellation] CancellationToken cancelToken)
+    public async IAsyncEnumerable<(TempFile File, string Hash, long Size, string Name)> GetFilesOverlappedAsync(IEnumerable<IRemoteVolume> volumes, [EnumeratorCancellation] CancellationToken cancelToken, bool allowParityRepair = true)
     {
         var prevVolume = volumes.FirstOrDefault();
         if (prevVolume == null)
             yield break;
 
         // Get the first volume, so we do not have pending parallel transfers
-        var prevResult = await GetWithInfoAsync(prevVolume.Name, prevVolume.Hash, prevVolume.Size, cancelToken)
+        var prevResult = await GetWithInfoAsync(prevVolume.Name, prevVolume.Hash, prevVolume.Size, cancelToken, allowParityRepair)
             .ConfigureAwait(false);
 
         foreach (var volume in volumes.Skip(1))
         {
             // Prepare the next volume, while processing the previous one
-            var nextTask = GetWithInfoAsync(volume.Name, volume.Hash, volume.Size, cancelToken);
+            var nextTask = GetWithInfoAsync(volume.Name, volume.Hash, volume.Size, cancelToken, allowParityRepair);
 
             // Assuming we do not throw while yielding, otherwise we would need to dispose nextTask
             yield return (prevResult.File, prevResult.Hash, prevResult.Size, prevVolume.Name);
@@ -590,20 +594,20 @@ internal partial class BackendManager : IBackendManager
     /// <param name="volumes">The volumes to download</param>
     /// <param name="cancelToken">The cancellation token</param>
     /// <returns>The downloaded files and the volume they came from</returns>
-    public async IAsyncEnumerable<(TempFile File, string Name)> GetFilesOverlappedDirectAsync(IEnumerable<IRemoteVolume> volumes, [EnumeratorCancellation] CancellationToken cancelToken)
+    public async IAsyncEnumerable<(TempFile File, string Name)> GetFilesOverlappedDirectAsync(IEnumerable<IRemoteVolume> volumes, [EnumeratorCancellation] CancellationToken cancelToken, bool allowParityRepair = true)
     {
         var prevVolume = volumes.FirstOrDefault();
         if (prevVolume == null)
             yield break;
 
         // Get the first volume, so we do not have pending parallel transfers
-        var prevResult = await GetDirectAsync(prevVolume.Name, prevVolume.Hash, prevVolume.Size, cancelToken)
+        var prevResult = await GetDirectAsync(prevVolume.Name, prevVolume.Hash, prevVolume.Size, cancelToken, allowParityRepair)
             .ConfigureAwait(false);
 
         foreach (var volume in volumes.Skip(1))
         {
             // Prepare the next volume, while processing the previous one
-            var nextTask = GetDirectAsync(volume.Name, volume.Hash, volume.Size, cancelToken);
+            var nextTask = GetDirectAsync(volume.Name, volume.Hash, volume.Size, cancelToken, allowParityRepair);
 
             // Assuming we do not throw while yielding, otherwise we would need to dispose nextTask
             yield return (prevResult, prevVolume.Name);
@@ -643,6 +647,7 @@ internal partial class BackendManager : IBackendManager
 
         isDisposed = true;
         requestChannel.RetireAsync().Await();
+        context.Parity.Dispose();
         context.Database.FlushMessagesToLog();
 
         if (!queueRunner.IsCompleted)

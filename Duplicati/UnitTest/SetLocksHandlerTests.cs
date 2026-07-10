@@ -96,11 +96,11 @@ namespace Duplicati.UnitTest
             public TempFile DecryptFile(TempFile volume, string volume_name, Options options, bool dispose) => throw new NotImplementedException();
             public Task DeleteAsync(string remotename, long size, bool waitForComplete, CancellationToken cancelToken) => throw new NotImplementedException();
             public Task<IQuotaInfo?> GetQuotaInfoAsync(CancellationToken cancelToken) => throw new NotImplementedException();
-            public Task<(TempFile File, string Hash, long Size)> GetWithInfoAsync(string remotename, string hash, long size, CancellationToken cancelToken) => throw new NotImplementedException();
-            public Task<TempFile> GetAsync(string remotename, string hash, long size, CancellationToken cancelToken) => throw new NotImplementedException();
-            public Task<TempFile> GetDirectAsync(string remotename, string hash, long size, CancellationToken cancelToken) => throw new NotImplementedException();
-            public IAsyncEnumerable<(TempFile File, string Hash, long Size, string Name)> GetFilesOverlappedAsync(IEnumerable<IRemoteVolume> volumes, CancellationToken cancelToken) => throw new NotImplementedException();
-            public IAsyncEnumerable<(TempFile File, string Name)> GetFilesOverlappedDirectAsync(IEnumerable<IRemoteVolume> volumes, CancellationToken cancelToken) => throw new NotImplementedException();
+            public Task<(TempFile File, string Hash, long Size)> GetWithInfoAsync(string remotename, string hash, long size, CancellationToken cancelToken, bool allowParityRepair = true) => throw new NotImplementedException();
+            public Task<TempFile> GetAsync(string remotename, string hash, long size, CancellationToken cancelToken, bool allowParityRepair = true) => throw new NotImplementedException();
+            public Task<TempFile> GetDirectAsync(string remotename, string hash, long size, CancellationToken cancelToken, bool allowParityRepair = true) => throw new NotImplementedException();
+            public IAsyncEnumerable<(TempFile File, string Hash, long Size, string Name)> GetFilesOverlappedAsync(IEnumerable<IRemoteVolume> volumes, CancellationToken cancelToken, bool allowParityRepair = true) => throw new NotImplementedException();
+            public IAsyncEnumerable<(TempFile File, string Name)> GetFilesOverlappedDirectAsync(IEnumerable<IRemoteVolume> volumes, CancellationToken cancelToken, bool allowParityRepair = true) => throw new NotImplementedException();
             public Task FlushPendingMessagesAsync(IBackendManagerDatabase database, CancellationToken cancellationToken) => Task.CompletedTask;
             public void UpdateThrottleValues(long maxUploadPrSecond, long maxDownloadPrSecond) => throw new NotImplementedException();
             #endregion

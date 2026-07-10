@@ -116,12 +116,8 @@ namespace Duplicati.Library.Main.Strings
         public static string CompressionmoduleShort { get { return LC.L(@"Select what module to use for compression"); } }
         public static string EncryptionmoduleLong { get { return LC.L(@"Duplicati supports pluggable encryption modules. Use this option to select a module to use for encryption. This is only applied when creating new volumes, when reading an existing file, the filename is used to select the encryption module."); } }
         public static string EncryptionmoduleShort { get { return LC.L(@"Select what module to use for encryption"); } }
-        public static string ParitymoduleLong { get { return LC.L(@"Duplicati supports pluggable parity modules that create error-correction data for remote volumes. Use this option to select which module to use. Parity is only created when --parity-redundancy-level is set to a positive value."); } }
+        public static string ParitymoduleLong { get { return LC.L(@"Duplicati supports pluggable parity modules that create error-correction data for remote volumes, allowing damaged volumes to be repaired on download. Parity is opt-in: it is disabled unless this option selects a module. Each module has its own options (for example, the redundancy level); see the parity module help for details."); } }
         public static string ParitymoduleShort { get { return LC.L(@"Select what module to use for parity"); } }
-        public static string ParityredundancylevelLong { get { return LC.L(@"Sets the amount of error-correction (parity) data to create for each remote volume, as a percentage of the volume size. A value of 0 disables parity. Higher values allow recovering from more damage, at the cost of extra storage and upload time."); } }
-        public static string ParityredundancylevelShort { get { return LC.L(@"The parity redundancy level in percent"); } }
-        public static string NoparityLong { get { return LC.L(@"Use this option to disable the creation of parity data, even if a redundancy level is set."); } }
-        public static string NoparityShort { get { return LC.L(@"Disable parity data creation"); } }
         public static string DisablemoduleLong { get { return LC.L(@"Supply one or more module names, separated by commas to unload them."); } }
         public static string DisablemoduleShort { get { return LC.L(@"Disable one or more modules"); } }
         public static string EnablemoduleLong { get { return LC.L(@"Supply one or more module names, separated by commas to load them."); } }
