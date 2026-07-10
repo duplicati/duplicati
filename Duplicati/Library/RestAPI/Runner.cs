@@ -1412,6 +1412,19 @@ namespace Duplicati.Server
             options["remote-sync-json-config"] = JsonSerializer.Serialize(config, jsonOptions);
         }
 
+        /// <summary>
+        /// Returns the effective local database path for a backup: the "--dbpath" advanced option if
+        /// it is set, otherwise the stored <see cref="Serialization.Interface.IBackup.DBPath"/>. This
+        /// mirrors the precedence applied by <see cref="ApplyOptions"/> so that every operation agrees
+        /// on which database file to use (see issue #1698).
+        /// </summary>
+        public static string GetEffectiveDBPath(Serialization.Interface.IBackup backup)
+        {
+            var dbpath = backup.Settings?
+                .FirstOrDefault(s => s.Name.Equals("--dbpath", StringComparison.OrdinalIgnoreCase))?.Value;
+            return string.IsNullOrWhiteSpace(dbpath) ? backup.DBPath : dbpath;
+        }
+
         internal static Dictionary<string, string?> ApplyOptions(Connection databaseConnection, Serialization.Interface.IBackup backup, Dictionary<string, string?> options, out string url)
         {
             url = backup.TargetURL;

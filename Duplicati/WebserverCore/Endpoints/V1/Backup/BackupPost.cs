@@ -105,7 +105,9 @@ public class BackupPost : IEndpointV1
         => connection.GetBackup(id) ?? throw new NotFoundException("Backup not found");
 
     private static void ExecuteDeleteDb(IBackup backup)
-        => File.Delete(backup.DBPath);
+        // Delete the effective database (honoring a "--dbpath" advanced option) so the database the
+        // backup actually uses is removed, not a stale DBPath that may not exist (see issue #1698).
+        => File.Delete(Runner.GetEffectiveDBPath(backup));
 
     private static void UpdateDatabasePath(Connection connection, IBackup backup, string targetpath, bool move)
     {
