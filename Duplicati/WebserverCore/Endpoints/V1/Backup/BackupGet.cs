@@ -187,20 +187,24 @@ public class BackupGet : IEndpointV1
 
     private static List<Dictionary<string, object>> ExecuteGetLog(Connection connection, IBackup bk, long? offset, long pagesize)
     {
-        if (!File.Exists(bk.DBPath))
+        // Use the effective database path (honoring a "--dbpath" advanced option) so that the log is
+        // read from the same database the backup actually uses (see issue #1698).
+        var dbpath = Runner.GetEffectiveDBPath(bk);
+        if (!File.Exists(dbpath))
             return new List<Dictionary<string, object>>();
 
-        using (var con = Library.SQLiteHelper.SQLiteLoader.LoadConnection(bk.DBPath))
+        using (var con = Library.SQLiteHelper.SQLiteLoader.LoadConnection(dbpath))
         using (var cmd = con.CreateCommand())
             return LogData.DumpTable(cmd, "LogData", "ID", offset, pagesize);
     }
 
     private static List<Dictionary<string, object>> ExecuteGetRemotelog(Connection connection, IBackup bk, long? offset, long pagesize)
     {
-        if (!File.Exists(bk.DBPath))
+        var dbpath = Runner.GetEffectiveDBPath(bk);
+        if (!File.Exists(dbpath))
             return new List<Dictionary<string, object>>();
 
-        using (var con = Library.SQLiteHelper.SQLiteLoader.LoadConnection(bk.DBPath))
+        using (var con = Library.SQLiteHelper.SQLiteLoader.LoadConnection(dbpath))
         using (var cmd = con.CreateCommand())
         {
             var dt = LogData.DumpTable(cmd, "RemoteOperation", "ID", offset, pagesize);
