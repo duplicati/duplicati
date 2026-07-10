@@ -774,7 +774,7 @@ namespace Duplicati.Library.Main.Operation
                         using var _ = Controller.PushFilterToOptions(m_options, filter);
                         foreach (var mx in m_options.LoadedModules)
                             if (mx is IBackupCallbackModule module)
-                                try { module.OnFinishBackup(m_result, null); }
+                                try { Controller.RunScriptCallbackWithStatus(m_result, mx, () => module.OnFinishBackup(m_result, null)); }
                                 catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, $"OnFinishBackupError{mx.Key}", ex, "OnFinishBackup callback {0} failed: {1}", mx.Key, ex.Message); }
                     }
 

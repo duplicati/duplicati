@@ -73,7 +73,9 @@ namespace Duplicati.Library.Main
         Sync_WaitForUpload,
         Sync_Complete,
 
-        Error
+        Error,
+
+        RunScript_Running
     }
 }
 

@@ -240,6 +240,32 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Border")]
+        public async Task RunScriptReportsRunningPhaseAsync()
+        {
+            var options = new Dictionary<string, string>(this.TestOptions);
+            options["run-script-before"] = CreateScript(0);
+            options["run-script-post-backup"] = CreateScript(0);
+            options["run-script-after"] = CreateScript(0);
+
+            var observedPhases = new List<OperationPhase>();
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                c.OnOperationStarted += results =>
+                {
+                    if (results is BasicResults basicResults)
+                        basicResults.OperationProgressUpdater.PhaseChanged += (phase, _) => observedPhases.Add(phase);
+                };
+
+                var backupResults = await c.BackupAsync(new[] { this.DATAFOLDER });
+                Assert.AreEqual(0, backupResults.Errors.Count());
+            }
+
+            Assert.AreEqual(3, observedPhases.Count(phase => phase == OperationPhase.RunScript_Running),
+                "Expected each configured run-script callback to report that a script is running.");
+        }
+
+        [Test]
+        [Category("Border")]
         [TestCase(0)]
         [TestCase(1)]
         [TestCase(2)]
