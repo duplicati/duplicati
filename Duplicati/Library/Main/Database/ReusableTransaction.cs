@@ -149,9 +149,12 @@ internal class ReusableTransaction(SqliteConnection con, SqliteTransaction? tran
 
     // Microsoft.Data.Sqlite throws InvalidOperationException ("This SqliteTransaction has completed;
     // it is no longer usable.") when a transaction is rolled back or disposed after it has already
-    // been completed. Match on the exception type rather than the (localizable) message text.
+    // been completed. Unfortunately there is nothing specific that can be used to differentiate it
+    // from other exceptions that might occur during disposal, so we rely on the exception type, source and message.
     private static bool IsInactiveTransactionException(Exception ex)
-        => ex is InvalidOperationException;
+        => ex is InvalidOperationException
+            && ex.Source == "Microsoft.Data.Sqlite"
+            && ex.Message.StartsWith("This SqliteTransaction has completed", StringComparison.Ordinal);
 
     /// <summary>
     /// Rolls back the transaction and restarts it.
