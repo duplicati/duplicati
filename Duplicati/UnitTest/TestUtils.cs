@@ -287,10 +287,18 @@ namespace Duplicati.UnitTest
         {
         }
 
+        /// <summary>
+        /// Warnings that are purely environmental (never a correctness signal) and are therefore
+        /// always ignored by <see cref="AssertResults"/>. For example, CI runners that cannot set
+        /// sleep prevention emit "Failed to set sleep prevention" (SleepPreventionError).
+        /// </summary>
+        private static readonly string[] AlwaysIgnoredWarnings = ["SleepPreventionError"];
+
         public static void AssertResults(IBasicResults results, string[] ignoredWarnings = null)
         {
             var operation = "Result";
             ignoredWarnings ??= [];
+            var effectiveIgnoredWarnings = ignoredWarnings.Concat(AlwaysIgnoredWarnings);
 
             // Use dynamic property access for MainOperation, because it is only exposed in internal classes
             var operationProperty = results.GetType().GetProperty("MainOperation", typeof(Library.Main.OperationMode));
@@ -330,7 +338,7 @@ namespace Duplicati.UnitTest
                 throw new TestVerificationException(sb.ToString());
             }
 
-            var remainingWarnings = results.Warnings.Where(w => !ignoredWarnings.Any(ignored => w.Contains(ignored)));
+            var remainingWarnings = results.Warnings.Where(w => !effectiveIgnoredWarnings.Any(ignored => w.Contains(ignored)));
             if (remainingWarnings.Any())
             {
                 var sb = new StringBuilder();
