@@ -498,6 +498,17 @@ namespace Duplicati.CommandLine
             return 0;
         }
 
+        public static int Find(TextWriter outwriter, Action<Duplicati.Library.Main.Controller> setup, List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
+        {
+            // Unlike "list" (which shows only the newest version by default), "find" searches every
+            // backup version, so a file is located regardless of which version it appears in.
+            // Respect an explicit --all-versions / --version / --time supplied by the user.
+            if (!options.ContainsKey("all-versions") && !options.ContainsKey("version") && !options.ContainsKey("time"))
+                options["all-versions"] = "true";
+
+            return List(outwriter, setup, args, options, filter);
+        }
+
         public static int List(TextWriter outwriter, Action<Duplicati.Library.Main.Controller> setup, List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
         {
             filter = filter ?? new Duplicati.Library.Utility.FilterExpression();

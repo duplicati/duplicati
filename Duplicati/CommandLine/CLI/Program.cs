@@ -76,7 +76,7 @@ namespace Duplicati.CommandLine
                         ["help"] = Commands.Help,
                         ["example"] = Commands.Examples,
                         ["examples"] = Commands.Examples,
-                        ["find"] = Commands.List,
+                        ["find"] = Commands.Find,
                         ["list"] = Commands.List,
                         ["list-filesets"] = Commands.ListFilesets,
                         ["list-folder-content"] = Commands.ListFolderContent,
