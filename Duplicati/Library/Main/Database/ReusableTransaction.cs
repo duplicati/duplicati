@@ -127,7 +127,7 @@ internal class ReusableTransaction(SqliteConnection con, SqliteTransaction? tran
                     throw;
                 }
 
-                Logging.Log.WriteVerboseMessage(LOGTAG, "ReusableTransactionAlreadyCompleted", ex, "Transaction was already completed during dispose: {0}", ex.Message);
+                Logging.Log.WriteWarningMessage(LOGTAG, "ReusableTransactionAlreadyCompleted", ex, "Transaction was already completed during dispose: {0}", ex.Message);
             }
             finally
             {
@@ -141,16 +141,17 @@ internal class ReusableTransaction(SqliteConnection con, SqliteTransaction? tran
                     if (!IsInactiveTransactionException(ex))
                         throw;
 
-                    Logging.Log.WriteVerboseMessage(LOGTAG, "ReusableTransactionAlreadyDisposed", ex, "Transaction was already completed before dispose: {0}", ex.Message);
+                    Logging.Log.WriteWarningMessage(LOGTAG, "ReusableTransactionAlreadyDisposed", ex, "Transaction was already completed before dispose: {0}", ex.Message);
                 }
             }
         }
     }
 
+    // Microsoft.Data.Sqlite throws InvalidOperationException ("This SqliteTransaction has completed;
+    // it is no longer usable.") when a transaction is rolled back or disposed after it has already
+    // been completed. Match on the exception type rather than the (localizable) message text.
     private static bool IsInactiveTransactionException(Exception ex)
-        => ex.Message.Contains("No transaction is active", StringComparison.OrdinalIgnoreCase)
-        || ex.Message.Contains("transaction has completed", StringComparison.OrdinalIgnoreCase)
-        || ex.Message.Contains("no longer usable", StringComparison.OrdinalIgnoreCase);
+        => ex is InvalidOperationException;
 
     /// <summary>
     /// Rolls back the transaction and restarts it.
