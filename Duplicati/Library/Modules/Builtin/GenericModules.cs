@@ -38,6 +38,7 @@ public static class GenericModules
         new HyperVOptions(),
         new MSSQLOptions(),
         new RunScript(),
+        new HttpReportStatus(),
         new SendHttpMessage(),
         new SendJabberMessage(),
         new SendTelegramMessage(),

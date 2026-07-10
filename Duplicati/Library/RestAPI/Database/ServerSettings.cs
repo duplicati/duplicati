@@ -114,6 +114,7 @@ namespace Duplicati.Server.Database
             public const string LAST_UPDATE_CHECK_VERSION = "last-update-check-version";
             [GuardedInput]
             public const string ADDITIONAL_REPORT_URL = "additional-report-url";
+            public const string ADDITIONAL_ACTIVITY_URL = "additional-activity-url";
             public const string BACKUP_LIST_SORT_ORDER = "backup-list-sort-order";
             public const string DISABLE_API_EXTENSIONS = "disable-api-extensions";
             public const string POWER_MODE_PROVIDER = "power-mode-provider";
@@ -840,6 +841,12 @@ namespace Duplicati.Server.Database
         {
             get => settings[CONST.ADDITIONAL_REPORT_URL];
             set => SetAndSaveSetting(CONST.ADDITIONAL_REPORT_URL, value);
+        }
+
+        public string? AdditionalActivityUrl
+        {
+            get => settings[CONST.ADDITIONAL_ACTIVITY_URL];
+            set => SetAndSaveSetting(CONST.ADDITIONAL_ACTIVITY_URL, value);
         }
 
         public string? RemoteControlDashboardUrl

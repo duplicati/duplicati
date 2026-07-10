@@ -76,6 +76,14 @@ namespace Duplicati.Library.Main
         private LocaleChange m_localeChange = null;
 
         /// <summary>
+        /// The handle for the report modules loaded for the current operation. Set in
+        /// <see cref="ReportModuleController.SetupAsync"/> and disposed in
+        /// <see cref="OperationCompleteAsync"/> so the completion callbacks fire before the
+        /// module instances themselves are disposed.
+        /// </summary>
+        private ReportModuleController.ReportModulesHandle ReportModulesHandler;
+
+        /// <summary>
         /// Callback method invoked when an operation is started
         /// </summary>
         public Action<IBasicResults> OnOperationStarted { get; set; }
@@ -528,8 +536,6 @@ namespace Duplicati.Library.Main
             using (var logTarget = new ControllerMultiLogTarget(result, Logging.LogMessageType.Information, null, m_options.SuppressWarningsFilter))
             using (Logging.Log.StartScope(logTarget, null))
             {
-                logTarget.AddTarget(m_messageSink, m_options.ConsoleLoglevel, m_options.ConsoleLogFilter);
-                result.MessageSink = m_messageSink;
                 using var httpListener = m_options.LogHttpRequests || m_options.LogSocketData >= 0
                     ? new NetworkTrafficLogger(m_options.LogHttpRequests, m_options.LogSocketData)
                     : null;
@@ -540,6 +546,11 @@ namespace Duplicati.Library.Main
                     m_options.MainAction = result.MainOperation;
                     await ApplySecretProviderAsync(CancellationToken.None).ConfigureAwait(false);
                     (paths, filter) = SetupCommonOptions(result, paths, filter, logTarget);
+
+                    ReportModulesHandler = await ReportModuleController.SetupAsync(this, result, m_options, m_currentTaskControl.StopToken);
+
+                    logTarget.AddTarget(m_messageSink, m_options.ConsoleLoglevel, m_options.ConsoleLogFilter);
+                    result.MessageSink = m_messageSink;
                     Logging.Log.WriteInformationMessage(LOGTAG, "StartingOperation", Strings.Controller.StartingOperationMessage(m_options.MainAction));
 
                     using (SlowQueryMonitor.StartMonitoring(m_options.SlowQueryThreshold))
@@ -630,7 +641,7 @@ namespace Duplicati.Library.Main
                         }
                     }
 
-                    OperationComplete(result, null, filter);
+                    await OperationCompleteAsync(result, null, filter).ConfigureAwait(false);
 
                     Logging.Log.WriteInformationMessage(LOGTAG, "CompletedOperation", Strings.Controller.CompletedOperationMessage(m_options.MainAction));
 
@@ -639,6 +650,7 @@ namespace Duplicati.Library.Main
                 // Handle custom abort exception from run-script
                 catch (OperationAbortException oae)
                 {
+                    ReportModulesHandler?.OperationException = null; // Requested aborts are not failures.
                     resultSetter.EndTime = DateTime.UtcNow;
                     // Log this as a normal operation, as the script raising the exception,
                     // has already populated either warning or log messages as required
@@ -659,12 +671,13 @@ namespace Duplicati.Library.Main
                     }
 
                     // Do not propagate the cancel exception
-                    OperationComplete(result, null, filter);
+                    await OperationCompleteAsync(result, null, filter).ConfigureAwait(false);
 
                     return result;
                 }
                 catch (Exception ex)
                 {
+                    ReportModulesHandler?.OperationException = ex;
                     Logging.Log.WriteErrorMessage(LOGTAG, "FailedOperation", ex, Strings.Controller.FailedOperationMessage(m_options.MainAction));
 
                     try
@@ -685,7 +698,7 @@ namespace Duplicati.Library.Main
                     }
 
                     // Report the result, and the failure
-                    OperationComplete(result, ex, filter);
+                    await OperationCompleteAsync(result, ex, filter).ConfigureAwait(false);
 
                     throw;
                 }
@@ -732,9 +745,29 @@ namespace Duplicati.Library.Main
             public void Dispose() => m_opts?.RawOptions.Remove("filter");
         }
 
-        private void OperationComplete(IBasicResults result, Exception exception, IFilter filter)
+        private async Task OperationCompleteAsync(IBasicResults result, Exception exception, IFilter filter)
         {
             using var _ = PushFilterToOptions(m_options, filter);
+
+            // Fire the report modules' completion callbacks and stop their progress ticker
+            // before the module instances themselves are disposed below. The handle reads
+            // the exception captured in the RunActionAsync catch blocks via the field.
+            try
+            {
+                if (this.ReportModulesHandler != null)
+                {
+                    // Wait at most 30s for the report modules to stop
+                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                    await this.ReportModulesHandler.StopAsync(cts.Token);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logging.Log.WriteWarningMessage(LOGTAG, "ReportModuleHandleDisposeError", ex, "Report module handle dispose failed: {0}", ex.Message);
+            }
+
+            this.ReportModulesHandler = default;
+
             if (m_options?.LoadedModules != null)
             {
                 foreach (var mx in m_options.LoadedModules)

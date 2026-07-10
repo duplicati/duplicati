@@ -97,6 +97,10 @@ public sealed record ControlRequestMessage(string Command, Dictionary<string, st
     /// </summary>
     public const string ReportUrlKey = "reportingurl";
     /// <summary>
+    /// The key that contains the activity URL
+    /// </summary>
+    public const string ActivityUrlKey = "activityurl";
+    /// <summary>
     /// The key that contains the client license key
     /// </summary>
     public const string ClientLicenseKeyKey = "clientlicensekey";

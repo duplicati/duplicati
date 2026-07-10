@@ -1444,6 +1444,18 @@ namespace Duplicati.Server
                 );
             }
 
+            // Patch in additional activity urls
+            var additionalActivityUrl = databaseConnection.ApplicationSettings.AdditionalActivityUrl;
+            if (!string.IsNullOrWhiteSpace(additionalActivityUrl))
+            {
+                options["http-report-status-url"] = string.Join(";",
+                    new[] {
+                        options.GetValueOrDefault("http-report-status-url"),
+                        additionalActivityUrl
+                    }.Where(x => !string.IsNullOrWhiteSpace(x))
+                );
+            }
+
             var uri = new Library.Utility.Uri(backup.TargetURL);
             if (uri.Scheme.Equals(Library.Backend.Duplicati.DuplicatiBackend.PROTOCOL, StringComparison.OrdinalIgnoreCase))
                 url = Library.Backend.Duplicati.DuplicatiBackend.MergeArgsIntoUrl(
