@@ -51,9 +51,12 @@ public static class Program
             HttpsCommand.CreateExportCaCommand()
         };
 
+        var secureDataFolderCmd = SecureDataFolderCommand.CreateSecureDataFolderCommand();
+
         var rootCmd = new RootCommand("Duplicati Configure Tool")
         {
-            httpsCmd
+            httpsCmd,
+            secureDataFolderCmd
         };
 
         return new CommandLineBuilder(rootCmd)

@@ -772,8 +772,36 @@ namespace Duplicati.Library.Common.IO
                     AccessControlType.Allow
                 ));
 
+            // Explicitly set the owner to the current user so the applied state matches what
+            // HasPermissionUserRWOnly verifies. Without this, the owner is whatever the
+            // filesystem assigned at creation (e.g. the Administrators group or a different
+            // account), which could cause the verification to reject a file we just locked down.
+            TrySetOwner(security);
+
             // Adjust with the new security settings
             new FileInfo(path).SetAccessControl(security);
+        }
+
+        /// <summary>
+        /// Attempts to set the owner of the security descriptor to the current user, so that a
+        /// file or directory locked down by <see cref="FileSetPermissionUserRWOnly"/> or
+        /// <see cref="DirectorySetPermissionUserRWOnly"/> has a trusted owner that
+        /// <see cref="HasPermissionUserRWOnly"/> will accept. Setting the owner can require the
+        /// SeRestorePrivilege in some scenarios, so failures are ignored: the existing owner may
+        /// already be a trusted principal (SYSTEM or Administrators), which verification accepts.
+        /// </summary>
+        /// <param name="security">The security descriptor to update.</param>
+        private static void TrySetOwner(FileSystemSecurity security)
+        {
+            try
+            {
+                security.SetOwner(CURRENT_USER_SID);
+            }
+            catch
+            {
+                // Best-effort: the owner may already be a trusted principal, which is accepted
+                // by the verification. Setting a new owner can require additional privileges.
+            }
         }
 
         /// <summary>
@@ -804,8 +832,100 @@ namespace Duplicati.Library.Common.IO
                     AccessControlType.Allow
                 ));
 
+            // Explicitly set the owner to the current user so the applied state matches what
+            // HasPermissionUserRWOnly verifies. Without this, the owner is whatever the
+            // filesystem assigned at creation (e.g. the Administrators group or a different
+            // account), which could cause the verification to reject a folder we just locked down.
+            TrySetOwner(security);
+
             // Adjust with the new security settings
             new DirectoryInfo(path).SetAccessControl(security);
+        }
+
+
+        /// <summary>
+        /// Checks whether the directory has the read-write only permission for the current user,
+        /// matching the permissions applied by <see cref="DirectorySetPermissionUserRWOnly"/>.
+        /// </summary>
+        /// <param name="path">The directory to check permissions on.</param>
+        /// <param name="detail">A human-readable description of why the check failed, if it did; otherwise <see cref="string.Empty"/>.</param>
+        /// <returns><c>true</c> if the directory has the expected permissions; otherwise <c>false</c>.</returns>
+        public bool DirectoryHasPermissionUserRWOnly(string path, out string detail)
+            => HasPermissionUserRWOnly(new DirectoryInfo(path).GetAccessControl(), "folder", out detail);
+
+        /// <summary>
+        /// Verifies that a file or directory access control object grants full control to
+        /// only the current user, SYSTEM and Administrators, has inheritance disabled, and is
+        /// owned by one of those principals.
+        /// </summary>
+        /// <param name="security">The access control object for the file or directory.</param>
+        /// <param name="kind">A label such as "file" or "folder" used in detail messages.</param>
+        /// <param name="detail">A human-readable description of why the check failed, if it did; otherwise <see cref="string.Empty"/>.</param>
+        /// <returns><c>true</c> if the expected permissions are set; otherwise <c>false</c>.</returns>
+        private static bool HasPermissionUserRWOnly(FileSystemSecurity security, string kind, out string detail)
+        {
+            detail = string.Empty;
+            try
+            {
+                // The owner must be one of the trusted principals. An unexpected owner
+                // can modify the DACL regardless of the explicit access rules, which
+                // would allow them to grant themselves access later. Any of these principals
+                // is privileged and cannot be impersonated by an unprivileged attacker, so all
+                // three are accepted. DirectorySetPermissionUserRWOnly explicitly sets the owner
+                // to the current user, so a folder we lock down always satisfies this check.
+                var expected = new[] { CURRENT_USER_SID, LOCAL_SYSTEM_SID, ADMINISTRATORS_SID }.ToHashSet();
+                var ownerRef = security.GetOwner(typeof(SecurityIdentifier));
+                var owner = ownerRef as SecurityIdentifier;
+                if (owner == null || !expected.Contains(owner))
+                {
+                    detail = $"the {kind} owner is {(ownerRef == null ? "(unknown)" : ownerRef.Value)} but expected one of SYSTEM, Administrators or the current user";
+                    return false;
+                }
+
+                // Inheritance must be disabled (protected from parent), matching SetAccessRuleProtection(true, false)
+                if (!security.AreAccessRulesProtected)
+                {
+                    detail = $"the {kind} inherits permissions from its parent";
+                    return false;
+                }
+
+                var rules = security.GetAccessRules(true, true, typeof(SecurityIdentifier));
+                var found = new HashSet<SecurityIdentifier>();
+
+                foreach (var rule in rules.Cast<FileSystemAccessRule>())
+                {
+                    // Any deny rule means the entry is not in the expected secure state
+                    if (rule.AccessControlType == AccessControlType.Deny)
+                    {
+                        detail = $"a deny access rule is present for {rule.IdentityReference}";
+                        return false;
+                    }
+
+                    // Only allow rules for the expected SIDs are permitted
+                    if (!expected.Contains(rule.IdentityReference))
+                    {
+                        detail = $"an unexpected access rule grants rights to {rule.IdentityReference}";
+                        return false;
+                    }
+
+                    found.Add((SecurityIdentifier)rule.IdentityReference);
+                }
+
+                // All expected SIDs must be present
+                if (found.Count != expected.Count)
+                {
+                    var missing = expected.Except(found).Select(x => x.ToString());
+                    detail = $"missing access rules for: {string.Join(", ", missing)}";
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                detail = $"failed to read permissions: {ex.Message}";
+                return false;
+            }
+
+            return true;
         }
         #endregion
     }

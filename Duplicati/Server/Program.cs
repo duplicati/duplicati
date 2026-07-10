@@ -1136,8 +1136,11 @@ namespace Duplicati.Server
             {
                 var databasePath = System.IO.Path.Combine(applicationSettings.DataFolder, DataFolderManager.SERVER_DATABASE_FILENAME);
 
-                if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(databasePath)))
-                    System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(databasePath));
+                // Ensure the directory holding the database exists and has secure permissions.
+                // This creates and locks down a missing folder, and verifies (rejecting an
+                // insecure, non-canonical folder unless the user has opted out) an existing one,
+                // guarding against the database being written into an unprotected directory.
+                DataFolderManager.PrepareSecureDataFolder(System.IO.Path.GetDirectoryName(databasePath), createIfMissing: true);
 
                 // Attempt to open the database, removing any encryption present
                 Library.SQLiteHelper.SQLiteLoader.OpenDatabaseAsync(con, databasePath, Library.SQLiteHelper.SQLiteRC4Decrypter.GetEncryptionPassword(commandlineOptions)).Await();
@@ -1585,6 +1588,7 @@ namespace Duplicati.Server
             new CommandLineArgument(DISABLE_UPDATE_CHECK_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Program.DisableupdatecheckShort, Strings.Program.DisableupdatecheckLong),
             new CommandLineArgument(LOG_RETENTION_OPTION, CommandLineArgument.ArgumentType.Timespan, Strings.Program.LogretentionShort, Strings.Program.LogretentionLong, DEFAULT_LOG_RETENTION),
             new CommandLineArgument(DataFolderManager.SERVER_DATAFOLDER_OPTION, CommandLineArgument.ArgumentType.Path, Strings.Program.ServerdatafolderShort, Strings.Program.ServerdatafolderLong(DataFolderManager.DATAFOLDER_ENV_NAME), DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ProbeOnly)),
+            new CommandLineArgument(DataFolderManager.ALLOW_INSECURE_DATAFOLDER_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Program.AllowInsecureDatafolderShort, Strings.Program.AllowInsecureDatafolderLong, false.ToString()),
             new CommandLineArgument(DISABLE_DB_ENCRYPTION_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Program.DisabledbencryptionShort, Strings.Program.DisabledbencryptionLong),
             new CommandLineArgument(DISABLE_DEFAULT_SECRET_PROVIDER_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Program.DisabledefaultsecretproviderShort, Strings.Program.DisabledefaultsecretproviderLong),
             new CommandLineArgument(REQUIRE_DB_ENCRYPTION_KEY_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Program.RequiredbencryptionShort, Strings.Program.RequiredbencryptionLong),

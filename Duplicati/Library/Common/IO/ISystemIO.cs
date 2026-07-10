@@ -94,6 +94,15 @@ namespace Duplicati.Library.Common.IO
         void DirectorySetPermissionUserRWOnly(string path);
 
         /// <summary>
+        /// Checks whether the directory has the read-write only permission for the current user,
+        /// i.e. the same permissions that <see cref="DirectorySetPermissionUserRWOnly"/> would apply.
+        /// </summary>
+        /// <param name="path">The directory to check permissions on.</param>
+        /// <param name="detail">A human-readable description of why the check failed, if it did; otherwise <see cref="string.Empty"/>.</param>
+        /// <returns><c>true</c> if the directory has the expected permissions; otherwise <c>false</c>.</returns>
+        bool DirectoryHasPermissionUserRWOnly(string path, out string detail);
+
+        /// <summary>
         /// Gets a value indicating whether the operating system supports alternate data streams.
         /// </summary>
         bool SupportsAlternateDataStreams { get; }

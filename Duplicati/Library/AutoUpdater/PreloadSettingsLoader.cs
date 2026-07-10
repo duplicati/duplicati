@@ -26,6 +26,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.AutoUpdater;
 
@@ -52,10 +54,6 @@ public static class PreloadSettingsLoader
     /// </summary>
     private static readonly bool PreloadDebug = !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(PreloadSettingsDebugEnvVar));
 
-    /// <summary>
-    /// The folder name for the preload settings
-    /// </summary>
-    private const string FOLDER_NAME = "Duplicati";
     /// <summary>
     /// The file name for the preload settings
     /// </summary>
@@ -92,23 +90,10 @@ public static class PreloadSettingsLoader
     /// </summary>
     private static readonly string[] PreloadPaths = new string[]
     {
-        // The default path for preload settings
-        OperatingSystem.IsMacOS()
-            ? ""
-            : Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
-                FOLDER_NAME,
-                FILE_NAME
-        ),
-
-        // MacOS reports CommonApplicationData as /usr/share, which is not writable
-        // so we use /usr/local/share instead
-        OperatingSystem.IsMacOS() || OperatingSystem.IsLinux()
-            ? Path.Combine("/usr/local/share", FOLDER_NAME, FILE_NAME)
-            : "",
-
         // User-context path for preload settings,
-        // the same default path as where other data is stored
+        // the same default path as where other data is stored.
+        // This is the data folder, which is verified and locked down to the current user,
+        // so a preload file placed here cannot be tampered with by an untrusted user.
         Path.Combine(DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ProbeOnly), FILE_NAME),
     }
     .Concat(PortablePreloadPaths)
@@ -186,11 +171,17 @@ public static class PreloadSettingsLoader
             paths = PortablePreloadPaths;
         }
 
+        // Portable preload paths are user-controlled (install directory or env var),
+        // so the security check is skipped for files in those locations.
+        var portablePathSet = new HashSet<string>(PortablePreloadPaths, StringComparer.OrdinalIgnoreCase);
+
+        var isExplicitOverride = false;
         if (!string.IsNullOrWhiteSpace(PreloadSettingsFile) && PreloadSettingsFile.StartsWith("!"))
         {
             if (PreloadDebug)
                 Console.WriteLine($"Preload settings file specified with environment variable and exclamation mark, ignoring others");
             paths = new[] { PreloadSettingsFile.Substring(1) };
+            isExplicitOverride = true;
         }
 
         foreach (var path in paths)
@@ -208,6 +199,15 @@ public static class PreloadSettingsLoader
                     Console.WriteLine($"Preload settings file does not exist, ignoring: {path}");
                 continue;
             }
+
+            // Verify that preload files in shared locations have restricted permissions.
+            // The security check is skipped for:
+            //   - Portable mode (all paths are user-controlled)
+            //   - The "!" prefix explicit env var override
+            //   - Files located alongside the binaries (install directory) or specified via env var,
+            //     since those are user-controlled locations even when not in portable mode.
+            if (!portableMode && !isExplicitOverride && !portablePathSet.Contains(path))
+                VerifyPreloadFileSecurity(path);
 
             var settings = LoadSettings(path);
 
@@ -356,6 +356,50 @@ public static class PreloadSettingsLoader
                 Console.WriteLine($"Failed to load preload settings from {path}: {ex}");
 
             return null;
+        }
+    }
+
+    /// <summary>
+    /// Verifies that the parent directory of a preload settings file in a shared location
+    /// has restricted permissions unless the user has
+    /// opted in with <c>--allow-insecure-datafolder</c>.
+    /// </summary>
+    /// <param name="path">The path to the preload settings file.</param>
+    private static void VerifyPreloadFileSecurity(string path)
+    {
+        try
+        {
+            // The parent directory is the trust boundary: if an attacker can write to the
+            // directory, they can create or replace the file regardless of the file's own ACL.
+            var dir = Path.GetDirectoryName(path);
+            if (string.IsNullOrEmpty(dir) || !Directory.Exists(dir))
+                return;
+
+            if (SystemIO.IO_OS.DirectoryHasPermissionUserRWOnly(dir, out var dirDetail))
+                return;
+
+            if (!Util.AllowInsecureDataFolder())
+                throw new UserInformationException(
+                    $"The directory '{dir}' holding the preload settings file '{path}' is not securely protected ({dirDetail}). " +
+                    $"A preload file can inject environment variables, command-line arguments, and database settings into the application, " +
+                    $"so allowing untrusted write access to this directory is a security risk. " +
+                    $"Restrict the permissions on the directory to the current user, SYSTEM and Administrators only, " +
+                    $"or run with --{Util.AllowInsecureDatafolderOption} to bypass this check if you understand the risks.",
+                    "InsecurePreloadFilePermissions");
+
+            if (PreloadDebug)
+                Console.WriteLine($"Preload settings directory '{dir}' is not securely protected ({dirDetail}), but --allow-insecure-datafolder is set, continuing.");
+        }
+        catch (UserInformationException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            // If we cannot read the permissions, log a warning but do not block startup,
+            // as the directory may be on a filesystem that does not support ACLs (e.g. FAT32).
+            if (PreloadDebug)
+                Console.WriteLine($"Failed to verify preload directory permissions for '{path}': {ex.Message}");
         }
     }
 

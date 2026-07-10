@@ -47,6 +47,7 @@ namespace Duplicati.WindowsService
             var remove_certs = args != null && args.Any(x => string.Equals("remove-certs", x, StringComparison.OrdinalIgnoreCase));
             var set_init_password = args != null && args.Any(x => string.Equals("set-init-password", x, StringComparison.OrdinalIgnoreCase));
             var lock_key = args != null && args.Any(x => string.Equals("lock-service-key", x, StringComparison.OrdinalIgnoreCase));
+            var secure_datafolder = args != null && args.Any(x => string.Equals("secure-datafolder", x, StringComparison.OrdinalIgnoreCase));
             var help = args != null && HelpOptionExtensions.IsArgumentAnyHelpString(args);
 
             if (help)
@@ -66,6 +67,7 @@ namespace Duplicati.WindowsService
                 Console.WriteLine("  remove-certs:\r\n    Removes TLS certificates, then restarts the service");
                 Console.WriteLine("  set-init-password:\r\n    Sets the initial API password (if not already set), then restarts the service");
                 Console.WriteLine("  lock-service-key:\r\n    Recreates the hardened Duplicati service registry key");
+                Console.WriteLine("  secure-datafolder:\r\n    Restricts the permissions on the data folder to SYSTEM and Administrators only, then restarts the service");
                 Console.WriteLine();
                 Console.WriteLine("It is possible to pass arguments to Duplicati.Server.exe, simply add them to the commandline:");
                 Console.WriteLine("  Duplicati.WindowsService.exe install --webservice-interface=loopback --log-retention=3M");
@@ -222,6 +224,60 @@ namespace Duplicati.WindowsService
                     Console.WriteLine("Failed to lock down service registry key: {0}", ex.Message);
                     return 1;
                 }
+            }
+            else if (secure_datafolder)
+            {
+                try
+                {
+                    // Create a locked-down key before we restart the service
+                    using (var key = ServiceRegistryKey.RecreateLockedDown())
+                        key.SetValue(ServiceControl.SECURE_DATAFOLDER_REGISTRY_VALUE, "apply", RegistryValueKind.String);
+
+                    Console.WriteLine("Secure-datafolder instruction written to registry.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Failed to write secure-datafolder instruction to registry: {ex.Message}");
+                    return 1;
+                }
+
+                try
+                {
+                    ServiceInstaller.StopService(ServiceControl.SERVICE_NAME);
+                    Console.WriteLine("Service stopped.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Failed to stop service: {0}", ex.Message);
+                    return 1;
+                }
+
+                try
+                {
+                    ServiceInstaller.StartService(ServiceControl.SERVICE_NAME);
+                    Console.WriteLine("Service started. Waiting for secure-datafolder operation to complete...");
+
+                    // Poll registry up to 30 seconds to ensure the service processed the command
+                    using (var view = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64))
+                    {
+                        for (int i = 0; i < 30; i++)
+                        {
+                            using (var key = view.OpenSubKey(ServiceControl.INIT_REGISTRY_KEY, writable: false))
+                            {
+                                if (key == null || key.GetValue(ServiceControl.SECURE_DATAFOLDER_REGISTRY_VALUE) == null)
+                                    break;
+                            }
+                            System.Threading.Thread.Sleep(TimeSpan.FromSeconds(1));
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Failed to start service: {0}", ex.Message);
+                    return 1;
+                }
+
+                Console.WriteLine("Secure-datafolder operation complete.");
             }
             else if (reset_password)
             {

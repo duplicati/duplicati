@@ -56,6 +56,23 @@ $ docker rm duplicati
 $ docker run --name=duplicati -v /host/duplicati-data:/data duplicati/duplicati
 ```
 
+#### Data folder permissions
+
+For security, the data folder (`/data/Duplicati` inside the container) must be private: readable and writable only by the user Duplicati runs as. Duplicati creates and locks down this folder automatically on first launch, so a named Docker volume or a bind mount to a native Linux filesystem (e.g. `ext4`) works without any extra steps.
+
+Duplicati will refuse to start if the existing data folder does **not** have restricted permissions. This can happen when:
+
+-   The data folder is bind-mounted from a filesystem that does not support Unix permissions (for example NTFS/exFAT, SMB/CIFS network shares, or the host filesystem when using Docker Desktop on Windows or macOS), which typically reports the folder as world-accessible.
+-   The `UID`/`GID` is changed between runs, leaving the folder owned by a different user.
+
+If you understand and accept the risk (for example the volume is only accessible to trusted users), you can bypass this check by setting the environment variable:
+
+```console
+$ docker run --name=duplicati -e DUPLICATI__ALLOW_INSECURE_DATAFOLDER=true -v /host/duplicati-data:/data duplicati/duplicati
+```
+
+The recommended alternative is to use a named Docker volume or a bind mount on a native Linux filesystem and to keep the `UID`/`GID` stable across restarts, so the folder can be locked down and no override is needed.
+
 ### Using a different UID/GID
 
 By default, Duplicati will run as the root user. While this can be a security issue, it is often required to grant Duplicati access to system files, such as the `/etc` folder. If you would like to use a different user to run Duplicati, you can supply the `UID` and `GID` values as environment variables. As an example, if you would like to run as the current user, you can supply:

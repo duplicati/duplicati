@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using Duplicati.Library.AutoUpdater;
+using Duplicati.Library.Common.IO;
 using Duplicati.Service;
 using Microsoft.Win32;
 using System;
@@ -68,6 +69,11 @@ namespace Duplicati.WindowsService
         /// The name of the registry value holding the TLS certs install/uninstall instruction.
         /// </summary>
         internal const string TLS_CERTS_REGISTRY_VALUE = "TlsCertsOption";
+
+        /// <summary>
+        /// The name of the registry value holding the secure-datafolder instruction.
+        /// </summary>
+        internal const string SECURE_DATAFOLDER_REGISTRY_VALUE = "SecureDataFolder";
 
         /// <summary>
         /// Separate registry key for the BootstrapApplied sentinel. This key
@@ -151,6 +157,7 @@ namespace Duplicati.WindowsService
             if (m_executable == PackageHelper.NamedExecutable.Server)
             {
                 ReadAndExecuteTlsCertsCommandFromRegistry();
+                ReadAndExecuteSecureDataFolderCommandFromRegistry();
                 ReadAndExecuteInitPasswordFromRegistry();
                 resetPassword = ConsumeResetPasswordFromRegistry();
             }
@@ -367,6 +374,78 @@ namespace Duplicati.WindowsService
             catch (Exception ex)
             {
                 m_eventLog.WriteEntry("Failed to process TLS certs registry command: " + ex.Message, System.Diagnostics.EventLogEntryType.Warning);
+            }
+        }
+
+        /// <summary>
+        /// Reads the secure-datafolder instruction from the registry if present, and directly
+        /// restricts the permissions on the data folder to the current user (SYSTEM),
+        /// Administrators only. The registry value is always deleted after being read,
+        /// regardless of success.
+        /// </summary>
+        private void ReadAndExecuteSecureDataFolderCommandFromRegistry()
+        {
+            try
+            {
+                using (var key = ServiceRegistryKey.OpenIfTrusted(writable: true, out var reason))
+                {
+                    if (key == null)
+                    {
+                        if (reason != null && reason != "key-missing")
+                            m_eventLog.WriteEntry(
+                                $"Refusing to process secure-datafolder registry command: {reason}",
+                                System.Diagnostics.EventLogEntryType.Warning);
+                        return;
+                    }
+
+                    var raw = key.GetValue(SECURE_DATAFOLDER_REGISTRY_VALUE);
+                    if (raw == null)
+                        return;
+
+                    var value = raw as string;
+                    if (string.IsNullOrEmpty(value))
+                        return;
+
+                    // Always delete the registry value after reading it
+                    key.DeleteValue(SECURE_DATAFOLDER_REGISTRY_VALUE, throwOnMissingValue: false);
+
+                    // Only the "apply" instruction is supported; any other value is ignored
+                    if (!string.Equals(value, "apply", StringComparison.OrdinalIgnoreCase))
+                    {
+                        m_eventLog.WriteEntry($"Unknown secure-datafolder command: {value}", System.Diagnostics.EventLogEntryType.Warning);
+                        return;
+                    }
+
+                    // Resolve the data folder in probe mode so we don't create it or trigger the
+                    // security check — we just need the path to lock down the permissions.
+                    var dataFolder = DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ProbeOnly);
+                    if (!System.IO.Directory.Exists(dataFolder))
+                    {
+                        m_eventLog.WriteEntry($"Data folder '{dataFolder}' does not exist, cannot secure it.", System.Diagnostics.EventLogEntryType.Warning);
+                        return;
+                    }
+
+                    m_eventLog.WriteEntry($"Securing data folder: {dataFolder}", System.Diagnostics.EventLogEntryType.Information);
+
+                    try
+                    {
+                        SystemIO.IO_OS.DirectorySetPermissionUserRWOnly(dataFolder);
+
+                        // Verify the permissions were actually set correctly
+                        if (SystemIO.IO_OS.DirectoryHasPermissionUserRWOnly(dataFolder, out var detail))
+                            m_eventLog.WriteEntry("Data folder permissions restricted to SYSTEM and Administrators only.", System.Diagnostics.EventLogEntryType.Information);
+                        else
+                            m_eventLog.WriteEntry($"Data folder permissions could not be verified after applying: {detail}", System.Diagnostics.EventLogEntryType.Warning);
+                    }
+                    catch (Exception ex)
+                    {
+                        m_eventLog.WriteEntry($"Failed to set permissions on data folder '{dataFolder}': {ex.Message}", System.Diagnostics.EventLogEntryType.Warning);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                m_eventLog.WriteEntry("Failed to process secure-datafolder registry command: " + ex.Message, System.Diagnostics.EventLogEntryType.Warning);
             }
         }
 

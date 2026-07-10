@@ -259,7 +259,7 @@ namespace Duplicati.Library.Snapshots.Windows
             }
             catch (Exception ex)
             {
-                Logging.Log.WriteVerboseMessage(LOGTAG, "VSSSnapShotDeleteCleanError", ex, "Failed during VSS esnapshot closing");
+                Logging.Log.WriteVerboseMessage(LOGTAG, "VSSSnapShotDeleteCleanError", ex, "Failed during VSS snapshot closing");
             }
 
             if (_snapshotProvider != null)
