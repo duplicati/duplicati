@@ -194,8 +194,7 @@ namespace Duplicati.UnitTest
                 opts["backup-test-samples"] = "0";
                 opts["unittest-mode"] = "true";
                 opts["allow-sleep"] = "true";
-                if (OperatingSystem.IsWindows() || OperatingSystem.IsLinux())
-                    opts["snapshot-policy"] = "Off";
+                opts["snapshot-policy"] = "Off";
 
                 return opts;
             }
