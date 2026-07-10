@@ -42,11 +42,6 @@ namespace Duplicati.Library.Modules.Builtin
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<ReportHelper>();
 
         /// <summary>
-        /// The salt used for calculating a backup Id from the remote URL
-        /// </summary>
-        private const string SALT = "DUPL";
-
-        /// <summary>
         /// Name of the option used to specify subject
         /// </summary>
         protected abstract string SubjectOptionName { get; }
@@ -448,7 +443,7 @@ namespace Duplicati.Library.Modules.Builtin
                 case MACHINE_ID:
                     return DataFolderManager.MachineID;
                 case BACKUP_ID:
-                    return Utility.Utility.ByteArrayAsHexString(Utility.Utility.RepeatedHashWithSalt(m_remoteurl, SALT));
+                    return Utility.Utility.CalculateBackupId(m_remoteurl);
                 case BACKUP_NAME:
                     return System.IO.Path.GetFileNameWithoutExtension(Utility.Utility.getEntryAssembly().Location);
                 case MACHINE_NAME:
@@ -464,7 +459,7 @@ namespace Duplicati.Library.Modules.Builtin
                     var ix = m_remoteurl?.IndexOf("://", StringComparison.OrdinalIgnoreCase) ?? -1;
                     return Utility.Utility.GuessScheme(m_remoteurl) ?? "file";
                 case DESTINATION_HOST_SUFFIX:
-                    return GuessHostSuffixSafe(m_remoteurl);
+                    return Utility.Utility.GuessHostSuffixSafe(m_remoteurl);
                 case UPDATE_CHANNEL:
                     return UpdaterManager.CurrentChannel.ToString();
                 default:
@@ -645,88 +640,6 @@ namespace Duplicati.Library.Modules.Builtin
                 Logging.Log.WriteWarningMessage(LOGTAG, "ReportSubmitError", ex, Strings.ReportHelper.SendMessageFailedError(sb.ToString()));
             }
 
-        }
-
-        /// <summary>
-        /// Regex used to extract the host from a URL
-        /// </summary>
-        private static readonly Regex hostSuffixRegex = new Regex(@"^(?:[a-zA-Z][a-zA-Z0-9+\-.]*://)?([^/:]+)", RegexOptions.Compiled);
-
-        /// <summary>
-        /// List of host suffixes that are considered public cloud and safe to report
-        /// </summary>
-        private static readonly IEnumerable<string> safeHostSuffixes = new HashSet<string>([
-            ".amazonaws.com",
-            ".impossibleapi.net",
-            ".scw.cloud",
-            ".hosteurope.de",
-            ".dunkel.de",
-            ".dreamhost.com",
-            ".dincloud.com",
-            ".polisystems.ch",
-            ".softlayer.net",
-            ".storadera.com",
-            ".wasabisys.com",
-            ".infomaniak.com",
-            ".infomaniak.cloud",
-            ".sakurastorage.jp",
-            ".lyvecloud.seagate.com",
-            ".digitaloceanspaces.com",
-            ".backblazeb2.com",
-            ".cloudian.com",
-            ".min.io",
-            ".linodeobjects.com",
-            ".bunnycdn.com",
-            ".azure.com",
-            ".googleapis.com",
-            ".ibm.com",
-            ".oracle.com",
-            ".cloudflare.com",
-            ".alibaba.com",
-            ".huawei.com",
-            ".tencent.com",
-            ".baidu.com",
-            ".jd.com",
-            ".ucloud.cn",
-            ".qiniu.com",
-            ".aliyuncs.com",
-            ".tcloud.com",
-            ".tencentcloudapi.com",
-            ".rabata.io",
-            ".internxt.com",
-            ".cloudflarestorage.com",
-            ".storage.selcloud.ru",
-            ".srvstorage.uz",
-            ".srvstorage.kz"
-        ], StringComparer.OrdinalIgnoreCase);
-
-        /// <summary>
-        /// Attempts to guess a safe host suffix from a URL.
-        /// This attempts to avoid reporting private or sensitive hostnames, and only returns known public cloud suffixes.
-        /// </summary>
-        /// <param name="url">The URL to analyze.</param>
-        /// <returns>The host suffix, or null if not found or not safe to report.</returns>
-        private static string GuessHostSuffixSafe(string url)
-        {
-            var scheme = Utility.Utility.GuessScheme(url);
-
-            // For now, only report S3 host suffixes
-            if (!string.Equals(scheme, "s3", StringComparison.OrdinalIgnoreCase))
-                return null;
-
-            try
-            {
-                var hostname = hostSuffixRegex.Match(url).Groups[1].Value;
-                if (string.IsNullOrEmpty(hostname))
-                    return null;
-
-                // Return the first matching safe suffix
-                return safeHostSuffixes.FirstOrDefault(suffix => hostname.EndsWith(suffix, StringComparison.OrdinalIgnoreCase)) ?? null;
-            }
-            catch
-            {
-                return null;
-            }
         }
     }
 }

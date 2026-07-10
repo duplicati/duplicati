@@ -46,6 +46,7 @@ public class RemoteControllerHandler(Connection connection, IHttpClientFactory h
     public Task<Dictionary<string, string?>> OnConnectAsync(Dictionary<string, string?> metadata)
     {
         metadata["feature:additional-report-url"] = connection.ApplicationSettings.AdditionalReportUrl;
+        metadata["feature:additional-activity-url"] = connection.ApplicationSettings.AdditionalActivityUrl;
         return Task.FromResult(metadata);
     }
 
@@ -94,6 +95,7 @@ public class RemoteControllerHandler(Connection connection, IHttpClientFactory h
                 };
 
                 connection.ApplicationSettings.AdditionalReportUrl = message.ControlRequestMessage.Parameters.GetValueOrDefault(ControlRequestMessage.ReportUrlKey);
+                connection.ApplicationSettings.AdditionalActivityUrl = message.ControlRequestMessage.Parameters.GetValueOrDefault(ControlRequestMessage.ActivityUrlKey);
                 connection.ApplicationSettings.RemoteControlDashboardUrl = message.ControlRequestMessage.Parameters.GetValueOrDefault(ControlRequestMessage.DashboardUrlKey);
                 connection.ApplicationSettings.RemoteControlStorageApiId = message.ControlRequestMessage.Parameters.GetValueOrDefault(ControlRequestMessage.StorageApiIdKey);
                 connection.ApplicationSettings.RemoteControlStorageApiKey = message.ControlRequestMessage.Parameters.GetValueOrDefault(ControlRequestMessage.StorageApiKeyKey);

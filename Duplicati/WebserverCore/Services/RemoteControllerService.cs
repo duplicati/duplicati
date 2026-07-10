@@ -113,6 +113,7 @@ public class RemoteControllerService(Connection connection, IRemoteControllerHan
         // Clear all remote control related settings
         connection.ApplicationSettings.RemoteControlConfig = string.Empty;
         connection.ApplicationSettings.AdditionalReportUrl = string.Empty;
+        connection.ApplicationSettings.AdditionalActivityUrl = string.Empty;
         connection.ApplicationSettings.RemoteControlDashboardUrl = string.Empty;
         connection.ApplicationSettings.RemoteControlStorageApiId = string.Empty;
         connection.ApplicationSettings.RemoteControlStorageApiKey = string.Empty;
