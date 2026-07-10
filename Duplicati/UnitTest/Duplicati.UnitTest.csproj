@@ -30,6 +30,7 @@
     <ProjectReference Include="..\Library\DynamicLoader\Duplicati.Library.DynamicLoader.csproj" />
     <ProjectReference Include="..\Library\Logging\Duplicati.Library.Logging.csproj" />
     <ProjectReference Include="..\Library\Main\Duplicati.Library.Main.csproj" />
+    <ProjectReference Include="..\Library\Parity\Duplicati.Library.Parity.csproj" />
     <ProjectReference Include="..\Library\Utility\Duplicati.Library.Utility.csproj" />
     <ProjectReference Include="..\License\Duplicati.License.csproj" />
     <ProjectReference Include="..\Server\Duplicati.Server.Serialization\Duplicati.Server.Serialization.csproj" />

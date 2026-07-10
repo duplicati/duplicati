@@ -93,6 +93,8 @@ namespace Duplicati.Library.Main.Volumes
             public string CompressionModule { get; private set; }
             public string EncryptionModule { get; private set; }
             public Library.Interface.IFileEntry File { get; private set; }
+            public bool IsParity { get; private set; }
+            public string ParityModule { get; private set; }
 
             internal static readonly IDictionary<RemoteVolumeType, string> REMOTE_TYPENAME_MAP;
             internal static readonly IDictionary<string, RemoteVolumeType> REVERSE_REMOTE_TYPENAME_MAP;
@@ -118,8 +120,16 @@ namespace Duplicati.Library.Main.Volumes
 
             public static IParsedVolume Parse(string filename, Library.Interface.IFileEntry file = null)
             {
-                var m = FILENAME_REGEXP.Match(filename);
-                if (!m.Success || m.Length != filename.Length)
+                // A parity companion file is named "<data volume name>.<parityextension>".
+                // Because the main filename regex has a greedy encryption group, it would
+                // otherwise mis-parse a parity file as a data volume with a bogus encryption
+                // module. So a parity suffix is detected and stripped first, and the remainder
+                // is parsed as the owning data volume.
+                var parityModule = MatchParitySuffix(filename);
+                var dataname = parityModule == null ? filename : filename.Substring(0, filename.Length - parityModule.Length - 1);
+
+                var m = FILENAME_REGEXP.Match(dataname);
+                if (!m.Success || m.Length != dataname.Length)
                     return null;
 
                 RemoteVolumeType t;
@@ -134,8 +144,29 @@ namespace Duplicati.Library.Main.Volumes
                     Time = m.Groups["time"].Success ? Library.Utility.Utility.DeserializeDateTime(m.Groups["time"].Value).ToUniversalTime() : new DateTime(0, DateTimeKind.Utc),
                     CompressionModule = m.Groups["compression"].Value,
                     EncryptionModule = m.Groups["encryption"].Success ? m.Groups["encryption"].Value : null,
+                    IsParity = parityModule != null,
+                    ParityModule = parityModule,
                     File = file
                 };
+            }
+
+            /// <summary>
+            /// Returns the parity module key if the filename ends with a registered parity
+            /// module extension, otherwise null.
+            /// </summary>
+            /// <param name="filename">The filename to inspect</param>
+            private static string MatchParitySuffix(string filename)
+            {
+                var idx = filename.LastIndexOf('.');
+                if (idx < 0 || idx == filename.Length - 1)
+                    return null;
+
+                var ext = filename.Substring(idx + 1);
+                foreach (var key in DynamicLoader.ParityLoader.Keys)
+                    if (string.Equals(key, ext, StringComparison.OrdinalIgnoreCase))
+                        return key;
+
+                return null;
             }
         }
 
@@ -157,6 +188,17 @@ namespace Duplicati.Library.Main.Volumes
                 volumename += "." + encryptionmodule;
 
             return volumename;
+        }
+
+        /// <summary>
+        /// Generates the filename of the parity companion file for a data volume.
+        /// The parity file is named "&lt;data volume name&gt;.&lt;parity extension&gt;".
+        /// </summary>
+        /// <param name="dataVolumeName">The full name of the data volume being protected</param>
+        /// <param name="parityExtension">The parity module extension (e.g. "par2")</param>
+        public static string GenerateParityFilename(string dataVolumeName, string parityExtension)
+        {
+            return dataVolumeName + "." + parityExtension;
         }
 
         public static IParsedVolume ParseFilename(Library.Interface.IFileEntry file)

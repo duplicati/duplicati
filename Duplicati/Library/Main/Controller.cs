@@ -1042,7 +1042,8 @@ namespace Duplicati.Library.Main
                 DynamicLoader.BackendLoader.GetSupportedCommands(m_backendUrl),
                 m_options.NoEncryption ? null : DynamicLoader.EncryptionLoader.GetSupportedCommands(m_options.EncryptionModule),
                 moduleOptions,
-                DynamicLoader.CompressionLoader.GetSupportedCommands(m_options.CompressionModule) })
+                DynamicLoader.CompressionLoader.GetSupportedCommands(m_options.CompressionModule),
+                string.IsNullOrEmpty(m_options.ParityModule) ? null : DynamicLoader.ParityLoader.GetSupportedCommands(m_options.ParityModule) })
             {
                 if (l != null)
                     foreach (ICommandLineArgument a in l)

@@ -34,6 +34,7 @@ namespace Duplicati.CommandLine.Strings
         public static string SupportedBackendsHeader { get { return LC.L(@"Supported backends:"); } }
         public static string SupportedCompressionModulesHeader { get { return LC.L(@"Supported compression modules:"); } }
         public static string SupportedEncryptionModulesHeader { get { return LC.L(@"Supported encryption modules:"); } }
+        public static string SupportedParityModulesHeader { get { return LC.L(@"Supported parity modules:"); } }
         public static string SupportedOptionsHeader { get { return LC.L(@"Supported options:"); } }
         public static string ModuleIsLoadedAutomatically { get { return LC.L(@"Module is loaded automatically. Use --{0} to prevent this.", "disable-module"); } }
         public static string ModuleIsNotLoadedAutomatically { get { return LC.L(@"Module is not loaded automatically Use --{0} to load it.", "enable-module"); } }

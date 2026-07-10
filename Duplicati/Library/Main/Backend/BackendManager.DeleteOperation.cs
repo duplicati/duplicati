@@ -212,8 +212,47 @@ partial class BackendManager
                 }
             }
 
+            // Best-effort: also delete the parity companion of a data volume, if parity
+            // is enabled. Parity files are not tracked in the database, so we delete them
+            // directly by their derived name. A missing parity file is harmless.
+            if (deleteSucceeded)
+                await MaybeDeleteParityAsync(backend, cancelToken).ConfigureAwait(false);
+
             Context.Statwriter.SendEvent(BackendActionType.Delete, BackendEventType.Completed, RemoteFilename, Size);
             return true;
+        }
+
+        /// <summary>
+        /// Deletes the parity companion of the just-deleted data volume, if parity is enabled.
+        /// </summary>
+        /// <param name="backend">The backend to delete from</param>
+        /// <param name="cancelToken">The cancellation token</param>
+        private async Task MaybeDeleteParityAsync(IBackend backend, CancellationToken cancelToken)
+        {
+            var parityModule = Context.Options.ParityModule;
+            if (string.IsNullOrEmpty(parityModule))
+                return;
+
+            // Only data volumes (dblock/dlist) have parity companions; skip index files,
+            // parity files themselves, and anything that does not parse as a volume.
+            var parsed = Volumes.VolumeBase.ParseFilename(RemoteFilename);
+            if (parsed == null || parsed.IsParity)
+                return;
+            if (parsed.FileType != RemoteVolumeType.Blocks && parsed.FileType != RemoteVolumeType.Files)
+                return;
+
+            // The parity module key is also its filename extension.
+            var parityEffectiveName = GetEffectiveRemoteName() + "." + parityModule;
+            try
+            {
+                await backend.DeleteAsync(parityEffectiveName, cancelToken).ConfigureAwait(false);
+                Logging.Log.WriteVerboseMessage(LOGTAG, "ParityDeleted", "Deleted parity companion for {0}", RemoteFilename);
+            }
+            catch (Exception ex)
+            {
+                // A missing parity file (or any delete failure) must not fail the operation
+                Logging.Log.WriteVerboseMessage(LOGTAG, "ParityDeleteFailed", ex, "Could not delete parity companion for {0}: {1}", RemoteFilename, ex.Message);
+            }
         }
     }
 }

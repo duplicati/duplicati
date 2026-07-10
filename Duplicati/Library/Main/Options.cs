@@ -460,6 +460,9 @@ namespace Duplicati.Library.Main
 
             new CommandLineArgument("encryption-module", CommandLineArgument.ArgumentType.String, Strings.Options.EncryptionmoduleShort, Strings.Options.EncryptionmoduleLong, "aes"),
             new CommandLineArgument("compression-module", CommandLineArgument.ArgumentType.String, Strings.Options.CompressionmoduleShort, Strings.Options.CompressionmoduleLong, "zip"),
+            new CommandLineArgument("parity-module", CommandLineArgument.ArgumentType.String, Strings.Options.ParitymoduleShort, Strings.Options.ParitymoduleLong, "par2"),
+            new CommandLineArgument("parity-redundancy-level", CommandLineArgument.ArgumentType.Integer, Strings.Options.ParityredundancylevelShort, Strings.Options.ParityredundancylevelLong, "0"),
+            new CommandLineArgument("no-parity", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NoparityShort, Strings.Options.NoparityLong, "false"),
 
             new CommandLineArgument("enable-module", CommandLineArgument.ArgumentType.String, Strings.Options.EnablemoduleShort, Strings.Options.EnablemoduleLong),
             new CommandLineArgument("disable-module", CommandLineArgument.ArgumentType.String, Strings.Options.DisablemoduleShort, Strings.Options.DisablemoduleLong),
@@ -906,6 +909,23 @@ namespace Duplicati.Library.Main
         /// Gets the module used for compression
         /// </summary>
         public string CompressionModule => GetString("compression-module", "zip");
+
+        /// <summary>
+        /// A value indicating if parity (error-correction) data creation is disabled
+        /// </summary>
+        public bool NoParity => GetBool("no-parity");
+
+        /// <summary>
+        /// Gets the redundancy level in percent used when creating parity data.
+        /// A value of 0 (the default) disables parity.
+        /// </summary>
+        public int ParityRedundancyLevel => GetInt("parity-redundancy-level", 0);
+
+        /// <summary>
+        /// Gets the module used for parity, or null if parity is disabled
+        /// (either explicitly, or because the redundancy level is not positive)
+        /// </summary>
+        public string? ParityModule => (NoParity || ParityRedundancyLevel <= 0) ? null : GetString("parity-module", "par2");
 
         /// <summary>
         /// Gets the number of time to retry transmission if it fails
