@@ -153,7 +153,6 @@ internal class ReusableTransaction(SqliteConnection con, SqliteTransaction? tran
     // from other exceptions that might occur during disposal, so we rely on the exception type, source and message.
     private static bool IsInactiveTransactionException(Exception ex)
         => ex is InvalidOperationException
-            && ex.Source == "Microsoft.Data.Sqlite"
             && ex.Message.StartsWith("This SqliteTransaction has completed", StringComparison.Ordinal);
 
     /// <summary>
