@@ -67,6 +67,7 @@ public static class ServiceCollectionsExtensions
             .AddSingleton<IRemoteControllerRegistration, RemoteControllerRegistrationService>()
             .AddSingleton<ISystemInfoProvider, SystemInfoProvider>()
             .AddSingleton<IQueueRunnerService, QueueRunnerService>()
+            .AddSingleton<IDatabaseLockTracker, DatabaseLockTracker>()
             .AddSingleton<IProgressStateProviderService, ProgressStateProviderService>()
             .AddTransient<INotificationService, NotificationService>()
             .AddTransient<IBackupListService, BackupListService>()

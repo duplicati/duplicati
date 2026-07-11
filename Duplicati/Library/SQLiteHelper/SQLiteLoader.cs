@@ -43,6 +43,13 @@ namespace Duplicati.Library.SQLiteHelper
         private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(SQLiteLoader));
 
         /// <summary>
+        /// The default busy timeout (in milliseconds) applied to every connection opened by
+        /// <see cref="OpenSQLiteFileAsync"/> via the connection string. This is a defense-in-depth
+        /// measure that ensures an active reader does not cause failed commits.
+        /// </summary>
+        private const int DefaultBusyTimeoutMs = 10000;
+
+        /// <summary>
         /// Helper method with logic to handle opening a database in possibly encrypted format.
         /// </summary>
         /// <param name="con">The SQLite connection object.</param>
@@ -278,7 +285,7 @@ namespace Duplicati.Library.SQLiteHelper
         /// <returns>A task that completes when the file is opened.</returns>
         private static async Task OpenSQLiteFileAsync(Microsoft.Data.Sqlite.SqliteConnection con, string path)
         {
-            con.ConnectionString = $"Data Source={path};Pooling=false";
+            con.ConnectionString = $"Data Source={path};Pooling=false;Busy Timeout={DefaultBusyTimeoutMs}";
             await con.OpenAsync().ConfigureAwait(false);
 
             // Make the file only accessible by the current user, unless opting out

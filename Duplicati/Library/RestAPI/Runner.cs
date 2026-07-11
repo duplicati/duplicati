@@ -1413,6 +1413,49 @@ namespace Duplicati.Server
         }
 
         /// <summary>
+        /// Returns the effective local database path for an <see cref="IQueuedTask"/> instance.
+        /// In production, all queued tasks are <see cref="IRunnerData"/> instances created by the
+        /// <c>Runner.Create*</c> factories, so this delegates to
+        /// <see cref="GetEffectiveDBPath(IRunnerData?)"/>. If the task is not an
+        /// <see cref="IRunnerData"/> (only possible in tests with mock <see cref="IQueuedTask"/>
+        /// implementations), the result is <c>null</c>.
+        /// </summary>
+        /// <returns>The effective path, or <c>null</c></returns>
+        public static string? GetEffectiveDBPath(IQueuedTask? runnerData)
+            => GetEffectiveDBPath(runnerData as IRunnerData);
+
+        /// <summary>
+        /// Returns the effective local database path for a <see cref="IRunnerData"/> instance.
+        /// The precedence mirrors <see cref="ApplyOptions"/>: the <c>dbpath</c> extra option takes
+        /// priority, then the backup's <c>--dbpath</c> advanced setting, then the stored
+        /// <see cref="Serialization.Interface.IBackup.DBPath"/>. If <c>no-local-db</c> is set
+        /// (either as an extra option or as a backup advanced setting), the result is <c>null</c>.
+        /// </summary>
+        /// <returns>The effective path, or <c>null</c></returns>
+        public static string? GetEffectiveDBPath(IRunnerData? runnerData)
+        {
+            if (runnerData == null)
+                return null;
+
+            if (runnerData.ExtraOptions != null)
+            {
+                if (runnerData.ExtraOptions.ContainsKey("no-local-db") && Utility.ParseBoolOption(runnerData.ExtraOptions.AsReadOnly(), "no-local-db"))
+                    return null;
+                if (runnerData.ExtraOptions.TryGetValue("dbpath", out var dbpath) && !string.IsNullOrWhiteSpace(dbpath))
+                    return dbpath;
+            }
+
+            if (runnerData.Backup == null)
+                return null;
+
+            var setting = runnerData.Backup.Settings?.FirstOrDefault(s => s.Name.Equals($"--no-local-db", StringComparison.OrdinalIgnoreCase));
+            if (setting != null && Utility.ParseBool(setting.Value, true))
+                return null;
+
+            return GetEffectiveDBPath(runnerData.Backup);
+        }
+
+        /// <summary>
         /// Returns the effective local database path for a backup: the "--dbpath" advanced option if
         /// it is set, otherwise the stored <see cref="Serialization.Interface.IBackup.DBPath"/>. This
         /// mirrors the precedence applied by <see cref="ApplyOptions"/> so that every operation agrees

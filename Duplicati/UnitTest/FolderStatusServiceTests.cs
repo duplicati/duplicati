@@ -62,6 +62,7 @@ public class FolderStatusServiceTests
         public void Resume() { }
         public void Pause() { }
         public IList<Tuple<long, string?>> GetQueueWithIds() => new List<Tuple<long, string?>>();
+        public void CancelCurrentTaskLockWait(long taskID) { }
         public Task<IBasicResults?> RunImmediatelyAsync(IQueuedTask task) => Task.FromResult<IBasicResults?>(null);
     }
 
