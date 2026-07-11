@@ -1164,7 +1164,7 @@ namespace Duplicati.Server
 
         private static void UpdateMetadataStatistics(IBackup backup, IParsedBackendStatistics r)
         {
-            if (r != null)
+            if (r != null && r.RemoteCalls > 0)
             {
                 backup.Metadata["LastBackupDate"] = Utility.SerializeDateTime(r.LastBackupDate.ToUniversalTime());
                 backup.Metadata["BackupListCount"] = r.BackupListCount.ToString();
@@ -1215,6 +1215,16 @@ namespace Duplicati.Server
             if (result is ISyncResults r6)
             {
                 UpdateMetadataLastSync(backup, r6);
+            }
+
+            if (result is IDeleteResults r7)
+            {
+                if (r7.CompactResults != null)
+                {
+                    UpdateMetadataLastCompact(backup, r7.CompactResults);
+                    if (!r7.CompactResults.Interrupted && r7.CompactResults.DeletedFileCount > 0 && r7.CompactResults.BackendStatistics is IParsedBackendStatistics p)
+                        UpdateMetadataStatistics(backup, p);
+                }
             }
 
             if (result is IBackupResults r)

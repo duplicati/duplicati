@@ -211,6 +211,7 @@ public class CompactResultsDto : BasicResultsDto
     public long UploadedFileSize { get; set; }
     public bool Dryrun { get; set; }
     public VacuumResultsDto VacuumResults { get; set; }
+    public BackendStatisticsDto BackendStatistics { get; set; }
 
     public static CompactResultsDto FromResults(ICompactResults results)
     {
@@ -232,7 +233,8 @@ public class CompactResultsDto : BasicResultsDto
             DownloadedFileSize = results.DownloadedFileSize,
             UploadedFileSize = results.UploadedFileSize,
             Dryrun = results.Dryrun,
-            VacuumResults = VacuumResultsDto.FromResults(results.VacuumResults)
+            VacuumResults = VacuumResultsDto.FromResults(results.VacuumResults),
+            BackendStatistics = BackendStatisticsDto.FromResults(results.BackendStatistics)
         };
     }
 }
@@ -310,6 +312,7 @@ public class DeleteResultsDto : BasicResultsDto
 {
     public List<Tuple<long, DateTime>> DeletedSets { get; set; } = new();
     public CompactResultsDto CompactResults { get; set; }
+    public BackendStatisticsDto BackendStatistics { get; set; }
     public bool Dryrun { get; set; }
 
     public static DeleteResultsDto FromResults(IDeleteResults results)
@@ -327,6 +330,7 @@ public class DeleteResultsDto : BasicResultsDto
             Interrupted = results.Interrupted,
             DeletedSets = results.DeletedSets?.ToList() ?? new List<Tuple<long, DateTime>>(),
             CompactResults = CompactResultsDto.FromResults(results.CompactResults),
+            BackendStatistics = BackendStatisticsDto.FromResults(results.BackendStatistics),
             Dryrun = results.Dryrun
         };
     }
