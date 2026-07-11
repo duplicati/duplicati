@@ -285,8 +285,14 @@ namespace Duplicati.Library.SQLiteHelper
         /// <returns>A task that completes when the file is opened.</returns>
         private static async Task OpenSQLiteFileAsync(Microsoft.Data.Sqlite.SqliteConnection con, string path)
         {
-            con.ConnectionString = $"Data Source={path};Pooling=false;Busy Timeout={DefaultBusyTimeoutMs}";
+            con.ConnectionString = $"Data Source={path};Pooling=false";
             await con.OpenAsync().ConfigureAwait(false);
+
+            using (var cmd = con.CreateCommand())
+            {
+                cmd.CommandText = $"PRAGMA busy_timeout={DefaultBusyTimeoutMs}";
+                await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+            }
 
             // Make the file only accessible by the current user, unless opting out
             if (!SystemIO.IO_OS.FileExists(SystemIO.IO_OS.PathCombine(SystemIO.IO_OS.PathGetDirectoryName(path), Util.InsecurePermissionsMarkerFile)))
