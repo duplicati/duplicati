@@ -2012,6 +2012,15 @@ namespace Duplicati.Library.Main
             {
                 var periodInterval = rententionPolicyValueString.Split(':');
 
+                // Each retention policy entry must be a timeframe and an interval separated by
+                // a single colon (e.g. "7D:1D"). Guard against malformed values so a user typo
+                // produces a clear error instead of an IndexOutOfRangeException (when the colon
+                // is missing) or silently dropping extra segments (when there are too many).
+                if (periodInterval.Length != 2)
+                {
+                    throw new UserInformationException(string.Format("The retention policy value '{0}' is not valid. Each entry must consist of a timeframe and an interval separated by a single colon, for example '7D:1D'.", rententionPolicyValueString), "RetentionPolicyInvalidValue");
+                }
+
                 TimeSpan timeframe;
                 // Timeframe "U" (= Unlimited) means: For unlimited time keep one version every X interval.
                 // So the timeframe has to span the maximum time possible.
