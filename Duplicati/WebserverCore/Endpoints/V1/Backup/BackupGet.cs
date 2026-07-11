@@ -45,12 +45,12 @@ public class BackupGet : IEndpointV1
             => ExecuteGetFilesAsync(queueRunnerService, GetBackup(connection, id), filter, time, allVersions ?? false, prefixOnly ?? false, folderContents ?? false, new Dictionary<string, string>()))
             .RequireAuthorization();
 
-        group.MapGet("/backup/{id}/log", ([FromServices] Connection connection, [FromRoute] string id, [FromQuery] long? offset, [FromQuery] long? pagesize)
-            => ExecuteGetLog(connection, GetBackup(connection, id), offset, pagesize ?? 100))
+        group.MapGet("/backup/{id}/log", ([FromServices] Connection connection, [FromServices] IDatabaseLockTracker databaseLockTracker, [FromRoute] string id, [FromQuery] long? offset, [FromQuery] long? pagesize)
+            => ExecuteGetLog(connection, databaseLockTracker, GetBackup(connection, id), offset, pagesize ?? 100))
             .RequireAuthorization();
 
-        group.MapGet("/backup/{id}/remotelog", ([FromServices] Connection connection, [FromRoute] string id, [FromQuery] long? offset, [FromQuery] long? pagesize)
-            => ExecuteGetRemotelog(connection, GetBackup(connection, id), offset, pagesize ?? 100))
+        group.MapGet("/backup/{id}/remotelog", ([FromServices] Connection connection, [FromServices] IDatabaseLockTracker databaseLockTracker, [FromRoute] string id, [FromQuery] long? offset, [FromQuery] long? pagesize)
+            => ExecuteGetRemotelog(connection, databaseLockTracker, GetBackup(connection, id), offset, pagesize ?? 100))
             .RequireAuthorization();
 
         group.MapGet("/backup/{id}/filesets", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromRoute] string id, [FromQuery(Name = "include-metadata")] bool? includeMetadata, [FromQuery(Name = "from-remote-only")] bool? fromRemoteOnly)
@@ -185,7 +185,7 @@ public class BackupGet : IEndpointV1
     private static async Task<Dictionary<string, object>> ExecuteGetFilesAsync(IQueueRunnerService queueRunnerService, IBackup bk, string? filter, string? timestring, bool allVersions, bool prefixOnly, bool folderContents, Dictionary<string, string> extraValues)
         => await SearchFilesAsync(queueRunnerService, bk, filter, timestring, allVersions, prefixOnly, folderContents, extraValues).ConfigureAwait(false);
 
-    private static List<Dictionary<string, object>> ExecuteGetLog(Connection connection, IBackup bk, long? offset, long pagesize)
+    private static async Task<List<Dictionary<string, object>>> ExecuteGetLog(Connection connection, IDatabaseLockTracker databaseLockTracker, IBackup bk, long? offset, long pagesize)
     {
         // Use the effective database path (honoring a "--dbpath" advanced option) so that the log is
         // read from the same database the backup actually uses (see issue #1698).
@@ -193,28 +193,48 @@ public class BackupGet : IEndpointV1
         if (!File.Exists(dbpath))
             return new List<Dictionary<string, object>>();
 
-        using (var con = Library.SQLiteHelper.SQLiteLoader.LoadConnection(dbpath))
-        using (var cmd = con.CreateCommand())
-            return LogData.DumpTable(cmd, "LogData", "ID", offset, pagesize);
+        var dbLock = databaseLockTracker.TryAcquire(dbpath)
+            ?? throw new DatabaseLockedException(dbpath);
+
+        try
+        {
+            using (var con = Library.SQLiteHelper.SQLiteLoader.LoadConnection(dbpath))
+            using (var cmd = con.CreateCommand())
+                return LogData.DumpTable(cmd, "LogData", "ID", offset, pagesize);
+        }
+        finally
+        {
+            await dbLock.DisposeAsync().ConfigureAwait(false);
+        }
     }
 
-    private static List<Dictionary<string, object>> ExecuteGetRemotelog(Connection connection, IBackup bk, long? offset, long pagesize)
+    private static async Task<List<Dictionary<string, object>>> ExecuteGetRemotelog(Connection connection, IDatabaseLockTracker databaseLockTracker, IBackup bk, long? offset, long pagesize)
     {
         var dbpath = Runner.GetEffectiveDBPath(bk);
         if (!File.Exists(dbpath))
             return new List<Dictionary<string, object>>();
 
-        using (var con = Library.SQLiteHelper.SQLiteLoader.LoadConnection(dbpath))
-        using (var cmd = con.CreateCommand())
+        var dbLock = databaseLockTracker.TryAcquire(dbpath)
+            ?? throw new DatabaseLockedException(dbpath);
+
+        try
         {
-            var dt = LogData.DumpTable(cmd, "RemoteOperation", "ID", offset, pagesize);
+            using (var con = Library.SQLiteHelper.SQLiteLoader.LoadConnection(dbpath))
+            using (var cmd = con.CreateCommand())
+            {
+                var dt = LogData.DumpTable(cmd, "RemoteOperation", "ID", offset, pagesize);
 
-            // Unwrap raw data to a string
-            foreach (var n in dt)
-                try { n["Data"] = System.Text.Encoding.UTF8.GetString((byte[])n["Data"]); }
-                catch { }
+                // Unwrap raw data to a string
+                foreach (var n in dt)
+                    try { n["Data"] = System.Text.Encoding.UTF8.GetString((byte[])n["Data"]); }
+                    catch { }
 
-            return dt;
+                return dt;
+            }
+        }
+        finally
+        {
+            await dbLock.DisposeAsync().ConfigureAwait(false);
         }
     }
 

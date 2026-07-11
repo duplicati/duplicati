@@ -37,7 +37,8 @@ public class QueueRunnerService(
     EventPollNotify eventPollNotify,
     INotificationUpdateService notificationUpdateService,
     IProgressStateProviderService progressStateProviderService,
-    IApplicationSettings applicationSettings) : IQueueRunnerService
+    IApplicationSettings applicationSettings,
+    IDatabaseLockTracker databaseLockTracker) : IQueueRunnerService, IDisposable
 {
     private readonly object _lock = new();
     /// <summary>
@@ -51,9 +52,10 @@ public class QueueRunnerService(
     private static readonly int MAX_TASK_RESULT_CACHE_SIZE = 100;
 
     private readonly List<IQueuedTask> _tasks = new();
-    private (Task? Task, IQueuedTask? QueuedTask) _current;
+    private (Task? Task, IQueuedTask? QueuedTask, CancellationTokenSource? LockCts) _current;
     private bool _isPaused;
     private bool _isTerminated;
+    private readonly CancellationTokenSource _terminateCts = new();
 
     public long AddTask(IQueuedTask task)
         => AddTask(task, false);
@@ -101,6 +103,7 @@ public class QueueRunnerService(
     public void Terminate(bool wait)
     {
         _isTerminated = true;
+        _terminateCts.Cancel();
         if (wait)
         {
             var task = _current.Task;
@@ -118,20 +121,27 @@ public class QueueRunnerService(
 
             // Clean up completed tasks
             if (_current.Task != null && _current.Task.IsCompleted)
-                _current = (null, null);
+            {
+                _current.LockCts?.Dispose();
+                _current = (null, null, null);
+            }
 
             if (_tasks.Count == 0)
                 return;
 
             var nextTask = _tasks[0];
             _tasks.RemoveAt(0);
-            _current = (Task.Run(() => RunTaskAsync(nextTask), CancellationToken.None), nextTask);
+            _current = (Task.Run(() => RunTaskAsync(nextTask), CancellationToken.None), nextTask, null);
         }
     }
 
     private async Task RunTaskAsync(IQueuedTask task)
     {
         var completed = false;
+        IAsyncDisposable? dbLock = null;
+        var lockCts = CancellationTokenSource.CreateLinkedTokenSource(_terminateCts.Token);
+        lock (_lock)
+            _current = (_current.Task, _current.QueuedTask, lockCts);
         try
         {
             eventPollNotify.SignalNewEvent();
@@ -139,6 +149,8 @@ public class QueueRunnerService(
             task.TaskStarted = DateTime.UtcNow;
             if (task.OnStarting != null)
                 await task.OnStarting().ConfigureAwait(false);
+
+            dbLock = await AcquireDatabaseLockAsync(task, lockCts.Token).ConfigureAwait(false);
 
             await Runner.RunAsync(connection, eventPollNotify, notificationUpdateService, progressStateProviderService, applicationSettings, task, true).ConfigureAwait(false);
 
@@ -160,9 +172,14 @@ public class QueueRunnerService(
         }
         finally
         {
+            if (dbLock != null)
+                await dbLock.DisposeAsync().ConfigureAwait(false);
             task.TaskFinished = DateTime.UtcNow;
             lock (_lock)
-                _current = (null, null);
+            {
+                lockCts.Dispose();
+                _current = (null, null, null);
+            }
             eventPollNotify.SignalNewEvent();
             eventPollNotify.SignalTaskQueueUpdate();
             eventPollNotify.SignalTaskCompleted(task.TaskID);
@@ -215,6 +232,55 @@ public class QueueRunnerService(
     /// <inheritdoc/>
     public async Task<IBasicResults?> RunImmediatelyAsync(IQueuedTask task)
     {
-        return await Runner.RunAsync(connection, eventPollNotify, notificationUpdateService, progressStateProviderService, applicationSettings, task, false).ConfigureAwait(false);
+        IAsyncDisposable? dbLock = null;
+        var dbPath = Runner.GetEffectiveDBPath(task);
+
+        // If we have a database to work with, make sure we can get the lock
+        if (!string.IsNullOrWhiteSpace(dbPath))
+            dbLock = databaseLockTracker.TryAcquire(dbPath)
+                ?? throw new DatabaseLockedException(dbPath);
+
+        try
+        {
+            return await Runner.RunAsync(connection, eventPollNotify, notificationUpdateService, progressStateProviderService, applicationSettings, task, false).ConfigureAwait(false);
+        }
+        finally
+        {
+            if (dbLock != null)
+                await dbLock.DisposeAsync().ConfigureAwait(false);
+        }
+    }
+
+    /// <inheritdoc/>
+    public void CancelCurrentTaskLockWait(long taskID)
+    {
+        lock (_lock)
+        {
+            if (_current.QueuedTask?.TaskID == taskID && _current.LockCts != null)
+                _current.LockCts.Cancel();
+        }
+    }
+
+    /// <summary>
+    /// Acquires the database lock for a queued task, waiting until the lock is available
+    /// or the cancellation token is cancelled. Tasks without a database path (e.g. custom
+    /// runner tasks) skip locking.
+    /// </summary>
+    private async Task<IAsyncDisposable?> AcquireDatabaseLockAsync(IQueuedTask task, CancellationToken cancellationToken)
+    {
+        var dbPath = Runner.GetEffectiveDBPath(task);
+        if (string.IsNullOrWhiteSpace(dbPath))
+            return null;
+
+        return await databaseLockTracker.AcquireAsync(dbPath, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Disposes resources held by the queue runner, including the termination
+    /// cancellation token source used to cancel tasks waiting on the database lock.
+    /// </summary>
+    public void Dispose()
+    {
+        _terminateCts.Dispose();
     }
 }

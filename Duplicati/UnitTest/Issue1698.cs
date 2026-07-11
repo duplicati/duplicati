@@ -24,6 +24,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Duplicati.Server.Database;
 using Duplicati.Server.Serialization.Interface;
 using NUnit.Framework;
@@ -86,6 +87,101 @@ namespace Duplicati.UnitTest
         {
             var backup = CreateBackup("/stored/path.sqlite", ("--dbpath", "   "));
             Assert.AreEqual("/stored/path.sqlite", Duplicati.Server.Runner.GetEffectiveDBPath(backup));
+        }
+
+        // ---- Tests for GetEffectiveDBPath(IQueuedTask) / GetEffectiveDBPath(IRunnerData) ----
+
+        private static Duplicati.Server.Runner.IRunnerData CreateRunnerTask(
+            Backup backup,
+            IDictionary<string, string?>? extraOptions = null)
+            => Duplicati.Server.Runner.CreateTask(
+                Duplicati.Server.Serialization.DuplicatiOperation.BackupOrSync,
+                backup,
+                extraOptions ?? new Dictionary<string, string?>());
+
+        [Test]
+        public void RunnerDataFallsBackToBackupDbPath()
+        {
+            var backup = CreateBackup("/stored/path.sqlite");
+            var task = CreateRunnerTask(backup);
+            Assert.AreEqual("/stored/path.sqlite", Duplicati.Server.Runner.GetEffectiveDBPath(task));
+        }
+
+        [Test]
+        public void RunnerDataRespectsBackupAdvancedDbPath()
+        {
+            var backup = CreateBackup("/stored/path.sqlite", ("--dbpath", "/override/path.sqlite"));
+            var task = CreateRunnerTask(backup);
+            Assert.AreEqual("/override/path.sqlite", Duplicati.Server.Runner.GetEffectiveDBPath(task));
+        }
+
+        [Test]
+        public void RunnerDataExtraDbPathOverridesBackup()
+        {
+            var backup = CreateBackup("/stored/path.sqlite", ("--dbpath", "/backup-override.sqlite"));
+            var task = CreateRunnerTask(backup, new Dictionary<string, string?> { ["dbpath"] = "/extra-override.sqlite" });
+            Assert.AreEqual("/extra-override.sqlite", Duplicati.Server.Runner.GetEffectiveDBPath(task));
+        }
+
+        [Test]
+        public void RunnerDataExtraNoLocalDbReturnsNull()
+        {
+            var backup = CreateBackup("/stored/path.sqlite");
+            var task = CreateRunnerTask(backup, new Dictionary<string, string?> { ["no-local-db"] = "true" });
+            Assert.IsNull(Duplicati.Server.Runner.GetEffectiveDBPath(task));
+        }
+
+        [Test]
+        public void RunnerDataBackupNoLocalDbSettingReturnsNull()
+        {
+            var backup = CreateBackup("/stored/path.sqlite", ("--no-local-db", "true"));
+            var task = CreateRunnerTask(backup);
+            Assert.IsNull(Duplicati.Server.Runner.GetEffectiveDBPath(task));
+        }
+
+        [Test]
+        public void RunnerDataExtraNoLocalDbFalseReturnsDbPath()
+        {
+            var backup = CreateBackup("/stored/path.sqlite");
+            var task = CreateRunnerTask(backup, new Dictionary<string, string?> { ["no-local-db"] = "false" });
+            Assert.AreEqual("/stored/path.sqlite", Duplicati.Server.Runner.GetEffectiveDBPath(task));
+        }
+
+        [Test]
+        public void RunnerDataNullReturnsNull()
+        {
+            Assert.IsNull(Duplicati.Server.Runner.GetEffectiveDBPath((Duplicati.Server.Runner.IRunnerData?)null));
+            Assert.IsNull(Duplicati.Server.Runner.GetEffectiveDBPath((Duplicati.Server.Serialization.Interface.IQueuedTask?)null));
+        }
+
+        [Test]
+        public void RunnerDataNonRunnerDataQueuedTaskReturnsNull()
+        {
+            // A non-IRunnerData IQueuedTask implementation should cast to null and return null.
+            var nonRunnerTask = new NonRunnerQueuedTask();
+            Assert.IsNull(Duplicati.Server.Runner.GetEffectiveDBPath(nonRunnerTask));
+        }
+
+        /// <summary>
+        /// A minimal <see cref="IQueuedTask"/> implementation that is NOT an
+        /// <see cref="Duplicati.Server.Runner.IRunnerData"/>, used to verify that
+        /// <see cref="Duplicati.Server.Runner.GetEffectiveDBPath(IQueuedTask)"/> safely returns
+        /// null for non-runner tasks.
+        /// </summary>
+        private sealed class NonRunnerQueuedTask : Duplicati.Server.Serialization.Interface.IQueuedTask
+        {
+            public long TaskID => 0;
+            public string? BackupID => null;
+            public Duplicati.Server.Serialization.DuplicatiOperation Operation => Duplicati.Server.Serialization.DuplicatiOperation.BackupOrSync;
+            public Func<Task>? OnStarting { get; set; }
+            public Func<Exception?, Task>? OnFinished { get; set; }
+            public DateTime? TaskStarted { get; set; }
+            public DateTime? TaskFinished { get; set; }
+            public Task UpdateThrottleSpeedsAsync(string? uploadSpeed, string? downloadSpeed) => Task.CompletedTask;
+            public Task StopAsync() => Task.CompletedTask;
+            public Task AbortAsync() => Task.CompletedTask;
+            public Task PauseAsync(bool alsoTransfers) => Task.CompletedTask;
+            public Task ResumeAsync() => Task.CompletedTask;
         }
     }
 }

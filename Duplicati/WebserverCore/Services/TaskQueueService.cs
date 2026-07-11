@@ -108,6 +108,8 @@ public class TaskQueueService(IQueueRunnerService queueRunnerService) : ITaskQue
         if (task == null)
             throw new NotFoundException("No such task found");
 
+        queueRunnerService.CancelCurrentTaskLockWait(task.TaskID);
+
         if (abort)
             await task.AbortAsync().ConfigureAwait(false);
         else
