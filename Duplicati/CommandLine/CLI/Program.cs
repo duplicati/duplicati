@@ -393,15 +393,25 @@ namespace Duplicati.CommandLine
                 foreach (KeyValuePair<String, String> keyvalue in opt)
                     options[keyvalue.Key] = keyvalue.Value;
 
+                var command = cargs.Count >= 1 ? cargs[0] : string.Empty;
+                var isBackup = command.Equals("backup", StringComparison.OrdinalIgnoreCase);
+                var isTestFilters = command.Equals("test-filters", StringComparison.OrdinalIgnoreCase)
+                                 || command.Equals("test-filter", StringComparison.OrdinalIgnoreCase);
+
                 if (!string.IsNullOrEmpty(newtarget))
                 {
-                    if (cargs.Count <= 1)
+                    // test-filters takes source paths as positional arguments and has no target, so a
+                    // --target from the parameters file must not become a bogus positional source (#4812).
+                    if (isTestFilters)
+                        Library.Logging.Log.WriteVerboseMessage(LOGTAG, "NotUsingTarget", Strings.Program.SkippingTargetArgumentOnTestFilters);
+                    else if (cargs.Count <= 1)
                         cargs.Add(newtarget);
                     else
                         cargs[1] = newtarget;
                 }
 
-                if (cargs.Count >= 1 && cargs[0].Equals("backup", StringComparison.OrdinalIgnoreCase))
+                // backup and test-filters take source paths as positional arguments.
+                if (isBackup || isTestFilters)
                     cargs.AddRange(newsource);
                 else if (newsource.Count > 0)
                     Library.Logging.Log.WriteVerboseMessage(LOGTAG, "NotUsingBackupSources", Strings.Program.SkippingSourceArgumentsOnNonBackupOperation);
