@@ -54,6 +54,7 @@ namespace Duplicati.CommandLine.Strings
         public static string QuietConsoleOptionLong { get { return LC.L(@"If this option is set, progress reports and other messages that would normally go to the console will be redirected to the log."); } }
         public static string QuietConsoleOptionShort { get { return LC.L(@"Disable console output"); } }
         public static string SkippingSourceArgumentsOnNonBackupOperation { get { return @"The --source argument was specified in the parameter file, but the current operation is not a backup operation, so the argument is ignored."; } }
+        public static string SkippingTargetArgumentOnTestFilters { get { return @"The --target argument was specified in the parameter file, but the test-filters operation has no target, so the argument is ignored."; } }
         public static string AutoUpdateOptionShort { get { return LC.L(@"Toggle automatic updates"); } }
         public static string AutoUpdateOptionLong { get { return LC.L(@"Set this option if you prefer to have the commandline version automatically update"); } }
         public static string PortableModeOptionShort { get { return LC.L(@"Use portable mode"); } }
