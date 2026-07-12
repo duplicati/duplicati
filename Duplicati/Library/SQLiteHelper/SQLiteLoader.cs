@@ -42,6 +42,13 @@ namespace Duplicati.Library.SQLiteHelper
         private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(SQLiteLoader));
 
         /// <summary>
+        /// The default busy timeout (in milliseconds) applied to every connection opened by
+        /// <see cref="OpenSQLiteFileAsync"/> via the connection string. This is a defense-in-depth
+        /// measure that ensures an active reader does not cause failed commits.
+        /// </summary>
+        private const int DefaultBusyTimeoutMs = 10000;
+
+        /// <summary>
         /// Helper method with logic to handle opening a database in possibly encrypted format.
         /// </summary>
         /// <param name="con">The SQLite connection object.</param>
@@ -284,6 +291,12 @@ namespace Duplicati.Library.SQLiteHelper
             con.ConnectionString = $"Data Source={path};Pooling=false";
             await con.OpenAsync().ConfigureAwait(false);
 
+            using (var cmd = con.CreateCommand())
+            {
+                cmd.CommandText = $"PRAGMA busy_timeout={DefaultBusyTimeoutMs}";
+                await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+            }
+
             // A database file we create is always locked down. For a pre-existing file we skip
             // the lockdown when the operator has opted in to an insecure data folder, mirroring
             // the data-folder behavior (a deliberately shared folder must not have its contents
@@ -295,7 +308,7 @@ namespace Duplicati.Library.SQLiteHelper
                 return;
 
             try { SystemIO.IO_OS.FileSetPermissionUserRWOnly(path); }
-            catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "SQLiteFilePermissionError", ex, "Failed to set permissions on SQLite file '{0}'", path); }
+            catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "SQLiteFilePermissionError", ex, "Failed to set permissions on SQLite file '{0}'", path); }            
         }
 
         /// <summary>

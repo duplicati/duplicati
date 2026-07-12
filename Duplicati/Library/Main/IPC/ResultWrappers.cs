@@ -146,6 +146,8 @@ public class CompactResultsWrapper : BasicResultsWrapper, ICompactResults
         get => _dto.VacuumResults == null ? null : new VacuumResultsWrapper(_dto.VacuumResults);
         set => throw new InvalidOperationException("Cannot set property on wrapper");
     }
+
+    public IBackendStatstics BackendStatistics => _dto.BackendStatistics == null ? null : new BackendStatisticsWrapper(_dto.BackendStatistics);
 }
 
 /// <summary>
@@ -188,6 +190,8 @@ public class DeleteResultsWrapper : BasicResultsWrapper, IDeleteResults
     public IEnumerable<Tuple<long, DateTime>> DeletedSets => _dto.DeletedSets;
     public ICompactResults CompactResults => _dto.CompactResults == null ? null : new CompactResultsWrapper(_dto.CompactResults);
     public bool Dryrun => _dto.Dryrun;
+
+    public IBackendStatstics BackendStatistics => _dto.BackendStatistics == null ? null : new BackendStatisticsWrapper(_dto.BackendStatistics);
 }
 
 /// <summary>

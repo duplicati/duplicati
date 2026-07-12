@@ -100,9 +100,31 @@ public interface IQueueRunnerService
     IList<Tuple<long, string?>> GetQueueWithIds();
 
     /// <summary>
+    /// Cancels the database lock wait for the currently running task, if its ID matches
+    /// <paramref name="taskID"/> and it is still waiting to acquire the database lock.
+    /// If the task has already acquired the lock and is executing, this has no effect —
+    /// call <see cref="IQueuedTask.AbortAsync"/> or <see cref="IQueuedTask.StopAsync"/>
+    /// to interrupt a running task. This method is intended to be called *before*
+    /// <see cref="IQueuedTask.AbortAsync"/>/<see cref="IQueuedTask.StopAsync"/> so that
+    /// a task blocked on lock acquisition is unblocked rather than left stuck.
+    /// </summary>
+    /// <param name="taskID">The ID of the currently running task whose lock wait should be cancelled.</param>
+    void CancelCurrentTaskLockWait(long taskID);
+
+    /// <summary>
     /// Runs a task immediately, bypassing the queue.
-    /// Note that the task will run concurrently with the queue tasks and may cause database lock issues.
+    /// If the task's backup database is already in use by a queued task (e.g. a running backup),
+    /// this method throws <see cref="Duplicati.Library.Interface.DatabaseLockedException"/> immediately
+    /// rather than waiting or causing a concurrent "database is locked" error.
+    /// <para>
+    /// Only tasks that expose a database path via <see cref="Duplicati.Library.RestAPI.Runner.GetEffectiveDBPath"/>
+    /// (i.e. <see cref="Duplicati.Library.RestAPI.IRunnerData"/>-backed tasks) are protected by the
+    /// database lock. In production all tasks are <see cref="Duplicati.Library.RestAPI.IRunnerData"/>
+    /// instances; non-runner <see cref="IQueuedTask"/> implementations (test mocks) return a
+    /// <c>null</c> path and bypass locking.
+    /// </para>
     /// </summary>
     /// <param name="task">The task to run</param>
+    /// <exception cref="Duplicati.Library.Interface.DatabaseLockedException">Thrown when the backup database is already in use.</exception>
     Task<IBasicResults?> RunImmediatelyAsync(IQueuedTask task);
 }

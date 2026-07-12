@@ -44,6 +44,13 @@ namespace Duplicati.Library.Utility
         private static readonly object m_lock = new object();
         private static readonly Dictionary<string, System.Diagnostics.StackTrace> m_fileTrace = new Dictionary<string, System.Diagnostics.StackTrace>();
 
+        // Process-wide monotonic counter appended to each generated name to guarantee
+        // uniqueness. The timestamp is only second-precision and the Guid is truncated to
+        // 8 characters, so under load (many temp files created in the same second by the
+        // same caller) those alone can collide, which would produce duplicate file paths
+        // and throw from the m_fileTrace.Add below.
+        private static long m_uniqueCounter;
+
         public static System.Diagnostics.StackTrace GetStackTraceForTempFile(string filename)
         {
             lock (m_lock)
@@ -53,17 +60,20 @@ namespace Duplicati.Library.Utility
                     return null;
         }
 
-        private static string GenerateUniqueName()
+        internal static string GenerateUniqueName()
         {
+            // The trailing sequence number guarantees a unique name even when the caller,
+            // second-precision timestamp, and truncated Guid all coincide.
+            var seq = System.Threading.Interlocked.Increment(ref m_uniqueCounter);
             var st = new System.Diagnostics.StackTrace();
             foreach (var f in st.GetFrames())
             {
                 var asm = f.GetMethod()?.DeclaringType?.Assembly;
                 if (asm != null && asm != typeof(TempFile).Assembly)
                 {
-                    var n = string.Format("{0}_{1}_{2}_{3}", f.GetMethod().DeclaringType.FullName, f.GetMethod().Name, Library.Utility.Utility.SerializeDateTime(DateTime.UtcNow), Guid.NewGuid().ToString().Substring(0, 8));
+                    var n = string.Format("{0}_{1}_{2}_{3}_{4}", f.GetMethod().DeclaringType.FullName, f.GetMethod().Name, Library.Utility.Utility.SerializeDateTime(DateTime.UtcNow), Guid.NewGuid().ToString().Substring(0, 8), seq);
                     if (n.IndexOfAny(System.IO.Path.GetInvalidFileNameChars()) >= 0)
-                        n = string.Format("{0}_{1}_{2}_{3}", f.GetMethod().DeclaringType.Name, f.GetMethod().Name, Library.Utility.Utility.SerializeDateTime(DateTime.UtcNow), Guid.NewGuid().ToString().Substring(0, 8));
+                        n = string.Format("{0}_{1}_{2}_{3}_{4}", f.GetMethod().DeclaringType.Name, f.GetMethod().Name, Library.Utility.Utility.SerializeDateTime(DateTime.UtcNow), Guid.NewGuid().ToString().Substring(0, 8), seq);
                     if (n.IndexOfAny(System.IO.Path.GetInvalidFileNameChars()) < 0)
                     {
                         lock (m_lock)
@@ -73,13 +83,13 @@ namespace Duplicati.Library.Utility
                 }
             }
 
-            var s = Guid.NewGuid().ToString();
+            var s = string.Format("{0}_{1}", Guid.NewGuid(), seq);
             lock (m_lock)
                 m_fileTrace.Add(s, st);
             return s;
         }
 #else
-        private static string GenerateUniqueName()
+        internal static string GenerateUniqueName()
         {
             return APPLICATION_PREFIX + Guid.NewGuid().ToString();
         }

@@ -121,16 +121,39 @@ internal class ReusableTransaction(SqliteConnection con, SqliteTransaction? tran
             }
             catch (Exception ex)
             {
-                Logging.Log.WriteErrorMessage(LOGTAG, "ReusableTransaction dispose", ex, "Transaction disposed with error: {0}", ex.Message);
-                throw;
+                if (!IsInactiveTransactionException(ex))
+                {
+                    Logging.Log.WriteErrorMessage(LOGTAG, "ReusableTransaction dispose", ex, "Transaction disposed with error: {0}", ex.Message);
+                    throw;
+                }
+
+                Logging.Log.WriteWarningMessage(LOGTAG, "ReusableTransactionAlreadyCompleted", ex, "Transaction was already completed during dispose: {0}", ex.Message);
             }
             finally
             {
                 m_disposed = true;
-                await m_transaction.DisposeAsync().ConfigureAwait(false);
+                try
+                {
+                    await m_transaction.DisposeAsync().ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    if (!IsInactiveTransactionException(ex))
+                        throw;
+
+                    Logging.Log.WriteWarningMessage(LOGTAG, "ReusableTransactionAlreadyDisposed", ex, "Transaction was already completed before dispose: {0}", ex.Message);
+                }
             }
         }
     }
+
+    // Microsoft.Data.Sqlite throws InvalidOperationException ("This SqliteTransaction has completed;
+    // it is no longer usable.") when a transaction is rolled back or disposed after it has already
+    // been completed. Unfortunately there is nothing specific that can be used to differentiate it
+    // from other exceptions that might occur during disposal, so we rely on the exception type, source and message.
+    private static bool IsInactiveTransactionException(Exception ex)
+        => ex is InvalidOperationException
+            && ex.Message.StartsWith("This SqliteTransaction has completed", StringComparison.Ordinal);
 
     /// <summary>
     /// Rolls back the transaction and restarts it.

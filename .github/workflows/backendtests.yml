@@ -269,11 +269,11 @@ jobs:
           - macos-latest
     steps:
       - name: Set up .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.x
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Restore NuGet dependencies
         run: >-
           dotnet restore
@@ -309,11 +309,11 @@ jobs:
           - macos-latest
     steps:
       - name: Set up .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.x
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Restore NuGet dependencies
         run: >-
           dotnet restore
@@ -347,11 +347,11 @@ jobs:
           - macos-latest
     steps:
       - name: Set up .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.x
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Restore NuGet dependencies
         run: >-
           dotnet restore
@@ -386,11 +386,11 @@ jobs:
           - macos-latest
     steps:
       - name: Set up .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.x
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Restore NuGet dependencies
         run: >-
           dotnet restore
@@ -424,11 +424,11 @@ jobs:
           - macos-latest
     steps:
       - name: Set up .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.x
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Restore NuGet dependencies
         run: >-
           dotnet restore
@@ -463,11 +463,11 @@ jobs:
           - macos-latest
     steps:
       - name: Set up .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.x
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Restore NuGet dependencies
         run: >-
           dotnet restore
@@ -500,11 +500,11 @@ jobs:
           - macos-latest
     steps:
       - name: Set up .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.x
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Restore NuGet dependencies
         run: >-
           dotnet restore
@@ -540,11 +540,11 @@ jobs:
           - macos-latest
     steps:
       - name: Set up .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.x
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Restore NuGet dependencies
         run: >-
           dotnet restore
@@ -579,11 +579,11 @@ jobs:
           - macos-latest
     steps:
       - name: Set up .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.x
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Restore NuGet dependencies
         run: >-
           dotnet restore
@@ -613,11 +613,11 @@ jobs:
           - ubuntu-latest
     steps:
       - name: Set up .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.x
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Restore NuGet dependencies
         run: >-
           dotnet restore
@@ -646,11 +646,11 @@ jobs:
           - macos-latest
     steps:
       - name: Set up .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.x
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Restore NuGet dependencies
         run: >-
           dotnet restore
@@ -684,11 +684,11 @@ jobs:
           - macos-latest
     steps:
       - name: Set up .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.x
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Restore NuGet dependencies
         run: >-
           dotnet restore
@@ -720,11 +720,11 @@ jobs:
           - macos-latest
     steps:
       - name: Set up .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.x
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Restore NuGet dependencies
         run: >-
           dotnet restore
@@ -758,11 +758,11 @@ jobs:
   #         - macos-latest
   #   steps:
   #     - name: Set up .NET
-  #       uses: actions/setup-dotnet@v4
+  #       uses: actions/setup-dotnet@v5
   #       with:
   #         dotnet-version: 10.x
   #     - name: Checkout source
-  #       uses: actions/checkout@v4
+  #       uses: actions/checkout@v7
   #     - name: Restore NuGet dependencies
   #       run: >-
   #         dotnet restore
@@ -794,11 +794,11 @@ jobs:
           - macos-latest
     steps:
       - name: Set up .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.x
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Restore NuGet dependencies
         run: >-
           dotnet restore
@@ -831,11 +831,11 @@ jobs:
           - macos-latest
     steps:
       - name: Set up .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.x
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Restore NuGet dependencies
         run: >-
           dotnet restore
@@ -869,11 +869,11 @@ jobs:
           - macos-latest
     steps:
       - name: Set up .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.x
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Restore NuGet dependencies
         run: >-
           dotnet restore
@@ -910,11 +910,11 @@ jobs:
           - macos-latest
     steps:
       - name: Set up .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.x
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Restore NuGet dependencies
         run: >-
           dotnet restore

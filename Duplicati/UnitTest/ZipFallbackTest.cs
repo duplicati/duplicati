@@ -31,6 +31,27 @@ namespace Duplicati.UnitTest
 {
     public class ZipFallbackTest : BasicSetupHelper
     {
+        private static async Task DeleteDatabaseWithRetryAsync(string path)
+        {
+            const int maxAttempts = 10;
+
+            for (var attempt = 1; ; attempt++)
+            {
+                try
+                {
+                    File.Delete(path);
+                    return;
+                }
+                catch (IOException) when (OperatingSystem.IsWindows() && attempt < maxAttempts)
+                {
+                    // Windows can retain SQLite file handles until pending finalizers complete.
+                    GC.Collect();
+                    GC.WaitForPendingFinalizers();
+                    await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
+                }
+            }
+        }
+
         [Test]
         [Category("Targeted")]
         public async Task FallbackToSharpCompressOnDecompressLzmaStreamsAsync()
@@ -50,7 +71,7 @@ namespace Duplicati.UnitTest
             }
 
             // Delete the local database
-            File.Delete(DBFILE);
+            await DeleteDatabaseWithRetryAsync(DBFILE);
 
             // Switch back to built-in compression
             testopts.Remove("zip-compression-method");
@@ -116,7 +137,7 @@ namespace Duplicati.UnitTest
             }
 
             // Delete the local database
-            File.Delete(DBFILE);
+            await DeleteDatabaseWithRetryAsync(DBFILE);
 
             // Recreate the database
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))

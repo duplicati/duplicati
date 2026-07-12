@@ -309,7 +309,7 @@ namespace Duplicati.Library.Interface
         IEnumerable<IListResultRemoteVolume> RemoteVolumes { get; }
     }
 
-    public interface IDeleteResults : IBasicResults
+    public interface IDeleteResults : IBasicResults, IBackendStatsticsReporter
     {
         IEnumerable<Tuple<long, DateTime>> DeletedSets { get; }
         ICompactResults CompactResults { get; }
@@ -377,7 +377,7 @@ namespace Duplicati.Library.Interface
         IEnumerable<IFileEntry> Files { get; }
     }
 
-    public interface ICompactResults : IBasicResults, IResultsWithVacuum
+    public interface ICompactResults : IBasicResults, IResultsWithVacuum, IBackendStatsticsReporter
     {
         long DeletedFileCount { get; }
         long DownloadedFileCount { get; }
