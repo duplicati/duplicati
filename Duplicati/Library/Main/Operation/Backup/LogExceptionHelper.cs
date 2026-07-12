@@ -42,14 +42,18 @@ public static class LogExceptionHelper
     /// <param name="message">The message to log</param>
     public static void LogCommonWarning(Exception? ex, string logtag, string id, string path, string message = "Failed to process path: {0}")
     {
+        // For known, expected path problems the warning message already describes the cause,
+        // so the exception (and its stack trace) is not attached: it would only bloat the logs
+        // (issue #6426). The fallback below keeps the exception so genuinely unexpected failures
+        // remain fully debuggable.
         if (ex.IsPermissionDeniedException())
-            Log.WriteWarningMessage(logtag, "PermissionDenied", ex, "Excluding path due to permission denied: {0}", path);
+            Log.WriteWarningMessage(logtag, "PermissionDenied", null, "Excluding path due to permission denied: {0}", path);
         else if (ex.IsFileLockedException())
-            Log.WriteWarningMessage(logtag, "FileLocked", ex, "Excluding path due to file locked: {0}", path);
+            Log.WriteWarningMessage(logtag, "FileLocked", null, "Excluding path due to file locked: {0}", path);
         else if (ex.IsPathNotFoundException())
-            Log.WriteWarningMessage(logtag, "PathNotFound", ex, "Excluding path due to path not found: {0}", path);
+            Log.WriteWarningMessage(logtag, "PathNotFound", null, "Excluding path due to path not found: {0}", path);
         else if (ex.IsPathTooLongException())
-            Log.WriteWarningMessage(logtag, "PathTooLong", ex, "Excluding path due to path too long: {0}", path);
+            Log.WriteWarningMessage(logtag, "PathTooLong", null, "Excluding path due to path too long: {0}", path);
         else
             Log.WriteWarningMessage(logtag, id, ex, message, path);
 
