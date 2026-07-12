@@ -458,7 +458,7 @@ namespace Duplicati.WindowsService
             GENERIC_ALL = SC_MANAGER_ALL_ACCESS,
         }
 
-        public static void InstallService(string ServiceName, string DisplayName, string Description, string Path, bool delayedAutoStart = false)
+        public static void InstallService(string ServiceName, string DisplayName, string Description, string Path, bool delayedAutoStart)
         {
             var scMgrHandle = OpenSCManager(null, null, (uint)SCM_ACCESS.SC_MANAGER_ALL_ACCESS);
 
