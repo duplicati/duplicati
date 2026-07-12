@@ -103,7 +103,7 @@ Usage: %CLI_EXE% backup <storage-URL> "<source-path>" [<options>]
 
 Usage: %CLI_EXE% find <storage-URL> ["<filename>"] [<options>]
 
-  Finds specific files in specific backups. If <filename> is specified, all occurrences of <filename> in the backup are listed. <filename> can contain * and ? as wildcards. File names in [brackets] are interpreted as regular expression. Latest backup is searched by default. If entire path is specified, all available versions of the file are listed. If no <filename> is specified, a list of all available backups is shown.
+  Finds specific files in specific backups. If <filename> is specified, all occurrences of <filename> in the backup are listed. <filename> can contain * and ? as wildcards. File names in [brackets] are interpreted as regular expression. The "find" command searches all backup versions by default, while "list" shows only the latest version by default (use --all-versions with "list" to search every version). If no <filename> is specified, a list of all available backups is shown.
 
   --time=<time>
     Shows what the files looked like at a specific time. Absolute and relative times can be specified.

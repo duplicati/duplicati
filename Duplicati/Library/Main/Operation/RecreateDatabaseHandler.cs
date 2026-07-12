@@ -64,16 +64,48 @@ namespace Duplicati.Library.Main.Operation
             if (File.Exists(path))
                 throw new UserInformationException(string.Format("Cannot recreate database because file already exists: {0}", path), "RecreateTargetDatabaseExists");
 
-            await using var db =
-                await LocalDatabase.CreateLocalDatabaseAsync(path, "Recreate", true, null, m_result.TaskControl.ProgressToken)
+            try
+            {
+                await using var db =
+                    await LocalDatabase.CreateLocalDatabaseAsync(path, "Recreate", true, null, m_result.TaskControl.ProgressToken)
+                        .ConfigureAwait(false);
+
+                await DoRunAsync(backendManager, db, false, filter, filelistfilter, blockprocessor).ConfigureAwait(false);
+
+                // Ensure database is consistent after the recreate
+                await db
+                    .VerifyConsistencyAsync(m_options.Blocksize, m_options.BlockhashSize, true, m_result.TaskControl.ProgressToken)
                     .ConfigureAwait(false);
+            }
+            catch (UserInformationException uex) when (uex.HelpID == "EmptyRemoteLocation" || uex.HelpID == "EmptyRemoteLocationWithPrefix")
+            {
+                // The remote destination is empty (#6205): the freshly-created database is empty and
+                // would block further operations - a fresh backup cannot run, and even a retry fails
+                // because RunAsync refuses to run when the file already exists. Remove it so the next
+                // run starts cleanly. The database connection is already disposed by the await-using
+                // above (the using scope is left before this catch runs), so the file is no longer
+                // locked.
+                //
+                // Only the empty-destination case is cleaned up. Other recreate failures - notably a
+                // database with missing blocks / broken filelists (help id "DatabaseIsBrokenConsiderPurge")
+                // - intentionally KEEP the recreated database so the user can run list-broken-files /
+                // purge-broken-files against it; those exceptions do not match this filter and propagate
+                // with the database left in place. This is best-effort and must never mask the error.
+                try
+                {
+                    if (File.Exists(path))
+                    {
+                        File.Delete(path);
+                        Logging.Log.WriteInformationMessage(LOGTAG, "RemovedIncompleteRecreateDatabase", "Removed incomplete recreate database at {0}", path);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "RecreateCleanupFailed", ex, "Failed to remove incomplete recreate database at {0}: {1}", path, ex.Message);
+                }
 
-            await DoRunAsync(backendManager, db, false, filter, filelistfilter, blockprocessor).ConfigureAwait(false);
-
-            // Ensure database is consistent after the recreate
-            await db
-                .VerifyConsistencyAsync(m_options.Blocksize, m_options.BlockhashSize, true, m_result.TaskControl.ProgressToken)
-                .ConfigureAwait(false);
+                throw;
+            }
         }
 
         /// <summary>

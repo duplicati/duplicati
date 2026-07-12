@@ -1164,7 +1164,7 @@ namespace Duplicati.Server
 
         private static void UpdateMetadataStatistics(IBackup backup, IParsedBackendStatistics r)
         {
-            if (r != null)
+            if (r != null && r.RemoteCalls > 0)
             {
                 backup.Metadata["LastBackupDate"] = Utility.SerializeDateTime(r.LastBackupDate.ToUniversalTime());
                 backup.Metadata["BackupListCount"] = r.BackupListCount.ToString();
@@ -1215,6 +1215,16 @@ namespace Duplicati.Server
             if (result is ISyncResults r6)
             {
                 UpdateMetadataLastSync(backup, r6);
+            }
+
+            if (result is IDeleteResults r7)
+            {
+                if (r7.CompactResults != null)
+                {
+                    UpdateMetadataLastCompact(backup, r7.CompactResults);
+                    if (!r7.CompactResults.Interrupted && r7.CompactResults.DeletedFileCount > 0 && r7.CompactResults.BackendStatistics is IParsedBackendStatistics p)
+                        UpdateMetadataStatistics(backup, p);
+                }
             }
 
             if (result is IBackupResults r)
@@ -1410,6 +1420,62 @@ namespace Duplicati.Server
                 PropertyNamingPolicy = JsonNamingPolicy.KebabCaseLower
             };
             options["remote-sync-json-config"] = JsonSerializer.Serialize(config, jsonOptions);
+        }
+
+        /// <summary>
+        /// Returns the effective local database path for an <see cref="IQueuedTask"/> instance.
+        /// In production, all queued tasks are <see cref="IRunnerData"/> instances created by the
+        /// <c>Runner.Create*</c> factories, so this delegates to
+        /// <see cref="GetEffectiveDBPath(IRunnerData?)"/>. If the task is not an
+        /// <see cref="IRunnerData"/> (only possible in tests with mock <see cref="IQueuedTask"/>
+        /// implementations), the result is <c>null</c>.
+        /// </summary>
+        /// <returns>The effective path, or <c>null</c></returns>
+        public static string? GetEffectiveDBPath(IQueuedTask? runnerData)
+            => GetEffectiveDBPath(runnerData as IRunnerData);
+
+        /// <summary>
+        /// Returns the effective local database path for a <see cref="IRunnerData"/> instance.
+        /// The precedence mirrors <see cref="ApplyOptions"/>: the <c>dbpath</c> extra option takes
+        /// priority, then the backup's <c>--dbpath</c> advanced setting, then the stored
+        /// <see cref="Serialization.Interface.IBackup.DBPath"/>. If <c>no-local-db</c> is set
+        /// (either as an extra option or as a backup advanced setting), the result is <c>null</c>.
+        /// </summary>
+        /// <returns>The effective path, or <c>null</c></returns>
+        public static string? GetEffectiveDBPath(IRunnerData? runnerData)
+        {
+            if (runnerData == null)
+                return null;
+
+            if (runnerData.ExtraOptions != null)
+            {
+                if (runnerData.ExtraOptions.ContainsKey("no-local-db") && Utility.ParseBoolOption(runnerData.ExtraOptions.AsReadOnly(), "no-local-db"))
+                    return null;
+                if (runnerData.ExtraOptions.TryGetValue("dbpath", out var dbpath) && !string.IsNullOrWhiteSpace(dbpath))
+                    return dbpath;
+            }
+
+            if (runnerData.Backup == null)
+                return null;
+
+            var setting = runnerData.Backup.Settings?.FirstOrDefault(s => s.Name.Equals($"--no-local-db", StringComparison.OrdinalIgnoreCase));
+            if (setting != null && Utility.ParseBool(setting.Value, true))
+                return null;
+
+            return GetEffectiveDBPath(runnerData.Backup);
+        }
+
+        /// <summary>
+        /// Returns the effective local database path for a backup: the "--dbpath" advanced option if
+        /// it is set, otherwise the stored <see cref="Serialization.Interface.IBackup.DBPath"/>. This
+        /// mirrors the precedence applied by <see cref="ApplyOptions"/> so that every operation agrees
+        /// on which database file to use (see issue #1698).
+        /// </summary>
+        public static string GetEffectiveDBPath(Serialization.Interface.IBackup backup)
+        {
+            var dbpath = backup.Settings?
+                .FirstOrDefault(s => s.Name.Equals("--dbpath", StringComparison.OrdinalIgnoreCase))?.Value;
+            return string.IsNullOrWhiteSpace(dbpath) ? backup.DBPath : dbpath;
         }
 
         internal static Dictionary<string, string?> ApplyOptions(Connection databaseConnection, Serialization.Interface.IBackup backup, Dictionary<string, string?> options, out string url)
