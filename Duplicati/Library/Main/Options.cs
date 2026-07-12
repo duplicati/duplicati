@@ -2018,7 +2018,7 @@ namespace Duplicati.Library.Main
                 // is missing) or silently dropping extra segments (when there are too many).
                 if (periodInterval.Length != 2)
                 {
-                    throw new UserInformationException(string.Format("The retention policy value '{0}' is not valid. Each entry must consist of a timeframe and an interval separated by a single colon, for example '7D:1D'.", rententionPolicyValueString), "RetentionPolicyInvalidValue");
+                    throw new UserInformationException(Strings.Options.RetentionPolicyInvalidValue(rententionPolicyValueString), "RetentionPolicyInvalidValue");
                 }
 
                 TimeSpan timeframe;
