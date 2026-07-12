@@ -160,7 +160,7 @@ namespace Duplicati.Library.Main.Operation
                 if (!await m_result.TaskControl.ProgressRendevouzAsync().ConfigureAwait(false))
                     return;
 
-                using (var tmpfile = await backendManager.GetAsync(firstEntry.File.Name, null, firstEntry.File.Size, cancellationToken).ConfigureAwait(false))
+                using (var tmpfile = await backendManager.GetAsync(firstEntry.File.Name, null, firstEntry.File.Size, allowParityRepair: true, cancellationToken).ConfigureAwait(false))
                 {
                     VolumeReaderBase.UpdateOptionsFromManifest(RestoreHandler.GetCompressionModule(firstEntry.File.Name), tmpfile, m_options);
                     using (var rd = new FilesetVolumeReader(RestoreHandler.GetCompressionModule(firstEntry.File.Name), tmpfile, m_options))
@@ -196,7 +196,7 @@ namespace Duplicati.Library.Main.Operation
 
                 long flindex = 1;
                 var filteredListMap = filteredList.ToDictionary(x => x.Value.File.Name, x => x.Value);
-                await foreach (var (tmpfile, hash, size, name) in backendManager.GetFilesOverlappedAsync(filteredList.Select(x => new RemoteVolumeMapper(x.Value)), cancellationToken).ConfigureAwait(false))
+                await foreach (var (tmpfile, hash, size, name) in backendManager.GetFilesOverlappedAsync(filteredList.Select(x => new RemoteVolumeMapper(x.Value)), allowParityRepair: true, cancellationToken).ConfigureAwait(false))
                 {
                     var flentry = filteredListMap[name];
                     using (tmpfile)
@@ -256,7 +256,7 @@ namespace Duplicati.Library.Main.Operation
         {
             var list = new List<IListResultFileset>();
             var map = filteredList.ToDictionary(x => x.Value.File.Name, x => x);
-            await foreach (var (file, hash, size, name) in backendManager.GetFilesOverlappedAsync(filteredList.Select(x => new RemoteVolumeMapper(x.Value)), cancelToken).ConfigureAwait(false))
+            await foreach (var (file, hash, size, name) in backendManager.GetFilesOverlappedAsync(filteredList.Select(x => new RemoteVolumeMapper(x.Value)), allowParityRepair: true, cancelToken).ConfigureAwait(false))
             {
                 // We must obtain the partial/full status from the fileset file in the dlist files.
                 // Without this, the restore dialog will show all versions as full, or all versions

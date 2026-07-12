@@ -309,9 +309,10 @@ internal partial class BackendManager : IBackendManager
     /// <param name="remotename">The name of the remote file</param>
     /// <param name="hash">The hash of the remote file, for verification</param>
     /// <param name="size">The size of the remote file, for verification</param>
+    /// <param name="allowParityRepair">Whether a failed download may be repaired using parity data</param>
     /// <param name="cancelToken">The cancellation token</param>
     /// <returns>A temporary file with the contents of the remote file</returns>
-    public async Task<TempFile> GetAsync(string remotename, string hash, long size, CancellationToken cancelToken, bool allowParityRepair = true)
+    public async Task<TempFile> GetAsync(string remotename, string hash, long size, bool allowParityRepair, CancellationToken cancelToken)
     {
         var op = new GetOperation(remotename, size, context, cancelToken)
         {
@@ -331,9 +332,10 @@ internal partial class BackendManager : IBackendManager
     /// <param name="remotename">The name of the remote file</param>
     /// <param name="hash">The hash of the remote file, for verification</param>
     /// <param name="size">The size of the remote file, for verification</param>
+    /// <param name="allowParityRepair">Whether a failed download may be repaired using parity data</param>
     /// <param name="cancelToken">The cancellation token</param>
     /// <returns>A temporary file with the contents of the remote file</returns>
-    public async Task<TempFile> GetDirectAsync(string remotename, string hash, long size, CancellationToken cancelToken, bool allowParityRepair = true)
+    public async Task<TempFile> GetDirectAsync(string remotename, string hash, long size, bool allowParityRepair, CancellationToken cancelToken)
     {
         var op = new GetOperation(remotename, size, context, cancelToken)
         {
@@ -365,9 +367,10 @@ internal partial class BackendManager : IBackendManager
     /// <param name="remotename">The name of the remote file</param>
     /// <param name="hash">The hash of the remote file, or null if not known</param>
     /// <param name="size">The size of the remote file, or -1 if not known</param>
+    /// <param name="allowParityRepair">Whether a failed download may be repaired using parity data</param>
     /// <param name="cancelToken">The cancellation token</param>
     /// <returns>A tuple containing the temporary file, the hash of the file, and the size of the file</returns>
-    public async Task<(TempFile File, string Hash, long Size)> GetWithInfoAsync(string remotename, string hash, long size, CancellationToken cancelToken, bool allowParityRepair = true)
+    public async Task<(TempFile File, string Hash, long Size)> GetWithInfoAsync(string remotename, string hash, long size, bool allowParityRepair, CancellationToken cancelToken)
     {
         var op = new GetOperation(remotename, size, context, cancelToken)
         {
@@ -557,22 +560,23 @@ internal partial class BackendManager : IBackendManager
     /// Performs a download of the files specified, with pre-fetch to overlap the download and processing
     /// </summary>
     /// <param name="volumes">The volumes to download</param>
+    /// <param name="allowParityRepair">Whether a failed download may be repaired using parity data</param>
     /// <param name="cancelToken">The cancellation token</param>
     /// <returns>The downloaded files and the volume they came from</returns>
-    public async IAsyncEnumerable<(TempFile File, string Hash, long Size, string Name)> GetFilesOverlappedAsync(IEnumerable<IRemoteVolume> volumes, [EnumeratorCancellation] CancellationToken cancelToken, bool allowParityRepair = true)
+    public async IAsyncEnumerable<(TempFile File, string Hash, long Size, string Name)> GetFilesOverlappedAsync(IEnumerable<IRemoteVolume> volumes, bool allowParityRepair, [EnumeratorCancellation] CancellationToken cancelToken)
     {
         var prevVolume = volumes.FirstOrDefault();
         if (prevVolume == null)
             yield break;
 
         // Get the first volume, so we do not have pending parallel transfers
-        var prevResult = await GetWithInfoAsync(prevVolume.Name, prevVolume.Hash, prevVolume.Size, cancelToken, allowParityRepair)
+        var prevResult = await GetWithInfoAsync(prevVolume.Name, prevVolume.Hash, prevVolume.Size, allowParityRepair, cancelToken)
             .ConfigureAwait(false);
 
         foreach (var volume in volumes.Skip(1))
         {
             // Prepare the next volume, while processing the previous one
-            var nextTask = GetWithInfoAsync(volume.Name, volume.Hash, volume.Size, cancelToken, allowParityRepair);
+            var nextTask = GetWithInfoAsync(volume.Name, volume.Hash, volume.Size, allowParityRepair, cancelToken);
 
             // Assuming we do not throw while yielding, otherwise we would need to dispose nextTask
             yield return (prevResult.File, prevResult.Hash, prevResult.Size, prevVolume.Name);
@@ -592,22 +596,23 @@ internal partial class BackendManager : IBackendManager
     /// Performs a direct download of the files specified, with pre-fetch to overlap the download and processing
     /// </summary>
     /// <param name="volumes">The volumes to download</param>
+    /// <param name="allowParityRepair">Whether a failed download may be repaired using parity data</param>
     /// <param name="cancelToken">The cancellation token</param>
     /// <returns>The downloaded files and the volume they came from</returns>
-    public async IAsyncEnumerable<(TempFile File, string Name)> GetFilesOverlappedDirectAsync(IEnumerable<IRemoteVolume> volumes, [EnumeratorCancellation] CancellationToken cancelToken, bool allowParityRepair = true)
+    public async IAsyncEnumerable<(TempFile File, string Name)> GetFilesOverlappedDirectAsync(IEnumerable<IRemoteVolume> volumes, bool allowParityRepair, [EnumeratorCancellation] CancellationToken cancelToken)
     {
         var prevVolume = volumes.FirstOrDefault();
         if (prevVolume == null)
             yield break;
 
         // Get the first volume, so we do not have pending parallel transfers
-        var prevResult = await GetDirectAsync(prevVolume.Name, prevVolume.Hash, prevVolume.Size, cancelToken, allowParityRepair)
+        var prevResult = await GetDirectAsync(prevVolume.Name, prevVolume.Hash, prevVolume.Size, allowParityRepair, cancelToken)
             .ConfigureAwait(false);
 
         foreach (var volume in volumes.Skip(1))
         {
             // Prepare the next volume, while processing the previous one
-            var nextTask = GetDirectAsync(volume.Name, volume.Hash, volume.Size, cancelToken, allowParityRepair);
+            var nextTask = GetDirectAsync(volume.Name, volume.Hash, volume.Size, allowParityRepair, cancelToken);
 
             // Assuming we do not throw while yielding, otherwise we would need to dispose nextTask
             yield return (prevResult, prevVolume.Name);

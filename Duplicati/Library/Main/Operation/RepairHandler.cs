@@ -265,7 +265,7 @@ namespace Duplicati.Library.Main.Operation
                                 m_result.OperationProgressUpdater.UpdateProgress((float)progress / targetProgess);
 
                                 KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>> res;
-                                var (tf, hash, size) = await backendManager.GetWithInfoAsync(n.Name, n.Hash, n.Size, cancellationToken).ConfigureAwait(false);
+                                var (tf, hash, size) = await backendManager.GetWithInfoAsync(n.Name, n.Hash, n.Size, allowParityRepair: true, cancellationToken).ConfigureAwait(false);
                                 using (tf)
                                     res =
                                         await TestHandler.TestVolumeInternalsAsync(testdb, n, tf, m_options, 1, cancellationToken)
@@ -322,7 +322,7 @@ namespace Duplicati.Library.Main.Operation
                             {
                                 try
                                 {
-                                    (var tf, var hash, var size) = await backendManager.GetWithInfoAsync(n.File.Name, null, n.File.Size, cancellationToken).ConfigureAwait(false);
+                                    (var tf, var hash, var size) = await backendManager.GetWithInfoAsync(n.File.Name, null, n.File.Size, allowParityRepair: true, cancellationToken).ConfigureAwait(false);
                                     using (tf)
                                     using (var ifr = new IndexVolumeReader(n.CompressionModule, tf, m_options, m_options.BlockhashSize))
                                     {
@@ -479,7 +479,7 @@ namespace Duplicati.Library.Main.Operation
                         var remoteVolume = await db
                             .GetRemoteVolumeAsync(volumename, cancellationToken)
                             .ConfigureAwait(false);
-                        using var tmpfile = await backendManager.GetAsync(remoteVolume.Name, remoteVolume.Hash, remoteVolume.Size, cancellationToken).ConfigureAwait(false);
+                        using var tmpfile = await backendManager.GetAsync(remoteVolume.Name, remoteVolume.Hash, remoteVolume.Size, allowParityRepair: true, cancellationToken).ConfigureAwait(false);
                         var parsed = VolumeBase.ParseFilename(remoteVolume.Name);
                         using var stream = new FileStream(tmpfile, FileMode.Open, FileAccess.Read, FileShare.Read);
                         using var compressor = DynamicLoader.CompressionLoader.GetModule(parsed.CompressionModule, stream, ArchiveMode.Read, m_options.RawOptions);
@@ -1245,7 +1245,7 @@ namespace Duplicati.Library.Main.Operation
                     await EmitBlockListBlock().ConfigureAwait(false);
 
                 //Then we grab all remote volumes that have the missing blocks
-                await foreach (var (tmpfile, _, _, name) in backendManager.GetFilesOverlappedAsync(await mbl.GetMissingBlockSourcesAsync(cancellationToken).ToListAsync(cancellationToken: cancellationToken).ConfigureAwait(false), cancellationToken).ConfigureAwait(false))
+                await foreach (var (tmpfile, _, _, name) in backendManager.GetFilesOverlappedAsync(await mbl.GetMissingBlockSourcesAsync(cancellationToken).ToListAsync(cancellationToken: cancellationToken).ConfigureAwait(false), allowParityRepair: true, cancellationToken).ConfigureAwait(false))
                 {
                     try
                     {
@@ -1357,7 +1357,7 @@ namespace Duplicati.Library.Main.Operation
                     .GetRemoteVolumeFromFilesetIDAsync(entry.Key, m_result.TaskControl.ProgressToken)
                     .ConfigureAwait(false);
                 var parsed = VolumeBase.ParseFilename(volume.Name);
-                using var tmpfile = await backendManager.GetAsync(volume.Name, volume.Hash, volume.Size, CancellationToken.None).ConfigureAwait(false);
+                using var tmpfile = await backendManager.GetAsync(volume.Name, volume.Hash, volume.Size, allowParityRepair: true, CancellationToken.None).ConfigureAwait(false);
                 using var stream = new FileStream(tmpfile, FileMode.Open, FileAccess.Read, FileShare.Read);
                 using var compressor = DynamicLoader.CompressionLoader.GetModule(parsed.CompressionModule, stream, ArchiveMode.Read, m_options.RawOptions);
                 if (compressor == null)

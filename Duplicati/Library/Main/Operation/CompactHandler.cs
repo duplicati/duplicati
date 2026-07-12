@@ -194,7 +194,7 @@ namespace Duplicati.Library.Main.Operation
 
                     using (var q = await db.CreateBlockQueryHelperAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                     {
-                        await foreach (var (tmpfile, hash, size, name) in backendManager.GetFilesOverlappedAsync(volumesToDownload, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
+                        await foreach (var (tmpfile, hash, size, name) in backendManager.GetFilesOverlappedAsync(volumesToDownload, allowParityRepair: true, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                         {
                             using (tmpfile)
                             {

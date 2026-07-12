@@ -144,10 +144,10 @@ internal interface IBackendManager : IDisposable
     /// <param name="remotename">The name of the file to get</param>
     /// <param name="hash">The hash of the file to get, or <c>null</c> if not known</param>
     /// <param name="size">The size of the file to get, or -1 if not known</param>
-    /// <param name="cancelToken">The cancellation token</param>
     /// <param name="allowParityRepair">Whether a failed download may be repaired using parity data. Disable for the test/verification flow so damaged files are reported.</param>
+    /// <param name="cancelToken">The cancellation token</param>
     /// <returns>The file, hash, and size</returns>
-    Task<(TempFile File, string Hash, long Size)> GetWithInfoAsync(string remotename, string hash, long size, CancellationToken cancelToken, bool allowParityRepair = true);
+    Task<(TempFile File, string Hash, long Size)> GetWithInfoAsync(string remotename, string hash, long size, bool allowParityRepair, CancellationToken cancelToken);
 
     /// <summary>
     /// Gets a file from the backend
@@ -155,10 +155,10 @@ internal interface IBackendManager : IDisposable
     /// <param name="remotename">The name of the file to get</param>
     /// <param name="hash">The hash of the file to get, or <c>null</c> if not known</param>
     /// <param name="size">The size of the file to get, or -1 if not known</param>
-    /// <param name="cancelToken">The cancellation token</param>
     /// <param name="allowParityRepair">Whether a failed download may be repaired using parity data. Disable for the test/verification flow so damaged files are reported.</param>
+    /// <param name="cancelToken">The cancellation token</param>
     /// <returns>The downloaded file</returns>
-    Task<TempFile> GetAsync(string remotename, string hash, long size, CancellationToken cancelToken, bool allowParityRepair = true);
+    Task<TempFile> GetAsync(string remotename, string hash, long size, bool allowParityRepair, CancellationToken cancelToken);
 
     /// <summary>
     /// Gets a file from the backend without decrypting it
@@ -166,28 +166,28 @@ internal interface IBackendManager : IDisposable
     /// <param name="remotename">The name of the remote volume</param>
     /// <param name="hash">The hash of the volume</param>
     /// <param name="size">The size of the volume</param>
-    /// <param name="cancelToken">The cancellation token</param>
     /// <param name="allowParityRepair">Whether a failed download may be repaired using parity data. Disable for the test/verification flow so damaged files are reported.</param>
+    /// <param name="cancelToken">The cancellation token</param>
     /// <returns>The downloaded file</returns>
-    Task<TempFile> GetDirectAsync(string remotename, string hash, long size, CancellationToken cancelToken, bool allowParityRepair = true);
+    Task<TempFile> GetDirectAsync(string remotename, string hash, long size, bool allowParityRepair, CancellationToken cancelToken);
 
     /// <summary>
     /// Performs a download of the files specified, with pre-fetch to overlap the download and processing
     /// </summary>
     /// <param name="volumes">The volumes to download</param>
-    /// <param name="cancelToken">The cancellation token</param>
     /// <param name="allowParityRepair">Whether a failed download may be repaired using parity data. Disable for the test/verification flow so damaged files are reported.</param>
+    /// <param name="cancelToken">The cancellation token</param>
     /// <returns>The downloaded files, hash, size, and name</returns>
-    IAsyncEnumerable<(TempFile File, string Hash, long Size, string Name)> GetFilesOverlappedAsync(IEnumerable<IRemoteVolume> volumes, CancellationToken cancelToken, bool allowParityRepair = true);
+    IAsyncEnumerable<(TempFile File, string Hash, long Size, string Name)> GetFilesOverlappedAsync(IEnumerable<IRemoteVolume> volumes, bool allowParityRepair, CancellationToken cancelToken);
 
     /// <summary>
     /// Performs a direct download of the files specified, with pre-fetch to overlap the download and processing
     /// </summary>
     /// <param name="volumes">The volumes to download</param>
-    /// <param name="cancelToken">The cancellation token</param>
     /// <param name="allowParityRepair">Whether a failed download may be repaired using parity data. Disable for the test/verification flow so damaged files are reported.</param>
+    /// <param name="cancelToken">The cancellation token</param>
     /// <returns>The downloaded files and the volume they came from</returns>
-    IAsyncEnumerable<(TempFile File, string Name)> GetFilesOverlappedDirectAsync(IEnumerable<IRemoteVolume> volumes, CancellationToken cancelToken, bool allowParityRepair = true);
+    IAsyncEnumerable<(TempFile File, string Name)> GetFilesOverlappedDirectAsync(IEnumerable<IRemoteVolume> volumes, bool allowParityRepair, CancellationToken cancelToken);
 
     /// <summary>
     /// Flushes the database messages to the database
