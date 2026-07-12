@@ -111,7 +111,7 @@ namespace Duplicati.WindowsService
                     //The path can also include arguments for an auto-start service. For example, "d:\myshare\myservice.exe arg1 arg2". These arguments are passed to the service entry point (typically the main function).
                     try
                     {
-                        ServiceInstaller.InstallService(ServiceControl.SERVICE_NAME, ServiceControl.DISPLAY_NAME, ServiceControl.SERVICE_DESCRIPTION, "\"" + selfexec + "\"" + " SERVER " + commandline);
+                        ServiceInstaller.InstallService(ServiceControl.SERVICE_NAME, ServiceControl.DISPLAY_NAME, ServiceControl.SERVICE_DESCRIPTION, "\"" + selfexec + "\"" + " SERVER " + commandline, delayedAutoStart: true);
                         Console.WriteLine("Duplicati service installation succeeded.");
                         if (!args.Any(x => string.Equals("install-only", x, StringComparison.OrdinalIgnoreCase)))
                         {
