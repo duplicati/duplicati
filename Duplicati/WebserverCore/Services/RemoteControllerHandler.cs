@@ -47,6 +47,19 @@ public class RemoteControllerHandler(Connection connection, IHttpClientFactory h
     {
         metadata["feature:additional-report-url"] = connection.ApplicationSettings.AdditionalReportUrl;
         metadata["feature:additional-activity-url"] = connection.ApplicationSettings.AdditionalActivityUrl;
+        if (connection.Settings != null)
+        {
+            var lookup = connection.Settings
+                .GroupBy(k => k.Name.StartsWith("--", StringComparison.Ordinal) ? k.Name.Substring(2) : k.Name, k => k.Value)
+                .ToDictionary(x => x.Key, x => x.FirstOrDefault(), StringComparer.OrdinalIgnoreCase);
+
+            var machineId = lookup.GetValueOrDefault("machine-id");
+            var machineName = lookup.GetValueOrDefault("machine-name");
+            if (!string.IsNullOrWhiteSpace(machineId))
+                metadata["machine-id"] = machineId;
+            if (!string.IsNullOrWhiteSpace(machineName))
+                metadata["machine-name"] = machineName;
+        }
         return Task.FromResult(metadata);
     }
 
