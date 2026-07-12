@@ -34,8 +34,10 @@ namespace Duplicati.UnitTest
             var oldEnv = Environment.GetEnvironmentVariable(DataFolderManager.DATAFOLDER_ENV_NAME);
             var portableModeEnvName = $"{AutoUpdateSettings.AppName}__{DataFolderManager.PORTABLE_MODE_OPTION.Replace('-', '_')}".ToUpperInvariant();
             var oldPortableEnv = Environment.GetEnvironmentVariable(portableModeEnvName);
+            var oldAllowInsecureEnv = Environment.GetEnvironmentVariable(Library.Common.IO.Util.AllowInsecureDatafolderEnvVar);
             Environment.SetEnvironmentVariable(DataFolderManager.DATAFOLDER_ENV_NAME, tempDir);
             Environment.SetEnvironmentVariable(portableModeEnvName, "false");
+            Environment.SetEnvironmentVariable(Library.Common.IO.Util.AllowInsecureDatafolderEnvVar, "true");
 
             try
             {
@@ -60,6 +62,7 @@ namespace Duplicati.UnitTest
             }
             finally
             {
+                Environment.SetEnvironmentVariable(Library.Common.IO.Util.AllowInsecureDatafolderEnvVar, oldAllowInsecureEnv);
                 Environment.SetEnvironmentVariable(DataFolderManager.DATAFOLDER_ENV_NAME, oldEnv);
                 Environment.SetEnvironmentVariable(portableModeEnvName, oldPortableEnv);
                 // reset override by calling without env var
