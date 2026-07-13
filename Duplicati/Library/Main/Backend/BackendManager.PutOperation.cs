@@ -258,6 +258,14 @@ partial class BackendManager
             // Upload completed, prepare the index file if any
             if (indexOperation != null)
             {
+#if DEBUG
+                // Test hook: the block volume has now been uploaded to the destination and
+                // committed as Uploaded in the database, but the paired index volume has
+                // not been uploaded yet. Tests use this to keep the index upload in flight
+                // while a concurrent upload fails, reproducing the teardown-cancellation
+                // race between a block volume and its paired index volume.
+                DebugTestHooks.BeforeIndexUpload?.Invoke(indexOperation.Value.Operation.RemoteFilename);
+#endif
                 // TODO: It would be better if we encrypt the index file while uploading the block file
                 // since most operations work correctly. But if the upload of the block file fails
                 // we need to deal with decryption, or keep the unencrypted file around

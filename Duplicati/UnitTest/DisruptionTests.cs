@@ -845,6 +845,171 @@ namespace Duplicati.UnitTest
             }
         }
 
+        /// <summary>
+        /// Deterministic reproduction of the flaky <see cref="TestUploadExceptionWithNoRetriesAsync"/> failure.
+        ///
+        /// The backup uploads dblock+dindex pairs concurrently (asynchronous-upload-limit
+        /// defaults to 4). When one dblock upload fails and there are no retries, the
+        /// BackendManager handler tears down: it faults, and in its finally block it calls
+        /// <c>tcs.CancelAsync()</c> which cancels every other in-flight upload
+        /// (see BackendManager.Handler.RunAsync). If a second dblock has already uploaded
+        /// and been committed to the database as Uploaded (with its IndexBlockLink created),
+        /// but its paired dindex upload is still in-flight, the dindex upload is cancelled.
+        ///
+        /// This leaves the database believing the dindex exists (or leaves a partially
+        /// uploaded/inconsistent dindex on the destination) while the actual remote content
+        /// does not match. On the following backup this surfaces either as a
+        /// "Found 1 faulty index files, repairing now" warning during the post-backup Test
+        /// phase (the common CI symptom), or as a hard verification error listing
+        /// "[Missing, ...]" blocks for that dindex (the rarer CI symptom).
+        ///
+        /// The production test relies on a Thread.Sleep(1000) and hopes the second upload
+        /// fully completes before teardown; this test removes that timing dependency by
+        /// using the DeterministicErrorBackend's ErrorGenerator (invoked synchronously on
+        /// the upload worker threads) as a barrier: the failing dblock is held until a
+        /// second dblock's dindex upload has started, guaranteeing the dindex is in-flight
+        /// when teardown cancels it.
+        /// </summary>
+        [Test]
+        [Category("Disruption")]
+        public async Task TestUploadExceptionWithNoRetriesRaceAsync()
+        {
+#if !DEBUG
+            Assert.Ignore("This test requires DEBUG to be defined");
+#endif
+            var testopts = TestOptions;
+            testopts["number-of-retries"] = "0";
+            testopts["dblock-size"] = "10mb";
+            // Force concurrent uploads so a second dblock/dindex pair is in flight
+            // while the first upload fails.
+            testopts["asynchronous-upload-limit"] = "4";
+
+            // Make a base backup
+            using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
+                TestUtils.AssertResults(await c.BackupAsync(new string[] { DATAFOLDER }));
+
+            Assert.AreEqual(1, Directory.EnumerateFiles(TARGETFOLDER, "*.dlist.*").Count(), "There should be only one dlist file in the target folder");
+
+            // Make a new backup that fails uploading a dblock file
+            ModifySourceFiles();
+
+            Library.DynamicLoader.BackendLoader.AddBackend(new DeterministicErrorBackend());
+            var failtarget = new DeterministicErrorBackend().ProtocolKey + "://" + TARGETFOLDER;
+
+            var hasFailed = false;
+            var lockobj = new object();
+
+            // Coordinates the deterministic race:
+            // - indexUploadHeld    : set when a completed dblock's paired dindex upload has
+            //                        started and is being held in flight.
+            // - releaseIndexUpload : set by the handler teardown to release the held dindex
+            //                        so it is cancelled mid-flight.
+            // The dindex is held in flight until the handler begins tearing down (after a
+            // concurrent dblock upload failed), guaranteeing the in-flight dindex is
+            // cancelled by the teardown rather than completing beforehand. This is what a
+            // correct fix must handle safely; without a fix, the following backup reports a
+            // faulty index file.
+            var indexUploadHeld = new ManualResetEventSlim(false);
+            var releaseIndexUpload = new ManualResetEventSlim(false);
+
+#if DEBUG
+            Library.Main.Backend.BackendManager.DebugTestHooks.BeforeIndexUpload = _ =>
+            {
+                // A dblock has been uploaded and committed as Uploaded in the database;
+                // its paired dindex is about to upload. Signal that it is in flight and
+                // hold it until the handler teardown releases it, so the dindex is
+                // guaranteed to still be in flight when the teardown cancels uploads.
+                indexUploadHeld.Set();
+                releaseIndexUpload.Wait(TimeSpan.FromSeconds(30));
+            };
+
+            Library.Main.Backend.BackendManager.DebugTestHooks.BeforeTeardownCancel = () =>
+            {
+                // The handler is about to cancel all in-flight uploads. Release the held
+                // dindex so it is cancelled here, deterministically leaving a dblock
+                // committed as Uploaded with an IndexBlockLink, but no matching dindex on
+                // the destination.
+                releaseIndexUpload.Set();
+            };
+#endif
+
+            DeterministicErrorBackend.ErrorGenerator = (DeterministicErrorBackend.BackendAction action, string remotename) =>
+            {
+                // Never interfere with downloads/verification reads.
+                if (action.IsGetOperation)
+                    return false;
+
+                var isBlock = remotename.Contains(".dblock.");
+
+                // Fail exactly one dblock upload, but only once a concurrent dindex
+                // upload is being held in flight. This guarantees the held dindex is
+                // cancelled by the handler teardown (tcs.CancelAsync) that follows.
+                if (action == DeterministicErrorBackend.BackendAction.PutBefore && isBlock)
+                {
+                    lock (lockobj)
+                    {
+                        if (!hasFailed)
+                        {
+                            // Wait until a dblock has uploaded and its dindex is held in
+                            // flight, then fail this (different) dblock upload.
+                            if (indexUploadHeld.Wait(TimeSpan.FromSeconds(30)))
+                            {
+                                hasFailed = true;
+                                return true;
+                            }
+                        }
+                    }
+                }
+
+                return false;
+            };
+
+            try
+            {
+                using (var c = new Controller(failtarget, testopts, null))
+                    Assert.ThrowsAsync<DeterministicErrorBackend.DeterministicErrorBackendException>(() => c.BackupAsync(new string[] { DATAFOLDER }));
+            }
+            finally
+            {
+                // Make sure a held dindex upload can never hang the test, and that the
+                // test hooks never leak into other tests.
+                releaseIndexUpload.Set();
+                DeterministicErrorBackend.ErrorGenerator = null;
+#if DEBUG
+                Library.Main.Backend.BackendManager.DebugTestHooks.Reset();
+#endif
+            }
+
+            Assert.That(hasFailed, Is.True, "Failed to fail the upload");
+
+            // Create a regular backup
+            using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
+                TestUtils.AssertResults(await c.BackupAsync(new string[] { DATAFOLDER }));
+
+            // Verify that all is in order. This is where the flaky failure surfaces:
+            // either a faulty-index-file warning or a [Missing, ...] verification error.
+            using (var c = new Controller("file://" + TARGETFOLDER, testopts.Expand(new { full_remote_verification = true }), null))
+            {
+                try
+                {
+                    TestUtils.AssertResults(await c.TestAsync(long.MaxValue));
+                }
+                catch (TestUtils.TestVerificationException e)
+                {
+                    using var db = await LocalDatabase.CreateLocalDatabaseAsync(testopts["dbpath"], "test", true, null, CancellationToken.None).ConfigureAwait(false);
+                    using var cmd = db.Connection.CreateCommand();
+
+                    var sb = new StringBuilder();
+                    sb.AppendLine(e.Message);
+                    sb.AppendLine(TestUtils.DumpTable(cmd, "Remotevolume", null));
+                    sb.AppendLine(TestUtils.DumpTable(cmd, "IndexBlockLink", null));
+                    sb.AppendLine(TestUtils.DumpTable(cmd, "Block", null));
+
+                    Assert.Fail(sb.ToString());
+                }
+            }
+        }
+
         [Test]
         [Category("Disruption")]
         [TestCase(true, false)]

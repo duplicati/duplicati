@@ -341,6 +341,12 @@ partial class BackendManager
             }
             finally
             {
+#if DEBUG
+                // Test hook: invoked right before we cancel all in-flight uploads during
+                // teardown. Tests use this to release a deliberately-held dindex upload so
+                // it is cancelled mid-flight here, making the teardown race deterministic.
+                DebugTestHooks.BeforeTeardownCancel?.Invoke();
+#endif
                 // Terminate any active uploads and downloads. Exceptions thrown by the downloads should be captured by the callers.
                 await tcs.CancelAsync();
 
