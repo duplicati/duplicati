@@ -460,6 +460,7 @@ namespace Duplicati.Library.Main
 
             new CommandLineArgument("encryption-module", CommandLineArgument.ArgumentType.String, Strings.Options.EncryptionmoduleShort, Strings.Options.EncryptionmoduleLong, "aes"),
             new CommandLineArgument("compression-module", CommandLineArgument.ArgumentType.String, Strings.Options.CompressionmoduleShort, Strings.Options.CompressionmoduleLong, "zip"),
+            new CommandLineArgument("parity-module", CommandLineArgument.ArgumentType.String, Strings.Options.ParitymoduleShort, Strings.Options.ParitymoduleLong, ""),
 
             new CommandLineArgument("enable-module", CommandLineArgument.ArgumentType.String, Strings.Options.EnablemoduleShort, Strings.Options.EnablemoduleLong),
             new CommandLineArgument("disable-module", CommandLineArgument.ArgumentType.String, Strings.Options.DisablemoduleShort, Strings.Options.DisablemoduleLong),
@@ -906,6 +907,19 @@ namespace Duplicati.Library.Main
         /// Gets the module used for compression
         /// </summary>
         public string CompressionModule => GetString("compression-module", "zip");
+
+        /// <summary>
+        /// Gets the module used for parity, or null if parity is disabled.
+        /// Parity is opt-in: it is disabled unless a parity module is explicitly selected.
+        /// </summary>
+        public string? ParityModule
+        {
+            get
+            {
+                var module = GetString("parity-module", "");
+                return string.IsNullOrEmpty(module) ? null : module;
+            }
+        }
 
         /// <summary>
         /// Gets the number of time to retry transmission if it fails

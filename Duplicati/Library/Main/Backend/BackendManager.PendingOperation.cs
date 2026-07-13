@@ -23,6 +23,7 @@ partial class BackendManager
     /// <param name="TaskReader">The task reader</param>
     /// <param name="IsThrottleDisabled">Whether throttling is disabled</param>
     /// <param name="Options">The options</param>
+    /// <param name="Parity">The shared parity module provider for the operation</param>
     private sealed record ExecuteContext(
         ProgressHandler ProgressHandler,
         IBackendWriter Statwriter,
@@ -31,7 +32,89 @@ partial class BackendManager
         ThrottleManager DownloadThrottleManager,
         ITaskReader TaskReader,
         bool IsThrottleDisabled,
-        Options Options);
+        Options Options,
+        SharedParityProvider Parity);
+
+    /// <summary>
+    /// Lazily creates and owns a single parity module instance for the lifetime of a
+    /// backend operation (backup/restore/...). Sharing one instance keeps the module's
+    /// availability probe and "not found" warning to once per operation, and lets the
+    /// instance hold per-operation state. Thread-safe; disposed with the backend manager.
+    /// </summary>
+    private sealed class SharedParityProvider : IDisposable
+    {
+        /// <summary>
+        /// The options used to construct the parity module
+        /// </summary>
+        private readonly Options m_options;
+        /// <summary>
+        /// Lock guarding the lazy creation
+        /// </summary>
+        private readonly object m_lock = new();
+        /// <summary>
+        /// Whether the instance creation has been attempted
+        /// </summary>
+        private bool m_created;
+        /// <summary>
+        /// The shared parity module instance, or null if parity is disabled/unavailable
+        /// </summary>
+        private IParity? m_instance;
+
+        /// <summary>
+        /// Creates a new shared parity provider
+        /// </summary>
+        /// <param name="options">The options used to construct the parity module</param>
+        public SharedParityProvider(Options options)
+        {
+            m_options = options;
+        }
+
+        /// <summary>
+        /// Returns the shared parity module instance, or null if parity is disabled or
+        /// the module could not be loaded. The instance is created on first access and
+        /// reused for the remainder of the operation.
+        /// </summary>
+        public IParity? Get()
+        {
+            lock (m_lock)
+            {
+                if (!m_created)
+                {
+                    m_created = true;
+                    var module = m_options.ParityModule;
+                    if (!string.IsNullOrEmpty(module))
+                    {
+                        try
+                        {
+                            m_instance = DynamicLoader.ParityLoader.GetModule(module, m_options.RawOptions);
+                        }
+                        catch (System.Reflection.TargetInvocationException tie) when (tie.InnerException != null)
+                        {
+                            // The module is created via reflection; surface the real
+                            // constructor exception (e.g. an invalid option value) rather
+                            // than the reflection wrapper.
+                            System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(tie.InnerException).Throw();
+                        }
+                    }
+                }
+
+                return m_instance;
+            }
+        }
+
+        /// <summary>
+        /// Disposes the shared parity module instance, if any
+        /// </summary>
+        public void Dispose()
+        {
+            lock (m_lock)
+            {
+                m_instance?.Dispose();
+                m_instance = null;
+                m_created = true;
+            }
+        }
+    }
 
     /// <summary>
     /// A base non-generic pending operation

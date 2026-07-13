@@ -293,14 +293,18 @@ namespace Duplicati.Library.Main.Operation
             protectedFiles = protectedFiles ?? [];
             strictExcemptFiles = strictExcemptFiles ?? [];
 
+            // Parity companion files parse as their owning data volume (with IsParity set).
+            // They are not tracked in the database and are managed opportunistically, so
+            // they must be excluded from the data-volume reconciliation lists below,
+            // otherwise they would be flagged as extra and deleted.
             var remotelist = (from n in rawlist
                               let p = Volumes.VolumeBase.ParseFilename(n)
-                              where p != null && p.Prefix == options.Prefix
+                              where p != null && !p.IsParity && p.Prefix == options.Prefix
                               select p).ToList();
 
             var otherlist = (from n in rawlist
                              let p = Volumes.VolumeBase.ParseFilename(n)
-                             where p != null && p.Prefix != options.Prefix
+                             where p != null && !p.IsParity && p.Prefix != options.Prefix
                              select p).ToList();
 
             var unknownlist = (from n in rawlist

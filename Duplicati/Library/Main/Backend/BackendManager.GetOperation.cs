@@ -41,6 +41,13 @@ partial class BackendManager
         public required string? Hash { get; set; }
 
         /// <summary>
+        /// Whether a failed download may be repaired in place using parity data. This is
+        /// enabled for normal operations, but disabled for the test/verification flow so
+        /// that damaged files are reported rather than silently repaired.
+        /// </summary>
+        public bool AllowParityRepair { get; set; } = true;
+
+        /// <summary>
         /// The operation type
         /// </summary>
         public override BackendActionType Operation => BackendActionType.Get;
@@ -88,11 +95,29 @@ partial class BackendManager
 
                 if (!Context.Options.SkipFileHashChecks)
                 {
-                    if (Size >= 0 && dataSizeDownloaded != Size)
-                        throw new Exception(Strings.Controller.DownloadedFileSizeError(RemoteFilename, dataSizeDownloaded, Size));
+                    var sizeMismatch = Size >= 0 && dataSizeDownloaded != Size;
+                    var hashMismatch = !string.IsNullOrEmpty(Hash) && fileHash != Hash;
 
-                    if (!string.IsNullOrEmpty(Hash) && fileHash != Hash)
-                        throw new HashMismatchException(Strings.Controller.HashMismatchError(RemoteFilename, Hash, fileHash));
+                    if (sizeMismatch || hashMismatch)
+                    {
+                        // The downloaded file failed verification; attempt a best-effort
+                        // repair using a parity companion file, if one is available. In the
+                        // test/verification flow (AllowParityRepair == false) we skip the
+                        // repair so that damaged files are reported instead of masked.
+                        if (AllowParityRepair && await TryRepairWithParityAsync(backend, tmpfile, cancelToken).ConfigureAwait(false))
+                        {
+                            dataSizeDownloaded = new System.IO.FileInfo(tmpfile).Length;
+                            fileHash = CalculateFileHash(tmpfile, Context.Options);
+                            sizeMismatch = Size >= 0 && dataSizeDownloaded != Size;
+                            hashMismatch = !string.IsNullOrEmpty(Hash) && fileHash != Hash;
+                        }
+
+                        if (sizeMismatch)
+                            throw new Exception(Strings.Controller.DownloadedFileSizeError(RemoteFilename, dataSizeDownloaded, Size));
+
+                        if (hashMismatch)
+                            throw new HashMismatchException(Strings.Controller.HashMismatchError(RemoteFilename, Hash, fileHash));
+                    }
                 }
 
                 // Perform decryption after hash validation, if needed
@@ -109,6 +134,69 @@ partial class BackendManager
             finally
             {
                 Context.ProgressHandler.EndTransfer(BackendActionType.Get, RemoteFilename);
+            }
+        }
+
+        /// <summary>
+        /// Attempts to repair a downloaded file that failed verification, using a
+        /// parity companion file downloaded from the same backend. This is best-effort:
+        /// if parity is disabled, the parity file is missing, or the engine is
+        /// unavailable, it returns false and the caller reports the original error.
+        /// </summary>
+        /// <param name="backend">The backend to download the parity file from</param>
+        /// <param name="tmpfile">The downloaded (still-encrypted) file to repair in place</param>
+        /// <param name="cancelToken">The cancellation token</param>
+        /// <returns>True if the file was repaired and is now intact</returns>
+        private async Task<bool> TryRepairWithParityAsync(IBackend backend, TempFile tmpfile, CancellationToken cancelToken)
+        {
+            var parityModule = Context.Options.ParityModule;
+            if (string.IsNullOrEmpty(parityModule))
+                return false;
+
+            // Do not attempt to repair a parity file itself, or non-volume files. Only
+            // data volumes (dblock/dlist) have parity companions; for anything else there
+            // is no parity file to find.
+            var parsed = Volumes.VolumeBase.ParseFilename(RemoteFilename);
+            if (parsed == null || parsed.IsParity)
+                return false;
+            if (parsed.FileType != RemoteVolumeType.Blocks && parsed.FileType != RemoteVolumeType.Files)
+                return false;
+
+            try
+            {
+                // The shared parity instance lives for the whole operation, so the
+                // availability probe and any "not found" warning happen once, not per volume.
+                var parity = Context.Parity.Get();
+                if (parity == null || !parity.IsAvailable)
+                    return false;
+
+                var parityEffectiveName = GetEffectiveRemoteName() + "." + parity.FilenameExtension;
+                using var parityTemp = new TempFile();
+                try
+                {
+                    await backend.GetAsync(parityEffectiveName, parityTemp, cancelToken).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "ParityFileNotAvailable", ex, "No parity file available to repair {0}: {1}", RemoteFilename, ex.Message);
+                    return false;
+                }
+
+                if (await parity.RepairAsync(tmpfile, parityTemp, cancelToken).ConfigureAwait(false))
+                {
+                    // Repairing a volume means the remote data was damaged; emit a warning
+                    // so it is visible that the backup data is no longer in prime condition.
+                    Logging.Log.WriteWarningMessage(LOGTAG, "ParityRepairSuccess", null, "Repaired {0} using parity data; the remote copy is damaged and should be checked", RemoteFilename);
+                    return true;
+                }
+
+                Logging.Log.WriteWarningMessage(LOGTAG, "ParityRepairFailed", null, "Parity repair did not succeed for {0}", RemoteFilename);
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Logging.Log.WriteWarningMessage(LOGTAG, "ParityRepairError", ex, "Error during parity repair of {0}: {1}", RemoteFilename, ex.Message);
+                return false;
             }
         }
 

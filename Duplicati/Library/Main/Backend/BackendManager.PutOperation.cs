@@ -333,7 +333,84 @@ partial class BackendManager
                     throw new Exception(string.Format($"List verify failed for file: {f.Name}, size was {f.Size} but expected to be {size}"));
             }
 
+            // Create and upload a parity companion file (best-effort) while the
+            // just-uploaded local file is still on disk.
+            await MaybeCreateAndUploadParityAsync(backend, cancelToken).ConfigureAwait(false);
+
             DeleteLocalFile();
+        }
+
+        /// <summary>
+        /// If parity is enabled and this operation is a data volume (block or fileset),
+        /// creates a parity companion file for the just-uploaded local file and uploads it.
+        /// This is best-effort: any failure is logged and does not fail the backup.
+        /// </summary>
+        /// <param name="backend">The backend to upload to</param>
+        /// <param name="cancelToken">The cancellation token</param>
+        private async Task MaybeCreateAndUploadParityAsync(IBackend backend, CancellationToken cancelToken)
+        {
+            var parityModule = Context.Options.ParityModule;
+            if (string.IsNullOrEmpty(parityModule))
+                return;
+
+            // Only protect data volumes (dblock/dlist). Skip index files, parity
+            // companions themselves, and anything that does not parse as a volume.
+            var parsed = VolumeBase.ParseFilename(RemoteFilename);
+            if (parsed == null || parsed.IsParity)
+                return;
+            if (parsed.FileType != RemoteVolumeType.Blocks && parsed.FileType != RemoteVolumeType.Files)
+                return;
+            if (LocalTempfile == null)
+                return;
+
+            try
+            {
+                // The shared parity instance lives for the whole operation, so the
+                // availability probe and any "not found" warning happen once, not per volume.
+                var parity = Context.Parity.Get();
+                if (parity == null || !parity.IsAvailable)
+                    return;
+
+                var parityName = VolumeBase.GenerateParityFilename(RemoteFilename, parity.FilenameExtension);
+                var parityTemp = new TempFile();
+                try
+                {
+                    await parity.CreateAsync(LocalFilename, parityTemp, cancelToken).ConfigureAwait(false);
+                }
+                catch
+                {
+                    parityTemp.Dispose();
+                    throw;
+                }
+
+                // Upload the parity file as an unencrypted, untracked companion,
+                // inline on the currently-held backend (never re-queued).
+                // The parity protects the already-encrypted data volume (parity is created
+                // from the encrypted file on disk), so the parity file itself needs no
+                // encryption: it cannot leak information about the source data.
+                var parityOp = new PutOperation(parityName, Context, false, cancelToken)
+                {
+                    LocalTempfile = parityTemp,
+                    Unencrypted = true,
+                    TrackedInDb = false,
+                    OriginalIndexFile = null,
+                    IndexVolumeFinishedCallback = null,
+                    OnDbUpdate = OnDbUpdateDefault,
+                    // The parity file lives in the same folder as this data volume, and
+                    // reuses the currently-held backend, so its effective name is the
+                    // data volume's effective name with the parity extension appended.
+                    // This is correct for both folder and non-folder backends.
+                    EffectiveRemoteName = GetEffectiveRemoteName() + "." + parity.FilenameExtension
+                };
+                parityOp.StartEncryptionAndHashing();
+                await parityOp.ExecuteAsync(backend, cancelToken).ConfigureAwait(false);
+
+                Logging.Log.WriteVerboseMessage(LOGTAG, "ParityCreated", "Created parity file {0} for {1}", parityName, RemoteFilename);
+            }
+            catch (Exception ex)
+            {
+                Logging.Log.WriteWarningMessage(LOGTAG, "ParityCreationFailed", ex, "Failed to create parity file for {0}: {1}", RemoteFilename, ex.Message);
+            }
         }
 
         /// <summary>

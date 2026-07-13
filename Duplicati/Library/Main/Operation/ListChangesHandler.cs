@@ -146,7 +146,7 @@ namespace Duplicati.Library.Main.Operation
                     return;
 
                 using (new Logging.Timer(LOGTAG, "InsertBaseFiles", "Inserting base files into database"))
-                using (var tmpfile = await backendManager.GetAsync(baseFile.File.Name, null, baseFile.File.Size, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
+                using (var tmpfile = await backendManager.GetAsync(baseFile.File.Name, null, baseFile.File.Size, allowParityRepair: true, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                 using (var rd = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(baseFile.File.Name), tmpfile, m_options))
                     foreach (var f in rd.Files)
                         if (FilterExpression.Matches(filter, f.Path))
@@ -158,7 +158,7 @@ namespace Duplicati.Library.Main.Operation
                     return;
 
                 using (new Logging.Timer(LOGTAG, "InsertCompareFiles", "Inserting compare files into database"))
-                using (var tmpfile = await backendManager.GetAsync(compareFile.File.Name, null, compareFile.File.Size, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
+                using (var tmpfile = await backendManager.GetAsync(compareFile.File.Name, null, compareFile.File.Size, allowParityRepair: true, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                 using (var rd = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(compareFile.File.Name), tmpfile, m_options))
                     foreach (var f in rd.Files)
                         if (FilterExpression.Matches(filter, f.Path))

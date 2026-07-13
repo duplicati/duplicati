@@ -83,7 +83,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                             .ConfigureAwait(false);
                         try
                         {
-                            f = await backend.GetDirectAsync(volume_name, hash, size, results.TaskControl.TransferToken).ConfigureAwait(false);
+                            f = await backend.GetDirectAsync(volume_name, hash, size, allowParityRepair: true, results.TaskControl.TransferToken).ConfigureAwait(false);
                         }
                         catch (Exception)
                         {

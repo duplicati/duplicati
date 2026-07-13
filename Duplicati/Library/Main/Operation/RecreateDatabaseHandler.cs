@@ -269,7 +269,7 @@ namespace Duplicati.Library.Main.Operation
             var isFirstFilelist = true;
             // At this point, we do not know the hashing used to verify the files, so we need to use direct download, and manually decrypt the files
             // so we can calculate the hash AFTER we have read the manifest content and updated the options
-            await foreach (var (tmpencfile, name) in backendManager.GetFilesOverlappedDirectAsync(filelistWork, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
+            await foreach (var (tmpencfile, name) in backendManager.GetFilesOverlappedDirectAsync(filelistWork, allowParityRepair: true, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
             {
                 try
                 {
@@ -396,7 +396,7 @@ namespace Duplicati.Library.Main.Operation
 
                     progress = 0;
 
-                    await foreach (var (tmpfile, hash, size, name) in backendManager.GetFilesOverlappedAsync(indexfiles, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
+                    await foreach (var (tmpfile, hash, size, name) in backendManager.GetFilesOverlappedAsync(indexfiles, allowParityRepair: true, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                     {
                         try
                         {
@@ -578,7 +578,7 @@ namespace Duplicati.Library.Main.Operation
                     }
 
                     progress = 0;
-                    await foreach (var (tmpfile, hash, size, name) in backendManager.GetFilesOverlappedAsync(lst, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
+                    await foreach (var (tmpfile, hash, size, name) in backendManager.GetFilesOverlappedAsync(lst, allowParityRepair: true, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                     {
                         try
                         {
@@ -808,7 +808,7 @@ namespace Duplicati.Library.Main.Operation
 
             // Download all required block volumes and extract metadata blocks.
             var volumesToDownload = volumeInfo.Values.Cast<IRemoteVolume>().ToList();
-            await foreach (var (tmpfile, hash, size, name) in backendManager.GetFilesOverlappedAsync(volumesToDownload, cancellationToken).ConfigureAwait(false))
+            await foreach (var (tmpfile, hash, size, name) in backendManager.GetFilesOverlappedAsync(volumesToDownload, allowParityRepair: true, cancellationToken).ConfigureAwait(false))
             {
                 using (tmpfile)
                 {

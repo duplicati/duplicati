@@ -116,6 +116,8 @@ namespace Duplicati.Library.Main.Strings
         public static string CompressionmoduleShort { get { return LC.L(@"Select what module to use for compression"); } }
         public static string EncryptionmoduleLong { get { return LC.L(@"Duplicati supports pluggable encryption modules. Use this option to select a module to use for encryption. This is only applied when creating new volumes, when reading an existing file, the filename is used to select the encryption module."); } }
         public static string EncryptionmoduleShort { get { return LC.L(@"Select what module to use for encryption"); } }
+        public static string ParitymoduleLong { get { return LC.L(@"Duplicati supports pluggable parity modules that create error-correction data for remote volumes, allowing damaged volumes to be repaired on download. Parity is opt-in: it is disabled unless this option selects a module. Each module has its own options (for example, the redundancy level); see the parity module help for details."); } }
+        public static string ParitymoduleShort { get { return LC.L(@"Select what module to use for parity"); } }
         public static string DisablemoduleLong { get { return LC.L(@"Supply one or more module names, separated by commas to unload them."); } }
         public static string DisablemoduleShort { get { return LC.L(@"Disable one or more modules"); } }
         public static string EnablemoduleLong { get { return LC.L(@"Supply one or more module names, separated by commas to load them."); } }
