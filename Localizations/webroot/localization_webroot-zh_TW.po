@@ -183,7 +183,7 @@ msgid "Advanced Options"
 msgstr "進階選項"
 
 #: templates/addoredit.html:378 templates/commandline.html:23
-#: templates/commandline.html:31 templates/edituri.html:28
+#: templates/commandline.html:31 templates/edituri.html:29
 msgid "Advanced options"
 msgstr "進階選項"
 
@@ -505,7 +505,6 @@ msgstr "Canary"
 #: scripts/services/EditUriBuiltins.js:1231
 #: scripts/services/EditUriBuiltins.js:61 templates/delete.html:54
 #: templates/export.html:34 templates/settings.html:205
-#: templates/waitarea.html:19
 msgid "Cancel"
 msgstr "取消"
 
@@ -603,7 +602,7 @@ msgstr "壓縮階段"
 msgid "Compact now"
 msgstr "立即緊密壓縮"
 
-#: scripts/services/ServerStatus.js:44 scripts/services/ServerStatus.js:69
+#: scripts/services/ServerStatus.js:44 scripts/services/ServerStatus.js:70
 msgid "Compacting remote data …"
 msgstr "正在緊密壓縮遠端資料 ..."
 
@@ -689,8 +688,8 @@ msgstr "連線中..."
 msgid "Connection lost"
 msgstr "連線失敗"
 
-#: scripts/directives/backupEditUri.js:51
-#: scripts/directives/backupEditUri.js:54
+#: scripts/directives/backupEditUri.js:52
+#: scripts/directives/backupEditUri.js:55
 msgid "Connection worked!"
 msgstr "連線已建立！"
 
@@ -760,7 +759,7 @@ msgstr "创建请求 (降序)"
 msgid "Create bug report …"
 msgstr "建立問題報告 ..."
 
-#: scripts/directives/backupEditUri.js:131
+#: scripts/directives/backupEditUri.js:132
 msgid "Create folder?"
 msgstr "建立資料夾？"
 
@@ -928,7 +927,7 @@ msgstr "已刪除版本"
 msgid "Deleted files"
 msgstr "已刪除檔案"
 
-#: scripts/services/ServerStatus.js:66
+#: scripts/services/ServerStatus.js:67
 msgid "Deleting remote files …"
 msgstr "正在刪除遠端檔案 ..."
 
@@ -1025,7 +1024,7 @@ msgstr "域"
 msgid "Domain name"
 msgstr "域名"
 
-#: templates/export.html:53
+#: templates/edituri.html:21 templates/export.html:53
 msgid "Done"
 msgstr "完成"
 
@@ -1110,12 +1109,12 @@ msgstr ""
 "每个备份都有一个与之关联的本地数据库，该数据库将远程备份的有关信息存储在本地计算机上。这使得许多操作的执行速度更快，并且减少了每次操作所需要下载的数据。"
 
 #: templates/addoredit.html:174 templates/addoredit.html:389
-#: templates/edituri.html:39 templates/settings.html:194
+#: templates/edituri.html:40 templates/settings.html:194
 msgid "Edit as list"
 msgstr "編輯清單"
 
 #: templates/addoredit.html:177 templates/addoredit.html:392
-#: templates/edituri.html:42 templates/settings.html:200
+#: templates/edituri.html:43 templates/settings.html:200
 msgid "Edit as text"
 msgstr "編輯文字內容"
 
@@ -1249,9 +1248,9 @@ msgstr "輸入目的地路徑"
 #: scripts/controllers/RestoreController.js:90
 #: scripts/controllers/RestoreDirectController.js:112
 #: scripts/controllers/RestoreDirectController.js:78
-#: scripts/directives/backupEditUri.js:143
-#: scripts/directives/backupEditUri.js:164
-#: scripts/directives/backupEditUri.js:198
+#: scripts/directives/backupEditUri.js:144
+#: scripts/directives/backupEditUri.js:165
+#: scripts/directives/backupEditUri.js:199
 #: scripts/directives/notificationArea.js:41
 #: scripts/directives/notificationArea.js:43
 #: scripts/directives/notificationArea.js:68 scripts/services/AppUtils.js:343
@@ -1260,7 +1259,7 @@ msgstr "輸入目的地路徑"
 msgid "Error"
 msgstr "錯誤"
 
-#: scripts/services/ServerStatus.js:71
+#: scripts/services/ServerStatus.js:72
 msgid "Error!"
 msgstr "錯誤！"
 
@@ -1352,9 +1351,9 @@ msgstr "FTP  (替代)"
 msgid "Failed to build temporary database: {{message}}"
 msgstr "建立暫存資料庫失敗：{{message}}"
 
-#: scripts/directives/backupEditUri.js:143
-#: scripts/directives/backupEditUri.js:164
-#: scripts/directives/backupEditUri.js:198
+#: scripts/directives/backupEditUri.js:144
+#: scripts/directives/backupEditUri.js:165
+#: scripts/directives/backupEditUri.js:199
 msgid "Failed to connect:"
 msgstr "連線失敗："
 
@@ -1766,11 +1765,11 @@ msgstr "函式庫"
 msgid "Listing backup dates …"
 msgstr "正在列出備份日期 ..."
 
-#: scripts/services/ServerStatus.js:67
+#: scripts/services/ServerStatus.js:68
 msgid "Listing remote files for purge …"
 msgstr "正在列出要清除的遠端檔案..."
 
-#: scripts/services/ServerStatus.js:65
+#: scripts/services/ServerStatus.js:66
 msgid "Listing remote files …"
 msgstr "正在列出遠端檔案 ..."
 
@@ -1892,7 +1891,7 @@ msgstr "最大上傳速度"
 
 #: index.html:144 templates/addoredit.html:127 templates/addoredit.html:169
 #: templates/addoredit.html:384 templates/addoredit.html:95
-#: templates/edituri.html:34 templates/restoredirect.html:34
+#: templates/edituri.html:35 templates/restoredirect.html:34
 msgid "Menu"
 msgstr "功能"
 
@@ -2045,9 +2044,9 @@ msgstr "下一次"
 #: scripts/controllers/LocalDatabaseController.js:28
 #: scripts/controllers/LocalDatabaseController.js:72
 #: scripts/controllers/LocalDatabaseController.js:88
-#: scripts/directives/backupEditUri.js:131
-#: scripts/directives/backupEditUri.js:173
-#: scripts/directives/backupEditUri.js:87
+#: scripts/directives/backupEditUri.js:132
+#: scripts/directives/backupEditUri.js:174
+#: scripts/directives/backupEditUri.js:88
 #: scripts/services/EditUriBackendConfig.js:74
 #: scripts/services/EditUriBuiltins.js:1215
 #: scripts/services/EditUriBuiltins.js:1231
@@ -2055,7 +2054,7 @@ msgstr "下一次"
 msgid "No"
 msgstr "否"
 
-#: scripts/directives/backupEditUri.js:169
+#: scripts/directives/backupEditUri.js:170
 msgid ""
 "No certificate was specified previously, please verify with the server administrator that the key is correct: {{key}} \n"
 "\n"
@@ -2214,7 +2213,7 @@ msgstr "区域（可选）"
 msgid "Optional tenant name"
 msgstr "租户名称（可选）"
 
-#: templates/addoredit.html:28 templates/edituri.html:51
+#: templates/addoredit.html:28 templates/edituri.html:52
 #: templates/settings.html:193 templates/settings.html:199
 msgid "Options"
 msgstr "選項"
@@ -2369,11 +2368,11 @@ msgstr "公共"
 msgid "Purge Phase"
 msgstr "清除階段"
 
-#: scripts/services/ServerStatus.js:70
+#: scripts/services/ServerStatus.js:71
 msgid "Purging files complete!"
 msgstr "檔案清除完成！"
 
-#: scripts/services/ServerStatus.js:68
+#: scripts/services/ServerStatus.js:69
 msgid "Purging files …"
 msgstr "正在清理檔案 ..."
 
@@ -2874,8 +2873,8 @@ msgstr "儲存"
 msgid "Strong"
 msgstr "強"
 
-#: scripts/directives/backupEditUri.js:51
-#: scripts/directives/backupEditUri.js:54
+#: scripts/directives/backupEditUri.js:52
+#: scripts/directives/backupEditUri.js:55
 msgid "Success"
 msgstr "成功"
 
@@ -2962,11 +2961,11 @@ msgstr "终止"
 msgid "Test Phase"
 msgstr "測試階段"
 
-#: templates/edituri.html:21
+#: templates/edituri.html:22
 msgid "Test connection"
 msgstr "測試連線"
 
-#: scripts/directives/backupEditUri.js:44
+#: scripts/directives/backupEditUri.js:45
 msgid "Testing connection …"
 msgstr "测试连接中…"
 
@@ -2974,7 +2973,7 @@ msgstr "测试连接中…"
 msgid "Testing permissions …"
 msgstr "正在測試權限 ..."
 
-#: scripts/directives/backupEditUri.js:44 templates/edituri.html:22
+#: scripts/directives/backupEditUri.js:45 templates/edituri.html:23
 msgid "Testing …"
 msgstr "測試中 ..."
 
@@ -3036,13 +3035,13 @@ msgid ""
 "file size decreases, it will be included in future backups."
 msgstr "文件大小为{{size}}，超过了指定的最大指定值。如果文件大小减小，它将会包含在未来的备份中。"
 
-#: scripts/directives/backupEditUri.js:131
+#: scripts/directives/backupEditUri.js:132
 msgid ""
 "The folder {{folder}} does not exist.\n"
 "Create it now?"
 msgstr "資料夾 {{folder}} 不存在，是否立即建立？"
 
-#: scripts/directives/backupEditUri.js:171
+#: scripts/directives/backupEditUri.js:172
 msgid ""
 "The host key has changed, please check with the server administrator if this is correct, otherwise you could be the victim of a MAN-IN-THE-MIDDLE attack.\n"
 "\n"
@@ -3085,7 +3084,7 @@ msgstr "區域參數只有在建立新 Bucket 時套用"
 msgid "The region parameter is only used when creating a bucket"
 msgstr "區域參數只使用在在建立新 Bucket 時"
 
-#: scripts/directives/backupEditUri.js:87
+#: scripts/directives/backupEditUri.js:88
 msgid ""
 "The server certificate could not be validated.\n"
 "Do you want to approve the SSL certificate with the hash: {{hash}}?"
@@ -3187,11 +3186,11 @@ msgstr "今天"
 msgid "Transport"
 msgstr "运输"
 
-#: scripts/directives/backupEditUri.js:173
+#: scripts/directives/backupEditUri.js:174
 msgid "Trust host certificate?"
 msgstr "信任主機憑證？"
 
-#: scripts/directives/backupEditUri.js:87
+#: scripts/directives/backupEditUri.js:88
 msgid "Trust server certificate?"
 msgstr "信任伺服器憑證？"
 
@@ -3450,9 +3449,9 @@ msgstr "年"
 #: scripts/controllers/LocalDatabaseController.js:28
 #: scripts/controllers/LocalDatabaseController.js:72
 #: scripts/controllers/LocalDatabaseController.js:88
-#: scripts/directives/backupEditUri.js:131
-#: scripts/directives/backupEditUri.js:173
-#: scripts/directives/backupEditUri.js:87
+#: scripts/directives/backupEditUri.js:132
+#: scripts/directives/backupEditUri.js:174
+#: scripts/directives/backupEditUri.js:88
 #: scripts/services/EditUriBackendConfig.js:74
 #: scripts/services/EditUriBuiltins.js:1215
 #: scripts/services/EditUriBuiltins.js:1231

@@ -116,7 +116,7 @@ msgid "Advanced Options"
 msgstr "Расширенные параметры"
 
 #: templates/addoredit.html:378 templates/commandline.html:23
-#: templates/commandline.html:31 templates/edituri.html:28
+#: templates/commandline.html:31 templates/edituri.html:29
 msgid "Advanced options"
 msgstr "Расширенные параметры"
 
@@ -369,7 +369,6 @@ msgstr "Canary"
 #: scripts/services/EditUriBuiltins.js:1231
 #: scripts/services/EditUriBuiltins.js:61 templates/delete.html:54
 #: templates/export.html:34 templates/settings.html:205
-#: templates/waitarea.html:19
 msgid "Cancel"
 msgstr "Отмена"
 
@@ -427,7 +426,7 @@ msgstr "Компактная фаза"
 msgid "Compact now"
 msgstr "Уплотнить сейчас"
 
-#: scripts/services/ServerStatus.js:44 scripts/services/ServerStatus.js:69
+#: scripts/services/ServerStatus.js:44 scripts/services/ServerStatus.js:70
 msgid "Compacting remote data …"
 msgstr "Сжатие удаленных данных…"
 
@@ -497,8 +496,8 @@ msgstr "Подключение к серверу…"
 msgid "Connection lost"
 msgstr "Потеряно соединение"
 
-#: scripts/directives/backupEditUri.js:51
-#: scripts/directives/backupEditUri.js:54
+#: scripts/directives/backupEditUri.js:52
+#: scripts/directives/backupEditUri.js:55
 msgid "Connection worked!"
 msgstr "Подключение работает!"
 
@@ -551,7 +550,7 @@ msgstr "Только падения"
 msgid "Create bug report …"
 msgstr "Создать отчет об ошибке…"
 
-#: scripts/directives/backupEditUri.js:131
+#: scripts/directives/backupEditUri.js:132
 msgid "Create folder?"
 msgstr "Создать папку?"
 
@@ -683,7 +682,7 @@ msgstr "Удалённые версии"
 msgid "Deleted files"
 msgstr "Удалённые файлы"
 
-#: scripts/services/ServerStatus.js:66
+#: scripts/services/ServerStatus.js:67
 msgid "Deleting remote files …"
 msgstr "Удаление \"удаленных\" файлов…"
 
@@ -740,7 +739,7 @@ msgstr "Подтверждаете удаление плана резервно�
 msgid "Do you really want to delete the local database for: {{name}}"
 msgstr "Вы действительно хотите удалить локальную базу данных для: {{name}}"
 
-#: templates/export.html:53
+#: templates/edituri.html:21 templates/export.html:53
 msgid "Done"
 msgstr "Готово"
 
@@ -815,12 +814,12 @@ msgstr ""
 "передаваемых данных с удалённых серверов."
 
 #: templates/addoredit.html:174 templates/addoredit.html:389
-#: templates/edituri.html:39 templates/settings.html:194
+#: templates/edituri.html:40 templates/settings.html:194
 msgid "Edit as list"
 msgstr "Редактировать как список"
 
 #: templates/addoredit.html:177 templates/addoredit.html:392
-#: templates/edituri.html:42 templates/settings.html:200
+#: templates/edituri.html:43 templates/settings.html:200
 msgid "Edit as text"
 msgstr "Редактировать как текст"
 
@@ -911,9 +910,9 @@ msgstr "Введите путь назначения"
 #: scripts/controllers/RestoreController.js:90
 #: scripts/controllers/RestoreDirectController.js:112
 #: scripts/controllers/RestoreDirectController.js:78
-#: scripts/directives/backupEditUri.js:143
-#: scripts/directives/backupEditUri.js:164
-#: scripts/directives/backupEditUri.js:198
+#: scripts/directives/backupEditUri.js:144
+#: scripts/directives/backupEditUri.js:165
+#: scripts/directives/backupEditUri.js:199
 #: scripts/directives/notificationArea.js:41
 #: scripts/directives/notificationArea.js:43
 #: scripts/directives/notificationArea.js:68 scripts/services/AppUtils.js:343
@@ -922,7 +921,7 @@ msgstr "Введите путь назначения"
 msgid "Error"
 msgstr "Ошибка"
 
-#: scripts/services/ServerStatus.js:71
+#: scripts/services/ServerStatus.js:72
 msgid "Error!"
 msgstr "Ошибка!"
 
@@ -1014,9 +1013,9 @@ msgstr "FTP (Альтернативный)"
 msgid "Failed to build temporary database: {{message}}"
 msgstr "Не удалось построить временную базу данных: {{message}}"
 
-#: scripts/directives/backupEditUri.js:143
-#: scripts/directives/backupEditUri.js:164
-#: scripts/directives/backupEditUri.js:198
+#: scripts/directives/backupEditUri.js:144
+#: scripts/directives/backupEditUri.js:165
+#: scripts/directives/backupEditUri.js:199
 msgid "Failed to connect:"
 msgstr "Не удается подключиться:"
 
@@ -1315,11 +1314,11 @@ msgstr "Библиотеки"
 msgid "Listing backup dates …"
 msgstr "Отображать дату резервного копирования…"
 
-#: scripts/services/ServerStatus.js:67
+#: scripts/services/ServerStatus.js:68
 msgid "Listing remote files for purge …"
 msgstr "Показать список удаленных файлов после очистки…"
 
-#: scripts/services/ServerStatus.js:65
+#: scripts/services/ServerStatus.js:66
 msgid "Listing remote files …"
 msgstr "Вывод списка \"удаленных\" файлов…"
 
@@ -1408,7 +1407,7 @@ msgstr "Максимальная скорость выгрузки"
 
 #: index.html:144 templates/addoredit.html:127 templates/addoredit.html:169
 #: templates/addoredit.html:384 templates/addoredit.html:95
-#: templates/edituri.html:34 templates/restoredirect.html:34
+#: templates/edituri.html:35 templates/restoredirect.html:34
 msgid "Menu"
 msgstr "Меню"
 
@@ -1513,9 +1512,9 @@ msgstr "В следующий раз"
 #: scripts/controllers/LocalDatabaseController.js:28
 #: scripts/controllers/LocalDatabaseController.js:72
 #: scripts/controllers/LocalDatabaseController.js:88
-#: scripts/directives/backupEditUri.js:131
-#: scripts/directives/backupEditUri.js:173
-#: scripts/directives/backupEditUri.js:87
+#: scripts/directives/backupEditUri.js:132
+#: scripts/directives/backupEditUri.js:174
+#: scripts/directives/backupEditUri.js:88
 #: scripts/services/EditUriBackendConfig.js:74
 #: scripts/services/EditUriBuiltins.js:1215
 #: scripts/services/EditUriBuiltins.js:1231
@@ -1523,7 +1522,7 @@ msgstr "В следующий раз"
 msgid "No"
 msgstr "Нет"
 
-#: scripts/directives/backupEditUri.js:169
+#: scripts/directives/backupEditUri.js:170
 msgid ""
 "No certificate was specified previously, please verify with the server administrator that the key is correct: {{key}} \n"
 "\n"
@@ -1630,7 +1629,7 @@ msgstr "Необязательный пароль аутентификации"
 msgid "Optional authentication username"
 msgstr "Необязательное имя пользователя"
 
-#: templates/addoredit.html:28 templates/edituri.html:51
+#: templates/addoredit.html:28 templates/edituri.html:52
 #: templates/settings.html:193 templates/settings.html:199
 msgid "Options"
 msgstr "Параметры"
@@ -1775,11 +1774,11 @@ msgstr "Проприетарное"
 msgid "Purge Phase"
 msgstr "Стадия очистки"
 
-#: scripts/services/ServerStatus.js:70
+#: scripts/services/ServerStatus.js:71
 msgid "Purging files complete!"
 msgstr "Очистка файлов завершена!"
 
-#: scripts/services/ServerStatus.js:68
+#: scripts/services/ServerStatus.js:69
 msgid "Purging files …"
 msgstr "Очистка файлов..."
 
@@ -2183,8 +2182,8 @@ msgstr "Сохраненные"
 msgid "Strong"
 msgstr "Сильный"
 
-#: scripts/directives/backupEditUri.js:51
-#: scripts/directives/backupEditUri.js:54
+#: scripts/directives/backupEditUri.js:52
+#: scripts/directives/backupEditUri.js:55
 msgid "Success"
 msgstr "Успех"
 
@@ -2240,7 +2239,7 @@ msgstr "Временные файлы"
 msgid "Test Phase"
 msgstr "Этап проверки"
 
-#: templates/edituri.html:21
+#: templates/edituri.html:22
 msgid "Test connection"
 msgstr "Проверить доступ"
 
@@ -2248,7 +2247,7 @@ msgstr "Проверить доступ"
 msgid "Testing permissions …"
 msgstr "Проверка разрешений…"
 
-#: scripts/directives/backupEditUri.js:44 templates/edituri.html:22
+#: scripts/directives/backupEditUri.js:45 templates/edituri.html:23
 msgid "Testing …"
 msgstr "Тестирование…"
 
@@ -2294,7 +2293,7 @@ msgstr "Тёмная тема (от Michael)"
 msgid "The default blue on white theme (by Alex)"
 msgstr "Стандартная тема синий на белом (от Alex)"
 
-#: scripts/directives/backupEditUri.js:131
+#: scripts/directives/backupEditUri.js:132
 msgid ""
 "The folder {{folder}} does not exist.\n"
 "Create it now?"
@@ -2302,7 +2301,7 @@ msgstr ""
 "Папка {{folder}} не существует. \n"
 "Создать сейчас?"
 
-#: scripts/directives/backupEditUri.js:171
+#: scripts/directives/backupEditUri.js:172
 msgid ""
 "The host key has changed, please check with the server administrator if this is correct, otherwise you could be the victim of a MAN-IN-THE-MIDDLE attack.\n"
 "\n"
@@ -2346,7 +2345,7 @@ msgstr "Параметр «регион» применяется только п
 msgid "The region parameter is only used when creating a bucket"
 msgstr "Параметр «регион» используется только при создании bucket"
 
-#: scripts/directives/backupEditUri.js:87
+#: scripts/directives/backupEditUri.js:88
 msgid ""
 "The server certificate could not be validated.\n"
 "Do you want to approve the SSL certificate with the hash: {{hash}}?"
@@ -2434,11 +2433,11 @@ msgstr ""
 msgid "Today"
 msgstr "Сегодня"
 
-#: scripts/directives/backupEditUri.js:173
+#: scripts/directives/backupEditUri.js:174
 msgid "Trust host certificate?"
 msgstr "Доверять сертификату хоста?"
 
-#: scripts/directives/backupEditUri.js:87
+#: scripts/directives/backupEditUri.js:88
 msgid "Trust server certificate?"
 msgstr "Доверять сертификату сервера?"
 
@@ -2640,9 +2639,9 @@ msgstr "Лет"
 #: scripts/controllers/LocalDatabaseController.js:28
 #: scripts/controllers/LocalDatabaseController.js:72
 #: scripts/controllers/LocalDatabaseController.js:88
-#: scripts/directives/backupEditUri.js:131
-#: scripts/directives/backupEditUri.js:173
-#: scripts/directives/backupEditUri.js:87
+#: scripts/directives/backupEditUri.js:132
+#: scripts/directives/backupEditUri.js:174
+#: scripts/directives/backupEditUri.js:88
 #: scripts/services/EditUriBackendConfig.js:74
 #: scripts/services/EditUriBuiltins.js:1215
 #: scripts/services/EditUriBuiltins.js:1231

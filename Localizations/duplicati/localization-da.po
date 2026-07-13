@@ -19,7 +19,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-02 11:34+0200\n"
+"POT-Creation-Date: 2026-07-13 15:38+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: jhertel <jesper.hertel@gmail.com>, 2025\n"
 "Language-Team: Danish (https://app.transifex.com/duplicati/teams/67655/da/)\n"
@@ -781,7 +781,7 @@ msgstr ""
 msgid "--{0}: {1}"
 msgstr "--{0}: {1}"
 
-#: Library/RestAPI/Strings.cs:38 CommandLine/CLI/Strings.cs:45
+#: Library/RestAPI/Strings.cs:38 CommandLine/CLI/Strings.cs:46
 msgid "Path to a file with parameters"
 msgstr "Sti til en fil med parametre"
 
@@ -798,7 +798,7 @@ msgstr ""
 "angive filter inde i parameter filen. Hvert filter skal starte med enten + "
 "eller -, og flere filter skal sammensættes med {3}"
 
-#: Library/RestAPI/Strings.cs:40 CommandLine/CLI/Strings.cs:41
+#: Library/RestAPI/Strings.cs:40 CommandLine/CLI/Strings.cs:42
 #, csharp-format
 msgid "Unable to read the parameters file \"{0}\", reason: {1}"
 msgstr "Kunne ikke læse parameter filen \"{0}\", årsag: {1}"
@@ -842,11 +842,11 @@ msgstr ""
 "Hostnavne der er accepteret, separeret med semikolon. Hvis nogle af "
 "hostnavne er \"*\" vil alle hostnavne være tilladt."
 
-#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:283
+#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:286
 msgid "Set the time after which log data will be purged from the database."
 msgstr "Indstil den tid, hvorefter logdata vil blive fjernet fra databasen."
 
-#: Library/RestAPI/Strings.cs:67 Library/Main/Strings.cs:284
+#: Library/RestAPI/Strings.cs:67 Library/Main/Strings.cs:287
 msgid "Clean up old log data"
 msgstr "Ryd gammel logdata"
 
@@ -861,7 +861,7 @@ msgstr ""
 "indstilling til at vælge, hvor indstillingerne er gemt. Denne mulighed kan "
 "også indstilles med miljøvariablen {0}."
 
-#: Library/RestAPI/Strings.cs:70
+#: Library/RestAPI/Strings.cs:72
 #, csharp-format
 msgid ""
 "This option sets the encryption key used to scramble the local settings "
@@ -873,16 +873,16 @@ msgstr ""
 "miljøvariablen {0}. Brug indstillingen --{1} for at deaktivere "
 "obfuskeringen."
 
-#: Library/RestAPI/Strings.cs:73 Library/Main/Strings.cs:103
+#: Library/RestAPI/Strings.cs:75 Library/Main/Strings.cs:103
 msgid "Temporary storage folder"
 msgstr "Midlertidig mappe"
 
-#: Library/RestAPI/Strings.cs:96 Library/RestAPI/Strings.cs:141
+#: Library/RestAPI/Strings.cs:98 Library/RestAPI/Strings.cs:143
 #, csharp-format
 msgid "Server has started and is listening on {0}, port {1}"
 msgstr "Serveren er startet og lytter på {0}, port {1}"
 
-#: Library/RestAPI/Strings.cs:137
+#: Library/RestAPI/Strings.cs:139
 #, csharp-format
 msgid ""
 "Unable to find a valid date, given the start date {0}, the repetition "
@@ -891,7 +891,7 @@ msgstr ""
 "Kan ikke finde en gyldig dato, givet startdatoen {0}, gentagelsesintervallet"
 " {1} og de tilladte dage {2}"
 
-#: Library/RestAPI/Strings.cs:143
+#: Library/RestAPI/Strings.cs:145
 #, csharp-format
 msgid "Unable to open a socket for listening, tried ports: {0}"
 msgstr "Kunne ikke åbne et socket til at lytte på, forsøgte disse porte: {0}"
@@ -956,79 +956,79 @@ msgstr "Vælg hvilket modul, der skal bruges til komprimering"
 msgid "Select what module to use for encryption"
 msgstr "Vælg det modul, der skal bruges til kryptering"
 
-#: Library/Main/Strings.cs:130
+#: Library/Main/Strings.cs:132
 msgid "The number of concurrent uploads allowed"
 msgstr "Antal samtidige uploads tilladt"
 
-#: Library/Main/Strings.cs:134
+#: Library/Main/Strings.cs:136
 msgid "Log internal information to a file"
 msgstr "Log interne oplysninger til en fil"
 
-#: Library/Main/Strings.cs:136
+#: Library/Main/Strings.cs:138
 msgid "Log information level"
 msgstr "Log informationsniveau"
 
-#: Library/Main/Strings.cs:163
+#: Library/Main/Strings.cs:165
 msgid "Do not re-use connections"
 msgstr "Genbrug ikke forbindelser"
 
-#: Library/Main/Strings.cs:167
+#: Library/Main/Strings.cs:169
 msgid "Upload empty backup files"
 msgstr "Upload tomme backup filer"
 
-#: Library/Main/Strings.cs:175
+#: Library/Main/Strings.cs:177
 msgid "Symlink handling"
 msgstr "Symlink håndtering"
 
-#: Library/Main/Strings.cs:177
+#: Library/Main/Strings.cs:179
 msgid "Hardlink handling"
 msgstr "Hardlink håndtering"
 
-#: Library/Main/Strings.cs:185
+#: Library/Main/Strings.cs:187
 msgid "Name of the backup"
 msgstr "Navn på backupen"
 
-#: Library/Main/Strings.cs:187
+#: Library/Main/Strings.cs:189
 msgid "Backup ID"
 msgstr "Backup ID"
 
-#: Library/Main/Strings.cs:195
+#: Library/Main/Strings.cs:197
 msgid "Manage non-compressible file extensions"
 msgstr "Administrer ikke-komprimerbare filtyper"
 
-#: Library/Main/Strings.cs:199
+#: Library/Main/Strings.cs:201
 msgid "List of files to examine for changes"
 msgstr "Liste over filer, der skal undersøges for ændringer"
 
-#: Library/Main/Strings.cs:201
+#: Library/Main/Strings.cs:203
 msgid "Path to the local state database"
 msgstr "Sti til den lokale tilstandsdatabase"
 
-#: Library/Main/Strings.cs:203
+#: Library/Main/Strings.cs:205
 msgid "List of deleted files"
 msgstr "Liste over slettede filer"
 
-#: Library/Main/Strings.cs:216
+#: Library/Main/Strings.cs:218
 msgid "The hash algorithm used on blocks"
 msgstr "Hash-algoritme, der anvendes til blokke"
 
-#: Library/Main/Strings.cs:218
+#: Library/Main/Strings.cs:220
 msgid "The hash algorithm used on files"
 msgstr "Hashalgoritmen der bruges til filer"
 
-#: Library/Main/Strings.cs:222
+#: Library/Main/Strings.cs:224
 msgid "Volume size threshold"
 msgstr "Volumenstørrelsestærskel"
 
-#: Library/Main/Strings.cs:226
+#: Library/Main/Strings.cs:228
 msgid "Use local file data when restoring"
 msgstr "Brug lokale fildata, ved gendannelse"
 
-#: Library/Main/Strings.cs:231
+#: Library/Main/Strings.cs:233
 msgid "Keep a number of versions"
 msgstr "Antal versioner, der skal beholdes"
 
-#: Library/Main/Strings.cs:245
+#: Library/Main/Strings.cs:248
 msgid "Overwrite files when restoring"
 msgstr "Overskriv filer ved genoprettelse"
 
@@ -1180,7 +1180,8 @@ msgstr "HTTP rapport modul"
 msgid "The name of the parameter to send the message as"
 msgstr "Navnet på parameteren som beskeden bliver sendt som"
 
-#: Library/Modules/Builtin/Strings.cs:277 Library/Utility/Strings.cs:84
+#: Library/Modules/Builtin/Strings.cs:277
+#: Library/Modules/Builtin/Strings.cs:312 Library/Utility/Strings.cs:84
 msgid "Accept any server certificate"
 msgstr "Accepter enhvert servercertifikat"
 
@@ -1289,33 +1290,33 @@ msgstr "Understøttede komprimerings moduler:"
 msgid "Supported encryption modules:"
 msgstr "Understøttede krypterings moduler:"
 
-#: CommandLine/CLI/Strings.cs:37
+#: CommandLine/CLI/Strings.cs:38
 msgid "Supported options:"
 msgstr "Understøttede indstillinger:"
 
-#: CommandLine/CLI/Strings.cs:40
+#: CommandLine/CLI/Strings.cs:41
 msgid "Supported generic modules:"
 msgstr "Understøttede generiske moduler:"
 
-#: CommandLine/CLI/Strings.cs:46
+#: CommandLine/CLI/Strings.cs:47
 #, csharp-format
 msgid "An error occured: {0}"
 msgstr "En fejl opstod: {0}"
 
-#: CommandLine/CLI/Strings.cs:47
+#: CommandLine/CLI/Strings.cs:48
 #, csharp-format
 msgid "The inner error message is: {0}"
 msgstr "Den indre fejlbesked er: {0}"
 
-#: CommandLine/CLI/Strings.cs:49
+#: CommandLine/CLI/Strings.cs:50
 msgid "Include files"
 msgstr "Inkludér filer"
 
-#: CommandLine/CLI/Strings.cs:51
+#: CommandLine/CLI/Strings.cs:52
 msgid "Exclude files"
 msgstr "Ekskludér filer"
 
-#: CommandLine/CLI/Strings.cs:52
+#: CommandLine/CLI/Strings.cs:53
 msgid ""
 "If this option is used with a backup operation, it is interpreted as a list "
 "of files to add to the filesets. When used with list or restore, it will "
@@ -1326,11 +1327,11 @@ msgstr ""
 "med list eller gendan vil den liste eller gendanne kontrol filer i stedet "
 "for de normale filer."
 
-#: CommandLine/CLI/Strings.cs:53
+#: CommandLine/CLI/Strings.cs:54
 msgid "Use control files"
 msgstr "Brug kontrol filer"
 
-#: CommandLine/CLI/Strings.cs:54
+#: CommandLine/CLI/Strings.cs:55
 msgid ""
 "If this option is set, progress reports and other messages that would "
 "normally go to the console will be redirected to the log."
@@ -1338,15 +1339,15 @@ msgstr ""
 "Hvis denne indstilling er sat, vil status og andre beskeder der normalt "
 "vises i konsollen blive skrevet til loggen istedet."
 
-#: CommandLine/CLI/Strings.cs:55
+#: CommandLine/CLI/Strings.cs:56
 msgid "Disable console output"
 msgstr "Deaktiver konsol udskrift"
 
-#: CommandLine/CLI/Strings.cs:57
+#: CommandLine/CLI/Strings.cs:59
 msgid "Toggle automatic updates"
 msgstr "Skift indstillinger for automatiske opdateringer"
 
-#: CommandLine/CLI/Strings.cs:58
+#: CommandLine/CLI/Strings.cs:60
 msgid ""
 "Set this option if you prefer to have the commandline version automatically "
 "update"
@@ -1354,7 +1355,7 @@ msgstr ""
 "vælg denne indstilling, hvis du foretrækker at kommandolinie programmet "
 "opdateres automatisk"
 
-#: CommandLine/CLI/Strings.cs:75
+#: CommandLine/CLI/Strings.cs:77
 #, csharp-format
 msgid "This link may provide additional information: {0}"
 msgstr "Det her link kan give nyttige oplysninger: {0}"

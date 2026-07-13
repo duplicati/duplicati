@@ -16,7 +16,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-02 11:34+0200\n"
+"POT-Creation-Date: 2026-07-13 15:38+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: KyungWoo Seo, 2026\n"
 "Language-Team: Korean (https://app.transifex.com/duplicati/teams/67655/ko/)\n"
@@ -49,8 +49,8 @@ msgstr "AES 암호화 작업에 허용되는 스레드 수준을 설정하려면
 msgid "Set thread level utilized for crypting"
 msgstr "암호화에 활용되는 스레드 수준 설정"
 
-#: Library/Encryption/Strings.cs:33 Library/Main/Strings.cs:206
-#: Library/Main/Strings.cs:263
+#: Library/Encryption/Strings.cs:33 Library/Main/Strings.cs:208
+#: Library/Main/Strings.cs:266
 #, csharp-format
 msgid "The option --{0} is no longer used and has been deprecated."
 msgstr "--{0} 옵션은 더 이상 사용되지 않으며 사용 중단되었습니다."
@@ -3381,7 +3381,7 @@ msgstr ""
 " 필터를 지정할 수 없습니다. 대신 특수 --{2}, --{3} 또는 --{4} 옵션을 사용하여 매개변수 파일 안에 필터를 지정할 수 "
 "있습니다. 각 필터에는 + 또는 - 접두사가 있어야 하며 여러 필터는 {5}로 결합해야 합니다."
 
-#: Library/RestAPI/Strings.cs:38 CommandLine/CLI/Strings.cs:45
+#: Library/RestAPI/Strings.cs:38 CommandLine/CLI/Strings.cs:46
 msgid "Path to a file with parameters"
 msgstr "매개변수가있는 파일의 경로"
 
@@ -3397,7 +3397,7 @@ msgstr ""
 " --{1}, --{2}을 사용합니다. 각 필터는 반드시 a + 또는 a - 로 시작되어야 하며 복수개의 필터는 {3}와 함께 "
 "사용되어야합니다."
 
-#: Library/RestAPI/Strings.cs:40 CommandLine/CLI/Strings.cs:41
+#: Library/RestAPI/Strings.cs:40 CommandLine/CLI/Strings.cs:42
 #, csharp-format
 msgid "Unable to read the parameters file \"{0}\", reason: {1}"
 msgstr "파라미터 파일 \"{0}\"을 읽을 수 없습니다. 원인: {1}"
@@ -3439,7 +3439,7 @@ msgstr ""
 "시작할 수 없습니다. 다른 프로세스가 이미 실행 중일까요?\n"
 "오류 메시지: {0}"
 
-#: Library/RestAPI/Strings.cs:50 Library/RestAPI/Strings.cs:86
+#: Library/RestAPI/Strings.cs:50 Library/RestAPI/Strings.cs:88
 msgid "Disable database encryption"
 msgstr "데이터베이스 암호화 비활성화"
 
@@ -3529,11 +3529,11 @@ msgid ""
 "can still be performed."
 msgstr "자동 업데이트 검증을 비활성화하려면 이 옵션을 사용합니다. 수동 업데이트 확인은 계속 수행할 수 있습니다."
 
-#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:283
+#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:286
 msgid "Set the time after which log data will be purged from the database."
 msgstr "데이터베이스에서 로그 데이터를 완전 삭제할 기준 시간을 설정합니다."
 
-#: Library/RestAPI/Strings.cs:67 Library/Main/Strings.cs:284
+#: Library/RestAPI/Strings.cs:67 Library/Main/Strings.cs:287
 msgid "Clean up old log data"
 msgstr "오래된 로그 데이터 정리"
 
@@ -3551,7 +3551,7 @@ msgstr ""
 msgid "Set the folder where settings are stored"
 msgstr "설정이 저장되는 폴더 설정"
 
-#: Library/RestAPI/Strings.cs:70
+#: Library/RestAPI/Strings.cs:72
 #, csharp-format
 msgid ""
 "This option sets the encryption key used to scramble the local settings "
@@ -3561,11 +3561,11 @@ msgstr ""
 "이 옵션은 로컬 설정 데이터베이스를 스크램블하는 데 사용되는 암호화 키를 설정합니다. 이 옵션은 환경 변수 {0}으로도 설정할 수 "
 "있습니다. --{1} 옵션을 사용하여 데이터베이스 스크램블링을 비활성화합니다."
 
-#: Library/RestAPI/Strings.cs:71
+#: Library/RestAPI/Strings.cs:73
 msgid "Set the database encryption key"
 msgstr "데이터베이스 암호화 키 설정"
 
-#: Library/RestAPI/Strings.cs:72 Library/Main/Strings.cs:102
+#: Library/RestAPI/Strings.cs:74 Library/Main/Strings.cs:102
 msgid ""
 "Use this option to supply an alternative folder for temporary storage. By "
 "default the system default temporary folder is used. Note that also SQLite "
@@ -3574,39 +3574,39 @@ msgstr ""
 "임시 저장을 위한 대체 폴더를 제공하려면 이 옵션을 사용합니다. 기본적으로 시스템 기본 임시 폴더가 사용됩니다. 또한 SQLite는 이 "
 "임시 폴더에 임시 파일을 저장합니다."
 
-#: Library/RestAPI/Strings.cs:73 Library/Main/Strings.cs:103
+#: Library/RestAPI/Strings.cs:75 Library/Main/Strings.cs:103
 msgid "Temporary storage folder"
 msgstr "임시 저장 폴더"
 
-#: Library/RestAPI/Strings.cs:74
+#: Library/RestAPI/Strings.cs:76
 msgid "Reset the JWT configuration, invalidating any issued login tokens"
 msgstr "JWT 구성을 재설정하여 발급된 모든 로그인 토큰을 무효화합니다."
 
-#: Library/RestAPI/Strings.cs:75
+#: Library/RestAPI/Strings.cs:77
 msgid "Enable the use of long-lived access tokens"
 msgstr "장기 액세스 토큰 사용 활성화"
 
-#: Library/RestAPI/Strings.cs:76
+#: Library/RestAPI/Strings.cs:78
 msgid "Disable the web interface and only allow API access"
 msgstr "웹 인터페이스를 비활성화하고 API 액세스만 허용합니다."
 
-#: Library/RestAPI/Strings.cs:77
+#: Library/RestAPI/Strings.cs:79
 msgid "Disable the use of signin tokens"
 msgstr "로그인 토큰 사용 비활성화"
 
-#: Library/RestAPI/Strings.cs:78
+#: Library/RestAPI/Strings.cs:80
 msgid ""
 "The relative paths that should be served as single page applications, "
 "separated with semicolons."
 msgstr "단일 페이지 애플리케이션으로 제공되어야 하는 상대 경로이며 세미콜론으로 구분됩니다."
 
-#: Library/RestAPI/Strings.cs:79
+#: Library/RestAPI/Strings.cs:81
 msgid ""
 "A list of CORS origins to allow, separated with semicolons. Each origin must"
 " be a valid URL."
 msgstr "허용할 CORS 원본 목록이며 세미콜론으로 구분됩니다. 각 원점은 유효한 URL이어야 합니다."
 
-#: Library/RestAPI/Strings.cs:80
+#: Library/RestAPI/Strings.cs:82
 msgid ""
 "The timezone to use for the webserver. The timezone must be a valid timezone"
 " identifier, such as \"America/New_York\" or \"UTC\". Common three-letter "
@@ -3615,7 +3615,7 @@ msgstr ""
 "웹서버에 사용할 시간대입니다. 시간대는 \"America/New_York\" 또는 \"UTC\"와 같은 유효한 시간대 식별자여야 합니다."
 " \"CET\"와 같은 일반적인 3자리 약어가 지원되지만 경우에 따라 모호합니다."
 
-#: Library/RestAPI/Strings.cs:81
+#: Library/RestAPI/Strings.cs:83
 msgid ""
 "A list of pre-authenticated tokens, separated with semicolons. These can be "
 "used in cases where the authentication is provided by a proxy. Each token "
@@ -3627,7 +3627,7 @@ msgstr ""
 " 하며 확장 문자를 포함할 수 없습니다. 토큰은 다음을 포함하도록 각 요청의 헤더를 설정하여 제공되어야합니다. 인증: "
 "PreAuth<token>"
 
-#: Library/RestAPI/Strings.cs:82
+#: Library/RestAPI/Strings.cs:84
 msgid ""
 "Disable the API extensions reported by the server. This will not disable the"
 " functionality, but will not report the extensions in the API responses. Use"
@@ -3636,7 +3636,7 @@ msgstr ""
 "서버에서 보고한 API 확장을 비활성화합니다. 기능이 비활성화되지는 않지만 API 응답의 확장은 보고되지 않습니다. 서버를 보다 기본적인"
 " API로 성능을 저하시키려면 이 옵션을 사용합니다."
 
-#: Library/RestAPI/Strings.cs:83
+#: Library/RestAPI/Strings.cs:85
 msgid ""
 "The duration of the refresh tokens issued by the server. This value "
 "indicates how much time can pass without activity before the user is asked "
@@ -3646,17 +3646,17 @@ msgstr ""
 "서버에서 발행한 새로 고침 토큰의 기간입니다. 이 값은 사용자에게 다시 로그인하라는 메시지가 표시되기 전까지 활동 없이 경과할 수 있는 "
 "시간을 나타냅니다. 값은 0보다 커야 하며 최대 30일로 제한됩니다."
 
-#: Library/RestAPI/Strings.cs:84
+#: Library/RestAPI/Strings.cs:86
 msgid ""
 "Enable the folder status service for showing overlay icons in the file "
 "explorer"
 msgstr "파일 탐색기에 오버레이 아이콘을 표시하기 위해 폴더 상태 서비스를 활성화합니다."
 
-#: Library/RestAPI/Strings.cs:85
+#: Library/RestAPI/Strings.cs:87
 msgid "Use this option to disable database encryption of sensitive fields"
 msgstr "민감한 필드의 데이터베이스 암호화를 비활성화하려면 이 옵션을 사용합니다."
 
-#: Library/RestAPI/Strings.cs:89
+#: Library/RestAPI/Strings.cs:91
 msgid ""
 "Use this option to log to the Windows event log. The provided name is in the"
 " format Log:Source. If no log name is provided, \"Duplicati 2\" is used."
@@ -3664,67 +3664,67 @@ msgstr ""
 "Windows 이벤트 로그에 기록하려면 이 옵션을 사용합니다. 제공된 이름은 Log:Source 형식입니다. 로그 이름이 제공되지 않으면"
 " \"Duplicati2\"가 사용됩니다."
 
-#: Library/RestAPI/Strings.cs:90
+#: Library/RestAPI/Strings.cs:92
 msgid "Log to the Windows event log"
 msgstr "Windows 이벤트 로그에 기록"
 
-#: Library/RestAPI/Strings.cs:91
+#: Library/RestAPI/Strings.cs:93
 msgid "Use this option to set the log level for the Windows event log."
 msgstr "Windows 이벤트 로그의 로그 수준을 설정하려면 이 옵션을 사용합니다."
 
-#: Library/RestAPI/Strings.cs:92
+#: Library/RestAPI/Strings.cs:94
 msgid "Set the log level for the Windows event log"
 msgstr "Windows 이벤트 로그의 로그 수준 설정"
 
-#: Library/RestAPI/Strings.cs:93
+#: Library/RestAPI/Strings.cs:95
 #, csharp-format
 msgid "The Windows event log source {0} was not found. Attempting to create."
 msgstr "Windows 이벤트 로그 소스 {0}를 찾을 수 없습니다. 생성을 시도하고 있습니다."
 
-#: Library/RestAPI/Strings.cs:94
+#: Library/RestAPI/Strings.cs:96
 #, csharp-format
 msgid ""
 "The Windows Event Log was not created for: {0}, not logging to eventlog."
 msgstr "Windows 이벤트 로그는 {0}에 대해 생성되지 않았으며 이벤트 로그에 기록되지 않았습니다."
 
-#: Library/RestAPI/Strings.cs:95
+#: Library/RestAPI/Strings.cs:97
 msgid "The Windows event log is not supported on this platform"
 msgstr "Windows 이벤트 로그는 이 플랫폼에서 지원되지 않습니다."
 
-#: Library/RestAPI/Strings.cs:96 Library/RestAPI/Strings.cs:141
+#: Library/RestAPI/Strings.cs:98 Library/RestAPI/Strings.cs:143
 #, csharp-format
 msgid "Server has started and is listening on {0}, port {1}"
 msgstr "서버가 시작되었으며 {0}, 포트 {1}에서 수신 중입니다."
 
-#: Library/RestAPI/Strings.cs:97
+#: Library/RestAPI/Strings.cs:99
 #, csharp-format
 msgid "Use the following link to sign in: {0}"
 msgstr "다음 링크를 사용하여 로그인합니다: {0}"
 
-#: Library/RestAPI/Strings.cs:98
+#: Library/RestAPI/Strings.cs:100
 #, csharp-format
 msgid "The server crashed: {0}"
 msgstr "서버가 충돌했습니다: {0}"
 
-#: Library/RestAPI/Strings.cs:99
+#: Library/RestAPI/Strings.cs:101
 msgid "Server is stopping, tearing down handlers"
 msgstr "서버가 중지되고 핸들러가 종료됩니다."
 
-#: Library/RestAPI/Strings.cs:100
+#: Library/RestAPI/Strings.cs:102
 msgid "Server has stopped"
 msgstr "서버가 중지되었습니다"
 
-#: Library/RestAPI/Strings.cs:101
+#: Library/RestAPI/Strings.cs:103
 msgid ""
 "Use this option to require a custom provided key for database encryption of "
 "sensitive fields and not rely on the serial number."
 msgstr "민감한 필드의 데이터베이스 암호화를 위해 사용자 정의 제공 키를 요구하고 일련번호에 의존하지 않으려면 이 옵션을 사용합니다."
 
-#: Library/RestAPI/Strings.cs:102
+#: Library/RestAPI/Strings.cs:104
 msgid "Require database encryption"
 msgstr "데이터베이스 암호화 필요"
 
-#: Library/RestAPI/Strings.cs:103
+#: Library/RestAPI/Strings.cs:105
 #, csharp-format
 msgid ""
 "Database encryption key is required. Supply an encryption key via the "
@@ -3734,7 +3734,7 @@ msgstr ""
 "데이터베이스 암호화 키가 필요합니다. 환경 변수 {0}를 통해 암호화 키를 제공하거나 --{1} 옵션을 사용하여 데이터베이스 암호화를 "
 "비활성화합니다."
 
-#: Library/RestAPI/Strings.cs:104
+#: Library/RestAPI/Strings.cs:106
 #, csharp-format
 msgid ""
 "The database encryption key is blacklisted and cannot be used. The database "
@@ -3744,7 +3744,7 @@ msgstr ""
 "데이터베이스 암호화 키는 블랙리스트에 등록되어 사용할 수 없습니다. 데이터베이스가 복호화되었습니다. 환경 변수 {0}를 통해 새 암호화 "
 "키를 제공하거나 --{1} 옵션을 사용하여 데이터베이스 암호화를 비활성화합니다."
 
-#: Library/RestAPI/Strings.cs:105
+#: Library/RestAPI/Strings.cs:107
 #, csharp-format
 msgid ""
 "No database encryption key was found. The database will be stored "
@@ -3754,7 +3754,7 @@ msgstr ""
 "데이터베이스 암호화 키를 찾을 수 없습니다. 데이터베이스는 암호화되지 않은 상태로 저장됩니다. 환경 변수 {0}를 통해 암호화 키를 "
 "제공하거나 --{1} 옵션을 사용하여 데이터베이스 암호화를 비활성화합니다."
 
-#: Library/RestAPI/Strings.cs:106
+#: Library/RestAPI/Strings.cs:108
 #, csharp-format
 msgid ""
 "The database appears to be encrypted, but no key was specified. Opening the "
@@ -3764,16 +3764,16 @@ msgstr ""
 "데이터베이스가 암호화된 것으로 보이지만 키가 지정되지 않았습니다. 데이터베이스 열기가 실패할 가능성이 높습니다. 키를 지정하려면 환경 "
 "변수 {0}를 사용합니다."
 
-#: Library/RestAPI/Strings.cs:107
+#: Library/RestAPI/Strings.cs:109
 #, csharp-format
 msgid "The timezone {0} is not valid"
 msgstr "시간대 {0}가 유효하지 않습니다."
 
-#: Library/RestAPI/Strings.cs:108
+#: Library/RestAPI/Strings.cs:110
 msgid "Set the encryption key for the settings database"
 msgstr "설정 데이터베이스에 대한 암호화 키 설정"
 
-#: Library/RestAPI/Strings.cs:109
+#: Library/RestAPI/Strings.cs:111
 #, csharp-format
 msgid ""
 "Use this option to set the encryption key for the settings database. This "
@@ -3781,52 +3781,52 @@ msgid ""
 msgstr ""
 "설정 데이터베이스에 대한 암호화 키를 설정하려면 이 옵션을 사용합니다. 이 옵션은 환경 변수 {0}를 사용하여 설정할 수도 있습니다."
 
-#: Library/RestAPI/Strings.cs:110
+#: Library/RestAPI/Strings.cs:112
 #, csharp-format
 msgid "Invalid pause/resume state: {0}"
 msgstr "잘못된 pause/resume 상태: {0}"
 
-#: Library/RestAPI/Strings.cs:111
+#: Library/RestAPI/Strings.cs:113
 msgid "Register for remote control"
 msgstr "원격제어 등록"
 
-#: Library/RestAPI/Strings.cs:112
+#: Library/RestAPI/Strings.cs:114
 msgid ""
 "Register for remote control using the pre-authenticated url. If the server "
 "is already registered, this option has no effect"
 msgstr "사전 인증된 URL을 이용하여 원격제어를 등록합니다. 서버가 이미 등록된 경우 이 옵션은 적용되지 않습니다."
 
-#: Library/RestAPI/Strings.cs:113
+#: Library/RestAPI/Strings.cs:115
 msgid "Force register for remote control"
 msgstr "원격 제어를 위한 강제 등록"
 
-#: Library/RestAPI/Strings.cs:114
+#: Library/RestAPI/Strings.cs:116
 msgid ""
 "Forces a re-registration if the server is already registered. If the server "
 "is not already registered, this option has no effect."
 msgstr "서버가 이미 등록된 경우 강제로 다시 등록합니다. 서버가 아직 등록되지 않은 경우 이 옵션은 적용되지 않습니다."
 
-#: Library/RestAPI/Strings.cs:115
+#: Library/RestAPI/Strings.cs:117
 msgid ""
 "The server is already registered for remote control, ignoring registration "
 "request"
 msgstr "서버가 이미 원격 제어에 등록되어 있어 등록 요청을 무시합니다."
 
-#: Library/RestAPI/Strings.cs:116
+#: Library/RestAPI/Strings.cs:118
 #, csharp-format
 msgid "The server is registered, use the following link to claim it: {0}"
 msgstr "서버가 등록되었습니다. 다음 링크를 사용하여 서버를 등록 청구합니다: {0}"
 
-#: Library/RestAPI/Strings.cs:117
+#: Library/RestAPI/Strings.cs:119
 #, csharp-format
 msgid "The server registration failed: {0}"
 msgstr "서버 등록 실패: {0}"
 
-#: Library/RestAPI/Strings.cs:118
+#: Library/RestAPI/Strings.cs:120
 msgid "Set the allowed backends for remote control"
 msgstr "원격 제어에 허용되는 백엔드 설정"
 
-#: Library/RestAPI/Strings.cs:119
+#: Library/RestAPI/Strings.cs:121
 msgid ""
 "Set the allowed backends for remote control. The value is a comma-separated "
 "list of backend names. If this option is not set, all backends are allowed. "
@@ -3835,11 +3835,11 @@ msgstr ""
 "원격 제어에 허용되는 백엔드를 설정합니다. 값은 쉼표로 구분된 백엔드 이름 목록입니다. 이 옵션을 설정하지 않으면 모든 백엔드가 "
 "허용됩니다. 데이터를 저장하는 데 사용할 수 있는 백엔드를 제한하려면 이 옵션을 사용합니다."
 
-#: Library/RestAPI/Strings.cs:120
+#: Library/RestAPI/Strings.cs:122
 msgid "Set the allowed encryption modules for remote control"
 msgstr "원격 제어에 허용되는 암호화 모듈 설정"
 
-#: Library/RestAPI/Strings.cs:121
+#: Library/RestAPI/Strings.cs:123
 msgid ""
 "Set the allowed encryption modules for remote control. The value is a comma-"
 "separated list of encryption module names. If this option is not set, all "
@@ -3849,11 +3849,11 @@ msgstr ""
 "원격 제어에 허용되는 암호화 모듈을 설정합니다. 값은 쉼표로 구분된 암호화 모듈 이름 목록입니다. 이 옵션을 설정하지 않으면 모든 암호화"
 " 모듈이 허용됩니다. 데이터를 암호화하는 데 사용할 수 있는 암호화 모듈을 제한하려면 이 옵션을 사용합니다."
 
-#: Library/RestAPI/Strings.cs:122
+#: Library/RestAPI/Strings.cs:124
 msgid "Set the allowed compression modules for remote control"
 msgstr "원격 제어에 허용되는 압축 모듈 설정"
 
-#: Library/RestAPI/Strings.cs:123
+#: Library/RestAPI/Strings.cs:125
 msgid ""
 "Set the allowed compression modules for remote control. The value is a "
 "comma-separated list of compression module names. If this option is not set,"
@@ -3863,46 +3863,46 @@ msgstr ""
 "원격 제어에 허용되는 압축 모듈을 설정합니다. 값은 쉼표로 구분된 압축 모듈 이름 목록입니다. 이 옵션을 설정하지 않으면 모든 압축 "
 "모듈이 허용됩니다. 데이터를 압축하는 데 사용할 수 있는 압축 모듈을 제한하려면 이 옵션을 사용합니다."
 
-#: Library/RestAPI/Strings.cs:124
+#: Library/RestAPI/Strings.cs:126
 msgid "Failed to get encryption key from secret provider"
 msgstr "비밀 공급자로부터 암호화 키를 가져오지 못했습니다."
 
-#: Library/RestAPI/Strings.cs:125
+#: Library/RestAPI/Strings.cs:127
 msgid "Failed to set encryption key in secret provider"
 msgstr "비밀 공급자에 암호화 키를 설정하지 못했습니다."
 
-#: Library/RestAPI/Strings.cs:126
+#: Library/RestAPI/Strings.cs:128
 msgid "Configure HTTPS certificates"
 msgstr "HTTPS 인증서 구성"
 
-#: Library/RestAPI/Strings.cs:127
+#: Library/RestAPI/Strings.cs:129
 msgid "Automatically generate and configure HTTPS certificates for the server"
 msgstr "서버용 HTTPS 인증서 자동 생성 및 구성"
 
-#: Library/RestAPI/Strings.cs:128
+#: Library/RestAPI/Strings.cs:130
 msgid "HTTPS hostnames"
 msgstr "HTTPS 호스트 이름"
 
-#: Library/RestAPI/Strings.cs:129
+#: Library/RestAPI/Strings.cs:131
 msgid ""
 "Comma-separated list of hostnames to include in the HTTPS certificate (used "
 "with --configure-https)"
 msgstr "HTTPS 인증서에 포함할 쉼표로 구분된 호스트 이름 목록(--configure-https 와 함께 사용됨)"
 
-#: Library/RestAPI/Strings.cs:137
+#: Library/RestAPI/Strings.cs:139
 #, csharp-format
 msgid ""
 "Unable to find a valid date, given the start date {0}, the repetition "
 "interval {1} and the allowed days {2}"
 msgstr "시작 날짜 {0}, 반복 간격 {1} 및 허용 날짜 {2}를 고려하여 유효한 날짜를 찾을 수 없습니다."
 
-#: Library/RestAPI/Strings.cs:142
+#: Library/RestAPI/Strings.cs:144
 msgid ""
 "SSL certificate password option has no meaning when provided without SSL "
 "certificate file option!"
 msgstr "SSL 인증서 비밀번호 옵션은 SSL 인증서 파일 옵션 없이 제공되면 의미가 없습니다!"
 
-#: Library/RestAPI/Strings.cs:143
+#: Library/RestAPI/Strings.cs:145
 #, csharp-format
 msgid "Unable to open a socket for listening, tried ports: {0}"
 msgstr "청취를 위해 소켓을 열 수 없습니다. 포트를 시도했습니다: {0}"
@@ -3943,7 +3943,7 @@ msgstr ""
 msgid "ZIP compression"
 msgstr "ZIP 압축"
 
-#: Library/Compression/Strings.cs:28 Library/Main/Strings.cs:227
+#: Library/Compression/Strings.cs:28 Library/Main/Strings.cs:229
 #, csharp-format
 msgid "Use the option --{0} instead."
 msgstr "대신 --{0} 옵션을 사용합니다."
@@ -4106,65 +4106,65 @@ msgstr ""
 msgid "Database file does not exist: {0}"
 msgstr "데이터베이스 파일이 존재하지 않습니다: {0}"
 
-#: Library/Main/Operation/TestHandler.cs:114
+#: Library/Main/Operation/TestHandler.cs:116
 #, csharp-format
 msgid "Index file {0} has extra blocks"
 msgstr "인덱스 파일 {0}에 추가 블록이 있습니다."
 
-#: Library/Main/Operation/TestHandler.cs:140
-#: Library/Main/Operation/TestHandler.cs:214
+#: Library/Main/Operation/TestHandler.cs:142
+#: Library/Main/Operation/TestHandler.cs:216
 #, csharp-format
 msgid "Successfully captured hash and size for {0}, would update database"
 msgstr "{0}에 대한 해시 및 크기를 성공적으로 캡처하여 데이터베이스를 업데이트합니다."
 
-#: Library/Main/Operation/TestHandler.cs:144
-#: Library/Main/Operation/TestHandler.cs:218
+#: Library/Main/Operation/TestHandler.cs:146
+#: Library/Main/Operation/TestHandler.cs:220
 #, csharp-format
 msgid "Successfully captured hash and size for {0}, updating database"
 msgstr "{0} 의 해시 및 크기를 성공적으로 캡처하여 데이터베이스를 업데이트했습니다."
 
-#: Library/Main/Operation/TestHandler.cs:161
-#: Library/Main/Operation/TestHandler.cs:240
+#: Library/Main/Operation/TestHandler.cs:163
+#: Library/Main/Operation/TestHandler.cs:242
 #, csharp-format
 msgid "Failed to process file {0}"
 msgstr "{0} 파일을 처리하지 못했습니다."
 
-#: Library/Main/Operation/TestHandler.cs:174
+#: Library/Main/Operation/TestHandler.cs:176
 #, csharp-format
 msgid "Found {0} faulty index files, repairing now"
 msgstr "{0} 결함이 있는 인덱스 파일을 발견하여 지금 복구 중입니다."
 
-#: Library/Main/Operation/TestHandler.cs:178
+#: Library/Main/Operation/TestHandler.cs:180
 #, csharp-format
 msgid "Found {0} faulty index files, remove the option {1} to repair them"
 msgstr "결함이 있는 인덱스 파일 {0}개를 발견했습니다. 복구하려면 {1} 옵션을 제거합니다."
 
-#: Library/Main/Operation/TestHandler.cs:198
+#: Library/Main/Operation/TestHandler.cs:200
 #, csharp-format
 msgid "No hash or size recorded for {0}, performing full verification"
 msgstr "{0}에 대해 기록된 해시 또는 크기가 없으며 전체 검증을 수행합니다."
 
-#: Library/Main/Operation/TestHandler.cs:256
+#: Library/Main/Operation/TestHandler.cs:258
 #, csharp-format
 msgid "Successfully verified {0} remote files"
 msgstr "{0} 원격 파일을 성공적으로 확인했습니다."
 
-#: Library/Main/Operation/TestHandler.cs:260
+#: Library/Main/Operation/TestHandler.cs:262
 #, csharp-format
 msgid "Verified {0} remote files with {1} problem(s)"
 msgstr "{1} 문제가 있는 {0} 원격 파일을 확인했습니다."
 
-#: Library/Main/Operation/TestHandler.cs:405
+#: Library/Main/Operation/TestHandler.cs:407
 #, csharp-format
 msgid "Unexpected file type {0} for {1}"
 msgstr "{1}에 대한 예기치 않은 파일 형식 {0}"
 
-#: Library/Main/Operation/TestHandler.cs:430
+#: Library/Main/Operation/TestHandler.cs:432
 #, csharp-format
 msgid "Would replace faulty index file {0} with {1}"
 msgstr "잘못된 인덱스 파일 {0}를 {1}로 교체합니다."
 
-#: Library/Main/Operation/TestHandler.cs:445
+#: Library/Main/Operation/TestHandler.cs:447
 #, csharp-format
 msgid "Failed to replace faulty index file {0}"
 msgstr "결함이 있는 인덱스 파일 {0}를 교체하지 못했습니다."
@@ -4815,23 +4815,23 @@ msgstr ""
 msgid "Select what module to use for encryption"
 msgstr "암호화에 사용할 모듈을 선택합니다."
 
-#: Library/Main/Strings.cs:119
+#: Library/Main/Strings.cs:121
 msgid "Supply one or more module names, separated by commas to unload them."
 msgstr "언로드할 모듈 이름을 하나 이상 쉼표로 구분하여 제공합니다."
 
-#: Library/Main/Strings.cs:120
+#: Library/Main/Strings.cs:122
 msgid "Disable one or more modules"
 msgstr "하나 이상의 모듈 비활성화"
 
-#: Library/Main/Strings.cs:121
+#: Library/Main/Strings.cs:123
 msgid "Supply one or more module names, separated by commas to load them."
 msgstr "로드할 모듈 이름을 하나 이상 쉼표로 구분하여 제공합니다."
 
-#: Library/Main/Strings.cs:122
+#: Library/Main/Strings.cs:124
 msgid "Enable one or more modules"
 msgstr "하나 이상의 모듈 활성화"
 
-#: Library/Main/Strings.cs:123
+#: Library/Main/Strings.cs:125
 msgid ""
 "This setting controls the usage of snapshots, which allows Duplicati to "
 "backup files that are locked by other programs. If this is set to \"off\", "
@@ -4854,11 +4854,11 @@ msgstr ""
 "필요합니다. Linux 에서는 논리 볼륨 관리(LVM)를 사용하며 루트 권한이 필요합니다. macOS 에서는 Apple 파일 "
 "시스템(APFS) 스냅샷을 사용하며 루트 권한이 필요합니다."
 
-#: Library/Main/Strings.cs:124
+#: Library/Main/Strings.cs:126
 msgid "Control the use of disk snapshots"
 msgstr "디스크 스냅샷 사용 제어"
 
-#: Library/Main/Strings.cs:125
+#: Library/Main/Strings.cs:127
 msgid ""
 "The snapshot provider implementation for Windows. The Vanara version is the "
 "default and supports all features and integrates directly with Windows on "
@@ -4870,11 +4870,11 @@ msgstr ""
 "Windows와 직접 통합됩니다. WMIC 기반 스냅샷은 이식성이 약간 더 뛰어나지만 기능은 적습니다. AlphaVSS는 레거시 "
 "공급자이며 VC++ Redist가 설치되어 있어야합니다."
 
-#: Library/Main/Strings.cs:126
+#: Library/Main/Strings.cs:128
 msgid "The snapshot provider implementation to use"
 msgstr "사용할 스냅샷 제공자 구현"
 
-#: Library/Main/Strings.cs:127
+#: Library/Main/Strings.cs:129
 msgid ""
 "The pre-generated volumes will be placed into the temporary folder by "
 "default. This option can set a different folder for placing the temporary "
@@ -4883,55 +4883,55 @@ msgstr ""
 "사전 생성된 볼륨은 기본적으로 임시 폴더에 배치됩니다. 이 옵션은 임시 볼륨을 배치하기 위해 다른 폴더를 설정할 수 있습니다. 이름에도 "
 "불구하고 이는 동기 실행에도 작동합니다."
 
-#: Library/Main/Strings.cs:128
+#: Library/Main/Strings.cs:130
 msgid "The path where ready volumes are placed until uploaded"
 msgstr "업로드될 때까지 준비된 볼륨이 배치되는 경로"
 
-#: Library/Main/Strings.cs:129
+#: Library/Main/Strings.cs:131
 msgid ""
 "When performing asynchronous uploads, the maximum number of concurrent "
 "uploads allowed. Set to zero to disable the limit."
 msgstr "비동기 업로드를 수행할 때 허용되는 최대 동시 업로드 수입니다. 제한을 비활성화하려면 0으로 설정합니다."
 
-#: Library/Main/Strings.cs:130
+#: Library/Main/Strings.cs:132
 msgid "The number of concurrent uploads allowed"
 msgstr "허용되는 동시 업로드 수"
 
-#: Library/Main/Strings.cs:131
+#: Library/Main/Strings.cs:133
 msgid ""
 "Activate this option to make some error messages more verbose, which may "
 "help you track down a particular issue."
 msgstr "특정 문제를 추적하는 데 도움이 될 수 있는 일부 오류 메시지를 더 자세히 표시하려면 이 옵션을 활성화합니다."
 
-#: Library/Main/Strings.cs:132
+#: Library/Main/Strings.cs:134
 msgid "Enable debugging output"
 msgstr "디버깅 출력 활성화"
 
-#: Library/Main/Strings.cs:133
+#: Library/Main/Strings.cs:135
 msgid "Log information to the file specified."
 msgstr "지정된 파일에 정보를 기록합니다."
 
-#: Library/Main/Strings.cs:134
+#: Library/Main/Strings.cs:136
 msgid "Log internal information to a file"
 msgstr "내부 정보를 파일에 기록"
 
-#: Library/Main/Strings.cs:135 Library/Main/Strings.cs:320
+#: Library/Main/Strings.cs:137 Library/Main/Strings.cs:323
 #, csharp-format
 msgid ""
 "Specify the amount of log information to write into the file specified by "
 "the option --{0}."
 msgstr "--{0} 옵션으로 지정된 파일에 쓸 로그 정보의 양을 지정합니다."
 
-#: Library/Main/Strings.cs:136
+#: Library/Main/Strings.cs:138
 msgid "Log information level"
 msgstr "로그 정보 수준"
 
-#: Library/Main/Strings.cs:137 Library/Main/Strings.cs:248
+#: Library/Main/Strings.cs:139 Library/Main/Strings.cs:251
 #, csharp-format
 msgid "Use the options --{0} and --{1} instead."
 msgstr "대신 --{0} 및 --{1} 옵션을 사용합니다."
 
-#: Library/Main/Strings.cs:138
+#: Library/Main/Strings.cs:140
 msgid ""
 "Suppress warnings and log them as information instead. Use this if you need "
 "to silence specific warnings. This option accepts a comma separated list of "
@@ -4940,22 +4940,22 @@ msgstr ""
 "경고를 억제하고 대신 정보로 기록합니다. 특정 경고를 무음으로 설정해야 하는 경우 이 기능을 사용합니다. 이 옵션은 쉼표로 구분된 경고 "
 "ID 목록을 허용합니다."
 
-#: Library/Main/Strings.cs:139
+#: Library/Main/Strings.cs:141
 msgid "Suppress specific warnings"
 msgstr "특정 경고 억제"
 
-#: Library/Main/Strings.cs:140
+#: Library/Main/Strings.cs:142
 #, csharp-format
 msgid ""
 "Enable logging of HTTP request diagnostics. Messages are logged at the {0} "
 "level, so make sure the log outputs at that level."
 msgstr "HTTP 요청 진단 로깅을 활성화합니다. 메시지는 {0} 수준에서 기록되므로 해당 수준에서 로그가 출력되는지 확인합니다."
 
-#: Library/Main/Strings.cs:141
+#: Library/Main/Strings.cs:143
 msgid "Log HTTP requests"
 msgstr "HTTP 요청 기록"
 
-#: Library/Main/Strings.cs:142
+#: Library/Main/Strings.cs:144
 #, csharp-format
 msgid ""
 "Enable logging of socket data. A value of 0 logs only event messages, a "
@@ -4965,22 +4965,22 @@ msgstr ""
 "소켓 데이터 로깅을 활성화합니다. 0 값은 이벤트 메시지만 기록하고, 양수 값은 해당 바이트만큼의 데이터를 포함합니다. 비활성화하려면 "
 "-1 을 사용합니다. 메시지는 {0} 수준에서 기록되므로 해당 수준에서 로그가 출력되는지 확인합니다."
 
-#: Library/Main/Strings.cs:143
+#: Library/Main/Strings.cs:145
 msgid "Log socket data"
 msgstr "로그 소켓 데이터"
 
-#: Library/Main/Strings.cs:144
+#: Library/Main/Strings.cs:146
 msgid ""
 "If Duplicati detects that the target folder is missing, it will create it "
 "automatically. Activate this option to prevent automatic folder creation."
 msgstr ""
 "Duplicati가 백업 저장소 폴더가 누락되었음을 감지하면 자동으로 생성됩니다. 자동 폴더 생성을 방지하려면 이 옵션을 활성화합니다."
 
-#: Library/Main/Strings.cs:145
+#: Library/Main/Strings.cs:147
 msgid "Disable automatic folder creation"
 msgstr "자동 폴더 생성 비활성화"
 
-#: Library/Main/Strings.cs:146
+#: Library/Main/Strings.cs:148
 msgid ""
 "Use this option to exclude faulty writers from a snapshot. This is "
 "equivalent to the -wx flag of the vshadow.exe tool, except that it only "
@@ -4992,12 +4992,12 @@ msgstr ""
 "GUID는 허용하지 않는다는 점을 제외하면 vshadow.exe 도구의 -wx플래그와 동일합니다. 여러 GUID는 세미콜론으로 구분해야 "
 "하며 중괄호 유무를 포함하여 대부분의 GUID 형식이 허용됩니다."
 
-#: Library/Main/Strings.cs:147
+#: Library/Main/Strings.cs:149
 msgid ""
 "A semicolon separated list of guids of VSS writers to exclude (Windows only)"
 msgstr "제외할 VSS 작성자의 세미콜론으로 구분된 GUID 목록(Windows 에만 해당)"
 
-#: Library/Main/Strings.cs:148
+#: Library/Main/Strings.cs:150
 msgid ""
 "This setting controls the usage of NTFS USN numbers, which allows Duplicati "
 "to obtain a list of files and folders much faster. If this is set to "
@@ -5014,11 +5014,11 @@ msgstr ""
 "USN를 사용하려고 시도하지만 실패할경우 로그에 경고 메시지가 생성됩니다. \"필수\"로 설정하면 USN 사용이 실패할 경우 "
 "Duplicati가 백업을 중단합니다. 이 기능을 사용하려면 관리자 권한이 필요합니다."
 
-#: Library/Main/Strings.cs:149
+#: Library/Main/Strings.cs:151
 msgid "Control the use of NTFS Update Sequence Numbers"
 msgstr "NTFS 업데이트 시퀀스 번호 사용 제어"
 
-#: Library/Main/Strings.cs:150
+#: Library/Main/Strings.cs:152
 msgid ""
 "When reading files, Duplicati can use the Windows BackupRead API to read "
 "files that are locked by other applications. This is useful for files that "
@@ -5036,15 +5036,15 @@ msgstr ""
 "실패합니다. \"on\"으로설정하면 BackupRead를 사용하려고 시도하지만 가능하지 않은 경우 경고가 생성됩니다. 이를 \"필수\"로"
 " 설정하면 Duplicati가 백업에 실패할 경우 백업을 중단하게됩니다. 이 기능을 사용하려면 관리자 권한이필요합니다."
 
-#: Library/Main/Strings.cs:151
+#: Library/Main/Strings.cs:153
 msgid "Use BackupRead API to read files"
 msgstr "BackupRead API를 사용하여 파일 읽기"
 
-#: Library/Main/Strings.cs:152
+#: Library/Main/Strings.cs:154
 msgid "Ignore advisory locking"
 msgstr "권고 잠금 무시"
 
-#: Library/Main/Strings.cs:153
+#: Library/Main/Strings.cs:155
 msgid ""
 "When reading files Duplicati can skip files that are marked locked by "
 "another application to ensure consistency. This flag can disable the check "
@@ -5053,11 +5053,11 @@ msgstr ""
 "파일을 읽을 때 Duplicati는 일관성을 보장하기 위해 다른 응용 프로그램에서 잠긴 것으로 표시된 파일을 건너뛸 수 있습니다. 이 "
 "플래그는 검사를 비활성화하고 잠긴 파일의 낙관적 읽기를 수행할 수 있습니다."
 
-#: Library/Main/Strings.cs:154
+#: Library/Main/Strings.cs:156
 msgid "Ignore backup exclusion attributes"
 msgstr "백업 제외 속성 무시"
 
-#: Library/Main/Strings.cs:155
+#: Library/Main/Strings.cs:157
 msgid ""
 "By default, Duplicati will skip files marked with backup exclusion extended "
 "attributes, such as the macOS com.apple.backupd flag or a Linux "
@@ -5067,7 +5067,7 @@ msgstr ""
 "기본적으로 Duplicati는 macOS com.apple.backupd 플래그 또는 Linux duplicati.exclude 마커와 "
 "같은 백업 제외 확장 속성이 표시된 파일을 건너뜁니다. 확장된 속성을 무시하려면 이 옵션을 활성화합니다."
 
-#: Library/Main/Strings.cs:156
+#: Library/Main/Strings.cs:158
 #, csharp-format
 msgid ""
 "When matching timestamps, Duplicati will adjust the times by a small "
@@ -5084,19 +5084,19 @@ msgstr ""
 "지나서 Duplicati가 예상보다 일찍 이전 백업을 삭제할 수 있습니다. 이를 방지하기 위해 Duplicati는 1% 공차(최대 "
 "1시간)를 삽입합니다. 허용오차를 비활성화하고 엄격한 시간 검증을 사용하려면 이 옵션을 사용합니다."
 
-#: Library/Main/Strings.cs:157
+#: Library/Main/Strings.cs:159
 msgid "Deactivate tolerance when comparing times"
 msgstr "시간을 비교할 때 허용오차 비활성화"
 
-#: Library/Main/Strings.cs:158
+#: Library/Main/Strings.cs:160
 msgid "Use this option to verify uploads by listing contents."
 msgstr "콘텐츠를 나열하여 업로드를 확인하려면 이 옵션을 사용합니다."
 
-#: Library/Main/Strings.cs:159
+#: Library/Main/Strings.cs:161
 msgid "Verify uploads by listing contents"
 msgstr "콘텐츠를 나열하여 업로드를 확인합니다."
 
-#: Library/Main/Strings.cs:160
+#: Library/Main/Strings.cs:162
 msgid ""
 "Disables uploading multiple files concurrently to preserve bandwith. This "
 "will have the same effect as setting --asynchronous-upload-limit=1 but "
@@ -5106,11 +5106,11 @@ msgstr ""
 "대역폭을 보존하기 위해 여러 파일을 동시에 업로드하는 것을 비활성화합니다. 이는 --asynchronous-upload-limit=1로 "
 "설정한 것과 동일한 효과를 가지지만 추가로 관련 업로드를 기다립니다. 생성되는 볼륨은 업로드 제한에 포함되지 않습니다."
 
-#: Library/Main/Strings.cs:161
+#: Library/Main/Strings.cs:163
 msgid "Upload files synchronously"
 msgstr "동기식으로 파일 업로드"
 
-#: Library/Main/Strings.cs:162
+#: Library/Main/Strings.cs:164
 msgid ""
 "Duplicati will attempt to perform multiple operations on a single "
 "connection, as this avoids repeated login attempts, and thus speeds up the "
@@ -5120,11 +5120,11 @@ msgstr ""
 "Duplicati는 단일 연결에서 여러 작업을 수행하려고 시도합니다. 이렇게 하면 반복적인 로그인 시도를 방지하고 프로세스 속도를 높일 "
 "수 있습니다. 각 작업이 별도의 연결에서 수행되도록 하려면 이 옵션을 사용합니다."
 
-#: Library/Main/Strings.cs:163
+#: Library/Main/Strings.cs:165
 msgid "Do not re-use connections"
 msgstr "연결 재사용 안 함"
 
-#: Library/Main/Strings.cs:164
+#: Library/Main/Strings.cs:166
 msgid ""
 "When an error occurs, Duplicati will silently retry, and only report the "
 "number of retries. Enable this option to have the error messages displayed "
@@ -5133,11 +5133,11 @@ msgstr ""
 "오류가 발생하면 Duplicati는 자동으로 재시도하고 재시도 횟수만 보고합니다. 재시도를 수행할 때 오류 메시지가 표시되도록 하려면 이"
 " 옵션을 활성화합니다."
 
-#: Library/Main/Strings.cs:165
+#: Library/Main/Strings.cs:167
 msgid "Show error messages when a retry is performed"
 msgstr "재시도 수행 시 오류 메시지 표시"
 
-#: Library/Main/Strings.cs:166
+#: Library/Main/Strings.cs:168
 msgid ""
 "If no files have changed, Duplicati will not upload a backup set. If the "
 "backup data is used to verify that a backup was executed, this option will "
@@ -5146,11 +5146,11 @@ msgstr ""
 "변경된 파일이 없으면 Duplicati는 백업 세트를 업로드하지 않습니다. 백업 데이터를 사용하여 백업이 실행되었는지 확인하는 경우 이 "
 "옵션을 사용하면 Duplicati가 백업 세트가 비어 있어도 백업 세트를 업로드하게됩니다."
 
-#: Library/Main/Strings.cs:167
+#: Library/Main/Strings.cs:169
 msgid "Upload empty backup files"
 msgstr "빈 백업 파일 업로드"
 
-#: Library/Main/Strings.cs:168
+#: Library/Main/Strings.cs:170
 msgid ""
 "Set a limit to the amount of storage used on the backend (by this backup). "
 "This is in addition to the full backend quota, if available. Note: Backups "
@@ -5159,11 +5159,11 @@ msgstr ""
 "이 백업에서 백엔드에 사용되는 스토리지 양에 대한 제한을 설정합니다. 가능한 경우 이는 전체 백엔드 할당량에 추가됩니다. 참고: 백업은 "
 "할당량을 넘어 계속됩니다. 이렇게 하면 경고와 오류 메시지만 생성됩니다."
 
-#: Library/Main/Strings.cs:169
+#: Library/Main/Strings.cs:171
 msgid "Limit storage use"
 msgstr "저장용량 사용 제한"
 
-#: Library/Main/Strings.cs:170
+#: Library/Main/Strings.cs:172
 msgid ""
 "Set a threshold for when to warn about the backend quota being nearly "
 "exceeded. It is given as a percentage, and a warning is generated if the "
@@ -5174,22 +5174,22 @@ msgstr ""
 "백엔드 할당량이 거의 초과되었음을 경고할 시기에 대한 임계값을 설정합니다. 이는 백분율로 제공되며, 사용 가능한 할당량이 전체 백업 "
 "크기의 이 백분율보다 작을 경우 경고가 생성됩니다. 백엔드가 할당량 정보를 보고하지 않으면 이 값은 무시됩니다."
 
-#: Library/Main/Strings.cs:171
+#: Library/Main/Strings.cs:173
 msgid "Threshold for warning about low quota"
 msgstr "낮은 할당량에 대한 경고 임계값"
 
-#: Library/Main/Strings.cs:172
+#: Library/Main/Strings.cs:174
 #, csharp-format
 msgid ""
 "Disable the quota reported by the backend. The option --{0} can still be "
 "used to set a manual quota"
 msgstr "백엔드에서 보고된 할당량을 비활성화합니다. --{0} 옵션을 사용하여 수동 할당량을 설정할 수 있습니다."
 
-#: Library/Main/Strings.cs:173
+#: Library/Main/Strings.cs:175
 msgid "Disable backend quota"
 msgstr "백엔드 할당량 비활성화"
 
-#: Library/Main/Strings.cs:174
+#: Library/Main/Strings.cs:176
 #, csharp-format
 msgid ""
 "Use this option to handle symlinks differently. The \"{0}\" option will "
@@ -5205,11 +5205,11 @@ msgstr ""
 "사용합니다. \"{2}\" 옵션을 사용하면 심볼릭 링크된 백업 저장소이 심볼릭 링크 이름을 가진 일반 파일로 백업 및 복원됩니다. "
 "Duplicati의 초기 버전은 이옵션을 지원하지 않았으며 \"{2}\"가 지정된 것처럼 동작했습니다."
 
-#: Library/Main/Strings.cs:175
+#: Library/Main/Strings.cs:177
 msgid "Symlink handling"
 msgstr "심볼릭 링크 처리"
 
-#: Library/Main/Strings.cs:176
+#: Library/Main/Strings.cs:178
 #, csharp-format
 msgid ""
 "Use this option to handle hardlinks (only works on Linux/OSX). The \"{0}\" "
@@ -5222,15 +5222,15 @@ msgstr ""
 "않도록 각 하드링크에 대해 하드링크 ID를 기록합니다. \"{1}\" 옵션은 하드링크정보를 무시하고 각 하드링크를 고유한 경로로 "
 "처리합니다. \"{2}\" 옵션은 둘 이상의 링크가 있는 모든 하드링크를 무시합니다."
 
-#: Library/Main/Strings.cs:177
+#: Library/Main/Strings.cs:179
 msgid "Hardlink handling"
 msgstr "하드링크 처리"
 
-#: Library/Main/Strings.cs:179
+#: Library/Main/Strings.cs:181
 msgid "Exclude files by attribute"
 msgstr "속성별로 파일 제외"
 
-#: Library/Main/Strings.cs:182
+#: Library/Main/Strings.cs:184
 msgid ""
 "Activate this option to map VSS snapshots to a drive (similar to SUBST, "
 "using Win32 DefineDosDevice). This will create temporary drives that are "
@@ -5241,56 +5241,56 @@ msgstr ""
 "이렇게 하면 스냅샷 콘텐츠에 액세스하는 데 사용되는 임시 드라이브가 생성됩니다. 이 해결 방법을 사용하면 Windows XP에서 파일 "
 "액세스 속도를 높일 수 있습니다."
 
-#: Library/Main/Strings.cs:183
+#: Library/Main/Strings.cs:185
 msgid "Map snapshots to a drive (Windows only)"
 msgstr "스냅샷을 드라이브에 매핑(Windows 에만 해당)"
 
-#: Library/Main/Strings.cs:184
+#: Library/Main/Strings.cs:186
 msgid ""
 "A display name that is attached to this backup. This can be used to identify"
 " the backup when sending mail or running scripts."
 msgstr "이 백업에 첨부된 표시 이름입니다. 이는 메일을 보내거나 스크립트를 실행할 때 백업을 식별하는 데 사용할 수 있습니다."
 
-#: Library/Main/Strings.cs:185
+#: Library/Main/Strings.cs:187
 msgid "Name of the backup"
 msgstr "백업 이름"
 
-#: Library/Main/Strings.cs:186
+#: Library/Main/Strings.cs:188
 msgid ""
 "A unique identification for this backup. This can be used to identify the "
 "backup when sending mail or running scripts."
 msgstr "이 백업의 고유 ID입니다. 이는 메일을 보내거나 스크립트를 실행할 때 백업을 식별하는 데 사용할 수 있습니다."
 
-#: Library/Main/Strings.cs:187
+#: Library/Main/Strings.cs:189
 msgid "Backup ID"
 msgstr "백업 ID"
 
-#: Library/Main/Strings.cs:188
+#: Library/Main/Strings.cs:190
 msgid ""
 "A unique identification of the machine running the backup. This can be used "
 "to identify the machine when sending mail or running scripts."
 msgstr ""
 "백업을 실행하는 머신의 고유 ID입니다. 이는 메일을 보내거나 스크립트를 실행할 때 컴퓨터를 식별하는 데 사용할 수 있습니다."
 
-#: Library/Main/Strings.cs:189
+#: Library/Main/Strings.cs:191
 msgid "Machine ID"
 msgstr "기계 ID"
 
-#: Library/Main/Strings.cs:190
+#: Library/Main/Strings.cs:192
 msgid ""
 "The name of the machine running the backup. This can be used to identify the"
 " machine when sending mail or running scripts."
 msgstr "백업을 실행하는 머신의 이름입니다. 이는 메일을 보내거나 스크립트를 실행할 때 컴퓨터를 식별하는 데 사용할 수 있습니다."
 
-#: Library/Main/Strings.cs:191
+#: Library/Main/Strings.cs:193
 msgid "Machine name"
 msgstr "기계 이름"
 
-#: Library/Main/Strings.cs:192
+#: Library/Main/Strings.cs:194
 msgid "The time of the next scheduled run"
 msgstr "다음 예정된 실행 시간"
 
-#: Library/Main/Strings.cs:193
+#: Library/Main/Strings.cs:195
 msgid ""
 "This property is a reporting option and does not affect the actual scheduled"
 " time. Use this option to inform a reporting destination about the next "
@@ -5299,7 +5299,7 @@ msgstr ""
 "이 속성은 보고 옵션이며 실제 예약 시간에 영향을 주지 않습니다. 백업이 실행될 다음 예상 시간을 보고 백업 저장소에 알리려면 이 옵션을"
 " 사용합니다."
 
-#: Library/Main/Strings.cs:194
+#: Library/Main/Strings.cs:196
 #, csharp-format
 msgid ""
 "Use this option to point to a text file where each line contains a file "
@@ -5314,11 +5314,11 @@ msgstr ""
 " 파일은 압축되지 않고 단순히 아카이브에 저장됩니다. 파일 형식은 마침표로시작하지 않는 모든 줄을 무시하고 확장자의 끝을 나타내는 공백을"
 " 고려합니다. 예제로도 사용되는 기본 파일이 제공됩니다. 기본 파일은 {0}에 있습니다."
 
-#: Library/Main/Strings.cs:195
+#: Library/Main/Strings.cs:197
 msgid "Manage non-compressible file extensions"
 msgstr "비압축 파일 확장자 관리"
 
-#: Library/Main/Strings.cs:196
+#: Library/Main/Strings.cs:198
 msgid ""
 "The block size determines how files are fragmented. Choosing a large value "
 "will cause a larger overhead on file changes, choosing a small value will "
@@ -5328,11 +5328,11 @@ msgstr ""
 "블록 크기에 따라 파일이 조각화되는 방식이 결정됩니다. 큰 값을 선택하면 파일 변경 시 오버헤드가 커지고, 작은 값을 선택하면 파일 목록"
 " 저장 시 오버헤드가 커집니다. 원격 파일이 생성된 후에는 값을 변경할 수 없습니다."
 
-#: Library/Main/Strings.cs:197
+#: Library/Main/Strings.cs:199
 msgid "Block size used in hashing"
 msgstr "해싱에 사용되는 블록 크기"
 
-#: Library/Main/Strings.cs:198
+#: Library/Main/Strings.cs:200
 msgid ""
 "Use this option to limit the scan to only files that are known to have "
 "changed. This is usually only activated in combination with a filesystem "
@@ -5341,41 +5341,41 @@ msgstr ""
 "변경된 것으로 알려진 파일만 검사하도록 제한하려면 이 옵션을 사용합니다. 이는 일반적으로 파일 변경 사항을 추적하는 파일 시스템 감시자와"
 " 함께 활성화됩니다."
 
-#: Library/Main/Strings.cs:199
+#: Library/Main/Strings.cs:201
 msgid "List of files to examine for changes"
 msgstr "변경 사항을 검사할 파일 목록"
 
-#: Library/Main/Strings.cs:200
+#: Library/Main/Strings.cs:202
 msgid ""
 "Path to the file containing the local cache of the remote file database."
 msgstr "원격 파일 데이터베이스의 로컬 캐시가 포함된 파일의 경로입니다."
 
-#: Library/Main/Strings.cs:201
+#: Library/Main/Strings.cs:203
 msgid "Path to the local state database"
 msgstr "로컬 상태 데이터베이스의 경로"
 
-#: Library/Main/Strings.cs:202
+#: Library/Main/Strings.cs:204
 #, csharp-format
 msgid ""
 "Use this option to supply a list of deleted files. This option will be "
 "ignored unless the option --{0} is also set."
 msgstr "삭제된 파일 목록을 제공하려면 이 옵션을 사용합니다. --{0} 옵션도 설정되지 않으면 이 옵션은 무시됩니다."
 
-#: Library/Main/Strings.cs:203
+#: Library/Main/Strings.cs:205
 msgid "List of deleted files"
 msgstr "삭제된 파일 목록 "
 
-#: Library/Main/Strings.cs:204
+#: Library/Main/Strings.cs:206
 msgid ""
 "Use this option to reduce the memory footprint by not keeping paths and "
 "modification timestamps in memory."
 msgstr "메모리에 경로 및 수정 타임스탬프를 유지하지 않음으로써 메모리 공간을 줄이려면 이 옵션을 사용합니다."
 
-#: Library/Main/Strings.cs:205
+#: Library/Main/Strings.cs:207
 msgid "Reduce memory footprint by disabling in-memory lookups"
 msgstr "메모리 내 조회를 비활성화하여 메모리 사용량을 줄입니다."
 
-#: Library/Main/Strings.cs:207
+#: Library/Main/Strings.cs:209
 msgid ""
 "If this option is set, the local database is not compared to the remote "
 "filelist on startup. The intended usage for this option is to work correctly"
@@ -5384,11 +5384,11 @@ msgstr ""
 "이 옵션을 설정하면 시작 시 로컬 데이터베이스가 원격 파일 목록과 비교되지 않습니다. 이 옵션의 용도는 파일 목록이 손상되거나 사용할 수"
 " 없는 경우에 올바르게 작동하는 것입니다."
 
-#: Library/Main/Strings.cs:208
+#: Library/Main/Strings.cs:210
 msgid "Do not query backend at startup"
 msgstr "시작 시 백엔드 쿼리 안 함"
 
-#: Library/Main/Strings.cs:209
+#: Library/Main/Strings.cs:211
 msgid ""
 "The index files are used to limit the need for downloading dblock files when"
 " there is no local database present. The more information is recorded in the"
@@ -5400,11 +5400,11 @@ msgstr ""
 " 기록될수록 데이터베이스 없이 더 빠른 작업을 진행할 수 있습니다. 단점은 더 큰 인덱스 파일이 더 많은 원격 공간을 차지하고 절대 "
 "사용되지 않을 수 있다는 것입니다."
 
-#: Library/Main/Strings.cs:210
+#: Library/Main/Strings.cs:212
 msgid "Determine usage of index files"
 msgstr "인덱스 파일의 용도 결정"
 
-#: Library/Main/Strings.cs:211
+#: Library/Main/Strings.cs:213
 msgid ""
 "As files are changed, some data stored at the remote destination may not be "
 "required. This option controls how much wasted space the destination can "
@@ -5414,21 +5414,21 @@ msgstr ""
 "파일이 변경됨에 따라 원격 백업 저장소에 저장된 일부 데이터가 필요하지 않을 수 있습니다. 이 옵션은 회수되기 전에 백업 저장소에 포함될"
 " 수 있는 낭비된 공간의 양을 제어합니다. 이 값은 각 볼륨 및 총 스토리지에 사용된 백분율입니다."
 
-#: Library/Main/Strings.cs:212
+#: Library/Main/Strings.cs:214
 msgid "The maximum wasted space in percent"
 msgstr "최대 낭비 공간(%)"
 
-#: Library/Main/Strings.cs:213
+#: Library/Main/Strings.cs:215
 msgid ""
 "Use this option to experiment with different settings and observe the "
 "outcome without changing actual files."
 msgstr "이 옵션을 사용하면 실제 파일을 변경하지 않고 다양한 설정을 실험하고 결과를 관찰할 수 있습니다."
 
-#: Library/Main/Strings.cs:214
+#: Library/Main/Strings.cs:216
 msgid "Do not perform any modifications"
 msgstr "수정 수행 안 함"
 
-#: Library/Main/Strings.cs:215
+#: Library/Main/Strings.cs:217
 msgid ""
 "This is a very advanced option! Use this option to select a block hash "
 "algorithm with smaller or larger hash size, for performance or storage space"
@@ -5437,11 +5437,11 @@ msgstr ""
 "이것은 매우 고급 옵션입니다! 성능이나 저장 공간상의 이유로 해시 크기가 더 작거나 큰 블록 해시 알고리즘을 선택하려면 이 옵션을 "
 "사용합니다."
 
-#: Library/Main/Strings.cs:216
+#: Library/Main/Strings.cs:218
 msgid "The hash algorithm used on blocks"
 msgstr "블록에 사용되는 해시 알고리즘"
 
-#: Library/Main/Strings.cs:217
+#: Library/Main/Strings.cs:219
 msgid ""
 "This is a very advanced option! Use this option to select a file hash "
 "algorithm with smaller or larger hash size, for performance or storage space"
@@ -5450,11 +5450,11 @@ msgstr ""
 "이것은 매우 고급 옵션입니다! 성능이나 저장 공간상의 이유로 더 작거나 큰 해시 크기의 파일 해시 알고리즘을 선택하려면 이 옵션을 "
 "사용합니다."
 
-#: Library/Main/Strings.cs:218
+#: Library/Main/Strings.cs:220
 msgid "The hash algorithm used on files"
 msgstr "파일에 사용된 해시 알고리즘입니다"
 
-#: Library/Main/Strings.cs:219
+#: Library/Main/Strings.cs:221
 msgid ""
 "If a large number of small files are detected during a backup, or wasted "
 "space is found after deleting backups, the remote data will be compacted. "
@@ -5464,11 +5464,11 @@ msgstr ""
 "백업 중에 작은 파일이 많이 발견되거나 백업 삭제 후 낭비되는 공간이 발견되면 원격 데이터가 정리됩니다. 이러한 자동 정리를 비활성화하고"
 " 정리 명령을 실행할 때만 정리하려면 이 옵션을 사용합니다."
 
-#: Library/Main/Strings.cs:220
+#: Library/Main/Strings.cs:222
 msgid "Disable automatic compacting"
 msgstr "자동 정리 비활성화"
 
-#: Library/Main/Strings.cs:221
+#: Library/Main/Strings.cs:223
 msgid ""
 "When examining the size of a volume in consideration for compacting, a small"
 " tolerance value is used, by default 20 percent of the volume size. This "
@@ -5478,11 +5478,11 @@ msgstr ""
 "정리를 고려하여 볼륨 크기를 검토할 때 작은 허용 오차 값이 사용되며 기본적으로 볼륨 크기의 20%입니다. 이렇게 하면 몇 바이트의 "
 "낭비되는 공간이 있을 수 있는 대용량 볼륨이 다운로드되거나 다시 작성되지 않습니다."
 
-#: Library/Main/Strings.cs:222
+#: Library/Main/Strings.cs:224
 msgid "Volume size threshold"
 msgstr "볼륨 크기 임계값"
 
-#: Library/Main/Strings.cs:223
+#: Library/Main/Strings.cs:225
 msgid ""
 "To avoid filling the remote storage with small files, this value can force "
 "grouping small files. The small volumes will always be combined when they "
@@ -5491,11 +5491,11 @@ msgstr ""
 "원격 저장소가 작은 파일로 채워지는 것을 방지하기 위해 이 값은 작은 파일을 그룹화할 수 있습니다. 작은 볼륨은 전체 볼륨을 채울 수 "
 "있을 때 항상 결합됩니다."
 
-#: Library/Main/Strings.cs:224
+#: Library/Main/Strings.cs:226
 msgid "Maximum number of small volumes"
 msgstr "작은 볼륨의 최대 수"
 
-#: Library/Main/Strings.cs:225
+#: Library/Main/Strings.cs:227
 msgid ""
 "Enable this option to look into other files on this machine to find existing"
 " blocks. This is a fairly slow operation but can limit the size of "
@@ -5504,11 +5504,11 @@ msgstr ""
 "이 시스템의 다른 파일을 조사하여 기존 블록을 찾으려면 이 옵션을 활성화합니다. 이는 상당히 느린 작업이지만 다운로드 크기를 제한할 수 "
 "있습니다."
 
-#: Library/Main/Strings.cs:226
+#: Library/Main/Strings.cs:228
 msgid "Use local file data when restoring"
 msgstr "복원 시 로컬 파일 데이터 사용"
 
-#: Library/Main/Strings.cs:228
+#: Library/Main/Strings.cs:230
 msgid ""
 "When listing contents or when restoring files, the local database can be "
 "skipped. This is usually slower, but can be used to verify the actual "
@@ -5517,29 +5517,29 @@ msgstr ""
 "내용을 나열하거나 파일을 복원할 때 로컬 데이터베이스를 건너뛸 수 있습니다. 이는 일반적으로 속도가 느리지만 원격 저장소의 실제 내용을 "
 "확인하는 데 사용할 수 있습니다."
 
-#: Library/Main/Strings.cs:229
+#: Library/Main/Strings.cs:231
 msgid "Disable the local database"
 msgstr "로컬 데이터베이스 비활성화"
 
-#: Library/Main/Strings.cs:230
+#: Library/Main/Strings.cs:232
 msgid ""
 "Use this option to set number of versions to keep. Supply -1 to keep all "
 "versions."
 msgstr "유지할 버전 수를 설정하려면 이 옵션을 사용합니다. 모든 버전을 유지하려면 -1 을 제공합니다."
 
-#: Library/Main/Strings.cs:231
+#: Library/Main/Strings.cs:233
 msgid "Keep a number of versions"
 msgstr "여러 버전 유지"
 
-#: Library/Main/Strings.cs:232
+#: Library/Main/Strings.cs:234
 msgid "Use this option to set the timespan in which backups are kept."
 msgstr "백업이 유지되는 시간을 설정하려면 이 옵션을 사용합니다."
 
-#: Library/Main/Strings.cs:233
+#: Library/Main/Strings.cs:235
 msgid "Keep all versions within a timespan"
 msgstr "모든 버전을 기간 내에 유지"
 
-#: Library/Main/Strings.cs:234
+#: Library/Main/Strings.cs:236
 msgid ""
 "Sets how long uploaded backup files should be protected with an immutable "
 "object lock (for example, 30d). If this option is not set, the files will "
@@ -5549,11 +5549,11 @@ msgstr ""
 "업로드된 백업 파일을 변경할 수 없는 개체 잠금(예: 30d)으로 보호해야 하는 기간을 설정합니다. 이 옵션을 설정하지 않으면 파일이 "
 "객체 잠금으로 보호되지 않습니다. 모든 백업 저장소이 객체 잠금을 지원하는 것은 아닙니다."
 
-#: Library/Main/Strings.cs:235
+#: Library/Main/Strings.cs:237
 msgid "Lock duration for remote backup files"
 msgstr "원격 백업 파일의 잠금 기간"
 
-#: Library/Main/Strings.cs:236
+#: Library/Main/Strings.cs:238
 msgid ""
 "Use this option to reduce the number of versions that are kept with "
 "increasing version age by deleting most of the old backups. The expected "
@@ -5569,15 +5569,15 @@ msgstr ""
 " 보관하고, 3개월 동안 매일 하나의 백업을 보관하고, 10년 동안 2개월마다 하나의 백업을 보관하고 이보다 오래된 모든 백업을 "
 "삭제합니다.\"를의미합니다. 이 옵션은 무제한 시간 간격을 나타내기 위해 지정자 \"U\"를 사용하는 것도 지원합니다."
 
-#: Library/Main/Strings.cs:237
+#: Library/Main/Strings.cs:239
 msgid "Reduce number of versions by deleting old intermediate backups"
 msgstr "오래된 중간 백업을 삭제하여 버전 수를 줄입니다."
 
-#: Library/Main/Strings.cs:239
+#: Library/Main/Strings.cs:242
 msgid "Ignore missing source elements"
 msgstr "누락된 소스 요소 무시"
 
-#: Library/Main/Strings.cs:242
+#: Library/Main/Strings.cs:245
 msgid ""
 "Use this option to prevent backups from running if one or more source "
 "folders are empty. This is useful to prevent backups from running when the "
@@ -5587,33 +5587,33 @@ msgstr ""
 "하나 이상의 원본 폴더가 비어 있는 경우 백업이 실행되지 않도록 하려면 이 옵션을 사용합니다. 이는 USB 드라이브가 마운트되지 않은 "
 "경우와 같이 소스를 사용할 수 없을 때 백업이 실행되는 것을 방지하는 데 유용합니다. 이는 파일 시스템 소스 경로에만 작동합니다."
 
-#: Library/Main/Strings.cs:243
+#: Library/Main/Strings.cs:246
 msgid "Prevent backups from running if source folders are empty"
 msgstr "원본 폴더가 비어 있으면 백업이 실행되지 않도록 방지"
 
-#: Library/Main/Strings.cs:244
+#: Library/Main/Strings.cs:247
 msgid ""
 "Use this option to overwrite target files when restoring. If this option is "
 "not set, the files will be restored with a timestamp and a number appended."
 msgstr ""
 "복원 시 백업 저장소 파일을 덮어쓰려면 이 옵션을 사용합니다. 이 옵션을 설정하지 않으면 파일에 타임스탬프와 숫자가 추가되어 복원됩니다."
 
-#: Library/Main/Strings.cs:245
+#: Library/Main/Strings.cs:248
 msgid "Overwrite files when restoring"
 msgstr "복원 시 파일 덮어 쓰기"
 
-#: Library/Main/Strings.cs:246
+#: Library/Main/Strings.cs:249
 msgid ""
 "Use this option to increase the amount of output generated when running an "
 "option. Generally this option will produce a line for each file processed."
 msgstr ""
 "옵션을 실행할 때 생성되는 출력의 양을 늘리려면 이 옵션을 사용합니다. 일반적으로 이 옵션은 처리된 각 파일에 대해 한 줄을 생성합니다."
 
-#: Library/Main/Strings.cs:247
+#: Library/Main/Strings.cs:250
 msgid "Output more progress information"
 msgstr "더 많은 진행 정보 출력합니다"
 
-#: Library/Main/Strings.cs:249
+#: Library/Main/Strings.cs:252
 msgid ""
 "Use this option to increase the amount of output generated as the result of "
 "the operation, including all filenames."
@@ -5621,11 +5621,11 @@ msgstr ""
 "모든 파일 이름을 포함하여 작업의 결과로 생성된 출력량을 늘리려면\n"
 "이 옵션을 사용합니다."
 
-#: Library/Main/Strings.cs:250
+#: Library/Main/Strings.cs:253
 msgid "Output full results"
 msgstr "전체 결과 출력"
 
-#: Library/Main/Strings.cs:251
+#: Library/Main/Strings.cs:254
 msgid ""
 "Use this option to upload a verification file after changing the remote "
 "storage. The file is not encrypted and contains the size and SHA256 hashes "
@@ -5635,11 +5635,11 @@ msgstr ""
 "원격 저장소 변경 후 검증 파일을 업로드하려면 이 옵션을 사용합니다. 파일은 암호화되지 않으며 모든 원격 파일의 크기와 SHA256 "
 "해시를 포함하며 파일의 무결성을 확인하는 데 사용할 수 있습니다."
 
-#: Library/Main/Strings.cs:252
+#: Library/Main/Strings.cs:255
 msgid "Determine if verification files are uploaded"
 msgstr "검증 파일이 업로드되었는지 확인"
 
-#: Library/Main/Strings.cs:253
+#: Library/Main/Strings.cs:256
 #, csharp-format
 msgid ""
 "After a backup is completed, some (dblock, dindex, dlist) files from the "
@@ -5652,11 +5652,11 @@ msgstr ""
 "옵션을 사용합니다. --{0} 옵션도 제공되면 테스트되는 샘플 수는 두 옵션이 의미하는 최대값입니다. 이 값이 0으로 설정되거나 "
 "--{1} 옵션이 설정되면 원격 파일을 검증하지 않습니다."
 
-#: Library/Main/Strings.cs:254
+#: Library/Main/Strings.cs:257
 msgid "The number of samples to test after a backup"
 msgstr "백업 후 테스트할 샘플 수"
 
-#: Library/Main/Strings.cs:255
+#: Library/Main/Strings.cs:258
 #, csharp-format
 msgid ""
 "After a backup is completed, some samples (one sample is 1 dblock, 1 dindex,"
@@ -5670,11 +5670,11 @@ msgstr ""
 " 테스트할 샘플의 백분율(0~100)을 지정하려면 이 옵션을 사용합니다.--{0} 옵션도 제공되는 경우 테스트되는 샘플 수는 두 옵션이 "
 "암시하는 최대값입니다. --{1} 옵션이 제공되면 원격 파일이 확인되지 않습니다."
 
-#: Library/Main/Strings.cs:256
+#: Library/Main/Strings.cs:259
 msgid "The percentage of samples to test after a backup"
 msgstr "백업 후 테스트할 샘플의 비율"
 
-#: Library/Main/Strings.cs:257
+#: Library/Main/Strings.cs:260
 #, csharp-format
 msgid ""
 "After a backup is completed, some (dblock, dindex, dlist) files from the "
@@ -5690,11 +5690,11 @@ msgstr ""
 "경우 원격 파일이 확인되지 않습니다. 이 옵션은 직접 검증을 수행할 경우 자동으로 설정됩니다. ListAndIndexes는 True와 "
 "비슷하지만 dlist 및인덱스 볼륨만 처리됩니다."
 
-#: Library/Main/Strings.cs:258
+#: Library/Main/Strings.cs:261
 msgid "Activate in-depth verification of files"
 msgstr "파일 심층 검증 활성화"
 
-#: Library/Main/Strings.cs:259
+#: Library/Main/Strings.cs:262
 msgid ""
 "Use this option to prevent automatic replacement of index files that are "
 "missing content during the testing phase. Creating repaired index files "
@@ -5703,41 +5703,41 @@ msgstr ""
 "테스트 단계에서 콘텐츠가 누락된 인덱스 파일의 자동 교체를 방지하려면 이 옵션을 사용합니다. 복구된 인덱스 파일을 생성하는 데 시간이 "
 "조금 더 걸리지만 매우 느린 데이터베이스 재생성을 방지할 수 있습니다."
 
-#: Library/Main/Strings.cs:260
+#: Library/Main/Strings.cs:263
 msgid "Don't fix defective index files"
 msgstr "결함이 있는 인덱스 파일을 수정하지 않습니다"
 
-#: Library/Main/Strings.cs:261
+#: Library/Main/Strings.cs:264
 msgid ""
 "Use this size to control how many bytes are read from a file before "
 "processing."
 msgstr "이 크기를 사용하여 처리하기 전에 파일에서 읽는 바이트 수를 제어합니다."
 
-#: Library/Main/Strings.cs:262
+#: Library/Main/Strings.cs:265
 msgid "Size of the file read buffer"
 msgstr "파일 읽기 버퍼의 크기"
 
-#: Library/Main/Strings.cs:264
+#: Library/Main/Strings.cs:267
 msgid ""
 "Use this option to allow the passphrase to change. Note that this option is "
 "not permitted for a backup or repair operation."
 msgstr "암호 문구 변경을 허용하려면 이 옵션을 사용합니다. 백업 또는 복구 작업에는 이 옵션이 허용되지 않습니다."
 
-#: Library/Main/Strings.cs:265
+#: Library/Main/Strings.cs:268
 msgid "Allow the passphrase to change"
 msgstr "암호 문구 변경 허용"
 
-#: Library/Main/Strings.cs:266
+#: Library/Main/Strings.cs:269
 msgid ""
 "Use this option to only list filesets and avoid traversing file names and "
 "other metadata which slows down the process."
 msgstr "파일 세트만 나열하고 프로세스 속도를 저하시키는 파일 이름 및 기타 메타데이터 순회를 방지하려면 이 옵션을 사용합니다."
 
-#: Library/Main/Strings.cs:267
+#: Library/Main/Strings.cs:270
 msgid "List only filesets"
 msgstr "파일세트만 나열"
 
-#: Library/Main/Strings.cs:269
+#: Library/Main/Strings.cs:272
 msgid ""
 "Use this option to disable the storage of metadata, such as file timestamps."
 " Disabling metadata storage will speed up the backup and restore operations,"
@@ -5746,21 +5746,21 @@ msgstr ""
 "파일 타임스탬프와 같은 메타데이터 저장을 비활성화하려면 이 옵션을 사용합니다. 메타데이터 저장소를 비활성화하면 백업 및 복원 작업 속도가"
 " 빨라지지만 파일 크기에는 큰 영향을 미치지 않습니다."
 
-#: Library/Main/Strings.cs:270
+#: Library/Main/Strings.cs:273
 msgid "Do not store metadata"
 msgstr "메타데이터를 저장하지 않음"
 
-#: Library/Main/Strings.cs:271
+#: Library/Main/Strings.cs:274
 msgid ""
 "By default permissions are not restored as they might prevent you from "
 "accessing your files. Use this option to restore the permissions as well."
 msgstr "기본적으로 권한은 파일에 액세스하지 못하게 할 수 있으므로 복원되지 않습니다. 권한을 복원하려면 이 옵션을 사용합니다."
 
-#: Library/Main/Strings.cs:272
+#: Library/Main/Strings.cs:275
 msgid "Restore file permissions"
 msgstr "파일 권한 복원"
 
-#: Library/Main/Strings.cs:273
+#: Library/Main/Strings.cs:276
 msgid ""
 "After restoring files, the file hash of all restored files are checked to "
 "verify that the restore was successful. Use this option to disable the check"
@@ -5769,11 +5769,11 @@ msgstr ""
 "파일을 복원한 후 복원된 모든 파일의 파일 해시를 검사하여 복원이 성공했는지 확인합니다. 검증을 비활성화하고 검증을 기다리지 않으려면 이"
 " 옵션을 사용합니다."
 
-#: Library/Main/Strings.cs:274
+#: Library/Main/Strings.cs:277
 msgid "Skip restored file check"
 msgstr "복원 된 파일 검사 건너 뛰기"
 
-#: Library/Main/Strings.cs:275
+#: Library/Main/Strings.cs:278
 msgid ""
 "Duplicati will attempt to use data from source files to minimize the amount "
 "of downloaded data. Use this option to skip this optimization and only use "
@@ -5782,18 +5782,18 @@ msgstr ""
 "Duplicati는 다운로드되는 데이터의 양을 최소화하기 위해 소스 파일의 데이터를 사용하려고 시도합니다. 이 최적화를 건너뛰고 원격 "
 "데이터만 사용하려면 이 옵션을 사용합니다."
 
-#: Library/Main/Strings.cs:276
+#: Library/Main/Strings.cs:279
 msgid "Do not use local data"
 msgstr "로컬 데이터 사용 안 함"
 
-#: Library/Main/Strings.cs:277
+#: Library/Main/Strings.cs:280
 #, csharp-format
 msgid ""
 "The default is now to not use local blocks for restore. To opt-in for using "
 "local blocks, set the option --{0}."
 msgstr "이제 기본값은 복원에 로컬 블록을 사용하지 않는 것입니다. 로컬 블록 사용을 선택하려면 --{0} 옵션을 설정합니다."
 
-#: Library/Main/Strings.cs:278
+#: Library/Main/Strings.cs:281
 msgid ""
 "Use this option to allow Duplicati to use blocks found on disk when "
 "performing restores, instead of only using files in remote storage."
@@ -5801,22 +5801,22 @@ msgstr ""
 "Duplicati가 복원을 수행할 때 원격 저장소의 파일만 사용하는 대신 디스크에서 발견된 블록을 사용하도록 허용하려면 이 옵션을 "
 "사용합니다."
 
-#: Library/Main/Strings.cs:279
+#: Library/Main/Strings.cs:282
 msgid "Use existing data for restore"
 msgstr "기존 데이터를 복원에 사용"
 
-#: Library/Main/Strings.cs:281
+#: Library/Main/Strings.cs:284
 msgid ""
 "Use this option to increase verification by checking the hash of blocks read"
 " from a volume before patching restored files with the data."
 msgstr ""
 "이 옵션을 사용하면 복원된 파일에 데이터를 패치하기 전에 볼륨에서 읽은 블록의 해시를 확인하여 검증 수준을 높일 수 있습니다."
 
-#: Library/Main/Strings.cs:282
+#: Library/Main/Strings.cs:285
 msgid "Check block hashes"
 msgstr "블록 해시 확인"
 
-#: Library/Main/Strings.cs:285
+#: Library/Main/Strings.cs:288
 msgid ""
 "Use this option to build a searchable local database which only contains "
 "path information. This option is usable for quickly building a database to "
@@ -5827,11 +5827,11 @@ msgstr ""
 "콘텐츠를 찾기 위한 데이터베이스를 빠르게 구축하는 데 사용할 수 있습니다. 결과 데이터베이스는 검색할 수 있지만 데이터를 복원하는 데 "
 "사용할 수는 없습니다."
 
-#: Library/Main/Strings.cs:286
+#: Library/Main/Strings.cs:289
 msgid "Repair database with paths"
 msgstr "경로가 있는 데이터베이스 복구"
 
-#: Library/Main/Strings.cs:287
+#: Library/Main/Strings.cs:290
 msgid ""
 "Use this option to ignore that the remote destination contains newer "
 "contents than the database. This should only be used when the database is "
@@ -5841,11 +5841,11 @@ msgstr ""
 "원격 백업 저장소에 데이터베이스보다 최신 내용이 포함되어 있음을 무시하려면 이 옵션을 사용합니다. 이는 데이터베이스가 올바른 것으로 "
 "알려져 있지만 원격 백업 저장소는 그렇지 않은 경우에만 사용해야 합니다. 그렇지 않으면 데이터가 손실될 수 있습니다."
 
-#: Library/Main/Strings.cs:288
+#: Library/Main/Strings.cs:291
 msgid "Ignore outdated database files"
 msgstr "오래된 데이터베이스 파일 무시"
 
-#: Library/Main/Strings.cs:289
+#: Library/Main/Strings.cs:292
 msgid ""
 "By default, your system locale and culture settings will be used. In some "
 "cases you may prefer to run with another locale, for example to get messages"
@@ -5855,11 +5855,11 @@ msgstr ""
 "기본적으로 시스템 로케일 및 문화권 설정이 사용됩니다. 어떤 경우에는 다른 언어로 메시지를 받기 위해 다른 로케일로 실행하는 것을 선호할"
 " 수도 있습니다. 이 옵션을 사용하여 로캘을 설정합니다. \"고정 문화권\"을 선택하려면 빈 문자열을 제공합니다."
 
-#: Library/Main/Strings.cs:290
+#: Library/Main/Strings.cs:293
 msgid "Force the locale setting"
 msgstr "로캘 설정을 강제로 적용"
 
-#: Library/Main/Strings.cs:291
+#: Library/Main/Strings.cs:294
 msgid ""
 "By default, dates are displayed in the calendar format, meaning \"Today\" or"
 " \"Last Thursday\". By setting this option, only the actual dates are "
@@ -5868,11 +5868,11 @@ msgstr ""
 "기본적으로 날짜는 \"오늘\" 또는 \"지난 목요일\"을 의미하는 달력 형식으로 표시됩니다. 이 옵션을 설정하면 \"2018년 11 월 "
 "12일 오전 8 시 1분\"과 같이 실제 날짜만 표시됩니다."
 
-#: Library/Main/Strings.cs:292
+#: Library/Main/Strings.cs:295
 msgid "Force the display of the actual date instead of calendar date"
 msgstr "달력 날짜 대신 실제 날짜를 강제로 표시합니다."
 
-#: Library/Main/Strings.cs:293
+#: Library/Main/Strings.cs:296
 msgid ""
 "Use this option to disable multithreaded handling of up- and downloads. That"
 " can significantly speed up backend operations depending on the hardware "
@@ -5881,11 +5881,11 @@ msgstr ""
 "업로드 및 다운로드의 멀티스레드 처리를 비활성화하려면 이 옵션을 사용합니다. 이를 통해 실행 중인 하드웨어와 백엔드의 전송 속도에 따라 "
 "백엔드 작업 속도를 크게 높일 수 있습니다."
 
-#: Library/Main/Strings.cs:294
+#: Library/Main/Strings.cs:297
 msgid "Handle file communication with backend using threaded pipes"
 msgstr "스레드 파이프를 사용하여 백엔드와의 파일 통신 처리"
 
-#: Library/Main/Strings.cs:295
+#: Library/Main/Strings.cs:298
 msgid ""
 "Use this option to set the maximum number of threads used. Setting this "
 "value to zero or less will dynamically balance the number of active threads "
@@ -5894,41 +5894,41 @@ msgstr ""
 "사용되는 최대 스레드 수를 설정하려면 이 옵션을 사용합니다. 이 값을 0 이하로 설정하면 하드웨어에 맞게 활성 스레드 수의 균형이 "
 "동적으로 조정됩니다."
 
-#: Library/Main/Strings.cs:296
+#: Library/Main/Strings.cs:299
 msgid "Limit number of concurrent threads"
 msgstr "동시 스레드 수 제한"
 
-#: Library/Main/Strings.cs:297
+#: Library/Main/Strings.cs:300
 msgid ""
 "Use this option to set the number of processes that perform hashing of data."
 msgstr "데이터 해싱을 수행하는 프로세스 수를 설정하려면 이 옵션을 사용합니다."
 
-#: Library/Main/Strings.cs:298
+#: Library/Main/Strings.cs:301
 msgid "Specify the number of concurrent hashing processes"
 msgstr "동시 해싱 프로세스 수 지정"
 
-#: Library/Main/Strings.cs:299
+#: Library/Main/Strings.cs:302
 msgid ""
 "Use this option to set the number of processes that perform compression of "
 "output data."
 msgstr "출력 데이터 압축을 수행하는 프로세스 수를 설정하려면 이 옵션을 사용합니다."
 
-#: Library/Main/Strings.cs:300
+#: Library/Main/Strings.cs:303
 msgid "Specify the number of concurrent compression processes"
 msgstr "동시 압축 프로세스 수 지정"
 
-#: Library/Main/Strings.cs:301
+#: Library/Main/Strings.cs:304
 msgid "Specify the number of concurrent files to open"
 msgstr "열려는 동시 파일 수 지정"
 
-#: Library/Main/Strings.cs:302
+#: Library/Main/Strings.cs:305
 msgid ""
 "Use this option to set the number of concurrent files to open. This could "
 "accelerate big backups involving lot of files, such as an initial backup"
 msgstr ""
 "열려는 동시 파일 수를 설정하려면 이 옵션을 사용합니다. 이는 초기 백업과 같이 많은 파일이 포함된 대규모 백업을 가속화할 수 있습니다."
 
-#: Library/Main/Strings.cs:303
+#: Library/Main/Strings.cs:306
 msgid ""
 "If Duplicati detects that the previous backup did not complete, it will "
 "generate a filelist that is a merge of the last completed backup and the "
@@ -5937,11 +5937,11 @@ msgstr ""
 "Duplicati가 이전 백업이 완료되지 않았음을 감지하면 마지막으로 완료된 백업과 불완전한 백업 세션에 업로드된 콘텐츠를 병합한 파일 "
 "목록을 생성합니다."
 
-#: Library/Main/Strings.cs:304
+#: Library/Main/Strings.cs:307
 msgid "Disable synthetic filelist"
 msgstr "합성 파일 목록 비활성화"
 
-#: Library/Main/Strings.cs:305
+#: Library/Main/Strings.cs:308
 msgid ""
 "This option instructs Duplicati to not look at metadata or filesize when "
 "deciding to scan a file for changes. Use this option if you have a large "
@@ -5951,11 +5951,11 @@ msgstr ""
 "이 옵션은 파일의 변경 사항을 검색하기로 결정할 때 Duplicati에 메타데이터나 파일 크기를 확인하지 않도록 지시합니다. 파일 수가 "
 "많고 수정되지 않은 파일을 검색하는 데 시간이 오래 걸리는 경우 이 옵션을 사용합니다."
 
-#: Library/Main/Strings.cs:306
+#: Library/Main/Strings.cs:309
 msgid "Check only file lastmodified"
 msgstr "마지막으로 수정된 파일만 확인"
 
-#: Library/Main/Strings.cs:307
+#: Library/Main/Strings.cs:310
 msgid ""
 "When restore a subset of a backup into a new folder, the shortest possible "
 "path is used to avoid generating deep paths with empty folders. Use this "
@@ -5965,11 +5965,11 @@ msgstr ""
 "백업의 하위 집합을 새 폴더로 복원하는 경우 빈 폴더로 깊은 경로가 생성되는 것을 방지하기 위해 가능한 가장 짧은 경로가 사용됩니다. "
 "상위 수준의 빈 폴더를 포함하여 전체 원래 폴더 구조가 보존되도록 이 압축을 건너뛰려면 이 옵션을 사용합니다."
 
-#: Library/Main/Strings.cs:308
+#: Library/Main/Strings.cs:311
 msgid "Disable path compression on restore"
 msgstr "복원 시 경로 압축 비활성화"
 
-#: Library/Main/Strings.cs:309
+#: Library/Main/Strings.cs:312
 msgid ""
 "By default, the last fileset cannot be removed. This is a safeguard to make "
 "sure that all remote data is not deleted by a configuration mistake. Use "
@@ -5979,11 +5979,11 @@ msgstr ""
 "기본적으로 마지막 파일 세트는 제거할 수 없습니다. 이는 구성 실수로 인해 모든 원격 데이터가 삭제되지 않도록 하기 위한 안전 "
 "조치입니다. 모든 파일 세트를 삭제할 수 있도록 해당 보호를 비활성화하려면 이 옵션을 사용합니다."
 
-#: Library/Main/Strings.cs:310
+#: Library/Main/Strings.cs:313
 msgid "Allow removing all filesets"
 msgstr "모든 파일 세트 제거 허용"
 
-#: Library/Main/Strings.cs:311
+#: Library/Main/Strings.cs:314
 msgid ""
 "Some operations that manipulate the local database leave unused entries "
 "behind. These entries are not deleted from a hard drive until a VACUUM "
@@ -5996,11 +5996,11 @@ msgstr ""
 "드라이브에서 삭제되지 않습니다. 이 작업은 장기적으로 디스크 공간을 절약하지만데이터베이스에 있는 모든 유효한 항목의 복사본을 임시로 "
 "만들어야합니다. 이를 true 로 설정하면 Duplicati가 재량에 따라 VACUUM 작업을 수행할 수 있습니다."
 
-#: Library/Main/Strings.cs:312
+#: Library/Main/Strings.cs:315
 msgid "Allow automatic rebuilding of local database to save space"
 msgstr "공간 절약을 위해 로컬 데이터베이스 자동 재구축 허용"
 
-#: Library/Main/Strings.cs:313
+#: Library/Main/Strings.cs:316
 msgid ""
 "When this flag is enabled, the scanner that computes the size of source "
 "files is disabled, and instead the reported size is read from the database. "
@@ -6010,11 +6010,11 @@ msgstr ""
 "이 플래그가 활성화되면 소스 파일의 크기를 계산하는 스캐너가 비활성화되고 대신 보고된 크기가 데이터베이스에서 읽혀집니다. 이 옵션을 "
 "사용하면 디스크 액세스를 줄여 백업 속도를 높일 수 있지만 진행률 표시기가 덜 정확해집니다."
 
-#: Library/Main/Strings.cs:314
+#: Library/Main/Strings.cs:317
 msgid "Disable the read-ahead scanner"
 msgstr "미리 읽기 스캐너 비활성화"
 
-#: Library/Main/Strings.cs:315
+#: Library/Main/Strings.cs:318
 msgid ""
 "In backups with a large number of filesets, the verification can take up a "
 "large part of the backup time. If you disable the checks, make sure you run "
@@ -6023,11 +6023,11 @@ msgstr ""
 "파일 세트 수가 많은 백업에서는 확인 작업이 백업 시간의 상당 부분을 차지할 수 있습니다. 검사를 비활성화하는 경우 정기적인 검사 명령을"
 " 실행하여 모든 것이 예상대로 작동하는지 확인합니다."
 
-#: Library/Main/Strings.cs:316
+#: Library/Main/Strings.cs:319
 msgid "Disable filelist consistency checks"
 msgstr "파일 목록 일관성 검사 비활성화"
 
-#: Library/Main/Strings.cs:317
+#: Library/Main/Strings.cs:320
 msgid ""
 "Use this option to disable a scheduled backup if the system is detected to "
 "be running on battery power (manual or command line backups will still be "
@@ -6037,15 +6037,15 @@ msgstr ""
 "시스템이 배터리 전원으로 실행 중인 것으로 감지된 경우 이 옵션을 사용하여 예약된 백업을 비활성화합니다(수동 또는 명령줄 백업은 계속 "
 "실행됩니다). 감지된 전원이 주전원(예: AC)이거나 알 수 없는 경우 예약된 백업이 정상적으로 진행됩니다."
 
-#: Library/Main/Strings.cs:318
+#: Library/Main/Strings.cs:321
 msgid "Disable the backup when on battery power"
 msgstr "배터리 사용 시 백업 비활성화"
 
-#: Library/Main/Strings.cs:321
+#: Library/Main/Strings.cs:324
 msgid "Log file information level"
 msgstr "로그 파일 정보 수준"
 
-#: Library/Main/Strings.cs:322
+#: Library/Main/Strings.cs:325
 #, csharp-format
 msgid ""
 "This option accepts filters that removes or includes messages regardless of "
@@ -6058,11 +6058,11 @@ msgstr ""
 "태그와 일치하며 '-'로 시작하지 않는 한 포함된 것으로 간주됩니다. 정규 표현식은 하드 중괄호 내에서 지원됩니다. 예: "
 "\"+경로*{0}+*메일*{0}-[.*DNS]\""
 
-#: Library/Main/Strings.cs:323
+#: Library/Main/Strings.cs:326
 msgid "Apply filters to the file log data"
 msgstr "파일 로그 데이터에 필터 적용"
 
-#: Library/Main/Strings.cs:324
+#: Library/Main/Strings.cs:327
 #, csharp-format
 msgid ""
 "This is a simplified version of the --{0} option. It will ignore all log "
@@ -6072,23 +6072,23 @@ msgstr ""
 "이는 --{0} 옵션의 단순화된 버전입니다. 목록에 ID가 있는 모든 로그 메시지는 무시됩니다. 목록은 로그 메시지 ID의 쉼표로 구분된"
 " 목록입니다."
 
-#: Library/Main/Strings.cs:325 Library/Main/Strings.cs:331
+#: Library/Main/Strings.cs:328 Library/Main/Strings.cs:334
 msgid "Ignore log messages with the specified IDs"
 msgstr "지정된 ID가 포함된 로그 메시지 무시"
 
-#: Library/Main/Strings.cs:326
+#: Library/Main/Strings.cs:329
 msgid "Specify the amount of log information to output to the console."
 msgstr "콘솔에 출력할 로그 정보의 양을 지정합니다."
 
-#: Library/Main/Strings.cs:327
+#: Library/Main/Strings.cs:330
 msgid "Console information level"
 msgstr "콘솔 정보 수준"
 
-#: Library/Main/Strings.cs:329
+#: Library/Main/Strings.cs:332
 msgid "Apply filters to the console log data"
 msgstr "콘솔 로그 데이터에 필터 적용"
 
-#: Library/Main/Strings.cs:333
+#: Library/Main/Strings.cs:336
 msgid ""
 "This option instructs the operating system to set the current process to use"
 " the lowest IO priority level, which can make operations run slower but will"
@@ -6097,19 +6097,19 @@ msgstr ""
 "이 옵션은 운영 체제에 현재 프로세스가 가장 낮은 IO 우선순위 수준을 사용하도록 설정하도록 지시합니다. 이렇게 하면 작업 실행 속도가 "
 "느려지지만 동시에 실행되는 다른 작업에 대한 간섭이 줄어듭니다."
 
-#: Library/Main/Strings.cs:334
+#: Library/Main/Strings.cs:337
 msgid "Set the process to use low IO priority"
 msgstr "낮은 IO 우선순위를 사용하도록 프로세스 설정"
 
-#: Library/Main/Strings.cs:336
+#: Library/Main/Strings.cs:339
 msgid "Use this option to remove all empty folders from a backup."
 msgstr "백업에서 빈 폴더를 모두 제거하려면 이 옵션을 사용합니다."
 
-#: Library/Main/Strings.cs:337
+#: Library/Main/Strings.cs:340
 msgid "Exclude empty folders"
 msgstr "빈 폴더 제외"
 
-#: Library/Main/Strings.cs:338
+#: Library/Main/Strings.cs:341
 msgid ""
 "Use this option to set a filename, or list of filenames, that indicate "
 "exclusion of a folder which contains it. A common use would be to have a "
@@ -6119,11 +6119,11 @@ msgstr ""
 "이 옵션을 사용하면 해당 파일이 포함된 폴더 제외를 나타내는 파일 이름 또는 파일 이름 목록을 설정할 수 있습니다. 일반적인 용도는 "
 "\".nobackup\"과 같은 이름의 파일을 갖고 이 파일을 백업해서는 안 되는 폴더에 배치하는 것입니다."
 
-#: Library/Main/Strings.cs:339
+#: Library/Main/Strings.cs:342
 msgid "List of filenames that exclude folders"
 msgstr "폴더를 제외한 파일 이름 목록"
 
-#: Library/Main/Strings.cs:340
+#: Library/Main/Strings.cs:343
 msgid ""
 "If symlink metadata is applied, it will usually mean changing the symlink "
 "target, instead of the symlink itself. For this reason, metadata is not "
@@ -6133,11 +6133,11 @@ msgstr ""
 "심볼릭 링크 메타데이터가 적용되면 일반적으로 심볼릭 링크 자체가 아닌 심볼릭 링크 대상을 변경하는 것을 의미합니다. 이러한 이유로 "
 "메타데이터는 심볼릭 링크에 적용되지 않지만 이 옵션을 사용하면 메타데이터가 심볼릭 링크에도 적용되도록 이를 재정의할 수 있습니다."
 
-#: Library/Main/Strings.cs:341
+#: Library/Main/Strings.cs:344
 msgid "Apply metadata to symlinks"
 msgstr "심볼릭 링크에 메타데이터 적용"
 
-#: Library/Main/Strings.cs:342
+#: Library/Main/Strings.cs:345
 msgid ""
 "When running in unittest mode, no automatic fixes are applied, which assumes"
 " that the input data is always in perfect shape. This option is not intended"
@@ -6147,11 +6147,11 @@ msgstr ""
 "단위 테스트 모드에서 실행할 때는 자동 수정이 적용되지 않으며 입력 데이터가 항상 완벽한 형태라고 가정합니다. 이 옵션은 일일 백업에 "
 "사용하기 위한 것이 아니지만 잠재적인 문제를 확인하기 위한 테스트 목적으로 필요합니다."
 
-#: Library/Main/Strings.cs:343
+#: Library/Main/Strings.cs:346
 msgid "Activate unittest mode"
 msgstr "단위 테스트 모드 활성화"
 
-#: Library/Main/Strings.cs:345
+#: Library/Main/Strings.cs:348
 #, csharp-format
 msgid ""
 "To improve performance of the backups, frequent database queries are not "
@@ -6162,15 +6162,15 @@ msgstr ""
 "백업 성능을 향상시키기 위해 빈번한 데이터베이스 쿼리는 기본적으로 기록되지 않습니다. 모든 데이터베이스 쿼리를 기록하려면 이 옵션을 "
 "활성화하고, 추가 로그 데이터를 보고하려면 --{0}={2} 또는 --{1}={2}를 설정해야 합니다."
 
-#: Library/Main/Strings.cs:346
+#: Library/Main/Strings.cs:349
 msgid "Activate logging of all database queries"
 msgstr "모든 데이터베이스 쿼리의 로깅 활성화"
 
-#: Library/Main/Strings.cs:349
+#: Library/Main/Strings.cs:352
 msgid "Store metadata content in the database"
 msgstr "데이터베이스에 메타데이터 콘텐츠 저장"
 
-#: Library/Main/Strings.cs:350
+#: Library/Main/Strings.cs:353
 msgid ""
 "By default, metadata content is only stored in the remote volumes. Use this "
 "option to also store metadata content in the local database, which can speed"
@@ -6179,7 +6179,7 @@ msgstr ""
 "기본적으로 메타데이터 콘텐츠는 원격 볼륨에만 저장됩니다. 이 옵션을 사용하면 메타데이터 콘텐츠를 로컬 데이터베이스에 저장할 수도 "
 "있습니다. 이렇게 하면 데이터베이스 크기가 늘어나는 대신 특정 작업 속도를 높일 수 있습니다."
 
-#: Library/Main/Strings.cs:351
+#: Library/Main/Strings.cs:354
 msgid ""
 "If dblock files are missing from the destination, you can attempt to rebuild"
 " them using local source data. However, since the local data may have "
@@ -6191,11 +6191,11 @@ msgstr ""
 "변경되었을 수 있으므로 필요한 모든 데이터를 검색하는 것이 불가능할 수 있으며 프로세스가 느려질 수 있습니다. 누락된 dblock 파일을"
 " 재구축하려면 이 옵션을 사용합니다."
 
-#: Library/Main/Strings.cs:352
+#: Library/Main/Strings.cs:355
 msgid "Rebuild dblock files when missing"
 msgstr "누락된 경우 dblock 파일 재구축"
 
-#: Library/Main/Strings.cs:353
+#: Library/Main/Strings.cs:356
 msgid ""
 "If rebuilding dblock files, the process will attempt to use local data to "
 "fill in missing blocks. If it is not possible to fill in all missing blocks,"
@@ -6207,19 +6207,19 @@ msgstr ""
 "수 없는 경우 Duplicati는 가능한 한 많은 데이터로 dblock 을 생성하려고 시도합니다. 이 동작을 비활성화하고 완전한 "
 "dblock 만 생성하려면 이 옵션을 사용합니다."
 
-#: Library/Main/Strings.cs:354
+#: Library/Main/Strings.cs:357
 msgid "Disable partial dblock recovery"
 msgstr "부분 dblock 복구 비활성화"
 
-#: Library/Main/Strings.cs:355
+#: Library/Main/Strings.cs:358
 msgid "list-broken-files"
 msgstr "목록 깨진 파일"
 
-#: Library/Main/Strings.cs:356
+#: Library/Main/Strings.cs:359
 msgid "Disable replacement of missing metadata"
 msgstr "누락된 메타데이터 교체 비활성화"
 
-#: Library/Main/Strings.cs:357
+#: Library/Main/Strings.cs:360
 msgid ""
 "If this option is enabled, the purge-broken-files command will skip "
 "calculating the size of the removed files. This can speed up the operation "
@@ -6228,11 +6228,11 @@ msgstr ""
 "이 옵션이 활성화되면 purge-broken-files 명령은 제거된 파일의 크기 계산을 건너뜁니다. 이를 통해 대규모 데이터세트의 작업"
 " 속도를 높일 수 있습니다."
 
-#: Library/Main/Strings.cs:358
+#: Library/Main/Strings.cs:361
 msgid "Skip calculating removed file size"
 msgstr "제거된 파일 크기 계산 건너뛰기"
 
-#: Library/Main/Strings.cs:360
+#: Library/Main/Strings.cs:363
 msgid ""
 "The minimum amount of time that must elapse after the last compaction before"
 " another will be automatically triggered at the end of a backup job. "
@@ -6242,11 +6242,11 @@ msgstr ""
 "백업 작업이 끝나면 자동으로 트리거되기 전에 마지막 정리 이후 경과해야 하는 최소 시간입니다. 자동 정리은 장기간 실행되는 프로세스일 수"
 " 있으므로 매 백업 후에 실행하는 것은 바람직하지 않을 수 있습니다."
 
-#: Library/Main/Strings.cs:361
+#: Library/Main/Strings.cs:364
 msgid "Minimum time between auto compactions"
 msgstr "자동 정리 간 최소 시간"
 
-#: Library/Main/Strings.cs:362
+#: Library/Main/Strings.cs:365
 msgid ""
 "The minimum amount of time that must elapse after the last vacuum before "
 "another will be automatically triggered at the end of a backup job. "
@@ -6256,15 +6256,15 @@ msgstr ""
 "백업 작업이 끝나면 다른 진공 청소기가 자동으로 트리거되기 전까지 마지막 진공 청소기 이후 경과해야 하는 최소 시간입니다. 자동 진공 "
 "청소기는 장기간 실행되는 프로세스일 수 있으므로 백업할 때마다 실행하는 것은 바람직하지 않을 수 있습니다."
 
-#: Library/Main/Strings.cs:363
+#: Library/Main/Strings.cs:366
 msgid "Minimum time between auto vacuums"
 msgstr "자동 진공 청소 사이의 최소 시간"
 
-#: Library/Main/Strings.cs:364
+#: Library/Main/Strings.cs:367
 msgid "Secret provider to use for reading credentials"
 msgstr "인증 정보를 읽는 데 사용할 비밀 공급자"
 
-#: Library/Main/Strings.cs:365
+#: Library/Main/Strings.cs:368
 #, csharp-format
 msgid ""
 "Configures a secret provider to use for reading credentials. Use the "
@@ -6275,11 +6275,11 @@ msgstr ""
 "인증 정보를 읽는 데 사용할 비밀 공급자를 구성합니다. 명령줄 도구 {0}를 사용하여 공급자를 테스트하고 지원되는 옵션을 확인합니다. 이"
 " 값은 '$'로 시작하거나 '%'로 시작하고 끝나는 경우 환경 변수로 해석됩니다."
 
-#: Library/Main/Strings.cs:366
+#: Library/Main/Strings.cs:369
 msgid "Pattern for secrets"
 msgstr "비밀 패턴"
 
-#: Library/Main/Strings.cs:367
+#: Library/Main/Strings.cs:370
 msgid ""
 "Use this option to specify a pattern for secret provider options. The "
 "pattern is used to find values that are intended to be translated by the "
@@ -6288,11 +6288,11 @@ msgstr ""
 "비밀 공급자 옵션의 패턴을 지정하려면 이 옵션을 사용합니다. 패턴은 비밀 공급자가 번역할 값을 찾는 데 사용됩니다. 패턴은 중괄호를 "
 "지원하는 접두사로 처리됩니다."
 
-#: Library/Main/Strings.cs:368
+#: Library/Main/Strings.cs:371
 msgid "Cache rules for the secret provider"
 msgstr "비밀 공급자에 대한 캐시 규칙"
 
-#: Library/Main/Strings.cs:369
+#: Library/Main/Strings.cs:372
 msgid ""
 "Use this option to set the allowed caching of credentials from the secret "
 "provider. Setting a cache level may reduce the security but allow the "
@@ -6301,11 +6301,11 @@ msgstr ""
 "비밀 공급자로부터 허용되는 인증 정보 캐싱을 설정하려면 이 옵션을 사용합니다. 캐시 수준을 설정하면 보안이 저하될 수 있지만 공급자 "
 "중단에도 불구하고 백업을 계속할 수 있습니다."
 
-#: Library/Main/Strings.cs:371
+#: Library/Main/Strings.cs:374
 msgid "CPU intensity level"
 msgstr "CPU 강도 레벨"
 
-#: Library/Main/Strings.cs:372
+#: Library/Main/Strings.cs:375
 msgid ""
 "Set the CPU intensity level to limit CPU resource utilization. A higher "
 "number translates into a higher utilization budget. E.g. 10 would mean no "
@@ -6314,20 +6314,20 @@ msgstr ""
 "CPU 리소스 활용도를 제한하려면 CPU 강도 수준을 설정합니다. 숫자가 높을수록 활용도 예산이 높아집니다. 예: 10은 제한이 없음을 "
 "의미합니다. 1~10 사이의 정수여야 합니다."
 
-#: Library/Main/Strings.cs:374
+#: Library/Main/Strings.cs:377
 msgid "Remote synchronization configuration"
 msgstr "원격 동기화 구성"
 
-#: Library/Main/Strings.cs:375
+#: Library/Main/Strings.cs:378
 msgid ""
 "JSON string or file path containing remote synchronization configuration"
 msgstr "원격 동기화 구성이 포함된 JSON 문자열 또는 파일 경로"
 
-#: Library/Main/Strings.cs:377
+#: Library/Main/Strings.cs:380
 msgid "Maximum cache size for restoring files"
 msgstr "파일 복원을 위한 최대 캐시 크기"
 
-#: Library/Main/Strings.cs:378
+#: Library/Main/Strings.cs:381
 msgid ""
 "Use this option to set the maximum size of the cache used for restoring "
 "files. The cache is used to store the data blocks that are downloaded from "
@@ -6337,11 +6337,11 @@ msgstr ""
 "파일 복원에 사용되는 캐시의 최대 크기를 설정하려면 이 옵션을 사용합니다. 캐시는 원격 저장소에서 다운로드된 데이터 블록을 저장하는 데 "
 "사용됩니다. 블록 캐시를 비활성화하는 0 인 경우를 제외하고는 값을 블록 크기로 나눌 수 있다고 가정합니다."
 
-#: Library/Main/Strings.cs:379
+#: Library/Main/Strings.cs:382
 msgid "Eviction ratio of the data block cache during restore"
 msgstr "복원 중 데이터 블록 캐시의 제거 비율"
 
-#: Library/Main/Strings.cs:380
+#: Library/Main/Strings.cs:383
 msgid ""
 "Use this option to set the eviction ratio of the data block cache during "
 "restore. The eviction ratio is the percentage of the cache that is evicted "
@@ -6351,11 +6351,11 @@ msgstr ""
 "복원 중 데이터 블록 캐시의 제거 비율을 설정하려면 이 옵션을 사용합니다. 제거 비율은 캐시가 가득 찼을 때 제거되는 캐시의 비율입니다."
 " 기본값은 50입니다. 즉, 캐시가 가득 차면 캐시의 50%가 제거됩니다."
 
-#: Library/Main/Strings.cs:381
+#: Library/Main/Strings.cs:384
 msgid "Number of concurrent FileProcessors processes used during restore"
 msgstr "복원 중에 사용되는 동시 FileProcessors 프로세스 수"
 
-#: Library/Main/Strings.cs:382
+#: Library/Main/Strings.cs:385
 msgid ""
 "Use this option to set the number of concurrent FileProcessors processes "
 "used during restore. A FileProcessor processes one file at a time, and "
@@ -6364,22 +6364,22 @@ msgstr ""
 "복원 중에 사용되는 동시 FileProcessors 프로세스 수를 설정하려면 이 옵션을 사용합니다. FileProcessor는 한 번에 "
 "하나의 파일을 처리하며 FileProcessor 수를 늘리면 복원 성능이 향상될 수 있습니다."
 
-#: Library/Main/Strings.cs:383
+#: Library/Main/Strings.cs:386
 msgid "Use legacy restore method"
 msgstr "레거시 복원 방법 사용"
 
-#: Library/Main/Strings.cs:384
+#: Library/Main/Strings.cs:387
 msgid ""
 "Use this option to use the legacy restore method. The legacy restore method "
 "is slower than the new method, but may be more reliable in some cases."
 msgstr ""
 "레거시 복원 방법을 사용하려면 이 옵션을 사용합니다. 레거시 복원 방법은 새로운 방법보다 느리지만 경우에 따라 더 안정적일 수 있습니다."
 
-#: Library/Main/Strings.cs:387
+#: Library/Main/Strings.cs:390
 msgid "Preallocate size of restored files"
 msgstr "복원된 파일의 크기 사전 할당"
 
-#: Library/Main/Strings.cs:388
+#: Library/Main/Strings.cs:391
 msgid ""
 "Use this option to toggle whether to set the size of the restored files "
 "before they are written to disk. This can help to reduce fragmentation and "
@@ -6388,11 +6388,11 @@ msgstr ""
 "이 옵션을 사용하면 복원된 파일을 디스크에 쓰기 전에 크기를 설정할지 여부를 전환할 수 있습니다. 이는 조각화를 줄이고 일부 파일 "
 "시스템의 성능을 향상시키는 데 도움이 될 수 있습니다."
 
-#: Library/Main/Strings.cs:389
+#: Library/Main/Strings.cs:392
 msgid "Hints to the desired maximum size of the restore volume cache"
 msgstr "복원 볼륨 캐시의 원하는 최대 크기에 대한 힌트"
 
-#: Library/Main/Strings.cs:390
+#: Library/Main/Strings.cs:393
 msgid ""
 "Use this option to hint the maximum desired size of the restore volume "
 "cache. The restore volume cache is used to store the volumes from the remote"
@@ -6410,12 +6410,12 @@ msgstr ""
 "두면 캐시는무제한이며 대신 디스크 공간 인식 제거가 사용됩니다(restore-volume-cache-min-free 참조). 캐싱을 "
 "완전히 비활성화하려면 0으로 설정합니다."
 
-#: Library/Main/Strings.cs:391
+#: Library/Main/Strings.cs:394
 msgid ""
 "Minimum free disk space to maintain in the temp directory during restore"
 msgstr "복원 중에 임시 디렉터리에 유지하기 위한 최소 여유 디스크 공간"
 
-#: Library/Main/Strings.cs:392
+#: Library/Main/Strings.cs:395
 msgid ""
 "When restore-volume-cache-hint is unset (unlimited mode), the restore volume"
 " cache evicts least-recently-used volumes whenever the free space in the "
@@ -6427,11 +6427,11 @@ msgstr ""
 "아래로 떨어질 때마다 가장 최근에 사용된 볼륨을 제거합니다. 기본값은 1GB입니다.단순한 숫자는 기가바이트로 해석됩니다. Restore-"
 "volume-cache-hint가 특정 크기나 0으로 설정된 경우 아무런 효과가 없습니다."
 
-#: Library/Main/Strings.cs:393
+#: Library/Main/Strings.cs:396
 msgid "Number of concurrent FileDecompressor processes used during restore"
 msgstr "복원 중에 사용되는 동시 FileDecompressor 프로세스 수"
 
-#: Library/Main/Strings.cs:394
+#: Library/Main/Strings.cs:397
 msgid ""
 "Use this option to set the number of concurrent FileDecompressor processes "
 "used during restore. A FileDecompressor processes one volume at a time, and "
@@ -6442,11 +6442,11 @@ msgstr ""
 "한 번에 하나의 볼륨을 처리하며 병목 현상이 압축 해제인 경우 FileDecompressor 수를 늘리면 복원 성능이 향상될 수 "
 "있습니다."
 
-#: Library/Main/Strings.cs:395
+#: Library/Main/Strings.cs:398
 msgid "Number of concurrent FileDecryptor processes used during restore"
 msgstr "복원 중에 사용되는 동시 FileDecryptor 프로세스 수"
 
-#: Library/Main/Strings.cs:396
+#: Library/Main/Strings.cs:399
 msgid ""
 "Use this option to set the number of concurrent FileDecryptor processes used"
 " during restore. A FileDecryptor processes one volume at a time, and "
@@ -6456,11 +6456,11 @@ msgstr ""
 "복원 중에 사용되는 동시 FileDecryptor 프로세스 수를 설정하려면 이 옵션을 사용합니다. FileDecryptor는 한 번에 "
 "하나의 볼륨을 처리하며 병목 현상이 복호화인 경우 FileDecryptor 수를 늘리면 복원 성능이 향상될 수 있습니다."
 
-#: Library/Main/Strings.cs:397
+#: Library/Main/Strings.cs:400
 msgid "Number of concurrent FileDownloader processes used during restore"
 msgstr "복원 중에 사용되는 동시 FileDownloader 프로세스 수"
 
-#: Library/Main/Strings.cs:398
+#: Library/Main/Strings.cs:401
 msgid ""
 "Use this option to set the number of concurrent FileDownloader processes "
 "used during restore. A FileDownloader processes one volume at a time, and "
@@ -6470,11 +6470,11 @@ msgstr ""
 "복원 중에 사용되는 동시 FileDownloader 프로세스 수를 설정하려면 이 옵션을 사용합니다. FileDownloader는 한 번에"
 " 하나의 볼륨을 처리하며 병목 현상이 다운로드 중인 경우 FileDownloader 수를 늘리면 복원 성능이 향상될 수 있습니다."
 
-#: Library/Main/Strings.cs:399
+#: Library/Main/Strings.cs:402
 msgid "Size of buffers of the channels used during restore"
 msgstr "복원 중에 사용되는 채널의 버퍼 크기"
 
-#: Library/Main/Strings.cs:400
+#: Library/Main/Strings.cs:403
 msgid ""
 "Use this option to set the size of the buffers of the channels used during "
 "restore. The buffers are used to allow for better asynchronous communication"
@@ -6484,11 +6484,11 @@ msgstr ""
 "복원 중에 사용되는 채널의 버퍼 크기를 설정하려면 이 옵션을 사용합니다. 버퍼는 복원 흐름의 프로세스 간 더 나은 비동기 통신을 허용하는"
 " 데 사용됩니다. 버퍼 크기를 늘리면 복원 성능이 향상될 수 있습니다."
 
-#: Library/Main/Strings.cs:401
+#: Library/Main/Strings.cs:404
 msgid "Allow restore outside target directory"
 msgstr "대상 디렉터리 외부 복원 허용"
 
-#: Library/Main/Strings.cs:402
+#: Library/Main/Strings.cs:405
 msgid ""
 "Use this option to allow the restore process to write files outside the "
 "target directory. This is normally disabled to prevent path traversal "
@@ -6498,11 +6498,11 @@ msgstr ""
 "복원 프로세스가 대상 디렉터리 외부에 파일을 쓸 수 있도록 하려면 이 옵션을 사용합니다. 일반적으로 경로 탐색 공격을 방지하기 위해 "
 "비활성화되어 있지만, 파일을 대상 디렉터리 외부 위치로 복원해야 하는 경우(예: 심볼릭 링크를 통해) 활성화할 수 있습니다."
 
-#: Library/Main/Strings.cs:403
+#: Library/Main/Strings.cs:406
 msgid "Enable internal profiling"
 msgstr "내부 프로파일링 활성화"
 
-#: Library/Main/Strings.cs:404
+#: Library/Main/Strings.cs:407
 msgid ""
 "Use this option to enable internal profiling. Profiling is used to measure "
 "the performance of the internal code. The profiling data is written to the "
@@ -6511,11 +6511,11 @@ msgstr ""
 "내부 프로파일링을 활성화하려면 이 옵션을 사용합니다. 프로파일링은 내부 코드의 성능을 측정하는 데 사용됩니다. 프로파일링 데이터는 로그 "
 "파일에 기록되며 성능 병목 현상을 식별하는 데 사용될 수 있습니다."
 
-#: Library/Main/Strings.cs:405
+#: Library/Main/Strings.cs:408
 msgid "Ignore update if version exists"
 msgstr "버전이 존재하면 업데이트를 무시합니다."
 
-#: Library/Main/Strings.cs:406
+#: Library/Main/Strings.cs:409
 msgid ""
 "Use this option to ignore the update if the version already exists. This can"
 " be used to avoid errors if asking to update the database with a version "
@@ -6524,11 +6524,11 @@ msgstr ""
 "버전이 이미 존재하는 경우 업데이트를 무시하려면 이 옵션을 사용합니다. 이미 존재하는 버전으로 데이터베이스를 업데이트하도록 요청하는 경우"
 " 오류를 방지하는 데 사용할 수 있습니다."
 
-#: Library/Main/Strings.cs:407
+#: Library/Main/Strings.cs:410
 msgid "Disable special handling for photo libraries on MacOS"
 msgstr "macOS에서 사진 라이브러리에 대한 특수 처리 비활성화"
 
-#: Library/Main/Strings.cs:408
+#: Library/Main/Strings.cs:411
 msgid ""
 "Use this option to disable special handling for photo libraries on MacOS. By"
 " default, Duplicati will attempt to read the contents of photo libraries and"
@@ -6540,11 +6540,11 @@ msgstr ""
 "콘텐츠를 읽고 디스크에 있는 라이브러리 콘텐츠 자체 대신 개별 사진을 백업하려고 시도합니다. 이 옵션은 해당 동작을 비활성화하고 "
 "라이브러리를 일반 폴더로 백업합니다."
 
-#: Library/Main/Strings.cs:409
+#: Library/Main/Strings.cs:412
 msgid "Path to the Photos library"
 msgstr "사진 라이브러리 경로"
 
-#: Library/Main/Strings.cs:410
+#: Library/Main/Strings.cs:413
 msgid ""
 "Use this option to specify the path to the Photos library on MacOS. This "
 "option is only relevant if the Photos library is not in the default "
@@ -6553,11 +6553,11 @@ msgstr ""
 "macOS에서 사진 라이브러리에 대한 경로를 지정하려면 이 옵션을 사용합니다. 이 옵션은 사진 라이브러리가 기본 위치에 없는 경우에만 "
 "관련됩니다."
 
-#: Library/Main/Strings.cs:411
+#: Library/Main/Strings.cs:414
 msgid "Refresh lock information during repair"
 msgstr "복구 중 잠금 정보 새로 고침"
 
-#: Library/Main/Strings.cs:412
+#: Library/Main/Strings.cs:415
 msgid ""
 "Use this option to refresh the object lock expiration information from the "
 "backend during a repair operation. This will query the backend for the "
@@ -6568,11 +6568,11 @@ msgstr ""
 "복구 작업 중에 백엔드에서 객체 잠금 만료 정보를 새로 고치려면 이 옵션을 사용합니다. 그러면 각 원격 볼륨의 현재 잠금 상태에 대해 "
 "백엔드를 쿼리하고 이에 따라 로컬 데이터베이스를 업데이트합니다. 백엔드가 잠금을 지원하지 않는 경우 이 옵션은 무시됩니다."
 
-#: Library/Main/Strings.cs:413
+#: Library/Main/Strings.cs:416
 msgid "Perform a complete refresh of lock information"
 msgstr "잠금 정보의 전체 새로 고침 수행"
 
-#: Library/Main/Strings.cs:414
+#: Library/Main/Strings.cs:417
 msgid ""
 "Use this option to perform a complete refresh of lock information from the "
 "backend. This will query the backend for the current lock status of each "
@@ -6583,29 +6583,29 @@ msgstr ""
 "백엔드에서 잠금 정보를 완전히 새로 고치려면 이 옵션을 사용합니다. 그러면 각 원격 볼륨의 현재 잠금 상태에 대해 백엔드를 쿼리하고 이에"
 " 따라 로컬 데이터베이스를 업데이트합니다. 이 옵션을 지정하지 않으면 잠금 정보가 없는 원격 볼륨에 대한 잠금 정보만 새로 고쳐집니다."
 
-#: Library/Main/Strings.cs:433
+#: Library/Main/Strings.cs:436
 #, csharp-format
 msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
 "algorithm {0}"
 msgstr "암호화 라이브러리는 해시 알고리즘 {0}에 대해 재사용 가능한 변환을 지원하지 않습니다."
 
-#: Library/Main/Strings.cs:434
+#: Library/Main/Strings.cs:437
 #, csharp-format
 msgid "The cryptolibrary does not support the hash algorithm {0}"
 msgstr "암호화 라이브러리는 해시 알고리즘 {0}를 지원하지 않습니다."
 
-#: Library/Main/Strings.cs:435
+#: Library/Main/Strings.cs:438
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr "기존 백업의 암호 문구는 변경할 수 없습니다"
 
-#: Library/Main/Strings.cs:442
+#: Library/Main/Strings.cs:450
 msgid ""
 "Failed to activate BackupRead as the current process does not have "
 "sufficient permissions"
 msgstr "현재 프로세스에 충분한 권한이 없으므로 BackupRead를 활성화하지 못했습니다."
 
-#: Library/Main/Strings.cs:447
+#: Library/Main/Strings.cs:455
 #, csharp-format
 msgid "The encryption module {0} was not found"
 msgstr "암호화 모듈 {0}를 찾을 수 없습니다"
@@ -7431,18 +7431,21 @@ msgstr ""
 msgid "HTTP report URLs for sending JSON data"
 msgstr "JSON 데이터 전송용 HTTP 보고서 URL"
 
-#: Library/Modules/Builtin/Strings.cs:276 Library/Utility/Strings.cs:83
+#: Library/Modules/Builtin/Strings.cs:276
+#: Library/Modules/Builtin/Strings.cs:311 Library/Utility/Strings.cs:83
 #, csharp-format
 msgid ""
 "Use this option to accept any server certificate, regardless of what errors "
 "it may have. Please use --{0} instead, whenever possible."
 msgstr "오류가 무엇인지 관계없이 모든 서버 인증서를 승인하려면 이 옵션을 사용합니다. 가능하다면 --{0}를 대신 사용합니다."
 
-#: Library/Modules/Builtin/Strings.cs:277 Library/Utility/Strings.cs:84
+#: Library/Modules/Builtin/Strings.cs:277
+#: Library/Modules/Builtin/Strings.cs:312 Library/Utility/Strings.cs:84
 msgid "Accept any server certificate"
 msgstr "모든 서버 인증서 수락"
 
-#: Library/Modules/Builtin/Strings.cs:278 Library/Utility/Strings.cs:85
+#: Library/Modules/Builtin/Strings.cs:278
+#: Library/Modules/Builtin/Strings.cs:313 Library/Utility/Strings.cs:85
 msgid ""
 "If your server certificate is reported as invalid (e.g. with self-signed "
 "certificates), you can supply the certificate hash (SHA1) to approve it "
@@ -7452,7 +7455,8 @@ msgstr ""
 "서버 인증서가 유효하지 않은 것으로 보고된 경우(예: 자체 서명된 인증서 사용) 인증서 해시(SHA1)를 제공하여 승인할 수 있습니다. "
 "해시 값은 공백이나 콜론 없이 16진수 형식으로 입력해야 합니다. 여러 해시를 쉼표로 구분하여 입력할 수 있습니다."
 
-#: Library/Modules/Builtin/Strings.cs:279 Library/Utility/Strings.cs:86
+#: Library/Modules/Builtin/Strings.cs:279
+#: Library/Modules/Builtin/Strings.cs:314 Library/Utility/Strings.cs:86
 msgid "Optionally accept a known SSL certificate"
 msgstr "선택적으로 알려진 SSL 인증서를 수락합니다."
 
@@ -7826,25 +7830,25 @@ msgstr "지원되는 압축 모듈:"
 msgid "Supported encryption modules:"
 msgstr "지원되는 암호화 모듈:"
 
-#: CommandLine/CLI/Strings.cs:37
+#: CommandLine/CLI/Strings.cs:38
 msgid "Supported options:"
 msgstr "지원되는 옵션:"
 
-#: CommandLine/CLI/Strings.cs:38
+#: CommandLine/CLI/Strings.cs:39
 #, csharp-format
 msgid "Module is loaded automatically. Use --{0} to prevent this."
 msgstr "모듈이 자동으로 로드됩니다. 이를 방지하려면 --{0}를 사용합니다."
 
-#: CommandLine/CLI/Strings.cs:39
+#: CommandLine/CLI/Strings.cs:40
 #, csharp-format
 msgid "Module is not loaded automatically Use --{0} to load it."
 msgstr "모듈이 자동으로 로드되지 않습니다. 모듈을 로드하려면 --{0}를 사용합니다."
 
-#: CommandLine/CLI/Strings.cs:40
+#: CommandLine/CLI/Strings.cs:41
 msgid "Supported generic modules:"
 msgstr "지원되는 일반 모듈:"
 
-#: CommandLine/CLI/Strings.cs:42
+#: CommandLine/CLI/Strings.cs:43
 #, csharp-format
 msgid ""
 "Filters cannot be specified on the commandline if filters are also present "
@@ -7855,14 +7859,14 @@ msgstr ""
 "매개변수 파일에도 필터가 있으면 명령줄에서 필터를 지정할 수 없습니다. 매개변수 파일 내부에 필터를 지정하려면 특수 --{0}, "
 "--{1} 또는 --{2} 옵션을 사용합니다. 각 필터에는 + 또는 - 접두사가 붙어야 하며 여러 필터는 {3}로 결합되어야합니다."
 
-#: CommandLine/CLI/Strings.cs:43
+#: CommandLine/CLI/Strings.cs:44
 #, csharp-format
 msgid ""
 "The option --{0} was supplied, but it is reserved for internal use and may "
 "not be set on the commandline."
 msgstr "--{0} 옵션이 제공되었지만 내부용으로 예약되어 있으므로 명령줄에서 설정할 수 없습니다."
 
-#: CommandLine/CLI/Strings.cs:44
+#: CommandLine/CLI/Strings.cs:45
 #, csharp-format
 msgid ""
 "Use this option to store some or all of the options given to the commandline"
@@ -7882,17 +7886,17 @@ msgstr ""
 " 필터를 지정할 수 없습니다. 대신 특수 --{2}, --{3} 또는 --{4} 옵션을 사용하여 매개변수 파일 안에 필터를 지정할 수 "
 "있습니다. 각 필터에는 + 또는 - 접두사가 있어야 하며 여러 필터는 {5}로 결합해야 합니다."
 
-#: CommandLine/CLI/Strings.cs:46
+#: CommandLine/CLI/Strings.cs:47
 #, csharp-format
 msgid "An error occured: {0}"
 msgstr "오류가 발생했습니다: {0}"
 
-#: CommandLine/CLI/Strings.cs:47
+#: CommandLine/CLI/Strings.cs:48
 #, csharp-format
 msgid "The inner error message is: {0}"
 msgstr "내부 오류 메시지는 다음과 같습니다: {0}"
 
-#: CommandLine/CLI/Strings.cs:48
+#: CommandLine/CLI/Strings.cs:49
 msgid ""
 "Include files that match this filter. The special character * means any "
 "number of character, and the special character ? means any single character."
@@ -7907,11 +7911,11 @@ msgstr ""
 "[.*\\.txt]. 잘 알려진 파일 및 폴더의 내장 세트를 캡슐화하는 필터 그룹은 중괄호를 사용하여 지정할 수 있습니다. "
 "{{Applications}}."
 
-#: CommandLine/CLI/Strings.cs:49
+#: CommandLine/CLI/Strings.cs:50
 msgid "Include files"
 msgstr "포함된 파일들"
 
-#: CommandLine/CLI/Strings.cs:50
+#: CommandLine/CLI/Strings.cs:51
 msgid ""
 "Exclude files that match this filter. The special character * means any "
 "number of character, and the special character ? means any single character."
@@ -7926,11 +7930,11 @@ msgstr ""
 "[.*\\.txt]. 잘 알려진 파일 및 폴더의 내장 세트를 캡슐화하는 필터 그룹은 중괄호를 사용하여 지정할 수 있습니다. "
 "{{TemporaryFiles}}."
 
-#: CommandLine/CLI/Strings.cs:51
+#: CommandLine/CLI/Strings.cs:52
 msgid "Exclude files"
 msgstr "제외된 파일들"
 
-#: CommandLine/CLI/Strings.cs:52
+#: CommandLine/CLI/Strings.cs:53
 msgid ""
 "If this option is used with a backup operation, it is interpreted as a list "
 "of files to add to the filesets. When used with list or restore, it will "
@@ -7939,35 +7943,35 @@ msgstr ""
 "이 옵션을 백업 작업과 함께 사용하면 파일 세트에 추가할 파일 목록으로 해석됩니다. 목록 또는 복원과 함께 사용하면 일반 파일 대신 제어"
 " 파일을 나열하거나 복원합니다."
 
-#: CommandLine/CLI/Strings.cs:53
+#: CommandLine/CLI/Strings.cs:54
 msgid "Use control files"
 msgstr "제어 파일 사용"
 
-#: CommandLine/CLI/Strings.cs:54
+#: CommandLine/CLI/Strings.cs:55
 msgid ""
 "If this option is set, progress reports and other messages that would "
 "normally go to the console will be redirected to the log."
 msgstr "이 옵션을 설정하면 일반적으로 콘솔에 전달되는 진행 보고서 및 기타 메시지가 로그로 리디렉션됩니다."
 
-#: CommandLine/CLI/Strings.cs:55
+#: CommandLine/CLI/Strings.cs:56
 msgid "Disable console output"
 msgstr "콘솔 출력 비활성화"
 
-#: CommandLine/CLI/Strings.cs:57
+#: CommandLine/CLI/Strings.cs:59
 msgid "Toggle automatic updates"
 msgstr "자동 업데이트 켜기/끄기"
 
-#: CommandLine/CLI/Strings.cs:58
+#: CommandLine/CLI/Strings.cs:60
 msgid ""
 "Set this option if you prefer to have the commandline version automatically "
 "update"
 msgstr "명령줄 버전이 자동으로 업데이트되도록 하려면 이 옵션을 설정합니다."
 
-#: CommandLine/CLI/Strings.cs:59
+#: CommandLine/CLI/Strings.cs:61
 msgid "Use portable mode"
 msgstr "휴대용 모드 사용"
 
-#: CommandLine/CLI/Strings.cs:60
+#: CommandLine/CLI/Strings.cs:62
 msgid ""
 "If this option is set, the configuration files will be stored in a data "
 "subfolder of the Duplicati installation folder. This is useful for running "
@@ -7976,21 +7980,21 @@ msgstr ""
 "이 옵션을 설정하면 구성 파일이 Duplicati 설치 폴더의 data 하위 폴더에 저장됩니다. 이는 USB 스틱이나 기타 휴대용 "
 "미디어에서 실행하는 데 유용합니다."
 
-#: CommandLine/CLI/Strings.cs:61
+#: CommandLine/CLI/Strings.cs:63
 msgid "Data folder"
 msgstr "데이터 폴더"
 
-#: CommandLine/CLI/Strings.cs:62
+#: CommandLine/CLI/Strings.cs:64
 msgid ""
 "The folder where data is stored. This is the folder where the database and "
 "other files are stored."
 msgstr "데이터가 저장되는 폴더입니다. 데이터베이스와 기타 파일이 저장되는 폴더입니다."
 
-#: CommandLine/CLI/Strings.cs:63
+#: CommandLine/CLI/Strings.cs:65
 msgid "Allowed backends"
 msgstr "허용된 백엔드"
 
-#: CommandLine/CLI/Strings.cs:64
+#: CommandLine/CLI/Strings.cs:66
 msgid ""
 "Comma-separated list of backend protocol keys that are allowed to be used. "
 "If this option is not specified, all available backends are allowed. Use "
@@ -8001,11 +8005,11 @@ msgstr ""
 "들어 관리되는 환경에서 사용할 수 있는 백엔드를 제한하려면 이 옵션을 사용합니다. 예: --allowed-backend-"
 "modules=file,ftp,s3"
 
-#: CommandLine/CLI/Strings.cs:65
+#: CommandLine/CLI/Strings.cs:67
 msgid "Allowed encryption modules"
 msgstr "허용되는 암호화 모듈"
 
-#: CommandLine/CLI/Strings.cs:66
+#: CommandLine/CLI/Strings.cs:68
 msgid ""
 "Comma-separated list of encryption module file extensions that are allowed "
 "to be used. If this option is not specified, all available encryption "
@@ -8017,11 +8021,11 @@ msgstr ""
 "허용됩니다. 예를 들어 관리되는 환경에서 사용할 수 있는 암호화 모듈을 제한하려면 이 옵션을 사용합니다. 예: --allowed-"
 "encryption-modules=aes,gpg"
 
-#: CommandLine/CLI/Strings.cs:67
+#: CommandLine/CLI/Strings.cs:69
 msgid "Allowed compression modules"
 msgstr "허용되는 압축 모듈"
 
-#: CommandLine/CLI/Strings.cs:68
+#: CommandLine/CLI/Strings.cs:70
 msgid ""
 "Comma-separated list of compression module file extensions that are allowed "
 "to be used. If this option is not specified, all available compression "
@@ -8033,7 +8037,7 @@ msgstr ""
 "예를 들어 관리되는 환경에서 사용할 수 있는 압축 모듈을 제한하려면 이 옵션을 사용합니다. 예: --allowed-compression-"
 "modules=zip"
 
-#: CommandLine/CLI/Strings.cs:75
+#: CommandLine/CLI/Strings.cs:77
 #, csharp-format
 msgid "This link may provide additional information: {0}"
 msgstr "이 링크에서 추가 정보를 제공할 수 있습니다: {0}"

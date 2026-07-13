@@ -115,7 +115,7 @@ msgid "Advanced Options"
 msgstr "Avancerede indstillinger"
 
 #: templates/addoredit.html:378 templates/commandline.html:23
-#: templates/commandline.html:31 templates/edituri.html:28
+#: templates/commandline.html:31 templates/edituri.html:29
 msgid "Advanced options"
 msgstr "Avancerede indstillinger"
 
@@ -371,7 +371,6 @@ msgstr "Canary"
 #: scripts/services/EditUriBuiltins.js:1231
 #: scripts/services/EditUriBuiltins.js:61 templates/delete.html:54
 #: templates/export.html:34 templates/settings.html:205
-#: templates/waitarea.html:19
 msgid "Cancel"
 msgstr "Annuller"
 
@@ -433,7 +432,7 @@ msgstr "Komprimeringsfase"
 msgid "Compact now"
 msgstr "Komprimer nu"
 
-#: scripts/services/ServerStatus.js:44 scripts/services/ServerStatus.js:69
+#: scripts/services/ServerStatus.js:44 scripts/services/ServerStatus.js:70
 msgid "Compacting remote data …"
 msgstr "Komprimerer data på destinationen ..."
 
@@ -499,8 +498,8 @@ msgstr "Forbinder til server ..."
 msgid "Connection lost"
 msgstr "Forbindelse mistet"
 
-#: scripts/directives/backupEditUri.js:51
-#: scripts/directives/backupEditUri.js:54
+#: scripts/directives/backupEditUri.js:52
+#: scripts/directives/backupEditUri.js:55
 msgid "Connection worked!"
 msgstr "Forbindelsen virkede!"
 
@@ -553,7 +552,7 @@ msgstr "Kun nedbrud"
 msgid "Create bug report …"
 msgstr "Opret fejlrapport ..."
 
-#: scripts/directives/backupEditUri.js:131
+#: scripts/directives/backupEditUri.js:132
 msgid "Create folder?"
 msgstr "Opret mappe?"
 
@@ -685,7 +684,7 @@ msgstr "Slettede versioner"
 msgid "Deleted files"
 msgstr "Slettede filer"
 
-#: scripts/services/ServerStatus.js:66
+#: scripts/services/ServerStatus.js:67
 msgid "Deleting remote files …"
 msgstr "Sletter filer fra destinationen ..."
 
@@ -750,7 +749,7 @@ msgstr "Vil du virkelig slette backuppen: \"{{name}}\"?"
 msgid "Do you really want to delete the local database for: {{name}}"
 msgstr "Vil du virkelig slette den lokale database for: {{navn}}?"
 
-#: templates/export.html:53
+#: templates/edituri.html:21 templates/export.html:53
 msgid "Done"
 msgstr "Færdig"
 
@@ -818,12 +817,12 @@ msgstr ""
 "Hvis du bruger den lokale database til at køre backup via kommandolinien skal du beholde databasen."
 
 #: templates/addoredit.html:174 templates/addoredit.html:389
-#: templates/edituri.html:39 templates/settings.html:194
+#: templates/edituri.html:40 templates/settings.html:194
 msgid "Edit as list"
 msgstr "Rediger som liste"
 
 #: templates/addoredit.html:177 templates/addoredit.html:392
-#: templates/edituri.html:42 templates/settings.html:200
+#: templates/edituri.html:43 templates/settings.html:200
 msgid "Edit as text"
 msgstr "Rediger som tekst"
 
@@ -917,9 +916,9 @@ msgstr "Indtast destinationsstien"
 #: scripts/controllers/RestoreController.js:90
 #: scripts/controllers/RestoreDirectController.js:112
 #: scripts/controllers/RestoreDirectController.js:78
-#: scripts/directives/backupEditUri.js:143
-#: scripts/directives/backupEditUri.js:164
-#: scripts/directives/backupEditUri.js:198
+#: scripts/directives/backupEditUri.js:144
+#: scripts/directives/backupEditUri.js:165
+#: scripts/directives/backupEditUri.js:199
 #: scripts/directives/notificationArea.js:41
 #: scripts/directives/notificationArea.js:43
 #: scripts/directives/notificationArea.js:68 scripts/services/AppUtils.js:343
@@ -928,7 +927,7 @@ msgstr "Indtast destinationsstien"
 msgid "Error"
 msgstr "Fejl"
 
-#: scripts/services/ServerStatus.js:71
+#: scripts/services/ServerStatus.js:72
 msgid "Error!"
 msgstr "Fejl!"
 
@@ -1020,9 +1019,9 @@ msgstr "FTP (alternativ)"
 msgid "Failed to build temporary database: {{message}}"
 msgstr "Kunne ikke bygge midlertidig database: {{message}}"
 
-#: scripts/directives/backupEditUri.js:143
-#: scripts/directives/backupEditUri.js:164
-#: scripts/directives/backupEditUri.js:198
+#: scripts/directives/backupEditUri.js:144
+#: scripts/directives/backupEditUri.js:165
+#: scripts/directives/backupEditUri.js:199
 msgid "Failed to connect:"
 msgstr "Kunne ikke forbinde:"
 
@@ -1321,11 +1320,11 @@ msgstr "Biblioteker"
 msgid "Listing backup dates …"
 msgstr "Danner en liste over backupdatoer..."
 
-#: scripts/services/ServerStatus.js:67
+#: scripts/services/ServerStatus.js:68
 msgid "Listing remote files for purge …"
 msgstr "Danner en liste over filer til fjernelse fra destinationen ..."
 
-#: scripts/services/ServerStatus.js:65
+#: scripts/services/ServerStatus.js:66
 msgid "Listing remote files …"
 msgstr "Danner en liste over filer på destinationen ..."
 
@@ -1412,7 +1411,7 @@ msgstr "Maks. uploadhastighed"
 
 #: index.html:144 templates/addoredit.html:127 templates/addoredit.html:169
 #: templates/addoredit.html:384 templates/addoredit.html:95
-#: templates/edituri.html:34 templates/restoredirect.html:34
+#: templates/edituri.html:35 templates/restoredirect.html:34
 msgid "Menu"
 msgstr "Menu"
 
@@ -1517,9 +1516,9 @@ msgstr "Næste tidspunkt"
 #: scripts/controllers/LocalDatabaseController.js:28
 #: scripts/controllers/LocalDatabaseController.js:72
 #: scripts/controllers/LocalDatabaseController.js:88
-#: scripts/directives/backupEditUri.js:131
-#: scripts/directives/backupEditUri.js:173
-#: scripts/directives/backupEditUri.js:87
+#: scripts/directives/backupEditUri.js:132
+#: scripts/directives/backupEditUri.js:174
+#: scripts/directives/backupEditUri.js:88
 #: scripts/services/EditUriBackendConfig.js:74
 #: scripts/services/EditUriBuiltins.js:1215
 #: scripts/services/EditUriBuiltins.js:1231
@@ -1527,7 +1526,7 @@ msgstr "Næste tidspunkt"
 msgid "No"
 msgstr "Nej"
 
-#: scripts/directives/backupEditUri.js:169
+#: scripts/directives/backupEditUri.js:170
 msgid ""
 "No certificate was specified previously, please verify with the server administrator that the key is correct: {{key}} \n"
 "\n"
@@ -1632,7 +1631,7 @@ msgstr "Valgfri adgangskode til godkendelse"
 msgid "Optional authentication username"
 msgstr "Valgfrit brugernavn til godkendelse"
 
-#: templates/addoredit.html:28 templates/edituri.html:51
+#: templates/addoredit.html:28 templates/edituri.html:52
 #: templates/settings.html:193 templates/settings.html:199
 msgid "Options"
 msgstr "Indstillinger"
@@ -1768,11 +1767,11 @@ msgstr "Proprietære"
 msgid "Purge Phase"
 msgstr "Rensningsfase"
 
-#: scripts/services/ServerStatus.js:70
+#: scripts/services/ServerStatus.js:71
 msgid "Purging files complete!"
 msgstr "Rensning af filer gennemført!"
 
-#: scripts/services/ServerStatus.js:68
+#: scripts/services/ServerStatus.js:69
 msgid "Purging files …"
 msgstr "Fjerner filer ..."
 
@@ -2170,8 +2169,8 @@ msgstr "Gemt"
 msgid "Strong"
 msgstr "Stærk"
 
-#: scripts/directives/backupEditUri.js:51
-#: scripts/directives/backupEditUri.js:54
+#: scripts/directives/backupEditUri.js:52
+#: scripts/directives/backupEditUri.js:55
 msgid "Success"
 msgstr "Succes"
 
@@ -2227,7 +2226,7 @@ msgstr "Midlertidige filer"
 msgid "Test Phase"
 msgstr "Afprøvningsfase"
 
-#: templates/edituri.html:21
+#: templates/edituri.html:22
 msgid "Test connection"
 msgstr "Afprøv forbindelse"
 
@@ -2235,7 +2234,7 @@ msgstr "Afprøv forbindelse"
 msgid "Testing permissions …"
 msgstr "Afprøver tilladelser ..."
 
-#: scripts/directives/backupEditUri.js:44 templates/edituri.html:22
+#: scripts/directives/backupEditUri.js:45 templates/edituri.html:23
 msgid "Testing …"
 msgstr "Afprøver ..."
 
@@ -2281,7 +2280,7 @@ msgstr "Mørke farver (af Michal)"
 msgid "The default blue on white theme (by Alex)"
 msgstr "Standard blå på hvid (af Alex)"
 
-#: scripts/directives/backupEditUri.js:131
+#: scripts/directives/backupEditUri.js:132
 msgid ""
 "The folder {{folder}} does not exist.\n"
 "Create it now?"
@@ -2289,7 +2288,7 @@ msgstr ""
 "Mappen {{folder}} eksisterer ikke.\n"
 "Opret den nu?"
 
-#: scripts/directives/backupEditUri.js:171
+#: scripts/directives/backupEditUri.js:172
 msgid ""
 "The host key has changed, please check with the server administrator if this is correct, otherwise you could be the victim of a MAN-IN-THE-MIDDLE attack.\n"
 "\n"
@@ -2332,7 +2331,7 @@ msgstr "Regionsparameteren anvendes kun når der oprettes en ny bucket"
 msgid "The region parameter is only used when creating a bucket"
 msgstr "Regionsparameteren bruges kun når der oprettes en ny bucket"
 
-#: scripts/directives/backupEditUri.js:87
+#: scripts/directives/backupEditUri.js:88
 msgid ""
 "The server certificate could not be validated.\n"
 "Do you want to approve the SSL certificate with the hash: {{hash}}?"
@@ -2423,11 +2422,11 @@ msgstr ""
 msgid "Today"
 msgstr "I dag"
 
-#: scripts/directives/backupEditUri.js:173
+#: scripts/directives/backupEditUri.js:174
 msgid "Trust host certificate?"
 msgstr "Stol på værtscertifikatet?"
 
-#: scripts/directives/backupEditUri.js:87
+#: scripts/directives/backupEditUri.js:88
 msgid "Trust server certificate?"
 msgstr "Stol på servercertifikatet?"
 
@@ -2617,9 +2616,9 @@ msgstr "År"
 #: scripts/controllers/LocalDatabaseController.js:28
 #: scripts/controllers/LocalDatabaseController.js:72
 #: scripts/controllers/LocalDatabaseController.js:88
-#: scripts/directives/backupEditUri.js:131
-#: scripts/directives/backupEditUri.js:173
-#: scripts/directives/backupEditUri.js:87
+#: scripts/directives/backupEditUri.js:132
+#: scripts/directives/backupEditUri.js:174
+#: scripts/directives/backupEditUri.js:88
 #: scripts/services/EditUriBackendConfig.js:74
 #: scripts/services/EditUriBuiltins.js:1215
 #: scripts/services/EditUriBuiltins.js:1231

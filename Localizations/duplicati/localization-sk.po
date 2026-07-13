@@ -16,7 +16,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-02 11:34+0200\n"
+"POT-Creation-Date: 2026-07-13 15:38+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: Martin Rovňák <rovnakm@gmail.com>, 2026\n"
 "Language-Team: Slovak (https://app.transifex.com/duplicati/teams/67655/sk/)\n"
@@ -53,8 +53,8 @@ msgstr ""
 msgid "Set thread level utilized for crypting"
 msgstr "Nastavte úroveň vlákna používanú na šifrovanie"
 
-#: Library/Encryption/Strings.cs:33 Library/Main/Strings.cs:206
-#: Library/Main/Strings.cs:263
+#: Library/Encryption/Strings.cs:33 Library/Main/Strings.cs:208
+#: Library/Main/Strings.cs:266
 #, csharp-format
 msgid "The option --{0} is no longer used and has been deprecated."
 msgstr "Možnosť --{0} sa už nepoužíva a bola zrušená."
@@ -542,7 +542,7 @@ msgstr ""
 msgid "--{0}: {1}"
 msgstr "--{0}: {1}"
 
-#: Library/RestAPI/Strings.cs:38 CommandLine/CLI/Strings.cs:45
+#: Library/RestAPI/Strings.cs:38 CommandLine/CLI/Strings.cs:46
 msgid "Path to a file with parameters"
 msgstr "Cesta k súboru s parametrami"
 
@@ -559,7 +559,7 @@ msgstr ""
 "zadanie filtrov v rámci súboru parametrov. Každý filter musí mať predponu "
 "buď a + alebo -, a viaceré filtre musia byť spojené s {3}"
 
-#: Library/RestAPI/Strings.cs:40 CommandLine/CLI/Strings.cs:41
+#: Library/RestAPI/Strings.cs:40 CommandLine/CLI/Strings.cs:42
 #, csharp-format
 msgid "Unable to read the parameters file \"{0}\", reason: {1}"
 msgstr "Nepodarilo sa prečítať súbor parametrov \"{0}\", dôvod: {1}"
@@ -574,11 +574,11 @@ msgstr "Vážna chyba v Duplicati: {0}"
 msgid "Unsupported version of SQLite detected ({0}), must be {1} or higher"
 msgstr "Zistená nepodporovaná verzia SQLite ({0}), musí byť {1} alebo vyššia"
 
-#: Library/RestAPI/Strings.cs:67 Library/Main/Strings.cs:284
+#: Library/RestAPI/Strings.cs:67 Library/Main/Strings.cs:287
 msgid "Clean up old log data"
 msgstr "Vyčistiť staré záznamy"
 
-#: Library/RestAPI/Strings.cs:73 Library/Main/Strings.cs:103
+#: Library/RestAPI/Strings.cs:75 Library/Main/Strings.cs:103
 msgid "Temporary storage folder"
 msgstr "Dočasný adresár"
 
@@ -624,27 +624,27 @@ msgstr "Zobraziť obsah adresára"
 msgid "Time to wait between retries"
 msgstr "Čas medzi opakovaniami"
 
-#: Library/Main/Strings.cs:136
+#: Library/Main/Strings.cs:138
 msgid "Log information level"
 msgstr "Log informačná úroveň"
 
-#: Library/Main/Strings.cs:179
+#: Library/Main/Strings.cs:181
 msgid "Exclude files by attribute"
 msgstr "Vylúčenie súborov podľa atribútov"
 
-#: Library/Main/Strings.cs:185
+#: Library/Main/Strings.cs:187
 msgid "Name of the backup"
 msgstr "Názov zálohy"
 
-#: Library/Main/Strings.cs:203
+#: Library/Main/Strings.cs:205
 msgid "List of deleted files"
 msgstr "Zoznam zmazaných súborov"
 
-#: Library/Main/Strings.cs:224
+#: Library/Main/Strings.cs:226
 msgid "Maximum number of small volumes"
 msgstr "Maximálny počet malých častí"
 
-#: Library/Main/Strings.cs:245
+#: Library/Main/Strings.cs:248
 msgid "Overwrite files when restoring"
 msgstr "Prepísanie súborov pri obnove"
 
@@ -717,7 +717,8 @@ msgstr "XMPP užívateľ"
 msgid "The XMPP password"
 msgstr "XMPP heslo"
 
-#: Library/Modules/Builtin/Strings.cs:277 Library/Utility/Strings.cs:84
+#: Library/Modules/Builtin/Strings.cs:277
+#: Library/Modules/Builtin/Strings.cs:312 Library/Utility/Strings.cs:84
 msgid "Accept any server certificate"
 msgstr "Akceptovenie všetkých serverových certifikátov"
 
@@ -775,33 +776,33 @@ msgstr "Podporované kompresné moduly:"
 msgid "Supported encryption modules:"
 msgstr "Podporované šifrovacie moduly:"
 
-#: CommandLine/CLI/Strings.cs:37
+#: CommandLine/CLI/Strings.cs:38
 msgid "Supported options:"
 msgstr "Podporované možnosti:"
 
-#: CommandLine/CLI/Strings.cs:40
+#: CommandLine/CLI/Strings.cs:41
 msgid "Supported generic modules:"
 msgstr "Podporované generické moduly:"
 
-#: CommandLine/CLI/Strings.cs:46
+#: CommandLine/CLI/Strings.cs:47
 #, csharp-format
 msgid "An error occured: {0}"
 msgstr "Vyskytla sa chyba: {0}"
 
-#: CommandLine/CLI/Strings.cs:47
+#: CommandLine/CLI/Strings.cs:48
 #, csharp-format
 msgid "The inner error message is: {0}"
 msgstr "Vnútorná chybová správa je: {0}"
 
-#: CommandLine/CLI/Strings.cs:49
+#: CommandLine/CLI/Strings.cs:50
 msgid "Include files"
 msgstr "Zahrňte súbory"
 
-#: CommandLine/CLI/Strings.cs:51
+#: CommandLine/CLI/Strings.cs:52
 msgid "Exclude files"
 msgstr "Vylúčte súbory"
 
-#: CommandLine/CLI/Strings.cs:52
+#: CommandLine/CLI/Strings.cs:53
 msgid ""
 "If this option is used with a backup operation, it is interpreted as a list "
 "of files to add to the filesets. When used with list or restore, it will "
@@ -812,11 +813,11 @@ msgstr ""
 "výpise, alebo pri obnovení, vypíše, alebo obnoví ovládacie súbory namiesto "
 "bežných súborov."
 
-#: CommandLine/CLI/Strings.cs:53
+#: CommandLine/CLI/Strings.cs:54
 msgid "Use control files"
 msgstr "Použiť ovládacie súbory"
 
-#: CommandLine/CLI/Strings.cs:54
+#: CommandLine/CLI/Strings.cs:55
 msgid ""
 "If this option is set, progress reports and other messages that would "
 "normally go to the console will be redirected to the log."
@@ -824,15 +825,15 @@ msgstr ""
 "Ak je táto možnosť nastavená, správy o priebehu a ostatné správy, ktoré by "
 "sa normálne vypísali do konzoly, budú presmerované do protokolu."
 
-#: CommandLine/CLI/Strings.cs:55
+#: CommandLine/CLI/Strings.cs:56
 msgid "Disable console output"
 msgstr "Zakázať výstup do konzoly"
 
-#: CommandLine/CLI/Strings.cs:57
+#: CommandLine/CLI/Strings.cs:59
 msgid "Toggle automatic updates"
 msgstr "Zapnúť automatické aktualizácie"
 
-#: CommandLine/CLI/Strings.cs:58
+#: CommandLine/CLI/Strings.cs:60
 msgid ""
 "Set this option if you prefer to have the commandline version automatically "
 "update"
