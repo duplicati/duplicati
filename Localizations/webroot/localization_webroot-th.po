@@ -78,7 +78,7 @@ msgid "Advanced Options"
 msgstr "ตัวเลือกขั้นสูง"
 
 #: templates/addoredit.html:378 templates/commandline.html:23
-#: templates/commandline.html:31 templates/edituri.html:28
+#: templates/commandline.html:31 templates/edituri.html:29
 msgid "Advanced options"
 msgstr "ตัวเลือกขั้นสูง:"
 
@@ -164,7 +164,6 @@ msgstr "ค่ามาตรฐานของเบราว์เซอร์
 #: scripts/services/EditUriBuiltins.js:1231
 #: scripts/services/EditUriBuiltins.js:61 templates/delete.html:54
 #: templates/export.html:34 templates/settings.html:205
-#: templates/waitarea.html:19
 msgid "Cancel"
 msgstr "ยกเลิก"
 
@@ -222,7 +221,7 @@ msgstr "คัดลอกแล้ว!"
 msgid "Copy Destination URL to Clipboard"
 msgstr "คัดลอก URL ปลายทางไปยังคลิปบอร์ด"
 
-#: scripts/directives/backupEditUri.js:131
+#: scripts/directives/backupEditUri.js:132
 msgid "Create folder?"
 msgstr "สร้างโฟลเดอร์?"
 
@@ -287,7 +286,7 @@ msgstr "รับทราบ"
 msgid "Display and color theme"
 msgstr "การแสดงผลและชุดสี"
 
-#: templates/export.html:53
+#: templates/edituri.html:21 templates/export.html:53
 msgid "Done"
 msgstr "เสร็จ"
 
@@ -337,9 +336,9 @@ msgstr "ใส่วลีรหัสผ่านเข้ารหัสลั
 #: scripts/controllers/RestoreController.js:90
 #: scripts/controllers/RestoreDirectController.js:112
 #: scripts/controllers/RestoreDirectController.js:78
-#: scripts/directives/backupEditUri.js:143
-#: scripts/directives/backupEditUri.js:164
-#: scripts/directives/backupEditUri.js:198
+#: scripts/directives/backupEditUri.js:144
+#: scripts/directives/backupEditUri.js:165
+#: scripts/directives/backupEditUri.js:199
 #: scripts/directives/notificationArea.js:41
 #: scripts/directives/notificationArea.js:43
 #: scripts/directives/notificationArea.js:68 scripts/services/AppUtils.js:343
@@ -348,7 +347,7 @@ msgstr "ใส่วลีรหัสผ่านเข้ารหัสลั
 msgid "Error"
 msgstr "ผิดพลาด"
 
-#: scripts/services/ServerStatus.js:71
+#: scripts/services/ServerStatus.js:72
 msgid "Error!"
 msgstr "ผิดพลาด!"
 
@@ -546,7 +545,7 @@ msgstr "การบำรุงรักษา"
 
 #: index.html:144 templates/addoredit.html:127 templates/addoredit.html:169
 #: templates/addoredit.html:384 templates/addoredit.html:95
-#: templates/edituri.html:34 templates/restoredirect.html:34
+#: templates/edituri.html:35 templates/restoredirect.html:34
 msgid "Menu"
 msgstr "เมนู"
 
@@ -579,9 +578,9 @@ msgstr "ถัดไป"
 #: scripts/controllers/LocalDatabaseController.js:28
 #: scripts/controllers/LocalDatabaseController.js:72
 #: scripts/controllers/LocalDatabaseController.js:88
-#: scripts/directives/backupEditUri.js:131
-#: scripts/directives/backupEditUri.js:173
-#: scripts/directives/backupEditUri.js:87
+#: scripts/directives/backupEditUri.js:132
+#: scripts/directives/backupEditUri.js:174
+#: scripts/directives/backupEditUri.js:88
 #: scripts/services/EditUriBackendConfig.js:74
 #: scripts/services/EditUriBuiltins.js:1215
 #: scripts/services/EditUriBuiltins.js:1231
@@ -611,7 +610,7 @@ msgstr "ตกลง"
 msgid "Opened"
 msgstr "เปิดแล้ว"
 
-#: templates/addoredit.html:28 templates/edituri.html:51
+#: templates/addoredit.html:28 templates/edituri.html:52
 #: templates/settings.html:193 templates/settings.html:199
 msgid "Options"
 msgstr "ตัวเลือก"

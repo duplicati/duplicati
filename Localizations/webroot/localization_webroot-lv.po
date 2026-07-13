@@ -96,7 +96,7 @@ msgid "Advanced Options"
 msgstr "Pielāgotas Opcijas"
 
 #: templates/addoredit.html:378 templates/commandline.html:23
-#: templates/commandline.html:31 templates/edituri.html:28
+#: templates/commandline.html:31 templates/edituri.html:29
 msgid "Advanced options"
 msgstr "Pielāgotas opcijas"
 
@@ -239,7 +239,6 @@ msgstr "Canary"
 #: scripts/services/EditUriBuiltins.js:1231
 #: scripts/services/EditUriBuiltins.js:61 templates/delete.html:54
 #: templates/export.html:34 templates/settings.html:205
-#: templates/waitarea.html:19
 msgid "Cancel"
 msgstr "Atcelt"
 
@@ -305,8 +304,8 @@ msgstr "Pieslēdzas serverim..."
 msgid "Connection lost"
 msgstr "Savienojums ir zudis"
 
-#: scripts/directives/backupEditUri.js:51
-#: scripts/directives/backupEditUri.js:54
+#: scripts/directives/backupEditUri.js:52
+#: scripts/directives/backupEditUri.js:55
 msgid "Connection worked!"
 msgstr "Savienojums strādā!"
 
@@ -330,7 +329,7 @@ msgstr "Pamata opcijas"
 msgid "Crashes only"
 msgstr "Tikai avārijas"
 
-#: scripts/directives/backupEditUri.js:131
+#: scripts/directives/backupEditUri.js:132
 msgid "Create folder?"
 msgstr "Izveidot mapi?"
 
@@ -391,7 +390,7 @@ msgstr "Atmest"
 msgid "Display and color theme"
 msgstr "Displeja un krāsu motīvs"
 
-#: templates/export.html:53
+#: templates/edituri.html:21 templates/export.html:53
 msgid "Done"
 msgstr "Pabeigts"
 
@@ -409,12 +408,12 @@ msgid "Duplicati forum"
 msgstr "Duplicati forums"
 
 #: templates/addoredit.html:174 templates/addoredit.html:389
-#: templates/edituri.html:39 templates/settings.html:194
+#: templates/edituri.html:40 templates/settings.html:194
 msgid "Edit as list"
 msgstr "Rediģēt kā sarakstu"
 
 #: templates/addoredit.html:177 templates/addoredit.html:392
-#: templates/edituri.html:42 templates/settings.html:200
+#: templates/edituri.html:43 templates/settings.html:200
 msgid "Edit as text"
 msgstr "Rediģēt kā tekstu"
 
@@ -471,9 +470,9 @@ msgstr "Ievadiet mērķa atrašanās vietu"
 #: scripts/controllers/RestoreController.js:90
 #: scripts/controllers/RestoreDirectController.js:112
 #: scripts/controllers/RestoreDirectController.js:78
-#: scripts/directives/backupEditUri.js:143
-#: scripts/directives/backupEditUri.js:164
-#: scripts/directives/backupEditUri.js:198
+#: scripts/directives/backupEditUri.js:144
+#: scripts/directives/backupEditUri.js:165
+#: scripts/directives/backupEditUri.js:199
 #: scripts/directives/notificationArea.js:41
 #: scripts/directives/notificationArea.js:43
 #: scripts/directives/notificationArea.js:68 scripts/services/AppUtils.js:343
@@ -482,7 +481,7 @@ msgstr "Ievadiet mērķa atrašanās vietu"
 msgid "Error"
 msgstr "Kļūda"
 
-#: scripts/services/ServerStatus.js:71
+#: scripts/services/ServerStatus.js:72
 msgid "Error!"
 msgstr "Kļūda!"
 
@@ -506,9 +505,9 @@ msgstr "Eksportēt konfigurāciju"
 msgid "FTP (Alternative)"
 msgstr "FTP (Alternatīvs)"
 
-#: scripts/directives/backupEditUri.js:143
-#: scripts/directives/backupEditUri.js:164
-#: scripts/directives/backupEditUri.js:198
+#: scripts/directives/backupEditUri.js:144
+#: scripts/directives/backupEditUri.js:165
+#: scripts/directives/backupEditUri.js:199
 msgid "Failed to connect:"
 msgstr "Neizdevās izveidot savienojumu:"
 
@@ -659,7 +658,7 @@ msgstr "Maksimālais augšupielādes ātrums"
 
 #: index.html:144 templates/addoredit.html:127 templates/addoredit.html:169
 #: templates/addoredit.html:384 templates/addoredit.html:95
-#: templates/edituri.html:34 templates/restoredirect.html:34
+#: templates/edituri.html:35 templates/restoredirect.html:34
 msgid "Menu"
 msgstr "Izvēlne"
 
@@ -744,9 +743,9 @@ msgstr "Nākamreiz"
 #: scripts/controllers/LocalDatabaseController.js:28
 #: scripts/controllers/LocalDatabaseController.js:72
 #: scripts/controllers/LocalDatabaseController.js:88
-#: scripts/directives/backupEditUri.js:131
-#: scripts/directives/backupEditUri.js:173
-#: scripts/directives/backupEditUri.js:87
+#: scripts/directives/backupEditUri.js:132
+#: scripts/directives/backupEditUri.js:174
+#: scripts/directives/backupEditUri.js:88
 #: scripts/services/EditUriBackendConfig.js:74
 #: scripts/services/EditUriBuiltins.js:1215
 #: scripts/services/EditUriBuiltins.js:1231
@@ -805,7 +804,7 @@ msgstr "Darbības:"
 msgid "Optional authentication password"
 msgstr "Neobligāta autentifikācijas parole"
 
-#: templates/addoredit.html:28 templates/edituri.html:51
+#: templates/addoredit.html:28 templates/edituri.html:52
 #: templates/settings.html:193 templates/settings.html:199
 msgid "Options"
 msgstr "Iestatījumi"
@@ -1051,7 +1050,7 @@ msgstr "Uzdevums ir palaists"
 msgid "Temporary files"
 msgstr "Pagaidu faili"
 
-#: templates/edituri.html:21
+#: templates/edituri.html:22
 msgid "Test connection"
 msgstr "Pārbaudīt savienojumu"
 
@@ -1177,9 +1176,9 @@ msgstr "Gadi"
 #: scripts/controllers/LocalDatabaseController.js:28
 #: scripts/controllers/LocalDatabaseController.js:72
 #: scripts/controllers/LocalDatabaseController.js:88
-#: scripts/directives/backupEditUri.js:131
-#: scripts/directives/backupEditUri.js:173
-#: scripts/directives/backupEditUri.js:87
+#: scripts/directives/backupEditUri.js:132
+#: scripts/directives/backupEditUri.js:174
+#: scripts/directives/backupEditUri.js:88
 #: scripts/services/EditUriBackendConfig.js:74
 #: scripts/services/EditUriBuiltins.js:1215
 #: scripts/services/EditUriBuiltins.js:1231
