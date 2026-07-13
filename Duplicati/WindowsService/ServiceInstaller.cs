@@ -47,15 +47,27 @@ namespace Duplicati.WindowsService
         private static extern bool DeleteService(IntPtr hService);
 
         private const int SERVICE_CONFIG_DESCRIPTION = 0x01;
+        private const int SERVICE_CONFIG_DELAYED_AUTO_START_INFO = 0x03;
 
         [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool ChangeServiceConfig2(IntPtr hService, int dwInfoLevel, [MarshalAs(UnmanagedType.Struct)] ref SERVICE_DESCRIPTION lpInfo);
 
+        [DllImport("advapi32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool ChangeServiceConfig2(IntPtr hService, int dwInfoLevel, ref SERVICE_DELAYED_AUTO_START_INFO lpInfo);
+
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
         private struct SERVICE_DESCRIPTION
         {
             public string lpDescription;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct SERVICE_DELAYED_AUTO_START_INFO
+        {
+            [MarshalAs(UnmanagedType.Bool)]
+            public bool fDelayedAutostart;
         }
 
         private enum SC_STATUS_TYPE : int
@@ -446,7 +458,7 @@ namespace Duplicati.WindowsService
             GENERIC_ALL = SC_MANAGER_ALL_ACCESS,
         }
 
-        public static void InstallService(string ServiceName, string DisplayName, string Description, string Path)
+        public static void InstallService(string ServiceName, string DisplayName, string Description, string Path, bool delayedAutoStart)
         {
             var scMgrHandle = OpenSCManager(null, null, (uint)SCM_ACCESS.SC_MANAGER_ALL_ACCESS);
 
@@ -461,16 +473,36 @@ namespace Duplicati.WindowsService
                 if (serviceHandle == IntPtr.Zero)
                     throw new Exception($"Win32 error {Marshal.GetLastWin32Error().ToString()} during install service (CreateService)");
 
-                var pinfo = new SERVICE_DESCRIPTION
+                try
                 {
-                    lpDescription = Description
-                };
+                    var pinfo = new SERVICE_DESCRIPTION
+                    {
+                        lpDescription = Description
+                    };
 
-                var res = ChangeServiceConfig2(serviceHandle, SERVICE_CONFIG_DESCRIPTION, ref pinfo);
-                if (!res)
-                    System.Diagnostics.Trace.WriteLine($"Failed to set decription: {Marshal.GetLastWin32Error().ToString()}");
+                    var res = ChangeServiceConfig2(serviceHandle, SERVICE_CONFIG_DESCRIPTION, ref pinfo);
+                    if (!res)
+                        System.Diagnostics.Trace.WriteLine($"Failed to set description: {Marshal.GetLastWin32Error().ToString()}");
 
-                CloseServiceHandle(serviceHandle);
+                    if (delayedAutoStart)
+                    {
+                        var delayedInfo = new SERVICE_DELAYED_AUTO_START_INFO
+                        {
+                            fDelayedAutostart = true
+                        };
+
+                        if (!ChangeServiceConfig2(serviceHandle, SERVICE_CONFIG_DELAYED_AUTO_START_INFO, ref delayedInfo))
+                        {
+                            var error = Marshal.GetLastWin32Error();
+                            DeleteService(serviceHandle);
+                            throw new Exception($"Win32 error {error.ToString()} during install service (ChangeServiceConfig2 delayed auto-start)");
+                        }
+                    }
+                }
+                finally
+                {
+                    CloseServiceHandle(serviceHandle);
+                }
             }
             finally
             {
