@@ -1986,6 +1986,17 @@ namespace Duplicati.Library.Main.Database.Local
 
             Logging.Log.WriteInformationMessage(LOGTAG, "ZeroLengthMetadata", "Found {0} zero-length metadata entries", emptyMetaCount);
 
+            // When the user opted out of replacing missing metadata, we must not fabricate or
+            // consolidate metadata here. Dropping the affected entries requires backend access and
+            // is handled by the purge-broken-files command, which honors this option. Leave the
+            // zero-length entries in place so that command can remove them.
+            if (options.DisableReplaceMissingMetadata)
+            {
+                Logging.Log.WriteInformationMessage(LOGTAG, "ZeroLengthMetadataSkipped",
+                    "Found {0} zero-length metadata entries, but --disable-replace-missing-metadata is set. Run the purge-broken-files command to drop the affected files.", emptyMetaCount);
+                return;
+            }
+
             // Create replacement metadata
             var emptyMeta = Utility.WrapMetadata(new Dictionary<string, string>(), options);
             var emptyBlocksetId = await GetEmptyMetadataBlocksetIdAsync(Array.Empty<long>(), emptyMeta.FileHash, emptyMeta.Blob.Length, token)
@@ -1993,8 +2004,85 @@ namespace Duplicati.Library.Main.Database.Local
 
             if (emptyBlocksetId < 0)
                 throw new Interface.UserInformationException(
-                    "Failed to locate an empty metadata blockset to replace missing metadata. Set the option --disable-replace-missing-metadata=true to ignore this and drop files with missing metadata.",
+                    "Failed to locate an empty metadata blockset to replace missing metadata. Set the option --disable-replace-missing-metadata=true and run the purge-broken-files command to drop files with missing metadata.",
                     "FailedToLocateEmptyMetadataBlockset");
+
+            // GetEmptyMetadataBlocksetId can return the empty-metadata blockset even when it has lost
+            // its BlocksetEntry (and length). Folders and symlinks require the metadata blockset to
+            // have a real block for the file list reconstruction to succeed, so if the empty metadata
+            // block still exists in the database we reconnect it here. This only relinks existing
+            // data and never touches remote storage.
+            await EnsureEmptyMetadataBlockEntryAsync(emptyBlocksetId, emptyMeta, options, token).ConfigureAwait(false);
+
+            // Determine whether the blockset we intend to keep now has a real block entry. When it
+            // does not, the only remaining data is a zero-length placeholder: regular files can
+            // tolerate that (empty metadata restores as defaults), but folders and symlinks cannot,
+            // because the file list consistency check requires the metadata block to exist.
+            var keepHasBlock = await cmd.SetCommandAndParameters(@"
+                SELECT COUNT(*)
+                FROM ""BlocksetEntry""
+                WHERE ""BlocksetID"" = @BlocksetId
+            ")
+                .SetParameterValue("@BlocksetId", emptyBlocksetId)
+                .ExecuteScalarInt64Async(0, token)
+                .ConfigureAwait(false) > 0;
+
+            if (!keepHasBlock)
+            {
+                // No usable metadata block is available and we cannot create one without writing to
+                // remote storage, which repair is not allowed to do. Folders and symlinks cannot be
+                // repaired in this state, so refuse rather than produce a database that would fail
+                // its own consistency verification, and point the user at purge-broken-files.
+                var affectedFolders = await cmd.SetCommandAndParameters(@"
+                    SELECT COUNT(*)
+                    FROM ""File""
+                    JOIN ""Metadataset""
+                        ON ""File"".""MetadataID"" = ""Metadataset"".""ID""
+                    JOIN ""Blockset""
+                        ON ""Metadataset"".""BlocksetID"" = ""Blockset"".""ID""
+                    WHERE
+                        ""Blockset"".""Length"" = 0
+                        AND ""File"".""BlocksetID"" IN (@FolderBlocksetId, @SymlinkBlocksetId)
+                ")
+                    .SetParameterValue("@FolderBlocksetId", FOLDER_BLOCKSET_ID)
+                    .SetParameterValue("@SymlinkBlocksetId", SYMLINK_BLOCKSET_ID)
+                    .ExecuteScalarInt64Async(0, token)
+                    .ConfigureAwait(false);
+
+                if (affectedFolders > 0)
+                    throw new Interface.UserInformationException(
+                        $"Unable to repair {affectedFolders} folder(s)/symlink(s) with missing metadata because no replacement metadata block is available. Set the option --disable-replace-missing-metadata=true and run the purge-broken-files command to drop the affected entries.",
+                        "MetadataRepairFailed");
+
+                Logging.Log.WriteWarningMessage(LOGTAG, "ZeroLengthMetadataFallback", null,
+                    "No empty metadata block ({}) is available to fully repair the metadata; the affected files will be consolidated onto a single empty metadata entry. The files remain listable, but their metadata cannot be restored.");
+            }
+
+            // Ensure there is a Metadataset row pointing at the blockset we intend to keep.
+            // GetEmptyMetadataBlocksetId can return a blockset that has no Metadataset (for example
+            // the smallest file-data blockset fallback). Without this, the reassignment in step 2
+            // would set FileLookup.MetadataID to NULL and corrupt the database.
+            var keepMetadataId = await cmd.SetCommandAndParameters(@"
+                SELECT ""ID""
+                FROM ""Metadataset""
+                WHERE ""BlocksetID"" = @KeepBlockset
+                LIMIT 1
+            ")
+                .SetParameterValue("@KeepBlockset", emptyBlocksetId)
+                .ExecuteScalarInt64Async(-1, token)
+                .ConfigureAwait(false);
+
+            if (keepMetadataId < 0)
+            {
+                await cmd.SetCommandAndParameters(@"
+                    INSERT INTO ""Metadataset"" (""BlocksetID"")
+                    VALUES (@KeepBlockset);
+                    SELECT last_insert_rowid();
+                ")
+                    .SetParameterValue("@KeepBlockset", emptyBlocksetId)
+                    .ExecuteScalarInt64Async(-1, token)
+                    .ConfigureAwait(false);
+            }
 
             // Step 1: Create temp table with Metadataset IDs referencing empty blocksets (excluding the one to keep)
             var tablename = $"FixMetadatasets-{Library.Utility.Utility.GetHexGuid()}";
@@ -2068,14 +2156,20 @@ namespace Duplicati.Library.Main.Database.Local
                     .ExecuteNonQueryAsync(true, token)
                     .ConfigureAwait(false);
 
-                // Step 5: Confirm all broken metadata entries are resolved
+                // Step 5: Confirm all broken metadata entries are resolved.
+                // The blockset we intentionally kept is excluded: when no non-empty replacement
+                // metadata block was available it may still be zero-length, but every affected file
+                // now references this single, consistent entry, which is the best achievable repair.
                 cmd.SetCommandAndParameters(@"
                     SELECT COUNT(*)
                     FROM ""Metadataset""
                     JOIN ""Blockset""
                         ON ""Metadataset"".""BlocksetID"" = ""Blockset"".""ID""
-                    WHERE ""Blockset"".""Length"" = 0
-                ");
+                    WHERE
+                        ""Blockset"".""Length"" = 0
+                        AND ""Metadataset"".""BlocksetID"" != @KeepBlockset
+                ")
+                    .SetParameterValue("@KeepBlockset", emptyBlocksetId);
 
                 var remaining = await cmd.ExecuteScalarInt64Async(0, token);
                 if (remaining > 0)
@@ -2101,6 +2195,99 @@ namespace Duplicati.Library.Main.Database.Local
                     Logging.Log.WriteVerboseMessage(LOGTAG, "ErrorDroppingTempTable", ex, "Failed to drop temporary table {0}: {1}", tablename, ex.Message);
                 }
             }
+        }
+
+        /// <summary>
+        /// Ensures that the given empty-metadata blockset has a <see cref="BlocksetEntry"/> linking it
+        /// to its backing block, when that block already exists in the database. This handles the case
+        /// where the empty (<c>{}</c>) metadata blockset lost its block entry (and possibly its
+        /// length) but the underlying block is still present. It only relinks existing data and
+        /// repairs the recorded length; it never creates blocks or writes to remote storage, so it is
+        /// safe to run during a database-only repair.
+        /// </summary>
+        /// <param name="blocksetId">The blockset to ensure has a block entry.</param>
+        /// <param name="emptyMeta">The wrapped empty metadata identifying the expected content.</param>
+        /// <param name="options">The options, used to determine the block hash algorithm.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        private async Task EnsureEmptyMetadataBlockEntryAsync(long blocksetId, IMetahash emptyMeta, Options options, CancellationToken token)
+        {
+            await using var cmd = m_connection.CreateCommand()
+                .SetTransaction(m_rtr);
+
+            // If the blockset already has a block entry there is nothing to do.
+            var hasEntry = await cmd.SetCommandAndParameters(@"
+                SELECT COUNT(*)
+                FROM ""BlocksetEntry""
+                WHERE ""BlocksetID"" = @BlocksetId
+            ")
+                .SetParameterValue("@BlocksetId", blocksetId)
+                .ExecuteScalarInt64Async(0, token)
+                .ConfigureAwait(false) > 0;
+
+            if (hasEntry)
+                return;
+
+            // Only relink when this blockset actually represents the empty metadata. The block hash
+            // and the blockset full hash live in different hash spaces, so we match the blockset by
+            // its full hash (identifying the empty content) and locate the block by the block hash we
+            // compute from the known empty blob.
+            var isEmptyMetaBlockset = await cmd.SetCommandAndParameters(@"
+                SELECT COUNT(*)
+                FROM ""Blockset""
+                WHERE ""ID"" = @BlocksetId
+                    AND ""FullHash"" = @FullHash
+            ")
+                .SetParameterValue("@BlocksetId", blocksetId)
+                .SetParameterValue("@FullHash", emptyMeta.FileHash)
+                .ExecuteScalarInt64Async(0, token)
+                .ConfigureAwait(false) > 0;
+
+            if (!isEmptyMetaBlockset)
+                return;
+
+            string blockHash;
+            using (var blockhasher = HashFactory.CreateHasher(options.BlockHashAlgorithm))
+                blockHash = Convert.ToBase64String(blockhasher.ComputeHash(emptyMeta.Blob));
+            var blockSize = emptyMeta.Blob.Length;
+
+            // Find the existing empty-metadata block. If it is missing we cannot relink without
+            // fabricating a block (which would require remote access), so leave the blockset as-is.
+            var blockId = await cmd.SetCommandAndParameters(@"
+                SELECT ""ID""
+                FROM ""Block""
+                WHERE ""Hash"" = @Hash
+                    AND ""Size"" = @Size
+            ")
+                .SetParameterValue("@Hash", blockHash)
+                .SetParameterValue("@Size", blockSize)
+                .ExecuteScalarInt64Async(-1, token)
+                .ConfigureAwait(false);
+
+            if (blockId < 0)
+                return;
+
+            await cmd.SetCommandAndParameters(@"
+                INSERT INTO ""BlocksetEntry"" (""BlocksetID"", ""Index"", ""BlockID"")
+                VALUES (@BlocksetId, 0, @BlockId)
+            ")
+                .SetParameterValue("@BlocksetId", blocksetId)
+                .SetParameterValue("@BlockId", blockId)
+                .ExecuteNonQueryAsync(true, token)
+                .ConfigureAwait(false);
+
+            // Repair the recorded length so it matches the backing block.
+            await cmd.SetCommandAndParameters(@"
+                UPDATE ""Blockset""
+                SET ""Length"" = @Length
+                WHERE ""ID"" = @BlocksetId
+            ")
+                .SetParameterValue("@Length", blockSize)
+                .SetParameterValue("@BlocksetId", blocksetId)
+                .ExecuteNonQueryAsync(true, token)
+                .ConfigureAwait(false);
+
+            Logging.Log.WriteInformationMessage(LOGTAG, "RelinkedEmptyMetadataBlock",
+                "Reconnected the existing empty metadata block to blockset {0} while repairing zero-length metadata entries", blocksetId);
         }
     }
 
