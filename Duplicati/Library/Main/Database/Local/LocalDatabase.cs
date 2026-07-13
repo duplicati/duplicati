@@ -1106,7 +1106,14 @@ namespace Duplicati.Library.Main.Database.Local
                 FROM ""{blocksetidstable}""
             ";
 
-            // Create a temp table to associate metadata that is being deleted to a fileset
+            // Create a temp table to associate metadata that is being deleted to a fileset.
+            // Only metadata whose own blockset is on a deleted volume should be captured here.
+            // Files whose data blockset is being deleted are already handled by the
+            // blockset-based FilesetEntry/FileLookup deletion below — they do not need
+            // their metadata (which may be shared with other files) to be deleted too.
+            // Previously, an OR clause also captured metadata referenced by files whose
+            // data blockset was being deleted, which caused shared metadata to be
+            // incorrectly deleted, orphaning FilesetEntry records in other filesets.
             var metadataFilesetQuery = $@"
                 SELECT
                     ""Metadataset"".""ID"",
@@ -1117,18 +1124,14 @@ namespace Duplicati.Library.Main.Database.Local
                 INNER JOIN ""FilesetEntry""
                     ON ""FilesetEntry"".""FileID"" = ""FileLookup"".""ID""
                 WHERE ""Metadataset"".""BlocksetID"" IN ({bsIdsSubQuery})
-                OR ""Metadataset"".""ID"" IN (
-                    SELECT ""MetadataID""
-                    FROM ""FileLookup""
-                    WHERE ""BlocksetID"" IN ({bsIdsSubQuery})
-                )
             ";
 
             var metadataFilesetTable = $"DelMetadataFilesetIds-{temptransguid}";
             await deletecmd.ExecuteNonQueryAsync($@"
                 CREATE TEMP TABLE ""{metadataFilesetTable}"" (
-                    ""MetadataID"" INTEGER PRIMARY KEY,
-                    ""FilesetID"" INTEGER
+                    ""MetadataID"" INTEGER,
+                    ""FilesetID"" INTEGER,
+                    CONSTRAINT ""PK_{metadataFilesetTable}"" PRIMARY KEY (""MetadataID"", ""FilesetID"")
                 )
             ", token)
                 .ConfigureAwait(false);
