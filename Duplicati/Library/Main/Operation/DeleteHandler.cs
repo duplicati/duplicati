@@ -149,6 +149,7 @@ namespace Duplicati.Library.Main.Operation
                         versionsToDelete
                             .Select(x => x.Time)
                             .ToArray(),
+                        m_options,
                         m_result.TaskControl.ProgressToken
                     )
                     .ToArrayAsync(cancellationToken: m_result.TaskControl.ProgressToken)

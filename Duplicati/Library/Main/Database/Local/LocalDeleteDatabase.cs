@@ -28,6 +28,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 using Microsoft.Data.Sqlite;
 
 namespace Duplicati.Library.Main.Database.Local
@@ -118,12 +119,23 @@ namespace Duplicati.Library.Main.Database.Local
         /// Drops all entries related to operations listed in the table.
         /// </summary>
         /// <param name="toDelete">The fileset entries to delete.</param>
+        /// <param name="options">The options, used to identify the pinned empty metadata block.</param>
         /// <param name="token"> A cancellation token to cancel the operation.</param>
         /// <returns>An async enumerable of key-value pairs, where the key is the fileset name and the value is the size of the fileset.</returns>
-        public async IAsyncEnumerable<KeyValuePair<string, long>> DropFilesetsFromTableAsync(DateTime[] toDelete, [EnumeratorCancellation] CancellationToken token)
+        public async IAsyncEnumerable<KeyValuePair<string, long>> DropFilesetsFromTableAsync(DateTime[] toDelete, Options options, [EnumeratorCancellation] CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand(m_rtr);
             var deleted = 0;
+
+            // The empty ({}) metadata block is pinned so it is never dereferenced or evicted, even
+            // when no entry currently uses it. This keeps it available for database-only repairs of
+            // missing metadata, which cannot fetch it from the remote storage.
+            var emptyMeta = Utility.WrapMetadata(new Dictionary<string, string>(), options);
+            string emptyMetaBlockHash;
+            using (var blockhasher = HashFactory.CreateHasher(options.BlockHashAlgorithm))
+                emptyMetaBlockHash = Convert.ToBase64String(blockhasher.ComputeHash(emptyMeta.Blob));
+            var emptyMetaBlockSize = emptyMeta.Blob.Length;
+            var emptyMetaFullHash = emptyMeta.FileHash;
 
             await using (var tempTable = await TemporaryDbValueList.CreateAsync(this, toDelete.Select(Library.Utility.Utility.NormalizeDateTimeToEpochSeconds), token).ConfigureAwait(false))
                 deleted += await (
@@ -168,16 +180,27 @@ namespace Duplicati.Library.Main.Database.Local
                 ", token)
                 .ConfigureAwait(false);
 
-            await cmd.ExecuteNonQueryAsync(@"
+            // Keep the pinned empty metadataset even when no file references it, so its blockset and
+            // block are never dereferenced and remain available for database-only metadata repairs.
+            await cmd.SetCommandAndParameters(@"
                     DELETE FROM ""Metadataset""
                     WHERE ""ID"" NOT IN (
                         SELECT DISTINCT ""MetadataID""
                         FROM ""FileLookup""
                     )
-                ", token)
+                    AND ""BlocksetID"" NOT IN (
+                        SELECT ""ID""
+                        FROM ""Blockset""
+                        WHERE ""FullHash"" = @EmptyMetaFullHash
+                            AND ""Length"" = @EmptyMetaBlockSize
+                    )
+                ")
+                .SetParameterValue("@EmptyMetaFullHash", emptyMetaFullHash)
+                .SetParameterValue("@EmptyMetaBlockSize", emptyMetaBlockSize)
+                .ExecuteNonQueryAsync(true, token)
                 .ConfigureAwait(false);
 
-            await cmd.ExecuteNonQueryAsync(@"
+            await cmd.SetCommandAndParameters(@"
                     DELETE FROM ""Blockset""
                     WHERE ""ID"" NOT IN (
                         SELECT DISTINCT ""BlocksetID""
@@ -186,7 +209,14 @@ namespace Duplicati.Library.Main.Database.Local
                             SELECT DISTINCT ""BlocksetID""
                             FROM ""Metadataset""
                     )
-                ", token)
+                    AND NOT (
+                        ""FullHash"" = @EmptyMetaFullHash
+                        AND ""Length"" = @EmptyMetaBlockSize
+                    )
+                ")
+                .SetParameterValue("@EmptyMetaFullHash", emptyMetaFullHash)
+                .SetParameterValue("@EmptyMetaBlockSize", emptyMetaBlockSize)
+                .ExecuteNonQueryAsync(true, token)
                 .ConfigureAwait(false);
 
             await cmd.ExecuteNonQueryAsync(@"
@@ -208,7 +238,8 @@ namespace Duplicati.Library.Main.Database.Local
                 .ConfigureAwait(false);
 
             //We save the block info for the remote files, before we delete it
-            await cmd.ExecuteNonQueryAsync(@"
+            //The pinned empty metadata block is excluded so it is never marked deleted or evicted
+            await cmd.SetCommandAndParameters(@"
                     INSERT INTO ""DeletedBlock"" (
                         ""Hash"",
                         ""Size"",
@@ -229,10 +260,17 @@ namespace Duplicati.Library.Main.Database.Local
                                 ""BlocklistHash""
                             WHERE ""Block"".""Hash"" = ""BlocklistHash"".""Hash""
                     )
-                ", token)
+                    AND NOT (
+                        ""Hash"" = @EmptyMetaBlockHash
+                        AND ""Size"" = @EmptyMetaBlockSize
+                    )
+                ")
+                .SetParameterValue("@EmptyMetaBlockHash", emptyMetaBlockHash)
+                .SetParameterValue("@EmptyMetaBlockSize", emptyMetaBlockSize)
+                .ExecuteNonQueryAsync(true, token)
                 .ConfigureAwait(false);
 
-            await cmd.ExecuteNonQueryAsync(@"
+            await cmd.SetCommandAndParameters(@"
                     DELETE FROM ""Block""
                     WHERE ""ID"" NOT IN (
                         SELECT DISTINCT ""BlockID""
@@ -244,7 +282,14 @@ namespace Duplicati.Library.Main.Database.Local
                                 ""BlocklistHash""
                             WHERE ""Block"".""Hash"" = ""BlocklistHash"".""Hash""
                     )
-                ", token)
+                    AND NOT (
+                        ""Hash"" = @EmptyMetaBlockHash
+                        AND ""Size"" = @EmptyMetaBlockSize
+                    )
+                ")
+                .SetParameterValue("@EmptyMetaBlockHash", emptyMetaBlockHash)
+                .SetParameterValue("@EmptyMetaBlockSize", emptyMetaBlockSize)
+                .ExecuteNonQueryAsync(true, token)
                 .ConfigureAwait(false);
 
             //Find all remote filesets that are no longer required, and mark them as deleting

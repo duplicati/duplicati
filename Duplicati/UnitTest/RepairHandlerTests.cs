@@ -837,5 +837,70 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual("MetadataRepairFailed", ex.HelpID);
             }
         }
+
+        [Test]
+        [Category("RepairHandler")]
+        public async Task BackupSeedsAndPinsEmptyMetadataBlockAsync()
+        {
+            // The backup should always seed the empty ({}) metadata block, and deleting all versions
+            // plus compacting must not evict it, so it remains available for database-only repairs.
+            var options = new Dictionary<string, string>(this.TestOptions)
+            {
+                ["keep-versions"] = "1",
+                ["no-auto-compact"] = "false",
+                ["threshold"] = "0"
+            };
+            File.WriteAllText(Path.Combine(this.DATAFOLDER, "a.txt"), "a");
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+
+            var opts = new Options(options);
+            var emptyMeta = Duplicati.Library.Main.Utility.WrapMetadata(new Dictionary<string, string>(), opts);
+            string emptyBlockHash;
+            using (var blockhasher = HashFactory.CreateHasher(opts.BlockHashAlgorithm))
+                emptyBlockHash = Convert.ToBase64String(blockhasher.ComputeHash(emptyMeta.Blob));
+            var emptyBlockSize = emptyMeta.Blob.Length;
+
+            // The empty metadata block must be present right after the backup.
+            using (var con = await SQLiteLoader.LoadConnectionAsync(options["dbpath"]))
+            using (var cmd = con.CreateCommand())
+            {
+                var count = cmd.SetCommandAndParameters("SELECT COUNT(*) FROM Block WHERE Hash = @Hash AND Size = @Size")
+                    .SetParameterValue("@Hash", emptyBlockHash)
+                    .SetParameterValue("@Size", emptyBlockSize)
+                    .ExecuteScalarInt64(0);
+                Assert.Greater(count, 0, "The empty metadata block should be seeded by the backup");
+            }
+
+            // Make several more backups with changing content so old versions are pruned and the
+            // volumes holding the original data become compactable.
+            for (var i = 0; i < 3; i++)
+            {
+                File.WriteAllText(Path.Combine(this.DATAFOLDER, "a.txt"), $"data-{i}-{new string('x', 2048)}");
+                using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                    TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+            }
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                await c.CompactAsync();
+
+            // After pruning and compaction, the pinned empty metadata block must still exist and not
+            // be marked as deleted.
+            using (var con = await SQLiteLoader.LoadConnectionAsync(options["dbpath"]))
+            using (var cmd = con.CreateCommand())
+            {
+                var count = cmd.SetCommandAndParameters("SELECT COUNT(*) FROM Block WHERE Hash = @Hash AND Size = @Size")
+                    .SetParameterValue("@Hash", emptyBlockHash)
+                    .SetParameterValue("@Size", emptyBlockSize)
+                    .ExecuteScalarInt64(0);
+                Assert.Greater(count, 0, "The empty metadata block should be pinned and survive compaction");
+
+                var deleted = cmd.SetCommandAndParameters("SELECT COUNT(*) FROM DeletedBlock WHERE Hash = @Hash AND Size = @Size")
+                    .SetParameterValue("@Hash", emptyBlockHash)
+                    .SetParameterValue("@Size", emptyBlockSize)
+                    .ExecuteScalarInt64(0);
+                Assert.AreEqual(0, deleted, "The pinned empty metadata block should never be marked deleted");
+            }
+        }
     }
 }
