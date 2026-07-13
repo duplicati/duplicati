@@ -58,3 +58,32 @@ INSERT INTO `RemoveFile` (`FileKey`, `Component_`, `FileName`, `DirProperty`, `I
 -- ---------------------------------------------------------------------------
 INSERT INTO `InstallExecuteSequence` (`Action`, `Condition`, `Sequence`) VALUES ('ResolveSource', 'INSTALL_PRELOAD="true" AND NOT Installed', 850)
 INSERT INTO `InstallExecuteSequence` (`Action`, `Condition`, `Sequence`) VALUES ('MoveFiles', 'INSTALL_PRELOAD="true"', 3700)
+
+-- ---------------------------------------------------------------------------
+-- MsiServiceConfig: register the Agent service as Automatic (Delayed Start).
+-- Replaces the WiX <ServiceConfig DelayedAutoStart="yes"/> element (a child of
+-- <ServiceInstall>) that wixl 0.106 cannot parse. On Windows the real WiX
+-- toolchain emits this table natively from the WXS <ServiceConfig> element.
+--
+--   Name        - the service name (matches ServiceInstall/@Name in the WXS).
+--   Event       - 7 = msidbServiceConfigEventInstall (1) | ...Reinstall (2) |
+--                 ...Uninstall (4); apply the config on install and reinstall
+--                 (the uninstall bit is harmless as there is nothing to undo).
+--   ConfigType  - 3 = SERVICE_CONFIG_DELAYED_AUTO_START_INFO.
+--   Argument    - '1' enables delayed auto-start (only affects auto services).
+--   Component_  - keyed to the always-installed service component so the
+--                 config is applied whenever the service is installed.
+--
+-- The standard MsiConfigureServices action that processes this table is
+-- scheduled below.
+-- ---------------------------------------------------------------------------
+CREATE TABLE `MsiServiceConfig` (`MsiServiceConfig` CHAR(72) NOT NULL, `Name` CHAR(255) NOT NULL, `Event` INT NOT NULL, `ConfigType` INT NOT NULL, `Argument` CHAR(255), `Component_` CHAR(72) NOT NULL PRIMARY KEY `MsiServiceConfig`)
+INSERT INTO `MsiServiceConfig` (`MsiServiceConfig`, `Name`, `Event`, `ConfigType`, `Argument`, `Component_`) VALUES ('DelayStartAgentSvc', 'Duplicati.Agent', 7, 3, '1', 'DuplicatiAgentServiceComponent')
+
+-- ---------------------------------------------------------------------------
+-- InstallExecuteSequence: schedule the standard MsiConfigureServices action so
+-- the MsiServiceConfig row above is processed. wixl does not auto-insert it
+-- because the table is empty at wixl build time. 5850 is just after the
+-- standard InstallServices (5800), so the service exists when it is configured.
+-- ---------------------------------------------------------------------------
+INSERT INTO `InstallExecuteSequence` (`Action`, `Condition`, `Sequence`) VALUES ('MsiConfigureServices', '', 5850)
