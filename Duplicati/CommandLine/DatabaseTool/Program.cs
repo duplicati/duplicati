@@ -21,6 +21,7 @@
 using System.CommandLine;
 using System.CommandLine.Builder;
 using System.CommandLine.Parsing;
+using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 
@@ -49,6 +50,13 @@ public static class Program
                 Commands.Verify.Create(),
                 Commands.Cleanup.Create(),
             };
+
+        // Registered so the option is accepted and shown in help; the value is read directly
+        // from the process arguments/environment by DataFolderManager/Util.
+        rootCmd.AddGlobalOption(new Option<bool>(
+            $"--{DataFolderManager.ALLOW_INSECURE_DATAFOLDER_OPTION}",
+            description: "Allow the data folder to have insecure permissions instead of rejecting it",
+            getDefaultValue: () => false));
 
         return new CommandLineBuilder(rootCmd)
             .UseDefaults()

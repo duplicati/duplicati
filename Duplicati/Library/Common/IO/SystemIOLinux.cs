@@ -467,6 +467,74 @@ namespace Duplicati.Library.Common.IO
             );
         }
 
+        /// <summary>
+        /// Checks whether the directory has the read-write only permission for the current user,
+        /// matching the permissions applied by <see cref="DirectorySetPermissionUserRWOnly"/>.
+        /// </summary>
+        /// <param name="path">The directory to check permissions on.</param>
+        /// <param name="detail">A human-readable description of why the check failed, if it did; otherwise <see cref="string.Empty"/>.</param>
+        /// <returns><c>true</c> if the directory has the expected permissions; otherwise <c>false</c>.</returns>
+        public bool DirectoryHasPermissionUserRWOnly(string path, out string detail)
+            => HasPermissionUserRWOnly(path, Convert.ToInt32("700", 8), out detail);
+
+        /// <summary>
+        /// The root user id, which is always considered a trusted owner.
+        /// </summary>
+        private const long RootUid = 0;
+
+        /// <summary>
+        /// Checks whether the path has the expected user read-write only permission.
+        /// The owner may be either the current user or root: a root-owned, mode 0700
+        /// directory is a common and secure setup (for example a system service reading a
+        /// configuration folder provisioned by an installer running as root), so it must not
+        /// be rejected. The security property that matters is that no group or other access
+        /// bits are set; the exact owning uid/gid beyond "current user or root" is not required.
+        /// </summary>
+        /// <param name="path">The path to check permissions on.</param>
+        /// <param name="expectedMode">The expected octal mode (e.g. 0700 for directories).</param>
+        /// <param name="detail">A human-readable description of why the check failed, if it did; otherwise <see cref="string.Empty"/>.</param>
+        /// <returns><c>true</c> if the expected permissions are set; otherwise <c>false</c>.</returns>
+        private static bool HasPermissionUserRWOnly(string path, int expectedMode, out string detail)
+        {
+            detail = string.Empty;
+            try
+            {
+                var info = PosixFile.GetUserGroupAndPermissions(path);
+                var expectedModeStr = Convert.ToString(expectedMode, 8);
+
+                if ((info.Permissions & expectedMode) != expectedMode)
+                {
+                    detail = $"permissions are {Convert.ToString((long)info.Permissions, 8)} but expected {expectedModeStr}";
+                    return false;
+                }
+
+                // No group/other access bits should be set
+                var groupAndOther = Convert.ToInt32("077", 8);
+                if ((info.Permissions & groupAndOther) != 0)
+                {
+                    detail = $"permissions allow group or other access ({Convert.ToString((long)info.Permissions, 8)})";
+                    return false;
+                }
+
+                // The owner must be the current user or root. A root-owned folder is trusted
+                // because only root (a fully privileged principal) could have created it, and
+                // an unprivileged attacker cannot own a folder as root.
+                var uid = PInvoke.getuid();
+                if (info.UID != uid && info.UID != RootUid)
+                {
+                    detail = $"owner is uid {info.UID} but expected the current user (uid {uid}) or root";
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                detail = $"failed to read permissions: {ex.Message}";
+                return false;
+            }
+
+            return true;
+        }
+
         /// <inheritdoc />
         public bool SupportsAlternateDataStreams => false;
 

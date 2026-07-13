@@ -74,6 +74,7 @@ public static class Program
     /// <param name="SecretProvider">The secret provider to use</param>
     /// <param name="SecretProviderCache">The secret provider cache level</param>
     /// <param name="SecretProviderPattern">The secret provider pattern</param>
+    /// <param name="AllowInsecureDatafolder">Allow the data folder to be in a shared location without restricted permissions</param>
     private sealed record CommandLineArguments(
         string AgentRegistrationUrl,
         FileInfo AgentSettingsFile,
@@ -95,7 +96,8 @@ public static class Program
         bool KeepWebservicePassword,
         string? SecretProvider,
         SecretProviderHelper.CachingLevel SecretProviderCache,
-        string SecretProviderPattern
+        string SecretProviderPattern,
+        bool AllowInsecureDatafolder
     );
 
     private static string GetDefaultRegistrationUrl()
@@ -139,6 +141,7 @@ public static class Program
             new Option<string>("--secret-provider-pattern", description: "The secret provider pattern", getDefaultValue: () => SecretProviderHelper.DEFAULT_PATTERN),
             new Option<bool>($"--{DataFolderManager.PORTABLE_MODE_OPTION}", description: "Use portable mode for locating the database and storing configuration", getDefaultValue: () => DataFolderManager.PORTABLE_MODE),
             new Option<DirectoryInfo?>($"--{DataFolderManager.SERVER_DATAFOLDER_OPTION}", description: "The datafolder to use for locating the database and storing configuration", getDefaultValue: () => new DirectoryInfo(DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ProbeOnly))),
+            new Option<bool>($"--{DataFolderManager.ALLOW_INSECURE_DATAFOLDER_OPTION}", description: "Allow the data folder to be in a shared location (e.g. C:\\ProgramData) without restricted permissions", getDefaultValue: () => false),
         };
         runcmd.Handler = CommandHandler.Create<CommandLineArguments>(RunAgentAsync);
 
@@ -232,7 +235,8 @@ public static class Program
             KeepWebservicePassword: false,
             SecretProvider: secretProvider,
             SecretProviderCache: SecretProviderHelper.CachingLevel.None,
-            SecretProviderPattern: secretProviderPattern
+            SecretProviderPattern: secretProviderPattern,
+            AllowInsecureDatafolder: false
         ));
 
     /// <summary>
@@ -572,7 +576,8 @@ public static class Program
             EncodeOption("--disable-db-encryption", agentConfig.DisableDbEncryption.ToString()),
             EncodeOption("--disable-default-secret-provider", agentConfig.DisableDefaultSecretProvider.ToString()),
             EncodeOption("--settings-encryption-key", settingsEncryptionKey),
-            EncodeOption("--webservice-disable-api-extensions", string.Join(",", disabledExtensions))
+            EncodeOption("--webservice-disable-api-extensions", string.Join(",", disabledExtensions)),
+            EncodeOption($"--{DataFolderManager.ALLOW_INSECURE_DATAFOLDER_OPTION}", agentConfig.AllowInsecureDatafolder.ToString())
             }
             .WhereNotNullOrWhiteSpace()
             .ToArray();

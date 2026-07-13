@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Duplicati.Library.Logging;
 
 #nullable enable
@@ -36,6 +37,84 @@ namespace Duplicati.Library.Common.IO
         private static readonly string LOGTAG = Log.LogTagFromType(typeof(Util));
 
         /// <summary>
+        /// The command-line option (without the leading <c>--</c>) that allows using an
+        /// insecure data folder without restricting its permissions.
+        /// </summary>
+        public const string AllowInsecureDatafolderOption = "allow-insecure-datafolder";
+
+        /// <summary>
+        /// The environment variable that, when set to a truthy value, allows using an insecure
+        /// data folder. This is equivalent to passing <c>--allow-insecure-datafolder</c> on the
+        /// command line.
+        /// </summary>
+        public const string AllowInsecureDatafolderEnvVar = "DUPLICATI__ALLOW_INSECURE_DATAFOLDER";
+
+        /// <summary>
+        /// Returns <c>true</c> if the user has opted in to using an insecure data folder, either
+        /// via the <c>--allow-insecure-datafolder</c> command-line argument or the
+        /// <c>DUPLICATI__ALLOW_INSECURE_DATAFOLDER</c> environment variable.
+        ///
+        /// This is read directly from the process command line and environment so it can be
+        /// consulted from low-level components (such as the SQLite loader) without threading the
+        /// value through every call. When the option is present without a value it is treated as
+        /// enabled; values <c>false</c>, <c>0</c>, <c>no</c> and <c>off</c> disable it.
+        /// </summary>
+        /// <returns><c>true</c> if the insecure data folder opt-in is set; otherwise <c>false</c>.</returns>
+        public static bool AllowInsecureDataFolder()
+        {
+            // Command-line argument takes precedence over the environment variable.
+            var opt = $"--{AllowInsecureDatafolderOption}";
+            var args = Environment.GetCommandLineArgs().Skip(1).ToArray();
+            var match = args
+                .Select((token, index) => new { token, index })
+                .LastOrDefault(x =>
+                    string.Equals(x.token, opt, StringComparison.OrdinalIgnoreCase)
+                    || x.token.StartsWith(opt + "=", StringComparison.OrdinalIgnoreCase));
+
+            if (match != null)
+            {
+                // Found in the form --allow-insecure-datafolder=value
+                if (match.token.StartsWith(opt + "=", StringComparison.OrdinalIgnoreCase))
+                    return ParseBool(match.token.Substring(opt.Length + 1).Trim('"'));
+
+                // Found in the form --allow-insecure-datafolder value
+                if (match.index + 1 < args.Length)
+                {
+                    var value = args[match.index + 1];
+                    if (!value.StartsWith("--"))
+                        return ParseBool(value);
+                }
+
+                // Found as a bare flag with no value
+                return true;
+            }
+
+            // Fall back to the environment variable.
+            var envValue = Environment.GetEnvironmentVariable(AllowInsecureDatafolderEnvVar);
+            if (envValue != null)
+                return ParseBool(envValue);
+
+            return false;
+        }
+
+        /// <summary>
+        /// Parses a truthy string value. An empty or whitespace value is treated as enabled
+        /// (the option was present); <c>false</c>, <c>0</c>, <c>no</c> and <c>off</c> disable it.
+        /// </summary>
+        /// <param name="value">The value to parse.</param>
+        /// <returns><c>true</c> if the value is truthy; otherwise <c>false</c>.</returns>
+        private static bool ParseBool(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return true;
+
+            return !value.Equals("false", StringComparison.OrdinalIgnoreCase)
+                   && !value.Equals("0", StringComparison.OrdinalIgnoreCase)
+                   && !value.Equals("no", StringComparison.OrdinalIgnoreCase)
+                   && !value.Equals("off", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
         /// A cached instance of the directory separator as a string
         /// </summary>
         public static readonly string DirectorySeparatorString = Path.DirectorySeparatorChar.ToString();
@@ -44,11 +123,6 @@ namespace Duplicati.Library.Common.IO
         /// A cached instance of the alternate directory separator as a string
         /// </summary>
         public static readonly string AltDirectorySeparatorString = Path.AltDirectorySeparatorChar.ToString();
-
-        /// <summary>
-        /// Filename of a marker file that can be put inside the data folder to prevent Duplicati from fixing lax permissions
-        /// </summary>
-        public const string InsecurePermissionsMarkerFile = "insecure-permissions.txt";
 
         /// <summary>
         /// Appends the appropriate directory separator to paths, depending on OS.

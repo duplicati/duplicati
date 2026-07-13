@@ -24,7 +24,6 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
@@ -285,6 +284,10 @@ namespace Duplicati.Library.SQLiteHelper
         /// <returns>A task that completes when the file is opened.</returns>
         private static async Task OpenSQLiteFileAsync(Microsoft.Data.Sqlite.SqliteConnection con, string path)
         {
+            // Capture whether the file already existed BEFORE opening (which creates it),
+            // so we can distinguish a database we create from a pre-existing one.
+            var fileExistedBefore = System.IO.File.Exists(path);
+
             con.ConnectionString = $"Data Source={path};Pooling=false";
             await con.OpenAsync().ConfigureAwait(false);
 
@@ -294,10 +297,18 @@ namespace Duplicati.Library.SQLiteHelper
                 await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
             }
 
-            // Make the file only accessible by the current user, unless opting out
-            if (!SystemIO.IO_OS.FileExists(SystemIO.IO_OS.PathCombine(SystemIO.IO_OS.PathGetDirectoryName(path), Util.InsecurePermissionsMarkerFile)))
-                try { SystemIO.IO_OS.FileSetPermissionUserRWOnly(path); }
-                catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "SQLiteFilePermissionError", ex, "Failed to set permissions on SQLite file '{0}'", path); }
+            // A database file we create is always locked down. For a pre-existing file we skip
+            // the lockdown when the operator has opted in to an insecure data folder, mirroring
+            // the data-folder behavior (a deliberately shared folder must not have its contents
+            // forced closed). On filesystems that do not support restrictive permissions
+            // (e.g. FAT32) this throws and is logged as a warning rather than failing. The
+            // containing data folder is separately verified and locked down (see
+            // DataFolderManager), so this is defense-in-depth on the file itself.
+            if (fileExistedBefore && Util.AllowInsecureDataFolder())
+                return;
+
+            try { SystemIO.IO_OS.FileSetPermissionUserRWOnly(path); }
+            catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "SQLiteFilePermissionError", ex, "Failed to set permissions on SQLite file '{0}'", path); }            
         }
 
         /// <summary>

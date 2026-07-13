@@ -51,6 +51,10 @@ public class SettingsBinder : BinderBase<Settings>
     /// </summary>
     public static readonly Option<bool> portableModeOption = new Option<bool>($"--{DataFolderManager.PORTABLE_MODE_OPTION}", description: "Use portable mode for locating the database and storing configuration", getDefaultValue: () => DataFolderManager.PORTABLE_MODE);
     /// <summary>
+    /// The allow-insecure-datafolder option.
+    /// </summary>
+    public static readonly Option<bool> allowInsecureDatafolderOption = new Option<bool>($"--{DataFolderManager.ALLOW_INSECURE_DATAFOLDER_OPTION}", description: "Allow the data folder to have insecure permissions instead of rejecting it", getDefaultValue: () => false);
+    /// <summary>
     /// The settings file option.
     /// </summary>
     public static readonly Option<FileInfo?> settingsFileOption = new Option<FileInfo?>("--settings-file", description: "The settings file to use", getDefaultValue: () => null);
@@ -105,6 +109,7 @@ public class SettingsBinder : BinderBase<Settings>
         rootCommand.AddGlobalOption(hostUrlOption);
         rootCommand.AddGlobalOption(serverDatafolderOption);
         rootCommand.AddGlobalOption(portableModeOption);
+        rootCommand.AddGlobalOption(allowInsecureDatafolderOption);
         rootCommand.AddGlobalOption(settingsFileOption);
         rootCommand.AddGlobalOption(insecureOption);
         rootCommand.AddGlobalOption(settingsEncryptionKeyOption);
