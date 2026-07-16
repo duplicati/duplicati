@@ -156,6 +156,34 @@ namespace Duplicati.Library.Utility
             m_queryParams = null;
             this.OriginalUri = url;
 
+            // A file:// URL whose remainder is a Windows drive path (e.g. file://c:\@folder\)
+            // must not go through the generic parser: an '@' or ':' in the path would be
+            // misread as user:password@host. Treat it as a local path directly. This
+            // generalizes the file://c:\test / file:///C:\test handling below so it also
+            // works when the path contains '@' or other userinfo-confusing characters.
+            // Decode first so the encoded forms (e.g. %40 for @, %5C for \) that ToString()
+            // produces are recognized as the same Windows path and round-trip cleanly.
+            if (url.StartsWith("file://", StringComparison.OrdinalIgnoreCase))
+            {
+                var candidate = UrlDecode(url.Substring("file://".Length));
+                // also accept the correctly-encoded file:///C:\ triple-slash form
+                if (candidate.StartsWith("/", StringComparison.Ordinal) && WINDOWS_PATH.IsMatch(candidate))
+                    candidate = candidate.Substring(1);
+
+                if (WINDOWS_PATH.IsMatch(candidate) && candidate.IndexOfAny(System.IO.Path.GetInvalidPathChars()) < 0)
+                {
+                    this.Scheme = "file";
+                    this.Host = null;
+                    this.Path = System.IO.Path.GetFullPath(candidate);
+                    this.Port = -1;
+                    this.Query = null;
+                    this.Username = null;
+                    this.Password = null;
+                    return;
+                }
+                // otherwise fall through to the generic parser (unchanged behavior)
+            }
+
             var m = URL_PARSER.Match(url);
             if (!m.Success || m.Length != url.Length)
             {

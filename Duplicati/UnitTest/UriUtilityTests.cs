@@ -159,5 +159,38 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(a.Path, b.Path);
             }
         }
+
+        [Test]
+        [Category("UriUtility")]
+        public static void TestUriParseWindowsPathWithAtSign()
+        {
+            // Regression for #2681: an '@' in a local (file://) Windows drive path must
+            // not be parsed as user:password@host.
+            if (!System.OperatingSystem.IsWindows())
+                return;
+
+            var a = new Library.Utility.Uri("file://c:\\@folder\\");
+            Assert.AreEqual("file", a.Scheme);
+            Assert.IsNull(a.Host, "Host should be null for a local path");
+            Assert.IsNull(a.Username, "Username should be null");
+            Assert.IsNull(a.Password, "Password should be null");
+            Assert.IsTrue(a.Path.Contains("@folder"), "Path should keep the @ folder name");
+            Assert.IsTrue(System.IO.Path.IsPathRooted(a.Path), "Path should be a rooted local path");
+
+            // The file:// form must parse the same as the raw path form
+            var b = new Library.Utility.Uri("c:\\@folder\\");
+            Assert.AreEqual(b.Path, a.Path);
+            Assert.AreEqual(b.ToString(), a.ToString());
+
+            // Re-parsing ToString() round-trips to the same path (no corruption)
+            var roundtrip = new Library.Utility.Uri(a.ToString());
+            Assert.AreEqual(a.Path, roundtrip.Path);
+            Assert.IsNull(roundtrip.Host);
+            Assert.IsNull(roundtrip.Username);
+
+            // The url-encoded form (%40) resolves to the same path
+            var encoded = new Library.Utility.Uri("file://c:\\%40folder\\");
+            Assert.AreEqual(a.Path, encoded.Path);
+        }
     }
 }
