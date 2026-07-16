@@ -526,6 +526,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("threshold", CommandLineArgument.ArgumentType.Integer, Strings.Options.ThresholdShort, Strings.Options.ThresholdLong, DEFAULT_THRESHOLD.ToString()),
             new CommandLineArgument("index-file-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.IndexfilepolicyShort, Strings.Options.IndexfilepolicyLong, IndexFileStrategy.Full.ToString(), null, Enum.GetNames(typeof(IndexFileStrategy))),
             new CommandLineArgument("no-backend-verification", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NobackendverificationShort, Strings.Options.NobackendverificationLong, "false"),
+            new CommandLineArgument("case-insensitive-remote", CommandLineArgument.ArgumentType.Boolean, Strings.Options.CaseinsensitiveremoteShort, Strings.Options.CaseinsensitiveremoteLong, "false"),
             new CommandLineArgument("backup-test-samples", CommandLineArgument.ArgumentType.Integer, Strings.Options.BackendtestsamplesShort, Strings.Options.BackendtestsamplesLong("no-backend-verification"), DEFAULT_BACKUP_TEST_SAMPLES.ToString()),
             new CommandLineArgument("backup-test-percentage", CommandLineArgument.ArgumentType.Decimal, Strings.Options.BackendtestpercentageShort, Strings.Options.BackendtestpercentageLong, "0.1"),
             new CommandLineArgument("full-remote-verification", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.FullremoteverificationShort, Strings.Options.FullremoteverificationLong("no-backend-verification"), Enum.GetName(typeof(RemoteTestStrategy), RemoteTestStrategy.False), null, Enum.GetNames(typeof(RemoteTestStrategy))),
@@ -1441,6 +1442,11 @@ namespace Duplicati.Library.Main
         /// Gets a flag indicating if the check for files on the remote storage should be omitted
         /// </summary>
         public bool NoBackendverification => GetBool("no-backend-verification");
+
+        /// <summary>
+        /// Gets a value indicating whether remote filenames should be matched case-insensitively.
+        /// </summary>
+        public bool CaseInsensitiveRemote => GetBool("case-insensitive-remote");
 
         /// <summary>
         /// Gets the percentage of samples to test during a backup operation
