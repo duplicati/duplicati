@@ -1870,7 +1870,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Gets whether to preallocate files during restore
         /// </summary>
-        public bool RestorePreAllocate => GetBool("restore-pre-allocate");
+        public bool RestorePreAllocate => GetBool("restore-preallocate-size");
 
         /// <summary>
         /// Gets whether to handle MacOS Photo Libraries specially
