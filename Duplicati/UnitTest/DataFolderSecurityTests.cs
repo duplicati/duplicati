@@ -21,12 +21,15 @@
 
 using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
+
+#nullable enable
 
 namespace Duplicati.UnitTest
 {
@@ -93,6 +96,37 @@ namespace Duplicati.UnitTest
         }
 
         /// <summary>
+        /// Returns the effective user id of the current process on POSIX, or 0 on Windows
+        /// (where the concept does not apply; callers gate on <see cref="OperatingSystem.IsWindows"/>).
+        /// </summary>
+        [SupportedOSPlatform("linux")]
+        [SupportedOSPlatform("macos")]
+        [DllImport("libc")]
+        private static extern uint geteuid();
+
+        /// <summary>
+        /// Returns <c>true</c> if the current process is privileged with respect to the
+        /// for-service lockdown: root on POSIX, or a member of the Administrators group on Windows.
+        /// On POSIX the for-service set step chowns to root and therefore requires root, so tests
+        /// that exercise the set step skip when this returns false on POSIX. On Windows the
+        /// Administrators principal is one of the trusted SIDs the for-service lockdown grants
+        /// access to, so a member of Administrators is effectively the service principal.
+        /// </summary>
+        private static bool IsCurrentUserPrivilegedForService()
+        {
+            if (OperatingSystem.IsWindows())
+            {
+                using var identity = System.Security.Principal.WindowsIdentity.GetCurrent();
+                return new System.Security.Principal.WindowsPrincipal(identity)
+                    .IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
+            }
+
+            return OperatingSystem.IsLinux() || OperatingSystem.IsMacOS()
+                ? geteuid() == 0
+                : false;
+        }
+
+        /// <summary>
         /// Creates a child directory inside the temp dir and returns its path.
         /// </summary>
         private string NewChild(string name)
@@ -105,10 +139,31 @@ namespace Duplicati.UnitTest
             var dir = NewChild("roundtrip");
             Directory.CreateDirectory(dir);
 
-            SystemIO.IO_OS.DirectorySetPermissionUserRWOnly(dir);
+            SystemIO.IO_OS.DirectorySetPermissionUserRWOnly(dir, false);
 
-            Assert.IsTrue(SystemIO.IO_OS.DirectoryHasPermissionUserRWOnly(dir, out var detail),
+            Assert.IsTrue(SystemIO.IO_OS.DirectoryHasPermissionUserRWOnly(dir, false, out var detail),
                 $"A locked-down folder should pass the canonical permission check, but: {detail}");
+        }
+
+        [Test]
+        [Category("DataFolderSecurity")]
+        public void LockDownThenVerifyRoundTrips_ForService()
+        {
+            var dir = NewChild("roundtrip-service");
+            Directory.CreateDirectory(dir);
+
+            // The "for service" mode excludes the current user as a trusted principal and
+            // locks the folder down to root (POSIX) or SYSTEM/Administrators (Windows).
+            // On POSIX this requires running as root to be able to chown to root, so skip
+            // the set step there when not root; verification of an already-root-owned
+            // folder is covered by the canonical check on the service path elsewhere.
+            if (!OperatingSystem.IsWindows() && !IsCurrentUserPrivilegedForService())
+                Assert.Ignore("The for-service lockdown on POSIX requires running as root");
+
+            SystemIO.IO_OS.DirectorySetPermissionUserRWOnly(dir, true);
+
+            Assert.IsTrue(SystemIO.IO_OS.DirectoryHasPermissionUserRWOnly(dir, true, out var detail),
+                $"A folder locked down for service should pass the canonical permission check, but: {detail}");
         }
 
         [Test]
@@ -123,8 +178,52 @@ namespace Duplicati.UnitTest
 
             // On Windows, a freshly created dir inherits its parent ACL (not protected) and so is
             // not canonical; on POSIX we made it 0777 above. Either way it must fail.
-            Assert.IsFalse(SystemIO.IO_OS.DirectoryHasPermissionUserRWOnly(dir, out _),
+            Assert.IsFalse(SystemIO.IO_OS.DirectoryHasPermissionUserRWOnly(dir, false, out _),
                 "A non-canonical folder must not pass the canonical permission check");
+        }
+
+        [Test]
+        [Category("DataFolderSecurity")]
+        public void ForServiceLockdown_AcceptsForServiceCheck()
+        {
+            var dir = NewChild("service-accepted");
+            Directory.CreateDirectory(dir);
+
+            if (!OperatingSystem.IsWindows() && !IsCurrentUserPrivilegedForService())
+                Assert.Ignore("The for-service lockdown on POSIX requires running as root");
+
+            SystemIO.IO_OS.DirectorySetPermissionUserRWOnly(dir, true);
+
+            // The folder locked down for service must pass the for-service verification.
+            Assert.IsTrue(SystemIO.IO_OS.DirectoryHasPermissionUserRWOnly(dir, true, out var detail),
+                $"A folder locked down for service should pass the for-service check, but: {detail}");
+        }
+
+        [Test]
+        [Category("DataFolderSecurity")]
+        public void ForServiceLockdown_RejectsNonServiceCheck()
+        {
+            var dir = NewChild("service-rejects-non-service");
+            Directory.CreateDirectory(dir);
+
+            if (!OperatingSystem.IsWindows() && !IsCurrentUserPrivilegedForService())
+                Assert.Ignore("The for-service lockdown on POSIX requires running as root");
+
+            SystemIO.IO_OS.DirectorySetPermissionUserRWOnly(dir, true);
+
+            // A folder locked down for service excludes the current user as a trusted principal.
+            // The non-service check (which requires the current user to be trusted) must reject it,
+            // unless the current user happens to be an Administrator (Windows) or root (POSIX),
+            // in which case the current user is indistinguishable from the service principal and
+            // the non-service check would also accept it. Assert accordingly.
+            var isPrivileged = IsCurrentUserPrivilegedForService();
+            var result = SystemIO.IO_OS.DirectoryHasPermissionUserRWOnly(dir, false, out _);
+            if (isPrivileged)
+                Assert.IsTrue(result,
+                    "When the current user is the service principal, both checks should accept the folder");
+            else
+                Assert.IsFalse(result,
+                    "A folder locked down for service must not pass the non-service check");
         }
 
         [Test]
@@ -137,7 +236,7 @@ namespace Duplicati.UnitTest
             DataFolderManager.PrepareSecureDataFolder(dir, createIfMissing: true);
 
             Assert.IsTrue(Directory.Exists(dir), "The folder should have been created");
-            Assert.IsTrue(SystemIO.IO_OS.DirectoryHasPermissionUserRWOnly(dir, out var detail),
+            Assert.IsTrue(SystemIO.IO_OS.DirectoryHasPermissionUserRWOnly(dir, false, out var detail),
                 $"A created folder should be locked down, but: {detail}");
         }
 
@@ -158,7 +257,7 @@ namespace Duplicati.UnitTest
         {
             var dir = NewChild("existing-ok");
             Directory.CreateDirectory(dir);
-            SystemIO.IO_OS.DirectorySetPermissionUserRWOnly(dir);
+            SystemIO.IO_OS.DirectorySetPermissionUserRWOnly(dir, false);
 
             // A pre-existing, already-canonical folder must be accepted without modification or error.
             Assert.DoesNotThrow(() => DataFolderManager.PrepareSecureDataFolder(dir, createIfMissing: true));
@@ -174,7 +273,7 @@ namespace Duplicati.UnitTest
                 MakeInsecure(dir);
 
             // Sanity: the folder must actually be non-canonical for this test to be meaningful.
-            if (SystemIO.IO_OS.DirectoryHasPermissionUserRWOnly(dir, out _))
+            if (SystemIO.IO_OS.DirectoryHasPermissionUserRWOnly(dir, false, out _))
                 Assert.Ignore("Could not produce a non-canonical folder on this platform/filesystem");
 
             var ex = Assert.Throws<UserInformationException>(
@@ -192,7 +291,7 @@ namespace Duplicati.UnitTest
             if (!OperatingSystem.IsWindows())
                 MakeInsecure(dir);
 
-            if (SystemIO.IO_OS.DirectoryHasPermissionUserRWOnly(dir, out _))
+            if (SystemIO.IO_OS.DirectoryHasPermissionUserRWOnly(dir, false, out _))
                 Assert.Ignore("Could not produce a non-canonical folder on this platform/filesystem");
 
             Environment.SetEnvironmentVariable(Util.AllowInsecureDatafolderEnvVar, "true");
@@ -210,7 +309,7 @@ namespace Duplicati.UnitTest
             if (!OperatingSystem.IsWindows())
                 MakeInsecure(dir);
 
-            if (SystemIO.IO_OS.DirectoryHasPermissionUserRWOnly(dir, out _))
+            if (SystemIO.IO_OS.DirectoryHasPermissionUserRWOnly(dir, false, out _))
                 Assert.Ignore("Could not produce a non-canonical folder on this platform/filesystem");
 
             var ex = Assert.Throws<UserInformationException>(
@@ -239,7 +338,7 @@ namespace Duplicati.UnitTest
         {
             var dir = NewChild("readonly-ok");
             Directory.CreateDirectory(dir);
-            SystemIO.IO_OS.DirectorySetPermissionUserRWOnly(dir);
+            SystemIO.IO_OS.DirectorySetPermissionUserRWOnly(dir, false);
 
             Assert.DoesNotThrow(() => DataFolderManager.VerifyDataFolderSecurityReadOnly(dir));
         }

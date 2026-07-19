@@ -429,10 +429,10 @@ namespace Duplicati.WindowsService
 
                     try
                     {
-                        SystemIO.IO_OS.DirectorySetPermissionUserRWOnly(dataFolder);
+                        SystemIO.IO_OS.DirectorySetPermissionUserRWOnly(dataFolder, false);
 
                         // Verify the permissions were actually set correctly
-                        if (SystemIO.IO_OS.DirectoryHasPermissionUserRWOnly(dataFolder, out var detail))
+                        if (SystemIO.IO_OS.DirectoryHasPermissionUserRWOnly(dataFolder, false, out var detail))
                             m_eventLog.WriteEntry("Data folder permissions restricted to SYSTEM and Administrators only.", System.Diagnostics.EventLogEntryType.Information);
                         else
                             m_eventLog.WriteEntry($"Data folder permissions could not be verified after applying: {detail}", System.Diagnostics.EventLogEntryType.Warning);

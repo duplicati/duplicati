@@ -88,19 +88,21 @@ namespace Duplicati.Library.Common.IO
         /// <param name="path">The file to set permissions on.</param>
         void FileSetPermissionUserRWOnly(string path);
         /// <summary>
-        /// Sets the permission to read-write only for the current user.
+        /// Sets the permission to read-write only for the desired user.
         /// </summary>
         /// <param name="path">The directory to set permissions on.</param>
-        void DirectorySetPermissionUserRWOnly(string path);
+        /// <param name="excludeCurrentUser">Do not accept the current user as part of the security check</param>
+        void DirectorySetPermissionUserRWOnly(string path, bool excludeCurrentUser);
 
         /// <summary>
-        /// Checks whether the directory has the read-write only permission for the current user,
+        /// Checks whether the directory has the correct read-write only permissions,
         /// i.e. the same permissions that <see cref="DirectorySetPermissionUserRWOnly"/> would apply.
         /// </summary>
         /// <param name="path">The directory to check permissions on.</param>
+        /// <param name="excludeCurrentUser">Do not accept the current user as part of the security check</param>
         /// <param name="detail">A human-readable description of why the check failed, if it did; otherwise <see cref="string.Empty"/>.</param>
         /// <returns><c>true</c> if the directory has the expected permissions; otherwise <c>false</c>.</returns>
-        bool DirectoryHasPermissionUserRWOnly(string path, out string detail);
+        bool DirectoryHasPermissionUserRWOnly(string path, bool excludeCurrentUser, out string detail);
 
         /// <summary>
         /// Gets a value indicating whether the operating system supports alternate data streams.
