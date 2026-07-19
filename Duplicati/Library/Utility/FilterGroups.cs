@@ -81,6 +81,9 @@ namespace Duplicati.Library.Utility
     /// </summary>
     public static class FilterGroups
     {
+        private const string CONTROL_DIRECTORY_NAME = "control_dir_v2";
+        private const string DEFAULT_CONTROL_DIRECTORY_FILTER = @"*/Duplicati/control_dir_v2/";
+
         /// <summary>
         /// In addition to the default names from the enums, these alternate / shorter names are also available.
         /// </summary>
@@ -235,6 +238,17 @@ namespace Duplicati.Library.Utility
         /// <param name="group">The group to use.</param>
         public static IEnumerable<string> GetFilterStrings(FilterGroup group)
         {
+            return GetFilterStrings(group, GetApplicationDataFolder());
+        }
+
+        /// <summary>
+        /// Gets the filters for a specific group using the supplied application data folder.
+        /// </summary>
+        /// <param name="group">The group to use.</param>
+        /// <param name="applicationDataFolder">The application data folder.</param>
+        /// <returns>The filters from the group.</returns>
+        internal static IEnumerable<string> GetFilterStrings(FilterGroup group, string applicationDataFolder)
+        {
             IEnumerable<string> osFilters;
 
             if (OperatingSystem.IsMacOS())
@@ -248,7 +262,7 @@ namespace Duplicati.Library.Utility
 
             return
                 FilterPrefixMatches(
-                    CreateCommonFilters(group)
+                    CreateCommonFilters(group, applicationDataFolder)
                         .Concat(osFilters)
                         .Where(x => !string.IsNullOrWhiteSpace(x))
                     )
@@ -305,15 +319,13 @@ namespace Duplicati.Library.Utility
         /// Creates common filters
         /// </summary>
         /// <param name="group">The groups to create the filters for</param>
+        /// <param name="applicationDataFolder">The application data folder.</param>
         /// <returns>Common filters</returns>
-        private static IEnumerable<string> CreateCommonFilters(FilterGroup group)
+        private static IEnumerable<string> CreateCommonFilters(FilterGroup group, string applicationDataFolder)
         {
             if (group.HasFlag(FilterGroup.CacheFiles))
             {
-                // TODO: The control_dir_v2 might be under a different path for OEM branded instances.
-                // However, the AppName is loaded and controlled by the AutoUpdater assembly, which we can't reference here without an ugly circular dependency or dependency injection.
-                // What is the best way to solve this?
-                yield return FilterGroups.CreateWildcardFilter(@"*/Duplicati/control_dir_v2/"); // Duplicati uses this directory to store lock files and communicate with other processes.
+                yield return CreateControlDirectoryFilter(applicationDataFolder); // Duplicati uses this directory to store lock files and communicate with other processes.
                 yield return FilterGroups.CreateWildcardFilter(@"*/Google/Chrome/*cache*");
                 yield return FilterGroups.CreateWildcardFilter(@"*/Google/Chrome/*LOCK*"); // Chrome appears to lock various files under it's settings folder using files named 'LOCK' or 'lockfile'
                 yield return FilterGroups.CreateWildcardFilter(@"*/Google/Chrome/*Current*"); // 'Current Session' and 'Current Tabs' appear to be locked while running Chrome
@@ -328,6 +340,50 @@ namespace Duplicati.Library.Utility
             {
                 yield return Library.Utility.TempFolder.SystemTempPath;
             }
+        }
+
+        /// <summary>
+        /// Gets the application data folder without introducing a circular dependency on the AutoUpdater assembly.
+        /// </summary>
+        /// <returns>The application data folder, or null if it could not be resolved.</returns>
+        private static string GetApplicationDataFolder()
+        {
+            try
+            {
+                var managerType = Type.GetType("Duplicati.Library.AutoUpdater.DataFolderManager, Duplicati.Library.AutoUpdater", false);
+                var accessModeType = managerType?.GetNestedType("AccessMode", System.Reflection.BindingFlags.Public);
+                if (managerType == null || accessModeType == null)
+                    return null;
+
+                var getDataFolder = managerType.GetMethod(
+                    "GetDataFolder",
+                    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static,
+                    null,
+                    new[] { accessModeType },
+                    null);
+                if (getDataFolder == null)
+                    return null;
+
+                var probeOnly = Enum.Parse(accessModeType, "ProbeOnly");
+                return getDataFolder.Invoke(null, new[] { probeOnly }) as string;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Creates the filter for the directory used for single-instance control files.
+        /// </summary>
+        /// <param name="applicationDataFolder">The application data folder.</param>
+        /// <returns>The control directory filter.</returns>
+        private static string CreateControlDirectoryFilter(string applicationDataFolder)
+        {
+            if (string.IsNullOrWhiteSpace(applicationDataFolder))
+                return CreateWildcardFilter(DEFAULT_CONTROL_DIRECTORY_FILTER);
+
+            return CreateWildcardFilter(Common.IO.Util.AppendDirSeparator(Path.Combine(applicationDataFolder, CONTROL_DIRECTORY_NAME)));
         }
 
         /// <summary>
