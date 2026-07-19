@@ -209,7 +209,7 @@ namespace Duplicati.Library.Backend
         public IList<ICommandLineArgument> SupportedCommands => [
             new CommandLineArgument(KEY_KEYLEN, CommandLineArgument.ArgumentType.Integer, Strings.KeyGenerator.KeyLenShort, Strings.KeyGenerator.KeyLenLong, DEFAULT_KEYLEN.ToString(), null, new string[] {"1024", "2048"}),
             new CommandLineArgument(KEY_TYPE_NAME, CommandLineArgument.ArgumentType.Enumeration, Strings.KeyGenerator.KeyTypeShort, Strings.KeyGenerator.KeyTypeLong, DEFAULT_KEYTYPE, null, new string[] {KEYTYPE_DSA, KEYTYPE_RSA}),
-            new CommandLineArgument(KEY_USERNAME, CommandLineArgument.ArgumentType.Integer, Strings.KeyGenerator.KeyUsernameShort, Strings.KeyGenerator.KeyUsernameLong, DEFAULT_USERNAME),
+            new CommandLineArgument(KEY_USERNAME, CommandLineArgument.ArgumentType.String, Strings.KeyGenerator.KeyUsernameShort, Strings.KeyGenerator.KeyUsernameLong, DEFAULT_USERNAME),
         ];
 
         public IDictionary<string, IDictionary<string, string?>> GetLookups()
