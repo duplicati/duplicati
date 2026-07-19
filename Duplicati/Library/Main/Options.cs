@@ -762,7 +762,7 @@ namespace Duplicati.Library.Main
         public bool DisableFiletimeCheck => GetBool("disable-filetime-check");
 
         /// <summary>
-        /// A value indicating if file time checks are skipped
+        /// A value indicating if only the file timestamp is checked (ignoring metadata and file size) when deciding to scan a file
         /// </summary>
         public bool CheckFiletimeOnly => GetBool("check-filetime-only");
 
@@ -1015,7 +1015,7 @@ namespace Duplicati.Library.Main
             => GetString("throttle-disabled-backends", DEFAULT_THROTTLE_DISABLED_BACKENDS)?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)?.ToHashSet(StringComparer.OrdinalIgnoreCase) ?? new HashSet<string>();
 
         /// <summary>
-        /// A value indicating if the backup is a full backup
+        /// A value indicating if the last fileset is allowed to be removed
         /// </summary>
         public bool AllowFullRemoval => GetBool("allow-full-removal");
 
@@ -1538,7 +1538,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Gets a value indicating whether local blocks usage should be used for restore.
         /// </summary>
-        /// <value><c>true</c> if no local blocks; otherwise, <c>false</c>.</value>
+        /// <value><c>true</c> if local blocks are used for restore; otherwise, <c>false</c>.</value>
         public bool UseLocalBlocks => GetBool("restore-with-local-blocks");
 
         /// <summary>
@@ -1548,9 +1548,9 @@ namespace Duplicati.Library.Main
         public bool NoLocalDb => GetBool("no-local-db");
 
         /// <summary>
-        /// Gets a flag indicating if the local database should not be used
+        /// Gets a flag indicating if the restored file paths should keep their full folder structure instead of being compressed to the shortest common path
         /// </summary>
-        /// <value><c>true</c> if no local db is used; otherwise, <c>false</c>.</value>
+        /// <value><c>true</c> if restore paths are not compressed; otherwise, <c>false</c>.</value>
         public bool DontCompressRestorePaths => GetBool("dont-compress-restore-paths");
 
         /// <summary>

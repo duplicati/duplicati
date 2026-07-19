@@ -727,7 +727,7 @@ namespace Duplicati.Library.Utility
 
         /// <summary>
         /// Helper method that reads the Windows registry and finds paths to exclude.
-        /// This method should not be called directly as that could cause loader errors on Mono.
+        /// This method is not inlined, so the Registry types are not loaded when the calling method is JIT'ed on non-Windows platforms.
         /// </summary>
         /// <returns>The list of paths to exclude.</returns>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
