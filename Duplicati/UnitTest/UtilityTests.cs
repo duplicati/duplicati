@@ -441,6 +441,68 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Utility")]
+        public void ExpandEnvironmentVariablesRegexp()
+        {
+            // Values with regex metacharacters, to prove the substituted value is Regex.Escape'd
+            var env = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["FOO"] = "a.b",
+                ["BAR"] = "a+b(c)",
+            };
+            Func<string, string> lookup = k => (k != null && env.TryGetValue(k, out var v)) ? v : null;
+
+            // %VAR% behaves identically whether or not native syntax is enabled
+            foreach (var native in new[] { true, false })
+            {
+                Assert.AreEqual(@"xa\.by", Utility.ExpandEnvironmentVariablesRegexp("x%FOO%y", lookup, native));
+                Assert.AreEqual(@"a\+b\(c\)", Utility.ExpandEnvironmentVariablesRegexp("%BAR%", lookup, native));
+                // Undefined %VAR% expands to an empty string (unchanged legacy behavior)
+                Assert.AreEqual("", Utility.ExpandEnvironmentVariablesRegexp("%NOPE%", lookup, native));
+            }
+
+            // Native ON: $VAR and ${VAR} expand and are Regex.Escape'd
+            Assert.AreEqual(@"a\.b/bar", Utility.ExpandEnvironmentVariablesRegexp("$FOO/bar", lookup, true));
+            Assert.AreEqual(@"a\.bbar", Utility.ExpandEnvironmentVariablesRegexp("${FOO}bar", lookup, true));
+            // Undefined native variable is left as the original literal
+            Assert.AreEqual("$NOPE/x", Utility.ExpandEnvironmentVariablesRegexp("$NOPE/x", lookup, true));
+            Assert.AreEqual("${NOPE}", Utility.ExpandEnvironmentVariablesRegexp("${NOPE}", lookup, true));
+            // A brace group without a leading '$' (e.g. Duplicati {group} filters) is not matched
+            Assert.AreEqual("{FOO}", Utility.ExpandEnvironmentVariablesRegexp("{FOO}", lookup, true));
+            // A '$' regex anchor not followed by a word character is left alone
+            Assert.AreEqual(@".*\.log$", Utility.ExpandEnvironmentVariablesRegexp(@".*\.log$", lookup, true));
+
+            // Native OFF (Windows path): $VAR / ${VAR} are left untouched
+            Assert.AreEqual("$FOO/bar", Utility.ExpandEnvironmentVariablesRegexp("$FOO/bar", lookup, false));
+            Assert.AreEqual("${FOO}bar", Utility.ExpandEnvironmentVariablesRegexp("${FOO}bar", lookup, false));
+        }
+
+        [Test]
+        [Category("Utility")]
+        public void ExpandEnvironmentVariablesNative()
+        {
+            // Space in the value proves the result is NOT regex-escaped
+            var env = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["FOO"] = "a b",
+            };
+            Func<string, string> lookup = k => (k != null && env.TryGetValue(k, out var v)) ? v : null;
+
+            // Native ON: expands, unescaped
+            Assert.AreEqual("a b/x", Utility.ExpandEnvironmentVariablesNative("$FOO/x", lookup, true));
+            Assert.AreEqual("a b", Utility.ExpandEnvironmentVariablesNative("${FOO}", lookup, true));
+            // Undefined native variable is left as the original literal
+            Assert.AreEqual("$NOPE", Utility.ExpandEnvironmentVariablesNative("$NOPE", lookup, true));
+            // %VAR% is not this helper's concern and is left untouched
+            Assert.AreEqual("%FOO%", Utility.ExpandEnvironmentVariablesNative("%FOO%", lookup, true));
+            // A brace group without a leading '$' is not matched
+            Assert.AreEqual("{FOO}", Utility.ExpandEnvironmentVariablesNative("{FOO}", lookup, true));
+
+            // Native OFF (Windows path): no-op
+            Assert.AreEqual("$FOO/x", Utility.ExpandEnvironmentVariablesNative("$FOO/x", lookup, false));
+        }
+
+        [Test]
+        [Category("Utility")]
         public static void ThrottledStreamRead()
         {
             byte[] sourceBuffer = [0x10, 0x20, 0x30, 0x40, 0x50];

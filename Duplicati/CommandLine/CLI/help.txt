@@ -562,6 +562,8 @@ Duplicati can apply globbing and regex filter rules to backup and restore specif
   Globbing: *.txt
   Regex: [.*test\.txt]
 
+Environment variables are expanded in filter values, source paths, and the restore path. On any platform you can use the Windows form %VAR%; on Linux and macOS you can also use the native forms $VAR and ${VAR}. An undefined $VAR or ${VAR} is left unchanged.
+
   --include=<filter>
     Adds an include filter
   --exclude=<filter>

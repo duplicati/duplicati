@@ -970,28 +970,92 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// Regexp for matching environment variables on Windows (%VAR%)
         /// </summary>
-        private static readonly Regex ENVIRONMENT_VARIABLE_MATCHER_WINDOWS = new Regex(@"\%(?<name>\w+)\%");
+        private static readonly Regex ENVIRONMENT_VARIABLE_MATCHER_WINDOWS = new Regex(@"\%(?<win>\w+)\%");
 
         /// <summary>
-        /// Expands environment variables in a RegExp safe format
+        /// Regexp for matching Windows (%VAR%) and native ($VAR or ${VAR}) environment variables in a single pass
+        /// </summary>
+        private static readonly Regex ENVIRONMENT_VARIABLE_MATCHER_COMBINED = new Regex(@"\%(?<win>\w+)\%|\$\{(?<braced>[^}]+)\}|\$(?<bare>\w+)");
+
+        /// <summary>
+        /// Regexp for matching native ($VAR or ${VAR}) environment variables only
+        /// </summary>
+        private static readonly Regex ENVIRONMENT_VARIABLE_MATCHER_NATIVE_ONLY = new Regex(@"\$\{(?<braced>[^}]+)\}|\$(?<bare>\w+)");
+
+        /// <summary>
+        /// Expands environment variables in a RegExp safe format.
+        /// Windows-style %VAR% is expanded on all platforms; native $VAR and ${VAR} are
+        /// additionally expanded on non-Windows platforms.
         /// </summary>
         /// <returns>The expanded string.</returns>
         /// <param name="str">The string to expand.</param>
         /// <param name="lookup">A lookup method that converts an environment key to an expanded string</param>
         public static string? ExpandEnvironmentVariablesRegexp(string? str, Func<string?, string?>? lookup = null)
+            => ExpandEnvironmentVariablesRegexp(str, lookup, !OperatingSystem.IsWindows());
+
+        /// <summary>
+        /// Expands environment variables in a RegExp safe format, with explicit control over native syntax.
+        /// </summary>
+        /// <returns>The expanded string.</returns>
+        /// <param name="str">The string to expand.</param>
+        /// <param name="lookup">A lookup method that converts an environment key to an expanded string</param>
+        /// <param name="expandNativeSyntax">True to also expand native $VAR and ${VAR} syntax (in addition to %VAR%)</param>
+        internal static string? ExpandEnvironmentVariablesRegexp(string? str, Func<string?, string?>? lookup, bool expandNativeSyntax)
         {
             if (string.IsNullOrWhiteSpace(str))
                 return str;
 
-            if (lookup == null)
-                lookup = x => Environment.GetEnvironmentVariable(x ?? string.Empty);
+            lookup ??= x => Environment.GetEnvironmentVariable(x ?? string.Empty);
 
-            return
+            var matcher = expandNativeSyntax ? ENVIRONMENT_VARIABLE_MATCHER_COMBINED : ENVIRONMENT_VARIABLE_MATCHER_WINDOWS;
 
-                // TODO: Should we switch to using the native format ($VAR or ${VAR}), instead of following the Windows scheme?
-                // IsClientLinux ? new Regex(@"\$(?<name>\w+)|(\{(?<name>[^\}]+)\})") : ENVIRONMENT_VARIABLE_MATCHER_WINDOWS
+            // Single pass, so a value that itself contains the other syntax is not re-expanded
+            return matcher.Replace(str, m =>
+            {
+                if (m.Groups["win"].Success)
+                    // Windows %VAR%: preserve legacy behavior - an undefined variable expands to an empty string
+                    return Regex.Escape(lookup(m.Groups["win"].Value) ?? string.Empty);
 
-                ENVIRONMENT_VARIABLE_MATCHER_WINDOWS.Replace(str, m => Regex.Escape(lookup(m.Groups["name"].Value) ?? string.Empty));
+                // Native $VAR / ${VAR}
+                var name = m.Groups["braced"].Success ? m.Groups["braced"].Value : m.Groups["bare"].Value;
+                var value = lookup(name);
+
+                // An undefined native variable is left untouched, so a literal '$'-containing
+                // string is never blanked or mangled
+                return value == null ? m.Value : Regex.Escape(value);
+            });
+        }
+
+        /// <summary>
+        /// Expands native ($VAR or ${VAR}) environment variables in a literal (non-RegExp) string.
+        /// Windows %VAR% is not touched by this method; native syntax is only expanded on non-Windows platforms.
+        /// </summary>
+        /// <returns>The expanded string.</returns>
+        /// <param name="str">The string to expand.</param>
+        /// <param name="lookup">A lookup method that converts an environment key to an expanded string</param>
+        public static string ExpandEnvironmentVariablesNative(string str, Func<string?, string?>? lookup = null)
+            => ExpandEnvironmentVariablesNative(str, lookup, !OperatingSystem.IsWindows());
+
+        /// <summary>
+        /// Expands native ($VAR or ${VAR}) environment variables in a literal string, with explicit control over native syntax.
+        /// </summary>
+        /// <returns>The expanded string.</returns>
+        /// <param name="str">The string to expand.</param>
+        /// <param name="lookup">A lookup method that converts an environment key to an expanded string</param>
+        /// <param name="expandNativeSyntax">True to expand native $VAR and ${VAR} syntax</param>
+        internal static string ExpandEnvironmentVariablesNative(string str, Func<string?, string?>? lookup, bool expandNativeSyntax)
+        {
+            if (!expandNativeSyntax || string.IsNullOrEmpty(str))
+                return str;
+
+            lookup ??= x => Environment.GetEnvironmentVariable(x ?? string.Empty);
+
+            return ENVIRONMENT_VARIABLE_MATCHER_NATIVE_ONLY.Replace(str, m =>
+            {
+                var name = m.Groups["braced"].Success ? m.Groups["braced"].Value : m.Groups["bare"].Value;
+                // An undefined native variable is left untouched (no regex escaping - this is a literal path/glob)
+                return lookup(name) ?? m.Value;
+            });
         }
 
         /// <summary>
