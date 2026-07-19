@@ -376,6 +376,26 @@ internal class APIHelper : IDisposable
     }
 
     /// <summary>
+    /// Lists the immediate subsites of a SharePoint site.
+    /// </summary>
+    /// <param name="siteId">The parent site ID</param>
+    /// <param name="ct">The cancellation token</param>
+    /// <returns>An asynchronous enumerable of subsites</returns>
+    public IAsyncEnumerable<GraphSite> ListSubsitesAsync(string siteId, CancellationToken ct)
+    {
+        var baseUrl = GraphBaseUrl.TrimEnd('/');
+        var select = GraphSelectBuilder.BuildSelect<GraphSite>();
+        var site = System.Uri.EscapeDataString(siteId);
+
+        var url =
+            $"{baseUrl}/v1.0/sites/{site}/sites" +
+            $"?$select={System.Uri.EscapeDataString(select)}" +
+            $"&$top={GENERAL_PAGE_SIZE}";
+
+        return GetAllGraphItemsAsync<GraphSite>(url, ct);
+    }
+
+    /// <summary>
     /// Gets a single Graph API item.
     /// </summary>
     /// <typeparam name="T">The graph item to get</typeparam>
