@@ -119,7 +119,6 @@ partial class BackendManager
         /// <summary>
         /// Starts the encryption of the file
         /// </summary>
-        /// <param name="options">The options to use</param>
         public void StartEncryptionAndHashing()
         {
             if (encryptionAndHashingTask != null)

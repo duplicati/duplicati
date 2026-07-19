@@ -349,7 +349,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// removed, the requester will be given a `Task` that will be
             /// completed when the block is available.
             /// </summary>
-            /// <param name="blockRequest">The block request related to the value.</param>
+            /// <param name="blockID">The ID of the block related to the value.</param>
             /// <param name="value">The byte[] buffer holding the block data.</param>
             public void Set(long blockID, DataBlock value)
             {

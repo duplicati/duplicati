@@ -1179,7 +1179,7 @@ namespace Duplicati.Library.Main.Database.Local
         /// Extends folder entries with additional metadata from the Metadataset table.
         /// Note that this modifies the input entries in-place.
         /// </summary>
-        /// <param name="entries">The folder entries to extend.</param>
+        /// <param name="filesetIds">The file IDs to fetch metadata for.</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>A task that when awaited returns the extended folder entries.</returns>
         public async Task<Dictionary<long, Dictionary<string, string?>>> GetMetadataForFilesetIdsAsync(IEnumerable<long> filesetIds, CancellationToken token)

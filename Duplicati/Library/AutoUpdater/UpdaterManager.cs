@@ -416,7 +416,7 @@ namespace Duplicati.Library.AutoUpdater
         /// <summary>
         /// Helper method to create a signed manifest file
         /// </summary>
-        /// <param name="key">The key used for signing the manifest</param>
+        /// <param name="keys">The keys used for signing the manifest</param>
         /// <param name="sourcedata">The template content in JSON format</param>
         /// <param name="outputfolder">The folder where the signed manifest will be written to</param>
         /// <param name="version">The version of the manifest</param>

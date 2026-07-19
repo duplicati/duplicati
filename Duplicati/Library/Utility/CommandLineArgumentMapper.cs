@@ -110,7 +110,7 @@ public static class CommandLineArgumentMapper
     /// <summary>
     /// Extracts all primitive types from a class and maps them to command line arguments
     /// </summary>
-    /// <param name="type">The type to extract arguments from</param>
+    /// <param name="obj">The object to extract arguments from</param>
     /// <param name="prefix">The prefix to use for the arguments</param>
     /// <param name="exclude">A list of properties to exclude</param>
     /// <returns>A list of command line arguments</returns>
