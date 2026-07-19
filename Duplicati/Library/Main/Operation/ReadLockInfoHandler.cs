@@ -44,8 +44,7 @@ namespace Duplicati.Library.Main.Operation
         /// Creates a new instance of the <see cref="ReadLockInfoHandler"/> class.
         /// </summary>
         /// <param name="options">The options for the operation.</param>
-        /// <param name="backendWriter">The backend writer for logging.</param>
-        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <param name="result">The result object for the operation.</param>
         public ReadLockInfoHandler(Options options, ReadLockInfoResults result)
         {
             m_options = options;

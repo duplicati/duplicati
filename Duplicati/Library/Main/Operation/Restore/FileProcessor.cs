@@ -750,7 +750,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <summary>
         /// Restores the metadata for a file.
         /// </summary>
-        /// <param name="cmd">The command to execute to retrieve the metadata blocks.</param>
+        /// <param name="db">The restore database, which is queried for the metadata blocks.</param>
         /// <param name="file">The file to restore.</param>
         /// <param name="restoreDestination">The restore destination provider.</param>
         /// <param name="block_request">The channel to request blocks from the block manager.</param>
