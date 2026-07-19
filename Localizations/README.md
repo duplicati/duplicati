@@ -29,3 +29,14 @@ When new work has been performed in Transifex, this can be pulled and applied to
 
 This will change the local files have the new changes.
 After inspecting the changes, this can be used to make a PR with updates.
+
+# Full sync
+
+To perform the full sync (extract, push, pull, compile) in one step, run:
+
+```bash
+./tx-sync.sh
+```
+
+This script will abort if there are any uncommitted changes in the working tree.
+It runs `extract_all.sh` and `push_source_files_to_transifex.sh`, then discards the resulting artifacts with `git stash` before pulling and compiling the latest translations.
