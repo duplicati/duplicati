@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -53,6 +54,55 @@ namespace Duplicati.UnitTest
             Assert.AreEqual(0, await Program.MainAsync(["list", dbfile, "RemoteVolume"]));
             Assert.AreEqual(0, await Program.MainAsync(["list", dbfile, "RemoteVolume", "--output-json"]));
             Assert.AreEqual(0, await Program.MainAsync(["execute", dbfile, "SELECT * FROM RemoteVolume", "--output-json"]));
+        }
+
+        /// <summary>
+        /// The backup taken before an upgrade must carry an unambiguous timestamp.
+        /// The format string used to specify <c>hh</c> (12-hour clock) without an
+        /// AM/PM designator, so a backup taken at 13:30 was named as if it had been
+        /// taken at 01:30 and collided with one taken in the morning.
+        ///
+        /// Note that the 12/24-hour part of this test only discriminates when the
+        /// local time is 13:00 or later; before noon the two formats agree. It never
+        /// fails spuriously, and a month/minute mix-up is caught at any time of day.
+        /// </summary>
+        [Test]
+        [Category("DatabaseTool")]
+        public async Task UpgradeBackupFileNameUsesUnambiguousTimestampAsync()
+        {
+            using var dbfile = new TempFile();
+            using (var db = await SQLiteLoader.LoadConnectionAsync(dbfile))
+            using (var cmd = db.CreateCommand())
+            {
+                cmd.CommandText = LocalSchemaV12;
+                await cmd.ExecuteNonQueryAsync();
+            }
+
+            var folder = Path.GetDirectoryName(Path.GetFullPath(dbfile))!;
+            var prefix = Path.GetFileNameWithoutExtension(dbfile) + "-";
+
+            // Deliberately omit --no-backups so that Helper.CreateFileBackup runs.
+            var before = DateTime.Now;
+            Assert.AreEqual(0, await Program.MainAsync(["upgrade", dbfile]));
+            var after = DateTime.Now;
+
+            var backups = Directory.GetFiles(folder, prefix + "*.bak");
+            Assert.AreEqual(1, backups.Length, "The upgrade should have created exactly one backup file.");
+
+            try
+            {
+                var stamp = Path.GetFileNameWithoutExtension(backups[0]).Substring(prefix.Length);
+                Assert.IsTrue(
+                    DateTime.TryParseExact(stamp, "yyyyMMddHHmmss", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsed),
+                    $"The backup timestamp \"{stamp}\" is not a valid yyyyMMddHHmmss value.");
+
+                Assert.IsTrue(parsed >= before.AddSeconds(-5) && parsed <= after.AddSeconds(5),
+                    $"The backup timestamp \"{stamp}\" does not match the time the backup was taken ({before:yyyyMMddHHmmss}).");
+            }
+            finally
+            {
+                File.Delete(backups[0]);
+            }
         }
 
         [Test]

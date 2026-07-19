@@ -79,10 +79,6 @@ namespace Duplicati.Library.AutoUpdater
         public static event Action<Exception>? OnError;
 
         /// <summary>
-        /// Common formatting string for date-time values
-        /// </summary>
-        private const string DATETIME_FORMAT = "yyyymmddhhMMss";
-        /// <summary>
         /// The template for the environment variable that toggles disabling updates
         /// </summary>
         public const string SKIPUPDATE_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_SKIP_UPDATE";
