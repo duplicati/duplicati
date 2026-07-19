@@ -43,8 +43,9 @@ namespace Duplicati.Library.SQLiteHelper
 
         /// <summary>
         /// The default busy timeout (in milliseconds) applied to every connection opened by
-        /// <see cref="OpenSQLiteFileAsync"/> via the connection string. This is a defense-in-depth
-        /// measure that ensures an active reader does not cause failed commits.
+        /// <see cref="OpenSQLiteFileAsync"/> by issuing a <c>PRAGMA busy_timeout</c> statement
+        /// after opening. This is a defense-in-depth measure that ensures an active reader
+        /// does not cause failed commits.
         /// </summary>
         private const int DefaultBusyTimeoutMs = 10000;
 

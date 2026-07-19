@@ -83,18 +83,22 @@ namespace Duplicati.Library.Common.IO
         void SetMetadata(string path, Dictionary<string, string> metdata, bool restorePermissions);
         Dictionary<string, string> GetMetadata(string path, bool isSymlink, bool followSymlink);
         /// <summary>
-        /// Sets the permission to read-write only for the current user.
+        /// Restricts access to the file so only the current user and privileged system principals retain access
+        /// (on Windows: full control for the current user, SYSTEM and Administrators with inheritance disabled;
+        /// on POSIX: owner-only 0600 permissions).
         /// </summary>
         /// <param name="path">The file to set permissions on.</param>
         void FileSetPermissionUserRWOnly(string path);
         /// <summary>
-        /// Sets the permission to read-write only for the current user.
+        /// Restricts access to the directory so only the current user and privileged system principals retain access
+        /// (on Windows: full control for the current user, SYSTEM and Administrators with inheritance disabled;
+        /// on POSIX: owner-only 0700 permissions).
         /// </summary>
         /// <param name="path">The directory to set permissions on.</param>
         void DirectorySetPermissionUserRWOnly(string path);
 
         /// <summary>
-        /// Checks whether the directory has the read-write only permission for the current user,
+        /// Checks whether the directory has the restricted permissions for the current user,
         /// i.e. the same permissions that <see cref="DirectorySetPermissionUserRWOnly"/> would apply.
         /// </summary>
         /// <param name="path">The directory to check permissions on.</param>

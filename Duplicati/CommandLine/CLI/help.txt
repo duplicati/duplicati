@@ -293,7 +293,7 @@ Usage: %CLI_EXE% purge <storage-URL> <filenames> [<options>]
   --time=<time>
     Selects a specific version to purge from
   --no-auto-compact
-    Performs a compact process after purging files
+    Disables the automatic compacting that is otherwise performed after purging files
   --include=<filter>
     Selects files to purge, using filter syntax
 
