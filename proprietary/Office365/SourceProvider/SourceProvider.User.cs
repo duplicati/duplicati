@@ -802,9 +802,14 @@ partial class SourceProvider
 
             var select = GraphSelectBuilder.BuildSelect<GraphEvent>();
 
+            // Order by createdDateTime to give the paged event feed a stable ordering, reducing
+            // the chance that the same event is returned on more than one page. Graph does not
+            // support ordering/filtering events by 'id'. createdDateTime is immutable, so it is a
+            // stable sort key. The source entry still de-duplicates by event id as a safety net.
             var url =
                 $"{baseUrl}/v1.0/users/{user}/calendars/{cal}/events" +
                 $"?$select={Uri.EscapeDataString(select)}" +
+                $"&$orderby={Uri.EscapeDataString("createdDateTime")}" +
                 $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphEvent>(url, ct);
