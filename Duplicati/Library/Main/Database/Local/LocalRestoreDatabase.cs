@@ -983,6 +983,53 @@ namespace Duplicati.Library.Main.Database.Local
         }
 
         /// <summary>
+        /// Determines whether the restore fileset contains any entry that is not located
+        /// below the specified folder. This is used to decide whether an explicitly selected
+        /// folder should be retained below the restore destination: retaining the folder name
+        /// only makes sense when the backup actually contains something outside it (i.e. the
+        /// folder is a genuine subfolder and not the backup root itself).
+        /// </summary>
+        /// <param name="restoretime">The restore time used to select the fileset(s).</param>
+        /// <param name="versions">The versions used to select the fileset(s).</param>
+        /// <param name="folder">The folder path, including a trailing directory separator.</param>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
+        /// <returns>A task that, when awaited, returns <c>true</c> if any entry lies outside the folder.</returns>
+        public async Task<bool> HasEntriesOutsideFolderAsync(DateTime restoretime, long[]? versions, string folder, CancellationToken token)
+        {
+            if (string.IsNullOrEmpty(folder))
+                return false;
+
+            var filesetIds = await GetFilesetIDsAsync(Library.Utility.Utility.NormalizeDateTime(restoretime), versions, false, token)
+                .ToListAsync(cancellationToken: token)
+                .ConfigureAwait(false);
+            if (filesetIds.Count == 0)
+                return false;
+
+            await using var cmd = m_connection.CreateCommand().SetTransaction(m_rtr);
+            foreach (var filesetId in filesetIds)
+            {
+                var found = await cmd.SetCommandAndParameters($@"
+                    SELECT 1
+                    FROM ""File"" INNER JOIN ""FilesetEntry""
+                        ON ""File"".""ID"" = ""FilesetEntry"".""FileID""
+                    WHERE ""FilesetEntry"".""FilesetID"" = @FilesetId
+                        AND SUBSTR(""File"".""Path"", 1, @PrefixLength) <> @Prefix
+                    LIMIT 1
+                ")
+                    .SetParameterValue("@FilesetId", filesetId)
+                    .SetParameterValue("@PrefixLength", folder.Length)
+                    .SetParameterValue("@Prefix", folder)
+                    .ExecuteScalarInt64Async(-1, token)
+                    .ConfigureAwait(false);
+
+                if (found == 1)
+                    return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// Sets the target paths for files in the temporary file table.
         /// This method adjusts the target paths based on the largest prefix and destination provided.
         /// </summary>
