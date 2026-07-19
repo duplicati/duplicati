@@ -34,11 +34,6 @@ namespace Duplicati.Library.AutoUpdater;
 public static class DataFolderLocator
 {
     /// <summary>
-    /// The log tag for this class
-    /// </summary>
-    private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(DataFolderLocator));
-
-    /// <summary>
     /// Finds a default storage folder, using the operating system specific locations.
     /// The targetfilename is used to detect locations that are used in previous versions.
     /// If the targetfilename is found in an old location, but not the current, the old location is used.

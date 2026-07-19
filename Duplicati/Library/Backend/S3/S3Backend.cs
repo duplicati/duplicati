@@ -30,8 +30,6 @@ namespace Duplicati.Library.Backend
 {
     public class S3 : IBackend, IStreamingBackend, IRenameEnabledBackend, IFolderEnabledBackend, ILockingBackend
     {
-        private static readonly string LOGTAG = Logging.Log.LogTagFromType<S3>();
-
         private const string AUTH_USERNAME_OPTION = "aws-access-key-id";
         private const string AUTH_PASSWORD_OPTION = "aws-secret-access-key";
 

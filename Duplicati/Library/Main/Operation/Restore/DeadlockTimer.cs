@@ -45,12 +45,6 @@ namespace Duplicati.Library.Main.Operation.Restore
     internal class DeadlockTimer
     {
         /// <summary>
-        /// The log tag for this class.
-        /// </summary>
-        private static readonly string LOGTAG =
-            Logging.Log.LogTagFromType<DeadlockTimer>();
-
-        /// <summary>
         /// Initial threshold (in milliseconds) for detecting deadlocks.
         /// </summary>
         public static int initial_threshold =
