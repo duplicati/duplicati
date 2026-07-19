@@ -21,7 +21,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-13 15:38+0200\n"
+"POT-Creation-Date: 2026-07-19 16:29+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: Gonzalo Seguel, 2026\n"
 "Language-Team: Spanish (https://app.transifex.com/duplicati/teams/67655/es/)\n"
@@ -2836,31 +2836,31 @@ msgstr ""
 " etc). Se recomienda un multiplicador para evitar cambios inesperados si el "
 "programa se actualiza."
 
-#: Library/Utility/FilterGroups.cs:191
+#: Library/Utility/FilterGroups.cs:194
 #, csharp-format
 msgid "{0}: Selects no filters."
 msgstr "{0}: Selecciona sin filtros."
 
-#: Library/Utility/FilterGroups.cs:192
+#: Library/Utility/FilterGroups.cs:195
 #, csharp-format
 msgid "{0}: A set of default exclude filters, currently evaluates to: {1}."
 msgstr ""
 "{0}: Un conjunto de filtros de exclusión por defecto, actualmente evalúa a: "
 "{1}."
 
-#: Library/Utility/FilterGroups.cs:193
+#: Library/Utility/FilterGroups.cs:196
 #, csharp-format
 msgid "{0}: A set of default include filters, currently evaluates to: {1}."
 msgstr ""
 "{0}: Un conjunto de filtros de inclusión por defecto, que actualmente se "
 "evalúa a: {1}."
 
-#: Library/Utility/FilterGroups.cs:204
+#: Library/Utility/FilterGroups.cs:207
 #, csharp-format
 msgid " Aliases: {0}"
 msgstr "Alias: {0}"
 
-#: Library/Utility/FilterGroups.cs:217
+#: Library/Utility/FilterGroups.cs:220
 #, csharp-format
 msgid ""
 "{0}: Files that are owned by the system or not suited to be backed up. This "
@@ -2872,7 +2872,7 @@ msgstr ""
 "operativo. La mayoría de los usuarios deberían al menos aplicar estos "
 "filtros."
 
-#: Library/Utility/FilterGroups.cs:219
+#: Library/Utility/FilterGroups.cs:222
 #, csharp-format
 msgid ""
 "{0}: Files that belong to the operating system. These files are restored "
@@ -2881,12 +2881,12 @@ msgstr ""
 "{0}: Archivos que pertenecen al sistema operativo. Estos archivos son "
 "restaurados cuando el sistema operativo es reinstalado."
 
-#: Library/Utility/FilterGroups.cs:221
+#: Library/Utility/FilterGroups.cs:224
 #, csharp-format
 msgid "{0}: Files and folders that are known to be storage of temporary data."
 msgstr "{0}: Archivos y carpetas que se sabe que almacenan datos temporales."
 
-#: Library/Utility/FilterGroups.cs:223
+#: Library/Utility/FilterGroups.cs:226
 #, csharp-format
 msgid ""
 "{0}: Files and folders that are known cache locations for the operating "
@@ -2895,7 +2895,7 @@ msgstr ""
 "{0}: Archivos y carpetas que son ubicaciones de caché conocidas para el "
 "sistema operativo y varias aplicaciones"
 
-#: Library/Utility/FilterGroups.cs:225
+#: Library/Utility/FilterGroups.cs:228
 #, csharp-format
 msgid "{0}: Installed programs and their libraries, but not their settings."
 msgstr "{0}: Instaló programas y sus bibliotecas, pero no sus ajustes."

@@ -8,15 +8,16 @@
 # AlbireoGT, 2024
 # yu hi <yuhisa@gmail.com>, 2025
 # 90ad3e7e6620e74f12dc711534d1972a_619c894, 2026
+# kyano, 2026
 # 
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-13 15:38+0200\n"
+"POT-Creation-Date: 2026-07-19 16:29+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
-"Last-Translator: 90ad3e7e6620e74f12dc711534d1972a_619c894, 2026\n"
+"Last-Translator: kyano, 2026\n"
 "Language-Team: Japanese (Japan) (https://app.transifex.com/duplicati/teams/67655/ja_JP/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -52,6 +53,36 @@ msgstr "暗号化に使用するスレッドの水準の設定"
 #, csharp-format
 msgid "The option --{0} is no longer used and has been deprecated."
 msgstr "--{0}のオプションは既に使用されておらず、非推奨となりました。"
+
+#: Library/Encryption/Strings.cs:34
+msgid "Set the AES file format version"
+msgstr "AESファイル形式のバージョンを設定"
+
+#: Library/Encryption/Strings.cs:35
+msgid "Use this option to set the AES encryption file format version."
+msgstr "AES暗号化ファイル形式のバージョンを設定します。"
+
+#: Library/Encryption/Strings.cs:36
+msgid "Set the number of iterations used for AES v3 key derivation"
+msgstr "AES v3の鍵導出に使用する反復回数を設定"
+
+#: Library/Encryption/Strings.cs:37
+msgid ""
+"Use this option to set the number of iterations used for AES v3 encryption. "
+"The default is using the library default."
+msgstr "AES v3暗号化に使用する反復回数を設定します。デフォルトでは、ライブラリのデフォルト値が使用されます。"
+
+#: Library/Encryption/Strings.cs:38
+msgid "Use minimal header for AES encryption"
+msgstr "AES暗号化に最小限のヘッダーを使用する"
+
+#: Library/Encryption/Strings.cs:39
+msgid ""
+"Use this option to use a minimal header for AES encryption. This will reduce"
+" the size of the encrypted file, but will remove some additional metadata "
+"that is normally stored in the header."
+msgstr ""
+"AES暗号化に最小限のヘッダーを使用します。これにより、暗号化されたファイルのサイズが縮小されますが、通常ヘッダーに格納される追加のメタデータの一部が削除されます。"
 
 #: Library/Encryption/Strings.cs:43
 #, csharp-format
@@ -162,6 +193,18 @@ msgstr "GnuPGを実行できませんでした。出力は行われません"
 msgid "Failure while invoking GnuPG, program won't terminate"
 msgstr "GnuPGを実行できませんでした。プログラムは終了しません"
 
+#: Library/Encryption/Strings.cs:71
+msgid "Key must be at least 8 characters long"
+msgstr "鍵は8文字以上である必要があります"
+
+#: Library/Encryption/Strings.cs:72
+msgid "Key must not be empty"
+msgstr "鍵は空であってはなりません"
+
+#: Library/Encryption/Strings.cs:73
+msgid "Refusing to encrypt with blacklisted key"
+msgstr "ブラックリストに登録された鍵での暗号化を拒否"
+
 #: Library/Interface/Strings.cs:26
 msgid "aliases"
 msgstr "エイリアス"
@@ -235,12 +278,24 @@ msgid ""
 "Encryption key used to encrypt target settings does not match current key."
 msgstr "対象となる設定を暗号化する際に使用された暗号化の鍵が、現在の鍵と一致しません。"
 
+#: Library/Interface/Strings.cs:52
+msgid "Encryption key is missing."
+msgstr "暗号化キーが見つかりません。"
+
 #: Library/Interface/CustomExceptions.cs:85
 #: Library/Interface/CustomExceptions.cs:93
 #: Library/Backend/Jottacloud/Jottacloud.cs:319
 #: Library/Backend/SMB/SMBShareConnection.cs:428
 msgid "The requested file does not exist"
 msgstr "要求されたファイルは存在しません"
+
+#: Library/Interface/CustomExceptions.cs:290
+#: Library/Interface/CustomExceptions.cs:296
+msgid ""
+"The backup database is currently in use by another operation and cannot be "
+"accessed concurrently. Please wait for the running operation to finish and "
+"try again."
+msgstr "バックアップデータベースは別の処理で使用中であるため、同時にアクセスすることはできません。実行中の処理が終了した後、再度お試しください。"
 
 #: Library/Snapshots/Strings.cs:24
 #, csharp-format
@@ -4451,27 +4506,27 @@ msgid ""
 msgstr ""
 "--{0}に指定されたサイズ「{1}」には乗数（バイト、キロバイト、メガバイトなど）がありません。プログラムがアップデートされた際に予期しない変更が生じないよう、乗数を設定することを推奨します。"
 
-#: Library/Utility/FilterGroups.cs:191
+#: Library/Utility/FilterGroups.cs:194
 #, csharp-format
 msgid "{0}: Selects no filters."
 msgstr "{0}：選択するフィルターはありません。"
 
-#: Library/Utility/FilterGroups.cs:192
+#: Library/Utility/FilterGroups.cs:195
 #, csharp-format
 msgid "{0}: A set of default exclude filters, currently evaluates to: {1}."
 msgstr "{0}: 既定の除外フィルターのセット。現在は次のように評価します：{1}。"
 
-#: Library/Utility/FilterGroups.cs:193
+#: Library/Utility/FilterGroups.cs:196
 #, csharp-format
 msgid "{0}: A set of default include filters, currently evaluates to: {1}."
 msgstr "{0}: ファイルを含めるフィルターの既定のセット。現在は次のように評価します：{1}。"
 
-#: Library/Utility/FilterGroups.cs:204
+#: Library/Utility/FilterGroups.cs:207
 #, csharp-format
 msgid " Aliases: {0}"
 msgstr "エイリアス：{0}"
 
-#: Library/Utility/FilterGroups.cs:217
+#: Library/Utility/FilterGroups.cs:220
 #, csharp-format
 msgid ""
 "{0}: Files that are owned by the system or not suited to be backed up. This "
@@ -4480,26 +4535,26 @@ msgid ""
 msgstr ""
 "{0}：システムが所有するか、バックアップに適していないファイル。オペレーティングシステムにより保護されているファイルの全てが該当します。最低限このフィルターは適用すべきです。"
 
-#: Library/Utility/FilterGroups.cs:219
+#: Library/Utility/FilterGroups.cs:222
 #, csharp-format
 msgid ""
 "{0}: Files that belong to the operating system. These files are restored "
 "when the operating system is re-installed."
 msgstr "{0}：オペレーティングシステムに属するファイル。これらのファイルは、オペレーティングシステムを再インストールした際に復元されます。"
 
-#: Library/Utility/FilterGroups.cs:221
+#: Library/Utility/FilterGroups.cs:224
 #, csharp-format
 msgid "{0}: Files and folders that are known to be storage of temporary data."
 msgstr "{0}：一時データの保存領域として知られるファイルとフォルダー。"
 
-#: Library/Utility/FilterGroups.cs:223
+#: Library/Utility/FilterGroups.cs:226
 #, csharp-format
 msgid ""
 "{0}: Files and folders that are known cache locations for the operating "
 "system and various applications"
 msgstr "{0}：オペレーティングシステムや各種アプリケーションのキャッシュの場所として知られるファイルとフォルダー"
 
-#: Library/Utility/FilterGroups.cs:225
+#: Library/Utility/FilterGroups.cs:228
 #, csharp-format
 msgid "{0}: Installed programs and their libraries, but not their settings."
 msgstr "{0}：プログラムとライブラリーはインストールしましたが、設定についてはインストールしていません。"
@@ -4676,6 +4731,18 @@ msgid ""
 "Set this option if you prefer to have the commandline version automatically "
 "update"
 msgstr "コマンドライン版を自動的にアップデートしたい場合は、このオプションを設定してください"
+
+#: CommandLine/CLI/Strings.cs:61
+msgid "Use portable mode"
+msgstr "ポータブルモードを使用する"
+
+#: CommandLine/CLI/Strings.cs:62
+msgid ""
+"If this option is set, the configuration files will be stored in a data "
+"subfolder of the Duplicati installation folder. This is useful for running "
+"from a USB stick or other portable media."
+msgstr ""
+"このオプションを設定すると、設定ファイルはDuplicatiのインストールフォルダ内の「data」サブフォルダに保存されます。これは、USBメモリやその他のポータブルメディアから実行する場合に便利です。"
 
 #: CommandLine/CLI/Strings.cs:77
 #, csharp-format

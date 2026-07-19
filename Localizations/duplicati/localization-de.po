@@ -47,7 +47,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-13 15:38+0200\n"
+"POT-Creation-Date: 2026-07-19 16:29+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: ghChrisHe, 2026\n"
 "Language-Team: German (https://app.transifex.com/duplicati/teams/67655/de/)\n"
@@ -2674,9 +2674,9 @@ msgid ""
 "Use this option to have files moved to the recycle bin folder instead of "
 "removing them permanently when compacting or deleting backups."
 msgstr ""
-"Verwende diese Option, um Dateien in den Papierkorb-Ordner zu verschieben, "
-"anstatt  beim Komprimieren oder Löschen von Sicherungen diese dauerhaft zu "
-"entfernen."
+"Verwenden Sie diese Option, um Dateien in den Papierkorb-Ordner zu "
+"verschieben, anstatt diese beim Kompaktieren oder Löschen von Sicherungen "
+"dauerhaft zu entfernen."
 
 #: Library/Backend/SharePoint/Strings.cs:31
 msgid "Move deleted files to the recycle bin"
@@ -5351,13 +5351,13 @@ msgid ""
 msgstr ""
 "Wenn während eines Backups eine große Anzahl kleiner Dateien erkannt oder "
 "nach dem Löschen von Backups Speicherplatz verschwendet wird, werden die "
-"Remote-Daten komprimiert. Verwende diese Option, um die automatische "
-"Komprimierung zu deaktivieren und nur bei Verwendung des Kompaktbefehls "
+"Remote-Daten kompaktiert. Verwenden Sie diese Option, um die automatische "
+"Kompaktierung zu deaktivieren und nur bei Verwendung des Kompaktbefehls "
 "anzuwenden."
 
 #: Library/Main/Strings.cs:222
 msgid "Disable automatic compacting"
-msgstr "Automatische Kompression deaktiveren"
+msgstr "Automatische Kompaktierung deaktiveren"
 
 #: Library/Main/Strings.cs:223
 msgid ""
@@ -5367,7 +5367,7 @@ msgid ""
 "downloaded and rewritten."
 msgstr ""
 "Bei der Prüfung der Größe eines Volumens unter Berücksichtigung der "
-"Komprimierung wird ein kleiner Toleranzwert verwendet, standardmäßig 20 "
+"Kompaktierung wird ein kleiner Toleranzwert verwendet, standardmäßig 20 "
 "Prozent der Volumengröße. Bei großen Volumen, welche eventuell ein paar "
 "Bytes unnötigen Speicherplatz belegen, verhindert dies, dass diese "
 "unnötigerweise heruntergeladen und neu beschrieben werden."
@@ -6159,6 +6159,10 @@ msgstr "Aktiviert die Protokollierung aller Datenbankanfragen"
 #: Library/Main/Strings.cs:359
 msgid "Disable replacement of missing metadata"
 msgstr "Ersetzung von fehlenden Metadaten deaktivieren"
+
+#: Library/Main/Strings.cs:364
+msgid "Minimum time between auto compactions"
+msgstr "Minimale Zeit zwischen Auto-Kompaktierungen"
 
 #: Library/Main/Strings.cs:374
 msgid "CPU intensity level"
@@ -7212,6 +7216,30 @@ msgstr ""
 msgid "Limit log lines"
 msgstr "Begrenzt Protokollzeilen"
 
+#: Library/Modules/Builtin/Strings.cs:304
+msgid "HTTP status report module"
+msgstr "HTTP Statusreport-Modul"
+
+#: Library/Modules/Builtin/Strings.cs:306
+msgid "Status report URL"
+msgstr "Statusbericht URL"
+
+#: Library/Modules/Builtin/Strings.cs:308
+msgid "Status report interval"
+msgstr "Statusbericht Intervall"
+
+#: Library/Modules/Builtin/Strings.cs:309
+msgid ""
+"Use this option to set the maximum number of recent log lines to include in "
+"each status report."
+msgstr ""
+"Verwenden Sie diese Option, um die maximale Anzahl von aktuellen Logzeilen "
+"festzulegen, die in den Statusbericht aufgenommen werden sollen."
+
+#: Library/Modules/Builtin/Strings.cs:310
+msgid "Maximum log lines per report"
+msgstr "Maximale Logzeilen pro Report"
+
 #: Library/ResultSerialization/ResultFormatSerializerProvider.cs:58
 #, csharp-format
 msgid "The format is not supported: {0}"
@@ -7470,31 +7498,31 @@ msgstr "Fehler beim Lesen der Datei: {0}, Fehler: {1}"
 msgid "Error listing content: {0}"
 msgstr "Fehler bei der Auflistung des Inhalts: {0}"
 
-#: Library/Utility/FilterGroups.cs:191
+#: Library/Utility/FilterGroups.cs:194
 #, csharp-format
 msgid "{0}: Selects no filters."
 msgstr "{0}: Keine Filter ausgewählt."
 
-#: Library/Utility/FilterGroups.cs:192
+#: Library/Utility/FilterGroups.cs:195
 #, csharp-format
 msgid "{0}: A set of default exclude filters, currently evaluates to: {1}."
 msgstr ""
 "{0}: Eine Set von Standard-Exclude-Filtern, welche derzeit wie folgt "
 "ausgewertet: {1}."
 
-#: Library/Utility/FilterGroups.cs:193
+#: Library/Utility/FilterGroups.cs:196
 #, csharp-format
 msgid "{0}: A set of default include filters, currently evaluates to: {1}."
 msgstr ""
 "{0}: Eine Set von Standard-Include-Filtern, welche derzeit wie folgt "
 "ausgewertet: {1}."
 
-#: Library/Utility/FilterGroups.cs:204
+#: Library/Utility/FilterGroups.cs:207
 #, csharp-format
 msgid " Aliases: {0}"
 msgstr "Alternativnamen: {0}"
 
-#: Library/Utility/FilterGroups.cs:217
+#: Library/Utility/FilterGroups.cs:220
 #, csharp-format
 msgid ""
 "{0}: Files that are owned by the system or not suited to be backed up. This "
@@ -7506,7 +7534,7 @@ msgstr ""
 "gemeldet wurden. Die meisten Benutzer sollten diese Filter zumindest "
 "anwenden."
 
-#: Library/Utility/FilterGroups.cs:219
+#: Library/Utility/FilterGroups.cs:222
 #, csharp-format
 msgid ""
 "{0}: Files that belong to the operating system. These files are restored "
@@ -7515,14 +7543,14 @@ msgstr ""
 "{0}: Dateien, die zum Betriebssystem gehören. Diese Dateien werden nach "
 "einer Neuinstallation des Betriebssystems wiederhergestellt."
 
-#: Library/Utility/FilterGroups.cs:221
+#: Library/Utility/FilterGroups.cs:224
 #, csharp-format
 msgid "{0}: Files and folders that are known to be storage of temporary data."
 msgstr ""
 "{0}: Dateien und Ordner, die als Speicherort für temporäre Daten bekannt "
 "sind."
 
-#: Library/Utility/FilterGroups.cs:223
+#: Library/Utility/FilterGroups.cs:226
 #, csharp-format
 msgid ""
 "{0}: Files and folders that are known cache locations for the operating "
@@ -7531,7 +7559,7 @@ msgstr ""
 "{0}: Dateien und Ordner, die vom Betriebssystem oder andere Anwendungen, als"
 " Cache-Speicherorte bekannt sind"
 
-#: Library/Utility/FilterGroups.cs:225
+#: Library/Utility/FilterGroups.cs:228
 #, csharp-format
 msgid "{0}: Installed programs and their libraries, but not their settings."
 msgstr ""
@@ -7582,6 +7610,10 @@ msgstr "Unterstützte Kompressions-Module:"
 #: CommandLine/CLI/Strings.cs:36
 msgid "Supported encryption modules:"
 msgstr "Unterstützte Verschlüsselungs-Module:"
+
+#: CommandLine/CLI/Strings.cs:37
+msgid "Supported parity modules:"
+msgstr "Unterstützte Parity Module:"
 
 #: CommandLine/CLI/Strings.cs:38
 msgid "Supported options:"

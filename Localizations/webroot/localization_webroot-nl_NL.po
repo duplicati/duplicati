@@ -2659,6 +2659,10 @@ msgstr "Nu uitvoeren"
 msgid "Running commandline entry"
 msgstr "Opdrachtregelinvoer in uitvoering"
 
+#: scripts/services/ServerStatus.js:65
+msgid "Running script …"
+msgstr "Script uitvoeren …"
+
 #: index.html:172
 msgid "Running task:"
 msgstr "Taak in uitvoering:"

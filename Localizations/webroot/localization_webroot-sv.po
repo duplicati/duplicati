@@ -1,0 +1,2825 @@
+# Translators:
+# Tommy Kronkvist <tommykronkvist@me.com>, 2026
+# Lennart Jansson <petterallan@gmail.com>, 2026
+# axez85 <dr@davidaslan.se>, 2026
+# nils måsén <nils@piksel.se>, 2026
+# 
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Last-Translator: nils måsén <nils@piksel.se>, 2026\n"
+"Language-Team: Swedish (https://app.transifex.com/duplicati/teams/67655/sv/)\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: sv\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: templates/advancedoptionseditor.html:50
+msgid "- pick an option -"
+msgstr "- välj ett alternativ -"
+
+#: scripts/controllers/SystemSettingsController.js:217 templates/delete.html:7
+msgid "...loading..."
+msgstr "...laddar..."
+
+#: scripts/services/EditUriBuiltins.js:1314
+#: templates/backends/openstack.html:44 templates/backends/storj.html:21
+#: templates/backends/storj.html:22
+msgid "API key"
+msgstr "API-nyckel"
+
+#: scripts/services/EditUriBuiltins.js:1204 templates/backends/s3.html:66
+#: templates/backends/s3.html:68
+msgid "AWS Access ID"
+msgstr "AWS Access ID"
+
+#: scripts/services/EditUriBuiltins.js:1205 templates/backends/s3.html:71
+#: templates/backends/s3.html:73
+msgid "AWS Access Key"
+msgstr "AWS Access Key"
+
+#: scripts/services/EditUriBuiltins.js:157
+msgid "AWS IAM Policy"
+msgstr "AWS IAM Policy"
+
+#: index.html:223 index.html:239
+msgid "About"
+msgstr "Om"
+
+#: templates/about.html:2
+msgid "About {{appname}}"
+msgstr "Om {{appname}}"
+
+#: scripts/services/EditUriBuiltins.js:1153
+msgid "Access Key"
+msgstr "Åtkomstnyckel"
+
+#: scripts/services/AppUtils.js:76
+msgid "Access denied"
+msgstr "Åtkomst nekad"
+
+#: templates/backends/storj.html:33 templates/backends/storj.html:34
+msgid "Access grant"
+msgstr "Åtkomst beviljad"
+
+#: templates/settings.html:5
+msgid "Access to user interface"
+msgstr "Access till användarinterface"
+
+#: scripts/services/EditUriBuiltins.js:1152 templates/backends/azure.html:7
+#: templates/backends/azure.html:8
+msgid "Account name"
+msgstr "Kontonamn"
+
+#: templates/addwizard.html:3
+msgid "Add a new backup"
+msgstr "Lägg till ny säkerhetskopia"
+
+#: templates/addoredit.html:153
+msgid "Add a path directly"
+msgstr "Lägg till direkt sökväg"
+
+#: templates/advancedoptionseditor.html:48
+msgid "Add advanced option"
+msgstr "Lägg till avancerade val"
+
+#: index.html:211
+msgid "Add backup"
+msgstr "Lägg till säkerhetskopia"
+
+#: templates/addoredit.html:207
+msgid "Add filter"
+msgstr "Lägg till filter"
+
+#: templates/addoredit.html:156
+msgid "Add path"
+msgstr "Lägg till sökväg"
+
+#: templates/backup-result/top-right-box.html:18
+msgid "Added"
+msgstr "Sparad"
+
+#: scripts/services/EditUriBuiltins.js:1215
+#: scripts/services/EditUriBuiltins.js:1231
+msgid "Adjust bucket name?"
+msgstr "Justera \"bucket name\"?"
+
+#: templates/restoredirect.html:66 templates/restoredirect.html:74
+msgid "Advanced Options"
+msgstr "Avancerade tillägg"
+
+#: templates/addoredit.html:378 templates/commandline.html:23
+#: templates/commandline.html:31 templates/edituri.html:29
+msgid "Advanced options"
+msgstr "Avancerade tillägg"
+
+#: templates/home.html:64
+msgid "Advanced:"
+msgstr "Avancerat:"
+
+#: scripts/directives/sourceFolderPicker.js:279
+msgid "All Hyper-V Machines"
+msgstr "Alla Hyper-V datorer"
+
+#: templates/settings.html:175
+msgid ""
+"All usage reports are sent anonymously and do not contain any personal "
+"information. They contain information about hardware and operating system, "
+"the type of backend, backup duration, overall size of source data and "
+"similar data. They do not contain paths, filenames, usernames, passwords or "
+"similar sensitive information."
+msgstr ""
+"Alla användningsrapporter skickas anonymt och innehåller ingen personlig "
+"information. De innehåller information om hårdvara och operativsystem, typ "
+"av backend, säkerhetskopieringstid, övergripande storlek på källdata och "
+"liknande data. De innehåller inte sökvägar, filnamn, användarnamn, lösenord "
+"eller liknande känslig information."
+
+#: templates/settings.html:20
+msgid "Allow remote access (requires restart)"
+msgstr "Tillåt fjärrstyrning (kräver omstart)"
+
+#: templates/addoredit.html:278
+msgid "Allowed days"
+msgstr "Tillåtna dagar"
+
+#: scripts/controllers/LocalDatabaseController.js:103
+msgid "An existing file was found at the new location"
+msgstr "En existerande fil hittades på den nya platsen"
+
+#: scripts/controllers/LocalDatabaseController.js:72
+msgid ""
+"An existing file was found at the new location\n"
+"Are you sure you want the database to point to an existing file?"
+msgstr ""
+"En existerande fil hittades på den nya platsen. Är du säker att databasen "
+"skall peka till en existerande fil?"
+
+#: scripts/controllers/EditBackupController.js:458
+msgid ""
+"An existing local database for the storage has been found.\n"
+"Re-using the database will allow the command-line and server instances to work on the same remote storage.\n"
+"\n"
+" Do you wish to use the existing database?"
+msgstr ""
+"En befintlig lokal databas för lagringen har hittats.\n"
+"Återanvändning av databasen gör att kommandorads- och serverinstanserna kan arbeta på samma fjärrlagring.\n"
+"\n"
+"Vill du använda den befintliga databasen?"
+
+#: templates/settings.html:163
+msgid "Anonymous usage reports"
+msgstr "Anonym användarrapport"
+
+#: scripts/services/AppUtils.js:212
+msgid "Applications"
+msgstr "Applikationer"
+
+#: templates/export.html:8
+msgid "As Command-line"
+msgstr "Som kommandorad"
+
+#: scripts/services/EditUriBuiltins.js:1110
+#: scripts/services/EditUriBuiltins.js:1120 templates/backends/gcs.html:8
+#: templates/backends/gcs.html:9 templates/backends/jottacloud.html:8
+#: templates/backends/jottacloud.html:9 templates/backends/msgroup.html:13
+#: templates/backends/msgroup.html:14 templates/backends/oauth.html:8
+#: templates/backends/oauth.html:9 templates/backends/pcloud.html:21
+#: templates/backends/pcloud.html:22 templates/backends/sharepoint.html:8
+#: templates/backends/sharepoint.html:9
+msgid "AuthID"
+msgstr "AuthID"
+
+#: scripts/services/EditUriBuiltins.js:1305 templates/backends/storj.html:2
+msgid "Authentication method"
+msgstr "Autentiseringsmetod"
+
+#: templates/backends/storj.html:5
+msgid "Authentication method ({{auth_method}})"
+msgstr "Autentiseringsmetod ({{auth_method}})"
+
+#: templates/backends/filejump.html:26 templates/backends/filen.html:12
+#: templates/backends/generic.html:23 templates/backends/openstack.html:35
+#: templates/backends/smb.html:43
+msgid "Authentication password"
+msgstr "Autentiseringslösenord"
+
+#: templates/backends/filejump.html:22 templates/backends/filen.html:8
+#: templates/backends/generic.html:19 templates/backends/openstack.html:31
+#: templates/backends/smb.html:39
+msgid "Authentication username"
+msgstr "Autentiseringsanvändarnamn"
+
+#: scripts/controllers/EditBackupController.js:367
+msgid "Autogenerated passphrase"
+msgstr "Autogenererat lösenord"
+
+#: templates/backends/b2.html:12
+msgid "B2 Application ID"
+msgstr "B2 Application ID"
+
+#: templates/backends/b2.html:16
+msgid "B2 Application Key"
+msgstr "B2 Application Key"
+
+#: scripts/services/EditUriBuiltins.js:1250
+msgid "B2 Cloud Storage Account ID"
+msgstr "B2 Cloud Storage Account ID"
+
+#: templates/backends/b2.html:13
+msgid "B2 Cloud Storage Application ID"
+msgstr "B2 Cloud Storage Application ID"
+
+#: scripts/services/EditUriBuiltins.js:1251 templates/backends/b2.html:17
+msgid "B2 Cloud Storage Application Key"
+msgstr "B2 Cloud Storage Application Key"
+
+#: templates/restore.html:138 templates/restore.html:70
+msgid "Back"
+msgstr "Åter"
+
+#: scripts/services/ServerStatus.js:47
+msgid "Backup complete!"
+msgstr "Säkerhetskopieringen är klar!"
+
+#: templates/addoredit.html:92
+msgid "Backup destination"
+msgstr "Destination till säkerhetskopia"
+
+#: templates/restore.html:21 templates/restoredirect.html:21
+#: templates/restoredirect.html:31
+msgid "Backup location"
+msgstr "Plats för säkerhetskopia"
+
+#: templates/addoredit.html:321
+msgid "Backup retention"
+msgstr "Backup-bibehållning"
+
+#: templates/home.html:100
+msgid "Backup:"
+msgstr "Säkerhetskopia:"
+
+#: templates/settings.html:140
+msgid "Beta"
+msgstr "Beta"
+
+#: scripts/services/AppUtils.js:74
+msgid "Broken access"
+msgstr "Trasig åtkomst"
+
+#: templates/backends/file.html:8 templates/restore.html:91
+msgid "Browse"
+msgstr "Bläddra"
+
+#: scripts/controllers/SystemSettingsController.js:39
+msgid "Browser default"
+msgstr "Webbläsarens standard"
+
+#: templates/backends/gcs.html:15
+msgid "Bucket create location"
+msgstr "Bucket skapa plats"
+
+#: scripts/services/EditUriBuiltins.js:1163
+#: scripts/services/EditUriBuiltins.js:1203
+#: scripts/services/EditUriBuiltins.js:1249
+#: scripts/services/EditUriBuiltins.js:1263
+#: scripts/services/EditUriBuiltins.js:1310
+#: scripts/services/EditUriBuiltins.js:1316
+#: scripts/services/EditUriBuiltins.js:1372
+#: scripts/services/EditUriBuiltins.js:1384 templates/backends/b2.html:2
+#: templates/backends/b2.html:3 templates/backends/cos.html:25
+#: templates/backends/e2.html:11 templates/backends/e2.html:12
+#: templates/backends/gcs.html:2 templates/backends/openstack.html:2
+#: templates/backends/s3.html:22 templates/backends/s3.html:23
+#: templates/backends/storj.html:37 templates/backends/storj.html:38
+msgid "Bucket name"
+msgstr "Bucket namn"
+
+#: templates/backends/gcs.html:26
+msgid "Bucket storage class"
+msgstr "Bucket förvaringsklass"
+
+#: scripts/services/ServerStatus.js:52
+msgid "Building list of files to restore …"
+msgstr "Skapar lista med filer för återskapande ..."
+
+#: scripts/controllers/RestoreController.js:373
+msgid "Building partial temporary database …"
+msgstr "Skapar tillfällig databas ..."
+
+#: templates/settings.html:21
+msgid ""
+"By allowing remote access, the server listens to requests from any machine "
+"on your network. If you enable this option, make sure you are always using "
+"the computer on a secure firewall protected network."
+msgstr ""
+"Genom att tillåta fjärråtkomst lyssnar servern på förfrågningar från vilken "
+"maskin som helst i ditt nätverk. Om du aktiverar det här alternativet, se "
+"till att du alltid använder datorn i ett säkert brandvägg-skyddat nätverk."
+
+#: templates/settings.html:31
+msgid ""
+"By default, the tray icon will open the user interface with a token that "
+"unlocks the user interface. This ensures that you can access the user "
+"interface from the tray icon, while requiring others to enter a password. If"
+" you prefer having to type in the password, even when accessing the user "
+"interface from the tray icon, enable this option."
+msgstr ""
+"Som standard öppnar tray-icon användargränssnittet med en token som låser "
+"upp användargränssnittet. Detta säkerställer att du kan komma åt "
+"användargränssnittet från ikonen i fältet, samtidigt som du kräver att andra"
+" anger ett lösenord. Om du föredrar att behöva skriva in lösenordet, även "
+"när du kommer åt användargränssnittet från ikonen i fältet, aktivera det här"
+" alternativet."
+
+#: scripts/services/AppUtils.js:206
+msgid "Cache Files"
+msgstr "Cachefiler"
+
+#: templates/settings.html:150
+msgid "Canary"
+msgstr "Kanariefågel"
+
+#: scripts/controllers/AppController.js:204
+#: scripts/controllers/AppController.js:58
+#: scripts/controllers/AppController.js:74
+#: scripts/controllers/DeleteController.js:67
+#: scripts/controllers/EditBackupController.js:103
+#: scripts/controllers/EditBackupController.js:352
+#: scripts/controllers/EditBackupController.js:367
+#: scripts/controllers/EditBackupController.js:401
+#: scripts/controllers/EditBackupController.js:410
+#: scripts/controllers/EditBackupController.js:437
+#: scripts/controllers/EditBackupController.js:458
+#: scripts/controllers/ExportController.js:13
+#: scripts/controllers/LocalDatabaseController.js:72
+#: scripts/controllers/LocalDatabaseController.js:88
+#: scripts/controllers/RestoreDirectController.js:24
+#: scripts/controllers/StateController.js:119
+#: scripts/controllers/StateController.js:128
+#: scripts/services/DialogService.js:50
+#: scripts/services/EditUriBuiltins.js:1215
+#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:61 templates/delete.html:54
+#: templates/export.html:34 templates/settings.html:205
+msgid "Cancel"
+msgstr "Avbryt"
+
+#: scripts/controllers/LocalDatabaseController.js:103
+msgid "Cannot move to existing file"
+msgstr "Kan inte flytta till befintlig fil"
+
+#: templates/about.html:5
+msgid "Changelog"
+msgstr "Ändringslogg"
+
+#: templates/updatechangelog.html:2
+msgid "Changelog for {{appname}} {{version}}"
+msgstr "Ändringslogg för {{appname}} {{version}}"
+
+#: scripts/controllers/UpdateChangelogController.js:16
+msgid "Check failed:"
+msgstr "Kontroll misslyckades:"
+
+#: templates/about.html:34
+msgid "Check for updates now"
+msgstr "Kontrollera uppdateringar nu"
+
+#: templates/about.html:35
+msgid "Checking for updates …"
+msgstr "Kontrollerar uppdateringar ..."
+
+#: templates/edituri.html:16
+msgid "Chose a storage type to get started"
+msgstr "Välj en lagringstyp för att börja"
+
+#: templates/backends/gcs.html:11 templates/backends/jottacloud.html:11
+#: templates/backends/msgroup.html:16 templates/backends/oauth.html:11
+#: templates/backends/pcloud.html:24 templates/backends/sharepoint.html:11
+msgid "Click the AuthID link to create an AuthID"
+msgstr "Klicka på AuthID-länken för att skapa ett AuthID"
+
+#: index.html:148 index.html:199
+msgid "Click to set throttle options"
+msgstr "Klicka för att välja begränsningsalternativ"
+
+#: templates/backends/s3.html:78
+msgid "Client library to use"
+msgstr "Klientbibliotek att använda"
+
+#: templates/home.html:69
+msgid "Commandline …"
+msgstr "Kommandorad ..."
+
+#: templates/backup-result/phases/compact.html:3
+msgid "Compact Phase"
+msgstr "Kompakt Fas"
+
+#: templates/home.html:68
+msgid "Compact now"
+msgstr "Komprimera nu"
+
+#: scripts/services/ServerStatus.js:44 scripts/services/ServerStatus.js:70
+msgid "Compacting remote data …"
+msgstr "Komprimerar fjärrdata …"
+
+#: templates/backup-result/box.html:35
+msgid "Complete log"
+msgstr "Komplett logg"
+
+#: scripts/services/ServerStatus.js:41
+msgid "Completing backup …"
+msgstr "Slutför säkerhetskopieringen..."
+
+#: scripts/services/ServerStatus.js:39
+msgid "Completing previous backup …"
+msgstr "Slutför tidigare säkerhetskopiering …"
+
+#: scripts/directives/sourceFolderPicker.js:582
+msgid "Computer"
+msgstr "Dator"
+
+#: templates/import.html:9
+msgid "Configuration file:"
+msgstr "Konfigurationsfil:"
+
+#: templates/home.html:56
+msgid "Configuration:"
+msgstr "Konfiguration:"
+
+#: templates/addwizard.html:9
+msgid "Configure a new backup"
+msgstr "Konfigurera en ny säkerhetskopia"
+
+#: scripts/controllers/DeleteController.js:65
+#: scripts/controllers/DeleteController.js:99
+#: scripts/controllers/LocalDatabaseController.js:28
+msgid "Confirm delete"
+msgstr "Bekräfta borttagning"
+
+#: templates/export.html:30
+msgid "Confirm encryption passphrase"
+msgstr "Bekräfta krypteringslösenord"
+
+#: templates/export.html:29
+msgid "Confirm passphrase"
+msgstr "Bekräfta lösenfras"
+
+#: scripts/services/EditUriBackendConfig.js:74
+msgid "Confirmation required"
+msgstr "Bekräftelse beövs"
+
+#: templates/restoredirect.html:80
+msgid "Connect"
+msgstr "Anslut"
+
+#: index.html:312
+msgid "Connect now"
+msgstr "Anslut nu"
+
+#: index.html:305
+msgid "Connecting to server …"
+msgstr "Ansluter till server ..."
+
+#: index.html:297
+msgid "Connection lost"
+msgstr "Anslutning avbruten"
+
+#: scripts/directives/backupEditUri.js:52
+#: scripts/directives/backupEditUri.js:55
+msgid "Connection worked!"
+msgstr "Anslutning OK!"
+
+#: scripts/services/EditUriBuiltins.js:1154 templates/backends/azure.html:2
+#: templates/backends/azure.html:3
+msgid "Container name"
+msgstr "Behållarnamn"
+
+#: templates/backends/openstack.html:49
+msgid "Container region"
+msgstr "Behållarregion"
+
+#: templates/restore.html:69
+msgid "Continue"
+msgstr "Fortsätt"
+
+#: scripts/controllers/EditBackupController.js:437
+msgid "Continue without encryption"
+msgstr "Fortsätt utan kryptering"
+
+#: scripts/controllers/DialogController.js:16
+msgid "Copied!"
+msgstr "Kopierad!"
+
+#: templates/copy_clipboard_buttons.html:3
+msgid "Copy"
+msgstr "Kopia"
+
+#: templates/addoredit.html:103 templates/restoredirect.html:42
+msgid "Copy Destination URL to Clipboard"
+msgstr "Kopiera mål-URL till urklipp"
+
+#: scripts/controllers/DialogController.js:20
+msgid "Copy failed. Please manually copy the URL"
+msgstr "Kopering misslyckades, var vänlig kopiera URLen manuellt"
+
+#: scripts/services/AppUtils.js:741
+msgid "Core options"
+msgstr "Kärnalternativ"
+
+#: scripts/controllers/StateController.js:34
+msgid "Counting ({{files}} files found, {{size}})"
+msgstr "Beräknar ({{files}} filer hittade, {{size}})"
+
+#: templates/settings.html:170
+msgid "Crashes only"
+msgstr "Endast kraschar"
+
+#: templates/home.html:75
+msgid "Create bug report …"
+msgstr "Skapa buggrapport"
+
+#: scripts/directives/backupEditUri.js:132
+msgid "Create folder?"
+msgstr "Skapa mapp?"
+
+#: scripts/services/EditUriBuiltins.js:140
+msgid "Created new limited user"
+msgstr "Skapa ny begränsad användare"
+
+#: scripts/services/ServerStatus.js:64
+msgid "Creating bug report …"
+msgstr "Skapar felrapport ..."
+
+#: scripts/services/EditUriBuiltins.js:126
+msgid "Creating new user with limited access …"
+msgstr "Skapar ny användare med begränsad åtkomst …"
+
+#: scripts/services/ServerStatus.js:53
+msgid "Creating target folders …"
+msgstr "Skapar målmappar …"
+
+#: scripts/controllers/RestoreController.js:368
+msgid "Creating temporary backup …"
+msgstr "Skapar temporär säkerhetskopia ..."
+
+#: templates/home.html:105
+msgid "Current action:"
+msgstr "Nuvarande åtgärd:"
+
+#: templates/home.html:115
+msgid "Current file:"
+msgstr "Nuvarande fil:"
+
+#: templates/updatechangelog.html:4
+msgid "Current version is {{versionname}} ({{versionnumber}})"
+msgstr "Aktuell version är {{versionname}} ({{versionnumber}})"
+
+#: templates/backends/s3.html:17
+msgid "Custom S3 endpoint"
+msgstr "Anpassad S3-slutpunkt"
+
+#: scripts/services/EditUriBuiltins.js:1320 templates/backends/storj.html:18
+msgid "Custom Satellite"
+msgstr "Anpassad Satellit"
+
+#: templates/backends/storj.html:13
+msgid "Custom Satellite ({{satellite}})"
+msgstr "Anpassad Satellit ({{satellite}})"
+
+#: templates/backends/openstack.html:13
+msgid "Custom authentication url"
+msgstr "Anpassad autentiseringsadress"
+
+#: templates/addoredit.html:327
+msgid "Custom backup retention"
+msgstr "Anpassad backup-bibehållning"
+
+#: templates/backends/s3.html:39
+msgid "Custom region for creating buckets"
+msgstr "Anpassad region för att skapa buckets"
+
+#: templates/home.html:66
+msgid "Database …"
+msgstr "Databas ..."
+
+#: scripts/services/AppUtils.js:97 templates/addoredit.html:353
+msgid "Days"
+msgstr "Dagar"
+
+#: scripts/controllers/SystemSettingsController.js:40
+msgid "Default"
+msgstr "Standard"
+
+#: templates/settings.html:129
+msgid "Default ({{channelname}})"
+msgstr "Standard ({{channelname}})"
+
+#: scripts/services/AppUtils.js:193
+msgid "Default excludes"
+msgstr "Standard exkluderingar"
+
+#: templates/settings.html:190
+msgid "Default options"
+msgstr "Standardalternativ"
+
+#: scripts/controllers/DeleteController.js:67 templates/localdatabase.html:16
+msgid "Delete"
+msgstr "Radera"
+
+#: templates/backup-result/phases/delete.html:3
+msgid "Delete Phase (Old Backup Versions)"
+msgstr "Ta bort fas (gamla säkerhetskopieringsversioner)"
+
+#: templates/delete.html:5 templates/delete.html:53
+msgid "Delete backup"
+msgstr "Radera säkerhetskopia"
+
+#: templates/addoredit.html:324
+msgid "Delete backups that are older than"
+msgstr "Radera säkerhetskopior äldre än"
+
+#: templates/delete.html:13
+msgid "Delete local database"
+msgstr "Radera lokal databas"
+
+#: templates/delete.html:38 templates/delete.html:47
+msgid "Delete remote files"
+msgstr "Radera målfiler"
+
+#: templates/delete.html:26
+msgid "Delete the local database"
+msgstr "Radera lokal databas"
+
+#: templates/delete.html:41
+msgid "Delete {{filecount}} files ({{filesize}}) from the remote storage?"
+msgstr "Ta bort {{filecount}} filer ({{filesize}}) från fjärrmålet?"
+
+#: templates/home.html:60
+msgid "Delete …"
+msgstr "Radera ..."
+
+#: templates/backup-result/top-right-box.html:26
+msgid "Deleted"
+msgstr "Raderade"
+
+#: templates/backup-result/phases/delete.html:24
+msgid "Deleted Versions"
+msgstr "Raderade Versioner"
+
+#: templates/backup-result/phases/compact.html:23
+msgid "Deleted files"
+msgstr "Raderade filer"
+
+#: scripts/services/ServerStatus.js:67
+msgid "Deleting remote files …"
+msgstr "Raderar fjärrfiler ..."
+
+#: scripts/services/ServerStatus.js:43
+msgid "Deleting unwanted files …"
+msgstr "Raderar oönskade filer..."
+
+#: templates/addoredit.html:43
+msgid "Description (optional)"
+msgstr "Beskrivning (valfritt)"
+
+#: templates/home.html:46
+msgid "Description:"
+msgstr "Beskrivning:"
+
+#: scripts/services/AppUtils.js:60
+msgid "Desktop"
+msgstr "Skrivbord"
+
+#: templates/addoredit.html:25
+msgid "Destination"
+msgstr "Destination"
+
+#: templates/backends/file.html:7 templates/backends/filejump.html:3
+#: templates/backends/filen.html:3 templates/backends/generic.html:14
+#: templates/backends/jottacloud.html:3 templates/backends/msgroup.html:8
+#: templates/backends/oauth.html:3 templates/backends/pcloud.html:16
+#: templates/backends/sharepoint.html:2 templates/backends/smb.html:29
+msgid "Destination path"
+msgstr "Målsökväg"
+
+#: templates/log.html:32
+msgid "Disabled"
+msgstr "Avstängd"
+
+#: templates/notificationarea.html:10 templates/notificationarea.html:29
+#: templates/notificationarea.html:40
+msgid "Dismiss"
+msgstr "Avfärda"
+
+#: templates/notificationarea.html:50
+msgid "Dismiss all"
+msgstr "Avfärda allt"
+
+#: templates/settings.html:108
+msgid "Display and color theme"
+msgstr "Visnings- och färgtema"
+
+#: scripts/controllers/DeleteController.js:99
+msgid "Do you really want to delete the backup: \"{{name}}\" ?"
+msgstr "Vill du verkligen radera säkerhetskopia för: \"{{name}}\" ?"
+
+#: scripts/controllers/LocalDatabaseController.js:28
+msgid "Do you really want to delete the local database for: {{name}}"
+msgstr "Vill du verkligen radera den lokala databasen för: {{name}}"
+
+#: templates/edituri.html:21 templates/export.html:53
+msgid "Done"
+msgstr "Klart"
+
+#: templates/notificationarea.html:16 templates/notificationarea.html:30
+#: templates/updatechangelog.html:10
+msgid "Download"
+msgstr "Ladda ner"
+
+#: templates/backup-result/phases/compact.html:28
+msgid "Downloaded files"
+msgstr "Nedladdade filer"
+
+#: scripts/services/ServerStatus.js:57
+msgid "Downloading files …"
+msgstr "Laddar ner filer ..."
+
+#: templates/notificationarea.html:26
+msgid "Downloading update…"
+msgstr "Laddar ner uppdatering ..."
+
+#: scripts/services/AppUtils.js:343
+msgid "Duplicate option {{opt}}"
+msgstr "Duplicera alternativ {{opt}}"
+
+#: index.html:254
+msgid "Duplicati Website"
+msgstr "Duplicatis webbsida"
+
+#: index.html:248
+msgid "Duplicati forum"
+msgstr "Duplicatis forum"
+
+#: templates/settings.html:93
+msgid ""
+"Duplicati will run when started, but will remain in a paused state for the "
+"duration. Duplicati will occupy minimal system resources and no backups will"
+" be run."
+msgstr ""
+"Duplicati kommer att köras när den startas, men förblir i pausat tillstånd "
+"under hela tiden. Duplicati kommer att uppta minimala systemresurser och "
+"inga säkerhetskopior kommer att köras."
+
+#: templates/backup-result/phases/compact.html:16
+#: templates/backup-result/phases/delete.html:16
+#: templates/backup-result/phases/purge.html:16
+#: templates/backup-result/phases/recreate-database.html:16
+#: templates/backup-result/phases/repair.html:16
+#: templates/backup-result/phases/test.html:16
+#: templates/backup-result/top-left-box.html:11 templates/home.html:19
+msgid "Duration"
+msgstr "Varaktighet"
+
+#: templates/delete.html:15
+msgid ""
+"Each backup has a local database associated with it, which stores information about the remote backup on the local machine.\n"
+"            When deleting a backup, you can also delete the local database without affecting the ability to restore the remote files.\n"
+"            If you are using the local database for backups from the commandline, you should keep the database."
+msgstr ""
+"Varje backup har en lokal databas som är associerad med den, som lagrar information om fjärrfilerna på den lokala maskinen.\n"
+"När du tar bort en säkerhetskopia kan du också ta bort den lokala databasen utan att påverka möjligheten att återställa fjärrfilerna.\n"
+"Om du använder den lokala databasen för säkerhetskopior från kommandoraden bör du behålla databasen."
+
+#: templates/addoredit.html:174 templates/addoredit.html:389
+#: templates/edituri.html:40 templates/settings.html:194
+msgid "Edit as list"
+msgstr "Ändra som lista"
+
+#: templates/addoredit.html:177 templates/addoredit.html:392
+#: templates/edituri.html:43 templates/settings.html:200
+msgid "Edit as text"
+msgstr "Ändra som text"
+
+#: templates/home.html:58
+msgid "Edit …"
+msgstr "Ändra ..."
+
+#: templates/export.html:22
+msgid "Encrypt file"
+msgstr "Kryptera fil"
+
+#: templates/addoredit.html:47 templates/restore.html:22
+#: templates/restoredirect.html:22 templates/restoredirect.html:58
+msgid "Encryption"
+msgstr "Kryptering"
+
+#: scripts/controllers/EditBackupController.js:410
+msgid "Encryption changed"
+msgstr "Kryptering förändrad"
+
+#: scripts/services/EditUriBuiltins.js:1315 templates/backends/storj.html:25
+#: templates/backends/storj.html:26
+msgid "Encryption passphrase"
+msgstr "Ange krypteringslösenord"
+
+#: templates/backup-result/phases/compact.html:12
+#: templates/backup-result/phases/delete.html:12
+#: templates/backup-result/phases/purge.html:12
+#: templates/backup-result/phases/recreate-database.html:12
+#: templates/backup-result/phases/repair.html:12
+#: templates/backup-result/phases/test.html:12
+#: templates/backup-result/top-left-box.html:7
+msgid "End"
+msgstr "Slut"
+
+#: scripts/controllers/EditBackupController.js:103
+#: scripts/controllers/RestoreDirectController.js:24
+msgid "Enter URL"
+msgstr "Ange URL"
+
+#: templates/addoredit.html:341
+msgid ""
+"Enter a retention strategy manually. Placeholders are D/W/Y for "
+"days/weeks/years and U for unlimited. The syntax is: 7D:1D,4W:1W,36M:1M. "
+"This example keeps one backup for each of the next 7 days, one for each of "
+"the next 4 weeks, and one for each of the next 36 months. This can also be "
+"written as 1W:1D,1M:1W,3Y:1M."
+msgstr ""
+"Ange en backupstategi manuellt. Användbara tecken är D/W/Y för "
+"dagar/veckor/år och U för obegränsat. Tillåten syntax är: "
+"7D:1D,4W:1W,36M:1M. Detta exempel behåller en backup för var 7:e dag, en för"
+" var 4:e vecka och en för var 36:e månad.  Detta kan också skriva som "
+"1W:1D,1M:1W,3Y:1M."
+
+#: templates/restoredirect.html:61
+msgid "Enter backup passphrase, if any"
+msgstr "Ange lösenordsfras, om tillämpligt"
+
+#: templates/addwizard.html:10
+msgid "Enter configuration details"
+msgstr "Ange konfigurationsdetaljer"
+
+#: templates/export.html:26
+msgid "Enter encryption passphrase"
+msgstr "Ange krypteringslösenord"
+
+#: templates/addoredit.html:196
+msgid "Enter expression here"
+msgstr "Ange uttryck här"
+
+#: templates/restore.html:90
+msgid "Enter the destination path"
+msgstr "Ange målsökväg"
+
+#: scripts/controllers/CommandlineController.js:174
+#: scripts/controllers/CommandlineController.js:80
+#: scripts/controllers/ExportController.js:40
+#: scripts/controllers/ExportController.js:57
+#: scripts/controllers/ExportController.js:70
+#: scripts/controllers/ImportController.js:17
+#: scripts/controllers/ImportController.js:39
+#: scripts/controllers/ImportController.js:43
+#: scripts/controllers/ImportController.js:49
+#: scripts/controllers/RestoreController.js:114
+#: scripts/controllers/RestoreController.js:144
+#: scripts/controllers/RestoreController.js:294
+#: scripts/controllers/RestoreController.js:332
+#: scripts/controllers/RestoreController.js:390
+#: scripts/controllers/RestoreController.js:423
+#: scripts/controllers/RestoreController.js:431
+#: scripts/controllers/RestoreController.js:90
+#: scripts/controllers/RestoreDirectController.js:112
+#: scripts/controllers/RestoreDirectController.js:78
+#: scripts/directives/backupEditUri.js:144
+#: scripts/directives/backupEditUri.js:165
+#: scripts/directives/backupEditUri.js:199
+#: scripts/directives/notificationArea.js:41
+#: scripts/directives/notificationArea.js:43
+#: scripts/directives/notificationArea.js:68 scripts/services/AppUtils.js:343
+#: scripts/services/AppUtils.js:348 scripts/services/AppUtils.js:394
+#: scripts/services/AppUtils.js:402
+msgid "Error"
+msgstr "Fel"
+
+#: scripts/services/ServerStatus.js:72
+msgid "Error!"
+msgstr "Fel!"
+
+#: templates/settings.html:169
+msgid "Errors and crashes"
+msgstr "Fel och kraschar"
+
+#: templates/backup-result/top-right-box.html:10
+msgid "Examined"
+msgstr "Granska"
+
+#: templates/addoredit.html:214
+msgid "Exclude"
+msgstr "Exkludera"
+
+#: scripts/services/AppUtils.js:131
+msgid "Exclude directories whose names contain"
+msgstr "Exkludera kataloger vars namn innehåller"
+
+#: scripts/services/AppUtils.js:187
+msgid "Exclude expression"
+msgstr "Uteslut enligt uttryck"
+
+#: scripts/services/AppUtils.js:150
+msgid "Exclude file"
+msgstr "Exkludera fil"
+
+#: scripts/services/AppUtils.js:157
+msgid "Exclude file extension"
+msgstr "Uteslut filändelse"
+
+#: scripts/services/AppUtils.js:137
+msgid "Exclude files whose names contain"
+msgstr "Uteslut filer vars namn innehåller"
+
+#: scripts/services/AppUtils.js:172
+msgid "Exclude filter group"
+msgstr "Uteslut filtergrupp"
+
+#: scripts/services/AppUtils.js:143
+msgid "Exclude folder"
+msgstr "Uteslut mapp"
+
+#: scripts/services/AppUtils.js:162
+msgid "Exclude regular expression"
+msgstr "Uteslut enligt reguljärt uttryck"
+
+#: scripts/controllers/LocalDatabaseController.js:72
+msgid "Existing file found"
+msgstr "Filen existerar redan"
+
+#: templates/settings.html:145
+msgid "Experimental"
+msgstr "Experimentell"
+
+#: templates/export.html:35
+msgid "Export"
+msgstr "Exportera"
+
+#: templates/export.html:2
+msgid "Export backup configuration"
+msgstr "Exportera konfiguration för säkerhetskopia"
+
+#: templates/delete.html:31 templates/delete.html:34
+msgid "Export configuration"
+msgstr "Exportera konfiguration"
+
+#: templates/export.html:18
+msgid "Export passwords"
+msgstr "Exportera lösenord"
+
+#: templates/home.html:59
+msgid "Export …"
+msgstr "Exportera ..."
+
+#: templates/export.html:39
+msgid "Exporting …"
+msgstr "Exporterar ..."
+
+#: templates/externallink.html:1
+msgid "External link"
+msgstr "Extern länk"
+
+#: scripts/services/SystemInfo.js:52
+msgid "FTP (Alternative)"
+msgstr "FTP (alternativ)"
+
+#: scripts/controllers/RestoreController.js:390
+msgid "Failed to build temporary database: {{message}}"
+msgstr "Misslyckades med att skapa tillfällig databas: {{message}}"
+
+#: scripts/directives/backupEditUri.js:144
+#: scripts/directives/backupEditUri.js:165
+#: scripts/directives/backupEditUri.js:199
+msgid "Failed to connect:"
+msgstr "Misslyckades med att ansluta:"
+
+#: scripts/controllers/CommandlineController.js:174
+#: scripts/controllers/CommandlineController.js:80
+#: scripts/controllers/ExportController.js:40
+#: scripts/controllers/ExportController.js:57
+#: scripts/controllers/RestoreController.js:294
+#: scripts/controllers/RestoreController.js:332
+#: scripts/controllers/RestoreController.js:431
+#: scripts/controllers/RestoreController.js:90
+#: scripts/controllers/RestoreDirectController.js:112
+#: scripts/controllers/RestoreDirectController.js:78
+#: scripts/services/LogService.js:29
+msgid "Failed to connect: {{message}}"
+msgstr "Misslyckades med att ansluta: {{message}}"
+
+#: scripts/controllers/LocalDatabaseController.js:38
+msgid "Failed to delete:"
+msgstr "Misslyckades med att radera:"
+
+#: scripts/controllers/RestoreController.js:114
+#: scripts/controllers/RestoreController.js:144
+msgid "Failed to fetch path information: {{message}}"
+msgstr "Misslyckades med att hämta sökvägsinformation: {{message}}"
+
+#: scripts/directives/notificationArea.js:45
+msgid "Failed to find backup:"
+msgstr "Misslyckades med att hitta säkerhetskopia:"
+
+#: scripts/controllers/EditBackupController.js:714
+msgid "Failed to read backup defaults:"
+msgstr "Misslyckades med att läsa standardinställningarna för säkerhetskopia:"
+
+#: scripts/controllers/RestoreController.js:423
+msgid "Failed to restore files: {{message}}"
+msgstr "Misslyckades med att återställa filer: {{message}}"
+
+#: scripts/controllers/SystemSettingsController.js:263
+msgid "Failed to save:"
+msgstr "Misslyckades med att spara:"
+
+#: scripts/controllers/RestoreController.js:120
+#: scripts/controllers/RestoreController.js:159
+msgid "Fetching path information …"
+msgstr "Hämtar sökvägsinformation …"
+
+#: scripts/services/AppUtils.js:80
+msgid "File"
+msgstr "Fil"
+
+#: templates/addoredit.html:237
+msgid "Files larger than:"
+msgstr "Filer större än:"
+
+#: templates/addoredit.html:163
+msgid "Filters"
+msgstr "Filter"
+
+#: templates/commandline.html:57
+msgid "Finished!"
+msgstr "Klar!"
+
+#: scripts/controllers/AppController.js:191
+msgid "First run setup"
+msgstr "Nyinstallationsinställningar"
+
+#: scripts/services/AppUtils.js:51
+msgid "Folder"
+msgstr "Mapp"
+
+#: templates/backends/aliyunoss.html:30 templates/backends/b2.html:7
+#: templates/backends/cos.html:30 templates/backends/e2.html:16
+#: templates/backends/file.html:22 templates/backends/file.html:6
+#: templates/backends/jottacloud.html:2 templates/backends/mega.html:2
+#: templates/backends/s3.html:60 templates/backends/storj.html:41
+#: templates/restore.html:105 templates/restore.html:89
+msgid "Folder path"
+msgstr "Mappsökväg"
+
+#: scripts/services/AppUtils.js:114
+msgid "Fri"
+msgstr "Fre"
+
+#: scripts/services/AppUtils.js:90
+msgid "GByte"
+msgstr "GByte"
+
+#: scripts/services/AppUtils.js:123
+msgid "GByte/s"
+msgstr "GByte/s"
+
+#: templates/backends/gcs.html:38
+msgid "GCS Project ID"
+msgstr "GCS Projekt-ID"
+
+#: templates/about.html:4 templates/addoredit.html:24
+#: templates/backuplog.html:6
+msgid "General"
+msgstr "Generellt"
+
+#: templates/addoredit.html:36
+msgid "General backup settings"
+msgstr "Allmän inställningar för säkerhetskopia"
+
+#: templates/addoredit.html:305
+msgid "General options"
+msgstr "Generella inställningar"
+
+#: templates/addoredit.html:73
+msgid "Generate"
+msgstr "Skapa"
+
+#: scripts/controllers/RestoreController.js:70
+msgid "Getting file versions …"
+msgstr "Hämtar filversioner ..."
+
+#: scripts/services/EditUriBuiltins.js:1143 templates/backends/msgroup.html:2
+msgid "Group email"
+msgstr "Grupp-epost"
+
+#: scripts/controllers/EditBackupController.js:20
+msgid "Hidden files"
+msgstr "Gömda filer"
+
+#: templates/addoredit.html:68
+msgid "Hide"
+msgstr "Dölj"
+
+#: index.html:208 scripts/services/AppUtils.js:62
+msgid "Home"
+msgstr "Hem"
+
+#: templates/settings.html:24
+msgid "Hostnames"
+msgstr "Värdnamn"
+
+#: scripts/services/AppUtils.js:106 scripts/services/AppUtils.js:96
+#: templates/settings.html:91
+msgid "Hours"
+msgstr "Timmar"
+
+#: templates/restore.html:111
+msgid "How do you want to handle existing files?"
+msgstr "Hur vill du hantera existerande filer?"
+
+#: scripts/services/AppUtils.js:70
+msgid "Hyper-V Machine"
+msgstr "HyperV-maskin"
+
+#: scripts/services/AppUtils.js:72
+msgid "Hyper-V Machines"
+msgstr "HyperV-maskiner"
+
+#: scripts/directives/sourceFolderPicker.js:65
+#: scripts/directives/sourceFolderPicker.js:71
+msgid "ID:"
+msgstr "ID:"
+
+#: templates/addoredit.html:261
+msgid "If a date was missed, the job will run as soon as possible."
+msgstr "Om ett tillfälle missades görs uppgiften så fort som möjligt."
+
+#: templates/addoredit.html:361
+msgid ""
+"If at least one newer backup is found, all backups older than this date are "
+"deleted."
+msgstr ""
+"Om minst en nyare säkerhetskopia finns, kommer alla säkerhetskopior äldre än"
+" detta datum att raderas."
+
+#: scripts/services/EditUriBackendConfig.js:114
+msgid ""
+"If you do not enter a path, all files will be stored in the login folder.\n"
+"Are you sure this is what you want?"
+msgstr ""
+"Om du inte anger en sökväg kommer alla filer att lagras i inloggningsmappen.\n"
+"Är du säker på detta?"
+
+#: templates/backends/openstack.html:40
+msgid "If you do not enter an API Key, the tenant name is required"
+msgstr "Om du inte anger en API-nyckel krävs \"tenant name\""
+
+#: templates/import.html:29
+msgid "Import"
+msgstr "Importera"
+
+#: templates/addoredit.html:100 templates/restoredirect.html:39
+msgid "Import Destination URL"
+msgstr "Importera destinationsadress"
+
+#: templates/import.html:3
+msgid "Import backup configuration"
+msgstr "Importera konfiguration för säkerhetskopia"
+
+#: templates/addwizard.html:15
+msgid "Import from a file"
+msgstr "Importera från en fil"
+
+#: templates/import.html:19
+msgid "Import metadata"
+msgstr "Importera metadata"
+
+#: templates/import.html:33
+msgid "Importing …"
+msgstr "Importerar …"
+
+#: scripts/controllers/EditBackupController.js:171
+msgid "Include a file?"
+msgstr "Inkludera en fil?"
+
+#: scripts/services/AppUtils.js:183
+msgid "Include expression"
+msgstr "Inkludera enligt uttryck"
+
+#: scripts/services/AppUtils.js:167
+msgid "Include regular expression"
+msgstr "Inkludera enligt reguljärt uttryck"
+
+#: templates/settings.html:151
+msgid ""
+"Individual builds for developers only. Not for use with important data."
+msgstr ""
+"Individuella versioner endast för utvecklare. Ej för användning med viktig "
+"data."
+
+#: scripts/services/DialogService.js:27
+msgid "Information"
+msgstr "Information"
+
+#: scripts/controllers/EditBackupController.js:296
+#: scripts/controllers/EditBackupController.js:303
+#: scripts/controllers/EditBackupController.js:313
+msgid "Invalid retention time"
+msgstr "Ogiltig bibehållningstid"
+
+#: scripts/services/EditUriBuiltins.js:1079
+msgid ""
+"It is possible to connect to some FTP without a password.\n"
+"Are you sure your FTP server supports password-less logins?"
+msgstr ""
+"Det är möjligt att ansluta till vissa FTP utan ett lösenord.\n"
+"Är du säker på att din FTP-server stöder lösenordsfria inloggningar?"
+
+#: scripts/services/AppUtils.js:88
+msgid "KByte"
+msgstr "KByte"
+
+#: scripts/services/AppUtils.js:121
+msgid "KByte/s"
+msgstr "KByte/s"
+
+#: templates/addoredit.html:325
+msgid "Keep a specific number of backups"
+msgstr "Behåll ett visst antal säkerhetskopior"
+
+#: templates/addoredit.html:323
+msgid "Keep all backups"
+msgstr "Behåll alla säkerhetskopior"
+
+#: templates/backends/openstack.html:18
+msgid "Keystone API version"
+msgstr "Keystone API-version"
+
+#: templates/settings.html:98
+msgid "Language in user interface"
+msgstr "Språk i användargränssnittet"
+
+#: scripts/controllers/RestoreController.js:38
+msgid "Last month"
+msgstr "Förra månaden"
+
+#: templates/home.html:80
+msgid "Last successful backup:"
+msgstr "Senaste lyckade säkerhetskopiering:"
+
+#: templates/restorewizard.html:27
+msgid "Last successful restore: {{time}} (took {{duration || '0 seconds'}})"
+msgstr ""
+"Senaste lyckade återställning: {{tid}} (tog {{varaktighet || '0 sekunder'}})"
+
+#: scripts/controllers/RestoreController.js:60
+msgid "Latest"
+msgstr "Senaste"
+
+#: templates/about.html:6
+msgid "Libraries"
+msgstr "Bibliotek"
+
+#: scripts/controllers/RestoreDirectController.js:70
+msgid "Listing backup dates …"
+msgstr "Listar datum för säkerhetskopia …"
+
+#: scripts/services/ServerStatus.js:68
+msgid "Listing remote files for purge …"
+msgstr "Listar fjärrfiler för rensning …"
+
+#: scripts/services/ServerStatus.js:66
+msgid "Listing remote files …"
+msgstr "Listar fjärrfiler ..."
+
+#: templates/log.html:7
+msgid "Live"
+msgstr "Live"
+
+#: templates/addwizard.html:16
+msgid "Load a configuration from an exported job or a storage provider"
+msgstr "Hämta konfiguration från en exporterad rutin eller en lagringstjänst"
+
+#: templates/restorewizard.html:16
+msgid "Load destination from an exported job or a storage provider"
+msgstr "Hämta mål från en exporterad rutin eller en lagringstjänst"
+
+#: templates/backuplog.html:23 templates/backuplog.html:41
+#: templates/log.html:24
+msgid "Load older data"
+msgstr "Hämta äldre data"
+
+#: templates/about.html:43 templates/about.html:49 templates/about.html:55
+#: templates/backuplog.html:12 templates/backuplog.html:22
+#: templates/backuplog.html:29 templates/backuplog.html:40
+#: templates/log.html:12 templates/log.html:23
+#: templates/updatechangelog.html:7
+msgid "Loading …"
+msgstr "Laddar ..."
+
+#: templates/localdatabase.html:23
+msgid "Local database path:"
+msgstr "Sökväg till lokal databas:"
+
+#: templates/backends/rclone.html:2
+msgid "Local repository"
+msgstr "Lokalt arkiv"
+
+#: scripts/services/SystemInfo.js:86
+msgid "Local storage"
+msgstr "Lokal lagring"
+
+#: templates/localdatabase.html:20
+msgid "Location"
+msgstr "Plats"
+
+#: templates/backends/gcs.html:21
+msgid "Location where buckets are created"
+msgstr "Plats där buckets skapas"
+
+#: templates/backuplog.html:3
+msgid "Log data for <b>{{Backup.Backup.Name}}</b>"
+msgstr "Logg-data för <b>{{Backup.Backup.Name}}</b>"
+
+#: templates/log.html:3
+msgid "Log data from the server"
+msgstr "Logg data från servern"
+
+#: index.html:226
+msgid "Log out"
+msgstr "Logga ut"
+
+#: scripts/services/AppUtils.js:89
+msgid "MByte"
+msgstr "MByte"
+
+#: scripts/services/AppUtils.js:122
+msgid "MByte/s"
+msgstr "MByte/s"
+
+#: templates/localdatabase.html:8
+msgid "Maintenance"
+msgstr "Underhåll"
+
+#: templates/backends/file.html:19 templates/restore.html:102
+msgid "Manually type path"
+msgstr "Skriv sökväg manuellt"
+
+#: templates/throttle.html:15
+msgid "Max download speed"
+msgstr "Max nedladdningshastighet"
+
+#: templates/throttle.html:5
+msgid "Max upload speed"
+msgstr "Max uppladdningshastighet"
+
+#: index.html:144 templates/addoredit.html:127 templates/addoredit.html:169
+#: templates/addoredit.html:384 templates/addoredit.html:95
+#: templates/edituri.html:35 templates/restoredirect.html:34
+msgid "Menu"
+msgstr "Meny"
+
+#: scripts/services/AppUtils.js:105 scripts/services/AppUtils.js:95
+#: templates/settings.html:90
+msgid "Minutes"
+msgstr "Minuter"
+
+#: scripts/controllers/EditBackupController.js:247
+msgid "Missing name"
+msgstr "Saknar namn"
+
+#: scripts/controllers/EditBackupController.js:254
+msgid "Missing passphrase"
+msgstr "Saknar lösenfras "
+
+#: scripts/controllers/EditBackupController.js:267
+msgid "Missing sources"
+msgstr "Saknade källor"
+
+#: templates/backup-result/top-right-box.html:22
+msgid "Modified"
+msgstr "Ändrad"
+
+#: scripts/services/AppUtils.js:110
+msgid "Mon"
+msgstr "Mån"
+
+#: scripts/services/AppUtils.js:99 templates/addoredit.html:355
+msgid "Months"
+msgstr "Månader"
+
+#: templates/localdatabase.html:31
+msgid "Move existing database"
+msgstr "Flytta existerande databas"
+
+#: scripts/controllers/LocalDatabaseController.js:66
+msgid "Move failed:"
+msgstr "Flytten misslyckades:"
+
+#: scripts/services/AppUtils.js:54
+msgid "My Documents"
+msgstr "Mina Dokument"
+
+#: scripts/services/AppUtils.js:56
+msgid "My Music"
+msgstr "Min Musi"
+
+#: templates/addoredit.html:40
+msgid "My Photos"
+msgstr "Mina Foton"
+
+#: scripts/services/AppUtils.js:58
+msgid "My Pictures"
+msgstr "Mina Bilder"
+
+#: templates/addoredit.html:39 templates/home.html:15
+msgid "Name"
+msgstr "Namn"
+
+#: templates/home.html:87
+msgid "Never"
+msgstr "Aldrig"
+
+#: scripts/services/EditUriBuiltins.js:140
+msgid ""
+"New user name is {{user}}.\n"
+"Updated credentials to use the new limited user"
+msgstr ""
+"Nytt användarnamn är {{user}}.\n"
+"Uppdaterade användaruppgifter för att använda den nya begränsade användaren"
+
+#: templates/addoredit.html:113 templates/addoredit.html:246
+#: templates/addoredit.html:296 templates/addoredit.html:82
+#: templates/addwizard.html:28 templates/restoredirect.html:52
+#: templates/restorewizard.html:36
+msgid "Next"
+msgstr "Nästa"
+
+#: templates/home.html:91
+msgid "Next scheduled run:"
+msgstr "Nästa schemalagda körning:"
+
+#: index.html:183
+msgid "Next scheduled task:"
+msgstr "Nästa schemalagda uppgift:"
+
+#: index.html:180
+msgid "Next task:"
+msgstr "Nästa uppgift:"
+
+#: templates/addoredit.html:264
+msgid "Next time"
+msgstr "Nästa gång"
+
+#: scripts/controllers/AppController.js:193
+#: scripts/controllers/DeleteController.js:99
+#: scripts/controllers/EditBackupController.js:161
+#: scripts/controllers/EditBackupController.js:171
+#: scripts/controllers/EditBackupController.js:458
+#: scripts/controllers/HomeController.js:22
+#: scripts/controllers/LocalDatabaseController.js:28
+#: scripts/controllers/LocalDatabaseController.js:72
+#: scripts/controllers/LocalDatabaseController.js:88
+#: scripts/directives/backupEditUri.js:132
+#: scripts/directives/backupEditUri.js:174
+#: scripts/directives/backupEditUri.js:88
+#: scripts/services/EditUriBackendConfig.js:74
+#: scripts/services/EditUriBuiltins.js:1215
+#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:61
+msgid "No"
+msgstr "Nej"
+
+#: scripts/directives/backupEditUri.js:170
+msgid ""
+"No certificate was specified previously, please verify with the server administrator that the key is correct: {{key}} \n"
+"\n"
+"Do you want to approve the reported host key?"
+msgstr ""
+"Inget certifikat har angetts tidigare, kontrollera med serveradministratören att nyckeln är korrekt: {{key}}\n"
+"\n"
+"Vill du godkänna den rapporterade värdnyckeln?"
+
+#: templates/edituri.html:12
+msgid "No editor found for the &quot;{{backend}}&quot; storage type"
+msgstr "Ingen redigerare hittades för &quot;{{backend}}&quot; lagringstyp"
+
+#: scripts/controllers/EditBackupController.js:437 templates/addoredit.html:49
+msgid "No encryption"
+msgstr "Ingen kryptering"
+
+#: scripts/controllers/RestoreController.js:192
+msgid "No items selected"
+msgstr "Inga objekt har valts"
+
+#: scripts/controllers/RestoreController.js:192
+msgid "No items to restore, please select one or more items"
+msgstr "Inga objekt att återställa, välj ett eller flera objekt"
+
+#: scripts/controllers/ExportController.js:67
+msgid "No passphrase entered"
+msgstr "Ingen lösenfras har angetts"
+
+#: index.html:185
+msgid "No scheduled tasks"
+msgstr "Inga schemalagda uppgifter"
+
+#: scripts/controllers/EditBackupController.js:260
+msgid "Non-matching passphrase"
+msgstr "Lösenfras som inte matchar"
+
+#: templates/settings.html:171
+msgid "None / disabled"
+msgstr "Ingen / inaktiverad"
+
+#: scripts/controllers/ExportController.js:13
+msgid "Not using encryption"
+msgstr "Använder inte kryptering"
+
+#: templates/addoredit.html:330
+msgid "Nothing will be deleted. The backup size will grow with each change."
+msgstr ""
+"Ingenting kommer att raderas. Storleken på säkerhetskopieringen kommer att "
+"växa med varje ändring."
+
+#: scripts/controllers/AppController.js:204
+#: scripts/controllers/AppController.js:58
+#: scripts/controllers/AppController.js:74
+#: scripts/controllers/EditBackupController.js:103
+#: scripts/controllers/EditBackupController.js:111
+#: scripts/controllers/RestoreDirectController.js:24
+#: scripts/controllers/RestoreDirectController.js:33
+#: scripts/services/DialogService.js:28 scripts/services/DialogService.js:50
+#: scripts/services/DialogService.js:58
+#: scripts/services/EditUriBuiltins.js:140 templates/restore.html:147
+#: templates/settings.html:206
+msgid "OK"
+msgstr "OK"
+
+#: templates/addoredit.html:348
+msgid ""
+"Once there are more backups than the specified number, the oldest backups "
+"are deleted."
+msgstr ""
+"När det finns fler säkerhetskopior än det angivna antalet, raderas de äldsta"
+" säkerhetskopiorna."
+
+#: templates/backends/openstack.html:7
+msgid "OpenStack AuthURI"
+msgstr "OpenStack AuthURI"
+
+#: scripts/services/SystemInfo.js:50
+msgid "OpenStack Object Storage / Swift"
+msgstr "OpenStack Object Storage / Swift"
+
+#: templates/backup-result/top-right-box.html:14
+msgid "Opened"
+msgstr "Öppnad"
+
+#: scripts/services/AppUtils.js:203
+msgid "Operating System"
+msgstr "Operativsystem"
+
+#: templates/backup-result/entryline.html:2
+msgid "Operation"
+msgstr "Operation"
+
+#: templates/home.html:50
+msgid "Operations:"
+msgstr "Operationer:"
+
+#: templates/backends/file.html:34
+msgid "Optional authentication password"
+msgstr "Valfritt lösenord för autentisering"
+
+#: templates/backends/file.html:30
+msgid "Optional authentication username"
+msgstr "Valfritt användarnamn för autentisering"
+
+#: templates/addoredit.html:28 templates/edituri.html:52
+#: templates/settings.html:193 templates/settings.html:199
+msgid "Options"
+msgstr "Alternativ"
+
+#: templates/restore.html:81
+msgid "Original location"
+msgstr "Ursprunglig plats"
+
+#: scripts/services/SystemInfo.js:89
+msgid "Others"
+msgstr "Andra"
+
+#: templates/addoredit.html:334
+msgid ""
+"Over time backups will be deleted automatically. There will remain one "
+"backup for each of the last 7 days, each of the last 4 weeks, each of the "
+"last 12 months. There will always be at least one remaining backup."
+msgstr ""
+"Med tiden kommer säkerhetskopior att raderas automatiskt. Det kommer att "
+"finnas kvar en säkerhetskopia för var och en av de senaste 7 dagarna, var "
+"och en av de senaste 4 veckorna, var och en av de senaste 12 månaderna. Det "
+"kommer alltid att finnas minst en säkerhetskopia kvar."
+
+#: templates/restore.html:114
+msgid "Overwrite"
+msgstr "Skriva över"
+
+#: templates/addoredit.html:58 templates/export.html:25
+#: templates/restore.html:130 templates/restoredirect.html:60
+msgid "Passphrase"
+msgstr "Lösenfras"
+
+#: templates/import.html:14
+msgid "Passphrase (if encrypted)"
+msgstr "Lösenfras (om krypterad)"
+
+#: scripts/controllers/EditBackupController.js:401
+msgid "Passphrase changed"
+msgstr "Lösenfras ändrad"
+
+#: scripts/controllers/EditBackupController.js:260
+msgid "Passphrases are not matching"
+msgstr "Lösenfraser matchar inte"
+
+#: scripts/controllers/EditBackupController.js:30
+msgid "Passphrases do not match"
+msgstr "Lösenfraser matchar inte"
+
+#: scripts/services/EditUriBuiltins.js:1295 templates/backends/file.html:33
+#: templates/backends/filejump.html:25 templates/backends/filen.html:11
+#: templates/backends/generic.html:22 templates/backends/idrive.html:11
+#: templates/backends/idrive.html:12 templates/backends/mega.html:11
+#: templates/backends/mega.html:12 templates/backends/openstack.html:34
+#: templates/backends/smb.html:42
+msgid "Password"
+msgstr "Lösenord"
+
+#: scripts/services/ServerStatus.js:56
+msgid "Patching files with local blocks …"
+msgstr "Patchar filer med lokala block..."
+
+#: scripts/services/EditUriBuiltins.js:1279
+#: scripts/services/EditUriBuiltins.js:1400
+msgid "Path"
+msgstr "Sökväg"
+
+#: scripts/controllers/EditBackupController.js:161
+msgid "Path not found"
+msgstr "Sökvägen hittades inte"
+
+#: templates/backends/filejump.html:2 templates/backends/filen.html:2
+#: templates/backends/generic.html:13 templates/backends/msgroup.html:7
+#: templates/backends/oauth.html:2 templates/backends/pcloud.html:15
+#: templates/backends/smb.html:28
+msgid "Path on server"
+msgstr "Sökväg på servern"
+
+#: templates/backends/b2.html:8 templates/backends/e2.html:17
+#: templates/backends/s3.html:62
+msgid "Path or subfolder in the bucket"
+msgstr "Sökväg eller undermapp i bucket"
+
+#: templates/settings.html:75
+msgid "Pause"
+msgstr "Paus"
+
+#: templates/settings.html:73
+msgid "Pause after startup or hibernation"
+msgstr "Pausa efter uppstart eller viloläge"
+
+#: scripts/controllers/AppController.js:56
+msgid "Pause options"
+msgstr "Pausalternativ"
+
+#: templates/restore.html:123
+msgid "Permissions"
+msgstr "Behörigheter"
+
+#: templates/restore.html:85
+msgid "Pick location"
+msgstr "Välj plats"
+
+#: templates/restorewizard.html:10
+msgid "Point to your backup files and restore from there"
+msgstr "Peka på dina säkerhetskopior och återställ därifrån"
+
+#: templates/backends/generic.html:9
+msgid "Port"
+msgstr "Port"
+
+#: templates/settings.html:30
+msgid "Prevent tray icon automatic log-in"
+msgstr "Förhindra att tray-icon automatiskt loggar in"
+
+#: templates/addoredit.html:114 templates/addoredit.html:247
+#: templates/addoredit.html:297 templates/addoredit.html:411
+#: templates/restoredirect.html:81
+msgid "Previous"
+msgstr "Tidigare"
+
+#: templates/home.html:107
+msgid "Progress:"
+msgstr "Framsteg:"
+
+#: templates/backends/gcs.html:39
+msgid "ProjectID is optional if the bucket exist"
+msgstr "ProjectID är valfritt om bucket finns"
+
+#: scripts/services/SystemInfo.js:88
+msgid "Proprietary"
+msgstr "Proprietär"
+
+#: templates/backup-result/phases/purge.html:3
+msgid "Purge Phase"
+msgstr "Rensningsfas"
+
+#: scripts/services/ServerStatus.js:71
+msgid "Purging files complete!"
+msgstr "Rensning av filer klar!"
+
+#: scripts/services/ServerStatus.js:69
+msgid "Purging files …"
+msgstr "Rensar filer..."
+
+#: scripts/services/ServerStatus.js:50
+msgid "Rebuilding local database …"
+msgstr "Bygger om lokal databas..."
+
+#: templates/localdatabase.html:17
+msgid "Recreate (delete and repair)"
+msgstr "Återskapa (ta bort och reparera)"
+
+#: templates/backup-result/phases/recreate-database.html:3
+msgid "Recreate Database Phase"
+msgstr "Återskapa Databas Fasen"
+
+#: scripts/services/ServerStatus.js:60
+msgid "Recreating database …"
+msgstr "Återskapar databas..."
+
+#: scripts/controllers/RestoreDirectController.js:40
+msgid "Registering temporary backup …"
+msgstr "Registrerar tillfällig säkerhetskopia …"
+
+#: scripts/controllers/EditBackupController.js:146
+msgid "Relative paths not allowed"
+msgstr "Relativa sökvägar är inte tillåtna"
+
+#: index.html:309
+msgid "Reload"
+msgstr "Ladda om"
+
+#: templates/backuplog.html:7
+msgid "Remote"
+msgstr "Fjärr"
+
+#: scripts/services/EditUriBuiltins.js:1338
+msgid "Remote Path"
+msgstr "Fjärrsökväg "
+
+#: scripts/services/EditUriBuiltins.js:1337
+msgid "Remote Repository"
+msgstr "Fjärr Repository"
+
+#: templates/backends/rclone.html:10
+msgid "Remote path"
+msgstr "Fjärrsökväg "
+
+#: templates/backends/rclone.html:6
+msgid "Remote repository"
+msgstr "Fjärr repository"
+
+#: templates/addoredit.html:307
+msgid "Remote volume size"
+msgstr "Fjärr-volymstorlek"
+
+#: templates/addoredit.html:203
+msgid "Remove"
+msgstr "Ta bort"
+
+#: templates/advancedoptionseditor.html:41
+msgid "Remove option"
+msgstr "Ta bort alternativ"
+
+#: templates/backup-result/phases/purge.html:23
+msgid "Removed files"
+msgstr "Borttagna filer"
+
+#: templates/localdatabase.html:15 templates/notificationarea.html:14
+msgid "Repair"
+msgstr "Reparera"
+
+#: templates/backup-result/phases/repair.html:3
+msgid "Repair Phase"
+msgstr "Reparations Fas"
+
+#: scripts/services/ServerStatus.js:62
+msgid "Repairing database …"
+msgstr "Reparerar databas ..."
+
+#: templates/addoredit.html:62
+msgid "Repeat Passphrase"
+msgstr "Upprepa lösenfrasen"
+
+#: templates/home.html:72
+msgid "Reporting:"
+msgstr "Rapportering:"
+
+#: templates/localdatabase.html:28
+msgid "Reset"
+msgstr "Återställa"
+
+#: index.html:214 templates/restore.html:137
+msgid "Restore"
+msgstr "Återställ"
+
+#: scripts/services/ServerStatus.js:59
+msgid "Restore complete!"
+msgstr "Återställningen är klar!"
+
+#: templates/restore.html:45
+msgid "Restore files"
+msgstr "Återställningen filer"
+
+#: templates/home.html:53
+msgid "Restore files …"
+msgstr "Återställer filer …"
+
+#: templates/restore.html:48
+msgid "Restore from"
+msgstr "Återställ från"
+
+#: templates/import.html:4
+msgid "Restore from backup configuration"
+msgstr "Återställ från konfiguration av säkerhetskopia"
+
+#: templates/restore.html:24 templates/restore.html:39
+#: templates/restore.html:76 templates/restoredirect.html:24
+msgid "Restore options"
+msgstr "Återställ alternativ"
+
+#: templates/restore.html:126
+msgid "Restore read/write permissions"
+msgstr "Återställ läs-/skrivbehörigheter"
+
+#: templates/backup-result/restore-items.html:2
+msgid "Restored Files"
+msgstr "Återställda filer"
+
+#: templates/backup-result/restore-items.html:6
+msgid "Restored Folders"
+msgstr "Återställda mappar"
+
+#: templates/backup-result/restore-items.html:10
+msgid "Restored Symlinks"
+msgstr "Återställda symbollänkar"
+
+#: scripts/controllers/RestoreController.js:383
+#: scripts/controllers/RestoreController.js:405
+msgid "Restoring files …"
+msgstr "Återställer filer..."
+
+#: index.html:217
+msgid "Resume"
+msgstr "Försätt"
+
+#: templates/backup-result/phases/purge.html:28
+msgid "Rewritten File Lists"
+msgstr "Omskrivna fillistor"
+
+#: templates/addoredit.html:269
+msgid "Run again every"
+msgstr "Kör igen varje"
+
+#: templates/home.html:52 templates/home.html:87
+msgid "Run now"
+msgstr "Kör nu"
+
+#: templates/commandline.html:44
+msgid "Running commandline entry"
+msgstr "Kör kommandoradspost"
+
+#: index.html:172
+msgid "Running task:"
+msgstr "Pågående uppgift:"
+
+#: scripts/controllers/StateController.js:25
+msgid "Running …"
+msgstr "Pågående ... "
+
+#: scripts/services/SystemInfo.js:51
+msgid "S3 Compatible"
+msgstr "S3 Kompatibel"
+
+#: templates/settings.html:130
+msgid "Same as the base install version: {{channelname}}"
+msgstr "Samma som basinstallationsversionen: {{channelname}}"
+
+#: scripts/services/AppUtils.js:115
+msgid "Sat"
+msgstr "Lör"
+
+#: templates/backends/storj.html:10
+msgid "Satellite"
+msgstr "Satellit"
+
+#: templates/addoredit.html:410 templates/localdatabase.html:29
+msgid "Save"
+msgstr "Spara"
+
+#: templates/localdatabase.html:30
+msgid "Save and repair"
+msgstr "Spara och reparera"
+
+#: templates/restore.html:118
+msgid "Save different versions with timestamp in file name"
+msgstr "Spara olika versioner med tidsstämpel i filnamnet"
+
+#: templates/import.html:24
+msgid "Save immediately"
+msgstr "Spara omedelbart"
+
+#: scripts/services/ServerStatus.js:54
+msgid "Scanning existing files …"
+msgstr "Skannar befintliga filer..."
+
+#: scripts/services/ServerStatus.js:55
+msgid "Scanning for local blocks …"
+msgstr "Söker efter lokala block …"
+
+#: templates/addoredit.html:255 templates/addoredit.html:27
+msgid "Schedule"
+msgstr "Schema"
+
+#: templates/restore.html:60
+msgid "Search"
+msgstr "Sök"
+
+#: templates/restore.html:56
+msgid "Search for files"
+msgstr "Sök efter filer"
+
+#: scripts/services/AppUtils.js:104 templates/settings.html:89
+msgid "Seconds"
+msgstr "Sekunder"
+
+#: templates/log.html:30
+msgid "Select a log level and see messages as they happen:"
+msgstr "Välj en logg-nivå och se meddelanden när de händer:"
+
+#: templates/restore.html:23 templates/restore.html:38
+#: templates/restoredirect.html:23
+msgid "Select files"
+msgstr "Välj filer"
+
+#: templates/backends/pcloud.html:2 templates/backends/s3.html:8
+#: templates/backends/smb.html:17
+msgid "Server"
+msgstr "Server"
+
+#: templates/backends/generic.html:7
+msgid "Server and port"
+msgstr "Server och port"
+
+#: templates/backends/generic.html:8 templates/backends/smb.html:18
+msgid "Server hostname or IP"
+msgstr "Server värdnamn eller IP"
+
+#: templates/restoredirect.html:95 templates/waitarea.html:15
+msgid "Server is currently paused,"
+msgstr "Servern är för närvarande pausad,"
+
+#: scripts/controllers/HomeController.js:22
+msgid "Server is currently paused, do you want to resume now?"
+msgstr "Servern är för närvarande pausad, vill du återuppta nu?"
+
+#: scripts/controllers/HomeController.js:22
+msgid "Server paused"
+msgstr "Servern pausad"
+
+#: templates/about.html:71
+msgid "Server state properties"
+msgstr "Serverstatusegenskaper"
+
+#: index.html:220 templates/settings.html:2
+msgid "Settings"
+msgstr "Inställningar"
+
+#: templates/addoredit.html:69 templates/notificationarea.html:12
+#: templates/notificationarea.html:31 templates/notificationarea.html:41
+msgid "Show"
+msgstr "Visa"
+
+#: templates/addoredit.html:132
+msgid "Show advanced editor"
+msgstr "Visa avancerad redigerare"
+
+#: templates/about.html:8
+msgid "Show log"
+msgstr "Visa logg"
+
+#: templates/home.html:74
+msgid "Show log …"
+msgstr "Visa logg ..."
+
+#: templates/addoredit.html:135
+msgid "Show treeview"
+msgstr "Visa träd-vy"
+
+#: templates/addoredit.html:326
+msgid "Smart backup retention"
+msgstr "Smart backup-bibehållning"
+
+#: templates/backends/openstack.html:45
+msgid ""
+"Some OpenStack providers allow an API key instead of a password and tenant "
+"name"
+msgstr ""
+"Vissa OpenStack-leverantörer tillåter en API-nyckel istället för ett "
+"lösenord och \"tenant name\""
+
+#: templates/backends/s3.html:82
+msgid ""
+"Some S3 providers might only be compatible with a certain client library"
+msgstr ""
+"Vissa S3-leverantörer kanske bara är kompatibla med ett visst "
+"klientbibliotek"
+
+#: templates/addoredit.html:26
+msgid "Source Data"
+msgstr "Källdata"
+
+#: templates/backup-result/top-right-box.html:1
+msgid "Source Files"
+msgstr "Källfiler"
+
+#: scripts/directives/sourceFolderPicker.js:588 templates/addoredit.html:124
+msgid "Source data"
+msgstr "Källdata"
+
+#: templates/addoredit.html:149
+msgid "Source folders"
+msgstr "Källmappar"
+
+#: templates/home.html:96
+msgid "Source:"
+msgstr "Källa:"
+
+#: templates/settings.html:146
+msgid "Specific builds for developers only. Not for use with important data."
+msgstr ""
+"Specifika versioner endast för utvecklare. Ej för användning med viktig "
+"data."
+
+#: scripts/services/SystemInfo.js:87
+msgid "Standard protocols"
+msgstr "Standardprotokoll"
+
+#: templates/backup-result/phases/compact.html:8
+#: templates/backup-result/phases/delete.html:8
+#: templates/backup-result/phases/purge.html:8
+#: templates/backup-result/phases/recreate-database.html:8
+#: templates/backup-result/phases/repair.html:8
+#: templates/backup-result/phases/test.html:8
+#: templates/backup-result/top-left-box.html:3
+msgid "Start"
+msgstr "Start"
+
+#: scripts/services/ServerStatus.js:36
+msgid "Starting backup …"
+msgstr "Startar säkerhetskopiering ..."
+
+#: scripts/services/ServerStatus.js:49
+msgid "Starting restore …"
+msgstr "Startar återställning ..."
+
+#: scripts/controllers/RestoreController.js:379
+#: scripts/controllers/RestoreController.js:403
+msgid "Starting the restore process …"
+msgstr "Startar återställningsprocessen ..."
+
+#: scripts/controllers/StateController.js:119
+#: scripts/controllers/StateController.js:128
+msgid "Stop after the current file"
+msgstr "Stoppa efter den aktuella filen"
+
+#: scripts/controllers/StateController.js:117
+msgid "Stop running backup"
+msgstr "Avsluta säkerhetskopiering"
+
+#: scripts/controllers/StateController.js:126
+msgid "Stop running task"
+msgstr "Sluta köra uppgiften"
+
+#: index.html:168
+msgid "Stopping after the current file:"
+msgstr "Stoppa efter den aktuella filen:"
+
+#: index.html:173
+msgid "Stopping task:"
+msgstr "Stoppa uppgift:"
+
+#: templates/edituri.html:3
+msgid "Storage Type"
+msgstr "Lagringstyp"
+
+#: templates/backends/s3.html:45
+msgid "Storage class"
+msgstr "Förvarings-klass"
+
+#: templates/backends/gcs.html:32
+msgid "Storage class for creating a bucket"
+msgstr "Förvaringsklass för att skapa en bucket"
+
+#: templates/log.html:6
+msgid "Stored"
+msgstr "Lagrat"
+
+#: scripts/controllers/EditBackupController.js:34
+msgid "Strong"
+msgstr "Stark"
+
+#: scripts/directives/backupEditUri.js:52
+#: scripts/directives/backupEditUri.js:55
+msgid "Success"
+msgstr "Framgång"
+
+#: scripts/services/AppUtils.js:116
+msgid "Sun"
+msgstr "Sön"
+
+#: scripts/services/AppUtils.js:78
+msgid "Symbolic link"
+msgstr "Symbolisk länk"
+
+#: scripts/services/AppUtils.js:200
+msgid "System Files"
+msgstr "Systemfiler"
+
+#: templates/settings.html:166
+msgid "System default ({{levelname}})"
+msgstr "Systemstandard ({{levelname}})"
+
+#: scripts/controllers/EditBackupController.js:21
+msgid "System files"
+msgstr "Systemfiler"
+
+#: templates/about.html:7
+msgid "System info"
+msgstr "System information"
+
+#: templates/about.html:63
+msgid "System properties"
+msgstr "Systemegenskaper"
+
+#: scripts/services/AppUtils.js:91
+msgid "TByte"
+msgstr "TByte"
+
+#: scripts/services/AppUtils.js:124
+msgid "TByte/s"
+msgstr "TByte/s"
+
+#: templates/waitarea.html:5
+msgid "Task is running"
+msgstr "Uppgiften pågår"
+
+#: scripts/services/AppUtils.js:209
+msgid "Temporary Files"
+msgstr "Tillfälliga filer"
+
+#: scripts/controllers/EditBackupController.js:22
+msgid "Temporary files"
+msgstr "Tillfälliga filer"
+
+#: templates/backup-result/phases/test.html:3
+msgid "Test Phase"
+msgstr "Test Fas"
+
+#: templates/edituri.html:22
+msgid "Test connection"
+msgstr "Testa anslutningen"
+
+#: scripts/services/EditUriBuiltins.js:52
+msgid "Testing permissions …"
+msgstr "Testar behörigheter..."
+
+#: scripts/directives/backupEditUri.js:45 templates/edituri.html:23
+msgid "Testing …"
+msgstr "Testar ..."
+
+#: scripts/services/EditUriBuiltins.js:1259
+#: scripts/services/EditUriBuiltins.js:1275
+#: scripts/services/EditUriBuiltins.js:1380
+#: scripts/services/EditUriBuiltins.js:1396
+msgid ""
+"The '{{fieldname}}' field contains an invalid character: {{character}} "
+"(value: {{value}}, index: {{pos}})"
+msgstr ""
+"Fältet '{{fieldname}}' innehåller ett ogiltigt tecken: {{character}} (värde:"
+" {{value}}, index: {{pos}})"
+
+#: scripts/directives/notificationArea.js:43
+msgid "The backup is missing, has it been deleted?"
+msgstr "Säkerhetskopia saknas, har den tagits bort?"
+
+#: scripts/directives/notificationArea.js:41
+msgid ""
+"The backup was temporary and does not exist anymore, so the log data is lost"
+msgstr ""
+"Säkerhetskopian var tillfällig och existerar inte längre, så logg-data går "
+"förlorad"
+
+#: scripts/services/EditUriBuiltins.js:1231
+msgid "The bucket name should be all lower-case, convert automatically?"
+msgstr "Namnet på bucket borde vara gemener, konvertera automatiskt?"
+
+#: scripts/controllers/ExportController.js:13
+msgid ""
+"The configuration should be kept safe. Are you sure you want to save an "
+"unencrypted file containing your passwords?"
+msgstr ""
+"Konfigurationen bör förvaras säker. Är du säker på att du vill spara en "
+"okrypterad fil som innehåller dina lösenord?"
+
+#: templates/settings.html:112
+msgid "The dark theme (by Michal)"
+msgstr "Det mörka temat (av Michal)"
+
+#: templates/settings.html:111
+msgid "The default blue on white theme (by Alex)"
+msgstr "Standardtemat för blått på vitt (av Alex)"
+
+#: scripts/directives/backupEditUri.js:132
+msgid ""
+"The folder {{folder}} does not exist.\n"
+"Create it now?"
+msgstr ""
+"Mappen {{folder}} finns inte.\n"
+"Skapa det nu?"
+
+#: scripts/directives/backupEditUri.js:172
+msgid ""
+"The host key has changed, please check with the server administrator if this is correct, otherwise you could be the victim of a MAN-IN-THE-MIDDLE attack.\n"
+"\n"
+"Do you want to REPLACE your CURRENT host key \"{{prev}}\" with the REPORTED host key: {{key}}?"
+msgstr ""
+"Värdnyckeln har ändrats, kontrollera med serveradministratören om detta är korrekt, annars kan du bli offer för en MAN-IN-MIDDLE-attack.\n"
+"\n"
+"Vill du ERSÄTTA din AKTUELLA värdnyckel \"{{prev}}\" med den RAPPORTERADE värdnyckeln: {{key}}?"
+
+#: scripts/controllers/ExportController.js:70
+#: scripts/controllers/SystemSettingsController.js:242
+msgid "The passwords do not match"
+msgstr "Lösenorden matchar inte"
+
+#: scripts/controllers/EditBackupController.js:161
+msgid "The path does not appear to exist, do you want to add it anyway?"
+msgstr "Sökvägen verkar inte existera, vill du lägga till den ändå?"
+
+#: scripts/controllers/EditBackupController.js:171
+msgid ""
+"The path does not end with a '{{dirsep}}' character, which means that you include a file, not a folder.\n"
+"\n"
+"Do you want to include the specified file?"
+msgstr ""
+"Sökvägen slutar inte med tecknet '{{dirsep}}', vilket betyder att du inkluderar en fil, inte en mapp.\n"
+"\n"
+"Vill du inkludera den angivna filen ändå?"
+
+#: scripts/controllers/EditBackupController.js:146
+msgid ""
+"The path must be an absolute path, i.e. it must start with a forward slash "
+"'/'"
+msgstr ""
+"Sökvägen måste vara en absolut väg, dvs den måste börja med ett snedstreck "
+"'/'"
+
+#: templates/backends/s3.html:33
+msgid "The region parameter is only applied when creating a new bucket"
+msgstr "Regionparametern tillämpas endast när en ny bucket skapas"
+
+#: templates/backends/openstack.html:50
+msgid "The region parameter is only used when creating a bucket"
+msgstr "Regionparametern används endast när du skapar en bucket"
+
+#: scripts/directives/backupEditUri.js:88
+msgid ""
+"The server certificate could not be validated.\n"
+"Do you want to approve the SSL certificate with the hash: {{hash}}?"
+msgstr ""
+"Servercertifikatet kunde inte valideras.\n"
+"Vill du godkänna SSL-certifikatet med hashen: {{hash}}?"
+
+#: templates/backends/s3.html:49
+msgid "The storage class affects the availability and price for a stored file"
+msgstr ""
+"Lagringsklassen påverkar tillgängligheten och priset för en lagrad fil"
+
+#: scripts/controllers/RestoreDirectController.js:108
+msgid ""
+"The target folder contains encrypted files, please supply the passphrase"
+msgstr ""
+"Målmappen innehåller redan krypterade filer, vänligen ange lösenfrasen"
+
+#: scripts/services/EditUriBuiltins.js:61
+msgid ""
+"The user has too many permissions. Do you want to create a new limited user,"
+" with only permissions to the selected path?"
+msgstr ""
+"Användaren har för många behörigheter. Vill du skapa en ny begränsad "
+"användare, med endast behörigheter till den valda sökvägen?"
+
+#: scripts/controllers/RestoreController.js:308
+msgid ""
+"This backup was created on another operating system. Restoring files without"
+" specifying a destination folder can cause files to be restored in "
+"unexpected places. Are you sure you want to continue without choosing a "
+"destination folder?"
+msgstr ""
+"Denna säkerhetskopia skapades på ett annat operativsystem. Att återställa "
+"filer utan att ange en målmapp kan göra att filer återställs på oväntade "
+"platser. Är du säker på att du vill fortsätta utan att välja en målmapp?"
+
+#: scripts/controllers/RestoreController.js:37
+msgid "This month"
+msgstr "Denna månad"
+
+#: scripts/controllers/RestoreController.js:36
+msgid "This week"
+msgstr "Denna vecka"
+
+#: scripts/controllers/AppController.js:72
+msgid "Throttle settings"
+msgstr "Inställningar för Hastighetsbegränsningar   "
+
+#: scripts/services/AppUtils.js:113
+msgid "Thu"
+msgstr "Tors"
+
+#: templates/backup-result/phases/delete.html:33
+#: templates/backup-result/top-left-box.html:1
+msgid "Time"
+msgstr "Tid"
+
+#: templates/export.html:14
+msgid "To File"
+msgstr "Till Arkiv"
+
+#: scripts/controllers/ExportController.js:67
+msgid "To export without a passphrase, uncheck the \"Encrypt file\" box"
+msgstr "För att exportera utan en lösenordsfras, avmarkera rutan \"Kryptera fil\""
+
+#: templates/settings.html:26
+msgid ""
+"To prevent various DNS based attacks, Duplicati limits the allowed hostnames"
+" to the ones listed here. Direct IP access and localhost is always allowed. "
+"Multiple hostnames can be supplied with a semicolon separator. If any of the"
+" allowed hostnames is an asterisk (*), all hostnames are allowed and this "
+"feature is disabled. If the field is empty, only IP address and localhost "
+"access is allowed."
+msgstr ""
+"För att förhindra olika DNS-baserade attacker, begränsar Duplicati de "
+"tillåtna värdnamnen till de som listas här. Direkt IP-åtkomst och lokal värd"
+" är alltid tillåten. Flera värdnamn kan förses med en semikolonseparator. Om"
+" något av de tillåtna värdnamnen är en asterisk (*), är alla värdnamn "
+"tillåtna och den här funktionen är inaktiverad. Om fältet är tomt tillåts "
+"endast IP-adress och lokal värdåtkomst."
+
+#: scripts/controllers/RestoreController.js:34
+msgid "Today"
+msgstr "I dag"
+
+#: scripts/directives/backupEditUri.js:174
+msgid "Trust host certificate?"
+msgstr "Lita på värdcertifikat?"
+
+#: scripts/directives/backupEditUri.js:88
+msgid "Trust server certificate?"
+msgstr "Lita på servercertifikat?"
+
+#: scripts/services/AppUtils.js:111
+msgid "Tue"
+msgstr "Tis"
+
+#: templates/restore.html:133
+msgid "Type passphrase here."
+msgstr "Skriv lösenordsfras här."
+
+#: templates/restore.html:57
+msgid "Type to highlight files"
+msgstr "Skriv för att markera filer"
+
+#: templates/restorewizard.html:25
+msgid "Unknown backup size and versions"
+msgstr "Okänd storlek och versioner av säkerhetskopia"
+
+#: templates/pause.html:46
+msgid "Until resumed"
+msgstr "Tills den återupptas"
+
+#: templates/settings.html:126
+msgid "Update channel"
+msgstr "Uppdatera kanal"
+
+#: scripts/controllers/LocalDatabaseController.js:66
+msgid "Update failed:"
+msgstr "Uppdateringen misslyckades:"
+
+#: scripts/controllers/LocalDatabaseController.js:88
+msgid "Updating with existing database"
+msgstr "Uppdatering med befintlig databas"
+
+#: templates/backup-result/phases/compact.html:33
+msgid "Uploaded files"
+msgstr "Uppladdade filer"
+
+#: scripts/services/ServerStatus.js:45
+msgid "Uploading verification file …"
+msgstr "Laddar upp verifieringsfil …"
+
+#: templates/settings.html:161
+msgid "Usage statistics"
+msgstr "Användningsstatistik"
+
+#: templates/settings.html:167
+msgid "Usage statistics, warnings, errors, and crashes"
+msgstr "Användningsstatistik, varningar, fel och krascher"
+
+#: templates/backends/generic.html:2 templates/backends/s3.html:2
+msgid "Use SSL"
+msgstr "Använd SSL"
+
+#: scripts/controllers/EditBackupController.js:458
+msgid "Use existing database?"
+msgstr "Använd befintlig databas?"
+
+#: scripts/controllers/EditBackupController.js:352
+msgid "Use weak passphrase"
+msgstr "Använd svag lösenfras"
+
+#: scripts/controllers/EditBackupController.js:31
+msgid "Useless"
+msgstr "Oanvändbar"
+
+#: scripts/directives/sourceFolderPicker.js:575
+msgid "User data"
+msgstr "Användardata"
+
+#: templates/backends/openstack.html:27
+msgid "User domain name"
+msgstr "Användardomännamn"
+
+#: scripts/services/EditUriBuiltins.js:61
+msgid "User has too many permissions"
+msgstr "Användaren har för många behörigheter"
+
+#: templates/settings.html:96
+msgid "User interface settings"
+msgstr "Användargränssnittet inställningar"
+
+#: scripts/services/EditUriBuiltins.js:1074
+#: scripts/services/EditUriBuiltins.js:1162
+#: scripts/services/EditUriBuiltins.js:1294 templates/backends/file.html:29
+#: templates/backends/filejump.html:21 templates/backends/filen.html:7
+#: templates/backends/generic.html:18 templates/backends/idrive.html:7
+#: templates/backends/idrive.html:8 templates/backends/mega.html:7
+#: templates/backends/mega.html:8 templates/backends/openstack.html:30
+#: templates/backends/smb.html:38
+msgid "Username"
+msgstr "Användarnamn"
+
+#: scripts/services/ServerStatus.js:61
+msgid "Vacuuming database …"
+msgstr "Dammsugar databas …"
+
+#: templates/addoredit.html:155
+msgid "Validating …"
+msgstr "Validerar …"
+
+#: templates/backup-result/phases/test.html:20
+#: templates/backup-result/test-items.html:2
+msgid "Verifications"
+msgstr "Verifieringar"
+
+#: templates/home.html:67
+msgid "Verify files"
+msgstr "Verifiera filer"
+
+#: scripts/services/ServerStatus.js:37 scripts/services/ServerStatus.js:46
+msgid "Verifying backend data …"
+msgstr "Verifierar backend-data …"
+
+#: scripts/services/ServerStatus.js:63
+msgid "Verifying files …"
+msgstr "Verifierar filer ..."
+
+#: scripts/services/ServerStatus.js:38 scripts/services/ServerStatus.js:51
+msgid "Verifying remote data …"
+msgstr "Verifierar fjärrdata …"
+
+#: scripts/services/ServerStatus.js:58
+msgid "Verifying restored files …"
+msgstr "Verifierar återställda filer..."
+
+#: templates/backup-result/phases/delete.html:33
+msgid "Version ID"
+msgstr "Versions-ID"
+
+#: scripts/controllers/EditBackupController.js:35
+msgid "Very strong"
+msgstr "Väldigt stark"
+
+#: scripts/controllers/EditBackupController.js:32
+msgid "Very weak"
+msgstr "Väldigt svag"
+
+#: index.html:245
+msgid "Visit us on"
+msgstr "Besök oss på"
+
+#: templates/delete.html:44
+msgid "WARNING: This will prevent you from restoring the data in the future."
+msgstr ""
+"VARNING: Detta kommer att förhindra dig från att återställa data i "
+"framtiden."
+
+#: templates/waitarea.html:2
+msgid "Waiting for task to begin"
+msgstr "Väntar på att uppgiften ska börja"
+
+#: scripts/services/ServerStatus.js:42
+msgid "Waiting for upload to finish …"
+msgstr "Väntar på att uppladdningen ska slutföras ..."
+
+#: templates/settings.html:168
+msgid "Warnings, errors and crashes"
+msgstr "Varningar, fel och krascher"
+
+#: templates/addoredit.html:54
+msgid "We recommend that you encrypt all backups stored outside your system"
+msgstr ""
+"Vi rekommenderar att du krypterar alla säkerhetskopior som lagras utanför "
+"ditt system"
+
+#: scripts/controllers/EditBackupController.js:33
+msgid "Weak"
+msgstr "Svag"
+
+#: scripts/controllers/EditBackupController.js:352
+msgid "Weak passphrase"
+msgstr "Svag lösenfras"
+
+#: scripts/services/AppUtils.js:112
+msgid "Wed"
+msgstr "Ons"
+
+#: scripts/services/AppUtils.js:98 templates/addoredit.html:354
+msgid "Weeks"
+msgstr "Veckor"
+
+#: templates/restorewizard.html:3
+msgid "Where do you want to restore from?"
+msgstr "Var vill du återställa från?"
+
+#: templates/restore.html:78
+msgid "Where do you want to restore the files to?"
+msgstr "Var vill du återställa filerna?"
+
+#: scripts/services/AppUtils.js:100 templates/addoredit.html:356
+msgid "Years"
+msgstr "År"
+
+#: scripts/controllers/AppController.js:193
+#: scripts/controllers/DeleteController.js:99
+#: scripts/controllers/EditBackupController.js:161
+#: scripts/controllers/EditBackupController.js:171
+#: scripts/controllers/EditBackupController.js:458
+#: scripts/controllers/HomeController.js:22
+#: scripts/controllers/LocalDatabaseController.js:28
+#: scripts/controllers/LocalDatabaseController.js:72
+#: scripts/controllers/LocalDatabaseController.js:88
+#: scripts/directives/backupEditUri.js:132
+#: scripts/directives/backupEditUri.js:174
+#: scripts/directives/backupEditUri.js:88
+#: scripts/services/EditUriBackendConfig.js:74
+#: scripts/services/EditUriBuiltins.js:1215
+#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:61
+msgid "Yes"
+msgstr "Ja"
+
+#: scripts/controllers/EditBackupController.js:367
+msgid "Yes, I have stored the passphrase safely"
+msgstr "Ja, jag har lagrat lösenfrasen säkert"
+
+#: scripts/controllers/ExportController.js:13
+msgid "Yes, I understand the risk"
+msgstr "Ja, jag förstår risken"
+
+#: scripts/controllers/EditBackupController.js:410
+msgid "Yes, I'm brave!"
+msgstr "Ja, jag är modig!"
+
+#: scripts/controllers/EditBackupController.js:401
+msgid "Yes, please break my backup!"
+msgstr "Ja, snälla bryt min säkerhetskopia!"
+
+#: scripts/controllers/RestoreController.js:35
+msgid "Yesterday"
+msgstr "I går"
+
+#: scripts/controllers/LocalDatabaseController.js:88
+msgid ""
+"You are changing the database path away from an existing database.\n"
+"Are you sure this is what you want?"
+msgstr ""
+"Du ändrar databassökvägen från en befintlig databas.\n"
+"Är du säker på detta?"
+
+#: templates/about.html:28
+msgid "You are currently running {{appname}} {{version}}"
+msgstr "Du kör för närvarande {{appname}} {{version}}"
+
+#: scripts/controllers/EditBackupController.js:410
+msgid ""
+"You have changed the encryption mode. This may break stuff. You are "
+"encouraged to create a new backup instead"
+msgstr ""
+"Du har ändrat krypteringsläget. Det här kan ta sönder saker. Du uppmuntras "
+"att skapa en ny säkerhetskopia istället"
+
+#: scripts/controllers/EditBackupController.js:401
+msgid ""
+"You have changed the passphrase, which is not supported. You are encouraged "
+"to create a new backup instead."
+msgstr ""
+"Du har ändrat lösenfrasen, som inte stöds. Du uppmuntras att skapa en ny "
+"säkerhetskopia istället."
+
+#: scripts/controllers/EditBackupController.js:437
+msgid ""
+"You have chosen not to encrypt the backup. Encryption is recommended for all"
+" data stored on a remote server."
+msgstr ""
+"Du har valt att inte kryptera säkerhetskopian. Kryptering rekommenderas för "
+"all data som lagras på en fjärrserver."
+
+#: scripts/controllers/RestoreController.js:302
+msgid "You have chosen to restore to a new location, but not entered one"
+msgstr "Du har valt att återställa till en ny plats, men inte angett någon"
+
+#: scripts/controllers/EditBackupController.js:367
+msgid ""
+"You have generated a strong passphrase. Make sure you have made a safe copy "
+"of the passphrase, as the data cannot be recovered if you lose the "
+"passphrase."
+msgstr ""
+"Du har genererat en stark lösenfras. Se till att du har gjort en säker kopia"
+" av lösenfrasen, eftersom data inte kan återställas om du tappar bort "
+"lösenfrasen."
+
+#: scripts/controllers/EditBackupController.js:267
+msgid "You must choose at least one source folder"
+msgstr "Du måste välja minst en källmapp"
+
+#: scripts/services/EditUriBuiltins.js:1173
+msgid "You must enter a domain name to use v3 API"
+msgstr "Du måste ange ett domännamn för att använda v3 API"
+
+#: scripts/controllers/EditBackupController.js:247
+msgid "You must enter a name for the backup"
+msgstr "Du måste ange ett namn för säkerhetskopian"
+
+#: scripts/controllers/EditBackupController.js:254
+msgid "You must enter a passphrase or disable encryption"
+msgstr "Du måste ange en lösenfras eller inaktivera kryptering"
+
+#: scripts/services/EditUriBuiltins.js:1170
+msgid "You must enter a password to use v3 API"
+msgstr "Du måste ange ett lösenord för att använda v3 API"
+
+#: scripts/controllers/EditBackupController.js:303
+msgid "You must enter a positive number of backups to keep"
+msgstr "Du måste ange ett positivt antal säkerhetskopior för att behålla"
+
+#: scripts/services/EditUriBuiltins.js:1176
+msgid "You must enter a tenant (aka project) name to use v3 API"
+msgstr "Du måste ange ett tenant (aka project) för att använda v3 API"
+
+#: scripts/controllers/EditBackupController.js:296
+msgid "You must enter a valid duration for the time to keep backups"
+msgstr ""
+"Du måste ange en giltig varaktighet för hur länge säkerhetskopior sparas "
+
+#: scripts/controllers/EditBackupController.js:313
+msgid "You must enter a valid retention policy string"
+msgstr "Du måste ange en giltig lagrings-policysträng"
+
+#: scripts/services/EditUriBackendConfig.js:123
+msgid "You must fill in the password"
+msgstr "Du måste fylla i lösenordet"
+
+#: scripts/services/EditUriBackendConfig.js:100
+msgid "You must fill in the server name or address"
+msgstr "Du måste fylla i serverns namn eller adress"
+
+#: scripts/services/EditUriBackendConfig.js:121
+#: scripts/services/EditUriBackendConfig.js:130
+msgid "You must fill in the username"
+msgstr "Du måste fylla i användarnamnet"
+
+#: scripts/services/EditUriBackendConfig.js:86
+msgid "You must fill in {{field}}"
+msgstr "Du måste fylla i {{field}}"
+
+#: scripts/services/EditUriBuiltins.js:1166
+msgid "You must select or fill in the AuthURI"
+msgstr "Du måste välja eller fylla i AuthURI"
+
+#: scripts/services/EditUriBuiltins.js:1208
+msgid "You must select or fill in the server"
+msgstr "Du måste välja eller fylla i uppgifterna för servern"
+
+#: scripts/services/EditUriBackendConfig.js:107
+msgid "You must specify a path"
+msgstr "Du måste ange en sökväg"
+
+#: templates/restore.html:144
+msgid "Your files and folders have been restored successfully."
+msgstr "Dina filer och mappar har återställts."
+
+#: scripts/controllers/EditBackupController.js:352
+msgid "Your passphrase is easy to guess. Consider changing passphrase."
+msgstr "Din lösenfras är lätt att gissa. Överväg att ändra lösenordsfras."
+
+#: templates/backends/gcs.html:3 templates/backends/openstack.html:3
+msgid "bucket/folder/subfolder"
+msgstr "bucket/mapp/undermapp"
+
+#: scripts/services/AppUtils.js:87
+msgid "byte"
+msgstr "byte"
+
+#: scripts/services/AppUtils.js:120
+msgid "byte/s"
+msgstr "byte/s"
+
+#: templates/addoredit.html:272 templates/addoredit.html:357
+#: templates/advancedoptionseditor.html:29
+#: templates/advancedoptionseditor.html:36
+msgid "custom"
+msgstr "anpassad"
+
+#: templates/restoredirect.html:95 templates/waitarea.html:15
+msgid "resume now"
+msgstr "återuppta nu"
+
+#: scripts/services/EditUriBuiltins.js:1143
+msgid "unless you are explicitly specifying --group-id"
+msgstr "om du inte uttryckligen anger --group-id"
+
+#: templates/about.html:12
+msgid ""
+"{{appname}} was primarily developed by <a href=\"{{mail1}}\">{{dev1}}</a> "
+"and <a href=\"{{mail2}}\">{{dev2}}</a>. {{appname}} can be downloaded from "
+"<a href=\"{{websitelink}}\">{{websitename}}</a>. {{appname}} is licensed "
+"under the <a href=\"{{licenselink}}\">{{licensename}}</a>."
+msgstr ""
+"{{appname}} utvecklades främst av <a href=\"{{mail1}}\">{{dev1}}</a> och <a "
+"href=\"{{mail2}}\">{{dev2}}</a>. {{appname}} kan laddas ner från <a "
+"href=\"{{websitelink}}\">{{websitename}}</a>. {{appname}} är licensierad "
+"under <a href=\"{{licenselink}}\">{{licensename}}</a>."
+
+#: scripts/controllers/StateController.js:53
+msgid "{{files}} files ({{size}}) to go {{speed_txt}}"
+msgstr "{{files}} filer ({{size}}) att gå {{speed_txt}}"
+
+#: templates/home.html:101 templates/restorewizard.html:23
+msgid "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Version"
+msgid_plural "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Versions"
+msgstr[0] "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Version"
+msgstr[1] "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Versions"
+
+#: templates/pause.html:26
+msgid "{{number}} Hour"
+msgstr "{{number}} Timme"
+
+#: templates/pause.html:31 templates/pause.html:36 templates/pause.html:41
+msgid "{{number}} Hours"
+msgstr "{{number}} Timmar"
+
+#: templates/pause.html:11 templates/pause.html:16 templates/pause.html:21
+#: templates/pause.html:6
+msgid "{{number}} Minutes"
+msgstr "{{number}} Minuter"
+
+#: templates/home.html:81
+msgid "{{time}} (took {{duration}})"
+msgstr "{{time}} (tog {{duration}})"
