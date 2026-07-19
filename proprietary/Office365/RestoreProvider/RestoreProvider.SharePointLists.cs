@@ -152,16 +152,9 @@ public partial class RestoreProvider
         if (lists.Count == 0)
             return;
 
-        string? targetSiteId = null;
-        if (RestoreTarget.Type == SourceItemType.Site)
+        if (RestoreTarget.Type != SourceItemType.Site)
         {
-            targetSiteId = RestoreTarget.Metadata.GetValueOrDefault("o365:Id");
-        }
-
-        if (string.IsNullOrWhiteSpace(targetSiteId))
-        {
-            // Try to infer from path if possible, or log error
-            // For now, we assume we are restoring to a site
+            // Only site restores support SharePoint lists
             return;
         }
 
@@ -183,6 +176,14 @@ public partial class RestoreProvider
                 }
 
                 _metadata.TryRemove(originalPath, out _);
+
+                // Resolve the target site (root site or a matched subsite) for this list's path
+                var targetSiteId = GetTargetSiteIdForPath(originalPath);
+                if (string.IsNullOrWhiteSpace(targetSiteId))
+                {
+                    Log.WriteWarningMessage(LOGTAG, "RestoreSharePointListMissingSite", null, $"Could not resolve target site for list {originalPath}, skipping.");
+                    continue;
+                }
 
                 // Check if list exists
                 var existingList = await SourceProvider.SharePointListApi.GetListAsync(targetSiteId, displayName, cancel);
@@ -212,14 +213,11 @@ public partial class RestoreProvider
         if (items.Count == 0)
             return;
 
-        string? targetSiteId = null;
-        if (RestoreTarget.Type == SourceItemType.Site)
+        if (RestoreTarget.Type != SourceItemType.Site)
         {
-            targetSiteId = RestoreTarget.Metadata.GetValueOrDefault("o365:Id");
-        }
-
-        if (string.IsNullOrWhiteSpace(targetSiteId))
+            // Only site restores support SharePoint list items
             return;
+        }
 
         // Sort items by path to ensure folders are created before their children
         var sortedItems = items.OrderBy(x => x.Key).ToList();
@@ -255,6 +253,14 @@ public partial class RestoreProvider
                 if (listId == null || listPath == null)
                 {
                     Log.WriteWarningMessage(LOGTAG, "RestoreSharePointListItemMissingList", null, $"Missing target list for item {originalPath}, skipping.");
+                    continue;
+                }
+
+                // Resolve the target site (root site or a matched subsite) for this item's path
+                var targetSiteId = GetTargetSiteIdForPath(originalPath);
+                if (string.IsNullOrWhiteSpace(targetSiteId))
+                {
+                    Log.WriteWarningMessage(LOGTAG, "RestoreSharePointListItemMissingSite", null, $"Could not resolve target site for item {originalPath}, skipping.");
                     continue;
                 }
 

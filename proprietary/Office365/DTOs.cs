@@ -32,11 +32,26 @@ internal sealed class GraphSite
     [JsonPropertyName("displayName")]
     public string? DisplayName { get; set; }
 
+    [JsonPropertyName("name")]
+    public string? Name { get; set; }
+
     [JsonPropertyName("webUrl")]
     public string? WebUrl { get; set; }
 
+    [JsonPropertyName("description")]
+    public string? Description { get; set; }
+
+    [JsonPropertyName("createdDateTime")]
+    public DateTimeOffset? CreatedDateTime { get; set; }
+
+    [JsonPropertyName("lastModifiedDateTime")]
+    public DateTimeOffset? LastModifiedDateTime { get; set; }
+
     [JsonPropertyName("siteCollection")]
     public GraphSiteCollection? SiteCollection { get; set; }
+
+    [JsonPropertyName("root")]
+    public GraphSiteRoot? Root { get; set; }
 }
 
 internal sealed class GraphSiteCollection
@@ -46,6 +61,12 @@ internal sealed class GraphSiteCollection
 
     [JsonPropertyName("personalSite")]
     public bool? PersonalSite { get; set; }
+}
+
+internal sealed class GraphSiteRoot
+{
+    [JsonPropertyName("id")]
+    public string? Id { get; set; }
 }
 
 internal sealed class OfficeTokenResponse

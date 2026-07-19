@@ -15,7 +15,7 @@ partial class SourceProvider
             var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
             var site = Uri.EscapeDataString(siteId);
 
-            var select = "id,name,displayName,webUrl,createdDateTime,description,siteCollection,root";
+            var select = GraphSelectBuilder.BuildSelect<GraphSite>();
             var url =
                 $"{baseUrl}/v1.0/sites/{site}" +
                 $"?$select={Uri.EscapeDataString(select)}";
@@ -53,5 +53,8 @@ partial class SourceProvider
 
             return drive;
         }
+
+        internal IAsyncEnumerable<GraphSite> ListSubsitesAsync(string siteId, CancellationToken ct)
+            => provider.ListSubsitesAsync(siteId, ct);
     }
 }

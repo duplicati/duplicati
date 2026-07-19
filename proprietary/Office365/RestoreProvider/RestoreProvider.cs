@@ -78,6 +78,17 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
     private readonly ConcurrentDictionary<string, string> _restoredDriveMap = new();
 
     /// <summary>
+    /// Map of restored site paths (including subsites) to their corresponding target site IDs
+    /// </summary>
+    private readonly ConcurrentDictionary<string, string> _restoredSiteMap = new();
+
+    /// <summary>
+    /// Set of site paths (subsites or extra top-level sites) that could not be mapped to a
+    /// target site and whose contents must therefore be skipped rather than misplaced.
+    /// </summary>
+    private readonly HashSet<string> _skippedSitePaths = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
     /// Map of restored drive folder paths to their corresponding IDs
     /// </summary>
     private readonly ConcurrentDictionary<string, string> _restoredDriveFolderMap = new();
@@ -415,6 +426,17 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         catch (Exception ex)
         {
             Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreDrivesFailed", ex, $"Failed to restore drives");
+        }
+
+        progressCallback?.Invoke(_metadata.Count / (double)totalFiles);
+
+        try
+        {
+            await RestoreSites(cancel).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            Log.WriteErrorMessage(LOGTAG, "FinalizeRestoreSitesFailed", ex, $"Failed to restore site hierarchy");
         }
 
         progressCallback?.Invoke(_metadata.Count / (double)totalFiles);
@@ -1013,15 +1035,15 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
             return;
         }
 
+        // Site restores map drives (including subsite drives) in RestoreSiteDrives,
+        // which resolves the correct target site per drive path.
+        if (RestoreTarget.Type == SourceItemType.Site)
+            return;
+
         string? targetUserId = null;
-        string? targetSiteId = null;
         if (RestoreTarget.Type == SourceItemType.User)
         {
             targetUserId = RestoreTarget.Metadata.GetValueOrDefault("o365:Id");
-        }
-        else if (RestoreTarget.Type == SourceItemType.Site)
-        {
-            targetSiteId = RestoreTarget.Metadata.GetValueOrDefault("o365:Id");
         }
 
         if (!string.IsNullOrWhiteSpace(targetUserId))
@@ -1029,21 +1051,6 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
             try
             {
                 var primaryDrive = await SourceProvider.OneDriveApi.GetUserPrimaryDriveAsync(targetUserId, cancel);
-                foreach (var driveSource in driveSources)
-                {
-                    _restoredDriveMap[driveSource.Key] = primaryDrive.Id;
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.WriteErrorMessage(LOGTAG, "RestoreDrivesFailed", ex, $"Failed to restore drives");
-            }
-        }
-        else if (!string.IsNullOrWhiteSpace(targetSiteId))
-        {
-            try
-            {
-                var primaryDrive = await SourceProvider.SiteApi.GetSitePrimaryDriveAsync(targetSiteId, cancel);
                 foreach (var driveSource in driveSources)
                 {
                     _restoredDriveMap[driveSource.Key] = primaryDrive.Id;

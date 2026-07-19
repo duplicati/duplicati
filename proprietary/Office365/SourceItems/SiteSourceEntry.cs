@@ -52,5 +52,17 @@ internal class SiteSourceEntry(SourceProvider provider, string parentPath, Graph
 
             yield return new SharePointListSourceEntry(provider, this.Path, site, list);
         }
+
+        await foreach (var subsite in provider.SiteApi.ListSubsitesAsync(site.Id, cancellationToken).ConfigureAwait(false))
+        {
+            if (cancellationToken.IsCancellationRequested)
+                yield break;
+
+            // Guard against the API echoing the parent site itself, which would cause infinite recursion.
+            if (string.Equals(subsite.Id, site.Id, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            yield return new SiteSourceEntry(provider, this.Path, subsite);
+        }
     }
 }
