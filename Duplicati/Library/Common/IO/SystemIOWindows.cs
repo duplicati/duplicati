@@ -747,7 +747,7 @@ namespace Duplicati.Library.Common.IO
         }
 
         /// <summary>
-        /// Sets the file permissions to user read-write only.
+        /// Restricts the file so only the current user, SYSTEM and Administrators have full control, with inheritance disabled.
         /// </summary>
         /// <param name="path">The file to set permissions on.</param>
         public void FileSetPermissionUserRWOnly(string path)
@@ -806,7 +806,7 @@ namespace Duplicati.Library.Common.IO
         }
 
         /// <summary>
-        /// Sets the directory permissions to read-write only for the current user.
+        /// Restricts the directory so only the current user, SYSTEM and Administrators have full control, with inheritance disabled.
         /// </summary>
         /// <param name="path">The directory to set permissions on.</param>
         /// <param name="excludeCurrentUser">Do not include the current user.</param>

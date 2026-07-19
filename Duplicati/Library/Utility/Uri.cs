@@ -473,7 +473,7 @@ namespace Duplicati.Library.Utility
 
         /// <summary>
         /// Parses the query string.
-        /// This is a duplicate of the System.Web.HttpUtility.ParseQueryString that does not work well on Mono
+        /// This is a local implementation of System.Web.HttpUtility.ParseQueryString, kept for consistent behavior (originally added due to Mono limitations)
         /// </summary>
         /// <returns>The parsed query string</returns>
         /// <param name="query">The query to parse</param>
@@ -484,7 +484,7 @@ namespace Duplicati.Library.Utility
 
         /// <summary>
         /// Parses the query string.
-        /// This is a duplicate of the System.Web.HttpUtility.ParseQueryString that does not work well on Mono
+        /// This is a local implementation of System.Web.HttpUtility.ParseQueryString, kept for consistent behavior (originally added due to Mono limitations)
         /// </summary>
         /// <returns>The parsed query string</returns>
         /// <param name="query">The query to parse</param>

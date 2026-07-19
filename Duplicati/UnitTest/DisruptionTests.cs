@@ -1092,6 +1092,9 @@ namespace Duplicati.UnitTest
             var testopts = TestOptions;
             testopts["number-of-retries"] = "0";
             testopts["dblock-size"] = "10mb";
+            // Keep unchanged-source cases independent of platform-specific metadata changes.
+            // ModifySourceFiles updates the file timestamps for cases that expect new versions.
+            testopts["check-filetime-only"] = "true";
             // We always have at least 1 backup at the end
             var expectedFilesets = 1;
             // If the files are modified, this will create multiple versions

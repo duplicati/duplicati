@@ -174,7 +174,6 @@ namespace Duplicati.Library.DynamicLoader
         /// <param name="url">The url to create the instance for</param>
         /// <param name="mountPoint">The mount point to use</param>
         /// <param name="options">The options to pass to the instance constructor</param>
-        /// <param name="getForTesting">Whether the SourceProvider is requested for testing purposes</param>
         /// <param name="cancellationToken">The cancellation token</param>
         /// <returns>The instanciated SourceProvider or null if the url is not supported</returns>
         public static async Task<ISourceProviderModule> GetSourceProvider(string url, string mountPoint, Dictionary<string, string> options, CancellationToken cancellationToken)

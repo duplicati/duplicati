@@ -294,7 +294,7 @@ public class pCloudBackend : IStreamingBackend, IRenameEnabledBackend
     /// Download files from remote
     /// </summary>
     /// <param name="remotename">Filename at remote location</param>
-    /// <param name="output">Destination stream to write to</param>
+    /// <param name="localname">Destination file path to write to</param>
     /// <param name="cancellationToken">CancellationToken that is combined with internal timeout token</param>
     /// <exception cref="FileMissingException">FileMissingException when file is not found</exception>
     /// <exception cref="Exception">Exceptions arising from either code execution or FileMissingException</exception>

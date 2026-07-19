@@ -36,7 +36,7 @@ namespace Duplicati.Library.Main.Database;
 /// <remarks>
 /// Creates a new reusable transaction.
 /// </remarks>
-/// <param name="db">The database to use.</param>
+/// <param name="con">The connection to use.</param>
 /// <param name="transaction">The transaction to use. If null, a new transaction is created.</param>
 internal class ReusableTransaction(SqliteConnection con, SqliteTransaction? transaction = null) : IDisposable, IAsyncDisposable
 {
@@ -73,7 +73,7 @@ internal class ReusableTransaction(SqliteConnection con, SqliteTransaction? tran
     /// <summary>
     /// Commits the transaction and restarts it.
     /// </summary>
-    /// <param name="token">A cancellation token to cancel the operation.</param>
+    /// <param name="token">A cancellation token (currently not observed by this operation).</param>
     /// <returns>A task that completes when the commit is done and a new transaction has been started.</returns>
     public async Task CommitAsync(CancellationToken token)
     {
@@ -81,10 +81,11 @@ internal class ReusableTransaction(SqliteConnection con, SqliteTransaction? tran
     }
 
     /// <summary>
-    /// Async version of Commit: <inheritdoc cref="Commit(string?, bool)"/>
+    /// Commits the transaction asynchronously, optionally logging a timed message and restarting the transaction.
     /// </summary>
     /// <param name="message">The log message to use.</param>
     /// <param name="restart">True if the transaction should be restarted.</param>
+    /// <param name="token">A cancellation token (currently not observed by this operation).</param>
     /// <returns>A task that completes when the commit is done and (potentially) a new transaction has been started.</returns>
     /// <exception cref="InvalidOperationException">If the transaction is already Disposed.</exception>
     public async Task CommitAsync(string? message = null, bool restart = true, CancellationToken token = default)
@@ -158,7 +159,7 @@ internal class ReusableTransaction(SqliteConnection con, SqliteTransaction? tran
     /// <summary>
     /// Rolls back the transaction and restarts it.
     /// </summary>
-    /// <param name="token">A cancellation token to cancel the operation.</param>
+    /// <param name="token">A cancellation token (currently not observed by this operation).</param>
     /// <returns>A task that completes when the rollback is done and a new transaction has been started.</returns>
     public async Task RollBackAsync(CancellationToken token)
     {
@@ -170,7 +171,7 @@ internal class ReusableTransaction(SqliteConnection con, SqliteTransaction? tran
     /// </summary>
     /// <param name="message">Message to log.</param>
     /// <param name="restart">Whether to restart the transaction after rolling back.</param>
-    /// <param name="token">A cancellation token to cancel the operation.</param>
+    /// <param name="token">A cancellation token (currently not observed by this operation).</param>
     /// <returns>A task that completes when the rollback is done and (potentially) a new transaction has been started.</returns>
     /// <exception cref="InvalidOperationException">If the transaction has already been disposed.</exception>
     public async Task RollBackAsync(string? message = null, bool restart = true, CancellationToken token = default)

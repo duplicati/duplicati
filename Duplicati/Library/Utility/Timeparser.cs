@@ -175,7 +175,7 @@ namespace Duplicati.Library.Utility
         /// Parses a time interval string with a timezone offset, retaining the local time
         /// </summary>
         /// <param name="datestring">The repeating interval string</param>
-        /// <param name="offset">The base time to add the interval to</param>
+        /// <param name="rawoffset">The base time to add the interval to</param>
         /// <param name="timeZoneInfo">The timezone to use for the calculation</param>
         /// <param name="negate">True if the interval should be subtracted</param>
         /// <returns>The calculated time</returns>

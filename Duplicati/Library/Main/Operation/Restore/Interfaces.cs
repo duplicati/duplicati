@@ -155,7 +155,7 @@ namespace Duplicati.Library.Main.Operation.Restore
     /// <param name="blockHash">The hash of the block.</param>
     /// <param name="blockSize">The size of the block.</param>
     /// <param name="volumeID">The ID of the volume in which the block is stored remotely.</param>
-    /// <param name="cacheDecrEvict">Flag indicating that this block request should either decrement the block counter for BlockID (for BlockManager) or evict the VolumeID (for VolumeDownloader).</param>
+    /// <param name="requestType">The type of request: a download, or a request to decrement the block counter for BlockID (for BlockManager) / evict the VolumeID (for VolumeDownloader).</param>
     public class BlockRequest(long blockID, long blockOffset, string blockHash, long blockSize, long volumeID, BlockRequestType requestType)
     { // Total = 81 bytes
         public long BlockID { get; } = blockID;

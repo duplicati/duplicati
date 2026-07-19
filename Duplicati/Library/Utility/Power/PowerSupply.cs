@@ -36,7 +36,6 @@ namespace Duplicati.Library.Utility.Power
         {
             IPowerSupplyState state;
 
-            // Since IsClientLinux returns true when on Mac OS X, we need to check IsClientOSX first.
             if (System.OperatingSystem.IsMacOS())
             {
                 state = new MacOSPowerSupplyState();

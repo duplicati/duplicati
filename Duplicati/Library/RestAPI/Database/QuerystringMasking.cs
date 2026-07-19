@@ -37,7 +37,7 @@ public static class QuerystringMasking
     /// <summary>
     /// Masks the values in the given URL for any properties listed in protectedProperties.
     /// </summary>
-    /// <param name="url">The URL to mask.</param>
+    /// <param name="urlstring">The URL to mask.</param>
     /// <param name="protectedProperties">The set of property names to mask (case-insensitive).</param>
     /// <returns>>The URL with sensitive properties masked.</returns>
     public static string Mask(string urlstring, IReadOnlySet<string> protectedProperties)

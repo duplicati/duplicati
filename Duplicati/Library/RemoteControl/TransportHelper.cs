@@ -92,7 +92,7 @@ internal static class TransportHelper
     /// Parses an encrypted message using the provided key
     /// </summary>
     /// <param name="message">The encrypted message to parse</param>
-    /// <param name="privateKey">The private key to decrypt with</param>
+    /// <param name="key">The key to decrypt or verify with</param>
     /// <returns>The parsed message</returns>
     private static EnvelopedMessage ParsedFromEncodedMessage(string message, RSA key, bool isPrivateKey)
     {

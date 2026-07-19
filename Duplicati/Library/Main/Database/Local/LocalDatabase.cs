@@ -3085,7 +3085,6 @@ namespace Duplicati.Library.Main.Database.Local
         /// <summary>
         /// Gets the last previous fileset that was incomplete.
         /// </summary>
-        /// <param name="transaction">The transaction to use.</param>
         /// <param name="token">Cancellation token to monitor for cancellation requests.</param>
         /// <returns>A task that when awaited returns the last incomplete fileset or default</returns>
         public async Task<RemoteVolumeEntry> GetLastIncompleteFilesetVolumeAsync(CancellationToken token)

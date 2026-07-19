@@ -20,7 +20,7 @@ public static class Helper
     /// <summary>
     /// Creates a backup of the file
     /// </summary>
-    /// <param name="filename">The filename to backup</param>
+    /// <param name="path">The path of the file to backup</param>
     public static void CreateFileBackup(string path)
     {
         path = Path.GetFullPath(path);

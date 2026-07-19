@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
@@ -204,6 +205,38 @@ namespace Duplicati.UnitTest
             IFilter defaultExcludes = new FilterExpression("{DefaultExcludes}");
             Assert.IsTrue(defaultExcludes.Matches(@"C:\Replicated\DfsrPrivate\", out _, out _));
             Assert.IsFalse(defaultExcludes.Matches(@"C:\Replicated\.DfsrPrivate\", out _, out _));
+        }
+
+        [Test]
+        [Category("Filter")]
+        public static void ControlDirectoryFilterUsesApplicationDataFolder()
+        {
+            var root = Path.GetPathRoot(Path.GetTempPath()) ?? Path.DirectorySeparatorChar.ToString();
+            var dataFolder = Path.Combine(root, "OemDuplicati");
+            var controlDirectory = Util.AppendDirSeparator(Path.Combine(dataFolder, "control_dir_v2"));
+            var unrelatedControlDirectory = Util.AppendDirSeparator(Path.Combine(root, "OtherApplication", "control_dir_v2"));
+
+            var cacheFilters = FilterGroups.GetFilterStrings(FilterGroup.CacheFiles, dataFolder).ToList();
+            Assert.IsTrue(cacheFilters.Contains(controlDirectory, StringComparer.OrdinalIgnoreCase), $"Expected filter {controlDirectory} was not found.");
+
+            IFilter defaultExcludes = new FilterExpression(FilterGroups.GetFilterStrings(FilterGroup.DefaultExcludes, dataFolder));
+            Assert.IsTrue(defaultExcludes.Matches(controlDirectory, out _, out _));
+            Assert.IsFalse(defaultExcludes.Matches(unrelatedControlDirectory, out _, out _));
+
+            var fallbackFilter = $"*{Util.DirectorySeparatorString}Duplicati{Util.DirectorySeparatorString}control_dir_v2{Util.DirectorySeparatorString}";
+            var fallbackFilters = FilterGroups.GetFilterStrings(FilterGroup.CacheFiles, null).ToList();
+            Assert.IsTrue(fallbackFilters.Contains(fallbackFilter, StringComparer.OrdinalIgnoreCase), $"Expected fallback filter {fallbackFilter} was not found.");
+        }
+
+        [Test]
+        [Category("Filter")]
+        public static void ControlDirectoryFilterUsesResolvedDataFolder()
+        {
+            var dataFolder = DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ProbeOnly);
+            var expectedFilter = Util.AppendDirSeparator(Path.Combine(dataFolder, "control_dir_v2"));
+            var cacheFilters = FilterGroups.GetFilterStrings(FilterGroup.CacheFiles).ToList();
+
+            Assert.IsTrue(cacheFilters.Contains(expectedFilter, StringComparer.OrdinalIgnoreCase), $"Expected filter {expectedFilter} was not found.");
         }
 
         [Test]

@@ -848,7 +848,6 @@ public static partial class ExtensionMethods
     /// </summary>
     /// <param name="self">The command instance to execute on</param>
     /// <param name="cmd">The command string to execute</param>
-    /// <param name="values">The values to use as parameters. The parameters must already be added.</param>
     /// <returns>The number of rows affected</returns>
     public static int ExecuteNonQuery(this IDbCommand self, string cmd)
         => ExecuteNonQuery(self, true, cmd);
@@ -1134,7 +1133,7 @@ public static partial class ExtensionMethods
     /// </summary>
     /// <param name="self">The connection to create the command on.</param>
     /// <param name="transaction">The transaction to use for the command.</param>
-    /// <param name="cmd">The command string to create the command with.</param>
+    /// <param name="cmdtext">The command string to create the command with.</param>
     /// <returns>A new command with the given transaction.</returns>
     public static IDbCommand CreateCommand(this IDbConnection self, IDbTransaction? transaction, string? cmdtext = null)
     {

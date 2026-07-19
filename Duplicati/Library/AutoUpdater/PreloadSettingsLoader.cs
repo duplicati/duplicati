@@ -137,7 +137,6 @@ public static class PreloadSettingsLoader
     /// Gets the merged settings for the given executable
     /// </summary>
     /// <param name="executable">The executable to get settings for</param>
-    /// <param name="sourceargs">The source commandline arguments</param>
     /// <param name="portableMode">The portable mode flag</param>
     /// <returns>The merged settings</returns>
     private static (Dictionary<string, string> env, List<string> args, Dictionary<string, string?> db) GetExecutableMergedSettings(PackageHelper.NamedExecutable executable, bool portableMode)

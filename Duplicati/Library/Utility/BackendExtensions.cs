@@ -61,7 +61,7 @@ public static class BackendExtensions
     /// Tests a backend by invoking the List() method, and attempting to write a small file on the destination.
     /// </summary>
     /// <param name="backend">Backend to test</param>
-    /// <param name="cancelToken">Cancellation token</param>
+    /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>An awaitable tasks</returns>
     public static async Task TestReadWritePermissionsAsync(this IBackend backend, CancellationToken cancellationToken)
     {
@@ -160,7 +160,7 @@ public static class BackendExtensions
     /// As long as the iteration can return one page, the test is considered successful.
     /// </summary>
     /// <param name="backend">Backend to test</param>
-    /// <param name="cancelToken">Cancellation token</param>
+    /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>An awaitable tasks</returns>
     public static async Task TestReadPermissionsAsync(this IBackend backend, CancellationToken cancellationToken)
     {

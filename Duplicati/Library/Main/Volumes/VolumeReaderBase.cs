@@ -153,7 +153,6 @@ namespace Duplicati.Library.Main.Volumes
         /// Updates the options with data from the manifest file, but does not overwrite existing values
         /// </summary>
         /// <param name="compressor">The compressor to use</param>
-        /// <param name="file">The file to read the manifest from</param>
         /// <param name="options">The options to update</param>
         public static void UpdateOptionsFromManifest(ICompression compressor, Options options)
         {

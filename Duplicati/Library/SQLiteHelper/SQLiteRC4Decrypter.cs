@@ -86,8 +86,6 @@ public static class SQLiteRC4Decrypter
     /// </summary>
     /// <param name="databasePath">The path to the database file</param>
     /// <param name="password">The password to use for decryption</param>
-    /// <param name="errorMessage">The error message if decryption failed</param>
-    /// <returns><c>true</c> if the decryption was successful or the database was not encrypted; <c>false</c> otherwise</returns>
     public static void DecryptSQLiteFile(string databasePath, string password)
     {
         databasePath = Path.GetFullPath(databasePath);
