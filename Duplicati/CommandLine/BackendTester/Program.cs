@@ -572,7 +572,6 @@ namespace Duplicati.CommandLine.BackendTester
         {
             var filesize = new System.IO.FileInfo(localfilename).Length;
             Console.Write($"{LogTimeStamp}Uploading file {i}, {Utility.FormatSizeString(filesize)} ... ");
-            Exception e = null;
 
             var sw = Stopwatch.StartNew();
             var throttleManager = new ThrottleManager() { Limit = throttle };
@@ -590,26 +589,21 @@ namespace Duplicati.CommandLine.BackendTester
                 else
                     backend.PutAsync(remotefilename, localfilename, CancellationToken.None).Await();
 
-                e = null;
+                sw.Stop();
+                Console.WriteLine($" done! in {sw.ElapsedMilliseconds} ms (~{Utility.FormatSizeString(filesize / sw.Elapsed.TotalSeconds)}/s)");
             }
             catch (Exception ex)
             {
-                e = ex;
-            }
-            sw.Stop();
-
-            if (e != null)
-            {
-                Console.WriteLine($"{LogTimeStamp}Failed to upload file {i}, error message: {e}, remote name: {remotefilename} after {sw.ElapsedMilliseconds} ms");
+                sw.Stop();
+                Console.WriteLine($"{LogTimeStamp}Failed to upload file {i}, error message: {ex}, remote name: {remotefilename} after {sw.ElapsedMilliseconds} ms");
+                var e = ex;
                 while (e.InnerException != null)
                 {
                     e = e.InnerException;
                     Console.WriteLine($"{LogTimeStamp}  Inner exception: {e}");
                 }
-            }
-            else
-            {
-                Console.WriteLine($" done! in {sw.ElapsedMilliseconds} ms (~{Utility.FormatSizeString(filesize / sw.Elapsed.TotalSeconds)}/s)");
+
+                throw;
             }
         }
 
