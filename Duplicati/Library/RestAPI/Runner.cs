@@ -42,6 +42,11 @@ namespace Duplicati.Server
 {
     public static class Runner
     {
+        /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Library.Logging.Log.LogTagFromType(typeof(Runner));
+
         public const string TaskSetupFilename = "task-setup.json";
 
         public interface IRunnerData : Serialization.Interface.IQueuedTask
@@ -140,14 +145,20 @@ namespace Duplicati.Server
                     if (!string.IsNullOrWhiteSpace(uploadSpeed))
                         server_upload_throttle = Sizeparser.ParseSize(uploadSpeed, "kb");
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Library.Logging.Log.WriteErrorMessage(LOGTAG, "ParseUploadLimitError", ex, "Failed to parse upload limit: {0}", uploadSpeed);
+                }
 
                 try
                 {
                     if (!string.IsNullOrWhiteSpace(downloadSpeed))
                         server_download_throttle = Sizeparser.ParseSize(downloadSpeed, "kb");
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Library.Logging.Log.WriteErrorMessage(LOGTAG, "ParseDownloadLimitError", ex, "Failed to parse download limit: {0}", downloadSpeed);
+                }
 
                 var upload_throttle = Math.Min(job_upload_throttle, server_upload_throttle);
                 var download_throttle = Math.Min(job_download_throttle, server_download_throttle);
@@ -833,14 +844,20 @@ namespace Duplicati.Server
                         if (options.ContainsKey("throttle-upload"))
                             ((RunnerData)data).OriginalUploadSpeed = Duplicati.Library.Utility.Sizeparser.ParseSize(options["throttle-upload"], "kb");
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Library.Logging.Log.WriteWarningMessage(LOGTAG, "ParseUploadThrottleError", ex, "Failed to parse throttle-upload, continuing without it: {0}", options["throttle-upload"]);
+                    }
 
                     try
                     {
                         if (options.ContainsKey("throttle-download"))
                             ((RunnerData)data).OriginalDownloadSpeed = Duplicati.Library.Utility.Sizeparser.ParseSize(options["throttle-download"], "kb");
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Library.Logging.Log.WriteWarningMessage(LOGTAG, "ParseDownloadThrottleError", ex, "Failed to parse throttle-download, continuing without it: {0}", options["throttle-download"]);
+                    }
 
                     ((RunnerData)data).Controller = controller;
                     var appSettings = databaseConnection.ApplicationSettings;
