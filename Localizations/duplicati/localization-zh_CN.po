@@ -24,7 +24,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-13 15:38+0200\n"
+"POT-Creation-Date: 2026-07-19 16:29+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: Xuedong Duan, 2026\n"
 "Language-Team: Chinese (China) (https://app.transifex.com/duplicati/teams/67655/zh_CN/)\n"
@@ -7852,27 +7852,27 @@ msgstr "读取文件时出错：{0}，错误：{1}"
 msgid "Error listing content: {0}"
 msgstr "列出内容时出错：{0}"
 
-#: Library/Utility/FilterGroups.cs:191
+#: Library/Utility/FilterGroups.cs:194
 #, csharp-format
 msgid "{0}: Selects no filters."
 msgstr "{0}: 不使用任何过滤"
 
-#: Library/Utility/FilterGroups.cs:192
+#: Library/Utility/FilterGroups.cs:195
 #, csharp-format
 msgid "{0}: A set of default exclude filters, currently evaluates to: {1}."
 msgstr "{0}：一组默认排除过滤器，当前评估为：{1}。"
 
-#: Library/Utility/FilterGroups.cs:193
+#: Library/Utility/FilterGroups.cs:196
 #, csharp-format
 msgid "{0}: A set of default include filters, currently evaluates to: {1}."
 msgstr "{0}：一组默认包含过滤器，当前评估为：{1}。"
 
-#: Library/Utility/FilterGroups.cs:204
+#: Library/Utility/FilterGroups.cs:207
 #, csharp-format
 msgid " Aliases: {0}"
 msgstr "别名：{0}"
 
-#: Library/Utility/FilterGroups.cs:217
+#: Library/Utility/FilterGroups.cs:220
 #, csharp-format
 msgid ""
 "{0}: Files that are owned by the system or not suited to be backed up. This "
@@ -7880,26 +7880,26 @@ msgid ""
 " least apply these filters."
 msgstr "{0}：系统拥有或不适合备份的文件。这包括任何操作系统报告的受保护文件。大多数用户至少应该使用这些过滤器。"
 
-#: Library/Utility/FilterGroups.cs:219
+#: Library/Utility/FilterGroups.cs:222
 #, csharp-format
 msgid ""
 "{0}: Files that belong to the operating system. These files are restored "
 "when the operating system is re-installed."
 msgstr "{0}：属于操作系统的文件。重新安装操作系统时将还原这些文件。"
 
-#: Library/Utility/FilterGroups.cs:221
+#: Library/Utility/FilterGroups.cs:224
 #, csharp-format
 msgid "{0}: Files and folders that are known to be storage of temporary data."
 msgstr "{0}：已知存储临时数据的文件和文件夹。"
 
-#: Library/Utility/FilterGroups.cs:223
+#: Library/Utility/FilterGroups.cs:226
 #, csharp-format
 msgid ""
 "{0}: Files and folders that are known cache locations for the operating "
 "system and various applications"
 msgstr "{0}：已知被操作系统和各种应用程序用来作为缓存位置的文件和文件夹"
 
-#: Library/Utility/FilterGroups.cs:225
+#: Library/Utility/FilterGroups.cs:228
 #, csharp-format
 msgid "{0}: Installed programs and their libraries, but not their settings."
 msgstr "{0}：已安装的程序及其库，但不包括其设置。"

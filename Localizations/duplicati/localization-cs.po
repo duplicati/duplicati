@@ -16,7 +16,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-13 15:38+0200\n"
+"POT-Creation-Date: 2026-07-19 16:29+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: J Nezbeda, 2026\n"
 "Language-Team: Czech (https://app.transifex.com/duplicati/teams/67655/cs/)\n"
@@ -2711,31 +2711,31 @@ msgstr ""
 "doporučeno jednotky používat, jako prevenci neočekávaných změn po "
 "aktualizaci programu."
 
-#: Library/Utility/FilterGroups.cs:191
+#: Library/Utility/FilterGroups.cs:194
 #, csharp-format
 msgid "{0}: Selects no filters."
 msgstr "{0}: Nevybírá žádné filtry."
 
-#: Library/Utility/FilterGroups.cs:192
+#: Library/Utility/FilterGroups.cs:195
 #, csharp-format
 msgid "{0}: A set of default exclude filters, currently evaluates to: {1}."
 msgstr ""
 "{0}: Sada výchozích filtrů, které vynechávají, v tuto chvíli vyhodnocuje na:"
 " {1}."
 
-#: Library/Utility/FilterGroups.cs:193
+#: Library/Utility/FilterGroups.cs:196
 #, csharp-format
 msgid "{0}: A set of default include filters, currently evaluates to: {1}."
 msgstr ""
 "{0}: Sada výchozích filtrů, které zahrnují, v tuto chvíli vyhodnocuje na: "
 "{1}."
 
-#: Library/Utility/FilterGroups.cs:204
+#: Library/Utility/FilterGroups.cs:207
 #, csharp-format
 msgid " Aliases: {0}"
 msgstr "Alternativní názvy: {0}"
 
-#: Library/Utility/FilterGroups.cs:217
+#: Library/Utility/FilterGroups.cs:220
 #, csharp-format
 msgid ""
 "{0}: Files that are owned by the system or not suited to be backed up. This "
@@ -2746,7 +2746,7 @@ msgstr ""
 " To zahrnuje jakékoli soubory, které operační systém hlásí jako chráněné. "
 "Většina uživatelů by měla používat alespoň tyto filtry."
 
-#: Library/Utility/FilterGroups.cs:219
+#: Library/Utility/FilterGroups.cs:222
 #, csharp-format
 msgid ""
 "{0}: Files that belong to the operating system. These files are restored "
@@ -2755,12 +2755,12 @@ msgstr ""
 "{0}: Soubory které náleží operačnímu systému. Tyto soubory jsou obnoveny "
 "když je operační systém přeinstalován."
 
-#: Library/Utility/FilterGroups.cs:221
+#: Library/Utility/FilterGroups.cs:224
 #, csharp-format
 msgid "{0}: Files and folders that are known to be storage of temporary data."
 msgstr "{0}: Soubory a složky, známé jako úložiště dočasných dat."
 
-#: Library/Utility/FilterGroups.cs:223
+#: Library/Utility/FilterGroups.cs:226
 #, csharp-format
 msgid ""
 "{0}: Files and folders that are known cache locations for the operating "
@@ -2769,7 +2769,7 @@ msgstr ""
 "{0}: Soubory a složky, známé jako umístění mezipamětí pro operační systém a "
 "aplikace"
 
-#: Library/Utility/FilterGroups.cs:225
+#: Library/Utility/FilterGroups.cs:228
 #, csharp-format
 msgid "{0}: Installed programs and their libraries, but not their settings."
 msgstr ""

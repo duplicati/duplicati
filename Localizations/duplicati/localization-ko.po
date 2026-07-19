@@ -16,7 +16,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-13 15:38+0200\n"
+"POT-Creation-Date: 2026-07-19 16:29+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: KyungWoo Seo, 2026\n"
 "Language-Team: Korean (https://app.transifex.com/duplicati/teams/67655/ko/)\n"
@@ -7735,27 +7735,27 @@ msgstr "파일 읽기 오류: {0}, 오류: {1}"
 msgid "Error listing content: {0}"
 msgstr "콘텐츠 목록 오류: {0}"
 
-#: Library/Utility/FilterGroups.cs:191
+#: Library/Utility/FilterGroups.cs:194
 #, csharp-format
 msgid "{0}: Selects no filters."
 msgstr "{0}: 필터를 선택하지 않습니다."
 
-#: Library/Utility/FilterGroups.cs:192
+#: Library/Utility/FilterGroups.cs:195
 #, csharp-format
 msgid "{0}: A set of default exclude filters, currently evaluates to: {1}."
 msgstr "{0}: 기본 제외 필터 세트로 현재 평가 대상은 {1}입니다."
 
-#: Library/Utility/FilterGroups.cs:193
+#: Library/Utility/FilterGroups.cs:196
 #, csharp-format
 msgid "{0}: A set of default include filters, currently evaluates to: {1}."
 msgstr "{0}: 기본 포함 필터 세트로 현재 평가 대상은 {1}입니다."
 
-#: Library/Utility/FilterGroups.cs:204
+#: Library/Utility/FilterGroups.cs:207
 #, csharp-format
 msgid " Aliases: {0}"
 msgstr " 별칭: {0}"
 
-#: Library/Utility/FilterGroups.cs:217
+#: Library/Utility/FilterGroups.cs:220
 #, csharp-format
 msgid ""
 "{0}: Files that are owned by the system or not suited to be backed up. This "
@@ -7765,26 +7765,26 @@ msgstr ""
 "{0}: 시스템이 소유하거나 백업하기에 적합하지 않은 파일입니다. 여기에는 운영 체제에서 보고된 보호된 파일이 모두 포함됩니다. 대부분의"
 " 사용자는 최소한 이러한 필터를 적용해야 합니다."
 
-#: Library/Utility/FilterGroups.cs:219
+#: Library/Utility/FilterGroups.cs:222
 #, csharp-format
 msgid ""
 "{0}: Files that belong to the operating system. These files are restored "
 "when the operating system is re-installed."
 msgstr "{0}: 운영 체제에 속하는 파일입니다. 이러한 파일은 운영 체제를 다시 설치하면 복원됩니다."
 
-#: Library/Utility/FilterGroups.cs:221
+#: Library/Utility/FilterGroups.cs:224
 #, csharp-format
 msgid "{0}: Files and folders that are known to be storage of temporary data."
 msgstr "{0}: 임시 데이터의 저장소로 알려진 파일 및 폴더."
 
-#: Library/Utility/FilterGroups.cs:223
+#: Library/Utility/FilterGroups.cs:226
 #, csharp-format
 msgid ""
 "{0}: Files and folders that are known cache locations for the operating "
 "system and various applications"
 msgstr "{0}: 운영 체제 및 다양한 애플리케이션의 캐시 위치로 알려진 파일 및 폴더"
 
-#: Library/Utility/FilterGroups.cs:225
+#: Library/Utility/FilterGroups.cs:228
 #, csharp-format
 msgid "{0}: Installed programs and their libraries, but not their settings."
 msgstr "{0}: 설치된 프로그램과 라이브러리, 그러나 설정은 제외."

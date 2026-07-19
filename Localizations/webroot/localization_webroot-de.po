@@ -620,15 +620,15 @@ msgstr "Kommandozeile …"
 
 #: templates/backup-result/phases/compact.html:3
 msgid "Compact Phase"
-msgstr "Komprimierungsphase"
+msgstr "Kompaktierungsphase"
 
 #: templates/home.html:68
 msgid "Compact now"
-msgstr "Sicherung komprimieren"
+msgstr "Sicherung kompaktieren"
 
 #: scripts/services/ServerStatus.js:44 scripts/services/ServerStatus.js:70
 msgid "Compacting remote data …"
-msgstr "Remotedaten verkleinern..."
+msgstr "Remotedaten kompaktieren..."
 
 #: templates/backup-result/box.html:35
 msgid "Complete log"
@@ -2659,6 +2659,10 @@ msgstr "Jetzt sichern"
 #: templates/commandline.html:44
 msgid "Running commandline entry"
 msgstr "Führe Kommandozeilenbefehl aus"
+
+#: scripts/services/ServerStatus.js:65
+msgid "Running script …"
+msgstr "Script wird ausgeführt ..."
 
 #: index.html:172
 msgid "Running task:"

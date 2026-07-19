@@ -1,0 +1,3886 @@
+# Translators:
+# kadir sainkaplan <kadirs.kaplan@gmail.com>, 2021
+# Harun Güngör, 2024
+# Eren S., 2024
+# Mümin Köykıran <muminkoykiran@gmail.com>, 2025
+# Bora Atıcı, 2025
+# Yurdakul Sezgin, 2026
+# 
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Last-Translator: Yurdakul Sezgin, 2026\n"
+"Language-Team: Turkish (https://app.transifex.com/duplicati/teams/67655/tr/)\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: tr\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: templates/backup-result/entryline.html:5
+msgid "(1 error{{item.Result.Interrupted? (', interrupted'|translate) : ''}})"
+msgid_plural ""
+"({{$count}} errors{{item.Result.Interrupted? (', interrupted'|translate) : "
+"''}})"
+msgstr[0] ""
+"(1 hata{{item.Result.Interrupted? (', interrupted'|translate) : ''}})"
+msgstr[1] ""
+"({{$count}} hata{{item.Result.Interrupted? (', interrupted'|translate) : "
+"''}})"
+
+#: templates/backup-result/entryline.html:10
+msgid ""
+"(1 warning{{item.Result.Interrupted? (', interrupted'|translate) : ''}})"
+msgid_plural ""
+"({{$count}} warnings{{item.Result.Interrupted? (', interrupted'|translate) :"
+" ''}})"
+msgstr[0] ""
+"(1 uyarı{{item.Result.Interrupted? (', interrupted'|translate) : ''}})"
+msgstr[1] ""
+"({{$count}} uyarı{{item.Result.Interrupted? (', interrupted'|translate) : "
+"''}})"
+
+#: templates/backup-result/entryline.html:15
+msgid "(interrupted)"
+msgstr "(yarıda kesildi)"
+
+#: templates/advancedoptionseditor.html:50
+msgid "- pick an option -"
+msgstr "- bir seçenek belirleyin -"
+
+#: scripts/controllers/SystemSettingsController.js:217 templates/delete.html:7
+msgid "...loading..."
+msgstr "...Yükleniyor..."
+
+#: templates/commandline.html:25
+msgid "<i class=\"fa fa-check\"></i> Edit as text"
+msgstr "<i class=\"fa fa-check\"></i>Metin olarak düzenle"
+
+#: templates/commandline.html:32
+msgid "<i class=\"fa\"></i> Edit as text"
+msgstr "<i class=\"fa\"></i>Metin olarak düzenle"
+
+#: templates/addoredit.html:312
+msgid ""
+"<p ng-show=\"(parseSizeString(Options['dblock-size']) &gt; 1024 * 1024 * 1024 * 2) || (parseSizeString(Options['dblock-size']) &lt; 1024 * 1024 * 5)\" class=\"warning\" translate>\n"
+"                            The chosen size is outside the recommended range. This may cause performance issues, excessively large temporary files or other problems.\n"
+"                        </p>\n"
+"                        The backups will be split up into multiple files called volumes. Here you can set the maximum size of the individual volume files. <external-link link=\"'https://forum.duplicati.com/t/choosing-sizes-in-duplicati/17683'\">See this page for more information.</external-link>"
+msgstr ""
+"<p ng-show=\"(parseSizeString(Options['dblock-size']) &gt; 1024 * 1024 * 1024 * 2) || (parseSizeString(Options['dblock-size']) &lt; 1024 * 1024 * 5)\" class=\"warning\" translate>\n"
+"                            Seçilen boyut önerilen aralığın dışında. Bu, performans sorunlarına, aşırı büyük geçici dosyalara veya başka sorunlara neden olabilir.\n"
+"                        </p>\n"
+"                        Yedekler, birim adı verilen birden çok dosyaya bölünür. Burada tek tek birim dosyalarının en büyük boyutunu ayarlayabilirsiniz. <external-link link=\"'https://forum.duplicati.com/t/choosing-sizes-in-duplicati/17683'\">Daha fazla bilgi için bu sayfaya bakın.</external-link>"
+
+#: index.html:298
+msgid ""
+"<p>Connection to server was rejected due to invalid authentication.</p>\n"
+"                <p>Log in again, or re-open the page from the TrayIcon (if applicable)</p>"
+msgstr ""
+"<p>Geçersiz kimlik doğrulama nedeniyle sunucuya bağlantı reddedildi.</p>\n"
+"                <p>Yeniden giriş yapın veya sayfayı sistem tepsisindeki simgeden (uygulanabilirse) yeniden açın. </p>"
+
+#: templates/backends/filejump.html:30
+msgid ""
+"<span ng-show=\"!$parent.UsernamePasswordAuth\" translate>Use username and password authentication</span>\n"
+"        <span ng-show=\"$parent.UsernamePasswordAuth\" translate>Use API token authentication (recommended)</span>"
+msgstr ""
+"<span ng-show=\"!$parent.UsernamePasswordAuth\" translate>Kullanıcı adı ve parola ile kimlik doğrulaması kullan</span>\n"
+"        <span ng-show=\"$parent.UsernamePasswordAuth\" translate>API belirteci ile kimlik doğrulaması kullan (önerilir)</span>"
+
+#: scripts/services/EditUriBuiltins.js:1061
+msgid "API Token"
+msgstr "API Belirteci"
+
+#: scripts/services/EditUriBuiltins.js:1314
+#: templates/backends/openstack.html:44 templates/backends/storj.html:21
+#: templates/backends/storj.html:22
+msgid "API key"
+msgstr "API Anahtarı"
+
+#: scripts/services/EditUriBuiltins.js:1204 templates/backends/s3.html:66
+#: templates/backends/s3.html:68
+msgid "AWS Access ID"
+msgstr "AWS Erişim Kimliği"
+
+#: scripts/services/EditUriBuiltins.js:1205 templates/backends/s3.html:71
+#: templates/backends/s3.html:73
+msgid "AWS Access Key"
+msgstr "AWS Erişim Anahtarı"
+
+#: scripts/services/EditUriBuiltins.js:157
+msgid "AWS IAM Policy"
+msgstr "AWS IAM Politikası"
+
+#: index.html:223 index.html:239
+msgid "About"
+msgstr "Hakkında"
+
+#: templates/about.html:2
+msgid "About {{appname}}"
+msgstr "{{appname}} Hakkında"
+
+#: scripts/services/EditUriBuiltins.js:1153
+msgid "Access Key"
+msgstr "Erişim Anahtarı"
+
+#: templates/backends/e2.html:2
+msgid "Access Key ID"
+msgstr "Erişim Anahtarı Kimliği"
+
+#: templates/backends/e2.html:6
+msgid "Access Key Secret"
+msgstr "Erişim Anahtarı Gizlisi"
+
+#: scripts/services/AppUtils.js:76
+msgid "Access denied"
+msgstr "Erişim reddedildi"
+
+#: templates/backends/storj.html:33 templates/backends/storj.html:34
+msgid "Access grant"
+msgstr "Erişim izni"
+
+#: templates/backends/azure.html:11 templates/backends/azure.html:12
+msgid "Access key"
+msgstr "Erişim anahtarı"
+
+#: templates/settings.html:5
+msgid "Access to user interface"
+msgstr "Kullanıcı arayüzüne erişim"
+
+#: scripts/services/EditUriBuiltins.js:1152 templates/backends/azure.html:7
+#: templates/backends/azure.html:8
+msgid "Account name"
+msgstr "Hesap adı"
+
+#: templates/addwizard.html:3
+msgid "Add a new backup"
+msgstr "Yeni bir yedekleme ekleyin"
+
+#: templates/addoredit.html:153
+msgid "Add a path directly"
+msgstr "Doğrudan bir yol ekleyin"
+
+#: templates/advancedoptionseditor.html:48
+msgid "Add advanced option"
+msgstr "Gelişmiş seçenek ekle"
+
+#: index.html:211
+msgid "Add backup"
+msgstr "Yedekleme ekle"
+
+#: templates/addoredit.html:207
+msgid "Add filter"
+msgstr "Filtre ekle"
+
+#: templates/addoredit.html:156
+msgid "Add path"
+msgstr "Yol ekle"
+
+#: templates/backup-result/top-right-box.html:18
+msgid "Added"
+msgstr "Eklendi"
+
+#: scripts/services/EditUriBuiltins.js:1215
+#: scripts/services/EditUriBuiltins.js:1231
+msgid "Adjust bucket name?"
+msgstr "Bucket adını ayarla?"
+
+#: templates/restoredirect.html:66 templates/restoredirect.html:74
+msgid "Advanced Options"
+msgstr "Gelişmiş Seçenekler"
+
+#: templates/addoredit.html:378 templates/commandline.html:23
+#: templates/commandline.html:31 templates/edituri.html:29
+msgid "Advanced options"
+msgstr "Gelişmiş seçenekler"
+
+#: templates/home.html:64
+msgid "Advanced:"
+msgstr "Gelişmiş:"
+
+#: templates/backends/aliyunoss.html:4
+msgid "Aliyun OSS Endpoint"
+msgstr "Aliyun OSS Uç Noktası"
+
+#: templates/backends/aliyunoss.html:35
+msgid "Aliyun OSS documents and resources"
+msgstr "Aliyun OSS belgeleri ve kaynakları"
+
+#: scripts/directives/sourceFolderPicker.js:279
+msgid "All Hyper-V Machines"
+msgstr "Tüm Hyper-V Makineleri"
+
+#: scripts/directives/sourceFolderPicker.js:319
+msgid "All Microsoft SQL Servers"
+msgstr "Tüm Microsoft SQL Sunucuları"
+
+#: templates/settings.html:175
+msgid ""
+"All usage reports are sent anonymously and do not contain any personal "
+"information. They contain information about hardware and operating system, "
+"the type of backend, backup duration, overall size of source data and "
+"similar data. They do not contain paths, filenames, usernames, passwords or "
+"similar sensitive information."
+msgstr ""
+"Tüm kullanım raporları anonim olarak gönderilir ve herhangi bir kişisel "
+"bilgi içermez. Donanım ve işletim sistemi, arka uç türü, yedekleme süresi, "
+"kaynak verilerin toplam boyutu ve benzeri veriler hakkında bilgiler "
+"içerirler. Yollar, dosya adları, kullanıcı adları, şifreler veya benzeri "
+"hassas bilgileri içermezler."
+
+#: templates/settings.html:20
+msgid "Allow remote access (requires restart)"
+msgstr "Uzaktan erişime izin ver (yeniden başlatma gerektirir)"
+
+#: templates/addoredit.html:278
+msgid "Allowed days"
+msgstr "İzin verilen günler"
+
+#: templates/pause.html:52
+msgid "Also pause transfers"
+msgstr "Transferleri de duraklat."
+
+#: scripts/controllers/LocalDatabaseController.js:103
+msgid "An existing file was found at the new location"
+msgstr "Yeni konumda mevcut bir dosya bulundu"
+
+#: scripts/controllers/LocalDatabaseController.js:72
+msgid ""
+"An existing file was found at the new location\n"
+"Are you sure you want the database to point to an existing file?"
+msgstr ""
+"Yeni konumda mevcut bir dosya bulundu.\n"
+"Veritabanının mevcut bir dosyaya yönlendirilmesini gerçekten istiyor musunuz?"
+
+#: scripts/controllers/EditBackupController.js:458
+msgid ""
+"An existing local database for the storage has been found.\n"
+"Re-using the database will allow the command-line and server instances to work on the same remote storage.\n"
+"\n"
+" Do you wish to use the existing database?"
+msgstr ""
+"Depolama için mevcut bir yerel veritabanı bulundu.\n"
+"Veritabanını yeniden kullanmak, komut satırı ve sunucu örneklerinin aynı uzak depolama üzerinde çalışmasına olanak tanır.\n"
+"\n"
+" Mevcut veritabanını kullanmak istiyor musunuz?"
+
+#: templates/settings.html:163
+msgid "Anonymous usage reports"
+msgstr "Anonim kullanım raporları"
+
+#: scripts/services/AppUtils.js:212
+msgid "Applications"
+msgstr "Uygulamalar"
+
+#: scripts/controllers/SystemSettingsController.js:194
+msgid "Are you sure you want to delete the remote control registration?"
+msgstr "Uzaktan denetim kaydını silmek istediğinizden emin misiniz?"
+
+#: templates/export.html:8
+msgid "As Command-line"
+msgstr "Komut satırı olarak"
+
+#: scripts/services/EditUriBuiltins.js:1110
+#: scripts/services/EditUriBuiltins.js:1120 templates/backends/gcs.html:8
+#: templates/backends/gcs.html:9 templates/backends/jottacloud.html:8
+#: templates/backends/jottacloud.html:9 templates/backends/msgroup.html:13
+#: templates/backends/msgroup.html:14 templates/backends/oauth.html:8
+#: templates/backends/oauth.html:9 templates/backends/pcloud.html:21
+#: templates/backends/pcloud.html:22 templates/backends/sharepoint.html:8
+#: templates/backends/sharepoint.html:9
+msgid "AuthID"
+msgstr "AuthID"
+
+#: templates/backends/smb.html:34
+msgid "Authentication Domain"
+msgstr "Kimlik Doğrulama Etki Alanı"
+
+#: scripts/services/EditUriBuiltins.js:1305 templates/backends/storj.html:2
+msgid "Authentication method"
+msgstr "Kimlik doğrulama yöntemi"
+
+#: templates/backends/storj.html:5
+msgid "Authentication method ({{auth_method}})"
+msgstr "Kimlik doğrulama yöntemi ({{auth_method}})"
+
+#: templates/backends/filejump.html:26 templates/backends/filen.html:12
+#: templates/backends/generic.html:23 templates/backends/openstack.html:35
+#: templates/backends/smb.html:43
+msgid "Authentication password"
+msgstr "Kimlik doğrulama şifresi"
+
+#: templates/backends/filejump.html:22 templates/backends/filen.html:8
+#: templates/backends/generic.html:19 templates/backends/openstack.html:31
+#: templates/backends/smb.html:39
+msgid "Authentication username"
+msgstr "Kimlik doğrulama kullanıcı adı"
+
+#: scripts/controllers/EditBackupController.js:367
+msgid "Autogenerated passphrase"
+msgstr "Otomatik oluşturulan anahtar söz öbeği"
+
+#: templates/addoredit.html:258
+msgid "Automatically run backups"
+msgstr "Yedeklemeleri otomatik olarak çalıştırın"
+
+#: templates/backends/b2.html:12
+msgid "B2 Application ID"
+msgstr "B2 Uygulama Kimliği"
+
+#: templates/backends/b2.html:16
+msgid "B2 Application Key"
+msgstr "B2 Uygulama Anahtarı"
+
+#: scripts/services/EditUriBuiltins.js:1250
+msgid "B2 Cloud Storage Account ID"
+msgstr "B2 Bulut Depolama Hesabı Kimliği"
+
+#: templates/backends/b2.html:13
+msgid "B2 Cloud Storage Application ID"
+msgstr "B2 Bulut Depolama Uygulama Kimliği"
+
+#: scripts/services/EditUriBuiltins.js:1251 templates/backends/b2.html:17
+msgid "B2 Cloud Storage Application Key"
+msgstr "B2 Bulut Depolama Uygulama Anahtarı"
+
+#: templates/restore.html:138 templates/restore.html:70
+msgid "Back"
+msgstr "Geri"
+
+#: templates/about.html:66
+msgid ""
+"Backend modules: <p style=\"display: inline\" ng-repeat=\"item in "
+"sysinfo.BackendModules\">{{item.Key}} </p>"
+msgstr ""
+"Arka uç modülleri: <p style=\"display: inline\" ng-repeat=\"item in "
+"sysinfo.BackendModules\">{{item.Key}}</p>"
+
+#: scripts/services/ServerStatus.js:47
+msgid "Backup complete!"
+msgstr "Yedekleme tamamlandı!"
+
+#: templates/addoredit.html:92
+msgid "Backup destination"
+msgstr "Yedekleme hedefi"
+
+#: templates/restore.html:131
+msgid ""
+"Backup is encrypted but no passphrase is available. Type a passphrase below "
+"to use for restoring your files, or, in case of GPG encryption, leave blank "
+"to let gpg retrieve the passphrase by invoking your system's keychain."
+msgstr ""
+"Yedekleme şifrelenmiş ancak parola mevcut değil. Dosyalarınızı geri yüklemek"
+" için kullanmak üzere aşağıya bir parola yazın veya GPG şifrelemesi "
+"durumunda, gpg'nin sisteminizin anahtar zincirini çağırarak parolayı "
+"almasına izin vermek için boş bırakın."
+
+#: templates/restore.html:21 templates/restoredirect.html:21
+#: templates/restoredirect.html:31
+msgid "Backup location"
+msgstr "Yedekleme konumu"
+
+#: templates/addoredit.html:321
+msgid "Backup retention"
+msgstr "Yedekleme saklama"
+
+#: templates/home.html:100
+msgid "Backup:"
+msgstr "Yedekleme:"
+
+#: templates/settings.html:140
+msgid "Beta"
+msgstr "Beta"
+
+#: scripts/services/AppUtils.js:74
+msgid "Broken access"
+msgstr "Bozuk erişim"
+
+#: templates/backends/file.html:8 templates/restore.html:91
+msgid "Browse"
+msgstr "Gözat"
+
+#: scripts/controllers/SystemSettingsController.js:39
+msgid "Browser default"
+msgstr "Tarayıcı varsayılanı"
+
+#: templates/backends/gcs.html:15
+msgid "Bucket create location"
+msgstr "Kova oluşturma konumu"
+
+#: scripts/services/EditUriBuiltins.js:1163
+#: scripts/services/EditUriBuiltins.js:1203
+#: scripts/services/EditUriBuiltins.js:1249
+#: scripts/services/EditUriBuiltins.js:1263
+#: scripts/services/EditUriBuiltins.js:1310
+#: scripts/services/EditUriBuiltins.js:1316
+#: scripts/services/EditUriBuiltins.js:1372
+#: scripts/services/EditUriBuiltins.js:1384 templates/backends/b2.html:2
+#: templates/backends/b2.html:3 templates/backends/cos.html:25
+#: templates/backends/e2.html:11 templates/backends/e2.html:12
+#: templates/backends/gcs.html:2 templates/backends/openstack.html:2
+#: templates/backends/s3.html:22 templates/backends/s3.html:23
+#: templates/backends/storj.html:37 templates/backends/storj.html:38
+msgid "Bucket name"
+msgstr "Kova adı"
+
+#: scripts/services/EditUriBuiltins.js:1328
+msgid ""
+"Bucket name can only be between 3 and 63 characters long and contain only "
+"lower-case characters, numbers, periods and dashes"
+msgstr ""
+"Paket adı yalnızca 3 ile 63 karakter uzunluğunda olabilir ve yalnızca küçük "
+"harf, rakam, nokta ve kısa çizgi içerebilir"
+
+#: templates/backends/s3.html:29
+msgid "Bucket region"
+msgstr "Kova bölgesi"
+
+#: templates/backends/cos.html:21
+msgid "Bucket region ap-guangzhou"
+msgstr "Paket bölgesi ap-guangzhou"
+
+#: templates/backends/gcs.html:26
+msgid "Bucket storage class"
+msgstr "Kova depolama sınıfı"
+
+#: templates/backends/cos.html:26
+msgid "Bucket, format: BucketName-APPID"
+msgstr "Paket, biçim: PaketAdi-APPID"
+
+#: scripts/services/ServerStatus.js:52
+msgid "Building list of files to restore …"
+msgstr "Geri yüklenecek dosyaların listesi oluşturuluyor…"
+
+#: scripts/controllers/RestoreController.js:373
+msgid "Building partial temporary database …"
+msgstr "Kısmi geçici veritabanı oluşturuluyor…"
+
+#: templates/restore.html:59
+msgid "Busy …"
+msgstr "Meşgul ..."
+
+#: templates/settings.html:21
+msgid ""
+"By allowing remote access, the server listens to requests from any machine "
+"on your network. If you enable this option, make sure you are always using "
+"the computer on a secure firewall protected network."
+msgstr ""
+"Uzaktan erişime izin verildiğinde, sunucu ağınızdaki herhangi bir makineden "
+"gelen istekleri dinler. Bu seçeneği etkinleştirirseniz, bilgisayarı her "
+"zaman güvenlik duvarıyla korunan güvenli bir ağda kullandığınızdan emin "
+"olun."
+
+#: templates/settings.html:31
+msgid ""
+"By default, the tray icon will open the user interface with a token that "
+"unlocks the user interface. This ensures that you can access the user "
+"interface from the tray icon, while requiring others to enter a password. If"
+" you prefer having to type in the password, even when accessing the user "
+"interface from the tray icon, enable this option."
+msgstr ""
+"Varsayılan olarak sistem tepsisi simgesi, kullanıcı arayüzünü, arayüzün "
+"kilidini açan bir belirteçle açar. Bu, başkalarının parola girmesini "
+"gerektirirken sizin tepsi simgesinden kullanıcı arayüzüne erişebilmenizi "
+"sağlar. Tepsi simgesinden kullanıcı arayüzüne erişirken bile parola yazmayı "
+"tercih ediyorsanız bu seçeneği etkinleştirin."
+
+#: templates/backends/cos.html:2
+msgid "COS App ID"
+msgstr "COS Uygulama Kimliği"
+
+#: templates/backends/cos.html:32
+msgid "COS Path or subfolder in the bucket"
+msgstr "COS yolu veya paket içindeki alt klasör"
+
+#: templates/backends/cos.html:8
+msgid "COS Secret ID"
+msgstr "COS Gizli Kimliği"
+
+#: templates/backends/cos.html:14
+msgid "COS Secret Key"
+msgstr "COS Gizli Anahtarı"
+
+#: scripts/services/AppUtils.js:206
+msgid "Cache Files"
+msgstr "Önbellek Dosyaları"
+
+#: templates/settings.html:150
+msgid "Canary"
+msgstr "Canary"
+
+#: scripts/controllers/AppController.js:204
+#: scripts/controllers/AppController.js:58
+#: scripts/controllers/AppController.js:74
+#: scripts/controllers/DeleteController.js:67
+#: scripts/controllers/EditBackupController.js:103
+#: scripts/controllers/EditBackupController.js:352
+#: scripts/controllers/EditBackupController.js:367
+#: scripts/controllers/EditBackupController.js:401
+#: scripts/controllers/EditBackupController.js:410
+#: scripts/controllers/EditBackupController.js:437
+#: scripts/controllers/EditBackupController.js:458
+#: scripts/controllers/ExportController.js:13
+#: scripts/controllers/LocalDatabaseController.js:72
+#: scripts/controllers/LocalDatabaseController.js:88
+#: scripts/controllers/RestoreDirectController.js:24
+#: scripts/controllers/StateController.js:119
+#: scripts/controllers/StateController.js:128
+#: scripts/services/DialogService.js:50
+#: scripts/services/EditUriBuiltins.js:1215
+#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:61 templates/delete.html:54
+#: templates/export.html:34 templates/settings.html:205
+msgid "Cancel"
+msgstr "İptal"
+
+#: templates/settings.html:56
+msgid "Cancel registration"
+msgstr "Kaydı iptal et"
+
+#: scripts/directives/sourceFolderPicker.js:460
+msgid "Cannot include \"{{text}}\""
+msgstr "\"{{text}}\" dahil edilemiyor"
+
+#: scripts/controllers/LocalDatabaseController.js:103
+msgid "Cannot move to existing file"
+msgstr "Mevcut dosyaya taşınamıyor"
+
+#: scripts/services/AppUtils.js:348
+msgid "Cannot specify filter include or excludes in extra options"
+msgstr "Ek seçeneklerde dahil etme veya hariç tutma filtresi belirtilemez"
+
+#: templates/settings.html:8
+msgid "Change server passphrase"
+msgstr "Sunucu anahtar sözcüğünü değiştir"
+
+#: scripts/controllers/AppController.js:202
+msgid "Change server password"
+msgstr "Sunucu şifresini değiştir"
+
+#: templates/about.html:5
+msgid "Changelog"
+msgstr "Değişim Günlüğü"
+
+#: templates/updatechangelog.html:2
+msgid "Changelog for {{appname}} {{version}}"
+msgstr "Changelog for {{appname}} {{version}}"
+
+#: scripts/controllers/UpdateChangelogController.js:16
+msgid "Check failed:"
+msgstr "Kontrol başarısız oldu:"
+
+#: templates/about.html:34
+msgid "Check for updates now"
+msgstr "Güncellemeleri şimdi kontrol edin"
+
+#: templates/about.html:35
+msgid "Checking for updates …"
+msgstr "Güncellemeler kontrol ediliyor ..."
+
+#: templates/edituri.html:16
+msgid "Chose a storage type to get started"
+msgstr "Başlamak için bir depolama türü seçin"
+
+#: templates/backends/gcs.html:11 templates/backends/jottacloud.html:11
+#: templates/backends/msgroup.html:16 templates/backends/oauth.html:11
+#: templates/backends/pcloud.html:24 templates/backends/sharepoint.html:11
+msgid "Click the AuthID link to create an AuthID"
+msgstr "Bir AuthID oluşturmak için AuthID bağlantısına tıklayın"
+
+#: templates/backends/filejump.html:10
+msgid "Click the Filejump API token link to set up an API token"
+msgstr ""
+"Bir API belirteci ayarlamak için Filejump API belirteci bağlantısına "
+"tıklayın"
+
+#: index.html:148 index.html:199
+msgid "Click to set throttle options"
+msgstr "Hız kısıtlama seçeneklerini ayarlamak için tıklayın"
+
+#: templates/backends/s3.html:78
+msgid "Client library to use"
+msgstr "Kullanılacak istemci kitaplığı"
+
+#: templates/backends/cos.html:10
+msgid "Cloud API Secret ID"
+msgstr "Bulut API Gizli Kimliği"
+
+#: templates/backends/cos.html:16
+msgid "Cloud API Secret Key"
+msgstr "Bulut API Gizli Anahtarı"
+
+#: templates/commandline.html:8
+msgid "Command"
+msgstr "Komut"
+
+#: templates/commandline.html:18
+msgid "Commandline arguments"
+msgstr "Komut satırı argümanları"
+
+#: templates/home.html:69
+msgid "Commandline …"
+msgstr "Komut Satırı ..."
+
+#: templates/backup-result/phases/compact.html:3
+msgid "Compact Phase"
+msgstr "Sıkıştırma (Compact) Aşaması"
+
+#: templates/home.html:68
+msgid "Compact now"
+msgstr "Şimdi sıkıştır"
+
+#: scripts/services/ServerStatus.js:44 scripts/services/ServerStatus.js:70
+msgid "Compacting remote data …"
+msgstr "Uzak veriler sıkıştırılıyor…"
+
+#: templates/backup-result/box.html:35
+msgid "Complete log"
+msgstr "Tam günlük"
+
+#: scripts/services/ServerStatus.js:41
+msgid "Completing backup …"
+msgstr "Yedekleme tamamlanıyor…"
+
+#: scripts/services/ServerStatus.js:39
+msgid "Completing previous backup …"
+msgstr "Önceki yedekleme tamamlanıyor…"
+
+#: templates/about.html:67
+msgid ""
+"Compression modules: <p style=\"display: inline\" ng-repeat=\"item in "
+"sysinfo.CompressionModules\">{{item.Key}} </p>"
+msgstr ""
+"Sıkıştırma modülleri: <p style=\"display: inline\" ng-repeat=\"item in "
+"sysinfo.CompressionModules\">{{item.Key}} </p>"
+
+#: scripts/directives/sourceFolderPicker.js:582
+msgid "Computer"
+msgstr "Bilgisayar"
+
+#: templates/import.html:9
+msgid "Configuration file:"
+msgstr "Yapılandırma dosyası:"
+
+#: templates/home.html:56
+msgid "Configuration:"
+msgstr "Yapılandırma:"
+
+#: templates/addwizard.html:9
+msgid "Configure a new backup"
+msgstr "Yeni bir yedekleme yapılandır"
+
+#: scripts/controllers/DeleteController.js:65
+#: scripts/controllers/DeleteController.js:99
+#: scripts/controllers/LocalDatabaseController.js:28
+msgid "Confirm delete"
+msgstr "Silmeyi onayla"
+
+#: templates/export.html:30
+msgid "Confirm encryption passphrase"
+msgstr "Şifreleme parolasını onayla"
+
+#: templates/changepassword.html:14 templates/settings.html:15
+msgid "Confirm new password"
+msgstr "Yeni şifreyi onayla"
+
+#: templates/export.html:29
+msgid "Confirm passphrase"
+msgstr "Parolayı onayla"
+
+#: scripts/services/EditUriBackendConfig.js:74
+msgid "Confirmation required"
+msgstr "Doğrulama gerekli"
+
+#: templates/restoredirect.html:80
+msgid "Connect"
+msgstr "Bağlan"
+
+#: index.html:312
+msgid "Connect now"
+msgstr "Şimdi bağlan"
+
+#: index.html:305
+msgid "Connecting to server …"
+msgstr "Sunucuya bağlanılıyor ..."
+
+#: templates/commandline.html:48
+msgid "Connecting to task …"
+msgstr "Göreve bağlanıyor ..."
+
+#: index.html:313
+msgid "Connecting …"
+msgstr "Bağlanıyor ..."
+
+#: index.html:297
+msgid "Connection lost"
+msgstr "Bağlantı kesildi"
+
+#: scripts/directives/backupEditUri.js:52
+#: scripts/directives/backupEditUri.js:55
+msgid "Connection worked!"
+msgstr "Bağlantı çalıştı!"
+
+#: scripts/services/EditUriBuiltins.js:1154 templates/backends/azure.html:2
+#: templates/backends/azure.html:3
+msgid "Container name"
+msgstr "Kapsayıcı adı"
+
+#: templates/backends/openstack.html:49
+msgid "Container region"
+msgstr "Kapsayıcı bölgesi"
+
+#: templates/restore.html:69
+msgid "Continue"
+msgstr "Devam et"
+
+#: scripts/controllers/EditBackupController.js:437
+msgid "Continue without encryption"
+msgstr "Şifreleme olmadan devam et"
+
+#: scripts/controllers/DialogController.js:16
+msgid "Copied!"
+msgstr "Kopyalandı!"
+
+#: templates/copy_clipboard_buttons.html:3
+msgid "Copy"
+msgstr "Kopyala"
+
+#: templates/addoredit.html:103 templates/restoredirect.html:42
+msgid "Copy Destination URL to Clipboard"
+msgstr "Hedef URL'yi Panoya Kopyala"
+
+#: scripts/controllers/EditBackupController.js:111
+#: scripts/controllers/RestoreDirectController.js:33
+msgid "Copy URL"
+msgstr "URL'yi kopyala"
+
+#: scripts/controllers/DialogController.js:20
+msgid "Copy failed. Please manually copy the URL"
+msgstr "Kopyalama başarısız oldu. Lütfen URL'yi manuel olarak kopyalayın"
+
+#: templates/backup-result/box.html:41
+msgid "Copy log"
+msgstr "Kopyalama günlüğü"
+
+#: scripts/services/AppUtils.js:741
+msgid "Core options"
+msgstr "Temel seçenekler"
+
+#: scripts/controllers/StateController.js:34
+msgid "Counting ({{files}} files found, {{size}})"
+msgstr "Sayılıyor ({{files}} dosya bulundu, {{size}})"
+
+#: templates/settings.html:170
+msgid "Crashes only"
+msgstr "Yalnızca çökmeler"
+
+#: templates/home.html:11
+msgid "Create Order"
+msgstr "Oluşturma Sırası"
+
+#: templates/home.html:21
+msgid "Create Order (descending)"
+msgstr "Oluşturma Sırası (azalan)"
+
+#: templates/home.html:75
+msgid "Create bug report …"
+msgstr "Hata raporu oluşturun ..."
+
+#: scripts/directives/backupEditUri.js:132
+msgid "Create folder?"
+msgstr "Klasör oluştur?"
+
+#: scripts/services/EditUriBuiltins.js:140
+msgid "Created new limited user"
+msgstr "Yeni sınırlı kullanıcı oluşturuldu"
+
+#: scripts/services/ServerStatus.js:64
+msgid "Creating bug report …"
+msgstr "Hata raporu oluşturma ..."
+
+#: scripts/services/EditUriBuiltins.js:126
+msgid "Creating new user with limited access …"
+msgstr "Sınırlı erişime sahip yeni kullanıcı oluşturma ..."
+
+#: scripts/services/ServerStatus.js:53
+msgid "Creating target folders …"
+msgstr "Hedef klasörler oluşturma ..."
+
+#: scripts/controllers/RestoreController.js:368
+msgid "Creating temporary backup …"
+msgstr "Geçici yedekleme oluşturma ..."
+
+#: scripts/services/EditUriBuiltins.js:126
+msgid "Creating user …"
+msgstr "Kullanıcı oluşturma ..."
+
+#: templates/home.html:105
+msgid "Current action:"
+msgstr "Mevcut eylem:"
+
+#: templates/home.html:115
+msgid "Current file:"
+msgstr "Mevcut dosya:"
+
+#: templates/updatechangelog.html:4
+msgid "Current version is {{versionname}} ({{versionnumber}})"
+msgstr "Mevcut sürüm {{versionname}} ({{versionnumber}})"
+
+#: templates/backends/s3.html:17
+msgid "Custom S3 endpoint"
+msgstr "Özel S3 uç noktası"
+
+#: scripts/services/EditUriBuiltins.js:1320 templates/backends/storj.html:18
+msgid "Custom Satellite"
+msgstr "Özel Uydu"
+
+#: templates/backends/storj.html:13
+msgid "Custom Satellite ({{satellite}})"
+msgstr "Özel Uydu ({{satellite}})"
+
+#: templates/backends/openstack.html:13
+msgid "Custom authentication url"
+msgstr "Özel kimlik doğrulama URL'si"
+
+#: templates/addoredit.html:327
+msgid "Custom backup retention"
+msgstr "Özel yedek saklama"
+
+#: templates/backends/s3.html:55
+msgid "Custom bucket storage class"
+msgstr "Özel paket depolama sınıfı"
+
+#: templates/backends/gcs.html:18
+msgid "Custom location"
+msgstr "Özel konum"
+
+#: templates/backends/s3.html:39
+msgid "Custom region for creating buckets"
+msgstr "Paket oluşturmak için özel bölge"
+
+#: templates/backends/s3.html:34
+msgid "Custom region value"
+msgstr "Özel bölge değeri"
+
+#: templates/backends/openstack.html:10 templates/backends/s3.html:12
+msgid "Custom server url"
+msgstr "Özel sunucu URL'si"
+
+#: templates/backends/gcs.html:29 templates/backends/s3.html:50
+msgid "Custom storage class"
+msgstr "Özel depolama sınıfı"
+
+#: templates/advancedoptionseditor.html:43
+msgid "DEPRECATED: {{getDeprecationMessage(item)}}"
+msgstr "KULLANIMDAN KALDIRILDI: {{getDeprecationMessage(item)}}"
+
+#: templates/home.html:66
+msgid "Database …"
+msgstr "Veritabanı ..."
+
+#: scripts/services/AppUtils.js:97 templates/addoredit.html:353
+msgid "Days"
+msgstr "Günler"
+
+#: scripts/controllers/SystemSettingsController.js:40
+msgid "Default"
+msgstr "Varsayılan"
+
+#: templates/settings.html:129
+msgid "Default ({{channelname}})"
+msgstr "Varsayılan ({{channelname}})"
+
+#: scripts/services/AppUtils.js:193
+msgid "Default excludes"
+msgstr "Varsayılan hariç tutmalar"
+
+#: templates/settings.html:190
+msgid "Default options"
+msgstr "Varsayılan seçenekler"
+
+#: templates/advancedoptionseditor.html:44
+msgid "Default value: \"{{getDefaultValue(item)}}\""
+msgstr "Varsayılan değer: \"{{getDefaultValue(item)}}\""
+
+#: scripts/controllers/DeleteController.js:67 templates/localdatabase.html:16
+msgid "Delete"
+msgstr "Sil"
+
+#: templates/backup-result/phases/delete.html:3
+msgid "Delete Phase (Old Backup Versions)"
+msgstr "Silme Aşaması (Eski Yedek Sürümleri)"
+
+#: templates/delete.html:5 templates/delete.html:53
+msgid "Delete backup"
+msgstr "Yedeklemeyi sil"
+
+#: templates/addoredit.html:324
+msgid "Delete backups that are older than"
+msgstr "Şundan eski yedekleri sil:"
+
+#: templates/delete.html:13
+msgid "Delete local database"
+msgstr "Yerel veritabanını sil"
+
+#: templates/settings.html:68
+msgid "Delete remote control setup"
+msgstr "Uzaktan denetim kurulumunu sil"
+
+#: templates/delete.html:38 templates/delete.html:47
+msgid "Delete remote files"
+msgstr "Uzak dosyaları sil"
+
+#: templates/delete.html:26
+msgid "Delete the local database"
+msgstr "Yerel veritabanını sil"
+
+#: templates/delete.html:41
+msgid "Delete {{filecount}} files ({{filesize}}) from the remote storage?"
+msgstr "Uzak depolamadan {{filecount}} dosya ({{filesize}}) silinsin mi?"
+
+#: templates/home.html:60
+msgid "Delete …"
+msgstr "Sil ..."
+
+#: templates/backup-result/top-right-box.html:26
+msgid "Deleted"
+msgstr "Silindi"
+
+#: templates/backup-result/phases/delete.html:24
+msgid "Deleted Versions"
+msgstr "Silinmiş Sürümler"
+
+#: templates/backup-result/phases/compact.html:23
+msgid "Deleted files"
+msgstr "Silinmiş dosyalar"
+
+#: scripts/services/ServerStatus.js:67
+msgid "Deleting remote files …"
+msgstr "Uzak dosyalar siliniyor ..."
+
+#: scripts/services/ServerStatus.js:43
+msgid "Deleting unwanted files …"
+msgstr "İstenmeyen dosyalar siliniyor ..."
+
+#: templates/addoredit.html:43
+msgid "Description (optional)"
+msgstr "Açıklama (isteğe bağlı)"
+
+#: templates/home.html:46
+msgid "Description:"
+msgstr "Açıklama:"
+
+#: scripts/services/AppUtils.js:60
+msgid "Desktop"
+msgstr "Masaüstü"
+
+#: templates/addoredit.html:25
+msgid "Destination"
+msgstr "Hedef"
+
+#: templates/home.html:12
+msgid "Destination Type"
+msgstr "Hedef Türü"
+
+#: templates/home.html:22
+msgid "Destination Type (descending)"
+msgstr "Hedef Türü (azalan)"
+
+#: templates/backends/file.html:7 templates/backends/filejump.html:3
+#: templates/backends/filen.html:3 templates/backends/generic.html:14
+#: templates/backends/jottacloud.html:3 templates/backends/msgroup.html:8
+#: templates/backends/oauth.html:3 templates/backends/pcloud.html:16
+#: templates/backends/sharepoint.html:2 templates/backends/smb.html:29
+msgid "Destination path"
+msgstr "Hedef yol"
+
+#: templates/home.html:18
+msgid "Destination size"
+msgstr "Hedef boyutu"
+
+#: templates/home.html:28
+msgid "Destination size (descending)"
+msgstr "Hedef boyutu (azalan)"
+
+#: templates/backends/smb.html:8
+msgid "Direct TCP"
+msgstr "Direct TCP"
+
+#: templates/restorewizard.html:9
+msgid "Direct restore from backup files …"
+msgstr "Yedek dosyalardan doğrudan geri yükleme ..."
+
+#: templates/backends/idrive.html:3
+msgid "Directory path"
+msgstr "Dizin yolu"
+
+#: templates/settings.html:60
+msgid "Disable remote control"
+msgstr "Uzaktan denetimi devre dışı bırak"
+
+#: templates/log.html:32
+msgid "Disabled"
+msgstr "Devre dışı"
+
+#: templates/notificationarea.html:10 templates/notificationarea.html:29
+#: templates/notificationarea.html:40
+msgid "Dismiss"
+msgstr "Reddet"
+
+#: templates/notificationarea.html:50
+msgid "Dismiss all"
+msgstr "Tümünü reddet"
+
+#: templates/settings.html:108
+msgid "Display and color theme"
+msgstr "Görünüm ve renk teması"
+
+#: scripts/controllers/DeleteController.js:99
+msgid "Do you really want to delete the backup: \"{{name}}\" ?"
+msgstr "Yedeği gerçekten silmek istiyor musunuz? \"{{name}}\" ?"
+
+#: scripts/controllers/LocalDatabaseController.js:28
+msgid "Do you really want to delete the local database for: {{name}}"
+msgstr "Yerel veritabanını gerçekten silmek istiyor musunuz? {{name}}"
+
+#: templates/backends/smb.html:33
+msgid "Domain"
+msgstr "Etki Alanı"
+
+#: templates/backends/openstack.html:26
+msgid "Domain name"
+msgstr "Alan adı"
+
+#: templates/edituri.html:21 templates/export.html:53
+msgid "Done"
+msgstr "Bitti"
+
+#: templates/notificationarea.html:16 templates/notificationarea.html:30
+#: templates/updatechangelog.html:10
+msgid "Download"
+msgstr "İndir"
+
+#: templates/backup-result/phases/compact.html:28
+msgid "Downloaded files"
+msgstr "İndirilmiş dosyalar"
+
+#: scripts/services/ServerStatus.js:57
+msgid "Downloading files …"
+msgstr "İndirilen dosyalar …"
+
+#: templates/notificationarea.html:26
+msgid "Downloading update…"
+msgstr "Güncelleme indiriliyor..."
+
+#: scripts/services/AppUtils.js:343
+msgid "Duplicate option {{opt}}"
+msgstr "Yinelenen seçenek: {{opt}}"
+
+#: index.html:254
+msgid "Duplicati Website"
+msgstr "Duplicati Web Sitesi"
+
+#: index.html:248
+msgid "Duplicati forum"
+msgstr "Duplicati forumu"
+
+#: scripts/controllers/AppController.js:192
+msgid ""
+"Duplicati needs to be secured with a passphrase and a random passphrase has been generated for you.\n"
+"If you open Duplicati from the tray icon, you do not need a passphrase, but if you plan to open it from another location you need to set a passphrase you know.\n"
+"Do you want to set a passphrase now?"
+msgstr ""
+"Duplicati'nin bir parolayla güvence altına alınması gerekiyor ve sizin için rastgele bir parola oluşturuldu.\n"
+"Duplicati'yi sistem tepsisi simgesinden açarsanız parolaya gerek yoktur; ancak başka bir konumdan açmayı planlıyorsanız bildiğiniz bir parola ayarlamanız gerekir.\n"
+"Şimdi bir parola ayarlamak istiyor musunuz?"
+
+#: templates/settings.html:93
+msgid ""
+"Duplicati will run when started, but will remain in a paused state for the "
+"duration. Duplicati will occupy minimal system resources and no backups will"
+" be run."
+msgstr ""
+"Duplicati başlatıldığında çalışır ancak bu süre boyunca duraklatılmış "
+"durumda kalır. Duplicati en az düzeyde sistem kaynağı kullanır ve hiçbir "
+"yedekleme çalıştırılmaz."
+
+#: templates/backup-result/phases/compact.html:16
+#: templates/backup-result/phases/delete.html:16
+#: templates/backup-result/phases/purge.html:16
+#: templates/backup-result/phases/recreate-database.html:16
+#: templates/backup-result/phases/repair.html:16
+#: templates/backup-result/phases/test.html:16
+#: templates/backup-result/top-left-box.html:11 templates/home.html:19
+msgid "Duration"
+msgstr "Süre"
+
+#: templates/home.html:29
+msgid "Duration (descending)"
+msgstr "Süre (azalan)"
+
+#: templates/delete.html:15
+msgid ""
+"Each backup has a local database associated with it, which stores information about the remote backup on the local machine.\n"
+"            When deleting a backup, you can also delete the local database without affecting the ability to restore the remote files.\n"
+"            If you are using the local database for backups from the commandline, you should keep the database."
+msgstr ""
+"Her yedeklemenin, uzak yedek hakkındaki bilgileri yerel makinede saklayan ilişkili bir yerel veritabanı vardır.\n"
+"            Bir yedeklemeyi silerken, uzak dosyaları geri yükleme yeteneğini etkilemeden yerel veritabanını da silebilirsiniz.\n"
+"            Yerel veritabanını komut satırından yedeklemeler için kullanıyorsanız, veritabanını tutmalısınız."
+
+#: templates/localdatabase.html:5
+msgid ""
+"Each backup has a local database associated with it, which stores "
+"information about the remote backup on the local machine. This makes it "
+"faster to perform many operations, and reduces the amount of data that needs"
+" to be downloaded for each operation."
+msgstr ""
+"Her yedeklemenin, uzak yedek hakkındaki bilgileri yerel makinede saklayan "
+"ilişkili bir yerel veritabanı vardır. Bu, birçok işlemin daha hızlı "
+"yapılmasını sağlar ve her işlem için indirilmesi gereken veri miktarını "
+"azaltır."
+
+#: templates/addoredit.html:174 templates/addoredit.html:389
+#: templates/edituri.html:40 templates/settings.html:194
+msgid "Edit as list"
+msgstr "Liste olarak düzenle"
+
+#: templates/addoredit.html:177 templates/addoredit.html:392
+#: templates/edituri.html:43 templates/settings.html:200
+msgid "Edit as text"
+msgstr "Metin olarak düzenle"
+
+#: templates/home.html:58
+msgid "Edit …"
+msgstr "Düzenle ..."
+
+#: templates/backends/msgroup.html:3
+msgid "Email address of the Office 365 group"
+msgstr "Office 365 grubunun e-posta adresi"
+
+#: templates/settings.html:64
+msgid "Enable remote control"
+msgstr "Uzaktan denetimi etkinleştir"
+
+#: templates/export.html:22
+msgid "Encrypt file"
+msgstr "Dosya şifrele"
+
+#: templates/addoredit.html:47 templates/restore.html:22
+#: templates/restoredirect.html:22 templates/restoredirect.html:58
+msgid "Encryption"
+msgstr "Şifreleme"
+
+#: scripts/controllers/EditBackupController.js:410
+msgid "Encryption changed"
+msgstr "Şifreleme değişti"
+
+#: templates/about.html:68
+msgid ""
+"Encryption modules: <p style=\"display: inline\" ng-repeat=\"item in "
+"sysinfo.EncryptionModules\">{{item.Key}} </p>"
+msgstr ""
+"Şifreleme modülleri: <p style=\"display: inline\" ng-repeat=\"item in "
+"sysinfo.EncryptionModules\">{{item.Key}} </p>"
+
+#: scripts/services/EditUriBuiltins.js:1315 templates/backends/storj.html:25
+#: templates/backends/storj.html:26
+msgid "Encryption passphrase"
+msgstr "Şifreleme anahtar sözcüğü"
+
+#: templates/backends/storj.html:30
+msgid "Encryption passphrase (for verification)"
+msgstr "Şifreleme parolası (doğrulama için)"
+
+#: templates/backup-result/phases/compact.html:12
+#: templates/backup-result/phases/delete.html:12
+#: templates/backup-result/phases/purge.html:12
+#: templates/backup-result/phases/recreate-database.html:12
+#: templates/backup-result/phases/repair.html:12
+#: templates/backup-result/phases/test.html:12
+#: templates/backup-result/top-left-box.html:7
+msgid "End"
+msgstr "Son"
+
+#: scripts/controllers/EditBackupController.js:103
+#: scripts/controllers/RestoreDirectController.js:24
+msgid "Enter URL"
+msgstr "URL Giriniz"
+
+#: scripts/controllers/EditBackupController.js:103
+#: scripts/controllers/RestoreDirectController.js:24
+msgid "Enter a backup destination URL:"
+msgstr "Bir yedekleme hedefi URL'si giriniz:"
+
+#: templates/addoredit.html:341
+msgid ""
+"Enter a retention strategy manually. Placeholders are D/W/Y for "
+"days/weeks/years and U for unlimited. The syntax is: 7D:1D,4W:1W,36M:1M. "
+"This example keeps one backup for each of the next 7 days, one for each of "
+"the next 4 weeks, and one for each of the next 36 months. This can also be "
+"written as 1W:1D,1M:1W,3Y:1M."
+msgstr ""
+"Bir saklama stratejisini el ile girin. Yer tutucular gün/hafta/yıl için "
+"D/W/Y, sınırsız için U'dur. Sözdizimi: 7D:1D,4W:1W,36M:1M. Bu örnek, sonraki"
+" 7 günün her biri için bir yedek, sonraki 4 haftanın her biri için bir yedek"
+" ve sonraki 36 ayın her biri için bir yedek tutar. Bu, 1W:1D,1M:1W,3Y:1M "
+"olarak da yazılabilir."
+
+#: templates/commandline.html:14
+msgid "Enter a url, or click the &quot;Target URL &gt;&quot; link"
+msgstr "Bir URL girin veya &quot;Hedef URL &gt;&quot; bağlantısına tıklayın"
+
+#: templates/restoredirect.html:61
+msgid "Enter backup passphrase, if any"
+msgstr "Varsa yedekleme parolasını girin"
+
+#: templates/addwizard.html:10
+msgid "Enter configuration details"
+msgstr "Yapılandırma ayrıntılarını girin"
+
+#: templates/export.html:26
+msgid "Enter encryption passphrase"
+msgstr "Şifreleme parolasını girin"
+
+#: templates/addoredit.html:196
+msgid "Enter expression here"
+msgstr "İfadeyi buraya girin"
+
+#: templates/commandline.html:19
+msgid "Enter one argument per line without quotes, e.g. *.txt"
+msgstr ""
+"Her satıra tırnak işareti olmadan bir bağımsız değişken girin, örn. *.txt"
+
+#: templates/commandline.html:26
+msgid ""
+"Enter one option per line in command-line format, e.g. --dblock-size=100MB"
+msgstr ""
+"Her satıra komut satırı biçiminde bir seçenek girin, örn. --dblock-"
+"size=100MB"
+
+#: scripts/services/AppUtils.js:128
+msgid "Enter one option per line in command-line format, e.g. {0}"
+msgstr "Her satıra komut satırı biçiminde bir seçenek girin, örn. {0}"
+
+#: templates/restore.html:90
+msgid "Enter the destination path"
+msgstr "Hedef yolunu girin"
+
+#: scripts/controllers/CommandlineController.js:174
+#: scripts/controllers/CommandlineController.js:80
+#: scripts/controllers/ExportController.js:40
+#: scripts/controllers/ExportController.js:57
+#: scripts/controllers/ExportController.js:70
+#: scripts/controllers/ImportController.js:17
+#: scripts/controllers/ImportController.js:39
+#: scripts/controllers/ImportController.js:43
+#: scripts/controllers/ImportController.js:49
+#: scripts/controllers/RestoreController.js:114
+#: scripts/controllers/RestoreController.js:144
+#: scripts/controllers/RestoreController.js:294
+#: scripts/controllers/RestoreController.js:332
+#: scripts/controllers/RestoreController.js:390
+#: scripts/controllers/RestoreController.js:423
+#: scripts/controllers/RestoreController.js:431
+#: scripts/controllers/RestoreController.js:90
+#: scripts/controllers/RestoreDirectController.js:112
+#: scripts/controllers/RestoreDirectController.js:78
+#: scripts/directives/backupEditUri.js:144
+#: scripts/directives/backupEditUri.js:165
+#: scripts/directives/backupEditUri.js:199
+#: scripts/directives/notificationArea.js:41
+#: scripts/directives/notificationArea.js:43
+#: scripts/directives/notificationArea.js:68 scripts/services/AppUtils.js:343
+#: scripts/services/AppUtils.js:348 scripts/services/AppUtils.js:394
+#: scripts/services/AppUtils.js:402
+msgid "Error"
+msgstr "Hata"
+
+#: scripts/services/ServerStatus.js:72
+msgid "Error!"
+msgstr "Hata!"
+
+#: templates/settings.html:169
+msgid "Errors and crashes"
+msgstr "Hatalar ve çökmeler"
+
+#: templates/backup-result/top-right-box.html:10
+msgid "Examined"
+msgstr "İncelendi"
+
+#: templates/addoredit.html:214
+msgid "Exclude"
+msgstr "Hariç tut"
+
+#: scripts/services/AppUtils.js:131
+msgid "Exclude directories whose names contain"
+msgstr "Adları şunu içeren dizinleri hariç tut:"
+
+#: scripts/services/AppUtils.js:187
+msgid "Exclude expression"
+msgstr "Hariç tutma ifadesi"
+
+#: scripts/services/AppUtils.js:150
+msgid "Exclude file"
+msgstr "Dosyayı hariç tut"
+
+#: scripts/services/AppUtils.js:157
+msgid "Exclude file extension"
+msgstr "Dosya uzantısını hariç tut"
+
+#: scripts/services/AppUtils.js:137
+msgid "Exclude files whose names contain"
+msgstr "Adları şunu içeren dosyaları hariç tut:"
+
+#: scripts/services/AppUtils.js:172
+msgid "Exclude filter group"
+msgstr "Filtre grubunu hariç tut"
+
+#: scripts/services/AppUtils.js:143
+msgid "Exclude folder"
+msgstr "Klasörü hariç tut"
+
+#: scripts/services/AppUtils.js:162
+msgid "Exclude regular expression"
+msgstr "Düzenli ifadeyi hariç tut"
+
+#: scripts/controllers/LocalDatabaseController.js:72
+msgid "Existing file found"
+msgstr "Mevcut dosya bulundu"
+
+#: templates/settings.html:145
+msgid "Experimental"
+msgstr "Deneysel"
+
+#: templates/export.html:35
+msgid "Export"
+msgstr "Dışa aktar"
+
+#: templates/export.html:2
+msgid "Export backup configuration"
+msgstr "Yedekleme yapılandırmasını dışa aktar"
+
+#: templates/delete.html:31 templates/delete.html:34
+msgid "Export configuration"
+msgstr "Yapılandırmayı dışa aktar"
+
+#: templates/export.html:18
+msgid "Export passwords"
+msgstr "Parolaları dışa aktar"
+
+#: templates/home.html:59
+msgid "Export …"
+msgstr "Dışa aktar…"
+
+#: templates/export.html:39
+msgid "Exporting …"
+msgstr "Dışa aktarılıyor…"
+
+#: templates/externallink.html:1
+msgid "External link"
+msgstr "Dış bağlantı"
+
+#: scripts/services/SystemInfo.js:52
+msgid "FTP (Alternative)"
+msgstr "FTP (Alternatif)"
+
+#: scripts/controllers/RestoreController.js:390
+msgid "Failed to build temporary database: {{message}}"
+msgstr "Geçici veritabanı oluşturulamadı: {{message}}"
+
+#: scripts/directives/backupEditUri.js:144
+#: scripts/directives/backupEditUri.js:165
+#: scripts/directives/backupEditUri.js:199
+msgid "Failed to connect:"
+msgstr "Bağlanılamadı:"
+
+#: scripts/controllers/CommandlineController.js:174
+#: scripts/controllers/CommandlineController.js:80
+#: scripts/controllers/ExportController.js:40
+#: scripts/controllers/ExportController.js:57
+#: scripts/controllers/RestoreController.js:294
+#: scripts/controllers/RestoreController.js:332
+#: scripts/controllers/RestoreController.js:431
+#: scripts/controllers/RestoreController.js:90
+#: scripts/controllers/RestoreDirectController.js:112
+#: scripts/controllers/RestoreDirectController.js:78
+#: scripts/services/LogService.js:29
+msgid "Failed to connect: {{message}}"
+msgstr "Bağlanılamadı: {{message}}"
+
+#: scripts/controllers/LocalDatabaseController.js:38
+msgid "Failed to delete:"
+msgstr "Silinemedi:"
+
+#: scripts/controllers/RestoreController.js:114
+#: scripts/controllers/RestoreController.js:144
+msgid "Failed to fetch path information: {{message}}"
+msgstr "Yol bilgisi alınamadı: {{message}}"
+
+#: scripts/directives/notificationArea.js:45
+msgid "Failed to find backup:"
+msgstr "Yedek bulunamadı:"
+
+#: scripts/directives/notificationArea.js:68
+msgid "Failed to get bug report URL: {{message}}"
+msgstr "Hata raporu URL'si alınamadı: {{message}}"
+
+#: scripts/controllers/ImportController.js:39
+#: scripts/controllers/ImportController.js:43
+msgid "Failed to import: {{message}}"
+msgstr "İçe aktarılamadı: {{message}}"
+
+#: scripts/controllers/EditBackupController.js:714
+msgid "Failed to read backup defaults:"
+msgstr "Yedekleme varsayılanları okunamadı:"
+
+#: scripts/controllers/ImportController.js:49
+msgid "Failed to read file: {{message}}"
+msgstr "Dosya okunamadı: {{message}}"
+
+#: scripts/controllers/RestoreController.js:423
+msgid "Failed to restore files: {{message}}"
+msgstr "Dosyalar geri yüklenemedi: {{message}}"
+
+#: scripts/controllers/SystemSettingsController.js:263
+msgid "Failed to save:"
+msgstr "Kaydedilemedi:"
+
+#: templates/backup-result/top-right-box.html:6
+msgid "Fatal error, no statistics collected"
+msgstr "Önemli hata, hiçbir istatistik toplanmadı"
+
+#: scripts/controllers/RestoreController.js:120
+#: scripts/controllers/RestoreController.js:159
+msgid "Fetching path information …"
+msgstr "Yol bilgisi alınıyor…"
+
+#: scripts/services/AppUtils.js:80
+msgid "File"
+msgstr "Dosya"
+
+#: templates/backends/filejump.html:8
+msgid "Filejump API token"
+msgstr "Filejump API belirteci"
+
+#: templates/addoredit.html:237
+msgid "Files larger than:"
+msgstr "Şundan büyük dosyalar:"
+
+#: templates/addoredit.html:163
+msgid "Filters"
+msgstr "Filtreler"
+
+#: templates/commandline.html:57
+msgid "Finished!"
+msgstr "Bitti!"
+
+#: scripts/controllers/AppController.js:191
+msgid "First run setup"
+msgstr "İlk çalıştırma kurulumu"
+
+#: scripts/services/AppUtils.js:51
+msgid "Folder"
+msgstr "Klasör"
+
+#: templates/backends/storj.html:42
+msgid "Folder in the bucket"
+msgstr "Paket içindeki klasör"
+
+#: templates/backends/aliyunoss.html:30 templates/backends/b2.html:7
+#: templates/backends/cos.html:30 templates/backends/e2.html:16
+#: templates/backends/file.html:22 templates/backends/file.html:6
+#: templates/backends/jottacloud.html:2 templates/backends/mega.html:2
+#: templates/backends/s3.html:60 templates/backends/storj.html:41
+#: templates/restore.html:105 templates/restore.html:89
+msgid "Folder path"
+msgstr "Klasör yolu"
+
+#: templates/backends/mega.html:3
+msgid "Folder path name"
+msgstr "Klasör yolu adı"
+
+#: scripts/services/AppUtils.js:114
+msgid "Fri"
+msgstr "Cum"
+
+#: templates/backends/sharepoint.html:3
+msgid "Full destination path, including the server name, but without https"
+msgstr "Sunucu adı dahil ancak https olmadan tam hedef yolu"
+
+#: scripts/services/AppUtils.js:90
+msgid "GByte"
+msgstr "GBayt"
+
+#: scripts/services/AppUtils.js:123
+msgid "GByte/s"
+msgstr "GBayt/s"
+
+#: templates/backends/gcs.html:38
+msgid "GCS Project ID"
+msgstr "GCS Proje Kimliği"
+
+#: templates/about.html:4 templates/addoredit.html:24
+#: templates/backuplog.html:6
+msgid "General"
+msgstr "Genel"
+
+#: templates/addoredit.html:36
+msgid "General backup settings"
+msgstr "Genel yedekleme ayarları"
+
+#: templates/addoredit.html:305
+msgid "General options"
+msgstr "Genel seçenekler"
+
+#: templates/addoredit.html:73
+msgid "Generate"
+msgstr "Oluştur"
+
+#: templates/backends/s3.html:88
+msgid "Generate IAM access policy"
+msgstr "IAM erişim ilkesi oluştur"
+
+#: scripts/controllers/RestoreController.js:70
+msgid "Getting file versions …"
+msgstr "Dosya sürümleri alınıyor…"
+
+#: scripts/services/EditUriBuiltins.js:1143 templates/backends/msgroup.html:2
+msgid "Group email"
+msgstr "Grup e-postası"
+
+#: templates/home.html:16
+msgid "Has Scheduled"
+msgstr "Zamanlanmış"
+
+#: templates/home.html:26
+msgid "Has Scheduled (descending)"
+msgstr "Zamanlanmış (azalan)"
+
+#: index.html:311
+msgid "Help"
+msgstr "Yardım"
+
+#: scripts/controllers/EditBackupController.js:20
+msgid "Hidden files"
+msgstr "Gizli dosyalar"
+
+#: templates/addoredit.html:68
+msgid "Hide"
+msgstr "Gizle"
+
+#: templates/backends/file.html:15 templates/restore.html:98
+msgid "Hide hidden items"
+msgstr "Gizli öğeleri gizle"
+
+#: index.html:208 scripts/services/AppUtils.js:62
+msgid "Home"
+msgstr "Ana Sayfa"
+
+#: templates/settings.html:24
+msgid "Hostnames"
+msgstr "Ana bilgisayar adları"
+
+#: scripts/services/AppUtils.js:106 scripts/services/AppUtils.js:96
+#: templates/settings.html:91
+msgid "Hours"
+msgstr "Saat"
+
+#: templates/restore.html:111
+msgid "How do you want to handle existing files?"
+msgstr "Mevcut dosyaları nasıl işlemek istiyorsunuz?"
+
+#: scripts/services/AppUtils.js:70
+msgid "Hyper-V Machine"
+msgstr "Hyper-V Makinesi"
+
+#: scripts/directives/sourceFolderPicker.js:279
+msgid "Hyper-V Machine: {{name}}"
+msgstr "Hyper-V Makinesi: {{name}}"
+
+#: scripts/services/AppUtils.js:72
+msgid "Hyper-V Machines"
+msgstr "Hyper-V Makineleri"
+
+#: scripts/directives/sourceFolderPicker.js:65
+#: scripts/directives/sourceFolderPicker.js:71
+msgid "ID:"
+msgstr "Kimlik:"
+
+#: templates/backends/idrive.html:2
+msgid "IDrive Sync directory path"
+msgstr "IDrive Sync dizin yolu"
+
+#: scripts/services/EditUriBuiltins.js:1370 templates/backends/e2.html:3
+msgid "IDrive e2 Access Key ID"
+msgstr "IDrive e2 Erişim Anahtarı Kimliği"
+
+#: scripts/services/EditUriBuiltins.js:1371 templates/backends/e2.html:7
+msgid "IDrive e2 Access Key Secret"
+msgstr "IDrive e2 Erişim Anahtarı Gizli Değeri"
+
+#: templates/addoredit.html:261
+msgid "If a date was missed, the job will run as soon as possible."
+msgstr "Bir tarih kaçırıldıysa, iş mümkün olan en kısa sürede çalıştırılır."
+
+#: templates/addoredit.html:361
+msgid ""
+"If at least one newer backup is found, all backups older than this date are "
+"deleted."
+msgstr ""
+"En az bir daha yeni yedek bulunursa, bu tarihten eski tüm yedekler silinir."
+
+#: templates/localdatabase.html:10
+msgid ""
+"If the backup and the remote storage is out of sync, Duplicati will require "
+"that you perform a repair operation to synchronize the database. If the "
+"repair is unsuccessful, you can delete the local database and re-generate."
+msgstr ""
+"Yedekleme ile uzak depolama eşitliğini yitirirse Duplicati, veritabanını "
+"eşitlemek için bir onarım işlemi yapmanızı ister. Onarım başarısız olursa "
+"yerel veritabanını silip yeniden oluşturabilirsiniz."
+
+#: templates/export.html:49
+msgid ""
+"If the backup file was not downloaded automatically, <a "
+"href=\"{{DownloadURL}}\" target=\"_blank\">right click and choose &quot;Save"
+" as …&quot;</a>."
+msgstr ""
+"Yedekleme dosyası otomatik olarak indirilmediyse, <a "
+"href=\"{{DownloadURL}}\" target=\"_blank\">sağ tıklayıp &quot;Farklı "
+"kaydet…&quot; seçeneğini seçin</a>."
+
+#: templates/notificationarea.html:7
+msgid ""
+"If the backup file was not downloaded automatically, <a "
+"href=\"{{item.DownloadLink}}\" target=\"_blank\">right click and choose "
+"&quot;Save as …&quot;</a>."
+msgstr ""
+"Yedekleme dosyası otomatik olarak indirilmediyse, <a "
+"href=\"{{item.DownloadLink}}\" target=\"_blank\">sağ tıklayıp &quot;Farklı "
+"kaydet…&quot; seçeneğini seçin</a>."
+
+#: scripts/services/EditUriBackendConfig.js:114
+msgid ""
+"If you do not enter a path, all files will be stored in the login folder.\n"
+"Are you sure this is what you want?"
+msgstr ""
+"Bir yol girmezseniz, tüm dosyalar oturum açma klasöründe saklanır.\n"
+"Bunu istediğinizden emin misiniz?"
+
+#: templates/backends/openstack.html:40
+msgid "If you do not enter an API Key, the tenant name is required"
+msgstr "Bir API anahtarı girmezseniz kiracı (tenant) adı gereklidir"
+
+#: templates/pause.html:53
+msgid ""
+"If you pause transfers they could time out and cause retries or failures."
+msgstr ""
+"Aktarımları duraklatırsanız zaman aşımına uğrayabilir ve yeniden denemelere "
+"veya hatalara neden olabilirler."
+
+#: templates/delete.html:32
+msgid ""
+"If you want to use the backup later, you can export the configuration before"
+" deleting it."
+msgstr ""
+"Yedeklemeyi daha sonra kullanmak isterseniz, silmeden önce yapılandırmayı "
+"dışa aktarabilirsiniz."
+
+#: templates/import.html:29
+msgid "Import"
+msgstr "İçe aktar"
+
+#: templates/addoredit.html:100 templates/restoredirect.html:39
+msgid "Import Destination URL"
+msgstr "Hedef URL'sini İçe Aktar"
+
+#: scripts/controllers/EditBackupController.js:103
+#: scripts/controllers/RestoreDirectController.js:24
+msgid "Import URL"
+msgstr "URL İçe Aktar"
+
+#: templates/import.html:3
+msgid "Import backup configuration"
+msgstr "Yedekleme yapılandırmasını içe aktar"
+
+#: templates/addwizard.html:15
+msgid "Import from a file"
+msgstr "Dosyadan içe aktar"
+
+#: templates/import.html:19
+msgid "Import metadata"
+msgstr "Üst verileri içe aktar"
+
+#: templates/import.html:33
+msgid "Importing …"
+msgstr "İçe aktarılıyor…"
+
+#: scripts/controllers/EditBackupController.js:171
+msgid "Include a file?"
+msgstr "Bir dosya dahil edilsin mi?"
+
+#: scripts/services/AppUtils.js:183
+msgid "Include expression"
+msgstr "Dahil etme ifadesi"
+
+#: scripts/services/AppUtils.js:167
+msgid "Include regular expression"
+msgstr "Düzenli ifadeyi dahil et"
+
+#: templates/settings.html:151
+msgid ""
+"Individual builds for developers only. Not for use with important data."
+msgstr ""
+"Yalnızca geliştiriciler için tekil derlemeler. Önemli verilerle kullanım "
+"için değildir."
+
+#: scripts/services/DialogService.js:27
+msgid "Information"
+msgstr "Bilgi"
+
+#: templates/backup-result/top-right-box.html:3
+msgid "Interrupted, no statistics collected"
+msgstr "Kesintiye uğradı, hiçbir istatistik toplanmadı"
+
+#: scripts/controllers/EditBackupController.js:296
+#: scripts/controllers/EditBackupController.js:303
+#: scripts/controllers/EditBackupController.js:313
+msgid "Invalid retention time"
+msgstr "Geçersiz saklama süresi"
+
+#: scripts/services/EditUriBuiltins.js:1079
+msgid ""
+"It is possible to connect to some FTP without a password.\n"
+"Are you sure your FTP server supports password-less logins?"
+msgstr ""
+"Bazı FTP sunucularına parolasız bağlanmak mümkündür.\n"
+"FTP sunucunuzun parolasız oturum açmayı desteklediğinden emin misiniz?"
+
+#: scripts/services/AppUtils.js:88
+msgid "KByte"
+msgstr "KBayt"
+
+#: scripts/services/AppUtils.js:121
+msgid "KByte/s"
+msgstr "KBayt/s"
+
+#: templates/addoredit.html:325
+msgid "Keep a specific number of backups"
+msgstr "Belirli sayıda yedek tut"
+
+#: templates/addoredit.html:323
+msgid "Keep all backups"
+msgstr "Tüm yedekleri tut"
+
+#: templates/backends/openstack.html:18
+msgid "Keystone API version"
+msgstr "Keystone API sürümü"
+
+#: templates/settings.html:98
+msgid "Language in user interface"
+msgstr "Kullanıcı arayüzü dili"
+
+#: templates/home.html:13
+msgid "Last Run"
+msgstr "Son Çalıştırma"
+
+#: templates/home.html:23
+msgid "Last Run (descending)"
+msgstr "Son Çalıştırma (azalan)"
+
+#: scripts/controllers/RestoreController.js:38
+msgid "Last month"
+msgstr "Geçen ay"
+
+#: templates/home.html:80
+msgid "Last successful backup:"
+msgstr "Son başarılı yedekleme:"
+
+#: templates/restorewizard.html:27
+msgid "Last successful restore: {{time}} (took {{duration || '0 seconds'}})"
+msgstr ""
+"Son başarılı geri yükleme: {{time}} (süre: {{duration || '0 seconds'}})"
+
+#: scripts/controllers/RestoreController.js:60
+msgid "Latest"
+msgstr "En son"
+
+#: templates/about.html:6
+msgid "Libraries"
+msgstr "Kitaplıklar"
+
+#: scripts/controllers/RestoreDirectController.js:70
+msgid "Listing backup dates …"
+msgstr "Yedekleme tarihleri listeleniyor…"
+
+#: scripts/services/ServerStatus.js:68
+msgid "Listing remote files for purge …"
+msgstr "Temizleme için uzak dosyalar listeleniyor…"
+
+#: scripts/services/ServerStatus.js:66
+msgid "Listing remote files …"
+msgstr "Uzak dosyalar listeleniyor…"
+
+#: templates/log.html:7
+msgid "Live"
+msgstr "Canlı"
+
+#: templates/addwizard.html:16
+msgid "Load a configuration from an exported job or a storage provider"
+msgstr ""
+"Dışa aktarılmış bir işten veya bir depolama sağlayıcısından yapılandırma "
+"yükle"
+
+#: templates/restorewizard.html:16
+msgid "Load destination from an exported job or a storage provider"
+msgstr ""
+"Dışa aktarılmış bir işten veya bir depolama sağlayıcısından hedef yükle"
+
+#: templates/backuplog.html:23 templates/backuplog.html:41
+#: templates/log.html:24
+msgid "Load older data"
+msgstr "Daha eski verileri yükle"
+
+#: templates/delete.html:40
+msgid "Loading remote storage usage …"
+msgstr "Uzak depolama kullanımı yükleniyor…"
+
+#: templates/about.html:43 templates/about.html:49 templates/about.html:55
+#: templates/backuplog.html:12 templates/backuplog.html:22
+#: templates/backuplog.html:29 templates/backuplog.html:40
+#: templates/log.html:12 templates/log.html:23
+#: templates/updatechangelog.html:7
+msgid "Loading …"
+msgstr "Yükleniyor…"
+
+#: templates/localdatabase.html:2
+msgid ""
+"Local database for <b ng-"
+"show=\"Backup.Backup.Name\">{{Backup.Backup.Name}}</b><b ng-"
+"hide=\"Backup.Backup.Name\">…loading…</b>"
+msgstr ""
+"<b ng-show=\"Backup.Backup.Name\">{{Backup.Backup.Name}}</b><b ng-"
+"hide=\"Backup.Backup.Name\">…yükleniyor…</b> için yerel veritabanı"
+
+#: templates/localdatabase.html:23
+msgid "Local database path:"
+msgstr "Yerel veritabanı yolu:"
+
+#: templates/backends/rclone.html:2
+msgid "Local repository"
+msgstr "Yerel depo"
+
+#: scripts/services/SystemInfo.js:86
+msgid "Local storage"
+msgstr "Yerel depolama"
+
+#: templates/localdatabase.html:20
+msgid "Location"
+msgstr "Konum"
+
+#: templates/backends/gcs.html:21
+msgid "Location where buckets are created"
+msgstr "Paketlerin oluşturulduğu konum"
+
+#: templates/backuplog.html:3
+msgid "Log data for <b>{{Backup.Backup.Name}}</b>"
+msgstr "<b>{{Backup.Backup.Name}}</b> için günlük verileri"
+
+#: templates/log.html:3
+msgid "Log data from the server"
+msgstr "Sunucudan günlük verileri"
+
+#: index.html:310
+msgid "Log in"
+msgstr "Oturum aç"
+
+#: index.html:226
+msgid "Log out"
+msgstr "Oturumu kapat"
+
+#: scripts/services/AppUtils.js:89
+msgid "MByte"
+msgstr "MBayt"
+
+#: scripts/services/AppUtils.js:122
+msgid "MByte/s"
+msgstr "MBayt/s"
+
+#: templates/settings.html:51
+msgid "Machine is now registered, open this link to add it to your account:"
+msgstr "Makine kaydedildi, hesabınıza eklemek için bu bağlantıyı açın:"
+
+#: templates/localdatabase.html:8
+msgid "Maintenance"
+msgstr "Bakım"
+
+#: templates/backends/rclone.html:13
+msgid ""
+"Make sure that rclone is in your path, or add the location to rclone via the"
+" advanced options."
+msgstr ""
+"rclone'un yolunuzda (PATH) olduğundan emin olun veya gelişmiş seçenekler "
+"aracılığıyla rclone konumunu ekleyin."
+
+#: index.html:259
+msgid "Manual"
+msgstr "El ile"
+
+#: templates/notificationarea.html:37
+msgid "Manual update found:"
+msgstr "El ile güncelleme bulundu:"
+
+#: templates/backends/file.html:19 templates/restore.html:102
+msgid "Manually type path"
+msgstr "Yolu el ile yazın"
+
+#: templates/throttle.html:15
+msgid "Max download speed"
+msgstr "En yüksek indirme hızı"
+
+#: templates/throttle.html:5
+msgid "Max upload speed"
+msgstr "En yüksek yükleme hızı"
+
+#: index.html:144 templates/addoredit.html:127 templates/addoredit.html:169
+#: templates/addoredit.html:384 templates/addoredit.html:95
+#: templates/edituri.html:35 templates/restoredirect.html:34
+msgid "Menu"
+msgstr "Menü"
+
+#: scripts/directives/sourceFolderPicker.js:323
+msgid "Microsoft SQL Database: {{name}}"
+msgstr "Microsoft SQL Veritabanı: {{name}}"
+
+#: scripts/directives/sourceFolderPicker.js:323
+msgid "Microsoft SQL Server: {{name}}"
+msgstr "Microsoft SQL Sunucusu: {{name}}"
+
+#: scripts/services/AppUtils.js:105 scripts/services/AppUtils.js:95
+#: templates/settings.html:90
+msgid "Minutes"
+msgstr "Dakika"
+
+#: scripts/controllers/EditBackupController.js:247
+msgid "Missing name"
+msgstr "Ad eksik"
+
+#: scripts/controllers/EditBackupController.js:254
+msgid "Missing passphrase"
+msgstr "Parola eksik"
+
+#: scripts/controllers/EditBackupController.js:267
+msgid "Missing sources"
+msgstr "Kaynaklar eksik"
+
+#: templates/backup-result/top-right-box.html:22
+msgid "Modified"
+msgstr "Değiştirilme"
+
+#: scripts/services/AppUtils.js:110
+msgid "Mon"
+msgstr "Pzt"
+
+#: scripts/services/AppUtils.js:99 templates/addoredit.html:355
+msgid "Months"
+msgstr "Ay"
+
+#: scripts/services/EditUriBackendConfig.js:137
+msgid ""
+"Most servers require a username, so you will likely need to enter one.\n"
+"Are you sure want to continue without a username?"
+msgstr ""
+"Çoğu sunucu bir kullanıcı adı gerektirir, bu yüzden büyük olasılıkla bir tane girmeniz gerekecek.\n"
+"Kullanıcı adı olmadan devam etmek istediğinizden emin misiniz?"
+
+#: templates/localdatabase.html:31
+msgid "Move existing database"
+msgstr "Mevcut veritabanını taşı"
+
+#: scripts/controllers/LocalDatabaseController.js:66
+msgid "Move failed:"
+msgstr "Taşıma başarısız oldu:"
+
+#: scripts/services/AppUtils.js:54
+msgid "My Documents"
+msgstr "Belgelerim"
+
+#: scripts/services/AppUtils.js:66
+msgid "My Downloads"
+msgstr "İndirilenlerim"
+
+#: scripts/services/AppUtils.js:64
+msgid "My Movies"
+msgstr "Filmlerim"
+
+#: scripts/services/AppUtils.js:56
+msgid "My Music"
+msgstr "Müziğim"
+
+#: templates/addoredit.html:40
+msgid "My Photos"
+msgstr "Fotoğraflarım"
+
+#: scripts/services/AppUtils.js:58
+msgid "My Pictures"
+msgstr "Resimlerim"
+
+#: templates/addoredit.html:39 templates/home.html:15
+msgid "Name"
+msgstr "Ad"
+
+#: templates/home.html:25
+msgid "Name (descending)"
+msgstr "Ad (azalan)"
+
+#: templates/backends/smb.html:11
+msgid "Netbios over TCP"
+msgstr "TCP üzerinden Netbios"
+
+#: templates/home.html:87
+msgid "Never"
+msgstr "Hiçbir zaman"
+
+#: templates/changepassword.html:5 templates/settings.html:11
+msgid "New Password"
+msgstr "Yeni Parola"
+
+#: templates/notificationarea.html:24
+msgid "New update found: <a href=\"{{state.updateDownloadLink}}\">{{message}}</a>"
+msgstr ""
+"Yeni güncelleme bulundu: <a "
+"href=\"{{state.updateDownloadLink}}\">{{message}}</a>"
+
+#: scripts/services/EditUriBuiltins.js:140
+msgid ""
+"New user name is {{user}}.\n"
+"Updated credentials to use the new limited user"
+msgstr ""
+"Yeni kullanıcı adı: {{user}}.\n"
+"Kimlik bilgileri yeni sınırlı kullanıcıyı kullanacak şekilde güncellendi"
+
+#: templates/addoredit.html:113 templates/addoredit.html:246
+#: templates/addoredit.html:296 templates/addoredit.html:82
+#: templates/addwizard.html:28 templates/restoredirect.html:52
+#: templates/restorewizard.html:36
+msgid "Next"
+msgstr "İleri"
+
+#: templates/home.html:14
+msgid "Next Scheduled Run"
+msgstr "Sonraki Zamanlanmış Çalıştırma"
+
+#: templates/home.html:24
+msgid "Next Scheduled Run (descending)"
+msgstr "Sonraki Zamanlanmış Çalıştırma (azalan)"
+
+#: templates/home.html:91
+msgid "Next scheduled run:"
+msgstr "Sonraki zamanlanmış çalıştırma:"
+
+#: index.html:183
+msgid "Next scheduled task:"
+msgstr "Sonraki zamanlanmış görev:"
+
+#: index.html:180
+msgid "Next task:"
+msgstr "Sonraki görev:"
+
+#: templates/addoredit.html:264
+msgid "Next time"
+msgstr "Sonraki sefer"
+
+#: scripts/controllers/AppController.js:193
+#: scripts/controllers/DeleteController.js:99
+#: scripts/controllers/EditBackupController.js:161
+#: scripts/controllers/EditBackupController.js:171
+#: scripts/controllers/EditBackupController.js:458
+#: scripts/controllers/HomeController.js:22
+#: scripts/controllers/LocalDatabaseController.js:28
+#: scripts/controllers/LocalDatabaseController.js:72
+#: scripts/controllers/LocalDatabaseController.js:88
+#: scripts/directives/backupEditUri.js:132
+#: scripts/directives/backupEditUri.js:174
+#: scripts/directives/backupEditUri.js:88
+#: scripts/services/EditUriBackendConfig.js:74
+#: scripts/services/EditUriBuiltins.js:1215
+#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:61
+msgid "No"
+msgstr "Hayır"
+
+#: scripts/directives/backupEditUri.js:170
+msgid ""
+"No certificate was specified previously, please verify with the server administrator that the key is correct: {{key}} \n"
+"\n"
+"Do you want to approve the reported host key?"
+msgstr ""
+"Daha önce bir sertifika belirtilmedi; anahtarın doğru olduğunu sunucu yöneticisiyle doğrulayın: {{key}} \n"
+"\n"
+"Bildirilen ana bilgisayar anahtarını onaylamak istiyor musunuz?"
+
+#: templates/edituri.html:12
+msgid "No editor found for the &quot;{{backend}}&quot; storage type"
+msgstr "&quot;{{backend}}&quot; depolama türü için düzenleyici bulunamadı"
+
+#: scripts/controllers/EditBackupController.js:437 templates/addoredit.html:49
+msgid "No encryption"
+msgstr "Şifreleme yok"
+
+#: scripts/controllers/RestoreController.js:192
+msgid "No items selected"
+msgstr "Hiçbir öğe seçilmedi"
+
+#: scripts/controllers/RestoreController.js:192
+msgid "No items to restore, please select one or more items"
+msgstr "Geri yüklenecek öğe yok, lütfen bir veya daha çok öğe seçin"
+
+#: scripts/controllers/ExportController.js:67
+msgid "No passphrase entered"
+msgstr "Parola girilmedi"
+
+#: index.html:185
+msgid "No scheduled tasks"
+msgstr "Zamanlanmış görev yok"
+
+#: scripts/controllers/EditBackupController.js:260
+msgid "Non-matching passphrase"
+msgstr "Parolalar eşleşmiyor"
+
+#: templates/settings.html:171
+msgid "None / disabled"
+msgstr "Yok / devre dışı"
+
+#: scripts/controllers/ExportController.js:13
+msgid "Not using encryption"
+msgstr "Şifreleme kullanılmıyor"
+
+#: templates/throttle.html:22
+msgid ""
+"Note that speeds are entered in bytes, and line speeds are typically "
+"reported in bits. Use a factor of 8 to convert, such that an 8 mbit/s line "
+"is equivalent to 1 MByte/s."
+msgstr ""
+"Hızların bayt cinsinden girildiğini, hat hızlarının ise genellikle bit "
+"cinsinden bildirildiğini unutmayın. Dönüştürmek için 8 katsayısını kullanın;"
+" örneğin 8 mbit/s bir hat 1 MBayt/s'ye eşdeğerdir."
+
+#: templates/addoredit.html:330
+msgid "Nothing will be deleted. The backup size will grow with each change."
+msgstr "Hiçbir şey silinmez. Yedek boyutu her değişiklikle büyür."
+
+#: scripts/controllers/AppController.js:204
+#: scripts/controllers/AppController.js:58
+#: scripts/controllers/AppController.js:74
+#: scripts/controllers/EditBackupController.js:103
+#: scripts/controllers/EditBackupController.js:111
+#: scripts/controllers/RestoreDirectController.js:24
+#: scripts/controllers/RestoreDirectController.js:33
+#: scripts/services/DialogService.js:28 scripts/services/DialogService.js:50
+#: scripts/services/DialogService.js:58
+#: scripts/services/EditUriBuiltins.js:140 templates/restore.html:147
+#: templates/settings.html:206
+msgid "OK"
+msgstr "Tamam"
+
+#: templates/backends/aliyunoss.html:10 templates/backends/aliyunoss.html:8
+msgid "OSS Access Key ID"
+msgstr "OSS Erişim Anahtarı Kimliği"
+
+#: templates/backends/aliyunoss.html:14 templates/backends/aliyunoss.html:16
+msgid "OSS Access Key Secret"
+msgstr "OSS Erişim Anahtarı Gizli Değeri"
+
+#: templates/backends/aliyunoss.html:21
+msgid "OSS Bucket Region"
+msgstr "OSS Paket Bölgesi"
+
+#: templates/backends/aliyunoss.html:25 templates/backends/aliyunoss.html:26
+msgid "OSS Bucket name"
+msgstr "OSS Paket adı"
+
+#: templates/backends/aliyunoss.html:2
+msgid "OSS Endpoint"
+msgstr "OSS Uç Noktası"
+
+#: templates/backends/aliyunoss.html:32
+msgid "OSS Path or subfolder in the bucket"
+msgstr "OSS yolu veya paket içindeki alt klasör"
+
+#: templates/backends/aliyunoss.html:20
+msgid "OSS Region"
+msgstr "OSS Bölgesi"
+
+#: templates/settings.html:136
+msgid "Official releases"
+msgstr "Resmî sürümler"
+
+#: templates/addoredit.html:348
+msgid ""
+"Once there are more backups than the specified number, the oldest backups "
+"are deleted."
+msgstr "Belirtilen sayıdan fazla yedek olduğunda en eski yedekler silinir."
+
+#: templates/backends/openstack.html:7
+msgid "OpenStack AuthURI"
+msgstr "OpenStack AuthURI"
+
+#: scripts/services/SystemInfo.js:50
+msgid "OpenStack Object Storage / Swift"
+msgstr "OpenStack Nesne Depolama / Swift"
+
+#: templates/backup-result/top-right-box.html:14
+msgid "Opened"
+msgstr "Açıldı"
+
+#: scripts/services/EditUriBuiltins.js:1179
+msgid "Openstack API key are not supported in v3 keystone API"
+msgstr "Openstack API anahtarları v3 keystone API'de desteklenmez"
+
+#: scripts/services/AppUtils.js:203
+msgid "Operating System"
+msgstr "İşletim Sistemi"
+
+#: templates/backup-result/entryline.html:2
+msgid "Operation"
+msgstr "İşlem"
+
+#: templates/home.html:50
+msgid "Operations:"
+msgstr "İşlemler:"
+
+#: templates/backends/openstack.html:45
+msgid "Optional API key"
+msgstr "İsteğe bağlı API anahtarı"
+
+#: templates/backends/file.html:34
+msgid "Optional authentication password"
+msgstr "İsteğe bağlı kimlik doğrulama parolası"
+
+#: templates/backends/file.html:30
+msgid "Optional authentication username"
+msgstr "İsteğe bağlı kimlik doğrulama kullanıcı adı"
+
+#: templates/backends/openstack.html:50
+msgid "Optional region"
+msgstr "İsteğe bağlı bölge"
+
+#: templates/backends/openstack.html:40
+msgid "Optional tenant name"
+msgstr "İsteğe bağlı kiracı (tenant) adı"
+
+#: templates/addoredit.html:28 templates/edituri.html:52
+#: templates/settings.html:193 templates/settings.html:199
+msgid "Options"
+msgstr "Seçenekler"
+
+#: templates/settings.html:191
+msgid ""
+"Options added here are applied to all backups, but can be overridden in each"
+" individual backup."
+msgstr ""
+"Buraya eklenen seçenekler tüm yedeklemelere uygulanır ancak her yedeklemede "
+"ayrı ayrı geçersiz kılınabilir."
+
+#: templates/home.html:7
+msgid "Order by"
+msgstr "Sıralama ölçütü"
+
+#: templates/restore.html:81
+msgid "Original location"
+msgstr "Özgün konum"
+
+#: scripts/services/SystemInfo.js:89
+msgid "Others"
+msgstr "Diğerleri"
+
+#: templates/addoredit.html:334
+msgid ""
+"Over time backups will be deleted automatically. There will remain one "
+"backup for each of the last 7 days, each of the last 4 weeks, each of the "
+"last 12 months. There will always be at least one remaining backup."
+msgstr ""
+"Zaman içinde yedekler otomatik olarak silinir. Son 7 günün her biri, son 4 "
+"haftanın her biri ve son 12 ayın her biri için birer yedek kalır. Her zaman "
+"en az bir yedek kalır."
+
+#: templates/restore.html:114
+msgid "Overwrite"
+msgstr "Üzerine yaz"
+
+#: templates/addoredit.html:58 templates/export.html:25
+#: templates/restore.html:130 templates/restoredirect.html:60
+msgid "Passphrase"
+msgstr "Parola"
+
+#: templates/import.html:14
+msgid "Passphrase (if encrypted)"
+msgstr "Parola (şifrelenmişse)"
+
+#: scripts/controllers/EditBackupController.js:401
+msgid "Passphrase changed"
+msgstr "Parola değiştirildi"
+
+#: scripts/controllers/EditBackupController.js:260
+msgid "Passphrases are not matching"
+msgstr "Parolalar eşleşmiyor"
+
+#: scripts/controllers/EditBackupController.js:30
+msgid "Passphrases do not match"
+msgstr "Parolalar eşleşmiyor"
+
+#: scripts/services/EditUriBuiltins.js:1295 templates/backends/file.html:33
+#: templates/backends/filejump.html:25 templates/backends/filen.html:11
+#: templates/backends/generic.html:22 templates/backends/idrive.html:11
+#: templates/backends/idrive.html:12 templates/backends/mega.html:11
+#: templates/backends/mega.html:12 templates/backends/openstack.html:34
+#: templates/backends/smb.html:42
+msgid "Password"
+msgstr "Parola"
+
+#: scripts/services/ServerStatus.js:56
+msgid "Patching files with local blocks …"
+msgstr "Dosyalar yerel bloklarla yamalanıyor…"
+
+#: scripts/services/EditUriBuiltins.js:1279
+#: scripts/services/EditUriBuiltins.js:1400
+msgid "Path"
+msgstr "Yol"
+
+#: scripts/controllers/EditBackupController.js:161
+msgid "Path not found"
+msgstr "Yol bulunamadı"
+
+#: templates/backends/filejump.html:2 templates/backends/filen.html:2
+#: templates/backends/generic.html:13 templates/backends/msgroup.html:7
+#: templates/backends/oauth.html:2 templates/backends/pcloud.html:15
+#: templates/backends/smb.html:28
+msgid "Path on server"
+msgstr "Sunucudaki yol"
+
+#: templates/backends/b2.html:8 templates/backends/e2.html:17
+#: templates/backends/s3.html:62
+msgid "Path or subfolder in the bucket"
+msgstr "Paket içindeki yol veya alt klasör"
+
+#: templates/settings.html:75
+msgid "Pause"
+msgstr "Duraklat"
+
+#: templates/settings.html:73
+msgid "Pause after startup or hibernation"
+msgstr "Başlangıç veya hazırda bekletme sonrası duraklat"
+
+#: scripts/controllers/AppController.js:56
+msgid "Pause options"
+msgstr "Duraklatma seçenekleri"
+
+#: templates/restore.html:123
+msgid "Permissions"
+msgstr "İzinler"
+
+#: templates/restore.html:85
+msgid "Pick location"
+msgstr "Konum seç"
+
+#: scripts/controllers/ImportController.js:17
+msgid "Please select a file to import"
+msgstr "Lütfen içe aktarılacak bir dosya seçin"
+
+#: templates/restorewizard.html:10
+msgid "Point to your backup files and restore from there"
+msgstr "Yedekleme dosyalarınızı gösterin ve oradan geri yükleyin"
+
+#: templates/backends/generic.html:9
+msgid "Port"
+msgstr "Port"
+
+#: templates/settings.html:30
+msgid "Prevent tray icon automatic log-in"
+msgstr "Sistem tepsisi simgesinin otomatik oturum açmasını engelle"
+
+#: templates/addoredit.html:114 templates/addoredit.html:247
+#: templates/addoredit.html:297 templates/addoredit.html:411
+#: templates/restoredirect.html:81
+msgid "Previous"
+msgstr "Geri"
+
+#: scripts/services/ServerStatus.js:40
+msgid "Processing files to backup …"
+msgstr "Yedeklenecek dosyalar işleniyor…"
+
+#: templates/home.html:107
+msgid "Progress:"
+msgstr "İlerleme:"
+
+#: templates/backends/gcs.html:39
+msgid "ProjectID is optional if the bucket exist"
+msgstr "Paket mevcutsa ProjectID isteğe bağlıdır"
+
+#: scripts/services/SystemInfo.js:88
+msgid "Proprietary"
+msgstr "Sahipli (Proprietary)"
+
+#: scripts/services/AppUtils.js:68
+msgid "Public"
+msgstr "Genel"
+
+#: templates/backup-result/phases/purge.html:3
+msgid "Purge Phase"
+msgstr "Temizleme (Purge) Aşaması"
+
+#: scripts/services/ServerStatus.js:71
+msgid "Purging files complete!"
+msgstr "Dosya temizleme tamamlandı!"
+
+#: scripts/services/ServerStatus.js:69
+msgid "Purging files …"
+msgstr "Dosyalar temizleniyor…"
+
+#: scripts/services/ServerStatus.js:50
+msgid "Rebuilding local database …"
+msgstr "Yerel veritabanı yeniden oluşturuluyor…"
+
+#: templates/localdatabase.html:17
+msgid "Recreate (delete and repair)"
+msgstr "Yeniden oluştur (sil ve onar)"
+
+#: templates/backup-result/phases/recreate-database.html:3
+msgid "Recreate Database Phase"
+msgstr "Veritabanını Yeniden Oluşturma Aşaması"
+
+#: scripts/services/ServerStatus.js:60
+msgid "Recreating database …"
+msgstr "Veritabanı yeniden oluşturuluyor…"
+
+#: templates/backends/cos.html:20
+msgid "Region"
+msgstr "Bölge"
+
+#: templates/settings.html:47
+msgid "Register for remote control"
+msgstr "Uzaktan denetim için kaydol"
+
+#: scripts/controllers/SystemSettingsController.js:213
+msgid "Registered, waiting for accept"
+msgstr "Kaydedildi, onay bekleniyor"
+
+#: scripts/controllers/SystemSettingsController.js:209
+msgid "Registering machine..."
+msgstr "Makine kaydediliyor..."
+
+#: scripts/controllers/RestoreDirectController.js:40
+msgid "Registering temporary backup …"
+msgstr "Geçici yedekleme kaydediliyor…"
+
+#: templates/settings.html:42
+msgid "Registration URL"
+msgstr "Kayıt URL'si"
+
+#: scripts/controllers/SystemSettingsController.js:211
+msgid "Registration failed"
+msgstr "Kayıt başarısız oldu"
+
+#: scripts/controllers/EditBackupController.js:146
+msgid "Relative paths not allowed"
+msgstr "Göreli yollara izin verilmez"
+
+#: index.html:309
+msgid "Reload"
+msgstr "Yeniden yükle"
+
+#: templates/backuplog.html:7
+msgid "Remote"
+msgstr "Uzak"
+
+#: scripts/services/EditUriBuiltins.js:1338
+msgid "Remote Path"
+msgstr "Uzak Yol"
+
+#: scripts/services/EditUriBuiltins.js:1337
+msgid "Remote Repository"
+msgstr "Uzak Depo"
+
+#: templates/settings.html:34
+msgid "Remote access control"
+msgstr "Uzaktan erişim denetimi"
+
+#: scripts/controllers/SystemSettingsController.js:215
+msgid "Remote control is configured but not enabled"
+msgstr "Uzaktan denetim yapılandırılmış ancak etkin değil"
+
+#: scripts/controllers/SystemSettingsController.js:207
+msgid "Remote control is connected"
+msgstr "Uzaktan denetim bağlı"
+
+#: scripts/controllers/SystemSettingsController.js:205
+msgid "Remote control is enabled but not connected"
+msgstr "Uzaktan denetim etkin ancak bağlı değil"
+
+#: scripts/controllers/SystemSettingsController.js:219
+msgid "Remote control is not set up"
+msgstr "Uzaktan denetim kurulmamış"
+
+#: templates/backends/rclone.html:10
+msgid "Remote path"
+msgstr "Uzaktan yol"
+
+#: templates/backends/rclone.html:6
+msgid "Remote repository"
+msgstr "Uzak depo"
+
+#: templates/addoredit.html:307
+msgid "Remote volume size"
+msgstr "Uzak birim boyutu"
+
+#: templates/addoredit.html:203
+msgid "Remove"
+msgstr "Kaldır"
+
+#: templates/advancedoptionseditor.html:41
+msgid "Remove option"
+msgstr "Seçeneği kaldır"
+
+#: templates/backup-result/phases/purge.html:23
+msgid "Removed files"
+msgstr "Kaldırılan dosyalar"
+
+#: templates/localdatabase.html:15 templates/notificationarea.html:14
+msgid "Repair"
+msgstr "Onar"
+
+#: templates/backup-result/phases/repair.html:3
+msgid "Repair Phase"
+msgstr "Onarım Aşaması"
+
+#: scripts/services/ServerStatus.js:62
+msgid "Repairing database …"
+msgstr "Veritabanı onarılıyor…"
+
+#: templates/addoredit.html:62
+msgid "Repeat Passphrase"
+msgstr "Parolayı Yinele"
+
+#: templates/home.html:72
+msgid "Reporting:"
+msgstr "Raporlama:"
+
+#: templates/localdatabase.html:28
+msgid "Reset"
+msgstr "Sıfırla"
+
+#: index.html:214 templates/restore.html:137
+msgid "Restore"
+msgstr "Geri Yükle"
+
+#: scripts/services/ServerStatus.js:59
+msgid "Restore complete!"
+msgstr "Geri yükleme tamamlandı!"
+
+#: templates/restore.html:45
+msgid "Restore files"
+msgstr "Dosyaları geri yükle"
+
+#: templates/restore.html:46
+msgid "Restore files from:"
+msgstr "Dosyaları şuradan geri yükle:"
+
+#: templates/home.html:53
+msgid "Restore files …"
+msgstr "Dosyaları geri yükle…"
+
+#: templates/restore.html:48
+msgid "Restore from"
+msgstr "Şuradan geri yükle:"
+
+#: templates/import.html:4
+msgid "Restore from backup configuration"
+msgstr "Yedekleme yapılandırmasından geri yükle"
+
+#: templates/restorewizard.html:15
+msgid "Restore from configuration …"
+msgstr "Yapılandırmadan geri yükle…"
+
+#: templates/restore.html:24 templates/restore.html:39
+#: templates/restore.html:76 templates/restoredirect.html:24
+msgid "Restore options"
+msgstr "Geri yükleme seçenekleri"
+
+#: templates/restore.html:126
+msgid "Restore read/write permissions"
+msgstr "Okuma/yazma izinlerini geri yükle"
+
+#: templates/backup-result/restore-items.html:2
+msgid "Restored Files"
+msgstr "Geri Yüklenen Dosyalar"
+
+#: templates/backup-result/restore-items.html:6
+msgid "Restored Folders"
+msgstr "Geri Yüklenen Klasörler"
+
+#: templates/backup-result/restore-items.html:10
+msgid "Restored Symlinks"
+msgstr "Geri Yüklenen Sembolik Bağlantılar"
+
+#: scripts/controllers/RestoreController.js:383
+#: scripts/controllers/RestoreController.js:405
+msgid "Restoring files …"
+msgstr "Dosyalar geri yükleniyor…"
+
+#: index.html:217
+msgid "Resume"
+msgstr "Sürdür"
+
+#: templates/backup-result/phases/purge.html:28
+msgid "Rewritten File Lists"
+msgstr "Yeniden Yazılan Dosya Listeleri"
+
+#: templates/addoredit.html:269
+msgid "Run again every"
+msgstr "Şu aralıkla yeniden çalıştır:"
+
+#: templates/home.html:52 templates/home.html:87
+msgid "Run now"
+msgstr "Şimdi çalıştır"
+
+#: templates/commandline.html:44
+msgid "Running commandline entry"
+msgstr "Komut satırı girdisi çalıştırılıyor"
+
+#: scripts/services/ServerStatus.js:65
+msgid "Running script …"
+msgstr "Komut dosyası çalıştırılıyor…"
+
+#: index.html:172
+msgid "Running task:"
+msgstr "Çalışan görev:"
+
+#: scripts/controllers/StateController.js:25
+msgid "Running …"
+msgstr "Çalışıyor…"
+
+#: templates/commandline.html:54
+msgid "Running … <a href ng-click=\"Abort()\" ng-hide=\"RawFinished\">stop now</a>"
+msgstr ""
+"Çalışıyor… <a href ng-click=\"Abort()\" ng-hide=\"RawFinished\">şimdi "
+"durdur</a>"
+
+#: scripts/services/SystemInfo.js:51
+msgid "S3 Compatible"
+msgstr "S3 Uyumlu"
+
+#: scripts/services/SystemInfo.js:53
+msgid "SMB / CIFS"
+msgstr "SMB / CIFS"
+
+#: templates/settings.html:130
+msgid "Same as the base install version: {{channelname}}"
+msgstr "Temel kurulum sürümüyle aynı: {{channelname}}"
+
+#: scripts/services/AppUtils.js:115
+msgid "Sat"
+msgstr "Cmt"
+
+#: templates/backends/storj.html:10
+msgid "Satellite"
+msgstr "Uydu"
+
+#: templates/addoredit.html:410 templates/localdatabase.html:29
+msgid "Save"
+msgstr "Kaydet"
+
+#: templates/localdatabase.html:30
+msgid "Save and repair"
+msgstr "Kaydet ve onar"
+
+#: templates/restore.html:118
+msgid "Save different versions with timestamp in file name"
+msgstr "Farklı sürümleri dosya adında zaman damgasıyla kaydet"
+
+#: templates/import.html:24
+msgid "Save immediately"
+msgstr "Hemen kaydet"
+
+#: scripts/services/ServerStatus.js:54
+msgid "Scanning existing files …"
+msgstr "Mevcut dosyalar taranıyor…"
+
+#: scripts/services/ServerStatus.js:55
+msgid "Scanning for local blocks …"
+msgstr "Yerel bloklar taranıyor…"
+
+#: templates/addoredit.html:255 templates/addoredit.html:27
+msgid "Schedule"
+msgstr "Zamanlama"
+
+#: templates/restore.html:60
+msgid "Search"
+msgstr "Ara"
+
+#: templates/restore.html:56
+msgid "Search for files"
+msgstr "Dosya ara"
+
+#: scripts/services/AppUtils.js:104 templates/settings.html:89
+msgid "Seconds"
+msgstr "Saniye"
+
+#: templates/log.html:30
+msgid "Select a log level and see messages as they happen:"
+msgstr "Bir günlük düzeyi seçin ve iletileri gerçekleştikçe görün:"
+
+#: templates/restore.html:23 templates/restore.html:38
+#: templates/restoredirect.html:23
+msgid "Select files"
+msgstr "Dosyaları seç"
+
+#: templates/backends/pcloud.html:2 templates/backends/s3.html:8
+#: templates/backends/smb.html:17
+msgid "Server"
+msgstr "Sunucu"
+
+#: templates/backends/generic.html:7
+msgid "Server and port"
+msgstr "Sunucu ve port"
+
+#: templates/backends/generic.html:8 templates/backends/smb.html:18
+msgid "Server hostname or IP"
+msgstr "Sunucu ana bilgisayar adı veya IP"
+
+#: templates/restoredirect.html:95 templates/waitarea.html:15
+msgid "Server is currently paused,"
+msgstr "Sunucu şu anda duraklatılmış durumda,"
+
+#: templates/commandline.html:45
+msgid ""
+"Server is currently paused, <a style=\"cursor: pointer\" ng-"
+"click=\"ServerStatus.resume()\">resume now</a>"
+msgstr ""
+"Sunucu şu anda duraklatılmış durumda, <a style=\"cursor: pointer\" ng-"
+"click=\"ServerStatus.resume()\">şimdi sürdür</a>"
+
+#: scripts/controllers/HomeController.js:22
+msgid "Server is currently paused, do you want to resume now?"
+msgstr ""
+"Sunucu şu anda duraklatılmış durumda, şimdi sürdürmek istiyor musunuz?"
+
+#: scripts/controllers/HomeController.js:22
+msgid "Server paused"
+msgstr "Sunucu duraklatıldı"
+
+#: templates/about.html:71
+msgid "Server state properties"
+msgstr "Sunucu durumu özellikleri"
+
+#: templates/settings.html:121
+msgid "Set timezone to default"
+msgstr "Saat dilimini varsayılana ayarla"
+
+#: index.html:220 templates/settings.html:2
+msgid "Settings"
+msgstr "Ayarlar"
+
+#: templates/backends/smb.html:23
+msgid "Share Name"
+msgstr "Paylaşım Adı"
+
+#: scripts/services/EditUriBuiltins.js:1042 templates/backends/smb.html:24
+msgid "Share name"
+msgstr "Paylaşım adı"
+
+#: templates/addoredit.html:69 templates/notificationarea.html:12
+#: templates/notificationarea.html:31 templates/notificationarea.html:41
+msgid "Show"
+msgstr "Göster"
+
+#: templates/addoredit.html:132
+msgid "Show advanced editor"
+msgstr "Gelişmiş düzenleyiciyi göster"
+
+#: templates/notificationarea.html:18 templates/notificationarea.html:19
+msgid "Show help"
+msgstr "Yardımı göster"
+
+#: templates/addoredit.html:143 templates/backends/file.html:16
+#: templates/restore.html:99
+msgid "Show hidden items"
+msgstr "Gizli öğeleri göster"
+
+#: templates/about.html:8
+msgid "Show log"
+msgstr "Günlüğü göster"
+
+#: templates/home.html:74
+msgid "Show log …"
+msgstr "Günlüğü göster…"
+
+#: templates/addoredit.html:135
+msgid "Show treeview"
+msgstr "Ağaç görünümünü göster"
+
+#: templates/addoredit.html:326
+msgid "Smart backup retention"
+msgstr "Akıllı yedek saklama"
+
+#: templates/backends/openstack.html:45
+msgid ""
+"Some OpenStack providers allow an API key instead of a password and tenant "
+"name"
+msgstr ""
+"Bazı OpenStack sağlayıcıları, parola ve kiracı adı yerine bir API anahtarına"
+" izin verir"
+
+#: templates/backends/s3.html:82
+msgid ""
+"Some S3 providers might only be compatible with a certain client library"
+msgstr ""
+"Bazı S3 sağlayıcıları yalnızca belirli bir istemci kitaplığıyla uyumlu "
+"olabilir"
+
+#: templates/addoredit.html:26
+msgid "Source Data"
+msgstr "Kaynak Verileri"
+
+#: templates/backup-result/top-right-box.html:1
+msgid "Source Files"
+msgstr "Kaynak Dosyalar"
+
+#: scripts/directives/sourceFolderPicker.js:588 templates/addoredit.html:124
+msgid "Source data"
+msgstr "Kaynak verileri"
+
+#: templates/addoredit.html:149
+msgid "Source folders"
+msgstr "Kaynak klasörler"
+
+#: templates/home.html:17
+msgid "Source size"
+msgstr "Kaynak boyutu"
+
+#: templates/home.html:27
+msgid "Source size (descending)"
+msgstr "Kaynak boyutu (azalan)"
+
+#: templates/home.html:96
+msgid "Source:"
+msgstr "Kaynak:"
+
+#: templates/settings.html:146
+msgid "Specific builds for developers only. Not for use with important data."
+msgstr ""
+"Yalnızca geliştiriciler için özel derlemeler. Önemli verilerle kullanım için"
+" değildir."
+
+#: templates/settings.html:135
+msgid "Stable"
+msgstr "Kararlı"
+
+#: scripts/services/SystemInfo.js:87
+msgid "Standard protocols"
+msgstr "Standart protokoller"
+
+#: templates/backup-result/phases/compact.html:8
+#: templates/backup-result/phases/delete.html:8
+#: templates/backup-result/phases/purge.html:8
+#: templates/backup-result/phases/recreate-database.html:8
+#: templates/backup-result/phases/repair.html:8
+#: templates/backup-result/phases/test.html:8
+#: templates/backup-result/top-left-box.html:3
+msgid "Start"
+msgstr "Başlat"
+
+#: scripts/services/ServerStatus.js:36
+msgid "Starting backup …"
+msgstr "Yedekleme başlatılıyor…"
+
+#: scripts/services/ServerStatus.js:49
+msgid "Starting restore …"
+msgstr "Geri yükleme başlatılıyor…"
+
+#: scripts/controllers/RestoreController.js:379
+#: scripts/controllers/RestoreController.js:403
+msgid "Starting the restore process …"
+msgstr "Geri yükleme süreci başlatılıyor…"
+
+#: templates/settings.html:36
+msgid "Status: {{getRemoteControlStatusText()}}"
+msgstr "Durum: {{getRemoteControlStatusText()}}"
+
+#: scripts/controllers/StateController.js:119
+#: scripts/controllers/StateController.js:128
+msgid "Stop after the current file"
+msgstr "Geçerli dosyadan sonra durdur"
+
+#: scripts/controllers/StateController.js:117
+msgid "Stop running backup"
+msgstr "Çalışan yedeklemeyi durdur"
+
+#: scripts/controllers/StateController.js:126
+msgid "Stop running task"
+msgstr "Çalışan görevi durdur"
+
+#: index.html:168
+msgid "Stopping after the current file:"
+msgstr "Geçerli dosyadan sonra durduruluyor:"
+
+#: index.html:173
+msgid "Stopping task:"
+msgstr "Görev durduruluyor:"
+
+#: templates/edituri.html:3
+msgid "Storage Type"
+msgstr "Depolama Türü"
+
+#: templates/backends/s3.html:45
+msgid "Storage class"
+msgstr "Depolama sınıfı"
+
+#: templates/backends/gcs.html:32
+msgid "Storage class for creating a bucket"
+msgstr "Paket oluşturmak için depolama sınıfı"
+
+#: templates/log.html:6
+msgid "Stored"
+msgstr "Depolandı"
+
+#: scripts/controllers/EditBackupController.js:34
+msgid "Strong"
+msgstr "Güçlü"
+
+#: scripts/directives/backupEditUri.js:52
+#: scripts/directives/backupEditUri.js:55
+msgid "Success"
+msgstr "Başarılı"
+
+#: scripts/services/AppUtils.js:116
+msgid "Sun"
+msgstr "Paz"
+
+#: scripts/services/AppUtils.js:78
+msgid "Symbolic link"
+msgstr "Sembolik bağlantı"
+
+#: scripts/controllers/StateController.js:80
+msgid ""
+"Synchronizing remote destination: {{files}} files ({{size}}) to "
+"go{{speed_txt}}"
+msgstr "Uzak hedef eşitleniyor: {{files}} dosya ({{size}}) kaldı{{speed_txt}}"
+
+#: scripts/services/ServerStatus.js:48
+msgid "Synchronizing secondary destination …"
+msgstr "İkincil hedef eşitleniyor…"
+
+#: scripts/services/AppUtils.js:200
+msgid "System Files"
+msgstr "Sistem Dosyaları"
+
+#: templates/settings.html:166
+msgid "System default ({{levelname}})"
+msgstr "Sistem varsayılanı ({{levelname}})"
+
+#: scripts/controllers/EditBackupController.js:21
+msgid "System files"
+msgstr "Sistem dosyaları"
+
+#: templates/about.html:7
+msgid "System info"
+msgstr "Sistem bilgisi"
+
+#: templates/about.html:63
+msgid "System properties"
+msgstr "Sistem özellikleri"
+
+#: scripts/services/AppUtils.js:91
+msgid "TByte"
+msgstr "TBayt"
+
+#: scripts/services/AppUtils.js:124
+msgid "TByte/s"
+msgstr "TBayt/s"
+
+#: templates/commandline.html:13
+msgid "Target URL &gt;"
+msgstr "Hedef URL &gt;"
+
+#: templates/waitarea.html:5
+msgid "Task is running"
+msgstr "Görev çalışıyor"
+
+#: scripts/services/AppUtils.js:209
+msgid "Temporary Files"
+msgstr "Geçici Dosyalar"
+
+#: scripts/controllers/EditBackupController.js:22
+msgid "Temporary files"
+msgstr "Geçici dosyalar"
+
+#: templates/backends/openstack.html:39
+msgid "Tenant name"
+msgstr "Kiracı (tenant) adı"
+
+#: templates/backends/cos.html:4
+msgid "Tencent Cloud Account APPID"
+msgstr "Tencent Cloud Hesap APPID"
+
+#: templates/backends/cos.html:35
+msgid "Tencent Cloud COS documents and resources"
+msgstr "Tencent Cloud COS belgeleri ve kaynakları"
+
+#: scripts/controllers/StateController.js:119
+#: scripts/controllers/StateController.js:128
+msgid "Terminate"
+msgstr "Sonlandır"
+
+#: templates/backup-result/phases/test.html:3
+msgid "Test Phase"
+msgstr "Sınama Aşaması"
+
+#: templates/edituri.html:22
+msgid "Test connection"
+msgstr "Bağlantıyı sına"
+
+#: scripts/directives/backupEditUri.js:45
+msgid "Testing connection …"
+msgstr "Bağlantı sınanıyor…"
+
+#: scripts/services/EditUriBuiltins.js:52
+msgid "Testing permissions …"
+msgstr "İzinler sınanıyor…"
+
+#: scripts/directives/backupEditUri.js:45 templates/edituri.html:23
+msgid "Testing …"
+msgstr "Sınanıyor…"
+
+#: scripts/services/EditUriBuiltins.js:1259
+#: scripts/services/EditUriBuiltins.js:1275
+#: scripts/services/EditUriBuiltins.js:1380
+#: scripts/services/EditUriBuiltins.js:1396
+msgid ""
+"The '{{fieldname}}' field contains an invalid character: {{character}} "
+"(value: {{value}}, index: {{pos}})"
+msgstr ""
+"'{{fieldname}}' alanı geçersiz bir karakter içeriyor: {{character}} (değer: "
+"{{value}}, konum: {{pos}})"
+
+#: scripts/directives/notificationArea.js:43
+msgid "The backup is missing, has it been deleted?"
+msgstr "Yedek eksik, silinmiş olabilir mi?"
+
+#: scripts/directives/notificationArea.js:41
+msgid ""
+"The backup was temporary and does not exist anymore, so the log data is lost"
+msgstr ""
+"Yedekleme geçiciydi ve artık mevcut değil, bu yüzden günlük verileri "
+"kayboldu"
+
+#: scripts/services/EditUriBuiltins.js:1231
+msgid "The bucket name should be all lower-case, convert automatically?"
+msgstr ""
+"Paket adının tamamı küçük harf olmalıdır, otomatik olarak dönüştürülsün mü?"
+
+#: templates/addoredit.html:313
+msgid ""
+"The chosen size is outside the recommended range. This may cause performance"
+" issues, excessively large temporary files or other problems."
+msgstr ""
+"Seçilen boyut önerilen aralığın dışında. Bu, performans sorunlarına, aşırı "
+"büyük geçici dosyalara veya başka sorunlara neden olabilir."
+
+#: scripts/controllers/ExportController.js:13
+msgid ""
+"The configuration should be kept safe. Are you sure you want to save an "
+"unencrypted file containing your passwords?"
+msgstr ""
+"Yapılandırma güvende tutulmalıdır. Parolalarınızı içeren şifrelenmemiş bir "
+"dosya kaydetmek istediğinizden emin misiniz?"
+
+#: index.html:302
+msgid "The connection to the server is lost, attempting again in {{time}} …"
+msgstr "Sunucuyla bağlantı kesildi, {{time}} içinde yeniden denenecek…"
+
+#: templates/settings.html:112
+msgid "The dark theme (by Michal)"
+msgstr "Koyu tema (Michal)"
+
+#: templates/settings.html:111
+msgid "The default blue on white theme (by Alex)"
+msgstr "Varsayılan beyaz üzerine mavi tema (Alex)"
+
+#: scripts/services/EditUriBuiltins.js:1324
+msgid "The encryption passphrases do not match"
+msgstr "Şifreleme parolaları eşleşmiyor"
+
+#: scripts/directives/sourceFolderPicker.js:461
+msgid ""
+"The file size is {{size}}, larger than the maximum specified size. If the "
+"file size decreases, it will be included in future backups."
+msgstr ""
+"Dosya boyutu {{size}}, belirtilen en büyük boyuttan daha büyük. Dosya boyutu"
+" küçülürse gelecekteki yedeklemelere dahil edilir."
+
+#: scripts/directives/backupEditUri.js:132
+msgid ""
+"The folder {{folder}} does not exist.\n"
+"Create it now?"
+msgstr ""
+"{{folder}} klasörü mevcut değil.\n"
+"Şimdi oluşturulsun mu?"
+
+#: scripts/directives/backupEditUri.js:172
+msgid ""
+"The host key has changed, please check with the server administrator if this is correct, otherwise you could be the victim of a MAN-IN-THE-MIDDLE attack.\n"
+"\n"
+"Do you want to REPLACE your CURRENT host key \"{{prev}}\" with the REPORTED host key: {{key}}?"
+msgstr ""
+"Ana bilgisayar anahtarı değişti; bunun doğru olup olmadığını sunucu yöneticisiyle kontrol edin, aksi halde bir ORTADAKİ ADAM (MAN-IN-THE-MIDDLE) saldırısının kurbanı olabilirsiniz.\n"
+"\n"
+"MEVCUT ana bilgisayar anahtarınız \"{{prev}}\" yerine BİLDİRİLEN ana bilgisayar anahtarını koymak istiyor musunuz: {{key}}?"
+
+#: scripts/controllers/ExportController.js:70
+#: scripts/controllers/SystemSettingsController.js:242
+msgid "The passwords do not match"
+msgstr "Parolalar eşleşmiyor"
+
+#: scripts/controllers/EditBackupController.js:161
+msgid "The path does not appear to exist, do you want to add it anyway?"
+msgstr "Yol mevcut değil gibi görünüyor, yine de eklemek istiyor musunuz?"
+
+#: scripts/controllers/EditBackupController.js:171
+msgid ""
+"The path does not end with a '{{dirsep}}' character, which means that you include a file, not a folder.\n"
+"\n"
+"Do you want to include the specified file?"
+msgstr ""
+"Yol bir '{{dirsep}}' karakteriyle bitmiyor; bu, bir klasör değil bir dosya dahil ettiğiniz anlamına gelir.\n"
+"\n"
+"Belirtilen dosyayı dahil etmek istiyor musunuz?"
+
+#: scripts/controllers/EditBackupController.js:146
+msgid ""
+"The path must be an absolute path, i.e. it must start with a forward slash "
+"'/'"
+msgstr "Yol mutlak bir yol olmalıdır, yani eğik çizgi '/' ile başlamalıdır"
+
+#: templates/backends/s3.html:33
+msgid "The region parameter is only applied when creating a new bucket"
+msgstr "Bölge parametresi yalnızca yeni bir paket oluşturulurken uygulanır"
+
+#: templates/backends/openstack.html:50
+msgid "The region parameter is only used when creating a bucket"
+msgstr "Bölge parametresi yalnızca paket oluşturulurken kullanılır"
+
+#: scripts/directives/backupEditUri.js:88
+msgid ""
+"The server certificate could not be validated.\n"
+"Do you want to approve the SSL certificate with the hash: {{hash}}?"
+msgstr ""
+"Sunucu sertifikası doğrulanamadı.\n"
+"Şu sağlamaya sahip SSL sertifikasını onaylamak istiyor musunuz: {{hash}}?"
+
+#: templates/backends/s3.html:49
+msgid "The storage class affects the availability and price for a stored file"
+msgstr ""
+"Depolama sınıfı, saklanan bir dosyanın kullanılabilirliğini ve fiyatını "
+"etkiler"
+
+#: scripts/controllers/RestoreDirectController.js:108
+msgid ""
+"The target folder contains encrypted files, please supply the passphrase"
+msgstr "Hedef klasör şifrelenmiş dosyalar içeriyor, lütfen parolayı girin"
+
+#: scripts/services/EditUriBuiltins.js:61
+msgid ""
+"The user has too many permissions. Do you want to create a new limited user,"
+" with only permissions to the selected path?"
+msgstr ""
+"Kullanıcının çok fazla izni var. Yalnızca seçilen yola izinleri olan yeni "
+"bir sınırlı kullanıcı oluşturmak istiyor musunuz?"
+
+#: scripts/controllers/RestoreController.js:308
+msgid ""
+"This backup was created on another operating system. Restoring files without"
+" specifying a destination folder can cause files to be restored in "
+"unexpected places. Are you sure you want to continue without choosing a "
+"destination folder?"
+msgstr ""
+"Bu yedekleme başka bir işletim sisteminde oluşturuldu. Hedef klasör "
+"belirtmeden dosyaları geri yüklemek, dosyaların beklenmedik yerlere geri "
+"yüklenmesine neden olabilir. Hedef klasör seçmeden devam etmek "
+"istediğinizden emin misiniz?"
+
+#: scripts/controllers/RestoreController.js:37
+msgid "This month"
+msgstr "Bu ay"
+
+#: scripts/controllers/RestoreController.js:36
+msgid "This week"
+msgstr "Bu hafta"
+
+#: scripts/controllers/AppController.js:72
+msgid "Throttle settings"
+msgstr "Hız kısıtlama ayarları"
+
+#: scripts/services/AppUtils.js:113
+msgid "Thu"
+msgstr "Per"
+
+#: templates/backup-result/phases/delete.html:33
+#: templates/backup-result/top-left-box.html:1
+msgid "Time"
+msgstr "Zaman"
+
+#: templates/settings.html:117
+msgid "Time zone"
+msgstr "Saat dilimi"
+
+#: templates/export.html:14
+msgid "To File"
+msgstr "Dosyaya"
+
+#: templates/confirmdelete.html:3
+msgid ""
+"To confirm you want to delete all remote files for\n"
+"      <span class=\"backupname\">\"{{selection.backupname}}\"</span>, please enter\n"
+"      this phrase:"
+msgstr ""
+"<span class=\"backupname\">\"{{selection.backupname}}\"</span> için tüm uzak dosyaları\n"
+"      silmek istediğinizi onaylamak amacıyla lütfen şu ifadeyi\n"
+"      girin:"
+
+#: scripts/controllers/ExportController.js:67
+msgid "To export without a passphrase, uncheck the \"Encrypt file\" box"
+msgstr ""
+"Parolasız dışa aktarmak için \"Dosyayı şifrele\" kutusunun işaretini "
+"kaldırın"
+
+#: scripts/services/EditUriBuiltins.js:1215
+msgid ""
+"To prevent bucket naming conflicts, it is recommended to prepend your "
+"account ID to the bucket name. Prepend automatically?"
+msgstr ""
+"Paket adlandırma çakışmalarını önlemek için hesap kimliğinizi paket adının "
+"önüne eklemeniz önerilir. Otomatik olarak eklensin mi?"
+
+#: templates/settings.html:26
+msgid ""
+"To prevent various DNS based attacks, Duplicati limits the allowed hostnames"
+" to the ones listed here. Direct IP access and localhost is always allowed. "
+"Multiple hostnames can be supplied with a semicolon separator. If any of the"
+" allowed hostnames is an asterisk (*), all hostnames are allowed and this "
+"feature is disabled. If the field is empty, only IP address and localhost "
+"access is allowed."
+msgstr ""
+"Çeşitli DNS tabanlı saldırıları önlemek için Duplicati, izin verilen ana "
+"bilgisayar adlarını burada listelenenlerle sınırlar. Doğrudan IP erişimine "
+"ve localhost'a her zaman izin verilir. Noktalı virgül ayırıcıyla birden çok "
+"ana bilgisayar adı girilebilir. İzin verilen ana bilgisayar adlarından "
+"herhangi biri yıldız (*) ise tüm ana bilgisayar adlarına izin verilir ve bu "
+"özellik devre dışı kalır. Alan boşsa yalnızca IP adresi ve localhost "
+"erişimine izin verilir."
+
+#: scripts/controllers/RestoreController.js:34
+msgid "Today"
+msgstr "Bugün"
+
+#: templates/backends/smb.html:3
+msgid "Transport"
+msgstr "Taşıma"
+
+#: scripts/directives/backupEditUri.js:174
+msgid "Trust host certificate?"
+msgstr "Ana bilgisayar sertifikasına güvenilsin mi?"
+
+#: scripts/directives/backupEditUri.js:88
+msgid "Trust server certificate?"
+msgstr "Sunucu sertifikasına güvenilsin mi?"
+
+#: templates/settings.html:141
+msgid ""
+"Try out the new features that we are working on. Test Backup &amp; Restore "
+"before using this in production environments."
+msgstr ""
+"Üzerinde çalıştığımız yeni özellikleri deneyin. Üretim ortamlarında "
+"kullanmadan önce Yedekleme ve Geri Yüklemeyi test edin."
+
+#: scripts/services/AppUtils.js:111
+msgid "Tue"
+msgstr "Sal"
+
+#: templates/restore.html:133
+msgid "Type passphrase here."
+msgstr "Parolayı buraya yazın."
+
+#: templates/restore.html:57
+msgid "Type to highlight files"
+msgstr "Dosyaları vurgulamak için yazın"
+
+#: templates/restorewizard.html:25
+msgid "Unknown backup size and versions"
+msgstr "Bilinmeyen yedek boyutu ve sürümleri"
+
+#: templates/pause.html:46
+msgid "Until resumed"
+msgstr "Sürdürülene kadar"
+
+#: templates/about.html:30
+msgid ""
+"Update <a href ng-"
+"click=\"doShowUpdateChangelog()\">{{state.updatedVersion}}</a> is available."
+" <a href=\"{{state.updateDownloadLink}}\">Download now</a>"
+msgstr ""
+"<a href ng-click=\"doShowUpdateChangelog()\">{{state.updatedVersion}}</a> "
+"güncellemesi mevcut. <a href=\"{{state.updateDownloadLink}}\">Şimdi "
+"indir</a>"
+
+#: templates/settings.html:126
+msgid "Update channel"
+msgstr "Güncelleme kanalı"
+
+#: scripts/controllers/LocalDatabaseController.js:66
+msgid "Update failed:"
+msgstr "Güncelleme başarısız oldu:"
+
+#: scripts/controllers/LocalDatabaseController.js:88
+msgid "Updating with existing database"
+msgstr "Mevcut veritabanıyla güncelleniyor"
+
+#: templates/backup-result/phases/compact.html:33
+msgid "Uploaded files"
+msgstr "Yüklenen dosyalar"
+
+#: scripts/services/ServerStatus.js:45
+msgid "Uploading verification file …"
+msgstr "Doğrulama dosyası yükleniyor…"
+
+#: templates/settings.html:173
+msgid ""
+"Usage reports help us improve the user experience and evaluate impact of new"
+" features. We use them to generate <external-link link=\"'https://usage-"
+"reporter.duplicati.com/'\">public usage statistics</external-link>."
+msgstr ""
+"Kullanım raporları, kullanıcı deneyimini iyileştirmemize ve yeni "
+"özelliklerin etkisini değerlendirmemize yardımcı olur. Bunları <external-"
+"link link=\"'https://usage-reporter.duplicati.com/'\">herkese açık kullanım "
+"istatistikleri</external-link> oluşturmak için kullanıyoruz."
+
+#: templates/settings.html:161
+msgid "Usage statistics"
+msgstr "Kullanım istatistikleri"
+
+#: templates/settings.html:167
+msgid "Usage statistics, warnings, errors, and crashes"
+msgstr "Kullanım istatistikleri, uyarılar, hatalar ve çökmeler"
+
+#: templates/backends/filejump.html:32
+msgid "Use API token authentication (recommended)"
+msgstr "API belirteci ile kimlik doğrulaması kullan (önerilir)"
+
+#: templates/backends/generic.html:2 templates/backends/s3.html:2
+msgid "Use SSL"
+msgstr "SSL kullan"
+
+#: scripts/controllers/EditBackupController.js:458
+msgid "Use existing database?"
+msgstr "Mevcut veritabanı kullanılsın mı?"
+
+#: index.html:263
+msgid "Use new UI"
+msgstr "Yeni arayüzü kullan"
+
+#: templates/backends/filejump.html:31
+msgid "Use username and password authentication"
+msgstr "Kullanıcı adı ve parola ile kimlik doğrulaması kullan"
+
+#: scripts/controllers/EditBackupController.js:352
+msgid "Use weak passphrase"
+msgstr "Zayıf parola kullan"
+
+#: scripts/controllers/EditBackupController.js:31
+msgid "Useless"
+msgstr "İşe yaramaz"
+
+#: scripts/directives/sourceFolderPicker.js:575
+msgid "User data"
+msgstr "Kullanıcı verileri"
+
+#: templates/backends/openstack.html:27
+msgid "User domain name"
+msgstr "Kullanıcı etki alanı adı"
+
+#: scripts/services/EditUriBuiltins.js:61
+msgid "User has too many permissions"
+msgstr "Kullanıcının çok fazla izni var"
+
+#: templates/settings.html:96
+msgid "User interface settings"
+msgstr "Kullanıcı arayüzü ayarları"
+
+#: scripts/services/EditUriBuiltins.js:1074
+#: scripts/services/EditUriBuiltins.js:1162
+#: scripts/services/EditUriBuiltins.js:1294 templates/backends/file.html:29
+#: templates/backends/filejump.html:21 templates/backends/filen.html:7
+#: templates/backends/generic.html:18 templates/backends/idrive.html:7
+#: templates/backends/idrive.html:8 templates/backends/mega.html:7
+#: templates/backends/mega.html:8 templates/backends/openstack.html:30
+#: templates/backends/smb.html:38
+msgid "Username"
+msgstr "Kullanıcı adı"
+
+#: templates/backends/filejump.html:14
+msgid ""
+"Username and password authentication is not recommended and does not work with MFA/2FA enabled accounts.\n"
+"        Use the API token if possible."
+msgstr ""
+"Kullanıcı adı ve parola ile kimlik doğrulaması önerilmez ve MFA/2FA etkin hesaplarla çalışmaz.\n"
+"        Mümkünse API belirtecini kullanın."
+
+#: scripts/services/ServerStatus.js:61
+msgid "Vacuuming database …"
+msgstr "Veritabanında vacuum yapılıyor…"
+
+#: templates/addoredit.html:155
+msgid "Validating …"
+msgstr "Doğrulanıyor…"
+
+#: templates/backup-result/phases/test.html:20
+#: templates/backup-result/test-items.html:2
+msgid "Verifications"
+msgstr "Doğrulamalar"
+
+#: templates/backends/storj.html:29
+msgid "Verify encryption passphrase"
+msgstr "Şifreleme parolasını doğrula"
+
+#: templates/home.html:67
+msgid "Verify files"
+msgstr "Dosyaları doğrula"
+
+#: scripts/services/ServerStatus.js:37 scripts/services/ServerStatus.js:46
+msgid "Verifying backend data …"
+msgstr "Arka uç verileri doğrulanıyor…"
+
+#: scripts/services/ServerStatus.js:63
+msgid "Verifying files …"
+msgstr "Dosyalar doğrulanıyor…"
+
+#: scripts/services/ServerStatus.js:38 scripts/services/ServerStatus.js:51
+msgid "Verifying remote data …"
+msgstr "Uzak veriler doğrulanıyor…"
+
+#: scripts/services/ServerStatus.js:58
+msgid "Verifying restored files …"
+msgstr "Geri yüklenen dosyalar doğrulanıyor…"
+
+#: templates/backup-result/phases/delete.html:33
+msgid "Version ID"
+msgstr "Sürüm Kimliği"
+
+#: scripts/controllers/EditBackupController.js:35
+msgid "Very strong"
+msgstr "Çok güçlü"
+
+#: scripts/controllers/EditBackupController.js:32
+msgid "Very weak"
+msgstr "Çok zayıf"
+
+#: index.html:245
+msgid "Visit us on"
+msgstr "Bizi ziyaret edin"
+
+#: templates/delete.html:21
+msgid ""
+"WARNING: The remote database is found to be in use by the commandline "
+"library."
+msgstr ""
+"UYARI: Uzak veritabanının komut satırı kitaplığı tarafından kullanıldığı "
+"tespit edildi."
+
+#: templates/delete.html:44
+msgid "WARNING: This will prevent you from restoring the data in the future."
+msgstr "UYARI: Bu, gelecekte verileri geri yüklemenizi engelleyecektir."
+
+#: templates/waitarea.html:2
+msgid "Waiting for task to begin"
+msgstr "Görevin başlaması bekleniyor"
+
+#: templates/commandline.html:51
+msgid "Waiting for task to start …"
+msgstr "Görevin başlaması bekleniyor…"
+
+#: scripts/services/ServerStatus.js:42
+msgid "Waiting for upload to finish …"
+msgstr "Yüklemenin bitmesi bekleniyor…"
+
+#: templates/settings.html:168
+msgid "Warnings, errors and crashes"
+msgstr "Uyarılar, hatalar ve çökmeler"
+
+#: templates/addoredit.html:54
+msgid "We recommend that you encrypt all backups stored outside your system"
+msgstr "Sisteminizin dışında saklanan tüm yedekleri şifrelemenizi öneririz"
+
+#: scripts/controllers/EditBackupController.js:33
+msgid "Weak"
+msgstr "Zayıf"
+
+#: scripts/controllers/EditBackupController.js:352
+msgid "Weak passphrase"
+msgstr "Zayıf parola"
+
+#: scripts/services/AppUtils.js:112
+msgid "Wed"
+msgstr "Çar"
+
+#: scripts/services/AppUtils.js:98 templates/addoredit.html:354
+msgid "Weeks"
+msgstr "Hafta"
+
+#: templates/restorewizard.html:3
+msgid "Where do you want to restore from?"
+msgstr "Nereden geri yüklemek istiyorsunuz?"
+
+#: templates/restore.html:78
+msgid "Where do you want to restore the files to?"
+msgstr "Dosyaları nereye geri yüklemek istiyorsunuz?"
+
+#: scripts/services/AppUtils.js:100 templates/addoredit.html:356
+msgid "Years"
+msgstr "Yıl"
+
+#: scripts/controllers/AppController.js:193
+#: scripts/controllers/DeleteController.js:99
+#: scripts/controllers/EditBackupController.js:161
+#: scripts/controllers/EditBackupController.js:171
+#: scripts/controllers/EditBackupController.js:458
+#: scripts/controllers/HomeController.js:22
+#: scripts/controllers/LocalDatabaseController.js:28
+#: scripts/controllers/LocalDatabaseController.js:72
+#: scripts/controllers/LocalDatabaseController.js:88
+#: scripts/directives/backupEditUri.js:132
+#: scripts/directives/backupEditUri.js:174
+#: scripts/directives/backupEditUri.js:88
+#: scripts/services/EditUriBackendConfig.js:74
+#: scripts/services/EditUriBuiltins.js:1215
+#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:61
+msgid "Yes"
+msgstr "Evet"
+
+#: scripts/controllers/EditBackupController.js:367
+msgid "Yes, I have stored the passphrase safely"
+msgstr "Evet, parolayı güvenli bir şekilde sakladım"
+
+#: scripts/controllers/ExportController.js:13
+msgid "Yes, I understand the risk"
+msgstr "Evet, riski anlıyorum"
+
+#: scripts/controllers/EditBackupController.js:410
+msgid "Yes, I'm brave!"
+msgstr "Evet, cesurum!"
+
+#: scripts/controllers/EditBackupController.js:401
+msgid "Yes, please break my backup!"
+msgstr "Evet, lütfen yedeğimi boz!"
+
+#: scripts/controllers/RestoreController.js:35
+msgid "Yesterday"
+msgstr "Dün"
+
+#: scripts/controllers/LocalDatabaseController.js:88
+msgid ""
+"You are changing the database path away from an existing database.\n"
+"Are you sure this is what you want?"
+msgstr ""
+"Veritabanı yolunu mevcut bir veritabanından uzaklaştırıyorsunuz.\n"
+"Bunu istediğinizden emin misiniz?"
+
+#: templates/about.html:28
+msgid "You are currently running {{appname}} {{version}}"
+msgstr "Şu anda {{appname}} {{version}} çalıştırıyorsunuz"
+
+#: scripts/controllers/StateController.js:118
+msgid ""
+"You can stop the backup after any file uploads currently in progress have "
+"finished. If you terminate the backup, the next run will need to recover "
+"from a failed backup."
+msgstr ""
+"Yedeklemeyi, devam eden dosya yüklemeleri bittikten sonra durdurabilirsiniz."
+" Yedeklemeyi sonlandırırsanız, bir sonraki çalıştırmanın başarısız bir "
+"yedekten kurtulması gerekir."
+
+#: scripts/controllers/StateController.js:127
+msgid ""
+"You can stop the task immediately, or allow the process to continue its "
+"current file and then stop. If you terminate the task, the backup could be "
+"left in an inconsistent state."
+msgstr ""
+"Görevi hemen durdurabilir veya sürecin geçerli dosyayı bitirip sonra "
+"durmasına izin verebilirsiniz. Görevi sonlandırırsanız, yedekleme tutarsız "
+"bir durumda kalabilir."
+
+#: scripts/controllers/EditBackupController.js:410
+msgid ""
+"You have changed the encryption mode. This may break stuff. You are "
+"encouraged to create a new backup instead"
+msgstr ""
+"Şifreleme modunu değiştirdiniz. Bu bazı şeyleri bozabilir. Bunun yerine yeni"
+" bir yedekleme oluşturmanız önerilir"
+
+#: scripts/controllers/EditBackupController.js:401
+msgid ""
+"You have changed the passphrase, which is not supported. You are encouraged "
+"to create a new backup instead."
+msgstr ""
+"Parolayı değiştirdiniz; bu desteklenmez. Bunun yerine yeni bir yedekleme "
+"oluşturmanız önerilir."
+
+#: scripts/controllers/EditBackupController.js:437
+msgid ""
+"You have chosen not to encrypt the backup. Encryption is recommended for all"
+" data stored on a remote server."
+msgstr ""
+"Yedeklemeyi şifrelememeyi seçtiniz. Uzak bir sunucuda saklanan tüm veriler "
+"için şifreleme önerilir."
+
+#: scripts/controllers/RestoreController.js:302
+msgid "You have chosen to restore to a new location, but not entered one"
+msgstr "Yeni bir konuma geri yüklemeyi seçtiniz ancak konum girmediniz"
+
+#: scripts/controllers/EditBackupController.js:367
+msgid ""
+"You have generated a strong passphrase. Make sure you have made a safe copy "
+"of the passphrase, as the data cannot be recovered if you lose the "
+"passphrase."
+msgstr ""
+"Güçlü bir parola oluşturdunuz. Parolayı kaybederseniz veriler "
+"kurtarılamayacağından, parolanın güvenli bir kopyasını aldığınızdan emin "
+"olun."
+
+#: scripts/controllers/EditBackupController.js:267
+msgid "You must choose at least one source folder"
+msgstr "En az bir kaynak klasör seçmelisiniz"
+
+#: scripts/services/EditUriBuiltins.js:1173
+msgid "You must enter a domain name to use v3 API"
+msgstr "v3 API'yi kullanmak için bir etki alanı adı girmelisiniz"
+
+#: scripts/controllers/EditBackupController.js:247
+msgid "You must enter a name for the backup"
+msgstr "Yedekleme için bir ad girmelisiniz"
+
+#: scripts/controllers/EditBackupController.js:254
+msgid "You must enter a passphrase or disable encryption"
+msgstr "Bir parola girmeli veya şifrelemeyi devre dışı bırakmalısınız"
+
+#: scripts/services/EditUriBuiltins.js:1170
+msgid "You must enter a password to use v3 API"
+msgstr "v3 API'yi kullanmak için bir parola girmelisiniz"
+
+#: scripts/controllers/EditBackupController.js:303
+msgid "You must enter a positive number of backups to keep"
+msgstr "Tutulacak yedekler için pozitif bir sayı girmelisiniz"
+
+#: scripts/services/EditUriBuiltins.js:1176
+msgid "You must enter a tenant (aka project) name to use v3 API"
+msgstr "v3 API'yi kullanmak için bir kiracı (yani proje) adı girmelisiniz"
+
+#: scripts/services/EditUriBuiltins.js:1190
+msgid "You must enter a tenant name if you do not provide an API key"
+msgstr "API anahtarı sağlamıyorsanız bir kiracı adı girmelisiniz"
+
+#: scripts/controllers/EditBackupController.js:296
+msgid "You must enter a valid duration for the time to keep backups"
+msgstr "Yedeklerin tutulacağı süre için geçerli bir süre girmelisiniz"
+
+#: scripts/controllers/EditBackupController.js:313
+msgid "You must enter a valid retention policy string"
+msgstr "Geçerli bir saklama ilkesi dizesi girmelisiniz"
+
+#: scripts/services/EditUriBuiltins.js:1187
+msgid "You must enter either a password or an API key"
+msgstr "Bir parola veya bir API anahtarı girmelisiniz"
+
+#: scripts/services/EditUriBuiltins.js:1194
+msgid "You must enter either a password or an API key, not both"
+msgstr "Bir parola veya bir API anahtarı girmelisiniz, ikisini birden değil"
+
+#: scripts/services/EditUriBackendConfig.js:123
+msgid "You must fill in the password"
+msgstr "Parolayı doldurmalısınız"
+
+#: scripts/services/EditUriBackendConfig.js:100
+msgid "You must fill in the server name or address"
+msgstr "Sunucu adını veya adresini doldurmalısınız"
+
+#: scripts/services/EditUriBackendConfig.js:121
+#: scripts/services/EditUriBackendConfig.js:130
+msgid "You must fill in the username"
+msgstr "Kullanıcı adını doldurmalısınız"
+
+#: scripts/services/EditUriBackendConfig.js:86
+msgid "You must fill in {{field}}"
+msgstr "{{field}} alanını doldurmalısınız"
+
+#: scripts/services/EditUriBuiltins.js:1166
+msgid "You must select or fill in the AuthURI"
+msgstr "AuthURI'yi seçmeli veya doldurmalısınız"
+
+#: scripts/services/EditUriBuiltins.js:1208
+msgid "You must select or fill in the server"
+msgstr "Sunucuyu seçmeli veya doldurmalısınız"
+
+#: scripts/services/EditUriBackendConfig.js:107
+msgid "You must specify a path"
+msgstr "Bir yol belirtmelisiniz"
+
+#: scripts/services/EditUriBackendConfig.js:93
+msgid "You should fill in {{field}} {{reason}}"
+msgstr "{{field}} alanını doldurmalısınız {{reason}}"
+
+#: templates/restore.html:144
+msgid "Your files and folders have been restored successfully."
+msgstr "Dosya ve klasörleriniz başarıyla geri yüklendi."
+
+#: scripts/controllers/EditBackupController.js:352
+msgid "Your passphrase is easy to guess. Consider changing passphrase."
+msgstr "Parolanızın tahmin edilmesi kolay. Parolayı değiştirmeyi düşünün."
+
+#: templates/backends/gcs.html:3 templates/backends/openstack.html:3
+msgid "bucket/folder/subfolder"
+msgstr "paket/klasor/altklasor"
+
+#: scripts/services/AppUtils.js:87
+msgid "byte"
+msgstr "bayt"
+
+#: scripts/services/AppUtils.js:120
+msgid "byte/s"
+msgstr "bayt/s"
+
+#: scripts/services/EditUriBuiltins.js:1346
+msgid "cos_app_id"
+msgstr "cos_app_id"
+
+#: scripts/services/EditUriBuiltins.js:1350
+msgid "cos_bucket"
+msgstr "cos_bucket"
+
+#: scripts/services/EditUriBuiltins.js:1349
+msgid "cos_region"
+msgstr "cos_region"
+
+#: scripts/services/EditUriBuiltins.js:1347
+msgid "cos_secret_id"
+msgstr "cos_secret_id"
+
+#: scripts/services/EditUriBuiltins.js:1348
+msgid "cos_secret_key"
+msgstr "cos_secret_key"
+
+#: templates/addoredit.html:272 templates/addoredit.html:357
+#: templates/advancedoptionseditor.html:29
+#: templates/advancedoptionseditor.html:36
+msgid "custom"
+msgstr "özel"
+
+#: templates/backup-result/entryline.html:4
+msgid "failed"
+msgstr "başarısız"
+
+#: templates/backends/rclone.html:3
+msgid "local repository, leave empty for local"
+msgstr "yerel depo, yerel için boş bırakın"
+
+#: scripts/services/EditUriBuiltins.js:1359
+msgid "oss_access_key_id"
+msgstr "oss_access_key_id"
+
+#: scripts/services/EditUriBuiltins.js:1360
+msgid "oss_access_key_secret"
+msgstr "oss_access_key_secret"
+
+#: scripts/services/EditUriBuiltins.js:1362
+msgid "oss_bucket_name"
+msgstr "oss_bucket_name"
+
+#: scripts/services/EditUriBuiltins.js:1358
+msgid "oss_endpoint"
+msgstr "oss_endpoint"
+
+#: scripts/services/EditUriBuiltins.js:1361
+msgid "oss_region"
+msgstr "oss_region"
+
+#: templates/backends/pcloud.html:10
+msgid "pCloud EU (eapi.pcloud.com)"
+msgstr "pCloud AB (eapi.pcloud.com)"
+
+#: templates/backends/pcloud.html:7
+msgid "pCloud Global (api.pcloud.com)"
+msgstr "pCloud Küresel (api.pcloud.com)"
+
+#: templates/backends/rclone.html:11
+msgid "remote path, e.g. backup"
+msgstr "uzak yol, örn. backup"
+
+#: templates/backends/rclone.html:7
+msgid "remote repository, e.g. remote"
+msgstr "uzak depo, örn. remote"
+
+#: templates/restoredirect.html:95 templates/waitarea.html:15
+msgid "resume now"
+msgstr "şimdi sürdür"
+
+#: scripts/services/EditUriBuiltins.js:1309
+msgid "storj_shared_access"
+msgstr "storj_shared_access"
+
+#: scripts/services/EditUriBuiltins.js:1143
+msgid "unless you are explicitly specifying --group-id"
+msgstr "--group-id seçeneğini açıkça belirtmiyorsanız"
+
+#: templates/about.html:12
+msgid ""
+"{{appname}} was primarily developed by <a href=\"{{mail1}}\">{{dev1}}</a> "
+"and <a href=\"{{mail2}}\">{{dev2}}</a>. {{appname}} can be downloaded from "
+"<a href=\"{{websitelink}}\">{{websitename}}</a>. {{appname}} is licensed "
+"under the <a href=\"{{licenselink}}\">{{licensename}}</a>."
+msgstr ""
+"{{appname}} esas olarak <a href=\"{{mail1}}\">{{dev1}}</a> ve <a "
+"href=\"{{mail2}}\">{{dev2}}</a> tarafından geliştirilmiştir. {{appname}}, <a"
+" href=\"{{websitelink}}\">{{websitename}}</a> adresinden indirilebilir. "
+"{{appname}}, <a href=\"{{licenselink}}\">{{licensename}}</a> ile "
+"lisanslanmıştır."
+
+#: templates/about.html:53
+msgid ""
+"{{brandingService.appName}} is using the following third party libraries:"
+msgstr "{{brandingService.appName}} şu üçüncü taraf kitaplıkları kullanıyor:"
+
+#: scripts/controllers/StateController.js:53
+msgid "{{files}} files ({{size}}) to go {{speed_txt}}"
+msgstr "{{files}} dosya ({{size}}) kaldı {{speed_txt}}"
+
+#: templates/home.html:101 templates/restorewizard.html:23
+msgid "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Version"
+msgid_plural "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Versions"
+msgstr[0] "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Sürüm"
+msgstr[1] "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Sürüm"
+
+#: templates/pause.html:26
+msgid "{{number}} Hour"
+msgstr "{{number}} Saat"
+
+#: templates/pause.html:31 templates/pause.html:36 templates/pause.html:41
+msgid "{{number}} Hours"
+msgstr "{{number}} Saat"
+
+#: templates/pause.html:11 templates/pause.html:16 templates/pause.html:21
+#: templates/pause.html:6
+msgid "{{number}} Minutes"
+msgstr "{{number}} Dakika"
+
+#: templates/home.html:81
+msgid "{{time}} (took {{duration}})"
+msgstr "{{time}} (süre: {{duration}})"

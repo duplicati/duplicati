@@ -30,7 +30,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-13 15:38+0200\n"
+"POT-Creation-Date: 2026-07-19 16:29+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: Fabrice Verrac, 2026\n"
 "Language-Team: French (https://app.transifex.com/duplicati/teams/67655/fr/)\n"
@@ -334,6 +334,17 @@ msgstr "La clé de chiffrement est manquante."
 msgid "The requested file does not exist"
 msgstr "Le fichier demandé n'existe pas"
 
+#: Library/Interface/CustomExceptions.cs:290
+#: Library/Interface/CustomExceptions.cs:296
+msgid ""
+"The backup database is currently in use by another operation and cannot be "
+"accessed concurrently. Please wait for the running operation to finish and "
+"try again."
+msgstr ""
+"La base de données des sauvegardes est déjà en cours d'utilisation par une "
+"autre opération et n'est donc pas accessible par une nouvelle opération. "
+"Merci d'attendre la fin de l'opération actuelle pour réessayer."
+
 #: Library/Snapshots/Strings.cs:24
 #, csharp-format
 msgid ""
@@ -439,6 +450,83 @@ msgstr "Le prochain USN est zéro"
 #: Library/Snapshots/Strings.cs:45
 msgid "Backup configuration changed"
 msgstr "Configuration de la sauvegarde modifiée"
+
+#: Library/Parity/Strings.cs:28
+msgid "PAR2 parity, external"
+msgstr "Parité PAR2, externe"
+
+#: Library/Parity/Strings.cs:29
+#, csharp-format
+msgid ""
+"The PAR2 parity module creates error-correction data using the PAR2 "
+"standard, allowing damaged remote volumes to be repaired. It requires that "
+"the \"par2\" (par2cmdline) executable is available on the system. On Linux "
+"and macOS it can be installed via the package manager; the path can be "
+"supplied using the option --{0}."
+msgstr ""
+"Le module de parité PAR2 crée des données de correction d'erreur au standard"
+" PAR2 permettant la réparation des volumes distants corrompus. Il nécessite "
+"que l'exécutable \"par2\" (par2cmdline) soit disponible sur le système. Sur "
+"Linux et macOS on peut l'installer avec le gestionnaire de paquets; on peut "
+"en indiquer le chemin avec l'option --{0}."
+
+#: Library/Parity/Strings.cs:30
+msgid "The path to the par2 program"
+msgstr "Chemin du programme par2"
+
+#: Library/Parity/Strings.cs:31
+msgid ""
+"The path to the par2 (par2cmdline) program. If not supplied, Duplicati will "
+"search for \"par2\" on the system path."
+msgstr ""
+"Chemin du programme par2 (par2cmdline). Si vide, Duplicati cherchera "
+"\"par2\" dans le path système."
+
+#: Library/Parity/Strings.cs:32
+msgid "Extra options for the par2 program"
+msgstr "Options aditionnelles pour le programme par2"
+
+#: Library/Parity/Strings.cs:33
+msgid ""
+"Use this option to supply extra commandline options to the par2 program when"
+" creating parity data."
+msgstr "Options pour par2"
+
+#: Library/Parity/Strings.cs:34
+msgid "The parity redundancy level in percent"
+msgstr "Niveau de redondance de parité en pourcent"
+
+#: Library/Parity/Strings.cs:35
+msgid ""
+"Sets the amount of error-correction (parity) data to create for each remote "
+"volume, as a percentage of the volume size. Higher values allow recovering "
+"from more damage, at the cost of extra storage and upload time. Must be a "
+"positive value."
+msgstr ""
+"Niveau de données de corrections d'erreur (parité) à créer pour chaque "
+"volume distant, en pourcentage de la taille du volume. De plus hautes "
+"valeurs permettent plus de récupérations de dommages au prix d'une plus "
+"grande utilisation du stockage et des temps d'envoi. Valeur positive "
+"requise."
+
+#: Library/Parity/Strings.cs:36
+#, csharp-format
+msgid "Failed to execute par2 with \"{0} {1}\": {2}"
+msgstr "Échec d'exécution de par2 avec \"{0} {1}\": {2}"
+
+#: Library/Parity/Strings.cs:37
+msgid ""
+"The par2 program was not found; parity data will not be created. Install "
+"par2cmdline or set the --par2-program-path option."
+msgstr ""
+"Programme par2 non trouvé; les données de parité ne seront pas crées. "
+"Installer par2cmdline ou réglez l'option --par2-program-path."
+
+#: Library/Parity/Strings.cs:38
+#, csharp-format
+msgid ""
+"The parity redundancy level (--{0}) must be a positive value, but was {1}."
+msgstr "Le niveau de parité (--{0}) doit être positif, mais était {1}."
 
 #: Library/Backend/OpenStack/Strings.cs:27
 msgid ""
@@ -4223,6 +4311,29 @@ msgstr ""
 msgid "Set the folder where settings are stored"
 msgstr "Définition du répertoire de stockage des paramètres."
 
+#: Library/RestAPI/Strings.cs:70
+msgid ""
+"Allow the data folder to be placed in a shared location without restricting "
+"the permissions to SYSTEM and Administrators. This bypasses the security "
+"check that prevents using a world-readable folder for the database and "
+"configuration. Only use this option if you understand the risks and have "
+"restricted the permissions manually."
+msgstr ""
+"Permettre que le répertoire de données soit placé dans un endroit partagé "
+"sans en restreindre l'accès au seul SYSTÈME et aux Administarteurs. Ceci "
+"contourne les vérifications de sécurité qui empêchent l'accès en lecture à "
+"tout le monde à ce répertoire pour la base de données et à laconfiguration. "
+"N'utilisez cette option que si vous en comprenez les risques et que vous "
+"avez déjà manuellement restreint les permissions."
+
+#: Library/RestAPI/Strings.cs:71
+msgid ""
+"Allow the data folder to be in a shared location without restricted "
+"permissions"
+msgstr ""
+"Permettre l'emplacement du répertoire de données dans un endroit partagé "
+"sans permissions restreintes."
+
 #: Library/RestAPI/Strings.cs:72
 #, csharp-format
 msgid ""
@@ -5786,6 +5897,25 @@ msgstr ""
 msgid "Select what module to use for encryption"
 msgstr "Sélectionnez le module à utiliser pour le chiffrement"
 
+#: Library/Main/Strings.cs:119
+msgid ""
+"Duplicati supports pluggable parity modules that create error-correction "
+"data for remote volumes, allowing damaged volumes to be repaired on "
+"download. Parity is opt-in: it is disabled unless this option selects a "
+"module. Each module has its own options (for example, the redundancy level);"
+" see the parity module help for details."
+msgstr ""
+"Duplicati supporte des modules de parité enfichables qui créent des données "
+"de correction d'erreurs pour les volumes distants, permettant à des volumes "
+"dégradés d'être réparés lors du téléchargement. Le contrôle de parité est "
+"une option à activer : il est désactivé sauf à sélectionner un module par "
+"cette option.. Chaque module dispose de ses propres options (par exemple, le"
+" niveau de redondance); voir l'aide du module de parité pour les détails."
+
+#: Library/Main/Strings.cs:120
+msgid "Select what module to use for parity"
+msgstr "Sélectionnez le module à utiliser pour les contrôles de parité."
+
 #: Library/Main/Strings.cs:121
 msgid "Supply one or more module names, separated by commas to unload them."
 msgstr ""
@@ -6695,6 +6825,16 @@ msgid "Reduce number of versions by deleting old intermediate backups"
 msgstr ""
 "Réduire le nombre de versions en supprimant les anciennes sauvegardes "
 "intermédiaires"
+
+#: Library/Main/Strings.cs:240
+#, csharp-format
+msgid ""
+"The retention policy value '{0}' is not valid. Each entry must consist of a "
+"timeframe and an interval separated by a single colon, for example '7D:1D'."
+msgstr ""
+"La valeur de stratégie de rétention '{0}' est invalide. Chaque entrée doit "
+"être composée d'une durée et d'un intervalle séparés par le caractère : "
+"p.ex, '7D:1D'."
 
 #: Library/Main/Strings.cs:241
 msgid ""
@@ -8001,6 +8141,29 @@ msgid "The passphrase cannot be changed for an existing backup"
 msgstr ""
 "La phrase de passe ne peut pas être modifiée pour une sauvegarde existante"
 
+#: Library/Main/Strings.cs:443
+#, csharp-format
+msgid ""
+"Failed to create a snapshot. The snapshot provider requires the Microsoft "
+"Visual C++ Redistributable, which does not appear to be installed. Please "
+"install the latest Visual C++ Redistributable. Error message: {0}"
+msgstr ""
+"Échec de création d'un cliché. Le fournisseur de clichés requiert Microsoft "
+"Visual C++ Redistributable, qui semble ne pas être installé. Merci "
+"d'installer la dernière de Visual C++ Redistributable. Message d'erreur : "
+"{0}"
+
+#: Library/Main/Strings.cs:444
+#, csharp-format
+msgid ""
+"Failed to create a snapshot. The process seems to not have the necessary "
+"permissions and the Microsoft Visual C++ Redistributable is not installed. "
+"Error message: {0}"
+msgstr ""
+"Échec de création d'un cliché. Le processus ne semble pas disposer des "
+"permissions nécessaires et Microsoft Visual C++ Redistributable n'est pas "
+"installé. Message d'erreur : {0}"
+
 #: Library/Main/Strings.cs:447
 #, csharp-format
 msgid ""
@@ -9040,6 +9203,72 @@ msgstr ""
 msgid "Limit log lines"
 msgstr "Limiter les lignes de journaux"
 
+#: Library/Modules/Builtin/Strings.cs:303
+msgid ""
+"This module periodically posts the current operation status (progress, "
+"observed backend events and log entries) to a remote URL as JSON while the "
+"operation is running."
+msgstr ""
+"Ce module émet périodiquement le statut de l'opération courante (avancement,"
+" évènements observés du moteur et les entrées de journal) au format JSON "
+"vers une URL distante pendant le déroulement de l'opération."
+
+#: Library/Modules/Builtin/Strings.cs:304
+msgid "HTTP status report module"
+msgstr "Module de rapport de l'état HTTP"
+
+#: Library/Modules/Builtin/Strings.cs:305
+msgid ""
+"Use this option to set the remote URL that the periodic status reports are "
+"posted to as JSON. The module is inactive unless this option is set. "
+"Multiple URL targets can be set with semicolon separators."
+msgstr ""
+"Option pour définir l'URL distante vers laquelle les rapports d'état sont "
+"envoyés au format JSON. Sinon, le module est  inactif. Plusieurs URL cibles "
+"peuvent être indiquées, séparées par un point-virgule."
+
+#: Library/Modules/Builtin/Strings.cs:306
+msgid "Status report URL"
+msgstr "URL de rapport d'état"
+
+#: Library/Modules/Builtin/Strings.cs:307
+msgid ""
+"Use this option to set the interval between status reports. The engine "
+"pushes progress updates at a fixed cadence; the module posts at most one "
+"report per interval."
+msgstr ""
+"Règle l'intervalle entre les rapports d'état. Le moteur pousse l'état "
+"d'avancement des mises à jour à fréquence régulière; le module poste au plus"
+" un rapport par intervalle."
+
+#: Library/Modules/Builtin/Strings.cs:308
+msgid "Status report interval"
+msgstr "Intervalle de rapport d'état"
+
+#: Library/Modules/Builtin/Strings.cs:309
+msgid ""
+"Use this option to set the maximum number of recent log lines to include in "
+"each status report."
+msgstr ""
+"Règle le nombre maximum de lignes de journal récentes à inclure dans chaque "
+"rapport d'état."
+
+#: Library/Modules/Builtin/Strings.cs:310
+msgid "Maximum log lines per report"
+msgstr "Nombre de ligne maximum dans les rapports d'état"
+
+#: Library/Modules/Builtin/Strings.cs:317
+#, csharp-format
+msgid ""
+"By default, file paths are redacted from the log lines included in status "
+"reports. Enable this option to include the unredacted paths. When this "
+"option is not set, the global --{0} setting is used."
+msgstr ""
+"Par défaut, les chemins de fichiers sont caviardés dans les lignes de "
+"rapports provenant des journaux. Activezz cette option pour inclure les "
+"chemins complets en clair. Quand cette option n'est pas activée, le réglage "
+"global --{0} est utilisé."
+
 #: Library/ResultSerialization/ResultFormatSerializerProvider.cs:58
 #, csharp-format
 msgid "The format is not supported: {0}"
@@ -9287,31 +9516,31 @@ msgstr "Erreur de lecture de fichier : {0}, erreur : {1}"
 msgid "Error listing content: {0}"
 msgstr "Erreur de listage de contenu : {0}"
 
-#: Library/Utility/FilterGroups.cs:191
+#: Library/Utility/FilterGroups.cs:194
 #, csharp-format
 msgid "{0}: Selects no filters."
 msgstr "{0}: ne sélectionne aucun filtre."
 
-#: Library/Utility/FilterGroups.cs:192
+#: Library/Utility/FilterGroups.cs:195
 #, csharp-format
 msgid "{0}: A set of default exclude filters, currently evaluates to: {1}."
 msgstr ""
 "{0}: un ensemble de filtres d'exclusion par défaut est actuellement évalué "
 "à: {1}."
 
-#: Library/Utility/FilterGroups.cs:193
+#: Library/Utility/FilterGroups.cs:196
 #, csharp-format
 msgid "{0}: A set of default include filters, currently evaluates to: {1}."
 msgstr ""
 "{0}: un ensemble de filtres d'inclusion par défaut est actuellement évalué "
 "à: {1}."
 
-#: Library/Utility/FilterGroups.cs:204
+#: Library/Utility/FilterGroups.cs:207
 #, csharp-format
 msgid " Aliases: {0}"
 msgstr " Alias: {0}"
 
-#: Library/Utility/FilterGroups.cs:217
+#: Library/Utility/FilterGroups.cs:220
 #, csharp-format
 msgid ""
 "{0}: Files that are owned by the system or not suited to be backed up. This "
@@ -9323,7 +9552,7 @@ msgstr ""
 "d'exploitation. La plupart des utilisateurs doivent au moins appliquer ces "
 "filtres."
 
-#: Library/Utility/FilterGroups.cs:219
+#: Library/Utility/FilterGroups.cs:222
 #, csharp-format
 msgid ""
 "{0}: Files that belong to the operating system. These files are restored "
@@ -9332,13 +9561,13 @@ msgstr ""
 "{0}: fichiers appartenant au système d'exploitation. Ces fichiers sont "
 "restaurés lorsque le système d'exploitation est réinstallé."
 
-#: Library/Utility/FilterGroups.cs:221
+#: Library/Utility/FilterGroups.cs:224
 #, csharp-format
 msgid "{0}: Files and folders that are known to be storage of temporary data."
 msgstr ""
 "{0}: fichiers et dossiers connus pour stocker des données temporaires."
 
-#: Library/Utility/FilterGroups.cs:223
+#: Library/Utility/FilterGroups.cs:226
 #, csharp-format
 msgid ""
 "{0}: Files and folders that are known cache locations for the operating "
@@ -9347,7 +9576,7 @@ msgstr ""
 "{0}: fichiers et dossiers connus comme emplacements de cache pour le système"
 " d'exploitation et diverses applications"
 
-#: Library/Utility/FilterGroups.cs:225
+#: Library/Utility/FilterGroups.cs:228
 #, csharp-format
 msgid "{0}: Installed programs and their libraries, but not their settings."
 msgstr ""
@@ -9397,6 +9626,10 @@ msgstr "Modules de compression supportés :"
 #: CommandLine/CLI/Strings.cs:36
 msgid "Supported encryption modules:"
 msgstr "Modules de chiffrement proposés :"
+
+#: CommandLine/CLI/Strings.cs:37
+msgid "Supported parity modules:"
+msgstr "Modules de parité supportés :"
 
 #: CommandLine/CLI/Strings.cs:38
 msgid "Supported options:"

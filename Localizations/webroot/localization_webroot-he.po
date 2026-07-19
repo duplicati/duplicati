@@ -1,0 +1,1885 @@
+# Translators:
+# matan tal <matantal23@gmail.com>, 2026
+# Yaron Shahrabani <sh.yaron@gmail.com>, 2026
+# Mike Kolesnik <mkolesni@redhat.com>, 2026
+# 
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Last-Translator: Mike Kolesnik <mkolesni@redhat.com>, 2026\n"
+"Language-Team: Hebrew (https://app.transifex.com/duplicati/teams/67655/he/)\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: he\n"
+"Plural-Forms: nplurals=3; plural=(n == 1 && n % 1 == 0) ? 0 : (n == 2 && n % 1 == 0) ? 1: 2;\n"
+
+#: templates/advancedoptionseditor.html:50
+msgid "- pick an option -"
+msgstr "- נא לבחור אפשרות -"
+
+#: scripts/controllers/SystemSettingsController.js:217 templates/delete.html:7
+msgid "...loading..."
+msgstr "…בטעינה…"
+
+#: scripts/services/EditUriBuiltins.js:1314
+#: templates/backends/openstack.html:44 templates/backends/storj.html:21
+#: templates/backends/storj.html:22
+msgid "API key"
+msgstr "מפתח API"
+
+#: scripts/services/EditUriBuiltins.js:1204 templates/backends/s3.html:66
+#: templates/backends/s3.html:68
+msgid "AWS Access ID"
+msgstr "Access ID של AWS"
+
+#: scripts/services/EditUriBuiltins.js:1205 templates/backends/s3.html:71
+#: templates/backends/s3.html:73
+msgid "AWS Access Key"
+msgstr "Access Key של AWS"
+
+#: scripts/services/EditUriBuiltins.js:157
+msgid "AWS IAM Policy"
+msgstr "IAM Policy של AWS"
+
+#: index.html:223 index.html:239
+msgid "About"
+msgstr "אודות"
+
+#: templates/about.html:2
+msgid "About {{appname}}"
+msgstr "אודות {{appname}}"
+
+#: scripts/services/EditUriBuiltins.js:1153
+msgid "Access Key"
+msgstr "Access Key"
+
+#: scripts/services/AppUtils.js:76
+msgid "Access denied"
+msgstr "הגישה נדחתה"
+
+#: templates/backends/storj.html:33 templates/backends/storj.html:34
+msgid "Access grant"
+msgstr "הענקת גישה"
+
+#: templates/settings.html:5
+msgid "Access to user interface"
+msgstr "גישה למנשק המשתמש"
+
+#: scripts/services/EditUriBuiltins.js:1152 templates/backends/azure.html:7
+#: templates/backends/azure.html:8
+msgid "Account name"
+msgstr "שם חשבון"
+
+#: templates/addwizard.html:3
+msgid "Add a new backup"
+msgstr "הוספת גיבוי חדש"
+
+#: templates/addoredit.html:153
+msgid "Add a path directly"
+msgstr "הוספת נתיב ידנית"
+
+#: templates/advancedoptionseditor.html:48
+msgid "Add advanced option"
+msgstr "הוספת אפשרות מתקדמת"
+
+#: index.html:211
+msgid "Add backup"
+msgstr "הוספת גיבוי"
+
+#: templates/addoredit.html:207
+msgid "Add filter"
+msgstr "הוספת מסנן"
+
+#: templates/addoredit.html:156
+msgid "Add path"
+msgstr "הוספת נתיב"
+
+#: templates/backup-result/top-right-box.html:18
+msgid "Added"
+msgstr "נוסף"
+
+#: scripts/services/EditUriBuiltins.js:1215
+#: scripts/services/EditUriBuiltins.js:1231
+msgid "Adjust bucket name?"
+msgstr "לשנות את שם הדלי (bucket)?"
+
+#: templates/restoredirect.html:66 templates/restoredirect.html:74
+msgid "Advanced Options"
+msgstr "אפשרויות מתקדמות"
+
+#: templates/addoredit.html:378 templates/commandline.html:23
+#: templates/commandline.html:31 templates/edituri.html:29
+msgid "Advanced options"
+msgstr "אפשרויות מתקדמות"
+
+#: templates/home.html:64
+msgid "Advanced:"
+msgstr "מתקדם:"
+
+#: scripts/directives/sourceFolderPicker.js:279
+msgid "All Hyper-V Machines"
+msgstr "כל מכונות ה־Hyper-V"
+
+#: templates/settings.html:175
+msgid ""
+"All usage reports are sent anonymously and do not contain any personal "
+"information. They contain information about hardware and operating system, "
+"the type of backend, backup duration, overall size of source data and "
+"similar data. They do not contain paths, filenames, usernames, passwords or "
+"similar sensitive information."
+msgstr ""
+"כל דוחות השימוש שנשלחים הם אלמוניים ואינם מכילים מידע אישי. הם מכילים מידע "
+"על החומרה, על מערכת ההפעלה ועל סוג המנגנון, משך זמן הגיבוי, גודל נתוני המקור"
+" הכולל ונתונים דומים כאלה. הם לא מכילים נתיבים, שמות קבצים, שמות משתמשים, "
+"ססמאות או מידע רגיש זה או אחר."
+
+#: templates/settings.html:20
+msgid "Allow remote access (requires restart)"
+msgstr "לאפשר גישה מרחוק (דורש אתחול)"
+
+#: templates/addoredit.html:278
+msgid "Allowed days"
+msgstr "ימים מורשים"
+
+#: scripts/controllers/LocalDatabaseController.js:103
+msgid "An existing file was found at the new location"
+msgstr "נמצא קובץ קיים במיקום החדש"
+
+#: scripts/controllers/LocalDatabaseController.js:72
+msgid ""
+"An existing file was found at the new location\n"
+"Are you sure you want the database to point to an existing file?"
+msgstr ""
+"נמצא קובץ קיים במיקום החדש\n"
+"האם להורות למסד הנתונים להצביע לקובץ הקיים?"
+
+#: scripts/controllers/EditBackupController.js:458
+msgid ""
+"An existing local database for the storage has been found.\n"
+"Re-using the database will allow the command-line and server instances to work on the same remote storage.\n"
+"\n"
+" Do you wish to use the existing database?"
+msgstr ""
+"נמצא מסד נתונים מקומי לאחסון.\n"
+"שימוש חוזר במסד הנתונים מאפשר למופעי שורת הפקודה והשרת לעבוד על אותו אחסון מרוחק.\n"
+"\n"
+"להשתמש במסד הנתונים הקיים?"
+
+#: templates/settings.html:163
+msgid "Anonymous usage reports"
+msgstr "דוחות שימוש אלמוניים"
+
+#: scripts/services/AppUtils.js:212
+msgid "Applications"
+msgstr "יישומים"
+
+#: templates/export.html:8
+msgid "As Command-line"
+msgstr "כשורת פקודה"
+
+#: scripts/services/EditUriBuiltins.js:1110
+#: scripts/services/EditUriBuiltins.js:1120 templates/backends/gcs.html:8
+#: templates/backends/gcs.html:9 templates/backends/jottacloud.html:8
+#: templates/backends/jottacloud.html:9 templates/backends/msgroup.html:13
+#: templates/backends/msgroup.html:14 templates/backends/oauth.html:8
+#: templates/backends/oauth.html:9 templates/backends/pcloud.html:21
+#: templates/backends/pcloud.html:22 templates/backends/sharepoint.html:8
+#: templates/backends/sharepoint.html:9
+msgid "AuthID"
+msgstr "AuthID"
+
+#: scripts/services/EditUriBuiltins.js:1305 templates/backends/storj.html:2
+msgid "Authentication method"
+msgstr "שיטת אימות"
+
+#: templates/backends/storj.html:5
+msgid "Authentication method ({{auth_method}})"
+msgstr "שיטת אימות ({{auth_method}})"
+
+#: templates/backends/filejump.html:26 templates/backends/filen.html:12
+#: templates/backends/generic.html:23 templates/backends/openstack.html:35
+#: templates/backends/smb.html:43
+msgid "Authentication password"
+msgstr "ססמת אימות"
+
+#: templates/backends/filejump.html:22 templates/backends/filen.html:8
+#: templates/backends/generic.html:19 templates/backends/openstack.html:31
+#: templates/backends/smb.html:39
+msgid "Authentication username"
+msgstr "שם משתמש לאימות"
+
+#: scripts/controllers/EditBackupController.js:367
+msgid "Autogenerated passphrase"
+msgstr "מילת צופן שנוצרה אוטומטית"
+
+#: templates/backends/b2.html:12
+msgid "B2 Application ID"
+msgstr "מזהה יישום B2"
+
+#: templates/backends/b2.html:16
+msgid "B2 Application Key"
+msgstr "מפתח יישום B2"
+
+#: scripts/services/EditUriBuiltins.js:1250
+msgid "B2 Cloud Storage Account ID"
+msgstr "מזהה חשבון אחסון ענן B2"
+
+#: templates/backends/b2.html:13
+msgid "B2 Cloud Storage Application ID"
+msgstr "מזהה יישום אחסון ענן B2"
+
+#: scripts/services/EditUriBuiltins.js:1251 templates/backends/b2.html:17
+msgid "B2 Cloud Storage Application Key"
+msgstr "מפתח יישום אחסון ענן B2"
+
+#: templates/restore.html:138 templates/restore.html:70
+msgid "Back"
+msgstr "חזרה"
+
+#: scripts/services/ServerStatus.js:47
+msgid "Backup complete!"
+msgstr "הגיבוי הושלם!"
+
+#: templates/addoredit.html:92
+msgid "Backup destination"
+msgstr "יעד גיבוי"
+
+#: templates/restore.html:21 templates/restoredirect.html:21
+#: templates/restoredirect.html:31
+msgid "Backup location"
+msgstr "מיקום גיבוי"
+
+#: templates/addoredit.html:321
+msgid "Backup retention"
+msgstr "החזקת גיבויים"
+
+#: templates/home.html:100
+msgid "Backup:"
+msgstr "גיבוי:"
+
+#: templates/settings.html:140
+msgid "Beta"
+msgstr "בטא"
+
+#: scripts/services/AppUtils.js:74
+msgid "Broken access"
+msgstr "הגישה פגומה"
+
+#: templates/backends/file.html:8 templates/restore.html:91
+msgid "Browse"
+msgstr "סייר"
+
+#: scripts/controllers/SystemSettingsController.js:39
+msgid "Browser default"
+msgstr "בררת המחדל של הדפדפן"
+
+#: templates/backends/gcs.html:15
+msgid "Bucket create location"
+msgstr "מיקום יצירת ה־Bucket"
+
+#: scripts/services/EditUriBuiltins.js:1163
+#: scripts/services/EditUriBuiltins.js:1203
+#: scripts/services/EditUriBuiltins.js:1249
+#: scripts/services/EditUriBuiltins.js:1263
+#: scripts/services/EditUriBuiltins.js:1310
+#: scripts/services/EditUriBuiltins.js:1316
+#: scripts/services/EditUriBuiltins.js:1372
+#: scripts/services/EditUriBuiltins.js:1384 templates/backends/b2.html:2
+#: templates/backends/b2.html:3 templates/backends/cos.html:25
+#: templates/backends/e2.html:11 templates/backends/e2.html:12
+#: templates/backends/gcs.html:2 templates/backends/openstack.html:2
+#: templates/backends/s3.html:22 templates/backends/s3.html:23
+#: templates/backends/storj.html:37 templates/backends/storj.html:38
+msgid "Bucket name"
+msgstr "שם Bucket"
+
+#: templates/backends/gcs.html:26
+msgid "Bucket storage class"
+msgstr "מחלקת אחסון Bucket"
+
+#: scripts/services/ServerStatus.js:52
+msgid "Building list of files to restore …"
+msgstr "רשימת הקבצים לשחזור מורכבת…"
+
+#: scripts/controllers/RestoreController.js:373
+msgid "Building partial temporary database …"
+msgstr "נבנה מסד נתונים זמני וחלקי…"
+
+#: templates/settings.html:21
+msgid ""
+"By allowing remote access, the server listens to requests from any machine "
+"on your network. If you enable this option, make sure you are always using "
+"the computer on a secure firewall protected network."
+msgstr ""
+"האפשרות לשליטה מרחוק משמעה שהשרת מאזין לבקשות מכל מכונה שהיא ברשת שלך. עליך "
+"תמיד לשים לב שהפעלת את השירות הזה ברשת מאובטחת שמוגנת בחומת אש."
+
+#: scripts/services/AppUtils.js:206
+msgid "Cache Files"
+msgstr "קובצי מטמון"
+
+#: templates/settings.html:150
+msgid "Canary"
+msgstr "קנרית"
+
+#: scripts/controllers/AppController.js:204
+#: scripts/controllers/AppController.js:58
+#: scripts/controllers/AppController.js:74
+#: scripts/controllers/DeleteController.js:67
+#: scripts/controllers/EditBackupController.js:103
+#: scripts/controllers/EditBackupController.js:352
+#: scripts/controllers/EditBackupController.js:367
+#: scripts/controllers/EditBackupController.js:401
+#: scripts/controllers/EditBackupController.js:410
+#: scripts/controllers/EditBackupController.js:437
+#: scripts/controllers/EditBackupController.js:458
+#: scripts/controllers/ExportController.js:13
+#: scripts/controllers/LocalDatabaseController.js:72
+#: scripts/controllers/LocalDatabaseController.js:88
+#: scripts/controllers/RestoreDirectController.js:24
+#: scripts/controllers/StateController.js:119
+#: scripts/controllers/StateController.js:128
+#: scripts/services/DialogService.js:50
+#: scripts/services/EditUriBuiltins.js:1215
+#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:61 templates/delete.html:54
+#: templates/export.html:34 templates/settings.html:205
+msgid "Cancel"
+msgstr "ביטול"
+
+#: scripts/controllers/LocalDatabaseController.js:103
+msgid "Cannot move to existing file"
+msgstr "לא ניתן להעביר לקובץ קיים"
+
+#: templates/about.html:5
+msgid "Changelog"
+msgstr "יומן שינויים"
+
+#: templates/updatechangelog.html:2
+msgid "Changelog for {{appname}} {{version}}"
+msgstr "יומן שינויים עבור {{appname}} {{version}}"
+
+#: scripts/controllers/UpdateChangelogController.js:16
+msgid "Check failed:"
+msgstr "הבדיקה נכשלה:"
+
+#: templates/about.html:34
+msgid "Check for updates now"
+msgstr "לבדוק עדכונים כעת"
+
+#: templates/about.html:35
+msgid "Checking for updates …"
+msgstr "מתבצע איתור עדכונים…"
+
+#: templates/edituri.html:16
+msgid "Chose a storage type to get started"
+msgstr "נא לבחור סוג אחסון כדי להתחיל"
+
+#: templates/backends/gcs.html:11 templates/backends/jottacloud.html:11
+#: templates/backends/msgroup.html:16 templates/backends/oauth.html:11
+#: templates/backends/pcloud.html:24 templates/backends/sharepoint.html:11
+msgid "Click the AuthID link to create an AuthID"
+msgstr "יש ללחוץ על הקישור AuthID כדי ליצור AuthID"
+
+#: index.html:148 index.html:199
+msgid "Click to set throttle options"
+msgstr "יש ללחוץ כדי להגדיר את אפשרויות החניקה"
+
+#: templates/backends/s3.html:78
+msgid "Client library to use"
+msgstr "ספרייה נוכחית לשימוש"
+
+#: templates/home.html:69
+msgid "Commandline …"
+msgstr "שורת פקודה…"
+
+#: templates/backup-result/phases/compact.html:3
+msgid "Compact Phase"
+msgstr "שלב הדחיסה"
+
+#: templates/home.html:68
+msgid "Compact now"
+msgstr "כווץ עכשיו"
+
+#: scripts/services/ServerStatus.js:44 scripts/services/ServerStatus.js:70
+msgid "Compacting remote data …"
+msgstr "הנתונים המרוחקים נדחסים…"
+
+#: templates/backup-result/box.html:35
+msgid "Complete log"
+msgstr "יומן שלם"
+
+#: scripts/services/ServerStatus.js:41
+msgid "Completing backup …"
+msgstr "הגיבוי מושלם…"
+
+#: scripts/services/ServerStatus.js:39
+msgid "Completing previous backup …"
+msgstr "הגיבוי הקודם מושלם…"
+
+#: scripts/directives/sourceFolderPicker.js:582
+msgid "Computer"
+msgstr "מחשב"
+
+#: templates/import.html:9
+msgid "Configuration file:"
+msgstr "קובץ הגדרות:"
+
+#: templates/home.html:56
+msgid "Configuration:"
+msgstr "הגדרות:"
+
+#: templates/addwizard.html:9
+msgid "Configure a new backup"
+msgstr "הגדרת גיבוי חדש"
+
+#: scripts/controllers/DeleteController.js:65
+#: scripts/controllers/DeleteController.js:99
+#: scripts/controllers/LocalDatabaseController.js:28
+msgid "Confirm delete"
+msgstr "אשר מחיקה"
+
+#: templates/export.html:30
+msgid "Confirm encryption passphrase"
+msgstr "אישור מילת הצופן של ההצפנה"
+
+#: templates/export.html:29
+msgid "Confirm passphrase"
+msgstr "אישור מילת הצופן"
+
+#: scripts/services/EditUriBackendConfig.js:74
+msgid "Confirmation required"
+msgstr "דרוש אישור"
+
+#: templates/restoredirect.html:80
+msgid "Connect"
+msgstr "התחבר"
+
+#: index.html:312
+msgid "Connect now"
+msgstr "התחבר עכשיו"
+
+#: index.html:305
+msgid "Connecting to server …"
+msgstr "מתבצעת התחברות לשרת…"
+
+#: index.html:297
+msgid "Connection lost"
+msgstr "החיבור אבד"
+
+#: scripts/directives/backupEditUri.js:52
+#: scripts/directives/backupEditUri.js:55
+msgid "Connection worked!"
+msgstr "החיבור הצליח!"
+
+#: scripts/services/EditUriBuiltins.js:1154 templates/backends/azure.html:2
+#: templates/backends/azure.html:3
+msgid "Container name"
+msgstr "שם המכולה"
+
+#: templates/backends/openstack.html:49
+msgid "Container region"
+msgstr "אזור המכולה"
+
+#: templates/restore.html:69
+msgid "Continue"
+msgstr "המשך"
+
+#: scripts/controllers/EditBackupController.js:437
+msgid "Continue without encryption"
+msgstr "המשך ללא הצפנה"
+
+#: scripts/controllers/DialogController.js:16
+msgid "Copied!"
+msgstr "הועתק!"
+
+#: templates/copy_clipboard_buttons.html:3
+msgid "Copy"
+msgstr "העתקה"
+
+#: templates/addoredit.html:103 templates/restoredirect.html:42
+msgid "Copy Destination URL to Clipboard"
+msgstr "העתק כתובת יעד"
+
+#: scripts/controllers/DialogController.js:20
+msgid "Copy failed. Please manually copy the URL"
+msgstr "העתקה נכשלה. נא הזן כתובת באופן ידני"
+
+#: scripts/services/AppUtils.js:741
+msgid "Core options"
+msgstr "הגדרות שרת"
+
+#: scripts/controllers/StateController.js:34
+msgid "Counting ({{files}} files found, {{size}})"
+msgstr "מתבצעת ספירה (נמצאו {{files}} קבצים, {{size}})"
+
+#: templates/settings.html:170
+msgid "Crashes only"
+msgstr "קריסות בלבד"
+
+#: templates/home.html:75
+msgid "Create bug report …"
+msgstr "יצירת דוח תקלה…"
+
+#: scripts/directives/backupEditUri.js:132
+msgid "Create folder?"
+msgstr "ליצור תיקייה?"
+
+#: scripts/services/EditUriBuiltins.js:140
+msgid "Created new limited user"
+msgstr "נוצר משתמש מוגבל חדש"
+
+#: scripts/services/ServerStatus.js:64
+msgid "Creating bug report …"
+msgstr "נוצר דוח תקלה…"
+
+#: scripts/services/EditUriBuiltins.js:126
+msgid "Creating new user with limited access …"
+msgstr "נוצר משתמש חדש עם גישה מוגבלת…"
+
+#: scripts/services/ServerStatus.js:53
+msgid "Creating target folders …"
+msgstr "נוצרות תיקיות יעד…"
+
+#: scripts/controllers/RestoreController.js:368
+msgid "Creating temporary backup …"
+msgstr "נוצר גיבוי זמני…"
+
+#: templates/home.html:105
+msgid "Current action:"
+msgstr "פעולה נוכחית:"
+
+#: templates/home.html:115
+msgid "Current file:"
+msgstr "קובץ נוכחי:"
+
+#: templates/updatechangelog.html:4
+msgid "Current version is {{versionname}} ({{versionnumber}})"
+msgstr "גרסה נוכחית {{versionname}} ({{versionnumber}})"
+
+#: templates/backends/s3.html:17
+msgid "Custom S3 endpoint"
+msgstr "נקודת גישה מותאמת אישית ל־S3"
+
+#: scripts/services/EditUriBuiltins.js:1320 templates/backends/storj.html:18
+msgid "Custom Satellite"
+msgstr "לוויין מותאם אישית"
+
+#: templates/backends/storj.html:13
+msgid "Custom Satellite ({{satellite}})"
+msgstr "לוויין מותאם אישית ({{satellite}})"
+
+#: templates/backends/openstack.html:13
+msgid "Custom authentication url"
+msgstr "כתובת אימות מותאמת אישית"
+
+#: templates/addoredit.html:327
+msgid "Custom backup retention"
+msgstr "שמירת גיבויים בהתאמה אישית"
+
+#: templates/backends/s3.html:39
+msgid "Custom region for creating buckets"
+msgstr "אזור מותאם אישית ליצירת buckets"
+
+#: templates/home.html:66
+msgid "Database …"
+msgstr "מסד נתונים…"
+
+#: scripts/services/AppUtils.js:97 templates/addoredit.html:353
+msgid "Days"
+msgstr "ימים"
+
+#: scripts/controllers/SystemSettingsController.js:40
+msgid "Default"
+msgstr "ברירת מחדל"
+
+#: templates/settings.html:129
+msgid "Default ({{channelname}})"
+msgstr "ברירת מחדל  ({{channelname}})"
+
+#: scripts/services/AppUtils.js:193
+msgid "Default excludes"
+msgstr "החרגות ברירת מחדל"
+
+#: templates/settings.html:190
+msgid "Default options"
+msgstr "הגדרות ברירת מחדל"
+
+#: scripts/controllers/DeleteController.js:67 templates/localdatabase.html:16
+msgid "Delete"
+msgstr "מחק"
+
+#: templates/backup-result/phases/delete.html:3
+msgid "Delete Phase (Old Backup Versions)"
+msgstr "שלב המחיקה (גרסאות גיבוי ישנות)"
+
+#: templates/delete.html:5 templates/delete.html:53
+msgid "Delete backup"
+msgstr "מחק גיבוי"
+
+#: templates/addoredit.html:324
+msgid "Delete backups that are older than"
+msgstr "מחק גיבויים אשר ישנים מ-"
+
+#: templates/delete.html:13
+msgid "Delete local database"
+msgstr "מחק בסיס נתונים מקומי"
+
+#: templates/delete.html:38 templates/delete.html:47
+msgid "Delete remote files"
+msgstr "מוחק קבצים ביעד"
+
+#: templates/delete.html:26
+msgid "Delete the local database"
+msgstr "מחק את את בסיס הנתונים המקומי"
+
+#: templates/delete.html:41
+msgid "Delete {{filecount}} files ({{filesize}}) from the remote storage?"
+msgstr "האם למחוק {{filecount}} קבצים ({{filesize}}) מהאחסון המרוחק?"
+
+#: templates/home.html:60
+msgid "Delete …"
+msgstr "מחיקה…"
+
+#: templates/backup-result/top-right-box.html:26
+msgid "Deleted"
+msgstr "נמחק"
+
+#: templates/backup-result/phases/delete.html:24
+msgid "Deleted Versions"
+msgstr "גרסאות שנמחקו"
+
+#: templates/backup-result/phases/compact.html:23
+msgid "Deleted files"
+msgstr "קבצים שנמחקו"
+
+#: scripts/services/ServerStatus.js:67
+msgid "Deleting remote files …"
+msgstr "קבצים מרוחקים נמחקים…"
+
+#: scripts/services/ServerStatus.js:43
+msgid "Deleting unwanted files …"
+msgstr "קבצים בלתי רצויים נמחקים…"
+
+#: templates/addoredit.html:43
+msgid "Description (optional)"
+msgstr "תיאור (רשות)"
+
+#: templates/home.html:46
+msgid "Description:"
+msgstr "תיאור:"
+
+#: scripts/services/AppUtils.js:60
+msgid "Desktop"
+msgstr "שולחן עבודה"
+
+#: templates/addoredit.html:25
+msgid "Destination"
+msgstr "יעד"
+
+#: templates/backends/file.html:7 templates/backends/filejump.html:3
+#: templates/backends/filen.html:3 templates/backends/generic.html:14
+#: templates/backends/jottacloud.html:3 templates/backends/msgroup.html:8
+#: templates/backends/oauth.html:3 templates/backends/pcloud.html:16
+#: templates/backends/sharepoint.html:2 templates/backends/smb.html:29
+msgid "Destination path"
+msgstr "נתיב היעד"
+
+#: templates/log.html:32
+msgid "Disabled"
+msgstr "מנוטרל"
+
+#: templates/notificationarea.html:10 templates/notificationarea.html:29
+#: templates/notificationarea.html:40
+msgid "Dismiss"
+msgstr "לסלק"
+
+#: templates/notificationarea.html:50
+msgid "Dismiss all"
+msgstr "לסלק הכל"
+
+#: templates/settings.html:108
+msgid "Display and color theme"
+msgstr "תצוגה וצבע העיצוב"
+
+#: scripts/controllers/DeleteController.js:99
+msgid "Do you really want to delete the backup: \"{{name}}\" ?"
+msgstr "האם ברצונכם באמת למחוק את הגיבוי: \"{{name}}\" ?"
+
+#: scripts/controllers/LocalDatabaseController.js:28
+msgid "Do you really want to delete the local database for: {{name}}"
+msgstr "האם ברצומכם באמת למקום את מסד הנתונים המקומי של: {{name}}"
+
+#: templates/edituri.html:21 templates/export.html:53
+msgid "Done"
+msgstr "הסתיים"
+
+#: templates/notificationarea.html:16 templates/notificationarea.html:30
+#: templates/updatechangelog.html:10
+msgid "Download"
+msgstr "הורד"
+
+#: templates/backup-result/phases/compact.html:28
+msgid "Downloaded files"
+msgstr "קבצים שהורדו"
+
+#: scripts/services/ServerStatus.js:57
+msgid "Downloading files …"
+msgstr "מוריד קבצים ..."
+
+#: templates/notificationarea.html:26
+msgid "Downloading update…"
+msgstr "מוריד עדכון ..."
+
+#: scripts/services/AppUtils.js:343
+msgid "Duplicate option {{opt}}"
+msgstr "אפשרות כפולה {{opt}}"
+
+#: index.html:254
+msgid "Duplicati Website"
+msgstr "אתר הבית של duplicati"
+
+#: index.html:248
+msgid "Duplicati forum"
+msgstr "פורום Duplicati"
+
+#: templates/settings.html:93
+msgid ""
+"Duplicati will run when started, but will remain in a paused state for the "
+"duration. Duplicati will occupy minimal system resources and no backups will"
+" be run."
+msgstr ""
+"Duplicati ירוץ כאשר הוא יופעל, אבל יישאר במצב המתנה למשך הזמן המוגדר. "
+"Duplicati ישתמש במעט משאבי מערכת ולא יריץ גיבויים."
+
+#: templates/backup-result/phases/compact.html:16
+#: templates/backup-result/phases/delete.html:16
+#: templates/backup-result/phases/purge.html:16
+#: templates/backup-result/phases/recreate-database.html:16
+#: templates/backup-result/phases/repair.html:16
+#: templates/backup-result/phases/test.html:16
+#: templates/backup-result/top-left-box.html:11 templates/home.html:19
+msgid "Duration"
+msgstr "משך זמן"
+
+#: templates/delete.html:15
+msgid ""
+"Each backup has a local database associated with it, which stores information about the remote backup on the local machine.\n"
+"            When deleting a backup, you can also delete the local database without affecting the ability to restore the remote files.\n"
+"            If you are using the local database for backups from the commandline, you should keep the database."
+msgstr ""
+"לכל גיבוי משויך מסד נתונים מקומי המאחסן מידע אודות הגיבוי המרוחק במחשב המקומי.\n"
+"בעת מחיקת גיבוי, ניתן גם למחוק את מסד הנתונים המקומי מבלי להשפיע על יכולת שחזור הקבצים המרוחקים.\n"
+"אם אתם משתמשים במסד הנתונים המקומי לגיבויים משורת הפקודה, עליכם לשמור את מסד הנתונים."
+
+#: templates/addoredit.html:174 templates/addoredit.html:389
+#: templates/edituri.html:40 templates/settings.html:194
+msgid "Edit as list"
+msgstr "עריכה כרשימה"
+
+#: templates/addoredit.html:177 templates/addoredit.html:392
+#: templates/edituri.html:43 templates/settings.html:200
+msgid "Edit as text"
+msgstr "עריכה כטקסט"
+
+#: templates/home.html:58
+msgid "Edit …"
+msgstr "עריכה…"
+
+#: templates/export.html:22
+msgid "Encrypt file"
+msgstr "הצפן קובץ"
+
+#: templates/addoredit.html:47 templates/restore.html:22
+#: templates/restoredirect.html:22 templates/restoredirect.html:58
+msgid "Encryption"
+msgstr "הצפנה"
+
+#: scripts/controllers/EditBackupController.js:410
+msgid "Encryption changed"
+msgstr "הצפנה שונתה"
+
+#: scripts/services/EditUriBuiltins.js:1315 templates/backends/storj.html:25
+#: templates/backends/storj.html:26
+msgid "Encryption passphrase"
+msgstr "מילת הצופן של ההצפנה"
+
+#: templates/backup-result/phases/compact.html:12
+#: templates/backup-result/phases/delete.html:12
+#: templates/backup-result/phases/purge.html:12
+#: templates/backup-result/phases/recreate-database.html:12
+#: templates/backup-result/phases/repair.html:12
+#: templates/backup-result/phases/test.html:12
+#: templates/backup-result/top-left-box.html:7
+msgid "End"
+msgstr "סוף"
+
+#: scripts/controllers/EditBackupController.js:103
+#: scripts/controllers/RestoreDirectController.js:24
+msgid "Enter URL"
+msgstr "הכנס כתובת"
+
+#: templates/addoredit.html:341
+msgid ""
+"Enter a retention strategy manually. Placeholders are D/W/Y for "
+"days/weeks/years and U for unlimited. The syntax is: 7D:1D,4W:1W,36M:1M. "
+"This example keeps one backup for each of the next 7 days, one for each of "
+"the next 4 weeks, and one for each of the next 36 months. This can also be "
+"written as 1W:1D,1M:1W,3Y:1M."
+msgstr ""
+"הזינו משך שימור באופן ידני. מצייני המקום הם D/W/Y עבור ימים/שבועות/שנים "
+"בהתאמה, ו-U מצייין ללא הגבלה. התחביר הוא: 7D:1D,4W:1W,36M:1M. דוגמה זו שומרת"
+" גיבוי אחד לכל אחד משבעת הימים הבאים, גיבוי אחד לכל אחד מארבעת השבועות "
+"הבאים, ואחד לכל אחד מ-36 החודשים הבאים. ניתן לכתוב זאת גם כ-1W:1D, 1M:1W, "
+"3Y:1M."
+
+#: templates/restoredirect.html:61
+msgid "Enter backup passphrase, if any"
+msgstr "הכנס סיסמאת גיבוי, אם קיימת"
+
+#: templates/addwizard.html:10
+msgid "Enter configuration details"
+msgstr "הכניסו פרטי הגדרות"
+
+#: templates/export.html:26
+msgid "Enter encryption passphrase"
+msgstr "הכניסו את מילת הצופן של ההצפנה"
+
+#: templates/addoredit.html:196
+msgid "Enter expression here"
+msgstr "הכניסו ביטוי כאן"
+
+#: templates/restore.html:90
+msgid "Enter the destination path"
+msgstr "הכנס את נתיב היעד (שם תיקיית היעד)"
+
+#: scripts/controllers/CommandlineController.js:174
+#: scripts/controllers/CommandlineController.js:80
+#: scripts/controllers/ExportController.js:40
+#: scripts/controllers/ExportController.js:57
+#: scripts/controllers/ExportController.js:70
+#: scripts/controllers/ImportController.js:17
+#: scripts/controllers/ImportController.js:39
+#: scripts/controllers/ImportController.js:43
+#: scripts/controllers/ImportController.js:49
+#: scripts/controllers/RestoreController.js:114
+#: scripts/controllers/RestoreController.js:144
+#: scripts/controllers/RestoreController.js:294
+#: scripts/controllers/RestoreController.js:332
+#: scripts/controllers/RestoreController.js:390
+#: scripts/controllers/RestoreController.js:423
+#: scripts/controllers/RestoreController.js:431
+#: scripts/controllers/RestoreController.js:90
+#: scripts/controllers/RestoreDirectController.js:112
+#: scripts/controllers/RestoreDirectController.js:78
+#: scripts/directives/backupEditUri.js:144
+#: scripts/directives/backupEditUri.js:165
+#: scripts/directives/backupEditUri.js:199
+#: scripts/directives/notificationArea.js:41
+#: scripts/directives/notificationArea.js:43
+#: scripts/directives/notificationArea.js:68 scripts/services/AppUtils.js:343
+#: scripts/services/AppUtils.js:348 scripts/services/AppUtils.js:394
+#: scripts/services/AppUtils.js:402
+msgid "Error"
+msgstr "שגיאה"
+
+#: scripts/services/ServerStatus.js:72
+msgid "Error!"
+msgstr "שגיאה!"
+
+#: templates/settings.html:169
+msgid "Errors and crashes"
+msgstr "שגיאות וקריסות"
+
+#: templates/backup-result/top-right-box.html:10
+msgid "Examined"
+msgstr "נבחן"
+
+#: templates/addoredit.html:214
+msgid "Exclude"
+msgstr "החרג"
+
+#: scripts/services/AppUtils.js:131
+msgid "Exclude directories whose names contain"
+msgstr "החרג תיקיות עם שמות שמכילים"
+
+#: scripts/services/AppUtils.js:187
+msgid "Exclude expression"
+msgstr "החרג ביטוי"
+
+#: scripts/services/AppUtils.js:150
+msgid "Exclude file"
+msgstr "החרג קובץ"
+
+#: scripts/services/AppUtils.js:157
+msgid "Exclude file extension"
+msgstr "החרג סיומות קבצים"
+
+#: scripts/services/AppUtils.js:137
+msgid "Exclude files whose names contain"
+msgstr "החרג קבצים ששמם מכיל"
+
+#: scripts/services/AppUtils.js:172
+msgid "Exclude filter group"
+msgstr "קבוצת מסנני החרגה"
+
+#: scripts/services/AppUtils.js:143
+msgid "Exclude folder"
+msgstr "החרג תיקייה"
+
+#: scripts/services/AppUtils.js:162
+msgid "Exclude regular expression"
+msgstr "החרג ביטוי באמצעות regular expression"
+
+#: scripts/controllers/LocalDatabaseController.js:72
+msgid "Existing file found"
+msgstr "הקובץ כבר קיים"
+
+#: templates/settings.html:145
+msgid "Experimental"
+msgstr "ניסיוני"
+
+#: templates/export.html:35
+msgid "Export"
+msgstr "ייצא"
+
+#: templates/export.html:2
+msgid "Export backup configuration"
+msgstr "ייצא קובץ הגדרות"
+
+#: templates/delete.html:31 templates/delete.html:34
+msgid "Export configuration"
+msgstr "ייצוא הגדרות"
+
+#: templates/export.html:18
+msgid "Export passwords"
+msgstr "ייצוא סיסמאות"
+
+#: templates/home.html:59
+msgid "Export …"
+msgstr "ייצוא ..."
+
+#: templates/export.html:39
+msgid "Exporting …"
+msgstr "מייצא ..."
+
+#: templates/externallink.html:1
+msgid "External link"
+msgstr "קישור חיצוני"
+
+#: scripts/services/SystemInfo.js:52
+msgid "FTP (Alternative)"
+msgstr "שרת FTP (אלטרנטיבי)"
+
+#: scripts/controllers/RestoreController.js:390
+msgid "Failed to build temporary database: {{message}}"
+msgstr "נכשלנו בבניית מסד נתונים זמני: {{message}}"
+
+#: scripts/directives/backupEditUri.js:144
+#: scripts/directives/backupEditUri.js:165
+#: scripts/directives/backupEditUri.js:199
+msgid "Failed to connect:"
+msgstr "נכשלנו בהתחברות:"
+
+#: scripts/controllers/CommandlineController.js:174
+#: scripts/controllers/CommandlineController.js:80
+#: scripts/controllers/ExportController.js:40
+#: scripts/controllers/ExportController.js:57
+#: scripts/controllers/RestoreController.js:294
+#: scripts/controllers/RestoreController.js:332
+#: scripts/controllers/RestoreController.js:431
+#: scripts/controllers/RestoreController.js:90
+#: scripts/controllers/RestoreDirectController.js:112
+#: scripts/controllers/RestoreDirectController.js:78
+#: scripts/services/LogService.js:29
+msgid "Failed to connect: {{message}}"
+msgstr "נכשלנו בהתחברות: {{message}}"
+
+#: scripts/controllers/LocalDatabaseController.js:38
+msgid "Failed to delete:"
+msgstr "נכשלנו במחיקה:"
+
+#: scripts/controllers/RestoreController.js:114
+#: scripts/controllers/RestoreController.js:144
+msgid "Failed to fetch path information: {{message}}"
+msgstr "נכשלנו בהבאת מידע הנתיב: {{message}}"
+
+#: scripts/directives/notificationArea.js:45
+msgid "Failed to find backup:"
+msgstr "נכשלנו במציאת הגיבוי:"
+
+#: scripts/controllers/EditBackupController.js:714
+msgid "Failed to read backup defaults:"
+msgstr "נכשלנו בקריאת ברירות המחדל של הגיבויים:"
+
+#: scripts/controllers/RestoreController.js:423
+msgid "Failed to restore files: {{message}}"
+msgstr "נכשלנו בשחזור הקבצים: {{message}}"
+
+#: scripts/controllers/SystemSettingsController.js:263
+msgid "Failed to save:"
+msgstr "נכשלנו בשמירה:"
+
+#: scripts/controllers/RestoreController.js:120
+#: scripts/controllers/RestoreController.js:159
+msgid "Fetching path information …"
+msgstr "מביא מידע נתיב ..."
+
+#: scripts/services/AppUtils.js:80
+msgid "File"
+msgstr "קובץ"
+
+#: templates/addoredit.html:237
+msgid "Files larger than:"
+msgstr "קבצים גדולים מ:"
+
+#: templates/addoredit.html:163
+msgid "Filters"
+msgstr "פילטרים"
+
+#: templates/commandline.html:57
+msgid "Finished!"
+msgstr "הסתיים!"
+
+#: scripts/controllers/AppController.js:191
+msgid "First run setup"
+msgstr "התקנה בריצה הראשונה"
+
+#: scripts/services/AppUtils.js:51
+msgid "Folder"
+msgstr "תיקייה"
+
+#: templates/backends/aliyunoss.html:30 templates/backends/b2.html:7
+#: templates/backends/cos.html:30 templates/backends/e2.html:16
+#: templates/backends/file.html:22 templates/backends/file.html:6
+#: templates/backends/jottacloud.html:2 templates/backends/mega.html:2
+#: templates/backends/s3.html:60 templates/backends/storj.html:41
+#: templates/restore.html:105 templates/restore.html:89
+msgid "Folder path"
+msgstr "נתיב התיקייה"
+
+#: scripts/services/AppUtils.js:114
+msgid "Fri"
+msgstr "שישי"
+
+#: scripts/services/AppUtils.js:90
+msgid "GByte"
+msgstr "גיגה בייט"
+
+#: scripts/services/AppUtils.js:123
+msgid "GByte/s"
+msgstr "גש\"ס"
+
+#: templates/backends/gcs.html:38
+msgid "GCS Project ID"
+msgstr "GCS Project ID"
+
+#: templates/about.html:4 templates/addoredit.html:24
+#: templates/backuplog.html:6
+msgid "General"
+msgstr "כללי"
+
+#: templates/addoredit.html:36
+msgid "General backup settings"
+msgstr "הגדרות גיבוי כלליות"
+
+#: templates/addoredit.html:305
+msgid "General options"
+msgstr "הגדרות כלליות"
+
+#: templates/addoredit.html:73
+msgid "Generate"
+msgstr "תייצר"
+
+#: scripts/controllers/RestoreController.js:70
+msgid "Getting file versions …"
+msgstr "מביא גרסאות קבצים ..."
+
+#: scripts/services/EditUriBuiltins.js:1143 templates/backends/msgroup.html:2
+msgid "Group email"
+msgstr "אימייל קבוצתי"
+
+#: scripts/controllers/EditBackupController.js:20
+msgid "Hidden files"
+msgstr "קצבים נסתרים"
+
+#: templates/addoredit.html:68
+msgid "Hide"
+msgstr "הסתר"
+
+#: index.html:208 scripts/services/AppUtils.js:62
+msgid "Home"
+msgstr "הביתה"
+
+#: templates/settings.html:24
+msgid "Hostnames"
+msgstr "שמות שרתים"
+
+#: scripts/services/AppUtils.js:106 scripts/services/AppUtils.js:96
+#: templates/settings.html:91
+msgid "Hours"
+msgstr "שעות"
+
+#: templates/restore.html:111
+msgid "How do you want to handle existing files?"
+msgstr "איך ברצונכם לטפל בקבצים קיימים?"
+
+#: scripts/services/AppUtils.js:70
+msgid "Hyper-V Machine"
+msgstr "מכונת Hyper-V"
+
+#: scripts/services/AppUtils.js:72
+msgid "Hyper-V Machines"
+msgstr "מכונות Hyper-V"
+
+#: scripts/directives/sourceFolderPicker.js:65
+#: scripts/directives/sourceFolderPicker.js:71
+msgid "ID:"
+msgstr "מזהה:"
+
+#: templates/addoredit.html:261
+msgid "If a date was missed, the job will run as soon as possible."
+msgstr "אם הזמן עבר, הפעולה תתבצע בהקדם האפשרי."
+
+#: templates/addoredit.html:361
+msgid ""
+"If at least one newer backup is found, all backups older than this date are "
+"deleted."
+msgstr "אם לפחות גיבוי חדש נמצא, כל הגיבויים לפני תאריך זה יימחקו."
+
+#: scripts/services/EditUriBackendConfig.js:114
+msgid ""
+"If you do not enter a path, all files will be stored in the login folder.\n"
+"Are you sure this is what you want?"
+msgstr ""
+"במידה ולא תזינו נתיב, כל הקבצים יאוחסנו בתיקיית הכניסה.\n"
+"האם אתם בטוחים שזה מה שאתם רוצים?"
+
+#: templates/backends/openstack.html:40
+msgid "If you do not enter an API Key, the tenant name is required"
+msgstr "במידה ולא תכניסו מפתח API, הכרחי להזסין את שם ה-tenant"
+
+#: templates/import.html:29
+msgid "Import"
+msgstr "ייבא"
+
+#: templates/addoredit.html:100 templates/restoredirect.html:39
+msgid "Import Destination URL"
+msgstr "ייבא כתובת יעד"
+
+#: templates/import.html:3
+msgid "Import backup configuration"
+msgstr "ייבא קובץ הגדרות"
+
+#: templates/addwizard.html:15
+msgid "Import from a file"
+msgstr "ייבוא מקובץ"
+
+#: templates/import.html:19
+msgid "Import metadata"
+msgstr "ייבוא מידע משלים"
+
+#: templates/import.html:33
+msgid "Importing …"
+msgstr "מייבא ..."
+
+#: scripts/controllers/EditBackupController.js:171
+msgid "Include a file?"
+msgstr "האם לכלול קובץ?"
+
+#: scripts/services/AppUtils.js:183
+msgid "Include expression"
+msgstr "ביטוי הכללה"
+
+#: scripts/services/AppUtils.js:167
+msgid "Include regular expression"
+msgstr "ביטוי רגולרי להכללה"
+
+#: scripts/services/DialogService.js:27
+msgid "Information"
+msgstr "מידע"
+
+#: scripts/controllers/EditBackupController.js:296
+#: scripts/controllers/EditBackupController.js:303
+#: scripts/controllers/EditBackupController.js:313
+msgid "Invalid retention time"
+msgstr "זמן שמירה לא תקין"
+
+#: scripts/services/AppUtils.js:88
+msgid "KByte"
+msgstr "קילובייט"
+
+#: scripts/services/AppUtils.js:121
+msgid "KByte/s"
+msgstr "קב\"ש"
+
+#: templates/addoredit.html:325
+msgid "Keep a specific number of backups"
+msgstr "שמירת מספר גיבויים מסויים"
+
+#: templates/addoredit.html:323
+msgid "Keep all backups"
+msgstr "שמירת כל הגיבויים"
+
+#: templates/backends/openstack.html:18
+msgid "Keystone API version"
+msgstr "גרסאת API של Keystone"
+
+#: templates/settings.html:98
+msgid "Language in user interface"
+msgstr "שפת ממשק משתמש"
+
+#: scripts/controllers/RestoreController.js:38
+msgid "Last month"
+msgstr "חודש אחרון"
+
+#: templates/home.html:80
+msgid "Last successful backup:"
+msgstr "הגיבוי המוצלח האחרון:"
+
+#: templates/restorewizard.html:27
+msgid "Last successful restore: {{time}} (took {{duration || '0 seconds'}})"
+msgstr "השחזןר המוצלח האחרון: {{time}} (לקח {{duration || '0 שניות'}})"
+
+#: scripts/controllers/RestoreController.js:60
+msgid "Latest"
+msgstr "הכי עדכני"
+
+#: templates/about.html:6
+msgid "Libraries"
+msgstr "ספריות"
+
+#: scripts/controllers/RestoreDirectController.js:70
+msgid "Listing backup dates …"
+msgstr "קורא תאריכי גיבוי ..."
+
+#: scripts/services/ServerStatus.js:68
+msgid "Listing remote files for purge …"
+msgstr "קורא קבצים מרוחקים למחיקה ..."
+
+#: scripts/services/ServerStatus.js:66
+msgid "Listing remote files …"
+msgstr "קורא קבצים מרוחקים ..."
+
+#: templates/log.html:7
+msgid "Live"
+msgstr "חי"
+
+#: templates/addwizard.html:16
+msgid "Load a configuration from an exported job or a storage provider"
+msgstr "טען הגדרות מגיבוי שמור או מספק אחסון"
+
+#: templates/restorewizard.html:16
+msgid "Load destination from an exported job or a storage provider"
+msgstr "טען יעד מגיבוי שמור או מספק אחסון"
+
+#: templates/backuplog.html:23 templates/backuplog.html:41
+#: templates/log.html:24
+msgid "Load older data"
+msgstr "טען מידע ישן"
+
+#: templates/about.html:43 templates/about.html:49 templates/about.html:55
+#: templates/backuplog.html:12 templates/backuplog.html:22
+#: templates/backuplog.html:29 templates/backuplog.html:40
+#: templates/log.html:12 templates/log.html:23
+#: templates/updatechangelog.html:7
+msgid "Loading …"
+msgstr "טוען ..."
+
+#: scripts/services/SystemInfo.js:86
+msgid "Local storage"
+msgstr "אחסון מקומי"
+
+#: templates/localdatabase.html:20
+msgid "Location"
+msgstr "מיקום"
+
+#: scripts/services/AppUtils.js:89
+msgid "MByte"
+msgstr "מגהבייט"
+
+#: scripts/services/AppUtils.js:122
+msgid "MByte/s"
+msgstr "מב\"ש"
+
+#: templates/localdatabase.html:8
+msgid "Maintenance"
+msgstr "תחזוקה"
+
+#: templates/backends/file.html:19 templates/restore.html:102
+msgid "Manually type path"
+msgstr "הזן נתיב ידנית"
+
+#: templates/throttle.html:15
+msgid "Max download speed"
+msgstr "מהירות הורדה מירבית"
+
+#: templates/throttle.html:5
+msgid "Max upload speed"
+msgstr "מהירות העלאה מירבית"
+
+#: index.html:144 templates/addoredit.html:127 templates/addoredit.html:169
+#: templates/addoredit.html:384 templates/addoredit.html:95
+#: templates/edituri.html:35 templates/restoredirect.html:34
+msgid "Menu"
+msgstr "תפריט"
+
+#: scripts/services/AppUtils.js:105 scripts/services/AppUtils.js:95
+#: templates/settings.html:90
+msgid "Minutes"
+msgstr "דקות"
+
+#: templates/addoredit.html:39 templates/home.html:15
+msgid "Name"
+msgstr "שם"
+
+#: templates/home.html:87
+msgid "Never"
+msgstr "אף פעם"
+
+#: templates/addoredit.html:113 templates/addoredit.html:246
+#: templates/addoredit.html:296 templates/addoredit.html:82
+#: templates/addwizard.html:28 templates/restoredirect.html:52
+#: templates/restorewizard.html:36
+msgid "Next"
+msgstr "הבא"
+
+#: templates/home.html:91
+msgid "Next scheduled run:"
+msgstr "ריצה הבאה מתוכננת:"
+
+#: index.html:183
+msgid "Next scheduled task:"
+msgstr "משימה הבאה מתוכננת:"
+
+#: index.html:180
+msgid "Next task:"
+msgstr "משימה הבאה:"
+
+#: templates/addoredit.html:264
+msgid "Next time"
+msgstr "פעם הבאה"
+
+#: scripts/controllers/AppController.js:193
+#: scripts/controllers/DeleteController.js:99
+#: scripts/controllers/EditBackupController.js:161
+#: scripts/controllers/EditBackupController.js:171
+#: scripts/controllers/EditBackupController.js:458
+#: scripts/controllers/HomeController.js:22
+#: scripts/controllers/LocalDatabaseController.js:28
+#: scripts/controllers/LocalDatabaseController.js:72
+#: scripts/controllers/LocalDatabaseController.js:88
+#: scripts/directives/backupEditUri.js:132
+#: scripts/directives/backupEditUri.js:174
+#: scripts/directives/backupEditUri.js:88
+#: scripts/services/EditUriBackendConfig.js:74
+#: scripts/services/EditUriBuiltins.js:1215
+#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:61
+msgid "No"
+msgstr "לא"
+
+#: scripts/controllers/EditBackupController.js:437 templates/addoredit.html:49
+msgid "No encryption"
+msgstr "ללא הצפנה"
+
+#: scripts/controllers/RestoreController.js:192
+msgid "No items selected"
+msgstr "לא נבחרו פריטים"
+
+#: scripts/controllers/RestoreController.js:192
+msgid "No items to restore, please select one or more items"
+msgstr "אין פריטים לשחזור , נא בחר פריט אחד או יותר"
+
+#: scripts/controllers/ExportController.js:67
+msgid "No passphrase entered"
+msgstr "לא הוכנסה סיסמה"
+
+#: index.html:185
+msgid "No scheduled tasks"
+msgstr "אין משימות מתוזמנות"
+
+#: scripts/controllers/EditBackupController.js:260
+msgid "Non-matching passphrase"
+msgstr "סיסמאות לא תואמות"
+
+#: templates/settings.html:171
+msgid "None / disabled"
+msgstr "כלום / מנוטרל"
+
+#: scripts/controllers/ExportController.js:13
+msgid "Not using encryption"
+msgstr "ללא שימוש בהצפנה"
+
+#: scripts/controllers/AppController.js:204
+#: scripts/controllers/AppController.js:58
+#: scripts/controllers/AppController.js:74
+#: scripts/controllers/EditBackupController.js:103
+#: scripts/controllers/EditBackupController.js:111
+#: scripts/controllers/RestoreDirectController.js:24
+#: scripts/controllers/RestoreDirectController.js:33
+#: scripts/services/DialogService.js:28 scripts/services/DialogService.js:50
+#: scripts/services/DialogService.js:58
+#: scripts/services/EditUriBuiltins.js:140 templates/restore.html:147
+#: templates/settings.html:206
+msgid "OK"
+msgstr "OK"
+
+#: templates/restore.html:81
+msgid "Original location"
+msgstr "מיקום מקורי"
+
+#: scripts/services/SystemInfo.js:89
+msgid "Others"
+msgstr "אחרים"
+
+#: templates/restore.html:114
+msgid "Overwrite"
+msgstr "שכתב"
+
+#: templates/addoredit.html:58 templates/export.html:25
+#: templates/restore.html:130 templates/restoredirect.html:60
+msgid "Passphrase"
+msgstr "סיסמה"
+
+#: scripts/controllers/EditBackupController.js:401
+msgid "Passphrase changed"
+msgstr "סיסמה שונתה"
+
+#: scripts/services/EditUriBuiltins.js:1295 templates/backends/file.html:33
+#: templates/backends/filejump.html:25 templates/backends/filen.html:11
+#: templates/backends/generic.html:22 templates/backends/idrive.html:11
+#: templates/backends/idrive.html:12 templates/backends/mega.html:11
+#: templates/backends/mega.html:12 templates/backends/openstack.html:34
+#: templates/backends/smb.html:42
+msgid "Password"
+msgstr "סיסמה"
+
+#: scripts/services/EditUriBuiltins.js:1279
+#: scripts/services/EditUriBuiltins.js:1400
+msgid "Path"
+msgstr "מיקום"
+
+#: templates/settings.html:75
+msgid "Pause"
+msgstr "הפסק"
+
+#: templates/settings.html:73
+msgid "Pause after startup or hibernation"
+msgstr "הפסק לאחר אתחול או כניסה למצב שינה"
+
+#: index.html:309
+msgid "Reload"
+msgstr "טען מחדש"
+
+#: templates/addoredit.html:203
+msgid "Remove"
+msgstr "הסר"
+
+#: templates/advancedoptionseditor.html:41
+msgid "Remove option"
+msgstr "הסר הגדרה"
+
+#: templates/localdatabase.html:15 templates/notificationarea.html:14
+msgid "Repair"
+msgstr "תקן"
+
+#: templates/localdatabase.html:28
+msgid "Reset"
+msgstr "אתחול"
+
+#: index.html:214 templates/restore.html:137
+msgid "Restore"
+msgstr "שחזור"
+
+#: templates/addoredit.html:269
+msgid "Run again every"
+msgstr "התחל שוב כל"
+
+#: templates/home.html:52 templates/home.html:87
+msgid "Run now"
+msgstr "התחל עכשיו"
+
+#: scripts/services/AppUtils.js:115
+msgid "Sat"
+msgstr "שבת"
+
+#: templates/addoredit.html:255 templates/addoredit.html:27
+msgid "Schedule"
+msgstr "תזמן"
+
+#: templates/restore.html:60
+msgid "Search"
+msgstr "חיפוש"
+
+#: templates/restore.html:56
+msgid "Search for files"
+msgstr "חפש קבצים"
+
+#: templates/backends/pcloud.html:2 templates/backends/s3.html:8
+#: templates/backends/smb.html:17
+msgid "Server"
+msgstr "שרת"
+
+#: templates/backends/generic.html:7
+msgid "Server and port"
+msgstr "שרת ופורט"
+
+#: templates/backends/generic.html:8 templates/backends/smb.html:18
+msgid "Server hostname or IP"
+msgstr "שם שרת או כתובת IP"
+
+#: templates/restoredirect.html:95 templates/waitarea.html:15
+msgid "Server is currently paused,"
+msgstr "שרת מופסק,"
+
+#: scripts/controllers/HomeController.js:22
+msgid "Server is currently paused, do you want to resume now?"
+msgstr "השרת מופסק, תרצה להמשיך כעת?"
+
+#: scripts/controllers/HomeController.js:22
+msgid "Server paused"
+msgstr "שרת מופסק"
+
+#: index.html:220 templates/settings.html:2
+msgid "Settings"
+msgstr "הגדרות מערכת"
+
+#: templates/addoredit.html:69 templates/notificationarea.html:12
+#: templates/notificationarea.html:31 templates/notificationarea.html:41
+msgid "Show"
+msgstr "הראה"
+
+#: templates/addoredit.html:132
+msgid "Show advanced editor"
+msgstr "הראה עורך מתקדם"
+
+#: templates/about.html:8
+msgid "Show log"
+msgstr "צפה בלוגים"
+
+#: templates/home.html:74
+msgid "Show log …"
+msgstr "הראה לוג ..."
+
+#: templates/addoredit.html:135
+msgid "Show treeview"
+msgstr "הראה תצוגת עץ"
+
+#: templates/addoredit.html:326
+msgid "Smart backup retention"
+msgstr "שמירת גיבויים חכמה"
+
+#: templates/home.html:96
+msgid "Source:"
+msgstr "מקור:"
+
+#: templates/backup-result/phases/compact.html:8
+#: templates/backup-result/phases/delete.html:8
+#: templates/backup-result/phases/purge.html:8
+#: templates/backup-result/phases/recreate-database.html:8
+#: templates/backup-result/phases/repair.html:8
+#: templates/backup-result/phases/test.html:8
+#: templates/backup-result/top-left-box.html:3
+msgid "Start"
+msgstr "התחל"
+
+#: scripts/services/ServerStatus.js:36
+msgid "Starting backup …"
+msgstr "מתחיל בגיבוי ..."
+
+#: scripts/services/ServerStatus.js:49
+msgid "Starting restore …"
+msgstr "מתחיל בשחזור ..."
+
+#: scripts/controllers/RestoreController.js:379
+#: scripts/controllers/RestoreController.js:403
+msgid "Starting the restore process …"
+msgstr "מתחיל בתהליך השחזור ..."
+
+#: scripts/controllers/StateController.js:119
+#: scripts/controllers/StateController.js:128
+msgid "Stop after the current file"
+msgstr "עצור לאחר הקובץ הנוכחי"
+
+#: scripts/controllers/StateController.js:117
+msgid "Stop running backup"
+msgstr "עצור גיבוי נוכחי"
+
+#: scripts/controllers/StateController.js:126
+msgid "Stop running task"
+msgstr "עצור משימה נוכחית"
+
+#: index.html:168
+msgid "Stopping after the current file:"
+msgstr "עוצר לאחר הקובץ הנוכחי:"
+
+#: index.html:173
+msgid "Stopping task:"
+msgstr "עוצר משימה:"
+
+#: templates/edituri.html:3
+msgid "Storage Type"
+msgstr "סוג אחסון"
+
+#: templates/log.html:6
+msgid "Stored"
+msgstr "מאוחסן"
+
+#: scripts/directives/backupEditUri.js:52
+#: scripts/directives/backupEditUri.js:55
+msgid "Success"
+msgstr "הצלחה"
+
+#: scripts/controllers/EditBackupController.js:21
+msgid "System files"
+msgstr "קבצי מערכת"
+
+#: templates/about.html:7
+msgid "System info"
+msgstr "מידע מערכת"
+
+#: templates/about.html:63
+msgid "System properties"
+msgstr "מאפייני מערכת"
+
+#: scripts/services/AppUtils.js:91
+msgid "TByte"
+msgstr "טרהבייט"
+
+#: scripts/services/AppUtils.js:124
+msgid "TByte/s"
+msgstr "טב\"ש"
+
+#: scripts/controllers/RestoreController.js:36
+msgid "This week"
+msgstr "השבוע"
+
+#: scripts/controllers/AppController.js:72
+msgid "Throttle settings"
+msgstr "הגדרות הגבלה"
+
+#: scripts/services/AppUtils.js:113
+msgid "Thu"
+msgstr "חמישי"
+
+#: templates/backup-result/phases/delete.html:33
+#: templates/backup-result/top-left-box.html:1
+msgid "Time"
+msgstr "זמן"
+
+#: templates/export.html:14
+msgid "To File"
+msgstr "לקובץ"
+
+#: scripts/controllers/RestoreController.js:34
+msgid "Today"
+msgstr "היום"
+
+#: scripts/services/AppUtils.js:111
+msgid "Tue"
+msgstr "יום ג׳"
+
+#: templates/restore.html:133
+msgid "Type passphrase here."
+msgstr "נא להקליד את מילת הצופן כאן."
+
+#: templates/restore.html:57
+msgid "Type to highlight files"
+msgstr "יש להקליד כדי לסמן קבצים"
+
+#: templates/restorewizard.html:25
+msgid "Unknown backup size and versions"
+msgstr "גודל וגרסאות הגיבוי אינם ידועים"
+
+#: templates/pause.html:46
+msgid "Until resumed"
+msgstr "עד להמשך"
+
+#: templates/settings.html:126
+msgid "Update channel"
+msgstr "ערוץ עדכונים"
+
+#: scripts/controllers/LocalDatabaseController.js:66
+msgid "Update failed:"
+msgstr "העדכון נכשל:"
+
+#: scripts/controllers/LocalDatabaseController.js:88
+msgid "Updating with existing database"
+msgstr "עדכון עם מסד הנתונים הקיים"
+
+#: templates/backup-result/phases/compact.html:33
+msgid "Uploaded files"
+msgstr "קבצים שהועלו"
+
+#: scripts/services/ServerStatus.js:45
+msgid "Uploading verification file …"
+msgstr "קובץ התיקוף נשלח…"
+
+#: scripts/services/EditUriBuiltins.js:1074
+#: scripts/services/EditUriBuiltins.js:1162
+#: scripts/services/EditUriBuiltins.js:1294 templates/backends/file.html:29
+#: templates/backends/filejump.html:21 templates/backends/filen.html:7
+#: templates/backends/generic.html:18 templates/backends/idrive.html:7
+#: templates/backends/idrive.html:8 templates/backends/mega.html:7
+#: templates/backends/mega.html:8 templates/backends/openstack.html:30
+#: templates/backends/smb.html:38
+msgid "Username"
+msgstr "שם משתמש"
+
+#: scripts/services/ServerStatus.js:61
+msgid "Vacuuming database …"
+msgstr "מנקה מסד נתונים ..."
+
+#: templates/addoredit.html:155
+msgid "Validating …"
+msgstr "מוודא ..."
+
+#: scripts/controllers/EditBackupController.js:35
+msgid "Very strong"
+msgstr "מאוד חזקה"
+
+#: scripts/controllers/EditBackupController.js:32
+msgid "Very weak"
+msgstr "מאוד חלשה"
+
+#: index.html:245
+msgid "Visit us on"
+msgstr "בקר אותנו ב-"
+
+#: templates/settings.html:168
+msgid "Warnings, errors and crashes"
+msgstr "אזהרות, שגיאות וקריסות"
+
+#: scripts/controllers/EditBackupController.js:33
+msgid "Weak"
+msgstr "חלש"
+
+#: scripts/controllers/EditBackupController.js:352
+msgid "Weak passphrase"
+msgstr "מילת צופן חלשה"
+
+#: scripts/services/AppUtils.js:112
+msgid "Wed"
+msgstr "יום ד׳"
+
+#: scripts/services/AppUtils.js:98 templates/addoredit.html:354
+msgid "Weeks"
+msgstr "שבועות"
+
+#: templates/restorewizard.html:3
+msgid "Where do you want to restore from?"
+msgstr "מאיפה לשחזר?"
+
+#: templates/restore.html:78
+msgid "Where do you want to restore the files to?"
+msgstr "להיכן ברצונך לשחזר את הקבצים?"
+
+#: scripts/services/AppUtils.js:100 templates/addoredit.html:356
+msgid "Years"
+msgstr "שנים"
+
+#: scripts/controllers/AppController.js:193
+#: scripts/controllers/DeleteController.js:99
+#: scripts/controllers/EditBackupController.js:161
+#: scripts/controllers/EditBackupController.js:171
+#: scripts/controllers/EditBackupController.js:458
+#: scripts/controllers/HomeController.js:22
+#: scripts/controllers/LocalDatabaseController.js:28
+#: scripts/controllers/LocalDatabaseController.js:72
+#: scripts/controllers/LocalDatabaseController.js:88
+#: scripts/directives/backupEditUri.js:132
+#: scripts/directives/backupEditUri.js:174
+#: scripts/directives/backupEditUri.js:88
+#: scripts/services/EditUriBackendConfig.js:74
+#: scripts/services/EditUriBuiltins.js:1215
+#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:61
+msgid "Yes"
+msgstr "כן"
+
+#: scripts/controllers/EditBackupController.js:367
+msgid "Yes, I have stored the passphrase safely"
+msgstr "כן, אחסנתי את מילת הצופן במקום מאובטח"
+
+#: scripts/controllers/ExportController.js:13
+msgid "Yes, I understand the risk"
+msgstr "כן, הסיכונים ברורים לי"
+
+#: scripts/controllers/EditBackupController.js:410
+msgid "Yes, I'm brave!"
+msgstr "כן, יש בי אומץ רב!"
+
+#: scripts/controllers/EditBackupController.js:401
+msgid "Yes, please break my backup!"
+msgstr "כן, נא לפגום בגיבוי שלי!"
+
+#: scripts/controllers/RestoreController.js:35
+msgid "Yesterday"
+msgstr "אתמול"
+
+#: scripts/controllers/EditBackupController.js:303
+msgid "You must enter a positive number of backups to keep"
+msgstr "עליך למלא מספר חיובי של גיבויים לשמירה"
+
+#: scripts/services/EditUriBuiltins.js:1176
+msgid "You must enter a tenant (aka project) name to use v3 API"
+msgstr "עליך למלא שם דייר (נודע גם כמיזם) כדי להשתמש בגרסה 3 של ה־API"
+
+#: scripts/services/EditUriBackendConfig.js:123
+msgid "You must fill in the password"
+msgstr "עליך למלא את הססמה"
+
+#: scripts/services/EditUriBackendConfig.js:100
+msgid "You must fill in the server name or address"
+msgstr "עליך למלא את שם או כתובת השרת"
+
+#: scripts/services/EditUriBackendConfig.js:121
+#: scripts/services/EditUriBackendConfig.js:130
+msgid "You must fill in the username"
+msgstr "עליך למלא את שם המשתמש"
+
+#: scripts/services/EditUriBackendConfig.js:86
+msgid "You must fill in {{field}}"
+msgstr "עליך למלא {{field}}"
+
+#: scripts/services/EditUriBuiltins.js:1208
+msgid "You must select or fill in the server"
+msgstr "עליך לבחור או למלא שרת"
+
+#: scripts/services/EditUriBackendConfig.js:107
+msgid "You must specify a path"
+msgstr "עליך לציין נתיב"
+
+#: templates/restore.html:144
+msgid "Your files and folders have been restored successfully."
+msgstr "הקבצים והתיקיות שלך שוחזרו בהצלחה."
+
+#: scripts/controllers/EditBackupController.js:352
+msgid "Your passphrase is easy to guess. Consider changing passphrase."
+msgstr "מילת הצופן שלך קלה לניחוש. מוטב לשקול להחליף מילת צופן."
+
+#: scripts/services/AppUtils.js:87
+msgid "byte"
+msgstr "בית"
+
+#: scripts/services/AppUtils.js:120
+msgid "byte/s"
+msgstr "בתים/שנייה"
+
+#: templates/pause.html:26
+msgid "{{number}} Hour"
+msgstr "שעה"
+
+#: templates/pause.html:31 templates/pause.html:36 templates/pause.html:41
+msgid "{{number}} Hours"
+msgstr "{{number}} שעות"
+
+#: templates/pause.html:11 templates/pause.html:16 templates/pause.html:21
+#: templates/pause.html:6
+msgid "{{number}} Minutes"
+msgstr "{{number}} דקות"
+
+#: templates/home.html:81
+msgid "{{time}} (took {{duration}})"
+msgstr "{{time}} (ארך {{duration}})"

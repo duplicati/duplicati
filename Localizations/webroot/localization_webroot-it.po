@@ -2668,6 +2668,10 @@ msgstr "Esegui ora"
 msgid "Running commandline entry"
 msgstr "Esecuzione voce da riga di comando"
 
+#: scripts/services/ServerStatus.js:65
+msgid "Running script …"
+msgstr "Esecuzione dello script…"
+
 #: index.html:172
 msgid "Running task:"
 msgstr "Attività in esecuzione:"
