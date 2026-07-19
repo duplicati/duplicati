@@ -212,18 +212,26 @@ namespace Duplicati.UnitTest
             SystemIO.IO_OS.DirectorySetPermissionUserRWOnly(dir, true);
 
             // A folder locked down for service excludes the current user as a trusted principal.
-            // The non-service check (which requires the current user to be trusted) must reject it,
-            // unless the current user happens to be an Administrator (Windows) or root (POSIX),
-            // in which case the current user is indistinguishable from the service principal and
-            // the non-service check would also accept it. Assert accordingly.
-            var isPrivileged = IsCurrentUserPrivilegedForService();
+            // How the non-service check treats it differs by platform:
+            //
+            // - Windows: the for-service lockdown grants the Administrators *group* SID, never
+            //   the current user's individual SID. The non-service check requires an explicit
+            //   rule for the current user's individual SID, which is distinct from the group SID
+            //   even when the current user is a member of Administrators. So the non-service
+            //   check always rejects a for-service folder here.
+            //
+            // - POSIX: the for-service lockdown chowns to root, and root ownership is always
+            //   trusted by the non-service check (an unprivileged attacker cannot own a folder
+            //   as root). So the non-service check always accepts a for-service folder here.
+            //   This test only runs as root on POSIX (it is ignored otherwise, above).
             var result = SystemIO.IO_OS.DirectoryHasPermissionUserRWOnly(dir, false, out _);
-            if (isPrivileged)
-                Assert.IsTrue(result,
-                    "When the current user is the service principal, both checks should accept the folder");
-            else
+            if (OperatingSystem.IsWindows())
                 Assert.IsFalse(result,
-                    "A folder locked down for service must not pass the non-service check");
+                    "On Windows a folder locked down for service must not pass the non-service check, " +
+                    "because it grants the Administrators group SID rather than the current user's individual SID");
+            else
+                Assert.IsTrue(result,
+                    "On POSIX a folder locked down for service is root-owned, which the non-service check always trusts");
         }
 
         [Test]
