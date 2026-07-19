@@ -95,16 +95,18 @@ namespace Duplicati.Library.Common.IO
         /// on POSIX: owner-only 0700 permissions).
         /// </summary>
         /// <param name="path">The directory to set permissions on.</param>
-        void DirectorySetPermissionUserRWOnly(string path);
+        /// <param name="excludeCurrentUser">Do not accept the current user as part of the security check</param>
+        void DirectorySetPermissionUserRWOnly(string path, bool excludeCurrentUser);
 
         /// <summary>
         /// Checks whether the directory has the restricted permissions for the current user,
         /// i.e. the same permissions that <see cref="DirectorySetPermissionUserRWOnly"/> would apply.
         /// </summary>
         /// <param name="path">The directory to check permissions on.</param>
+        /// <param name="excludeCurrentUser">Do not accept the current user as part of the security check</param>
         /// <param name="detail">A human-readable description of why the check failed, if it did; otherwise <see cref="string.Empty"/>.</param>
         /// <returns><c>true</c> if the directory has the expected permissions; otherwise <c>false</c>.</returns>
-        bool DirectoryHasPermissionUserRWOnly(string path, out string detail);
+        bool DirectoryHasPermissionUserRWOnly(string path, bool excludeCurrentUser, out string detail);
 
         /// <summary>
         /// Gets a value indicating whether the operating system supports alternate data streams.

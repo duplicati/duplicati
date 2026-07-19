@@ -43,9 +43,10 @@ public static class SecureDataFolderCommand
         {
             new Option<string>("--data-folder", "Path to the Duplicati data folder (defaults to standard location)"),
             new Option<bool>("--apply", "Apply the restricted permissions without prompting. By default a warning is shown and the user must confirm."),
+            new Option<bool>("--for-service", "Apply the restricted permissions for use with a service"),
         };
 
-        cmd.Handler = CommandHandler.Create<string?, bool>(HandleSecureDataFolder);
+        cmd.Handler = CommandHandler.Create<string?, bool, bool>(HandleSecureDataFolder);
         return cmd;
     }
 
@@ -77,7 +78,7 @@ public static class SecureDataFolderCommand
     /// Checks the current permissions on the data folder and, if they are not already restricted,
     /// applies the restricted permissions (current user, SYSTEM and Administrators only).
     /// </summary>
-    private static int HandleSecureDataFolder(string? dataFolder, bool apply)
+    private static int HandleSecureDataFolder(string? dataFolder, bool apply, bool forService)
     {
         var dataFolderPath = GetDataFolder(dataFolder);
 
@@ -92,7 +93,7 @@ public static class SecureDataFolderCommand
         }
 
         // Check if the permissions are already set as expected
-        var alreadySecure = SystemIO.IO_OS.DirectoryHasPermissionUserRWOnly(dataFolderPath, out var detail);
+        var alreadySecure = SystemIO.IO_OS.DirectoryHasPermissionUserRWOnly(dataFolderPath, forService, out var detail);
 
         if (alreadySecure)
         {
@@ -123,8 +124,8 @@ public static class SecureDataFolderCommand
 
         try
         {
-            SystemIO.IO_OS.DirectorySetPermissionUserRWOnly(dataFolderPath);
-            if (!SystemIO.IO_OS.DirectoryHasPermissionUserRWOnly(dataFolderPath, out var checkDetail))
+            SystemIO.IO_OS.DirectorySetPermissionUserRWOnly(dataFolderPath, forService);
+            if (!SystemIO.IO_OS.DirectoryHasPermissionUserRWOnly(dataFolderPath, forService, out var checkDetail))
             {
                 Console.WriteLine($"Warning: failed to verify that permissions were applied correctly: {checkDetail}");
                 return 1;

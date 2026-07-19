@@ -374,7 +374,7 @@ public static class PreloadSettingsLoader
             if (string.IsNullOrEmpty(dir) || !Directory.Exists(dir))
                 return;
 
-            if (SystemIO.IO_OS.DirectoryHasPermissionUserRWOnly(dir, out var dirDetail))
+            if (SystemIO.IO_OS.DirectoryHasPermissionUserRWOnly(dir, false, out var dirDetail))
                 return;
 
             if (!Util.AllowInsecureDataFolder())

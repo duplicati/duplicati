@@ -246,7 +246,7 @@ public static class DataFolderManager
     {
         try
         {
-            SystemIO.IO_OS.DirectorySetPermissionUserRWOnly(dataFolder);
+            SystemIO.IO_OS.DirectorySetPermissionUserRWOnly(dataFolder, false);
         }
         catch (Exception ex)
         {
@@ -277,7 +277,7 @@ public static class DataFolderManager
             return;
 
         // The folder is acceptable only if it is in the canonical locked-down form.
-        if (SystemIO.IO_OS.DirectoryHasPermissionUserRWOnly(dataFolder, out var detail))
+        if (SystemIO.IO_OS.DirectoryHasPermissionUserRWOnly(dataFolder, false, out var detail))
             return;
 
         // Tailor the guidance based on whether the folder pre-existed. A pre-existing folder

@@ -776,7 +776,7 @@ namespace Duplicati.Library.Common.IO
             // HasPermissionUserRWOnly verifies. Without this, the owner is whatever the
             // filesystem assigned at creation (e.g. the Administrators group or a different
             // account), which could cause the verification to reject a file we just locked down.
-            TrySetOwner(security);
+            TrySetOwner(security, CURRENT_USER_SID);
 
             // Adjust with the new security settings
             new FileInfo(path).SetAccessControl(security);
@@ -791,11 +791,12 @@ namespace Duplicati.Library.Common.IO
         /// already be a trusted principal (SYSTEM or Administrators), which verification accepts.
         /// </summary>
         /// <param name="security">The security descriptor to update.</param>
-        private static void TrySetOwner(FileSystemSecurity security)
+        /// <param name="userId">The id of the user to set as owner</param>
+        private static void TrySetOwner(FileSystemSecurity security, SecurityIdentifier userId)
         {
             try
             {
-                security.SetOwner(CURRENT_USER_SID);
+                security.SetOwner(userId);
             }
             catch
             {
@@ -808,7 +809,8 @@ namespace Duplicati.Library.Common.IO
         /// Restricts the directory so only the current user, SYSTEM and Administrators have full control, with inheritance disabled.
         /// </summary>
         /// <param name="path">The directory to set permissions on.</param>
-        public void DirectorySetPermissionUserRWOnly(string path)
+        /// <param name="excludeCurrentUser">Do not include the current user.</param>
+        public void DirectorySetPermissionUserRWOnly(string path, bool excludeCurrentUser)
         {
             // Create directory security settings
             var security = new DirectorySecurity();
@@ -816,8 +818,10 @@ namespace Duplicati.Library.Common.IO
             // Remove inherited permissions to ensure only the current user has access
             security.SetAccessRuleProtection(true, false);
 
+            var self = excludeCurrentUser ? ADMINISTRATORS_SID : CURRENT_USER_SID;
+
             var users = new[] {
-                CURRENT_USER_SID,
+                self,
                 LOCAL_SYSTEM_SID,
                 ADMINISTRATORS_SID
             }.ToHashSet();
@@ -836,7 +840,7 @@ namespace Duplicati.Library.Common.IO
             // HasPermissionUserRWOnly verifies. Without this, the owner is whatever the
             // filesystem assigned at creation (e.g. the Administrators group or a different
             // account), which could cause the verification to reject a folder we just locked down.
-            TrySetOwner(security);
+            TrySetOwner(security, self);
 
             // Adjust with the new security settings
             new DirectoryInfo(path).SetAccessControl(security);
@@ -848,10 +852,11 @@ namespace Duplicati.Library.Common.IO
         /// matching the permissions applied by <see cref="DirectorySetPermissionUserRWOnly"/>.
         /// </summary>
         /// <param name="path">The directory to check permissions on.</param>
+        /// <param name="excludeCurrentUser">Do not accept the current user as part of the security check</param>
         /// <param name="detail">A human-readable description of why the check failed, if it did; otherwise <see cref="string.Empty"/>.</param>
         /// <returns><c>true</c> if the directory has the expected permissions; otherwise <c>false</c>.</returns>
-        public bool DirectoryHasPermissionUserRWOnly(string path, out string detail)
-            => HasPermissionUserRWOnly(new DirectoryInfo(path).GetAccessControl(), "folder", out detail);
+        public bool DirectoryHasPermissionUserRWOnly(string path, bool excludeCurrentUser, out string detail)
+            => HasPermissionUserRWOnly(new DirectoryInfo(path).GetAccessControl(), excludeCurrentUser, "folder", out detail);
 
         /// <summary>
         /// Verifies that a file or directory access control object grants full control to
@@ -859,10 +864,11 @@ namespace Duplicati.Library.Common.IO
         /// owned by one of those principals.
         /// </summary>
         /// <param name="security">The access control object for the file or directory.</param>
+        /// <param name="excludeCurrentUser">Do not accept the current user as part of the security check</param>
         /// <param name="kind">A label such as "file" or "folder" used in detail messages.</param>
         /// <param name="detail">A human-readable description of why the check failed, if it did; otherwise <see cref="string.Empty"/>.</param>
         /// <returns><c>true</c> if the expected permissions are set; otherwise <c>false</c>.</returns>
-        private static bool HasPermissionUserRWOnly(FileSystemSecurity security, string kind, out string detail)
+        private static bool HasPermissionUserRWOnly(FileSystemSecurity security, bool excludeCurrentUser, string kind, out string detail)
         {
             detail = string.Empty;
             try
@@ -873,7 +879,7 @@ namespace Duplicati.Library.Common.IO
                 // is privileged and cannot be impersonated by an unprivileged attacker, so all
                 // three are accepted. DirectorySetPermissionUserRWOnly explicitly sets the owner
                 // to the current user, so a folder we lock down always satisfies this check.
-                var expected = new[] { CURRENT_USER_SID, LOCAL_SYSTEM_SID, ADMINISTRATORS_SID }.ToHashSet();
+                var expected = new[] { excludeCurrentUser ? ADMINISTRATORS_SID : CURRENT_USER_SID, LOCAL_SYSTEM_SID, ADMINISTRATORS_SID }.ToHashSet();
                 var ownerRef = security.GetOwner(typeof(SecurityIdentifier));
                 var owner = ownerRef as SecurityIdentifier;
                 if (owner == null || !expected.Contains(owner))
