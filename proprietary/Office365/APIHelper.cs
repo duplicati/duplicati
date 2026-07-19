@@ -259,7 +259,8 @@ internal class APIHelper : IDisposable
             // Ignore failures when reading the response body; we'll throw with status code regardless.
         }
 
-        var message = TryExtractOfficeApiErrorMessage(responseBody)
+        var (errorCode, errorMessage) = TryExtractOfficeApiError(responseBody);
+        var message = errorMessage
             ?? responseBody
             ?? response.ReasonPhrase
             ?? "Request failed.";
@@ -269,37 +270,89 @@ internal class APIHelper : IDisposable
         var detailedMessage = $"{message} (HTTP {(int)statusCode} {statusCode}) - Request URI: {response.RequestMessage?.RequestUri}";
         if (response?.Headers?.TryGetValues("Location", out var location) == true)
             detailedMessage += $" - Location: {location.First()}";
-        throw new HttpRequestException(detailedMessage, inner: null, statusCode);
+        var ex = new HttpRequestException(detailedMessage, inner: null, statusCode);
+
+        // Expose the machine-readable Graph error code so callers can react to specific
+        // conditions (e.g. a user without a provisioned mailbox) without matching on the
+        // localized human-readable message.
+        if (!string.IsNullOrWhiteSpace(errorCode))
+            ex.Data[GraphErrorCodeKey] = errorCode;
+
+        throw ex;
     }
 
     /// <summary>
-    /// Attempts to extract the error message from the Office API response.
+    /// The <see cref="System.Exception.Data"/> key used to store the Graph API error code
+    /// on thrown <see cref="HttpRequestException"/> instances.
+    /// </summary>
+    internal const string GraphErrorCodeKey = "GraphErrorCode";
+
+    /// <summary>
+    /// Gets the Graph API error code stored on an exception, if any.
+    /// </summary>
+    /// <param name="ex">The exception to inspect.</param>
+    /// <returns>The Graph error code, or null if none is present.</returns>
+    internal static string? GetGraphErrorCode(Exception ex)
+        => ex.Data.Contains(GraphErrorCodeKey) ? ex.Data[GraphErrorCodeKey] as string : null;
+
+    /// <summary>
+    /// Determines whether the exception indicates that the target user does not have an
+    /// accessible Exchange Online mailbox (no license, disabled, soft-deleted, or on-premise).
+    /// Graph returns HTTP 404 with an error code of <c>MailboxNotEnabledForRESTAPI</c> or
+    /// <c>MailboxNotSupportedForRESTAPI</c> in these cases.
+    /// </summary>
+    /// <param name="ex">The exception to inspect.</param>
+    /// <returns><c>true</c> if the exception indicates an unavailable mailbox; otherwise <c>false</c>.</returns>
+    internal static bool IsMailboxNotEnabled(Exception ex)
+    {
+        if (ex is not HttpRequestException httpEx || httpEx.StatusCode != HttpStatusCode.NotFound)
+            return false;
+
+        var code = GetGraphErrorCode(ex);
+        return string.Equals(code, "MailboxNotEnabledForRESTAPI", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(code, "MailboxNotSupportedForRESTAPI", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Attempts to extract the error code and message from the Office API response.
     /// </summary>
     /// <param name="responseBody">The response body</param>
-    /// <returns>The extracted error message, or null if none could be found</returns>
-    private static string? TryExtractOfficeApiErrorMessage(string? responseBody)
+    /// <returns>The extracted error code and message; either may be null if not found.</returns>
+    private static (string? Code, string? Message) TryExtractOfficeApiError(string? responseBody)
     {
         if (string.IsNullOrWhiteSpace(responseBody))
-            return null;
+            return (null, null);
 
         // Fast filter: if it doesn't look like JSON, don't attempt to parse.
         var trimmed = responseBody.AsSpan().TrimStart();
         if (trimmed.Length == 0 || (trimmed[0] != '{' && trimmed[0] != '['))
-            return null;
+            return (null, null);
 
         try
         {
             using var doc = JsonDocument.Parse(responseBody);
             if (doc.RootElement.ValueKind != JsonValueKind.Object)
-                return null;
+                return (null, null);
 
             if (doc.RootElement.TryGetProperty("error", out var error) && error.ValueKind == JsonValueKind.Object)
             {
+                string? code = null;
+                if (error.TryGetProperty("code", out var codeElement) && codeElement.ValueKind == JsonValueKind.String)
+                {
+                    code = codeElement.GetString();
+                    if (string.IsNullOrWhiteSpace(code))
+                        code = null;
+                }
+
+                string? message = null;
                 if (error.TryGetProperty("message", out var messageElement) && messageElement.ValueKind == JsonValueKind.String)
                 {
-                    var message = messageElement.GetString();
-                    return string.IsNullOrWhiteSpace(message) ? null : message;
+                    message = messageElement.GetString();
+                    if (string.IsNullOrWhiteSpace(message))
+                        message = null;
                 }
+
+                return (code, message);
             }
         }
         catch (JsonException)
@@ -307,7 +360,7 @@ internal class APIHelper : IDisposable
             // Not JSON (or invalid JSON) - fall back to entire response body.
         }
 
-        return null;
+        return (null, null);
     }
 
     /// <summary>

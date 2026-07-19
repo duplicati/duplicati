@@ -8,6 +8,31 @@ partial class SourceProvider
 
     internal class UserProfileImpl(APIHelper provider)
     {
+        /// <summary>
+        /// Gets the mailbox <c>userPurpose</c> for a user, which differentiates a regular
+        /// user mailbox from a shared, room or equipment mailbox.
+        /// Returns <c>null</c> if the user has no accessible mailbox (unlicensed, disabled,
+        /// soft-deleted, or hosted on-premise) or if the value cannot be determined.
+        /// </summary>
+        /// <param name="userIdOrUpn">The user id or user principal name.</param>
+        /// <param name="ct">The cancellation token.</param>
+        /// <returns>The mailbox purpose (e.g. <c>user</c>, <c>shared</c>, <c>room</c>, <c>equipment</c>), or null.</returns>
+        public async Task<string?> GetMailboxUserPurposeAsync(string userIdOrUpn, CancellationToken ct)
+        {
+            // MailboxSettings.Read (application) is required to read another user's mailbox purpose.
+            var url = $"{provider.GraphBaseUrl.TrimEnd('/')}/v1.0/users/{Uri.EscapeDataString(userIdOrUpn)}/mailboxSettings/userPurpose";
+            try
+            {
+                var purpose = await provider.GetGraphItemAsync<GraphMailboxUserPurpose>(url, ct).ConfigureAwait(false);
+                return string.IsNullOrWhiteSpace(purpose.Value) ? null : purpose.Value;
+            }
+            catch (Exception ex) when (APIHelper.IsMailboxNotEnabled(ex))
+            {
+                // No accessible mailbox; treat as unknown purpose.
+                return null;
+            }
+        }
+
         // /users/{id}
         public Task<Stream> GetUserObjectStreamAsync(string userIdOrUpn, CancellationToken ct)
         {

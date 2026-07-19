@@ -22,6 +22,32 @@ internal sealed class GraphUser
     [JsonPropertyName("createdDateTime")]
     public DateTimeOffset? CreatedDateTime { get; set; }
 
+    /// <summary>
+    /// The licenses assigned to the user. A shared mailbox with additional storage
+    /// (i.e. an assigned Exchange Online license) will have one or more entries here.
+    /// </summary>
+    [JsonPropertyName("assignedLicenses")]
+    public List<GraphAssignedLicense>? AssignedLicenses { get; set; }
+}
+
+internal sealed class GraphAssignedLicense
+{
+    [JsonPropertyName("skuId")]
+    public string? SkuId { get; set; }
+
+    [JsonPropertyName("disabledPlans")]
+    public List<string>? DisabledPlans { get; set; }
+}
+
+/// <summary>
+/// Represents the <c>userPurpose</c> value returned by
+/// <c>GET /users/{id}/mailboxSettings/userPurpose</c>.
+/// Differentiates a regular user mailbox from shared, room and equipment mailboxes.
+/// </summary>
+internal sealed class GraphMailboxUserPurpose
+{
+    [JsonPropertyName("value")]
+    public string? Value { get; set; }
 }
 
 internal sealed class GraphSite

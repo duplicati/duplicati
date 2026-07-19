@@ -57,7 +57,16 @@ internal class MetaRootSourceEntry(SourceProvider provider, string mountPoint, O
                     if (cancellationToken.IsCancellationRequested)
                         yield break;
 
-                    if (provider.LicenseApprovedForEntry(Path, type, user.Id, false))
+                    // Skip users whose classification is excluded by the include filter.
+                    // This uses the cached classification, so no extra Graph call is made
+                    // beyond the one already performed for seat counting.
+                    if (!await provider.IsUserClassificationIncludedAsync(user, cancellationToken).ConfigureAwait(false))
+                        continue;
+
+                    // Shared mailboxes without additional storage do not consume a seat.
+                    var countsAsSeat = await provider.UserCountsAsSeatAsync(user, cancellationToken).ConfigureAwait(false);
+
+                    if (provider.LicenseApprovedForEntry(Path, type, user.Id, false, countsAsSeat))
                         yield return new UserSourceEntry(provider, Path, user);
                 }
                 break;
@@ -67,7 +76,15 @@ internal class MetaRootSourceEntry(SourceProvider provider, string mountPoint, O
                     if (cancellationToken.IsCancellationRequested)
                         yield break;
 
-                    if (provider.LicenseApprovedForEntry(Path, type, group.Id, false))
+                    // Skip groups whose classification is excluded by the include filter.
+                    if (!provider.IsGroupClassificationIncluded(group))
+                        continue;
+
+                    // Security groups and distribution lists do not consume a seat;
+                    // only Microsoft 365 (Unified) groups count.
+                    var groupCountsAsSeat = SourceProvider.GroupCountsAsSeat(group);
+
+                    if (provider.LicenseApprovedForEntry(Path, type, group.Id, false, groupCountsAsSeat))
                         yield return new GroupSourceEntry(provider, this.Path, group);
                 }
                 break;
@@ -76,6 +93,10 @@ internal class MetaRootSourceEntry(SourceProvider provider, string mountPoint, O
                 {
                     if (cancellationToken.IsCancellationRequested)
                         yield break;
+
+                    // Skip sites whose classification is excluded by the include filter.
+                    if (!provider.IsSiteClassificationIncluded(site))
+                        continue;
 
                     if (provider.LicenseApprovedForEntry(Path, type, site.Id, false))
                         yield return new SiteSourceEntry(provider, this.Path, site);
