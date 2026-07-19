@@ -179,7 +179,7 @@ namespace Duplicati.Server
             {
                 var startupDelay = new TimeSpan(0);
                 try { startupDelay = Library.Utility.Timeparser.ParseTimeSpan(settings.StartupDelayDuration); }
-                catch { }
+                catch (Exception ex) { Library.Logging.Log.WriteWarningMessage(LOGTAG, "ParseStartupDelayError", ex, "Failed to parse startup delay, continuing without it: {0}", settings.StartupDelayDuration); }
 
                 if (startupDelay.Ticks > 0)
                 {
@@ -235,7 +235,10 @@ namespace Duplicati.Server
                     m_powerModeProvider.OnSuspend = OnSuspend;
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Library.Logging.Log.WriteWarningMessage(LOGTAG, "PowerModeProviderError", ex, "Failed to set up the power mode provider, suspend and resume events will not be handled: {0}", ex.Message);
+            }
         }
 
         /// <summary>
@@ -428,7 +431,7 @@ namespace Duplicati.Server
                 var appset = m_connection.ApplicationSettings;
                 if (!string.IsNullOrEmpty(appset.StartupDelayDuration) && appset.StartupDelayDuration != "0")
                     try { delayTicks = Math.Max(delayTicks, Library.Utility.Timeparser.ParseTimeSpan(appset.StartupDelayDuration).Ticks); }
-                    catch { }
+                    catch (Exception ex) { Library.Logging.Log.WriteWarningMessage(LOGTAG, "ParseStartupDelayError", ex, "Failed to parse startup delay, continuing without it: {0}", appset.StartupDelayDuration); }
 
                 if (delayTicks > 0)
                 {
