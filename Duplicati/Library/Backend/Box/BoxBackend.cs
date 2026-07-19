@@ -36,7 +36,6 @@ namespace Duplicati.Library.Backend.Box
     public class BoxBackend : IStreamingBackend, IRenameEnabledBackend, IFolderEnabledBackend
     {
         private static readonly string TOKEN_URL = AuthIdOptionsHelper.GetOAuthLoginUrl("box.com", null);
-        private const string AUTHID_OPTION = "authid";
         private const string REALLY_DELETE_OPTION = "box-delete-from-trash";
 
         private const string BOX_API_URL = "https://api.box.com/2.0";

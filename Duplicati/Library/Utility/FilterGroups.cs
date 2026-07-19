@@ -120,16 +120,6 @@ namespace Duplicati.Library.Utility
             };
 
         /// <summary>
-        /// Regex escaped string for the AltDirectorySeparatorChar
-        /// </summary>
-        private static readonly string RegexEscapedAltDirectorySeparatorChar = System.Text.RegularExpressions.Regex.Escape(Common.IO.Util.AltDirectorySeparatorString);
-
-        /// <summary>
-        /// Regex escaped string for the DirectorySeparatorChar
-        /// </summary>
-        private static readonly string RegexEscapedDirectorySeparatorChar = System.Text.RegularExpressions.Regex.Escape(Common.IO.Util.DirectorySeparatorString);
-
-        /// <summary>
         /// Gets the list of alternate aliases which can refer to this group.
         /// </summary>
         /// <param name="group">Filter group</param>

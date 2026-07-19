@@ -420,10 +420,6 @@ public class Program
     /// Core tuning loop for restore performance. Measures a baseline, then iteratively adjusts
     /// concurrency parameters to find the fastest configuration.
     /// </summary>
-    /// <param name="source">Path to the source folder to back up.</param>
-    /// <param name="destination">Backup destination URI (e.g. file:///tmp/backup).</param>
-    /// <param name="restoretarget">Path where restores are performed during measurement.</param>
-    /// <param name="tempfolder">Path for temporary files such as the database.</param>
     /// <param name="cfg">User-supplied tuning options.</param>
     /// <param name="options">Parsed Duplicati key-value options passed to the controller.</param>
     /// <returns>A process exit code: 0 on success, -1 on error.</returns>
