@@ -63,7 +63,7 @@ public static class HttpsCommand
     /// <returns>The command</returns>
     private static Command AddDatabaseOptions(Command cmd)
     {
-        cmd.AddOption(new Option<string>("--data-folder", "Path to the Duplicati data folder (defaults to standard location)"));
+        cmd.AddOption(new Option<string>("--datafolder", "Path to the Duplicati data folder (defaults to standard location)"));
         cmd.AddOption(new Option<string>("--settings-encryption-key", "Settings encryption key for the database (if settings are encrypted)"));
         return cmd;
     }
@@ -370,10 +370,10 @@ public static class HttpsCommand
     /// Handles the 'generate' command.
     /// Delegates certificate generation to <see cref="CertificateConfigurationHelper.GenerateCertificates"/>.
     /// </summary>
-    private static int HandleGenerate(string? hostnames, bool noTrust, string? dataFolder, string? settingsEncryptionKey, bool autoCreateDatabase, string? store, string? certDir, string? keychain)
+    private static int HandleGenerate(string? hostnames, bool noTrust, string? datafolder, string? settingsEncryptionKey, bool autoCreateDatabase, string? store, string? certDir, string? keychain)
     {
         var storeLocation = ParseStoreLocation(store);
-        var dataFolderPath = GetDataFolder(dataFolder);
+        var dataFolderPath = GetDataFolder(datafolder);
 
         using var _ = StartConsoleLogScope();
         Console.WriteLine($"Using data folder: {dataFolderPath}");
@@ -426,9 +426,9 @@ public static class HttpsCommand
     /// Handles the 'renew' command.
     /// Delegates certificate renewal to <see cref="CertificateConfigurationHelper.RenewServerCertificate"/>.
     /// </summary>
-    private static int HandleRenew(string? dataFolder, string? settingsEncryptionKey)
+    private static int HandleRenew(string? datafolder, string? settingsEncryptionKey)
     {
-        var dataFolderPath = GetDataFolder(dataFolder);
+        var dataFolderPath = GetDataFolder(datafolder);
 
         Console.WriteLine($"Using data folder: {dataFolderPath}");
         using var _ = StartConsoleLogScope();
@@ -466,10 +466,10 @@ public static class HttpsCommand
     /// Handles the 'regenerate-ca' command.
     /// Delegates to <see cref="CertificateConfigurationHelper.RegenerateCACertificates"/>.
     /// </summary>
-    private static int HandleRegenerateCa(string? hostnames, bool noTrust, string? dataFolder, string? settingsEncryptionKey, string? store, string? certDir, string? keychain)
+    private static int HandleRegenerateCa(string? hostnames, bool noTrust, string? datafolder, string? settingsEncryptionKey, string? store, string? certDir, string? keychain)
     {
         var storeLocation = ParseStoreLocation(store);
-        var dataFolderPath = GetDataFolder(dataFolder);
+        var dataFolderPath = GetDataFolder(datafolder);
 
         Console.WriteLine($"Using data folder: {dataFolderPath}");
         using var _ = StartConsoleLogScope();
@@ -511,10 +511,10 @@ public static class HttpsCommand
     /// <summary>
     /// Handles the 'remove' command.
     /// </summary>
-    private static int HandleRemove(string? dataFolder, string? settingsEncryptionKey, string? store, string? certDir, string? keychain)
+    private static int HandleRemove(string? datafolder, string? settingsEncryptionKey, string? store, string? certDir, string? keychain)
     {
         var storeLocation = ParseStoreLocation(store);
-        var dataFolderPath = GetDataFolder(dataFolder);
+        var dataFolderPath = GetDataFolder(datafolder);
 
         Console.WriteLine($"Using data folder: {dataFolderPath}");
         using var _ = StartConsoleLogScope();
@@ -577,10 +577,10 @@ public static class HttpsCommand
     /// Handles the 'show' command.
     /// Delegates status retrieval to <see cref="CertificateConfigurationHelper.GetCertificateStatus"/>.
     /// </summary>
-    private static int HandleShow(string? dataFolder, string? settingsEncryptionKey, string? store, string? certDir, string? keychain)
+    private static int HandleShow(string? datafolder, string? settingsEncryptionKey, string? store, string? certDir, string? keychain)
     {
         var storeLocation = ParseStoreLocation(store);
-        var dataFolderPath = GetDataFolder(dataFolder);
+        var dataFolderPath = GetDataFolder(datafolder);
 
         Console.WriteLine($"Using data folder: {dataFolderPath}");
         Console.WriteLine();
@@ -671,9 +671,9 @@ public static class HttpsCommand
     /// <summary>
     /// Handles the 'export' command.
     /// </summary>
-    private static int HandleExport(string? file, string? dataFolder, string? settingsEncryptionKey)
+    private static int HandleExport(string? file, string? datafolder, string? settingsEncryptionKey)
     {
-        var dataFolderPath = GetDataFolder(dataFolder);
+        var dataFolderPath = GetDataFolder(datafolder);
         var outputFile = string.IsNullOrWhiteSpace(file) ? "duplicati-server.crt" : file;
 
         Console.WriteLine($"Using data folder: {dataFolderPath}");
@@ -709,9 +709,9 @@ public static class HttpsCommand
     /// <summary>
     /// Handles the 'export-ca' command.
     /// </summary>
-    private static int HandleExportCa(string? file, string? dataFolder, string? settingsEncryptionKey)
+    private static int HandleExportCa(string? file, string? datafolder, string? settingsEncryptionKey)
     {
-        var dataFolderPath = GetDataFolder(dataFolder);
+        var dataFolderPath = GetDataFolder(datafolder);
         var outputFile = string.IsNullOrWhiteSpace(file) ? "duplicati-ca.crt" : file;
 
         Console.WriteLine($"Using data folder: {dataFolderPath}");
