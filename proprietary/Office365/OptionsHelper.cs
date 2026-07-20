@@ -19,6 +19,9 @@ internal static class OptionsHelper
     internal const string OFFICE_INCLUDED_ROOT_TYPES_OPTION = "office365-included-root-types";
     internal const string OFFICE_INCLUDED_USER_TYPES_OPTION = "office365-included-user-types";
     internal const string OFFICE_INCLUDED_GROUP_TYPES_OPTION = "office365-included-group-types";
+    internal const string OFFICE_INCLUDED_USER_CLASSIFICATIONS_OPTION = "office365-included-user-classifications";
+    internal const string OFFICE_INCLUDED_GROUP_CLASSIFICATIONS_OPTION = "office365-included-group-classifications";
+    internal const string OFFICE_INCLUDED_SITE_CLASSIFICATIONS_OPTION = "office365-included-site-classifications";
 
     /// <summary>
     /// User types that require delegated permissions, default disabled.
@@ -61,6 +64,24 @@ internal static class OptionsHelper
             .Except(DELEGATED_USER_TYPES)
             .ToArray();
 
+    /// <summary>
+    /// All user classifications, i.e. the default include filter (everything included).
+    /// </summary>
+    internal static readonly Office365UserClassification ALL_USER_CLASSIFICATIONS =
+        Enum.GetValues<Office365UserClassification>().Aggregate((Office365UserClassification)0, (acc, v) => acc | v);
+
+    /// <summary>
+    /// All group classifications, i.e. the default include filter (everything included).
+    /// </summary>
+    internal static readonly Office365GroupClassification ALL_GROUP_CLASSIFICATIONS =
+        Enum.GetValues<Office365GroupClassification>().Aggregate((Office365GroupClassification)0, (acc, v) => acc | v);
+
+    /// <summary>
+    /// All site classifications, i.e. the default include filter (everything included).
+    /// </summary>
+    internal static readonly Office365SiteClassification ALL_SITE_CLASSIFICATIONS =
+        Enum.GetValues<Office365SiteClassification>().Aggregate((Office365SiteClassification)0, (acc, v) => acc | v);
+
     internal const string DEFAULT_GRAPH_BASE_URL = "https://graph.microsoft.com";
 
     internal sealed record ParsedOptions(
@@ -72,7 +93,10 @@ internal static class OptionsHelper
         string Scope,
         Office365MetaType[] IncludedRootTypes,
         Office365UserType[] IncludedUserTypes,
-        Office365GroupType[] IncludedGroupTypes
+        Office365GroupType[] IncludedGroupTypes,
+        Office365UserClassification IncludedUserClassifications,
+        Office365GroupClassification IncludedGroupClassifications,
+        Office365SiteClassification IncludedSiteClassifications
     );
 
     internal static ParsedOptions ParseAndValidateOptions(string url, Dictionary<string, string?> options)
@@ -98,6 +122,11 @@ internal static class OptionsHelper
         var includedUserTypes = Library.Utility.Utility.ParseFlagsOption(options, OFFICE_INCLUDED_USER_TYPES_OPTION, (Office365UserType)DEFAULT_INCLUDED_USER_TYPES.Aggregate(0, (acc, type) => acc | (int)type));
         var includedGroupTypes = Library.Utility.Utility.ParseFlagsOption(options, OFFICE_INCLUDED_GROUP_TYPES_OPTION, (Office365GroupType)DEFAULT_INCLUDED_GROUP_TYPES.Aggregate(0, (acc, type) => acc | (int)type));
 
+        // Classification include filters default to all classifications included.
+        var includedUserClassifications = Library.Utility.Utility.ParseFlagsOption(options, OFFICE_INCLUDED_USER_CLASSIFICATIONS_OPTION, ALL_USER_CLASSIFICATIONS);
+        var includedGroupClassifications = Library.Utility.Utility.ParseFlagsOption(options, OFFICE_INCLUDED_GROUP_CLASSIFICATIONS_OPTION, ALL_GROUP_CLASSIFICATIONS);
+        var includedSiteClassifications = Library.Utility.Utility.ParseFlagsOption(options, OFFICE_INCLUDED_SITE_CLASSIFICATIONS_OPTION, ALL_SITE_CLASSIFICATIONS);
+
         return new ParsedOptions(
             TenantId: _tenantId,
             AuthOptions: _authOptions,
@@ -107,7 +136,10 @@ internal static class OptionsHelper
             Scope: _scope,
             IncludedRootTypes: Enum.GetValues<Office365MetaType>().Where(n => includedRootTypes.HasFlag(n)).ToArray(),
             IncludedUserTypes: Enum.GetValues<Office365UserType>().Where(n => includedUserTypes.HasFlag(n)).ToArray(),
-            IncludedGroupTypes: Enum.GetValues<Office365GroupType>().Where(n => includedGroupTypes.HasFlag(n)).ToArray()
+            IncludedGroupTypes: Enum.GetValues<Office365GroupType>().Where(n => includedGroupTypes.HasFlag(n)).ToArray(),
+            IncludedUserClassifications: includedUserClassifications,
+            IncludedGroupClassifications: includedGroupClassifications,
+            IncludedSiteClassifications: includedSiteClassifications
         );
     }
 
@@ -122,6 +154,9 @@ internal static class OptionsHelper
         new CommandLineArgument(OFFICE_SCOPE_OPTION, CommandLineArgument.ArgumentType.String, Strings.OfficeScopeOptionShort, Strings.OfficeScopeOptionLong, OFFICE_SCOPE_OPTION_DEFAULT),
         new CommandLineArgument(OFFICE_INCLUDED_ROOT_TYPES_OPTION, CommandLineArgument.ArgumentType.Flags, Strings.OfficeIncludedRootTypesShort, Strings.OfficeIncludedRootTypesLong, string.Join(",", DEFAULT_INCLUDED_ROOT_TYPES.Select(n => n.ToString()).ToArray()), null, Enum.GetNames<Office365MetaType>()),
         new CommandLineArgument(OFFICE_INCLUDED_USER_TYPES_OPTION, CommandLineArgument.ArgumentType.Flags, Strings.OfficeIncludedUserTypesShort, Strings.OfficeIncludedUserTypesLong, string.Join(",", DEFAULT_INCLUDED_USER_TYPES.Select(n => n.ToString()).ToArray()), null, Enum.GetNames<Office365UserType>()),
-        new CommandLineArgument(OFFICE_INCLUDED_GROUP_TYPES_OPTION, CommandLineArgument.ArgumentType.Flags, Strings.OfficeIncludedGroupTypesShort, Strings.OfficeIncludedGroupTypesLong, string.Join(",", DEFAULT_INCLUDED_GROUP_TYPES.Select(n => n.ToString()).ToArray()), null, Enum.GetNames<Office365GroupType>())
+        new CommandLineArgument(OFFICE_INCLUDED_GROUP_TYPES_OPTION, CommandLineArgument.ArgumentType.Flags, Strings.OfficeIncludedGroupTypesShort, Strings.OfficeIncludedGroupTypesLong, string.Join(",", DEFAULT_INCLUDED_GROUP_TYPES.Select(n => n.ToString()).ToArray()), null, Enum.GetNames<Office365GroupType>()),
+        new CommandLineArgument(OFFICE_INCLUDED_USER_CLASSIFICATIONS_OPTION, CommandLineArgument.ArgumentType.Flags, Strings.OfficeIncludedUserClassificationsShort, Strings.OfficeIncludedUserClassificationsLong, string.Join(",", Enum.GetNames<Office365UserClassification>()), null, Enum.GetNames<Office365UserClassification>()),
+        new CommandLineArgument(OFFICE_INCLUDED_GROUP_CLASSIFICATIONS_OPTION, CommandLineArgument.ArgumentType.Flags, Strings.OfficeIncludedGroupClassificationsShort, Strings.OfficeIncludedGroupClassificationsLong, string.Join(",", Enum.GetNames<Office365GroupClassification>()), null, Enum.GetNames<Office365GroupClassification>()),
+        new CommandLineArgument(OFFICE_INCLUDED_SITE_CLASSIFICATIONS_OPTION, CommandLineArgument.ArgumentType.Flags, Strings.OfficeIncludedSiteClassificationsShort, Strings.OfficeIncludedSiteClassificationsLong, string.Join(",", Enum.GetNames<Office365SiteClassification>()), null, Enum.GetNames<Office365SiteClassification>())
     ];
 }

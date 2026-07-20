@@ -19,7 +19,8 @@ internal class SiteSourceEntry(SourceProvider provider, string parentPath, Graph
             { "o365:DisplayName", site.DisplayName },
             { "o365:WebUrl", site.WebUrl },
             { "o365:Hostname", site.SiteCollection?.Hostname },
-            { "o365:PersonalSite", site.SiteCollection?.PersonalSite?.ToString() }
+            { "o365:PersonalSite", site.SiteCollection?.PersonalSite?.ToString() },
+            { "o365:Classification", SourceProvider.ClassifySite(site).ToString() }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))
         .ToDictionary(kv => kv.Key, kv => kv.Value));

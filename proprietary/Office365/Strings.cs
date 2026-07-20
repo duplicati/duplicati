@@ -71,5 +71,14 @@ internal static class Strings
     public static string OfficeIncludedGroupTypesShort => LC.L("Included group types.");
     public static string OfficeIncludedGroupTypesLong => LC.L("The group types to include in the backup (e.g. Mailbox, OneDrive, Calendar).");
 
+    public static string OfficeIncludedUserClassificationsShort => LC.L("Included user classifications.");
+    public static string OfficeIncludedUserClassificationsLong => LC.L("The user classifications to include in the backup: Licensed, Unlicensed, SharedMailboxWithStorage, SharedMailboxWithoutStorage. Defaults to all.");
+
+    public static string OfficeIncludedGroupClassificationsShort => LC.L("Included group classifications.");
+    public static string OfficeIncludedGroupClassificationsLong => LC.L("The group classifications to include in the backup: Unified (Microsoft 365 groups), NotUnified (security groups and distribution lists). Defaults to all.");
+
+    public static string OfficeIncludedSiteClassificationsShort => LC.L("Included site classifications.");
+    public static string OfficeIncludedSiteClassificationsLong => LC.L("The site classifications to include in the backup: Group, Classic, Communication, Personal, Other. Defaults to all.");
+
     public static string LicenseWarning(SourceItems.Office365MetaType type, int approved) => LC.L($"Licensed Microsoft 365 feature seats exceeded for {type} ({approved}). Some items will not be backed up, and some folders may be empty.");
 }
