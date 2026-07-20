@@ -49,6 +49,7 @@ public static class Program
                 Commands.Execute.Create(),
                 Commands.Verify.Create(),
                 Commands.Cleanup.Create(),
+                Commands.WipeEncryption.Create(),
             };
 
         // Registered so the option is accepted and shown in help; the value is read directly
