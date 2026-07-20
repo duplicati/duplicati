@@ -1,3 +1,69 @@
+2026-07-20 - 2.3.0.108_canary_2026-07-20
+==========
+This release is a canary release intended to be used for testing.
+
+If no major faults are found, **this release is intended to be the basis of the next beta release**.
+
+# MS365 subsites and shared mailboxes
+
+This release improves the Microsoft 365 backup support with two additions.
+Support for backing up SharePoint subsites has been added, making it possible
+to include sub-sites beneath a site collection in a backup.
+
+The handling of shared mailboxes has also been improved, with better detection
+and enumeration of shared mailboxes within a tenant.
+
+The license counter now excludes shared mailboxes without a license, and supports
+top-level filtering of users/sites/groups based on classification.
+
+An extra information button is added to the source page that shows a summary
+of what content was found in the MS365 tenant.
+
+# Case-insensitive remote filename matching
+
+A new option has been added to perform case-insensitive matching of remote
+filenames. This helps with backends that do not preserve filename casing, and
+prevents issues where files cannot be found because of case differences.
+
+# Improved filter parsing
+
+The filter parsing logic has been improved to handle more edge cases and
+produce more predictable results when building filter expressions.
+
+# Added `wipe-encryption` to database tool
+
+The database tool now supports a `wipe-encryption` command that can be used to remove all encrypted fields from a server database. With this command it is possible to get an encrypted database back into a state where it can be opened again. After encrypted fields are wiped, the user can then edit backups and settings to replace the lost data.
+
+## Detailed list of changes
+
+- Make BackendTester actually retry failed uploads, thanks @JamBalaya56562
+- Fix `--restore-preallocate-size` option having no effect, thanks @JamBalaya56562
+- Re-introduce `insecure-permissions.txt` file in install folder
+- Use the application data folder for the control directory filter, thanks @JamBalaya56562
+- Fix several options declared as Integer that are not integers, thanks @JamBalaya56562
+- Add case-insensitive remote filename matching, thanks @JamBalaya56562
+- Fix broken date-time format strings, thanks @JamBalaya56562
+- Fix secure-datafolder for service permissions
+- Log errors when user-supplied settings fail to parse, thanks @JamBalaya56562
+- Support MS365 subsites in backup and restore
+- Updated all translations, thanks to all translators
+- Fixed pulling mulitple new languages
+- Improve MS365 shared mailbox handling and item classification
+- Improve filter parsing with regards to embedded path separators
+- Fixed restore-control-files with non-standard options
+- Unify `--datafolder` option name in configuretool
+- Fail the backend test when verification finds a problem, thanks @JamBalaya56562
+- Use local executable name for configuretool
+- Fix loading of locale files with hyphenated culture names, thanks @JamBalaya56562
+
+## UI updates
+
+- Added option to manually start a console-managed backup
+- Added `tr` and `ko` languages to the UI
+- Updated all translations, thanks to all translators
+- Fixed an error attempting to save a backup with a schedule
+- Added button to show MS365 tenant counters
+
 2026-07-13 - 2.3.0.107_canary_2026-07-13
 ==========
 This release is a canary release intended to be used for testing.
