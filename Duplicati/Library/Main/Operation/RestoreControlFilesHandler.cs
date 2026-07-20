@@ -77,8 +77,14 @@ namespace Duplicati.Library.Main.Operation
                             .ConfigureAwait(false);
 
                         var res = new List<string>();
+
+                        // We do not want to match the manifest settings to the current settings,
+                        // as we only want to access the control files
+                        var readopts = new Options(m_options.RawOptions);
+                        readopts.RawOptions["dont-read-manifests"] = "true";
+
                         using (var tmpfile = await backendManager.GetAsync(file.Name, entry.Hash, entry.Size < 0 ? file.Size : entry.Size, allowParityRepair: true, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
-                        using (var tmp = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(file.Name), tmpfile, m_options))
+                        using (var tmp = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(file.Name), tmpfile, readopts))
                             foreach (var cf in tmp.ControlFiles)
                                 if (FilterExpression.Matches(filter, cf.Key))
                                 {
