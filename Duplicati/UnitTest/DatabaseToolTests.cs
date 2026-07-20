@@ -884,5 +884,191 @@ INSERT INTO ""Version"" (""Version"") VALUES (12);
                 Assert.That(File.Exists(missingDb), Is.False, "Missing DB should still not exist after cleanup");
             }
         }
+
+        /// <summary>
+        /// Wipes encrypted fields from a server database and verifies that all
+        /// <c>enc-v1:</c>-prefixed values are cleared, the <c>encrypted-fields</c>
+        /// server setting is reset to <c>False</c>, and a backup file is produced.
+        /// </summary>
+        [Test]
+        [Category("DatabaseTool")]
+        public async Task TestWipeEncryptionServerDatabaseAsync()
+        {
+            using var tempFolder = new Library.Utility.TempFolder();
+            var tempDir = (string)tempFolder;
+
+            var serverDb = Path.Combine(tempDir, "Duplicati-server.sqlite");
+
+            using (var db = await SQLiteLoader.LoadConnectionAsync(serverDb))
+            using (var cmd = db.CreateCommand())
+            {
+                cmd.CommandText = ServerSchemaV6;
+                await cmd.ExecuteNonQueryAsync();
+
+                // Insert a backup with an encrypted TargetURL, a normal TargetURL,
+                // an encrypted option (passphrase), a non-sensitive option, an
+                // encrypted Source path, and the encrypted-fields server setting.
+                var key = Duplicati.Library.Encryption.EncryptedFieldHelper.KeyInstance.CreateKey("a good and long password");
+                var encryptedTargetUrl = Duplicati.Library.Encryption.EncryptedFieldHelper.Encrypt("s3://bucket/path?auth-password=secret", key);
+                var encryptedSource = Duplicati.Library.Encryption.EncryptedFieldHelper.Encrypt("@/path|url://host/?auth-password=secret", key);
+                var encryptedPassphrase = Duplicati.Library.Encryption.EncryptedFieldHelper.Encrypt("my-passphrase", key);
+
+                cmd.CommandText = $@"
+                    INSERT INTO ""Backup"" (""Name"", ""Tags"", ""TargetURL"", ""DBPath"")
+                    VALUES ('EncryptedBackup', '', '{encryptedTargetUrl.Replace("'", "''")}', 'backup1.sqlite');
+                    INSERT INTO ""Backup"" (""Name"", ""Tags"", ""TargetURL"", ""DBPath"")
+                    VALUES ('PlainBackup', '', 'file:///plain', 'backup2.sqlite');
+                    INSERT INTO ""Option"" (""BackupID"", ""Filter"", ""Name"", ""Value"")
+                    VALUES (1, '', 'passphrase', '{encryptedPassphrase.Replace("'", "''")}');
+                    INSERT INTO ""Option"" (""BackupID"", ""Filter"", ""Name"", ""Value"")
+                    VALUES (1, '', 'dblock-size', '50MB');
+                    INSERT INTO ""Source"" (""BackupID"", ""Path"")
+                    VALUES (1, '{encryptedSource.Replace("'", "''")}');
+                    INSERT INTO ""Option"" (""BackupID"", ""Filter"", ""Name"", ""Value"")
+                    VALUES (-2, '', 'encrypted-fields', 'True');
+                ";
+                await cmd.ExecuteNonQueryAsync();
+            }
+
+            // Run wipe-encryption. A backup should be created by default.
+            Assert.AreEqual(0, await Program.MainAsync(["wipe-encryption", serverDb]));
+
+            // Verify a backup file was created
+            var backupFiles = Directory.GetFiles(tempDir, "Duplicati-server-*.bak");
+            Assert.AreEqual(1, backupFiles.Length, "A backup file should have been created");
+
+            // Verify the encrypted fields were cleared
+            using (var db = await SQLiteLoader.LoadConnectionAsync(serverDb))
+            using (var cmd = db.CreateCommand())
+            {
+                // The encrypted TargetURL should now be empty
+                cmd.CommandText = @"SELECT ""TargetURL"" FROM ""Backup"" WHERE ""Name"" = 'EncryptedBackup'";
+                Assert.AreEqual("", (string)cmd.ExecuteScalar());
+
+                // The plain TargetURL should be untouched
+                cmd.CommandText = @"SELECT ""TargetURL"" FROM ""Backup"" WHERE ""Name"" = 'PlainBackup'";
+                Assert.AreEqual("file:///plain", (string)cmd.ExecuteScalar());
+
+                // The encrypted passphrase option should be empty
+                cmd.CommandText = @"SELECT ""Value"" FROM ""Option"" WHERE ""BackupID"" = 1 AND ""Name"" = 'passphrase'";
+                Assert.AreEqual("", (string)cmd.ExecuteScalar());
+
+                // The non-sensitive dblock-size option should be untouched
+                cmd.CommandText = @"SELECT ""Value"" FROM ""Option"" WHERE ""BackupID"" = 1 AND ""Name"" = 'dblock-size'";
+                Assert.AreEqual("50MB", (string)cmd.ExecuteScalar());
+
+                // The encrypted source path should be empty
+                cmd.CommandText = @"SELECT ""Path"" FROM ""Source"" WHERE ""BackupID"" = 1";
+                Assert.AreEqual("", (string)cmd.ExecuteScalar());
+
+                // The encrypted-fields server setting should be reset to False
+                cmd.CommandText = @"SELECT ""Value"" FROM ""Option"" WHERE ""BackupID"" = -2 AND ""Name"" = 'encrypted-fields'";
+                Assert.AreEqual("False", (string)cmd.ExecuteScalar());
+            }
+
+            // Clean up the backup file
+            File.Delete(backupFiles[0]);
+        }
+
+        /// <summary>
+        /// Verifies that <c>wipe-encryption</c> skips non-server databases (backup and
+        /// sync databases) without modifying them, since the command only applies to the
+        /// server database.
+        /// </summary>
+        [Test]
+        [Category("DatabaseTool")]
+        public async Task TestWipeEncryptionSkipsNonServerDatabasesAsync()
+        {
+            using var tempFolder = new Library.Utility.TempFolder();
+            var tempDir = (string)tempFolder;
+
+            var localDb = Path.Combine(tempDir, "local.sqlite");
+
+            using (var db = await SQLiteLoader.LoadConnectionAsync(localDb))
+            using (var cmd = db.CreateCommand())
+            {
+                cmd.CommandText = LocalSchemaV12;
+                await cmd.ExecuteNonQueryAsync();
+
+                cmd.CommandText = @"
+                    INSERT INTO ""Configuration"" (""Key"", ""Value"") VALUES ('passphrase', 'abc123hashed');
+                    INSERT INTO ""Configuration"" (""Key"", ""Value"") VALUES ('passphrase-salt', 'v1:deadbeef');
+                    INSERT INTO ""Configuration"" (""Key"", ""Value"") VALUES ('blocksize', '102400');
+                ";
+                await cmd.ExecuteNonQueryAsync();
+            }
+
+            // Run wipe-encryption against the local (backup) database. It should be skipped.
+            Assert.AreEqual(0, await Program.MainAsync(["wipe-encryption", localDb, "--no-backups"]));
+
+            // No backup file should be created for a skipped database
+            Assert.AreEqual(0, Directory.GetFiles(tempDir, "local-*.bak").Length, "No backup file should be created for a skipped database");
+
+            // The database should be unchanged
+            using (var db = await SQLiteLoader.LoadConnectionAsync(localDb))
+            using (var cmd = db.CreateCommand())
+            {
+                cmd.CommandText = @"SELECT COUNT(*) FROM ""Configuration"" WHERE ""Key"" IN ('passphrase', 'passphrase-salt')";
+                Assert.AreEqual(2, Convert.ToInt64(cmd.ExecuteScalar()));
+
+                cmd.CommandText = @"SELECT ""Value"" FROM ""Configuration"" WHERE ""Key"" = 'passphrase'";
+                Assert.AreEqual("abc123hashed", (string)cmd.ExecuteScalar());
+            }
+        }
+
+        /// <summary>
+        /// Verifies that <c>--dry-run</c> reports the encrypted fields that would be wiped
+        /// from a server database without modifying it, and that no backup file is created.
+        /// </summary>
+        [Test]
+        [Category("DatabaseTool")]
+        public async Task TestWipeEncryptionDryRunAsync()
+        {
+            using var tempFolder = new Library.Utility.TempFolder();
+            var tempDir = (string)tempFolder;
+
+            var serverDb = Path.Combine(tempDir, "Duplicati-server.sqlite");
+
+            using (var db = await SQLiteLoader.LoadConnectionAsync(serverDb))
+            using (var cmd = db.CreateCommand())
+            {
+                cmd.CommandText = ServerSchemaV6;
+                await cmd.ExecuteNonQueryAsync();
+
+                var key = Duplicati.Library.Encryption.EncryptedFieldHelper.KeyInstance.CreateKey("a good and long password");
+                var encryptedTargetUrl = Duplicati.Library.Encryption.EncryptedFieldHelper.Encrypt("s3://bucket/path?auth-password=secret", key);
+                var encryptedPassphrase = Duplicati.Library.Encryption.EncryptedFieldHelper.Encrypt("my-passphrase", key);
+
+                cmd.CommandText = $@"
+                    INSERT INTO ""Backup"" (""Name"", ""Tags"", ""TargetURL"", ""DBPath"")
+                    VALUES ('EncryptedBackup', '', '{encryptedTargetUrl.Replace("'", "''")}', 'backup1.sqlite');
+                    INSERT INTO ""Option"" (""BackupID"", ""Filter"", ""Name"", ""Value"")
+                    VALUES (1, '', 'passphrase', '{encryptedPassphrase.Replace("'", "''")}');
+                    INSERT INTO ""Option"" (""BackupID"", ""Filter"", ""Name"", ""Value"")
+                    VALUES (-2, '', 'encrypted-fields', 'True');
+                ";
+                await cmd.ExecuteNonQueryAsync();
+            }
+
+            // Run with --dry-run
+            Assert.AreEqual(0, await Program.MainAsync(["wipe-encryption", serverDb, "--dry-run"]));
+
+            // No backup file should be created during a dry run
+            Assert.AreEqual(0, Directory.GetFiles(tempDir, "Duplicati-server-*.bak").Length, "No backup file should be created during a dry run");
+
+            // The database should be unchanged
+            using (var db = await SQLiteLoader.LoadConnectionAsync(serverDb))
+            using (var cmd = db.CreateCommand())
+            {
+                // The encrypted TargetURL should still be present
+                cmd.CommandText = @"SELECT ""TargetURL"" FROM ""Backup"" WHERE ""Name"" = 'EncryptedBackup'";
+                var targetUrl = (string)cmd.ExecuteScalar();
+                Assert.IsTrue(targetUrl.StartsWith("enc-v1:"), "Encrypted TargetURL should be unchanged during a dry run");
+
+                // The encrypted-fields server setting should still be True
+                cmd.CommandText = @"SELECT ""Value"" FROM ""Option"" WHERE ""BackupID"" = -2 AND ""Name"" = 'encrypted-fields'";
+                Assert.AreEqual("True", (string)cmd.ExecuteScalar());
+            }
+        }
     }
 }
