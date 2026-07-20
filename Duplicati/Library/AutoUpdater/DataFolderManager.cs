@@ -280,6 +280,8 @@ public static class DataFolderManager
         if (SystemIO.IO_OS.DirectoryHasPermissionUserRWOnly(dataFolder, false, out var detail))
             return;
 
+        var configuretoolname = PackageHelper.GetExecutableName(PackageHelper.NamedExecutable.ConfigureTool);
+
         // Tailor the guidance based on whether the folder pre-existed. A pre-existing folder
         // that is not canonical is either an attacker-created folder (squatting) or one whose
         // permissions have been changed; either way Duplicati will not adopt it and requires
@@ -288,8 +290,8 @@ public static class DataFolderManager
             ? "This folder already existed before Duplicati started and does not have the expected restricted permissions, " +
               "which can mean it was created by another (possibly malicious) user and may contain a malicious database or configuration. " +
               "Duplicati does not automatically adopt an existing folder's permissions. Verify the folder was created by Duplicati " +
-              "(not an attacker), then restrict its permissions using the 'configuretool secure-datafolder' command (or manually). "
-            : "Restrict the permissions on the folder using the 'configuretool secure-datafolder' command (or manually). ";
+              $"(not an attacker), then restrict its permissions using the '{configuretoolname} secure-datafolder' command (or manually). "
+            : $"Restrict the permissions on the folder using the '{configuretoolname} secure-datafolder' command (or manually). ";
 
         throw new UserInformationException(
             $"The data folder '{dataFolder}' does not have secure permissions ({detail}). " +
