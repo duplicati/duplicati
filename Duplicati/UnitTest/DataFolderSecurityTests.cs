@@ -154,11 +154,13 @@ namespace Duplicati.UnitTest
 
             // The "for service" mode excludes the current user as a trusted principal and
             // locks the folder down to root (POSIX) or SYSTEM/Administrators (Windows).
-            // On POSIX this requires running as root to be able to chown to root, so skip
-            // the set step there when not root; verification of an already-root-owned
-            // folder is covered by the canonical check on the service path elsewhere.
-            if (!OperatingSystem.IsWindows() && !IsCurrentUserPrivilegedForService())
-                Assert.Ignore("The for-service lockdown on POSIX requires running as root");
+            // On POSIX this requires running as root to be able to chown to root, and on
+            // Windows it requires an elevated (Administrators) token to be able to assign
+            // Administrators as the owner, so skip the set step when not privileged;
+            // verification of an already-root-owned folder is covered by the canonical
+            // check on the service path elsewhere.
+            if (!IsCurrentUserPrivilegedForService())
+                Assert.Ignore("The for-service lockdown requires running as root on POSIX or as a member of Administrators on Windows");
 
             SystemIO.IO_OS.DirectorySetPermissionUserRWOnly(dir, true);
 
@@ -189,8 +191,8 @@ namespace Duplicati.UnitTest
             var dir = NewChild("service-accepted");
             Directory.CreateDirectory(dir);
 
-            if (!OperatingSystem.IsWindows() && !IsCurrentUserPrivilegedForService())
-                Assert.Ignore("The for-service lockdown on POSIX requires running as root");
+            if (!IsCurrentUserPrivilegedForService())
+                Assert.Ignore("The for-service lockdown requires running as root on POSIX or as a member of Administrators on Windows");
 
             SystemIO.IO_OS.DirectorySetPermissionUserRWOnly(dir, true);
 
@@ -206,8 +208,8 @@ namespace Duplicati.UnitTest
             var dir = NewChild("service-rejects-non-service");
             Directory.CreateDirectory(dir);
 
-            if (!OperatingSystem.IsWindows() && !IsCurrentUserPrivilegedForService())
-                Assert.Ignore("The for-service lockdown on POSIX requires running as root");
+            if (!IsCurrentUserPrivilegedForService())
+                Assert.Ignore("The for-service lockdown requires running as root on POSIX or as a member of Administrators on Windows");
 
             SystemIO.IO_OS.DirectorySetPermissionUserRWOnly(dir, true);
 
