@@ -534,7 +534,7 @@ namespace Duplicati.Library.Main.Database.Local
                         pathprefix = Util.AppendDirSeparator(pathprefix, dirsep);
 
                     await using var tmpnames = await FilteredFilenameTable
-                        .CreateFilteredFilenameTableAsync(m_db, new FilterExpression(new string[] { pathprefix + "*" }, true), token)
+                        .CreateFilteredFilenameTableAsync(m_db, new FilterExpression(pathprefix + "*", true), token)
                         .ConfigureAwait(false);
                     await using var cmd = m_db.Connection.CreateCommand();
                     //First we trim the filelist to exclude filenames not found in any of the filesets

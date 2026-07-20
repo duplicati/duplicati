@@ -304,5 +304,141 @@ namespace Duplicati.UnitTest
                 Assert.IsFalse(combined.Matches(s, out _, out _));
             }
         }
+
+        [Test]
+        [Category("Filter")]
+        public static void SingleStringConstructorDoesNotSplitOnPathSeparator()
+        {
+            // Regression guard: the single-string constructor must treat the input as a single
+            // filter entry and must NOT split it on System.IO.Path.PathSeparator. Previously the
+            // constructor split the input, which broke Windows paths that contain a colon (the
+            // platform's PathSeparator) or Unix paths that contain a semicolon.
+            var sep = System.IO.Path.PathSeparator.ToString();
+
+            // A path that contains the platform path separator should be matched as a single
+            // literal entry, not as two separate entries.
+            var literalWithSep = $"alpha{sep}beta";
+            var filter = new FilterExpression(literalWithSep);
+
+            Assert.IsFalse(filter.Empty, "Filter should not be empty");
+            Assert.AreEqual(FilterType.Simple, filter.Type, "Filter should be a simple/literal entry");
+
+            // The full string (including the separator) must match, proving it was not split.
+            Assert.IsTrue(filter.Matches(literalWithSep, out _, out _));
+            // Neither half should match on its own.
+            Assert.IsFalse(filter.Matches("alpha", out _, out _));
+            Assert.IsFalse(filter.Matches("beta", out _, out _));
+        }
+
+        [Test]
+        [Category("Filter")]
+        public static void SingleStringConstructorHandlesEmptyAndWhitespace()
+        {
+            Assert.IsTrue(new FilterExpression(string.Empty).Empty, "Empty string should produce an empty filter");
+            Assert.IsTrue(new FilterExpression("   ").Empty, "Whitespace-only string should produce an empty filter");
+            Assert.IsTrue(new FilterExpression("\t\n").Empty, "Tab/newline string should produce an empty filter");
+        }
+
+        [Test]
+        [Category("Filter")]
+        public static void MultiStringConstructorDoesNotSplitEntries()
+        {
+            var sep = System.IO.Path.PathSeparator.ToString();
+
+            // When multiple entries are passed, each is treated as a distinct literal. Entries
+            // containing the platform path separator must not be split further.
+            var filter = new FilterExpression(new[] { $"foo{sep}bar", "baz" });
+
+            Assert.IsFalse(filter.Empty);
+            Assert.IsTrue(filter.Matches($"foo{sep}bar", out _, out _), "Composite entry should match as a whole");
+            Assert.IsTrue(filter.Matches("baz", out _, out _));
+            Assert.IsFalse(filter.Matches("foo", out _, out _), "Composite entry should not match its first half");
+            Assert.IsFalse(filter.Matches("bar", out _, out _), "Composite entry should not match its second half");
+        }
+
+        [Test]
+        [Category("Filter")]
+        public static void ExpandFilterGroupsResolvesValidGroup()
+        {
+            // {DefaultExcludes} should expand into the underlying System/Cache/etc. filter strings.
+            // Rather than asserting a specific platform-dependent path match, verify that the
+            // expanded filter is non-empty and matches at least one of the strings produced by
+            // FilterGroups.GetFilterStrings(FilterGroup.DefaultExcludes).
+            var groupStrings = FilterGroups.GetFilterStrings(FilterGroup.DefaultExcludes).ToList();
+            Assert.IsTrue(groupStrings.Count > 0, "DefaultExcludes group should produce filter strings");
+
+            var defaultExcludes = new FilterExpression("{DefaultExcludes}");
+            Assert.IsFalse(defaultExcludes.Empty, "DefaultExcludes group should expand to a non-empty filter");
+
+            var anyMatched = groupStrings.Any(s => defaultExcludes.Matches(s, out _, out _));
+            Assert.IsTrue(anyMatched, "Expanded filter should match at least one of the group's filter strings");
+        }
+
+        [Test]
+        [Category("Filter")]
+        public static void ExpandFilterGroupsDropsNoneResolvingGroup()
+        {
+            // DefaultIncludes resolves to FilterGroup.None, so the entry should be silently dropped
+            // rather than producing an empty/throwing filter. Combined with another literal, the
+            // literal must still match.
+            var filter = new FilterExpression(new[] { "{DefaultIncludes}", "keepme" });
+            Assert.IsFalse(filter.Empty, "Literal entry should survive even when a group entry is dropped");
+            Assert.IsTrue(filter.Matches("keepme", out _, out _));
+        }
+
+        [Test]
+        [Category("Filter")]
+        public static void ExpandFilterGroupsThrowsOnUnknownGroup()
+        {
+            // An unknown group name is a user error; ParseFilterList throws ArgumentException,
+            // which must propagate out of the constructor.
+            Assert.Throws<ArgumentException>(() => new FilterExpression("{NoSuchGroup}"));
+        }
+
+        [Test]
+        [Category("Filter")]
+        public static void ExpandFilterGroupsDropsEmptyAndWhitespaceEntries()
+        {
+            var filter = new FilterExpression(new[] { "", "   ", "real" });
+            Assert.IsFalse(filter.Empty);
+            Assert.IsTrue(filter.Matches("real", out _, out _));
+            Assert.IsFalse(filter.Matches("", out _, out _));
+        }
+
+        [Test]
+        [Category("Filter")]
+        public static void ExpandFilterGroupsReturnsEmptyWhenAllEntriesDropped()
+        {
+            // When every entry resolves to nothing (empty strings plus a None-resolving group),
+            // the resulting filter should be Empty.
+            var filter = new FilterExpression(new[] { "", "{DefaultIncludes}", "   " });
+            Assert.IsTrue(filter.Empty, "Filter with only dropped entries should be empty");
+        }
+
+        [Test]
+        [Category("Filter")]
+        public static void FilterCollectorSkipsEmptyExpandedIncludeExclude()
+        {
+            // FilterCollector expands environment variables for --include/--exclude. If the
+            // expanded value is empty or whitespace, no filter entry should be added, and the
+            // resulting filter should be empty. Passing whitespace directly exercises the
+            // IsNullOrWhiteSpace guard without depending on platform-specific env var syntax.
+            var (_, filter) = FilterCollector.ExtractOptions(
+                new List<string> { "--include=   " });
+            Assert.IsTrue(filter.Empty, "Whitespace-only include should produce an empty filter");
+        }
+
+        [Test]
+        [Category("Filter")]
+        public static void FilterCollectorAcceptsNonWhitespaceInclude()
+        {
+            // A non-whitespace include value (with no env var references to expand) should
+            // produce a usable literal filter.
+            var (_, filter) = FilterCollector.ExtractOptions(
+                new List<string> { "--include=target-file.txt" });
+            Assert.IsFalse(filter.Empty);
+            Assert.IsTrue(filter.Matches("target-file.txt", out var result, out _));
+            Assert.IsTrue(result, "Include filter should report a positive match result");
+        }
     }
 }
