@@ -52,7 +52,13 @@ namespace Duplicati.Library.Utility
 
                     if (include || exclude)
                     {
-                        m_filters.Add(new FilterExpression(Environment.ExpandEnvironmentVariables(value), include));
+                        // Environment variable expansion is intentionally performed here rather than
+                        // inside FilterExpression: only command-line --include/--exclude arguments
+                        // are expanded, which mirrors how other options (e.g. --changed-files) are
+                        // pre-split by Options.cs before reaching the filter layer.
+                        var expanded = Environment.ExpandEnvironmentVariables(value);
+                        if (!string.IsNullOrWhiteSpace(expanded))
+                            m_filters.Add(new FilterExpression(expanded, include));
                         return false;
                     }
                 }

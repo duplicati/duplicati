@@ -392,22 +392,24 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
-        /// Creates a new <see cref="FilterExpression"/> instance.
+        /// Creates a new <see cref="FilterExpression"/> instance from a single filter string.
         /// </summary>
         /// <param name="filter">The filter string that represents the filter</param>
         public FilterExpression(string filter, bool result = true)
-            : this(Expand(filter), result)
+            : this([filter], result)
         {
         }
 
         /// <summary>
-        /// Creates a new <see cref="FilterExpression"/> instance.
+        /// Creates a new <see cref="FilterExpression"/> instance from one or more filter strings.
         /// </summary>
-        /// <param name="filter">The filter string that represents the filter</param>
+        /// <param name="filter">The filter strings that represent the filter</param>
         /// <param name="result">Return value of <see cref="Matches(string,out bool,out IFilter)"/> in case of match</param>
         public FilterExpression(IEnumerable<string>? filter, bool result = true)
         {
             this.Result = result;
+
+            filter = ExpandFilterGroups(filter);
 
             if (filter == null)
             {
@@ -427,24 +429,40 @@ namespace Duplicati.Library.Utility
                 this.Type = m_filters.Max((a) => a.Type);
         }
 
-        private static IEnumerable<string>? Expand(string filter)
+        /// <summary>
+        /// Expands any <c>{GroupName}</c> entries in <paramref name="filters"/> into the underlying
+        /// filter strings provided by <see cref="FilterGroups.GetFilterStrings(FilterGroup)"/>.
+        /// </summary>
+        /// <param name="filters">The raw filter strings to inspect. May be <see langword="null"/>.</param>
+        /// <returns>
+        /// A new sequence with group references replaced by their constituent filter strings, or
+        /// <see langword="null"/> when <paramref name="filters"/> is <see langword="null"/> or all
+        /// entries are empty/whitespace and/or reference unknown groups.
+        /// </returns>
+        private static IEnumerable<string>? ExpandFilterGroups(IEnumerable<string>? filters)
         {
-            if (string.IsNullOrWhiteSpace(filter))
+            if (filters == null)
                 return null;
 
-            if (filter.Length < 2 || (filter.StartsWith("[", StringComparison.Ordinal) && filter.EndsWith("]", StringComparison.Ordinal)))
+            var result = new List<string>();
+            foreach (var f in filters)
             {
-                return new string[] { filter };
-            }
+                if (string.IsNullOrWhiteSpace(f))
+                    continue;
 
-            if (filter.StartsWith("{", StringComparison.Ordinal) && filter.EndsWith("}", StringComparison.Ordinal))
-            {
-                string groupName = filter.Substring(1, filter.Length - 2);
-                FilterGroup filterGroup = FilterGroups.ParseFilterList(groupName, FilterGroup.None);
-                return (filterGroup == FilterGroup.None) ? null : FilterGroups.GetFilterStrings(filterGroup);
+                if (f.StartsWith("{", StringComparison.Ordinal) && f.EndsWith("}", StringComparison.Ordinal))
+                {
+                    string groupName = f.Substring(1, f.Length - 2);
+                    FilterGroup filterGroup = FilterGroups.ParseFilterList(groupName, FilterGroup.None);
+                    if (filterGroup != FilterGroup.None)
+                        result.AddRange(FilterGroups.GetFilterStrings(filterGroup));
+                }
+                else
+                {
+                    result.Add(f);
+                }
             }
-
-            return filter.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries);
+            return result.Count > 0 ? result : null;
         }
 
         private static List<FilterEntry> Compact(IEnumerable<FilterEntry> items)

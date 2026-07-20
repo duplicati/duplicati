@@ -1668,13 +1668,13 @@ namespace Duplicati.Server
                     filter = newfilter;
 
                 if (!string.IsNullOrWhiteSpace(prependfilter))
-                    filter = FilterExpression.Combine(FilterExpression.Deserialize(prependfilter.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries)), filter);
+                    filter = FilterExpression.Combine(FilterExpression.Deserialize(prependfilter.Split([System.IO.Path.PathSeparator.ToString()], StringSplitOptions.RemoveEmptyEntries)), filter);
 
                 if (!string.IsNullOrWhiteSpace(appendfilter))
-                    filter = FilterExpression.Combine(filter, FilterExpression.Deserialize(appendfilter.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries)));
+                    filter = FilterExpression.Combine(filter, FilterExpression.Deserialize(appendfilter.Split([System.IO.Path.PathSeparator.ToString()], StringSplitOptions.RemoveEmptyEntries)));
 
                 if (!string.IsNullOrWhiteSpace(replacefilter))
-                    filter = FilterExpression.Deserialize(replacefilter.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries));
+                    filter = FilterExpression.Deserialize(replacefilter.Split([System.IO.Path.PathSeparator.ToString()], StringSplitOptions.RemoveEmptyEntries));
 
                 foreach (var keyvalue in opt)
                     options[keyvalue.Key] = keyvalue.Value;

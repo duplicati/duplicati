@@ -858,7 +858,7 @@ namespace Duplicati.Library.Main
 
                 // If the filters were changed by a module, read them back in
                 if (pristinefilter != m_options.RawOptions["filter"])
-                    filter = FilterExpression.Deserialize(m_options.RawOptions["filter"].Split(new string[] { Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries));
+                    filter = FilterExpression.Deserialize(m_options.RawOptions["filter"].Split([Path.PathSeparator.ToString()], StringSplitOptions.RemoveEmptyEntries));
             }
 
             if (!string.IsNullOrEmpty(m_options.Logfile))
