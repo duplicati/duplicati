@@ -169,6 +169,13 @@ public static class WindowsShimLoader
         => LoadWithReflection<Stream>("BackupDataStream", path);
 
     /// <summary>
+    /// Creates a new NativeNotifier that shows Windows toast notifications
+    /// </summary>
+    /// <returns>A new NativeNotifier</returns>
+    public static INativeNotifier NewNativeNotifier()
+        => LoadWithReflection<INativeNotifier>("WindowsToastNotifier");
+
+    /// <summary>
     /// Loads the chosen snapshot provider
     /// </summary>
     /// <param name="provider">The provider to load</param>
