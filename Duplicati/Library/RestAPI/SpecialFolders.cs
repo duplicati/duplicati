@@ -40,7 +40,10 @@ namespace Duplicati.Server
             foreach (var n in Nodes)
                 if (path.StartsWith(n.id, StringComparison.Ordinal))
                     path = path.Replace(n.id, n.resolvedpath);
-            return Environment.ExpandEnvironmentVariables(path);
+            // Expand Windows %VAR% (undefined is left literal - unchanged legacy behavior)
+            path = Environment.ExpandEnvironmentVariables(path);
+            // Additionally expand native $VAR / ${VAR} on non-Windows platforms
+            return Library.Utility.Utility.ExpandEnvironmentVariablesNative(path);
         }
 
         public static string ExpandEnvironmentVariablesRegexp(string path)
