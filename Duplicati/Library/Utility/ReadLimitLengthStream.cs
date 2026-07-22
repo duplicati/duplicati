@@ -158,8 +158,8 @@ namespace Duplicati.Library.Utility
 
         public override int WriteTimeout
         {
-            get => m_innerStream.ReadTimeout;
-            set => m_innerStream.ReadTimeout = value;
+            get => m_innerStream.WriteTimeout;
+            set => m_innerStream.WriteTimeout = value;
         }
 
         public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state)

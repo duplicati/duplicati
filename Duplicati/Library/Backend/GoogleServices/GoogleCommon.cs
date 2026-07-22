@@ -164,7 +164,9 @@ namespace Duplicati.Library.Backend.GoogleServices
 
                     var chunkSize = Math.Min(UPLOAD_CHUNK_SIZE, stream.Length - offset);
                     using var ls = new ReadLimitLengthStream(stream, offset, chunkSize);
-                    using var ts = ls.ObserveWriteTimeout(readWriteTimeout);
+                    // The chunk stream is used as the request body and is only read
+                    // by the HTTP stack, so the read timeout must be observed here.
+                    using var ts = ls.ObserveReadTimeout(readWriteTimeout);
                     req.Content = new StreamContent(ts);
                     req.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
                     req.Content.Headers.Add("Content-Range", $"bytes {offset}-{offset + chunkSize - 1}/{stream.Length}");
