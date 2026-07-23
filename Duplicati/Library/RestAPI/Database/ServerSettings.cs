@@ -802,6 +802,12 @@ namespace Duplicati.Server.Database
             set => SetAndSaveSetting(CONST.PRELOAD_SETTINGS_HASH, value);
         }
 
+        /// <summary>
+        /// The last timezone id that failed to resolve; used to only warn once per id,
+        /// as the timezone is read repeatedly by the scheduler
+        /// </summary>
+        private static string? lastUnresolvableTimezoneId;
+
         public TimeZoneInfo Timezone
         {
             get
@@ -812,15 +818,22 @@ namespace Duplicati.Server.Database
                 if (string.IsNullOrEmpty(id))
                     return TimeZoneInfo.Utc;
 
-                try
+                var tzi = TimeZoneHelper.GetTimeZoneById(id);
+                if (tzi != null)
+                    return tzi;
+
+                // The fallback changes when scheduled backups run, so it must not be silent;
+                // this can happen when the database is moved between operating systems
+                if (lastUnresolvableTimezoneId != id)
                 {
-                    if (!string.IsNullOrEmpty(id))
-                        return TimeZoneHelper.GetTimeZoneById(id)
-                            ?? TimeZoneInfo.Local;
+                    lastUnresolvableTimezoneId = id;
+                    Library.Logging.Log.WriteWarningMessage(
+                        "ServerSettings",
+                        "UnresolvableTimezone",
+                        null,
+                        $"The configured timezone \"{id}\" cannot be resolved on this system; using the local timezone \"{TimeZoneInfo.Local.Id}\" instead.");
                 }
-                catch
-                {
-                }
+
                 return TimeZoneInfo.Local;
             }
             set

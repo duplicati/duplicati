@@ -693,14 +693,14 @@ namespace Duplicati.Server
                 connection.ApplicationSettings.SetAllowedHostnames(commandlineOptions[WebServerLoader.OPTION_WEBSERVICE_ALLOWEDHOSTNAMES_ALT]);
 
             if (commandlineOptions.ContainsKey(WebServerLoader.OPTION_WEBSERVICE_TIMEZONE) && !string.IsNullOrEmpty(commandlineOptions[WebServerLoader.OPTION_WEBSERVICE_TIMEZONE]))
-                try
-                {
-                    connection.ApplicationSettings.Timezone = TimeZoneHelper.FindTimeZone(commandlineOptions[WebServerLoader.OPTION_WEBSERVICE_TIMEZONE]);
-                }
-                catch (Exception ex)
-                {
-                    throw new UserInformationException(Strings.Program.InvalidTimezone(commandlineOptions[WebServerLoader.OPTION_WEBSERVICE_TIMEZONE]), "InvalidTimeZone", ex);
-                }
+            {
+                // FindTimeZone reports an unknown timezone by returning null, not by
+                // throwing; assigning the null would silently clear the stored setting
+                var timezone = TimeZoneHelper.FindTimeZone(commandlineOptions[WebServerLoader.OPTION_WEBSERVICE_TIMEZONE]);
+                if (timezone == null)
+                    throw new UserInformationException(Strings.Program.InvalidTimezone(commandlineOptions[WebServerLoader.OPTION_WEBSERVICE_TIMEZONE]), "InvalidTimeZone");
+                connection.ApplicationSettings.Timezone = timezone;
+            }
 
             // The database has recorded a new version
             if (connection.ApplicationSettings.UpdatedVersion != null)

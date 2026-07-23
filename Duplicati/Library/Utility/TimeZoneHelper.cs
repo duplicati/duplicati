@@ -68,7 +68,10 @@ public static class TimeZoneHelper
         {
             return TimeZoneInfo.FindSystemTimeZoneById(id);
         }
-        catch
+        catch (TimeZoneNotFoundException)
+        {
+        }
+        catch (InvalidTimeZoneException)
         {
         }
         return null;
