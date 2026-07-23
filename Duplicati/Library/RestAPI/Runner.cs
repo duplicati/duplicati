@@ -420,17 +420,23 @@ namespace Duplicati.Server
 
 
         public static IRunnerData CreateRestoreTask(IBackup backup, string[]? filters,
-                                                    DateTime time, string? restoreTarget, bool overwrite, bool restore_permissions,
-                                                    bool skip_metadata, string? passphrase)
+                                                    DateTime time, string? restoreTarget, bool? overwrite, bool? restore_permissions,
+                                                    bool? skip_metadata, string? passphrase)
         {
             var dict = new Dictionary<string, string?>
             {
                 ["time"] = Utility.SerializeDateTime(time.ToUniversalTime()),
-                ["overwrite"] = overwrite ? bool.TrueString : bool.FalseString,
-                ["restore-permissions"] = restore_permissions ? bool.TrueString : bool.FalseString,
-                ["skip-metadata"] = skip_metadata ? bool.TrueString : bool.FalseString,
                 ["allow-passphrase-change"] = bool.TrueString
             };
+
+            // An unset value is not written, so the backup settings and the server's
+            // default options apply; an explicit value overrides them
+            if (overwrite.HasValue)
+                dict["overwrite"] = overwrite.Value ? bool.TrueString : bool.FalseString;
+            if (restore_permissions.HasValue)
+                dict["restore-permissions"] = restore_permissions.Value ? bool.TrueString : bool.FalseString;
+            if (skip_metadata.HasValue)
+                dict["skip-metadata"] = skip_metadata.Value ? bool.TrueString : bool.FalseString;
             if (!string.IsNullOrWhiteSpace(restoreTarget))
                 dict["restore-path"] = SpecialFolders.ExpandEnvironmentVariables(restoreTarget);
             if (!(passphrase is null))
