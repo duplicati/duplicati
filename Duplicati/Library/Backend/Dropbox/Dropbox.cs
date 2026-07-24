@@ -46,9 +46,9 @@ namespace Duplicati.Library.Backend
         // This constructor is needed by the BackendLoader.
         public Dropbox(string url, Dictionary<string, string?> options)
         {
-            var uri = new Utility.Uri(url);
+            var uri = new Utility.CompatUri(url);
 
-            m_path = Utility.Uri.UrlDecode(uri.HostAndPath);
+            m_path = Utility.CompatUri.UrlDecode(uri.HostAndPath);
             if (m_path.Length != 0 && !m_path.StartsWith("/", StringComparison.Ordinal))
                 m_path = "/" + m_path;
 

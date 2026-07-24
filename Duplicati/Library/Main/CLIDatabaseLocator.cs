@@ -133,7 +133,7 @@ namespace Duplicati.Library.Main
                 configs = Newtonsoft.Json.JsonConvert.DeserializeObject<List<BackendEntry>>(System.IO.File.ReadAllText(file, System.Text.Encoding.UTF8))
                     ?? new List<BackendEntry>();
 
-            var uri = new Library.Utility.Uri(backend);
+            var uri = new Library.Utility.CompatUri(backend);
             var server = uri.Host ?? "";
             var path = uri.Path;
             var type = uri.Scheme;

@@ -129,7 +129,7 @@ public class SMBBackend : IStreamingBackend, IFolderEnabledBackend, IRenameEnabl
         if (options == null)
             throw new ArgumentNullException(nameof(options));
 
-        var uri = new Utility.Uri(url);
+        var uri = new Utility.CompatUri(url);
         uri.RequireHost();
         _DnsName = uri.Host ?? "";
 

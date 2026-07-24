@@ -120,13 +120,13 @@ public static class SecretProviderHelper
     /// Note that this method modifes the arguments and options in place.
     /// </summary>
     /// <param name="realUriArguments">The arguments to modify, of type <see cref="System.Uri"/></param>
-    /// <param name="internalUriArguments">The arguments to modify, of type <see cref="Library.Utility.Uri"/></param>
+    /// <param name="internalUriArguments">The arguments to modify, of type <see cref="Library.Utility.CompatUri"/></param>
     /// <param name="options">The options to modify</param>
     /// <param name="persistedFolder">The persisted secret cache folder</param>
     /// <param name="fallbackProvider">The fallback provider to use if no provider is specified</param>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>The secret provider</returns>
-    public static async Task<ISecretProvider?> ApplySecretProviderAsync(System.Uri?[] realUriArguments, Library.Utility.Uri[] internalUriArguments, Dictionary<string, string?> options, string persistedFolder, ISecretProvider? fallbackProvider, CancellationToken cancellationToken)
+    public static async Task<ISecretProvider?> ApplySecretProviderAsync(System.Uri?[] realUriArguments, Library.Utility.CompatUri[] internalUriArguments, Dictionary<string, string?> options, string persistedFolder, ISecretProvider? fallbackProvider, CancellationToken cancellationToken)
     {
         var provider = options.GetValueOrDefault("secret-provider");
         if (string.IsNullOrWhiteSpace(provider) && fallbackProvider == null)
@@ -170,12 +170,12 @@ public static class SecretProviderHelper
     /// </summary>
     /// <param name="provider">The secret provider to use</param>
     /// <param name="realUriArguments">The arguments to modify, of type <see cref="System.Uri"/></param>
-    /// <param name="internalUriArguments">The arguments to modify, of type <see cref="Library.Utility.Uri"/></param>
+    /// <param name="internalUriArguments">The arguments to modify, of type <see cref="Library.Utility.CompatUri"/></param>
     /// <param name="options">Any options to update</param>
     /// <param name="matchpattern">The prefix to look for</param>
     /// <param name="cancelToken">The cancellation token</param>
     /// <returns>An awaitable task</returns>
-    public static async Task ReplaceSecretsAsync(ISecretProvider provider, System.Uri?[] realUriArguments, Library.Utility.Uri[] internalUriArguments, Dictionary<string, string?> options, string matchpattern, CancellationToken cancelToken)
+    public static async Task ReplaceSecretsAsync(ISecretProvider provider, System.Uri?[] realUriArguments, Library.Utility.CompatUri[] internalUriArguments, Dictionary<string, string?> options, string matchpattern, CancellationToken cancelToken)
     {
         // Unwrap ${} to support ${name is long}
         var suffix = string.Empty;
@@ -267,8 +267,8 @@ public static class SecretProviderHelper
             {
                 var uri = internalUriArguments[s];
                 var kp = uri.QueryParameters;
-                kp[k] = Library.Utility.Uri.UrlEncode(translated[v.Key]);
-                uri = uri.SetQuery(Library.Utility.Uri.BuildUriQuery(kp));
+                kp[k] = Library.Utility.CompatUri.UrlEncode(translated[v.Key]);
+                uri = uri.SetQuery(Library.Utility.CompatUri.BuildUriQuery(kp));
                 internalUriArguments[s] = uri;
             }
 

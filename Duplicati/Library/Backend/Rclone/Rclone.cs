@@ -62,7 +62,7 @@ namespace Duplicati.Library.Backend
 
         public Rclone(string url, Dictionary<string, string?> options)
         {
-            var uri = new Utility.Uri(url);
+            var uri = new Utility.CompatUri(url);
             /*should check here if program is installed */
 
             local_repo = options.GetValueOrDefault(OPTION_LOCAL_REPO) ?? "";

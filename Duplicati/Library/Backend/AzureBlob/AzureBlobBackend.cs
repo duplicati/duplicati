@@ -108,7 +108,7 @@ namespace Duplicati.Library.Backend.AzureBlob
         // This constructor is needed by the BackendLoader.
         public AzureBlobBackend(string url, Dictionary<string, string?> options)
         {
-            var uri = new Utility.Uri(url);
+            var uri = new Utility.CompatUri(url);
             uri.RequireHost();
 
             var containerName = (uri.Host ?? "").ToLowerInvariant();

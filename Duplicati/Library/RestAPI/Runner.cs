@@ -1545,7 +1545,7 @@ namespace Duplicati.Server
                 );
             }
 
-            var uri = new Library.Utility.Uri(backup.TargetURL);
+            var uri = new Library.Utility.CompatUri(backup.TargetURL);
             if (uri.Scheme.Equals(Library.Backend.Duplicati.DuplicatiBackend.PROTOCOL, StringComparison.OrdinalIgnoreCase))
                 url = Library.Backend.Duplicati.DuplicatiBackend.MergeArgsIntoUrl(
                     url,

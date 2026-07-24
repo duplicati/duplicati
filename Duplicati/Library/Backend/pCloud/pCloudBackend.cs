@@ -129,7 +129,7 @@ public class pCloudBackend : IStreamingBackend, IRenameEnabledBackend
     /// <param name="options">options to be used in the backend</param>
     public pCloudBackend(string url, Dictionary<string, string?> options)
     {
-        var uri = new Utility.Uri(url);
+        var uri = new Utility.CompatUri(url);
         uri.RequireHost();
         _DnsName = uri.Host ?? "";
 

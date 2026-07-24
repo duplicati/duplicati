@@ -63,7 +63,7 @@ public class GetApiKeyModule : IWebModule
         if (string.IsNullOrEmpty(url))
             throw new UserInformationException("URL is required", "UrlOptionMissing");
 
-        var uri = new Utility.Uri(url);
+        var uri = new Utility.CompatUri(url);
 
         var newOpts = new Dictionary<string, string?>(options);
         foreach (var key in uri.QueryParameters.AllKeys)

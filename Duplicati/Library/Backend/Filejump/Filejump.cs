@@ -129,7 +129,7 @@ namespace Duplicati.Library.Backend
 
         public Filejump(string url, Dictionary<string, string?> options)
         {
-            var u = new Utility.Uri(url);
+            var u = new Utility.CompatUri(url);
             m_path = u.HostAndPath.Trim('/');
             if (string.IsNullOrWhiteSpace(m_path))
                 m_path = "/";

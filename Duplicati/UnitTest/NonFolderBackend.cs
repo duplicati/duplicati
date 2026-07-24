@@ -62,7 +62,7 @@ namespace Duplicati.UnitTest
             // into it; this wrapper does not pre-create it, mirroring how a real
             // folderless backend would behave (folders are created explicitly via
             // CreateFolderAsync, not implicitly on construction).
-            var wrappedUrl = new Library.Utility.Uri(url).SetScheme(WrappedBackend).ToString();
+            var wrappedUrl = new Library.Utility.CompatUri(url).SetScheme(WrappedBackend).ToString();
             m_backend = (IStreamingBackend)Library.DynamicLoader.BackendLoader.GetBackend(wrappedUrl, options);
         }
 

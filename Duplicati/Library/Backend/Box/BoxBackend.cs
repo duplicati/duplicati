@@ -29,7 +29,6 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
 using Newtonsoft.Json;
-using Uri = Duplicati.Library.Utility.Uri;
 
 namespace Duplicati.Library.Backend.Box
 {
@@ -107,7 +106,7 @@ namespace Duplicati.Library.Backend.Box
 
         public BoxBackend(string url, Dictionary<string, string?> options)
         {
-            var uri = new Uri(url);
+            var uri = new CompatUri(url);
 
             _path = Util.AppendDirSeparator(uri.HostAndPath, "/");
 

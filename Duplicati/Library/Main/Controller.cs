@@ -125,7 +125,7 @@ namespace Duplicati.Library.Main
         /// <inheritdoc />
         public async Task<IBackupResults> BackupAsync(string[] inputsources, IFilter inputFilter = null)
         {
-            UsageReporter.Reporter.Report("USE_BACKEND", new Library.Utility.Uri(m_backendUrl).Scheme);
+            UsageReporter.Reporter.Report("USE_BACKEND", new Library.Utility.CompatUri(m_backendUrl).Scheme);
             UsageReporter.Reporter.Report("USE_COMPRESSION", m_options.CompressionModule);
             UsageReporter.Reporter.Report("USE_ENCRYPTION", m_options.EncryptionModule);
 
@@ -827,7 +827,7 @@ namespace Duplicati.Library.Main
 
             // Store the URL connection options separately, as these should only be visible to modules implementing IConnectionModule
             var conopts = new Dictionary<string, string>(m_options.RawOptions);
-            var qp = new Library.Utility.Uri(m_backendUrl).QueryParameters;
+            var qp = new Library.Utility.CompatUri(m_backendUrl).QueryParameters;
             foreach (var k in qp.Keys)
                 conopts[(string)k] = qp[(string)k];
 
@@ -937,7 +937,7 @@ namespace Duplicati.Library.Main
 
         private async Task ApplySecretProviderAsync(CancellationToken cancellationToken)
         {
-            var args = new[] { new Library.Utility.Uri(m_backendUrl) };
+            var args = new[] { new Library.Utility.CompatUri(m_backendUrl) };
             await SecretProviderHelper.ApplySecretProviderAsync([], args, m_options.RawOptions, TempFolder.SystemTempPath, SecretProvider, cancellationToken).ConfigureAwait(false);
             // Write back the backend argument, if it was modified by the secret provider
             m_backendUrl = args[0].ToString();
@@ -1032,7 +1032,7 @@ namespace Duplicati.Library.Main
 
             // Throw url-encoded options into the mix
             //TODO: This can hide values if both commandline and url-parameters supply the same key
-            var ext = new Library.Utility.Uri(m_backendUrl).QueryParameters;
+            var ext = new Library.Utility.CompatUri(m_backendUrl).QueryParameters;
             foreach (var k in ext.AllKeys)
                 ropts[k] = ext[k];
 

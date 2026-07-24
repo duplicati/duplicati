@@ -194,7 +194,7 @@ public class B2 : IStreamingBackend, ILockingBackend, IRenameEnabledBackend
     /// <param name="options">options to be used in the backend</param>
     public B2(string url, Dictionary<string, string?> options)
     {
-        var uri = new Utility.Uri(url);
+        var uri = new Utility.CompatUri(url);
 
         _bucketName = uri.Host ?? "";
         _prefix = Util.AppendDirSeparator("/" + uri.Path, "/");
@@ -202,7 +202,7 @@ public class B2 : IStreamingBackend, ILockingBackend, IRenameEnabledBackend
         // For B2 we do not use a leading slash
         _prefix = _prefix.TrimStart('/');
 
-        _urlencodedPrefix = string.Join("/", _prefix.Split(new[] { '/' }).Select(x => Utility.Uri.UrlPathEncode(x)));
+        _urlencodedPrefix = string.Join("/", _prefix.Split(new[] { '/' }).Select(x => Utility.CompatUri.UrlPathEncode(x)));
 
         _bucketType = DEFAULT_BUCKET_TYPE;
         if (options.TryGetValue(B2_CREATE_BUCKET_TYPE_OPTION, out var option1))
@@ -352,7 +352,7 @@ public class B2 : IStreamingBackend, ILockingBackend, IRenameEnabledBackend
 
             request.Headers.TryAddWithoutValidation("Authorization", uploadUrlData.AuthorizationToken);
             request.Headers.Add("X-Bz-Content-Sha1", sha1);
-            request.Headers.Add("X-Bz-File-Name", _urlencodedPrefix + Utility.Uri.UrlPathEncode(remotename));
+            request.Headers.Add("X-Bz-File-Name", _urlencodedPrefix + Utility.CompatUri.UrlPathEncode(remotename));
             request.Content = new StreamContent(timeoutStream);
 
             request.Content.Headers.Add("Content-Type", "application/octet-stream");
@@ -414,9 +414,9 @@ public class B2 : IStreamingBackend, ILockingBackend, IRenameEnabledBackend
 
         using var request = _filecache != null && _filecache.ContainsKey(remotename)
             ? await _b2AuthHelper.CreateRequestAsync(
-                $"{config.DownloadUrl}/b2api/v1/b2_download_file_by_id?fileId={Utility.Uri.UrlEncode(await GetFileId(remotename, cancellationToken))}", HttpMethod.Get, cancellationToken).ConfigureAwait(false)
+                $"{config.DownloadUrl}/b2api/v1/b2_download_file_by_id?fileId={Utility.CompatUri.UrlEncode(await GetFileId(remotename, cancellationToken))}", HttpMethod.Get, cancellationToken).ConfigureAwait(false)
             : await _b2AuthHelper.CreateRequestAsync(
-                $"{config.DownloadUrl}/{_urlencodedPrefix}{Utility.Uri.UrlPathEncode(remotename)}", HttpMethod.Get, cancellationToken).ConfigureAwait(false);
+                $"{config.DownloadUrl}/{_urlencodedPrefix}{Utility.CompatUri.UrlPathEncode(remotename)}", HttpMethod.Get, cancellationToken).ConfigureAwait(false);
 
         HttpResponseMessage? response = null;
         try
@@ -712,7 +712,7 @@ public class B2 : IStreamingBackend, ILockingBackend, IRenameEnabledBackend
         await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, async ct =>
             await _b2AuthHelper.PostAndGetJsonDataAsync<FileEntity>(
                 $"{config.APIUrl}/b2api/v1/b2_copy_file",
-                new CopyFileRequest(sourceFileId, _urlencodedPrefix + Utility.Uri.UrlPathEncode(newname)),
+                new CopyFileRequest(sourceFileId, _urlencodedPrefix + Utility.CompatUri.UrlPathEncode(newname)),
                 ct).ConfigureAwait(false)
         ).ConfigureAwait(false);
 

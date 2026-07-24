@@ -62,7 +62,7 @@ namespace Duplicati.UnitTest
         // ReSharper disable once UnusedMember.Global
         public DeterministicErrorBackend(string url, Dictionary<string, string> options)
         {
-            var u = new Library.Utility.Uri(url).SetScheme(WrappedBackend).ToString();
+            var u = new Library.Utility.CompatUri(url).SetScheme(WrappedBackend).ToString();
             m_backend = (IStreamingBackend)Library.DynamicLoader.BackendLoader.GetBackend(u, options);
         }
 

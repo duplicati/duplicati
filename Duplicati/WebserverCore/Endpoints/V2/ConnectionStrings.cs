@@ -132,8 +132,8 @@ namespace Duplicati.WebserverCore.Endpoints.V2
 
         private static string MergeConnectionStrings(string connectionStringUrl, string backupUrl)
         {
-            var csUri = new Duplicati.Library.Utility.Uri(connectionStringUrl);
-            var backupUri = new Duplicati.Library.Utility.Uri(backupUrl);
+            var csUri = new Duplicati.Library.Utility.CompatUri(connectionStringUrl);
+            var backupUri = new Duplicati.Library.Utility.CompatUri(backupUrl);
 
             // Start with backup URI to keep Scheme, Host, Port, Path
             var resultUri = backupUri;
@@ -147,8 +147,8 @@ namespace Duplicati.WebserverCore.Endpoints.V2
 
             // Merge Query Parameters
             // Use decodeValues=false to preserve encoding
-            var csQuery = Duplicati.Library.Utility.Uri.ParseQueryString(csUri.Query ?? "", false);
-            var backupQuery = Duplicati.Library.Utility.Uri.ParseQueryString(backupUri.Query ?? "", false);
+            var csQuery = Duplicati.Library.Utility.CompatUri.ParseQueryString(csUri.Query ?? "", false);
+            var backupQuery = Duplicati.Library.Utility.CompatUri.ParseQueryString(backupUri.Query ?? "", false);
 
             var mergedQuery = new System.Collections.Specialized.NameValueCollection(backupQuery);
 
@@ -158,7 +158,7 @@ namespace Duplicati.WebserverCore.Endpoints.V2
                     mergedQuery[key] = csQuery[key];
             }
 
-            resultUri = resultUri.SetQuery(Duplicati.Library.Utility.Uri.BuildUriQuery(mergedQuery));
+            resultUri = resultUri.SetQuery(Duplicati.Library.Utility.CompatUri.BuildUriQuery(mergedQuery));
 
             return resultUri.ToString();
         }

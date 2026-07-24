@@ -104,7 +104,7 @@ namespace Duplicati.CommandLine.BackendTool
                                where n is Library.Interface.IConnectionModule
                                select n).ToArray();
 
-                var uri = new Library.Utility.Uri(args[1]);
+                var uri = new Library.Utility.CompatUri(args[1]);
                 var qp = uri.QueryParameters;
 
                 var backendOpts = new Dictionary<string, string>();

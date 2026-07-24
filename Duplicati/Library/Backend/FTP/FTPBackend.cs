@@ -269,7 +269,7 @@ namespace Duplicati.Library.Backend
             _sslOptions = SslOptionsHelper.Parse(options);
             _sslValidator = new SslCertificateValidator(_sslOptions.AcceptAllCertificates, _sslOptions.AcceptSpecificCertificateHashes, _sslOptions.IgnoreRevocationFailure);
 
-            var u = new Utility.Uri(url);
+            var u = new Utility.CompatUri(url);
             u.RequireHost();
 
             var auth = AuthOptionsHelper.Parse(options, u);

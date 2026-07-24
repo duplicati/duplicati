@@ -73,7 +73,7 @@ namespace Duplicati.Library.Backend.Mega
 
         public MegaBackend(string url, Dictionary<string, string?> options)
         {
-            var uri = new Utility.Uri(url);
+            var uri = new Utility.CompatUri(url);
 
             var auth = AuthOptionsHelper.Parse(options, uri);
             if (options.ContainsKey("auth-two-factor-key"))

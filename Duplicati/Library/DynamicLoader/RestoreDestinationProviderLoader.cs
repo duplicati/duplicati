@@ -69,7 +69,7 @@ namespace Duplicati.Library.DynamicLoader
             /// <returns>The instanciated SourceProvider or null if the url is not supported</returns>
             public IRestoreDestinationProvider GetRestoreDestinationProvider(string url, Dictionary<string, string> options)
             {
-                var uri = new Utility.Uri(url);
+                var uri = new Utility.CompatUri(url);
 
                 LoadInterfaces();
 
@@ -107,7 +107,7 @@ namespace Duplicati.Library.DynamicLoader
             /// <returns>The supported commands or null if the url scheme was not supported</returns>
             public IReadOnlyList<ICommandLineArgument> GetSupportedCommands(string url)
             {
-                var uri = new Utility.Uri(url);
+                var uri = new Utility.CompatUri(url);
 
                 LoadInterfaces();
 

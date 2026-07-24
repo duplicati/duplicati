@@ -117,7 +117,7 @@ namespace Duplicati.Library.Backend
         /// <param name="options">The options for the file backend</param>
         public File(string url, Dictionary<string, string?> options)
         {
-            var uri = new Utility.Uri(url);
+            var uri = new Utility.CompatUri(url);
             var path = uri.HostAndPath;
             var auth = AuthOptionsHelper.Parse(options, uri);
             m_timeouts = TimeoutOptionsHelper.Parse(options);

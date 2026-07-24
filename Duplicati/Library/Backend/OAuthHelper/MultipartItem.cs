@@ -101,7 +101,7 @@ namespace Duplicati.Library
                 if (string.IsNullOrWhiteSpace(value))
                     Headers.Remove("Content-Disposition");
                 else
-                    Headers["Content-Disposition"] = string.Format("form-data; name=\"{0}\"", Library.Utility.Uri.UrlEncode(value)); 
+                    Headers["Content-Disposition"] = string.Format("form-data; name=\"{0}\"", Library.Utility.CompatUri.UrlEncode(value)); 
             }
         }
 
@@ -132,7 +132,7 @@ namespace Duplicati.Library
         }
         public MultipartItem SetHeader(string key, string value)
         {
-            return SetHeaderRaw(key, Library.Utility.Uri.UrlEncode(value));
+            return SetHeaderRaw(key, Library.Utility.CompatUri.UrlEncode(value));
         }
         public MultipartItem SetContentDisposition(string name, string filename = null)
         {
@@ -142,7 +142,7 @@ namespace Duplicati.Library
                 return this;
             }
                 
-            return SetHeaderRaw("Content-Disposition", string.Format("form-data; name=\"{0}\"; filename=\"{1}\"", Library.Utility.Uri.UrlEncode(name), Library.Utility.Uri.UrlEncode(filename)));
+            return SetHeaderRaw("Content-Disposition", string.Format("form-data; name=\"{0}\"; filename=\"{1}\"", Library.Utility.CompatUri.UrlEncode(name), Library.Utility.CompatUri.UrlEncode(filename)));
         }
 
     }}

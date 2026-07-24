@@ -135,15 +135,15 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     /// <param name="options">The backend options</param>
     public DuplicatiBackend(string url, Dictionary<string, string?> options)
     {
-        var uri = new Utility.Uri(url);
+        var uri = new Utility.CompatUri(url);
         if (string.IsNullOrWhiteSpace(uri.HostAndPath))
-            uri = new Utility.Uri(DEFAULT_ENDPOINT);
+            uri = new Utility.CompatUri(DEFAULT_ENDPOINT);
         else
             uri = uri.SetScheme("https").SetQuery(null);
 
         var endpoint = options.GetValueOrDefault(ENDPOINT_OPTION);
         if (!string.IsNullOrWhiteSpace(endpoint))
-            uri = new Utility.Uri(endpoint);
+            uri = new Utility.CompatUri(endpoint);
 
         _client = new HttpClient
         {
@@ -157,7 +157,7 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
         _backup_id = options.GetValueOrDefault(BACKUP_ID_OPTION) ?? string.Empty;
         if (string.IsNullOrEmpty(_backup_id))
             throw new ArgumentException(Strings.DuplicatiBackend.ErrorMissingBackupId, BACKUP_ID_OPTION);
-        _auth = AuthOptionsHelper.ParseWithAlias(options, new Utility.Uri(url), AUTH_API_ID_OPTION, AUTH_API_KEY_OPTION)
+        _auth = AuthOptionsHelper.ParseWithAlias(options, new Utility.CompatUri(url), AUTH_API_ID_OPTION, AUTH_API_KEY_OPTION)
             .RequireCredentials();
 
         _authTimeout = Utility.Utility.ParseTimespanOption(options, AUTH_TIMEOUT_OPTION, DEFAULT_AUTH_TIMEOUT);
@@ -180,7 +180,7 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     /// <returns>The merged URL</returns>
     public static string MergeArgsIntoUrl(string url, string? apiId, string? apiKey, string? endpoint)
     {
-        var uri = new Utility.Uri(url);
+        var uri = new Utility.CompatUri(url);
         var opts = new Dictionary<string, string?>
         {
             [AUTH_API_ID_OPTION] = apiId,
@@ -190,12 +190,12 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
         var qp = uri.QueryParameters;
         foreach (var kvp in opts)
             if (!string.IsNullOrWhiteSpace(kvp.Value) && string.IsNullOrWhiteSpace(qp.Get(kvp.Key)))
-                qp[kvp.Key] = Utility.Uri.UrlEncode(kvp.Value);
+                qp[kvp.Key] = Utility.CompatUri.UrlEncode(kvp.Value);
 
-        var query = Utility.Uri.BuildUriQuery(qp);
+        var query = Utility.CompatUri.BuildUriQuery(qp);
 
         if (string.IsNullOrWhiteSpace(uri.HostAndPath) && !string.IsNullOrWhiteSpace(endpoint))
-            uri = new Utility.Uri(endpoint).SetScheme(uri.Scheme).SetQuery(null);
+            uri = new Utility.CompatUri(endpoint).SetScheme(uri.Scheme).SetQuery(null);
 
         return uri.SetQuery(query).ToString();
     }

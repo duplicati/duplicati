@@ -75,7 +75,7 @@ public static class AuthIdOptionsHelper
     {
         if (string.IsNullOrWhiteSpace(oauthurl))
             oauthurl = DUPLICATI_OAUTH_SERVICE;
-        var u = new Uri(oauthurl);
+        var u = new CompatUri(oauthurl);
         var addr = u.SetPath("").SetQuery((u.Query ?? "") + (string.IsNullOrWhiteSpace(u.Query) ? "" : "&") + "type={0}");
         return string.Format(addr.ToString(), modulename);
     }
@@ -89,7 +89,7 @@ public static class AuthIdOptionsHelper
         if (string.IsNullOrWhiteSpace(oauthurl))
             oauthurl = DUPLICATI_OAUTH_SERVICE_NEW;
 
-        var u = new Uri(oauthurl);
+        var u = new CompatUri(oauthurl);
         var addr = u.SetPath("").SetQuery((u.Query ?? "") + (string.IsNullOrWhiteSpace(u.Query) ? "" : "&") + "type={0}");
         return string.Format(addr.ToString(), modulename);
     }

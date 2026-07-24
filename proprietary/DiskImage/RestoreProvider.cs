@@ -111,7 +111,7 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     /// <param name="options">The options for the restore operation</param>
     public RestoreProvider(string url, Dictionary<string, string?> options)
     {
-        var uri = new Library.Utility.Uri(url);
+        var uri = new Library.Utility.CompatUri(url);
         _restorePath = uri.HostAndPath;
         _devicePath = uri.HostAndPath;
 
