@@ -64,6 +64,76 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("RestoreHandler")]
+        public async Task RestoreLocalBlocksRetargetPartialTrailingBlockAsync()
+        {
+            // Regression test for the byte-offset used when copying verified
+            // blocks from an existing target file into a retargeted file
+            // (CopyOldTargetBlocksToNewTargetAsync). The offset must be the
+            // block index times the fixed block size, not times the block's
+            // own size. This only mattered for a file's trailing partial block,
+            // where the block size is smaller than the fixed block size.
+
+            const int blocksize = 1024;
+            const string blocksizeArg = "1kb";
+            // Size the file to 2.5 blocks so the last block is partial (512 bytes).
+            var data = new byte[(blocksize * 2) + (blocksize / 2)];
+            new Random(42).NextBytes(data);
+
+            var filePath = Path.Combine(this.DATAFOLDER, "file");
+            File.WriteAllBytes(filePath, data);
+
+            var backupOptions = new Dictionary<string, string>(this.TestOptions)
+            {
+                ["blocksize"] = blocksizeArg,
+                ["restore-legacy"] = "false"
+            };
+            using (var c = new Controller("file://" + this.TARGETFOLDER, backupOptions, null))
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+
+            var restoreOptions = new Dictionary<string, string>(this.TestOptions)
+            {
+                ["blocksize"] = blocksizeArg,
+                ["restore-path"] = this.RESTOREFOLDER,
+                ["restore-legacy"] = "false",
+                ["restore-with-local-blocks"] = "true"
+            };
+            var restoredFilePath = Path.Combine(this.RESTOREFOLDER, "file");
+
+            // First restore so that a target file exists at the restore path.
+            using (var c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
+                TestUtils.AssertResults(await c.RestoreAsync(new[] { filePath }));
+            Assert.IsTrue(File.Exists(restoredFilePath));
+
+            // Corrupt the first (full) block of the existing target while leaving
+            // the trailing partial block intact. VerifyTargetBlocks then marks the
+            // first block as missing and the last (partial) block as verified,
+            // which triggers retargeting to a new file and copies the verified
+            // blocks - including the partial one - into it.
+            var corrupted = (byte[])data.Clone();
+            for (var i = 0; i < blocksize; i++)
+                corrupted[i] ^= 0xFF;
+            File.WriteAllBytes(restoredFilePath, corrupted);
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
+            {
+                var restoreResults = await c.RestoreAsync(new[] { filePath });
+                // With the wrong offset the partial block lands at the wrong
+                // position, the file hash no longer matches and the restore
+                // reports an error instead of producing the file.
+                Assert.AreEqual(0, restoreResults.Errors.Count());
+            }
+
+            // The retargeted file is a sibling of the original target and must
+            // contain the exact original data.
+            var retargeted = Directory.GetFiles(this.RESTOREFOLDER)
+                .Where(p => !string.Equals(p, restoredFilePath, StringComparison.Ordinal))
+                .Where(p => new FileInfo(p).Length == data.Length)
+                .FirstOrDefault(p => File.ReadAllBytes(p).SequenceEqual(data));
+            Assert.IsNotNull(retargeted, "Expected a retargeted copy containing the original file content");
+        }
+
+        [Test]
+        [Category("RestoreHandler")]
         public async Task RestoreEmptyFileAsync()
         {
             var folderPath = Path.Combine(this.DATAFOLDER, "folder");

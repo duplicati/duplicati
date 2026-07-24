@@ -601,8 +601,13 @@ namespace Duplicati.Library.Main.Operation.Restore
 
             foreach (var block in verified_blocks)
             {
-                fs_old.Seek(block.BlockOffset * block.BlockSize, SeekOrigin.Begin);
-                fs_new.Seek(block.BlockOffset * block.BlockSize, SeekOrigin.Begin);
+                // BlockOffset is the block index in the file, so the byte offset
+                // is the index multiplied by the fixed block size (buffer.Length,
+                // which equals options.Blocksize). Using block.BlockSize here would
+                // be wrong for the trailing partial block, where BlockSize is smaller
+                // than the fixed block size, placing the block at the wrong offset.
+                fs_old.Seek(block.BlockOffset * buffer.Length, SeekOrigin.Begin);
+                fs_new.Seek(block.BlockOffset * buffer.Length, SeekOrigin.Begin);
 
                 var length = await Library.Utility.Utility.ForceStreamReadAsync(fs_old, buffer, buffer.Length, cancellationToken).ConfigureAwait(false);
                 await fs_new.WriteAsync(buffer, 0, length, cancellationToken).ConfigureAwait(false);
