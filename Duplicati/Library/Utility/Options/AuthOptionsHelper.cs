@@ -60,7 +60,7 @@ public static class AuthOptionsHelper
     /// <param name="username">The name of the username options</param>
     /// <param name="password">The name of the password options</param>
     /// <returns>The parsed authentication options</returns>
-    public static AuthOptions ParseWithAlias(IReadOnlyDictionary<string, string?> options, Uri uri, string username, string password)
+    public static AuthOptions ParseWithAlias(IReadOnlyDictionary<string, string?> options, CompatUri uri, string username, string password)
     {
         // Prefer the primary name, if set
         var optionUsername = options.GetValueOrDefault(username);
@@ -82,7 +82,7 @@ public static class AuthOptionsHelper
     /// <param name="uri">The URI to get the default values from</param>
     /// <param name="prefix">An optional prefix for the options</param>
     /// <returns>The parsed authentication options</returns>
-    public static AuthOptions Parse(IReadOnlyDictionary<string, string?> options, Uri uri, string? prefix = null)
+    public static AuthOptions Parse(IReadOnlyDictionary<string, string?> options, CompatUri uri, string? prefix = null)
     {
         var optionUsername = options.GetValueOrDefault($"{prefix}{AuthUsernameOption}");
         var optionPassword = options.GetValueOrDefault($"{prefix}{AuthPasswordOption}");

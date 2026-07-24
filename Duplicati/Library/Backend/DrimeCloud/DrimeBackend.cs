@@ -24,15 +24,12 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Text.Json;
 using Duplicati.Library.Backend.DrimeCloud.Model;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
-using Duplicati.StreamUtil;
 using FileEntry = Duplicati.Library.Common.IO.FileEntry;
-using UtilityUri = Duplicati.Library.Utility.Uri;
 
 namespace Duplicati.Library.Backend.DrimeCloud;
 
@@ -187,7 +184,7 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
     /// <param name="options">Options dictionary</param>
     public DrimeBackend(string url, Dictionary<string, string?> options)
     {
-        var uri = new UtilityUri(url);
+        var uri = new CompatUri(url);
         _path = uri.HostAndPath?.Trim('/') ?? "";
 
         if (string.IsNullOrWhiteSpace(_path))

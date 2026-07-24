@@ -53,7 +53,7 @@ namespace Duplicati.Library.Backend
         #region [Variables and constants declarations]
 
         /// <summary> Auth-stripped HTTPS-URI as passed to constructor. </summary>
-        private readonly Utility.Uri m_orgUrl;
+        private readonly Utility.CompatUri m_orgUrl;
         /// <summary> Server relative path to backup folder. </summary>
         private readonly string m_serverRelPath;
         /// <summary> User's credentials to create client context </summary>
@@ -106,7 +106,7 @@ namespace Duplicati.Library.Backend
 
         public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new string?[] {
             m_orgUrl.Host,
-            string.IsNullOrWhiteSpace(m_spWebUrl) ? null : new Utility.Uri(m_spWebUrl).Host
+            string.IsNullOrWhiteSpace(m_spWebUrl) ? null : new Utility.CompatUri(m_spWebUrl).Host
         }.WhereNotNullOrWhiteSpace().ToArray());
 
         #endregion
@@ -149,11 +149,11 @@ namespace Duplicati.Library.Backend
             catch { }
 
 
-            var u = new Utility.Uri(url);
+            var u = new Utility.CompatUri(url);
             u.RequireHost();
 
             // Create sanitized plain https-URI (note: still has double slashes for processing web)
-            m_orgUrl = new Utility.Uri("https", u.Host, u.Path, null, null, null, u.Port);
+            m_orgUrl = new Utility.CompatUri("https", u.Host, u.Path, null, null, null, u.Port);
 
             // Actual path to Web will be searched for on first use. Ctor should not throw.
             m_spWebUrl = null;
@@ -273,7 +273,7 @@ namespace Duplicati.Library.Backend
         /// If that won't help, we will try all possible paths from longest
         /// to shortest...
         /// </summary>
-        private static async Task<(string? testUrl, ClientContext? retCtx)> FindCorrectWebPathAsync(Utility.Uri orgUrl, System.Net.ICredentials userInfo, TimeSpan timeout, CancellationToken cancelToken)
+        private static async Task<(string? testUrl, ClientContext? retCtx)> FindCorrectWebPathAsync(Utility.CompatUri orgUrl, System.Net.ICredentials userInfo, TimeSpan timeout, CancellationToken cancelToken)
         {
             ClientContext? retCtx = null;
             int status;
@@ -284,7 +284,7 @@ namespace Duplicati.Library.Backend
             // if a hint is supplied, we will of course use this first.
             if (webIndicatorPos >= 0)
             {
-                var testUrl = new Utility.Uri(orgUrl.Scheme, orgUrl.Host, path.Substring(0, webIndicatorPos), null, null, null, orgUrl.Port).ToString();
+                var testUrl = new Utility.CompatUri(orgUrl.Scheme, orgUrl.Host, path.Substring(0, webIndicatorPos), null, null, null, orgUrl.Port).ToString();
                 (status, retCtx) = await TestUrlForWebAsync(testUrl, userInfo, false, timeout, cancelToken).ConfigureAwait(false);
                 if (status >= 0)
                     return (testUrl, retCtx);
@@ -296,7 +296,7 @@ namespace Duplicati.Library.Backend
             var docLibrary = Array.FindIndex(pathParts, p => StringComparer.OrdinalIgnoreCase.Equals(p, "documents"));
             if (docLibrary >= 0)
             {
-                var testUrl = new Utility.Uri(orgUrl.Scheme, orgUrl.Host,
+                var testUrl = new Utility.CompatUri(orgUrl.Scheme, orgUrl.Host,
                     string.Join("/", pathParts, 0, docLibrary),
                     null, null, null, orgUrl.Port).ToString();
                 (status, retCtx) = await TestUrlForWebAsync(testUrl, userInfo, false, timeout, cancelToken).ConfigureAwait(false);
@@ -309,7 +309,7 @@ namespace Duplicati.Library.Backend
             {
                 if (pi == docLibrary) continue; // already tested
 
-                var testUrl = new Utility.Uri(orgUrl.Scheme, orgUrl.Host,
+                var testUrl = new Utility.CompatUri(orgUrl.Scheme, orgUrl.Host,
                     string.Join("/", pathParts, 0, pi),
                     null, null, null, orgUrl.Port).ToString();
                 (status, retCtx) = await TestUrlForWebAsync(testUrl, userInfo, false, timeout, cancelToken).ConfigureAwait(false);
@@ -664,7 +664,7 @@ namespace Duplicati.Library.Backend
             {
                 if (string.IsNullOrWhiteSpace(m_spWebUrl))
                     throw new HttpRequestException(Strings.SharePoint.NoSharePointWebFoundError(m_orgUrl.ToString()));
-                var pathLengthToWeb = new Utility.Uri(m_spWebUrl).Path.Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries).Length;
+                var pathLengthToWeb = new Utility.CompatUri(m_spWebUrl).Path.Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries).Length;
 
                 var folderNames = m_serverRelPath.Substring(0, m_serverRelPath.Length - 1).Split('/');
                 folderNames = Array.ConvertAll(folderNames, fold => System.Net.WebUtility.UrlDecode(fold));

@@ -60,7 +60,7 @@ public class ListBackupsModule : IWebModule
         var url = opts.GetValueOrDefault("url");
         if (string.IsNullOrEmpty(url))
             throw new UserInformationException("The 'url' option must be specified", "UrlOptionMissing");
-        var uri = new Library.Utility.Uri(url);
+        var uri = new Library.Utility.CompatUri(url);
         foreach (var key in uri.QueryParameters.AllKeys)
             if (key != null)
                 opts[key] = uri.QueryParameters[key];

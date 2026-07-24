@@ -195,7 +195,7 @@ internal partial class BackendManager : IBackendManager
         if (string.IsNullOrWhiteSpace(subPath))
             return backendUrl;
 
-        var uri = new Library.Utility.Uri(backendUrl);
+        var uri = new Library.Utility.CompatUri(backendUrl);
         // Trim trailing path separators from the existing path AND the sub-path before
         // joining with a single '/'. The URL path can end with a backslash on Windows
         // (e.g. a file:// URL built from a TempFolder path, which always carries a

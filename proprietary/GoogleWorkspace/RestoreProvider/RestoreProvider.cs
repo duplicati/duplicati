@@ -103,7 +103,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
     /// <param name="options">The options for the restore operation</param>
     public RestoreProvider(string url, Dictionary<string, string?> options)
     {
-        var uri = new Library.Utility.Uri(url);
+        var uri = new Library.Utility.CompatUri(url);
         _restorePath = uri.HostAndPath;
 
         var parsedOptions = OptionsHelper.ParseOptions(options);

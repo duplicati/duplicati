@@ -122,7 +122,7 @@ namespace Duplicati.UnitTest
         [Category("SVNData")]
         public async Task TestWithErrorsAsync()
         {
-            var u = new Library.Utility.Uri(TestUtils.GetDefaultTarget());
+            var u = new Library.Utility.CompatUri(TestUtils.GetDefaultTarget());
             RandomErrorBackend.WrappedBackend = u.Scheme;
             var target = u.SetScheme(new RandomErrorBackend().ProtocolKey).ToString();
             Library.DynamicLoader.BackendLoader.AddBackend(new RandomErrorBackend());
@@ -138,7 +138,7 @@ namespace Duplicati.UnitTest
         [Category("SVNData")]
         public async Task TestWithoutSizeInfoAsync()
         {
-            var u = new Library.Utility.Uri(TestUtils.GetDefaultTarget());
+            var u = new Library.Utility.CompatUri(TestUtils.GetDefaultTarget());
             SizeOmittingBackend.WrappedBackend = u.Scheme;
             var target = u.SetScheme(new SizeOmittingBackend().ProtocolKey).ToString();
             Library.DynamicLoader.BackendLoader.AddBackend(new SizeOmittingBackend());

@@ -43,7 +43,7 @@ public record RestoreDestinationProviderTupleDisposeWrapper(IRestoreDestinationP
 
 public class SharedRemoteOperation
 {
-    public static Dictionary<string, string?> ParseUrlOptions(Connection connection, Library.Utility.Uri uri)
+    public static Dictionary<string, string?> ParseUrlOptions(Connection connection, Library.Utility.CompatUri uri)
     {
         var qp = uri.QueryParameters;
 
@@ -81,7 +81,7 @@ public class SharedRemoteOperation
     public static async Task<(string Url, Dictionary<string, string?> Options)> ExpandUrlAsync(Connection connection, IApplicationSettings applicationSettings, string url, string? backupId, long connectionStringId, string? sourcePrefix, CancellationToken cancelToken)
     {
         url = UnmaskUrl(connection, url, backupId, connectionStringId, sourcePrefix);
-        var uri = new Library.Utility.Uri(url);
+        var uri = new Library.Utility.CompatUri(url);
         var opts = ParseUrlOptions(connection, uri);
 
         var tmp = new[] { uri };
@@ -111,7 +111,7 @@ public class SharedRemoteOperation
         if (string.IsNullOrEmpty(url))
             return url;
 
-        var source = new Library.Utility.Uri(url);
+        var source = new Library.Utility.CompatUri(url);
         var path = (source.Path ?? "").TrimEnd('/') + "/" + additionalPath.TrimStart('/');
         return new UriBuilder(url) { Path = path }.Uri.AbsoluteUri;
     }

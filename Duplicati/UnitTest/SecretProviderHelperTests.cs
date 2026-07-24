@@ -103,7 +103,7 @@ public class SecretProviderHelperTests : BasicSetupHelper
         };
 
         var argsInternal = new[] {
-            new Library.Utility.Uri("test://host?pass=$key2&user=$key1&other=123")
+            new Library.Utility.CompatUri("test://host?pass=$key2&user=$key1&other=123")
         };
 
         await SecretProviderHelper.ApplySecretProviderAsync(argsSys, argsInternal, settings, null, secretProvider, CancellationToken.None);
@@ -135,7 +135,7 @@ public class SecretProviderHelperTests : BasicSetupHelper
         };
 
         var argsInternal = new[] {
-            new Library.Utility.Uri("test://host?pass=$key/with/slash&user=$key1&other=123")
+            new Library.Utility.CompatUri("test://host?pass=$key/with/slash&user=$key1&other=123")
         };
 
         await SecretProviderHelper.ApplySecretProviderAsync(argsSys, argsInternal, settings, null, secretProvider, CancellationToken.None);
@@ -167,7 +167,7 @@ public class SecretProviderHelperTests : BasicSetupHelper
         };
 
         var argsInternal = new[] {
-            new Library.Utility.Uri("test://host?pass=$key-with-dash&user=$key1&other=123")
+            new Library.Utility.CompatUri("test://host?pass=$key-with-dash&user=$key1&other=123")
         };
 
         await SecretProviderHelper.ApplySecretProviderAsync(argsSys, argsInternal, settings, null, secretProvider, CancellationToken.None);
@@ -196,7 +196,7 @@ public class SecretProviderHelperTests : BasicSetupHelper
         };
 
         var argsInternal = new[] {
-            new Library.Utility.Uri("test://host?pass=$key1&user=user")
+            new Library.Utility.CompatUri("test://host?pass=$key1&user=user")
         };
 
         await SecretProviderHelper.ApplySecretProviderAsync(argsSys, argsInternal, settings, null, secretProvider, CancellationToken.None);
@@ -230,7 +230,7 @@ public class SecretProviderHelperTests : BasicSetupHelper
         };
 
         var argsInternal = new[] {
-            new Library.Utility.Uri("test://host?pass=${key2}&user=${key1}&other=123"),
+            new Library.Utility.CompatUri("test://host?pass=${key2}&user=${key1}&other=123"),
         };
 
         await SecretProviderHelper.ApplySecretProviderAsync(argsSys, argsInternal, settings, null, secretProvider, CancellationToken.None);
@@ -263,7 +263,7 @@ public class SecretProviderHelperTests : BasicSetupHelper
         };
 
         var argsInternal = new[] {
-            new Library.Utility.Uri("test://host?pass=:sec{key2}&user=:sec{key1}&other=123"),
+            new Library.Utility.CompatUri("test://host?pass=:sec{key2}&user=:sec{key1}&other=123"),
         };
 
         await SecretProviderHelper.ApplySecretProviderAsync(argsSys, argsInternal, settings, null, secretProvider, CancellationToken.None);
@@ -319,7 +319,7 @@ public class SecretProviderHelperTests : BasicSetupHelper
         };
 
         var argsInternal = new[] {
-            new Library.Utility.Uri("test://host?pass=$key2&user=$key1&other=123"),
+            new Library.Utility.CompatUri("test://host?pass=$key2&user=$key1&other=123"),
         };
 
         Assert.ThrowsAsync<UserInformationException>(() => SecretProviderHelper.ApplySecretProviderAsync(argsSys, argsInternal, settings, null, secretProvider, CancellationToken.None));
@@ -344,7 +344,7 @@ public class SecretProviderHelperTests : BasicSetupHelper
         };
 
         var argsInternal = new[] {
-            new Library.Utility.Uri("test://host?pass=$key2&user=$key1&other=123"),
+            new Library.Utility.CompatUri("test://host?pass=$key2&user=$key1&other=123"),
         };
 
         Assert.ThrowsAsync<InvalidOperationException>(() => SecretProviderHelper.ApplySecretProviderAsync(argsSys, argsInternal, settings, null, secretProvider, CancellationToken.None));
@@ -476,7 +476,7 @@ public class SecretProviderHelperTests : BasicSetupHelper
         };
 
         var argsInternal = new[] {
-            new Library.Utility.Uri("test://host?pass=$key2&user=$key)5&other=123"),
+            new Library.Utility.CompatUri("test://host?pass=$key2&user=$key)5&other=123"),
         };
 
         var logCapture = new LogCapture();

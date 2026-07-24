@@ -57,7 +57,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
 
         public GoogleDrive(string url, Dictionary<string, string?> options)
         {
-            var uri = new Utility.Uri(url);
+            var uri = new Utility.CompatUri(url);
 
             m_path = Util.AppendDirSeparator(uri.HostAndPath, "/");
 
@@ -413,7 +413,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
 
                 foreach (var fileid in entries.Select(x => x.id).WhereNotNullOrWhiteSpace())
                 {
-                    var url = WebApi.GoogleDrive.DeleteUrl(Library.Utility.Uri.UrlPathEncode(fileid), m_teamDriveID);
+                    var url = WebApi.GoogleDrive.DeleteUrl(Library.Utility.CompatUri.UrlPathEncode(fileid), m_teamDriveID);
                     await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken,
                         async ct =>
                         {
@@ -566,7 +566,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
                 "trashed=false"
             };
 
-            var encodedFileQuery = Utility.Uri.UrlEncode(string.Join(" and ", fileQuery.Where(x => x != null)));
+            var encodedFileQuery = Utility.CompatUri.UrlEncode(string.Join(" and ", fileQuery.Where(x => x != null)));
             var url = WebApi.GoogleDrive.ListUrl(encodedFileQuery, m_teamDriveID);
 
             while (true)

@@ -240,7 +240,7 @@ namespace Duplicati.Library.Backend
 
         public S3(string url, Dictionary<string, string?> options)
         {
-            var uri = new Utility.Uri(url);
+            var uri = new Utility.CompatUri(url);
             uri.RequireHost();
 
             m_bucket = uri.Host ?? "";

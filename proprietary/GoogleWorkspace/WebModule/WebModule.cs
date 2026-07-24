@@ -90,7 +90,7 @@ public class WebModule : IWebModule
             { "store-metadata-content-in-database", "true" }
         };
 
-        var uri = new Library.Utility.Uri(url);
+        var uri = new Library.Utility.CompatUri(url);
         foreach (var key in uri.QueryParameters.AllKeys)
             forwardoptions[key!] = uri.QueryParameters[key];
 

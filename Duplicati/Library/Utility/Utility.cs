@@ -1873,8 +1873,8 @@ namespace Duplicati.Library.Utility
             // If we can parse it, this result is better
             try
             {
-                var uri = new Uri(url[sepIndex..]);
-                sanitizedUrl = new Uri($"{uri.Scheme}://{uri.Host}").SetPath(uri.Path).ToString();
+                var uri = new LegacyUri(url[sepIndex..]);
+                sanitizedUrl = new LegacyUri($"{uri.Scheme}://{uri.Host}").SetPath(uri.Path).ToString();
             }
             catch
             {

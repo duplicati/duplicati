@@ -337,12 +337,12 @@ namespace Duplicati.Library.AutoUpdater
             // we look for packages there as well
             if (AutoUpdateSettings.UsesAlternateURLs)
             {
-                var packagepath = new Library.Utility.Uri(updates[0]).Path;
+                var packagepath = new Library.Utility.CompatUri(updates[0]).Path;
                 var packagename = packagepath.Split('/').Last();
 
                 foreach (var alt_url in AutoUpdateSettings.URLs.Reverse())
                 {
-                    var alt_uri = new Library.Utility.Uri(alt_url);
+                    var alt_uri = new Library.Utility.CompatUri(alt_url);
                     var path_components = alt_uri.Path.Split('/');
                     var path = string.Join("/", path_components.Take(path_components.Count() - 1).Union(new string[] { packagename }));
 

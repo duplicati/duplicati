@@ -135,7 +135,7 @@ public class Jottacloud : IStreamingBackend, IRenameEnabledBackend
             .RequireCredentials(TOKEN_URL);
 
         // Build URL
-        var u = new Utility.Uri(url);
+        var u = new Utility.CompatUri(url);
         m_path = u.HostAndPath; // Host and path of "jottacloud://folder/subfolder" is "folder/subfolder", so the actual folder path within the mount point.
         if (string.IsNullOrEmpty(m_path)) // Require a folder. Actually it is possible to store files directly on the root level of the mount point, but that does not seem to be a good option.
             throw new UserInformationException(Strings.Jottacloud.NoPathError, "JottaNoPath");
@@ -421,7 +421,7 @@ public class Jottacloud : IStreamingBackend, IRenameEnabledBackend
     private async Task<HttpRequestMessage> CreateRequest(HttpMethod method, string remotename, string queryparams, bool upload, CancellationToken cancelToken)
     {
         (var _, var urls) = await GetClient(cancelToken).ConfigureAwait(false);
-        return await CreateRequest((upload ? urls.UploadUrl : urls.Url) + Utility.Uri.UrlEncode(remotename).Replace("+", "%20"), queryparams, method, cancelToken).ConfigureAwait(false);
+        return await CreateRequest((upload ? urls.UploadUrl : urls.Url) + Utility.CompatUri.UrlEncode(remotename).Replace("+", "%20"), queryparams, method, cancelToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc/>
@@ -649,7 +649,7 @@ public class Jottacloud : IStreamingBackend, IRenameEnabledBackend
     {
         (var client, var _) = await GetClient(cancellationToken).ConfigureAwait(false);
         var destPath = "/" + m_path + newname;
-        using var req = await CreateRequest(HttpMethod.Post, oldname, "mv=" + Utility.Uri.UrlEncode(destPath), false, cancellationToken).ConfigureAwait(false);
+        using var req = await CreateRequest(HttpMethod.Post, oldname, "mv=" + Utility.CompatUri.UrlEncode(destPath), false, cancellationToken).ConfigureAwait(false);
         using var response = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancellationToken,
             innerCancellationToken => client.GetResponseAsync(req, HttpCompletionOption.ResponseContentRead, innerCancellationToken)).ConfigureAwait(false);
 

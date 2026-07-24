@@ -678,9 +678,9 @@ namespace Duplicati.Library.Backend
         protected virtual Task<string> GetRootPathFromUrlAsync(string url, CancellationToken cancelToken)
         {
             // Extract out the path to the backup root folder from the given URI
-            var uri = new Utility.Uri(url);
+            var uri = new Utility.CompatUri(url);
 
-            return Task.FromResult(Utility.Uri.UrlDecode(uri.HostAndPath));
+            return Task.FromResult(Utility.CompatUri.UrlDecode(uri.HostAndPath));
         }
 
         protected Task<T> GetAsync<T>(string url, CancellationToken cancelToken)

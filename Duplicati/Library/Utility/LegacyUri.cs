@@ -36,6 +36,12 @@ namespace Duplicati.Library.Utility
     // but it does not make sense to support "invalid" urls as that increases the complexity
     // of the code and potentially introduces ambiguity for the user.
 
+    // This is the legacy implementation retained for backwards compatibility. New code
+    // should use <see cref="CompatUri"/>, which parses with <see cref="System.Uri"/> by
+    // default and only falls back to this implementation when the user opts in via the
+    // DUPLICATI_LEGACY_URL_PARSING environment variable or the legacy_url_parsing.txt
+    // marker file in the binary folder.
+
     /// <summary>
     /// Represents a relaxed parsing of a URL.
     /// The goal is to cover as many types of url's as possible,
@@ -43,7 +49,7 @@ namespace Duplicati.Library.Utility
     /// The major limitations is that an embedded username may not contain a :,
     /// and the password may not contain a @.
     /// </summary>
-    public struct Uri
+    public struct LegacyUri
     {
         /// <summary>
         /// A very lax version of a URL parser
@@ -145,10 +151,10 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Duplicati.Library.Utility.Uri"/> struct.
+        /// Initializes a new instance of the <see cref="Duplicati.Library.Utility.LegacyUri"/> struct.
         /// </summary>
         /// <param name="url">The URL to parse</param>
-        public Uri(string url)
+        public LegacyUri(string url)
         {
             if (string.IsNullOrEmpty(url))
                 throw new ArgumentNullException(nameof(url));
@@ -255,7 +261,7 @@ namespace Duplicati.Library.Utility
         /// <param name="username">The username</param>
         /// <param name="password">The password</param>
         /// <param name="port">The port</param>
-        public Uri(string scheme, string? host, string? path = null, string? query = null, string? username = null, string? password = null, int port = -1)
+        public LegacyUri(string scheme, string? host, string? path = null, string? query = null, string? username = null, string? password = null, int port = -1)
         {
             m_queryParams = null;
             Scheme = scheme;
@@ -265,16 +271,16 @@ namespace Duplicati.Library.Utility
             Username = username;
             Password = password;
             Port = port;
-            OriginalUri = AsString(scheme, host, path, query, username, password, port);
+            OriginalUri = BuildUriString(scheme, host, path, query, username, password, port);
         }
 
         /// <summary>
-        /// Returns a <see cref="System.String"/> that represents the current <see cref="Duplicati.Library.Utility.Uri"/>.
+        /// Returns a <see cref="System.String"/> that represents the current <see cref="Duplicati.Library.Utility.LegacyUri"/>.
         /// </summary>
-        /// <returns>A <see cref="System.String"/> that represents the current <see cref="Duplicati.Library.Utility.Uri"/>.</returns>
+        /// <returns>A <see cref="System.String"/> that represents the current <see cref="Duplicati.Library.Utility.LegacyUri"/>.</returns>
         public override string ToString()
         {
-            return AsString(Scheme, Host, Path, Query, Username, Password, Port);
+            return BuildUriString(Scheme, Host, Path, Query, Username, Password, Port);
         }
 
         /// <summary>
@@ -297,7 +303,7 @@ namespace Duplicati.Library.Utility
         /// <param name="username">The username</param>
         /// <param name="password">The password</param>
         /// <param name="port">The port</param>
-        private static string AsString(string scheme, string? host, string? path, string? query, string? username, string? password, int port)
+        internal static string BuildUriString(string scheme, string? host, string? path, string? query, string? username, string? password, int port)
         {
             var s = scheme + "://";
             if (!string.IsNullOrEmpty(username) || !string.IsNullOrEmpty(password))
@@ -335,9 +341,9 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <returns>A new instance</returns>
         /// <param name="scheme">The new scheme to use</param>
-        public Uri SetScheme(string scheme)
+        public LegacyUri SetScheme(string scheme)
         {
-            return new Uri(scheme, Host, Path, Query, Username, Password, Port);
+            return new LegacyUri(scheme, Host, Path, Query, Username, Password, Port);
         }
 
         /// <summary>
@@ -345,9 +351,9 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <returns>A new instance</returns>
         /// <param name="host">The new hostname to use</param>
-        public Uri SetHost(string host)
+        public LegacyUri SetHost(string host)
         {
-            return new Uri(Scheme, host, Path, Query, Username, Password, Port);
+            return new LegacyUri(Scheme, host, Path, Query, Username, Password, Port);
         }
 
         /// <summary>
@@ -355,9 +361,9 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <returns>A new instance</returns>
         /// <param name="path">The new path to use</param>
-        public Uri SetPath(string? path)
+        public LegacyUri SetPath(string? path)
         {
-            return new Uri(Scheme, Host, path, Query, Username, Password, Port);
+            return new LegacyUri(Scheme, Host, path, Query, Username, Password, Port);
         }
 
         /// <summary>
@@ -365,9 +371,9 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <returns>A new instance</returns>
         /// <param name="query">The new query to use</param>
-        public Uri SetQuery(string? query)
+        public LegacyUri SetQuery(string? query)
         {
-            return new Uri(Scheme, Host, Path, query, Username, Password, Port);
+            return new LegacyUri(Scheme, Host, Path, query, Username, Password, Port);
         }
 
         /// <summary>
@@ -376,9 +382,9 @@ namespace Duplicati.Library.Utility
         /// <returns>A new instance</returns>
         /// <param name="username">The new username to use</param>
         /// <param name="password">The new password to use</param>
-        public Uri SetCredentials(string? username, string? password)
+        public LegacyUri SetCredentials(string? username, string? password)
         {
-            return new Uri(Scheme, Host, Path, Query, username, password, Port);
+            return new LegacyUri(Scheme, Host, Path, Query, username, password, Port);
         }
 
         /// <summary>
@@ -386,9 +392,9 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <returns>A new instance</returns>
         /// <param name="port">The new port to use</param>
-        public Uri SetPort(int port)
+        public LegacyUri SetPort(int port)
         {
-            return new Uri(Scheme, Host, Path, Query, Username, Password, port);
+            return new LegacyUri(Scheme, Host, Path, Query, Username, Password, port);
         }
 
         /// <summary>
@@ -601,7 +607,7 @@ namespace Duplicati.Library.Utility
         /// <param name="url">URL.</param>
         public static string? ExtractPath(string url)
         {
-            return new Uri(url).Path;
+            return new LegacyUri(url).Path;
         }
 
         /// <summary>

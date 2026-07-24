@@ -82,7 +82,7 @@ namespace Duplicati.Library.Backend
         public SSHv2(string url, Dictionary<string, string?> options)
         {
             m_options = options;
-            var uri = new Utility.Uri(url);
+            var uri = new Utility.CompatUri(url);
             uri.RequireHost();
 
             var auth = AuthOptionsHelper.Parse(options, uri);
@@ -596,7 +596,7 @@ namespace Duplicati.Library.Backend
                 using (var ms = new MemoryStream())
                 using (var sr = new StreamWriter(ms))
                 {
-                    sr.Write(Utility.Uri.UrlDecode(inline));
+                    sr.Write(Utility.CompatUri.UrlDecode(inline));
                     sr.Flush();
 
                     ms.Position = 0;

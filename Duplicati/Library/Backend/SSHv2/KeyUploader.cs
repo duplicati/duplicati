@@ -51,7 +51,7 @@ namespace Duplicati.Library.Backend
             if (string.IsNullOrWhiteSpace(pubkey_s))
                 throw new ArgumentException(OPTION_KEY);
 
-            var uri = new Utility.Uri(url);
+            var uri = new Utility.CompatUri(url);
             foreach (var key in uri.QueryParameters.AllKeys)
                 if (!string.IsNullOrWhiteSpace(key))
                     options[key] = uri.QueryParameters[key] ?? "";

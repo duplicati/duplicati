@@ -90,7 +90,7 @@ namespace Duplicati.Library.Backend
         /// <inheritdoc />
         public Idrivee2Backend(string url, Dictionary<string, string?> options)
         {
-            var uri = new Utility.Uri(url);
+            var uri = new Utility.CompatUri(url);
             _bucket = uri.Host ?? "";
             _prefix = uri.Path;
             _prefix = _prefix.Trim();
