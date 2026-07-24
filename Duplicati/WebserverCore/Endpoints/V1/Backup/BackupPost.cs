@@ -147,9 +147,9 @@ public class BackupPost : IEndpointV1
             input.paths ?? [],
             Library.Utility.Timeparser.ParseTimeInterval(input.time, DateTime.Now),
             restorepath,
-            input.overwrite ?? false,
-            input.permissions ?? false,
-            input.skip_metadata ?? false,
+            input.overwrite,
+            input.permissions,
+            input.skip_metadata,
             string.IsNullOrWhiteSpace(input.passphrase) ? null : input.passphrase)));
     }
 
