@@ -99,7 +99,9 @@ public class JsonWebHelperHttpClient(HttpClient httpClient)
     {
         using var req = await CreateRequestAsync(url, HttpMethod.Post, cancellationToken).ConfigureAwait(false);
         req.Content = parts;
-        return await _httpClient.SendAsync(req, cancellationToken).ConfigureAwait(false);
+        // Reading the content here keeps the response body available to the error
+        // handler, and matches the completion option used for the other requests
+        return await GetResponseAsync(req, HttpCompletionOption.ResponseContentRead, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
