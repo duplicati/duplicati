@@ -81,7 +81,15 @@ namespace Duplicati.WebserverCore.Endpoints.V1
                             if (!autoCreate || readOnlyTest)
                                 throw;
 
-                            await b.CreateFolderAsync(cancelToken).ConfigureAwait(false);
+                            try
+                            {
+                                await b.CreateFolderAsync(cancelToken).ConfigureAwait(false);
+                            }
+                            catch (FolderAreadyExistedException)
+                            {
+                                // The folder is already there, which is the desired outcome
+                            }
+
                             await b.TestAsync(!readOnlyTest, cancelToken).ConfigureAwait(false);
                         }
                     }

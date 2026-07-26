@@ -83,7 +83,15 @@ public class DestinationVerify : IEndpointV2
                         if (!input.AutoCreate || input.ReadOnlyTest)
                             throw;
 
-                        await b.CreateFolderAsync(cancelToken).ConfigureAwait(false);
+                        try
+                        {
+                            await b.CreateFolderAsync(cancelToken).ConfigureAwait(false);
+                        }
+                        catch (FolderAreadyExistedException)
+                        {
+                            // The folder is already there, which is the desired outcome
+                        }
+
                         await b.TestAsync(!input.ReadOnlyTest, cancelToken).ConfigureAwait(false);
                     }
 
