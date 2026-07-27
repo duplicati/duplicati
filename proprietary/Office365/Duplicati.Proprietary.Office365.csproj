@@ -13,7 +13,7 @@
     <ProjectReference Include="../../Duplicati/Library/Utility/Duplicati.Library.Utility.csproj" />
     <ProjectReference Include="../LicenseChecker/Duplicati.Proprietary.LicenseChecker.csproj" />
     <PackageReference Include="MimeKit" Version="4.16.0" />
-    <PackageReference Include="jose-jwt" Version="5.2.0" />
+    <PackageReference Include="jose-jwt" Version="5.3.0" />
   </ItemGroup>
 
 </Project>

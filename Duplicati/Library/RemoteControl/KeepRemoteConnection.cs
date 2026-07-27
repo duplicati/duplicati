@@ -22,6 +22,8 @@
 using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Reactive.Concurrency;
+using System.Reactive.Linq;
 using System.Security.Cryptography;
 using System.Text.Json;
 using CoCoL;
@@ -59,7 +61,7 @@ public class KeepRemoteConnection : IDisposable
     /// <summary>
     /// The time between reconnect attempts if no response is received
     /// </summary>
-    private static readonly TimeSpan NoResponseTimeout = HeartbeatInterval * 2;
+    private static readonly TimeSpan NoResponseTimeout = HeartbeatInterval * 5;
 
     /// <summary>
     /// The minimum time between certificate refreshes
@@ -271,7 +273,7 @@ public class KeepRemoteConnection : IDisposable
                     reconnectHelper.Signal();
                 }
                 // If we do not get any response from the server, we should reconnect
-                else if ((_state == ConnectionState.Authenticated || _state == ConnectionState.WelcomeReceived) && _lastMessageReceived.Add(NoResponseTimeout) < DateTimeOffset.Now)
+                else if ((_state == ConnectionState.Authenticated || _state == ConnectionState.WelcomeReceived) && _lastMessageReceived.Add(NoResponseTimeout) < DateTimeOffset.UtcNow)
                 {
                     SetState(ConnectionState.Error);
                     Log.WriteMessage(LogMessageType.Warning, LogTag, "WebsocketDisconnect", "No response from server");
@@ -298,7 +300,7 @@ public class KeepRemoteConnection : IDisposable
             RefreshCertificatesAsync,
             _cancellationTokenSource.Token);
 
-        _client.DisconnectionHappened.Subscribe(info =>
+        using var h1 = _client.DisconnectionHappened.Subscribe(info =>
         {
             SetState(ConnectionState.NotConnected);
             _serverCertificate = null;
@@ -306,7 +308,7 @@ public class KeepRemoteConnection : IDisposable
             if (!IsAutoReconnectDisabled())
             {
                 reconnectHelper.Signal();
-                Log.WriteMessage(LogMessageType.Warning, LogTag, "WebsocketDisconnect", "Disconnected from the server");
+                Log.WriteMessage(LogMessageType.Warning, LogTag, "WebsocketDisconnect", $"Disconnected from server. Type: {info.Type}, Status: {info.CloseStatus}, Description: {info.CloseStatusDescription}");
             }
             else
             {
@@ -314,7 +316,26 @@ public class KeepRemoteConnection : IDisposable
             }
         });
 
-        _client.MessageReceived.Subscribe(msg => OnMessageAsync(msg, certificateRefreshHelper, reconnectHelper).Await());
+        using var h2 = _client.MessageReceived
+            // Use specific pool to avoid deep-sleep pausing the receive
+            .ObserveOn(TaskPoolScheduler.Default)
+            // The remote UI may send multiple concurrent requests,
+            // and the SelectMany allows us to handle multiple messages concurrently.
+            // Only the initial handshake requires strict ordering, but here the
+            // server will only send a single message anyway.
+            .SelectMany(async msg =>
+            {
+                try
+                {
+                    await OnMessageAsync(msg, certificateRefreshHelper, reconnectHelper);
+                }
+                catch (Exception ex)
+                {
+                    Log.WriteMessage(LogMessageType.Warning, LogTag, "MessageProcessingError", ex, "Failed to process message: {0}", msg);
+                }
+                return System.Reactive.Unit.Default;
+            })
+            .Subscribe();
 
         // Start the connection
         if (forceConnect || !IsAutoReconnectDisabled())
@@ -338,7 +359,7 @@ public class KeepRemoteConnection : IDisposable
         if (_state == ConnectionState.Error)
             return;
 
-        _lastMessageReceived = DateTimeOffset.Now;
+        _lastMessageReceived = DateTimeOffset.UtcNow;
         if (_state == ConnectionState.NotConnected)
             Log.WriteMessage(LogMessageType.Verbose, LogTag, "WebsocketMessage", "Received message from server: {0}", msg);
         else // Encrypted messages are not logged, as the content has no meaning before being decrypted
@@ -364,7 +385,7 @@ public class KeepRemoteConnection : IDisposable
 
                 if (string.IsNullOrWhiteSpace(welcomeMessage.PublicKeyHash))
                     throw new ProtocolViolationException("No public key hash in welcome message");
-                _serverCertificate = _serverKeys.FirstOrDefault(x => x.PublicKeyHash == welcomeMessage.PublicKeyHash && x.Expiry > DateTimeOffset.Now);
+                _serverCertificate = _serverKeys.FirstOrDefault(x => x.PublicKeyHash == welcomeMessage.PublicKeyHash && x.Expiry.ToUniversalTime() > DateTimeOffset.UtcNow);
 
                 if (_serverCertificate == null)
                 {
