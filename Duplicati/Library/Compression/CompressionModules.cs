@@ -31,7 +31,7 @@ public static class CompressionModules
     /// </summary>
     public static IReadOnlyList<ICompression> BuiltInCompressionModules => [
         new ZipCompression.FileArchiveZip(),
-        new TarZstdCompression.FileArchiveTarZstd(),
-        new TarZstdCompression.FileArchiveTarGzip()
+        //new TarZstdCompression.FileArchiveTarZstd(),
+        //new TarZstdCompression.FileArchiveTarGzip()
     ];
 }
