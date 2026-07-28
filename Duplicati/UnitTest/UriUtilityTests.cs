@@ -284,5 +284,54 @@ namespace Duplicati.UnitTest
             Assert.AreEqual("/some/path/to/destination/", uri.HostAndPath);
             Assert.AreEqual("file:///some/path/to/destination/", uri.ToString());
         }
+
+        [Test]
+        [Category("UriUtility")]
+        public static void TestCompatUriPathIsDecodedToMatchLegacyContract()
+        {
+            // System.Uri.AbsolutePath returns the percent-encoded path (a space becomes
+            // "%20"), but LegacyUri decodes the path. CompatUri must match the legacy
+            // contract so that SetPath/ToString (which encode) and Path (which decodes)
+            // stay symmetric. Backends like FileBackend use Path directly as a filesystem
+            // path, so an encoded value would look up a folder literally named "%20".
+            // This is the contract BackendManager.MergeBackendPath relies on: it builds a
+            // sub-path URL with SetPath(...).ToString() (encoding spaces to "%20") and the
+            // backend re-parses it, expecting Path to decode back to the original.
+            var uri = new Library.Utility.CompatUri("file:///some/path/header files");
+            Assert.AreEqual("/some/path/header files", uri.Path);
+            Assert.AreEqual("/some/path/header files", uri.HostAndPath);
+
+            // The correctly-encoded form must resolve to the same decoded path.
+            var encoded = new Library.Utility.CompatUri("file:///some/path/header%20files");
+            Assert.AreEqual(uri.Path, encoded.Path);
+        }
+
+        [Test]
+        [Category("UriUtility")]
+        public static void TestMergeBackendPathRoundTripsSpaces()
+        {
+            // Reproduces the BackendManager.MergeBackendPath -> FileBackend re-parse flow
+            // that broke sync tests against the DSMCBE dataset (which contains a folder
+            // named "header files"). MergeBackendPath builds a sub-path URL via
+            // SetPath(...).ToString() (encoding the space), and the FileBackend
+            // constructor re-parses that URL. The re-parsed HostAndPath must decode back
+            // to the original path with the literal space, not the encoded "%20".
+            var backendUrl = "file:///tmp/dest";
+            var subPath = "SPU/header files";
+
+            var uri = new Library.Utility.CompatUri(backendUrl);
+            var basePath = uri.Path?.TrimEnd('/', '\\') ?? "";
+            var sub = subPath.Trim('/', '\\');
+            var mergedPath = string.IsNullOrEmpty(basePath) ? sub : basePath + "/" + sub;
+            var mergedUrl = uri.SetPath(mergedPath).ToString();
+
+            // The produced URL is correctly percent-encoded.
+            Assert.AreEqual("file:///tmp/dest/SPU/header%20files", mergedUrl);
+
+            // Re-parsing (as FileBackend does) must yield the decoded path.
+            var reparsed = new Library.Utility.CompatUri(mergedUrl);
+            Assert.AreEqual("/tmp/dest/SPU/header files", reparsed.HostAndPath);
+            Assert.IsFalse(reparsed.HostAndPath.Contains("%20"));
+        }
     }
 }

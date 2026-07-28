@@ -260,7 +260,15 @@ namespace Duplicati.Library.Utility
                 // present. For host-less URIs (e.g. file:///path), the leading '/' is part of
                 // the absolute path and must be preserved so that round-tripping through
                 // BuildUriString yields file:///path rather than file://path.
+                // System.Uri.AbsolutePath returns the percent-encoded path (e.g. a space is
+                // reported as "%20"), but LegacyUri decodes the path. The two must stay
+                // symmetric: SetPath/ToString encode, and Path decodes, so that a URL built
+                // from a path containing spaces round-trips back to the same path. Backends
+                // like FileBackend use Path directly as a filesystem path, so an encoded
+                // value here would look up a folder literally named "%20" instead of the one
+                // with a space. Decode to match the legacy contract.
                 var absolutePath = systemUri.IsAbsoluteUri ? systemUri.AbsolutePath : systemUri.OriginalString;
+                absolutePath = LegacyUri.UrlDecode(absolutePath);
                 Path = !string.IsNullOrEmpty(Host) && absolutePath.Length > 0 && absolutePath[0] == '/'
                     ? absolutePath.Substring(1)
                     : absolutePath;
