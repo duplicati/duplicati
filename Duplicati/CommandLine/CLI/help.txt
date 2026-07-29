@@ -12,7 +12,7 @@
 
 See %CLI_EXE% help <topic> for more information.
   General: example, changelog
-  Commands: backup, find, restore, delete, compact, test, compare, purge, vacuum
+  Commands: backup, sync, find, restore, delete, compact, test, compare, purge, vacuum
   Searching: list-filesets, list-folder-contents, list-file-versions, search-files
   Repair: repair, affected, list-broken-files, purge-broken-files
   Locking: set-locks, read-lock-info
@@ -95,6 +95,27 @@ Usage: %CLI_EXE% backup <storage-URL> "<source-path>" [<options>]
     This is the passphrase that is used to encrypt all data before it is uploaded. If an empty passphrase is specified, the backup will not be encrypted. This is the same as using --no-encryption.
   --prefix=<string>
     Replaces the default "duplicati" with <string> in the file names of the backup files. It is required to specify different prefixes if multiple backups are stored in the same target folder.
+
+
+# =============================================================================
+> duplicati.commandline.exe help sync
+
+Usage: %CLI_EXE% sync <storage-URL> "<source-path>" [<options>]
+
+  Mirrors <source-path> to <storage-URL> by copying the local files to the remote destination unencrypted. Unlike a backup, a sync keeps an exact mirror of the source on the destination: files are uploaded in their original (uncompressed, unencrypted) form, and with --sync-then-delete files that no longer exist locally are removed from the destination. Multiple source paths can be specified if they are separated by a space.
+
+  Because the data is stored unencrypted, encryption must be disabled with --no-encryption. The sync operation maintains its own local database to track what has been uploaded.
+
+  --no-encryption=<boolean>
+    Use this to make an unencrypted mirror. Encryption is not supported for sync and must be disabled.
+  --sync-remote-state=<use-remote-state|use-local-state|blindly-upload>
+    Controls how the sync determines the remote state of each folder. "use-remote-state" enumerates the remote destination per folder (safest, one listing per folder). "use-local-state" uses the local database and assumes it is up to date (faster, no extra listings). "blindly-upload" uploads every local file unconditionally without checking remote state (fastest, deletes are skipped with a warning). Default is "use-remote-state".
+  --sync-then-delete=<boolean>
+    Deletes files on the remote that no longer exist locally, keeping the destination an exact mirror of the source. Default is false. Has no effect with --sync-remote-state=blindly-upload.
+  --sync-verify-hash=<boolean>
+    Verifies file content using SHA-256 hashes when size and time match, to detect files that changed without updating the timestamp. Default is false.
+  --sync-recheck=<boolean>
+    Forces a full remote listing to rebuild the local sync cache. Under "use-local-state" this effectively behaves as "use-remote-state" for the run and refreshes the local inventory. Default is false.
 
 
 # =============================================================================
