@@ -596,7 +596,7 @@ namespace Duplicati.Library.Backend
                 using (var ms = new MemoryStream())
                 using (var sr = new StreamWriter(ms))
                 {
-                    sr.Write(Utility.RelaxedUri.UrlDecode(inline));
+                    sr.Write(Utility.UrlEncoding.UrlDecode(inline));
                     sr.Flush();
 
                     ms.Position = 0;

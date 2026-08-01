@@ -421,7 +421,7 @@ public class Jottacloud : IStreamingBackend, IRenameEnabledBackend
     private async Task<HttpRequestMessage> CreateRequest(HttpMethod method, string remotename, string queryparams, bool upload, CancellationToken cancelToken)
     {
         (var _, var urls) = await GetClient(cancelToken).ConfigureAwait(false);
-        return await CreateRequest((upload ? urls.UploadUrl : urls.Url) + Utility.RelaxedUri.UrlEncode(remotename).Replace("+", "%20"), queryparams, method, cancelToken).ConfigureAwait(false);
+        return await CreateRequest((upload ? urls.UploadUrl : urls.Url) + Utility.UrlEncoding.UrlEncode(remotename).Replace("+", "%20"), queryparams, method, cancelToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc/>
@@ -649,7 +649,7 @@ public class Jottacloud : IStreamingBackend, IRenameEnabledBackend
     {
         (var client, var _) = await GetClient(cancellationToken).ConfigureAwait(false);
         var destPath = "/" + m_path + newname;
-        using var req = await CreateRequest(HttpMethod.Post, oldname, "mv=" + Utility.RelaxedUri.UrlEncode(destPath), false, cancellationToken).ConfigureAwait(false);
+        using var req = await CreateRequest(HttpMethod.Post, oldname, "mv=" + Utility.UrlEncoding.UrlEncode(destPath), false, cancellationToken).ConfigureAwait(false);
         using var response = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancellationToken,
             innerCancellationToken => client.GetResponseAsync(req, HttpCompletionOption.ResponseContentRead, innerCancellationToken)).ConfigureAwait(false);
 

@@ -680,7 +680,7 @@ namespace Duplicati.Library.Backend
             // Extract out the path to the backup root folder from the given URI
             var uri = new Utility.RelaxedUri(url);
 
-            return Task.FromResult(Utility.RelaxedUri.UrlDecode(uri.HostAndPath));
+            return Task.FromResult(Utility.UrlEncoding.UrlDecode(uri.HostAndPath));
         }
 
         protected Task<T> GetAsync<T>(string url, CancellationToken cancelToken)

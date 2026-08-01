@@ -174,7 +174,7 @@ namespace Duplicati.Library.Backend.WebApi
             });
 
         public static string DeleteUrl(string fileId, string? teamDriveId)
-            => FileQueryUrl(Utility.RelaxedUri.UrlPathEncode(fileId), AddTeamDriveParam(teamDriveId));
+            => FileQueryUrl(Utility.UrlEncoding.UrlPathEncode(fileId), AddTeamDriveParam(teamDriveId));
 
         public static string PutUrl(string? fileId, bool useTeamDrive)
         {
@@ -188,7 +188,7 @@ namespace Duplicati.Library.Backend.WebApi
             }
 
             return !string.IsNullOrWhiteSpace(fileId) ?
-                FileUploadUrl(Utility.RelaxedUri.UrlPathEncode(fileId), queryParams) :
+                FileUploadUrl(Utility.UrlEncoding.UrlPathEncode(fileId), queryParams) :
                       FileUploadUrl(queryParams);
         }
 
