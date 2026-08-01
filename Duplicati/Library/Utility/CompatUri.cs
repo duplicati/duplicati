@@ -119,6 +119,30 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
+        /// Determines whether the original URL string carried an explicit path component after
+        /// the "<c>scheme://</c>" authority separator. <see cref="System.Uri"/> collapses
+        /// "<c>dummy://</c>" (no path) and "<c>dummy:///</c>" (root path) to the same
+        /// <see cref="System.Uri.AbsolutePath"/> of "<c>/</c>", so the original string is
+        /// consulted to tell them apart and preserve a lossless round-trip. A query string
+        /// directly after the separator (e.g. "<c>dummy://?a=b</c>") is not a path.
+        /// </summary>
+        /// <param name="originalUri">The original, unmodified URL string.</param>
+        /// <param name="scheme">The URL scheme (e.g. "dummy").</param>
+        /// <returns>
+        /// <c>true</c> if a path (including a lone root "<c>/</c>") follows the
+        /// "<c>scheme://</c>" separator; <c>false</c> if nothing, or only a query string,
+        /// follows it.
+        /// </returns>
+        private static bool UrlHasPathAfterScheme(string originalUri, string scheme)
+        {
+            var prefix = scheme + "://";
+            var idx = originalUri.IndexOf(prefix, StringComparison.Ordinal);
+            return idx >= 0
+                && originalUri.Length > idx + prefix.Length
+                && originalUri[idx + prefix.Length] != '?';
+        }
+
+        /// <summary>
         /// The backing <see cref="LegacyUri"/> when legacy parsing is enabled, or the parsed
         /// components when using <see cref="System.Uri"/>.
         /// </summary>
@@ -269,6 +293,18 @@ namespace Duplicati.Library.Utility
                 // with a space. Decode to match the legacy contract.
                 var absolutePath = systemUri.IsAbsoluteUri ? systemUri.AbsolutePath : systemUri.OriginalString;
                 absolutePath = LegacyUri.UrlDecode(absolutePath);
+
+                // System.Uri reports AbsolutePath="/" for both "dummy://" (no path) and
+                // "dummy:///" (root path), but LegacyUri parses "dummy://" with an empty
+                // path. A host-less URL that the user wrote with no path after "://" (no
+                // third slash, e.g. "dummy://", "file://", "dummy://?a=b") must round-trip
+                // losslessly; a synthetic root path would turn "dummy://" into "dummy:///"
+                // and break the exact-match backend guard in ValidateOptions (#4812).
+                // Treat a lone root path as empty unless the original URL actually carried
+                // a path after "://".
+                if (string.IsNullOrEmpty(Host) && absolutePath == "/" && !UrlHasPathAfterScheme(systemUri.OriginalString, systemUri.Scheme))
+                    absolutePath = "";
+
                 Path = !string.IsNullOrEmpty(Host) && absolutePath.Length > 0 && absolutePath[0] == '/'
                     ? absolutePath.Substring(1)
                     : absolutePath;

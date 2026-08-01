@@ -287,6 +287,37 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("UriUtility")]
+        public static void TestCompatUriSchemeOnlyRoundTrip()
+        {
+            // A scheme-only URL with neither host nor path (e.g. the "dummy://" placeholder
+            // used by test-filters/system-info/send-mail) must round-trip through ToString()
+            // losslessly. Controller.ApplySecretProviderAsync writes m_backendUrl back from
+            // CompatUri.ToString(); a round-trip that injects a path (turning "dummy://" into
+            // "dummy:///") breaks the exact-match backend guard in ValidateOptions and makes
+            // those commands fail with BackendNotSupported (#4812 regression).
+            var uri = new Library.Utility.CompatUri("dummy://");
+            Assert.AreEqual("dummy", uri.Scheme);
+            Assert.IsNull(uri.Host);
+            Assert.AreEqual("dummy://", uri.ToString());
+        }
+
+        [Test]
+        [Category("UriUtility")]
+        public static void TestCompatUriSchemeOnlyWithQueryRoundTrip()
+        {
+            // A query string directly after "://" is not a path: LegacyUri parses
+            // "dummy://?a=b" with an empty path, so strict mode must not synthesize a root
+            // path that would round-trip to "dummy:///?a=b".
+            var uri = new Library.Utility.CompatUri("dummy://?a=b");
+            Assert.AreEqual("dummy", uri.Scheme);
+            Assert.IsNull(uri.Host);
+            Assert.AreEqual("", uri.Path);
+            Assert.AreEqual("a=b", uri.Query);
+            Assert.AreEqual("dummy://?a=b", uri.ToString());
+        }
+
+        [Test]
+        [Category("UriUtility")]
         public static void TestCompatUriPathIsDecodedToMatchLegacyContract()
         {
             // System.Uri.AbsolutePath returns the percent-encoded path (a space becomes
