@@ -269,7 +269,7 @@ public sealed class MovistarCloudBackend : IBackend
         _password = RequireOption(options, PasswordOption);
         _deviceId = RequireOption(options, DeviceIdOption);
 
-        var uri = new Utility.Uri(url);
+        var uri = new Utility.RelaxedUri(url);
         _rootFolderPathOpt = uri.HostAndPath;
 
         _listLimit = Library.Utility.Utility.ParseIntOption(options, ListLimitOption, DefaultListLimit);

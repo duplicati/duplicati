@@ -32,25 +32,25 @@ namespace Duplicati.UnitTest
         public static void TestBuildUriQuery()
         {
             var query = new NameValueCollection { { "a", "b" } };
-            var queryUrl = Library.Utility.Uri.BuildUriQuery(query);
+            var queryUrl = Library.Utility.RelaxedUri.BuildUriQuery(query);
             Assert.AreEqual("a=b", queryUrl);
             query.Add(new NameValueCollection { { "c", "d" } });
-            queryUrl = Library.Utility.Uri.BuildUriQuery(query);
+            queryUrl = Library.Utility.RelaxedUri.BuildUriQuery(query);
             Assert.AreEqual("a=b&c=d", queryUrl);
 
             // Test with space in value
             query = new NameValueCollection { { "key", "value with space" } };
-            queryUrl = Library.Utility.Uri.BuildUriQuery(query);
+            queryUrl = Library.Utility.RelaxedUri.BuildUriQuery(query);
             Assert.AreEqual("key=value with space", queryUrl);
 
             // Test with + in value
             query = new NameValueCollection { { "key", "value+plus" } };
-            queryUrl = Library.Utility.Uri.BuildUriQuery(query);
+            queryUrl = Library.Utility.RelaxedUri.BuildUriQuery(query);
             Assert.AreEqual("key=value+plus", queryUrl);
 
             // Test with % in value
             query = new NameValueCollection { { "key", "value%percent" } };
-            queryUrl = Library.Utility.Uri.BuildUriQuery(query);
+            queryUrl = Library.Utility.RelaxedUri.BuildUriQuery(query);
             Assert.AreEqual("key=value%percent", queryUrl);
         }
 
@@ -61,7 +61,7 @@ namespace Duplicati.UnitTest
             var baseUrl = "http://localhost";
             var path = "files";
             var query = new NameValueCollection { { "a", "b" }, { "c", "d" }, { "e", "+ %" } };
-            var url = Library.Utility.Uri.UriBuilder(baseUrl, path, query);
+            var url = Library.Utility.RelaxedUri.UriBuilder(baseUrl, path, query);
             Assert.AreEqual(baseUrl + "/" + path + "?a=b&c=d&e=+%20%25", url);
         }
 
@@ -70,7 +70,7 @@ namespace Duplicati.UnitTest
         public static void TestExtractPath()
         {
             var url = "http://localhost/a/b";
-            var path = Library.Utility.Uri.ExtractPath(url);
+            var path = Library.Utility.RelaxedUri.ExtractPath(url);
             Assert.AreEqual("a/b", path);
         }
 
@@ -97,7 +97,7 @@ namespace Duplicati.UnitTest
         {
             string uriStr = $"http://{user}{host}{port}{path}{query}";
 
-            var uri = new Library.Utility.Uri(uriStr);
+            var uri = new Library.Utility.RelaxedUri(uriStr);
             Assert.AreEqual("http", uri.Scheme);
             Assert.AreEqual(host, uri.Host);
             if (port.Length != 0)
@@ -135,26 +135,26 @@ namespace Duplicati.UnitTest
         {
             if (System.OperatingSystem.IsWindows())
             {
-                var a = new Library.Utility.Uri("file://c:/a/b/");
-                var b = new Library.Utility.Uri("c:/a/b/");
+                var a = new Library.Utility.RelaxedUri("file://c:/a/b/");
+                var b = new Library.Utility.RelaxedUri("c:/a/b/");
 
                 Assert.AreEqual(a.ToString(), b.ToString());
                 Assert.AreEqual(a.Path, b.Path);
 
-                a = new Library.Utility.Uri("file://C:\\a\\b");
-                b = new Library.Utility.Uri("C:\\a\\b");
+                a = new Library.Utility.RelaxedUri("file://C:\\a\\b");
+                b = new Library.Utility.RelaxedUri("C:\\a\\b");
                 Assert.AreEqual(a.ToString(), b.ToString());
                 Assert.AreEqual(a.Path, b.Path);
             }
             else
             {
-                var a = new Library.Utility.Uri("file:///a/b");
-                var b = new Library.Utility.Uri("/a/b");
+                var a = new Library.Utility.RelaxedUri("file:///a/b");
+                var b = new Library.Utility.RelaxedUri("/a/b");
                 Assert.AreEqual(a.ToString(), b.ToString());
                 Assert.AreEqual(a.Path, b.Path);
 
-                a = new Library.Utility.Uri("file:///a/b/");
-                b = new Library.Utility.Uri("/a/b/");
+                a = new Library.Utility.RelaxedUri("file:///a/b/");
+                b = new Library.Utility.RelaxedUri("/a/b/");
                 Assert.AreEqual(a.ToString(), b.ToString());
                 Assert.AreEqual(a.Path, b.Path);
             }
@@ -169,7 +169,7 @@ namespace Duplicati.UnitTest
             if (!System.OperatingSystem.IsWindows())
                 return;
 
-            var a = new Library.Utility.Uri("file://c:\\@folder\\");
+            var a = new Library.Utility.RelaxedUri("file://c:\\@folder\\");
             Assert.AreEqual("file", a.Scheme);
             Assert.IsNull(a.Host, "Host should be null for a local path");
             Assert.IsNull(a.Username, "Username should be null");
@@ -178,18 +178,18 @@ namespace Duplicati.UnitTest
             Assert.IsTrue(System.IO.Path.IsPathRooted(a.Path), "Path should be a rooted local path");
 
             // The file:// form must parse the same as the raw path form
-            var b = new Library.Utility.Uri("c:\\@folder\\");
+            var b = new Library.Utility.RelaxedUri("c:\\@folder\\");
             Assert.AreEqual(b.Path, a.Path);
             Assert.AreEqual(b.ToString(), a.ToString());
 
             // Re-parsing ToString() round-trips to the same path (no corruption)
-            var roundtrip = new Library.Utility.Uri(a.ToString());
+            var roundtrip = new Library.Utility.RelaxedUri(a.ToString());
             Assert.AreEqual(a.Path, roundtrip.Path);
             Assert.IsNull(roundtrip.Host);
             Assert.IsNull(roundtrip.Username);
 
             // The url-encoded form (%40) resolves to the same path
-            var encoded = new Library.Utility.Uri("file://c:\\%40folder\\");
+            var encoded = new Library.Utility.RelaxedUri("file://c:\\%40folder\\");
             Assert.AreEqual(a.Path, encoded.Path);
         }
     }

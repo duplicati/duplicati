@@ -132,18 +132,18 @@ namespace Duplicati.Server.Database
         /// </summary>
         private void SanitizeTargetUrl()
         {
-            var url = new Duplicati.Library.Utility.Uri(this.TargetURL);
+            var url = new Duplicati.Library.Utility.RelaxedUri(this.TargetURL);
             NameValueCollection filteredParameters = new NameValueCollection();
             if (url.Query != null)
             {
                 // We cannot use url.QueryParameters since it contains decoded parameter values, which
                 // breaks assumptions made by the decode_uri function in AppUtils.js. Since we are simply
                 // removing password parameters, we will leave the parameters as they are in the target URL.
-                filteredParameters = Library.Utility.Uri.ParseQueryString(url.Query, false);
+                filteredParameters = Library.Utility.RelaxedUri.ParseQueryString(url.Query, false);
                 foreach (var field in Connection.PasswordFieldNames)
                     filteredParameters.Remove(field);
             }
-            url = url.SetQuery(Duplicati.Library.Utility.Uri.BuildUriQuery(filteredParameters));
+            url = url.SetQuery(Duplicati.Library.Utility.RelaxedUri.BuildUriQuery(filteredParameters));
             this.TargetURL = url.ToString();
         }
 
@@ -168,15 +168,15 @@ namespace Duplicati.Server.Database
                 if (SourceMasking.IsSpecialSource(this.Sources[i]))
                 {
                     var urlString = SourceMasking.ExtractUrl(this.Sources[i]);
-                    var url = new Library.Utility.Uri(urlString);
+                    var url = new Library.Utility.RelaxedUri(urlString);
 
                     if (url.Query != null)
                     {
-                        var filteredParameters = Library.Utility.Uri.ParseQueryString(url.Query, false);
+                        var filteredParameters = Library.Utility.RelaxedUri.ParseQueryString(url.Query, false);
                         foreach (var field in Connection.PasswordFieldNames)
                             filteredParameters.Remove(field);
 
-                        url = url.SetQuery(Library.Utility.Uri.BuildUriQuery(filteredParameters));
+                        url = url.SetQuery(Library.Utility.RelaxedUri.BuildUriQuery(filteredParameters));
                         this.Sources[i] = SourceMasking.ReplaceUrl(this.Sources[i], url.ToString());
                     }
                 }
@@ -205,11 +205,11 @@ namespace Duplicati.Server.Database
                 if (target == null || string.IsNullOrEmpty(target.TargetUrl))
                     continue;
 
-                var url = new Duplicati.Library.Utility.Uri(target.TargetUrl);
+                var url = new Duplicati.Library.Utility.RelaxedUri(target.TargetUrl);
                 var filteredParameters = url.QueryParameters;
                 foreach (var field in Connection.PasswordFieldNames)
                     filteredParameters.Remove(field);
-                url = url.SetQuery(Duplicati.Library.Utility.Uri.BuildUriQuery(filteredParameters));
+                url = url.SetQuery(Duplicati.Library.Utility.RelaxedUri.BuildUriQuery(filteredParameters));
                 target.TargetUrl = url.ToString();
             }
         }
