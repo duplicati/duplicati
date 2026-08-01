@@ -592,6 +592,74 @@ namespace Duplicati.UnitTest
             for (int i = 0; i < testValues.Length; i++)
                 Assert.AreEqual(TimeSpan.FromSeconds(expect[i]), Utility.GetRetryDelay(baseDelay, testValues[i], true));
         }
+
+        [Test]
+        [Category("Utility")]
+        public static void GetUrlWithoutCredentialsRemovesCredentialsFromMalformedUrls()
+        {
+            // An unencoded '@' in the password makes the relaxed parser read
+            // "ssw0rd@example.com" as the host
+            var result = Utility.GetUrlWithoutCredentials("ftp://user:p@ssw0rd@example.com/path");
+            StringAssert.DoesNotContain("ssw0rd", result);
+
+            // A single-slash typo does not match the url parser, so the whole
+            // url is reinterpreted as a local file path and shown in full
+            result = Utility.GetUrlWithoutCredentials("ftps:/user:hunter2@example.com/path");
+            StringAssert.DoesNotContain("hunter2", result);
+
+            // Same reinterpretation when the scheme is missing entirely
+            result = Utility.GetUrlWithoutCredentials("user:hunter2@example.com/path");
+            StringAssert.DoesNotContain("hunter2", result);
+
+            // '\0' is an invalid path character on all platforms, so this is
+            // neither a url nor a path and hits the truncating fallback
+            result = Utility.GetUrlWithoutCredentials("user:hunter2@ex\0ample/x");
+            StringAssert.DoesNotContain("hunter2", result);
+        }
+
+        [Test]
+        [Category("Utility")]
+        public static void GetUrlWithoutCredentialsKeepsSafeUrlsReadable()
+        {
+            // Well-formed urls keep the exact pre-existing output
+            Assert.AreEqual("ftp://example.com/path", Utility.GetUrlWithoutCredentials("ftp://user:pass@example.com/path"));
+            Assert.AreEqual("ftp://example.com/path", Utility.GetUrlWithoutCredentials("ftp://example.com/path"));
+
+            // The part before a '|' separator stays hidden
+            Assert.AreEqual("ftp://host/x", Utility.GetUrlWithoutCredentials("mount|ftp://user:pass@host/x"));
+
+            // An '@' after the first path separator is not userinfo and must survive
+            var decoded = Library.Utility.Uri.UrlDecode(Utility.GetUrlWithoutCredentials("ftp://host/dir@name/x"));
+            StringAssert.Contains("dir@name", decoded);
+
+            decoded = Library.Utility.Uri.UrlDecode(Utility.GetUrlWithoutCredentials("/mnt/data@x/y"));
+            StringAssert.Contains("data@x", decoded);
+
+            // A drive letter is not a scheme, so '@' in a Windows path is kept
+            decoded = Library.Utility.Uri.UrlDecode(Utility.GetUrlWithoutCredentials(@"C:\backup@daily\x"));
+            StringAssert.Contains("backup@daily", decoded);
+
+            decoded = Library.Utility.Uri.UrlDecode(Utility.GetUrlWithoutCredentials(@"file://C:\backup@daily\x"));
+            StringAssert.Contains("backup@daily", decoded);
+
+            // Null and blank inputs pass through
+            Assert.IsNull(Utility.GetUrlWithoutCredentials(null));
+            Assert.AreEqual("", Utility.GetUrlWithoutCredentials(""));
+            Assert.AreEqual("   ", Utility.GetUrlWithoutCredentials("   "));
+        }
+
+        [Test]
+        [Category("Utility")]
+        public static void UriExceptionsDoNotEchoCredentials()
+        {
+            // The parse error for an invalid url is shown to the user, so it
+            // must not echo an embedded password
+            var parseEx = Assert.Throws<ArgumentException>(() => new Library.Utility.Uri("user:hunter2@ex\0ample/x"));
+            StringAssert.DoesNotContain("hunter2", parseEx.Message);
+
+            var hostEx = Assert.Throws<ArgumentException>(() => new Library.Utility.Uri("ftp://user:hunter2@/path").RequireHost());
+            StringAssert.DoesNotContain("hunter2", hostEx.Message);
+        }
     }
 
     /// <summary>

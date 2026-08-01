@@ -1851,6 +1851,22 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
+        /// Matches a leading userinfo segment (user:password@, up to the last @ before
+        /// the first path separator), optionally preceded by a scheme. The scheme needs
+        /// at least two characters so a drive letter is not mistaken for one.
+        /// </summary>
+        private static readonly Regex URL_USERINFO_MATCHER = new Regex(@"^(?<scheme>[a-zA-Z][a-zA-Z0-9+._\-]+:/{0,2})??[^/\\]*@", RegexOptions.Compiled);
+
+        /// <summary>
+        /// Removes a leading userinfo (user:password@) segment from a url-like string,
+        /// keeping any scheme prefix
+        /// </summary>
+        /// <param name="url">The url-like string to strip</param>
+        /// <returns>The string without the userinfo segment</returns>
+        internal static string StripUrlUserInfo(string url)
+            => URL_USERINFO_MATCHER.Replace(url, "${scheme}", 1);
+
+        /// <summary>
         /// Returns a url that is safe to display, by removing any credentials
         /// </summary>
         /// <param name="url">The url to sanitize</param>
@@ -1862,25 +1878,26 @@ namespace Duplicati.Library.Utility
             if (string.IsNullOrWhiteSpace(url))
                 return url;
 
-            // Use a reportable url without credentials
-            var pipeIndex = url.IndexOf('|');
-            var sepIndex = pipeIndex >= 0 ? pipeIndex + 1 : 0;
-            var length = url.Length - sepIndex;
-            var shown = Math.Min(length, maxShown);
-            var hidden = length - shown;
-            var sanitizedUrl = $"{url[sepIndex..(sepIndex + shown)]}{new string('*', hidden)}";
+            // Remove any userinfo before parsing, so a url the parser misreads
+            // (or rejects) cannot carry credentials into the displayed result
+            var target = StripUrlUserInfo(url[(url.IndexOf('|') + 1)..]);
 
             // If we can parse it, this result is better
             try
             {
-                var uri = new Uri(url[sepIndex..]);
-                sanitizedUrl = new Uri($"{uri.Scheme}://{uri.Host}").SetPath(uri.Path).ToString();
+                var uri = new Uri(target);
+                return new Uri($"{uri.Scheme}://{uri.Host}").SetPath(uri.Path).ToString();
             }
             catch
             {
             }
 
-            return sanitizedUrl;
+            // Not parseable even as a path; show a truncated prefix, without any query
+            var queryIndex = target.IndexOf('?');
+            if (queryIndex >= 0)
+                target = target[..queryIndex];
+            var shown = Math.Min(target.Length, maxShown);
+            return $"{target[..shown]}{new string('*', target.Length - shown)}";
         }
 
         /// <summary>

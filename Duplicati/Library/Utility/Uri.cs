@@ -209,7 +209,7 @@ namespace Duplicati.Library.Utility
                     catch
                     {
                     }
-                throw new ArgumentException(Strings.Uri.UriParseError(url), nameof(url));
+                throw new ArgumentException(Strings.Uri.UriParseError(Utility.StripUrlUserInfo(url)), nameof(url));
             }
 
             this.Scheme = m.Groups["scheme"].Value;
@@ -224,7 +224,7 @@ namespace Duplicati.Library.Utility
             {
                 p = h + p;
                 if (p.IndexOfAny(System.IO.Path.GetInvalidPathChars()) >= 0)
-                    throw new ArgumentException(Strings.Uri.UriParseError(url), nameof(url));
+                    throw new ArgumentException(Strings.Uri.UriParseError(Utility.StripUrlUserInfo(url)), nameof(url));
                 p = System.IO.Path.GetFullPath(p);
                 h = null;
             }
@@ -283,7 +283,7 @@ namespace Duplicati.Library.Utility
         public void RequireHost()
         {
             if (string.IsNullOrEmpty(Host))
-                throw new ArgumentException(Strings.Uri.NoHostname(OriginalUri));
+                throw new ArgumentException(Strings.Uri.NoHostname(Utility.StripUrlUserInfo(OriginalUri)));
         }
 
         /// <summary>
