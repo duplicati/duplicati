@@ -27,6 +27,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Localization.Short;
 
 namespace Duplicati.Library.Utility;
 
@@ -35,6 +36,11 @@ namespace Duplicati.Library.Utility;
 /// </summary>
 public static class BackendExtensions
 {
+    /// <summary>
+    /// The log tag for messages from this class
+    /// </summary>
+    private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(BackendExtensions));
+
     /// <summary>
     /// The test file name used to test access permissions
     /// </summary>
@@ -78,7 +84,16 @@ public static class BackendExtensions
                     continue;
 
                 connected = true;
-                await backend.DeleteAsync(TEST_FILE_NAME, cancellationToken).ConfigureAwait(false);
+                try
+                {
+                    await backend.DeleteAsync(TEST_FILE_NAME, cancellationToken).ConfigureAwait(false);
+                }
+                catch (FileMissingException)
+                {
+                    // A listing can report a file that is already deleted, and this
+                    // step only needs the file to be gone
+                    Logging.Log.WriteInformationMessage(LOGTAG, "TestFileAlreadyGone", LC.L($"The listed file {TEST_FILE_NAME} was already gone"));
+                }
                 break;
             }
         }
@@ -148,6 +163,12 @@ public static class BackendExtensions
         try
         {
             await backend.DeleteAsync(TEST_FILE_NAME, cancellationToken).ConfigureAwait(false);
+        }
+        catch (FileMissingException)
+        {
+            // A file that was just written is not always addressable right away, and
+            // the file being gone is what the cleanup is for
+            Logging.Log.WriteInformationMessage(LOGTAG, "TestFileAlreadyGone", LC.L($"The file {TEST_FILE_NAME} was already gone when cleaning up"));
         }
         catch (Exception e)
         {
