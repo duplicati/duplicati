@@ -109,6 +109,7 @@ namespace Duplicati.Server
                 }
                 catch
                 {
+                    Database.ServerSettings.ReportUnusableUpdateCheckInterval(connection.ApplicationSettings.UpdateCheckInterval);
                 }
 
                 // If we have some weirdness, just check now
