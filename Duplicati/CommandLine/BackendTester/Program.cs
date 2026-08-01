@@ -206,7 +206,7 @@ namespace Duplicati.CommandLine.BackendTester
                             if (Library.Utility.Utility.ParseBoolOption(options, "force"))
                             {
                                 Console.WriteLine($"{LogTimeStamp}Auto clean, removing file: {fe.Name}");
-                                Retry(() => backend.DeleteAsync(fe.Name, CancellationToken.None), retries).Await();
+                                DeleteListedFileAsync(backend, fe.Name, retries).Await();
                                 continue;
                             }
                             else
@@ -649,6 +649,28 @@ namespace Duplicati.CommandLine.BackendTester
 
             return filename;
         }
+
+        /// <summary>
+        /// Deletes a file that was reported by the listing, accepting that it may already be gone
+        /// </summary>
+        /// <param name="backend">The backend to delete from</param>
+        /// <param name="remotename">The name of the file to delete</param>
+        /// <param name="retries">The number of attempts to make</param>
+        /// <returns>An awaitable task</returns>
+        internal static Task DeleteListedFileAsync(IBackend backend, string remotename, int retries)
+            => Retry(async () =>
+            {
+                try
+                {
+                    await backend.DeleteAsync(remotename, CancellationToken.None);
+                }
+                catch (FileMissingException)
+                {
+                    // A listing can report a file that was just deleted, and removing
+                    // it is what this was for, so the file being gone is the result
+                    Console.WriteLine($"{LogTimeStamp}File was already gone: {remotename}");
+                }
+            }, retries);
 
         private static async Task<T> Retry<T>(Func<Task<T>> action, int retries)
         {
