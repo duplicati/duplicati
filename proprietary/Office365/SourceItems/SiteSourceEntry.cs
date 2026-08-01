@@ -15,11 +15,11 @@ internal class SiteSourceEntry(SourceProvider provider, string parentPath, Graph
             { "o365:v", "1" },
             { "o365:Id", site.Id },
             { "o365:Type", SourceItemType.Site.ToString() },
-            { "o365:Name", $"{site.DisplayName}{(site.SiteCollection?.PersonalSite == true ? " (Personal)" : "" )}" },
+            { "o365:Name", $"{site.DisplayName}{(site.IsPersonalSite == true ? " (Personal)" : "" )}" },
             { "o365:DisplayName", site.DisplayName },
             { "o365:WebUrl", site.WebUrl },
             { "o365:Hostname", site.SiteCollection?.Hostname },
-            { "o365:PersonalSite", site.SiteCollection?.PersonalSite?.ToString() },
+            { "o365:PersonalSite", site.IsPersonalSite?.ToString() },
             { "o365:Classification", SourceProvider.ClassifySite(site).ToString() }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))

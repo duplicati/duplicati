@@ -52,29 +52,50 @@ internal class MetaRootSourceEntry(SourceProvider provider, string mountPoint, O
         switch (type)
         {
             case Office365MetaType.Users:
+                // Microsoft Graph paging over users is not guaranteed to be stable, so the
+                // same user can be returned on more than one page. De-duplicate by user id
+                // to avoid emitting duplicate paths for the same user.
+                var seenUserIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
                 await foreach (var user in provider.RootApi.ListAllUsersAsync(cancellationToken).ConfigureAwait(false))
                 {
                     if (cancellationToken.IsCancellationRequested)
                         yield break;
 
-                    // Skip users whose classification is excluded by the include filter.
-                    // This uses the cached classification, so no extra Graph call is made
-                    // beyond the one already performed for seat counting.
+                    if (string.IsNullOrEmpty(user.Id) || !seenUserIds.Add(user.Id))
+                        continue;
+
+                    // Skip users whose classification is excluded by the include filter. When
+                    // every classification is included, which is the default, this does not
+                    // classify the user and so makes no Graph call.
                     if (!await provider.IsUserClassificationIncludedAsync(user, cancellationToken).ConfigureAwait(false))
                         continue;
 
-                    // Shared mailboxes without additional storage do not consume a seat.
-                    var countsAsSeat = await provider.UserCountsAsSeatAsync(user, cancellationToken).ConfigureAwait(false);
+                    // Shared mailboxes without additional storage do not consume a seat, but
+                    // determining that costs a Graph call per user and the gate below only
+                    // needs the answer once the seat limit has been reached. Until then, assume
+                    // the user consumes a seat: the gate approves either way, and nothing is
+                    // counted here because this check does not increment.
+                    var countsAsSeat = !provider.SeatLimitReached(type)
+                        || await provider.UserCountsAsSeatAsync(user, cancellationToken).ConfigureAwait(false);
 
                     if (provider.LicenseApprovedForEntry(Path, type, user.Id, false, countsAsSeat))
                         yield return new UserSourceEntry(provider, Path, user);
                 }
                 break;
             case Office365MetaType.Groups:
+                // Microsoft Graph paging over groups is not guaranteed to be stable, so the
+                // same group can be returned on more than one page. De-duplicate by group id
+                // to avoid emitting duplicate paths for the same group.
+                var seenGroupIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
                 await foreach (var group in provider.RootApi.ListAllGroupsAsync(cancellationToken).ConfigureAwait(false))
                 {
                     if (cancellationToken.IsCancellationRequested)
                         yield break;
+
+                    if (string.IsNullOrEmpty(group.Id) || !seenGroupIds.Add(group.Id))
+                        continue;
 
                     // Skip groups whose classification is excluded by the include filter.
                     if (!provider.IsGroupClassificationIncluded(group))
@@ -89,10 +110,18 @@ internal class MetaRootSourceEntry(SourceProvider provider, string mountPoint, O
                 }
                 break;
             case Office365MetaType.Sites:
+                // Microsoft Graph paging over sites is not guaranteed to be stable, so the
+                // same site can be returned on more than one page. De-duplicate by site id
+                // to avoid emitting duplicate paths for the same site.
+                var seenSiteIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
                 await foreach (var site in provider.RootApi.ListAllSitesAsync(cancellationToken).ConfigureAwait(false))
                 {
                     if (cancellationToken.IsCancellationRequested)
                         yield break;
+
+                    if (string.IsNullOrEmpty(site.Id) || !seenSiteIds.Add(site.Id))
+                        continue;
 
                     // Skip sites whose classification is excluded by the include filter.
                     if (!provider.IsSiteClassificationIncluded(site))
