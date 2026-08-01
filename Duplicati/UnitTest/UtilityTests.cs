@@ -629,17 +629,17 @@ namespace Duplicati.UnitTest
             Assert.AreEqual("ftp://host/x", Utility.GetUrlWithoutCredentials("mount|ftp://user:pass@host/x"));
 
             // An '@' after the first path separator is not userinfo and must survive
-            var decoded = Library.Utility.Uri.UrlDecode(Utility.GetUrlWithoutCredentials("ftp://host/dir@name/x"));
+            var decoded = RelaxedUri.UrlDecode(Utility.GetUrlWithoutCredentials("ftp://host/dir@name/x"));
             StringAssert.Contains("dir@name", decoded);
 
-            decoded = Library.Utility.Uri.UrlDecode(Utility.GetUrlWithoutCredentials("/mnt/data@x/y"));
+            decoded = RelaxedUri.UrlDecode(Utility.GetUrlWithoutCredentials("/mnt/data@x/y"));
             StringAssert.Contains("data@x", decoded);
 
             // A drive letter is not a scheme, so '@' in a Windows path is kept
-            decoded = Library.Utility.Uri.UrlDecode(Utility.GetUrlWithoutCredentials(@"C:\backup@daily\x"));
+            decoded = RelaxedUri.UrlDecode(Utility.GetUrlWithoutCredentials(@"C:\backup@daily\x"));
             StringAssert.Contains("backup@daily", decoded);
 
-            decoded = Library.Utility.Uri.UrlDecode(Utility.GetUrlWithoutCredentials(@"file://C:\backup@daily\x"));
+            decoded = RelaxedUri.UrlDecode(Utility.GetUrlWithoutCredentials(@"file://C:\backup@daily\x"));
             StringAssert.Contains("backup@daily", decoded);
 
             // Null and blank inputs pass through
@@ -654,10 +654,10 @@ namespace Duplicati.UnitTest
         {
             // The parse error for an invalid url is shown to the user, so it
             // must not echo an embedded password
-            var parseEx = Assert.Throws<ArgumentException>(() => new Library.Utility.Uri("user:hunter2@ex\0ample/x"));
+            var parseEx = Assert.Throws<ArgumentException>(() => new RelaxedUri("user:hunter2@ex\0ample/x"));
             StringAssert.DoesNotContain("hunter2", parseEx.Message);
 
-            var hostEx = Assert.Throws<ArgumentException>(() => new Library.Utility.Uri("ftp://user:hunter2@/path").RequireHost());
+            var hostEx = Assert.Throws<ArgumentException>(() => new RelaxedUri("ftp://user:hunter2@/path").RequireHost());
             StringAssert.DoesNotContain("hunter2", hostEx.Message);
         }
     }
