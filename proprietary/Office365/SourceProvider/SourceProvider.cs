@@ -390,15 +390,32 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
         };
 
     /// <summary>
+    /// Whether the user-classification include filter covers every classification. When it
+    /// does, the filter can never exclude a user, so the classification does not need to be
+    /// resolved in order to apply it.
+    /// </summary>
+    private bool AllUserClassificationsIncluded
+        => _includedUserClassifications.HasFlag(OptionsHelper.ALL_USER_CLASSIFICATIONS);
+
+    /// <summary>
     /// Determines whether a user should be included based on its classification and the
-    /// configured user-classification include filter. Uses the cached classification, so no
-    /// extra Graph API call is made beyond the one already performed for seat counting.
+    /// configured user-classification include filter.
     /// </summary>
     /// <param name="user">The user to test.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns><c>true</c> if the user should be included; otherwise <c>false</c>.</returns>
+    /// <remarks>
+    /// Classifying a user costs one Graph request (the <c>mailboxSettings/userPurpose</c>
+    /// lookup), so when the include filter covers every classification the test is a
+    /// tautology and is answered without classifying at all. That is the default
+    /// configuration, and it is what keeps a tenant-wide user listing from issuing one
+    /// request per user.
+    /// </remarks>
     internal async Task<bool> IsUserClassificationIncludedAsync(GraphUser user, CancellationToken cancellationToken)
     {
+        if (AllUserClassificationsIncluded)
+            return true;
+
         var category = await ClassifyUserAsync(user, cancellationToken).ConfigureAwait(false);
         return _includedUserClassifications.HasFlag(ToClassificationFlag(category));
     }
@@ -443,7 +460,17 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
     /// shared between seat counting, the count operation and item metadata.
     /// </remarks>
     internal Task<UserSeatCategory> ClassifyUserAsync(GraphUser user, CancellationToken cancellationToken)
-        => _userSeatCache.GetOrAdd(user.Id, _ => ResolveUserSeatCategoryAsync(user, cancellationToken));
+    {
+        var task = _userSeatCache.GetOrAdd(user.Id, _ => ResolveUserSeatCategoryAsync(user, cancellationToken));
+
+        // The cached task captured the cancellation token of whichever caller asked first, so a
+        // cancelled lookup would otherwise stay cached and keep failing for the lifetime of the
+        // provider. Evict it so the next caller retries with its own token.
+        if (task.IsCanceled || task.IsFaulted)
+            _userSeatCache.TryRemove(new KeyValuePair<string, Task<UserSeatCategory>>(user.Id, task));
+
+        return task;
+    }
 
     /// <summary>
     /// Resolves the seat classification for a user. See <see cref="ClassifyUserAsync"/>.
@@ -487,10 +514,12 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
     /// <returns>The site category.</returns>
     internal static SiteCategory ClassifySite(GraphSite site)
     {
-        if (site.SiteCollection?.PersonalSite == true)
+        if (site.IsPersonalSite == true)
             return SiteCategory.Personal;
 
-        // OneDrive personal sites are hosted on the "-my" SharePoint host.
+        // OneDrive personal sites are hosted on the "-my" SharePoint host. Note that the
+        // siteCollection facet is only populated on the root site of a site collection, so
+        // this is a fallback for the root sites only.
         var host = site.SiteCollection?.Hostname;
         if (!string.IsNullOrWhiteSpace(host) && host.Contains("-my.", StringComparison.OrdinalIgnoreCase))
             return SiteCategory.Personal;
@@ -524,6 +553,35 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
     /// <returns>The classification string suitable for item metadata.</returns>
     internal static string ClassifyGroupFromDirectory(GraphGroup group)
         => GroupCountsAsSeat(group) ? "Unified" : "NotUnified";
+
+    /// <summary>
+    /// Determines whether the seat limit for the given entry type has already been reached.
+    /// </summary>
+    /// <param name="type">The entry type to check.</param>
+    /// <returns><c>true</c> if the seat limit has been reached; otherwise <c>false</c>.</returns>
+    /// <remarks>
+    /// While seats remain, <see cref="LicenseApprovedForEntry"/> approves the entry whether or
+    /// not it consumes one. Callers that only need the approval answer, and that do not
+    /// increment the counters, can therefore skip resolving <c>countsAsSeat</c> until this
+    /// returns <c>true</c>. That matters for users, where resolving it costs a Graph request
+    /// per user.
+    /// </remarks>
+    internal bool SeatLimitReached(Office365MetaType type)
+    {
+        // Restores are unlimited, so the limit is never reached.
+        if (UsedForRestoreOperation)
+            return false;
+
+        if (type.HasFlag(Office365MetaType.Users))
+            return _userCount >= LicenseChecker.LicenseHelper.AvailableOffice365UserSeats;
+        if (type.HasFlag(Office365MetaType.Groups))
+            return _groupCount >= LicenseChecker.LicenseHelper.AvailableOffice365GroupSeats;
+        if (type.HasFlag(Office365MetaType.Sites))
+            return _siteCount >= LicenseChecker.LicenseHelper.AvailableOffice365SiteSeats;
+
+        // Unknown types are not limited.
+        return false;
+    }
 
     /// <summary>
     /// Determines whether the license is approved for the given entry.

@@ -61,6 +61,13 @@ internal sealed class GraphSite
     [JsonPropertyName("name")]
     public string? Name { get; set; }
 
+    /// <summary>
+    /// Whether the site is a personal (OneDrive) site. This is a top-level property on the
+    /// Graph site resource; the siteCollection facet has no equivalent property.
+    /// </summary>
+    [JsonPropertyName("isPersonalSite")]
+    public bool? IsPersonalSite { get; set; }
+
     [JsonPropertyName("webUrl")]
     public string? WebUrl { get; set; }
 
@@ -80,13 +87,14 @@ internal sealed class GraphSite
     public GraphSiteRoot? Root { get; set; }
 }
 
+/// <summary>
+/// The siteCollection facet of a site. Only populated on the root site of a site collection,
+/// so it must not be relied on for classifying arbitrary sites.
+/// </summary>
 internal sealed class GraphSiteCollection
 {
     [JsonPropertyName("hostname")]
     public string? Hostname { get; set; }
-
-    [JsonPropertyName("personalSite")]
-    public bool? PersonalSite { get; set; }
 }
 
 internal sealed class GraphSiteRoot
