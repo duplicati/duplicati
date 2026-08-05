@@ -26,6 +26,45 @@ internal partial class BackendManager : IBackendManager
     /// </summary>
     private static readonly string LOGTAG = Logging.Log.LogTagFromType<BackendManager>();
 
+#if DEBUG
+    /// <summary>
+    /// Test-only hooks used to make the concurrent-upload failure race deterministic.
+    /// These are only compiled in DEBUG builds and are no-ops unless a test assigns them.
+    /// See <c>DisruptionTests.TestUploadExceptionWithNoRetriesRaceAsync</c>.
+    /// </summary>
+    internal static class DebugTestHooks
+    {
+        /// <summary>
+        /// Invoked from a <see cref="PutOperation"/> just after the block (dblock) volume
+        /// has been uploaded to the destination but before the paired index (dindex)
+        /// volume is uploaded. The argument is the dindex remote filename. A test can
+        /// block here to keep the dindex upload in flight while another upload fails,
+        /// exercising the teardown/cancellation race between a block volume and its
+        /// paired index volume.
+        /// </summary>
+        public static Action<string>? BeforeIndexUpload;
+
+        /// <summary>
+        /// Invoked from the backend handler right before it cancels all in-flight uploads
+        /// during teardown (after an upload failed and the operation is aborting). A test
+        /// can use this to release an index (dindex) upload that has been deliberately held
+        /// in flight, so that the dindex is guaranteed to be cancelled mid-flight by the
+        /// teardown rather than completing beforehand. This makes the teardown/cancellation
+        /// race deterministic.
+        /// </summary>
+        public static Action? BeforeTeardownCancel;
+
+        /// <summary>
+        /// Resets all hooks. Should be called by tests in teardown.
+        /// </summary>
+        public static void Reset()
+        {
+            BeforeIndexUpload = null;
+            BeforeTeardownCancel = null;
+        }
+    }
+#endif
+
     /// <summary>
     /// The channel for issuing and handling requests.
     /// </summary>
