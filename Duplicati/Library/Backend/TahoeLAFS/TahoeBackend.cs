@@ -28,6 +28,8 @@ using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
 using Newtonsoft.Json;
 
+[assembly: InternalsVisibleTo("Duplicati.UnitTest")]
+
 namespace Duplicati.Library.Backend;
 
 public class TahoeBackend : IStreamingBackend, IRenameEnabledBackend
@@ -74,6 +76,17 @@ public class TahoeBackend : IStreamingBackend, IRenameEnabledBackend
         _url = Util.AppendDirSeparator(_url, "/");
         _timeouts = TimeoutOptionsHelper.Parse(options);
     }
+
+    /// <summary>
+    /// Builds the backend on a caller supplied handler, so the request handling
+    /// can be exercised without a Tahoe-LAFS instance
+    /// </summary>
+    /// <param name="url">The connection url</param>
+    /// <param name="options">The options to use</param>
+    /// <param name="handler">The message handler to send requests through</param>
+    internal TahoeBackend(string url, Dictionary<string, string?> options, HttpMessageHandler handler)
+        : this(url, options)
+        => _httpClient = new HttpClient(handler) { Timeout = Timeout.InfiniteTimeSpan };
 
     /// <inheritdoc />
     public Task TestAsync(bool alsoWrite, CancellationToken cancelToken)
@@ -175,14 +188,15 @@ public class TahoeBackend : IStreamingBackend, IRenameEnabledBackend
     {
         try
         {
-            using (await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken,
-                       innerCancelToken =>
-                       {
-                           using var request = CreateRequest(remotename, string.Empty, HttpMethod.Delete);
-                           return GetHttpClient().SendAsync(request,
-                               innerCancelToken);
-                       }).ConfigureAwait(false))
-            { }
+            using var resp = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken,
+                innerCancelToken =>
+                {
+                    using var request = CreateRequest(remotename, string.Empty, HttpMethod.Delete);
+                    return GetHttpClient().SendAsync(request,
+                        innerCancelToken);
+                }).ConfigureAwait(false);
+
+            resp.EnsureSuccessStatusCode();
         }
         catch (HttpRequestException wex)
             when (wex.StatusCode is HttpStatusCode.Conflict or HttpStatusCode.NotFound)
