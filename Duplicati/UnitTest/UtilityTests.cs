@@ -629,17 +629,17 @@ namespace Duplicati.UnitTest
             Assert.AreEqual("ftp://host/x", Utility.GetUrlWithoutCredentials("mount|ftp://user:pass@host/x"));
 
             // An '@' after the first path separator is not userinfo and must survive
-            var decoded = RelaxedUri.UrlDecode(Utility.GetUrlWithoutCredentials("ftp://host/dir@name/x"));
+            var decoded = UrlEncoding.UrlDecode(Utility.GetUrlWithoutCredentials("ftp://host/dir@name/x"));
             StringAssert.Contains("dir@name", decoded);
 
-            decoded = RelaxedUri.UrlDecode(Utility.GetUrlWithoutCredentials("/mnt/data@x/y"));
+            decoded = UrlEncoding.UrlDecode(Utility.GetUrlWithoutCredentials("/mnt/data@x/y"));
             StringAssert.Contains("data@x", decoded);
 
             // A drive letter is not a scheme, so '@' in a Windows path is kept
-            decoded = RelaxedUri.UrlDecode(Utility.GetUrlWithoutCredentials(@"C:\backup@daily\x"));
+            decoded = UrlEncoding.UrlDecode(Utility.GetUrlWithoutCredentials(@"C:\backup@daily\x"));
             StringAssert.Contains("backup@daily", decoded);
 
-            decoded = RelaxedUri.UrlDecode(Utility.GetUrlWithoutCredentials(@"file://C:\backup@daily\x"));
+            decoded = UrlEncoding.UrlDecode(Utility.GetUrlWithoutCredentials(@"file://C:\backup@daily\x"));
             StringAssert.Contains("backup@daily", decoded);
 
             // Null and blank inputs pass through

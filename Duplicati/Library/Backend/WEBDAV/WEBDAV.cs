@@ -190,7 +190,7 @@ namespace Duplicati.Library.Backend
                 m_path = "/" + m_path;
             m_path = Util.AppendDirSeparator(m_path, "/");
 
-            m_path = Utility.RelaxedUri.UrlDecode(m_path);
+            m_path = Utility.UrlEncoding.UrlDecode(m_path);
             m_rawurl = new Utility.RelaxedUri(m_certificateOptions.UseSSL ? "https" : "http", u.Host, m_path).ToString();
 
             int port = u.Port;
@@ -238,7 +238,7 @@ namespace Duplicati.Library.Backend
             if (path == null)
                 return;
 
-            var normalized = Utility.RelaxedUri.UrlDecode(path.Replace("+", "%2B"));
+            var normalized = Utility.UrlEncoding.UrlDecode(path.Replace("+", "%2B"));
 
             if (!normalized.StartsWith("/", StringComparison.Ordinal))
                 normalized = "/" + normalized;
@@ -264,17 +264,17 @@ namespace Duplicati.Library.Backend
                 }
                 else
                 {
-                    var decodedValue = Utility.RelaxedUri.UrlDecode(trimmed.Replace("+", "%2B"));
+                    var decodedValue = Utility.UrlEncoding.UrlDecode(trimmed.Replace("+", "%2B"));
                     return ExtractRelativeFromDecodedPath(decodedValue);
                 }
             }
 
-            var decodedPath = Utility.RelaxedUri.UrlDecode(hrefUri.AbsolutePath.Replace("+", "%2B"));
+            var decodedPath = Utility.UrlEncoding.UrlDecode(hrefUri.AbsolutePath.Replace("+", "%2B"));
             var name = ExtractRelativeFromDecodedPath(decodedPath);
             if (!string.IsNullOrEmpty(name))
                 return name;
 
-            var decodedHref = Utility.RelaxedUri.UrlDecode(trimmed.Replace("+", "%2B"));
+            var decodedHref = Utility.UrlEncoding.UrlDecode(trimmed.Replace("+", "%2B"));
             return ExtractRelativeFromDecodedPath(decodedHref);
         }
 
@@ -329,7 +329,7 @@ namespace Duplicati.Library.Backend
             if (string.IsNullOrWhiteSpace(hrefValue))
                 return null;
 
-            string name = Utility.RelaxedUri.UrlDecode(hrefValue.Replace("+", "%2B"));
+            string name = Utility.UrlEncoding.UrlDecode(hrefValue.Replace("+", "%2B"));
 
             string cmp_path;
 
@@ -611,7 +611,7 @@ namespace Duplicati.Library.Backend
 
         private HttpRequestMessage CreateRequest(string remotename, HttpMethod? method = null)
         {
-            var request = new HttpRequestMessage(HttpMethod.Get, $"{m_url}{Utility.RelaxedUri.UrlEncode(remotename).Replace("+", "%20")}");
+            var request = new HttpRequestMessage(HttpMethod.Get, $"{m_url}{Utility.UrlEncoding.UrlEncode(remotename).Replace("+", "%20")}");
             request.Headers.Add(HttpRequestHeader.UserAgent.ToString(), "Duplicati WEBDAV Client v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
 
             request.Headers.ConnectionClose = !m_useIntegratedAuthentication; // ConnectionClose is incompatible with integrated authentication
@@ -686,7 +686,7 @@ namespace Duplicati.Library.Backend
             try
             {
                 using var request = CreateRequest(oldname, new HttpMethod("MOVE"));
-                request.Headers.Add("Destination", $"{m_url}{Utility.RelaxedUri.UrlEncode(newname).Replace("+", "%20")}");
+                request.Headers.Add("Destination", $"{m_url}{Utility.UrlEncoding.UrlEncode(newname).Replace("+", "%20")}");
                 request.Headers.Add("Overwrite", "T");
 
                 using var response = await GetHttpClient().SendAsync(request, cancellationToken).ConfigureAwait(false);

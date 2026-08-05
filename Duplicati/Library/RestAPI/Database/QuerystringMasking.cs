@@ -50,7 +50,7 @@ public static class QuerystringMasking
             return urlstring;
 
         var modified = false;
-        var query = Library.Utility.RelaxedUri.ParseQueryString(url.Query, false);
+        var query = Library.Utility.UrlEncoding.ParseQueryString(url.Query, false);
         foreach (var k in query.AllKeys)
         {
             if (k is null) continue;
@@ -63,7 +63,7 @@ public static class QuerystringMasking
 
         if (!modified) return urlstring;
 
-        url = url.SetQuery(Library.Utility.RelaxedUri.BuildUriQuery(query));
+        url = url.SetQuery(Library.Utility.UrlEncoding.BuildUriQuery(query));
         return url.ToString();
     }
 
@@ -92,7 +92,7 @@ public static class QuerystringMasking
         if (string.IsNullOrWhiteSpace(newUb.Query))
             return newUrl;
 
-        var newQuery = Library.Utility.RelaxedUri.ParseQueryString(newUb.Query, false);
+        var newQuery = Library.Utility.UrlEncoding.ParseQueryString(newUb.Query, false);
 
         var modified = false;
         foreach (var key in newQuery.AllKeys)
@@ -117,7 +117,7 @@ public static class QuerystringMasking
                             continue;
 
                         var prevUb = new Library.Utility.RelaxedUri(previousUrl);
-                        var prevQuery = Library.Utility.RelaxedUri.ParseQueryString(prevUb.Query ?? "", false);
+                        var prevQuery = Library.Utility.UrlEncoding.ParseQueryString(prevUb.Query ?? "", false);
                         prevValues = GetValuesCaseInsensitive(prevQuery, key);
                         if (prevValues != null && prevValues.Any(x => !Connection.IsPasswordPlaceholder(x)))
                             break;
@@ -139,7 +139,7 @@ public static class QuerystringMasking
         if (!modified)
             return newUrl;
 
-        newUb = newUb.SetQuery(Library.Utility.RelaxedUri.BuildUriQuery(newQuery));
+        newUb = newUb.SetQuery(Library.Utility.UrlEncoding.BuildUriQuery(newQuery));
 
         return newUb.ToString();
 

@@ -29,33 +29,6 @@ namespace Duplicati.UnitTest
     {
         [Test]
         [Category("UriUtility")]
-        public static void TestBuildUriQuery()
-        {
-            var query = new NameValueCollection { { "a", "b" } };
-            var queryUrl = Library.Utility.RelaxedUri.BuildUriQuery(query);
-            Assert.AreEqual("a=b", queryUrl);
-            query.Add(new NameValueCollection { { "c", "d" } });
-            queryUrl = Library.Utility.RelaxedUri.BuildUriQuery(query);
-            Assert.AreEqual("a=b&c=d", queryUrl);
-
-            // Test with space in value
-            query = new NameValueCollection { { "key", "value with space" } };
-            queryUrl = Library.Utility.RelaxedUri.BuildUriQuery(query);
-            Assert.AreEqual("key=value with space", queryUrl);
-
-            // Test with + in value
-            query = new NameValueCollection { { "key", "value+plus" } };
-            queryUrl = Library.Utility.RelaxedUri.BuildUriQuery(query);
-            Assert.AreEqual("key=value+plus", queryUrl);
-
-            // Test with % in value
-            query = new NameValueCollection { { "key", "value%percent" } };
-            queryUrl = Library.Utility.RelaxedUri.BuildUriQuery(query);
-            Assert.AreEqual("key=value%percent", queryUrl);
-        }
-
-        [Test]
-        [Category("UriUtility")]
         public static void TestUrlBuilder()
         {
             var baseUrl = "http://localhost";

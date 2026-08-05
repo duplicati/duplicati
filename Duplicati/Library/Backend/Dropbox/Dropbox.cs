@@ -48,7 +48,7 @@ namespace Duplicati.Library.Backend
         {
             var uri = new Utility.RelaxedUri(url);
 
-            m_path = Utility.RelaxedUri.UrlDecode(uri.HostAndPath);
+            m_path = Utility.UrlEncoding.UrlDecode(uri.HostAndPath);
             if (m_path.Length != 0 && !m_path.StartsWith("/", StringComparison.Ordinal))
                 m_path = "/" + m_path;
 

@@ -108,7 +108,7 @@ namespace Duplicati.Library.Utility
                     if (Query == null)
                         m_queryParams = new NameValueCollection();
                     else
-                        m_queryParams = ParseQueryString(Query);
+                        m_queryParams = UrlEncoding.ParseQueryString(Query);
                 }
 
                 return m_queryParams;
@@ -165,7 +165,7 @@ namespace Duplicati.Library.Utility
             // produces are recognized as the same Windows path and round-trip cleanly.
             if (url.StartsWith("file://", StringComparison.OrdinalIgnoreCase))
             {
-                var candidate = UrlDecode(url.Substring("file://".Length));
+                var candidate = UrlEncoding.UrlDecode(url.Substring("file://".Length));
                 // also accept the correctly-encoded file:///C:\ triple-slash form
                 if (candidate.StartsWith("/", StringComparison.Ordinal) && WINDOWS_PATH.IsMatch(candidate))
                     candidate = candidate.Substring(1);
@@ -191,7 +191,7 @@ namespace Duplicati.Library.Utility
                 if (path.StartsWith("file://", StringComparison.OrdinalIgnoreCase))
                     path = path.Substring("file://".Length);
 
-                path = UrlDecode(path);
+                path = UrlEncoding.UrlDecode(path);
 
                 if (path.IndexOfAny(System.IO.Path.GetInvalidPathChars()) < 0)
                     try
@@ -213,9 +213,9 @@ namespace Duplicati.Library.Utility
             }
 
             this.Scheme = m.Groups["scheme"].Value;
-            var h = UrlDecode(m.Groups["hostname"].Success ? m.Groups["hostname"].Value : "");
+            var h = UrlEncoding.UrlDecode(m.Groups["hostname"].Success ? m.Groups["hostname"].Value : "");
 
-            var p = UrlDecode(m.Groups["path"].Success ? m.Groups["path"].Value : "");
+            var p = UrlEncoding.UrlDecode(m.Groups["path"].Success ? m.Groups["path"].Value : "");
             if (m.Groups["hostname"].Success && p.StartsWith("/", StringComparison.Ordinal))
                 p = p.Substring(1);
 
@@ -237,8 +237,8 @@ namespace Duplicati.Library.Utility
             this.Path = p;
 
             this.Query = m.Groups["query"].Success ? m.Groups["query"].Value : null;
-            this.Username = m.Groups["username"].Success ? UrlDecode(m.Groups["username"].Value) : null;
-            this.Password = m.Groups["password"].Success ? UrlDecode(m.Groups["password"].Value) : null;
+            this.Username = m.Groups["username"].Success ? UrlEncoding.UrlDecode(m.Groups["username"].Value) : null;
+            this.Password = m.Groups["password"].Success ? UrlEncoding.UrlDecode(m.Groups["password"].Value) : null;
             if (m.Groups["port"].Success)
                 this.Port = int.Parse(m.Groups["port"].Value);
             else
@@ -303,15 +303,15 @@ namespace Duplicati.Library.Utility
             if (!string.IsNullOrEmpty(username) || !string.IsNullOrEmpty(password))
             {
 
-                s += UrlEncode(username ?? "");
+                s += UrlEncoding.UrlEncode(username ?? "");
                 s += ":";
-                s += UrlEncode(password ?? "");
+                s += UrlEncoding.UrlEncode(password ?? "");
                 s += "@";
             }
 
             if (!string.IsNullOrEmpty(host))
             {
-                s += UrlPathEncode(host);
+                s += UrlEncoding.UrlPathEncode(host);
                 if (port != -1)
                     s += ":" + port.ToString();
             }
@@ -322,7 +322,7 @@ namespace Duplicati.Library.Utility
                 if (!string.IsNullOrEmpty(host) || (WINDOWS_PATH.IsMatch(path) && !path.StartsWith("/")))
                     s += "/";
 
-                s += string.Join('/', path.Split('/').Select(x => UrlPathEncode(x)));
+                s += string.Join('/', path.Split('/').Select(x => UrlEncoding.UrlPathEncode(x)));
             }
             if (!string.IsNullOrEmpty(query))
                 s += "?" + query;
@@ -392,191 +392,6 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
-        /// The regular expression that matches %20 type values in a querystring
-        /// </summary>
-        private static readonly System.Text.RegularExpressions.Regex RE_ESCAPECHAR = new System.Text.RegularExpressions.Regex(@"[^0-9a-zA-Z\-_.]", System.Text.RegularExpressions.RegexOptions.Compiled);
-
-        /// <summary>
-        /// Encodes a URL, like System.Web.HttpUtility.UrlEncode
-        /// </summary>
-        /// <returns>The encoded URL</returns>
-        /// <param name="value">The URL fragment to encode</param>
-        /// <param name="encoding">The encoding to use</param>
-        public static string UrlPathEncode(string value, System.Text.Encoding? encoding = null)
-        {
-            if (value == null)
-                throw new ArgumentNullException(nameof(value));
-
-            return UrlEncode(value, encoding, "%20");
-        }
-
-        /// <summary>
-        /// Encodes a URL, like System.Web.HttpUtility.UrlEncode
-        /// </summary>
-        /// <returns>The encoded URL</returns>
-        /// <param name="value">The URL fragment to encode</param>
-        /// <param name="encoding">The encoding to use</param>
-        public static string UrlEncode(string value, System.Text.Encoding? encoding = null, string spacevalue = "+")
-        {
-            if (value == null)
-                throw new ArgumentNullException(nameof(value));
-
-            encoding = encoding ?? System.Text.Encoding.UTF8;
-
-            var encoder = encoding.GetEncoder();
-            var inbuf = new char[1];
-            var outbuf = new byte[4];
-
-            return RE_ESCAPECHAR.Replace(value, (m) =>
-            {
-                if (m.Value == " ")
-                    return spacevalue;
-
-                inbuf[0] = m.Value[0];
-
-                try
-                {
-                    var len = encoder.GetBytes(inbuf, 0, 1, outbuf, 0, true);
-                    return "%" + BitConverter.ToString(outbuf, 0, len).Replace("-", "%");
-                }
-                catch
-                {
-                }
-
-                //Fallback
-                return m.Value;
-            });
-
-        }
-
-        /// <summary>
-        /// The regular expression that matches %20 type values in a querystring
-        /// </summary>
-        private static readonly System.Text.RegularExpressions.Regex RE_NUMBER = new System.Text.RegularExpressions.Regex(@"(\%(?<number>([0-9]|[a-f]|[A-F]){2}))|(\+)|(\%u(?<number>([0-9]|[a-f]|[A-F]){4}))", System.Text.RegularExpressions.RegexOptions.Compiled);
-
-        /// <summary>
-        /// Decodes a URL, like System.Web.HttpUtility.UrlDecode
-        /// </summary>
-        /// <returns>The decoded URL</returns>
-        /// <param name="value">The URL fragment to decode</param>
-        /// <param name="encoding">The encoding to use</param>
-        public static string UrlDecode(string value, System.Text.Encoding? encoding = null)
-        {
-            if (value == null)
-                throw new ArgumentNullException(nameof(value));
-
-            encoding = encoding ?? System.Text.Encoding.UTF8;
-
-            var decoder = encoding.GetDecoder();
-            var inbuf = new byte[8];
-            var outbuf = new char[8];
-
-            return RE_NUMBER.Replace(value, (m) =>
-            {
-                if (m.Value == "+")
-                    return " ";
-
-                try
-                {
-                    var hex = m.Groups["number"].Value;
-                    var bytelen = hex.Length / 2;
-                    Utility.HexStringAsByteArray(hex, inbuf);
-                    var c = decoder.GetChars(inbuf, 0, bytelen, outbuf, 0);
-                    return new string(outbuf, 0, c);
-                }
-                catch
-                {
-                }
-
-                //Fallback
-                return m.Value;
-            });
-
-        }
-
-        /// <summary>
-        /// The regular expression that matches a=b type values in a querystring
-        /// </summary>
-        private static readonly System.Text.RegularExpressions.Regex RE_URLPARAM = new System.Text.RegularExpressions.Regex(@"(?<key>[^\=\&]+)(\=(?<value>[^\&]*))?", System.Text.RegularExpressions.RegexOptions.Compiled);
-
-        /// <summary>
-        /// Parses the query string.
-        /// This is a local implementation of System.Web.HttpUtility.ParseQueryString, kept for consistent behavior (originally added due to Mono limitations)
-        /// </summary>
-        /// <returns>The parsed query string</returns>
-        /// <param name="query">The query to parse</param>
-        public static NameValueCollection ParseQueryString(string query)
-        {
-            return ParseQueryString(query, true);
-        }
-
-        /// <summary>
-        /// Parses the query string.
-        /// This is a local implementation of System.Web.HttpUtility.ParseQueryString, kept for consistent behavior (originally added due to Mono limitations)
-        /// </summary>
-        /// <returns>The parsed query string</returns>
-        /// <param name="query">The query to parse</param>
-        /// <param name="decodeValues">Whether to the parameter values should be decoded or not.</param>
-        public static NameValueCollection ParseQueryString(string query, bool decodeValues)
-        {
-            if (query == null)
-                throw new ArgumentNullException(nameof(query));
-            if (query.StartsWith("?", StringComparison.Ordinal))
-                query = query.Substring(1);
-            if (string.IsNullOrEmpty(query))
-                return new NameValueCollection(StringComparer.OrdinalIgnoreCase);
-
-            var result = new NameValueCollection(StringComparer.OrdinalIgnoreCase);
-            foreach (System.Text.RegularExpressions.Match m in RE_URLPARAM.Matches(query))
-            {
-                string value = m.Groups["value"].Success ? m.Groups["value"].Value : "";
-                if (decodeValues)
-                {
-                    value = UrlDecode(value);
-                }
-
-                result.Add(UrlDecode(m.Groups["key"].Value), value);
-            }
-
-            return result;
-        }
-
-        /// <summary>
-        /// Build the querystring to be used in a URL
-        /// </summary>
-        /// <returns>The generated querystring</returns>
-        /// <param name="query">A collection of name value pairs to be translated into a query string</param>
-        /// <param name="delimiter">The delimiter to separate key value pairs in the query string</param>
-        public static string BuildUriQuery(NameValueCollection query, string delimiter)
-        {
-
-            if (query == null)
-                throw new ArgumentNullException(nameof(query));
-
-            StringBuilder builder = new StringBuilder();
-            foreach (var key in query.Cast<string>().Where(key => !string.IsNullOrEmpty(query[key])))
-            {
-                builder.Append(builder.Length == 0 ? string.Empty : delimiter)
-                       .Append(key)
-                       .Append("=")
-                       .Append(query[key]);
-            }
-
-            return builder.ToString();
-        }
-
-        /// <summary>
-        /// Build the querystring to be used in a URL
-        /// </summary>
-        /// <returns>The generated querystring</returns>
-        /// <param name="query">A collection of name value pairs to be translated into a query string that is
-        /// ampersand delimited.</param>
-        public static string BuildUriQuery(NameValueCollection query)
-        {
-            return BuildUriQuery(query, "&");
-        }
-
-        /// <summary>
         /// Builds a URL together using a base URL, a path and a query.
         /// </summary>
         /// <returns>The built together URL.</returns>
@@ -588,7 +403,7 @@ namespace Duplicati.Library.Utility
             var builder = new UriBuilder(url)
             {
                 Path = new UrlPath(ExtractPath(url)).Append(path).ToString(),
-                Query = query != null ? BuildUriQuery(query) : null
+                Query = query != null ? UrlEncoding.BuildUriQuery(query) : null
             };
             return builder.Uri.AbsoluteUri;
         }

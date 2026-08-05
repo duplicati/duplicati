@@ -132,7 +132,7 @@ namespace Duplicati.Library.Backend
 
             var b64 = sb.ToString().Trim();
             var pem = string.Format(pem_template, b64);
-            var uri = SSHv2.KEYFILE_URI + Duplicati.Library.Utility.RelaxedUri.UrlEncode(pem);
+            var uri = SSHv2.KEYFILE_URI + Duplicati.Library.Utility.UrlEncoding.UrlEncode(pem);
             var pub = key_name + " " + Convert.ToBase64String(public_key) + " " + username;
 
             res["privkey"] = b64_raw;

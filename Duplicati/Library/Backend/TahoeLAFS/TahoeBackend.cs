@@ -260,7 +260,7 @@ public class TahoeBackend : IStreamingBackend, IRenameEnabledBackend
     /// <returns></returns>
     private HttpRequestMessage CreateRequest(string remotename, string queryparams, HttpMethod? method = null)
     {
-        var request = new HttpRequestMessage(method == null ? HttpMethod.Get : method, $"{_url}{RelaxedUri.UrlEncode(remotename).Replace("+", "%20")}{(string.IsNullOrEmpty(queryparams) || queryparams.Trim().Length == 0 ? String.Empty : "?" + queryparams)}");
+        var request = new HttpRequestMessage(method == null ? HttpMethod.Get : method, $"{_url}{UrlEncoding.UrlEncode(remotename).Replace("+", "%20")}{(string.IsNullOrEmpty(queryparams) || queryparams.Trim().Length == 0 ? String.Empty : "?" + queryparams)}");
         request.Headers.UserAgent.ParseAdd($"Duplicati Tahoe-LAFS Client {Assembly.GetExecutingAssembly().GetName().Version?.ToString()}");
         return request;
     }
@@ -283,7 +283,7 @@ public class TahoeBackend : IStreamingBackend, IRenameEnabledBackend
         using var resp = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken,
             innerCancelToken =>
             {
-                using var request = CreateRequest(string.Empty, $"t=rename&from_name={RelaxedUri.UrlEncode(oldname)}&to_name={RelaxedUri.UrlEncode(newname)}", HttpMethod.Post);
+                using var request = CreateRequest(string.Empty, $"t=rename&from_name={UrlEncoding.UrlEncode(oldname)}&to_name={UrlEncoding.UrlEncode(newname)}", HttpMethod.Post);
                 return GetHttpClient().SendAsync(request, innerCancelToken);
             }).ConfigureAwait(false);
 

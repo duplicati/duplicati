@@ -329,7 +329,7 @@ public class OpenStackStorage : IStreamingBackend, IRenameEnabledBackend
     /// <inheritdoc />
     public async Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
     {
-        var url = JoinUrls(await GetSimpleStorageEndPoint(cancelToken).ConfigureAwait(false), m_container, RelaxedUri.UrlPathEncode(m_prefix + remotename));
+        var url = JoinUrls(await GetSimpleStorageEndPoint(cancelToken).ConfigureAwait(false), m_container, UrlEncoding.UrlPathEncode(m_prefix + remotename));
         using var req = m_helper.CreateRequest(url, "PUT");
         await using var ts = stream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false);
 
@@ -343,7 +343,7 @@ public class OpenStackStorage : IStreamingBackend, IRenameEnabledBackend
     /// <inheritdoc />
     public async Task GetAsync(string remotename, Stream stream, CancellationToken cancelToken)
     {
-        var url = JoinUrls(await GetSimpleStorageEndPoint(cancelToken).ConfigureAwait(false), m_container, RelaxedUri.UrlPathEncode(m_prefix + remotename));
+        var url = JoinUrls(await GetSimpleStorageEndPoint(cancelToken).ConfigureAwait(false), m_container, UrlEncoding.UrlPathEncode(m_prefix + remotename));
 
         try
         {
@@ -386,7 +386,7 @@ public class OpenStackStorage : IStreamingBackend, IRenameEnabledBackend
     {
         var plainurl = JoinUrls(await GetSimpleStorageEndPoint(cancelToken).ConfigureAwait(false), m_container) + string.Format("?format=json&delimiter=/&limit={0}", PAGE_LIMIT);
         if (!string.IsNullOrEmpty(m_prefix))
-            plainurl += "&prefix=" + RelaxedUri.UrlEncode(m_prefix);
+            plainurl += "&prefix=" + UrlEncoding.UrlEncode(m_prefix);
 
         var url = plainurl;
 
@@ -417,7 +417,7 @@ public class OpenStackStorage : IStreamingBackend, IRenameEnabledBackend
                 yield break;
 
             // Prepare next listing entry
-            url = plainurl + $"&marker={RelaxedUri.UrlEncode(items.Last().name ?? "")}";
+            url = plainurl + $"&marker={UrlEncoding.UrlEncode(items.Last().name ?? "")}";
         }
     }
 
@@ -438,7 +438,7 @@ public class OpenStackStorage : IStreamingBackend, IRenameEnabledBackend
     /// <inheritdoc />
     public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
     {
-        var url = JoinUrls(await GetSimpleStorageEndPoint(cancelToken).ConfigureAwait(false), m_container, RelaxedUri.UrlPathEncode(m_prefix + remotename));
+        var url = JoinUrls(await GetSimpleStorageEndPoint(cancelToken).ConfigureAwait(false), m_container, UrlEncoding.UrlPathEncode(m_prefix + remotename));
         using var req = m_helper.CreateRequest(url, "DELETE");
         using var response = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, ct => m_helper.GetResponseAsync(req, HttpCompletionOption.ResponseContentRead, ct)).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
@@ -507,9 +507,9 @@ public class OpenStackStorage : IStreamingBackend, IRenameEnabledBackend
 
     public async Task RenameAsync(string oldname, string newname, CancellationToken cancellationToken)
     {
-        var url = JoinUrls(await GetSimpleStorageEndPoint(cancellationToken).ConfigureAwait(false), m_container, RelaxedUri.UrlPathEncode(m_prefix + oldname));
+        var url = JoinUrls(await GetSimpleStorageEndPoint(cancellationToken).ConfigureAwait(false), m_container, UrlEncoding.UrlPathEncode(m_prefix + oldname));
         using var req = m_helper.CreateRequest(url, "COPY");
-        req.Headers.Add("Destination", "/" + m_container + "/" + RelaxedUri.UrlPathEncode(m_prefix + newname));
+        req.Headers.Add("Destination", "/" + m_container + "/" + UrlEncoding.UrlPathEncode(m_prefix + newname));
 
         using var response = await m_httpClient.SendAsync(req, cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();

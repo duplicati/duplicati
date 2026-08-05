@@ -190,9 +190,9 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
         var qp = uri.QueryParameters;
         foreach (var kvp in opts)
             if (!string.IsNullOrWhiteSpace(kvp.Value) && string.IsNullOrWhiteSpace(qp.Get(kvp.Key)))
-                qp[kvp.Key] = Utility.RelaxedUri.UrlEncode(kvp.Value);
+                qp[kvp.Key] = Utility.UrlEncoding.UrlEncode(kvp.Value);
 
-        var query = Utility.RelaxedUri.BuildUriQuery(qp);
+        var query = Utility.UrlEncoding.BuildUriQuery(qp);
 
         if (string.IsNullOrWhiteSpace(uri.HostAndPath) && !string.IsNullOrWhiteSpace(endpoint))
             uri = new Utility.RelaxedUri(endpoint).SetScheme(uri.Scheme).SetQuery(null);
