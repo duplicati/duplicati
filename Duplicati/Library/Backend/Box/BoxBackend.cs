@@ -30,6 +30,8 @@ using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
 using Newtonsoft.Json;
 
+[assembly: InternalsVisibleTo("Duplicati.UnitTest")]
+
 namespace Duplicati.Library.Backend.Box
 {
     public class BoxBackend : IStreamingBackend, IRenameEnabledBackend, IFolderEnabledBackend
@@ -53,8 +55,8 @@ namespace Duplicati.Library.Backend.Box
         private class BoxHelper : OAuthHelperHttpClient
         {
             private readonly TimeoutOptionsHelper.Timeouts _timeouts;
-            public BoxHelper(AuthIdOptionsHelper.AuthIdOptions authId, TimeoutOptionsHelper.Timeouts timeouts)
-                : base(authId.AuthId, "box.com", authId.OAuthUrl)
+            public BoxHelper(AuthIdOptionsHelper.AuthIdOptions authId, TimeoutOptionsHelper.Timeouts timeouts, HttpClient? httpClient = null)
+                : base(authId.AuthId, "box.com", authId.OAuthUrl, httpClient)
             {
                 AutoAuthHeader = true;
                 _timeouts = timeouts;
@@ -105,6 +107,18 @@ namespace Duplicati.Library.Backend.Box
         }
 
         public BoxBackend(string url, Dictionary<string, string?> options)
+            : this(url, options, null)
+        {
+        }
+
+        /// <summary>
+        /// Creates a backend that uses the supplied <see cref="HttpClient"/>,
+        /// so the Box API responses can be stubbed in tests
+        /// </summary>
+        /// <param name="url">The backend url</param>
+        /// <param name="options">The options to use</param>
+        /// <param name="httpClient">The client to use, or null to create one</param>
+        internal BoxBackend(string url, Dictionary<string, string?> options, HttpClient? httpClient)
         {
             var uri = new RelaxedUri(url);
 
@@ -116,7 +130,7 @@ namespace Duplicati.Library.Backend.Box
             _deleteFromTrash = Utility.Utility.ParseBoolOption(options, REALLY_DELETE_OPTION);
             _timeouts = TimeoutOptionsHelper.Parse(options);
 
-            _oAuthHelper = new BoxHelper(authid, _timeouts);
+            _oAuthHelper = new BoxHelper(authid, _timeouts, httpClient);
 
         }
 
@@ -224,7 +238,7 @@ namespace Duplicati.Library.Backend.Box
 
         public async Task<IFileEntry?> GetEntryAsync(string path, CancellationToken cancellationToken)
         {
-            var parts = GetAbsolutePath(_path).Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+            var parts = GetAbsolutePath(path).Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length == 0)
                 return new FileEntry(string.Empty) { IsFolder = true };
 
