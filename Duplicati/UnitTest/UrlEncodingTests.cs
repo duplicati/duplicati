@@ -65,6 +65,36 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Utility")]
+        public static void UnicodeEscapeIsDecodedAsCodeUnit()
+        {
+            // The four hex digits of a %uXXXX escape are a UTF-16 code unit, not
+            // a pair of bytes to hand to the byte decoder
+            Assert.AreEqual("æ", Library.Utility.UrlEncoding.UrlDecode("%u00e6"));
+            Assert.AreEqual("A", Library.Utility.UrlEncoding.UrlDecode("%u0041"));
+            Assert.AreEqual("a日b", Library.Utility.UrlEncoding.UrlDecode("a%u65e5b"));
+        }
+
+        [Test]
+        [Category("Utility")]
+        public static void UnicodeEscapeMatchesTheFramework()
+        {
+            // This decoder is documented as behaving like the one it is named
+            // after, which is what settles how %uXXXX should be read
+            foreach (var value in new[] { "%u00e6", "%u0041", "a%u65e5b" })
+                Assert.AreEqual(System.Web.HttpUtility.UrlDecode(value), Library.Utility.UrlEncoding.UrlDecode(value), value);
+        }
+
+        [Test]
+        [Category("Utility")]
+        public static void SurrogatePairIsDecoded()
+        {
+            // Each escape carries one code unit, so a pair has to survive being
+            // decoded one at a time
+            Assert.AreEqual("\U0001F600", Library.Utility.UrlEncoding.UrlDecode("%uD83D%uDE00"));
+        }
+
+        [Test]
+        [Category("Utility")]
         public static void OnlyAlphanumericAndThreeSignsAreLeftAlone()
         {
             Assert.AreEqual("aA1-_.", Library.Utility.UrlEncoding.UrlEncode("aA1-_."));

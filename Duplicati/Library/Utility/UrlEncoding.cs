@@ -97,7 +97,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The regular expression that matches %20 type values in a querystring
         /// </summary>
-        private static readonly System.Text.RegularExpressions.Regex RE_NUMBER = new System.Text.RegularExpressions.Regex(@"(\%(?<number>([0-9]|[a-f]|[A-F]){2}))|(\+)|(\%u(?<number>([0-9]|[a-f]|[A-F]){4}))", System.Text.RegularExpressions.RegexOptions.Compiled);
+        private static readonly System.Text.RegularExpressions.Regex RE_NUMBER = new System.Text.RegularExpressions.Regex(@"(\%(?<number>([0-9]|[a-f]|[A-F]){2}))|(\+)|(\%u(?<unicode>([0-9]|[a-f]|[A-F]){4}))", System.Text.RegularExpressions.RegexOptions.Compiled);
 
         /// <summary>
         /// Decodes a URL, like System.Web.HttpUtility.UrlDecode
@@ -123,6 +123,12 @@ namespace Duplicati.Library.Utility
 
                 try
                 {
+                    // The four digits of a %uXXXX escape are a UTF-16 code unit,
+                    // not bytes, so they must not go through the byte decoder
+                    var unicode = m.Groups["unicode"];
+                    if (unicode.Success)
+                        return ((char)Convert.ToUInt16(unicode.Value, 16)).ToString();
+
                     var hex = m.Groups["number"].Value;
                     var bytelen = hex.Length / 2;
                     Utility.HexStringAsByteArray(hex, inbuf);
