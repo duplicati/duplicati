@@ -216,7 +216,7 @@ namespace Duplicati.Library.Main.Operation
                                     .UpdateRemoteVolumeAsync(vol.RemoteFilename, RemoteVolumeState.Uploading, -1, null, m_result.TaskControl.ProgressToken)
                                     .ConfigureAwait(false);
                                 var lst = await db
-                                    .DropFilesetsFromTableAsync(new[] { tsOriginal }, m_result.TaskControl.ProgressToken)
+                                    .DropFilesetsFromTableAsync(new[] { tsOriginal }, m_options, m_result.TaskControl.ProgressToken)
                                     .ToArrayAsync(cancellationToken: m_result.TaskControl.ProgressToken)
                                     .ConfigureAwait(false);
                                 foreach (var f in lst)
