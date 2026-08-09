@@ -41,6 +41,13 @@ namespace Duplicati.UnitTest.DiskImage.Helpers;
 /// </summary>
 internal sealed class PowerShellSession : IDisposable
 {
+    /// <summary>
+    /// How long the module load at session start is allowed to take. It is
+    /// deliberately far larger than a command budget, because it absorbs a cost
+    /// the commands would otherwise pay.
+    /// </summary>
+    private const int WarmUpTimeoutSeconds = 180;
+
     private Process? _process;
     private readonly object _lock = new();
     private bool _disposed;
@@ -111,6 +118,16 @@ internal sealed class PowerShellSession : IDisposable
 
         _process.BeginOutputReadLine();
         _process.BeginErrorReadLine();
+
+        // New-VHD is the first Hyper-V cmdlet the disk image tests reach, and
+        // PowerShell auto loads the module the first time it is used. On a cold
+        // machine that load has been measured at up to 26 seconds, which lands
+        // inside whichever operation happens to run first and is charged against
+        // that operation's budget. Paying it here keeps the per command budgets
+        // meaning what they say.
+        // Re-entering ExecuteScript is safe: this thread already holds the lock,
+        // and EnsureStarted returns straight away now that _process is set.
+        ExecuteScript("Import-Module Hyper-V -ErrorAction SilentlyContinue", WarmUpTimeoutSeconds);
     }
 
     /// <summary>
