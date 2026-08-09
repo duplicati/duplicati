@@ -27,6 +27,8 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
 
+[assembly: InternalsVisibleTo("Duplicati.UnitTest")]
+
 namespace Duplicati.Library.Backend
 {
     /// <summary>
@@ -129,7 +131,7 @@ namespace Duplicati.Library.Backend
 
         public Filejump(string url, Dictionary<string, string?> options)
         {
-            var u = new Utility.Uri(url);
+            var u = new Utility.RelaxedUri(url);
             m_path = u.HostAndPath.Trim('/');
             if (string.IsNullOrWhiteSpace(m_path))
                 m_path = "/";
@@ -137,7 +139,7 @@ namespace Duplicati.Library.Backend
                 m_path = $"/{m_path}/";
 
             m_api_token = options.GetValueOrDefault(API_TOKEN_OPTION);
-            m_authOptions = AuthOptionsHelper.Parse(options, u);
+            m_authOptions = AuthOptionsHelper.Parse(options, u.Username, u.Password);
             if (string.IsNullOrWhiteSpace(m_api_token) && (!m_authOptions.HasUsername || !m_authOptions.HasPassword))
                 throw new ArgumentException("Either an API token, or username/password are required for filejump authentication.");
 
@@ -202,12 +204,22 @@ namespace Duplicati.Library.Backend
             var content = new StringContent(JsonSerializer.Serialize(data), Encoding.UTF8, "application/json");
             using var request = new HttpRequestMessage(HttpMethod.Post, "auth/login") { Content = content };
             request.Headers.Add("Accept", "application/json");
-            var response = await Utility.Utility.WithTimeout(m_timeoutOptions.ShortTimeout, cancelToken, ct => client.SendAsync(request, ct));
+            using var response = await Utility.Utility.WithTimeout(m_timeoutOptions.ShortTimeout, cancelToken, ct => client.SendAsync(request, ct));
 
             var body = await response.Content.ReadAsStringAsync(cancelToken);
-            var result = JsonSerializer.Deserialize<AuthResponseOuter>(body, m_jsonOptions);
+
+            // A failing gateway answers with html, which is not the shape expected here
+            AuthResponseOuter? result = null;
+            try
+            {
+                result = JsonSerializer.Deserialize<AuthResponseOuter>(body, m_jsonOptions);
+            }
+            catch (JsonException)
+            {
+            }
+
             if (result == null || !string.Equals(result.Status, "success", StringComparison.OrdinalIgnoreCase))
-                throw new UserInformationException($"Failed to authenticate: {result?.Message}", "LoginFailed");
+                throw new UserInformationException($"Failed to authenticate: {result?.Message ?? $"the server returned {(int)response.StatusCode} {response.StatusCode}"}", "LoginFailed");
             if (!string.IsNullOrWhiteSpace(result?.User?.Banned_At))
                 throw new UserInformationException($"User is banned: {result.User.Banned_At}", "UserBanned");
             response.EnsureSuccessStatusCode();
@@ -250,7 +262,9 @@ namespace Duplicati.Library.Backend
             using var request = new HttpRequestMessage(HttpMethod.Post, "uploads") { Content = content };
             request.Headers.Add("Accept", "application/json");
 
-            var response = await client.SendAsync(request, token);
+            using var response = await client.SendAsync(request, token);
+            await EnsureSuccessStatusCode(response);
+
             var body = await response.Content.ReadAsStringAsync(token);
             var result = JsonSerializer.Deserialize<FileEntryOuter>(body, m_jsonOptions);
             if (result == null || !string.Equals(result.Status, "success", StringComparison.OrdinalIgnoreCase))
@@ -258,7 +272,6 @@ namespace Duplicati.Library.Backend
 
             if (string.IsNullOrWhiteSpace(result?.FileEntry?.Id.ToString()))
                 throw new InvalidOperationException($"Failed to upload file: {result?.Message}");
-            await EnsureSuccessStatusCode(response);
 
             cache[result.FileEntry.Name] = new(result.FileEntry.Id, result.FileEntry.Url);
         }
@@ -553,17 +566,29 @@ namespace Duplicati.Library.Backend
         /// </summary>
         /// <param name="response">The HTTP response to check</param>
         /// <returns>An awaitable task</returns>
-        private static async Task EnsureSuccessStatusCode(HttpResponseMessage response)
+        internal static async Task EnsureSuccessStatusCode(HttpResponseMessage response)
         {
             if (response.IsSuccessStatusCode)
                 return;
 
             var body = await response.Content.ReadAsStringAsync();
-            var result = JsonSerializer.Deserialize<ResponseEnvelope>(body, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-            if (result == null || !string.IsNullOrWhiteSpace(result.Message))
-                throw new InvalidOperationException($"Request failed: {result?.Message}");
 
-            await EnsureSuccessStatusCode(response);
+            // The body is not always the shape this backend expects; a gateway in
+            // front of the API answers with html, and some errors carry no message
+            string? message = null;
+            try
+            {
+                message = JsonSerializer.Deserialize<ResponseEnvelope>(body, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })?.Message;
+            }
+            catch (JsonException)
+            {
+            }
+
+            if (!string.IsNullOrWhiteSpace(message))
+                throw new InvalidOperationException($"Request failed: {message}");
+
+            // Nothing to report beyond the status, so let the framework say it
+            response.EnsureSuccessStatusCode();
         }
 
         /// <summary>

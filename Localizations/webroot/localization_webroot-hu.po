@@ -100,7 +100,7 @@ msgid "Advanced Options"
 msgstr "Haladó beállítások"
 
 #: templates/addoredit.html:378 templates/commandline.html:23
-#: templates/commandline.html:31 templates/edituri.html:28
+#: templates/commandline.html:31 templates/edituri.html:29
 msgid "Advanced options"
 msgstr "Haladó beállítások"
 
@@ -306,7 +306,6 @@ msgstr "Gyorsítótás Fájlok"
 #: scripts/services/EditUriBuiltins.js:1231
 #: scripts/services/EditUriBuiltins.js:61 templates/delete.html:54
 #: templates/export.html:34 templates/settings.html:205
-#: templates/waitarea.html:19
 msgid "Cancel"
 msgstr "Mégsem"
 
@@ -354,7 +353,7 @@ msgstr "Tömörített állapot"
 msgid "Compact now"
 msgstr "Tömörítés most"
 
-#: scripts/services/ServerStatus.js:44 scripts/services/ServerStatus.js:69
+#: scripts/services/ServerStatus.js:44 scripts/services/ServerStatus.js:70
 msgid "Compacting remote data …"
 msgstr "Távoli adatok tömörítése..."
 
@@ -420,8 +419,8 @@ msgstr "Csatlakozás a kiszolgálóhoz..."
 msgid "Connection lost"
 msgstr "Csatlakozás megszakadt"
 
-#: scripts/directives/backupEditUri.js:51
-#: scripts/directives/backupEditUri.js:54
+#: scripts/directives/backupEditUri.js:52
+#: scripts/directives/backupEditUri.js:55
 msgid "Connection worked!"
 msgstr "Csatlakozás működik!"
 
@@ -474,7 +473,7 @@ msgstr "Csak összeomlások"
 msgid "Create bug report …"
 msgstr "Hibajelentés készítés..."
 
-#: scripts/directives/backupEditUri.js:131
+#: scripts/directives/backupEditUri.js:132
 msgid "Create folder?"
 msgstr "Mappa készítés?"
 
@@ -594,7 +593,7 @@ msgstr "Törölt verziók"
 msgid "Deleted files"
 msgstr "Törölt fájlok"
 
-#: scripts/services/ServerStatus.js:66
+#: scripts/services/ServerStatus.js:67
 msgid "Deleting remote files …"
 msgstr "Távoli fájlok törlése"
 
@@ -651,7 +650,7 @@ msgstr "Biztos, hogy törölni akarod ezt a mentést: \"{{name}}\" ?"
 msgid "Do you really want to delete the local database for: {{name}}"
 msgstr "Biztos, hogy törölni akarod ezt a helyi adatbázist: {{name}}"
 
-#: templates/export.html:53
+#: templates/edituri.html:21 templates/export.html:53
 msgid "Done"
 msgstr "Kész"
 
@@ -718,12 +717,12 @@ msgstr ""
 "az adatbázist."
 
 #: templates/addoredit.html:174 templates/addoredit.html:389
-#: templates/edituri.html:39 templates/settings.html:194
+#: templates/edituri.html:40 templates/settings.html:194
 msgid "Edit as list"
 msgstr "Szerkesztés listaként"
 
 #: templates/addoredit.html:177 templates/addoredit.html:392
-#: templates/edituri.html:42 templates/settings.html:200
+#: templates/edituri.html:43 templates/settings.html:200
 msgid "Edit as text"
 msgstr "Szerkesztés szövegként"
 
@@ -812,9 +811,9 @@ msgstr "Cél útvonal megadása"
 #: scripts/controllers/RestoreController.js:90
 #: scripts/controllers/RestoreDirectController.js:112
 #: scripts/controllers/RestoreDirectController.js:78
-#: scripts/directives/backupEditUri.js:143
-#: scripts/directives/backupEditUri.js:164
-#: scripts/directives/backupEditUri.js:198
+#: scripts/directives/backupEditUri.js:144
+#: scripts/directives/backupEditUri.js:165
+#: scripts/directives/backupEditUri.js:199
 #: scripts/directives/notificationArea.js:41
 #: scripts/directives/notificationArea.js:43
 #: scripts/directives/notificationArea.js:68 scripts/services/AppUtils.js:343
@@ -823,7 +822,7 @@ msgstr "Cél útvonal megadása"
 msgid "Error"
 msgstr "Hiba"
 
-#: scripts/services/ServerStatus.js:71
+#: scripts/services/ServerStatus.js:72
 msgid "Error!"
 msgstr "Hiba!"
 
@@ -915,9 +914,9 @@ msgstr "FTP (alternatív)"
 msgid "Failed to build temporary database: {{message}}"
 msgstr "Nem sikerült létrehozni az ideiglenes adatbázist: {{message}}"
 
-#: scripts/directives/backupEditUri.js:143
-#: scripts/directives/backupEditUri.js:164
-#: scripts/directives/backupEditUri.js:198
+#: scripts/directives/backupEditUri.js:144
+#: scripts/directives/backupEditUri.js:165
+#: scripts/directives/backupEditUri.js:199
 msgid "Failed to connect:"
 msgstr "Nem sikerült csatlakozni:"
 
@@ -1169,11 +1168,11 @@ msgstr "Könyvtárak"
 msgid "Listing backup dates …"
 msgstr "Mentési dátumok felsorolása…"
 
-#: scripts/services/ServerStatus.js:67
+#: scripts/services/ServerStatus.js:68
 msgid "Listing remote files for purge …"
 msgstr "Távoli fájlok felsorolása a tisztításhoz…"
 
-#: scripts/services/ServerStatus.js:65
+#: scripts/services/ServerStatus.js:66
 msgid "Listing remote files …"
 msgstr "Távoli fájlok felsorolása..."
 
@@ -1240,7 +1239,7 @@ msgstr "Maximális feltöltési sebesség"
 
 #: index.html:144 templates/addoredit.html:127 templates/addoredit.html:169
 #: templates/addoredit.html:384 templates/addoredit.html:95
-#: templates/edituri.html:34 templates/restoredirect.html:34
+#: templates/edituri.html:35 templates/restoredirect.html:34
 msgid "Menu"
 msgstr "Menü"
 
@@ -1337,9 +1336,9 @@ msgstr "Következő dátum"
 #: scripts/controllers/LocalDatabaseController.js:28
 #: scripts/controllers/LocalDatabaseController.js:72
 #: scripts/controllers/LocalDatabaseController.js:88
-#: scripts/directives/backupEditUri.js:131
-#: scripts/directives/backupEditUri.js:173
-#: scripts/directives/backupEditUri.js:87
+#: scripts/directives/backupEditUri.js:132
+#: scripts/directives/backupEditUri.js:174
+#: scripts/directives/backupEditUri.js:88
 #: scripts/services/EditUriBackendConfig.js:74
 #: scripts/services/EditUriBuiltins.js:1215
 #: scripts/services/EditUriBuiltins.js:1231
@@ -1421,7 +1420,7 @@ msgstr "Tevékenységek:"
 msgid "Optional authentication password"
 msgstr "Opcionális hitelesítési jelszó"
 
-#: templates/addoredit.html:28 templates/edituri.html:51
+#: templates/addoredit.html:28 templates/edituri.html:52
 #: templates/settings.html:193 templates/settings.html:199
 msgid "Options"
 msgstr "Beállítások"
@@ -1540,11 +1539,11 @@ msgstr "Tulajdonosi"
 msgid "Purge Phase"
 msgstr "Tisztítási fázis"
 
-#: scripts/services/ServerStatus.js:70
+#: scripts/services/ServerStatus.js:71
 msgid "Purging files complete!"
 msgstr "Fájlok tisztítása befejezve!"
 
-#: scripts/services/ServerStatus.js:68
+#: scripts/services/ServerStatus.js:69
 msgid "Purging files …"
 msgstr "Fájlok tisztítása..."
 
@@ -1917,8 +1916,8 @@ msgstr "Tárolva"
 msgid "Strong"
 msgstr "Erős"
 
-#: scripts/directives/backupEditUri.js:51
-#: scripts/directives/backupEditUri.js:54
+#: scripts/directives/backupEditUri.js:52
+#: scripts/directives/backupEditUri.js:55
 msgid "Success"
 msgstr "Siker"
 
@@ -1974,7 +1973,7 @@ msgstr "Ideiglenes fájlok"
 msgid "Test Phase"
 msgstr "Teszt fázis"
 
-#: templates/edituri.html:21
+#: templates/edituri.html:22
 msgid "Test connection"
 msgstr "Kapcsolat tesztelése"
 
@@ -1982,7 +1981,7 @@ msgstr "Kapcsolat tesztelése"
 msgid "Testing permissions …"
 msgstr "Engedélyek tesztelése..."
 
-#: scripts/directives/backupEditUri.js:44 templates/edituri.html:22
+#: scripts/directives/backupEditUri.js:45 templates/edituri.html:23
 msgid "Testing …"
 msgstr "Tesztelés..."
 
@@ -1994,7 +1993,7 @@ msgstr "Sötét téma (by Michal)"
 msgid "The default blue on white theme (by Alex)"
 msgstr "Alapértelmezett kék-fehér téma (Alextől)"
 
-#: scripts/directives/backupEditUri.js:131
+#: scripts/directives/backupEditUri.js:132
 msgid ""
 "The folder {{folder}} does not exist.\n"
 "Create it now?"
@@ -2041,11 +2040,11 @@ msgstr "Fájlba"
 msgid "Today"
 msgstr "Ma"
 
-#: scripts/directives/backupEditUri.js:173
+#: scripts/directives/backupEditUri.js:174
 msgid "Trust host certificate?"
 msgstr "Megbízható a gazdagép tanúsítványa?"
 
-#: scripts/directives/backupEditUri.js:87
+#: scripts/directives/backupEditUri.js:88
 msgid "Trust server certificate?"
 msgstr "Megbízható kiszolgáló tanúsítványa?"
 
@@ -2245,9 +2244,9 @@ msgstr "Év"
 #: scripts/controllers/LocalDatabaseController.js:28
 #: scripts/controllers/LocalDatabaseController.js:72
 #: scripts/controllers/LocalDatabaseController.js:88
-#: scripts/directives/backupEditUri.js:131
-#: scripts/directives/backupEditUri.js:173
-#: scripts/directives/backupEditUri.js:87
+#: scripts/directives/backupEditUri.js:132
+#: scripts/directives/backupEditUri.js:174
+#: scripts/directives/backupEditUri.js:88
 #: scripts/services/EditUriBackendConfig.js:74
 #: scripts/services/EditUriBuiltins.js:1215
 #: scripts/services/EditUriBuiltins.js:1231

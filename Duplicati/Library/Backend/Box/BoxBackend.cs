@@ -29,14 +29,12 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
 using Newtonsoft.Json;
-using Uri = Duplicati.Library.Utility.Uri;
 
 namespace Duplicati.Library.Backend.Box
 {
     public class BoxBackend : IStreamingBackend, IRenameEnabledBackend, IFolderEnabledBackend
     {
         private static readonly string TOKEN_URL = AuthIdOptionsHelper.GetOAuthLoginUrl("box.com", null);
-        private const string AUTHID_OPTION = "authid";
         private const string REALLY_DELETE_OPTION = "box-delete-from-trash";
 
         private const string BOX_API_URL = "https://api.box.com/2.0";
@@ -108,7 +106,7 @@ namespace Duplicati.Library.Backend.Box
 
         public BoxBackend(string url, Dictionary<string, string?> options)
         {
-            var uri = new Uri(url);
+            var uri = new RelaxedUri(url);
 
             _path = Util.AppendDirSeparator(uri.HostAndPath, "/");
 

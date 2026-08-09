@@ -71,7 +71,15 @@
                             Start="auto"
                             ErrorControl="normal"
                             Arguments="AGENT run"
-                            Vital="yes" />
+                            Vital="yes">
+              <!-- Register the service as Automatic (Delayed Start). Only the
+                   real WiX toolchain (Windows build) understands ServiceConfig;
+                   wixl builds get the equivalent MsiServiceConfig row injected
+                   from InstallTables.sql instead. -->
+<?if $(var.BuildEnv) = "Windows" ?>
+              <ServiceConfig DelayedAutoStart="yes" OnInstall="yes" OnReinstall="yes" />
+<?endif?>
+            </ServiceInstall>
 
             <ServiceControl Id="DuplicatiAgentServiceControl"
                             Name="Duplicati.Agent"

@@ -184,14 +184,18 @@ public partial class Auth : IEndpointV1
             Domain = context.Request.Host.Host
         });
 
-    private static object PerformLogout(ILoginProvider loginProvider, IHttpContextAccessor httpContextAccessor, Dto.RefreshTokenInputDto? input)
+    private static async Task<object> PerformLogout(ILoginProvider loginProvider, IHttpContextAccessor httpContextAccessor, Dto.RefreshTokenInputDto? input)
     {
+        var context = httpContextAccessor.HttpContext!;
         var cookieName = GetCookieName(httpContextAccessor);
-        if (httpContextAccessor.HttpContext!.Request.Cookies.TryGetValue(cookieName, out var refreshTokenString))
+        if (context.Request.Cookies.TryGetValue(cookieName, out var refreshTokenString))
         {
             try
             {
-                loginProvider.PerformLogoutWithRefreshTokenAsync(refreshTokenString, input?.Nonce, CancellationToken.None);
+                // Must be awaited, otherwise exceptions from the async call are
+                // never observed by the catch below and the intended
+                // "ignore invalid refresh tokens" handling does not run.
+                await loginProvider.PerformLogoutWithRefreshTokenAsync(refreshTokenString, input?.Nonce, CancellationToken.None).ConfigureAwait(false);
             }
             catch
             {
@@ -199,8 +203,15 @@ public partial class Auth : IEndpointV1
             }
         }
 
-        // Also remove the cookie, in case we failed to delete it
-        httpContextAccessor.HttpContext!.Response.Cookies.Delete(cookieName);
+        // Also remove the cookie, in case we failed to delete it.
+        // The Path and Domain must match the values used when the cookie was
+        // created (see AddCookie), otherwise the browser will not match and
+        // remove the stored cookie.
+        context.Response.Cookies.Delete(cookieName, new CookieOptions
+        {
+            Path = "/api/v1/auth/refresh",
+            Domain = context.Request.Host.Host
+        });
         return new { success = true };
     }
 

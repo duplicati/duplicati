@@ -96,7 +96,7 @@ msgid "Advanced Options"
 msgstr "Opcions avançades"
 
 #: templates/addoredit.html:378 templates/commandline.html:23
-#: templates/commandline.html:31 templates/edituri.html:28
+#: templates/commandline.html:31 templates/edituri.html:29
 msgid "Advanced options"
 msgstr "Opcions avançades"
 
@@ -310,7 +310,6 @@ msgstr "Canary"
 #: scripts/services/EditUriBuiltins.js:1231
 #: scripts/services/EditUriBuiltins.js:61 templates/delete.html:54
 #: templates/export.html:34 templates/settings.html:205
-#: templates/waitarea.html:19
 msgid "Cancel"
 msgstr "Cancel·la"
 
@@ -394,8 +393,8 @@ msgstr "Connecta ara"
 msgid "Connection lost"
 msgstr "S'ha perdut la connexió"
 
-#: scripts/directives/backupEditUri.js:51
-#: scripts/directives/backupEditUri.js:54
+#: scripts/directives/backupEditUri.js:52
+#: scripts/directives/backupEditUri.js:55
 msgid "Connection worked!"
 msgstr "Ha funcionat la connexió!"
 
@@ -444,7 +443,7 @@ msgstr "S'està comptant (s'han trobat {{files}} fitxers, {{size}})"
 msgid "Crashes only"
 msgstr "Només fallades"
 
-#: scripts/directives/backupEditUri.js:131
+#: scripts/directives/backupEditUri.js:132
 msgid "Create folder?"
 msgstr "Voleu crear una carpeta?"
 
@@ -595,7 +594,7 @@ msgstr "Segur que voleu eliminar la còpia de seguretat «{{name}}»?"
 msgid "Do you really want to delete the local database for: {{name}}"
 msgstr "Segur que voleu eliminar la base de dades local de «{{name}}»?"
 
-#: templates/export.html:53
+#: templates/edituri.html:21 templates/export.html:53
 msgid "Done"
 msgstr "Fet"
 
@@ -651,12 +650,12 @@ msgstr ""
 "            Si feu servir la base de dades local per a còpies de seguretat des de la línia d'ordres, hauríeu de mantenir la base de dades."
 
 #: templates/addoredit.html:174 templates/addoredit.html:389
-#: templates/edituri.html:39 templates/settings.html:194
+#: templates/edituri.html:40 templates/settings.html:194
 msgid "Edit as list"
 msgstr "Edita com a llista"
 
 #: templates/addoredit.html:177 templates/addoredit.html:392
-#: templates/edituri.html:42 templates/settings.html:200
+#: templates/edituri.html:43 templates/settings.html:200
 msgid "Edit as text"
 msgstr "Edita com a text"
 
@@ -741,9 +740,9 @@ msgstr "Introduïu la ruta de destinació"
 #: scripts/controllers/RestoreController.js:90
 #: scripts/controllers/RestoreDirectController.js:112
 #: scripts/controllers/RestoreDirectController.js:78
-#: scripts/directives/backupEditUri.js:143
-#: scripts/directives/backupEditUri.js:164
-#: scripts/directives/backupEditUri.js:198
+#: scripts/directives/backupEditUri.js:144
+#: scripts/directives/backupEditUri.js:165
+#: scripts/directives/backupEditUri.js:199
 #: scripts/directives/notificationArea.js:41
 #: scripts/directives/notificationArea.js:43
 #: scripts/directives/notificationArea.js:68 scripts/services/AppUtils.js:343
@@ -752,7 +751,7 @@ msgstr "Introduïu la ruta de destinació"
 msgid "Error"
 msgstr "Error"
 
-#: scripts/services/ServerStatus.js:71
+#: scripts/services/ServerStatus.js:72
 msgid "Error!"
 msgstr "S'ha produït un error!"
 
@@ -836,9 +835,9 @@ msgstr "FTP (alternatiu)"
 msgid "Failed to build temporary database: {{message}}"
 msgstr "No s'ha pogut crear la base de dades temporal: {{message}}"
 
-#: scripts/directives/backupEditUri.js:143
-#: scripts/directives/backupEditUri.js:164
-#: scripts/directives/backupEditUri.js:198
+#: scripts/directives/backupEditUri.js:144
+#: scripts/directives/backupEditUri.js:165
+#: scripts/directives/backupEditUri.js:199
 msgid "Failed to connect:"
 msgstr "No s'ha pogut connectar:"
 
@@ -1201,7 +1200,7 @@ msgstr "Velocitat màxima de càrrega"
 
 #: index.html:144 templates/addoredit.html:127 templates/addoredit.html:169
 #: templates/addoredit.html:384 templates/addoredit.html:95
-#: templates/edituri.html:34 templates/restoredirect.html:34
+#: templates/edituri.html:35 templates/restoredirect.html:34
 msgid "Menu"
 msgstr "Menú"
 
@@ -1306,9 +1305,9 @@ msgstr "La pròxima vegada"
 #: scripts/controllers/LocalDatabaseController.js:28
 #: scripts/controllers/LocalDatabaseController.js:72
 #: scripts/controllers/LocalDatabaseController.js:88
-#: scripts/directives/backupEditUri.js:131
-#: scripts/directives/backupEditUri.js:173
-#: scripts/directives/backupEditUri.js:87
+#: scripts/directives/backupEditUri.js:132
+#: scripts/directives/backupEditUri.js:174
+#: scripts/directives/backupEditUri.js:88
 #: scripts/services/EditUriBackendConfig.js:74
 #: scripts/services/EditUriBuiltins.js:1215
 #: scripts/services/EditUriBuiltins.js:1231
@@ -1316,7 +1315,7 @@ msgstr "La pròxima vegada"
 msgid "No"
 msgstr "No"
 
-#: scripts/directives/backupEditUri.js:169
+#: scripts/directives/backupEditUri.js:170
 msgid ""
 "No certificate was specified previously, please verify with the server administrator that the key is correct: {{key}} \n"
 "\n"
@@ -1423,7 +1422,7 @@ msgstr "Contrasenya per a l'autenticació (opcional)"
 msgid "Optional authentication username"
 msgstr "Nom d'usuari per a l'autenticació (opcional)"
 
-#: templates/addoredit.html:28 templates/edituri.html:51
+#: templates/addoredit.html:28 templates/edituri.html:52
 #: templates/settings.html:193 templates/settings.html:199
 msgid "Options"
 msgstr "Opcions"
@@ -1558,7 +1557,7 @@ msgstr "De propietat"
 msgid "Purge Phase"
 msgstr "Fase de purga"
 
-#: scripts/services/ServerStatus.js:70
+#: scripts/services/ServerStatus.js:71
 msgid "Purging files complete!"
 msgstr "S'ha completat la purga de fitxers!"
 
@@ -1875,8 +1874,8 @@ msgstr "Emmagatzemat"
 msgid "Strong"
 msgstr "Forta"
 
-#: scripts/directives/backupEditUri.js:51
-#: scripts/directives/backupEditUri.js:54
+#: scripts/directives/backupEditUri.js:52
+#: scripts/directives/backupEditUri.js:55
 msgid "Success"
 msgstr "Èxit"
 
@@ -1932,7 +1931,7 @@ msgstr "Fitxers temporals"
 msgid "Test Phase"
 msgstr "Fase de comprovació"
 
-#: templates/edituri.html:21
+#: templates/edituri.html:22
 msgid "Test connection"
 msgstr "Comprova la connexió"
 
@@ -1980,7 +1979,7 @@ msgstr "Tema fosc (per Michal)"
 msgid "The default blue on white theme (by Alex)"
 msgstr "Tema per defecte, blau sobre blanc (per Alex)"
 
-#: scripts/directives/backupEditUri.js:131
+#: scripts/directives/backupEditUri.js:132
 msgid ""
 "The folder {{folder}} does not exist.\n"
 "Create it now?"
@@ -1988,7 +1987,7 @@ msgstr ""
 "La carpeta {{folder}} no existeix.\n"
 "Voleu crear-la ara?"
 
-#: scripts/directives/backupEditUri.js:171
+#: scripts/directives/backupEditUri.js:172
 msgid ""
 "The host key has changed, please check with the server administrator if this is correct, otherwise you could be the victim of a MAN-IN-THE-MIDDLE attack.\n"
 "\n"
@@ -2032,7 +2031,7 @@ msgstr "El paràmetre de regió només s'aplica quan es crea un contenidor"
 msgid "The region parameter is only used when creating a bucket"
 msgstr "El paràmetre de regió només es fa servir quan es crea un contenidor"
 
-#: scripts/directives/backupEditUri.js:87
+#: scripts/directives/backupEditUri.js:88
 msgid ""
 "The server certificate could not be validated.\n"
 "Do you want to approve the SSL certificate with the hash: {{hash}}?"
@@ -2124,11 +2123,11 @@ msgstr ""
 msgid "Today"
 msgstr "Avui"
 
-#: scripts/directives/backupEditUri.js:173
+#: scripts/directives/backupEditUri.js:174
 msgid "Trust host certificate?"
 msgstr "Voleu confiar en el certificat de l'amfitrió?"
 
-#: scripts/directives/backupEditUri.js:87
+#: scripts/directives/backupEditUri.js:88
 msgid "Trust server certificate?"
 msgstr "Voleu confiar en el certificat del servidor?"
 
@@ -2300,9 +2299,9 @@ msgstr "Anys"
 #: scripts/controllers/LocalDatabaseController.js:28
 #: scripts/controllers/LocalDatabaseController.js:72
 #: scripts/controllers/LocalDatabaseController.js:88
-#: scripts/directives/backupEditUri.js:131
-#: scripts/directives/backupEditUri.js:173
-#: scripts/directives/backupEditUri.js:87
+#: scripts/directives/backupEditUri.js:132
+#: scripts/directives/backupEditUri.js:174
+#: scripts/directives/backupEditUri.js:88
 #: scripts/services/EditUriBackendConfig.js:74
 #: scripts/services/EditUriBuiltins.js:1215
 #: scripts/services/EditUriBuiltins.js:1231

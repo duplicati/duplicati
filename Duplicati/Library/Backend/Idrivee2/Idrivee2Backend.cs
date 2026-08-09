@@ -90,7 +90,7 @@ namespace Duplicati.Library.Backend
         /// <inheritdoc />
         public Idrivee2Backend(string url, Dictionary<string, string?> options)
         {
-            var uri = new Utility.Uri(url);
+            var uri = new Utility.RelaxedUri(url);
             _bucket = uri.Host ?? "";
             _prefix = uri.Path;
             _prefix = _prefix.Trim();
@@ -98,7 +98,7 @@ namespace Duplicati.Library.Backend
                 _prefix = Util.AppendDirSeparator(_prefix, "/");
 
             _timeouts = TimeoutOptionsHelper.Parse(options);
-            _auth = AuthOptionsHelper.ParseWithAlias(options, uri, AUTH_USERNAME_OPTION, AUTH_PASSWORD_OPTION);
+            _auth = AuthOptionsHelper.ParseWithAlias(options, uri.Username, uri.Password, AUTH_USERNAME_OPTION, AUTH_PASSWORD_OPTION);
             if (!_auth.HasUsername)
                 throw new UserInformationException(Strings.Idrivee2Backend.NoKeyIdError, "Idrivee2NoKeyId");
             if (!_auth.HasPassword)

@@ -69,7 +69,7 @@ namespace Duplicati.Library.DynamicLoader
             /// <returns>The instanciated SourceProvider or null if the url is not supported</returns>
             public ISourceProviderModule GetSourceProvider(string url, string mountPoint, Dictionary<string, string> options)
             {
-                var uri = new Utility.Uri(url);
+                var uri = new Utility.RelaxedUri(url);
 
                 LoadInterfaces();
 
@@ -107,7 +107,7 @@ namespace Duplicati.Library.DynamicLoader
             /// <returns>The supported commands or null if the url scheme was not supported</returns>
             public IReadOnlyList<ICommandLineArgument> GetSupportedCommands(string url)
             {
-                var uri = new Utility.Uri(url);
+                var uri = new Utility.RelaxedUri(url);
 
                 LoadInterfaces();
 
@@ -174,7 +174,6 @@ namespace Duplicati.Library.DynamicLoader
         /// <param name="url">The url to create the instance for</param>
         /// <param name="mountPoint">The mount point to use</param>
         /// <param name="options">The options to pass to the instance constructor</param>
-        /// <param name="getForTesting">Whether the SourceProvider is requested for testing purposes</param>
         /// <param name="cancellationToken">The cancellation token</param>
         /// <returns>The instanciated SourceProvider or null if the url is not supported</returns>
         public static async Task<ISourceProviderModule> GetSourceProvider(string url, string mountPoint, Dictionary<string, string> options, CancellationToken cancellationToken)

@@ -862,7 +862,7 @@ namespace Duplicati.UnitTest
 
         /// <summary>
         /// Tests that <see cref="LocalListDatabase.SearchEntriesAsync"/> can match values inside
-        /// metadata JSON when <paramref name="searchMetadata"/> is <c>true</c>.
+        /// metadata JSON when <c>searchMetadata</c> is <c>true</c>.
         /// </summary>
         [Test]
         [Category("Database")]

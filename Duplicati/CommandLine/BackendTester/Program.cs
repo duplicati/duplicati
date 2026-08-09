@@ -31,6 +31,8 @@ using Duplicati.Library.Utility;
 using Duplicati.StreamUtil;
 using System.Threading.Tasks;
 
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Duplicati.UnitTest")]
+
 namespace Duplicati.CommandLine.BackendTester
 {
     public class Program
@@ -41,7 +43,6 @@ namespace Duplicati.CommandLine.BackendTester
             public readonly string localfilename;
             public readonly byte[] hash;
             public readonly long length;
-            public bool found = false;
 
             public TempFile(string remotefilename, string localfilename, byte[] hash, long length)
             {
@@ -205,7 +206,7 @@ namespace Duplicati.CommandLine.BackendTester
                             if (Library.Utility.Utility.ParseBoolOption(options, "force"))
                             {
                                 Console.WriteLine($"{LogTimeStamp}Auto clean, removing file: {fe.Name}");
-                                Retry(() => backend.DeleteAsync(fe.Name, CancellationToken.None), retries).Await();
+                                DeleteListedFileAsync(backend, fe.Name, retries).Await();
                                 continue;
                             }
                             else
@@ -286,6 +287,10 @@ namespace Duplicati.CommandLine.BackendTester
                 if (options.ContainsKey("wait-after-delete"))
                     waitAfterDelete = Timeparser.ParseTimeSpan(options["wait-after-delete"]);
 
+                var verificationRetries = 3;
+                if (options.ContainsKey("verification-retries"))
+                    verificationRetries = int.Parse(options["verification-retries"]);
+
                 var rnd = new Random();
                 var sha = System.Security.Cryptography.SHA256.Create();
 
@@ -351,42 +356,27 @@ namespace Duplicati.CommandLine.BackendTester
 
                     Console.WriteLine($"{LogTimeStamp}Verifying file list ...");
 
-                    curlist = Retry(() => backend.ListAsync(CancellationToken.None).ToBlockingEnumerable().ToList(), retries);
-                    foreach (var fe in curlist)
-                        if (!fe.IsFolder)
-                        {
-                            bool found = false;
-                            for (var i = 0; i < files.Count; i++)
-                            {
-                                var tx = files[i];
-                                if (tx.remotefilename == fe.Name)
-                                {
-                                    if (tx.found)
-                                        Console.WriteLine($"{LogTimeStamp}*** File {i}) with name {tx.remotefilename} was found more than once");
-                                    found = true;
-                                    tx.found = true;
+                    // The listing can lag behind the operations that were just performed, so a
+                    // mismatch is re-checked a number of times before it is reported as a problem.
+                    var expectedFiles = files.Select(x => (x.remotefilename, x.length)).ToList();
+                    List<string> listProblems;
+                    for (var attempt = 0; ; attempt++)
+                    {
+                        curlist = Retry(() => backend.ListAsync(CancellationToken.None).ToBlockingEnumerable().ToList(), retries);
+                        listProblems = VerifyFileList(curlist, expectedFiles, originalRenamedFile?.remotefilename, renamedFileNewName);
+                        if (listProblems.Count == 0 || attempt >= verificationRetries)
+                            break;
 
-                                    if (fe.Size > 0 && tx.length != fe.Size)
-                                        Console.WriteLine($"{LogTimeStamp}*** File {i} with name {tx.remotefilename} has size {tx.length} but the size was reported as {fe.Size}");
+                        var delay = Utility.GetRetryDelay(TimeSpan.FromSeconds(1), attempt + 1, true);
+                        Console.WriteLine($"{LogTimeStamp}File listing does not match yet ({listProblems.Count} problem(s)), re-checking in {delay.TotalMilliseconds} ms");
+                        Thread.Sleep(delay);
+                    }
 
-                                    break;
-                                }
-                            }
-
-                            if (!found)
-                                if (originalRenamedFile != null && renamedFileNewName != null && originalRenamedFile.remotefilename == fe.Name)
-                                {
-                                    Console.WriteLine($"{LogTimeStamp}*** File with name {fe.Name} was found on server but was supposed to have been renamed to {renamedFileNewName}!");
-                                }
-                                else
-                                {
-                                    Console.WriteLine($"{LogTimeStamp}*** File with name {fe.Name} was found on server but not uploaded!");
-                                }
-                        }
-
-                    for (var i = 0; i < files.Count; i++)
-                        if (!files[i].found)
-                            Console.WriteLine($"{LogTimeStamp}*** File {i} with name {files[i].remotefilename} was uploaded but not found afterwards");
+                    foreach (var problem in listProblems)
+                    {
+                        failAfterFinished = true;
+                        Console.WriteLine($"{LogTimeStamp}*** {problem}");
+                    }
 
                     Console.WriteLine($"{LogTimeStamp}Downloading files");
 
@@ -439,7 +429,10 @@ namespace Duplicati.CommandLine.BackendTester
                                 if (Convert.ToBase64String(sha.ComputeHash(fs)) != Convert.ToBase64String(files[i].hash))
                                 {
                                     if (dummyFileHash != null && Convert.ToBase64String(sha.ComputeHash(fs)) == Convert.ToBase64String(dummyFileHash))
-                                        Console.WriteLine($"{LogTimeStamp}failed\n*** Downloaded file was the dummy file"); // Should this be failed?
+                                    {
+                                        failAfterFinished = true;
+                                        Console.WriteLine($"{LogTimeStamp}failed\n*** Downloaded file was the dummy file");
+                                    }
                                     else
                                     {
                                         failAfterFinished = true;
@@ -471,12 +464,25 @@ namespace Duplicati.CommandLine.BackendTester
                         Thread.Sleep(waitAfterDelete);
                     }
 
-                    curlist = Retry(() => backend.ListAsync(CancellationToken.None).ToBlockingEnumerable().ToList(), retries);
-                    foreach (var fe in curlist)
-                        if (!fe.IsFolder)
-                        {
-                            Console.WriteLine($"{LogTimeStamp}*** Remote folder contains {fe.Name} after cleanup");
-                        }
+                    // As with the upload verification, the listing can lag behind the deletes
+                    List<string> leftovers;
+                    for (var attempt = 0; ; attempt++)
+                    {
+                        curlist = Retry(() => backend.ListAsync(CancellationToken.None).ToBlockingEnumerable().ToList(), retries);
+                        leftovers = curlist.Where(x => !x.IsFolder).Select(x => x.Name).ToList();
+                        if (leftovers.Count == 0 || attempt >= verificationRetries)
+                            break;
+
+                        var delay = Utility.GetRetryDelay(TimeSpan.FromSeconds(1), attempt + 1, true);
+                        Console.WriteLine($"{LogTimeStamp}Remote folder is not empty yet ({leftovers.Count} file(s)), re-checking in {delay.TotalMilliseconds} ms");
+                        Thread.Sleep(delay);
+                    }
+
+                    foreach (var name in leftovers)
+                    {
+                        failAfterFinished = true;
+                        Console.WriteLine($"{LogTimeStamp}*** Remote folder contains {name} after cleanup");
+                    }
 
                     // Test some error cases
                     Console.WriteLine($"{LogTimeStamp}Checking retrieval of non-existent file...");
@@ -572,7 +578,6 @@ namespace Duplicati.CommandLine.BackendTester
         {
             var filesize = new System.IO.FileInfo(localfilename).Length;
             Console.Write($"{LogTimeStamp}Uploading file {i}, {Utility.FormatSizeString(filesize)} ... ");
-            Exception e = null;
 
             var sw = Stopwatch.StartNew();
             var throttleManager = new ThrottleManager() { Limit = throttle };
@@ -590,26 +595,21 @@ namespace Duplicati.CommandLine.BackendTester
                 else
                     backend.PutAsync(remotefilename, localfilename, CancellationToken.None).Await();
 
-                e = null;
+                sw.Stop();
+                Console.WriteLine($" done! in {sw.ElapsedMilliseconds} ms (~{Utility.FormatSizeString(filesize / sw.Elapsed.TotalSeconds)}/s)");
             }
             catch (Exception ex)
             {
-                e = ex;
-            }
-            sw.Stop();
-
-            if (e != null)
-            {
-                Console.WriteLine($"{LogTimeStamp}Failed to upload file {i}, error message: {e}, remote name: {remotefilename} after {sw.ElapsedMilliseconds} ms");
+                sw.Stop();
+                Console.WriteLine($"{LogTimeStamp}Failed to upload file {i}, error message: {ex}, remote name: {remotefilename} after {sw.ElapsedMilliseconds} ms");
+                var e = ex;
                 while (e.InnerException != null)
                 {
                     e = e.InnerException;
                     Console.WriteLine($"{LogTimeStamp}  Inner exception: {e}");
                 }
-            }
-            else
-            {
-                Console.WriteLine($" done! in {sw.ElapsedMilliseconds} ms (~{Utility.FormatSizeString(filesize / sw.Elapsed.TotalSeconds)}/s)");
+
+                throw;
             }
         }
 
@@ -650,6 +650,28 @@ namespace Duplicati.CommandLine.BackendTester
             return filename;
         }
 
+        /// <summary>
+        /// Deletes a file that was reported by the listing, accepting that it may already be gone
+        /// </summary>
+        /// <param name="backend">The backend to delete from</param>
+        /// <param name="remotename">The name of the file to delete</param>
+        /// <param name="retries">The number of attempts to make</param>
+        /// <returns>An awaitable task</returns>
+        internal static Task DeleteListedFileAsync(IBackend backend, string remotename, int retries)
+            => Retry(async () =>
+            {
+                try
+                {
+                    await backend.DeleteAsync(remotename, CancellationToken.None);
+                }
+                catch (FileMissingException)
+                {
+                    // A listing can report a file that was just deleted, and removing
+                    // it is what this was for, so the file being gone is the result
+                    Console.WriteLine($"{LogTimeStamp}File was already gone: {remotename}");
+                }
+            }, retries);
+
         private static async Task<T> Retry<T>(Func<Task<T>> action, int retries)
         {
             var total = retries;
@@ -683,6 +705,56 @@ namespace Duplicati.CommandLine.BackendTester
         private static T Retry<T>(Func<T> action, int retries)
             => Retry(() => Task.FromResult(action()), retries).Result;
 
+        /// <summary>
+        /// Compares the file listing reported by the backend with the files that were uploaded.
+        /// </summary>
+        /// <param name="remoteList">The listing reported by the backend.</param>
+        /// <param name="expected">The files that are expected to be present, in upload order.</param>
+        /// <param name="renamedFrom">The name a file was renamed away from, or null if no rename was performed.</param>
+        /// <param name="renamedTo">The name the file was renamed to, or null if no rename was performed.</param>
+        /// <returns>One message for each problem found; empty if the listing matches what was uploaded.</returns>
+        internal static List<string> VerifyFileList(IEnumerable<IFileEntry> remoteList, IReadOnlyList<(string Name, long Length)> expected, string renamedFrom, string renamedTo)
+        {
+            var problems = new List<string>();
+            var found = new bool[expected.Count];
+
+            foreach (var fe in remoteList)
+            {
+                if (fe.IsFolder)
+                    continue;
+
+                var matched = false;
+                for (var i = 0; i < expected.Count; i++)
+                {
+                    if (expected[i].Name != fe.Name)
+                        continue;
+
+                    if (found[i])
+                        problems.Add($"File {i}) with name {expected[i].Name} was found more than once");
+                    matched = true;
+                    found[i] = true;
+
+                    // A size of zero means the backend does not report sizes, so it cannot be compared
+                    if (fe.Size > 0 && expected[i].Length != fe.Size)
+                        problems.Add($"File {i} with name {expected[i].Name} has size {expected[i].Length} but the size was reported as {fe.Size}");
+
+                    break;
+                }
+
+                if (!matched)
+                    if (renamedFrom != null && renamedTo != null && renamedFrom == fe.Name)
+                        problems.Add($"File with name {fe.Name} was found on server but was supposed to have been renamed to {renamedTo}!");
+                    else
+                        problems.Add($"File with name {fe.Name} was found on server but not uploaded!");
+            }
+
+            for (var i = 0; i < expected.Count; i++)
+                if (!found[i])
+                    problems.Add($"File {i} with name {expected[i].Name} was uploaded but not found afterwards");
+
+            return problems;
+        }
+
         private static string LogTimeStamp => $"[{DateTime.Now:HH:mm:ss fff}] ";
 
         public static IList<ICommandLineArgument> SupportedCommands => [
@@ -693,7 +765,7 @@ namespace Duplicati.CommandLine.BackendTester
             new CommandLineArgument("min-file-size", CommandLineArgument.ArgumentType.Size, "The minimum allowed file size", "File sizes are chosen at random, this value is the lower bound", "1kb"),
             new CommandLineArgument("max-file-size", CommandLineArgument.ArgumentType.Size, "The maximum allowed file size", "File sizes are chosen at random, this value is the upper bound", "50mb"),
             new CommandLineArgument("min-filename-length", CommandLineArgument.ArgumentType.Integer, "The minimum allowed filename length", "File name lengths are chosen at random, this value is the lower bound", "5"),
-            new CommandLineArgument("max-filename-length", CommandLineArgument.ArgumentType.Integer, "The minimum allowed filename length", "File name lengths are chosen at random, this value is the upper bound", "80"),
+            new CommandLineArgument("max-filename-length", CommandLineArgument.ArgumentType.Integer, "The maximum allowed filename length", "File name lengths are chosen at random, this value is the upper bound", "80"),
             new CommandLineArgument("trim-filename-spaces", CommandLineArgument.ArgumentType.Boolean, "Trim whitespace from filenames", "A value that indicates if whitespace should be trimmed from the ends of randomly generated filenames", "false"),
             new CommandLineArgument("auto-create-folder", CommandLineArgument.ArgumentType.Boolean, "Allow automatic folder creation", "A value that indicates if missing folders are created automatically", "false"),
             new CommandLineArgument("skip-overwrite-test", CommandLineArgument.ArgumentType.Boolean, "Bypass the overwrite test", "A value that indicates if dummy files should be uploaded prior to uploading the real files", "false"),
@@ -702,6 +774,7 @@ namespace Duplicati.CommandLine.BackendTester
             new CommandLineArgument("wait-after-upload", CommandLineArgument.ArgumentType.Timespan, "Wait after all uploads", "A value that indicates how long to wait after all files are uploaded, to account for the backends eventual consistency", "0s"),
             new CommandLineArgument("wait-after-delete", CommandLineArgument.ArgumentType.Timespan, "Wait after all deletes", "A value that indicates how long to wait after each delete operation, to account for the backends eventual consistency", "0s"),
             new CommandLineArgument("failure-retries", CommandLineArgument.ArgumentType.Integer, "The number of retries for each operation", "An integer that indicates how many times an operation should be retried before giving up", "0"),
+            new CommandLineArgument("verification-retries", CommandLineArgument.ArgumentType.Integer, "The number of re-checks of the remote file listing", "An integer that indicates how many times the remote file listing is re-checked before a mismatch is reported as a problem, to account for the backends eventual consistency", "3"),
         ];
     }
 }

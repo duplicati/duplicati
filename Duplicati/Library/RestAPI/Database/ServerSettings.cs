@@ -180,6 +180,12 @@ namespace Duplicati.Server.Database
             if (newsettings == null)
                 throw new ArgumentNullException(nameof(newsettings));
 
+            // Only check a value that is actually changing, so an installation that
+            // already holds an unusable value can still change other settings
+            if (newsettings.TryGetValue(CONST.UPDATE_CHECK_INTERVAL, out var newInterval)
+                && newInterval != settings[CONST.UPDATE_CHECK_INTERVAL])
+                ValidateUpdateCheckInterval(newInterval);
+
             lock (databaseConnection.m_lock)
             {
                 latestUpdate = null;
@@ -499,6 +505,56 @@ namespace Duplicati.Server.Database
             }
         }
 
+        /// <summary>
+        /// The default interval to use when the configured one cannot be used
+        /// </summary>
+        private const int UPDATE_CHECK_FALLBACK_DAYS = 7;
+
+        /// <summary>
+        /// The last update check interval that could not be used; used to only report it
+        /// once per value, as the poll thread reads the interval on every pass
+        /// </summary>
+        private static string? lastUnusableUpdateCheckInterval;
+
+        /// <summary>
+        /// Checks that the value can be used as an update check interval
+        /// </summary>
+        /// <param name="value">The value to check</param>
+        private static void ValidateUpdateCheckInterval(string? value)
+        {
+            // An empty value means the default interval is used
+            if (string.IsNullOrWhiteSpace(value))
+                return;
+
+            try
+            {
+                Timeparser.ParseTimeSpan(value);
+            }
+            catch (Exception ex)
+            {
+                throw new Library.Interface.UserInformationException(Strings.Program.InvalidUpdateCheckInterval(value), "InvalidUpdateCheckInterval", ex);
+            }
+        }
+
+        /// <summary>
+        /// Reports an update check interval that cannot be used, once per value
+        /// </summary>
+        /// <param name="value">The value that cannot be used</param>
+        internal static void ReportUnusableUpdateCheckInterval(string value)
+        {
+            // The fallback changes how often updates are found, so it must not be silent;
+            // stored values from before the interval was validated can end up here
+            if (lastUnusableUpdateCheckInterval == value)
+                return;
+
+            lastUnusableUpdateCheckInterval = value;
+            Library.Logging.Log.WriteWarningMessage(
+                "ServerSettings",
+                "InvalidUpdateCheckInterval",
+                null,
+                $"The configured update check interval \"{value}\" cannot be used; checking every {UPDATE_CHECK_FALLBACK_DAYS} days instead.");
+        }
+
         public string UpdateCheckInterval
         {
             get
@@ -511,6 +567,7 @@ namespace Duplicati.Server.Database
             }
             set
             {
+                ValidateUpdateCheckInterval(value);
                 lock (databaseConnection.m_lock)
                     settings[CONST.UPDATE_CHECK_INTERVAL] = value;
                 SaveSettings();
@@ -528,7 +585,8 @@ namespace Duplicati.Server.Database
                 }
                 catch
                 {
-                    return LastUpdateCheck.AddDays(7);
+                    ReportUnusableUpdateCheckInterval(UpdateCheckInterval);
+                    return LastUpdateCheck.AddDays(UPDATE_CHECK_FALLBACK_DAYS);
                 }
             }
         }
@@ -802,6 +860,12 @@ namespace Duplicati.Server.Database
             set => SetAndSaveSetting(CONST.PRELOAD_SETTINGS_HASH, value);
         }
 
+        /// <summary>
+        /// The last timezone id that failed to resolve; used to only warn once per id,
+        /// as the timezone is read repeatedly by the scheduler
+        /// </summary>
+        private static string? lastUnresolvableTimezoneId;
+
         public TimeZoneInfo Timezone
         {
             get
@@ -812,15 +876,22 @@ namespace Duplicati.Server.Database
                 if (string.IsNullOrEmpty(id))
                     return TimeZoneInfo.Utc;
 
-                try
+                var tzi = TimeZoneHelper.GetTimeZoneById(id);
+                if (tzi != null)
+                    return tzi;
+
+                // The fallback changes when scheduled backups run, so it must not be silent;
+                // this can happen when the database is moved between operating systems
+                if (lastUnresolvableTimezoneId != id)
                 {
-                    if (!string.IsNullOrEmpty(id))
-                        return TimeZoneHelper.GetTimeZoneById(id)
-                            ?? TimeZoneInfo.Local;
+                    lastUnresolvableTimezoneId = id;
+                    Library.Logging.Log.WriteWarningMessage(
+                        "ServerSettings",
+                        "UnresolvableTimezone",
+                        null,
+                        $"The configured timezone \"{id}\" cannot be resolved on this system; using the local timezone \"{TimeZoneInfo.Local.Id}\" instead.");
                 }
-                catch
-                {
-                }
+
                 return TimeZoneInfo.Local;
             }
             set

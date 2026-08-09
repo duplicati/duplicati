@@ -50,6 +50,11 @@ namespace Duplicati.Library.Common.IO
         public const string AllowInsecureDatafolderEnvVar = "DUPLICATI__ALLOW_INSECURE_DATAFOLDER";
 
         /// <summary>
+        /// The insecure permission marker file
+        /// </summary>
+        public const string InsecurePermissionsMarkerFile = "insecure-permissions.txt";
+
+        /// <summary>
         /// Returns <c>true</c> if the user has opted in to using an insecure data folder, either
         /// via the <c>--allow-insecure-datafolder</c> command-line argument or the
         /// <c>DUPLICATI__ALLOW_INSECURE_DATAFOLDER</c> environment variable.
@@ -93,6 +98,15 @@ namespace Duplicati.Library.Common.IO
             var envValue = Environment.GetEnvironmentVariable(AllowInsecureDatafolderEnvVar);
             if (envValue != null)
                 return ParseBool(envValue);
+
+            // Finally, check if the override file exists
+            var installfolder = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+            if (!string.IsNullOrWhiteSpace(installfolder))
+            {
+                var path = Path.Combine(installfolder, InsecurePermissionsMarkerFile);
+                if (File.Exists(path))
+                    return true;
+            }
 
             return false;
         }

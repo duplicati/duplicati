@@ -30,15 +30,12 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
-using Duplicati.Library.Logging;
 
 namespace Duplicati.Library.Snapshots.MacOS;
 
 [SupportedOSPlatform("macOS")]
 internal sealed class MacOSPhotosLibraryEntry : ISourceProviderEntry
 {
-    private static readonly string LOGTAG = Log.LogTagFromType<MacOSPhotosLibraryEntry>();
-
     private readonly ISourceProviderEntry inner;
     private readonly MacOSPhotosLibrary photosLibrary;
     private readonly SemaphoreSlim cacheLock = new(1, 1);

@@ -524,7 +524,6 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// Evaluates a single entry for inclusion in the backup
         /// </summary>
         /// <param name="entry">The current entry.</param>
-        /// <param name="snapshot">The snapshot service.</param>
         /// <param name="blacklistPaths">The blacklist paths.</param>
         /// <param name="hardlinkPolicy">The hardlink policy.</param>
         /// <param name="symlinkPolicy">The symlink policy.</param>

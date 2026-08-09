@@ -22,6 +22,32 @@ internal sealed class GraphUser
     [JsonPropertyName("createdDateTime")]
     public DateTimeOffset? CreatedDateTime { get; set; }
 
+    /// <summary>
+    /// The licenses assigned to the user. A shared mailbox with additional storage
+    /// (i.e. an assigned Exchange Online license) will have one or more entries here.
+    /// </summary>
+    [JsonPropertyName("assignedLicenses")]
+    public List<GraphAssignedLicense>? AssignedLicenses { get; set; }
+}
+
+internal sealed class GraphAssignedLicense
+{
+    [JsonPropertyName("skuId")]
+    public string? SkuId { get; set; }
+
+    [JsonPropertyName("disabledPlans")]
+    public List<string>? DisabledPlans { get; set; }
+}
+
+/// <summary>
+/// Represents the <c>userPurpose</c> value returned by
+/// <c>GET /users/{id}/mailboxSettings/userPurpose</c>.
+/// Differentiates a regular user mailbox from shared, room and equipment mailboxes.
+/// </summary>
+internal sealed class GraphMailboxUserPurpose
+{
+    [JsonPropertyName("value")]
+    public string? Value { get; set; }
 }
 
 internal sealed class GraphSite
@@ -32,11 +58,26 @@ internal sealed class GraphSite
     [JsonPropertyName("displayName")]
     public string? DisplayName { get; set; }
 
+    [JsonPropertyName("name")]
+    public string? Name { get; set; }
+
     [JsonPropertyName("webUrl")]
     public string? WebUrl { get; set; }
 
+    [JsonPropertyName("description")]
+    public string? Description { get; set; }
+
+    [JsonPropertyName("createdDateTime")]
+    public DateTimeOffset? CreatedDateTime { get; set; }
+
+    [JsonPropertyName("lastModifiedDateTime")]
+    public DateTimeOffset? LastModifiedDateTime { get; set; }
+
     [JsonPropertyName("siteCollection")]
     public GraphSiteCollection? SiteCollection { get; set; }
+
+    [JsonPropertyName("root")]
+    public GraphSiteRoot? Root { get; set; }
 }
 
 internal sealed class GraphSiteCollection
@@ -46,6 +87,12 @@ internal sealed class GraphSiteCollection
 
     [JsonPropertyName("personalSite")]
     public bool? PersonalSite { get; set; }
+}
+
+internal sealed class GraphSiteRoot
+{
+    [JsonPropertyName("id")]
+    public string? Id { get; set; }
 }
 
 internal sealed class OfficeTokenResponse

@@ -59,7 +59,7 @@ internal enum MessageType
 /// </summary>
 /// <param name="Token">The client token</param>
 /// <param name="PublicKey">The client public key</param>
-/// <param name="Version">The version of the client</param>
+/// <param name="ClientVersion">The version of the client</param>
 /// <param name="ProtocolVersion">The protocol version of the client</param>
 /// <param name="Metadata">The optional metadata to send</param>
 public record AuthMessage(string Token, string PublicKey, string ClientVersion, int ProtocolVersion, Dictionary<string, string?>? Metadata);
@@ -70,7 +70,6 @@ public record AuthMessage(string Token, string PublicKey, string ClientVersion, 
 /// <param name="Accepted">Whether the authentication was accepted</param>
 /// <param name="WillReplaceToken">Whether the token will be replaced</param>
 /// <param name="NewToken">The new token</param>
-/// <param name="SignedChallenge">The signed challenge</param>
 internal sealed record AuthResultMessage(bool? Accepted, bool? WillReplaceToken, string? NewToken);
 
 /// <summary>

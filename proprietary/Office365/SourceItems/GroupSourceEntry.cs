@@ -25,7 +25,11 @@ internal class GroupSourceEntry(SourceProvider provider, string parentPath, Grap
 {
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        if (!provider.LicenseApprovedForEntry(parentPath, Office365MetaType.Groups, group.Id, true))
+        // Security groups and distribution lists do not consume a seat; only Microsoft 365
+        // (Unified) groups count.
+        var groupCountsAsSeat = SourceProvider.GroupCountsAsSeat(group);
+
+        if (!provider.LicenseApprovedForEntry(parentPath, Office365MetaType.Groups, group.Id, true, groupCountsAsSeat))
             yield break;
 
         await foreach (var entry in MetadataEntries(cancellationToken))
@@ -111,6 +115,7 @@ internal class GroupSourceEntry(SourceProvider provider, string parentPath, Grap
                 { "o365:Visibility", group.Visibility },
                 { "o365:MailEnabled", group.MailEnabled.ToString() },
                 { "o365:SecurityEnabled", group.SecurityEnabled.ToString() },
+                { "o365:Classification", SourceProvider.ClassifyGroupFromDirectory(group) },
             }
             .WhereNotNull()
             .ToDictionary(kvp => kvp.Key, kvp => kvp.Value));

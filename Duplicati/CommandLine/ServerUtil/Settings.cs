@@ -165,7 +165,6 @@ public sealed record Settings(
     /// <summary>
     /// Replaces secrets inside arguments and options
     /// </summary>
-    /// <param name="args">The arguments to replace</param>
     /// <param name="options">The options to replace</param>
     /// <returns>The task to await</returns>
     public Task ReplaceSecretsAsync(Dictionary<string, string?> options)

@@ -29,6 +29,8 @@ using Uri = System.Uri;
 using System.Runtime.CompilerServices;
 using Duplicati.Library.Utility.Options;
 
+[assembly: InternalsVisibleTo("Duplicati.UnitTest")]
+
 namespace Duplicati.Library.Backend;
 
 /// <summary>
@@ -86,7 +88,7 @@ public class pCloudBackend : IStreamingBackend, IRenameEnabledBackend
     /// <summary>
     /// HttpClient to be used for requests
     /// </summary>
-    private readonly HttpClient _HttpClient;
+    private HttpClient _HttpClient;
 
     /// <summary>
     /// Variable being used to cache the folder ID, as it is required to upload files
@@ -129,7 +131,7 @@ public class pCloudBackend : IStreamingBackend, IRenameEnabledBackend
     /// <param name="options">options to be used in the backend</param>
     public pCloudBackend(string url, Dictionary<string, string?> options)
     {
-        var uri = new Utility.Uri(url);
+        var uri = new Utility.RelaxedUri(url);
         uri.RequireHost();
         _DnsName = uri.Host ?? "";
 
@@ -159,6 +161,21 @@ public class pCloudBackend : IStreamingBackend, IRenameEnabledBackend
         // Set the timeout to infinite, all methods are called with cancelationTokens.
         _HttpClient.Timeout = Timeout.InfiniteTimeSpan;
 
+    }
+
+    /// <summary>
+    /// Builds the backend on a caller supplied handler, so the request handling
+    /// can be exercised without a pCloud account
+    /// </summary>
+    /// <param name="url">URL in Duplicati Uri format</param>
+    /// <param name="options">options to be used in the backend</param>
+    /// <param name="handler">The message handler to send requests through</param>
+    internal pCloudBackend(string url, Dictionary<string, string?> options, HttpMessageHandler handler)
+        : this(url, options)
+    {
+        _HttpClient.Dispose();
+        _HttpClient = new HttpClient(handler) { Timeout = Timeout.InfiniteTimeSpan };
+        _HttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _Token);
     }
 
     /// <summary>
@@ -279,6 +296,8 @@ public class pCloudBackend : IStreamingBackend, IRenameEnabledBackend
 
         using var response = await _HttpClient.SendAsync(request, HttpCompletionOption.ResponseContentRead, cancellationToken).ConfigureAwait(false);
 
+        response.EnsureSuccessStatusCode();
+
         var content = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
         var uploadResponse = JsonSerializer.Deserialize<pCloudUploadResponse>(content)
             ?? throw new Exception("Failed to deserialize upload response");
@@ -294,7 +313,7 @@ public class pCloudBackend : IStreamingBackend, IRenameEnabledBackend
     /// Download files from remote
     /// </summary>
     /// <param name="remotename">Filename at remote location</param>
-    /// <param name="output">Destination stream to write to</param>
+    /// <param name="localname">Destination file path to write to</param>
     /// <param name="cancellationToken">CancellationToken that is combined with internal timeout token</param>
     /// <exception cref="FileMissingException">FileMissingException when file is not found</exception>
     /// <exception cref="Exception">Exceptions arising from either code execution or FileMissingException</exception>

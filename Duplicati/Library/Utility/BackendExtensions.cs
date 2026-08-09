@@ -27,6 +27,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Localization.Short;
 
 namespace Duplicati.Library.Utility;
 
@@ -35,6 +36,11 @@ namespace Duplicati.Library.Utility;
 /// </summary>
 public static class BackendExtensions
 {
+    /// <summary>
+    /// The log tag for messages from this class
+    /// </summary>
+    private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(BackendExtensions));
+
     /// <summary>
     /// The test file name used to test access permissions
     /// </summary>
@@ -61,7 +67,7 @@ public static class BackendExtensions
     /// Tests a backend by invoking the List() method, and attempting to write a small file on the destination.
     /// </summary>
     /// <param name="backend">Backend to test</param>
-    /// <param name="cancelToken">Cancellation token</param>
+    /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>An awaitable tasks</returns>
     public static async Task TestReadWritePermissionsAsync(this IBackend backend, CancellationToken cancellationToken)
     {
@@ -78,7 +84,16 @@ public static class BackendExtensions
                     continue;
 
                 connected = true;
-                await backend.DeleteAsync(TEST_FILE_NAME, cancellationToken).ConfigureAwait(false);
+                try
+                {
+                    await backend.DeleteAsync(TEST_FILE_NAME, cancellationToken).ConfigureAwait(false);
+                }
+                catch (FileMissingException)
+                {
+                    // A listing can report a file that is already deleted, and this
+                    // step only needs the file to be gone
+                    Logging.Log.WriteInformationMessage(LOGTAG, "TestFileAlreadyGone", LC.L($"The listed file {TEST_FILE_NAME} was already gone"));
+                }
                 break;
             }
         }
@@ -149,6 +164,12 @@ public static class BackendExtensions
         {
             await backend.DeleteAsync(TEST_FILE_NAME, cancellationToken).ConfigureAwait(false);
         }
+        catch (FileMissingException)
+        {
+            // A file that was just written is not always addressable right away, and
+            // the file being gone is what the cleanup is for
+            Logging.Log.WriteInformationMessage(LOGTAG, "TestFileAlreadyGone", LC.L($"The file {TEST_FILE_NAME} was already gone when cleaning up"));
+        }
         catch (Exception e)
         {
             throw new TestAfterConnectException(Strings.BackendExtensions.ErrorDeleteFile(TEST_FILE_NAME, e.Message), "TestCleanupError", e);
@@ -160,7 +181,7 @@ public static class BackendExtensions
     /// As long as the iteration can return one page, the test is considered successful.
     /// </summary>
     /// <param name="backend">Backend to test</param>
-    /// <param name="cancelToken">Cancellation token</param>
+    /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>An awaitable tasks</returns>
     public static async Task TestReadPermissionsAsync(this IBackend backend, CancellationToken cancellationToken)
     {

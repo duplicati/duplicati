@@ -35,10 +35,18 @@ internal class CalendarSourceEntry(SourceProvider provider, string path, GraphUs
 
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        // Microsoft Graph paging over calendar events is not guaranteed to be stable, so the
+        // same event can be returned on more than one page. De-duplicate by event id to avoid
+        // emitting duplicate paths for the same event.
+        var seenEventIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
         await foreach (var eventItem in provider.CalendarApi.ListCalendarEventsAsync(user.Id, calendar.Id, cancellationToken).ConfigureAwait(false))
         {
             if (cancellationToken.IsCancellationRequested)
                 yield break;
+
+            if (string.IsNullOrEmpty(eventItem.Id) || !seenEventIds.Add(eventItem.Id))
+                continue;
 
             yield return new CalendarEventSourceEntry(provider, this.Path, user, calendar, eventItem);
         }

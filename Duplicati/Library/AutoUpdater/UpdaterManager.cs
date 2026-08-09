@@ -79,10 +79,6 @@ namespace Duplicati.Library.AutoUpdater
         public static event Action<Exception>? OnError;
 
         /// <summary>
-        /// Common formatting string for date-time values
-        /// </summary>
-        private const string DATETIME_FORMAT = "yyyymmddhhMMss";
-        /// <summary>
         /// The template for the environment variable that toggles disabling updates
         /// </summary>
         public const string SKIPUPDATE_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_SKIP_UPDATE";
@@ -341,12 +337,12 @@ namespace Duplicati.Library.AutoUpdater
             // we look for packages there as well
             if (AutoUpdateSettings.UsesAlternateURLs)
             {
-                var packagepath = new Library.Utility.Uri(updates[0]).Path;
+                var packagepath = new Library.Utility.RelaxedUri(updates[0]).Path;
                 var packagename = packagepath.Split('/').Last();
 
                 foreach (var alt_url in AutoUpdateSettings.URLs.Reverse())
                 {
-                    var alt_uri = new Library.Utility.Uri(alt_url);
+                    var alt_uri = new Library.Utility.RelaxedUri(alt_url);
                     var path_components = alt_uri.Path.Split('/');
                     var path = string.Join("/", path_components.Take(path_components.Count() - 1).Union(new string[] { packagename }));
 
@@ -416,7 +412,7 @@ namespace Duplicati.Library.AutoUpdater
         /// <summary>
         /// Helper method to create a signed manifest file
         /// </summary>
-        /// <param name="key">The key used for signing the manifest</param>
+        /// <param name="keys">The keys used for signing the manifest</param>
         /// <param name="sourcedata">The template content in JSON format</param>
         /// <param name="outputfolder">The folder where the signed manifest will be written to</param>
         /// <param name="version">The version of the manifest</param>

@@ -234,7 +234,7 @@ internal partial class BackendManager : IBackendManager
         if (string.IsNullOrWhiteSpace(subPath))
             return backendUrl;
 
-        var uri = new Library.Utility.Uri(backendUrl);
+        var uri = new Library.Utility.RelaxedUri(backendUrl);
         // Trim trailing path separators from the existing path AND the sub-path before
         // joining with a single '/'. The URL path can end with a backslash on Windows
         // (e.g. a file:// URL built from a TempFolder path, which always carries a
@@ -291,8 +291,8 @@ internal partial class BackendManager : IBackendManager
     /// <summary>
     /// Decrypts a file using the specified options
     /// </summary>
-    /// <param name="tmpfile">The file to decrypt</param>
-    /// <param name="filename">The name of the file. Used for detecting encryption algorithm if not specified in options or if it differs from the options</param>
+    /// <param name="volume">The file to decrypt</param>
+    /// <param name="volume_name">The name of the file. Used for detecting encryption algorithm if not specified in options or if it differs from the options</param>
     /// <param name="options">The Duplicati options</param>
     /// <param name="dispose">True if the input file should be disposed after decryption</param>
     /// <returns>The decrypted file</returns>
@@ -560,7 +560,6 @@ internal partial class BackendManager : IBackendManager
     /// Waits for the backend queue to be empty and flushes the database messages
     /// </summary>
     /// <param name="database">The database to write to</param>
-    /// <param name="transaction">The transaction to use</param>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>An awaitable task</returns>
     public async Task WaitForEmptyAsync(IBackendManagerDatabase database, CancellationToken cancellationToken)

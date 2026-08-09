@@ -37,7 +37,7 @@ public static class QuerystringMasking
     /// <summary>
     /// Masks the values in the given URL for any properties listed in protectedProperties.
     /// </summary>
-    /// <param name="url">The URL to mask.</param>
+    /// <param name="urlstring">The URL to mask.</param>
     /// <param name="protectedProperties">The set of property names to mask (case-insensitive).</param>
     /// <returns>>The URL with sensitive properties masked.</returns>
     public static string Mask(string urlstring, IReadOnlySet<string> protectedProperties)
@@ -45,12 +45,12 @@ public static class QuerystringMasking
         if (string.IsNullOrEmpty(urlstring))
             return urlstring;
 
-        var url = new Library.Utility.Uri(urlstring);
+        var url = new Library.Utility.RelaxedUri(urlstring);
         if (string.IsNullOrWhiteSpace(url.Query))
             return urlstring;
 
         var modified = false;
-        var query = Library.Utility.Uri.ParseQueryString(url.Query, false);
+        var query = Library.Utility.UrlEncoding.ParseQueryString(url.Query, false);
         foreach (var k in query.AllKeys)
         {
             if (k is null) continue;
@@ -63,7 +63,7 @@ public static class QuerystringMasking
 
         if (!modified) return urlstring;
 
-        url = url.SetQuery(Library.Utility.Uri.BuildUriQuery(query));
+        url = url.SetQuery(Library.Utility.UrlEncoding.BuildUriQuery(query));
         return url.ToString();
     }
 
@@ -88,11 +88,11 @@ public static class QuerystringMasking
         if (string.IsNullOrEmpty(newUrl))
             throw new ArgumentException("newUrl is null or empty");
 
-        var newUb = new Library.Utility.Uri(newUrl);
+        var newUb = new Library.Utility.RelaxedUri(newUrl);
         if (string.IsNullOrWhiteSpace(newUb.Query))
             return newUrl;
 
-        var newQuery = Library.Utility.Uri.ParseQueryString(newUb.Query, false);
+        var newQuery = Library.Utility.UrlEncoding.ParseQueryString(newUb.Query, false);
 
         var modified = false;
         foreach (var key in newQuery.AllKeys)
@@ -116,8 +116,8 @@ public static class QuerystringMasking
                         if (string.IsNullOrEmpty(previousUrl))
                             continue;
 
-                        var prevUb = new Library.Utility.Uri(previousUrl);
-                        var prevQuery = Library.Utility.Uri.ParseQueryString(prevUb.Query ?? "", false);
+                        var prevUb = new Library.Utility.RelaxedUri(previousUrl);
+                        var prevQuery = Library.Utility.UrlEncoding.ParseQueryString(prevUb.Query ?? "", false);
                         prevValues = GetValuesCaseInsensitive(prevQuery, key);
                         if (prevValues != null && prevValues.Any(x => !Connection.IsPasswordPlaceholder(x)))
                             break;
@@ -139,7 +139,7 @@ public static class QuerystringMasking
         if (!modified)
             return newUrl;
 
-        newUb = newUb.SetQuery(Library.Utility.Uri.BuildUriQuery(newQuery));
+        newUb = newUb.SetQuery(Library.Utility.UrlEncoding.BuildUriQuery(newQuery));
 
         return newUb.ToString();
 

@@ -25,7 +25,9 @@ using System.Diagnostics;
 using System.IO;
 using System.Collections.Generic;
 using System.IO.Compression;
+using System.Linq;
 using Duplicati.Library.Common.IO;
+using NUnit.Framework.Interfaces;
 using System.Timers;
 
 namespace Duplicati.UnitTest
@@ -98,7 +100,8 @@ namespace Duplicati.UnitTest
             this.BasicHelperTearDown();
         }
 
-        private static int count = 1;
+        private const int RetainedFailedTestLogs = 10;
+        private static int logArchiveSequence;
 
 
         private static Timer SetupTimer()
@@ -162,15 +165,44 @@ namespace Duplicati.UnitTest
             }
             if (systemIO.FileExists(this.LOGFILE))
             {
-                var source = new System.IO.FileStream(this.LOGFILE, System.IO.FileMode.Open, System.IO.FileAccess.Read);
-                var dest = new System.IO.FileStream($"{this.LOGFILE}.{count++}.gz", System.IO.FileMode.Create, System.IO.FileAccess.Write);
-                var gzip = new System.IO.Compression.GZipStream(dest, System.IO.Compression.CompressionMode.Compress);
-                source.CopyTo(gzip);
-                gzip.Flush();
-                source.Close();
-                gzip.Close();
-                dest.Close();
-                systemIO.FileDelete(this.LOGFILE);
+                CleanupLogFile(
+                    this.LOGFILE,
+                    TestContext.CurrentContext.Result.Outcome.Status == TestStatus.Failed,
+                    RetainedFailedTestLogs
+                );
+            }
+        }
+
+        internal static string CleanupLogFile(string logfile, bool retain, int retainedLogCount)
+        {
+            if (!File.Exists(logfile))
+                return null;
+
+            string archivePath = null;
+            try
+            {
+                if (!retain)
+                    return null;
+
+                var archiveSequence = System.Threading.Interlocked.Increment(ref logArchiveSequence);
+                archivePath = $"{logfile}.{DateTime.UtcNow:yyyyMMddHHmmssfffffff}.{archiveSequence:D10}.gz";
+                using (var source = new FileStream(logfile, FileMode.Open, FileAccess.Read))
+                using (var destination = new FileStream(archivePath, FileMode.Create, FileAccess.Write))
+                using (var gzip = new GZipStream(destination, CompressionMode.Compress))
+                    source.CopyTo(gzip);
+
+                var logDirectory = Path.GetDirectoryName(logfile);
+                var logPattern = $"{Path.GetFileName(logfile)}.*.gz";
+                foreach (var expiredArchive in Directory.GetFiles(logDirectory, logPattern)
+                    .OrderByDescending(x => x, StringComparer.Ordinal)
+                    .Skip(retainedLogCount))
+                    File.Delete(expiredArchive);
+
+                return archivePath;
+            }
+            finally
+            {
+                File.Delete(logfile);
             }
         }
 

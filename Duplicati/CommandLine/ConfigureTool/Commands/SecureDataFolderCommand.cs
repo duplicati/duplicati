@@ -41,11 +41,13 @@ public static class SecureDataFolderCommand
             ? "Restrict the permissions on the data folder so only the current user, SYSTEM and Administrators can access it"
             : "Restrict the permissions on the data folder so only root and the current user can access it")
         {
-            new Option<string>("--data-folder", "Path to the Duplicati data folder (defaults to standard location)"),
+            new Option<string>("--datafolder", "Path to the Duplicati data folder (defaults to standard location)"),
             new Option<bool>("--apply", "Apply the restricted permissions without prompting. By default a warning is shown and the user must confirm."),
+            new Option<bool>("--for-service", "Apply the restricted permissions for use with a service"),
+            new Option<bool>("--quiet", "Suppress all output except for minimum messages, such as errors"),
         };
 
-        cmd.Handler = CommandHandler.Create<string?, bool>(HandleSecureDataFolder);
+        cmd.Handler = CommandHandler.Create<string?, bool, bool, bool>(HandleSecureDataFolder);
         return cmd;
     }
 
@@ -77,37 +79,45 @@ public static class SecureDataFolderCommand
     /// Checks the current permissions on the data folder and, if they are not already restricted,
     /// applies the restricted permissions (current user, SYSTEM and Administrators only).
     /// </summary>
-    private static int HandleSecureDataFolder(string? dataFolder, bool apply)
+    private static int HandleSecureDataFolder(string? datafolder, bool apply, bool forService, bool quiet)
     {
-        var dataFolderPath = GetDataFolder(dataFolder);
+        var dataFolderPath = GetDataFolder(datafolder);
 
         using var _ = StartConsoleLogScope();
-        Console.WriteLine($"Using data folder: {dataFolderPath}");
+        if (!quiet)
+            Console.WriteLine($"Using data folder: {dataFolderPath}");
 
         if (!Directory.Exists(dataFolderPath))
         {
             Console.WriteLine($"The data folder does not exist: {dataFolderPath}");
-            Console.WriteLine("Create the folder first by starting the server or by creating it manually, then re-run this command.");
+            if (!quiet)
+                Console.WriteLine("Create the folder first by starting the server or by creating it manually, then re-run this command.");
             return 1;
         }
 
         // Check if the permissions are already set as expected
-        var alreadySecure = SystemIO.IO_OS.DirectoryHasPermissionUserRWOnly(dataFolderPath, out var detail);
+        var alreadySecure = SystemIO.IO_OS.DirectoryHasPermissionUserRWOnly(dataFolderPath, forService, out var detail);
 
         if (alreadySecure)
         {
-            Console.WriteLine("The data folder already has restricted permissions (only the current user, SYSTEM and Administrators can access it).");
-            Console.WriteLine("No changes are needed.");
+            if (!quiet)
+            {
+                Console.WriteLine("The data folder already has restricted permissions (only the current user, SYSTEM and Administrators can access it).");
+                Console.WriteLine("No changes are needed.");
+            }
             return 0;
         }
 
-        Console.WriteLine("The data folder does not have restricted permissions.");
-        Console.WriteLine($"Current state: {detail}");
-        Console.WriteLine();
-        Console.WriteLine("Warning: if someone created this folder, running this command may inadvertently give unwanted access to this system.");
-        Console.WriteLine("Before proceeding, verify that the data folder was created by Duplicati and not by an attacker,");
-        Console.WriteLine("as restricting the permissions will grant the current user, SYSTEM and Administrators full control over the folder.");
-        Console.WriteLine();
+        if (!quiet)
+        {
+            Console.WriteLine("The data folder does not have restricted permissions.");
+            Console.WriteLine($"Current state: {detail}");
+            Console.WriteLine();
+            Console.WriteLine("Warning: if someone created this folder, running this command may inadvertently give unwanted access to this system.");
+            Console.WriteLine("Before proceeding, verify that the data folder was created by Duplicati and not by an attacker,");
+            Console.WriteLine("as restricting the permissions will grant the current user, SYSTEM and Administrators full control over the folder.");
+            Console.WriteLine();
+        }
 
         if (!apply)
         {
@@ -116,22 +126,26 @@ public static class SecureDataFolderCommand
             if (!string.Equals(response?.Trim(), "y", StringComparison.OrdinalIgnoreCase) &&
                 !string.Equals(response?.Trim(), "yes", StringComparison.OrdinalIgnoreCase))
             {
-                Console.WriteLine("Aborted. No changes were made.");
+                if (!quiet)
+                    Console.WriteLine("Aborted. No changes were made.");
                 return 1;
             }
         }
 
         try
         {
-            SystemIO.IO_OS.DirectorySetPermissionUserRWOnly(dataFolderPath);
-            if (!SystemIO.IO_OS.DirectoryHasPermissionUserRWOnly(dataFolderPath, out var checkDetail))
+            SystemIO.IO_OS.DirectorySetPermissionUserRWOnly(dataFolderPath, forService);
+            if (!SystemIO.IO_OS.DirectoryHasPermissionUserRWOnly(dataFolderPath, forService, out var checkDetail))
             {
                 Console.WriteLine($"Warning: failed to verify that permissions were applied correctly: {checkDetail}");
                 return 1;
             }
 
-            Console.WriteLine("Restricted permissions applied to the data folder.");
-            Console.WriteLine("Only the current user, SYSTEM and Administrators can now access the folder.");
+            if (!quiet)
+            {
+                Console.WriteLine("Restricted permissions applied to the data folder.");
+                Console.WriteLine("Only the current user, SYSTEM and Administrators can now access the folder.");
+            }
             return 0;
         }
         catch (Exception ex)

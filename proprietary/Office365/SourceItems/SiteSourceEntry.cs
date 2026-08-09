@@ -19,7 +19,8 @@ internal class SiteSourceEntry(SourceProvider provider, string parentPath, Graph
             { "o365:DisplayName", site.DisplayName },
             { "o365:WebUrl", site.WebUrl },
             { "o365:Hostname", site.SiteCollection?.Hostname },
-            { "o365:PersonalSite", site.SiteCollection?.PersonalSite?.ToString() }
+            { "o365:PersonalSite", site.SiteCollection?.PersonalSite?.ToString() },
+            { "o365:Classification", SourceProvider.ClassifySite(site).ToString() }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))
         .ToDictionary(kv => kv.Key, kv => kv.Value));
@@ -51,6 +52,18 @@ internal class SiteSourceEntry(SourceProvider provider, string parentPath, Graph
                 yield break;
 
             yield return new SharePointListSourceEntry(provider, this.Path, site, list);
+        }
+
+        await foreach (var subsite in provider.SiteApi.ListSubsitesAsync(site.Id, cancellationToken).ConfigureAwait(false))
+        {
+            if (cancellationToken.IsCancellationRequested)
+                yield break;
+
+            // Guard against the API echoing the parent site itself, which would cause infinite recursion.
+            if (string.Equals(subsite.Id, site.Id, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            yield return new SiteSourceEntry(provider, this.Path, subsite);
         }
     }
 }

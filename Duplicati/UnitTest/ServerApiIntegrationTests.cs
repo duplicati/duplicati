@@ -37,6 +37,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.DynamicLoader;
 using Duplicati.Server;
 using Duplicati.WebserverCore.Dto.V2;
 using Duplicati.WebserverCore.Endpoints.V1.Backup;
@@ -288,6 +289,83 @@ public class ServerApiIntegrationTests : BasicSetupHelper
                 .Any(entryPath => string.Equals(entryPath, expectedRoot, OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal));
 
             Assert.That(rootFound, Is.True, "list-folder root listing should include the original data folder");
+        }).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// A destination folder that is already there is the desired outcome of an
+    /// automatic creation, the way the backend manager treats it. These tests use a
+    /// backend that reports the folder as missing and then reports it as already
+    /// existing, which is what happens when the folder appears between the test and
+    /// the create.
+    /// </summary>
+    [Test]
+    [Category("Integration")]
+    public async Task DestinationAutoCreateAcceptsExistingFolder_Async()
+    {
+        FolderExistsBackend.Reset();
+        BackendLoader.AddBackend(new FolderExistsBackend());
+
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            var response = await httpClient.PostAsJsonAsync(
+                "/api/v1/remoteoperation/test?autocreate=true",
+                new { path = "folderexists://existing" },
+                JsonOptions).ConfigureAwait(false);
+
+            var body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            Assert.That(response.IsSuccessStatusCode, Is.True,
+                $"Testing a destination that is already there should succeed; got {(int)response.StatusCode}: {body}");
+            Assert.That(FolderExistsBackend.CreateFolderCalls, Is.EqualTo(1), "The folder should have been created once");
+        }).ConfigureAwait(false);
+    }
+
+    [Test]
+    [Category("Integration")]
+    public async Task DestinationAutoCreateAcceptsExistingFolderV2_Async()
+    {
+        FolderExistsBackend.Reset();
+        BackendLoader.AddBackend(new FolderExistsBackend());
+
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            var request = new DestinationTestRequestDto
+            {
+                DestinationUrl = "folderexists://existing",
+                Options = new Dictionary<string, string>(),
+                AutoCreate = true
+            };
+
+            var response = await httpClient.PostAsJsonAsync("/api/v2/destination/test", request, JsonOptions).ConfigureAwait(false);
+            response.EnsureSuccessStatusCode();
+            var result = await response.Content.ReadFromJsonAsync<DestinationTestResponseDto>(JsonOptions).ConfigureAwait(false)
+                         ?? throw new InvalidOperationException("destination/test response was empty");
+
+            Assert.That(result.Success, Is.True, $"Testing a destination that is already there should succeed; got {result.StatusCode}: {result.Error}");
+            Assert.That(result.StatusCode, Is.EqualTo("OK"));
+            // The client reads the folder state from the payload, so the test has to
+            // continue after the folder was reported as existing
+            Assert.That(result.Data, Is.Not.Null, "The folder state should be reported");
+            Assert.That(result.Data!.FolderExists, Is.True);
+        }).ConfigureAwait(false);
+    }
+
+    [Test]
+    [Category("Integration")]
+    public async Task DestinationTestDoesNotCreateWhenReadOnly_Async()
+    {
+        FolderExistsBackend.Reset();
+        BackendLoader.AddBackend(new FolderExistsBackend());
+
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            var response = await httpClient.PostAsJsonAsync(
+                "/api/v1/remoteoperation/test?autocreate=true&readOnlyTest=true",
+                new { path = "folderexists://existing" },
+                JsonOptions).ConfigureAwait(false);
+
+            Assert.That(response.IsSuccessStatusCode, Is.False, "A read-only test of a missing folder should fail");
+            Assert.That(FolderExistsBackend.CreateFolderCalls, Is.EqualTo(0), "A read-only test should not create anything");
         }).ConfigureAwait(false);
     }
 

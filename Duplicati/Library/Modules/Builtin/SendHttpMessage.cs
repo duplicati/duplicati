@@ -246,7 +246,7 @@ namespace Duplicati.Library.Modules.Builtin
             new CommandLineArgument(OPTION_IGNORE_REVOCATION_FAILURE, CommandLineArgument.ArgumentType.Boolean, Strings.SendHttpMessage.IgnoreRevocationFailureShort, Strings.SendHttpMessage.IgnoreRevocationFailureLong, "false"),
 
             new CommandLineArgument(OPTION_SEND_HTTP_RETRIES, CommandLineArgument.ArgumentType.Integer, Strings.SendHttpMessage.SendHttpRetriesShort, Strings.SendHttpMessage.SendHttpRetriesLong, DEFAULT_RETRIES.ToString()),
-            new CommandLineArgument(OPTION_SEND_HTTP_RETRY_DELAY, CommandLineArgument.ArgumentType.Integer, Strings.SendHttpMessage.SendHttpRetryDelayShort, Strings.SendHttpMessage.SendHttpRetryDelayLong, DEFAULT_RETRY_DELAY),
+            new CommandLineArgument(OPTION_SEND_HTTP_RETRY_DELAY, CommandLineArgument.ArgumentType.Timespan, Strings.SendHttpMessage.SendHttpRetryDelayShort, Strings.SendHttpMessage.SendHttpRetryDelayLong, DEFAULT_RETRY_DELAY),
         ];
 
         protected override string SubjectOptionName => OPTION_MESSAGE;
