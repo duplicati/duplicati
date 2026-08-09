@@ -117,7 +117,7 @@ namespace Duplicati.Library.DynamicLoader
                     IRestoreDestinationProviderModule b;
                     if (m_interfaces.TryGetValue(uri.Scheme, out b) && b != null)
                         return GetSupportedCommandsCached(b).ToList();
-                    else if (uri.Scheme.EndsWith("s", StringComparison.Ordinal))
+                    else if (uri.Scheme.EndsWith("s", StringComparison.OrdinalIgnoreCase))
                     {
                         var tmpscheme = uri.Scheme.Substring(0, uri.Scheme.Length - 1);
                         if (m_interfaces.TryGetValue(tmpscheme, out b) && b != null)
