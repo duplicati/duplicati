@@ -136,7 +136,7 @@ public class SMBBackend : IStreamingBackend, IFolderEnabledBackend, IRenameEnabl
         var input = uri.Path.TrimEnd('/');
         var slashIndex = input.IndexOf('/');  // Find first slash to separate server and share if present.
 
-        var auth = AuthOptionsHelper.Parse(options, uri);
+        var auth = AuthOptionsHelper.Parse(options, uri.Username, uri.Password);
         var authDomain = options.GetValueOrDefault(AUTH_DOMAIN_OPTION);
         var transport = options.GetValueOrDefault(TRANSPORT_OPTION);
 

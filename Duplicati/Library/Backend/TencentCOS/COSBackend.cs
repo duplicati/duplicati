@@ -125,7 +125,7 @@ namespace Duplicati.Library.Backend.TencentCOS
         {
             var uri = new Utility.RelaxedUri(url?.Trim() ?? "");
             var prefix = uri.HostAndPath?.Trim()?.Trim('/')?.Trim('\\');
-            var auth = AuthOptionsHelper.ParseWithAlias(options, uri, COS_SECRET_ID, COS_SECRET_KEY)
+            var auth = AuthOptionsHelper.ParseWithAlias(options, uri.Username, uri.Password, COS_SECRET_ID, COS_SECRET_KEY)
                 .RequireCredentials();
 
             var bucket = options.GetValueOrDefault(COS_BUCKET);

@@ -113,7 +113,7 @@ namespace Duplicati.Library.Backend.AzureBlob
 
             var containerName = (uri.Host ?? "").ToLowerInvariant();
 
-            var auth = AuthOptionsHelper.ParseWithAlias(options, uri, AZURE_ACCOUNT_NAME_OPTION, AZURE_ACCESS_KEY_OPTION);
+            var auth = AuthOptionsHelper.ParseWithAlias(options, uri.Username, uri.Password, AZURE_ACCOUNT_NAME_OPTION, AZURE_ACCESS_KEY_OPTION);
             var timeouts = TimeoutOptionsHelper.Parse(options);
 
             var sasToken = options.GetValueOrDefault(AZURE_ACCESS_SAS_TOKEN_OPTION);

@@ -75,7 +75,7 @@ namespace Duplicati.Library.Backend.Mega
         {
             var uri = new Utility.RelaxedUri(url);
 
-            var auth = AuthOptionsHelper.Parse(options, uri);
+            var auth = AuthOptionsHelper.Parse(options, uri.Username, uri.Password);
             if (options.ContainsKey("auth-two-factor-key"))
                 m_twoFactorKey = options["auth-two-factor-key"];
 

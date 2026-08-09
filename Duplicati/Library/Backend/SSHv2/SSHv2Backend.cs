@@ -85,7 +85,7 @@ namespace Duplicati.Library.Backend
             var uri = new Utility.RelaxedUri(url);
             uri.RequireHost();
 
-            var auth = AuthOptionsHelper.Parse(options, uri);
+            var auth = AuthOptionsHelper.Parse(options, uri.Username, uri.Password);
             if (!auth.HasUsername)
                 throw new UserInformationException(Strings.SSHv2Backend.UsernameRequired, "UsernameNotSpecified");
 

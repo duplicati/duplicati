@@ -117,7 +117,7 @@ public class OpenStackStorage : IStreamingBackend, IRenameEnabledBackend
         if (m_prefix.StartsWith("/", StringComparison.Ordinal))
             m_prefix = m_prefix.Substring(1);
 
-        var auth = AuthOptionsHelper.Parse(options, uri);
+        var auth = AuthOptionsHelper.Parse(options, uri.Username, uri.Password);
 
         options.TryGetValue(DOMAINNAME_OPTION, out m_domainName);
         options.TryGetValue(TENANTNAME_OPTION, out m_tenantName);

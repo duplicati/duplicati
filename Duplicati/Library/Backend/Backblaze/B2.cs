@@ -208,7 +208,7 @@ public class B2 : IStreamingBackend, ILockingBackend, IRenameEnabledBackend
         if (options.TryGetValue(B2_CREATE_BUCKET_TYPE_OPTION, out var option1))
             _bucketType = option1;
 
-        var auth = AuthOptionsHelper.ParseWithAlias(options, uri, B2_ID_OPTION, B2_KEY_OPTION);
+        var auth = AuthOptionsHelper.ParseWithAlias(options, uri.Username, uri.Password, B2_ID_OPTION, B2_KEY_OPTION);
 
         if (!auth.HasUsername)
             throw new UserInformationException(Strings.B2.NoB2UserIDError, "B2MissingUserID");

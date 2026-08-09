@@ -119,7 +119,7 @@ namespace Duplicati.Library.Backend
         {
             var uri = new Utility.RelaxedUri(url);
             var path = uri.HostAndPath;
-            var auth = AuthOptionsHelper.Parse(options, uri);
+            var auth = AuthOptionsHelper.Parse(options, uri.Username, uri.Password);
             m_timeouts = TimeoutOptionsHelper.Parse(options);
             m_username = auth.Username;
             m_password = auth.Password;

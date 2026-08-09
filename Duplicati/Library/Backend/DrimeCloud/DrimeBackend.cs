@@ -194,7 +194,7 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
 
         // Get API token or parse auth options
         _apiToken = options.GetValueOrDefault(API_TOKEN_OPTION);
-        _authOptions = AuthOptionsHelper.Parse(options, uri);
+        _authOptions = AuthOptionsHelper.Parse(options, uri.Username, uri.Password);
 
         if (string.IsNullOrWhiteSpace(_apiToken) && (!_authOptions.HasUsername || !_authOptions.HasPassword))
             throw new UserInformationException(Strings.DrimeCloud.MissingCredentialsError, "DrimeCloudMissingCredentials");

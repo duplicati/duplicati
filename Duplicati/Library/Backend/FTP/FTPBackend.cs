@@ -272,7 +272,7 @@ namespace Duplicati.Library.Backend
             var u = new Utility.RelaxedUri(url);
             u.RequireHost();
 
-            var auth = AuthOptionsHelper.Parse(options, u);
+            var auth = AuthOptionsHelper.Parse(options, u.Username, u.Password);
             if (auth.HasUsername)
             {
                 _userInfo = new NetworkCredential()
