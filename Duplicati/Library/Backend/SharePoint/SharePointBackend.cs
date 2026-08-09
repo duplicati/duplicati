@@ -175,7 +175,7 @@ namespace Duplicati.Library.Backend
 
             if (!useIntegratedAuthentication)
             {
-                var auth = AuthOptionsHelper.Parse(options, u);
+                var auth = AuthOptionsHelper.Parse(options, u.Username, u.Password);
                 // No validation here, maybe at least username should be set?
                 useUsername = auth.Username;
                 usePassword = auth.Password;

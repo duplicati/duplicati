@@ -139,7 +139,7 @@ namespace Duplicati.Library.Backend
                 m_path = $"/{m_path}/";
 
             m_api_token = options.GetValueOrDefault(API_TOKEN_OPTION);
-            m_authOptions = AuthOptionsHelper.Parse(options, u);
+            m_authOptions = AuthOptionsHelper.Parse(options, u.Username, u.Password);
             if (string.IsNullOrWhiteSpace(m_api_token) && (!m_authOptions.HasUsername || !m_authOptions.HasPassword))
                 throw new ArgumentException("Either an API token, or username/password are required for filejump authentication.");
 

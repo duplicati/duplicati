@@ -136,6 +136,12 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     public DuplicatiBackend(string url, Dictionary<string, string?> options)
     {
         var uri = new Utility.RelaxedUri(url);
+
+        // Keep the credentials from the supplied url: uri is replaced with the
+        // endpoint below, which does not carry them.
+        var urlUsername = uri.Username;
+        var urlPassword = uri.Password;
+
         if (string.IsNullOrWhiteSpace(uri.HostAndPath))
             uri = new Utility.RelaxedUri(DEFAULT_ENDPOINT);
         else
@@ -157,7 +163,7 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
         _backup_id = options.GetValueOrDefault(BACKUP_ID_OPTION) ?? string.Empty;
         if (string.IsNullOrEmpty(_backup_id))
             throw new ArgumentException(Strings.DuplicatiBackend.ErrorMissingBackupId, BACKUP_ID_OPTION);
-        _auth = AuthOptionsHelper.ParseWithAlias(options, new Utility.RelaxedUri(url), AUTH_API_ID_OPTION, AUTH_API_KEY_OPTION)
+        _auth = AuthOptionsHelper.ParseWithAlias(options, urlUsername, urlPassword, AUTH_API_ID_OPTION, AUTH_API_KEY_OPTION)
             .RequireCredentials();
 
         _authTimeout = Utility.Utility.ParseTimespanOption(options, AUTH_TIMEOUT_OPTION, DEFAULT_AUTH_TIMEOUT);

@@ -101,7 +101,8 @@ internal static class OptionsHelper
 
     internal static ParsedOptions ParseAndValidateOptions(string url, Dictionary<string, string?> options)
     {
-        var _authOptions = AuthOptionsHelper.ParseWithAlias(options, new Library.Utility.RelaxedUri(url), OFFICE_CLIENT_OPTION, OFFICE_SECRET_OPTION)
+        var uri = new Library.Utility.RelaxedUri(url);
+        var _authOptions = AuthOptionsHelper.ParseWithAlias(options, uri.Username, uri.Password, OFFICE_CLIENT_OPTION, OFFICE_SECRET_OPTION)
             .RequireCredentials();
         var _tenantId = options.GetValueOrDefault(OFFICE_TENANT_OPTION)!;
         if (string.IsNullOrWhiteSpace(_tenantId))

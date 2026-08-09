@@ -247,7 +247,7 @@ namespace Duplicati.Library.Backend
             m_prefix = uri.Path;
             var timeout = TimeoutOptionsHelper.Parse(options);
 
-            var auth = AuthOptionsHelper.ParseWithAlias(options, uri, AUTH_USERNAME_OPTION, AUTH_PASSWORD_OPTION);
+            var auth = AuthOptionsHelper.ParseWithAlias(options, uri.Username, uri.Password, AUTH_USERNAME_OPTION, AUTH_PASSWORD_OPTION);
 
             if (!auth.HasUsername)
                 throw new UserInformationException(Strings.S3Backend.NoAMZUserIDError, "S3NoAmzUserID");
