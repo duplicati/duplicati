@@ -25,6 +25,9 @@ using System.Linq;
 using Duplicati.Library.Interface;
 using Duplicati.Library.ResultSerialization;
 using Artalk.Xmpp.Client;
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("Duplicati.UnitTest")]
 
 namespace Duplicati.Library.Modules.Builtin
 {
@@ -195,16 +198,47 @@ namespace Duplicati.Library.Modules.Builtin
             return base.ReplaceTemplate(input, result, exception, subjectline);
         }
 
-        protected override void SendMessage(string subject, string body)
+        /// <summary>
+        /// The parts of the xmpp target needed to open a connection.
+        /// </summary>
+        /// <param name="Host">The server to connect to.</param>
+        /// <param name="Username">The user part of the jid.</param>
+        /// <param name="Password">The password from the jid, if it carries one.</param>
+        /// <param name="Port">The port to connect on, defaulted from the scheme.</param>
+        /// <param name="Resource">The xmpp resource, "Duplicati" when the jid has none.</param>
+        internal readonly record struct XmppTarget(string Host, string Username, string Password, int Port, string Resource);
+
+        /// <summary>
+        /// Splits the configured jid into the parts needed to connect. The value is a jid
+        /// rather than a url, so a scheme is prepended when it has none, and the url parser
+        /// is used to separate the user, server, port and resource.
+        /// </summary>
+        /// <param name="usernameOption">The value of the username option.</param>
+        /// <returns>The parts needed to connect.</returns>
+        internal static XmppTarget ParseXmppTarget(string usernameOption)
         {
-            var uri = new Utility.RelaxedUri(m_username.Contains("://") ? m_username : "http://" + m_username);
+            var uri = new Utility.RelaxedUri(usernameOption.Contains("://") ? usernameOption : "http://" + usernameOption);
             var resource = uri.Path ?? "";
             if (resource.StartsWith("/", StringComparison.Ordinal))
                 resource = resource.Substring(1);
 
             if (string.IsNullOrWhiteSpace(resource))
                 resource = "Duplicati";
-            using (ArtalkXmppClient client = new ArtalkXmppClient(uri.Host, uri.Username, string.IsNullOrWhiteSpace(m_password) ? uri.Password : m_password, uri.Port == -1 ? (uri.Scheme == "https" ? 5223 : 5222) : uri.Port))
+
+            return new XmppTarget(
+                uri.Host,
+                uri.Username,
+                uri.Password,
+                uri.Port == -1 ? (uri.Scheme == "https" ? 5223 : 5222) : uri.Port,
+                resource);
+        }
+
+        protected override void SendMessage(string subject, string body)
+        {
+            var target = ParseXmppTarget(m_username);
+            var resource = target.Resource;
+
+            using (ArtalkXmppClient client = new ArtalkXmppClient(target.Host, target.Username, string.IsNullOrWhiteSpace(m_password) ? target.Password : m_password, target.Port))
             {
                 client.Connect(resource);
                 try
