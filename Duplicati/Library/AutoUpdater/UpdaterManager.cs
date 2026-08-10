@@ -346,7 +346,10 @@ namespace Duplicati.Library.AutoUpdater
             {
                 var alt_uri = new Uri(alt_url);
                 var path_components = alt_uri.AbsolutePath.TrimStart('/').Split('/');
-                var path = string.Join("/", path_components.Take(path_components.Count() - 1).Union(new string[] { packagename }));
+                // Concat, not Union: Union de-duplicates across the whole sequence, so a
+                // mirror path that repeats a component lost it, and a component named
+                // after the package swallowed the filename.
+                var path = string.Join("/", path_components.Take(path_components.Count() - 1).Concat(new string[] { packagename }));
 
                 updates.Insert(0, new UriBuilder(alt_uri) { Path = path }.Uri.ToString());
             }

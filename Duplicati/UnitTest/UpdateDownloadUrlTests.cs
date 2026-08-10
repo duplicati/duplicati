@@ -103,6 +103,27 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
+        public void ARepeatedPathSegmentOnAnAlternateIsKept()
+        {
+            // The components were combined with Union, which de-duplicates, so a mirror
+            // path that repeats a segment came out one segment short and pointed at a
+            // location that does not exist.
+            var result = UpdaterManager.BuildDownloadUrls([PACKAGE], ["https://mirror.example.com/duplicati/duplicati/latest.manifest"]);
+
+            Assert.AreEqual("https://mirror.example.com/duplicati/duplicati/duplicati-2.1.0.5.zip", result[0]);
+        }
+
+        [Test]
+        public void ARepeatedPathSegmentThatIsNotAdjacentIsAlsoKept()
+        {
+            // Union de-duplicates across the whole sequence, so the repeat did not have to
+            // be next to itself to be lost.
+            var result = UpdaterManager.BuildDownloadUrls([PACKAGE], ["https://mirror.example.com/a/b/a/latest.manifest"]);
+
+            Assert.AreEqual("https://mirror.example.com/a/b/a/duplicati-2.1.0.5.zip", result[0]);
+        }
+
+        [Test]
         public void AnAlternateWithASinglePathSegmentIsReplacedEntirely()
         {
             var result = UpdaterManager.BuildDownloadUrls([PACKAGE], ["https://mirror.example.com/latest.manifest"]);
@@ -119,16 +140,14 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
-        public void APathSegmentEqualToThePackageNameSwallowsTheFilename()
+        public void APathSegmentEqualToThePackageNameKeepsTheFilename()
         {
-            // The path components are combined with Union, not Concat, so a component that
-            // already equals the package name is de-duplicated and the filename is lost.
-            // That looks unintended, but it is what happens today, so it is pinned rather
-            // than changed here.
+            // The same de-duplication removed the package name itself when a directory in
+            // the mirror path happened to be named after it.
             var result = UpdaterManager.BuildDownloadUrls([PACKAGE],
                 ["https://mirror.example.com/duplicati-2.1.0.5.zip/latest.manifest"]);
 
-            Assert.AreEqual("https://mirror.example.com/duplicati-2.1.0.5.zip", result[0]);
+            Assert.AreEqual("https://mirror.example.com/duplicati-2.1.0.5.zip/duplicati-2.1.0.5.zip", result[0]);
         }
     }
 }
