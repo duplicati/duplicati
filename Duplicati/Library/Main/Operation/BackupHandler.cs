@@ -667,10 +667,6 @@ namespace Duplicati.Library.Main.Operation
 
                             var lastfilesetid = prevfileset.Value.Ticks == 0 ? -1 : prevfileset.Key;
 
-                            // Rebuild any index files that are missing
-                            await Backup.RecreateMissingIndexFiles.RunAsync(db, backendManager, m_options, m_result.TaskControl)
-                                .ConfigureAwait(false);
-
                             // Prepare the operation by registering the filelist
                             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_ProcessingFiles);
 
@@ -740,6 +736,16 @@ namespace Duplicati.Library.Main.Operation
                             .ConfigureAwait(false);
 
                     await FlushBackendAsync(db, m_result, backendManager)
+                        .ConfigureAwait(false);
+
+                    // Rebuild any index files that are missing.
+                    // This has to happen after the block volumes have been processed:
+                    // an interrupted backup can leave a block volume registered as uploaded
+                    // while the blocklists it contains are only registered by the following
+                    // backup. Re-creating the index file before that registration produces an
+                    // index file without any blocklists, which is then uploaded and recorded
+                    // as complete.
+                    await Backup.RecreateMissingIndexFiles.RunAsync(db, backendManager, m_options, m_result.TaskControl)
                         .ConfigureAwait(false);
 
                     // Send the actual filelist
