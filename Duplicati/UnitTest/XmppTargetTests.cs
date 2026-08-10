@@ -98,13 +98,14 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
-        public void AnUppercaseHttpsSchemeSelectsThePlainPort()
+        public void AnUppercaseHttpsSchemeAlsoSelectsTheTlsPort()
         {
-            // The scheme is compared as written, so an uppercase HTTPS:// does not select
-            // the TLS port. That looks unintended, but it is what happens today.
+            // A url scheme is case insensitive, so HTTPS:// has to mean the same as
+            // https://. It used to fall through to 5222 because the scheme was compared as
+            // written; System.Uri normalizes it, so the TLS port is now chosen.
             var target = SendJabberMessage.ParseXmppTarget("HTTPS://user@server.example.com");
 
-            Assert.AreEqual(5222, target.Port);
+            Assert.AreEqual(5223, target.Port);
         }
 
         [Test]

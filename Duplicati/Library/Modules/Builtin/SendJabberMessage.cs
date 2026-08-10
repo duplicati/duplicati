@@ -217,19 +217,27 @@ namespace Duplicati.Library.Modules.Builtin
         /// <returns>The parts needed to connect.</returns>
         internal static XmppTarget ParseXmppTarget(string usernameOption)
         {
-            var uri = new Utility.RelaxedUri(usernameOption.Contains("://") ? usernameOption : "http://" + usernameOption);
-            var resource = uri.Path ?? "";
+            var uri = new Uri(usernameOption.Contains("://") ? usernameOption : "http://" + usernameOption);
+            var resource = uri.AbsolutePath;
             if (resource.StartsWith("/", StringComparison.Ordinal))
                 resource = resource.Substring(1);
 
             if (string.IsNullOrWhiteSpace(resource))
                 resource = "Duplicati";
 
+            // The user info is not decoded by System.Uri, so it is decoded here to keep
+            // the jid readable the same way it was before.
+            var userinfo = uri.UserInfo.Split(new[] { ':' }, 2);
+            var username = userinfo.Length > 0 && userinfo[0].Length > 0 ? Uri.UnescapeDataString(userinfo[0]) : null;
+            var password = userinfo.Length > 1 ? Uri.UnescapeDataString(userinfo[1]) : null;
+
             return new XmppTarget(
                 uri.Host,
-                uri.Username,
-                uri.Password,
-                uri.Port == -1 ? (uri.Scheme == "https" ? 5223 : 5222) : uri.Port,
+                username,
+                password,
+                // System.Uri answers with the scheme's default port when the jid does not
+                // name one, so the absence of a port is asked for directly.
+                uri.IsDefaultPort ? (uri.Scheme == "https" ? 5223 : 5222) : uri.Port,
                 resource);
         }
 
