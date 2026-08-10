@@ -84,4 +84,27 @@ public class AuthIdOptionsHelperTests : BasicSetupHelper
         Assert.IsTrue(urlNew.StartsWith("https://"), $"Expected an https url, got '{urlNew}'");
         Assert.IsTrue(urlNew.EndsWith($"?type={module}"), $"Expected the type query at the end, got '{urlNew}'");
     }
+
+    [Test]
+    [Category("UriUtility")]
+    public static void CredentialsInTheServiceUrlAreKept()
+    {
+        // The path is dropped, but anything in front of the host is not: a service url
+        // given with credentials keeps them.
+        Assert.AreEqual("https://user:pw@example.com?type=googledrive",
+            AuthIdOptionsHelper.GetOAuthLoginUrl("googledrive", "https://user:pw@example.com/refresh"));
+    }
+
+    [Test]
+    [Category("UriUtility")]
+    public static void BracesInTheServiceUrlNoLongerBreakIt()
+    {
+        // The type parameter used to be inserted as a '{0}' placeholder and formatted in
+        // afterwards, which made any brace already in the url a format specifier: this
+        // threw FormatException instead of returning a url.
+        // Braces are not legal in a query, so they come back percent-encoded, which a
+        // server decodes to the same value.
+        Assert.AreEqual("https://example.com?a=%7Bb%7D&type=googledrive",
+            AuthIdOptionsHelper.GetOAuthLoginUrl("googledrive", "https://example.com/refresh?a={b}"));
+    }
 }
