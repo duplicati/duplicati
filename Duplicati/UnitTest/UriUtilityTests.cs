@@ -320,5 +320,30 @@ namespace Duplicati.UnitTest
             var ex = Assert.Throws<System.ArgumentException>(() => withoutHost.RequireHost());
             Assert.IsFalse(ex!.Message.Contains("secret"), "The message must not carry the password");
         }
+
+        [Test]
+        [Category("UriUtility")]
+        public static void TestHostAndPathKeepsTheFolderCase()
+        {
+            // Several backends take a case sensitive remote name out of the authority:
+            // BoxBackend reads HostAndPath as the remote path, Dropbox reads
+            // UrlDecode(HostAndPath), and OpenStackStorage reads Host as the container.
+            // An RFC 3986 conformant parser lower-cases the authority, which is why #7097
+            // failed the Box.com tests on all three platforms, and CloudStack, with "The
+            // requested folder does not exist". That only showed up in the backend tests,
+            // which need credentials, so it is pinned here as well.
+            var box = new Library.Utility.RelaxedUri("box://MyBackups/Sub/");
+            Assert.AreEqual("MyBackups", box.Host);
+            Assert.AreEqual("MyBackups/Sub/", box.HostAndPath);
+
+            var container = new Library.Utility.RelaxedUri("openstack://MyContainer");
+            Assert.AreEqual("MyContainer", container.Host);
+            Assert.AreEqual("MyContainer", container.HostAndPath);
+
+            // The same has to survive being written back out and parsed again, because
+            // that is how the url reaches the backend after being edited in the UI.
+            var roundtrip = new Library.Utility.RelaxedUri(box.ToString());
+            Assert.AreEqual(box.HostAndPath, roundtrip.HostAndPath);
+        }
     }
 }

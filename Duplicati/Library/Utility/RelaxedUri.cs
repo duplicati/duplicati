@@ -36,6 +36,21 @@ namespace Duplicati.Library.Utility
     // but it does not make sense to support "invalid" urls as that increases the complexity
     // of the code and potentially introduces ambiguity for the user.
 
+    // The commandline is not the only problem, though. Several backends take a
+    // case sensitive remote name out of the authority component:
+    //
+    //   box://MyBackups/Sub/   -> BoxBackend reads uri.HostAndPath as the remote path
+    //   dropbox://MyBackups/   -> Dropbox reads UrlDecode(uri.HostAndPath)
+    //   openstack://MyBucket   -> OpenStackStorage reads uri.Host as the container
+    //
+    // An RFC 3986 conformant parser lower-cases the authority, which destroys those
+    // names. #7097 replaced this class with System.Uri and the Box.com tests failed on
+    // all three platforms, plus CloudStack, with "The requested folder does not exist".
+    // Replacing the parser therefore also means either changing that url convention or
+    // taking the authority from the original string. TestHostAndPathKeepsTheFolderCase
+    // in UriUtilityTests covers this so it fails in the normal unit test job rather than
+    // only in the backend tests, which need credentials.
+
     /// <summary>
     /// Represents a relaxed parsing of a URL.
     /// The goal is to cover as many types of url's as possible,
