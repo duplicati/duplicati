@@ -1,13 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!-- The toast notification support requires the 10.0.17763 API surface;
-         .NET 10 itself requires Windows 10 or later, so this does not narrow
-         the set of supported systems -->
+    <!-- The toast notification support requires the 10.0.17763 API surface -->
     <TargetFramework>net10.0-windows10.0.17763.0</TargetFramework>
-    <!-- Allows compiling this Windows-targeted assembly on Linux/macOS build hosts;
-         it is only ever loaded at runtime on Windows -->
+    <!-- Allows compiling this Windows-targeted assembly on Linux/macOS build hosts -->
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <!-- Support older Windows versions -->
+    <SupportedOSPlatformVersion>7.0</SupportedOSPlatformVersion>
     <Copyright>Copyright © 2026 Team Duplicati, MIT license</Copyright>
     <RootNamespace>Duplicati.Library.WindowsModules</RootNamespace>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>

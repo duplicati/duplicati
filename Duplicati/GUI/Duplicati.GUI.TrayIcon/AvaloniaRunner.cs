@@ -51,7 +51,7 @@ namespace Duplicati.GUI.TrayIcon
         /// <summary>
         /// The native notification support, if available; created on first use
         /// </summary>
-        private Library.Interface.INativeNotifier notifier = null;
+        private Library.Interface.INativeNotifier? notifier = null;
         private IEnumerable<AvaloniaMenuItem> menuItems = Enumerable.Empty<AvaloniaMenuItem>();
         private int _disposed;
         private int _exitCalled;
@@ -248,6 +248,10 @@ namespace Duplicati.GUI.TrayIcon
             // notification is shown with platform code; currently only Windows
             // toast notifications are implemented
             if (!OperatingSystem.IsWindows())
+                return;
+
+            // The Windows toast notifications require Windows 10 or later
+            if (!OperatingSystem.IsWindowsVersionAtLeast(10, 0, 17763))
                 return;
 
             try
