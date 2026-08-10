@@ -152,8 +152,6 @@ public static class CommandLineArgumentMapper
                 yield return new CommandLineArgument(name, argumentType ?? CommandLineArgument.ArgumentType.Boolean, shortDescription, longDescription, defaultValue);
             else if (propType.IsEnum)
                 yield return new CommandLineArgument(name, argumentType ?? CommandLineArgument.ArgumentType.String, shortDescription, longDescription, defaultValue, null, customAttr?.ValueList ?? Enum.GetNames(propType));
-            else if (propType == typeof(RelaxedUri))
-                yield return new CommandLineArgument(name, argumentType ?? CommandLineArgument.ArgumentType.String, shortDescription, longDescription, defaultValue);
             else if (propType == typeof(Uri))
                 yield return new CommandLineArgument(name, argumentType ?? CommandLineArgument.ArgumentType.String, shortDescription, longDescription, defaultValue);
             else if (propType == typeof(TimeSpan))
@@ -202,8 +200,6 @@ public static class CommandLineArgumentMapper
                     p.SetValue(obj, bool.Parse(value));
                 else if (propType.IsEnum)
                     p.SetValue(obj, Enum.Parse(propType, value, true));
-                else if (propType == typeof(RelaxedUri))
-                    p.SetValue(obj, new RelaxedUri(value));
                 else if (propType == typeof(TimeSpan))
                     p.SetValue(obj, Timeparser.ParseTimeSpan(value));
             }

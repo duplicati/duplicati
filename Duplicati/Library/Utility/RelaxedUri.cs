@@ -341,16 +341,6 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
-        /// Creates a new instance with another host
-        /// </summary>
-        /// <returns>A new instance</returns>
-        /// <param name="host">The new hostname to use</param>
-        public RelaxedUri SetHost(string host)
-        {
-            return new RelaxedUri(Scheme, host, Path, Query, Username, Password, Port);
-        }
-
-        /// <summary>
         /// Creates a new instance with another path
         /// </summary>
         /// <returns>A new instance</returns>
@@ -379,16 +369,6 @@ namespace Duplicati.Library.Utility
         public RelaxedUri SetCredentials(string? username, string? password)
         {
             return new RelaxedUri(Scheme, Host, Path, Query, username, password, Port);
-        }
-
-        /// <summary>
-        /// Creates a new instance with another port
-        /// </summary>
-        /// <returns>A new instance</returns>
-        /// <param name="port">The new port to use</param>
-        public RelaxedUri SetPort(int port)
-        {
-            return new RelaxedUri(Scheme, Host, Path, Query, Username, Password, port);
         }
 
         /// <summary>

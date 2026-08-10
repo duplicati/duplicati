@@ -165,5 +165,160 @@ namespace Duplicati.UnitTest
             var encoded = new Library.Utility.RelaxedUri("file://c:\\%40folder\\");
             Assert.AreEqual(a.Path, encoded.Path);
         }
+
+        [Test]
+        [Category("UriUtility")]
+        public static void TestHostKeepsItsCase()
+        {
+            // System.Uri lowercases the host, this parser does not. #7097 replaced the
+            // parser with System.Uri and had to be closed because Box broke on exactly
+            // this difference, so it is pinned here for whoever tries again.
+            var uri = new Library.Utility.RelaxedUri("https://ExAmPle.COM/Some/Path");
+
+            Assert.AreEqual("ExAmPle.COM", uri.Host);
+            Assert.AreEqual("Some/Path", uri.Path);
+            Assert.IsTrue(uri.ToString().Contains("ExAmPle.COM"), "ToString must not change the host case");
+        }
+
+        [Test]
+        [Category("UriUtility")]
+        public static void TestSetSchemeOnlyChangesTheScheme()
+        {
+            var uri = new Library.Utility.RelaxedUri("http://user:pw@example.com:8080/a/b?x=1");
+            var changed = uri.SetScheme("https");
+
+            Assert.AreEqual("https", changed.Scheme);
+            Assert.AreEqual("http", uri.Scheme, "The original instance must not change");
+            Assert.AreEqual(uri.Host, changed.Host);
+            Assert.AreEqual(uri.Port, changed.Port);
+            Assert.AreEqual(uri.Path, changed.Path);
+            Assert.AreEqual(uri.Query, changed.Query);
+            Assert.AreEqual(uri.Username, changed.Username);
+            Assert.AreEqual(uri.Password, changed.Password);
+        }
+
+        [Test]
+        [Category("UriUtility")]
+        public static void TestSetPathOnlyChangesThePath()
+        {
+            var uri = new Library.Utility.RelaxedUri("http://user:pw@example.com:8080/a/b?x=1");
+            var changed = uri.SetPath("c/d");
+
+            Assert.AreEqual("c/d", changed.Path);
+            Assert.AreEqual("a/b", uri.Path, "The original instance must not change");
+            Assert.AreEqual(uri.Scheme, changed.Scheme);
+            Assert.AreEqual(uri.Host, changed.Host);
+            Assert.AreEqual(uri.Port, changed.Port);
+            Assert.AreEqual(uri.Query, changed.Query);
+            Assert.AreEqual(uri.Username, changed.Username);
+            Assert.AreEqual(uri.Password, changed.Password);
+
+            Assert.AreEqual("", uri.SetPath(null).Path, "A null path becomes an empty path");
+        }
+
+        [Test]
+        [Category("UriUtility")]
+        public static void TestSetQueryOnlyChangesTheQuery()
+        {
+            var uri = new Library.Utility.RelaxedUri("http://user:pw@example.com:8080/a/b?x=1");
+            var changed = uri.SetQuery("y=2");
+
+            Assert.AreEqual("y=2", changed.Query);
+            Assert.AreEqual("x=1", uri.Query, "The original instance must not change");
+            Assert.AreEqual(uri.Scheme, changed.Scheme);
+            Assert.AreEqual(uri.Host, changed.Host);
+            Assert.AreEqual(uri.Port, changed.Port);
+            Assert.AreEqual(uri.Path, changed.Path);
+            Assert.AreEqual(uri.Username, changed.Username);
+            Assert.AreEqual(uri.Password, changed.Password);
+
+            Assert.IsNull(uri.SetQuery(null).Query, "A null query stays null");
+        }
+
+        [Test]
+        [Category("UriUtility")]
+        public static void TestSetCredentialsOnlyChangesTheCredentials()
+        {
+            var uri = new Library.Utility.RelaxedUri("http://user:pw@example.com:8080/a/b?x=1");
+            var changed = uri.SetCredentials("other", "secret");
+
+            Assert.AreEqual("other", changed.Username);
+            Assert.AreEqual("secret", changed.Password);
+            Assert.AreEqual("user", uri.Username, "The original instance must not change");
+            Assert.AreEqual(uri.Scheme, changed.Scheme);
+            Assert.AreEqual(uri.Host, changed.Host);
+            Assert.AreEqual(uri.Port, changed.Port);
+            Assert.AreEqual(uri.Path, changed.Path);
+            Assert.AreEqual(uri.Query, changed.Query);
+
+            var cleared = uri.SetCredentials(null, null);
+            Assert.IsNull(cleared.Username);
+            Assert.IsNull(cleared.Password);
+        }
+
+        [Test]
+        [Category("UriUtility")]
+        public static void TestToStringRoundTripsThroughTheParser()
+        {
+            var uri = new Library.Utility.RelaxedUri("http://user:pw@example.com:8080/a/b?x=1");
+            var rebuilt = new Library.Utility.RelaxedUri(uri.ToString());
+
+            Assert.AreEqual(uri.Scheme, rebuilt.Scheme);
+            Assert.AreEqual(uri.Host, rebuilt.Host);
+            Assert.AreEqual(uri.Port, rebuilt.Port);
+            Assert.AreEqual(uri.Path, rebuilt.Path);
+            Assert.AreEqual(uri.Query, rebuilt.Query);
+            Assert.AreEqual(uri.Username, rebuilt.Username);
+            Assert.AreEqual(uri.Password, rebuilt.Password);
+        }
+
+        [Test]
+        [Category("UriUtility")]
+        public static void TestHostAndPath()
+        {
+            Assert.AreEqual("example.com/a/b", new Library.Utility.RelaxedUri("http://example.com/a/b").HostAndPath);
+            Assert.AreEqual("example.com", new Library.Utility.RelaxedUri("http://example.com").HostAndPath);
+            Assert.AreEqual("a/b", new Library.Utility.RelaxedUri("http", null, "a/b").HostAndPath);
+            Assert.AreEqual("", new Library.Utility.RelaxedUri("http", null, null).HostAndPath);
+        }
+
+        [Test]
+        [Category("UriUtility")]
+        public static void TestPathAndQuery()
+        {
+            Assert.AreEqual("a/b?x=1", new Library.Utility.RelaxedUri("http://example.com/a/b?x=1").PathAndQuery);
+            Assert.AreEqual("a/b", new Library.Utility.RelaxedUri("http://example.com/a/b").PathAndQuery);
+        }
+
+        [Test]
+        [Category("UriUtility")]
+        public static void TestQueryParameters()
+        {
+            var query = new Library.Utility.RelaxedUri("http://example.com/?a=b&c=d").QueryParameters;
+            Assert.AreEqual("b", query["a"]);
+            Assert.AreEqual("d", query["c"]);
+            Assert.AreEqual("b", query["A"], "Keys are matched without regard to case");
+
+            var decoded = new Library.Utility.RelaxedUri("http://example.com/?a=x%20y&b=p+q").QueryParameters;
+            Assert.AreEqual("x y", decoded["a"], "%20 is decoded");
+            Assert.AreEqual("p q", decoded["b"], "+ is decoded as a space");
+
+            var repeated = new Library.Utility.RelaxedUri("http://example.com/?a=1&a=2").QueryParameters;
+            Assert.AreEqual("1,2", repeated["a"], "A repeated key keeps both values");
+
+            Assert.AreEqual(0, new Library.Utility.RelaxedUri("http://example.com/").QueryParameters.Count,
+                "A url without a query has no parameters");
+        }
+
+        [Test]
+        [Category("UriUtility")]
+        public static void TestRequireHost()
+        {
+            Assert.DoesNotThrow(() => new Library.Utility.RelaxedUri("http://example.com/a").RequireHost());
+
+            var withoutHost = new Library.Utility.RelaxedUri("http", null, "a", null, "user", "secret");
+            var ex = Assert.Throws<System.ArgumentException>(() => withoutHost.RequireHost());
+            Assert.IsFalse(ex!.Message.Contains("secret"), "The message must not carry the password");
+        }
     }
 }
