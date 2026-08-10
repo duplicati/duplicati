@@ -705,6 +705,20 @@ namespace Duplicati.Library.Main.Database.Local
                     ", token)
                         .ConfigureAwait(false);
 
+                    // Both of these are joined on when the missing blocks are collected, and
+                    // without them SQLite builds a transient index of its own for each join.
+                    await cmd.ExecuteNonQueryAsync($@"
+                        CREATE INDEX ""{m_tempfiletable}_BlocksetID""
+                        ON ""{m_tempfiletable}"" (""BlocksetID"")
+                    ", token)
+                        .ConfigureAwait(false);
+
+                    await cmd.ExecuteNonQueryAsync($@"
+                        CREATE INDEX ""{m_tempfiletable}_MetadataID""
+                        ON ""{m_tempfiletable}"" (""MetadataID"")
+                    ", token)
+                        .ConfigureAwait(false);
+
                     cmd.SetCommandAndParameters($@"
                         SELECT
                             COUNT(DISTINCT ""{m_tempfiletable}"".""Path""),
