@@ -51,7 +51,11 @@ namespace Duplicati.GUI.TrayIcon
         /// <summary>
         /// The native notification support, if available; created on first use
         /// </summary>
-        private Library.Interface.INativeNotifier? notifier = null;
+        private Library.Interface.INativeNotifier? notifierInstance = null;
+        /// <summary>
+        /// Only attempt to load the notifier once
+        /// </summary>
+        private bool hasAttemptedNotifierLoad = false;
         private IEnumerable<AvaloniaMenuItem> menuItems = Enumerable.Empty<AvaloniaMenuItem>();
         private int _disposed;
         private int _exitCalled;
@@ -242,29 +246,45 @@ namespace Duplicati.GUI.TrayIcon
             return new AvaloniaMenuItem(this, text, icon, callback, subitems);
         }
 
-        public override void NotifyUser(string title, string message, NotificationType type)
+        private Library.Interface.INativeNotifier? TryLoadNotifier()
         {
+            if (hasAttemptedNotifierLoad)
+                return notifierInstance;
+
+            // Only try to load the notifier once
+            hasAttemptedNotifierLoad = true;
+
             // Avalonia's TrayIcon has no notification support of its own, so the
             // notification is shown with platform code; currently only Windows
             // toast notifications are implemented
-            if (!OperatingSystem.IsWindows())
-                return;
-
-            // The Windows toast notifications require Windows 10 or later
-            if (!OperatingSystem.IsWindowsVersionAtLeast(10, 0, 17763))
-                return;
-
-            try
+            // The Toast implementation requires Windows 10 build 17763 or later
+            if (OperatingSystem.IsWindows() && OperatingSystem.IsWindowsVersionAtLeast(10, 0, 17763))
             {
-                if (this.notifier == null)
+                try
                 {
-                    this.notifier = Library.Snapshots.Windows.WindowsShimLoader.NewNativeNotifier();
+                    this.notifierInstance = Library.Snapshots.Windows.WindowsShimLoader.NewNativeNotifier();
                     // Clicking the notification opens the status window, same as
                     // clicking the tray icon. ShowStatusWindow only performs an HTTP
                     // request and launches the browser, so it is safe to call from
                     // the activation callback's COM thread.
-                    this.notifier.NotificationClicked = () => ShowStatusWindow();
+                    this.notifierInstance.NotificationClicked = () => ShowStatusWindow();
                 }
+                catch (Exception ex)
+                {
+                    Log.WriteWarningMessage(LOGTAG, "NotificationLoadFailed", ex, "Failed to load notification implementation");                    
+                }
+            }
+
+            return notifierInstance;
+        }
+
+        public override void NotifyUser(string title, string message, NotificationType type)
+        {
+            try
+            {
+                var notifier = TryLoadNotifier();
+                if (notifier == null)
+                    return;
 
                 var level = type switch
                 {
@@ -273,7 +293,7 @@ namespace Duplicati.GUI.TrayIcon
                     _ => Library.Interface.NativeNotificationLevel.Information,
                 };
 
-                this.notifier.Notify(level, title, message);
+                notifier.Notify(level, title, message);
             }
             catch (Exception ex)
             {
