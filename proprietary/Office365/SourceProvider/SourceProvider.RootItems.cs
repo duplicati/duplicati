@@ -14,10 +14,16 @@ partial class SourceProvider
             var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
             var select = GraphSelectBuilder.BuildSelect<GraphUser>();
 
+            // Order by displayName to give the paged user feed a stable ordering, reducing
+            // the chance that users are skipped or returned on more than one page.
+            // displayName is one of the few user properties Graph can sort on without
+            // advanced query parameters. The source entry still de-duplicates by user id
+            // as a safety net.
             var url =
                 $"{baseUrl}/v1.0/users" +
                 $"?$select={Uri.EscapeDataString(select)}" +
-                   $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
+                $"&$orderby={Uri.EscapeDataString("displayName")}" +
+                $"&$top={APIHelper.BIG_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphUser>(url, ct);
         }
@@ -26,10 +32,17 @@ partial class SourceProvider
         {
             var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
             var select = GraphSelectBuilder.BuildSelect<GraphGroup>();
+
+            // Order by displayName to give the paged group feed a stable ordering, reducing
+            // the chance that groups are skipped or returned on more than one page.
+            // displayName is the only group property Graph can sort on without advanced
+            // query parameters. The source entry still de-duplicates by group id as a
+            // safety net.
             var url =
                 $"{baseUrl}/v1.0/groups" +
                 $"?$select={Uri.EscapeDataString(select)}" +
-                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
+                $"&$orderby={Uri.EscapeDataString("displayName")}" +
+                $"&$top={APIHelper.BIG_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphGroup>(url, ct);
         }
@@ -44,7 +57,7 @@ partial class SourceProvider
                 $"{baseUrl}/v1.0/groups" +
                 $"?$filter={Uri.EscapeDataString(filter)}" +
                 $"&$select={Uri.EscapeDataString(select)}" +
-                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.BIG_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphGroup>(url, ct);
         }
@@ -58,9 +71,11 @@ partial class SourceProvider
             var url =
                 $"{baseUrl}/v1.0/sites/getAllSites" +
                 $"?$select={Uri.EscapeDataString(select)}" +
-                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.BIG_PAGE_SIZE}";
 
-            return provider.GetAllGraphItemsAsync<GraphSite>(url, ct);
+            // getAllSites does not support $orderby, so the alphabetical ordering that is
+            // presented to the user has to be applied on the client.
+            return APIHelper.OrderSitesByNameAsync(provider.GetAllGraphItemsAsync<GraphSite>(url, ct), ct);
         }
     }
 }
