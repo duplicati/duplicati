@@ -32,6 +32,9 @@ using System.Net.Http;
 using System.Threading;
 using Duplicati.Library.Common.IO;
 using JsonSignature;
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("Duplicati.UnitTest")]
 
 namespace Duplicati.Library.AutoUpdater
 {
@@ -322,6 +325,36 @@ namespace Duplicati.Library.AutoUpdater
         }
 
         /// <summary>
+        /// Builds the list of urls to try when downloading an update package.
+        /// Each alternate url is pointed at the package name taken from the first package
+        /// url, and the alternates are tried first, in the order they were configured.
+        /// </summary>
+        /// <param name="packageUrls">The urls listed in the update package.</param>
+        /// <param name="alternateUrls">The configured alternate urls, empty if none.</param>
+        /// <returns>The urls to try, in order.</returns>
+        internal static List<string> BuildDownloadUrls(IEnumerable<string> packageUrls, IEnumerable<string> alternateUrls)
+        {
+            var updates = packageUrls.ToList();
+            var alternates = alternateUrls.ToArray();
+            if (alternates.Length == 0)
+                return updates;
+
+            var packagepath = new Uri(updates[0]).AbsolutePath.TrimStart('/');
+            var packagename = packagepath.Split('/').Last();
+
+            foreach (var alt_url in alternates.Reverse())
+            {
+                var alt_uri = new Uri(alt_url);
+                var path_components = alt_uri.AbsolutePath.TrimStart('/').Split('/');
+                var path = string.Join("/", path_components.Take(path_components.Count() - 1).Union(new string[] { packagename }));
+
+                updates.Insert(0, new UriBuilder(alt_uri) { Path = path }.Uri.ToString());
+            }
+
+            return updates;
+        }
+
+        /// <summary>
         /// Downloads the update package
         /// </summary>
         /// <param name="version">The version to download</param>
@@ -331,25 +364,11 @@ namespace Duplicati.Library.AutoUpdater
         /// <returns>True if the download was successful, otherwise false</returns>
         public static bool DownloadUpdate(UpdateInfo version, PackageEntry package, string targetPath, Action<double>? progress = null)
         {
-            var updates = package.RemoteUrls.ToList();
-
             // If alternate update URLs are specified,
             // we look for packages there as well
-            if (AutoUpdateSettings.UsesAlternateURLs)
-            {
-                var packagepath = new Library.Utility.RelaxedUri(updates[0]).Path;
-                var packagename = packagepath.Split('/').Last();
-
-                foreach (var alt_url in AutoUpdateSettings.URLs.Reverse())
-                {
-                    var alt_uri = new Library.Utility.RelaxedUri(alt_url);
-                    var path_components = alt_uri.Path.Split('/');
-                    var path = string.Join("/", path_components.Take(path_components.Count() - 1).Union(new string[] { packagename }));
-
-                    var new_path = alt_uri.SetPath(path);
-                    updates.Insert(0, new_path.ToString());
-                }
-            }
+            var updates = BuildDownloadUrls(
+                package.RemoteUrls,
+                AutoUpdateSettings.UsesAlternateURLs ? AutoUpdateSettings.URLs : []);
 
             using (var tempfilename = new Library.Utility.TempFile())
             {
