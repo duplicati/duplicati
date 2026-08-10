@@ -213,7 +213,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                     {
                                         try
                                         {
-                                            await CopyOldTargetBlocksToNewTargetAsync(file, new_file, restoreDestination, buffer, verified_blocks, results.TaskControl.ProgressToken).ConfigureAwait(false);
+                                            await CopyOldTargetBlocksToNewTargetAsync(file, new_file, restoreDestination, buffer, options.Blocksize, verified_blocks, results.TaskControl.ProgressToken).ConfigureAwait(false);
                                         }
                                         catch (Exception ex)
                                         {
@@ -590,19 +590,24 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// </summary>
         /// <param name="old_file">The old target file.</param>
         /// <param name="new_file">The new target file.</param>
-        /// <param name="buffer">The buffer used for copying.</param>
         /// <param name="restoreDestination">The restore destination provider.</param>
+        /// <param name="buffer">The buffer used for copying (must be at least <paramref name="blocksize"/> bytes).</param>
+        /// <param name="blocksize">The fixed block size to used for calculating the byte offsets.</param>
         /// <param name="verified_blocks">The blocks in the old file that were verified.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
-        private static async Task CopyOldTargetBlocksToNewTargetAsync(FileRequest old_file, FileRequest new_file, IRestoreDestinationProvider restoreDestination, byte[] buffer, List<BlockRequest> verified_blocks, CancellationToken cancellationToken)
+        private static async Task CopyOldTargetBlocksToNewTargetAsync(FileRequest old_file, FileRequest new_file, IRestoreDestinationProvider restoreDestination, byte[] buffer, long blocksize, List<BlockRequest> verified_blocks, CancellationToken cancellationToken)
         {
             using var fs_old = await restoreDestination.OpenRead(old_file.TargetPath, cancellationToken).ConfigureAwait(false);
             using var fs_new = await restoreDestination.OpenWrite(new_file.TargetPath, cancellationToken).ConfigureAwait(false);
 
             foreach (var block in verified_blocks)
             {
-                fs_old.Seek(block.BlockOffset * block.BlockSize, SeekOrigin.Begin);
-                fs_new.Seek(block.BlockOffset * block.BlockSize, SeekOrigin.Begin);
+                // BlockOffset is the block index in the file, so the byte offset
+                // is the index multiplied by the fixed block size.
+                // Note that block.BlockSize is the size of the actual block, not the
+                // fixed block size.
+                fs_old.Seek(block.BlockOffset * blocksize, SeekOrigin.Begin);
+                fs_new.Seek(block.BlockOffset * blocksize, SeekOrigin.Begin);
 
                 var length = await Library.Utility.Utility.ForceStreamReadAsync(fs_old, buffer, buffer.Length, cancellationToken).ConfigureAwait(false);
                 await fs_new.WriteAsync(buffer, 0, length, cancellationToken).ConfigureAwait(false);
