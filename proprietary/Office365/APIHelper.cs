@@ -23,6 +23,23 @@ internal class APIHelper : IDisposable
     private static readonly string LOGTAG = Log.LogTagFromType<APIHelper>();
 
     /// <summary>
+    /// The options used when parsing Microsoft Graph responses. Graph is not consistent with
+    /// property casing across endpoints (the site collection hostname is documented as
+    /// <c>hostname</c> for <c>/sites</c> but as <c>hostName</c> for <c>getAllSites</c>), and
+    /// silently binding nothing at all is worse than being lenient, so parsing is
+    /// case-insensitive.
+    /// </summary>
+    internal static readonly JsonSerializerOptions GraphJsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
+    /// <summary>
+    /// The default page size for API requests that allow big pages
+    /// </summary>
+    internal const int BIG_PAGE_SIZE = 500;
+
+    /// <summary>
     /// The default page size for API requests
     /// </summary>
     internal const int GENERAL_PAGE_SIZE = 100;
@@ -225,7 +242,7 @@ internal class APIHelper : IDisposable
         var content = await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            return JsonSerializer.Deserialize<T>(content) ?? throw new JsonException("Deserialized object is null");
+            return JsonSerializer.Deserialize<T>(content, GraphJsonOptions) ?? throw new JsonException("Deserialized object is null");
         }
         catch (JsonException ex)
         {
@@ -426,6 +443,54 @@ internal class APIHelper : IDisposable
                 yield return item;
             next = page.NextLink;
         }
+    }
+
+    /// <summary>
+    /// Re-orders a site feed alphabetically by name.
+    /// </summary>
+    /// <remarks>
+    /// Microsoft Graph cannot sort sites: neither the tenant-wide <c>getAllSites</c> endpoint
+    /// nor the subsites collection documents support for <c>$orderby</c>, and the site resource
+    /// has no sortable key. The ordering therefore has to be applied on the client, which means
+    /// the full feed must be buffered before the first item can be emitted. That is acceptable
+    /// here because the site collection is orders of magnitude smaller than the user collection,
+    /// and buffering has the added benefit of making the offset-based paging in the listing API
+    /// deterministic across requests.
+    /// </remarks>
+    /// <param name="sites">The unordered site feed</param>
+    /// <param name="ct">The cancellation token</param>
+    /// <returns>An asynchronous enumerable of sites, ordered by name</returns>
+    internal static async IAsyncEnumerable<GraphSite> OrderSitesByNameAsync(IAsyncEnumerable<GraphSite> sites, [EnumeratorCancellation] CancellationToken ct)
+    {
+        var buffer = new List<GraphSite>();
+        await foreach (var site in sites.ConfigureAwait(false))
+            buffer.Add(site);
+
+        // The id is the tie-breaker: display names are neither unique nor immutable,
+        // so the name alone is not a deterministic sort key.
+        foreach (var site in buffer
+            .OrderBy(GetSiteSortName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(x => x.Id, StringComparer.Ordinal))
+        {
+            ct.ThrowIfCancellationRequested();
+            yield return site;
+        }
+    }
+
+    /// <summary>
+    /// Gets the name to sort a site by. Sites returned from <c>getAllSites</c> frequently
+    /// carry only <c>name</c> and no <c>displayName</c>, so both are considered.
+    /// </summary>
+    /// <param name="site">The site to get the sort name for</param>
+    /// <returns>The name to sort by</returns>
+    private static string GetSiteSortName(GraphSite site)
+    {
+        if (!string.IsNullOrWhiteSpace(site.DisplayName))
+            return site.DisplayName;
+        if (!string.IsNullOrWhiteSpace(site.Name))
+            return site.Name;
+
+        return site.WebUrl ?? site.Id;
     }
 
     /// <summary>
