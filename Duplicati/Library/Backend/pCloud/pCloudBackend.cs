@@ -25,7 +25,6 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using Duplicati.Library.Backend.pCloud;
 using Duplicati.Library.Utility;
-using Uri = System.Uri;
 using System.Runtime.CompilerServices;
 using Duplicati.Library.Utility.Options;
 

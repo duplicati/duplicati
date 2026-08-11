@@ -21,12 +21,10 @@
 
 using System.Text.Json;
 using Duplicati.Library.AutoUpdater;
-using Duplicati.Library.DynamicLoader;
 using Duplicati.Library.Encryption;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using Duplicati.Library.Utility;
-using Uri = System.Uri;
 using Utility = Duplicati.Library.Utility.Utility;
 
 namespace Duplicati.CommandLine.ServerUtil;
