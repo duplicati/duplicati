@@ -26,6 +26,8 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
 
+[assembly: InternalsVisibleTo("Duplicati.UnitTest")]
+
 namespace Duplicati.Library.Backend
 {
     public class Idrivee2Backend : IStreamingBackend, IFolderEnabledBackend, ILockingBackend
@@ -105,6 +107,24 @@ namespace Duplicati.Library.Backend
                 throw new UserInformationException(Strings.Idrivee2Backend.NoKeySecretError, "Idrivee2NoKeySecret");
 
             _options = options;
+        }
+
+        /// <summary>
+        /// Constructor for testing, using a supplied client instead of connecting.
+        /// </summary>
+        /// <param name="url">The backend url.</param>
+        /// <param name="options">The backend options.</param>
+        /// <param name="client">The client to use.</param>
+        /// <remarks>
+        /// The argument count differs from the public constructor on purpose: the backend
+        /// loader instantiates backends with Activator.CreateInstance(type, url, options)
+        /// and does not bind optional parameters, so an extra optional argument on the
+        /// public constructor would stop it from being found.
+        /// </remarks>
+        internal Idrivee2Backend(string url, Dictionary<string, string?> options, IS3Client client)
+            : this(url, options)
+        {
+            _s3Client = client;
         }
 
         /// <inheritdoc />
@@ -277,8 +297,15 @@ namespace Duplicati.Library.Backend
         }
 
         /// <inheritdoc/>
-        public Task<IFileEntry?> GetEntryAsync(string path, CancellationToken cancellationToken)
-            => Task.FromResult<IFileEntry?>(null);
+        public async Task<IFileEntry?> GetEntryAsync(string path, CancellationToken cancellationToken)
+        {
+            // An empty path is the root of the bucket, which needs no lookup
+            if (string.IsNullOrWhiteSpace(path))
+                return new FileEntry(string.Empty) { IsFolder = true };
+
+            var con = await GetConnection(cancellationToken).ConfigureAwait(false);
+            return await con.GetFileEntryAsync(_bucket, GetFullKey(path), cancellationToken).ConfigureAwait(false);
+        }
 
         public async Task RenameAsync(string oldname, string newname, CancellationToken cancellationToken)
         {
