@@ -631,6 +631,11 @@ namespace Duplicati.Library.Main.Operation
             // If there is no filter, we set an empty filter to simplify the code
             m_filter = filter ?? new Library.Utility.FilterExpression();
 
+            // Warn about a likely misconfigured filter that excludes everything but has no includes
+            if (Library.Utility.FilterExpression.IsExcludeAllBeforeIncludes(m_filter))
+                Logging.Log.WriteWarningMessage(LOGTAG, "FilterExcludesAll", null,
+                    "The filter has an \"exclude all\" rule that appears before any include rules. This is likely a misconfiguration; no files will be backed up. Please check the filter settings.");
+
             Task parallelScanner = null;
             try
             {
@@ -751,6 +756,12 @@ namespace Duplicati.Library.Main.Operation
                     // Send the actual filelist
                     var uploadedNewFileset = await Backup.UploadRealFilelist.RunAsync(m_result, db, backendManager, m_options, filesetvolume, filesetid, m_result.TaskControl, lastTempVolumeIncomplete)
                         .ConfigureAwait(false);
+
+                    // Warn if the backup examined only folders and/or symlinks but no actual files,
+                    // as this is likely a misconfiguration (e.g. wrong source path or over-aggressive filter)
+                    if (uploadedNewFileset && !m_result.PartialBackup && m_result.ExaminedFiles == 0)
+                        Logging.Log.WriteWarningMessage(LOGTAG, "NoFilesInBackup", null,
+                            "The backup completed but no files were processed. This is likely a misconfiguration; please check the source paths and filter settings.");
 
                     // Wait for upload completion
                     m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_WaitForUpload);

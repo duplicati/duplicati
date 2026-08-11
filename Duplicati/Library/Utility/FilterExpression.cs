@@ -590,6 +590,82 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
+        /// Checks if the filter has an "exclude everything" rule (e.g. <c>*</c>) that
+        /// appears before any include rules in the evaluation order, which would cause
+        /// all files to be excluded regardless of later includes. This is typically a
+        /// misconfiguration.
+        /// </summary>
+        /// <param name="filter">The filter to examine</param>
+        /// <returns>
+        /// <c>true</c> if an exclude-all rule is encountered before any include rule
+        /// in the filter's evaluation order; <c>false</c> otherwise.
+        /// </returns>
+        public static bool IsExcludeAllBeforeIncludes(IFilter? filter)
+        {
+            return CheckExcludeAllBeforeIncludes(filter);
+        }
+
+        /// <summary>
+        /// Recursively walks the filter tree in evaluation order (First before Second
+        /// in <see cref="JoinedFilterExpression"/>). Returns <c>true</c> if an
+        /// exclude-all expression is found before any include expression.
+        /// </summary>
+        private static bool CheckExcludeAllBeforeIncludes(IFilter? filter)
+        {
+            if (filter == null || filter.Empty)
+                return false;
+
+            if (filter is FilterExpression expression)
+            {
+                if (expression.Result)
+                    return false; // Include expression — not misconfigured from here
+                else
+                    return IsExcludeAllExpression(expression); // Exclude expression — check if it matches everything
+            }
+
+            if (filter is JoinedFilterExpression joined)
+            {
+                // First is evaluated before Second (short-circuit OR).
+                // If First is an exclude-all, it swallows everything before Second can match.
+                if (CheckExcludeAllBeforeIncludes(joined.First))
+                    return true;
+
+                // If First contains includes, they are evaluated first and the
+                // exclude-all in Second is a valid default-deny, not a misconfiguration.
+                AnalyzeFilters(joined.First, out var firstHasIncludes, out _);
+                if (firstHasIncludes)
+                    return false;
+
+                // First has no includes, so check Second
+                return CheckExcludeAllBeforeIncludes(joined.Second);
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Checks if a <see cref="FilterExpression"/> with <c>Result = false</c> (exclude)
+        /// contains an entry that matches every path (e.g. <c>*</c>).
+        /// </summary>
+        private static bool IsExcludeAllExpression(FilterExpression expression)
+        {
+            if (expression.Type == FilterType.Empty || expression.m_filters == null)
+                return false;
+
+            foreach (var entry in expression.m_filters)
+            {
+                // A "*" wildcard matches every path
+                if (entry.Type == FilterType.Wildcard && entry.Filter == "*")
+                    return true;
+                // A regex that matches everything also excludes all
+                if (entry.Type == FilterType.Regexp && entry.Filter == "^(.*)$")
+                    return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// Utility function to match a filter with a default fall-through value
         /// </summary>
         /// <param name="filter">The filter to evaluate</param>
