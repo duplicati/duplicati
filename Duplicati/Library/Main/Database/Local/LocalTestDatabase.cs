@@ -242,7 +242,7 @@ namespace Duplicati.Library.Main.Database.Local
                         RemoteVolumeState.Uploaded.ToString()
                 ]);
 
-                await using (var rd = await cmd.ExecuteReaderAsync(token))
+                await using (var rd = await cmd.ExecuteReaderAsync(writeLog: false, token))
                     while (await rd.ReadAsync(token))
                         yield return new RemoteVolume(rd);
 
@@ -279,7 +279,7 @@ namespace Duplicati.Library.Main.Database.Local
                     .SetParameterValue("@State1", RemoteVolumeState.Uploaded.ToString())
                     .SetParameterValue("@State2", RemoteVolumeState.Verified.ToString())
                     .SetParameterValues(tp.Item2)
-                    .ExecuteReaderAsync(token))
+                    .ExecuteReaderAsync(writeLog: false, token))
                     while (await rd.ReadAsync(token))
                         files.Add(new RemoteVolume(rd));
 
@@ -312,7 +312,7 @@ namespace Duplicati.Library.Main.Database.Local
                 .SetParameterValue("@Type", RemoteVolumeType.Index.ToString())
                 .ExpandInClauseParameterMssqlite("@States", [RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString()]);
 
-            await using (var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false))
+            await using (var rd = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false))
                 while (await rd.ReadAsync(token).ConfigureAwait(false))
                     files.Add(new RemoteVolume(rd));
 
@@ -341,7 +341,7 @@ namespace Duplicati.Library.Main.Database.Local
                 .SetParameterValue("@Type", RemoteVolumeType.Blocks.ToString())
                 .ExpandInClauseParameterMssqlite("@States", [RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString()]);
 
-            await using (var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false))
+            await using (var rd = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false))
                 while (await rd.ReadAsync(token).ConfigureAwait(false))
                     files.Add(new RemoteVolume(rd));
 
@@ -655,7 +655,7 @@ namespace Duplicati.Library.Main.Database.Local
                         .SetParameterValue("@TypeMissing", (int)Interface.TestEntryStatus.Missing)
                         .SetParameterValue("@TypeModified", (int)Interface.TestEntryStatus.Modified);
 
-                    await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+                    await using var rd = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false);
                     while (await rd.ReadAsync(token).ConfigureAwait(false))
                         yield return new KeyValuePair<Interface.TestEntryStatus, string>(
                             (Interface.TestEntryStatus)rd.ConvertValueToInt64(0),
@@ -853,7 +853,7 @@ namespace Duplicati.Library.Main.Database.Local
                         .SetParameterValue("@TypeMissing", (int)Interface.TestEntryStatus.Missing)
                         .SetParameterValue("@TypeModified", (int)Interface.TestEntryStatus.Modified);
 
-                    await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+                    await using var rd = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false);
                     while (await rd.ReadAsync(token).ConfigureAwait(false))
                         yield return new KeyValuePair<Interface.TestEntryStatus, string>((Interface.TestEntryStatus)rd.ConvertValueToInt64(0), rd.ConvertValueToString(1) ?? "");
 
@@ -1096,7 +1096,7 @@ namespace Duplicati.Library.Main.Database.Local
                         .SetParameterValue("@TypeMissing", (int)Library.Interface.TestEntryStatus.Missing)
                         .SetParameterValue("@TypeModified", (int)Library.Interface.TestEntryStatus.Modified);
 
-                    await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+                    await using var rd = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false);
                     while (await rd.ReadAsync(token).ConfigureAwait(false))
                         yield return new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>((Duplicati.Library.Interface.TestEntryStatus)rd.ConvertValueToInt64(0), rd.ConvertValueToString(1) ?? "");
 
@@ -1313,7 +1313,7 @@ namespace Duplicati.Library.Main.Database.Local
                         .SetParameterValue("@TypeMissing", (int)Library.Interface.TestEntryStatus.Missing)
                         .SetParameterValue("@TypeModified", (int)Library.Interface.TestEntryStatus.Modified);
 
-                    await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+                    await using var rd = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false);
                     while (await rd.ReadAsync(token).ConfigureAwait(false))
                         yield return new KeyValuePair<Library.Interface.TestEntryStatus, string>(
                             (Library.Interface.TestEntryStatus)rd.ConvertValueToInt64(0),

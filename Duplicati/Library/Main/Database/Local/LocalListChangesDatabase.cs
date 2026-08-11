@@ -452,7 +452,7 @@ namespace Duplicati.Library.Main.Database.Local
                         foreach (var s in p)
                             await cmd
                                 .SetParameterValue("@Path", s)
-                                .ExecuteNonQueryAsync(token) // Not logging as we log the total time
+                                .ExecuteNonQueryAsync(writeLog: false, token) // Not logging as we log the total time
                                 .ConfigureAwait(false);
 
                     string whereClause;
@@ -541,7 +541,7 @@ namespace Duplicati.Library.Main.Database.Local
                     await cmd2.PrepareAsync(token).ConfigureAwait(false);
 
                     await using var rd = await cmd
-                        .ExecuteReaderAsync(token)
+                        .ExecuteReaderAsync(writeLog: false, token)
                         .ConfigureAwait(false);
 
                     using (new Logging.Timer(LOGTAG, "AddFromDb", $"Evaluating paths and updating table"))
@@ -557,7 +557,7 @@ namespace Duplicati.Library.Main.Database.Local
                                     .SetParameterValue("@MetaHash", values[2])
                                     .SetParameterValue("@Size", values[3])
                                     .SetParameterValue("@Type", values[4])
-                                    .ExecuteNonQueryAsync(token) // Not logging as we log the total time
+                                    .ExecuteNonQueryAsync(writeLog: false, token) // Not logging as we log the total time
                                     .ConfigureAwait(false);
                             }
                         }
@@ -783,7 +783,7 @@ namespace Duplicati.Library.Main.Database.Local
                     {
                         cmd.SetCommandAndParameters(sql);
                         foreach (var type in elTypes)
-                            await foreach (var s in ReaderToStringListAsync(await cmd.SetParameterValue("@Type", (int)type).ExecuteReaderAsync(token).ConfigureAwait(false), token).ConfigureAwait(false))
+                            await foreach (var s in ReaderToStringListAsync(await cmd.SetParameterValue("@Type", (int)type).ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false), token).ConfigureAwait(false))
                                 yield return new Tuple<Interface.ListChangesChangeType, Interface.ListChangesElementType, string>(changeType, type, s ?? "");
                     }
 

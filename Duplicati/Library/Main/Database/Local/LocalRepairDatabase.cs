@@ -106,7 +106,7 @@ namespace Duplicati.Library.Main.Database.Local
                 .SetTransaction(m_rtr)
                 .SetParameterValue("@Name", filelist);
 
-            var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+            var rd = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false);
 
             if (!await rd.ReadAsync(token).ConfigureAwait(false))
                 throw new Exception($"No such remote file: {filelist}");
@@ -195,7 +195,7 @@ namespace Duplicati.Library.Main.Database.Local
             ")
                 .SetTransaction(m_rtr);
 
-            await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+            await using var rd = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false);
             while (await rd.ReadAsync(token).ConfigureAwait(false))
             {
                 yield return new KeyValuePair<long, DateTime>(
@@ -965,7 +965,7 @@ namespace Duplicati.Library.Main.Database.Local
                             .ConfigureAwait(false);
 
                         await cmd.SetTransaction(m_rtr)
-                            .ExecuteNonQueryAsync()
+                            .ExecuteNonQueryAsync(writeLog: false, default)
                             .ConfigureAwait(false);
                     }
                 }

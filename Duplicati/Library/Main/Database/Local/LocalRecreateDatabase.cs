@@ -955,7 +955,7 @@ namespace Duplicati.Library.Main.Database.Local
                                 await m_insertBlocklistHashCommand
                                     .SetParameterValue("@Index", index++)
                                     .SetParameterValue("@Hash", hash)
-                                    .ExecuteNonQueryAsync(token) // Not logging as we log the total time
+                                    .ExecuteNonQueryAsync(writeLog: false, token) // Not logging as we log the total time
                                     .ConfigureAwait(false);
                             }
                         }
@@ -1113,7 +1113,7 @@ namespace Duplicati.Library.Main.Database.Local
                 .SetTransaction(m_rtr)
                 .SetParameterValue("@VolumeId", volumeid);
 
-            await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+            await using var rd = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false);
             while (await rd.ReadAsync(token).ConfigureAwait(false))
                 yield return rd.ConvertValueToString(0) ?? "";
         }
@@ -1233,7 +1233,7 @@ namespace Duplicati.Library.Main.Database.Local
             }
 
             await using var rd = await cmd
-                .ExecuteReaderAsync(token)
+                .ExecuteReaderAsync(writeLog: false, token)
                 .ConfigureAwait(false);
 
             while (await rd.ReadAsync(token).ConfigureAwait(false))
@@ -1535,7 +1535,7 @@ namespace Duplicati.Library.Main.Database.Local
                 ";
             cmd.Parameters.AddWithValue("@VolumeType", RemoteVolumeType.Blocks.ToString());
 
-            await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+            await using var rd = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false);
             while (await rd.ReadAsync(token).ConfigureAwait(false))
             {
                 yield return new MetadataBlockInfo(

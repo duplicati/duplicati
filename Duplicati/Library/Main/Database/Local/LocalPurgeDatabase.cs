@@ -111,7 +111,7 @@ namespace Duplicati.Library.Main.Database.Local
                 ")
                     .SetParameterValue("@FilesetId", id);
 
-            await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+            await using var rd = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false);
             if (!await rd.ReadAsync(token).ConfigureAwait(false))
                 throw new Exception($"No remote volume found for fileset with id {id}");
             else
@@ -134,7 +134,7 @@ namespace Duplicati.Library.Main.Database.Local
                     FROM ""FilesetEntry""
                 )
             ");
-            await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+            await using var rd = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false);
             if (await rd.ReadAsync(token).ConfigureAwait(false))
                 return rd.ConvertValueToInt64(0, 0);
             else
@@ -308,7 +308,7 @@ namespace Duplicati.Library.Main.Database.Local
                     using (new Logging.Timer(LOGTAG, "ApplyFilter", "Inserting paths into table"))
                         foreach (var s in p)
                             await cmd.SetParameterValue("@Path", s)
-                                .ExecuteNonQueryAsync(token) // Not logging as we log the total time
+                                .ExecuteNonQueryAsync(writeLog: false, token) // Not logging as we log the total time
                                 .ConfigureAwait(false);
 
                     await cmd.SetCommandAndParameters($@"
@@ -358,7 +358,7 @@ namespace Duplicati.Library.Main.Database.Local
 
                     using (new Logging.Timer(LOGTAG, "ApplyFilter", "Iterating files with filter"))
                     {
-                        await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+                        await using var rd = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false);
                         while (await rd.ReadAsync(token).ConfigureAwait(false))
                         {
                             rd.GetValues(values);
@@ -367,7 +367,7 @@ namespace Duplicati.Library.Main.Database.Local
                             {
                                 await cmd2
                                     .SetParameterValue("@FileId", values[1])
-                                    .ExecuteNonQueryAsync(token) // Not logging as we log the total time
+                                    .ExecuteNonQueryAsync(writeLog: false, token) // Not logging as we log the total time
                                     .ConfigureAwait(false);
                             }
                         }

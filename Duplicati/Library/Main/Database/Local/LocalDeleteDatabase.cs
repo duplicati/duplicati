@@ -285,7 +285,7 @@ namespace Duplicati.Library.Main.Database.Local
                 .SetParameterValue("@Type", RemoteVolumeType.Files.ToString())
                 .SetParameterValue("@State", RemoteVolumeState.Deleting.ToString());
 
-            await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+            await using var rd = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false);
             while (await rd.ReadAsync(token).ConfigureAwait(false))
                 yield return new KeyValuePair<string, long>(
                     rd.ConvertValueToString(0) ?? "",
@@ -315,7 +315,7 @@ namespace Duplicati.Library.Main.Database.Local
                     ORDER BY ""Timestamp"" DESC
                 ");
 
-            await using var reader = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+            await using var reader = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false);
             int version = 0;
             while (await reader.ReadAsync(token).ConfigureAwait(false))
             {
@@ -556,7 +556,7 @@ namespace Duplicati.Library.Main.Database.Local
                         ORDER BY ""B"".""Sorttime"" ASC
                     ");
 
-                await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+                await using var rd = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false);
                 while (await rd.ReadAsync(token).ConfigureAwait(false))
                     yield return new VolumeUsage(
                         rd.ConvertValueToString(0) ?? "",
@@ -1069,7 +1069,7 @@ namespace Duplicati.Library.Main.Database.Local
                         AND ""B"".""Size"" IS NOT NULL
                 ");
 
-            await using (var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false))
+            await using (var rd = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false))
                 while (await rd.ReadAsync(token).ConfigureAwait(false))
                 {
                     var name = rd.ConvertValueToString(0) ?? "";
