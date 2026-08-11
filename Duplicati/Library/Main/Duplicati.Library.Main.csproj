@@ -8,6 +8,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Keeps the database queries on the overloads that register with SlowQueryMonitor.
+         An extension method cannot win against the command's own methods, so the ban is
+         the only thing that stops the bare call shape from coming back. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="4.14.0" PrivateAssets="all" />
+    <AdditionalFiles Include="BannedSymbols.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="CoCoL" Version="1.8.4" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="StreamJsonRpc" Version="2.25.29" />

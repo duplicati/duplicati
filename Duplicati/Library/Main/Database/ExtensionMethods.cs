@@ -32,6 +32,10 @@ using Microsoft.Data.Sqlite;
 
 namespace Duplicati.Library.Main.Database;
 
+// This file is the layer that wraps the command's own execute methods, so it is the one place
+// that has to call them. Everywhere else in this project the ban applies; see BannedSymbols.txt.
+#pragma warning disable RS0030
+
 /// <summary>
 /// Extension method for <see cref="IDbCommand"/>
 /// </summary>
