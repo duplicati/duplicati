@@ -30,7 +30,6 @@ using CoCoL;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Logging;
 using Duplicati.Library.Utility;
-using Uri = System.Uri;
 
 namespace Duplicati.Library.RemoteControl;
 

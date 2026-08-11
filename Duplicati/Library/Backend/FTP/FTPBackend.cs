@@ -20,7 +20,6 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System.Net;
-using System.Net.Security;
 using System.Runtime.CompilerServices;
 using System.Security.Authentication;
 using Duplicati.Library.Common.IO;
@@ -32,7 +31,6 @@ using FluentFTP;
 using FluentFTP.Client.BaseClient;
 using FluentFTP.Exceptions;
 using CoreUtility = Duplicati.Library.Utility.Utility;
-using Uri = System.Uri;
 
 namespace Duplicati.Library.Backend
 {

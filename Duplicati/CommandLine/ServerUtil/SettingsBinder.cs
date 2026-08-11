@@ -24,7 +24,6 @@ using System.CommandLine.Binding;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Encryption;
 using Duplicati.Library.Main;
-using Uri = System.Uri;
 using Utility = Duplicati.Library.Utility.Utility;
 
 namespace Duplicati.CommandLine.ServerUtil;
