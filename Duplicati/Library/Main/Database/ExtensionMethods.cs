@@ -35,6 +35,19 @@ namespace Duplicati.Library.Main.Database;
 /// <summary>
 /// Extension method for <see cref="IDbCommand"/>
 /// </summary>
+/// <remarks>
+/// These are what register a query with <see cref="SlowQueryMonitor"/>, so a query that is
+/// executed through the command's own methods instead is invisible to it, no matter how long
+/// it runs or how low the threshold is set.
+///
+/// Adding a <c>(this SqliteCommand, CancellationToken)</c> overload would not help: an
+/// applicable instance method always wins over an extension method. There is a proof of that
+/// in this file - <see cref="ExecuteScalarAsync(SqliteCommand, bool, string?, Dictionary{string, object?}?, CancellationToken)"/>
+/// calls <c>self.ExecuteScalarAsync(cancellationToken)</c>, which would be an unbounded
+/// recursion if the extension were picked. So the call has to name the overload it wants, and
+/// <c>writeLog: false</c> is the one that registers with the monitor without also writing a
+/// profiling record.
+/// </remarks>
 public static partial class ExtensionMethods
 {
 
@@ -160,6 +173,11 @@ public static partial class ExtensionMethods
     /// <param name="writeLog">Whether to write a log entry.</param>
     /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
     /// <returns>A task that when awaited contains the number of rows affected.</returns>
+    /// <remarks>
+    /// Without a log entry this deliberately skips <see cref="SlowQueryMonitor"/> as well. The
+    /// callers are the per-block loops in the backup, where registering every statement would
+    /// put a lock and a dictionary insert in the innermost loop. It is not an oversight.
+    /// </remarks>
     public static Task<int> ExecuteNonQueryPerformanceSensitiveAsync(this SqliteCommand self, bool writeLog, CancellationToken cancellationToken)
     {
         if (!writeLog)
@@ -328,18 +346,6 @@ public static partial class ExtensionMethods
     /// Executes the command asynchronously and returns the first column of the first row in the result set.
     /// </summary>
     /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
-    /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
-    /// <returns>A task that when awaited contains the first column of the first row in the result set, or null if no rows are returned.</returns>
-    public static async Task<object?> ExecuteScalarAsync(this SqliteCommand self, CancellationToken cancellationToken)
-    {
-        return await self.ExecuteScalarAsync(true, null, null, cancellationToken)
-            .ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Executes the command asynchronously and returns the first column of the first row in the result set.
-    /// </summary>
-    /// <param name="self">The <see cref="SqliteCommand"/> instance to execute on.</param>
     /// <param name="cmdtext">The command text to execute.</param>
     /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
     /// <returns>A task that when awaited contains the first column of the first row in the result set, or null if no rows are returned.</returns>
@@ -435,6 +441,11 @@ public static partial class ExtensionMethods
     /// <param name="writeLog">Whether to write a log entry.</param>
     /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
     /// <returns>A task that when awaited contains the first column of the first row in the result set as an Int64, or the default value if no rows are returned or the value cannot be converted.</returns>
+    /// <remarks>
+    /// Without a log entry this deliberately skips <see cref="SlowQueryMonitor"/> as well. The
+    /// callers are the per-block loops in the backup, where registering every statement would
+    /// put a lock and a dictionary insert in the innermost loop. It is not an oversight.
+    /// </remarks>
     public static async Task<long> ExecuteScalarInt64PerformanceSensitiveAsync(this SqliteCommand self, bool writeLog, CancellationToken cancellationToken)
     {
         if (!writeLog)
