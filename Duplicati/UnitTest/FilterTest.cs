@@ -172,7 +172,8 @@ namespace Duplicati.UnitTest
             {
                 var backupResults = await c.BackupAsync(new string[] { DATAFOLDER }, excludefilter);
                 Assert.AreEqual(0, backupResults.Errors.Count());
-                Assert.AreEqual(0, backupResults.Warnings.Count());
+                // The source now contains no files, so the NoFilesInBackup warning is expected
+                Assert.AreEqual(0, backupResults.Warnings.Count(x => !x.Contains("NoFilesInBackup")));
             }
 
             // Check we now have only one folder and no files
