@@ -286,6 +286,10 @@ namespace Duplicati.UnitTest
             if (SystemIO.IO_OS.DirectoryHasPermissionUserRWOnly(dir, false, out _))
                 Assert.Ignore("Could not produce a non-canonical folder on this platform/filesystem");
 
+            // Explicitly opt out so the insecure folder is rejected even in DEBUG builds, where
+            // the option otherwise defaults to true.
+            Environment.SetEnvironmentVariable(Util.AllowInsecureDatafolderEnvVar, "false");
+
             var ex = Assert.Throws<UserInformationException>(
                 () => DataFolderManager.PrepareSecureDataFolder(dir, createIfMissing: true),
                 "A pre-existing folder with insecure permissions must be rejected");
@@ -322,6 +326,10 @@ namespace Duplicati.UnitTest
             if (SystemIO.IO_OS.DirectoryHasPermissionUserRWOnly(dir, false, out _))
                 Assert.Ignore("Could not produce a non-canonical folder on this platform/filesystem");
 
+            // Explicitly opt out so the insecure folder is rejected even in DEBUG builds, where
+            // the option otherwise defaults to true.
+            Environment.SetEnvironmentVariable(Util.AllowInsecureDatafolderEnvVar, "false");
+
             var ex = Assert.Throws<UserInformationException>(
                 () => DataFolderManager.VerifyDataFolderSecurityReadOnly(dir),
                 "Read-only verification must reject a non-canonical folder");
@@ -357,8 +365,14 @@ namespace Duplicati.UnitTest
         [Category("DataFolderSecurity")]
         public void AllowInsecureDataFolder_ReadsEnvironmentVariable()
         {
+            // With the env var unset, the default depends on the build configuration: DEBUG builds
+            // default to true (to ease local development), while release builds default to false.
             Environment.SetEnvironmentVariable(Util.AllowInsecureDatafolderEnvVar, null);
-            Assert.IsFalse(Util.AllowInsecureDataFolder(), "Unset env var should mean not allowed");
+#if DEBUG
+            Assert.IsTrue(Util.AllowInsecureDataFolder(), "Unset env var should default to true in DEBUG builds");
+#else
+            Assert.IsFalse(Util.AllowInsecureDataFolder(), "Unset env var should mean not allowed in release builds");
+#endif
 
             foreach (var truthy in new[] { "true", "1", "yes", "on", "" })
             {

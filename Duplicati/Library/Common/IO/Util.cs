@@ -63,6 +63,10 @@ namespace Duplicati.Library.Common.IO
         /// consulted from low-level components (such as the SQLite loader) without threading the
         /// value through every call. When the option is present without a value it is treated as
         /// enabled; values <c>false</c>, <c>0</c>, <c>no</c> and <c>off</c> disable it.
+        ///
+        /// In <c>DEBUG</c> builds the option defaults to <c>true</c> (after all explicit sources
+        /// are checked), so permission checks do not block local development. An explicit
+        /// <c>--allow-insecure-datafolder=false</c> still overrides this default.
         /// </summary>
         /// <returns><c>true</c> if the insecure data folder opt-in is set; otherwise <c>false</c>.</returns>
         public static bool AllowInsecureDataFolder()
@@ -108,7 +112,14 @@ namespace Duplicati.Library.Common.IO
                     return true;
             }
 
+#if DEBUG
+            // In debug builds the permission checks are relaxed by default to make local
+            // development easier. Users can still opt out explicitly via
+            // --allow-insecure-datafolder=false.
+            return true;
+#else
             return false;
+#endif
         }
 
         /// <summary>
