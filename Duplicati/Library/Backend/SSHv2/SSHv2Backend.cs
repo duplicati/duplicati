@@ -98,10 +98,25 @@ namespace Duplicati.Library.Backend
         /// <returns>The parts the backend needs.</returns>
         internal static SshUrl ParseSshUrl(string url)
         {
-            var uri = new Utility.RelaxedUri(url);
-            uri.RequireHost();
+            var uri = new Uri(url);
+            uri.RequireHost(url);
+            uri.RequireNoFragment(url);
 
-            return new SshUrl(uri.Host!, uri.Port, uri.Path, uri.Username, uri.Password);
+            // The path arrives escaped and with its leading separator, where the previous
+            // parser handed it over decoded and without one. Decoding first keeps an
+            // encoded separator in the place it used to land in.
+            var path = Uri.UnescapeDataString(uri.AbsolutePath);
+            if (path.StartsWith("/", StringComparison.Ordinal))
+                path = path.Substring(1);
+
+            // The user info is not decoded, so it is decoded here.
+            var userinfo = uri.UserInfo.Split(new[] { ':' }, 2);
+            var username = userinfo.Length > 0 && userinfo[0].Length > 0 ? Uri.UnescapeDataString(userinfo[0]) : null;
+            var password = userinfo.Length > 1 ? Uri.UnescapeDataString(userinfo[1]) : null;
+
+            // ssh is not a scheme with a registered default port, so an url without one
+            // answers -1 here, the same way the previous parser did.
+            return new SshUrl(uri.Host, uri.Port, path, username, password);
         }
 
         public SSHv2(string url, Dictionary<string, string?> options)

@@ -136,18 +136,31 @@ public class SMBBackend : IStreamingBackend, IFolderEnabledBackend, IRenameEnabl
     /// <returns>The parts the backend needs.</returns>
     internal static SmbUrl ParseSmbUrl(string url)
     {
-        var uri = new Utility.RelaxedUri(url);
-        uri.RequireHost();
+        var uri = new Uri(url);
+        uri.RequireHost(url);
+        uri.RequireNoFragment(url);
 
-        var input = uri.Path.TrimEnd('/');
+        // The path arrives escaped and with its leading separator, where the previous
+        // parser handed it over decoded and without one. Decoding first keeps an
+        // encoded separator in the place it used to land in.
+        var path = Uri.UnescapeDataString(uri.AbsolutePath);
+        if (path.StartsWith("/", StringComparison.Ordinal))
+            path = path.Substring(1);
+
+        // The user info is not decoded, so it is decoded here.
+        var userinfo = uri.UserInfo.Split(new[] { ':' }, 2);
+        var username = userinfo.Length > 0 && userinfo[0].Length > 0 ? Uri.UnescapeDataString(userinfo[0]) : null;
+        var password = userinfo.Length > 1 ? Uri.UnescapeDataString(userinfo[1]) : null;
+
+        var input = path.TrimEnd('/');
         var slashIndex = input.IndexOf('/');  // Find first slash to separate share and path if present.
 
         return new SmbUrl(
-            uri.Host!,
+            uri.Host,
             slashIndex >= 0 ? input[..slashIndex] : input,
             slashIndex >= 0 ? input[(slashIndex + 1)..] : "",
-            uri.Username,
-            uri.Password);
+            username,
+            password);
     }
 
     /// <summary>

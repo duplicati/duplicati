@@ -23,6 +23,7 @@
 
 using System;
 using Duplicati.Library.Backend;
+using Duplicati.Library.Interface;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
 
@@ -99,49 +100,66 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
-        public void TheMessageForAMissingHostDoesNotCarryTheCredentials()
+        public void AnEmptyUserWithAPasswordIsNoLongerReadAsAMissingHost()
         {
-            var ex = Assert.Throws<ArgumentException>(() => SSHv2.ParseSshUrl("ssh://:pass@host/p"));
-            Assert.IsFalse(ex!.Message.Contains("pass"), ex.Message);
+            // The previous parser read the ':' as the start of the authority and reported
+            // a missing hostname. The password is taken now, and the missing user is what
+            // the constructor reports.
+            var parsed = SSHv2.ParseSshUrl("ssh://:pass@host/p");
+            Assert.AreEqual("host", parsed.Host);
+            Assert.IsNull(parsed.Username);
+            Assert.AreEqual("pass", parsed.Password);
         }
 
         [Test]
-        public void TheHostKeepsItsCase()
+        public void TheHostIsLowerCased()
         {
-            Assert.AreEqual("Host.Example.COM", SSHv2.ParseSshUrl("ssh://Host.Example.COM/p").Host);
+            // The previous parser kept the case. A host name is a dns name, a netbios name
+            // or an ip literal, and none of those are case sensitive, so this only matters
+            // for the backends that read a remote folder name out of the authority instead.
+            Assert.AreEqual("host.example.com", SSHv2.ParseSshUrl("ssh://Host.Example.COM/p").Host);
         }
 
         [Test]
-        public void APlusInThePathIsReadAsASpace()
+        public void APlusInThePathIsNoLongerASpace()
         {
-            Assert.AreEqual("a b", SSHv2.ParseSshUrl("ssh://host/a+b").Path);
+            // The previous parser applied the query string rule that reads '+' as a space
+            // to the path as well. A url that has been through the parser carries %2B, so
+            // only a hand written url is affected.
+            Assert.AreEqual("a+b", SSHv2.ParseSshUrl("ssh://host/a+b").Path);
         }
 
         [Test]
-        public void AHashInThePathIsPartOfTheFolderName()
+        public void AHashInThePathIsRejected()
         {
-            Assert.AreEqual("backup#1/", SSHv2.ParseSshUrl("ssh://host/backup#1/").Path);
+            // The previous parser had no fragment and kept the '#' in the folder name.
+            // Accepting the url now would move the backup to "backup" instead, so the
+            // user is told to write %23 rather than being sent somewhere else.
+            Assert.Throws<UserInformationException>(() => SSHv2.ParseSshUrl("ssh://host/backup#1/"));
         }
 
         [Test]
-        public void ADotSegmentInThePathIsKept()
+        public void ADotSegmentInThePathIsResolved()
         {
-            Assert.AreEqual("a/../b", SSHv2.ParseSshUrl("ssh://host/a/../b").Path);
+            // The previous parser kept the segment as written.
+            Assert.AreEqual("b", SSHv2.ParseSshUrl("ssh://host/a/../b").Path);
         }
 
         [Test]
-        public void AnUnencodedAtSignInThePasswordIsReadAsPartOfTheHost()
+        public void AnUnencodedAtSignInThePasswordIsRejected()
         {
-            var parsed = SSHv2.ParseSshUrl("ssh://user:p@ss@host/p");
-            Assert.AreEqual("ss@host", parsed.Host);
-            Assert.AreEqual("user", parsed.Username);
-            Assert.AreEqual("p", parsed.Password);
+            // The previous parser read the last '@' as the separator, so the password was
+            // cut at the first one and the rest ended up in the host name, which then
+            // failed to resolve when connecting. It is reported here instead.
+            var ex = Assert.Throws<UriFormatException>(() => SSHv2.ParseSshUrl("ssh://user:p@ss@host/p"));
+            Assert.IsFalse(ex!.Message.Contains("ss"), ex.Message);
         }
 
         [Test]
-        public void APortOutsideTheValidRangeIsAccepted()
+        public void APortOutsideTheValidRangeIsRejected()
         {
-            Assert.AreEqual(99999, SSHv2.ParseSshUrl("ssh://host:99999/p").Port);
+            // The previous parser passed it on and the connection failed later.
+            Assert.Throws<UriFormatException>(() => SSHv2.ParseSshUrl("ssh://host:99999/p"));
         }
     }
 }

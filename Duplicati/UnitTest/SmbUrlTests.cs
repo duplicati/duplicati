@@ -23,6 +23,7 @@
 
 using System;
 using Duplicati.Library.Backend;
+using Duplicati.Library.Interface;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
 
@@ -77,35 +78,54 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
-        public void TheHostKeepsItsCaseButTheShareAndPathAreWhatMatter()
+        public void TheHostIsLowerCasedAndTheShareAndPathKeepTheirCase()
         {
+            // The previous parser kept the case of the host as well. A server name is not
+            // case sensitive, while the share and the path name things on the server, so
+            // those are the ones that have to survive.
             var parsed = SMBBackend.ParseSmbUrl("smb://SERVER01/Share/Sub");
-            Assert.AreEqual("SERVER01", parsed.Host);
+            Assert.AreEqual("server01", parsed.Host);
             Assert.AreEqual("Share", parsed.ShareName);
             Assert.AreEqual("Sub", parsed.Path);
         }
 
-        [TestCase("smb://host/share\\sub")]
-        [TestCase("smb://host/share%5Csub")]
-        public void ABackslashDoesNotSeparateTheShareFromThePath(string url)
+        [Test]
+        public void ABackslashSeparatesTheShareFromThePath()
         {
-            var parsed = SMBBackend.ParseSmbUrl(url);
-            Assert.AreEqual("share\\sub", parsed.ShareName, url);
-            Assert.AreEqual("", parsed.Path, url);
+            // The previous parser only split on '/', so the whole thing became the share
+            // name and the path was left empty. PATH_SEPARATORS already treats '\' as a
+            // separator everywhere else in this backend, so this makes it consistent.
+            var parsed = SMBBackend.ParseSmbUrl("smb://host/share\\sub");
+            Assert.AreEqual("share", parsed.ShareName);
+            Assert.AreEqual("sub", parsed.Path);
         }
 
         [Test]
-        public void APlusInThePathIsReadAsASpace()
+        public void AnEncodedBackslashStaysInTheShareName()
         {
-            Assert.AreEqual("a b", SMBBackend.ParseSmbUrl("smb://host/share/a+b").Path);
+            // Only the separator written as a separator is one; an encoded backslash is
+            // a character in the name.
+            var parsed = SMBBackend.ParseSmbUrl("smb://host/share%5Csub");
+            Assert.AreEqual("share\\sub", parsed.ShareName);
+            Assert.AreEqual("", parsed.Path);
         }
 
         [Test]
-        public void AHashInTheShareIsPartOfTheShareName()
+        public void APlusInThePathIsNoLongerASpace()
         {
-            var parsed = SMBBackend.ParseSmbUrl("smb://host/share#1/x");
-            Assert.AreEqual("share#1", parsed.ShareName);
-            Assert.AreEqual("x", parsed.Path);
+            // The previous parser applied the query string rule that reads '+' as a space
+            // to the path as well. A url that has been through the parser carries %2B, so
+            // only a hand written url is affected.
+            Assert.AreEqual("a+b", SMBBackend.ParseSmbUrl("smb://host/share/a+b").Path);
+        }
+
+        [Test]
+        public void AHashInTheShareIsRejected()
+        {
+            // The previous parser had no fragment and kept the '#' in the share name.
+            // Accepting the url now would use the share "share" instead, so the user is
+            // told to write %23 rather than being sent to a different share.
+            Assert.Throws<UserInformationException>(() => SMBBackend.ParseSmbUrl("smb://host/share#1/x"));
         }
     }
 }
