@@ -29,6 +29,8 @@ using Duplicati.Library.Common.IO;
 using Duplicati.Library.Utility.Options;
 using Duplicati.Library.Utility;
 
+[assembly: InternalsVisibleTo("Duplicati.UnitTest")]
+
 namespace Duplicati.Library.Backend;
 
 /// <summary>
@@ -118,6 +120,37 @@ public class SMBBackend : IStreamingBackend, IFolderEnabledBackend, IRenameEnabl
     }
 
     /// <summary>
+    /// The parts of an smb url that the backend configures itself from.
+    /// </summary>
+    /// <param name="Host">The server to connect to. An IPv6 literal keeps its brackets.</param>
+    /// <param name="ShareName">The share, which is the first segment of the url path.</param>
+    /// <param name="Path">The path inside the share, without a trailing slash.</param>
+    /// <param name="Username">The user from the url, or null when it has none.</param>
+    /// <param name="Password">The password from the url, or null when it has none.</param>
+    internal readonly record struct SmbUrl(string Host, string ShareName, string Path, string? Username, string? Password);
+
+    /// <summary>
+    /// Splits an smb url into the parts the backend needs.
+    /// </summary>
+    /// <param name="url">The url to split.</param>
+    /// <returns>The parts the backend needs.</returns>
+    internal static SmbUrl ParseSmbUrl(string url)
+    {
+        var uri = new Utility.RelaxedUri(url);
+        uri.RequireHost();
+
+        var input = uri.Path.TrimEnd('/');
+        var slashIndex = input.IndexOf('/');  // Find first slash to separate share and path if present.
+
+        return new SmbUrl(
+            uri.Host!,
+            slashIndex >= 0 ? input[..slashIndex] : input,
+            slashIndex >= 0 ? input[(slashIndex + 1)..] : "",
+            uri.Username,
+            uri.Password);
+    }
+
+    /// <summary>
     /// Actual constructor for the backend that accepts the url and options
     /// </summary>
     /// <param name="url">URL in Duplicati Uri format</param>
@@ -129,12 +162,8 @@ public class SMBBackend : IStreamingBackend, IFolderEnabledBackend, IRenameEnabl
         if (options == null)
             throw new ArgumentNullException(nameof(options));
 
-        var uri = new Utility.RelaxedUri(url);
-        uri.RequireHost();
-        _DnsName = uri.Host ?? "";
-
-        var input = uri.Path.TrimEnd('/');
-        var slashIndex = input.IndexOf('/');  // Find first slash to separate server and share if present.
+        var uri = ParseSmbUrl(url);
+        _DnsName = uri.Host;
 
         var auth = AuthOptionsHelper.Parse(options, uri.Username, uri.Password);
         var authDomain = options.GetValueOrDefault(AUTH_DOMAIN_OPTION);
@@ -164,8 +193,8 @@ public class SMBBackend : IStreamingBackend, IFolderEnabledBackend, IRenameEnabl
         _connectionParameters = new SMBConnectionParameters(
             _DnsName,
             transportType,
-            slashIndex >= 0 ? input[..slashIndex] : input,
-            slashIndex >= 0 ? input[(slashIndex + 1)..] : "",
+            uri.ShareName,
+            uri.Path,
             authDomain,
             auth.Username,
             auth.Password,

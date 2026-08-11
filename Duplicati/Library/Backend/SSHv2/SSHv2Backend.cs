@@ -34,6 +34,8 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Runtime.Versioning;
 
+[assembly: InternalsVisibleTo("Duplicati.UnitTest")]
+
 namespace Duplicati.Library.Backend
 {
     public class SSHv2 : IStreamingBackend, IRenameEnabledBackend, IFolderEnabledBackend
@@ -79,11 +81,33 @@ namespace Duplicati.Library.Backend
             m_useAgent = true;
         }
 
+        /// <summary>
+        /// The parts of an ssh url that the backend configures itself from.
+        /// </summary>
+        /// <param name="Host">The server to connect to. An IPv6 literal keeps its brackets.</param>
+        /// <param name="Port">The port, or -1 when the url does not name one.</param>
+        /// <param name="Path">The remote path, decoded and without a leading slash.</param>
+        /// <param name="Username">The user from the url, or null when it has none.</param>
+        /// <param name="Password">The password from the url, or null when it has none.</param>
+        internal readonly record struct SshUrl(string Host, int Port, string Path, string? Username, string? Password);
+
+        /// <summary>
+        /// Splits an ssh url into the parts the backend needs.
+        /// </summary>
+        /// <param name="url">The url to split.</param>
+        /// <returns>The parts the backend needs.</returns>
+        internal static SshUrl ParseSshUrl(string url)
+        {
+            var uri = new Utility.RelaxedUri(url);
+            uri.RequireHost();
+
+            return new SshUrl(uri.Host!, uri.Port, uri.Path, uri.Username, uri.Password);
+        }
+
         public SSHv2(string url, Dictionary<string, string?> options)
         {
             m_options = options;
-            var uri = new Utility.RelaxedUri(url);
-            uri.RequireHost();
+            var uri = ParseSshUrl(url);
 
             var auth = AuthOptionsHelper.Parse(options, uri.Username, uri.Password);
             if (!auth.HasUsername)
@@ -112,7 +136,7 @@ namespace Duplicati.Library.Backend
                     m_path = "/" + m_path;
             }
 
-            m_server = uri.Host ?? "";
+            m_server = uri.Host;
 
             if (uri.Port > 0)
                 m_port = uri.Port;
