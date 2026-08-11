@@ -48,6 +48,14 @@ namespace Duplicati.GUI.TrayIcon
         private AvaloniaApp? application;
         private bool closed = false;
         private ProcessBasedActionDelay actionDelayer = new ProcessBasedActionDelay();
+        /// <summary>
+        /// The native notification support, if available; created on first use
+        /// </summary>
+        private Library.Interface.INativeNotifier? notifierInstance = null;
+        /// <summary>
+        /// Only attempt to load the notifier once
+        /// </summary>
+        private bool hasAttemptedNotifierLoad = false;
         private IEnumerable<AvaloniaMenuItem> menuItems = Enumerable.Empty<AvaloniaMenuItem>();
         private int _disposed;
         private int _exitCalled;
@@ -238,21 +246,60 @@ namespace Duplicati.GUI.TrayIcon
             return new AvaloniaMenuItem(this, text, icon, callback, subitems);
         }
 
+        private Library.Interface.INativeNotifier? TryLoadNotifier()
+        {
+            if (hasAttemptedNotifierLoad)
+                return notifierInstance;
+
+            // Only try to load the notifier once
+            hasAttemptedNotifierLoad = true;
+
+            // Avalonia's TrayIcon has no notification support of its own, so the
+            // notification is shown with platform code; currently only Windows
+            // toast notifications are implemented
+            // The Toast implementation requires Windows 10 build 17763 or later
+            if (OperatingSystem.IsWindows() && OperatingSystem.IsWindowsVersionAtLeast(10, 0, 17763))
+            {
+                try
+                {
+                    this.notifierInstance = Library.Snapshots.Windows.WindowsShimLoader.NewNativeNotifier();
+                    // Clicking the notification opens the status window, same as
+                    // clicking the tray icon. ShowStatusWindow only performs an HTTP
+                    // request and launches the browser, so it is safe to call from
+                    // the activation callback's COM thread.
+                    this.notifierInstance.NotificationClicked = () => ShowStatusWindow();
+                }
+                catch (Exception ex)
+                {
+                    Log.WriteWarningMessage(LOGTAG, "NotificationLoadFailed", ex, "Failed to load notification implementation");                    
+                }
+            }
+
+            return notifierInstance;
+        }
+
         public override void NotifyUser(string title, string message, NotificationType type)
         {
-            //var icon = Win32NativeNotifyIcon.InfoFlags.NIIF_INFO;
-
-            switch (type)
+            try
             {
-                case NotificationType.Information:
-                    //icon = Win32NativeNotifyIcon.InfoFlags.NIIF_INFO;
-                    break;
-                case NotificationType.Warning:
-                    //icon = Win32NativeNotifyIcon.InfoFlags.NIIF_WARNING;
-                    break;
-                case NotificationType.Error:
-                    //icon = Win32NativeNotifyIcon.InfoFlags.NIIF_ERROR;
-                    break;
+                var notifier = TryLoadNotifier();
+                if (notifier == null)
+                    return;
+
+                var level = type switch
+                {
+                    NotificationType.Warning => Library.Interface.NativeNotificationLevel.Warning,
+                    NotificationType.Error => Library.Interface.NativeNotificationLevel.Error,
+                    _ => Library.Interface.NativeNotificationLevel.Information,
+                };
+
+                notifier.Notify(level, title, message);
+            }
+            catch (Exception ex)
+            {
+                // Never let a failed notification take down the tray icon; toasts can
+                // be unavailable (e.g. notifications disabled, missing WinRT support)
+                Log.WriteWarningMessage(LOGTAG, "NotificationFailed", ex, "Failed to show notification: {0}", title);
             }
         }
 
