@@ -255,24 +255,28 @@ namespace Duplicati.GUI.TrayIcon
             hasAttemptedNotifierLoad = true;
 
             // Avalonia's TrayIcon has no notification support of its own, so the
-            // notification is shown with platform code; currently only Windows
-            // toast notifications are implemented
-            // The Toast implementation requires Windows 10 build 17763 or later
-            if (OperatingSystem.IsWindows() && OperatingSystem.IsWindowsVersionAtLeast(10, 0, 17763))
+            // notification is shown with platform code; currently Windows toast
+            // notifications and macOS Notification Center alerts are implemented
+            try
             {
-                try
-                {
+                // The Toast implementation requires Windows 10 build 17763 or later
+                if (OperatingSystem.IsWindows() && OperatingSystem.IsWindowsVersionAtLeast(10, 0, 17763))
                     this.notifierInstance = Library.Snapshots.Windows.WindowsShimLoader.NewNativeNotifier();
+                else if (OperatingSystem.IsMacOS())
+                    this.notifierInstance = new Library.Utility.MacOSOSANotifier();
+
+                if (this.notifierInstance != null)
+                {
                     // Clicking the notification opens the status window, same as
                     // clicking the tray icon. ShowStatusWindow only performs an HTTP
                     // request and launches the browser, so it is safe to call from
-                    // the activation callback's COM thread.
+                    // whatever thread the activation callback arrives on.
                     this.notifierInstance.NotificationClicked = () => ShowStatusWindow();
                 }
-                catch (Exception ex)
-                {
-                    Log.WriteWarningMessage(LOGTAG, "NotificationLoadFailed", ex, "Failed to load notification implementation");                    
-                }
+            }
+            catch (Exception ex)
+            {
+                Log.WriteWarningMessage(LOGTAG, "NotificationLoadFailed", ex, "Failed to load notification implementation");
             }
 
             return notifierInstance;
@@ -293,6 +297,8 @@ namespace Duplicati.GUI.TrayIcon
                     _ => Library.Interface.NativeNotificationLevel.Information,
                 };
 
+                // The INativeNotifier implementations are non-blocking, so this
+                // is safe to call on the UI thread
                 notifier.Notify(level, title, message);
             }
             catch (Exception ex)

@@ -22,6 +22,7 @@
 #nullable enable
 
 using System;
+using System.Runtime.Versioning;
 using Duplicati.Library.Snapshots.Windows;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
@@ -29,10 +30,10 @@ using Assert = NUnit.Framework.Legacy.ClassicAssert;
 namespace Duplicati.UnitTest
 {
     /// <summary>
-    /// Smoke test for the Windows toast notifier shim. Only the loading and the
-    /// callback wiring are exercised; no toast is shown, because notification
-    /// display depends on the session/OS configuration of the machine running
-    /// the tests.
+    /// Smoke tests for the native notifier implementations. Only the loading
+    /// and the callback wiring are exercised; no notification is shown,
+    /// because notification display depends on the session/OS configuration
+    /// of the machine running the tests.
     /// </summary>
     [TestFixture]
     [Category("NativeNotifier")]
@@ -46,6 +47,24 @@ namespace Duplicati.UnitTest
 
             var notifier = WindowsShimLoader.NewNativeNotifier();
             Assert.IsNotNull(notifier, "The shim should produce a notifier instance on Windows");
+
+            var clicked = false;
+            notifier.NotificationClicked = () => clicked = true;
+            Assert.IsNotNull(notifier.NotificationClicked, "The click callback must be storable");
+
+            notifier.NotificationClicked.Invoke();
+            Assert.IsTrue(clicked, "The stored callback must be invocable");
+        }
+
+        [Test]
+        [SupportedOSPlatform("macOS")]
+        public void MacOSOSANotifierCanBeCreated()
+        {
+            if (!OperatingSystem.IsMacOS())
+                Assert.Ignore("The macOS notifier can only be created on macOS");
+
+            var notifier = new Library.Utility.MacOSOSANotifier();
+            Assert.IsNotNull(notifier, "A notifier instance should be created on macOS");
 
             var clicked = false;
             notifier.NotificationClicked = () => clicked = true;
