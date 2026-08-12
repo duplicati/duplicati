@@ -564,6 +564,13 @@ namespace Duplicati.Library.Main.Operation.Restore
                     }
                     return;
                 }
+                catch (Exception) when (RestoreCancellation.IsAborted(results.TaskControl))
+                {
+                    // An abort is an orderly shutdown that arrived by a different signal than
+                    // retirement, so it is reported the same way retirement is.
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "CancelledProcess", null, "File processor cancelled");
+                    throw;
+                }
                 catch (Exception ex)
                 {
                     Logging.Log.WriteErrorMessage(LOGTAG, "FileProcessingError", ex, "Error during file processing");

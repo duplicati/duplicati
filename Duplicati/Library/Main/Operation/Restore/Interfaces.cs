@@ -32,6 +32,34 @@ namespace Duplicati.Library.Main.Operation.Restore
 {
 
     /// <summary>
+    /// Helper for telling a requested shutdown apart from a genuine failure in the restore
+    /// process network.
+    /// </summary>
+    internal static class RestoreCancellation
+    {
+        /// <summary>
+        /// Returns whether the restore has been aborted, i.e. whether the cancellation the
+        /// processes are seeing was asked for rather than caused by a fault.
+        /// </summary>
+        /// <param name="taskReader">The task reader whose tokens to consult.</param>
+        /// <returns><c>true</c> if the operation was aborted.</returns>
+        /// <remarks>
+        /// The tokens are consulted rather than the exception type. A cancellation is not
+        /// identifiable from its exception: <see cref="System.Net.Http.HttpClient"/> reports its
+        /// own request timeouts as <see cref="System.Threading.Tasks.TaskCanceledException"/>, so
+        /// keying off the type would silently reclassify real backend timeouts as a requested
+        /// shutdown. Consulting the token instead follows the existing precedent in
+        /// <c>BackendManager.Handler</c>.
+        ///
+        /// <see cref="Common.ITaskReader.StopToken"/> is deliberately not consulted: nothing in
+        /// the restore process network observes it, so no cancellation can originate there.
+        /// </remarks>
+        public static bool IsAborted(Common.ITaskReader taskReader)
+            => taskReader.ProgressToken.IsCancellationRequested
+                || taskReader.TransferToken.IsCancellationRequested;
+    }
+
+    /// <summary>
     /// Represents the type of block request.
     /// </summary>
     public enum BlockRequestType

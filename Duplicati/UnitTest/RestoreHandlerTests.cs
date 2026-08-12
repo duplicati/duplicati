@@ -544,5 +544,174 @@ namespace Duplicati.UnitTest
             Assert.IsTrue(File.Exists(restoredSmallFilePath), "The small file should have been restored");
             Assert.IsFalse(File.Exists(restoredLargeFilePath), "The large file should not have been restored");
         }
+
+        /// <summary>
+        /// An abort is a requested shutdown, so it should not report errors of its own, should
+        /// not blame the backup for a download it cancelled itself, and should not leave the
+        /// volumes it had cached behind on disk.
+        /// </summary>
+        [Test]
+        [Category("RestoreHandler")]
+        public async Task AbortedRestoreIsCleanAsync()
+        {
+            const int volumesBeforeAbort = 3;
+
+            var backupOptions = new Dictionary<string, string>(this.TestOptions)
+            {
+                ["dblock-size"] = "200kb",
+                ["blocksize"] = "4kb"
+            };
+
+            // Enough distinct data to fill several volumes, so some are still cached when the
+            // abort lands
+            var rng = new Random(42);
+            var data = new byte[32 * 1024];
+            for (var i = 0; i < 40; i++)
+            {
+                rng.NextBytes(data);
+                File.WriteAllBytes(Path.Combine(this.DATAFOLDER, $"file{i}"), data);
+            }
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, backupOptions, null))
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+
+            // The decrypted volumes are created with `new TempFile()`, which resolves through
+            // TempFolder.SystemTempPath rather than through --tempdir, so that is what has to
+            // be redirected for the test to be able to count what is left behind.
+            var tempdir = Path.Combine(BASEFOLDER, "aborted-restore-temp");
+            Directory.CreateDirectory(tempdir);
+            var previousTempPath = Library.Utility.TempFolder.SystemTempPath;
+            Library.Utility.TempFolder.SystemTempPath = tempdir;
+
+            Library.DynamicLoader.BackendLoader.AddBackend(new DeterministicErrorBackend());
+            var downloaded = 0;
+            var enoughDownloaded = new TaskCompletionSource();
+
+            // Used as a hook rather than as a source of errors: it always answers "no error",
+            // but it slows every volume download down so the restore cannot outrun the abort,
+            // and it signals once enough volumes have been fetched. Without this the abort
+            // would land at a different point on every machine.
+            DeterministicErrorBackend.ErrorGenerator = (action, remotename) =>
+            {
+                if (!remotename.Contains(".dblock.", StringComparison.Ordinal))
+                    return false;
+
+                if (action != DeterministicErrorBackend.BackendAction.GetBefore)
+                    return false;
+
+                // Signalled before the delay rather than after it, so the abort is guaranteed
+                // to land while a download is still in flight
+                if (System.Threading.Interlocked.Increment(ref downloaded) >= volumesBeforeAbort)
+                    enoughDownloaded.TrySetResult();
+
+                System.Threading.Thread.Sleep(1500);
+                return false;
+            };
+
+            try
+            {
+                var restoreOptions = new Dictionary<string, string>(this.TestOptions)
+                {
+                    ["dblock-size"] = "200kb",
+                    ["blocksize"] = "4kb",
+                    ["restore-path"] = this.RESTOREFOLDER,
+                    ["restore-legacy"] = "false",
+                    // Force the blocks to come from the destination rather than from the source
+                    ["restore-with-local-blocks"] = "false",
+                    // Several downloaders so that requests are queued behind the slow one and
+                    // the abort has something in flight to cancel
+                    ["restore-volume-downloaders"] = "4",
+                    ["restore-volume-decryptors"] = "1",
+                    ["restore-volume-decompressors"] = "1",
+                    ["restore-file-processors"] = "1",
+                    ["tempdir"] = tempdir
+                    // restore-volume-cache-hint is deliberately left unset, which means
+                    // unlimited: the volumes stay cached, which is the state this test is about.
+                };
+
+                var beforeRestore = Directory.GetFiles(tempdir, "*", SearchOption.AllDirectories).ToHashSet(StringComparer.Ordinal);
+
+                var restoreErrors = new System.Collections.Concurrent.ConcurrentQueue<string>();
+                var cachedVolumes = 0;
+                // Spelled out rather than taken from the types, which are internal to
+                // Duplicati.Library.Main
+                const string restoreNamespace = "Duplicati.Library.Main.Operation.Restore.";
+                const string volumeManagerTag = restoreNamespace + "VolumeManager";
+
+                Library.Main.RestoreResults? restoreResults = null;
+                using var c = new Controller(new DeterministicErrorBackend().ProtocolKey + "://" + this.TARGETFOLDER, restoreOptions, null);
+                c.OnOperationStarted += r => restoreResults = (Library.Main.RestoreResults)r;
+
+                using (Library.Logging.Log.StartScope(e =>
+                {
+                    // Scoped to the restore process network. Controller logs FailedOperation of
+                    // its own on an abort, and how an aborted operation is classified is a
+                    // separate matter from what the network reports.
+                    if (e.Level == Library.Logging.LogMessageType.Error
+                        && e.Tag != null && e.Tag.StartsWith(restoreNamespace, StringComparison.Ordinal))
+                        restoreErrors.Enqueue($"{e.Tag.Split('.').Last()}/{e.Id}: {e.FormattedMessage}");
+
+                    // Guards against a vacuous pass: if nothing was ever cached there is
+                    // nothing for the abort to leave behind.
+                    if (e.Tag == volumeManagerTag && e.FormattedMessage != null
+                        && e.FormattedMessage.StartsWith("Caching volume", StringComparison.Ordinal))
+                        System.Threading.Interlocked.Increment(ref cachedVolumes);
+                }))
+                {
+                    var restoreTask = Task.Run(async () => await c.RestoreAsync(new[] { "*" }));
+
+                    var trigger = await Task.WhenAny(enoughDownloaded.Task, restoreTask, Task.Delay(TimeSpan.FromMinutes(1))).ConfigureAwait(false);
+                    if (trigger == restoreTask)
+                        Assert.Ignore("The restore finished before it could be aborted; the download hook is not slowing it down enough");
+                    if (trigger != enoughDownloaded.Task)
+                        Assert.Fail($"The restore did not download {volumesBeforeAbort} volumes within a minute");
+
+                    await c.AbortAsync().ConfigureAwait(false);
+
+                    var stopped = await Task.WhenAny(restoreTask, Task.Delay(TimeSpan.FromMinutes(1))).ConfigureAwait(false) == restoreTask;
+                    Assert.IsTrue(stopped, "The abort did not stop the restore within a minute");
+
+                    try
+                    {
+                        await restoreTask.ConfigureAwait(false);
+                        Assert.Fail("The aborted restore was expected to fault");
+                    }
+                    catch (Exception)
+                    {
+                        // The type is deliberately not asserted: which task in the network faults
+                        // first decides it, and classifying an aborted restore is a separate matter.
+                    }
+                }
+
+                // No GC.Collect anywhere: the point is that the volumes are disposed
+                // explicitly, and a forced collection would let a finalizer do that job.
+                var leftover = Directory.GetFiles(tempdir, "*", SearchOption.AllDirectories)
+                    .Where(x => !beforeRestore.Contains(x))
+                    .ToList();
+
+                // Checked on its own first: if nothing was ever cached the remaining
+                // assertions could pass without proving anything.
+                Assert.Greater(cachedVolumes, 0, "No volume was ever cached, so the test would pass without proving anything");
+
+                // The three claims are independent, so report all of them rather than only
+                // whichever happens to be checked first.
+                NUnit.Framework.Assert.Multiple(() =>
+                {
+                    Assert.AreEqual(0, restoreErrors.Count,
+                        $"An aborted restore reported errors:{Environment.NewLine}{string.Join(Environment.NewLine, restoreErrors)}");
+
+                    Assert.AreEqual(0, restoreResults!.BrokenRemoteFiles.Count(),
+                        $"An aborted restore blamed the backup for {string.Join(", ", restoreResults.BrokenRemoteFiles)}");
+
+                    Assert.AreEqual(0, leftover.Count,
+                        $"An aborted restore left temporary files behind:{Environment.NewLine}{string.Join(Environment.NewLine, leftover)}");
+                });
+            }
+            finally
+            {
+                DeterministicErrorBackend.ErrorGenerator = null;
+                Library.Utility.TempFolder.SystemTempPath = previousTempPath;
+            }
+        }
     }
 }

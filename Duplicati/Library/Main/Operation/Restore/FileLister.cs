@@ -175,6 +175,16 @@ namespace Duplicati.Library.Main.Operation.Restore
                         await self.Output.WriteAsync(new FileRequest(file.ID, file.OriginalPath, file.TargetPath, file.Hash, file.Length, file.BlocksetID, IsAlternateDataStream: true, Version: version, BackupTimestamp: backupTimestamp)).ConfigureAwait(false);
                     sw_write_file?.Stop();
                 }
+                catch (Exception) when (RestoreCancellation.IsAborted(result.TaskControl))
+                {
+                    // An abort is an orderly shutdown that arrived by a different signal than
+                    // retirement, so it is reported the same way retirement is. This is also the
+                    // only process without a `catch (RetiredException)`, and consulting the token
+                    // covers both.
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "CancelledProcess", null, "File lister cancelled");
+                    threw_exception = true;
+                    throw;
+                }
                 catch (Exception ex)
                 {
                     Logging.Log.WriteErrorMessage(LOGTAG, "FileListerError", ex, "Error during file listing");
