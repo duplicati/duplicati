@@ -263,7 +263,7 @@ namespace Duplicati.GUI.TrayIcon
                 if (OperatingSystem.IsWindows() && OperatingSystem.IsWindowsVersionAtLeast(10, 0, 17763))
                     this.notifierInstance = Library.Snapshots.Windows.WindowsShimLoader.NewNativeNotifier();
                 else if (OperatingSystem.IsMacOS())
-                    this.notifierInstance = new Library.Utility.MacOSOSANotifier();
+                    this.notifierInstance = new MacOSRumpNotifier();
 
                 if (this.notifierInstance != null)
                 {

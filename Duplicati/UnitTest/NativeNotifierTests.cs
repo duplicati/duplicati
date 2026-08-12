@@ -22,7 +22,6 @@
 #nullable enable
 
 using System;
-using System.Runtime.Versioning;
 using Duplicati.Library.Snapshots.Windows;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
@@ -56,22 +55,5 @@ namespace Duplicati.UnitTest
             Assert.IsTrue(clicked, "The stored callback must be invocable");
         }
 
-        [Test]
-        [SupportedOSPlatform("macOS")]
-        public void MacOSOSANotifierCanBeCreated()
-        {
-            if (!OperatingSystem.IsMacOS())
-                Assert.Ignore("The macOS notifier can only be created on macOS");
-
-            var notifier = new Library.Utility.MacOSOSANotifier();
-            Assert.IsNotNull(notifier, "A notifier instance should be created on macOS");
-
-            var clicked = false;
-            notifier.NotificationClicked = () => clicked = true;
-            Assert.IsNotNull(notifier.NotificationClicked, "The click callback must be storable");
-
-            notifier.NotificationClicked.Invoke();
-            Assert.IsTrue(clicked, "The stored callback must be invocable");
-        }
     }
 }
