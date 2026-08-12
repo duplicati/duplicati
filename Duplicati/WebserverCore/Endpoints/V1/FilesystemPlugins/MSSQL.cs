@@ -36,12 +36,12 @@ public class MSSQL : IFilesystemPlugin
         if (!OperatingSystem.IsWindows())
             return [];
 
-        var mssqlUtility = new MSSQLUtility();
-        if (!mssqlUtility.IsMSSQLInstalled || !new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator))
-            return [];
-
         try
         {
+            var mssqlUtility = new MSSQLUtility();
+            if (!mssqlUtility.IsMSSQLInstalled || !new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator))
+                return [];
+
             mssqlUtility.QueryDBsInfo(WindowsSnapshot.DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER);
 
             // Tier 1: Root Node Selection (%MSSQL%)
