@@ -419,18 +419,18 @@ namespace Duplicati.Library.Main.Operation.Restore
             public void Dispose()
             {
                 // These are self-checks for a completed restore: they ask whether every block
-                // and volume that was counted up front was also consumed. An aborted restore
-                // stops with work outstanding by definition, so leftovers are the expected
-                // outcome rather than a defect, and reporting them as errors describes the abort
-                // as a failure. The retirement check below is not suppressed, because it holds
-                // on every path.
-                var aborted = RestoreCancellation.IsAborted(m_taskreader);
+                // and volume that was counted up front was also consumed. A restore that was
+                // asked to stop or was aborted ends with work outstanding by definition, so
+                // leftovers are the expected outcome rather than a defect, and reporting them as
+                // errors describes a requested shutdown as a failure. The retirement check below
+                // is not suppressed, because it holds on every path.
+                var shutdown_requested = RestoreCancellation.IsShutdownRequested(m_taskreader);
 
                 // Verify that the tables are empty
                 var blockcount = m_blockcount.Sum(x => x.Value);
                 var volumecount = m_volumecount.Sum(x => x.Value);
 
-                if (blockcount != 0 && !aborted)
+                if (blockcount != 0 && !shutdown_requested)
                 {
                     var blocks = m_blockcount
                         .Where(x => x.Value != 0)
@@ -440,7 +440,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     Logging.Log.WriteErrorMessage(LOGTAG, "BlockCountError", null, $"Block count in SleepableDictionarys block table is not zero: {blockcount}{Environment.NewLine}First 10 blocks: {blockids}");
                 }
 
-                if (volumecount != 0 && !aborted)
+                if (volumecount != 0 && !shutdown_requested)
                 {
                     var vols = m_volumecount
                         .Where(x => x.Value != 0)
@@ -450,7 +450,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     Logging.Log.WriteErrorMessage(LOGTAG, "VolumeCountError", null, $"Volume count in SleepableDictionarys volume table is not zero: {volumecount}{Environment.NewLine}First 10 volumes: {volids}");
                 }
 
-                if (m_block_cache.Count > 0 && !aborted)
+                if (m_block_cache.Count > 0 && !shutdown_requested)
                 {
                     Logging.Log.WriteErrorMessage(LOGTAG, "BlockCacheMismatch", null, $"Internal Block cache is not empty: {m_block_cache.Count}");
                     Logging.Log.WriteErrorMessage(LOGTAG, "BlockCacheMismatch", null, $"First 10 block counts in cache ({m_blockcount.Count}): {string.Join(", ", m_blockcount.Take(10).Select(x => x.Value))}");

@@ -38,11 +38,11 @@ namespace Duplicati.Library.Main.Operation.Restore
     internal static class RestoreCancellation
     {
         /// <summary>
-        /// Returns whether the restore has been aborted, i.e. whether the cancellation the
-        /// processes are seeing was asked for rather than caused by a fault.
+        /// Returns whether the restore is winding down because it was asked to, rather than
+        /// because something failed. Covers both an abort and an orderly stop.
         /// </summary>
         /// <param name="taskReader">The task reader whose tokens to consult.</param>
-        /// <returns><c>true</c> if the operation was aborted.</returns>
+        /// <returns><c>true</c> if the shutdown was requested.</returns>
         /// <remarks>
         /// The tokens are consulted rather than the exception type. A cancellation is not
         /// identifiable from its exception: <see cref="System.Net.Http.HttpClient"/> reports its
@@ -51,12 +51,16 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// shutdown. Consulting the token instead follows the existing precedent in
         /// <c>BackendManager.Handler</c>.
         ///
-        /// <see cref="Common.ITaskReader.StopToken"/> is deliberately not consulted: nothing in
-        /// the restore process network observes it, so no cancellation can originate there.
+        /// <see cref="Common.ITaskReader.StopToken"/> is consulted because a stop leaves the same
+        /// traces an abort does. It stops the restore with work outstanding, so the invariant
+        /// checks in <c>BlockManager</c> see leftovers; and a download that had already failed
+        /// once is cancelled rather than retried by <c>BackendManager</c>, which is not evidence
+        /// that the backup is broken.
         /// </remarks>
-        public static bool IsAborted(Common.ITaskReader taskReader)
+        public static bool IsShutdownRequested(Common.ITaskReader taskReader)
             => taskReader.ProgressToken.IsCancellationRequested
-                || taskReader.TransferToken.IsCancellationRequested;
+                || taskReader.TransferToken.IsCancellationRequested
+                || taskReader.StopToken.IsCancellationRequested;
     }
 
     /// <summary>

@@ -713,5 +713,128 @@ namespace Duplicati.UnitTest
                 Library.Utility.TempFolder.SystemTempPath = previousTempPath;
             }
         }
+
+        /// <summary>
+        /// A stop is a request to finish the current file and then stop, so the restore has to
+        /// notice it while it is running rather than carry on to the end of the backup.
+        /// </summary>
+        [Test]
+        [Category("RestoreHandler")]
+        public async Task StoppedRestoreStopsAsync()
+        {
+            const int fileCount = 40;
+            const int volumesBeforeStop = 3;
+
+            var backupOptions = new Dictionary<string, string>(this.TestOptions)
+            {
+                ["dblock-size"] = "200kb",
+                ["blocksize"] = "4kb"
+            };
+
+            // Enough distinct data to fill several volumes, so the restore still has plenty of
+            // work left when the stop arrives
+            var rng = new Random(42);
+            var data = new byte[32 * 1024];
+            for (var i = 0; i < fileCount; i++)
+            {
+                rng.NextBytes(data);
+                File.WriteAllBytes(Path.Combine(this.DATAFOLDER, $"file{i}"), data);
+            }
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, backupOptions, null))
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+
+            Library.DynamicLoader.BackendLoader.AddBackend(new DeterministicErrorBackend());
+            var downloaded = 0;
+            var enoughDownloaded = new TaskCompletionSource();
+
+            // Used as a hook rather than as a source of errors: it always answers "no error",
+            // but it slows every volume download down so the restore cannot outrun the stop,
+            // and it signals once enough volumes have been fetched.
+            DeterministicErrorBackend.ErrorGenerator = (action, remotename) =>
+            {
+                if (action != DeterministicErrorBackend.BackendAction.GetBefore
+                    || !remotename.Contains(".dblock.", StringComparison.Ordinal))
+                    return false;
+
+                if (System.Threading.Interlocked.Increment(ref downloaded) >= volumesBeforeStop)
+                    enoughDownloaded.TrySetResult();
+
+                System.Threading.Thread.Sleep(1500);
+                return false;
+            };
+
+            try
+            {
+                var restoreOptions = new Dictionary<string, string>(this.TestOptions)
+                {
+                    ["dblock-size"] = "200kb",
+                    ["blocksize"] = "4kb",
+                    ["restore-path"] = this.RESTOREFOLDER,
+                    ["restore-legacy"] = "false",
+                    // Force the blocks to come from the destination rather than from the source
+                    ["restore-with-local-blocks"] = "false",
+                    ["restore-volume-downloaders"] = "4",
+                    ["restore-volume-decryptors"] = "1",
+                    ["restore-volume-decompressors"] = "1",
+                    ["restore-file-processors"] = "1"
+                };
+
+                var restoreErrors = new System.Collections.Concurrent.ConcurrentQueue<string>();
+                // Spelled out rather than taken from the types, which are internal to
+                // Duplicati.Library.Main
+                const string restoreNamespace = "Duplicati.Library.Main.Operation.Restore.";
+
+                Library.Main.RestoreResults? restoreResults = null;
+                using var c = new Controller(new DeterministicErrorBackend().ProtocolKey + "://" + this.TARGETFOLDER, restoreOptions, null);
+                c.OnOperationStarted += r => restoreResults = (Library.Main.RestoreResults)r;
+
+                using (Library.Logging.Log.StartScope(e =>
+                {
+                    // Scoped to the restore process network; how a stopped operation is
+                    // classified is a separate matter from what the network reports.
+                    if (e.Level == Library.Logging.LogMessageType.Error
+                        && e.Tag != null && e.Tag.StartsWith(restoreNamespace, StringComparison.Ordinal))
+                        restoreErrors.Enqueue($"{e.Tag.Split('.').Last()}/{e.Id}: {e.FormattedMessage}");
+                }))
+                {
+                    var restoreTask = Task.Run(async () => await c.RestoreAsync(new[] { "*" }));
+
+                    var trigger = await Task.WhenAny(enoughDownloaded.Task, restoreTask, Task.Delay(TimeSpan.FromMinutes(1))).ConfigureAwait(false);
+                    if (trigger == restoreTask)
+                        Assert.Ignore("The restore finished before it could be stopped; the download hook is not slowing it down enough");
+                    if (trigger != enoughDownloaded.Task)
+                        Assert.Fail($"The restore did not download {volumesBeforeStop} volumes within a minute");
+
+                    await c.StopAsync().ConfigureAwait(false);
+
+                    // Bounded: a stop that does not stop the restore has to fail the test rather
+                    // than hang the run, since NUnit has no per-test timeout to fall back on.
+                    var grace = TimeSpan.FromMinutes(2);
+                    var stopped = await Task.WhenAny(restoreTask, Task.Delay(grace)).ConfigureAwait(false) == restoreTask;
+                    Assert.IsTrue(stopped, $"The restore did not stop within {grace.TotalMinutes:F0} minutes of being stopped");
+
+                    // A stopped restore is a requested shutdown, so it is expected to return
+                    // rather than fault.
+                    await restoreTask.ConfigureAwait(false);
+                }
+
+                NUnit.Framework.Assert.Multiple(() =>
+                {
+                    Assert.Less(restoreResults!.RestoredFiles, fileCount,
+                        $"The restore was stopped after {volumesBeforeStop} volumes but still restored all {fileCount} files, so the stop was ignored");
+
+                    Assert.AreEqual(0, restoreErrors.Count,
+                        $"A stopped restore reported errors:{Environment.NewLine}{string.Join(Environment.NewLine, restoreErrors)}");
+
+                    Assert.AreEqual(0, restoreResults.BrokenRemoteFiles.Count(),
+                        $"A stopped restore blamed the backup for {string.Join(", ", restoreResults.BrokenRemoteFiles)}");
+                });
+            }
+            finally
+            {
+                DeterministicErrorBackend.ErrorGenerator = null;
+            }
+        }
     }
 }

@@ -89,7 +89,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         // download the abort itself cancelled would be recorded as a defect in
                         // the backup. The progress token is consulted as well because the
                         // `BackendManager` gives up on a download for either of them.
-                        catch (Exception) when (!RestoreCancellation.IsAborted(results.TaskControl))
+                        catch (Exception) when (!RestoreCancellation.IsShutdownRequested(results.TaskControl))
                         {
                             lock (results)
                                 results.BrokenRemoteFiles.Add(volume_name);
@@ -125,7 +125,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Read: {sw_read!.ElapsedMilliseconds}ms, Write: {sw_write!.ElapsedMilliseconds}ms, Wait: {sw_wait!.ElapsedMilliseconds}ms");
                     }
                 }
-                catch (Exception) when (RestoreCancellation.IsAborted(results.TaskControl))
+                catch (Exception) when (RestoreCancellation.IsShutdownRequested(results.TaskControl))
                 {
                     // An abort is an orderly shutdown that arrived by a different signal than
                     // retirement, so it is reported the same way retirement is. The retirement

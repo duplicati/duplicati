@@ -330,7 +330,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                             Logging.Log.WriteProfilingMessage(LOGTAG, "CacheUsage", $"Max used cache size: {Duplicati.Library.Utility.Utility.FormatSizeString(cache_size_max_consumed)}");
                         }
                     }
-                    catch (Exception) when (RestoreCancellation.IsAborted(results.TaskControl))
+                    catch (Exception) when (RestoreCancellation.IsShutdownRequested(results.TaskControl))
                     {
                         // An abort is an orderly shutdown that arrived by a different signal
                         // than retirement, so it is reported the same way retirement is.
