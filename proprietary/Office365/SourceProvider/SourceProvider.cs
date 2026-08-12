@@ -57,6 +57,29 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
     private readonly ConcurrentDictionary<string, Task<UserSeatCategory>> _userSeatCache = new();
 
     /// <summary>
+    /// Cache of the resolved classification for a given site (by id). Resolved once per site
+    /// and reused across the non-incrementing (gate) and incrementing (count) license checks
+    /// as well as for item metadata.
+    /// </summary>
+    private readonly ConcurrentDictionary<string, Task<SiteCategory>> _siteCategoryCache = new();
+
+    /// <summary>
+    /// The lazily built index of the sites that host the OneDrive of a disabled user.
+    /// Built at most once per provider instance, and only if a personal site is encountered.
+    /// </summary>
+    private Task<DisabledUserSiteIndex>? _disabledUserSiteIndex;
+
+    /// <summary>
+    /// Guards the creation of <see cref="_disabledUserSiteIndex"/>.
+    /// </summary>
+    private readonly object _disabledUserSiteIndexLock = new();
+
+    /// <summary>
+    /// Whether a warning has been issued about a failed disabled-user lookup.
+    /// </summary>
+    private int _disabledUserLookupWarningIssued = 0;
+
+    /// <summary>
     /// The current number of users that has been enumerated.
     /// </summary>
     private int _userCount = 0;
@@ -113,6 +136,14 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
     private readonly SourceItems.Office365SiteClassification _includedSiteClassifications;
 
     /// <summary>
+    /// Whether this provider instance is enumerating items for display rather than for backup.
+    /// Only then does the item metadata carry the classification, which the user interface uses
+    /// to pick an icon; resolving it can cost a Graph request per item, and a backup never reads
+    /// it back.
+    /// </summary>
+    internal bool EnumerationMode { get; }
+
+    /// <summary>
     /// Whether this provider is being used for a restore operation.
     /// </summary>
     internal bool UsedForRestoreOperation { get; set; } = false;
@@ -133,6 +164,7 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
         _includedUserClassifications = OptionsHelper.ALL_USER_CLASSIFICATIONS;
         _includedGroupClassifications = OptionsHelper.ALL_GROUP_CLASSIFICATIONS;
         _includedSiteClassifications = OptionsHelper.ALL_SITE_CLASSIFICATIONS;
+        EnumerationMode = false;
         _hasSetMetadataStorageOption = false;
     }
 
@@ -155,6 +187,7 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
         _includedUserClassifications = parsedOptions.IncludedUserClassifications;
         _includedGroupClassifications = parsedOptions.IncludedGroupClassifications;
         _includedSiteClassifications = parsedOptions.IncludedSiteClassifications;
+        EnumerationMode = parsedOptions.EnumerationMode;
         _apiHelper = APIHelper.Create(
             tenantId: parsedOptions.TenantId,
             authOptions: parsedOptions.AuthOptions,
@@ -347,7 +380,9 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
 
     /// <summary>
     /// The classification of a SharePoint site, used for reporting item counts.
-    /// Determined on a best-effort basis from the Microsoft Graph <c>site</c> object only.
+    /// Determined on a best-effort basis from the Microsoft Graph <c>site</c> object, plus a
+    /// lookup of the tenant's disabled users to separate out
+    /// <see cref="PersonalDisabledUser"/>.
     /// </summary>
     internal enum SiteCategory
     {
@@ -357,10 +392,15 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
         Classic,
         /// <summary>A modern communication site.</summary>
         Communication,
-        /// <summary>A personal (OneDrive for Business) site.</summary>
+        /// <summary>
+        /// A personal (OneDrive for Business) site whose owner is an enabled account, or could
+        /// not be determined.
+        /// </summary>
         Personal,
         /// <summary>Any other or undetermined site type.</summary>
         Other,
+        /// <summary>A personal (OneDrive for Business) site owned by a disabled user account.</summary>
+        PersonalDisabledUser,
     }
 
     /// <summary>
@@ -379,13 +419,21 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
     /// <summary>
     /// Maps a <see cref="SiteCategory"/> to its corresponding include-filter flag.
     /// </summary>
+    /// <remarks>
+    /// <see cref="SiteCategory.Personal"/> maps to the enabled-owner flag rather than to the
+    /// <see cref="SourceItems.Office365SiteClassification.Personal"/> alias, because the alias
+    /// covers both owner states and would make a filter that excludes only one of them match
+    /// anyway. A site whose owner could not be determined is therefore filtered as if the owner
+    /// were enabled, which is the same assumption the seat counting makes.
+    /// </remarks>
     private static SourceItems.Office365SiteClassification ToClassificationFlag(SiteCategory category)
         => category switch
         {
             SiteCategory.Group => SourceItems.Office365SiteClassification.Group,
             SiteCategory.Classic => SourceItems.Office365SiteClassification.Classic,
             SiteCategory.Communication => SourceItems.Office365SiteClassification.Communication,
-            SiteCategory.Personal => SourceItems.Office365SiteClassification.Personal,
+            SiteCategory.Personal => SourceItems.Office365SiteClassification.PersonalEnabledUser,
+            SiteCategory.PersonalDisabledUser => SourceItems.Office365SiteClassification.PersonalDisabledUser,
             _ => SourceItems.Office365SiteClassification.Other
         };
 
@@ -396,6 +444,14 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
     /// </summary>
     private bool AllUserClassificationsIncluded
         => _includedUserClassifications.HasFlag(OptionsHelper.ALL_USER_CLASSIFICATIONS);
+
+    /// <summary>
+    /// Whether the site-classification include filter covers every classification. When it
+    /// does, the filter can never exclude a site, so the classification does not need to be
+    /// resolved in order to apply it.
+    /// </summary>
+    private bool AllSiteClassificationsIncluded
+        => _includedSiteClassifications.HasFlag(OptionsHelper.ALL_SITE_CLASSIFICATIONS);
 
     /// <summary>
     /// Determines whether a user should be included based on its classification and the
@@ -439,9 +495,61 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
     /// configured site-classification include filter.
     /// </summary>
     /// <param name="site">The site to test.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns><c>true</c> if the site should be included; otherwise <c>false</c>.</returns>
-    internal bool IsSiteClassificationIncluded(GraphSite site)
-        => _includedSiteClassifications.HasFlag(ToClassificationFlag(ClassifySite(site)));
+    /// <remarks>
+    /// Separating a personal site owned by a disabled user from one owned by an active user
+    /// requires the disabled-user index, so when the include filter covers every
+    /// classification the test is a tautology and is answered without classifying at all.
+    /// That is the default configuration.
+    /// </remarks>
+    internal async Task<bool> IsSiteClassificationIncludedAsync(GraphSite site, CancellationToken cancellationToken)
+    {
+        if (AllSiteClassificationsIncluded)
+            return true;
+
+        var category = await ClassifySiteAsync(site, cancellationToken).ConfigureAwait(false);
+        return _includedSiteClassifications.HasFlag(ToClassificationFlag(category));
+    }
+
+    /// <summary>
+    /// Determines whether the given site consumes a Duplicati site seat. Personal (OneDrive)
+    /// sites owned by a disabled user account do not, since the account has been offboarded and
+    /// is no longer an active seat.
+    /// </summary>
+    /// <param name="site">The site to classify.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns><c>true</c> if the site should count as a seat; otherwise <c>false</c>.</returns>
+    internal async Task<bool> SiteCountsAsSeatAsync(GraphSite site, CancellationToken cancellationToken)
+    {
+        // Restores are unlimited; avoid any extra Graph calls for classification.
+        if (UsedForRestoreOperation)
+            return true;
+
+        var category = await ClassifySiteAsync(site, cancellationToken).ConfigureAwait(false);
+        return SiteCategoryCountsAsSeat(category);
+    }
+
+    /// <summary>
+    /// Determines whether the given site category consumes a licensed seat. Only personal
+    /// sites that could be positively attributed to a disabled user account are exempt; every
+    /// other category (including personal sites whose owner could not be determined) counts,
+    /// so site seats are never under-counted.
+    /// </summary>
+    private static bool SiteCategoryCountsAsSeat(SiteCategory category)
+        => category != SiteCategory.PersonalDisabledUser;
+
+    /// <summary>
+    /// Returns the cached classification for a site if it has already been resolved, without
+    /// triggering any Graph API call. Returns <c>null</c> when the classification has not been
+    /// resolved yet (or has not completed successfully).
+    /// </summary>
+    /// <param name="siteId">The site id.</param>
+    /// <returns>The resolved site category, or <c>null</c> if not yet available.</returns>
+    internal SiteCategory? TryGetCachedSiteCategory(string siteId)
+        => _siteCategoryCache.TryGetValue(siteId, out var task) && task.IsCompletedSuccessfully
+            ? task.Result
+            : null;
 
     /// <summary>
     /// Classifies a user into one of the <see cref="UserSeatCategory"/> buckets.
@@ -532,6 +640,202 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
         // The Graph site object does not expose the web template, so group/classic/
         // communication cannot be distinguished reliably from Graph alone.
         return SiteCategory.Other;
+    }
+
+    /// <summary>
+    /// Classifies a SharePoint site, additionally separating personal (OneDrive) sites owned
+    /// by a disabled user account into <see cref="SiteCategory.PersonalDisabledUser"/>.
+    /// </summary>
+    /// <param name="site">The site to classify.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The site category.</returns>
+    /// <remarks>
+    /// The result is resolved once per site and cached, so the disabled-user index is
+    /// consulted at most once per site and is shared between seat counting, the count
+    /// operation and item metadata.
+    /// </remarks>
+    internal Task<SiteCategory> ClassifySiteAsync(GraphSite site, CancellationToken cancellationToken)
+    {
+        // Restores are unlimited, so the owner cannot affect seat counting and must not be paid
+        // for. It is still resolved when the include filter needs it, because otherwise the
+        // same configuration would select a different set of sites on restore than on backup.
+        if (UsedForRestoreOperation && AllSiteClassificationsIncluded)
+            return Task.FromResult(ClassifySite(site));
+
+        // A site without an id cannot be cached, as the key would be shared with every other
+        // id-less site. The disabled-user index is cached independently of this, so resolving
+        // it directly costs no more than a cache miss.
+        if (string.IsNullOrWhiteSpace(site.Id))
+            return ResolveSiteCategoryAsync(site, cancellationToken);
+
+        var task = _siteCategoryCache.GetOrAdd(site.Id, _ => ResolveSiteCategoryAsync(site, cancellationToken));
+
+        // The cached task captured the cancellation token of whichever caller asked first, so a
+        // cancelled lookup would otherwise stay cached and keep failing for the lifetime of the
+        // provider. Evict it so the next caller retries with its own token.
+        if (task.IsCanceled || task.IsFaulted)
+            _siteCategoryCache.TryRemove(new KeyValuePair<string, Task<SiteCategory>>(site.Id, task));
+
+        return task;
+    }
+
+    /// <summary>
+    /// Resolves the classification for a site. See <see cref="ClassifySiteAsync"/>.
+    /// </summary>
+    private async Task<SiteCategory> ResolveSiteCategoryAsync(GraphSite site, CancellationToken cancellationToken)
+    {
+        var category = ClassifySite(site);
+
+        // Only personal sites have a single owning user account, so nothing else can be
+        // attributed to a disabled user.
+        if (category != SiteCategory.Personal)
+            return category;
+
+        var index = await GetDisabledUserSiteIndexAsync(cancellationToken).ConfigureAwait(false);
+        return index.Contains(site)
+            ? SiteCategory.PersonalDisabledUser
+            : SiteCategory.Personal;
+    }
+
+    /// <summary>
+    /// Gets the index of the sites hosting the OneDrive of a disabled user, building it on
+    /// first use.
+    /// </summary>
+    private Task<DisabledUserSiteIndex> GetDisabledUserSiteIndexAsync(CancellationToken cancellationToken)
+    {
+        lock (_disabledUserSiteIndexLock)
+        {
+            // A cancelled build captured the token of whichever caller asked first, so it must
+            // not stay cached; rebuild it with the current caller's token instead.
+            var existing = _disabledUserSiteIndex;
+            if (existing != null && !existing.IsCanceled && !existing.IsFaulted)
+                return existing;
+
+            return _disabledUserSiteIndex = BuildDisabledUserSiteIndexAsync(cancellationToken);
+        }
+    }
+
+    /// <summary>
+    /// Builds the index of the sites hosting the OneDrive of a disabled user.
+    /// </summary>
+    /// <remarks>
+    /// The whole index costs a single filtered listing of the tenant's disabled accounts,
+    /// selecting nothing but the user principal name. No request is made per account and none
+    /// per site: a personal site is matched to its owner through the site URL, because
+    /// SharePoint derives the URL of a personal site from the owner's user principal name (see
+    /// <see cref="SanitizeUserPrincipalName"/>). Asking Graph instead — either which site hosts
+    /// each disabled user's OneDrive, or who owns each personal site — would cost one request
+    /// per account or per site, which is not acceptable while enumerating for display.
+    /// <para>
+    /// The URL is derived from the user principal name at the time the OneDrive is provisioned
+    /// and does not follow a later rename, so a renamed disabled account is not recognized. Such
+    /// a site keeps counting as a seat, which over-counts rather than under-counts, matching how
+    /// every other unresolved case is treated here.
+    /// </para>
+    /// <para>
+    /// A failure never propagates: the index is then built from whatever could be read, which
+    /// attributes the remaining personal sites to an active user and so over-counts seats
+    /// rather than under-counting them. That incomplete index is still cached, because
+    /// rebuilding it for every personal site would multiply the cost of a failure that is
+    /// unlikely to be transient; it is retried on the next operation, since the index does not
+    /// outlive the provider instance. Whether the result is complete is reported once as a
+    /// warning so the over-counting is not silent.
+    /// </para>
+    /// </remarks>
+    private async Task<DisabledUserSiteIndex> BuildDisabledUserSiteIndexAsync(CancellationToken cancellationToken)
+    {
+        var sanitizedUserPrincipalNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            await foreach (var user in RootApi.ListDisabledUsersAsync(cancellationToken).ConfigureAwait(false))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var sanitized = SanitizeUserPrincipalName(user.UserPrincipalName);
+                if (sanitized != null)
+                    sanitizedUserPrincipalNames.Add(sanitized);
+            }
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // Paging may fail part-way through, in which case the users listed so far are still
+            // usable; only the remaining ones keep counting as a seat.
+            if (Interlocked.Exchange(ref _disabledUserLookupWarningIssued, 1) == 0)
+                Library.Logging.Log.WriteWarningMessage(LOGTAG, "DisabledUserLookupFailed", ex,
+                    sanitizedUserPrincipalNames.Count == 0
+                        ? Strings.DisabledUserLookupFailed
+                        : Strings.DisabledUserLookupIncomplete(sanitizedUserPrincipalNames.Count));
+        }
+
+        return new DisabledUserSiteIndex(sanitizedUserPrincipalNames);
+    }
+
+    /// <summary>
+    /// Converts a user principal name into the form SharePoint uses for the path segment of the
+    /// owner's personal site, by replacing <c>@</c> and <c>.</c> with an underscore, so that
+    /// <c>first.last@contoso.com</c> becomes <c>first_last_contoso_com</c>.
+    /// </summary>
+    /// <param name="userPrincipalName">The user principal name to convert.</param>
+    /// <returns>The sanitized name, or <c>null</c> if there is nothing to convert.</returns>
+    private static string? SanitizeUserPrincipalName(string? userPrincipalName)
+        => string.IsNullOrWhiteSpace(userPrincipalName)
+            ? null
+            : userPrincipalName.Trim().Replace('@', '_').Replace('.', '_');
+
+    /// <summary>
+    /// Extracts the owner part of the URL of a personal site, i.e. the segment that follows
+    /// <c>/personal/</c>, which is the sanitized user principal name of the owner.
+    /// </summary>
+    /// <param name="webUrl">The site URL to inspect.</param>
+    /// <returns>The sanitized owner name, or <c>null</c> if the URL is not a personal site URL.</returns>
+    /// <remarks>
+    /// Only the segment right after <c>/personal/</c> is taken, so that a subsite of a personal
+    /// site is attributed to the same owner as its site collection.
+    /// </remarks>
+    private static string? GetPersonalSiteOwnerSegment(string? webUrl)
+    {
+        const string marker = "/personal/";
+
+        if (string.IsNullOrWhiteSpace(webUrl))
+            return null;
+
+        var start = webUrl.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+        if (start < 0)
+            return null;
+
+        start += marker.Length;
+        var end = webUrl.IndexOf('/', start);
+        var segment = end < 0
+            ? webUrl[start..]
+            : webUrl[start..end];
+
+        if (string.IsNullOrWhiteSpace(segment))
+            return null;
+
+        // A user principal name may contain characters that are percent-encoded in the URL,
+        // notably the "#EXT#" marker of a guest account.
+        return Uri.UnescapeDataString(segment);
+    }
+
+    /// <summary>
+    /// A lookup of the sites that host the OneDrive of a disabled user account, keyed by the
+    /// sanitized user principal name that SharePoint puts in the URL of a personal site.
+    /// </summary>
+    /// <param name="sanitizedUserPrincipalNames">
+    /// The sanitized user principal names of the disabled accounts.
+    /// </param>
+    private sealed class DisabledUserSiteIndex(HashSet<string> sanitizedUserPrincipalNames)
+    {
+        /// <summary>
+        /// Determines whether the given site hosts the OneDrive of a disabled user account.
+        /// </summary>
+        /// <param name="site">The site to test.</param>
+        /// <returns><c>true</c> if the site belongs to a disabled user; otherwise <c>false</c>.</returns>
+        public bool Contains(GraphSite site)
+        {
+            var owner = GetPersonalSiteOwnerSegment(site.WebUrl);
+            return owner != null && sanitizedUserPrincipalNames.Contains(owner);
+        }
     }
 
     /// <summary>

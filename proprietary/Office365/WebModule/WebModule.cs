@@ -83,7 +83,10 @@ public class WebModule : IWebModule
 
         var forwardoptions = new Dictionary<string, string?>()
         {
-            { "store-metadata-content-in-database", "true" }
+            { "store-metadata-content-in-database", "true" },
+            // Every operation here enumerates for display or reporting, never for backup, so the
+            // item classification is wanted in the metadata.
+            { OptionsHelper.ENUMERATION_MODE_OPTION, "true" }
         };
 
         var uri = new Library.Utility.Uri(url);
@@ -200,7 +203,7 @@ public class WebModule : IWebModule
             cancellationToken.ThrowIfCancellationRequested();
             result.Sites.Total++;
 
-            switch (SourceProvider.ClassifySite(site))
+            switch (await client.ClassifySiteAsync(site, cancellationToken).ConfigureAwait(false))
             {
                 case SourceProvider.SiteCategory.Group:
                     result.Sites.Group++;
@@ -213,6 +216,9 @@ public class WebModule : IWebModule
                     break;
                 case SourceProvider.SiteCategory.Personal:
                     result.Sites.Personal++;
+                    break;
+                case SourceProvider.SiteCategory.PersonalDisabledUser:
+                    result.Sites.PersonalDisabledUser++;
                     break;
                 default:
                     result.Sites.Other++;
@@ -282,7 +288,8 @@ public class WebModule : IWebModule
     }
 
     /// <summary>
-    /// The site item-count breakdown.
+    /// The site item-count breakdown. Every category requires a seat except
+    /// <see cref="PersonalDisabledUser"/>.
     /// </summary>
     private sealed class SiteCounts
     {
@@ -300,6 +307,9 @@ public class WebModule : IWebModule
 
         [System.Text.Json.Serialization.JsonPropertyName("personal")]
         public int Personal { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("personalDisabledUser")]
+        public int PersonalDisabledUser { get; set; }
 
         [System.Text.Json.Serialization.JsonPropertyName("other")]
         public int Other { get; set; }

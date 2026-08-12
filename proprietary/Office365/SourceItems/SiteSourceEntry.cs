@@ -3,14 +3,17 @@
 using System.Runtime.CompilerServices;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Logging;
 
 namespace Duplicati.Proprietary.Office365.SourceItems;
 
 internal class SiteSourceEntry(SourceProvider provider, string parentPath, GraphSite site)
     : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, site.Id)), null, null)
 {
-    public override Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)
-        => Task.FromResult(new Dictionary<string, string?>()
+    private static readonly string LOGTAG = Log.LogTagFromType<SiteSourceEntry>();
+
+    public override async Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)
+        => new Dictionary<string, string?>()
         {
             { "o365:v", "1" },
             { "o365:Id", site.Id },
@@ -20,14 +23,49 @@ internal class SiteSourceEntry(SourceProvider provider, string parentPath, Graph
             { "o365:WebUrl", site.WebUrl },
             { "o365:Hostname", site.SiteCollection?.Hostname },
             { "o365:PersonalSite", site.IsPersonalSite?.ToString() },
-            { "o365:Classification", SourceProvider.ClassifySite(site).ToString() }
+            // Only the user interface consumes the classification, and resolving it may require
+            // the disabled-user lookup, so a backup does not pay for it.
+            { "o365:Classification", provider.EnumerationMode ? await GetSiteClassificationAsync(cancellationToken).ConfigureAwait(false) : null }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))
-        .ToDictionary(kv => kv.Key, kv => kv.Value));
+        .ToDictionary(kv => kv.Key, kv => kv.Value);
+
+    /// <summary>
+    /// Gets the classification string for treeview display, using the full classification
+    /// (which separates personal sites of disabled users) and falling back to the
+    /// site-object-only classification if it cannot be resolved.
+    /// </summary>
+    /// <remarks>
+    /// The full classification may require the disabled-user lookup, which costs a single
+    /// listing of the tenant's disabled accounts and is then shared by every other site. It is
+    /// resolved here rather than while enumerating so that a listing that displays no personal
+    /// site does not pay for it at all.
+    /// </remarks>
+    private async Task<string> GetSiteClassificationAsync(CancellationToken cancellationToken)
+    {
+        var cached = provider.TryGetCachedSiteCategory(site.Id);
+        if (cached != null)
+            return cached.Value.ToString();
+
+        try
+        {
+            var category = await provider.ClassifySiteAsync(site, cancellationToken).ConfigureAwait(false);
+            return category.ToString();
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // Metadata generation must not fail over a classification lookup.
+            Log.WriteVerboseMessage(LOGTAG, "SiteClassificationLookupFailed", ex, $"Failed to resolve the classification for site '{site.Id}'; falling back to the site classification.");
+            return SourceProvider.ClassifySite(site).ToString();
+        }
+    }
 
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        if (!provider.LicenseApprovedForEntry(parentPath, Office365MetaType.Sites, site.Id, true))
+        // Personal sites belonging to a disabled user account do not consume a seat.
+        var countsAsSeat = await provider.SiteCountsAsSeatAsync(site, cancellationToken).ConfigureAwait(false);
+
+        if (!provider.LicenseApprovedForEntry(parentPath, Office365MetaType.Sites, site.Id, true, countsAsSeat))
             yield break;
 
         yield return new StreamResourceEntryFunction(

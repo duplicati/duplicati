@@ -522,8 +522,6 @@ internal class APIHelper : IDisposable
     /// <returns>>The graph item</returns>
     public async Task<T> GetGraphItemAsync<T>(string url, CancellationToken ct)
     {
-        var select = GraphSelectBuilder.BuildSelect<T>();
-
         async Task<HttpRequestMessage> requestFactory(CancellationToken cancellationToken)
         {
             var req = new HttpRequestMessage(HttpMethod.Get, new NetUri(url));

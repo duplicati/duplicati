@@ -52,7 +52,9 @@ internal class UserSourceEntry(SourceProvider provider, string parentPath, Graph
                 { "o365:DisplayName", user.DisplayName ?? "" },
                 { "o365:UserPrincipalName", user.UserPrincipalName ?? "" },
                 { "o365:AccountEnabled", user.AccountEnabled?.ToString() ?? "" },
-                { "o365:Classification", await GetUserClassificationAsync(cancellationToken).ConfigureAwait(false) },
+                // Only the user interface consumes the classification, and resolving it costs a
+                // Graph request per user, so a backup does not pay for it.
+                { "o365:Classification", provider.EnumerationMode ? await GetUserClassificationAsync(cancellationToken).ConfigureAwait(false) : null },
             }
             .Where(kvp => !string.IsNullOrEmpty(kvp.Value))
             .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);

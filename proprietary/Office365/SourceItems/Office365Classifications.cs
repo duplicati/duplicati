@@ -44,8 +44,22 @@ internal enum Office365SiteClassification
     Classic = 2,
     /// <summary>A modern communication site.</summary>
     Communication = 4,
-    /// <summary>A personal (OneDrive for Business) site.</summary>
-    Personal = 8,
+    /// <summary>
+    /// A personal (OneDrive for Business) site owned by an enabled user account, or one whose
+    /// owner could not be determined.
+    /// </summary>
+    PersonalEnabledUser = 8,
     /// <summary>Any other or undetermined site type.</summary>
-    Other = 16
+    Other = 16,
+    /// <summary>
+    /// A personal (OneDrive for Business) site owned by a disabled user account.
+    /// </summary>
+    PersonalDisabledUser = 32,
+    /// <summary>
+    /// Every personal (OneDrive for Business) site, regardless of whether the owning account is
+    /// enabled or disabled. This is an alias, retained so that a configuration written before
+    /// <see cref="PersonalDisabledUser"/> existed keeps selecting every personal site, and so
+    /// that a caller that does not care about the owner can say so in one word.
+    /// </summary>
+    Personal = PersonalEnabledUser | PersonalDisabledUser
 }

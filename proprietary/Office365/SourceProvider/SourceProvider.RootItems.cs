@@ -28,6 +28,34 @@ partial class SourceProvider
             return provider.GetAllGraphItemsAsync<GraphUser>(url, ct);
         }
 
+        /// <summary>
+        /// Lists the users in the tenant whose account is disabled.
+        /// </summary>
+        /// <remarks>
+        /// The filtering is done server-side and only the user principal name is selected, so
+        /// the cost is proportional to the number of disabled users rather than to the size of
+        /// the tenant. <c>$orderby</c> is deliberately omitted: combining it with a filter on
+        /// <c>accountEnabled</c> requires an advanced directory query, and the result is only
+        /// used to build a lookup set where the ordering is irrelevant.
+        /// </remarks>
+        /// <param name="ct">The cancellation token.</param>
+        /// <returns>
+        /// An asynchronous enumerable of the disabled users, carrying only the id and the user
+        /// principal name.
+        /// </returns>
+        internal IAsyncEnumerable<GraphUser> ListDisabledUsersAsync(CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+
+            var url =
+                $"{baseUrl}/v1.0/users" +
+                $"?$filter={Uri.EscapeDataString("accountEnabled eq false")}" +
+                $"&$select={Uri.EscapeDataString("id,userPrincipalName")}" +
+                $"&$top={APIHelper.BIG_PAGE_SIZE}";
+
+            return provider.GetAllGraphItemsAsync<GraphUser>(url, ct);
+        }
+
         internal IAsyncEnumerable<GraphGroup> ListAllGroupsAsync(CancellationToken ct)
         {
             var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
