@@ -1,0 +1,7 @@
+{
+  "name": "StreamJsonRpc",
+  "description": "StreamJsonRpc is a cross-platform .NET library for JSON-RPC communication",
+  "link": "https://github.com/microsoft/vs-streamjsonrpc",
+  "license": "MIT",
+  "notes": ""
+}
