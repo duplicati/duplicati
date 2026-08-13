@@ -255,8 +255,7 @@ namespace Duplicati.GUI.TrayIcon
             hasAttemptedNotifierLoad = true;
 
             // Avalonia's TrayIcon has no notification support of its own, so the
-            // notification is shown with platform code; currently Windows toast
-            // notifications and macOS Notification Center alerts are implemented
+            // notification is shown with platform specific code
             try
             {
                 // The Toast implementation requires Windows 10 build 17763 or later
@@ -264,6 +263,8 @@ namespace Duplicati.GUI.TrayIcon
                     this.notifierInstance = Library.Snapshots.Windows.WindowsShimLoader.NewNativeNotifier();
                 else if (OperatingSystem.IsMacOS())
                     this.notifierInstance = new MacOSRumpNotifier();
+                else if (OperatingSystem.IsLinux())
+                    this.notifierInstance = new LinuxDBusNotifier();
 
                 if (this.notifierInstance != null)
                 {
