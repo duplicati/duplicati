@@ -1,0 +1,7 @@
+{
+  "name": "DnsClient",
+  "description": "DnsClient is a simple DNS client library for .NET",
+  "link": "https://github.com/MichaCo/DnsClient.NET",
+  "license": "MIT",
+  "notes": ""
+}

@@ -1,0 +1,7 @@
+{
+  "name": "Mono.Unix",
+  "description": "Mono.Unix provides Unix/POSIX integration for .NET",
+  "link": "https://github.com/mono/mono",
+  "license": "MIT",
+  "notes": ""
+}
