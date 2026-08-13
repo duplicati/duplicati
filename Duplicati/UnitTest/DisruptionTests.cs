@@ -1344,5 +1344,148 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(4, listResults.Filesets.Count());
             }
         }
+
+        /// <summary>
+        /// An abort is something the user asked for, so it must not be reported the way a
+        /// crash is. The exception is still expected to propagate.
+        /// </summary>
+        [Test]
+        [Category("Disruption")]
+        public async Task AbortedBackupIsNotReportedAsFatalAsync()
+        {
+            var options = new Dictionary<string, string>(this.TestOptions) { ["dblock-size"] = "10mb" };
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+
+            this.ModifySourceFiles();
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                IBackupResults? results = null;
+                var startedTcs = new TaskCompletionSource<bool>();
+                c.OnOperationStarted += r =>
+                {
+                    results = (IBackupResults)r;
+                    ((BackupResults)r).OperationProgressUpdater.PhaseChanged += (phase, previousPhase) =>
+                    {
+                        if (phase == OperationPhase.Backup_ProcessingFiles)
+                            startedTcs.TrySetResult(true);
+                    };
+                };
+
+                Task backupTask = c.BackupAsync(new[] { this.DATAFOLDER });
+
+                if (await Task.WhenAny(startedTcs.Task, Task.Delay(TimeSpan.FromSeconds(30))).ConfigureAwait(false) != startedTcs.Task)
+                    Assert.Fail("The backup did not reach the processing phase within 30 seconds");
+
+                await c.AbortAsync().ConfigureAwait(false);
+
+                try
+                {
+                    await backupTask.ConfigureAwait(false);
+                    Assert.Fail("Expected the aborted backup to throw");
+                }
+                catch (OperationCanceledException)
+                {
+                    // The exception is part of the contract: DisruptionTests.StopNowAsync and the
+                    // server both rely on an abort surfacing this way.
+                }
+
+                Assert.IsNotNull(results, "OnOperationStarted never fired, so there is no result to inspect");
+                Assert.AreNotEqual(ParsedResultType.Fatal, results!.ParsedResult,
+                    "An abort the user asked for was reported as a fatal failure");
+                Assert.IsTrue(results.Interrupted,
+                    "An aborted backup was not marked as interrupted, so its partial numbers are recorded as the new truth");
+            }
+        }
+
+        /// <summary>
+        /// A stopped run did not finish, so its numbers must not be recorded as the latest
+        /// state of the backup. See Runner.UpdateMetadata, which keys off Interrupted.
+        /// </summary>
+        [Test]
+        [Category("Disruption")]
+        public async Task StoppedBackupIsMarkedInterruptedAsync()
+        {
+            var options = new Dictionary<string, string>(this.TestOptions) { ["dblock-size"] = "10mb" };
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+
+            this.ModifySourceFiles();
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                (var backupResults, _) = await this.RunPartialBackupAsync(c).ConfigureAwait(false);
+
+                Assert.IsTrue(backupResults.Interrupted,
+                    "A stopped backup was not marked as interrupted, so its partial numbers are recorded as the new truth");
+
+                // The stop path must stay quiet: the existing partial-backup tests all assert
+                // exactly one warning, so anything added here would break them.
+                Assert.AreEqual(0, backupResults.Errors.Count());
+                Assert.AreEqual(1, backupResults.Warnings.Count());
+            }
+        }
+
+        /// <summary>
+        /// A cancellation nobody asked for is still a failure. Guards against the abort
+        /// handling swallowing real faults, which matters because HttpClient reports its own
+        /// request timeouts as a cancellation.
+        /// </summary>
+        [Test]
+        [Category("Disruption")]
+        public async Task UnrequestedCancellationIsStillFatalAsync()
+        {
+            var options = new Dictionary<string, string>(this.TestOptions)
+            {
+                ["dblock-size"] = "10mb",
+                ["number-of-retries"] = "1"
+            };
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+
+            this.ModifySourceFiles();
+
+            Library.DynamicLoader.BackendLoader.AddBackend(new DeterministicErrorBackend());
+            var failtarget = new DeterministicErrorBackend().ProtocolKey + "://" + this.TARGETFOLDER;
+
+            // Always cancelling, so the retries are exhausted and the cancellation reaches the
+            // controller without anyone having requested a shutdown.
+            DeterministicErrorBackend.ErrorGenerator = (action, remotename) =>
+            {
+                if (action == DeterministicErrorBackend.BackendAction.PutBefore && remotename.Contains(".dblock.", StringComparison.Ordinal))
+                    throw new OperationCanceledException();
+
+                return false;
+            };
+
+            try
+            {
+                using var c = new Controller(failtarget, options, null);
+                IBackupResults? results = null;
+                c.OnOperationStarted += r => results = (IBackupResults)r;
+
+                try
+                {
+                    await c.BackupAsync(new[] { this.DATAFOLDER }).ConfigureAwait(false);
+                    Assert.Fail("Expected the backup to fail when every upload is cancelled");
+                }
+                catch (OperationCanceledException)
+                {
+                    // Expected: the backend gave up
+                }
+
+                Assert.IsNotNull(results, "OnOperationStarted never fired, so there is no result to inspect");
+                Assert.AreEqual(ParsedResultType.Fatal, results!.ParsedResult,
+                    "A cancellation that nobody requested was not reported as a failure");
+                Assert.IsFalse(results.Interrupted,
+                    "A cancellation that nobody requested was reported as a requested interruption");
+            }
+            finally
+            {
+                DeterministicErrorBackend.ErrorGenerator = null;
+            }
+        }
     }
 }
