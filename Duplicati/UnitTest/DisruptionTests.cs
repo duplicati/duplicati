@@ -1361,7 +1361,7 @@ namespace Duplicati.UnitTest
             this.ModifySourceFiles();
             using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IBackupResults? results = null;
+                IBackupResults results = null;
                 var startedTcs = new TaskCompletionSource<bool>();
                 c.OnOperationStarted += r =>
                 {
@@ -1392,7 +1392,7 @@ namespace Duplicati.UnitTest
                 }
 
                 Assert.IsNotNull(results, "OnOperationStarted never fired, so there is no result to inspect");
-                Assert.AreNotEqual(ParsedResultType.Fatal, results!.ParsedResult,
+                Assert.AreNotEqual(ParsedResultType.Fatal, results.ParsedResult,
                     "An abort the user asked for was reported as a fatal failure");
                 Assert.IsTrue(results.Interrupted,
                     "An aborted backup was not marked as interrupted, so its partial numbers are recorded as the new truth");
@@ -1465,7 +1465,7 @@ namespace Duplicati.UnitTest
             try
             {
                 using var c = new Controller(failtarget, options, null);
-                IBackupResults? results = null;
+                IBackupResults results = null;
                 c.OnOperationStarted += r => results = (IBackupResults)r;
 
                 try
@@ -1480,7 +1480,7 @@ namespace Duplicati.UnitTest
                 }
 
                 Assert.IsNotNull(results, "OnOperationStarted never fired, so there is no result to inspect");
-                Assert.AreEqual(ParsedResultType.Fatal, results!.ParsedResult,
+                Assert.AreEqual(ParsedResultType.Fatal, results.ParsedResult,
                     "A cancellation that nobody requested was not reported as a failure");
                 Assert.IsFalse(results.Interrupted,
                     "A cancellation that nobody requested was reported as a requested interruption");
