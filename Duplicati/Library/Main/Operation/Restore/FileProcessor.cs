@@ -125,8 +125,26 @@ namespace Duplicati.Library.Main.Operation.Restore
                         var file = await self.Input.ReadAsync().ConfigureAwait(false);
                         sw_file?.Stop();
 
+                        // A stop means "finish the current file and stop", so the check sits at
+                        // the top of the loop: whatever was being restored when the stop arrived
+                        // has already completed, and this file is not started. Files still sitting
+                        // in the channel buffer are dropped for the same reason.
+                        //
+                        // Returning is enough to wind the network down: the finally below retires
+                        // the block channels and releases the folder-metadata barrier, which is
+                        // the same path retirement takes.
+                        if (results.TaskControl.StopToken.IsCancellationRequested)
+                        {
+                            Logging.Log.WriteVerboseMessage(LOGTAG, "StoppedProcess", null, "{0} File processor stopped", my_id);
+                            return;
+                        }
+
                         // Check if this is a priority file and wait for all priority files to complete before processing non-priority files
-                        await WaitForPriorityFilesIfNeededAsync(file, modules, results.TaskControl.ProgressToken).ConfigureAwait(false);
+                        if (!await WaitForPriorityFilesIfNeededAsync(file, modules, results.TaskControl).ConfigureAwait(false))
+                        {
+                            Logging.Log.WriteVerboseMessage(LOGTAG, "StoppedProcess", null, "{0} File processor stopped while waiting for the priority files", my_id);
+                            return;
+                        }
 
                         Logging.Log.WriteExplicitMessage(LOGTAG, "FileRestored", null, "{0} Restoring file {1}", my_id, file.TargetPath);
 
@@ -564,6 +582,13 @@ namespace Duplicati.Library.Main.Operation.Restore
                     }
                     return;
                 }
+                catch (Exception) when (RestoreCancellation.IsShutdownRequested(results.TaskControl))
+                {
+                    // An abort is an orderly shutdown that arrived by a different signal than
+                    // retirement, so it is reported the same way retirement is.
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "CancelledProcess", null, "File processor cancelled");
+                    throw;
+                }
                 catch (Exception ex)
                 {
                     Logging.Log.WriteErrorMessage(LOGTAG, "FileProcessingError", ex, "Error during file processing");
@@ -706,8 +731,9 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// </summary>
         /// <param name="file">The file request being processed.</param>
         /// <param name="modules">The loaded generic modules, used to dispatch the bulk-restore-start callback. May be null.</param>
-        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-        private static async Task WaitForPriorityFilesIfNeededAsync(FileRequest file, IEnumerable<IGenericModule>? modules, CancellationToken cancellationToken)
+        /// <param name="taskReader">The task reader, used to abandon the wait if a shutdown is requested.</param>
+        /// <returns><c>true</c> if the caller should carry on with the file; <c>false</c> if the wait was abandoned because the restore is stopping.</returns>
+        private static async Task<bool> WaitForPriorityFilesIfNeededAsync(FileRequest file, IEnumerable<IGenericModule>? modules, Common.ITaskReader taskReader)
         {
             if (file.IsPriorityFile)
             {
@@ -727,7 +753,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     // modules before signaling the other processors to continue.
                     try
                     {
-                        await RestoreHandler.InvokeBulkRestoreStartAsync(modules, cancellationToken).ConfigureAwait(false);
+                        await RestoreHandler.InvokeBulkRestoreStartAsync(modules, taskReader.ProgressToken).ConfigureAwait(false);
                     }
                     finally
                     {
@@ -747,9 +773,24 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                 if (shouldWait)
                 {
-                    await priority_files_completed.Task.ConfigureAwait(false);
+                    // The completion source is only ever signalled by a processor that handles a
+                    // priority file, so if the restore stops or is aborted before every priority
+                    // file has been emitted, nothing will release this wait. Without a token the
+                    // processor would sit here forever, and the restore's Task.WhenAll over the
+                    // process network would never return.
+                    using var cts = CancellationTokenSource.CreateLinkedTokenSource(taskReader.ProgressToken, taskReader.StopToken);
+                    try
+                    {
+                        await priority_files_completed.Task.WaitAsync(cts.Token).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        return false;
+                    }
                 }
             }
+
+            return true;
         }
 
         /// <summary>

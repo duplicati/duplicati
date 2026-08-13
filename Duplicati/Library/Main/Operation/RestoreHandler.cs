@@ -942,7 +942,19 @@ namespace Duplicati.Library.Main.Operation
             await database.DisposePoolAsync().ConfigureAwait(false);
 
             if (!await m_result.TaskControl.ProgressRendevouzAsync().ConfigureAwait(false))
+            {
+                // Recorded because otherwise a stopped restore is indistinguishable in the log
+                // from one that ran to the end.
+                Logging.Log.WriteInformationMessage(LOGTAG, "RestoreStopped", "Restore stopped on request after restoring {0} files", m_result.RestoredFiles);
+
+                // The temporary tables are dropped even on this path: leaving them behind on
+                // every stop is a real cost to the database. The restored-hash harvest is
+                // deliberately skipped, because it exists for --restore-all-files=unique and
+                // recording a partial restore as done would mislead the next one.
+                await database.DropRestoreTableAsync(cancellationToken).ConfigureAwait(false);
+                m_result.EndTime = DateTime.UtcNow;
                 return;
+            }
 
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_PostRestoreVerify);
 
