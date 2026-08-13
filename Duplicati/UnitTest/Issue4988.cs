@@ -56,8 +56,9 @@ public class Issue4988 : BasicSetupHelper
         Directory.CreateDirectory(emptyFolder);
 
         // Step 2: Backup empty folder
+        // The source contains no files, so the NoFilesInBackup warning is expected
         using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
-            TestUtils.AssertResults(await c.BackupAsync([emptyFolder]));
+            TestUtils.AssertResults(await c.BackupAsync([emptyFolder]), ignoredWarnings: ["NoFilesInBackup"]);
 
         // Step 3: Find the dblock created
         var dblockPath = Directory.GetFiles(TARGETFOLDER, "*.dblock*", SearchOption.TopDirectoryOnly).First();
