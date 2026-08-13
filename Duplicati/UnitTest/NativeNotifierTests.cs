@@ -29,10 +29,10 @@ using Assert = NUnit.Framework.Legacy.ClassicAssert;
 namespace Duplicati.UnitTest
 {
     /// <summary>
-    /// Smoke test for the Windows toast notifier shim. Only the loading and the
-    /// callback wiring are exercised; no toast is shown, because notification
-    /// display depends on the session/OS configuration of the machine running
-    /// the tests.
+    /// Smoke tests for the native notifier implementations. Only the loading
+    /// and the callback wiring are exercised; no notification is shown,
+    /// because notification display depends on the session/OS configuration
+    /// of the machine running the tests.
     /// </summary>
     [TestFixture]
     [Category("NativeNotifier")]
@@ -54,5 +54,6 @@ namespace Duplicati.UnitTest
             notifier.NotificationClicked.Invoke();
             Assert.IsTrue(clicked, "The stored callback must be invocable");
         }
+
     }
 }

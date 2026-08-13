@@ -52,6 +52,11 @@ namespace Duplicati.Library.Interface
         /// <summary>
         /// Shows a notification to the user
         /// </summary>
+        /// <remarks>
+        /// Implementations must not block the calling thread; the method is
+        /// usually invoked on the UI thread. Any slow work must happen on a
+        /// background thread.
+        /// </remarks>
         /// <param name="level">The severity of the notification</param>
         /// <param name="title">The notification title</param>
         /// <param name="message">The notification message</param>

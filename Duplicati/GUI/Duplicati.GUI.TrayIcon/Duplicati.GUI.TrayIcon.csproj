@@ -29,6 +29,15 @@
     <PackageReference Include="Avalonia.Themes.Fluent" Version="12.0.2" />
     <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
     <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.3.13" />
+
+    <PackageReference Include="RumpSharp" Version="1.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\..\..\ReleaseBuilder\Resources\MacOS\AppBundle\app-resources\Duplicati.icns">
+      <Link>Duplicati.icns</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <AvaloniaResource Include="Assets\**" />
