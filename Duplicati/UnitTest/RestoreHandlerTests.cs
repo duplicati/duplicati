@@ -264,8 +264,21 @@ namespace Duplicati.UnitTest
             using var c = new Controller("file://" + this.TARGETFOLDER, opts, null);
             TestUtils.AssertResults(await c.BackupAsync([this.DATAFOLDER]));
 
-            // Start a 30 second timeout
-            var timeout_task = System.Threading.Tasks.Task.Delay(TimeSpan.FromSeconds(30));
+            // This timeout is here to catch a deadlock, not to police throughput, so it has to
+            // outlast the point where the restore itself starts suspecting one. The deadlock
+            // threshold is a minute per 10 MB of volume size, so a minute for the 1 MB volumes
+            // used here, and BlockManager only warns about a possible deadlock at twice that.
+            // Anything shorter gives up before the restore would even complain, which turns a
+            // slow-but-working configuration into a failure - and two of the cache sizes under
+            // test are meant to be slow on purpose: with the cache disabled, or capped at a
+            // single volume, one 1 KiB block costs a fresh download and decrypt of a whole
+            // 1 MiB volume. On a four core machine the slowest case here has been measured
+            // between two and four minutes, varying by more than a factor of two between runs
+            // of the same case, so the budget is set well clear of that rather than close to
+            // it. Overshooting costs nothing when the restore works, and the wait after the
+            // abort below is bounded, so even a genuine hang fails rather than stalling.
+            var timeout = TimeSpan.FromMinutes(10);
+            var timeout_task = System.Threading.Tasks.Task.Delay(timeout);
 
             var restore_task = System.Threading.Tasks.Task.Run(async () =>
             {
@@ -277,8 +290,33 @@ namespace Duplicati.UnitTest
             if (t == timeout_task)
             {
                 await c.AbortAsync().ConfigureAwait(false);
-                await restore_task; // Ensure we wait for the restore task to complete
-                Assert.Fail("Restore timed out");
+
+                // Give the abort a bounded amount of time to land. Waiting on the restore
+                // without a bound is what this used to do, and an abort that does not stop the
+                // restore then hangs the test run rather than failing it - there is no test
+                // level timeout to fall back on.
+                var abort_grace = TimeSpan.FromMinutes(1);
+                var aborted = await System.Threading.Tasks.Task
+                    .WhenAny(restore_task, System.Threading.Tasks.Task.Delay(abort_grace))
+                    .ConfigureAwait(false) == restore_task;
+
+                if (aborted)
+                {
+                    // The abort just issued is what makes the restore fault, so its
+                    // cancellation must not replace the diagnosis below. Anything else the
+                    // restore threw is still worth surfacing.
+                    try
+                    {
+                        await restore_task.ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                    }
+
+                    Assert.Fail($"Restore did not finish within {timeout.TotalSeconds:F0}s");
+                }
+
+                Assert.Fail($"Restore did not finish within {timeout.TotalSeconds:F0}s, and did not stop within {abort_grace.TotalSeconds:F0}s of being aborted");
             }
             else if (t == restore_task)
                 // Throw any exceptions it might have
