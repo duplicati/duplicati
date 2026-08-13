@@ -11,11 +11,11 @@
 
   <ItemGroup>
     <!-- Force these versions to avoid a version with vulnerabilities -->
-    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3" />
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.5" />
     <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" Version="3.53.3" ExcludeAssets="All" />
 
     <PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="uplink.NET" Version="2.14.3623" />
     <PackageReference Include="uplink.NET.Win" Version="2.14.3623" />
     <PackageReference Include="uplink.NET.Linux" Version="2.14.3623" />

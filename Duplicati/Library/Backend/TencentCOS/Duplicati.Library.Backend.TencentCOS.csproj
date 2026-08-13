@@ -10,7 +10,7 @@
 
   <ItemGroup>
     <PackageReference Include="Tencent.QCloud.Cos.Sdk" Version="5.4.11" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
   </ItemGroup>
 
   <ItemGroup>
