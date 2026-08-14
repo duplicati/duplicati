@@ -20,7 +20,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 using System.CommandLine;
-using System.CommandLine.NamingConventionBinder;
 using Duplicati.Library.SQLiteHelper;
 
 namespace Duplicati.CommandLine.DatabaseTool.Commands;
@@ -34,37 +33,65 @@ public static class Execute
     /// Creates the execute command
     /// </summary>
     /// <returns>The execute command</returns>
-    public static Command Create() =>
-        new Command("execute", "Executes one or more commands on the database")
+    public static Command Create()
+    {
+        var databaseArgument = new Argument<string>("database")
         {
-            new Argument<string>("database", "The databases to downgrade"),
-            new Argument<string>("command", "The command to run"),
-            new Option<bool>("--create-backup", description: "Create a backup before executing", getDefaultValue: () => false),
-            new Option<bool>("--output-json", description: "Output as JSON", getDefaultValue: () => false),
+            Description = "The databases to downgrade"
+        };
+        var commandArgument = new Argument<string>("command")
+        {
+            Description = "The command to run"
+        };
+        var createBackupOption = new Option<bool>("--create-backup")
+        {
+            Description = "Create a backup before executing",
+            DefaultValueFactory = _ => false
+        };
+        var outputJsonOption = new Option<bool>("--output-json")
+        {
+            Description = "Output as JSON",
+            DefaultValueFactory = _ => false
+        };
 
-        }
-        .WithHandler(CommandHandler.Create<string, string, bool, bool>((database, command, createbackup, outputjson) =>
+        var cmd = new Command("execute", "Executes one or more commands on the database")
+        {
+            databaseArgument,
+            commandArgument,
+            createBackupOption,
+            outputJsonOption,
+        };
+
+        cmd.SetAction(parseResult =>
+        {
+            var database = parseResult.GetValue(databaseArgument)!;
+            var command = parseResult.GetValue(commandArgument)!;
+            var createbackup = parseResult.GetValue(createBackupOption);
+            var outputjson = parseResult.GetValue(outputJsonOption);
+
+            if (createbackup)
+                Helper.CreateFileBackup(database);
+
+            using var connection = SQLiteLoader.LoadConnection(database);
+            try
             {
-                if (createbackup)
-                    Helper.CreateFileBackup(database);
+                if (command.IndexOfAny(Path.GetInvalidPathChars()) < 0 && File.Exists(command))
+                    command = File.ReadAllText(command);
+            }
+            catch { }
 
-                using var connection = SQLiteLoader.LoadConnection(database);
-                try
-                {
-                    if (command.IndexOfAny(Path.GetInvalidPathChars()) < 0 && File.Exists(command))
-                        command = File.ReadAllText(command);
-                }
-                catch { }
+            var begin = DateTime.Now;
 
-                var begin = DateTime.Now;
+            using var dbcmd = connection.CreateCommand();
+            dbcmd.CommandText = command;
+            using var rd = dbcmd.ExecuteReader();
+            if (!outputjson)
+                Console.WriteLine("Execution took: {0:mm\\:ss\\.fff}", DateTime.Now - begin);
 
-                using var cmd = connection.CreateCommand();
-                cmd.CommandText = command;
-                using var rd = cmd.ExecuteReader();
-                if (!outputjson)
-                    Console.WriteLine("Execution took: {0:mm\\:ss\\.fff}", DateTime.Now - begin);
+            if (rd.FieldCount != 0)
+                rd.Print(outputjson);
+        });
 
-                if (rd.FieldCount != 0)
-                    rd.Print(outputjson);
-            }));
+        return cmd;
+    }
 }

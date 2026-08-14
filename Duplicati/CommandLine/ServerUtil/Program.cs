@@ -20,8 +20,6 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System.CommandLine;
-using System.CommandLine.Builder;
-using System.CommandLine.Parsing;
 using Duplicati.CommandLine.ServerUtil.Commands;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Utility;
@@ -60,49 +58,49 @@ public static class Program
             };
 
         rootCmd = SettingsBinder.AddGlobalOptions(rootCmd);
+        rootCmd.UseAdditionalHelpAliases();
 
-        return await new CommandLineBuilder(rootCmd)
-            .UseDefaults()
-            .UseExceptionHandler((ex, context) =>
+        try
+        {
+            var exitCode = await rootCmd.Parse(args).InvokeAsync(new InvocationConfiguration
             {
-                OutputInterceptorBinder.Instance?.SetResult(false);
+                EnableDefaultExceptionHandler = false
+            });
 
-                if (ex is UserReportedException ure)
-                {
-                    OutputInterceptorBinder.Instance?.AppendExceptionMessage(ure.Message);
-                    context.ExitCode = 2;
-                }
-                else
-                {
-                    OutputInterceptorBinder.Instance?.AppendExceptionMessage(ex.ToString());
-                    context.ExitCode = 1;
-                }
+            // Propagate a non-zero result from the command (e.g. a backup that
+            // finished with warnings/errors) to the process exit code. The exception
+            // path already sets the exit code directly and never reaches here.
+            if (OutputInterceptorBinder.Instance is { ExitCode: not 0 } instance)
+                exitCode = instance.ExitCode;
 
+            var jsonResult = OutputInterceptorBinder.Instance?.GetSerializedResult();
+            if (jsonResult != null)
+                Console.WriteLine(jsonResult);
+
+            return exitCode;
+        }
+        catch (Exception ex)
+        {
+            OutputInterceptorBinder.Instance?.SetResult(false);
+
+            if (ex is UserReportedException ure)
+            {
+                OutputInterceptorBinder.Instance?.AppendExceptionMessage(ure.Message);
                 if (OutputInterceptorBinder.Instance != null)
-                {
-                    OutputInterceptorBinder.Instance.ExitCode = context.ExitCode;
-                    Console.WriteLine(OutputInterceptorBinder.Instance.GetSerializedResult());
-                }
-            })
-            .AddMiddleware(async (context, next) =>
+                    OutputInterceptorBinder.Instance.ExitCode = 2;
+            }
+            else
             {
-                // Inject settings with custom binder
-                if (context.ParseResult.CommandResult.Command is { } cmd)
-                    context.BindingContext.AddService(_ => SettingsBinder.GetSettings(context.BindingContext));
+                OutputInterceptorBinder.Instance?.AppendExceptionMessage(ex.ToString());
+                if (OutputInterceptorBinder.Instance != null)
+                    OutputInterceptorBinder.Instance.ExitCode = 1;
+            }
 
-                context.BindingContext.AddService(_ => OutputInterceptorBinder.GetConsoleInterceptor(context.BindingContext));
+            var jsonResult = OutputInterceptorBinder.Instance?.GetSerializedResult();
+            if (jsonResult != null)
+                Console.WriteLine(jsonResult);
 
-                await next(context);
-
-                // Propagate a non-zero result from the command (e.g. a backup that
-                // finished with warnings/errors) to the process exit code. The exception
-                // path already sets context.ExitCode directly and never reaches here.
-                if (OutputInterceptorBinder.Instance is { ExitCode: not 0 } instance)
-                    context.ExitCode = instance.ExitCode;
-
-                Console.WriteLine(OutputInterceptorBinder.Instance?.GetSerializedResult());
-            })
-            .UseAdditionalHelpAliases()
-            .Build().InvokeAsync(args);
+            return OutputInterceptorBinder.Instance?.ExitCode ?? 1;
+        }
     }
 }

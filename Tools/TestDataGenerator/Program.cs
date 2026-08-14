@@ -12,7 +12,7 @@ public static class Program
             TestDataGenerator.Commands.Update.CreateCommand()
         };
 
-        return rootCommand.Invoke(args);
+        return rootCommand.Parse(args).Invoke();
     }
 }
 

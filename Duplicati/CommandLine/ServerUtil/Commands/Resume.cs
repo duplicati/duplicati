@@ -20,18 +20,23 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System.CommandLine;
-using System.CommandLine.NamingConventionBinder;
 
 namespace Duplicati.CommandLine.ServerUtil.Commands;
 
 public static class Resume
 {
     public static Command Create()
-        => new Command("resume", "Resumes the server")
-            .WithHandler(CommandHandler.Create<Settings, OutputInterceptor>(async (settings, output) =>
-            {
-                output.AppendConsoleMessage("Resuming the server...");
-                await (await settings.GetConnectionAsync(output)).ResumeAsync();
-                output.SetResult(true);
-            }));
+    {
+        var cmd = new Command("resume", "Resumes the server");
+        cmd.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var settings = SettingsBinder.GetSettings(parseResult);
+            var output = OutputInterceptorBinder.GetConsoleInterceptor(parseResult);
+
+            output.AppendConsoleMessage("Resuming the server...");
+            await (await settings.GetConnectionAsync(output)).ResumeAsync();
+            output.SetResult(true);
+        });
+        return cmd;
+    }
 }

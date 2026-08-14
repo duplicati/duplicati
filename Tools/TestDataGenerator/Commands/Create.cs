@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.CommandLine;
-using System.CommandLine.NamingConventionBinder;
 using static TestDataGenerator.Commands.Shared;
 
 namespace TestDataGenerator.Commands;
@@ -47,55 +46,107 @@ public static class Create
     {
         var command = new Command("create", "Create test data in a folder");
 
-        var targetFolderOption = new Argument<DirectoryInfo>("target-folder", "The folder to create files in");
-        targetFolderOption.SetDefaultValue(new DirectoryInfo(Directory.GetCurrentDirectory()));
-        command.AddArgument(targetFolderOption);
+        var targetFolderArgument = new Argument<DirectoryInfo>("target-folder")
+        {
+            Description = "The folder to create files in",
+            DefaultValueFactory = _ => new DirectoryInfo(Directory.GetCurrentDirectory())
+        };
+        command.Arguments.Add(targetFolderArgument);
 
-        var fileCountOption = new Option<int>("--file-count", "The number of files to create in the target folder");
-        fileCountOption.SetDefaultValue(200000);
-        command.AddOption(fileCountOption);
+        var fileCountOption = new Option<int>("--file-count")
+        {
+            Description = "The number of files to create in the target folder",
+            DefaultValueFactory = _ => 200000
+        };
+        command.Options.Add(fileCountOption);
 
-        var maxTotalSizeOption = new Option<long>("--max-total-size", "The maximum total size of the files to create in the target folder");
-        maxTotalSizeOption.SetDefaultValue(1024 * 1024 * 1024L);
-        command.AddOption(maxTotalSizeOption);
+        var maxTotalSizeOption = new Option<long>("--max-total-size")
+        {
+            Description = "The maximum total size of the files to create in the target folder",
+            DefaultValueFactory = _ => 1024 * 1024 * 1024L
+        };
+        command.Options.Add(maxTotalSizeOption);
 
-        var maxFileSizeOption = new Option<long>("--max-file-size", "The maximum size of each file to create in the target folder");
-        maxFileSizeOption.SetDefaultValue(1024 * 1024L);
-        command.AddOption(maxFileSizeOption);
+        var maxFileSizeOption = new Option<long>("--max-file-size")
+        {
+            Description = "The maximum size of each file to create in the target folder",
+            DefaultValueFactory = _ => 1024 * 1024L
+        };
+        command.Options.Add(maxFileSizeOption);
 
-        var minFileSizeOption = new Option<long>("--min-file-size", "The minimum size of each file to create in the target folder");
-        minFileSizeOption.SetDefaultValue(0L);
-        command.AddOption(minFileSizeOption);
+        var minFileSizeOption = new Option<long>("--min-file-size")
+        {
+            Description = "The minimum size of each file to create in the target folder",
+            DefaultValueFactory = _ => 0L
+        };
+        command.Options.Add(minFileSizeOption);
 
-        var sparseFactorOption = new Option<int>("--sparse-factor", "The percentage of data that should be zeroed out in each file");
-        sparseFactorOption.SetDefaultValue(10);
-        command.AddOption(sparseFactorOption);
+        var sparseFactorOption = new Option<int>("--sparse-factor")
+        {
+            Description = "The percentage of data that should be zeroed out in each file",
+            DefaultValueFactory = _ => 10
+        };
+        command.Options.Add(sparseFactorOption);
 
-        var maxFanOutOption = new Option<int>("--max-fan-out", "The maximum number of subfolders to create in each folder");
-        maxFanOutOption.SetDefaultValue(10);
-        command.AddOption(maxFanOutOption);
+        var maxFanOutOption = new Option<int>("--max-fan-out")
+        {
+            Description = "The maximum number of subfolders to create in each folder",
+            DefaultValueFactory = _ => 10
+        };
+        command.Options.Add(maxFanOutOption);
 
-        var maxDepthOption = new Option<int>("--max-depth", "The maximum depth of subfolders to create in the target folder");
-        maxDepthOption.SetDefaultValue(5);
-        command.AddOption(maxDepthOption);
+        var maxDepthOption = new Option<int>("--max-depth")
+        {
+            Description = "The maximum depth of subfolders to create in the target folder",
+            DefaultValueFactory = _ => 5
+        };
+        command.Options.Add(maxDepthOption);
 
-        var maxFolderCountOption = new Option<int>("--max-folder-count", "The maximum number of folders to create in the target folder");
-        maxFolderCountOption.SetDefaultValue(10000);
-        command.AddOption(maxFolderCountOption);
+        var maxFolderCountOption = new Option<int>("--max-folder-count")
+        {
+            Description = "The maximum number of folders to create in the target folder",
+            DefaultValueFactory = _ => 10000
+        };
+        command.Options.Add(maxFolderCountOption);
 
-        var maxPathSegmentLengthOption = new Option<int>("--max-path-segment-length", "The maximum length of each path segment in the target folder");
-        maxPathSegmentLengthOption.SetDefaultValue(15);
-        command.AddOption(maxPathSegmentLengthOption);
+        var maxPathSegmentLengthOption = new Option<int>("--max-path-segment-length")
+        {
+            Description = "The maximum length of each path segment in the target folder",
+            DefaultValueFactory = _ => 15
+        };
+        command.Options.Add(maxPathSegmentLengthOption);
 
-        var randomSeedOption = new Option<string>("--random-seed", "The random seed to use for generating the test data");
-        randomSeedOption.SetDefaultValue("Duplicati");
-        command.AddOption(randomSeedOption);
+        var randomSeedOption = new Option<string>("--random-seed")
+        {
+            Description = "The random seed to use for generating the test data",
+            DefaultValueFactory = _ => "Duplicati"
+        };
+        command.Options.Add(randomSeedOption);
 
-        var parallelOption = new Option<int>("--parallel", "The number of parallel tasks to use for creating the test data");
-        parallelOption.SetDefaultValue(Environment.ProcessorCount);
-        command.AddOption(parallelOption);
+        var parallelOption = new Option<int>("--parallel")
+        {
+            Description = "The number of parallel tasks to use for creating the test data",
+            DefaultValueFactory = _ => Environment.ProcessorCount
+        };
+        command.Options.Add(parallelOption);
 
-        command.Handler = CommandHandler.Create<CommandInput>(Execute);
+        command.SetAction(parseResult =>
+        {
+            var input = new CommandInput(
+                TargetFolder: parseResult.GetValue(targetFolderArgument)!,
+                FileCount: parseResult.GetValue(fileCountOption),
+                MaxTotalSize: parseResult.GetValue(maxTotalSizeOption),
+                MaxFileSize: parseResult.GetValue(maxFileSizeOption),
+                MinFileSize: parseResult.GetValue(minFileSizeOption),
+                SparseFactor: parseResult.GetValue(sparseFactorOption),
+                MaxFanOut: parseResult.GetValue(maxFanOutOption),
+                MaxDepth: parseResult.GetValue(maxDepthOption),
+                MaxFolderCount: parseResult.GetValue(maxFolderCountOption),
+                MaxPathSegmentLength: parseResult.GetValue(maxPathSegmentLengthOption),
+                RandomSeed: parseResult.GetValue(randomSeedOption)!,
+                Parallel: parseResult.GetValue(parallelOption));
+            Execute(input);
+        });
 
         return command;
     }

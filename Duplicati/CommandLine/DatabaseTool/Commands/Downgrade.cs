@@ -19,7 +19,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 using System.CommandLine;
-using System.CommandLine.NamingConventionBinder;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
@@ -37,105 +36,152 @@ public static class Downgrade
     /// Creates the downgrade command
     /// </summary>
     /// <returns>The downgrade command</returns>
-    public static Command Create() =>
-        new Command("downgrade", "Downgrades one or more databases to a prior version")
+    public static Command Create()
+    {
+        var databasesArgument = new Argument<string[]>("databases")
         {
-            new Argument<string[]>("databases", "The databases to downgrade") {
-                Arity = ArgumentArity.ZeroOrMore
-            },
-            new Option<DirectoryInfo>("--server-datafolder", description: "The folder with databases", getDefaultValue: () => new DirectoryInfo(DataFolderLocator.GetDefaultStorageFolder(DataFolderManager.SERVER_DATABASE_FILENAME, false, true))),
-            new Option<int>("--server-version", description: "The version to downgrade the server database to", getDefaultValue: () => 9),
-            new Option<int>("--local-version", description: "The version to downgrade local databases to", getDefaultValue: () => 14),
-            new Option<int>("--sync-version", description: "The version to downgrade sync databases to", getDefaultValue: () => 1),
-            new Option<bool>("--no-backups", description: "Do not create backups before downgrade", getDefaultValue: () => false),
-            new Option<bool>("--include-untracked-databases", description: "Include untracked databases in the downgrade process", getDefaultValue: () => false)
-        }
-        .WithHandler(CommandHandler.Create<string[], DirectoryInfo, int, int, int, bool, bool>((databases, serverdatafolder, serverversion, localversion, syncversion, nobackups, includeuntrackeddatabases) =>
+            Arity = ArgumentArity.ZeroOrMore,
+            Description = "The databases to downgrade"
+        };
+        var serverDatafolderOption = new Option<DirectoryInfo>("--server-datafolder")
+        {
+            Description = "The folder with databases",
+            DefaultValueFactory = _ => new DirectoryInfo(DataFolderLocator.GetDefaultStorageFolder(DataFolderManager.SERVER_DATABASE_FILENAME, false, true))
+        };
+        var serverVersionOption = new Option<int>("--server-version")
+        {
+            Description = "The version to downgrade the server database to",
+            DefaultValueFactory = _ => 9
+        };
+        var localVersionOption = new Option<int>("--local-version")
+        {
+            Description = "The version to downgrade local databases to",
+            DefaultValueFactory = _ => 14
+        };
+        var syncVersionOption = new Option<int>("--sync-version")
+        {
+            Description = "The version to downgrade sync databases to",
+            DefaultValueFactory = _ => 1
+        };
+        var noBackupsOption = new Option<bool>("--no-backups")
+        {
+            Description = "Do not create backups before downgrade",
+            DefaultValueFactory = _ => false
+        };
+        var includeUntrackedDatabasesOption = new Option<bool>("--include-untracked-databases")
+        {
+            Description = "Include untracked databases in the downgrade process",
+            DefaultValueFactory = _ => false
+        };
+
+        var cmd = new Command("downgrade", "Downgrades one or more databases to a prior version")
+        {
+            databasesArgument,
+            serverDatafolderOption,
+            serverVersionOption,
+            localVersionOption,
+            syncVersionOption,
+            noBackupsOption,
+            includeUntrackedDatabasesOption
+        };
+
+        cmd.SetAction(parseResult =>
+        {
+            var databases = parseResult.GetValue(databasesArgument) ?? [];
+            var serverdatafolder = parseResult.GetValue(serverDatafolderOption)!;
+            var serverversion = parseResult.GetValue(serverVersionOption);
+            var localversion = parseResult.GetValue(localVersionOption);
+            var syncversion = parseResult.GetValue(syncVersionOption);
+            var nobackups = parseResult.GetValue(noBackupsOption);
+            var includeuntrackeddatabases = parseResult.GetValue(includeUntrackedDatabasesOption);
+
+            databases = Helper.FindAllDatabasesAsync(databases, serverdatafolder.FullName, includeuntrackeddatabases).Await();
+            if (databases.Length == 0)
             {
-                databases = Helper.FindAllDatabasesAsync(databases, serverdatafolder.FullName, includeuntrackeddatabases).Await();
-                if (databases.Length == 0)
+                Console.WriteLine("No databases found to downgrade");
+                return;
+            }
+
+            static string ReadStream(string path)
+            {
+                using var reader = new StreamReader(typeof(Downgrade).Assembly.GetManifestResourceStream(path) ?? throw new InvalidOperationException());
+                return reader.ReadToEnd();
+            }
+
+            static string ResourceNameToPath(string resourcename)
+            {
+                var prefixes = new[] {
+                    typeof(Program).Namespace + ".Scripts.Local.",
+                    typeof(Program).Namespace + ".Scripts.Server.",
+                    typeof(Program).Namespace + ".Scripts.Sync."
+                };
+
+                foreach (var prefix in prefixes)
+                    if (resourcename.StartsWith(prefix))
+                        return resourcename.Substring(prefix.Length);
+
+                throw new Exception($"Unexpected resource name: {resourcename}");
+            }
+
+            var serverVersions = typeof(Downgrade).Assembly.GetManifestResourceNames()
+                .Where(x => x.Contains(".Scripts.Server."))
+                .Select(x => new DowngradeScript(Version: int.Parse(ResourceNameToPath(x).Split('.').First()), Filename: ResourceNameToPath(x), Content: ReadStream(x)))
+                .ToList();
+
+            var localVersions = typeof(Downgrade).Assembly.GetManifestResourceNames()
+                .Where(x => x.Contains(".Scripts.Local."))
+                .Select(x => new DowngradeScript(Version: int.Parse(ResourceNameToPath(x).Split('.').First()), Filename: ResourceNameToPath(x), Content: ReadStream(x)))
+                .ToList();
+
+            var syncVersions = typeof(Downgrade).Assembly.GetManifestResourceNames()
+                .Where(x => x.Contains(".Scripts.Sync."))
+                .Select(x => new DowngradeScript(Version: int.Parse(ResourceNameToPath(x).Split('.').First()), Filename: ResourceNameToPath(x), Content: ReadStream(x)))
+                .ToList();
+
+            foreach (var db in databases)
+            {
+                Console.WriteLine($"Examining {db} ...");
+                if (!File.Exists(db))
                 {
-                    Console.WriteLine("No databases found to downgrade");
-                    return;
+                    Console.WriteLine($"Database {db} does not exist");
+                    continue;
                 }
 
-                static string ReadStream(string path)
+                int version;
+                DatabaseType type;
+                try
                 {
-                    using var reader = new StreamReader(typeof(Downgrade).Assembly.GetManifestResourceStream(path) ?? throw new InvalidOperationException());
-                    return reader.ReadToEnd();
+                    (version, type) = Helper.ExamineDatabaseAsync(db).Await();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error reading database {db}: {ex.Message}");
+                    continue;
                 }
 
-                static string ResourceNameToPath(string resourcename)
+                var targetVersion = type switch
                 {
-                    var prefixes = new[] {
-                        typeof(Program).Namespace + ".Scripts.Local.",
-                        typeof(Program).Namespace + ".Scripts.Server.",
-                        typeof(Program).Namespace + ".Scripts.Sync."
-                    };
+                    DatabaseType.Server => serverversion,
+                    DatabaseType.Sync => syncversion,
+                    DatabaseType.Backup => localversion,
+                    _ => throw new Exception($"Unknown database type: {type}")
+                };
 
-                    foreach (var prefix in prefixes)
-                        if (resourcename.StartsWith(prefix))
-                            return resourcename.Substring(prefix.Length);
-
-                    throw new Exception($"Unexpected resource name: {resourcename}");
-                }
-
-                var serverVersions = typeof(Downgrade).Assembly.GetManifestResourceNames()
-                    .Where(x => x.Contains(".Scripts.Server."))
-                    .Select(x => new DowngradeScript(Version: int.Parse(ResourceNameToPath(x).Split('.').First()), Filename: ResourceNameToPath(x), Content: ReadStream(x)))
-                    .ToList();
-
-                var localVersions = typeof(Downgrade).Assembly.GetManifestResourceNames()
-                    .Where(x => x.Contains(".Scripts.Local."))
-                    .Select(x => new DowngradeScript(Version: int.Parse(ResourceNameToPath(x).Split('.').First()), Filename: ResourceNameToPath(x), Content: ReadStream(x)))
-                    .ToList();
-
-                var syncVersions = typeof(Downgrade).Assembly.GetManifestResourceNames()
-                    .Where(x => x.Contains(".Scripts.Sync."))
-                    .Select(x => new DowngradeScript(Version: int.Parse(ResourceNameToPath(x).Split('.').First()), Filename: ResourceNameToPath(x), Content: ReadStream(x)))
-                    .ToList();
-
-                foreach (var db in databases)
+                var scripts = type switch
                 {
-                    Console.WriteLine($"Examining {db} ...");
-                    if (!File.Exists(db))
-                    {
-                        Console.WriteLine($"Database {db} does not exist");
-                        continue;
-                    }
+                    DatabaseType.Server => serverVersions,
+                    DatabaseType.Sync => syncVersions,
+                    DatabaseType.Backup => localVersions,
+                    _ => throw new Exception($"Unknown database type: {type}")
+                };
 
-                    int version;
-                    DatabaseType type;
-                    try
-                    {
-                        (version, type) = Helper.ExamineDatabaseAsync(db).Await();
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Error reading database {db}: {ex.Message}");
-                        continue;
-                    }
+                Console.WriteLine($"Database {db} is version {version} and is a {type} database");
+                ApplyDowngradeAsync(db, version, targetVersion, scripts, nobackups).Await();
+            }
+        });
 
-                    var targetVersion = type switch
-                    {
-                        DatabaseType.Server => serverversion,
-                        DatabaseType.Sync => syncversion,
-                        DatabaseType.Backup => localversion,
-                        _ => throw new Exception($"Unknown database type: {type}")
-                    };
-
-                    var scripts = type switch
-                    {
-                        DatabaseType.Server => serverVersions,
-                        DatabaseType.Sync => syncVersions,
-                        DatabaseType.Backup => localVersions,
-                        _ => throw new Exception($"Unknown database type: {type}")
-                    };
-
-                    Console.WriteLine($"Database {db} is version {version} and is a {type} database");
-                    ApplyDowngradeAsync(db, version, targetVersion, scripts, nobackups).Await();
-                }
-            }));
+        return cmd;
+    }
 
     /// <summary>
     /// The downgrade script
