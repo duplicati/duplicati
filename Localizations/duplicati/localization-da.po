@@ -19,7 +19,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-19 16:29+0200\n"
+"POT-Creation-Date: 2026-08-14 16:08+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: jhertel <jesper.hertel@gmail.com>, 2025\n"
 "Language-Team: Danish (https://app.transifex.com/duplicati/teams/67655/da/)\n"
@@ -290,7 +290,7 @@ msgid "The domain name of the user used to connect to the server."
 msgstr "Domæne navnet på brugeren som forbinder til serveren"
 
 #: Library/Backend/OpenStack/Strings.cs:34 Library/Backend/S3/Strings.cs:34
-#: Library/Backend/Mega/Strings.cs:28 Library/Utility/Strings.cs:97
+#: Library/Backend/Mega/Strings.cs:28 Library/Utility/Strings.cs:98
 msgid ""
 "The username used to connect to the server. This may also be supplied as the"
 " environment variable \"AUTH_USERNAME\"."
@@ -437,7 +437,7 @@ msgid "S3 compatible"
 msgstr "S3 kompatibel"
 
 #: Library/Backend/S3/Strings.cs:32 Library/Backend/Mega/Strings.cs:26
-#: Library/Utility/Strings.cs:95
+#: Library/Utility/Strings.cs:96
 msgid ""
 "The password used to connect to the server. This may also be supplied as the"
 " environment variable \"AUTH_PASSWORD\"."
@@ -693,13 +693,13 @@ msgid "Dropbox"
 msgstr "Dropbox"
 
 #: Library/Backend/Dropbox/Strings.cs:29
-#: Library/Backend/OAuthHelper/Strings.cs:29 Library/Utility/Strings.cs:104
+#: Library/Backend/OAuthHelper/Strings.cs:29 Library/Utility/Strings.cs:105
 #, csharp-format
 msgid "The authorization token retrieved from {0}"
 msgstr "Autorizationskoden fra {0}"
 
 #: Library/Backend/Dropbox/Strings.cs:30
-#: Library/Backend/OAuthHelper/Strings.cs:30 Library/Utility/Strings.cs:105
+#: Library/Backend/OAuthHelper/Strings.cs:30 Library/Utility/Strings.cs:106
 msgid "The authorization code"
 msgstr "Autorizationskoden"
 
@@ -842,11 +842,11 @@ msgstr ""
 "Hostnavne der er accepteret, separeret med semikolon. Hvis nogle af "
 "hostnavne er \"*\" vil alle hostnavne være tilladt."
 
-#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:286
+#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:288
 msgid "Set the time after which log data will be purged from the database."
 msgstr "Indstil den tid, hvorefter logdata vil blive fjernet fra databasen."
 
-#: Library/RestAPI/Strings.cs:67 Library/Main/Strings.cs:287
+#: Library/RestAPI/Strings.cs:67 Library/Main/Strings.cs:289
 msgid "Clean up old log data"
 msgstr "Ryd gammel logdata"
 
@@ -877,12 +877,12 @@ msgstr ""
 msgid "Temporary storage folder"
 msgstr "Midlertidig mappe"
 
-#: Library/RestAPI/Strings.cs:98 Library/RestAPI/Strings.cs:143
+#: Library/RestAPI/Strings.cs:98 Library/RestAPI/Strings.cs:144
 #, csharp-format
 msgid "Server has started and is listening on {0}, port {1}"
 msgstr "Serveren er startet og lytter på {0}, port {1}"
 
-#: Library/RestAPI/Strings.cs:139
+#: Library/RestAPI/Strings.cs:140
 #, csharp-format
 msgid ""
 "Unable to find a valid date, given the start date {0}, the repetition "
@@ -891,7 +891,7 @@ msgstr ""
 "Kan ikke finde en gyldig dato, givet startdatoen {0}, gentagelsesintervallet"
 " {1} og de tilladte dage {2}"
 
-#: Library/RestAPI/Strings.cs:145
+#: Library/RestAPI/Strings.cs:146
 #, csharp-format
 msgid "Unable to open a socket for listening, tried ports: {0}"
 msgstr "Kunne ikke åbne et socket til at lytte på, forsøgte disse porte: {0}"
@@ -1008,27 +1008,27 @@ msgstr "Sti til den lokale tilstandsdatabase"
 msgid "List of deleted files"
 msgstr "Liste over slettede filer"
 
-#: Library/Main/Strings.cs:218
+#: Library/Main/Strings.cs:220
 msgid "The hash algorithm used on blocks"
 msgstr "Hash-algoritme, der anvendes til blokke"
 
-#: Library/Main/Strings.cs:220
+#: Library/Main/Strings.cs:222
 msgid "The hash algorithm used on files"
 msgstr "Hashalgoritmen der bruges til filer"
 
-#: Library/Main/Strings.cs:224
+#: Library/Main/Strings.cs:226
 msgid "Volume size threshold"
 msgstr "Volumenstørrelsestærskel"
 
-#: Library/Main/Strings.cs:228
+#: Library/Main/Strings.cs:230
 msgid "Use local file data when restoring"
 msgstr "Brug lokale fildata, ved gendannelse"
 
-#: Library/Main/Strings.cs:233
+#: Library/Main/Strings.cs:235
 msgid "Keep a number of versions"
 msgstr "Antal versioner, der skal beholdes"
 
-#: Library/Main/Strings.cs:248
+#: Library/Main/Strings.cs:250
 msgid "Overwrite files when restoring"
 msgstr "Overskriv filer ved genoprettelse"
 
@@ -1181,7 +1181,7 @@ msgid "The name of the parameter to send the message as"
 msgstr "Navnet på parameteren som beskeden bliver sendt som"
 
 #: Library/Modules/Builtin/Strings.cs:277
-#: Library/Modules/Builtin/Strings.cs:312 Library/Utility/Strings.cs:84
+#: Library/Modules/Builtin/Strings.cs:312 Library/Utility/Strings.cs:85
 msgid "Accept any server certificate"
 msgstr "Accepter enhvert servercertifikat"
 
@@ -1233,21 +1233,21 @@ msgstr "Uri er ugyldig: {0}"
 msgid "The Uri is missing a hostname: {0}"
 msgstr "Uri mangler et værtsnavn: {0}"
 
-#: Library/Utility/Strings.cs:55
+#: Library/Utility/Strings.cs:56
 #, csharp-format
 msgid "{0} bytes"
 msgstr "{0} bytes"
 
-#: Library/Utility/Strings.cs:60
+#: Library/Utility/Strings.cs:61
 #, csharp-format
 msgid "The string \"{0}\" could not be parsed into a date"
 msgstr "Strengen \"{0}\" kunne ikke oversættes til en dato"
 
-#: Library/Utility/Strings.cs:64
+#: Library/Utility/Strings.cs:65
 msgid "Cannot read and write on the same stream"
 msgstr "Kan ikke læse og skrive på den samme stream"
 
-#: Library/Utility/Strings.cs:108
+#: Library/Utility/Strings.cs:109
 msgid "Alternate OAuth URL"
 msgstr "Alternativ OAuth-URL"
 
