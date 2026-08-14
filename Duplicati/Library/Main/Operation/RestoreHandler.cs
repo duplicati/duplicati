@@ -652,7 +652,14 @@ namespace Duplicati.Library.Main.Operation
                     {
                         if (!options.Dryrun)
                         {
-                            var folderpath = SystemIO.IO_OS.PathGetDirectoryName(targetpath);
+                            // A directory entry's path ends with a separator, and PathGetDirectoryName
+                            // only strips that separator, so asking it directly answers with the entry
+                            // itself rather than with its parent. The guard below then always passes,
+                            // and a real folder is created where the entry belongs - a folder in place
+                            // of a symlink, and what is left behind if the symlink cannot be created
+                            // afterwards.
+                            var folderpath = SystemIO.IO_OS.PathGetDirectoryName(
+                                targetpath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
                             // Only create the folder if the folder path is different from the target path
                             // (i.e., targetpath is not a root-level folder)
                             // Also skip if the folder is outside the target destination
