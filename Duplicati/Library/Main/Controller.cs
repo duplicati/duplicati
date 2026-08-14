@@ -603,7 +603,12 @@ namespace Duplicati.Library.Main
 
                     if (resultSetter.EndTime.Ticks == 0)
                         resultSetter.EndTime = DateTime.UtcNow;
-                    resultSetter.Interrupted = false;
+
+                    // The operation returned, but if a stop was requested it returned early, so
+                    // the run did not cover everything it was asked to. Its numbers must not be
+                    // recorded as the latest state of the backup, which is what this flag decides
+                    // (see Runner.UpdateMetadata).
+                    resultSetter.Interrupted = m_currentTaskControl?.StopToken.IsCancellationRequested == true;
 
                     // The post-operation result/log writes target the backup LocalDatabase schema
                     // (Operation, LogData, DeletedVolume tables). The sync database has its own
@@ -674,6 +679,46 @@ namespace Duplicati.Library.Main
                     await OperationCompleteAsync(result, null, filter).ConfigureAwait(false);
 
                     return result;
+                }
+                // Handle an abort requested through AbortAsync, which reaches this point as a
+                // cancellation. Reported the way the run-script abort above is: the user asked
+                // for it, so it is not a failure of the backup.
+                //
+                // The guard consults the token rather than the exception type. The progress token
+                // is only ever cancelled by TaskControl.Terminate, so a cancellation from anything
+                // else - an HttpClient request timeout, which surfaces as a TaskCanceledException,
+                // or the caller's own token - still falls through to the failure path below.
+                catch (OperationCanceledException) when (m_currentTaskControl?.ProgressToken.IsCancellationRequested == true)
+                {
+                    ReportModulesHandler?.OperationException = null; // Requested aborts are not failures.
+                    resultSetter.EndTime = DateTime.UtcNow;
+                    resultSetter.Interrupted = true;
+
+                    // Information rather than an error: the operation did what it was told to do.
+                    // Fatal is deliberately not set, and the phase is left alone, so the operation
+                    // is not presented as having errored.
+                    Logging.Log.WriteInformationMessage(LOGTAG, "TerminatedOperation", "Terminating operation {0} by request", m_options.MainAction);
+
+                    try
+                    {
+                        // Write logs to previous operation if database exists.
+                        // Sync uses its own database schema
+                        if (File.Exists(m_options.Dbpath) && !m_options.Dryrun && m_options.MainAction != OperationMode.Sync)
+                            await using (var db = await LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, null, true, null, CancellationToken.None).ConfigureAwait(false))
+                                await db.WriteResultsAndCommitAsync(result, CancellationToken.None).ConfigureAwait(false);
+                    }
+                    catch (Exception we)
+                    {
+                        Logging.Log.WriteWarningMessage(LOGTAG, "FailedWriteOperation", we, we.Message);
+                    }
+
+                    // Reported without the exception: ReportHelper forces the Fatal level whenever
+                    // it is given one, regardless of the result's own classification.
+                    await OperationCompleteAsync(result, null, filter).ConfigureAwait(false);
+
+                    // Still propagated. Callers rely on an abort surfacing as an exception rather
+                    // than as a returned result.
+                    throw;
                 }
                 catch (Exception ex)
                 {
