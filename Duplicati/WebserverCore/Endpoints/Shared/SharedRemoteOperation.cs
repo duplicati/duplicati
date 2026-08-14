@@ -129,6 +129,9 @@ public class SharedRemoteOperation
         (url, var opts) = await ExpandUrlAsync(connection, applicationSettings, url, backupId, connectionStringId, sourcePrefix, cancelToken);
         // Prevent the source provider from rejecting requests when we are simply testing
         opts["store-metadata-content-in-database"] = "true";
+        // Signal that the items are enumerated for display, not for backup, so the provider can
+        // include metadata that only the user interface needs, such as the item classification
+        opts["enumeration-mode"] = "true";
         var modules = ConfigureModules(opts);
         var sourceProvider = await Library.DynamicLoader.SourceProviderLoader.GetSourceProvider(AppendAdditionalPath(url, additionalPath), "", opts, cancelToken);
 
