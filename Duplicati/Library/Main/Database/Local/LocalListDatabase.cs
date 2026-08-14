@@ -494,7 +494,7 @@ namespace Duplicati.Library.Main.Database.Local
                     SELECT DISTINCT ""Path""
                     FROM ""{table}""
                 ");
-                await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+                await using var rd = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false);
                 while (await rd.ReadAsync(token).ConfigureAwait(false))
                 {
                     var s = rd.ConvertValueToString(0) ?? "";
@@ -582,7 +582,7 @@ namespace Duplicati.Library.Main.Database.Local
                             await foreach (var n in SelectFolderEntriesAsync(cmd, pathprefix, tmpnames.Tablename, token).Distinct().ConfigureAwait(false))
                                 await c2
                                     .SetParameterValue("@Path", n)
-                                    .ExecuteNonQueryAsync(token) // Not logging as we log the total time
+                                    .ExecuteNonQueryAsync(writeLog: false, token) // Not logging as we log the total time
                                     .ConfigureAwait(false);
 
                         await c2.ExecuteNonQueryAsync($@"

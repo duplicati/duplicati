@@ -116,7 +116,7 @@ namespace Duplicati.Library.Main.Database.Local
                 {whereClause}
             ");
 
-            await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+            await using var rd = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false);
             while (await rd.ReadAsync(token).ConfigureAwait(false))
             {
                 var name = rd.ConvertValueToString(0) ?? string.Empty;
