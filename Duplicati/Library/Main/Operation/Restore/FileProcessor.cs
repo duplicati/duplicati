@@ -193,7 +193,11 @@ namespace Duplicati.Library.Main.Operation.Restore
                         {
                             (bytes_verified, missing_blocks, verified_blocks) = await VerifyTargetBlocksAsync(file, restoreDestination, blocks, filehasher, blockhasher, buffer, options, results, results.TaskControl.ProgressToken).ConfigureAwait(false);
                         }
-                        catch (Exception ex)
+                        // Now that the reads observe the token, a shutdown reaches this handler.
+                        // Letting it through matters twice over: continuing would carry on with
+                        // the next file after being told to stop, and it would report the
+                        // interruption as an error against the target file.
+                        catch (Exception ex) when (!RestoreCancellation.IsShutdownRequested(results.TaskControl))
                         {
                             Logging.Log.WriteErrorMessage(LOGTAG, "VerifyTargetBlocks", ex, "Error during checking the target file");
                             continue;
@@ -441,7 +445,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                         {
                                             // Write the block to the file
                                             sw_work_write?.Start();
-                                            await fs!.WriteAsync(datablock.Data.AsMemory(0, (int)blocks[i].BlockSize)).ConfigureAwait(false);
+                                            await fs!.WriteAsync(datablock.Data.AsMemory(0, (int)blocks[i].BlockSize), results.TaskControl.ProgressToken).ConfigureAwait(false);
                                             sw_work_write?.Stop();
                                         }
 
@@ -468,7 +472,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                         {
                                             sw_work_read?.Start();
                                             var read = await fs
-                                                .ReadAsync(buffer, 0, buffer.Length)
+                                                .ReadAsync(buffer, 0, buffer.Length, results.TaskControl.ProgressToken)
                                                 .ConfigureAwait(false);
                                             sw_work_read?.Stop();
                                             sw_work_hash?.Start();
@@ -917,7 +921,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     using var f = await restoreDestination.OpenRead(file.TargetPath, cancellationToken).ConfigureAwait(false);
                     for (int i = 0; i < blocks.Length; i++)
                     {
-                        var read = await f.ReadAsync(buffer, 0, (int)blocks[i].BlockSize).ConfigureAwait(false);
+                        var read = await f.ReadAsync(buffer, 0, (int)blocks[i].BlockSize, cancellationToken).ConfigureAwait(false);
                         if (read == blocks[i].BlockSize)
                         {
                             // Block is present
@@ -1061,7 +1065,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         try
                         {
                             f_original.Seek(i * options.Blocksize, SeekOrigin.Begin);
-                            read = await f_original.ReadAsync(buffer, 0, (int)blocks[j].BlockSize).ConfigureAwait(false);
+                            read = await f_original.ReadAsync(buffer, 0, (int)blocks[j].BlockSize, cancellationToken).ConfigureAwait(false);
                         }
                         catch (Exception) when (!RestoreCancellation.IsShutdownRequested(results.TaskControl))
                         {
@@ -1089,7 +1093,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                         {
                                             f_target.Seek(blocks[j].BlockOffset * options.Blocksize, SeekOrigin.Begin);
                                             await f_target
-                                                .WriteAsync(buffer, 0, read)
+                                                .WriteAsync(buffer, 0, read, cancellationToken)
                                                 .ConfigureAwait(false);
                                         }
                                         catch (Exception) when (!RestoreCancellation.IsShutdownRequested(results.TaskControl))
@@ -1138,7 +1142,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                             {
                                 f_target.Seek(i * options.Blocksize, SeekOrigin.Begin);
                                 read = await f_target
-                                    .ReadAsync(buffer, 0, options.Blocksize)
+                                    .ReadAsync(buffer, 0, options.Blocksize, cancellationToken)
                                     .ConfigureAwait(false);
                             }
                             catch (Exception) when (!RestoreCancellation.IsShutdownRequested(results.TaskControl))
