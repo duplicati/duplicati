@@ -128,11 +128,35 @@ public class pCloudBackend : IStreamingBackend, IRenameEnabledBackend
     /// </summary>
     /// <param name="url">URL in Duplicati Uri format</param>
     /// <param name="options">options to be used in the backend</param>
+    /// <summary>
+    /// The parts of a pcloud url that the backend configures itself from.
+    /// </summary>
+    /// <param name="Host">The pCloud api endpoint to talk to.</param>
+    /// <param name="Path">The remote folder, decoded, without leading or trailing separators or whitespace.</param>
+    internal readonly record struct PCloudUrl(string Host, string Path);
+
+    /// <summary>
+    /// Splits a pcloud url into the parts the backend needs.
+    /// </summary>
+    /// <param name="url">The url to split.</param>
+    /// <returns>The parts the backend needs.</returns>
+    internal static PCloudUrl ParsePCloudUrl(string url)
+    {
+        var uri = new Uri(url);
+        uri.RequireHost(url);
+        uri.RequireNoFragment(url);
+
+        // The path arrives escaped, where the previous parser handed it over decoded.
+        var path = Uri.UnescapeDataString(uri.AbsolutePath);
+
+        // Ensure that the path is in the correct format, without starting or tailing slashes
+        return new PCloudUrl(uri.Host, path.TrimStart(PATH_SEPARATORS).TrimEnd(PATH_SEPARATORS).Trim());
+    }
+
     public pCloudBackend(string url, Dictionary<string, string?> options)
     {
-        var uri = new Utility.RelaxedUri(url);
-        uri.RequireHost();
-        _DnsName = uri.Host ?? "";
+        var uri = ParsePCloudUrl(url);
+        _DnsName = uri.Host;
 
         _Token = AuthIdOptionsHelper.Parse(options)
             .RequireCredentials(TOKEN_URL)
@@ -145,8 +169,7 @@ public class pCloudBackend : IStreamingBackend, IRenameEnabledBackend
         if (string.IsNullOrWhiteSpace(_DnsName))
             throw new UserInformationException(Strings.pCloudBackend.NoServerSpecified, "NopCloudServerSpecified");
 
-        // Ensure that the path is in the correct format, without starting or tailing slashes
-        _Path = uri.Path.TrimStart(PATH_SEPARATORS).TrimEnd(PATH_SEPARATORS).Trim();
+        _Path = uri.Path;
         _ServerUrl = _DnsName;
         _Timeouts = TimeoutOptionsHelper.Parse(options);
 
