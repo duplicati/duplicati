@@ -233,7 +233,10 @@ namespace Duplicati.Library.Main.Operation.Restore
                                         {
                                             await CopyOldTargetBlocksToNewTargetAsync(file, new_file, restoreDestination, buffer, options.Blocksize, verified_blocks, results.TaskControl.ProgressToken).ConfigureAwait(false);
                                         }
-                                        catch (Exception ex)
+                                        // Swallowing a requested shutdown here would carry on with
+                                        // the rest of the file instead of stopping, so the filter
+                                        // lets it through to the handler that ends the process.
+                                        catch (Exception ex) when (!RestoreCancellation.IsShutdownRequested(results.TaskControl))
                                         {
                                             Logging.Log.WriteErrorMessage(LOGTAG, "CopyOldTargetToNew", ex, "Error when trying to copy {0} to {1}", file, new_file);
                                             results.BrokenLocalFiles.Add(file.TargetPath);
@@ -505,6 +508,15 @@ namespace Duplicati.Library.Main.Operation.Restore
                                     }
                                 }
                                 sw_work?.Stop();
+                            }
+                            // A requested shutdown stops the file wherever it happened to be, so
+                            // it did not "fail to restore" in any sense the user needs told. The
+                            // channels still have to be retired to tear the network down.
+                            catch (Exception) when (RestoreCancellation.IsShutdownRequested(results.TaskControl))
+                            {
+                                block_request.Retire();
+                                block_response.Retire();
+                                throw;
                             }
                             catch (Exception)
                             {
@@ -936,7 +948,11 @@ namespace Duplicati.Library.Main.Operation.Restore
                         }
                     }
                 }
-                catch (Exception)
+                // The file is only recorded as having failed when something actually went wrong.
+                // A stop or an abort ends the work wherever it stands, and the files that happen
+                // to be in flight at that moment are not evidence of anything: the next restore
+                // verifies them block by block and repairs whatever is short.
+                catch (Exception) when (!RestoreCancellation.IsShutdownRequested(results.TaskControl))
                 {
                     lock (results)
                     {
@@ -971,7 +987,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                     using var f = await restoreDestination.OpenWrite(file.TargetPath, cancellationToken).ConfigureAwait(false);
                                     f.SetLength(file.Length);
                                 }
-                                catch (Exception)
+                                catch (Exception) when (!RestoreCancellation.IsShutdownRequested(results.TaskControl))
                                 {
                                     lock (results)
                                     {
@@ -1047,7 +1063,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                             f_original.Seek(i * options.Blocksize, SeekOrigin.Begin);
                             read = await f_original.ReadAsync(buffer, 0, (int)blocks[j].BlockSize).ConfigureAwait(false);
                         }
-                        catch (Exception)
+                        catch (Exception) when (!RestoreCancellation.IsShutdownRequested(results.TaskControl))
                         {
                             lock (results)
                             {
@@ -1076,7 +1092,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                                 .WriteAsync(buffer, 0, read)
                                                 .ConfigureAwait(false);
                                         }
-                                        catch (Exception)
+                                        catch (Exception) when (!RestoreCancellation.IsShutdownRequested(results.TaskControl))
                                         {
                                             lock (results)
                                             {
@@ -1125,7 +1141,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                     .ReadAsync(buffer, 0, options.Blocksize)
                                     .ConfigureAwait(false);
                             }
-                            catch (Exception)
+                            catch (Exception) when (!RestoreCancellation.IsShutdownRequested(results.TaskControl))
                             {
                                 lock (results)
                                 {
@@ -1157,7 +1173,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 {
                                     f_target.SetLength(file.Length);
                                 }
-                                catch (Exception)
+                                catch (Exception) when (!RestoreCancellation.IsShutdownRequested(results.TaskControl))
                                 {
                                     lock (results)
                                     {
