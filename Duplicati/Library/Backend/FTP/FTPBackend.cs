@@ -32,6 +32,8 @@ using FluentFTP.Client.BaseClient;
 using FluentFTP.Exceptions;
 using CoreUtility = Duplicati.Library.Utility.Utility;
 
+[assembly: InternalsVisibleTo("Duplicati.UnitTest")]
+
 namespace Duplicati.Library.Backend
 {
 
@@ -262,13 +264,37 @@ namespace Duplicati.Library.Backend
         /// </summary>
         /// <param name="url">Configured url.</param>
         /// <param name="options">Configured options. cannot be null.</param>
+        /// <summary>
+        /// The parts of an ftp url that the backend connects with.
+        /// </summary>
+        /// <param name="Url">The sanitized url: the ftp scheme, no credentials, no query, and a path that ends with a separator.</param>
+        /// <param name="Username">The user from the url, or null when it has none.</param>
+        /// <param name="Password">The password from the url, or null when it has none.</param>
+        internal readonly record struct FtpUrl(Uri Url, string? Username, string? Password);
+
+        /// <summary>
+        /// Splits an ftp url into the parts the backend needs. The scheme of the sanitized
+        /// url is always ftp, so the ftps and aftp spellings end up the same way.
+        /// </summary>
+        /// <param name="url">The url to split.</param>
+        /// <returns>The parts the backend needs.</returns>
+        internal static FtpUrl ParseFtpUrl(string url)
+        {
+            var u = new Utility.RelaxedUri(url);
+            u.RequireHost();
+
+            var parsedurl = u.SetScheme("ftp").SetQuery(null).SetCredentials(null, null).ToString();
+            parsedurl = Util.AppendDirSeparator(parsedurl, "/");
+
+            return new FtpUrl(new Uri(parsedurl), u.Username, u.Password);
+        }
+
         public FTP(string url, Dictionary<string, string?> options)
         {
             _sslOptions = SslOptionsHelper.Parse(options);
             _sslValidator = new SslCertificateValidator(_sslOptions.AcceptAllCertificates, _sslOptions.AcceptSpecificCertificateHashes, _sslOptions.IgnoreRevocationFailure);
 
-            var u = new Utility.RelaxedUri(url);
-            u.RequireHost();
+            var u = ParseFtpUrl(url);
 
             var auth = AuthOptionsHelper.Parse(options, u.Username, u.Password);
             if (auth.HasUsername)
@@ -283,9 +309,7 @@ namespace Duplicati.Library.Backend
                     _userInfo.Password = auth.Password;
             }
 
-            var parsedurl = u.SetScheme("ftp").SetQuery(null).SetCredentials(null, null).ToString();
-            parsedurl = Util.AppendDirSeparator(parsedurl, "/");
-            _url = new Uri(parsedurl);
+            _url = u.Url;
 
             _listVerify = !CoreUtility.ParseBoolOption(options, CONFIG_KEY_DISABLE_UPLOAD_VERIFY);
             _relativePaths = ProtocolKey == "ftp"

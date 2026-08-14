@@ -61,19 +61,36 @@ public class TahoeBackend : IStreamingBackend, IRenameEnabledBackend
         _certificateOptions = null!;
     }
 
-    public TahoeBackend(string url, Dictionary<string, string?> options)
+    /// <summary>
+    /// The url requests are built from.
+    /// </summary>
+    /// <param name="Url">The sanitized url: http or https, no credentials, no query, ending with a separator.</param>
+    internal readonly record struct TahoeUrl(string Url);
+
+    /// <summary>
+    /// Checks that the url names a Tahoe-LAFS directory capability and turns it into the
+    /// url requests are built from.
+    /// </summary>
+    /// <param name="url">The url to read.</param>
+    /// <param name="useSsl">Whether the requests go over https.</param>
+    /// <returns>The url requests are built from.</returns>
+    internal static TahoeUrl ParseTahoeUrl(string url, bool useSsl)
     {
-        //Validate URL
         var u = new RelaxedUri(url);
         u.RequireHost();
 
         if (!u.Path.StartsWith("uri/URI:DIR2:", StringComparison.Ordinal) && !u.Path.StartsWith("uri/URI%3ADIR2%3A", StringComparison.Ordinal))
             throw new UserInformationException(Strings.TahoeBackend.UnrecognizedUriError, "TahoeInvalidUri");
 
-        _certificateOptions = SslOptionsHelper.Parse(options);
+        var built = u.SetScheme(useSsl ? "https" : "http").SetQuery(null).SetCredentials(null, null).ToString();
 
-        _url = u.SetScheme(_certificateOptions.UseSSL ? "https" : "http").SetQuery(null).SetCredentials(null, null).ToString();
-        _url = Util.AppendDirSeparator(_url, "/");
+        return new TahoeUrl(Util.AppendDirSeparator(built, "/"));
+    }
+
+    public TahoeBackend(string url, Dictionary<string, string?> options)
+    {
+        _certificateOptions = SslOptionsHelper.Parse(options);
+        _url = ParseTahoeUrl(url, _certificateOptions.UseSSL).Url;
         _timeouts = TimeoutOptionsHelper.Parse(options);
     }
 
