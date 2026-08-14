@@ -1,0 +1,7 @@
+{
+  "name": "SQLitePCLRaw",
+  "description": "SQLitePCLRaw is a Portable Class Library (PCL) for low-level access to SQLite",
+  "link": "https://github.com/ericsink/SQLitePCL.raw",
+  "license": "Apache-2.0",
+  "notes": ""
+}

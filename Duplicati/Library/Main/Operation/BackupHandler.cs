@@ -631,6 +631,11 @@ namespace Duplicati.Library.Main.Operation
             // If there is no filter, we set an empty filter to simplify the code
             m_filter = filter ?? new Library.Utility.FilterExpression();
 
+            // Warn about a likely misconfigured filter that excludes everything but has no includes
+            if (Library.Utility.FilterExpression.IsExcludeAllBeforeIncludes(m_filter))
+                Logging.Log.WriteWarningMessage(LOGTAG, "FilterExcludesAll", null,
+                    "The filter has an \"exclude all\" rule that appears before any include rules. This is likely a misconfiguration; no files will be backed up. Please check the filter settings.");
+
             Task parallelScanner = null;
             try
             {
@@ -666,10 +671,6 @@ namespace Duplicati.Library.Main.Operation
                                 throw new Exception(string.Format("The previous backup has time {0}, but this backup has time {1}. Something is wrong with the clock.", prevfileset.Value.ToLocalTime(), m_database.OperationTimestamp.ToLocalTime()));
 
                             var lastfilesetid = prevfileset.Value.Ticks == 0 ? -1 : prevfileset.Key;
-
-                            // Rebuild any index files that are missing
-                            await Backup.RecreateMissingIndexFiles.RunAsync(db, backendManager, m_options, m_result.TaskControl)
-                                .ConfigureAwait(false);
 
                             // Prepare the operation by registering the filelist
                             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_ProcessingFiles);
@@ -742,9 +743,25 @@ namespace Duplicati.Library.Main.Operation
                     await FlushBackendAsync(db, m_result, backendManager)
                         .ConfigureAwait(false);
 
+                    // Rebuild any index files that are missing.
+                    // This has to happen after the block volumes have been processed:
+                    // an interrupted backup can leave a block volume registered as uploaded
+                    // while the blocklists it contains are only registered by the following
+                    // backup. Re-creating the index file before that registration produces an
+                    // index file without any blocklists, which is then uploaded and recorded
+                    // as complete.
+                    await Backup.RecreateMissingIndexFiles.RunAsync(db, backendManager, m_options, m_result.TaskControl)
+                        .ConfigureAwait(false);
+
                     // Send the actual filelist
                     var uploadedNewFileset = await Backup.UploadRealFilelist.RunAsync(m_result, db, backendManager, m_options, filesetvolume, filesetid, m_result.TaskControl, lastTempVolumeIncomplete)
                         .ConfigureAwait(false);
+
+                    // Warn if the backup examined only folders and/or symlinks but no actual files,
+                    // as this is likely a misconfiguration (e.g. wrong source path or over-aggressive filter)
+                    if (uploadedNewFileset && !m_result.PartialBackup && m_result.ExaminedFiles == 0)
+                        Logging.Log.WriteWarningMessage(LOGTAG, "NoFilesInBackup", null,
+                            "The backup completed but no files were processed. This is likely a misconfiguration; please check the source paths and filter settings.");
 
                     // Wait for upload completion
                     m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_WaitForUpload);

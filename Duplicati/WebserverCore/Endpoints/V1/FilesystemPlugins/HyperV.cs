@@ -38,12 +38,12 @@ public class Hyperv : IFilesystemPlugin
         if (!OperatingSystem.IsWindows())
             return [];
 
-        var hypervUtility = new HyperVUtility();
-        if (!hypervUtility.IsHyperVInstalled || !new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator))
-            return [];
-
         try
         {
+            var hypervUtility = new HyperVUtility();
+            if (!hypervUtility.IsHyperVInstalled || !new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator))
+                return [];
+
             if (pathSegments.Length == 0)
             {
                 hypervUtility.QueryHyperVGuestsInfo(WindowsSnapshot.DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER);

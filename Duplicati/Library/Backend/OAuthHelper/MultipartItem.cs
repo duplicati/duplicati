@@ -67,24 +67,24 @@ namespace Duplicati.Library
             ContentLength = content.Length;
         }
 
-        public string ContentType 
-        { 
-            get 
-            { 
-                return Headers.ContainsKey("Content-Type") ? Headers["Content-Type"] : null; 
-            } 
-            set 
-            { 
+        public string ContentType
+        {
+            get
+            {
+                return Headers.ContainsKey("Content-Type") ? Headers["Content-Type"] : null;
+            }
+            set
+            {
                 if (string.IsNullOrWhiteSpace(value))
                     Headers.Remove("Content-Type");
                 else
-                    Headers["Content-Type"] = value; 
-            } 
+                    Headers["Content-Type"] = value;
+            }
         }
 
         public Stream ContentData { get; set; }
         public Dictionary<string, string> Headers { get; set; }
-        public string ContentTypeName 
+        public string ContentTypeName
         {
             get
             {
@@ -92,16 +92,16 @@ namespace Duplicati.Library
                 Headers.TryGetValue("Content-Disposition", out v);
                 if (string.IsNullOrWhiteSpace(v))
                     return null;
-                
+
                 var m = new System.Text.RegularExpressions.Regex("name=\"(?<name>[^\"]+)\"").Match(v);
                 return m.Success ? m.Groups["name"].Value : null;
             }
-            set 
-            { 
+            set
+            {
                 if (string.IsNullOrWhiteSpace(value))
                     Headers.Remove("Content-Disposition");
                 else
-                    Headers["Content-Disposition"] = string.Format("form-data; name=\"{0}\"", Library.Utility.Uri.UrlEncode(value)); 
+                    Headers["Content-Disposition"] = string.Format("form-data; name=\"{0}\"", Library.Utility.UrlEncoding.UrlEncode(value));
             }
         }
 
@@ -132,7 +132,7 @@ namespace Duplicati.Library
         }
         public MultipartItem SetHeader(string key, string value)
         {
-            return SetHeaderRaw(key, Library.Utility.Uri.UrlEncode(value));
+            return SetHeaderRaw(key, Library.Utility.UrlEncoding.UrlEncode(value));
         }
         public MultipartItem SetContentDisposition(string name, string filename = null)
         {
@@ -141,9 +141,10 @@ namespace Duplicati.Library
                 this.ContentTypeName = name;
                 return this;
             }
-                
-            return SetHeaderRaw("Content-Disposition", string.Format("form-data; name=\"{0}\"; filename=\"{1}\"", Library.Utility.Uri.UrlEncode(name), Library.Utility.Uri.UrlEncode(filename)));
+
+            return SetHeaderRaw("Content-Disposition", string.Format("form-data; name=\"{0}\"; filename=\"{1}\"", Library.Utility.UrlEncoding.UrlEncode(name), Library.Utility.UrlEncoding.UrlEncode(filename)));
         }
 
-    }}
+    }
+}
 

@@ -108,12 +108,12 @@ namespace Duplicati.Library.Backend.AzureBlob
         // This constructor is needed by the BackendLoader.
         public AzureBlobBackend(string url, Dictionary<string, string?> options)
         {
-            var uri = new Utility.Uri(url);
+            var uri = new Utility.RelaxedUri(url);
             uri.RequireHost();
 
             var containerName = (uri.Host ?? "").ToLowerInvariant();
 
-            var auth = AuthOptionsHelper.ParseWithAlias(options, uri, AZURE_ACCOUNT_NAME_OPTION, AZURE_ACCESS_KEY_OPTION);
+            var auth = AuthOptionsHelper.ParseWithAlias(options, uri.Username, uri.Password, AZURE_ACCOUNT_NAME_OPTION, AZURE_ACCESS_KEY_OPTION);
             var timeouts = TimeoutOptionsHelper.Parse(options);
 
             var sasToken = options.GetValueOrDefault(AZURE_ACCESS_SAS_TOKEN_OPTION);

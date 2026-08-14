@@ -25,7 +25,6 @@ using Azure.Storage.Blobs.Models;
 using System.Runtime.CompilerServices;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
-using Uri = System.Uri;
 using Duplicati.Library.Utility.Options;
 using Duplicati.Library.Utility;
 using Azure.Core.Pipeline;

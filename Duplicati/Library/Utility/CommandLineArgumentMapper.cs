@@ -200,8 +200,6 @@ public static class CommandLineArgumentMapper
                     p.SetValue(obj, bool.Parse(value));
                 else if (propType.IsEnum)
                     p.SetValue(obj, Enum.Parse(propType, value, true));
-                else if (propType == typeof(Uri))
-                    p.SetValue(obj, new Uri(value));
                 else if (propType == typeof(TimeSpan))
                     p.SetValue(obj, Timeparser.ParseTimeSpan(value));
             }

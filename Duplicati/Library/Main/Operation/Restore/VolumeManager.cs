@@ -330,10 +330,44 @@ namespace Duplicati.Library.Main.Operation.Restore
                             Logging.Log.WriteProfilingMessage(LOGTAG, "CacheUsage", $"Max used cache size: {Duplicati.Library.Utility.Utility.FormatSizeString(cache_size_max_consumed)}");
                         }
                     }
+                    catch (Exception) when (RestoreCancellation.IsShutdownRequested(results.TaskControl))
+                    {
+                        // An abort is an orderly shutdown that arrived by a different signal
+                        // than retirement, so it is reported the same way retirement is.
+                        Logging.Log.WriteVerboseMessage(LOGTAG, "CancelledProcess", null, "Volume manager cancelled");
+                        throw;
+                    }
                     catch (Exception ex)
                     {
                         Logging.Log.WriteErrorMessage(LOGTAG, "VolumeManagerError", ex, "Error during volume manager");
                         throw;
+                    }
+                    finally
+                    {
+                        // Nothing else disposes what is left in the cache. `handle_evict` is
+                        // only reached from a `CacheEvict` request or from an eviction, so on
+                        // any early exit the cached volumes keep their decrypted temporary
+                        // files open. The finalizer in `TempFile` cannot recover them either,
+                        // because the volume reader holds the file without `FileShare.Delete`,
+                        // so the delete fails and is swallowed. On Windows that leaves the
+                        // files behind until the 30-day cleanup.
+                        //
+                        // Placed in a `finally` rather than in the catch blocks so it also
+                        // covers a non-exceptional exit, and it reuses `handle_evict` so that
+                        // `cache_size` and `cache_last_touched` stay consistent. `cache.Keys`
+                        // has to be copied because `handle_evict` removes from the dictionary.
+                        try
+                        {
+                            foreach (var volume_id in cache.Keys.ToList())
+                                handle_evict(volume_id);
+                        }
+                        catch (Exception ex)
+                        {
+                            // Disposing a volume reaches a compression module's `Dispose`, and
+                            // an exception from there must not replace the exception that is
+                            // currently unwinding.
+                            Logging.Log.WriteWarningMessage(LOGTAG, "CacheDrainError", ex, "Failed to dispose the cached volumes");
+                        }
                     }
                 }
             );

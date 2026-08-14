@@ -50,10 +50,12 @@ public interface IFolderEnabledBackend : IBackend
     /// </summary>
     /// <param name="path">The path to get</param>
     /// <param name="cancellationToken">The cancellation token</param>
-    /// <returns>The file or folder entry</returns>
+    /// <returns>The file or folder entry, or null when it does not exist</returns>
     /// <remarks>
     /// The paths returned should be only the filenames or folder names, not the full path.
     /// Folders should end with the operating system's directory separator.
+    /// Null means the entry does not exist: callers pass that straight on, so it must not
+    /// be used to say that the backend cannot answer.
     /// </remarks>
     Task<IFileEntry?> GetEntryAsync(string path, CancellationToken cancellationToken);
 }

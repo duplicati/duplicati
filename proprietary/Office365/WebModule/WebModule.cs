@@ -89,7 +89,7 @@ public class WebModule : IWebModule
             { OptionsHelper.ENUMERATION_MODE_OPTION, "true" }
         };
 
-        var uri = new Library.Utility.Uri(url);
+        var uri = new Library.Utility.RelaxedUri(url);
         foreach (var key in uri.QueryParameters.AllKeys)
             forwardoptions[key!] = uri.QueryParameters[key];
 

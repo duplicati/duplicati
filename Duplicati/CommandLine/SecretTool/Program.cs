@@ -26,7 +26,6 @@ using System.CommandLine.Parsing;
 using Duplicati.Library.DynamicLoader;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
-using Uri = System.Uri;
 
 namespace Duplicati.CommandLine.SecretTool;
 

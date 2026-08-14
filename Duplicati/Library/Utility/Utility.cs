@@ -1885,8 +1885,8 @@ namespace Duplicati.Library.Utility
             // If we can parse it, this result is better
             try
             {
-                var uri = new Uri(target);
-                return new Uri($"{uri.Scheme}://{uri.Host}").SetPath(uri.Path).ToString();
+                var uri = new RelaxedUri(target);
+                return new RelaxedUri($"{uri.Scheme}://{uri.Host}").SetPath(uri.Path).ToString();
             }
             catch
             {

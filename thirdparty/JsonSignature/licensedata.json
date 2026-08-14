@@ -1,0 +1,7 @@
+{
+  "name": "JsonSignature",
+  "description": "JsonSignature provides JSON signing capabilities",
+  "link": "https://github.com/duplicati/JsonSignature",
+  "license": "MIT",
+  "notes": ""
+}

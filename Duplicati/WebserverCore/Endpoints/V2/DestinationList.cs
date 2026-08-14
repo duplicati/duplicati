@@ -68,11 +68,11 @@ public class DestinationList : IEndpointV2
 
                 var entries = await entry.Enumerate(cancelToken)
                     .Skip(offset)
-                    .Take(limit)
+                    .Take(limit + 1)
                     .ToListAsync(cancelToken);
 
                 var items = new List<DestinationListResponseItem>(entries.Count);
-                foreach (var e in entries)
+                foreach (var e in entries.Take(limit))
                     items.Add(new DestinationListResponseItem
                     {
                         Path = e.Path,
@@ -81,7 +81,7 @@ public class DestinationList : IEndpointV2
                     });
 
                 return DestinationListResponseDto.Create(
-                    items, offset, hasMore: items.Count() == limit
+                    items, offset, hasMore: entries.Count > limit
                 );
             }
             else
@@ -90,7 +90,7 @@ public class DestinationList : IEndpointV2
                 {
                     var name = $"{additionalPath?.TrimEnd('/')}/{entry.Name?.TrimStart('/')}";
                     if (entry.IsFolder)
-                        Util.AppendDirSeparator(name, "/");
+                        name = Util.AppendDirSeparator(name, "/");
                     return name;
                 }
 
@@ -100,7 +100,7 @@ public class DestinationList : IEndpointV2
                 {
                     var items = await b.ListAsync(cancelToken)
                         .Skip(offset)
-                        .Take(limit)
+                        .Take(limit + 1)
                         .Select(x => new DestinationListResponseItem
                         {
                             Path = pathCombine(input.Path, x),
@@ -110,7 +110,7 @@ public class DestinationList : IEndpointV2
                         .ToListAsync(cancelToken);
 
                     return DestinationListResponseDto.Create(
-                        items, offset, hasMore: items.Count() == limit
+                        items.Take(limit), offset, hasMore: items.Count > limit
                     );
                 }
             }
