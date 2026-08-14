@@ -280,13 +280,34 @@ namespace Duplicati.Library.Backend
         /// <returns>The parts the backend needs.</returns>
         internal static FtpUrl ParseFtpUrl(string url)
         {
-            var u = new Utility.RelaxedUri(url);
-            u.RequireHost();
+            // The previous parser started the query at the first '?' and the backend dropped
+            // it. System.Uri has no query for the ftp scheme and keeps the '?' in the path
+            // instead, which would point the backup at a folder named after the options, so
+            // the query comes off the string before it is parsed. For aftp and ftps, which
+            // System.Uri does not know, this only removes what would have been the query.
+            var queryStart = url.IndexOf('?');
+            var u = new Uri(queryStart < 0 ? url : url.Substring(0, queryStart));
+            u.RequireHost(url);
+            u.RequireNoFragment(url);
 
-            var parsedurl = u.SetScheme("ftp").SetQuery(null).SetCredentials(null, null).ToString();
-            parsedurl = Util.AppendDirSeparator(parsedurl, "/");
+            // The user info is not decoded, so it is decoded here.
+            var userinfo = u.UserInfo.Split(new[] { ':' }, 2);
+            var username = userinfo.Length > 0 && userinfo[0].Length > 0 ? Uri.UnescapeDataString(userinfo[0]) : null;
+            var password = userinfo.Length > 1 ? Uri.UnescapeDataString(userinfo[1]) : null;
 
-            return new FtpUrl(new Uri(parsedurl), u.Username, u.Password);
+            // The port is carried over as it is. It is -1 for aftp and ftps, which have no
+            // registered default, and becomes 21 on the way out because the sanitized url is
+            // always ftp. The separator goes on the path rather than on the assembled url,
+            // which is where it ended up before.
+            var builder = new UriBuilder
+            {
+                Scheme = "ftp",
+                Host = u.Host,
+                Port = u.Port,
+                Path = Util.AppendDirSeparator(u.AbsolutePath, "/")
+            };
+
+            return new FtpUrl(builder.Uri, username, password);
         }
 
         public FTP(string url, Dictionary<string, string?> options)

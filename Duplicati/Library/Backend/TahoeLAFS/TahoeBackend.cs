@@ -76,15 +76,31 @@ public class TahoeBackend : IStreamingBackend, IRenameEnabledBackend
     /// <returns>The url requests are built from.</returns>
     internal static TahoeUrl ParseTahoeUrl(string url, bool useSsl)
     {
-        var u = new RelaxedUri(url);
-        u.RequireHost();
+        var u = new System.Uri(url);
+        u.RequireHost(url);
+        u.RequireNoFragment(url);
 
-        if (!u.Path.StartsWith("uri/URI:DIR2:", StringComparison.Ordinal) && !u.Path.StartsWith("uri/URI%3ADIR2%3A", StringComparison.Ordinal))
+        // The check is made against the decoded path without its leading separator, which is
+        // what the previous parser handed over. Decoding happens once, so a doubly encoded
+        // colon still reaches the second spelling the way it did before.
+        var path = System.Uri.UnescapeDataString(u.AbsolutePath);
+        if (path.StartsWith("/", StringComparison.Ordinal))
+            path = path.Substring(1);
+
+        if (!path.StartsWith("uri/URI:DIR2:", StringComparison.Ordinal) && !path.StartsWith("uri/URI%3ADIR2%3A", StringComparison.Ordinal))
             throw new UserInformationException(Strings.TahoeBackend.UnrecognizedUriError, "TahoeInvalidUri");
 
-        var built = u.SetScheme(useSsl ? "https" : "http").SetQuery(null).SetCredentials(null, null).ToString();
+        // The escaped path is what goes into the url, and the separator goes on the path
+        // rather than on the assembled url, which is where it ended up before.
+        var builder = new UriBuilder
+        {
+            Scheme = useSsl ? "https" : "http",
+            Host = u.Host,
+            Port = u.Port,
+            Path = Util.AppendDirSeparator(u.AbsolutePath, "/")
+        };
 
-        return new TahoeUrl(Util.AppendDirSeparator(built, "/"));
+        return new TahoeUrl(builder.Uri.AbsoluteUri);
     }
 
     public TahoeBackend(string url, Dictionary<string, string?> options)

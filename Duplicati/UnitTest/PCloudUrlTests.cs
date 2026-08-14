@@ -66,43 +66,54 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
-        public void TheHostKeepsItsCase()
+        public void TheHostIsLowerCased()
         {
-            Assert.AreEqual("API.pCloud.com", pCloudBackend.ParsePCloudUrl("pcloud://API.pCloud.com/").Host);
+            // The previous parser kept the case. The endpoint is a host name, so this is only
+            // a normalization - but see AServerWrittenInAnotherCaseIsAccepted for what it
+            // means for the check against the known endpoints.
+            Assert.AreEqual("api.pcloud.com", pCloudBackend.ParsePCloudUrl("pcloud://API.pCloud.com/").Host);
         }
 
         [Test]
-        public void APlusInThePathIsReadAsASpace()
+        public void APlusInThePathIsNoLongerASpace()
         {
-            Assert.AreEqual("a b", pCloudBackend.ParsePCloudUrl("pcloud://api.pcloud.com/a+b").Path);
+            // The previous parser applied the query string rule that reads '+' as a space to
+            // the path as well, which moved the remote folder.
+            Assert.AreEqual("a+b", pCloudBackend.ParsePCloudUrl("pcloud://api.pcloud.com/a+b").Path);
         }
 
         [Test]
-        public void ADotSegmentInThePathIsKept()
+        public void ADotSegmentInThePathIsResolved()
         {
-            Assert.AreEqual("a/../b", pCloudBackend.ParsePCloudUrl("pcloud://api.pcloud.com/a/../b").Path);
+            // The previous parser kept the segment as written.
+            Assert.AreEqual("b", pCloudBackend.ParsePCloudUrl("pcloud://api.pcloud.com/a/../b").Path);
         }
 
         [Test]
-        public void ABackslashInThePathIsKept()
+        public void ABackslashInThePathBecomesASeparator()
         {
-            Assert.AreEqual("a\\b", pCloudBackend.ParsePCloudUrl("pcloud://api.pcloud.com/a\\b").Path);
+            // The previous parser left it alone. The path is split on both separators
+            // everywhere it is used, so the folder ends up the same either way.
+            Assert.AreEqual("a/b", pCloudBackend.ParsePCloudUrl("pcloud://api.pcloud.com/a\\b").Path);
         }
 
         [Test]
-        public void AHashInThePathIsPartOfTheFolderName()
+        public void AHashInThePathIsRejected()
         {
-            Assert.AreEqual("back#up", pCloudBackend.ParsePCloudUrl("pcloud://api.pcloud.com/back#up").Path);
+            // The previous parser had no fragment and kept the '#' in the folder name.
+            Assert.Throws<UserInformationException>(() => pCloudBackend.ParsePCloudUrl("pcloud://api.pcloud.com/back#up"));
         }
 
         [Test]
-        public void AServerWrittenInAnotherCaseIsRejected()
+        public void AServerWrittenInAnotherCaseIsAccepted()
         {
-            // The server check compares the host against the known endpoints with the default
-            // comparer, so it is case sensitive even though the dictionary is not.
+            // The check compares the host against the known endpoints with the default
+            // comparer, so it is case sensitive even though the dictionary is not, and this
+            // url used to be rejected. The endpoints are written in lower case, so the host
+            // now matches one. The check itself is left as it is, so that every expectation
+            // that moved in this change traces back to the parser.
             var options = new Dictionary<string, string?> { ["authid"] = "x" };
-            var ex = Assert.Throws<UserInformationException>(() => new pCloudBackend("pcloud://API.pCloud.com/", options));
-            Assert.AreEqual("InvalidpCloudServerSpecified", ex!.HelpID);
+            Assert.DoesNotThrow(() => new pCloudBackend("pcloud://API.pCloud.com/", options).Dispose());
         }
 
         [Test]

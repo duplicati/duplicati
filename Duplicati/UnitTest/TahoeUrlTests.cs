@@ -46,15 +46,18 @@ namespace Duplicati.UnitTest
     [Category("UriUtility")]
     public class TahoeUrlTests
     {
-        [TestCase("tahoe://host/uri/URI:DIR2:a", "http://host/uri/URI%3ADIR2%3Aa/")]
+        // The previous parser percent encoded every character outside a small set while it
+        // rebuilt the url, so the colons of the capability went out as %3A. A colon is a legal
+        // path character and the literal form is the one the Tahoe-LAFS web api documents.
+        [TestCase("tahoe://host/uri/URI:DIR2:a", "http://host/uri/URI:DIR2:a/")]
         // An already encoded colon is left as it is
         [TestCase("tahoe://host/uri/URI%3ADIR2%3Aa", "http://host/uri/URI%3ADIR2%3Aa/")]
         // Decoding happens once, so a doubly encoded colon matches the second spelling the
         // dircap check accepts
         [TestCase("tahoe://host/uri/URI%253ADIR2%253Aa", "http://host/uri/URI%253ADIR2%253Aa/")]
-        [TestCase("tahoe://user:pw@host/uri/URI:DIR2:a", "http://host/uri/URI%3ADIR2%3Aa/")]
-        [TestCase("tahoe://host/uri/URI:DIR2:a?x=1", "http://host/uri/URI%3ADIR2%3Aa/")]
-        [TestCase("tahoe://host:3456/uri/URI:DIR2:aaa:bbb/sub", "http://host:3456/uri/URI%3ADIR2%3Aaaa%3Abbb/sub/")]
+        [TestCase("tahoe://user:pw@host/uri/URI:DIR2:a", "http://host/uri/URI:DIR2:a/")]
+        [TestCase("tahoe://host/uri/URI:DIR2:a?x=1", "http://host/uri/URI:DIR2:a/")]
+        [TestCase("tahoe://host:3456/uri/URI:DIR2:aaa:bbb/sub", "http://host:3456/uri/URI:DIR2:aaa:bbb/sub/")]
         public void TheRequestUrlIsBuiltFromTheUrl(string url, string expected)
         {
             Assert.AreEqual(expected, TahoeBackend.ParseTahoeUrl(url, false).Url, url);
@@ -63,7 +66,7 @@ namespace Duplicati.UnitTest
         [Test]
         public void TheSchemeFollowsTheSslOption()
         {
-            Assert.AreEqual("https://host/uri/URI%3ADIR2%3Aa/", TahoeBackend.ParseTahoeUrl("tahoe://host/uri/URI:DIR2:a", true).Url);
+            Assert.AreEqual("https://host/uri/URI:DIR2:a/", TahoeBackend.ParseTahoeUrl("tahoe://host/uri/URI:DIR2:a", true).Url);
         }
 
         [TestCase("tahoe://host/")]
@@ -82,49 +85,62 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
-        public void TheHostKeepsItsCase()
+        public void TheHostIsLowerCased()
         {
-            Assert.AreEqual("http://HOST/uri/URI%3ADIR2%3Aa/", TahoeBackend.ParseTahoeUrl("tahoe://HOST/uri/URI:DIR2:a", false).Url);
+            // The previous parser kept the case. A host name is not case sensitive, and the
+            // capability that names the directory is in the path, which does keep its case.
+            Assert.AreEqual("http://host/uri/URI:DIR2:a/", TahoeBackend.ParseTahoeUrl("tahoe://HOST/uri/URI:DIR2:a", false).Url);
         }
 
         [Test]
-        public void AWrittenDefaultPortIsKept()
+        public void AWrittenDefaultPortIsLeftOut()
         {
-            Assert.AreEqual("http://host:80/uri/URI%3ADIR2%3Aa/", TahoeBackend.ParseTahoeUrl("tahoe://host:80/uri/URI:DIR2:a", false).Url);
+            // The previous parser wrote out whatever port the url named. The request goes to
+            // the same place either way.
+            Assert.AreEqual("http://host/uri/URI:DIR2:a/", TahoeBackend.ParseTahoeUrl("tahoe://host:80/uri/URI:DIR2:a", false).Url);
         }
 
         [Test]
-        public void APlusInThePathIsReadAsASpace()
+        public void APlusInThePathIsNoLongerASpace()
         {
-            Assert.AreEqual("http://host/uri/URI%3ADIR2%3Aa%20b/", TahoeBackend.ParseTahoeUrl("tahoe://host/uri/URI:DIR2:a+b", false).Url);
+            // The previous parser applied the query string rule that reads '+' as a space to
+            // the path as well.
+            Assert.AreEqual("http://host/uri/URI:DIR2:a+b/", TahoeBackend.ParseTahoeUrl("tahoe://host/uri/URI:DIR2:a+b", false).Url);
         }
 
         [Test]
-        public void AnEncodedSeparatorBecomesARealSeparator()
+        public void AnEncodedSeparatorStaysEncodedInTheUrl()
         {
-            Assert.AreEqual("http://host/uri/URI%3ADIR2%3Aa/", TahoeBackend.ParseTahoeUrl("tahoe://host/uri%2FURI:DIR2:a", false).Url);
+            // The capability check still sees a real separator, because it reads the decoded
+            // path, but the url keeps the encoded form now instead of turning it into a
+            // separator of its own.
+            Assert.AreEqual("http://host/uri%2FURI:DIR2:a/", TahoeBackend.ParseTahoeUrl("tahoe://host/uri%2FURI:DIR2:a", false).Url);
         }
 
         [Test]
-        public void AHashInThePathIsPartOfTheName()
+        public void AHashInThePathIsRejected()
         {
-            Assert.AreEqual("http://host/uri/URI%3ADIR2%3Aa%23b/", TahoeBackend.ParseTahoeUrl("tahoe://host/uri/URI:DIR2:a#b", false).Url);
+            // The previous parser had no fragment and kept the '#' in the name.
+            Assert.Throws<UserInformationException>(() => TahoeBackend.ParseTahoeUrl("tahoe://host/uri/URI:DIR2:a#b", false));
         }
 
         [Test]
-        public void ADotSegmentInThePathIsKept()
+        public void ADotSegmentInThePathIsResolvedAndBreaksTheCapability()
         {
-            Assert.AreEqual("http://host/uri/URI%3ADIR2%3Aa/../b/", TahoeBackend.ParseTahoeUrl("tahoe://host/uri/URI:DIR2:a/../b", false).Url);
+            // The previous parser kept the segment as written. Resolving it moves the path
+            // off the capability, so the url is reported as unrecognized rather than being
+            // sent to a directory the user did not name.
+            Assert.Throws<UserInformationException>(() => TahoeBackend.ParseTahoeUrl("tahoe://host/uri/URI:DIR2:a/../b", false));
         }
 
         [Test]
-        public void AnIpv6HostProducesAUrlThatCannotBeParsedBack()
+        public void AnIpv6HostProducesAUrlThatCanBeParsedBack()
         {
-            // The host is percent encoded while the url is rebuilt, which leaves a string
-            // that GetDNSNamesAsync cannot parse back.
+            // The previous parser percent encoded the host, which left a string that
+            // GetDNSNamesAsync could not parse back.
             var built = TahoeBackend.ParseTahoeUrl("tahoe://[fe80::1]:3456/uri/URI:DIR2:a", false).Url;
-            Assert.AreEqual("http://%5Bfe80%3A%3A1%5D:3456/uri/URI%3ADIR2%3Aa/", built);
-            Assert.Throws<UriFormatException>(() => new Uri(built));
+            Assert.AreEqual("http://[fe80::1]:3456/uri/URI:DIR2:a/", built);
+            Assert.AreEqual("[fe80::1]", new Uri(built).Host);
         }
 
         private sealed class CapturingHandler : HttpMessageHandler
@@ -153,7 +169,7 @@ namespace Duplicati.UnitTest
                     break;
             });
 
-            Assert.AreEqual("http://example.invalid/uri/URI%3ADIR2%3Aaaa%3Abbb/?t=json", handler.LastUri?.OriginalString);
+            Assert.AreEqual("http://example.invalid/uri/URI:DIR2:aaa:bbb/?t=json", handler.LastUri?.OriginalString);
         }
     }
 }

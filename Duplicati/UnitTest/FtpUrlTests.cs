@@ -103,11 +103,18 @@ namespace Duplicati.UnitTest
 
         [TestCase("aftp:///p")]
         [TestCase("ftps:///p")]
-        [TestCase("ftp:///p")]
-        [TestCase("ftp://")]
         public void AUrlWithoutAHostIsRejected(string url)
         {
             Assert.Throws<ArgumentException>(() => FTP.ParseFtpUrl(url), url);
+        }
+
+        [TestCase("ftp:///p")]
+        [TestCase("ftp://")]
+        public void AnFtpUrlWithoutAHostIsRejectedByTheParser(string url)
+        {
+            // ftp is a scheme that requires an authority, so these do not reach the check
+            // that produced the message about a missing hostname. aftp and ftps still do.
+            Assert.Throws<UriFormatException>(() => FTP.ParseFtpUrl(url), url);
         }
 
         [TestCase("ftp://host:99999/p")]
@@ -120,38 +127,54 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
-        public void AnEmptyUserWithAPasswordIsReadAsAMissingHost()
+        public void AnEmptyUserWithAPasswordIsNoLongerReadAsAMissingHost()
         {
-            var ex = Assert.Throws<ArgumentException>(() => FTP.ParseFtpUrl("ftp://:pass@host/p"));
-            Assert.IsFalse(ex!.Message.Contains("pass"), ex.Message);
+            // The previous parser read the ':' as the start of the authority and reported a
+            // missing hostname. The password is taken now, and the user stays unset, so the
+            // connection is made without credentials.
+            var parsed = FTP.ParseFtpUrl("ftp://:pass@host/p");
+            Assert.AreEqual("ftp://host/p/", parsed.Url.AbsoluteUri);
+            Assert.IsNull(parsed.Username);
+            Assert.AreEqual("pass", parsed.Password);
         }
 
         [Test]
-        public void APlusInThePathIsReadAsASpace()
+        public void APlusInThePathIsNoLongerASpace()
         {
-            Assert.AreEqual("ftp://host/a%20b/", FTP.ParseFtpUrl("ftp://host/a+b").Url.AbsoluteUri);
+            // The previous parser applied the query string rule that reads '+' as a space to
+            // the path as well. A url that has been through the parser carries %2B, so only a
+            // hand written url is affected - but for this backend it moves the remote folder.
+            Assert.AreEqual("ftp://host/a+b/", FTP.ParseFtpUrl("ftp://host/a+b").Url.AbsoluteUri);
         }
 
         [Test]
-        public void AHashInThePathIsPartOfTheFolderName()
+        public void AHashInThePathIsRejected()
         {
-            Assert.AreEqual("ftp://host/back%23up/", FTP.ParseFtpUrl("ftp://host/back#up/").Url.AbsoluteUri);
+            // The previous parser had no fragment and kept the '#' in the folder name.
+            // Accepting the url now would use "back" instead, so the user is told to write
+            // %23 rather than being sent to a different folder.
+            Assert.Throws<UserInformationException>(() => FTP.ParseFtpUrl("ftp://host/back#up/"));
         }
 
         [Test]
-        public void AnEncodedSeparatorBecomesARealSeparator()
+        public void AnEncodedSeparatorStaysEncoded()
         {
-            Assert.AreEqual("ftp://host/a/b/", FTP.ParseFtpUrl("ftp://host/a%2Fb").Url.AbsoluteUri);
+            // The previous parser decoded the path and the separator became a real one. The
+            // path handed to the client is unescaped again, so the folder is the same either
+            // way; only the url differs.
+            var parsed = FTP.ParseFtpUrl("ftp://host/a%2Fb");
+            Assert.AreEqual("ftp://host/a%2Fb/", parsed.Url.AbsoluteUri);
+            Assert.AreEqual("/a/b/", Uri.UnescapeDataString(parsed.Url.AbsolutePath));
         }
 
-        [TestCase("ftp://[fe80::1]/p")]
-        [TestCase("ftp://[fe80::1]:2121/p")]
-        [TestCase("ftp://münchen.de/p")]
-        public void AnIpv6OrNonAsciiHostIsRejected(string url)
+        [TestCase("ftp://[fe80::1]/p", "ftp://[fe80::1]/p/")]
+        [TestCase("ftp://[fe80::1]:2121/p", "ftp://[fe80::1]:2121/p/")]
+        [TestCase("ftp://münchen.de/p", "ftp://münchen.de/p/")]
+        public void AnIpv6OrNonAsciiHostIsAccepted(string url, string expected)
         {
-            // The host is percent encoded while the url is rebuilt, and the encoded form is
-            // not a host System.Uri can parse.
-            Assert.Throws<UriFormatException>(() => FTP.ParseFtpUrl(url), url);
+            // The previous parser percent encoded the host while it rebuilt the url, and the
+            // encoded form was not a host System.Uri could parse, so both of these failed.
+            Assert.AreEqual(expected, FTP.ParseFtpUrl(url).Url.AbsoluteUri, url);
         }
     }
 }

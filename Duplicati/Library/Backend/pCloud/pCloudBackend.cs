@@ -142,11 +142,15 @@ public class pCloudBackend : IStreamingBackend, IRenameEnabledBackend
     /// <returns>The parts the backend needs.</returns>
     internal static PCloudUrl ParsePCloudUrl(string url)
     {
-        var uri = new Utility.RelaxedUri(url);
-        uri.RequireHost();
+        var uri = new Uri(url);
+        uri.RequireHost(url);
+        uri.RequireNoFragment(url);
+
+        // The path arrives escaped, where the previous parser handed it over decoded.
+        var path = Uri.UnescapeDataString(uri.AbsolutePath);
 
         // Ensure that the path is in the correct format, without starting or tailing slashes
-        return new PCloudUrl(uri.Host ?? "", uri.Path.TrimStart(PATH_SEPARATORS).TrimEnd(PATH_SEPARATORS).Trim());
+        return new PCloudUrl(uri.Host, path.TrimStart(PATH_SEPARATORS).TrimEnd(PATH_SEPARATORS).Trim());
     }
 
     public pCloudBackend(string url, Dictionary<string, string?> options)
