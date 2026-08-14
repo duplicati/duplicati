@@ -222,7 +222,7 @@ internal class TemporaryDbValueList : IDisposable, IAsyncDisposable
             for (int i = 0; i < slice.Length; i++)
                 _cmd.SetParameterValue(parameterNames[i], slice[i]);
 
-            await _cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+            await _cmd.ExecuteNonQueryAsync(writeLog: false, default).ConfigureAwait(false);
         }
     }
 

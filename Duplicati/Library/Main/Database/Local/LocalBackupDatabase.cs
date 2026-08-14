@@ -464,7 +464,7 @@ namespace Duplicati.Library.Main.Database.Local
                         ")
                         .ConfigureAwait(false);
 
-                    await using (var reader = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false))
+                    await using (var reader = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false))
                         while (await reader.ReadAsync(token).ConfigureAwait(false))
                         {
                             var id = reader.ConvertValueToInt64(0);
@@ -1167,7 +1167,7 @@ namespace Duplicati.Library.Main.Database.Local
                 .SetParameterValue("@Path", path)
                 .SetParameterValue("@FilesetId", filesetid);
 
-            await using var rd = await m_findfileCommand.ExecuteReaderAsync(token).ConfigureAwait(false);
+            await using var rd = await m_findfileCommand.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false);
             if (await rd.ReadAsync(token).ConfigureAwait(false))
             {
                 oldModified = new DateTime(rd.ConvertValueToInt64(1), DateTimeKind.Utc);
@@ -1212,7 +1212,7 @@ namespace Duplicati.Library.Main.Database.Local
                 .SetTransaction(m_rtr)
                 .SetParameterValue("@FileId", fileid);
 
-            await using var rd = await m_selectfilemetadatahashandsizeCommand.ExecuteReaderAsync(token).ConfigureAwait(false);
+            await using var rd = await m_selectfilemetadatahashandsizeCommand.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false);
             if (await rd.ReadAsync(token).ConfigureAwait(false))
                 return (
                     rd.ConvertValueToString(1) ?? throw new InvalidOperationException("Metadata hash is null"),
@@ -1694,7 +1694,7 @@ namespace Duplicati.Library.Main.Database.Local
 
                     if (exclusionPredicate(path, size))
                         await cmdDelete.SetParameterValue("@FileId", row.ConvertValueToInt64(1))
-                            .ExecuteNonQueryAsync(token) // Not logging because we log the full operation
+                            .ExecuteNonQueryAsync(writeLog: false, token) // Not logging because we log the full operation
                             .ConfigureAwait(false);
                 }
 
@@ -1785,7 +1785,7 @@ namespace Duplicati.Library.Main.Database.Local
                     RemoteVolumeState.Verified.ToString()
                 ]);
 
-            await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+            await using var rd = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false);
             while (await rd.ReadAsync(token).ConfigureAwait(false))
                 yield return rd.ConvertValueToString(0) ?? throw new Exception("Unexpected null value for volume name");
         }
@@ -1921,7 +1921,7 @@ namespace Duplicati.Library.Main.Database.Local
                 .SetTransaction(m_rtr)
                 .SetParameterValue("@FilesetId", fileSetId);
 
-            await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+            await using var rd = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false);
             while (await rd.ReadAsync(token).ConfigureAwait(false))
             {
                 yield return new Interface.USNJournalDataEntry
@@ -1968,7 +1968,7 @@ namespace Duplicati.Library.Main.Database.Local
                         .SetParameterValue("@JournalId", entry.JournalId)
                         .SetParameterValue("@NextUsn", entry.NextUsn)
                         .SetParameterValue("@ConfigHash", entry.ConfigHash)
-                        .ExecuteNonQueryAsync(token) // Not logging, as we log the whole operation
+                        .ExecuteNonQueryAsync(writeLog: false, token) // Not logging, as we log the whole operation
                         .ConfigureAwait(false);
 
                     if (c != 1)
@@ -2004,7 +2004,7 @@ namespace Duplicati.Library.Main.Database.Local
                         .SetParameterValue("@FilesetId", fileSetId)
                         .SetParameterValue("@VolumeName", entry.Volume)
                         .SetParameterValue("@JournalId", entry.JournalId)
-                        .ExecuteNonQueryAsync(token) // Not logging, as we log the whole operation
+                        .ExecuteNonQueryAsync(writeLog: false, token) // Not logging, as we log the whole operation
                         .ConfigureAwait(false);
                 }
 

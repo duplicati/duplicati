@@ -115,7 +115,7 @@ public class LocalSyncDatabase : IDisposable, IBackendManagerDatabase
     {
         using var cmd = m_connection.CreateCommand();
         cmd.CommandText = @"DELETE FROM ""PendingOperation"";";
-        await cmd.ExecuteNonQueryAsync(cancellationToken);
+        await cmd.ExecuteNonQueryAsync(writeLog: false, cancellationToken);
     }
 
     /// <summary>
@@ -138,7 +138,7 @@ public class LocalSyncDatabase : IDisposable, IBackendManagerDatabase
         cmd.Parameters.AddWithValue("@modified", lastModified.ToUniversalTime().ToString("O"));
         cmd.Parameters.AddWithValue("@hash", (object?)contentHash ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@verified", DateTime.UtcNow.ToString("O"));
-        await cmd.ExecuteNonQueryAsync(cancellationToken);
+        await cmd.ExecuteNonQueryAsync(writeLog: false, cancellationToken);
     }
 
     /// <summary>
@@ -168,7 +168,7 @@ public class LocalSyncDatabase : IDisposable, IBackendManagerDatabase
         cmd.Parameters.AddWithValue("@size", (object?)size ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@hash", (object?)hash ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@startedAt", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow));
-        await cmd.ExecuteNonQueryAsync(cancellationToken);
+        await cmd.ExecuteNonQueryAsync(writeLog: false, cancellationToken);
     }
 
     /// <summary>
@@ -179,7 +179,7 @@ public class LocalSyncDatabase : IDisposable, IBackendManagerDatabase
         using var cmd = m_connection.CreateCommand();
         cmd.CommandText = @"DELETE FROM ""RemoteInventory"" WHERE ""RelativePath"" = @path;";
         cmd.Parameters.AddWithValue("@path", relativePath);
-        await cmd.ExecuteNonQueryAsync(cancellationToken);
+        await cmd.ExecuteNonQueryAsync(writeLog: false, cancellationToken);
     }
 
     /// <summary>
@@ -191,7 +191,7 @@ public class LocalSyncDatabase : IDisposable, IBackendManagerDatabase
         using var cmd = m_connection.CreateCommand();
         cmd.CommandText = @"DELETE FROM ""PendingOperation"" WHERE ""Path"" = @path;";
         cmd.Parameters.AddWithValue("@path", path);
-        await cmd.ExecuteNonQueryAsync(cancellationToken);
+        await cmd.ExecuteNonQueryAsync(writeLog: false, cancellationToken);
     }
 
     /// <summary>
@@ -202,7 +202,7 @@ public class LocalSyncDatabase : IDisposable, IBackendManagerDatabase
         using var cmd = m_connection.CreateCommand();
         cmd.CommandText = @"SELECT ""RelativePath"", ""Size"", ""LastModified"", ""ContentHash"" FROM ""RemoteInventory"" WHERE ""RelativePath"" = @path;";
         cmd.Parameters.AddWithValue("@path", relativePath);
-        await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+        await using var reader = await cmd.ExecuteReaderAsync(writeLog: false, cancellationToken);
         if (await reader.ReadAsync(cancellationToken))
         {
             return new InventoryItem
@@ -275,7 +275,7 @@ public class LocalSyncDatabase : IDisposable, IBackendManagerDatabase
             cmd.Parameters.AddWithValue("@prefixlen", prefix.Length);
         }
 
-        await using var reader = await cmd.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+        await using var reader = await cmd.ExecuteReaderAsync(writeLog: false, cancellationToken).ConfigureAwait(false);
         while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
         {
             yield return new InventoryItem
@@ -312,7 +312,7 @@ public class LocalSyncDatabase : IDisposable, IBackendManagerDatabase
         using var cmd = m_connection.CreateCommand();
         cmd.CommandText = @"SELECT ""ID"", ""Path"", ""Operation"", ""Size"", ""Hash"", ""StartedAt"", ""Attempts"" FROM ""PendingOperation"" WHERE ""Path"" = @path;";
         cmd.Parameters.AddWithValue("@path", path);
-        await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+        await using var reader = await cmd.ExecuteReaderAsync(writeLog: false, cancellationToken);
         if (await reader.ReadAsync(cancellationToken))
         {
             return ReadPendingOperation(reader, cancellationToken);
@@ -353,7 +353,7 @@ public class LocalSyncDatabase : IDisposable, IBackendManagerDatabase
     {
         using var cmd = m_connection.CreateCommand();
         cmd.CommandText = @"SELECT COUNT(*) FROM ""RemoteInventory"";";
-        return Convert.ToInt32(await cmd.ExecuteScalarAsync(cancellationToken)) > 0;
+        return Convert.ToInt32(await cmd.ExecuteScalarAsync(writeLog: false, cancellationToken)) > 0;
     }
 
     /// <summary>
@@ -365,7 +365,7 @@ public class LocalSyncDatabase : IDisposable, IBackendManagerDatabase
     {
         using var cmd = m_connection.CreateCommand();
         cmd.CommandText = @"SELECT COUNT(*) FROM ""PendingOperation"";";
-        return Convert.ToInt32(await cmd.ExecuteScalarAsync(cancellationToken)) > 0;
+        return Convert.ToInt32(await cmd.ExecuteScalarAsync(writeLog: false, cancellationToken)) > 0;
     }
 
     /// <summary>
@@ -375,7 +375,7 @@ public class LocalSyncDatabase : IDisposable, IBackendManagerDatabase
     {
         using var cmd = m_connection.CreateCommand();
         cmd.CommandText = @"SELECT ""RelativePath"", ""Size"", ""LastModified"", ""ContentHash"" FROM ""RemoteInventory"";";
-        await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+        await using var reader = await cmd.ExecuteReaderAsync(writeLog: false, cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
             yield return new InventoryItem
@@ -396,7 +396,7 @@ public class LocalSyncDatabase : IDisposable, IBackendManagerDatabase
     {
         using var cmd = m_connection.CreateCommand();
         cmd.CommandText = @"SELECT ""ID"", ""Path"", ""Operation"", ""Size"", ""Hash"", ""StartedAt"", ""Attempts"" FROM ""PendingOperation"";";
-        await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+        await using var reader = await cmd.ExecuteReaderAsync(writeLog: false, cancellationToken);
         while (await reader.ReadAsync(cancellationToken))
         {
             yield return ReadPendingOperation(reader, cancellationToken);
@@ -418,7 +418,7 @@ public class LocalSyncDatabase : IDisposable, IBackendManagerDatabase
         cmd.Parameters.AddWithValue("@operation", operation);
         cmd.Parameters.AddWithValue("@path", path);
         cmd.Parameters.AddWithValue("@data", (object?)data ?? DBNull.Value);
-        await cmd.ExecuteNonQueryAsync(cancellationToken);
+        await cmd.ExecuteNonQueryAsync(writeLog: false, cancellationToken);
 
         // Throttle the audit-log purge so we don't run a DELETE on every logged
         // operation. The RemoteOperationTimestamp index makes the purge itself cheap
@@ -439,7 +439,7 @@ public class LocalSyncDatabase : IDisposable, IBackendManagerDatabase
         using var cmd = m_connection.CreateCommand();
         cmd.CommandText = @"DELETE FROM ""RemoteOperation"" WHERE ""Timestamp"" < @threshold;";
         cmd.Parameters.AddWithValue("@threshold", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(threshold));
-        await cmd.ExecuteNonQueryAsync(cancellationToken);
+        await cmd.ExecuteNonQueryAsync(writeLog: false, cancellationToken);
     }
 
     /// <summary>
@@ -474,7 +474,7 @@ public class LocalSyncDatabase : IDisposable, IBackendManagerDatabase
             {
                 using var cmd = m_connection.CreateCommand();
                 cmd.CommandText = $@"DROP TABLE IF EXISTS ""{m_name}"";";
-                await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+                await cmd.ExecuteNonQueryAsync(writeLog: false, default).ConfigureAwait(false);
             }
             catch
             {
@@ -495,7 +495,7 @@ public class LocalSyncDatabase : IDisposable, IBackendManagerDatabase
         var name = $"SyncTemp-{Library.Utility.Utility.GetHexGuid()}";
         using var cmd = m_connection.CreateCommand();
         cmd.CommandText = $@"CREATE TEMPORARY TABLE ""{name}"" ({columnDefinition});";
-        await cmd.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        await cmd.ExecuteNonQueryAsync(writeLog: false, cancellationToken).ConfigureAwait(false);
         return new TempTable(m_connection, name);
     }
 
@@ -532,7 +532,7 @@ public class LocalSyncDatabase : IDisposable, IBackendManagerDatabase
                 cmd.SetParameterValue($"@s{n}", slice[i].Size);
                 cmd.SetParameterValue($"@m{n}", slice[i].ModifiedUtc.ToString("O"));
             }
-            await cmd.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+            await cmd.ExecuteNonQueryAsync(writeLog: false, cancellationToken).ConfigureAwait(false);
         }
     }
 
@@ -586,7 +586,7 @@ public class LocalSyncDatabase : IDisposable, IBackendManagerDatabase
             WHERE ri.""RelativePath"" IS NULL
             ORDER BY lf.""RelativePath"";
         ";
-        await using var reader = await cmd.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+        await using var reader = await cmd.ExecuteReaderAsync(writeLog: false, cancellationToken).ConfigureAwait(false);
         while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
         {
             yield return new SyncPlanRow
@@ -642,7 +642,7 @@ public class LocalSyncDatabase : IDisposable, IBackendManagerDatabase
                {hashClause}
             ORDER BY lf.""RelativePath"";
         ";
-        await using var reader = await cmd.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+        await using var reader = await cmd.ExecuteReaderAsync(writeLog: false, cancellationToken).ConfigureAwait(false);
         while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
         {
             yield return new SyncPlanRow
@@ -679,7 +679,7 @@ public class LocalSyncDatabase : IDisposable, IBackendManagerDatabase
               AND po.""Path"" IS NULL
             ORDER BY ri.""RelativePath"";
         ";
-        await using var reader = await cmd.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+        await using var reader = await cmd.ExecuteReaderAsync(writeLog: false, cancellationToken).ConfigureAwait(false);
         while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
         {
             yield return new SyncPlanRow
@@ -701,7 +701,7 @@ public class LocalSyncDatabase : IDisposable, IBackendManagerDatabase
     {
         using var cmd = m_connection.CreateCommand();
         cmd.CommandText = $@"SELECT COUNT(*) FROM ""{tableName}"";";
-        return Convert.ToInt64(await cmd.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false), null);
+        return Convert.ToInt64(await cmd.ExecuteScalarAsync(writeLog: false, cancellationToken).ConfigureAwait(false), null);
     }
 
     /// <summary>
@@ -717,7 +717,7 @@ public class LocalSyncDatabase : IDisposable, IBackendManagerDatabase
             LEFT JOIN ""RemoteInventory"" ri ON ri.""RelativePath"" = lf.""RelativePath""
             WHERE ri.""RelativePath"" IS NULL;
         ";
-        return Convert.ToInt64(await cmd.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false), null);
+        return Convert.ToInt64(await cmd.ExecuteScalarAsync(writeLog: false, cancellationToken).ConfigureAwait(false), null);
     }
 
     /// <summary>
@@ -737,7 +737,7 @@ public class LocalSyncDatabase : IDisposable, IBackendManagerDatabase
                OR ri.""LastModified"" < lf.""LastModified""
                {hashClause};
         ";
-        return Convert.ToInt64(await cmd.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false), null);
+        return Convert.ToInt64(await cmd.ExecuteScalarAsync(writeLog: false, cancellationToken).ConfigureAwait(false), null);
     }
 
     /// <summary>
@@ -754,7 +754,7 @@ public class LocalSyncDatabase : IDisposable, IBackendManagerDatabase
             WHERE lf.""RelativePath"" IS NULL
               AND po.""Path"" IS NULL;
         ";
-        return Convert.ToInt64(await cmd.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false), null);
+        return Convert.ToInt64(await cmd.ExecuteScalarAsync(writeLog: false, cancellationToken).ConfigureAwait(false), null);
     }
 
     /// <summary>
