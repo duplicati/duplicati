@@ -19,8 +19,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using System.CommandLine;
-using System.CommandLine.Builder;
-using System.CommandLine.Parsing;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 
@@ -36,7 +34,7 @@ public static class Program
     /// </summary>
     /// <param name="args">The arguments</param>
     /// <returns>The return code</returns>
-    public static Task<int> Main(string[] args)
+    public static async Task<int> Main(string[] args)
     {
         Library.AutoUpdater.PreloadSettingsLoader.ConfigurePreloadSettings(ref args, Library.AutoUpdater.PackageHelper.NamedExecutable.ServerUtil);
 
@@ -46,23 +44,21 @@ public static class Program
                 Commands.Download.Create(),
             };
 
-        return new CommandLineBuilder(rootCmd)
-            .UseDefaults()
-            .UseExceptionHandler((ex, context) =>
-            {
-                if (ex is UserInformationException uie)
-                {
-                    Console.WriteLine(uie.Message);
-                    context.ExitCode = 2;
-                }
-                else
-                {
-                    Console.WriteLine(ex.ToString());
-                    context.ExitCode = 1;
-                }
-            })
-            .UseAdditionalHelpAliases()
-            .Build()
-            .InvokeAsync(args);
+        rootCmd.UseAdditionalHelpAliases();
+
+        try
+        {
+            return await rootCmd.Parse(args).InvokeAsync(new InvocationConfiguration { EnableDefaultExceptionHandler = false });
+        }
+        catch (UserInformationException uie)
+        {
+            Console.WriteLine(uie.Message);
+            return 2;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.ToString());
+            return 1;
+        }
     }
 }

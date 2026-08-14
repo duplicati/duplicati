@@ -20,27 +20,62 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System.CommandLine;
-using System.CommandLine.NamingConventionBinder;
 
 namespace Duplicati.CommandLine.ServerUtil.Commands;
 
 public static class Export
 {
-    public static Command Create() =>
-        new Command("export", "Export a backup configuration")
+    public static Command Create()
+    {
+        var backupsArgument = new Argument<string[]>("backups")
         {
-            new Argument<string[]>("backups", "The backup id or name to export, use 'all' to export all backups") {
-                Arity = ArgumentArity.OneOrMore
-            },
+            Description = "The backup id or name to export, use 'all' to export all backups",
+            Arity = ArgumentArity.OneOrMore
+        };
+        var encryptionPassphraseOption = new Option<string?>("--encryption-passphrase")
+        {
+            Description = "The passphrase to use for encrypting the backup configuration",
+            DefaultValueFactory = _ => null
+        };
+        var exportPasswordsOption = new Option<bool?>("--export-passwords")
+        {
+            Description = "Flag toggling the inclusion of sensitive values, such as passwords, defaults to true if a passphrase is supplied",
+            DefaultValueFactory = _ => null
+        };
+        var overwriteOption = new Option<bool>("--overwrite")
+        {
+            Description = "Flag toggling the overwriting of existing files"
+        };
+        var unencryptedOption = new Option<bool>("--unencrypted")
+        {
+            Description = "Flag toggling unencrypted export of configurations"
+        };
+        var destinationOption = new Option<DirectoryInfo>("--destination")
+        {
+            Description = "The folder where the backup configuration should be exported to",
+            DefaultValueFactory = _ => new DirectoryInfo(Directory.GetCurrentDirectory())
+        };
 
-            new Option<string?>(name: "--encryption-passphrase", description: "The passphrase to use for encrypting the backup configuration", getDefaultValue: () => null),
-            new Option<bool?>(name: "--export-passwords", description: "Flag toggling the inclusion of sensitive values, such as passwords, defaults to true if a passphrase is supplied", getDefaultValue: () => null),
-            new Option<bool>(name: "--overwrite", description: "Flag toggling the overwriting of existing files", getDefaultValue: () => false),
-            new Option<bool>(name: "--unencrypted", description: "Flag toggling unencrypted export of configurations", getDefaultValue: () => false),
-            new Option<DirectoryInfo>(name: "--destination", description: "The folder where the backup configuration should be exported to", getDefaultValue: () => new DirectoryInfo(Directory.GetCurrentDirectory()))
-        }
-        .WithHandler(CommandHandler.Create<Settings, OutputInterceptor, string[], string?, bool?, bool, bool, DirectoryInfo>(async (settings, output, backups, encryptionPassphrase, exportPasswords, overwrite, unencrypted, destination) =>
+        var cmd = new Command("export", "Export a backup configuration")
         {
+            backupsArgument,
+            encryptionPassphraseOption,
+            exportPasswordsOption,
+            overwriteOption,
+            unencryptedOption,
+            destinationOption
+        };
+        cmd.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var settings = SettingsBinder.GetSettings(parseResult);
+            var output = OutputInterceptorBinder.GetConsoleInterceptor(parseResult);
+            var backups = parseResult.GetValue(backupsArgument) ?? [];
+            var encryptionPassphrase = parseResult.GetValue(encryptionPassphraseOption);
+            var exportPasswords = parseResult.GetValue(exportPasswordsOption);
+            var overwrite = parseResult.GetValue(overwriteOption);
+            var unencrypted = parseResult.GetValue(unencryptedOption);
+            var destination = parseResult.GetValue(destinationOption)!;
+
             if (!destination.Exists)
             {
                 output.AppendConsoleMessage($"Creating destination folder {destination.FullName}");
@@ -115,6 +150,7 @@ public static class Export
             }
             output.AppendCustomObject("ExportedBackups", exportedBackups);
             output.SetResult(true);
-
-        }));
+        });
+        return cmd;
+    }
 }

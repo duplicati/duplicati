@@ -19,7 +19,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using System.CommandLine;
-using System.CommandLine.NamingConventionBinder;
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -194,179 +193,180 @@ public static partial class Command
     /// <returns>The command</returns>
     public static System.CommandLine.Command Create()
     {
-        var releaseChannelArgument = new Argument<ReleaseChannel>(
-            name: "channel",
-            description: "The release channel",
-            getDefaultValue: () => ReleaseChannel.Canary
-        );
+        var releaseChannelArgument = new Argument<ReleaseChannel>("channel")
+        {
+            Description = "The release channel",
+            DefaultValueFactory = _ => ReleaseChannel.Canary
+        };
 
-        var buildTargetOption = new Option<PackageTarget[]>(
-            name: "--targets",
-            description: "The possible build targets, multiple arguments supported. Use the format os-arch.package, example: x64-win.msi.",
-            parseArgument: arg =>
+        var buildTargetOption = new Option<PackageTarget[]>("--targets")
+        {
+            Description = "The possible build targets, multiple arguments supported. Use the format os-arch.package, example: x64-win.msi.",
+            CustomParser = result =>
             {
-                if (!arg.Tokens.Any())
+                if (!result.Tokens.Any())
                     return Program.SupportedPackageTargets.ToArray();
 
-                var requested = arg.Tokens.Select(x => PackageTarget.ParsePackageId(x.Value)).Distinct().ToArray();
+                var requested = result.Tokens.Select(x => PackageTarget.ParsePackageId(x.Value)).Distinct().ToArray();
                 var invalid = requested.Where(x => !Program.SupportedPackageTargets.Contains(x)).ToList();
                 if (invalid.Any())
                     throw new Exception($"Following targets are not supported: {string.Join(", ", invalid.Select(x => x.PackageTargetString))}");
 
                 return requested;
-            });
+            }
+        };
 
-        var gitStashPushOption = new Option<bool>(
-            name: "--git-stash-push",
-            description: "Performs a git stash command before running the build, and a git commit after updating files",
-            getDefaultValue: () => true
-        );
+        var gitStashPushOption = new Option<bool>("--git-stash-push")
+        {
+            Description = "Performs a git stash command before running the build, and a git commit after updating files",
+            DefaultValueFactory = _ => true
+        };
 
-        var keepBuildsOption = new Option<bool>(
-            name: "--keep-builds",
-            description: "Do not delete the build folders if they already exist (re-use build)",
-            getDefaultValue: () => false
-        );
+        var keepBuildsOption = new Option<bool>("--keep-builds")
+        {
+            Description = "Do not delete the build folders if they already exist (re-use build)",
+            DefaultValueFactory = _ => false
+        };
 
-        var compileOnlyOption = new Option<bool>(
-            name: "--compile-only",
-            description: "Only build the binaries, do not create packages",
-            getDefaultValue: () => false
-        );
+        var compileOnlyOption = new Option<bool>("--compile-only")
+        {
+            Description = "Only build the binaries, do not create packages",
+            DefaultValueFactory = _ => false
+        };
 
-        var buildTempOption = new Option<DirectoryInfo>(
-            name: "--build-path",
-            description: "The path to the temporary folder used for builds; will be deleted on startup",
-            getDefaultValue: () => new DirectoryInfo(Path.GetFullPath("build-temp"))
-        );
+        var buildTempOption = new Option<DirectoryInfo>("--build-path")
+        {
+            Description = "The path to the temporary folder used for builds; will be deleted on startup",
+            DefaultValueFactory = _ => new DirectoryInfo(Path.GetFullPath("build-temp"))
+        };
 
-        var solutionFileOption = new Option<FileInfo>(
-            name: "--solution-file",
-            description: "Path to the Duplicati.slnx file",
-            getDefaultValue: () => new FileInfo(Path.GetFullPath(Path.Combine("..", "Duplicati.slnx")))
-        );
+        var solutionFileOption = new Option<FileInfo>("--solution-file")
+        {
+            Description = "Path to the Duplicati.slnx file",
+            DefaultValueFactory = _ => new FileInfo(Path.GetFullPath(Path.Combine("..", "Duplicati.slnx")))
+        };
 
-        var disableAuthenticodeOption = new Option<bool>(
-            name: "--disable-authenticode",
-            description: "Disables authenticode signing",
-            getDefaultValue: () => false
-        );
+        var disableAuthenticodeOption = new Option<bool>("--disable-authenticode")
+        {
+            Description = "Disables authenticode signing",
+            DefaultValueFactory = _ => false
+        };
 
-        var disableCodeSignOption = new Option<bool>(
-            name: "--disable-signcode",
-            description: "Disables Apple signcode signing",
-            getDefaultValue: () => false
-        );
+        var disableCodeSignOption = new Option<bool>("--disable-signcode")
+        {
+            Description = "Disables Apple signcode signing",
+            DefaultValueFactory = _ => false
+        };
 
         var passwordOption = SharedOptions.passwordOption;
 
-        var signkeyPinOption = new Option<string>(
-            name: "--signkey-pin",
-            description: "The pin to use for the signing key",
-            getDefaultValue: () => string.Empty
-        );
+        var signkeyPinOption = new Option<string>("--signkey-pin")
+        {
+            Description = "The pin to use for the signing key",
+            DefaultValueFactory = _ => string.Empty
+        };
 
-        var disableDockerPushOption = new Option<bool>(
-            name: "--disable-docker-push",
-            description: "Disables pushing the docker image to the repository",
-            getDefaultValue: () => false
-        );
+        var disableDockerPushOption = new Option<bool>("--disable-docker-push")
+        {
+            Description = "Disables pushing the docker image to the repository",
+            DefaultValueFactory = _ => false
+        };
 
-        var macOsAppNameOption = new Option<string>(
-            name: "--macos-app-name",
-            description: "The name of the MacOS app bundle",
-            getDefaultValue: () => "Duplicati.app"
-        );
+        var macOsAppNameOption = new Option<string>("--macos-app-name")
+        {
+            Description = "The name of the MacOS app bundle",
+            DefaultValueFactory = _ => "Duplicati.app"
+        };
 
-        var dockerRepoOption = new Option<string>(
-            name: "--docker-repo",
-            description: "The docker repository to push to",
-            getDefaultValue: () => "duplicati/duplicati"
-        );
+        var dockerRepoOption = new Option<string>("--docker-repo")
+        {
+            Description = "The docker repository to push to",
+            DefaultValueFactory = _ => "duplicati/duplicati"
+        };
 
-        var changelogFileOption = new Option<FileInfo>(
-            name: "--changelog-news-file",
-            description: "The path to the changelog news file. Contents from this file are prepended to the changelog.",
-            getDefaultValue: () => new FileInfo(Path.GetFullPath("changelog-news.txt"))
-        );
+        var changelogFileOption = new Option<FileInfo>("--changelog-news-file")
+        {
+            Description = "The path to the changelog news file. Contents from this file are prepended to the changelog.",
+            DefaultValueFactory = _ => new FileInfo(Path.GetFullPath("changelog-news.txt"))
+        };
 
-        var disableNotarizeSigningOption = new Option<bool>(
-            name: "--disable-notarize-signing",
-            description: "Disables notarize signing for MacOS packages",
-            getDefaultValue: () => false
-        );
+        var disableNotarizeSigningOption = new Option<bool>("--disable-notarize-signing")
+        {
+            Description = "Disables notarize signing for MacOS packages",
+            DefaultValueFactory = _ => false
+        };
 
-        var disableGpgSigningOption = new Option<bool>(
-            name: "--disable-gpg-signing",
-            description: "Disables GPG signing of packages",
-            getDefaultValue: () => false
-        );
+        var disableGpgSigningOption = new Option<bool>("--disable-gpg-signing")
+        {
+            Description = "Disables GPG signing of packages",
+            DefaultValueFactory = _ => false
+        };
 
-        var versionOverrideOption = new Option<string?>(
-            name: "--version",
-            description: "Sets a custom version to use",
-            getDefaultValue: () => null
-        );
+        var versionOverrideOption = new Option<string?>("--version")
+        {
+            Description = "Sets a custom version to use",
+            DefaultValueFactory = _ => null
+        };
 
-        var dateOverrideOption = new Option<string?>(
-            name: "--date",
-            description: "Sets a custom date to use for the release, in the format yyyy-MM-dd",
-            getDefaultValue: () => null
-        );
+        var dateOverrideOption = new Option<string?>("--date")
+        {
+            Description = "Sets a custom date to use for the release, in the format yyyy-MM-dd",
+            DefaultValueFactory = _ => null
+        };
 
-        var disableS3UploadOption = new Option<bool>(
-            name: "--disable-s3-upload",
-            description: "Disables uploading to S3",
-            getDefaultValue: () => false
-        );
+        var disableS3UploadOption = new Option<bool>("--disable-s3-upload")
+        {
+            Description = "Disables uploading to S3",
+            DefaultValueFactory = _ => false
+        };
 
-        var disableGithubUploadOption = new Option<bool>(
-            name: "--disable-github-upload",
-            description: "Disables uploading to Github",
-            getDefaultValue: () => false
-        );
+        var disableGithubUploadOption = new Option<bool>("--disable-github-upload")
+        {
+            Description = "Disables uploading to Github",
+            DefaultValueFactory = _ => false
+        };
 
-        var disableUpdateServerReloadOption = new Option<bool>(
-            name: "--disable-update-server-reload",
-            description: "Disables reloading the update server",
-            getDefaultValue: () => false
-        );
+        var disableUpdateServerReloadOption = new Option<bool>("--disable-update-server-reload")
+        {
+            Description = "Disables reloading the update server",
+            DefaultValueFactory = _ => false
+        };
 
-        var disableDiscourseAnnounceOption = new Option<bool>(
-            name: "--disable-discourse-announce",
-            description: "Disables posting to the forum",
-            getDefaultValue: () => false
-        );
+        var disableDiscourseAnnounceOption = new Option<bool>("--disable-discourse-announce")
+        {
+            Description = "Disables posting to the forum",
+            DefaultValueFactory = _ => false
+        };
 
-        var useHostedBuildsOption = new Option<bool>(
-            name: "--use-hosted-builds",
-            description: "Create hosted builds that require .NET installed, instead of self-contained builds with no .NET dependency",
-            getDefaultValue: () => false
-        );
+        var useHostedBuildsOption = new Option<bool>("--use-hosted-builds")
+        {
+            Description = "Create hosted builds that require .NET installed, instead of self-contained builds with no .NET dependency",
+            DefaultValueFactory = _ => false
+        };
 
-        var resumeFromUploadOption = new Option<bool>(
-            name: "--resume-from-upload",
-            description: "Resumes the build process from the upload step",
-            getDefaultValue: () => false
-        );
+        var resumeFromUploadOption = new Option<bool>("--resume-from-upload")
+        {
+            Description = "Resumes the build process from the upload step",
+            DefaultValueFactory = _ => false
+        };
 
-        var propagateReleaseOption = new Option<bool>(
-            name: "--propagate-release",
-            description: "Propagate the release to the next channel",
-            getDefaultValue: () => false
-        );
+        var propagateReleaseOption = new Option<bool>("--propagate-release")
+        {
+            Description = "Propagate the release to the next channel",
+            DefaultValueFactory = _ => false
+        };
 
-        var disableCleanSourceOption = new Option<bool>(
-            name: "--disable-clean-source",
-            description: "Do not clean the source tree before the build",
-            getDefaultValue: () => false
-        );
+        var disableCleanSourceOption = new Option<bool>("--disable-clean-source")
+        {
+            Description = "Do not clean the source tree before the build",
+            DefaultValueFactory = _ => false
+        };
 
-        var allowAssemblyMismatchOption = new Option<bool>(
-            name: "--allow-assembly-mismatch",
-            description: "Allow mismatched assembly versions",
-            getDefaultValue: () => false
-        );
+        var allowAssemblyMismatchOption = new Option<bool>("--allow-assembly-mismatch")
+        {
+            Description = "Allow mismatched assembly versions",
+            DefaultValueFactory = _ => false
+        };
 
         var command = new System.CommandLine.Command("build", "Builds the packages for a release") {
             gitStashPushOption,
@@ -399,7 +399,41 @@ public static partial class Command
             allowAssemblyMismatchOption
         };
 
-        command.Handler = CommandHandler.Create<CommandInput>(DoBuild);
+        command.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var input = new CommandInput(
+                Targets: parseResult.GetValue(buildTargetOption)!,
+                BuildPath: parseResult.GetValue(buildTempOption)!,
+                SolutionFile: parseResult.GetValue(solutionFileOption)!,
+                GitStashPush: parseResult.GetValue(gitStashPushOption),
+                Channel: parseResult.GetValue(releaseChannelArgument),
+                Version: parseResult.GetValue(versionOverrideOption),
+                Date: parseResult.GetValue(dateOverrideOption),
+                KeepBuilds: parseResult.GetValue(keepBuildsOption),
+                CompileOnly: parseResult.GetValue(compileOnlyOption),
+                DisableAuthenticode: parseResult.GetValue(disableAuthenticodeOption),
+                DisableSignCode: parseResult.GetValue(disableCodeSignOption),
+                Password: parseResult.GetValue(passwordOption)!,
+                SignkeyPin: parseResult.GetValue(signkeyPinOption)!,
+                DisableDockerPush: parseResult.GetValue(disableDockerPushOption),
+                MacOSAppName: parseResult.GetValue(macOsAppNameOption)!,
+                DockerRepo: parseResult.GetValue(dockerRepoOption)!,
+                ChangelogNewsFile: parseResult.GetValue(changelogFileOption)!,
+                DisableNotarizeSigning: parseResult.GetValue(disableNotarizeSigningOption),
+                DisableGpgSigning: parseResult.GetValue(disableGpgSigningOption),
+                DisableS3Upload: parseResult.GetValue(disableS3UploadOption),
+                DisableGithubUpload: parseResult.GetValue(disableGithubUploadOption),
+                DisableUpdateServerReload: parseResult.GetValue(disableUpdateServerReloadOption),
+                DisableDiscourseAnnounce: parseResult.GetValue(disableDiscourseAnnounceOption),
+                UseHostedBuilds: parseResult.GetValue(useHostedBuildsOption),
+                ResumeFromUpload: parseResult.GetValue(resumeFromUploadOption),
+                PropagateRelease: parseResult.GetValue(propagateReleaseOption),
+                DisableCleanSource: parseResult.GetValue(disableCleanSourceOption),
+                AllowAssemblyMismatch: parseResult.GetValue(allowAssemblyMismatchOption)
+            );
+            await DoBuild(input);
+            return Program.ReturnCode ?? 0;
+        });
         return command;
     }
 

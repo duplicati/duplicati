@@ -20,21 +20,29 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System.CommandLine;
-using System.CommandLine.NamingConventionBinder;
 
 namespace Duplicati.CommandLine.ServerUtil.Commands;
 
 public static class Pause
 {
-    public static Command Create() =>
-        new Command("pause", "Pauses the server")
+    public static Command Create()
+    {
+        var durationArgument = new Argument<string?>("duration")
         {
-            new Argument<string?>("duration", description: "The duration to pause the server for", getDefaultValue: () => null) {
-                Arity = ArgumentArity.ZeroOrOne
-            }
-        }
-        .WithHandler(CommandHandler.Create<Settings, OutputInterceptor, string?>(async (settings, output, duration) =>
+            Description = "The duration to pause the server for",
+            Arity = ArgumentArity.ZeroOrOne
+        };
+
+        var cmd = new Command("pause", "Pauses the server")
         {
+            durationArgument
+        };
+        cmd.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var settings = SettingsBinder.GetSettings(parseResult);
+            var output = OutputInterceptorBinder.GetConsoleInterceptor(parseResult);
+            var duration = parseResult.GetValue(durationArgument);
+
             output.AppendConsoleMessage(string.IsNullOrWhiteSpace(duration)
                 ? "Pausing the server indefinitely"
                 : $"Pausing the server for {duration}");
@@ -43,5 +51,7 @@ public static class Pause
 
             // If no exception we presume success
             output.SetResult(true);
-        }));
+        });
+        return cmd;
+    }
 }

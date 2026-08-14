@@ -20,9 +20,6 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System.CommandLine;
-using System.CommandLine.Builder;
-using System.CommandLine.NamingConventionBinder;
-using System.CommandLine.Parsing;
 using System.Security.Cryptography;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Encryption;
@@ -116,50 +113,111 @@ public static class Program
     {
         Library.AutoUpdater.PreloadSettingsLoader.ConfigurePreloadSettings(ref args, Library.AutoUpdater.PackageHelper.NamedExecutable.Agent);
 
+        var runAgentRegistrationUrlOption = new Option<string>("--agent-registration-url") { Description = "The server URL to connect to", DefaultValueFactory = _ => GetDefaultRegistrationUrl() };
+        var runAgentSettingsFileOption = new Option<FileInfo>("--agent-settings-file") { Description = "The file to use for the agent settings", DefaultValueFactory = _ => new FileInfo(Settings.DefaultSettingsFile) };
+        var runAgentSettingsFilePassphraseOption = new Option<string?>("--agent-settings-file-passphrase") { Description = "The passphrase for the agent settings file", DefaultValueFactory = _ => null };
+        var runAgentRegisterOnlyOption = new Option<bool>("--agent-register-only") { Description = "Only register the agent, then exit", DefaultValueFactory = _ => false };
+        var runWebserviceInterfaceOption = new Option<string>("--webservice-interface") { Description = "The interface to listen on for the webserver", DefaultValueFactory = _ => "loopback" };
+        var runWebservicePortOption = new Option<string>("--webservice-port") { Description = "The port to listen on for the webserver", DefaultValueFactory = _ => "8210" };
+        var runWebservicePasswordOption = new Option<string?>("--webservice-password") { Description = "The password for the webserver, not set, or set to \"random\", a random value is used.", DefaultValueFactory = _ => null };
+        var runSettingsEncryptionKeyOption = new Option<string?>("--settings-encryption-key") { Description = "The encryption key for the database settings", DefaultValueFactory = _ => null };
+        var runWindowsEventlogOption = new Option<string>("--windows-eventlog") { Description = "The Windows event log to use as source.", DefaultValueFactory = _ => "" };
+        var runDisableDbEncryptionOption = new Option<bool>("--disable-db-encryption") { Description = "Disable database encryption", DefaultValueFactory = _ => false };
+        var runDisableDefaultSecretProviderOption = new Option<bool>("--disable-default-secret-provider") { Description = "Disable the default secret provider", DefaultValueFactory = _ => false };
+        var runWebserviceResetJwtConfigOption = new Option<bool>("--webservice-reset-jwt-config") { Description = "Reset the JWT configuration", DefaultValueFactory = _ => true };
+        var runWebserviceAllowedHostnamesOption = new Option<string>("--webservice-allowed-hostnames") { Description = "The allowed hostnames for the webserver", DefaultValueFactory = _ => "127.0.0.1" };
+        var runWebserviceApiOnlyOption = new Option<bool>("--webservice-api-only") { Description = "Only allow API access to the webserver", DefaultValueFactory = _ => true };
+        var runWebserviceDisableSigninTokensOption = new Option<bool>("--webservice-disable-signin-tokens") { Description = "Disable signin tokens for the webserver", DefaultValueFactory = _ => true };
+        var runPingPongKeepaliveOption = new Option<bool>("--ping-pong-keepalive") { Description = "Enable ping-pong keepalive", DefaultValueFactory = _ => false };
+        var runDisablePreSharedKeyOption = new Option<bool>("--disable-pre-shared-key") { Description = "Disable the pre-shared key that prevents outside access to the webserver", DefaultValueFactory = _ => false };
+        var runKeepWebservicePasswordOption = new Option<bool>("--keep-webservice-password") { Description = "Disables the random password assigned to the webserver on startup if no password is provided", DefaultValueFactory = _ => false };
+        var runSecretProviderOption = new Option<string?>("--secret-provider") { Description = "The secret provider to use", DefaultValueFactory = _ => null };
+        var runSecretProviderCacheOption = new Option<SecretProviderHelper.CachingLevel>("--secret-provider-cache") { Description = "The secret provider cache level", DefaultValueFactory = _ => SecretProviderHelper.CachingLevel.None };
+        var runSecretProviderPatternOption = new Option<string>("--secret-provider-pattern") { Description = "The secret provider pattern", DefaultValueFactory = _ => SecretProviderHelper.DEFAULT_PATTERN };
+        var runPortableModeOption = new Option<bool>($"--{DataFolderManager.PORTABLE_MODE_OPTION}") { Description = "Use portable mode for locating the database and storing configuration", DefaultValueFactory = _ => DataFolderManager.PORTABLE_MODE };
+        var runServerDatafolderOption = new Option<DirectoryInfo?>($"--{DataFolderManager.SERVER_DATAFOLDER_OPTION}") { Description = "The datafolder to use for locating the database and storing configuration", DefaultValueFactory = _ => new DirectoryInfo(DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ProbeOnly)) };
+        var runAllowInsecureDatafolderOption = new Option<bool>($"--{DataFolderManager.ALLOW_INSECURE_DATAFOLDER_OPTION}") { Description = "Allow the data folder to be in a shared location (e.g. C:\\ProgramData) without restricted permissions", DefaultValueFactory = _ => false };
+
         var runcmd = new Command("run", "Runs the agent")
         {
-            new Option<string>("--agent-registration-url", description: "The server URL to connect to", getDefaultValue: () => GetDefaultRegistrationUrl()),
-            new Option<FileInfo>("--agent-settings-file", description: "The file to use for the agent settings", getDefaultValue: () => new FileInfo(Settings.DefaultSettingsFile)),
-            new Option<string?>("--agent-settings-file-passphrase", description: "The passphrase for the agent settings file", getDefaultValue: () => null),
-            new Option<bool>("--agent-register-only", description: "Only register the agent, then exit", getDefaultValue: () => false),
-            new Option<string>("--webservice-interface", description: "The interface to listen on for the webserver", getDefaultValue: () => "loopback"),
-            new Option<string>("--webservice-port", description: "The port to listen on for the webserver", getDefaultValue: () => "8210"),
-            new Option<string?>("--webservice-password", description: "The password for the webserver, not set, or set to \"random\", a random value is used.", getDefaultValue: () => null),
-            new Option<string?>("--settings-encryption-key", description: "The encryption key for the database settings", getDefaultValue: () => null),
-            new Option<string>("--windows-eventlog", description: "The Windows event log to use as source.", getDefaultValue: () => ""),
-            new Option<bool>("--disable-db-encryption", description: "Disable database encryption", getDefaultValue: () => false),
-            new Option<bool>("--disable-default-secret-provider", description: "Disable the default secret provider", getDefaultValue: () => false),
-            new Option<bool>("--webservice-reset-jwt-config", description: "Reset the JWT configuration", getDefaultValue: () => true),
-            new Option<string>("--webservice-allowed-hostnames", description: "The allowed hostnames for the webserver", getDefaultValue: () => "127.0.0.1"),
-            new Option<bool>("--webservice-api-only", description: "Only allow API access to the webserver", getDefaultValue: () => true),
-            new Option<bool>("--webservice-disable-signin-tokens", description: "Disable signin tokens for the webserver", getDefaultValue: () => true),
-            new Option<bool>("--ping-pong-keepalive", description: "Enable ping-pong keepalive", getDefaultValue: () => false),
-            new Option<bool>("--disable-pre-shared-key", description: "Disable the pre-shared key that prevents outside access to the webserver", getDefaultValue: () => false),
-            new Option<bool>("--keep-webservice-password", description: "Disables the random password assigned to the webserver on startup if no password is provided", getDefaultValue: () => false),
-            new Option<string?>("--secret-provider", description: "The secret provider to use", getDefaultValue: () => null),
-            new Option<SecretProviderHelper.CachingLevel>("--secret-provider-cache", description: "The secret provider cache level", getDefaultValue: () => SecretProviderHelper.CachingLevel.None),
-            new Option<string>("--secret-provider-pattern", description: "The secret provider pattern", getDefaultValue: () => SecretProviderHelper.DEFAULT_PATTERN),
-            new Option<bool>($"--{DataFolderManager.PORTABLE_MODE_OPTION}", description: "Use portable mode for locating the database and storing configuration", getDefaultValue: () => DataFolderManager.PORTABLE_MODE),
-            new Option<DirectoryInfo?>($"--{DataFolderManager.SERVER_DATAFOLDER_OPTION}", description: "The datafolder to use for locating the database and storing configuration", getDefaultValue: () => new DirectoryInfo(DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ProbeOnly))),
-            new Option<bool>($"--{DataFolderManager.ALLOW_INSECURE_DATAFOLDER_OPTION}", description: "Allow the data folder to be in a shared location (e.g. C:\\ProgramData) without restricted permissions", getDefaultValue: () => false),
+            runAgentRegistrationUrlOption,
+            runAgentSettingsFileOption,
+            runAgentSettingsFilePassphraseOption,
+            runAgentRegisterOnlyOption,
+            runWebserviceInterfaceOption,
+            runWebservicePortOption,
+            runWebservicePasswordOption,
+            runSettingsEncryptionKeyOption,
+            runWindowsEventlogOption,
+            runDisableDbEncryptionOption,
+            runDisableDefaultSecretProviderOption,
+            runWebserviceResetJwtConfigOption,
+            runWebserviceAllowedHostnamesOption,
+            runWebserviceApiOnlyOption,
+            runWebserviceDisableSigninTokensOption,
+            runPingPongKeepaliveOption,
+            runDisablePreSharedKeyOption,
+            runKeepWebservicePasswordOption,
+            runSecretProviderOption,
+            runSecretProviderCacheOption,
+            runSecretProviderPatternOption,
+            runPortableModeOption,
+            runServerDatafolderOption,
+            runAllowInsecureDatafolderOption,
         };
-        runcmd.Handler = CommandHandler.Create<CommandLineArguments>(RunAgentAsync);
+        runcmd.SetAction((parseResult, cancellationToken) => RunAgentAsync(new CommandLineArguments(
+            AgentRegistrationUrl: parseResult.GetValue(runAgentRegistrationUrlOption)!,
+            AgentSettingsFile: parseResult.GetValue(runAgentSettingsFileOption)!,
+            AgentSettingsFilePassphrase: parseResult.GetValue(runAgentSettingsFilePassphraseOption),
+            AgentRegisterOnly: parseResult.GetValue(runAgentRegisterOnlyOption),
+            WebserviceInterface: parseResult.GetValue(runWebserviceInterfaceOption)!,
+            WebservicePort: parseResult.GetValue(runWebservicePortOption)!,
+            WebservicePassword: parseResult.GetValue(runWebservicePasswordOption)!,
+            SettingsEncryptionKey: parseResult.GetValue(runSettingsEncryptionKeyOption),
+            WindowsEventLog: parseResult.GetValue(runWindowsEventlogOption)!,
+            DisableDbEncryption: parseResult.GetValue(runDisableDbEncryptionOption),
+            DisableDefaultSecretProvider: parseResult.GetValue(runDisableDefaultSecretProviderOption),
+            WebserviceResetJwtConfig: parseResult.GetValue(runWebserviceResetJwtConfigOption),
+            WebserviceAllowedHostnames: parseResult.GetValue(runWebserviceAllowedHostnamesOption)!,
+            WebserviceApiOnly: parseResult.GetValue(runWebserviceApiOnlyOption),
+            WebserviceDisableSigninTokens: parseResult.GetValue(runWebserviceDisableSigninTokensOption),
+            PingPongKeepalive: parseResult.GetValue(runPingPongKeepaliveOption),
+            DisablePreSharedKey: parseResult.GetValue(runDisablePreSharedKeyOption),
+            KeepWebservicePassword: parseResult.GetValue(runKeepWebservicePasswordOption),
+            SecretProvider: parseResult.GetValue(runSecretProviderOption),
+            SecretProviderCache: parseResult.GetValue(runSecretProviderCacheOption),
+            SecretProviderPattern: parseResult.GetValue(runSecretProviderPatternOption)!,
+            AllowInsecureDatafolder: parseResult.GetValue(runAllowInsecureDatafolderOption)
+        )));
+
+        var clearAgentSettingsFileOption = new Option<FileInfo>("--agent-settings-file") { Description = "The file to use for the agent settings", DefaultValueFactory = _ => new FileInfo(Settings.DefaultSettingsFile) };
 
         var clearCommand = new Command("clear", "Clears the agent settings")
         {
-            new Option<FileInfo>("--agent-settings-file", description: "The file to use for the agent settings", getDefaultValue: () => new FileInfo(Settings.DefaultSettingsFile)),
+            clearAgentSettingsFileOption,
         };
-        clearCommand.Handler = CommandHandler.Create<FileInfo>(ClearAgentSettingsAsync);
+        clearCommand.SetAction((parseResult, cancellationToken) => ClearAgentSettingsAsync(parseResult.GetValue(clearAgentSettingsFileOption)!));
+
+        var registerAgentRegistrationUrlArgument = new Argument<string>("agent-registration-url") { Description = "The server URL to connect to", DefaultValueFactory = _ => RegisterForRemote.DefaultRegisterationUrl, Arity = ArgumentArity.ZeroOrOne };
+        var registerAgentSettingsFileOption = new Option<FileInfo>("--agent-settings-file") { Description = "The file to use for the agent settings", DefaultValueFactory = _ => new FileInfo(Settings.DefaultSettingsFile) };
+        var registerAgentSettingsFilePassphraseOption = new Option<string?>("--agent-settings-file-passphrase") { Description = "The passphrase for the agent settings file", DefaultValueFactory = _ => null };
+        var registerSecretProviderOption = new Option<string?>("--secret-provider") { Description = "The secret provider to use", DefaultValueFactory = _ => null };
+        var registerSecretProviderPatternOption = new Option<string>("--secret-provider-pattern") { Description = "The secret provider pattern", DefaultValueFactory = _ => SecretProviderHelper.DEFAULT_PATTERN };
 
         var registerCommand = new Command("register", "Registers the agent and exits")
         {
-            new Argument<string>("agent-registration-url", description: "The server URL to connect to", getDefaultValue: () => RegisterForRemote.DefaultRegisterationUrl) { Arity = ArgumentArity.ZeroOrOne },
-            new Option<FileInfo>("--agent-settings-file", description: "The file to use for the agent settings", getDefaultValue: () => new FileInfo(Settings.DefaultSettingsFile)),
-            new Option<string?>("--agent-settings-file-passphrase", description: "The passphrase for the agent settings file", getDefaultValue: () => null),
-            new Option<string?>("--secret-provider", description: "The secret provider to use", getDefaultValue: () => null),
-            new Option<string>("--secret-provider-pattern", description: "The secret provider pattern", getDefaultValue: () => SecretProviderHelper.DEFAULT_PATTERN),
+            registerAgentRegistrationUrlArgument,
+            registerAgentSettingsFileOption,
+            registerAgentSettingsFilePassphraseOption,
+            registerSecretProviderOption,
+            registerSecretProviderPatternOption,
         };
-        registerCommand.Handler = CommandHandler.Create<string, FileInfo, string?, string?, string>(RegisterAgentAsync);
+        registerCommand.SetAction((parseResult, cancellationToken) => RegisterAgentAsync(
+            parseResult.GetValue(registerAgentRegistrationUrlArgument)!,
+            parseResult.GetValue(registerAgentSettingsFileOption)!,
+            parseResult.GetValue(registerAgentSettingsFilePassphraseOption),
+            parseResult.GetValue(registerSecretProviderOption),
+            parseResult.GetValue(registerSecretProviderPatternOption)!));
 
         var rootcmd = new RootCommand("Duplicati Agent")
         {
@@ -167,27 +225,34 @@ public static class Program
             clearCommand,
             registerCommand
         };
-        // rootcmd.Handler = CommandHandler.Create<CommandLineArguments>(RunAgent);
+        rootcmd.UseAdditionalHelpAliases();
 
-        return new CommandLineBuilder(rootcmd)
-            .UseDefaults()
-            .UseExceptionHandler((ex, context) =>
+        return InvokeWithExceptionHandlingAsync(rootcmd, args);
+    }
+
+    private static async Task<int> InvokeWithExceptionHandlingAsync(RootCommand rootcmd, string[] args)
+    {
+        try
+        {
+            return await rootcmd.Parse(args).InvokeAsync(new InvocationConfiguration
             {
-                if (ex is UserInformationException userInformationException)
-                {
-                    Console.WriteLine("ErrorID: {0}", userInformationException.HelpID);
-                    Console.WriteLine("Message: {0}", userInformationException.Message);
-                    context.ExitCode = 2;
-                }
-                else
-                {
-                    Console.WriteLine("Exception: " + ex);
-                    context.ExitCode = 1;
-                }
-            })
-            .UseAdditionalHelpAliases()
-            .Build()
-            .InvokeAsync(args);
+                EnableDefaultExceptionHandler = false
+            });
+        }
+        catch (Exception ex)
+        {
+            if (ex is UserInformationException userInformationException)
+            {
+                Console.WriteLine("ErrorID: {0}", userInformationException.HelpID);
+                Console.WriteLine("Message: {0}", userInformationException.Message);
+                return 2;
+            }
+            else
+            {
+                Console.WriteLine("Exception: " + ex);
+                return 1;
+            }
+        }
     }
 
     /// <summary>

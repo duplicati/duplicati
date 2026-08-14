@@ -20,7 +20,6 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System.CommandLine;
-using System.CommandLine.NamingConventionBinder;
 using System.Security.Cryptography.X509Certificates;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Certificates;
@@ -42,30 +41,56 @@ public static class HttpsCommand
     /// Adds platform-specific CA options to the command.
     /// </summary>
     /// <param name="cmd">The command to add options to.</param>
-    /// <returns>The command with added options.</returns>
-    private static Command AddPlatformSpecificCAOptions(Command cmd)
+    /// <returns>The created option, or null if not applicable for this platform.</returns>
+    private static Option<string>? AddPlatformSpecificCAOptions(Command cmd)
     {
         // Add platform-specific options
         if (OperatingSystem.IsWindows())
-            cmd.AddOption(new Option<string>("--store", getDefaultValue: () => OperatingSystem.IsWindows() ? CATrustInstallerFactory.GetDefaultWindowsStoreLocation() == StoreLocation.LocalMachine ? "local" : "user" : "", description: "Certificate store location (local|user). Defaults to 'local' if admin, otherwise 'user')"));
+        {
+            var storeOption = new Option<string>("--store")
+            {
+                Description = "Certificate store location (local|user). Defaults to 'local' if admin, otherwise 'user')",
+                DefaultValueFactory = _ => OperatingSystem.IsWindows() ? CATrustInstallerFactory.GetDefaultWindowsStoreLocation() == StoreLocation.LocalMachine ? "local" : "user" : ""
+            };
+            cmd.Add(storeOption);
+            return storeOption;
+        }
         else if (OperatingSystem.IsLinux())
-            cmd.AddOption(new Option<string>("--cert-dir", getDefaultValue: () => OperatingSystem.IsLinux() ? LinuxCATrustInstaller.DEFAULT_CERT_DIR : "", description: "Custom certificate directory for installing CA certificate"));
+        {
+            var certDirOption = new Option<string>("--cert-dir")
+            {
+                Description = "Custom certificate directory for installing CA certificate",
+                DefaultValueFactory = _ => OperatingSystem.IsLinux() ? LinuxCATrustInstaller.DEFAULT_CERT_DIR : ""
+            };
+            cmd.Add(certDirOption);
+            return certDirOption;
+        }
         else if (OperatingSystem.IsMacOS())
-            cmd.AddOption(new Option<string>("--keychain", getDefaultValue: () => OperatingSystem.IsMacOS() ? MacOSCATrustInstaller.DEFAULT_KEYCHAIN_PATH : "", description: "Custom keychain path for installing CA certificate"));
+        {
+            var keychainOption = new Option<string>("--keychain")
+            {
+                Description = "Custom keychain path for installing CA certificate",
+                DefaultValueFactory = _ => OperatingSystem.IsMacOS() ? MacOSCATrustInstaller.DEFAULT_KEYCHAIN_PATH : ""
+            };
+            cmd.Add(keychainOption);
+            return keychainOption;
+        }
 
-        return cmd;
+        return null;
     }
 
     /// <summary>
     /// Adds common database options to the command.
     /// </summary>
     /// <param name="cmd">The command to add options to.</param>
-    /// <returns>The command</returns>
-    private static Command AddDatabaseOptions(Command cmd)
+    /// <returns>The datafolder and settings-encryption-key options.</returns>
+    private static (Option<string> DatafolderOption, Option<string> SettingsEncryptionKeyOption) AddDatabaseOptions(Command cmd)
     {
-        cmd.AddOption(new Option<string>("--datafolder", "Path to the Duplicati data folder (defaults to standard location)"));
-        cmd.AddOption(new Option<string>("--settings-encryption-key", "Settings encryption key for the database (if settings are encrypted)"));
-        return cmd;
+        var datafolderOption = new Option<string>("--datafolder") { Description = "Path to the Duplicati data folder (defaults to standard location)" };
+        var settingsEncryptionKeyOption = new Option<string>("--settings-encryption-key") { Description = "Settings encryption key for the database (if settings are encrypted)" };
+        cmd.Add(datafolderOption);
+        cmd.Add(settingsEncryptionKeyOption);
+        return (datafolderOption, settingsEncryptionKeyOption);
     }
 
     /// <summary>
@@ -73,16 +98,28 @@ public static class HttpsCommand
     /// </summary>
     public static Command CreateGenerateCommand()
     {
+        var hostnamesOption = new Option<string>("--hostnames") { Description = "Comma-separated list of hostnames to include in the certificate (defaults to auto-detected hostnames)" };
+        var noTrustOption = new Option<bool>("--no-trust") { Description = "Skip installing the CA certificate in the system trust store" };
+        var autoCreateDatabaseOption = new Option<bool>("--auto-create-database") { Description = "Create the database if it does not exist" };
+
         var cmd = new Command("generate", "Generate a new CA and server certificate for HTTPS")
         {
-            new Option<string>("--hostnames", "Comma-separated list of hostnames to include in the certificate (defaults to auto-detected hostnames)"),
-            new Option<bool>("--no-trust", "Skip installing the CA certificate in the system trust store"),
-            new Option<bool>("--auto-create-database", "Create the database if it does not exist"),
+            hostnamesOption,
+            noTrustOption,
+            autoCreateDatabaseOption,
         };
 
-        AddDatabaseOptions(cmd);
-        AddPlatformSpecificCAOptions(cmd);
-        cmd.Handler = CommandHandler.Create<string?, bool, string?, string?, bool, string?, string?, string?>(HandleGenerate);
+        var (datafolderOption, settingsEncryptionKeyOption) = AddDatabaseOptions(cmd);
+        var platformOption = AddPlatformSpecificCAOptions(cmd);
+        cmd.SetAction(parseResult => HandleGenerate(
+            parseResult.GetValue(hostnamesOption),
+            parseResult.GetValue(noTrustOption),
+            parseResult.GetValue(datafolderOption),
+            parseResult.GetValue(settingsEncryptionKeyOption),
+            parseResult.GetValue(autoCreateDatabaseOption),
+            OperatingSystem.IsWindows() ? parseResult.GetValue(platformOption!) : null,
+            OperatingSystem.IsLinux() ? parseResult.GetValue(platformOption!) : null,
+            OperatingSystem.IsMacOS() ? parseResult.GetValue(platformOption!) : null));
         return cmd;
     }
 
@@ -93,8 +130,10 @@ public static class HttpsCommand
     {
         var cmd = new Command("renew", "Renew the server certificate using the existing CA");
 
-        AddDatabaseOptions(cmd);
-        cmd.Handler = CommandHandler.Create<string?, string?>(HandleRenew);
+        var (datafolderOption, settingsEncryptionKeyOption) = AddDatabaseOptions(cmd);
+        cmd.SetAction(parseResult => HandleRenew(
+            parseResult.GetValue(datafolderOption),
+            parseResult.GetValue(settingsEncryptionKeyOption)));
         return cmd;
     }
 
@@ -103,15 +142,25 @@ public static class HttpsCommand
     /// </summary>
     public static Command CreateRegenerateCaCommand()
     {
+        var hostnamesOption = new Option<string>("--hostnames") { Description = "Comma-separated list of hostnames to include in the certificate (defaults to auto-detected hostnames)" };
+        var noTrustOption = new Option<bool>("--no-trust") { Description = "Skip installing the CA certificate in the system trust store" };
+
         var cmd = new Command("regenerate-ca", "Regenerate the CA and server certificate (removes old CA from trust store)")
         {
-            new Option<string>("--hostnames", "Comma-separated list of hostnames to include in the certificate (defaults to auto-detected hostnames)"),
-            new Option<bool>("--no-trust", "Skip installing the CA certificate in the system trust store"),
+            hostnamesOption,
+            noTrustOption,
         };
 
-        AddDatabaseOptions(cmd);
-        AddPlatformSpecificCAOptions(cmd);
-        cmd.Handler = CommandHandler.Create<string?, bool, string?, string?, string?, string?, string?>(HandleRegenerateCa);
+        var (datafolderOption, settingsEncryptionKeyOption) = AddDatabaseOptions(cmd);
+        var platformOption = AddPlatformSpecificCAOptions(cmd);
+        cmd.SetAction(parseResult => HandleRegenerateCa(
+            parseResult.GetValue(hostnamesOption),
+            parseResult.GetValue(noTrustOption),
+            parseResult.GetValue(datafolderOption),
+            parseResult.GetValue(settingsEncryptionKeyOption),
+            OperatingSystem.IsWindows() ? parseResult.GetValue(platformOption!) : null,
+            OperatingSystem.IsLinux() ? parseResult.GetValue(platformOption!) : null,
+            OperatingSystem.IsMacOS() ? parseResult.GetValue(platformOption!) : null));
         return cmd;
     }
 
@@ -122,9 +171,14 @@ public static class HttpsCommand
     {
         var cmd = new Command("remove", "Remove the CA from trust store and delete certificates from database");
 
-        AddDatabaseOptions(cmd);
-        AddPlatformSpecificCAOptions(cmd);
-        cmd.Handler = CommandHandler.Create<string?, string?, string?, string?, string?>(HandleRemove);
+        var (datafolderOption, settingsEncryptionKeyOption) = AddDatabaseOptions(cmd);
+        var platformOption = AddPlatformSpecificCAOptions(cmd);
+        cmd.SetAction(parseResult => HandleRemove(
+            parseResult.GetValue(datafolderOption),
+            parseResult.GetValue(settingsEncryptionKeyOption),
+            OperatingSystem.IsWindows() ? parseResult.GetValue(platformOption!) : null,
+            OperatingSystem.IsLinux() ? parseResult.GetValue(platformOption!) : null,
+            OperatingSystem.IsMacOS() ? parseResult.GetValue(platformOption!) : null));
         return cmd;
     }
 
@@ -135,9 +189,14 @@ public static class HttpsCommand
     {
         var cmd = new Command("show", "Display current certificate status");
 
-        AddDatabaseOptions(cmd);
-        AddPlatformSpecificCAOptions(cmd);
-        cmd.Handler = CommandHandler.Create<string?, string?, string?, string?, string?>(HandleShow);
+        var (datafolderOption, settingsEncryptionKeyOption) = AddDatabaseOptions(cmd);
+        var platformOption = AddPlatformSpecificCAOptions(cmd);
+        cmd.SetAction(parseResult => HandleShow(
+            parseResult.GetValue(datafolderOption),
+            parseResult.GetValue(settingsEncryptionKeyOption),
+            OperatingSystem.IsWindows() ? parseResult.GetValue(platformOption!) : null,
+            OperatingSystem.IsLinux() ? parseResult.GetValue(platformOption!) : null,
+            OperatingSystem.IsMacOS() ? parseResult.GetValue(platformOption!) : null));
         return cmd;
     }
 
@@ -146,13 +205,18 @@ public static class HttpsCommand
     /// </summary>
     public static Command CreateExportCommand()
     {
+        var fileOption = new Option<string>("--file") { Description = "Output file path (defaults to duplicati-server.crt in current directory)" };
+
         var cmd = new Command("export", "Export the server certificate (public key only) to a file")
         {
-            new Option<string>("--file", "Output file path (defaults to duplicati-server.crt in current directory)"),
+            fileOption,
         };
 
-        AddDatabaseOptions(cmd);
-        cmd.Handler = CommandHandler.Create<string?, string?, string?>(HandleExport);
+        var (datafolderOption, settingsEncryptionKeyOption) = AddDatabaseOptions(cmd);
+        cmd.SetAction(parseResult => HandleExport(
+            parseResult.GetValue(fileOption),
+            parseResult.GetValue(datafolderOption),
+            parseResult.GetValue(settingsEncryptionKeyOption)));
         return cmd;
     }
 
@@ -161,13 +225,18 @@ public static class HttpsCommand
     /// </summary>
     public static Command CreateExportCaCommand()
     {
+        var fileOption = new Option<string>("--file") { Description = "Output file path (defaults to duplicati-ca.crt in current directory)" };
+
         var cmd = new Command("export-ca", "Export the CA certificate (public key only) to a file")
         {
-            new Option<string>("--file", "Output file path (defaults to duplicati-ca.crt in current directory)"),
+            fileOption,
         };
 
-        AddDatabaseOptions(cmd);
-        cmd.Handler = CommandHandler.Create<string?, string?, string?>(HandleExportCa);
+        var (datafolderOption, settingsEncryptionKeyOption) = AddDatabaseOptions(cmd);
+        cmd.SetAction(parseResult => HandleExportCa(
+            parseResult.GetValue(fileOption),
+            parseResult.GetValue(datafolderOption),
+            parseResult.GetValue(settingsEncryptionKeyOption)));
         return cmd;
     }
 
