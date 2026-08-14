@@ -1,0 +1,1676 @@
+# Translators:
+# Rivo Zängov <eraser@eraser.ee>, 2022
+# 
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Last-Translator: Rivo Zängov <eraser@eraser.ee>, 2022\n"
+"Language-Team: Estonian (https://app.transifex.com/duplicati/teams/67655/et/)\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: et\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: templates/advancedoptionseditor.html:50
+msgid "- pick an option -"
+msgstr "- tee valik -"
+
+#: scripts/controllers/SystemSettingsController.js:217 templates/delete.html:7
+msgid "...loading..."
+msgstr "...laadimine..."
+
+#: scripts/services/EditUriBuiltins.js:1314
+#: templates/backends/openstack.html:44 templates/backends/storj.html:21
+#: templates/backends/storj.html:22
+msgid "API key"
+msgstr "API võti"
+
+#: scripts/services/EditUriBuiltins.js:1204 templates/backends/s3.html:66
+#: templates/backends/s3.html:68
+msgid "AWS Access ID"
+msgstr "AWS ligipääsu ID"
+
+#: scripts/services/EditUriBuiltins.js:1205 templates/backends/s3.html:71
+#: templates/backends/s3.html:73
+msgid "AWS Access Key"
+msgstr "AWS ligipääsuvõti"
+
+#: scripts/services/EditUriBuiltins.js:157
+msgid "AWS IAM Policy"
+msgstr "AWS IAM poliitika"
+
+#: index.html:223 index.html:239
+msgid "About"
+msgstr "Info"
+
+#: templates/about.html:2
+msgid "About {{appname}}"
+msgstr "{{appname}} info"
+
+#: scripts/services/EditUriBuiltins.js:1153
+msgid "Access Key"
+msgstr "Ligipääsuvõti"
+
+#: scripts/services/AppUtils.js:76
+msgid "Access denied"
+msgstr "Ligipääs on keelatud"
+
+#: templates/backends/storj.html:33 templates/backends/storj.html:34
+msgid "Access grant"
+msgstr "Ligipääs on antud"
+
+#: templates/settings.html:5
+msgid "Access to user interface"
+msgstr "Ligipääs kasutajaliidesele"
+
+#: scripts/services/EditUriBuiltins.js:1152 templates/backends/azure.html:7
+#: templates/backends/azure.html:8
+msgid "Account name"
+msgstr "Konto nimi"
+
+#: templates/addwizard.html:3
+msgid "Add a new backup"
+msgstr "Lisa uus varukoopia"
+
+#: templates/addoredit.html:153
+msgid "Add a path directly"
+msgstr "Lisa kaustatee"
+
+#: index.html:211
+msgid "Add backup"
+msgstr "Lisa varukoopia"
+
+#: templates/addoredit.html:207
+msgid "Add filter"
+msgstr "Lisa filter"
+
+#: templates/addoredit.html:156
+msgid "Add path"
+msgstr "Lisa kaustatee"
+
+#: templates/backup-result/top-right-box.html:18
+msgid "Added"
+msgstr "Lisatud"
+
+#: templates/restoredirect.html:66 templates/restoredirect.html:74
+msgid "Advanced Options"
+msgstr "Lisavalikud"
+
+#: templates/addoredit.html:378 templates/commandline.html:23
+#: templates/commandline.html:31 templates/edituri.html:29
+msgid "Advanced options"
+msgstr "Lisavalikud"
+
+#: templates/home.html:64
+msgid "Advanced:"
+msgstr "Lisavalikud:"
+
+#: templates/addoredit.html:278
+msgid "Allowed days"
+msgstr "Lubatud päevad"
+
+#: scripts/services/AppUtils.js:212
+msgid "Applications"
+msgstr "Rakendused"
+
+#: templates/export.html:8
+msgid "As Command-line"
+msgstr "Käsureana"
+
+#: scripts/services/EditUriBuiltins.js:1110
+#: scripts/services/EditUriBuiltins.js:1120 templates/backends/gcs.html:8
+#: templates/backends/gcs.html:9 templates/backends/jottacloud.html:8
+#: templates/backends/jottacloud.html:9 templates/backends/msgroup.html:13
+#: templates/backends/msgroup.html:14 templates/backends/oauth.html:8
+#: templates/backends/oauth.html:9 templates/backends/pcloud.html:21
+#: templates/backends/pcloud.html:22 templates/backends/sharepoint.html:8
+#: templates/backends/sharepoint.html:9
+msgid "AuthID"
+msgstr "AuthID"
+
+#: scripts/services/EditUriBuiltins.js:1305 templates/backends/storj.html:2
+msgid "Authentication method"
+msgstr "Autentimise viis"
+
+#: templates/backends/filejump.html:26 templates/backends/filen.html:12
+#: templates/backends/generic.html:23 templates/backends/openstack.html:35
+#: templates/backends/smb.html:43
+msgid "Authentication password"
+msgstr "Autentimise parool"
+
+#: templates/backends/filejump.html:22 templates/backends/filen.html:8
+#: templates/backends/generic.html:19 templates/backends/openstack.html:31
+#: templates/backends/smb.html:39
+msgid "Authentication username"
+msgstr "Autentimise kaustajanimi"
+
+#: templates/backends/b2.html:12
+msgid "B2 Application ID"
+msgstr "B2 rakenduse ID"
+
+#: templates/backends/b2.html:16
+msgid "B2 Application Key"
+msgstr "B2 rakenduse võti"
+
+#: templates/restore.html:138 templates/restore.html:70
+msgid "Back"
+msgstr "Tagasi"
+
+#: scripts/services/ServerStatus.js:47
+msgid "Backup complete!"
+msgstr "Varukoopia on valmis!"
+
+#: templates/addoredit.html:92
+msgid "Backup destination"
+msgstr "Varukoopia sihtkoht"
+
+#: templates/restore.html:21 templates/restoredirect.html:21
+#: templates/restoredirect.html:31
+msgid "Backup location"
+msgstr "Varukoopia asukoht"
+
+#: templates/addoredit.html:321
+msgid "Backup retention"
+msgstr "Varukoopia säilitamine"
+
+#: templates/home.html:100
+msgid "Backup:"
+msgstr "Varukoopia:"
+
+#: templates/settings.html:140
+msgid "Beta"
+msgstr "Beeta"
+
+#: templates/backends/file.html:8 templates/restore.html:91
+msgid "Browse"
+msgstr "Sirvi"
+
+#: scripts/controllers/SystemSettingsController.js:39
+msgid "Browser default"
+msgstr "Brauseri vaikeväärtus"
+
+#: scripts/services/AppUtils.js:206
+msgid "Cache Files"
+msgstr "Vahemälu failid"
+
+#: templates/settings.html:150
+msgid "Canary"
+msgstr "Eksperimentaalne"
+
+#: scripts/controllers/AppController.js:204
+#: scripts/controllers/AppController.js:58
+#: scripts/controllers/AppController.js:74
+#: scripts/controllers/DeleteController.js:67
+#: scripts/controllers/EditBackupController.js:103
+#: scripts/controllers/EditBackupController.js:352
+#: scripts/controllers/EditBackupController.js:367
+#: scripts/controllers/EditBackupController.js:401
+#: scripts/controllers/EditBackupController.js:410
+#: scripts/controllers/EditBackupController.js:437
+#: scripts/controllers/EditBackupController.js:458
+#: scripts/controllers/ExportController.js:13
+#: scripts/controllers/LocalDatabaseController.js:72
+#: scripts/controllers/LocalDatabaseController.js:88
+#: scripts/controllers/RestoreDirectController.js:24
+#: scripts/controllers/StateController.js:119
+#: scripts/controllers/StateController.js:128
+#: scripts/services/DialogService.js:50
+#: scripts/services/EditUriBuiltins.js:1215
+#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:61 templates/delete.html:54
+#: templates/export.html:34 templates/settings.html:205
+msgid "Cancel"
+msgstr "Loobu"
+
+#: scripts/controllers/LocalDatabaseController.js:103
+msgid "Cannot move to existing file"
+msgstr "Olemas olevat faili ei saa liigutada"
+
+#: templates/about.html:5
+msgid "Changelog"
+msgstr "Muudatuste nimekiri"
+
+#: scripts/controllers/UpdateChangelogController.js:16
+msgid "Check failed:"
+msgstr "Kontrollimine ebaõnnestus:"
+
+#: templates/about.html:34
+msgid "Check for updates now"
+msgstr "Kontrolli värskendusi kohe"
+
+#: templates/about.html:35
+msgid "Checking for updates …"
+msgstr "Värskenduste kontrollimine ..."
+
+#: templates/backends/s3.html:78
+msgid "Client library to use"
+msgstr "Kliendi teek, mida kasutada"
+
+#: templates/home.html:69
+msgid "Commandline …"
+msgstr "Käsurida ..."
+
+#: templates/backup-result/phases/compact.html:3
+msgid "Compact Phase"
+msgstr "Pakkimise faas"
+
+#: templates/home.html:68
+msgid "Compact now"
+msgstr "Paki kohe"
+
+#: scripts/services/ServerStatus.js:44 scripts/services/ServerStatus.js:70
+msgid "Compacting remote data …"
+msgstr "Kaugandmete pakkimine ..."
+
+#: scripts/services/ServerStatus.js:41
+msgid "Completing backup …"
+msgstr "Varukoopia tegemise lõpetamine ..."
+
+#: scripts/services/ServerStatus.js:39
+msgid "Completing previous backup …"
+msgstr "Eelmise varukoopia tegemise lõpetamine ..."
+
+#: scripts/directives/sourceFolderPicker.js:582
+msgid "Computer"
+msgstr "Arvuti"
+
+#: templates/import.html:9
+msgid "Configuration file:"
+msgstr "Seadete fail:"
+
+#: templates/home.html:56
+msgid "Configuration:"
+msgstr "Seadistamine:"
+
+#: templates/addwizard.html:9
+msgid "Configure a new backup"
+msgstr "Seadista uus varukoopia"
+
+#: scripts/controllers/DeleteController.js:65
+#: scripts/controllers/DeleteController.js:99
+#: scripts/controllers/LocalDatabaseController.js:28
+msgid "Confirm delete"
+msgstr "Kinnita kustutamine"
+
+#: templates/export.html:30
+msgid "Confirm encryption passphrase"
+msgstr "Kinnita krüpteerimise parool"
+
+#: templates/export.html:29
+msgid "Confirm passphrase"
+msgstr "Kinnita parool"
+
+#: scripts/services/EditUriBackendConfig.js:74
+msgid "Confirmation required"
+msgstr "Kinnitus on nõutud"
+
+#: templates/restoredirect.html:80
+msgid "Connect"
+msgstr "Ühenda"
+
+#: index.html:312
+msgid "Connect now"
+msgstr "Ühenda kohe"
+
+#: index.html:305
+msgid "Connecting to server …"
+msgstr "Serveriga ühendumine ..."
+
+#: index.html:297
+msgid "Connection lost"
+msgstr "Ühendus kadus"
+
+#: scripts/directives/backupEditUri.js:52
+#: scripts/directives/backupEditUri.js:55
+msgid "Connection worked!"
+msgstr "Ühendus töötas!"
+
+#: scripts/services/EditUriBuiltins.js:1154 templates/backends/azure.html:2
+#: templates/backends/azure.html:3
+msgid "Container name"
+msgstr "Konteineri nimi"
+
+#: templates/backends/openstack.html:49
+msgid "Container region"
+msgstr "Konteineri piirkond"
+
+#: templates/restore.html:69
+msgid "Continue"
+msgstr "Jätka"
+
+#: scripts/controllers/EditBackupController.js:437
+msgid "Continue without encryption"
+msgstr "Jätka ilma krüpteerimata"
+
+#: scripts/controllers/DialogController.js:16
+msgid "Copied!"
+msgstr "Kopeeritud!"
+
+#: templates/copy_clipboard_buttons.html:3
+msgid "Copy"
+msgstr "Kopeeri"
+
+#: scripts/controllers/DialogController.js:20
+msgid "Copy failed. Please manually copy the URL"
+msgstr "Kopeerimine ebaõnnestus. Palun kopeeri URL käsitsi"
+
+#: scripts/services/AppUtils.js:741
+msgid "Core options"
+msgstr "Tuuma valikud"
+
+#: templates/settings.html:170
+msgid "Crashes only"
+msgstr "Ainult kokkujooksmised"
+
+#: templates/home.html:75
+msgid "Create bug report …"
+msgstr "Loo vea aruanne ..."
+
+#: scripts/directives/backupEditUri.js:132
+msgid "Create folder?"
+msgstr "Luua kaust?"
+
+#: scripts/services/EditUriBuiltins.js:140
+msgid "Created new limited user"
+msgstr "Uus piiratud õigustega kasutaja on loodud"
+
+#: scripts/services/ServerStatus.js:64
+msgid "Creating bug report …"
+msgstr "Vea aruande loomine ..."
+
+#: scripts/services/ServerStatus.js:53
+msgid "Creating target folders …"
+msgstr "Sihtkaustade loomine ..."
+
+#: scripts/controllers/RestoreController.js:368
+msgid "Creating temporary backup …"
+msgstr "Ajutise varukoopia loomine ..."
+
+#: templates/home.html:105
+msgid "Current action:"
+msgstr "Praegune tegevus:"
+
+#: templates/home.html:115
+msgid "Current file:"
+msgstr "Praegune fail:"
+
+#: templates/updatechangelog.html:4
+msgid "Current version is {{versionname}} ({{versionnumber}})"
+msgstr "Praegune versioon on {{versionname}} ({{versionnumber}})"
+
+#: templates/backends/s3.html:17
+msgid "Custom S3 endpoint"
+msgstr "Kohandatud S3 lõpppunkt"
+
+#: scripts/services/EditUriBuiltins.js:1320 templates/backends/storj.html:18
+msgid "Custom Satellite"
+msgstr "Kohandatud satelliit"
+
+#: templates/backends/storj.html:13
+msgid "Custom Satellite ({{satellite}})"
+msgstr "Kohandatud satelliit ({{satellite}})"
+
+#: templates/backends/openstack.html:13
+msgid "Custom authentication url"
+msgstr "Kohandatud autoriseerimise URL"
+
+#: templates/addoredit.html:327
+msgid "Custom backup retention"
+msgstr "Kohandatud varukoopia säilitamine"
+
+#: templates/home.html:66
+msgid "Database …"
+msgstr "Andmebaas ..."
+
+#: scripts/services/AppUtils.js:97 templates/addoredit.html:353
+msgid "Days"
+msgstr "Päeva"
+
+#: scripts/controllers/SystemSettingsController.js:40
+msgid "Default"
+msgstr "Vaikeväärtus"
+
+#: scripts/services/AppUtils.js:193
+msgid "Default excludes"
+msgstr "Vaikimisi väljajätmised"
+
+#: templates/settings.html:190
+msgid "Default options"
+msgstr "Vaikevalikud"
+
+#: scripts/controllers/DeleteController.js:67 templates/localdatabase.html:16
+msgid "Delete"
+msgstr "Kustuta"
+
+#: templates/delete.html:5 templates/delete.html:53
+msgid "Delete backup"
+msgstr "Kustuta varukoopia"
+
+#: templates/delete.html:13
+msgid "Delete local database"
+msgstr "Kustuta kohalik andmebaas"
+
+#: templates/delete.html:38 templates/delete.html:47
+msgid "Delete remote files"
+msgstr "Kustuta kaugfailid"
+
+#: templates/delete.html:26
+msgid "Delete the local database"
+msgstr "Kustuta kohalik andmebaas"
+
+#: templates/home.html:60
+msgid "Delete …"
+msgstr "Kustuta ..."
+
+#: templates/backup-result/top-right-box.html:26
+msgid "Deleted"
+msgstr "Kustutatud"
+
+#: templates/backup-result/phases/delete.html:24
+msgid "Deleted Versions"
+msgstr "Kustutatud versioonid"
+
+#: templates/backup-result/phases/compact.html:23
+msgid "Deleted files"
+msgstr "Kustutatud failid"
+
+#: scripts/services/ServerStatus.js:67
+msgid "Deleting remote files …"
+msgstr "Kaugfailide kustutamine ..."
+
+#: scripts/services/ServerStatus.js:43
+msgid "Deleting unwanted files …"
+msgstr "Soovimatute failide kustutamine ..."
+
+#: templates/addoredit.html:43
+msgid "Description (optional)"
+msgstr "Kirjeldus (valikuline)"
+
+#: templates/home.html:46
+msgid "Description:"
+msgstr "Kirjeldus:"
+
+#: scripts/services/AppUtils.js:60
+msgid "Desktop"
+msgstr "Töölaud"
+
+#: templates/addoredit.html:25
+msgid "Destination"
+msgstr "Sihtkoht"
+
+#: templates/backends/file.html:7 templates/backends/filejump.html:3
+#: templates/backends/filen.html:3 templates/backends/generic.html:14
+#: templates/backends/jottacloud.html:3 templates/backends/msgroup.html:8
+#: templates/backends/oauth.html:3 templates/backends/pcloud.html:16
+#: templates/backends/sharepoint.html:2 templates/backends/smb.html:29
+msgid "Destination path"
+msgstr "Sihtkoha kaustatee"
+
+#: templates/log.html:32
+msgid "Disabled"
+msgstr "Keelatud"
+
+#: templates/notificationarea.html:10 templates/notificationarea.html:29
+#: templates/notificationarea.html:40
+msgid "Dismiss"
+msgstr "Eira"
+
+#: templates/notificationarea.html:50
+msgid "Dismiss all"
+msgstr "Eira kõiki"
+
+#: templates/settings.html:108
+msgid "Display and color theme"
+msgstr "Vaade ja värviteema"
+
+#: scripts/controllers/DeleteController.js:99
+msgid "Do you really want to delete the backup: \"{{name}}\" ?"
+msgstr "Kas sa tõesti soovid kustutada vaukoopia: \"{{name}}\" ?"
+
+#: templates/edituri.html:21 templates/export.html:53
+msgid "Done"
+msgstr "Valmis"
+
+#: templates/notificationarea.html:16 templates/notificationarea.html:30
+#: templates/updatechangelog.html:10
+msgid "Download"
+msgstr "Laadi alla"
+
+#: templates/backup-result/phases/compact.html:28
+msgid "Downloaded files"
+msgstr "Allalaaditud failid"
+
+#: scripts/services/ServerStatus.js:57
+msgid "Downloading files …"
+msgstr "Failide allalaadimine ..."
+
+#: templates/notificationarea.html:26
+msgid "Downloading update…"
+msgstr "Värskenduste allalaadimine..."
+
+#: index.html:254
+msgid "Duplicati Website"
+msgstr "Duplicati veebisait"
+
+#: index.html:248
+msgid "Duplicati forum"
+msgstr "Duplicati foorum"
+
+#: templates/backup-result/phases/compact.html:16
+#: templates/backup-result/phases/delete.html:16
+#: templates/backup-result/phases/purge.html:16
+#: templates/backup-result/phases/recreate-database.html:16
+#: templates/backup-result/phases/repair.html:16
+#: templates/backup-result/phases/test.html:16
+#: templates/backup-result/top-left-box.html:11 templates/home.html:19
+msgid "Duration"
+msgstr "Kestus"
+
+#: templates/addoredit.html:174 templates/addoredit.html:389
+#: templates/edituri.html:40 templates/settings.html:194
+msgid "Edit as list"
+msgstr "Muuda nimekirjana"
+
+#: templates/addoredit.html:177 templates/addoredit.html:392
+#: templates/edituri.html:43 templates/settings.html:200
+msgid "Edit as text"
+msgstr "Muuda tekstina"
+
+#: templates/home.html:58
+msgid "Edit …"
+msgstr "Muuda ..."
+
+#: templates/export.html:22
+msgid "Encrypt file"
+msgstr "Krüpteeri fail"
+
+#: templates/addoredit.html:47 templates/restore.html:22
+#: templates/restoredirect.html:22 templates/restoredirect.html:58
+msgid "Encryption"
+msgstr "Krüpteerimine"
+
+#: scripts/controllers/EditBackupController.js:410
+msgid "Encryption changed"
+msgstr "Krüpteerimist muudeti"
+
+#: templates/backup-result/phases/compact.html:12
+#: templates/backup-result/phases/delete.html:12
+#: templates/backup-result/phases/purge.html:12
+#: templates/backup-result/phases/recreate-database.html:12
+#: templates/backup-result/phases/repair.html:12
+#: templates/backup-result/phases/test.html:12
+#: templates/backup-result/top-left-box.html:7
+msgid "End"
+msgstr "Lõpp"
+
+#: scripts/controllers/EditBackupController.js:103
+#: scripts/controllers/RestoreDirectController.js:24
+msgid "Enter URL"
+msgstr "Sisesta URL"
+
+#: templates/addwizard.html:10
+msgid "Enter configuration details"
+msgstr "Sisesta seadistamise üksikasjad"
+
+#: templates/export.html:26
+msgid "Enter encryption passphrase"
+msgstr "Sisesta krüpteerimise parool"
+
+#: templates/addoredit.html:196
+msgid "Enter expression here"
+msgstr "Sisenda avaldis siia"
+
+#: templates/restore.html:90
+msgid "Enter the destination path"
+msgstr "Sisesta sihtkoht"
+
+#: scripts/controllers/CommandlineController.js:174
+#: scripts/controllers/CommandlineController.js:80
+#: scripts/controllers/ExportController.js:40
+#: scripts/controllers/ExportController.js:57
+#: scripts/controllers/ExportController.js:70
+#: scripts/controllers/ImportController.js:17
+#: scripts/controllers/ImportController.js:39
+#: scripts/controllers/ImportController.js:43
+#: scripts/controllers/ImportController.js:49
+#: scripts/controllers/RestoreController.js:114
+#: scripts/controllers/RestoreController.js:144
+#: scripts/controllers/RestoreController.js:294
+#: scripts/controllers/RestoreController.js:332
+#: scripts/controllers/RestoreController.js:390
+#: scripts/controllers/RestoreController.js:423
+#: scripts/controllers/RestoreController.js:431
+#: scripts/controllers/RestoreController.js:90
+#: scripts/controllers/RestoreDirectController.js:112
+#: scripts/controllers/RestoreDirectController.js:78
+#: scripts/directives/backupEditUri.js:144
+#: scripts/directives/backupEditUri.js:165
+#: scripts/directives/backupEditUri.js:199
+#: scripts/directives/notificationArea.js:41
+#: scripts/directives/notificationArea.js:43
+#: scripts/directives/notificationArea.js:68 scripts/services/AppUtils.js:343
+#: scripts/services/AppUtils.js:348 scripts/services/AppUtils.js:394
+#: scripts/services/AppUtils.js:402
+msgid "Error"
+msgstr "Tõrge"
+
+#: scripts/services/ServerStatus.js:72
+msgid "Error!"
+msgstr "Tõrge!"
+
+#: templates/settings.html:169
+msgid "Errors and crashes"
+msgstr "Tõrked ja kokkujooksmised"
+
+#: templates/backup-result/top-right-box.html:10
+msgid "Examined"
+msgstr "Uuritud"
+
+#: templates/addoredit.html:214
+msgid "Exclude"
+msgstr "Jäta välja"
+
+#: scripts/services/AppUtils.js:187
+msgid "Exclude expression"
+msgstr "Väljajätmise avaldis"
+
+#: scripts/services/AppUtils.js:150
+msgid "Exclude file"
+msgstr "Jäta fail välja"
+
+#: scripts/services/AppUtils.js:157
+msgid "Exclude file extension"
+msgstr "Jäta faililaiend välja"
+
+#: scripts/services/AppUtils.js:137
+msgid "Exclude files whose names contain"
+msgstr "Jäta välja failid, mille nimes on"
+
+#: scripts/services/AppUtils.js:143
+msgid "Exclude folder"
+msgstr "Jäta kaust välja"
+
+#: scripts/controllers/LocalDatabaseController.js:72
+msgid "Existing file found"
+msgstr "Leiti olemasolev fail"
+
+#: templates/settings.html:145
+msgid "Experimental"
+msgstr "Eksperimentaalne"
+
+#: templates/export.html:35
+msgid "Export"
+msgstr "Ekspordi"
+
+#: templates/delete.html:31 templates/delete.html:34
+msgid "Export configuration"
+msgstr "Ekspordi seadistused"
+
+#: templates/export.html:18
+msgid "Export passwords"
+msgstr "Ekspordi paroolid"
+
+#: templates/home.html:59
+msgid "Export …"
+msgstr "Ekspordi ..."
+
+#: templates/export.html:39
+msgid "Exporting …"
+msgstr "Eksportimine ..."
+
+#: templates/externallink.html:1
+msgid "External link"
+msgstr "Väline link"
+
+#: scripts/services/SystemInfo.js:52
+msgid "FTP (Alternative)"
+msgstr "FTP (alternatiiv)"
+
+#: scripts/directives/backupEditUri.js:144
+#: scripts/directives/backupEditUri.js:165
+#: scripts/directives/backupEditUri.js:199
+msgid "Failed to connect:"
+msgstr "Ühendumine ebaõnnestus:"
+
+#: scripts/controllers/CommandlineController.js:174
+#: scripts/controllers/CommandlineController.js:80
+#: scripts/controllers/ExportController.js:40
+#: scripts/controllers/ExportController.js:57
+#: scripts/controllers/RestoreController.js:294
+#: scripts/controllers/RestoreController.js:332
+#: scripts/controllers/RestoreController.js:431
+#: scripts/controllers/RestoreController.js:90
+#: scripts/controllers/RestoreDirectController.js:112
+#: scripts/controllers/RestoreDirectController.js:78
+#: scripts/services/LogService.js:29
+msgid "Failed to connect: {{message}}"
+msgstr "Ühendumine ebaõnnestus: {{message}}"
+
+#: scripts/controllers/LocalDatabaseController.js:38
+msgid "Failed to delete:"
+msgstr "Kustutamine ebaõnnestus:"
+
+#: scripts/directives/notificationArea.js:45
+msgid "Failed to find backup:"
+msgstr "Varukoopiat ei leitud:"
+
+#: scripts/controllers/EditBackupController.js:714
+msgid "Failed to read backup defaults:"
+msgstr "Varukoopia vaikeväärtuste lugemine ebaõnnestus:"
+
+#: scripts/controllers/SystemSettingsController.js:263
+msgid "Failed to save:"
+msgstr "Salvestamine ebaõnnestus:"
+
+#: scripts/controllers/RestoreController.js:120
+#: scripts/controllers/RestoreController.js:159
+msgid "Fetching path information …"
+msgstr "Asukoha info hankimine ..."
+
+#: scripts/services/AppUtils.js:80
+msgid "File"
+msgstr "Fail"
+
+#: templates/addoredit.html:237
+msgid "Files larger than:"
+msgstr "Failid, mis on suuremad kui:"
+
+#: templates/addoredit.html:163
+msgid "Filters"
+msgstr "Filtrid"
+
+#: templates/commandline.html:57
+msgid "Finished!"
+msgstr "Lõpetatud!"
+
+#: scripts/controllers/AppController.js:191
+msgid "First run setup"
+msgstr "Esimese käivitamise seadistamine"
+
+#: scripts/services/AppUtils.js:51
+msgid "Folder"
+msgstr "Kaust"
+
+#: templates/backends/aliyunoss.html:30 templates/backends/b2.html:7
+#: templates/backends/cos.html:30 templates/backends/e2.html:16
+#: templates/backends/file.html:22 templates/backends/file.html:6
+#: templates/backends/jottacloud.html:2 templates/backends/mega.html:2
+#: templates/backends/s3.html:60 templates/backends/storj.html:41
+#: templates/restore.html:105 templates/restore.html:89
+msgid "Folder path"
+msgstr "Kaustatee"
+
+#: scripts/services/AppUtils.js:114
+msgid "Fri"
+msgstr "R"
+
+#: scripts/services/AppUtils.js:90
+msgid "GByte"
+msgstr "GBait"
+
+#: scripts/services/AppUtils.js:123
+msgid "GByte/s"
+msgstr "GBaiti/s"
+
+#: templates/backends/gcs.html:38
+msgid "GCS Project ID"
+msgstr "GCS projekti ID"
+
+#: templates/about.html:4 templates/addoredit.html:24
+#: templates/backuplog.html:6
+msgid "General"
+msgstr "Üldine"
+
+#: templates/addoredit.html:36
+msgid "General backup settings"
+msgstr "Üldised varukoopia valikud"
+
+#: templates/addoredit.html:305
+msgid "General options"
+msgstr "Üldised valikud"
+
+#: templates/addoredit.html:73
+msgid "Generate"
+msgstr "Genereeri"
+
+#: scripts/controllers/RestoreController.js:70
+msgid "Getting file versions …"
+msgstr "Failiversioonide hankimine ..."
+
+#: scripts/services/EditUriBuiltins.js:1143 templates/backends/msgroup.html:2
+msgid "Group email"
+msgstr "Grupi e-post"
+
+#: scripts/controllers/EditBackupController.js:20
+msgid "Hidden files"
+msgstr "Peidetud failid"
+
+#: templates/addoredit.html:68
+msgid "Hide"
+msgstr "Peida"
+
+#: index.html:208 scripts/services/AppUtils.js:62
+msgid "Home"
+msgstr "Avaleht"
+
+#: templates/settings.html:24
+msgid "Hostnames"
+msgstr "Hostinimed"
+
+#: scripts/services/AppUtils.js:106 scripts/services/AppUtils.js:96
+#: templates/settings.html:91
+msgid "Hours"
+msgstr "Tunnid"
+
+#: templates/restore.html:111
+msgid "How do you want to handle existing files?"
+msgstr "Kuidas sa soovid käsitleda olemasolevaid faile?"
+
+#: scripts/services/AppUtils.js:70
+msgid "Hyper-V Machine"
+msgstr "Hyper-V masin"
+
+#: scripts/services/AppUtils.js:72
+msgid "Hyper-V Machines"
+msgstr "Hyper-V masinad"
+
+#: scripts/directives/sourceFolderPicker.js:65
+#: scripts/directives/sourceFolderPicker.js:71
+msgid "ID:"
+msgstr "ID:"
+
+#: templates/addoredit.html:261
+msgid "If a date was missed, the job will run as soon as possible."
+msgstr "Kui kuupäev puudub, siis käivitatakse töö esimesel võimalusel."
+
+#: templates/addoredit.html:361
+msgid ""
+"If at least one newer backup is found, all backups older than this date are "
+"deleted."
+msgstr ""
+"Kui leitakse vähemalt üks varukoopia, siis kõik varasema kuupäevaga "
+"varukoopiad kustutakse."
+
+#: templates/import.html:29
+msgid "Import"
+msgstr "Impordi"
+
+#: templates/import.html:3
+msgid "Import backup configuration"
+msgstr "Impordi varukoopia seades"
+
+#: templates/addwizard.html:15
+msgid "Import from a file"
+msgstr "Impordi failist"
+
+#: templates/import.html:19
+msgid "Import metadata"
+msgstr "Impordi metaandmed"
+
+#: templates/import.html:33
+msgid "Importing …"
+msgstr "Importimine ..."
+
+#: scripts/controllers/EditBackupController.js:171
+msgid "Include a file?"
+msgstr "Kaasata fail?"
+
+#: scripts/services/AppUtils.js:183
+msgid "Include expression"
+msgstr "Kaasamise avaldis"
+
+#: scripts/services/DialogService.js:27
+msgid "Information"
+msgstr "Info"
+
+#: scripts/services/AppUtils.js:88
+msgid "KByte"
+msgstr "KBait"
+
+#: scripts/services/AppUtils.js:121
+msgid "KByte/s"
+msgstr "KBaiti/s"
+
+#: templates/addoredit.html:323
+msgid "Keep all backups"
+msgstr "Säilita kõik varukoopiad"
+
+#: templates/backends/openstack.html:18
+msgid "Keystone API version"
+msgstr "Keystone API versioon"
+
+#: templates/settings.html:98
+msgid "Language in user interface"
+msgstr "Kasutajaliidese keel"
+
+#: scripts/controllers/RestoreController.js:38
+msgid "Last month"
+msgstr "Viimane kuu"
+
+#: templates/home.html:80
+msgid "Last successful backup:"
+msgstr "Viimane edukas varukoopia:"
+
+#: scripts/controllers/RestoreController.js:60
+msgid "Latest"
+msgstr "Viimased"
+
+#: templates/about.html:6
+msgid "Libraries"
+msgstr "Teegid"
+
+#: scripts/controllers/RestoreDirectController.js:70
+msgid "Listing backup dates …"
+msgstr "Varukoopia kuupäevade loetlemine ..."
+
+#: scripts/services/ServerStatus.js:68
+msgid "Listing remote files for purge …"
+msgstr "Kaugfailide loetlemine kustutamiseks ..."
+
+#: scripts/services/ServerStatus.js:66
+msgid "Listing remote files …"
+msgstr "Kaugfailide loetlemine ..."
+
+#: templates/backuplog.html:23 templates/backuplog.html:41
+#: templates/log.html:24
+msgid "Load older data"
+msgstr "Laadi vanemad andmed"
+
+#: templates/about.html:43 templates/about.html:49 templates/about.html:55
+#: templates/backuplog.html:12 templates/backuplog.html:22
+#: templates/backuplog.html:29 templates/backuplog.html:40
+#: templates/log.html:12 templates/log.html:23
+#: templates/updatechangelog.html:7
+msgid "Loading …"
+msgstr "Laadimine ..."
+
+#: templates/localdatabase.html:23
+msgid "Local database path:"
+msgstr "Kohaliku andmebaasi hoidmise koht:"
+
+#: templates/backends/rclone.html:2
+msgid "Local repository"
+msgstr "Kohalik hoidla"
+
+#: scripts/services/SystemInfo.js:86
+msgid "Local storage"
+msgstr "Kohalik salvestusruum"
+
+#: templates/localdatabase.html:20
+msgid "Location"
+msgstr "Asukoht"
+
+#: index.html:226
+msgid "Log out"
+msgstr "Logi välja"
+
+#: scripts/services/AppUtils.js:89
+msgid "MByte"
+msgstr "MBait"
+
+#: scripts/services/AppUtils.js:122
+msgid "MByte/s"
+msgstr "MBaiti/s"
+
+#: templates/localdatabase.html:8
+msgid "Maintenance"
+msgstr "Hooldus"
+
+#: templates/backends/file.html:19 templates/restore.html:102
+msgid "Manually type path"
+msgstr "Sisesta asukoht käsitsi"
+
+#: templates/throttle.html:15
+msgid "Max download speed"
+msgstr "Maks. allalaadimise kiirus"
+
+#: templates/throttle.html:5
+msgid "Max upload speed"
+msgstr "Maks. üleslaadimise kiirus"
+
+#: index.html:144 templates/addoredit.html:127 templates/addoredit.html:169
+#: templates/addoredit.html:384 templates/addoredit.html:95
+#: templates/edituri.html:35 templates/restoredirect.html:34
+msgid "Menu"
+msgstr "Menüü"
+
+#: scripts/services/AppUtils.js:105 scripts/services/AppUtils.js:95
+#: templates/settings.html:90
+msgid "Minutes"
+msgstr "MInutit"
+
+#: scripts/controllers/EditBackupController.js:247
+msgid "Missing name"
+msgstr "Puuduv nimi"
+
+#: scripts/controllers/EditBackupController.js:254
+msgid "Missing passphrase"
+msgstr "Parool puudub"
+
+#: scripts/controllers/EditBackupController.js:267
+msgid "Missing sources"
+msgstr "Puuduvad allikad"
+
+#: templates/backup-result/top-right-box.html:22
+msgid "Modified"
+msgstr "Muudetud"
+
+#: scripts/services/AppUtils.js:110
+msgid "Mon"
+msgstr "E"
+
+#: scripts/services/AppUtils.js:99 templates/addoredit.html:355
+msgid "Months"
+msgstr "Kuud"
+
+#: templates/localdatabase.html:31
+msgid "Move existing database"
+msgstr "Liiguta olemasoleva andmebaas"
+
+#: scripts/controllers/LocalDatabaseController.js:66
+msgid "Move failed:"
+msgstr "Liigutamine ebaõnnestus"
+
+#: scripts/services/AppUtils.js:54
+msgid "My Documents"
+msgstr "Minu dokumendid"
+
+#: scripts/services/AppUtils.js:56
+msgid "My Music"
+msgstr "Minu muusika"
+
+#: templates/addoredit.html:40
+msgid "My Photos"
+msgstr "Minu fotod"
+
+#: scripts/services/AppUtils.js:58
+msgid "My Pictures"
+msgstr "Minu pildid"
+
+#: templates/addoredit.html:39 templates/home.html:15
+msgid "Name"
+msgstr "Nimi"
+
+#: templates/home.html:87
+msgid "Never"
+msgstr "Mitte kunagi"
+
+#: templates/addoredit.html:113 templates/addoredit.html:246
+#: templates/addoredit.html:296 templates/addoredit.html:82
+#: templates/addwizard.html:28 templates/restoredirect.html:52
+#: templates/restorewizard.html:36
+msgid "Next"
+msgstr "Järgmine"
+
+#: templates/home.html:91
+msgid "Next scheduled run:"
+msgstr "Järgmine planeeritud käivitus:"
+
+#: index.html:183
+msgid "Next scheduled task:"
+msgstr "Järgmine planeeritud ülesanne:"
+
+#: index.html:180
+msgid "Next task:"
+msgstr "Järgmine ülesanne:"
+
+#: templates/addoredit.html:264
+msgid "Next time"
+msgstr "Järgmine aeg"
+
+#: scripts/controllers/AppController.js:193
+#: scripts/controllers/DeleteController.js:99
+#: scripts/controllers/EditBackupController.js:161
+#: scripts/controllers/EditBackupController.js:171
+#: scripts/controllers/EditBackupController.js:458
+#: scripts/controllers/HomeController.js:22
+#: scripts/controllers/LocalDatabaseController.js:28
+#: scripts/controllers/LocalDatabaseController.js:72
+#: scripts/controllers/LocalDatabaseController.js:88
+#: scripts/directives/backupEditUri.js:132
+#: scripts/directives/backupEditUri.js:174
+#: scripts/directives/backupEditUri.js:88
+#: scripts/services/EditUriBackendConfig.js:74
+#: scripts/services/EditUriBuiltins.js:1215
+#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:61
+msgid "No"
+msgstr "Ei"
+
+#: scripts/controllers/EditBackupController.js:437 templates/addoredit.html:49
+msgid "No encryption"
+msgstr "Krüpteerimist pole"
+
+#: scripts/controllers/RestoreController.js:192
+msgid "No items selected"
+msgstr "Ühtegi kirjet pole valitud"
+
+#: scripts/controllers/ExportController.js:67
+msgid "No passphrase entered"
+msgstr "Parooli pole sisestatud"
+
+#: index.html:185
+msgid "No scheduled tasks"
+msgstr "Planeeritud ülesandeid pole"
+
+#: templates/settings.html:171
+msgid "None / disabled"
+msgstr "Pole / Keelatud"
+
+#: scripts/controllers/ExportController.js:13
+msgid "Not using encryption"
+msgstr "Ei kasuta krüpteerimist"
+
+#: scripts/controllers/AppController.js:204
+#: scripts/controllers/AppController.js:58
+#: scripts/controllers/AppController.js:74
+#: scripts/controllers/EditBackupController.js:103
+#: scripts/controllers/EditBackupController.js:111
+#: scripts/controllers/RestoreDirectController.js:24
+#: scripts/controllers/RestoreDirectController.js:33
+#: scripts/services/DialogService.js:28 scripts/services/DialogService.js:50
+#: scripts/services/DialogService.js:58
+#: scripts/services/EditUriBuiltins.js:140 templates/restore.html:147
+#: templates/settings.html:206
+msgid "OK"
+msgstr "OK"
+
+#: templates/backends/openstack.html:7
+msgid "OpenStack AuthURI"
+msgstr "OpenStack AuthURI"
+
+#: templates/backup-result/top-right-box.html:14
+msgid "Opened"
+msgstr "Avatud"
+
+#: scripts/services/AppUtils.js:203
+msgid "Operating System"
+msgstr "Operatsioonisüsteem"
+
+#: templates/backup-result/entryline.html:2
+msgid "Operation"
+msgstr "Tegevus"
+
+#: templates/home.html:50
+msgid "Operations:"
+msgstr "Tegevused:"
+
+#: templates/addoredit.html:28 templates/edituri.html:52
+#: templates/settings.html:193 templates/settings.html:199
+msgid "Options"
+msgstr "Valikud"
+
+#: templates/restore.html:81
+msgid "Original location"
+msgstr "Algne asukoht"
+
+#: scripts/services/SystemInfo.js:89
+msgid "Others"
+msgstr "Muud"
+
+#: templates/restore.html:114
+msgid "Overwrite"
+msgstr "Kirjuta üle"
+
+#: templates/addoredit.html:58 templates/export.html:25
+#: templates/restore.html:130 templates/restoredirect.html:60
+msgid "Passphrase"
+msgstr "Parool"
+
+#: templates/import.html:14
+msgid "Passphrase (if encrypted)"
+msgstr "Parool (kui on krüpteeritud)"
+
+#: scripts/controllers/EditBackupController.js:401
+msgid "Passphrase changed"
+msgstr "Parooli muudeti"
+
+#: scripts/controllers/EditBackupController.js:260
+msgid "Passphrases are not matching"
+msgstr "Paroolid ei kattu"
+
+#: scripts/controllers/EditBackupController.js:30
+msgid "Passphrases do not match"
+msgstr "Paroolid ei kattu"
+
+#: scripts/services/EditUriBuiltins.js:1295 templates/backends/file.html:33
+#: templates/backends/filejump.html:25 templates/backends/filen.html:11
+#: templates/backends/generic.html:22 templates/backends/idrive.html:11
+#: templates/backends/idrive.html:12 templates/backends/mega.html:11
+#: templates/backends/mega.html:12 templates/backends/openstack.html:34
+#: templates/backends/smb.html:42
+msgid "Password"
+msgstr "Parool"
+
+#: scripts/services/EditUriBuiltins.js:1279
+#: scripts/services/EditUriBuiltins.js:1400
+msgid "Path"
+msgstr "Kaustatee"
+
+#: scripts/controllers/EditBackupController.js:161
+msgid "Path not found"
+msgstr "Kaustateed ei leitud"
+
+#: templates/backends/filejump.html:2 templates/backends/filen.html:2
+#: templates/backends/generic.html:13 templates/backends/msgroup.html:7
+#: templates/backends/oauth.html:2 templates/backends/pcloud.html:15
+#: templates/backends/smb.html:28
+msgid "Path on server"
+msgstr "Kaustatee serverid"
+
+#: templates/settings.html:75
+msgid "Pause"
+msgstr "Peata"
+
+#: scripts/controllers/AppController.js:56
+msgid "Pause options"
+msgstr "Peatamise valikud"
+
+#: templates/restore.html:123
+msgid "Permissions"
+msgstr "Õigused"
+
+#: templates/restore.html:85
+msgid "Pick location"
+msgstr "Vali asukoht"
+
+#: templates/backends/generic.html:9
+msgid "Port"
+msgstr "Port"
+
+#: templates/addoredit.html:114 templates/addoredit.html:247
+#: templates/addoredit.html:297 templates/addoredit.html:411
+#: templates/restoredirect.html:81
+msgid "Previous"
+msgstr "Eelmine"
+
+#: templates/home.html:107
+msgid "Progress:"
+msgstr "Edenemine:"
+
+#: scripts/services/ServerStatus.js:60
+msgid "Recreating database …"
+msgstr "Andmebaasi taasloomine ..."
+
+#: index.html:309
+msgid "Reload"
+msgstr "Laadi uuesti"
+
+#: templates/addoredit.html:203
+msgid "Remove"
+msgstr "Eemalda"
+
+#: templates/advancedoptionseditor.html:41
+msgid "Remove option"
+msgstr "Eemaldamise valikud"
+
+#: templates/localdatabase.html:15 templates/notificationarea.html:14
+msgid "Repair"
+msgstr "Paranda"
+
+#: templates/backup-result/phases/repair.html:3
+msgid "Repair Phase"
+msgstr "Parandamise faas"
+
+#: scripts/services/ServerStatus.js:62
+msgid "Repairing database …"
+msgstr "Andmebaasi parandamine ..."
+
+#: templates/localdatabase.html:28
+msgid "Reset"
+msgstr "Nulli"
+
+#: index.html:214 templates/restore.html:137
+msgid "Restore"
+msgstr "Taasta"
+
+#: scripts/services/ServerStatus.js:59
+msgid "Restore complete!"
+msgstr "Taastamine on lõpetatud!"
+
+#: templates/restore.html:45
+msgid "Restore files"
+msgstr "Taasta failid"
+
+#: templates/home.html:53
+msgid "Restore files …"
+msgstr "Taasta failid ..."
+
+#: templates/restore.html:24 templates/restore.html:39
+#: templates/restore.html:76 templates/restoredirect.html:24
+msgid "Restore options"
+msgstr "Taastamise valikud"
+
+#: templates/backup-result/restore-items.html:2
+msgid "Restored Files"
+msgstr "Taastatud failid"
+
+#: templates/backup-result/restore-items.html:6
+msgid "Restored Folders"
+msgstr "Taastatud kaustad"
+
+#: index.html:217
+msgid "Resume"
+msgstr "Jätka"
+
+#: templates/home.html:52 templates/home.html:87
+msgid "Run now"
+msgstr "Käivita kohe"
+
+#: scripts/services/AppUtils.js:115
+msgid "Sat"
+msgstr "L"
+
+#: templates/backends/storj.html:10
+msgid "Satellite"
+msgstr "Satelliit"
+
+#: templates/addoredit.html:410 templates/localdatabase.html:29
+msgid "Save"
+msgstr "Salvesta"
+
+#: templates/localdatabase.html:30
+msgid "Save and repair"
+msgstr "Salvesta ja paranda"
+
+#: templates/import.html:24
+msgid "Save immediately"
+msgstr "Salvesta kohe"
+
+#: templates/addoredit.html:255 templates/addoredit.html:27
+msgid "Schedule"
+msgstr "Ajakava"
+
+#: templates/restore.html:60
+msgid "Search"
+msgstr "Otsi"
+
+#: templates/restore.html:56
+msgid "Search for files"
+msgstr "Otsi faile"
+
+#: scripts/services/AppUtils.js:104 templates/settings.html:89
+msgid "Seconds"
+msgstr "Sekundit"
+
+#: templates/restore.html:23 templates/restore.html:38
+#: templates/restoredirect.html:23
+msgid "Select files"
+msgstr "Valitud failid"
+
+#: templates/backends/pcloud.html:2 templates/backends/s3.html:8
+#: templates/backends/smb.html:17
+msgid "Server"
+msgstr "Server"
+
+#: templates/backends/generic.html:7
+msgid "Server and port"
+msgstr "Server ja port"
+
+#: templates/backends/generic.html:8 templates/backends/smb.html:18
+msgid "Server hostname or IP"
+msgstr "Serveri hostinimi või IP"
+
+#: index.html:220 templates/settings.html:2
+msgid "Settings"
+msgstr "Seaded"
+
+#: templates/addoredit.html:69 templates/notificationarea.html:12
+#: templates/notificationarea.html:31 templates/notificationarea.html:41
+msgid "Show"
+msgstr "Näita"
+
+#: templates/about.html:8
+msgid "Show log"
+msgstr "Näita logi"
+
+#: templates/home.html:74
+msgid "Show log …"
+msgstr "Näita logi ..."
+
+#: templates/addoredit.html:135
+msgid "Show treeview"
+msgstr "Näita puuvaadet"
+
+#: templates/home.html:96
+msgid "Source:"
+msgstr "Allikas:"
+
+#: scripts/services/ServerStatus.js:36
+msgid "Starting backup …"
+msgstr "Varundamise alustamine ..."
+
+#: scripts/services/ServerStatus.js:49
+msgid "Starting restore …"
+msgstr "Taastamise alustamine ..."
+
+#: scripts/controllers/EditBackupController.js:34
+msgid "Strong"
+msgstr "Tugev"
+
+#: scripts/directives/backupEditUri.js:52
+#: scripts/directives/backupEditUri.js:55
+msgid "Success"
+msgstr "Korras"
+
+#: scripts/services/AppUtils.js:116
+msgid "Sun"
+msgstr "P"
+
+#: scripts/services/AppUtils.js:78
+msgid "Symbolic link"
+msgstr "Sümboolne link"
+
+#: scripts/services/AppUtils.js:200
+msgid "System Files"
+msgstr "Süsteemifailid"
+
+#: scripts/controllers/EditBackupController.js:21
+msgid "System files"
+msgstr "Süsteemifailid"
+
+#: templates/about.html:7
+msgid "System info"
+msgstr "Süsteemi info"
+
+#: templates/about.html:63
+msgid "System properties"
+msgstr "Süsteemi omadused"
+
+#: scripts/services/AppUtils.js:91
+msgid "TByte"
+msgstr "TBait"
+
+#: scripts/services/AppUtils.js:124
+msgid "TByte/s"
+msgstr "TBaiti/s"
+
+#: scripts/services/AppUtils.js:209
+msgid "Temporary Files"
+msgstr "Ajutised failid"
+
+#: scripts/controllers/EditBackupController.js:22
+msgid "Temporary files"
+msgstr "Ajutised failid"
+
+#: scripts/services/EditUriBuiltins.js:52
+msgid "Testing permissions …"
+msgstr "Õiguste testimine ..."
+
+#: scripts/directives/backupEditUri.js:45 templates/edituri.html:23
+msgid "Testing …"
+msgstr "Testimine ..."
+
+#: scripts/directives/notificationArea.js:43
+msgid "The backup is missing, has it been deleted?"
+msgstr "Varukoopiat pole. Kas see on kustutatud?"
+
+#: templates/settings.html:112
+msgid "The dark theme (by Michal)"
+msgstr "Tume teema (autor on Michal)"
+
+#: templates/settings.html:111
+msgid "The default blue on white theme (by Alex)"
+msgstr "Vaikimisi sinine ja valge teem (autor on Alex)"
+
+#: scripts/controllers/RestoreController.js:36
+msgid "This week"
+msgstr "See nädal"
+
+#: scripts/services/AppUtils.js:113
+msgid "Thu"
+msgstr "N"
+
+#: templates/backup-result/phases/delete.html:33
+#: templates/backup-result/top-left-box.html:1
+msgid "Time"
+msgstr "Kellaaeg"
+
+#: templates/export.html:14
+msgid "To File"
+msgstr "Faili"
+
+#: scripts/controllers/RestoreController.js:34
+msgid "Today"
+msgstr "Täna"
+
+#: scripts/services/AppUtils.js:111
+msgid "Tue"
+msgstr "T"
+
+#: templates/pause.html:46
+msgid "Until resumed"
+msgstr "Kuni jätkatakse"
+
+#: templates/settings.html:126
+msgid "Update channel"
+msgstr "Värskenduste kanal"
+
+#: scripts/controllers/LocalDatabaseController.js:66
+msgid "Update failed:"
+msgstr "Värskendamine ebaõnnestus:"
+
+#: templates/backup-result/phases/compact.html:33
+msgid "Uploaded files"
+msgstr "Failide üleslaadimine"
+
+#: templates/settings.html:161
+msgid "Usage statistics"
+msgstr "Kasutamise statistika"
+
+#: templates/backends/generic.html:2 templates/backends/s3.html:2
+msgid "Use SSL"
+msgstr "Kasuta SSL-i"
+
+#: scripts/controllers/EditBackupController.js:458
+msgid "Use existing database?"
+msgstr "Kasutada olemasolevat andmebaasi?"
+
+#: scripts/controllers/EditBackupController.js:31
+msgid "Useless"
+msgstr "Kasutu"
+
+#: scripts/directives/sourceFolderPicker.js:575
+msgid "User data"
+msgstr "Kasutaja andmed"
+
+#: templates/backends/openstack.html:27
+msgid "User domain name"
+msgstr "Kasutaja domeeninimi"
+
+#: templates/settings.html:96
+msgid "User interface settings"
+msgstr "Kasutajaliidese seaded"
+
+#: scripts/services/EditUriBuiltins.js:1074
+#: scripts/services/EditUriBuiltins.js:1162
+#: scripts/services/EditUriBuiltins.js:1294 templates/backends/file.html:29
+#: templates/backends/filejump.html:21 templates/backends/filen.html:7
+#: templates/backends/generic.html:18 templates/backends/idrive.html:7
+#: templates/backends/idrive.html:8 templates/backends/mega.html:7
+#: templates/backends/mega.html:8 templates/backends/openstack.html:30
+#: templates/backends/smb.html:38
+msgid "Username"
+msgstr "Kasutajanimi"
+
+#: templates/backup-result/phases/test.html:20
+#: templates/backup-result/test-items.html:2
+msgid "Verifications"
+msgstr "Kontrollimised"
+
+#: templates/home.html:67
+msgid "Verify files"
+msgstr "Kontrolli faile"
+
+#: scripts/controllers/EditBackupController.js:35
+msgid "Very strong"
+msgstr "Väga tugev"
+
+#: scripts/controllers/EditBackupController.js:32
+msgid "Very weak"
+msgstr "Väga närk"
+
+#: scripts/controllers/EditBackupController.js:33
+msgid "Weak"
+msgstr "Nõrk"
+
+#: scripts/services/AppUtils.js:112
+msgid "Wed"
+msgstr "K"
+
+#: scripts/services/AppUtils.js:98 templates/addoredit.html:354
+msgid "Weeks"
+msgstr "Nädalat"
+
+#: templates/restorewizard.html:3
+msgid "Where do you want to restore from?"
+msgstr "Kust sa soovid taastada?"
+
+#: templates/restore.html:78
+msgid "Where do you want to restore the files to?"
+msgstr "Kuhu sa soovid taastatud failid panna?"
+
+#: scripts/services/AppUtils.js:100 templates/addoredit.html:356
+msgid "Years"
+msgstr "Aastat"
+
+#: scripts/controllers/AppController.js:193
+#: scripts/controllers/DeleteController.js:99
+#: scripts/controllers/EditBackupController.js:161
+#: scripts/controllers/EditBackupController.js:171
+#: scripts/controllers/EditBackupController.js:458
+#: scripts/controllers/HomeController.js:22
+#: scripts/controllers/LocalDatabaseController.js:28
+#: scripts/controllers/LocalDatabaseController.js:72
+#: scripts/controllers/LocalDatabaseController.js:88
+#: scripts/directives/backupEditUri.js:132
+#: scripts/directives/backupEditUri.js:174
+#: scripts/directives/backupEditUri.js:88
+#: scripts/services/EditUriBackendConfig.js:74
+#: scripts/services/EditUriBuiltins.js:1215
+#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:61
+msgid "Yes"
+msgstr "Jah"
+
+#: scripts/controllers/ExportController.js:13
+msgid "Yes, I understand the risk"
+msgstr "Jah, mõistan riski"
+
+#: scripts/controllers/EditBackupController.js:410
+msgid "Yes, I'm brave!"
+msgstr "Jah, mina olen julge!"
+
+#: scripts/controllers/RestoreController.js:35
+msgid "Yesterday"
+msgstr "Eile"
+
+#: scripts/controllers/EditBackupController.js:247
+msgid "You must enter a name for the backup"
+msgstr "Pead sisestama varukoopia nime"
+
+#: templates/addoredit.html:272 templates/addoredit.html:357
+#: templates/advancedoptionseditor.html:29
+#: templates/advancedoptionseditor.html:36
+msgid "custom"
+msgstr "kohandatud"

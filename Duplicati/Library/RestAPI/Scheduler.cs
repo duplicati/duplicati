@@ -253,11 +253,30 @@ namespace Duplicati.Server
         }
 
         /// <summary>
+        /// Returns a fingerprint of the schedule fields that determine the next run time.
+        /// The cached next-run computed by <see cref="Runner"/> is invalidated when this
+        /// changes, so that editing the time, the repetition interval or the allowed
+        /// weekdays all cause the next run to be recomputed.
+        /// </summary>
+        /// <param name="schedule">The schedule to compute the fingerprint for</param>
+        /// <returns>The fingerprint of the schedule</returns>
+        public static string GetScheduleFingerprint(ISchedule schedule)
+        {
+            // Fold the days into a bitmask so ordering and duplicates do not matter
+            var daysMask = 0;
+            if (schedule.AllowedDays != null)
+                foreach (var d in schedule.AllowedDays)
+                    daysMask |= 1 << (int)d;
+
+            return FormattableString.Invariant($"{schedule.Time.Ticks}:{daysMask}:{schedule.Repeat}");
+        }
+
+        /// <summary>
         /// The actual scheduling procedure
         /// </summary>
         private void Runner()
         {
-            var scheduled = new Dictionary<long, KeyValuePair<long, DateTime>>();
+            var scheduled = new Dictionary<long, KeyValuePair<string, DateTime>>();
             while (!m_terminate)
             {
                 //TODO: As this is executed repeatedly we should cache it
@@ -270,16 +289,18 @@ namespace Duplicati.Server
                 {
                     if (!string.IsNullOrEmpty(sc.Repeat))
                     {
-                        KeyValuePair<long, DateTime> startkey;
+                        KeyValuePair<string, DateTime> startkey;
 
-                        DateTime last = new DateTime(0, DateTimeKind.Utc);
+                        // The last run is applied on both paths so the timedrift recovery
+                        // below also works on a cached entry; a last run in the future
+                        // would otherwise keep the stale cached time until a restart
+                        DateTime last = sc.LastRun;
                         DateTime start;
-                        var scticks = sc.Time.Ticks;
+                        var scfingerprint = GetScheduleFingerprint(sc);
 
-                        if (!scheduled.TryGetValue(sc.ID, out startkey) || startkey.Key != scticks)
+                        if (!scheduled.TryGetValue(sc.ID, out startkey) || startkey.Key != scfingerprint)
                         {
-                            start = new DateTime(scticks, DateTimeKind.Utc);
-                            last = sc.LastRun;
+                            start = new DateTime(sc.Time.Ticks, DateTimeKind.Utc);
                         }
                         else
                         {
@@ -402,7 +423,7 @@ namespace Duplicati.Server
                             }
                         }
 
-                        scheduled[sc.ID] = new KeyValuePair<long, DateTime>(scticks, start);
+                        scheduled[sc.ID] = new KeyValuePair<string, DateTime>(scfingerprint, start);
                     }
                 }
 

@@ -457,11 +457,12 @@ namespace Duplicati.Library.Common.IO
         /// Sets the permission to read-write only for the current user.
         /// </summary>
         /// <param name="path">The directory to set permissions on.</param>
-        public void DirectorySetPermissionUserRWOnly(string path)
+        /// <param name="excludeCurrentUser">Do not use the current user for the permissions</param>
+        public void DirectorySetPermissionUserRWOnly(string path, bool excludeCurrentUser)
         {
             PosixFile.SetUserGroupAndPermissions(
                 path,
-                PInvoke.getuid(),
+                excludeCurrentUser ? RootUid : PInvoke.getuid(),
                 PInvoke.getgid(),
                 Convert.ToInt32("700", 8) /* FilePermissions.S_IRUSR | FilePermissions.S_IWUSR | FilePermissions.S_IXUSR */
             );
@@ -472,10 +473,11 @@ namespace Duplicati.Library.Common.IO
         /// matching the permissions applied by <see cref="DirectorySetPermissionUserRWOnly"/>.
         /// </summary>
         /// <param name="path">The directory to check permissions on.</param>
+        /// <param name="excludeCurrentUser">Do not include the current user when checking permissions</param>
         /// <param name="detail">A human-readable description of why the check failed, if it did; otherwise <see cref="string.Empty"/>.</param>
         /// <returns><c>true</c> if the directory has the expected permissions; otherwise <c>false</c>.</returns>
-        public bool DirectoryHasPermissionUserRWOnly(string path, out string detail)
-            => HasPermissionUserRWOnly(path, Convert.ToInt32("700", 8), out detail);
+        public bool DirectoryHasPermissionUserRWOnly(string path, bool excludeCurrentUser, out string detail)
+            => HasPermissionUserRWOnly(path, excludeCurrentUser, Convert.ToInt32("700", 8), out detail);
 
         /// <summary>
         /// The root user id, which is always considered a trusted owner.
@@ -491,10 +493,11 @@ namespace Duplicati.Library.Common.IO
         /// bits are set; the exact owning uid/gid beyond "current user or root" is not required.
         /// </summary>
         /// <param name="path">The path to check permissions on.</param>
+        /// <param name="excludeCurrentUser">Do not include the current user in the permission check</param>
         /// <param name="expectedMode">The expected octal mode (e.g. 0700 for directories).</param>
         /// <param name="detail">A human-readable description of why the check failed, if it did; otherwise <see cref="string.Empty"/>.</param>
         /// <returns><c>true</c> if the expected permissions are set; otherwise <c>false</c>.</returns>
-        private static bool HasPermissionUserRWOnly(string path, int expectedMode, out string detail)
+        private static bool HasPermissionUserRWOnly(string path, bool excludeCurrentUser, int expectedMode, out string detail)
         {
             detail = string.Empty;
             try
@@ -519,7 +522,7 @@ namespace Duplicati.Library.Common.IO
                 // The owner must be the current user or root. A root-owned folder is trusted
                 // because only root (a fully privileged principal) could have created it, and
                 // an unprivileged attacker cannot own a folder as root.
-                var uid = PInvoke.getuid();
+                var uid = excludeCurrentUser ? RootUid : PInvoke.getuid();
                 if (info.UID != uid && info.UID != RootUid)
                 {
                     detail = $"owner is uid {info.UID} but expected the current user (uid {uid}) or root";

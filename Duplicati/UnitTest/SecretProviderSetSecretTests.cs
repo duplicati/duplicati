@@ -105,7 +105,11 @@ public class SecretProviderSetSecretTests
         var secretName = queryParams["secrets"];
 
         AmazonSecretsManagerClient? cleanupClient = null;
-        string createdSecretId = string.Empty;
+        // The keys written through the provider are stored inside the configured
+        // secret, while the direct lookup test creates a secret of its own, so both
+        // have to be cleaned up separately
+        var createdSecretIds = new List<string>();
+        string? containerKey = null;
 
         try
         {
@@ -115,13 +119,13 @@ public class SecretProviderSetSecretTests
             await provider.InitializeAsync(uri, CancellationToken.None);
 
             var key = $"duplicati-aws-{Guid.NewGuid():N}";
-            createdSecretId = key;
+            containerKey = key;
 
             await provider.SetSecretAsync(key, "value1", overwrite: false, CancellationToken.None);
-            var secrets = await provider.ResolveSecretsAsync(new[] { key }, CancellationToken.None);
+            var secrets = await ResolveSecretWithRetryAsync(provider, key, "value1");
             Assert.AreEqual("value1", secrets[key]);
 
-            NUnit.Framework.Assert.ThrowsAsync<UserInformationException>(() => provider.SetSecretAsync(key, "value2", overwrite: false, CancellationToken.None));
+            await AssertSetSecretRejectsExistingKeyAsync(provider, key, "value2");
 
             await provider.SetSecretAsync(key, "value3", overwrite: true, CancellationToken.None);
             var updated = await ResolveSecretWithRetryAsync(provider, key, "value3");
@@ -129,7 +133,7 @@ public class SecretProviderSetSecretTests
 
             // Verify direct-secret lookup path and missing-key behavior in AWSSecretProvider.ResolveSecretsAsync.
             var directSecretId = $"duplicati-aws-direct-{Guid.NewGuid():N}";
-            createdSecretId = directSecretId;
+            createdSecretIds.Add(directSecretId);
 
             await cleanupClient.CreateSecretAsync(new Amazon.SecretsManager.Model.CreateSecretRequest
             {
@@ -137,7 +141,7 @@ public class SecretProviderSetSecretTests
                 SecretString = "direct-value"
             }).ConfigureAwait(false);
 
-            var directSecrets = await provider.ResolveSecretsAsync(new[] { directSecretId }, CancellationToken.None);
+            var directSecrets = await ResolveSecretWithRetryAsync(provider, directSecretId, "direct-value");
             Assert.AreEqual("direct-value", directSecrets[directSecretId]);
 
             NUnit.Framework.Assert.ThrowsAsync<KeyNotFoundException>(() =>
@@ -147,13 +151,13 @@ public class SecretProviderSetSecretTests
         {
             if (cleanupClient != null)
             {
-                if (!string.IsNullOrEmpty(createdSecretId))
+                foreach (var secretId in createdSecretIds)
                 {
                     try
                     {
                         await cleanupClient.DeleteSecretAsync(new Amazon.SecretsManager.Model.DeleteSecretRequest
                         {
-                            SecretId = createdSecretId,
+                            SecretId = secretId,
                             ForceDeleteWithoutRecovery = true
                         }).ConfigureAwait(false);
                     }
@@ -162,8 +166,47 @@ public class SecretProviderSetSecretTests
                     }
                 }
 
+                if (containerKey != null)
+                    await RemoveKeyFromContainerSecretAsync(cleanupClient, secretName, containerKey).ConfigureAwait(false);
+
                 cleanupClient.Dispose();
             }
+        }
+    }
+
+    /// <summary>
+    /// Removes a single key from the secret that the provider stores its keys in, so
+    /// the test keys do not pile up in it
+    /// </summary>
+    /// <param name="client">The client to use</param>
+    /// <param name="secrets">The configured secrets, of which the first one is used as the store</param>
+    /// <param name="key">The key to remove</param>
+    private static async Task RemoveKeyFromContainerSecretAsync(AmazonSecretsManagerClient client, string secrets, string key)
+    {
+        var containerSecretId = secrets.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+        if (string.IsNullOrWhiteSpace(containerSecretId))
+            return;
+
+        try
+        {
+            var current = await client.GetSecretValueAsync(new GetSecretValueRequest { SecretId = containerSecretId }).ConfigureAwait(false);
+            var values = string.IsNullOrWhiteSpace(current.SecretString)
+                ? null
+                : JsonSerializer.Deserialize<Dictionary<string, string>>(current.SecretString);
+
+            if (values == null || !values.Remove(key))
+                return;
+
+            await client.PutSecretValueAsync(new PutSecretValueRequest
+            {
+                SecretId = containerSecretId,
+                SecretString = JsonSerializer.Serialize(values)
+            }).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            // Cleaning up must not turn a passing test into a failing one
+            Console.WriteLine($"Failed to remove the test key from the secret store: {ex.Message}");
         }
     }
 
@@ -338,24 +381,166 @@ public class SecretProviderSetSecretTests
         }
     }
 
-    private static async Task<IDictionary<string, string>> ResolveSecretWithRetryAsync(ISecretProvider provider, string key, string expected)
+    /// <summary>
+    /// A provider that reports a written secret as missing for the first reads, the
+    /// way a service that is not immediately consistent behaves
+    /// </summary>
+    private sealed class DelayedVisibilitySecretProvider : ISecretProvider
     {
-        var delays = new[]
+        /// <summary>
+        /// The number of attempts that report a stored secret as still missing
+        /// </summary>
+        private readonly int _staleAttempts;
+        private readonly Dictionary<string, string> _stored = new();
+        private int _staleReads;
+        private int _staleChecks;
+
+        public DelayedVisibilitySecretProvider(int staleAttempts)
+            => _staleAttempts = staleAttempts;
+
+        public Task<Dictionary<string, string>> ResolveSecretsAsync(IEnumerable<string> keys, CancellationToken cancellationToken)
         {
-            TimeSpan.Zero,
-            TimeSpan.FromSeconds(1),
-            TimeSpan.FromSeconds(5),
-            TimeSpan.FromSeconds(10)
-        };
+            var result = new Dictionary<string, string>();
+            var missing = new List<string>();
 
-        IDictionary<string, string>? secrets = null;
+            foreach (var key in keys)
+            {
+                if (_stored.TryGetValue(key, out var value) && _staleReads++ >= _staleAttempts)
+                    result[key] = value;
+                else
+                    missing.Add(key);
+            }
 
-        foreach (var delay in delays)
+            if (missing.Count > 0)
+                throw new KeyNotFoundException("The following keys were not found: " + string.Join(", ", missing));
+
+            return Task.FromResult(result);
+        }
+
+        public Task SetSecretAsync(string key, string value, bool overwrite, CancellationToken cancellationToken)
+        {
+            // The existence check reads the stored values, so it can miss a secret
+            // that was just written, the same way the read does
+            if (!overwrite && _stored.ContainsKey(key) && _staleChecks++ >= _staleAttempts)
+                throw new UserInformationException($"The key '{key}' already exists", "KeyAlreadyExists");
+
+            _stored[key] = value;
+            return Task.CompletedTask;
+        }
+
+        public Task InitializeAsync(Uri config, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task<bool> IsSupported(CancellationToken cancellationToken) => Task.FromResult(true);
+        public bool IsSetSupported => true;
+        public string Key => "delayed";
+        public string DisplayName => "Delayed visibility provider";
+        public string Description => "A provider that becomes readable only after a number of reads";
+        public IList<ICommandLineArgument> SupportedCommands => new List<ICommandLineArgument>();
+    }
+
+    [Test]
+    public async Task ResolveSecretWithRetry_WaitsForADelayedSecret_Async()
+    {
+        // A write is not guaranteed to be visible to the next read, and the read
+        // reports a missing key by throwing
+        var provider = new DelayedVisibilitySecretProvider(staleAttempts: 1);
+        await provider.SetSecretAsync("alpha", "bravo", overwrite: false, CancellationToken.None);
+
+        var secrets = await ResolveSecretWithRetryAsync(provider, "alpha", "bravo");
+
+        Assert.AreEqual("bravo", secrets["alpha"]);
+    }
+
+    [Test]
+    public async Task ResolveSecretWithRetry_ReportsASecretThatNeverAppears_Async()
+    {
+        // A key that is genuinely absent must still fail, not be reported as empty
+        var provider = new DelayedVisibilitySecretProvider(staleAttempts: int.MaxValue);
+        var noDelays = new[] { TimeSpan.Zero, TimeSpan.Zero };
+
+        Assert.ThrowsAsync<KeyNotFoundException>(() => ResolveSecretWithRetryAsync(provider, "alpha", "bravo", noDelays));
+        await Task.CompletedTask;
+    }
+
+    [Test]
+    public async Task SetSecretRejectsExistingKey_WaitsForTheWriteToBeVisible_Async()
+    {
+        // The duplicate check reads the stored values, so it can miss a key that
+        // was just written
+        var provider = new DelayedVisibilitySecretProvider(staleAttempts: 1);
+        await provider.SetSecretAsync("alpha", "bravo", overwrite: false, CancellationToken.None);
+
+        await AssertSetSecretRejectsExistingKeyAsync(provider, "alpha", "charlie");
+    }
+
+    /// <summary>
+    /// The delays to use while waiting for a written secret to become readable
+    /// </summary>
+    private static readonly TimeSpan[] ConsistencyDelays =
+    [
+        TimeSpan.Zero,
+        TimeSpan.FromSeconds(1),
+        TimeSpan.FromSeconds(5),
+        TimeSpan.FromSeconds(10)
+    ];
+
+    /// <summary>
+    /// Checks that writing to an existing key is rejected. The existence check reads
+    /// the stored secrets, so it can miss a key that was just written; a write that
+    /// slips through is harmless here, as the callers overwrite the value afterwards.
+    /// </summary>
+    /// <param name="provider">The provider to write to</param>
+    /// <param name="key">The key that already exists</param>
+    /// <param name="value">The value to attempt to write</param>
+    /// <param name="delays">The delays to use, or null to use the defaults</param>
+    private static async Task AssertSetSecretRejectsExistingKeyAsync(ISecretProvider provider, string key, string value, TimeSpan[]? delays = null)
+    {
+        foreach (var delay in delays ?? ConsistencyDelays)
         {
             if (delay > TimeSpan.Zero)
                 await Task.Delay(delay).ConfigureAwait(false);
 
-            secrets = await provider.ResolveSecretsAsync(new[] { key }, CancellationToken.None).ConfigureAwait(false);
+            try
+            {
+                await provider.SetSecretAsync(key, value, overwrite: false, CancellationToken.None).ConfigureAwait(false);
+            }
+            catch (UserInformationException)
+            {
+                return;
+            }
+        }
+
+        NUnit.Framework.Assert.Fail($"Writing to the existing key '{key}' should have been rejected");
+    }
+
+    /// <summary>
+    /// Reads a secret, waiting for it to become readable, as a write is not
+    /// guaranteed to be visible to the next read
+    /// </summary>
+    /// <param name="provider">The provider to read from</param>
+    /// <param name="key">The key to read</param>
+    /// <param name="expected">The value to wait for</param>
+    /// <param name="delays">The delays to use, or null to use the defaults</param>
+    /// <returns>The resolved secrets</returns>
+    private static async Task<IDictionary<string, string>> ResolveSecretWithRetryAsync(ISecretProvider provider, string key, string expected, TimeSpan[]? delays = null)
+    {
+        var schedule = delays ?? ConsistencyDelays;
+        IDictionary<string, string>? secrets = null;
+
+        for (var i = 0; i < schedule.Length; i++)
+        {
+            if (schedule[i] > TimeSpan.Zero)
+                await Task.Delay(schedule[i]).ConfigureAwait(false);
+
+            try
+            {
+                secrets = await provider.ResolveSecretsAsync(new[] { key }, CancellationToken.None).ConfigureAwait(false);
+            }
+            // A key that is not readable yet is reported as missing; on the last
+            // attempt the error is passed on, so a key that is really absent fails
+            catch (KeyNotFoundException) when (i < schedule.Length - 1)
+            {
+                continue;
+            }
 
             if (secrets.TryGetValue(key, out var actual) && actual == expected)
                 break;

@@ -89,7 +89,9 @@ namespace Duplicati.Library.DynamicLoader
                 lock (m_lock)
                     if (m_interfaces == null)
                     {
-                        var interfaces = new Dictionary<string, T>();
+                        // Url schemes are case insensitive (RFC 3986), and so are the
+                        // module keys derived from them, so the lookup must be too.
+                        var interfaces = new Dictionary<string, T>(StringComparer.OrdinalIgnoreCase);
                         // When loading, inject the built-ins first, so they can be replaced by subfolder matches
                         foreach (T b in BuiltInModules)
                             interfaces[GetInterfaceKey(b)] = b;

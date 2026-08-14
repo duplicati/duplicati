@@ -69,6 +69,11 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// </summary>
             private readonly IWriteChannel<object> m_volume_request;
             /// <summary>
+            /// The task reader for the restore, used to tell an abort apart from a real failure
+            /// when the invariants are checked in <see cref="Dispose"/>.
+            /// </summary>
+            private readonly Common.ITaskReader m_taskreader;
+            /// <summary>
             /// The dictionary holding the cached blocks.
             /// </summary>
             private readonly MemoryCache m_block_cache;
@@ -152,10 +157,12 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// </summary>
             /// <param name="volume_request">Channel for submitting block requests from a volume.</param>
             /// <param name="readers">Number of readers accessing this dictionary. Used during shutdown / cleanup.</param>
-            private SleepableDictionary(IWriteChannel<object> volume_request, Options options, int readers)
+            /// <param name="taskreader">The task reader for the restore.</param>
+            private SleepableDictionary(IWriteChannel<object> volume_request, Options options, int readers, Common.ITaskReader taskreader)
             {
                 m_options = options;
                 m_volume_request = volume_request;
+                m_taskreader = taskreader;
                 var cache_options = new MemoryCacheOptions();
                 m_block_cache = new MemoryCache(cache_options);
                 m_block_cache_max = options.RestoreCacheMax;
@@ -197,13 +204,13 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// <param name="volume_request">CoCoL channel for submitting block requests from a volume.</param>
             /// <param name="options">The restore options.</param>
             /// <param name="readers">The number of readers accessing this dictionary. Used during shutdown / cleanup.</param>
-            /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
+            /// <param name="taskreader">The task reader for the restore. Its progress token cancels the enumeration, and it is retained so that <see cref="Dispose"/> can tell an abort apart from a real failure.</param>
             /// <returns>A task that when awaited returns a new instance of the <see cref="SleepableDictionary"/> class.</returns>
-            public static async Task<SleepableDictionary> CreateAsync(LocalRestoreDatabase db, IWriteChannel<object> volume_request, Options options, int readers, CancellationToken cancellationToken)
+            public static async Task<SleepableDictionary> CreateAsync(LocalRestoreDatabase db, IWriteChannel<object> volume_request, Options options, int readers, Common.ITaskReader taskreader)
             {
-                var sd = new SleepableDictionary(volume_request, options, readers);
+                var sd = new SleepableDictionary(volume_request, options, readers, taskreader);
 
-                await foreach (var (block_id, volume_id) in db.GetBlocksAndVolumeIDsAsync(options.SkipMetadata, cancellationToken).ConfigureAwait(false))
+                await foreach (var (block_id, volume_id) in db.GetBlocksAndVolumeIDsAsync(options.SkipMetadata, taskreader.ProgressToken).ConfigureAwait(false))
                 {
                     var bc = sd.m_blockcount.TryGetValue(block_id, out var c);
                     sd.m_blockcount[block_id] = bc ? c + 1 : 1;
@@ -349,7 +356,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// removed, the requester will be given a `Task` that will be
             /// completed when the block is available.
             /// </summary>
-            /// <param name="blockRequest">The block request related to the value.</param>
+            /// <param name="blockID">The ID of the block related to the value.</param>
             /// <param name="value">The byte[] buffer holding the block data.</param>
             public void Set(long blockID, DataBlock value)
             {
@@ -411,11 +418,19 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// </summary>
             public void Dispose()
             {
+                // These are self-checks for a completed restore: they ask whether every block
+                // and volume that was counted up front was also consumed. A restore that was
+                // asked to stop or was aborted ends with work outstanding by definition, so
+                // leftovers are the expected outcome rather than a defect, and reporting them as
+                // errors describes a requested shutdown as a failure. The retirement check below
+                // is not suppressed, because it holds on every path.
+                var shutdown_requested = RestoreCancellation.IsShutdownRequested(m_taskreader);
+
                 // Verify that the tables are empty
                 var blockcount = m_blockcount.Sum(x => x.Value);
                 var volumecount = m_volumecount.Sum(x => x.Value);
 
-                if (blockcount != 0)
+                if (blockcount != 0 && !shutdown_requested)
                 {
                     var blocks = m_blockcount
                         .Where(x => x.Value != 0)
@@ -425,7 +440,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     Logging.Log.WriteErrorMessage(LOGTAG, "BlockCountError", null, $"Block count in SleepableDictionarys block table is not zero: {blockcount}{Environment.NewLine}First 10 blocks: {blockids}");
                 }
 
-                if (volumecount != 0)
+                if (volumecount != 0 && !shutdown_requested)
                 {
                     var vols = m_volumecount
                         .Where(x => x.Value != 0)
@@ -435,7 +450,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     Logging.Log.WriteErrorMessage(LOGTAG, "VolumeCountError", null, $"Volume count in SleepableDictionarys volume table is not zero: {volumecount}{Environment.NewLine}First 10 volumes: {volids}");
                 }
 
-                if (m_block_cache.Count > 0)
+                if (m_block_cache.Count > 0 && !shutdown_requested)
                 {
                     Logging.Log.WriteErrorMessage(LOGTAG, "BlockCacheMismatch", null, $"Internal Block cache is not empty: {m_block_cache.Count}");
                     Logging.Log.WriteErrorMessage(LOGTAG, "BlockCacheMismatch", null, $"First 10 block counts in cache ({m_blockcount.Count}): {string.Join(", ", m_blockcount.Take(10).Select(x => x.Value))}");
@@ -494,7 +509,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             {
                 // Create a cache for the blocks,
                 using SleepableDictionary cache =
-                    await SleepableDictionary.CreateAsync(db, self.Output, options, fp_requests.Length, results.TaskControl.ProgressToken)
+                    await SleepableDictionary.CreateAsync(db, self.Output, options, fp_requests.Length, results.TaskControl)
                         .ConfigureAwait(false);
 
                 // The volume consumer will read blocks from the input channel (data blocks from the volumes) and store them in the cache.

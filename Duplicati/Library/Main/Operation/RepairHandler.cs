@@ -1420,7 +1420,6 @@ namespace Duplicati.Library.Main.Operation
         /// Runs the refresh lock info operation to update lock expiration times from the backend.
         /// </summary>
         /// <param name="backendManager">The backend manager to use for reading lock info.</param>
-        /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
         /// <returns>A task that completes when the operation is finished.</returns>
         private async Task RunRefreshLockInfoAsync(IBackendManager backendManager)
         {

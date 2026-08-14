@@ -69,7 +69,8 @@ public static partial class Command
         /// Set of files that are unwanted despite the OS
         /// </summary>
         static readonly IReadOnlyList<string> UnwantedCommonFiles = [
-            "System.Reactive.xml" // Extra documentation file
+            "System.Reactive.xml", // Extra documentation file
+            "Duplicati.icns" // Icon for the RumpSharp helper bundle, only used by unpackaged debug builds
         ];
 
         /// <summary>

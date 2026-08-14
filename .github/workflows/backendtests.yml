@@ -628,7 +628,7 @@ jobs:
           LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.slnx
       - name: Run CIFS tests
         run: >-
-          dotnet test --no-build --filter="ClassName~CIFSTests"
+          dotnet test --no-build --filter="ClassName~SMBTests"
           --logger:"console;verbosity=detailed"
           LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.slnx
   test_b2:

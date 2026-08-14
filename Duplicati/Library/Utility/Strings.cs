@@ -49,6 +49,7 @@ namespace Duplicati.Library.Utility.Strings
     {
         public static string UriParseError(string uri) { return LC.L(@"The Uri is invalid: {0}", uri); }
         public static string NoHostname(string uri) { return LC.L(@"The Uri is missing a hostname: {0}", uri); }
+        public static string FragmentNotAllowed(string uri) { return LC.L(@"The Uri has a fragment, so everything after the ""#"" is not part of the path. Write the ""#"" as %23 if it belongs to the path: {0}", uri); }
     }
     internal static class Utility
     {

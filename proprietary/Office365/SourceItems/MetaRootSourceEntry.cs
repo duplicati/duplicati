@@ -52,32 +52,88 @@ internal class MetaRootSourceEntry(SourceProvider provider, string mountPoint, O
         switch (type)
         {
             case Office365MetaType.Users:
+                // Microsoft Graph paging over users is not guaranteed to be stable, so the
+                // same user can be returned on more than one page. De-duplicate by user id
+                // to avoid emitting duplicate paths for the same user.
+                var seenUserIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
                 await foreach (var user in provider.RootApi.ListAllUsersAsync(cancellationToken).ConfigureAwait(false))
                 {
                     if (cancellationToken.IsCancellationRequested)
                         yield break;
 
-                    if (provider.LicenseApprovedForEntry(Path, type, user.Id, false))
+                    if (string.IsNullOrEmpty(user.Id) || !seenUserIds.Add(user.Id))
+                        continue;
+
+                    // Skip users whose classification is excluded by the include filter. When
+                    // every classification is included, which is the default, this does not
+                    // classify the user and so makes no Graph call.
+                    if (!await provider.IsUserClassificationIncludedAsync(user, cancellationToken).ConfigureAwait(false))
+                        continue;
+
+                    // Only licensed accounts consume a seat, which the directory object
+                    // already answers without any Graph call.
+                    var countsAsSeat = provider.UserCountsAsSeat(user);
+
+                    if (provider.LicenseApprovedForEntry(Path, type, user.Id, false, countsAsSeat))
                         yield return new UserSourceEntry(provider, Path, user);
                 }
                 break;
             case Office365MetaType.Groups:
+                // Microsoft Graph paging over groups is not guaranteed to be stable, so the
+                // same group can be returned on more than one page. De-duplicate by group id
+                // to avoid emitting duplicate paths for the same group.
+                var seenGroupIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
                 await foreach (var group in provider.RootApi.ListAllGroupsAsync(cancellationToken).ConfigureAwait(false))
                 {
                     if (cancellationToken.IsCancellationRequested)
                         yield break;
 
-                    if (provider.LicenseApprovedForEntry(Path, type, group.Id, false))
+                    if (string.IsNullOrEmpty(group.Id) || !seenGroupIds.Add(group.Id))
+                        continue;
+
+                    // Skip groups whose classification is excluded by the include filter.
+                    if (!provider.IsGroupClassificationIncluded(group))
+                        continue;
+
+                    // Security groups and distribution lists do not consume a seat;
+                    // only Microsoft 365 (Unified) groups count.
+                    var groupCountsAsSeat = SourceProvider.GroupCountsAsSeat(group);
+
+                    if (provider.LicenseApprovedForEntry(Path, type, group.Id, false, groupCountsAsSeat))
                         yield return new GroupSourceEntry(provider, this.Path, group);
                 }
                 break;
             case Office365MetaType.Sites:
+                // Microsoft Graph paging over sites is not guaranteed to be stable, so the
+                // same site can be returned on more than one page. De-duplicate by site id
+                // to avoid emitting duplicate paths for the same site.
+                var seenSiteIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
                 await foreach (var site in provider.RootApi.ListAllSitesAsync(cancellationToken).ConfigureAwait(false))
                 {
                     if (cancellationToken.IsCancellationRequested)
                         yield break;
 
-                    if (provider.LicenseApprovedForEntry(Path, type, site.Id, false))
+                    if (string.IsNullOrEmpty(site.Id) || !seenSiteIds.Add(site.Id))
+                        continue;
+
+                    // Skip sites whose classification is excluded by the include filter. When
+                    // every classification is included, which is the default, this does not
+                    // classify the site and so makes no Graph call.
+                    if (!await provider.IsSiteClassificationIncludedAsync(site, cancellationToken).ConfigureAwait(false))
+                        continue;
+
+                    // Personal sites of unlicensed users do not consume a seat, but determining
+                    // that requires the unlicensed-user lookup and the gate below only needs the
+                    // answer once the seat limit has been reached. Until then, assume the site
+                    // consumes a seat: the gate approves either way, and nothing is counted
+                    // here because this check does not increment.
+                    var siteCountsAsSeat = !provider.SeatLimitReached(type)
+                        || await provider.SiteCountsAsSeatAsync(site, cancellationToken).ConfigureAwait(false);
+
+                    if (provider.LicenseApprovedForEntry(Path, type, site.Id, false, siteCountsAsSeat))
                         yield return new SiteSourceEntry(provider, this.Path, site);
                 }
                 break;

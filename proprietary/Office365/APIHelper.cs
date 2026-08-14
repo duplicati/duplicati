@@ -23,6 +23,23 @@ internal class APIHelper : IDisposable
     private static readonly string LOGTAG = Log.LogTagFromType<APIHelper>();
 
     /// <summary>
+    /// The options used when parsing Microsoft Graph responses. Graph is not consistent with
+    /// property casing across endpoints (the site collection hostname is documented as
+    /// <c>hostname</c> for <c>/sites</c> but as <c>hostName</c> for <c>getAllSites</c>), and
+    /// silently binding nothing at all is worse than being lenient, so parsing is
+    /// case-insensitive.
+    /// </summary>
+    internal static readonly JsonSerializerOptions GraphJsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
+    /// <summary>
+    /// The default page size for API requests that allow big pages
+    /// </summary>
+    internal const int BIG_PAGE_SIZE = 500;
+
+    /// <summary>
     /// The default page size for API requests
     /// </summary>
     internal const int GENERAL_PAGE_SIZE = 100;
@@ -225,7 +242,7 @@ internal class APIHelper : IDisposable
         var content = await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            return JsonSerializer.Deserialize<T>(content) ?? throw new JsonException("Deserialized object is null");
+            return JsonSerializer.Deserialize<T>(content, GraphJsonOptions) ?? throw new JsonException("Deserialized object is null");
         }
         catch (JsonException ex)
         {
@@ -259,7 +276,8 @@ internal class APIHelper : IDisposable
             // Ignore failures when reading the response body; we'll throw with status code regardless.
         }
 
-        var message = TryExtractOfficeApiErrorMessage(responseBody)
+        var (errorCode, errorMessage) = TryExtractOfficeApiError(responseBody);
+        var message = errorMessage
             ?? responseBody
             ?? response.ReasonPhrase
             ?? "Request failed.";
@@ -269,37 +287,89 @@ internal class APIHelper : IDisposable
         var detailedMessage = $"{message} (HTTP {(int)statusCode} {statusCode}) - Request URI: {response.RequestMessage?.RequestUri}";
         if (response?.Headers?.TryGetValues("Location", out var location) == true)
             detailedMessage += $" - Location: {location.First()}";
-        throw new HttpRequestException(detailedMessage, inner: null, statusCode);
+        var ex = new HttpRequestException(detailedMessage, inner: null, statusCode);
+
+        // Expose the machine-readable Graph error code so callers can react to specific
+        // conditions (e.g. a user without a provisioned mailbox) without matching on the
+        // localized human-readable message.
+        if (!string.IsNullOrWhiteSpace(errorCode))
+            ex.Data[GraphErrorCodeKey] = errorCode;
+
+        throw ex;
     }
 
     /// <summary>
-    /// Attempts to extract the error message from the Office API response.
+    /// The <see cref="System.Exception.Data"/> key used to store the Graph API error code
+    /// on thrown <see cref="HttpRequestException"/> instances.
+    /// </summary>
+    internal const string GraphErrorCodeKey = "GraphErrorCode";
+
+    /// <summary>
+    /// Gets the Graph API error code stored on an exception, if any.
+    /// </summary>
+    /// <param name="ex">The exception to inspect.</param>
+    /// <returns>The Graph error code, or null if none is present.</returns>
+    internal static string? GetGraphErrorCode(Exception ex)
+        => ex.Data.Contains(GraphErrorCodeKey) ? ex.Data[GraphErrorCodeKey] as string : null;
+
+    /// <summary>
+    /// Determines whether the exception indicates that the target user does not have an
+    /// accessible Exchange Online mailbox (no license, disabled, soft-deleted, or on-premise).
+    /// Graph returns HTTP 404 with an error code of <c>MailboxNotEnabledForRESTAPI</c> or
+    /// <c>MailboxNotSupportedForRESTAPI</c> in these cases.
+    /// </summary>
+    /// <param name="ex">The exception to inspect.</param>
+    /// <returns><c>true</c> if the exception indicates an unavailable mailbox; otherwise <c>false</c>.</returns>
+    internal static bool IsMailboxNotEnabled(Exception ex)
+    {
+        if (ex is not HttpRequestException httpEx || httpEx.StatusCode != HttpStatusCode.NotFound)
+            return false;
+
+        var code = GetGraphErrorCode(ex);
+        return string.Equals(code, "MailboxNotEnabledForRESTAPI", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(code, "MailboxNotSupportedForRESTAPI", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Attempts to extract the error code and message from the Office API response.
     /// </summary>
     /// <param name="responseBody">The response body</param>
-    /// <returns>The extracted error message, or null if none could be found</returns>
-    private static string? TryExtractOfficeApiErrorMessage(string? responseBody)
+    /// <returns>The extracted error code and message; either may be null if not found.</returns>
+    private static (string? Code, string? Message) TryExtractOfficeApiError(string? responseBody)
     {
         if (string.IsNullOrWhiteSpace(responseBody))
-            return null;
+            return (null, null);
 
         // Fast filter: if it doesn't look like JSON, don't attempt to parse.
         var trimmed = responseBody.AsSpan().TrimStart();
         if (trimmed.Length == 0 || (trimmed[0] != '{' && trimmed[0] != '['))
-            return null;
+            return (null, null);
 
         try
         {
             using var doc = JsonDocument.Parse(responseBody);
             if (doc.RootElement.ValueKind != JsonValueKind.Object)
-                return null;
+                return (null, null);
 
             if (doc.RootElement.TryGetProperty("error", out var error) && error.ValueKind == JsonValueKind.Object)
             {
+                string? code = null;
+                if (error.TryGetProperty("code", out var codeElement) && codeElement.ValueKind == JsonValueKind.String)
+                {
+                    code = codeElement.GetString();
+                    if (string.IsNullOrWhiteSpace(code))
+                        code = null;
+                }
+
+                string? message = null;
                 if (error.TryGetProperty("message", out var messageElement) && messageElement.ValueKind == JsonValueKind.String)
                 {
-                    var message = messageElement.GetString();
-                    return string.IsNullOrWhiteSpace(message) ? null : message;
+                    message = messageElement.GetString();
+                    if (string.IsNullOrWhiteSpace(message))
+                        message = null;
                 }
+
+                return (code, message);
             }
         }
         catch (JsonException)
@@ -307,7 +377,7 @@ internal class APIHelper : IDisposable
             // Not JSON (or invalid JSON) - fall back to entire response body.
         }
 
-        return null;
+        return (null, null);
     }
 
     /// <summary>
@@ -376,6 +446,74 @@ internal class APIHelper : IDisposable
     }
 
     /// <summary>
+    /// Re-orders a site feed alphabetically by name.
+    /// </summary>
+    /// <remarks>
+    /// Microsoft Graph cannot sort sites: neither the tenant-wide <c>getAllSites</c> endpoint
+    /// nor the subsites collection documents support for <c>$orderby</c>, and the site resource
+    /// has no sortable key. The ordering therefore has to be applied on the client, which means
+    /// the full feed must be buffered before the first item can be emitted. That is acceptable
+    /// here because the site collection is orders of magnitude smaller than the user collection,
+    /// and buffering has the added benefit of making the offset-based paging in the listing API
+    /// deterministic across requests.
+    /// </remarks>
+    /// <param name="sites">The unordered site feed</param>
+    /// <param name="ct">The cancellation token</param>
+    /// <returns>An asynchronous enumerable of sites, ordered by name</returns>
+    internal static async IAsyncEnumerable<GraphSite> OrderSitesByNameAsync(IAsyncEnumerable<GraphSite> sites, [EnumeratorCancellation] CancellationToken ct)
+    {
+        var buffer = new List<GraphSite>();
+        await foreach (var site in sites.ConfigureAwait(false))
+            buffer.Add(site);
+
+        // The id is the tie-breaker: display names are neither unique nor immutable,
+        // so the name alone is not a deterministic sort key.
+        foreach (var site in buffer
+            .OrderBy(GetSiteSortName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(x => x.Id, StringComparer.Ordinal))
+        {
+            ct.ThrowIfCancellationRequested();
+            yield return site;
+        }
+    }
+
+    /// <summary>
+    /// Gets the name to sort a site by. Sites returned from <c>getAllSites</c> frequently
+    /// carry only <c>name</c> and no <c>displayName</c>, so both are considered.
+    /// </summary>
+    /// <param name="site">The site to get the sort name for</param>
+    /// <returns>The name to sort by</returns>
+    private static string GetSiteSortName(GraphSite site)
+    {
+        if (!string.IsNullOrWhiteSpace(site.DisplayName))
+            return site.DisplayName;
+        if (!string.IsNullOrWhiteSpace(site.Name))
+            return site.Name;
+
+        return site.WebUrl ?? site.Id;
+    }
+
+    /// <summary>
+    /// Lists the immediate subsites of a SharePoint site.
+    /// </summary>
+    /// <param name="siteId">The parent site ID</param>
+    /// <param name="ct">The cancellation token</param>
+    /// <returns>An asynchronous enumerable of subsites</returns>
+    public IAsyncEnumerable<GraphSite> ListSubsitesAsync(string siteId, CancellationToken ct)
+    {
+        var baseUrl = GraphBaseUrl.TrimEnd('/');
+        var select = GraphSelectBuilder.BuildSelect<GraphSite>();
+        var site = System.Uri.EscapeDataString(siteId);
+
+        var url =
+            $"{baseUrl}/v1.0/sites/{site}/sites" +
+            $"?$select={System.Uri.EscapeDataString(select)}" +
+            $"&$top={GENERAL_PAGE_SIZE}";
+
+        return GetAllGraphItemsAsync<GraphSite>(url, ct);
+    }
+
+    /// <summary>
     /// Gets a single Graph API item.
     /// </summary>
     /// <typeparam name="T">The graph item to get</typeparam>
@@ -384,8 +522,6 @@ internal class APIHelper : IDisposable
     /// <returns>>The graph item</returns>
     public async Task<T> GetGraphItemAsync<T>(string url, CancellationToken ct)
     {
-        var select = GraphSelectBuilder.BuildSelect<T>();
-
         async Task<HttpRequestMessage> requestFactory(CancellationToken cancellationToken)
         {
             var req = new HttpRequestMessage(HttpMethod.Get, new NetUri(url));

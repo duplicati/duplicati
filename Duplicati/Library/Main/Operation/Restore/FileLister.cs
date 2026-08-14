@@ -72,6 +72,21 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                 bool threw_exception = false;
 
+                // A stop asks the restore to finish what it is doing and stop, so the lister
+                // stops handing out work. It is checked per file rather than once up front
+                // because every file is written to the channel before any of the later stages
+                // run, so a single check would let a large fileset run to completion anyway.
+                // Returning is enough to wind the network down: RunTask retires the output
+                // channel, which is the same path a completed listing takes.
+                bool StopRequested()
+                {
+                    if (!result.TaskControl.StopToken.IsCancellationRequested)
+                        return false;
+
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "StoppedProcess", null, "File lister stopped, no further files will be restored");
+                    return true;
+                }
+
                 try
                 {
                     sw_get_files?.Start();
@@ -143,13 +158,21 @@ namespace Duplicati.Library.Main.Operation.Restore
                     // Send priority files first (marked with IsPriorityFile=true)
                     foreach (var file in priorityFileList)
                     {
+                        if (StopRequested())
+                            return;
+
                         var priorityFileRequest = new FileRequest(file.ID, file.OriginalPath, file.TargetPath, file.Hash, file.Length, file.BlocksetID, IsPriorityFile: true, Version: version, BackupTimestamp: backupTimestamp);
                         await self.Output.WriteAsync(priorityFileRequest).ConfigureAwait(false);
                     }
 
                     // Then send remaining files
                     foreach (var file in remainingFiles)
+                    {
+                        if (StopRequested())
+                            return;
+
                         await self.Output.WriteAsync(file.WithVersion(version, backupTimestamp)).ConfigureAwait(false);
+                    }
 
                     sw_write_file?.Stop();
 
@@ -165,15 +188,35 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                         sw_write_folder?.Start();
                         foreach (var folder in folders)
+                        {
+                            if (StopRequested())
+                                return;
+
                             await self.Output.WriteAsync(folder.WithVersion(version, backupTimestamp)).ConfigureAwait(false);
+                        }
                         sw_write_folder?.Stop();
                     }
 
                     // Send the alternate data streams last, so their hosts are restored
                     sw_write_file?.Start();
                     foreach (var file in adsStreams)
+                    {
+                        if (StopRequested())
+                            return;
+
                         await self.Output.WriteAsync(new FileRequest(file.ID, file.OriginalPath, file.TargetPath, file.Hash, file.Length, file.BlocksetID, IsAlternateDataStream: true, Version: version, BackupTimestamp: backupTimestamp)).ConfigureAwait(false);
+                    }
                     sw_write_file?.Stop();
+                }
+                catch (Exception) when (RestoreCancellation.IsShutdownRequested(result.TaskControl))
+                {
+                    // An abort is an orderly shutdown that arrived by a different signal than
+                    // retirement, so it is reported the same way retirement is. This is also the
+                    // only process without a `catch (RetiredException)`, and consulting the token
+                    // covers both.
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "CancelledProcess", null, "File lister cancelled");
+                    threw_exception = true;
+                    throw;
                 }
                 catch (Exception ex)
                 {

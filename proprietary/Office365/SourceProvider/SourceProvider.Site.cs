@@ -15,7 +15,7 @@ partial class SourceProvider
             var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
             var site = Uri.EscapeDataString(siteId);
 
-            var select = "id,name,displayName,webUrl,createdDateTime,description,siteCollection,root";
+            var select = GraphSelectBuilder.BuildSelect<GraphSite>();
             var url =
                 $"{baseUrl}/v1.0/sites/{site}" +
                 $"?$select={Uri.EscapeDataString(select)}";
@@ -53,5 +53,19 @@ partial class SourceProvider
 
             return drive;
         }
+
+        /// <summary>
+        /// Lists the immediate subsites of a site, ordered alphabetically by name.
+        /// </summary>
+        /// <remarks>
+        /// The subsites collection does not support <c>$orderby</c> either, so the ordering is
+        /// applied on the client. Only the source provider orders the feed; the restore provider
+        /// scans it for a name match and does not need the buffering.
+        /// </remarks>
+        /// <param name="siteId">The parent site ID</param>
+        /// <param name="ct">The cancellation token</param>
+        /// <returns>An asynchronous enumerable of subsites, ordered by name</returns>
+        internal IAsyncEnumerable<GraphSite> ListSubsitesAsync(string siteId, CancellationToken ct)
+            => APIHelper.OrderSitesByNameAsync(provider.ListSubsitesAsync(siteId, ct), ct);
     }
 }

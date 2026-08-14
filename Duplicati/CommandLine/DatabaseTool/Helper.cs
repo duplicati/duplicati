@@ -20,14 +20,14 @@ public static class Helper
     /// <summary>
     /// Creates a backup of the file
     /// </summary>
-    /// <param name="filename">The filename to backup</param>
+    /// <param name="path">The path of the file to backup</param>
     public static void CreateFileBackup(string path)
     {
         path = Path.GetFullPath(path);
         var dir = Path.GetDirectoryName(path) ?? "";
         var filename = Path.GetFileNameWithoutExtension(path);
 
-        var newname = $"{filename}-{DateTime.Now:yyyMMddhhmmss}.bak";
+        var newname = $"{filename}-{DateTime.Now:yyyyMMddHHmmss}.bak";
         var backup = Path.Combine(dir, newname);
         var retry = 0;
         while (File.Exists(backup))
@@ -36,7 +36,7 @@ public static class Helper
                 throw new IOException($"Cannot create backup file {backup} - too many retries");
 
             retry++;
-            newname = $"{filename}-{DateTime.Now:yyyMMddhhmmss}-{retry}.bak";
+            newname = $"{filename}-{DateTime.Now:yyyyMMddHHmmss}-{retry}.bak";
             backup = Path.Combine(dir, newname);
         }
 

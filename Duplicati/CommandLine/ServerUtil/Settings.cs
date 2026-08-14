@@ -21,12 +21,10 @@
 
 using System.Text.Json;
 using Duplicati.Library.AutoUpdater;
-using Duplicati.Library.DynamicLoader;
 using Duplicati.Library.Encryption;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using Duplicati.Library.Utility;
-using Uri = System.Uri;
 using Utility = Duplicati.Library.Utility.Utility;
 
 namespace Duplicati.CommandLine.ServerUtil;
@@ -165,7 +163,6 @@ public sealed record Settings(
     /// <summary>
     /// Replaces secrets inside arguments and options
     /// </summary>
-    /// <param name="args">The arguments to replace</param>
     /// <param name="options">The options to replace</param>
     /// <returns>The task to await</returns>
     public Task ReplaceSecretsAsync(Dictionary<string, string?> options)

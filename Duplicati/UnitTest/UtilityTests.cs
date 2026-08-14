@@ -441,6 +441,68 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Utility")]
+        public void ExpandEnvironmentVariablesRegexp()
+        {
+            // Values with regex metacharacters, to prove the substituted value is Regex.Escape'd
+            var env = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["FOO"] = "a.b",
+                ["BAR"] = "a+b(c)",
+            };
+            Func<string, string> lookup = k => (k != null && env.TryGetValue(k, out var v)) ? v : null;
+
+            // %VAR% behaves identically whether or not native syntax is enabled
+            foreach (var native in new[] { true, false })
+            {
+                Assert.AreEqual(@"xa\.by", Utility.ExpandEnvironmentVariablesRegexp("x%FOO%y", lookup, native));
+                Assert.AreEqual(@"a\+b\(c\)", Utility.ExpandEnvironmentVariablesRegexp("%BAR%", lookup, native));
+                // Undefined %VAR% expands to an empty string (unchanged legacy behavior)
+                Assert.AreEqual("", Utility.ExpandEnvironmentVariablesRegexp("%NOPE%", lookup, native));
+            }
+
+            // Native ON: $VAR and ${VAR} expand and are Regex.Escape'd
+            Assert.AreEqual(@"a\.b/bar", Utility.ExpandEnvironmentVariablesRegexp("$FOO/bar", lookup, true));
+            Assert.AreEqual(@"a\.bbar", Utility.ExpandEnvironmentVariablesRegexp("${FOO}bar", lookup, true));
+            // Undefined native variable is left as the original literal
+            Assert.AreEqual("$NOPE/x", Utility.ExpandEnvironmentVariablesRegexp("$NOPE/x", lookup, true));
+            Assert.AreEqual("${NOPE}", Utility.ExpandEnvironmentVariablesRegexp("${NOPE}", lookup, true));
+            // A brace group without a leading '$' (e.g. Duplicati {group} filters) is not matched
+            Assert.AreEqual("{FOO}", Utility.ExpandEnvironmentVariablesRegexp("{FOO}", lookup, true));
+            // A '$' regex anchor not followed by a word character is left alone
+            Assert.AreEqual(@".*\.log$", Utility.ExpandEnvironmentVariablesRegexp(@".*\.log$", lookup, true));
+
+            // Native OFF (Windows path): $VAR / ${VAR} are left untouched
+            Assert.AreEqual("$FOO/bar", Utility.ExpandEnvironmentVariablesRegexp("$FOO/bar", lookup, false));
+            Assert.AreEqual("${FOO}bar", Utility.ExpandEnvironmentVariablesRegexp("${FOO}bar", lookup, false));
+        }
+
+        [Test]
+        [Category("Utility")]
+        public void ExpandEnvironmentVariablesNative()
+        {
+            // Space in the value proves the result is NOT regex-escaped
+            var env = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["FOO"] = "a b",
+            };
+            Func<string, string> lookup = k => (k != null && env.TryGetValue(k, out var v)) ? v : null;
+
+            // Native ON: expands, unescaped
+            Assert.AreEqual("a b/x", Utility.ExpandEnvironmentVariablesNative("$FOO/x", lookup, true));
+            Assert.AreEqual("a b", Utility.ExpandEnvironmentVariablesNative("${FOO}", lookup, true));
+            // Undefined native variable is left as the original literal
+            Assert.AreEqual("$NOPE", Utility.ExpandEnvironmentVariablesNative("$NOPE", lookup, true));
+            // %VAR% is not this helper's concern and is left untouched
+            Assert.AreEqual("%FOO%", Utility.ExpandEnvironmentVariablesNative("%FOO%", lookup, true));
+            // A brace group without a leading '$' is not matched
+            Assert.AreEqual("{FOO}", Utility.ExpandEnvironmentVariablesNative("{FOO}", lookup, true));
+
+            // Native OFF (Windows path): no-op
+            Assert.AreEqual("$FOO/x", Utility.ExpandEnvironmentVariablesNative("$FOO/x", lookup, false));
+        }
+
+        [Test]
+        [Category("Utility")]
         public static void ThrottledStreamRead()
         {
             byte[] sourceBuffer = [0x10, 0x20, 0x30, 0x40, 0x50];
@@ -529,6 +591,74 @@ namespace Duplicati.UnitTest
 
             for (int i = 0; i < testValues.Length; i++)
                 Assert.AreEqual(TimeSpan.FromSeconds(expect[i]), Utility.GetRetryDelay(baseDelay, testValues[i], true));
+        }
+
+        [Test]
+        [Category("Utility")]
+        public static void GetUrlWithoutCredentialsRemovesCredentialsFromMalformedUrls()
+        {
+            // An unencoded '@' in the password makes the relaxed parser read
+            // "ssw0rd@example.com" as the host
+            var result = Utility.GetUrlWithoutCredentials("ftp://user:p@ssw0rd@example.com/path");
+            StringAssert.DoesNotContain("ssw0rd", result);
+
+            // A single-slash typo does not match the url parser, so the whole
+            // url is reinterpreted as a local file path and shown in full
+            result = Utility.GetUrlWithoutCredentials("ftps:/user:hunter2@example.com/path");
+            StringAssert.DoesNotContain("hunter2", result);
+
+            // Same reinterpretation when the scheme is missing entirely
+            result = Utility.GetUrlWithoutCredentials("user:hunter2@example.com/path");
+            StringAssert.DoesNotContain("hunter2", result);
+
+            // '\0' is an invalid path character on all platforms, so this is
+            // neither a url nor a path and hits the truncating fallback
+            result = Utility.GetUrlWithoutCredentials("user:hunter2@ex\0ample/x");
+            StringAssert.DoesNotContain("hunter2", result);
+        }
+
+        [Test]
+        [Category("Utility")]
+        public static void GetUrlWithoutCredentialsKeepsSafeUrlsReadable()
+        {
+            // Well-formed urls keep the exact pre-existing output
+            Assert.AreEqual("ftp://example.com/path", Utility.GetUrlWithoutCredentials("ftp://user:pass@example.com/path"));
+            Assert.AreEqual("ftp://example.com/path", Utility.GetUrlWithoutCredentials("ftp://example.com/path"));
+
+            // The part before a '|' separator stays hidden
+            Assert.AreEqual("ftp://host/x", Utility.GetUrlWithoutCredentials("mount|ftp://user:pass@host/x"));
+
+            // An '@' after the first path separator is not userinfo and must survive
+            var decoded = UrlEncoding.UrlDecode(Utility.GetUrlWithoutCredentials("ftp://host/dir@name/x"));
+            StringAssert.Contains("dir@name", decoded);
+
+            decoded = UrlEncoding.UrlDecode(Utility.GetUrlWithoutCredentials("/mnt/data@x/y"));
+            StringAssert.Contains("data@x", decoded);
+
+            // A drive letter is not a scheme, so '@' in a Windows path is kept
+            decoded = UrlEncoding.UrlDecode(Utility.GetUrlWithoutCredentials(@"C:\backup@daily\x"));
+            StringAssert.Contains("backup@daily", decoded);
+
+            decoded = UrlEncoding.UrlDecode(Utility.GetUrlWithoutCredentials(@"file://C:\backup@daily\x"));
+            StringAssert.Contains("backup@daily", decoded);
+
+            // Null and blank inputs pass through
+            Assert.IsNull(Utility.GetUrlWithoutCredentials(null));
+            Assert.AreEqual("", Utility.GetUrlWithoutCredentials(""));
+            Assert.AreEqual("   ", Utility.GetUrlWithoutCredentials("   "));
+        }
+
+        [Test]
+        [Category("Utility")]
+        public static void UriExceptionsDoNotEchoCredentials()
+        {
+            // The parse error for an invalid url is shown to the user, so it
+            // must not echo an embedded password
+            var parseEx = Assert.Throws<ArgumentException>(() => new RelaxedUri("user:hunter2@ex\0ample/x"));
+            StringAssert.DoesNotContain("hunter2", parseEx.Message);
+
+            var hostEx = Assert.Throws<ArgumentException>(() => new RelaxedUri("ftp://user:hunter2@/path").RequireHost());
+            StringAssert.DoesNotContain("hunter2", hostEx.Message);
         }
     }
 

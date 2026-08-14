@@ -125,7 +125,9 @@ namespace Duplicati.Library.Backend
         {
             using var req = await reqTask.ConfigureAwait(false);
             using var ls = new ReadLimitLengthStream(stream, offset, Math.Min(chunksize, stream.Length - offset));
-            using var ts = ls.ObserveWriteTimeout(m_timeouts.ReadWriteTimeout);
+            // The chunk stream is used as the request body and is only read by the
+            // HTTP stack, so the read timeout must be observed here.
+            using var ts = ls.ObserveReadTimeout(m_timeouts.ReadWriteTimeout);
 
             req.Content = new StreamContent(ts);
             req.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");

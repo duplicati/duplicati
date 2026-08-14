@@ -27,7 +27,8 @@ namespace Duplicati.UnitTest
             {
                 using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
                 {
-                    TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+                    // The source folder is intentionally empty, so the NoFilesInBackup warning is expected
+                    TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }), ignoredWarnings: ["NoFilesInBackup"]);
                     var sets = await c.ListFilesetsAsync();
                     Assert.That(sets.Filesets.Count(), Is.EqualTo(i + 1));
                 }
@@ -862,7 +863,7 @@ namespace Duplicati.UnitTest
 
         /// <summary>
         /// Tests that <see cref="LocalListDatabase.SearchEntriesAsync"/> can match values inside
-        /// metadata JSON when <paramref name="searchMetadata"/> is <c>true</c>.
+        /// metadata JSON when <c>searchMetadata</c> is <c>true</c>.
         /// </summary>
         [Test]
         [Category("Database")]

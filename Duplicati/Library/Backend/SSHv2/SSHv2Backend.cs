@@ -34,6 +34,8 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Runtime.Versioning;
 
+[assembly: InternalsVisibleTo("Duplicati.UnitTest")]
+
 namespace Duplicati.Library.Backend
 {
     public class SSHv2 : IStreamingBackend, IRenameEnabledBackend, IFolderEnabledBackend
@@ -79,13 +81,50 @@ namespace Duplicati.Library.Backend
             m_useAgent = true;
         }
 
+        /// <summary>
+        /// The parts of an ssh url that the backend configures itself from.
+        /// </summary>
+        /// <param name="Host">The server to connect to. An IPv6 literal keeps its brackets.</param>
+        /// <param name="Port">The port, or -1 when the url does not name one.</param>
+        /// <param name="Path">The remote path, decoded and without a leading slash.</param>
+        /// <param name="Username">The user from the url, or null when it has none.</param>
+        /// <param name="Password">The password from the url, or null when it has none.</param>
+        internal readonly record struct SshUrl(string Host, int Port, string Path, string? Username, string? Password);
+
+        /// <summary>
+        /// Splits an ssh url into the parts the backend needs.
+        /// </summary>
+        /// <param name="url">The url to split.</param>
+        /// <returns>The parts the backend needs.</returns>
+        internal static SshUrl ParseSshUrl(string url)
+        {
+            var uri = new Uri(url);
+            uri.RequireHost(url);
+            uri.RequireNoFragment(url);
+
+            // The path arrives escaped and with its leading separator, where the previous
+            // parser handed it over decoded and without one. Decoding first keeps an
+            // encoded separator in the place it used to land in.
+            var path = Uri.UnescapeDataString(uri.AbsolutePath);
+            if (path.StartsWith("/", StringComparison.Ordinal))
+                path = path.Substring(1);
+
+            // The user info is not decoded, so it is decoded here.
+            var userinfo = uri.UserInfo.Split(new[] { ':' }, 2);
+            var username = userinfo.Length > 0 && userinfo[0].Length > 0 ? Uri.UnescapeDataString(userinfo[0]) : null;
+            var password = userinfo.Length > 1 ? Uri.UnescapeDataString(userinfo[1]) : null;
+
+            // ssh is not a scheme with a registered default port, so an url without one
+            // answers -1 here, the same way the previous parser did.
+            return new SshUrl(uri.Host, uri.Port, path, username, password);
+        }
+
         public SSHv2(string url, Dictionary<string, string?> options)
         {
             m_options = options;
-            var uri = new Utility.Uri(url);
-            uri.RequireHost();
+            var uri = ParseSshUrl(url);
 
-            var auth = AuthOptionsHelper.Parse(options, uri);
+            var auth = AuthOptionsHelper.Parse(options, uri.Username, uri.Password);
             if (!auth.HasUsername)
                 throw new UserInformationException(Strings.SSHv2Backend.UsernameRequired, "UsernameNotSpecified");
 
@@ -112,7 +151,7 @@ namespace Duplicati.Library.Backend
                     m_path = "/" + m_path;
             }
 
-            m_server = uri.Host ?? "";
+            m_server = uri.Host;
 
             if (uri.Port > 0)
                 m_port = uri.Port;
@@ -596,7 +635,7 @@ namespace Duplicati.Library.Backend
                 using (var ms = new MemoryStream())
                 using (var sr = new StreamWriter(ms))
                 {
-                    sr.Write(Utility.Uri.UrlDecode(inline));
+                    sr.Write(Utility.UrlEncoding.UrlDecode(inline));
                     sr.Flush();
 
                     ms.Position = 0;

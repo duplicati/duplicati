@@ -72,12 +72,30 @@ public static class AuthIdOptionsHelper
     /// <param name="modulename">The name of the module to use.</param>
     /// <returns>The URL to use for obtaining an OAuth token.</returns>
     public static string GetOAuthLoginUrl(string modulename, string? oauthurl)
+        => BuildOAuthLoginUrl(modulename, string.IsNullOrWhiteSpace(oauthurl) ? DUPLICATI_OAUTH_SERVICE : oauthurl);
+
+    /// <summary>
+    /// Points a service url at the login endpoint for a module, by dropping the path and
+    /// adding the module to the query.
+    /// </summary>
+    /// <param name="modulename">The name of the module to use.</param>
+    /// <param name="oauthurl">The service url to use.</param>
+    /// <returns>The URL to use for obtaining an OAuth token.</returns>
+    private static string BuildOAuthLoginUrl(string modulename, string oauthurl)
     {
-        if (string.IsNullOrWhiteSpace(oauthurl))
-            oauthurl = DUPLICATI_OAUTH_SERVICE;
         var u = new Uri(oauthurl);
-        var addr = u.SetPath("").SetQuery((u.Query ?? "") + (string.IsNullOrWhiteSpace(u.Query) ? "" : "&") + "type={0}");
-        return string.Format(addr.ToString(), modulename);
+
+        var query = u.Query.TrimStart('?');
+        if (!string.IsNullOrWhiteSpace(query))
+            query += "&";
+
+        // Authority is only the host and port, so anything in front of the host has to be
+        // put back to avoid dropping credentials the service url was given with.
+        var userinfo = string.IsNullOrEmpty(u.UserInfo) ? "" : u.UserInfo + "@";
+
+        // Assembled rather than handed to UriBuilder, which would place a '/' between the
+        // host and the query and change the url that is shown to the user.
+        return $"{u.Scheme}://{userinfo}{u.Authority}?{query}type={modulename}";
     }
 
     /// <summary>
@@ -85,14 +103,7 @@ public static class AuthIdOptionsHelper
     /// </summary>
     /// <param name="modulename">The name of the module to use.</param>
     public static string GetOAuthLoginUrlNew(string modulename, string? oauthurl)
-    {
-        if (string.IsNullOrWhiteSpace(oauthurl))
-            oauthurl = DUPLICATI_OAUTH_SERVICE_NEW;
-
-        var u = new Uri(oauthurl);
-        var addr = u.SetPath("").SetQuery((u.Query ?? "") + (string.IsNullOrWhiteSpace(u.Query) ? "" : "&") + "type={0}");
-        return string.Format(addr.ToString(), modulename);
-    }
+        => BuildOAuthLoginUrl(modulename, string.IsNullOrWhiteSpace(oauthurl) ? DUPLICATI_OAUTH_SERVICE_NEW : oauthurl);
 
     /// <summary>
     /// The authentication ID option, without a prefix

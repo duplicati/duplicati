@@ -24,34 +24,34 @@ namespace Duplicati.Library.Backend.WebApi
     public static class Dropbox
     {
         public static string CreateFolderUrl()
-            => Utility.Uri.UriBuilder(Url.API, Path.CreateFolder);
+            => Utility.RelaxedUri.UriBuilder(Url.API, Path.CreateFolder);
 
         public static string ListFilesUrl()
-            => Utility.Uri.UriBuilder(Url.API, Path.ListFolder);
+            => Utility.RelaxedUri.UriBuilder(Url.API, Path.ListFolder);
 
         public static string ListFilesContinueUrl()
-            => Utility.Uri.UriBuilder(Url.API, Path.ListFolderContinue);
+            => Utility.RelaxedUri.UriBuilder(Url.API, Path.ListFolderContinue);
 
         public static string GetMetadataUrl()
-            => Utility.Uri.UriBuilder(Url.API, Path.GetMetadata);
+            => Utility.RelaxedUri.UriBuilder(Url.API, Path.GetMetadata);
 
         public static string DeleteUrl()
-            => Utility.Uri.UriBuilder(Url.API, Path.DeleteFolder);
+            => Utility.RelaxedUri.UriBuilder(Url.API, Path.DeleteFolder);
 
         public static string MoveUrl()
-            => Utility.Uri.UriBuilder(Url.API, Path.Move);
+            => Utility.RelaxedUri.UriBuilder(Url.API, Path.Move);
 
         public static string UploadSessionStartUrl()
-            => Utility.Uri.UriBuilder(Url.CONTENT_API_URL, Path.UploadSessionStart);
+            => Utility.RelaxedUri.UriBuilder(Url.CONTENT_API_URL, Path.UploadSessionStart);
 
         public static string UploadSessionAppendUrl()
-            => Utility.Uri.UriBuilder(Url.CONTENT_API_URL, Path.UploadSessionAppend);
+            => Utility.RelaxedUri.UriBuilder(Url.CONTENT_API_URL, Path.UploadSessionAppend);
 
         public static string UploadSessionFinishUrl()
-            => Utility.Uri.UriBuilder(Url.CONTENT_API_URL, Path.UploadSessionFinish);
+            => Utility.RelaxedUri.UriBuilder(Url.CONTENT_API_URL, Path.UploadSessionFinish);
 
         public static string DownloadFilesUrl()
-            => Utility.Uri.UriBuilder(Url.CONTENT_API_URL, Path.DownloadFiles);
+            => Utility.RelaxedUri.UriBuilder(Url.CONTENT_API_URL, Path.DownloadFiles);
 
         public static string[] Hosts()
             => [new Uri(Url.API).Host, new Uri(Url.CONTENT_API_URL).Host];

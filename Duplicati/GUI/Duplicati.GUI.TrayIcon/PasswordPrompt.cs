@@ -40,10 +40,8 @@ internal static class PasswordPrompt
     /// Shows a password prompt dialog within an already-running Avalonia application.
     /// Must be called from the UI thread or will dispatch to it.
     /// </summary>
-    /// <param name="hostUrl">The host URL to show in the prompt</param>
-    /// <param name="password">The current password to pre-fill, if any</param
     /// <param name="isChangePassword">Whether this is a change password prompt</param>
-    /// <returns>A task that completes with the password, or null if cancelled</returns>
+    /// <returns>A task that completes with <c>true</c> if the password was submitted, or <c>false</c> if cancelled</returns>
     public static Task<bool> ShowPasswordDialogAsync(bool isChangePassword)
     {
         if (IsShowingDialog)

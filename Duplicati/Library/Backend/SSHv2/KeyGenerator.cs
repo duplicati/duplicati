@@ -132,7 +132,7 @@ namespace Duplicati.Library.Backend
 
             var b64 = sb.ToString().Trim();
             var pem = string.Format(pem_template, b64);
-            var uri = SSHv2.KEYFILE_URI + Duplicati.Library.Utility.Uri.UrlEncode(pem);
+            var uri = SSHv2.KEYFILE_URI + Duplicati.Library.Utility.UrlEncoding.UrlEncode(pem);
             var pub = key_name + " " + Convert.ToBase64String(public_key) + " " + username;
 
             res["privkey"] = b64_raw;
@@ -209,7 +209,7 @@ namespace Duplicati.Library.Backend
         public IList<ICommandLineArgument> SupportedCommands => [
             new CommandLineArgument(KEY_KEYLEN, CommandLineArgument.ArgumentType.Integer, Strings.KeyGenerator.KeyLenShort, Strings.KeyGenerator.KeyLenLong, DEFAULT_KEYLEN.ToString(), null, new string[] {"1024", "2048"}),
             new CommandLineArgument(KEY_TYPE_NAME, CommandLineArgument.ArgumentType.Enumeration, Strings.KeyGenerator.KeyTypeShort, Strings.KeyGenerator.KeyTypeLong, DEFAULT_KEYTYPE, null, new string[] {KEYTYPE_DSA, KEYTYPE_RSA}),
-            new CommandLineArgument(KEY_USERNAME, CommandLineArgument.ArgumentType.Integer, Strings.KeyGenerator.KeyUsernameShort, Strings.KeyGenerator.KeyUsernameLong, DEFAULT_USERNAME),
+            new CommandLineArgument(KEY_USERNAME, CommandLineArgument.ArgumentType.String, Strings.KeyGenerator.KeyUsernameShort, Strings.KeyGenerator.KeyUsernameLong, DEFAULT_USERNAME),
         ];
 
         public IDictionary<string, IDictionary<string, string?>> GetLookups()

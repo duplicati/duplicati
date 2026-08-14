@@ -32,6 +32,7 @@ using System.Runtime.Versioning;
 using System.Security.AccessControl;
 using System.Security.Cryptography;
 using System.Security.Principal;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
@@ -273,6 +274,34 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Restore"), Category("Bug")]
+        public async Task Issue3340PreserveSelectedFolderAsync([Values] bool restoreLegacy)
+        {
+            var testopts = new Dictionary<string, string>(TestOptions)
+            {
+                ["restore-legacy"] = restoreLegacy.ToString().ToLower()
+            };
+
+            var selectedFolder = Path.Combine(DATAFOLDER, "selected-folder");
+            var nestedFolder = Path.Combine(selectedFolder, "nested-folder");
+            Directory.CreateDirectory(nestedFolder);
+            var sourceFile = Path.Combine(nestedFolder, "file.txt");
+            File.WriteAllText(sourceFile, "Issue #3340");
+
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+                TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
+
+            testopts["restore-path"] = RESTOREFOLDER;
+            var selectedFolderFilter = $"[{Regex.Escape(selectedFolder + Path.DirectorySeparatorChar)}.*]";
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+                TestUtils.AssertResults(await c.RestoreAsync([selectedFolderFilter]));
+
+            var restoredFile = Path.Combine(RESTOREFOLDER, "selected-folder", "nested-folder", "file.txt");
+            Assert.That(File.Exists(restoredFile), Is.True, "The explicitly selected folder should be retained below the restore destination");
+            Assert.That(File.ReadAllText(restoredFile), Is.EqualTo("Issue #3340"));
+        }
+
+        [Test]
+        [Category("Restore"), Category("Bug")]
         public async Task Issue5826RestoreMissingFolderAsync([Values] bool compressRestorePaths, [Values] bool restoreLegacy)
         {
             // Reproduction of Issue #5826
@@ -443,8 +472,9 @@ namespace Duplicati.UnitTest
             Directory.CreateDirectory(original_dir);
 
             // Backup the files
+            // The source contains only an empty folder, so the NoFilesInBackup warning is expected
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
+                TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]), ignoredWarnings: ["NoFilesInBackup"]);
 
             // Sleep to ensure timestamps are different
             await Task.Delay(1000);

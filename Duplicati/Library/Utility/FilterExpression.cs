@@ -392,22 +392,24 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
-        /// Creates a new <see cref="FilterExpression"/> instance.
+        /// Creates a new <see cref="FilterExpression"/> instance from a single filter string.
         /// </summary>
         /// <param name="filter">The filter string that represents the filter</param>
         public FilterExpression(string filter, bool result = true)
-            : this(Expand(filter), result)
+            : this([filter], result)
         {
         }
 
         /// <summary>
-        /// Creates a new <see cref="FilterExpression"/> instance.
+        /// Creates a new <see cref="FilterExpression"/> instance from one or more filter strings.
         /// </summary>
-        /// <param name="filter">The filter string that represents the filter</param>
+        /// <param name="filter">The filter strings that represent the filter</param>
         /// <param name="result">Return value of <see cref="Matches(string,out bool,out IFilter)"/> in case of match</param>
         public FilterExpression(IEnumerable<string>? filter, bool result = true)
         {
             this.Result = result;
+
+            filter = ExpandFilterGroups(filter);
 
             if (filter == null)
             {
@@ -427,24 +429,40 @@ namespace Duplicati.Library.Utility
                 this.Type = m_filters.Max((a) => a.Type);
         }
 
-        private static IEnumerable<string>? Expand(string filter)
+        /// <summary>
+        /// Expands any <c>{GroupName}</c> entries in <paramref name="filters"/> into the underlying
+        /// filter strings provided by <see cref="FilterGroups.GetFilterStrings(FilterGroup)"/>.
+        /// </summary>
+        /// <param name="filters">The raw filter strings to inspect. May be <see langword="null"/>.</param>
+        /// <returns>
+        /// A new sequence with group references replaced by their constituent filter strings, or
+        /// <see langword="null"/> when <paramref name="filters"/> is <see langword="null"/> or all
+        /// entries are empty/whitespace and/or reference unknown groups.
+        /// </returns>
+        private static IEnumerable<string>? ExpandFilterGroups(IEnumerable<string>? filters)
         {
-            if (string.IsNullOrWhiteSpace(filter))
+            if (filters == null)
                 return null;
 
-            if (filter.Length < 2 || (filter.StartsWith("[", StringComparison.Ordinal) && filter.EndsWith("]", StringComparison.Ordinal)))
+            var result = new List<string>();
+            foreach (var f in filters)
             {
-                return new string[] { filter };
-            }
+                if (string.IsNullOrWhiteSpace(f))
+                    continue;
 
-            if (filter.StartsWith("{", StringComparison.Ordinal) && filter.EndsWith("}", StringComparison.Ordinal))
-            {
-                string groupName = filter.Substring(1, filter.Length - 2);
-                FilterGroup filterGroup = FilterGroups.ParseFilterList(groupName, FilterGroup.None);
-                return (filterGroup == FilterGroup.None) ? null : FilterGroups.GetFilterStrings(filterGroup);
+                if (f.StartsWith("{", StringComparison.Ordinal) && f.EndsWith("}", StringComparison.Ordinal))
+                {
+                    string groupName = f.Substring(1, f.Length - 2);
+                    FilterGroup filterGroup = FilterGroups.ParseFilterList(groupName, FilterGroup.None);
+                    if (filterGroup != FilterGroup.None)
+                        result.AddRange(FilterGroups.GetFilterStrings(filterGroup));
+                }
+                else
+                {
+                    result.Add(f);
+                }
             }
-
-            return filter.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries);
+            return result.Count > 0 ? result : null;
         }
 
         private static List<FilterEntry> Compact(IEnumerable<FilterEntry> items)
@@ -569,6 +587,82 @@ namespace Duplicati.Library.Utility
                         _matchFallbackLookup[filter] = new Tuple<bool, bool>(includes, excludes);
                 }
             }
+        }
+
+        /// <summary>
+        /// Checks if the filter has an "exclude everything" rule (e.g. <c>*</c>) that
+        /// appears before any include rules in the evaluation order, which would cause
+        /// all files to be excluded regardless of later includes. This is typically a
+        /// misconfiguration.
+        /// </summary>
+        /// <param name="filter">The filter to examine</param>
+        /// <returns>
+        /// <c>true</c> if an exclude-all rule is encountered before any include rule
+        /// in the filter's evaluation order; <c>false</c> otherwise.
+        /// </returns>
+        public static bool IsExcludeAllBeforeIncludes(IFilter? filter)
+        {
+            return CheckExcludeAllBeforeIncludes(filter);
+        }
+
+        /// <summary>
+        /// Recursively walks the filter tree in evaluation order (First before Second
+        /// in <see cref="JoinedFilterExpression"/>). Returns <c>true</c> if an
+        /// exclude-all expression is found before any include expression.
+        /// </summary>
+        private static bool CheckExcludeAllBeforeIncludes(IFilter? filter)
+        {
+            if (filter == null || filter.Empty)
+                return false;
+
+            if (filter is FilterExpression expression)
+            {
+                if (expression.Result)
+                    return false; // Include expression — not misconfigured from here
+                else
+                    return IsExcludeAllExpression(expression); // Exclude expression — check if it matches everything
+            }
+
+            if (filter is JoinedFilterExpression joined)
+            {
+                // First is evaluated before Second (short-circuit OR).
+                // If First is an exclude-all, it swallows everything before Second can match.
+                if (CheckExcludeAllBeforeIncludes(joined.First))
+                    return true;
+
+                // If First contains includes, they are evaluated first and the
+                // exclude-all in Second is a valid default-deny, not a misconfiguration.
+                AnalyzeFilters(joined.First, out var firstHasIncludes, out _);
+                if (firstHasIncludes)
+                    return false;
+
+                // First has no includes, so check Second
+                return CheckExcludeAllBeforeIncludes(joined.Second);
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Checks if a <see cref="FilterExpression"/> with <c>Result = false</c> (exclude)
+        /// contains an entry that matches every path (e.g. <c>*</c>).
+        /// </summary>
+        private static bool IsExcludeAllExpression(FilterExpression expression)
+        {
+            if (expression.Type == FilterType.Empty || expression.m_filters == null)
+                return false;
+
+            foreach (var entry in expression.m_filters)
+            {
+                // A "*" wildcard matches every path
+                if (entry.Type == FilterType.Wildcard && entry.Filter == "*")
+                    return true;
+                // A regex that matches everything also excludes all
+                if (entry.Type == FilterType.Regexp && entry.Filter == "^(.*)$")
+                    return true;
+            }
+
+            return false;
         }
 
         /// <summary>

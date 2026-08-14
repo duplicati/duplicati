@@ -270,7 +270,14 @@ public static partial class Command
             { "SQLitePCLRaw.core", new Version(3, 0, 3, 3048) },
 
             // Using v6.0.0.1 for assembly, but 6.0.1 in nuget
-            { "System.Memory.Data", new Version(8, 0, 0, 1) }
+            { "System.Memory.Data", new Version(8, 0, 0, 1) },
+
+            // Microsoft.Extensions packages use 10.0.0.0 as assembly version
+            { "Microsoft.Extensions.Configuration.Abstractions", new Version(10, 0, 0, 0) },
+            { "Microsoft.Extensions.Diagnostics.Abstractions", new Version(10, 0, 0, 0) },
+            { "Microsoft.Extensions.Options", new Version(10, 0, 0, 0) },
+            { "Microsoft.Extensions.Primitives", new Version(10, 0, 0, 0) },
+            { "System.IO.Hashing", new Version(10, 0, 0, 3) }
         };
 
         /// <summary>

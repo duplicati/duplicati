@@ -1,3 +1,92 @@
+2026-07-13 - 2.3.0.107_canary_2026-07-13
+==========
+This release is a canary release intended to be used for testing.
+
+If no major faults are found, **this release is intended to be the basis of the next beta release**.
+
+# Breaking change: Locked-down data folder permissions
+
+This release hardens security around the data folder and is a **breaking change** for some setups.
+
+Duplicati now **requires** that the data folder has the exact expected permissions, or it will refuse to use it. Previously, Duplicati would silently lock down the folder if it was not already locked. The previous `insecure-permissions.txt` opt-out file is no longer supported.
+
+The only way to opt out of the permission check is to pass `--allow-insecure-datafolder` or set the environment variable `DUPLICATI__ALLOW_INSECURE_DATAFOLDER=true`. This setting can be placed in `preload.json`, but only if _that_ file is in a trusted location (the directory with the binaries, or the path pointed to by `DUPLICATI_PRELOAD_SETTINGS`). The previous trusted paths `/usr/local/share/Duplicati/preload.json` and `C:\ProgramData\Duplicati\preload.json` are no longer supported as they cannot be guaranteed to be locked down.
+
+A `preload.json` inside the data folder is still supported, provided the folder passes the permission check.
+
+The `ConfigureTool` has a new `secure-datafolder` command that can be used to force the correct permissions on the data folder.
+
+For most users this should not cause any problems, as Duplicati has been locking down the folder already, but if you rely on lax folder permissions the setup needs to change. Some Docker setups may not be able to set the permissions and will need to apply `DUPLICATI__ALLOW_INSECURE_DATAFOLDER=true` in the image to run without the protections.
+
+## Feedback requested
+
+We are grateful for any feedback on changes or hints for how we can lessen the impact before the next stable release.
+
+# Live reporting module
+
+This release adds a new live-reporting module that sends the current progress of backups to a user-specified URL. The intention is that this can be used for dashboards that want to show the current progress for backups. By default, the module is not configured and has no impact.
+
+The module supports multiple activity targets and includes metadata in the activity report, as well as a server-provided activity URL.
+
+# PAR2 parity / error-correction for remote volumes
+
+This release adds a pluggable parity module that produces error-correction data for remote data volumes, so they can be repaired after bit-rot or corruption on the backend, thanks @JamBalaya56562.
+
+A pluggable `IParity` module system is introduced, mirroring the existing compression/encryption modules. The default `Par2Parity` implementation shells out to the `par2` (par2cmdline) program. If the `par2` command is installed this will transparently handle creating and using parity files to guard against flipped bits.
+
+# Improved TLS certificate validation
+
+The TLS certificate validation has been improved, and Duplicati now falls back to using the OS-default certificate validator. This should resolve issues with custom certificate chains and improve compatibility with various TLS setups.
+
+## Detailed list of changes
+
+- Locked down data folder permissions and require exact permissions, with opt-out via `--allow-insecure-datafolder`
+- Added `secure-datafolder` command to the ConfigureTool
+- Added a live reporting module for sending backup progress to a URL
+- Added pluggable PAR2 parity module for error-correction of remote volumes, thanks @JamBalaya56562
+- Improved TLS certificate validation and fallback to OS-default validator
+- Locked the server database with a busy timeout to prevent concurrent access issues
+- Improved metadata update handling to better show remote versions
+- Guarded the compact operation against race conditions
+- Fixed database inconsistency after shared metadata delete
+- Avoid secondary transaction errors after repair failure, thanks @JamBalaya56562
+- Delete the incomplete recreate database when the remote is empty, thanks @JamBalaya56562
+- Stabilized ZipFallback database cleanup on Windows, thanks @JamBalaya56562
+- Reset restore rendezvous barriers per operation, thanks @JamBalaya56562
+- Fixed test-filters ignoring `--source` from a parameters file, thanks @JamBalaya56562
+- Removed redundant cancel button from restore progress, thanks @JamBalaya56562
+- Do not attach stack traces to known-problem path warnings, thanks @JamBalaya56562
+- Made CLI `find` search all backup versions by default, thanks @JamBalaya56562
+- Use effective dbpath for show-log and delete-db endpoints, thanks @JamBalaya56562
+- Reporte script execution in operation status, thanks @JamBalaya56562
+- Added commandline target URL done action, thanks @JamBalaya56562
+- Returned non-zero exit code from server-util run on backup failures, thanks @JamBalaya56562
+- Added DfsrPrivate to default excludes, thanks @JamBalaya56562
+- Escaped Windows commandline percent expansion, thanks @JamBalaya56562
+- Updated SQLitePCLRaw e_sqlite3 library, thanks @JamBalaya56562
+- Stabilized Windows ACL restore test, thanks @JamBalaya56562
+- Updated Swashbuckle to patched OpenApi, thanks @JamBalaya56562
+- Delayed Windows service startup, thanks @JamBalaya56562
+- Validated retention-policy format instead of crashing on missing colon, thanks @TowyTowy
+- Allowed machine-id override to fix mismatched ids for console connection and backup reports
+- Added endpoints for removal of versions and purge-broken files
+- Reported number of zero-length metadata entries
+- Fixed uninstall issue with delay-start service
+- Updated all localizations, thanks to all translators
+
+## UI updates
+
+- Option to start a managed backup from the home page.
+- Support for deleting versions from the actions menu.
+- Support for invoking purge-broken-files from the actions menu.
+- Moved the database compact action from the main menu to the database page.
+- Resolved websocket reconnect race conditions and timer mismatch
+- Aligned the disconnected dialog countdown with the actual reconnect delay (5s)
+- Renamed the "System settings" panel heading to "Server settings" for consistency with the tab name
+- Fixed a search issue with advanced options
+- Resolved the schedule page next-time off-by-one day issue
+- Updated localizations, thansk to all translators
+
 2026-07-03 - 2.3.0.106_canary_2026-07-03
 ==========
 This release is a canary release intended to be used for testing.

@@ -99,6 +99,7 @@ namespace Duplicati.Library.Main.Volumes
             internal static readonly IDictionary<RemoteVolumeType, string> REMOTE_TYPENAME_MAP;
             internal static readonly IDictionary<string, RemoteVolumeType> REVERSE_REMOTE_TYPENAME_MAP;
             private static readonly System.Text.RegularExpressions.Regex FILENAME_REGEXP;
+            private static readonly System.Text.RegularExpressions.Regex FILENAME_REGEXP_IGNORE_CASE;
 
             static ParsedVolume()
             {
@@ -113,12 +114,14 @@ namespace Duplicati.Library.Main.Volumes
 
                 REMOTE_TYPENAME_MAP = dict;
                 REVERSE_REMOTE_TYPENAME_MAP = reversedict;
-                FILENAME_REGEXP = new System.Text.RegularExpressions.Regex(@"(?<prefix>[^\-]+)\-(([i|b|I|B](?<guid>[0-9A-Fa-f]+))|((?<time>\d{8}T\d{6}Z))).(?<filetype>(" + string.Join(")|(", dict.Values) + @"))\.(?<compression>[^\.]+)(\.(?<encryption>.+))?");
+                var pattern = @"(?<prefix>[^\-]+)\-(([i|b|I|B](?<guid>[0-9A-Fa-f]+))|((?<time>\d{8}T\d{6}Z))).(?<filetype>(" + string.Join(")|(", dict.Values) + @"))\.(?<compression>[^\.]+)(\.(?<encryption>.+))?";
+                FILENAME_REGEXP = new System.Text.RegularExpressions.Regex(pattern);
+                FILENAME_REGEXP_IGNORE_CASE = new System.Text.RegularExpressions.Regex(pattern, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
             }
 
             private ParsedVolume() { }
 
-            public static IParsedVolume Parse(string filename, Library.Interface.IFileEntry file = null)
+            public static IParsedVolume Parse(string filename, Library.Interface.IFileEntry file = null, bool caseInsensitive = false)
             {
                 // A parity companion file is named "<data volume name>.<parityextension>".
                 // Because the main filename regex has a greedy encryption group, it would
@@ -128,7 +131,7 @@ namespace Duplicati.Library.Main.Volumes
                 var parityModule = MatchParitySuffix(filename);
                 var dataname = parityModule == null ? filename : filename.Substring(0, filename.Length - parityModule.Length - 1);
 
-                var m = FILENAME_REGEXP.Match(dataname);
+                var m = (caseInsensitive ? FILENAME_REGEXP_IGNORE_CASE : FILENAME_REGEXP).Match(dataname);
                 if (!m.Success || m.Length != dataname.Length)
                     return null;
 
@@ -141,7 +144,7 @@ namespace Duplicati.Library.Main.Volumes
                     Prefix = m.Groups["prefix"].Value,
                     FileType = t,
                     Guid = m.Groups["guid"].Success ? m.Groups["guid"].Value : null,
-                    Time = m.Groups["time"].Success ? Library.Utility.Utility.DeserializeDateTime(m.Groups["time"].Value).ToUniversalTime() : new DateTime(0, DateTimeKind.Utc),
+                    Time = m.Groups["time"].Success ? Library.Utility.Utility.DeserializeDateTime(caseInsensitive ? m.Groups["time"].Value.ToUpperInvariant() : m.Groups["time"].Value).ToUniversalTime() : new DateTime(0, DateTimeKind.Utc),
                     CompressionModule = m.Groups["compression"].Value,
                     EncryptionModule = m.Groups["encryption"].Success ? m.Groups["encryption"].Value : null,
                     IsParity = parityModule != null,
@@ -206,9 +209,19 @@ namespace Duplicati.Library.Main.Volumes
             return ParsedVolume.Parse(file.Name, file);
         }
 
+        public static IParsedVolume ParseFilename(Library.Interface.IFileEntry file, bool caseInsensitive)
+        {
+            return ParsedVolume.Parse(file.Name, file, caseInsensitive);
+        }
+
         public static IParsedVolume ParseFilename(string filename)
         {
             return ParsedVolume.Parse(filename);
+        }
+
+        public static IParsedVolume ParseFilename(string filename, bool caseInsensitive)
+        {
+            return ParsedVolume.Parse(filename, caseInsensitive: caseInsensitive);
         }
 
         protected const string FILESET_FILENAME = "fileset";

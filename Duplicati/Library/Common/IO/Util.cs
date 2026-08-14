@@ -50,6 +50,11 @@ namespace Duplicati.Library.Common.IO
         public const string AllowInsecureDatafolderEnvVar = "DUPLICATI__ALLOW_INSECURE_DATAFOLDER";
 
         /// <summary>
+        /// The insecure permission marker file
+        /// </summary>
+        public const string InsecurePermissionsMarkerFile = "insecure-permissions.txt";
+
+        /// <summary>
         /// Returns <c>true</c> if the user has opted in to using an insecure data folder, either
         /// via the <c>--allow-insecure-datafolder</c> command-line argument or the
         /// <c>DUPLICATI__ALLOW_INSECURE_DATAFOLDER</c> environment variable.
@@ -58,6 +63,10 @@ namespace Duplicati.Library.Common.IO
         /// consulted from low-level components (such as the SQLite loader) without threading the
         /// value through every call. When the option is present without a value it is treated as
         /// enabled; values <c>false</c>, <c>0</c>, <c>no</c> and <c>off</c> disable it.
+        ///
+        /// In <c>DEBUG</c> builds the option defaults to <c>true</c> (after all explicit sources
+        /// are checked), so permission checks do not block local development. An explicit
+        /// <c>--allow-insecure-datafolder=false</c> still overrides this default.
         /// </summary>
         /// <returns><c>true</c> if the insecure data folder opt-in is set; otherwise <c>false</c>.</returns>
         public static bool AllowInsecureDataFolder()
@@ -94,7 +103,23 @@ namespace Duplicati.Library.Common.IO
             if (envValue != null)
                 return ParseBool(envValue);
 
+            // Finally, check if the override file exists
+            var installfolder = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+            if (!string.IsNullOrWhiteSpace(installfolder))
+            {
+                var path = Path.Combine(installfolder, InsecurePermissionsMarkerFile);
+                if (File.Exists(path))
+                    return true;
+            }
+
+#if DEBUG
+            // In debug builds the permission checks are relaxed by default to make local
+            // development easier. Users can still opt out explicitly via
+            // --allow-insecure-datafolder=false.
+            return true;
+#else
             return false;
+#endif
         }
 
         /// <summary>

@@ -10,10 +10,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AWSSDK.Core" Version="4.0.3.3" />
-    <PackageReference Include="AWSSDK.IdentityManagement" Version="4.0.2.6" />
-    <PackageReference Include="AWSSDK.S3" Version="4.0.6.4" />
+    <PackageReference Include="AWSSDK.Core" Version="4.0.100.5" />
+    <PackageReference Include="AWSSDK.IdentityManagement" Version="4.0.100.4" />
+    <PackageReference Include="AWSSDK.S3" Version="4.0.100.3" />
     <PackageReference Include="Minio" Version="6.0.0" />
+    <PackageReference Include="System.Reactive" Version="7.0.0" />
   </ItemGroup>
 
   <ItemGroup>

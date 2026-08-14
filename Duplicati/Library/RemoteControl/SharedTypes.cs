@@ -40,7 +40,6 @@ public sealed record RegisterClientData(
 /// <summary>
 /// Data returned when the machine is claimed
 /// </summary>
-/// <param name="Success">True if the claim was successful</param>
 /// <param name="StatusMessage">The status message for the claim</param>
 /// <param name="JWT">The JWT token for the machine</param>
 /// <param name="ServerUrl">The URL for the remote server</param>

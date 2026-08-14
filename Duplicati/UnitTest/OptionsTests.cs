@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Duplicati.Library.Main;
 using NUnit.Framework;
 
@@ -258,6 +259,52 @@ namespace Duplicati.UnitTest
             });
 
             Assert.That(options.RestoreVolumeCacheMinFree, Is.EqualTo(2L * 1024 * 1024 * 1024));
+        }
+
+        [Test]
+        [Category("Options")]
+        public void RestorePreAllocateDefaultsToFalse()
+        {
+            var options = CreateOptions();
+
+            Assert.That(options.RestorePreAllocate, Is.False);
+        }
+
+        [Test]
+        [Category("Options")]
+        public void RestorePreAllocateReadsTheRegisteredOptionName()
+        {
+            var options = CreateOptions(new Dictionary<string, string?>
+            {
+                { "restore-preallocate-size", "true" }
+            });
+
+            Assert.That(options.RestorePreAllocate, Is.True);
+        }
+
+        [Test]
+        [Category("Options")]
+        public void RestorePreAllocateCanBeDisabledExplicitly()
+        {
+            var options = CreateOptions(new Dictionary<string, string?>
+            {
+                { "restore-preallocate-size", "false" }
+            });
+
+            Assert.That(options.RestorePreAllocate, Is.False);
+        }
+
+        [Test]
+        [Category("Options")]
+        public void RestorePreAllocateOptionIsRegistered()
+        {
+            // Guards against the accessor reading a key that is not a registered option name,
+            // which silently makes the option a no-op.
+            var options = CreateOptions();
+
+            Assert.That(
+                options.SupportedCommands.Any(x => x.Name == "restore-preallocate-size"),
+                Is.True);
         }
     }
 }

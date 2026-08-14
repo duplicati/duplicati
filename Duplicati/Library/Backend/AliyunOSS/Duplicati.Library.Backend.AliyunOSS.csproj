@@ -20,7 +20,7 @@
 
   <ItemGroup>
     <PackageReference Include="Aliyun.OSS.SDK.NetCore" Version="2.14.1" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
   </ItemGroup>
 
 </Project>

@@ -743,7 +743,7 @@ public class MacOSKeyChainProvider : ISecretProvider
     /// <summary>
     /// Core method to retrieve a password by label.
     /// </summary>
-    /// <param name="label">The label of the item.</param>
+    /// <param name="name">The label of the item.</param>
     /// <param name="isInternet">Whether it's an internet password.</param>
     /// <returns>The password value.</returns>
     private static string GetByLabelCore(string name, KeyChainSettings? settings, bool isInternet)

@@ -366,7 +366,7 @@ public class Connection
     /// <summary>
     /// Parses the authentication response
     /// </summary>
-    /// <param name="response">The response to parse</param>
+    /// <param name="responseTask">The task producing the response to parse</param>
     /// <returns>The access and refresh tokens</returns>
     private static async Task<(string AccessToken, string? RefreshToken, string? RefreshNonce)> ParseAuthResponseAsync(Task<HttpResponseMessage> responseTask)
     {

@@ -428,7 +428,7 @@ namespace Duplicati.Library.Snapshots.USN
         /// <summary>
         /// Tests if specified folder, or any of its ancestors, is excluded by the filter
         /// </summary>
-        /// <param name="folder">Folder to test</param>
+        /// <param name="inputFolder">Folder to test</param>
         /// <param name="filter">Filter</param>
         /// <param name="cache">Cache of excluded folders (optional)</param>
         /// <returns>True if excluded, false otherwise</returns>

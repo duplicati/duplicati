@@ -93,10 +93,10 @@ public class FilenBackend : IStreamingBackend, IRenameEnabledBackend
     /// <param name="options">The options to use</param>
     public FilenBackend(string url, Dictionary<string, string?> options)
     {
-        var uri = new Utility.Uri(url);
+        var uri = new Utility.RelaxedUri(url);
         _path = uri.HostAndPath;
 
-        _auth = AuthOptionsHelper.Parse(options, uri)
+        _auth = AuthOptionsHelper.Parse(options, uri.Username, uri.Password)
             .RequireCredentials();
 
         _moveToTrash = Utility.Utility.ParseBoolOption(options, MoveToTrashOption);

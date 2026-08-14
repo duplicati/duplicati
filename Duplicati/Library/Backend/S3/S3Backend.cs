@@ -30,8 +30,6 @@ namespace Duplicati.Library.Backend
 {
     public class S3 : IBackend, IStreamingBackend, IRenameEnabledBackend, IFolderEnabledBackend, ILockingBackend
     {
-        private static readonly string LOGTAG = Logging.Log.LogTagFromType<S3>();
-
         private const string AUTH_USERNAME_OPTION = "aws-access-key-id";
         private const string AUTH_PASSWORD_OPTION = "aws-secret-access-key";
 
@@ -242,14 +240,14 @@ namespace Duplicati.Library.Backend
 
         public S3(string url, Dictionary<string, string?> options)
         {
-            var uri = new Utility.Uri(url);
+            var uri = new Utility.RelaxedUri(url);
             uri.RequireHost();
 
             m_bucket = uri.Host ?? "";
             m_prefix = uri.Path;
             var timeout = TimeoutOptionsHelper.Parse(options);
 
-            var auth = AuthOptionsHelper.ParseWithAlias(options, uri, AUTH_USERNAME_OPTION, AUTH_PASSWORD_OPTION);
+            var auth = AuthOptionsHelper.ParseWithAlias(options, uri.Username, uri.Password, AUTH_USERNAME_OPTION, AUTH_PASSWORD_OPTION);
 
             if (!auth.HasUsername)
                 throw new UserInformationException(Strings.S3Backend.NoAMZUserIDError, "S3NoAmzUserID");

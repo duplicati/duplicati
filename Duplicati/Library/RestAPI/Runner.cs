@@ -42,6 +42,11 @@ namespace Duplicati.Server
 {
     public static class Runner
     {
+        /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Library.Logging.Log.LogTagFromType(typeof(Runner));
+
         public const string TaskSetupFilename = "task-setup.json";
 
         public interface IRunnerData : Serialization.Interface.IQueuedTask
@@ -140,14 +145,20 @@ namespace Duplicati.Server
                     if (!string.IsNullOrWhiteSpace(uploadSpeed))
                         server_upload_throttle = Sizeparser.ParseSize(uploadSpeed, "kb");
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Library.Logging.Log.WriteErrorMessage(LOGTAG, "ParseUploadLimitError", ex, "Failed to parse upload limit: {0}", uploadSpeed);
+                }
 
                 try
                 {
                     if (!string.IsNullOrWhiteSpace(downloadSpeed))
                         server_download_throttle = Sizeparser.ParseSize(downloadSpeed, "kb");
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Library.Logging.Log.WriteErrorMessage(LOGTAG, "ParseDownloadLimitError", ex, "Failed to parse download limit: {0}", downloadSpeed);
+                }
 
                 var upload_throttle = Math.Min(job_upload_throttle, server_upload_throttle);
                 var download_throttle = Math.Min(job_download_throttle, server_download_throttle);
@@ -409,17 +420,23 @@ namespace Duplicati.Server
 
 
         public static IRunnerData CreateRestoreTask(IBackup backup, string[]? filters,
-                                                    DateTime time, string? restoreTarget, bool overwrite, bool restore_permissions,
-                                                    bool skip_metadata, string? passphrase)
+                                                    DateTime time, string? restoreTarget, bool? overwrite, bool? restore_permissions,
+                                                    bool? skip_metadata, string? passphrase)
         {
             var dict = new Dictionary<string, string?>
             {
                 ["time"] = Utility.SerializeDateTime(time.ToUniversalTime()),
-                ["overwrite"] = overwrite ? bool.TrueString : bool.FalseString,
-                ["restore-permissions"] = restore_permissions ? bool.TrueString : bool.FalseString,
-                ["skip-metadata"] = skip_metadata ? bool.TrueString : bool.FalseString,
                 ["allow-passphrase-change"] = bool.TrueString
             };
+
+            // An unset value is not written, so the backup settings and the server's
+            // default options apply; an explicit value overrides them
+            if (overwrite.HasValue)
+                dict["overwrite"] = overwrite.Value ? bool.TrueString : bool.FalseString;
+            if (restore_permissions.HasValue)
+                dict["restore-permissions"] = restore_permissions.Value ? bool.TrueString : bool.FalseString;
+            if (skip_metadata.HasValue)
+                dict["skip-metadata"] = skip_metadata.Value ? bool.TrueString : bool.FalseString;
             if (!string.IsNullOrWhiteSpace(restoreTarget))
                 dict["restore-path"] = SpecialFolders.ExpandEnvironmentVariables(restoreTarget);
             if (!(passphrase is null))
@@ -833,14 +850,20 @@ namespace Duplicati.Server
                         if (options.ContainsKey("throttle-upload"))
                             ((RunnerData)data).OriginalUploadSpeed = Duplicati.Library.Utility.Sizeparser.ParseSize(options["throttle-upload"], "kb");
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Library.Logging.Log.WriteWarningMessage(LOGTAG, "ParseUploadThrottleError", ex, "Failed to parse throttle-upload, continuing without it: {0}", options["throttle-upload"]);
+                    }
 
                     try
                     {
                         if (options.ContainsKey("throttle-download"))
                             ((RunnerData)data).OriginalDownloadSpeed = Duplicati.Library.Utility.Sizeparser.ParseSize(options["throttle-download"], "kb");
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Library.Logging.Log.WriteWarningMessage(LOGTAG, "ParseDownloadThrottleError", ex, "Failed to parse throttle-download, continuing without it: {0}", options["throttle-download"]);
+                    }
 
                     ((RunnerData)data).Controller = controller;
                     var appSettings = databaseConnection.ApplicationSettings;
@@ -1522,7 +1545,7 @@ namespace Duplicati.Server
                 );
             }
 
-            var uri = new Library.Utility.Uri(backup.TargetURL);
+            var uri = new Library.Utility.RelaxedUri(backup.TargetURL);
             if (uri.Scheme.Equals(Library.Backend.Duplicati.DuplicatiBackend.PROTOCOL, StringComparison.OrdinalIgnoreCase))
                 url = Library.Backend.Duplicati.DuplicatiBackend.MergeArgsIntoUrl(
                     url,

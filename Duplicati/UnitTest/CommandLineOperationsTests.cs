@@ -97,6 +97,13 @@ namespace Duplicati.UnitTest
                     }
                     else
                     {
+                        // An error response is not a download. Without this check the error body
+                        // is written out as if it were the archive, and the length check below
+                        // compares it against the Content-Length of that same response, so it
+                        // passes. The failure then surfaces much later as a corrupt archive, and
+                        // the retry below never happens because nothing threw.
+                        response.EnsureSuccessStatusCode();
+
                         using var tmpFile = new TempFile();
                         Console.WriteLine($"Downloading file from {url} to: {tmpFile}");
                         var contentStream = await response.Content.ReadAsStreamAsync();

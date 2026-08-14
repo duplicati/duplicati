@@ -29,39 +29,12 @@ namespace Duplicati.UnitTest
     {
         [Test]
         [Category("UriUtility")]
-        public static void TestBuildUriQuery()
-        {
-            var query = new NameValueCollection { { "a", "b" } };
-            var queryUrl = Library.Utility.Uri.BuildUriQuery(query);
-            Assert.AreEqual("a=b", queryUrl);
-            query.Add(new NameValueCollection { { "c", "d" } });
-            queryUrl = Library.Utility.Uri.BuildUriQuery(query);
-            Assert.AreEqual("a=b&c=d", queryUrl);
-
-            // Test with space in value
-            query = new NameValueCollection { { "key", "value with space" } };
-            queryUrl = Library.Utility.Uri.BuildUriQuery(query);
-            Assert.AreEqual("key=value with space", queryUrl);
-
-            // Test with + in value
-            query = new NameValueCollection { { "key", "value+plus" } };
-            queryUrl = Library.Utility.Uri.BuildUriQuery(query);
-            Assert.AreEqual("key=value+plus", queryUrl);
-
-            // Test with % in value
-            query = new NameValueCollection { { "key", "value%percent" } };
-            queryUrl = Library.Utility.Uri.BuildUriQuery(query);
-            Assert.AreEqual("key=value%percent", queryUrl);
-        }
-
-        [Test]
-        [Category("UriUtility")]
         public static void TestUrlBuilder()
         {
             var baseUrl = "http://localhost";
             var path = "files";
             var query = new NameValueCollection { { "a", "b" }, { "c", "d" }, { "e", "+ %" } };
-            var url = Library.Utility.Uri.UriBuilder(baseUrl, path, query);
+            var url = Library.Utility.RelaxedUri.UriBuilder(baseUrl, path, query);
             Assert.AreEqual(baseUrl + "/" + path + "?a=b&c=d&e=+%20%25", url);
         }
 
@@ -70,7 +43,7 @@ namespace Duplicati.UnitTest
         public static void TestExtractPath()
         {
             var url = "http://localhost/a/b";
-            var path = Library.Utility.Uri.ExtractPath(url);
+            var path = Library.Utility.RelaxedUri.ExtractPath(url);
             Assert.AreEqual("a/b", path);
         }
 
@@ -97,7 +70,7 @@ namespace Duplicati.UnitTest
         {
             string uriStr = $"http://{user}{host}{port}{path}{query}";
 
-            var uri = new Library.Utility.Uri(uriStr);
+            var uri = new Library.Utility.RelaxedUri(uriStr);
             Assert.AreEqual("http", uri.Scheme);
             Assert.AreEqual(host, uri.Host);
             if (port.Length != 0)
@@ -135,29 +108,242 @@ namespace Duplicati.UnitTest
         {
             if (System.OperatingSystem.IsWindows())
             {
-                var a = new Library.Utility.Uri("file://c:/a/b/");
-                var b = new Library.Utility.Uri("c:/a/b/");
+                var a = new Library.Utility.RelaxedUri("file://c:/a/b/");
+                var b = new Library.Utility.RelaxedUri("c:/a/b/");
 
                 Assert.AreEqual(a.ToString(), b.ToString());
                 Assert.AreEqual(a.Path, b.Path);
 
-                a = new Library.Utility.Uri("file://C:\\a\\b");
-                b = new Library.Utility.Uri("C:\\a\\b");
+                a = new Library.Utility.RelaxedUri("file://C:\\a\\b");
+                b = new Library.Utility.RelaxedUri("C:\\a\\b");
                 Assert.AreEqual(a.ToString(), b.ToString());
                 Assert.AreEqual(a.Path, b.Path);
             }
             else
             {
-                var a = new Library.Utility.Uri("file:///a/b");
-                var b = new Library.Utility.Uri("/a/b");
+                var a = new Library.Utility.RelaxedUri("file:///a/b");
+                var b = new Library.Utility.RelaxedUri("/a/b");
                 Assert.AreEqual(a.ToString(), b.ToString());
                 Assert.AreEqual(a.Path, b.Path);
 
-                a = new Library.Utility.Uri("file:///a/b/");
-                b = new Library.Utility.Uri("/a/b/");
+                a = new Library.Utility.RelaxedUri("file:///a/b/");
+                b = new Library.Utility.RelaxedUri("/a/b/");
                 Assert.AreEqual(a.ToString(), b.ToString());
                 Assert.AreEqual(a.Path, b.Path);
             }
+        }
+
+        [Test]
+        [Category("UriUtility")]
+        public static void TestUriParseWindowsPathWithAtSign()
+        {
+            // Regression for #2681: an '@' in a local (file://) Windows drive path must
+            // not be parsed as user:password@host.
+            if (!System.OperatingSystem.IsWindows())
+                return;
+
+            var a = new Library.Utility.RelaxedUri("file://c:\\@folder\\");
+            Assert.AreEqual("file", a.Scheme);
+            Assert.IsNull(a.Host, "Host should be null for a local path");
+            Assert.IsNull(a.Username, "Username should be null");
+            Assert.IsNull(a.Password, "Password should be null");
+            Assert.IsTrue(a.Path.Contains("@folder"), "Path should keep the @ folder name");
+            Assert.IsTrue(System.IO.Path.IsPathRooted(a.Path), "Path should be a rooted local path");
+
+            // The file:// form must parse the same as the raw path form
+            var b = new Library.Utility.RelaxedUri("c:\\@folder\\");
+            Assert.AreEqual(b.Path, a.Path);
+            Assert.AreEqual(b.ToString(), a.ToString());
+
+            // Re-parsing ToString() round-trips to the same path (no corruption)
+            var roundtrip = new Library.Utility.RelaxedUri(a.ToString());
+            Assert.AreEqual(a.Path, roundtrip.Path);
+            Assert.IsNull(roundtrip.Host);
+            Assert.IsNull(roundtrip.Username);
+
+            // The url-encoded form (%40) resolves to the same path
+            var encoded = new Library.Utility.RelaxedUri("file://c:\\%40folder\\");
+            Assert.AreEqual(a.Path, encoded.Path);
+        }
+
+        [Test]
+        [Category("UriUtility")]
+        public static void TestHostKeepsItsCase()
+        {
+            // System.Uri lowercases the host, this parser does not. #7097 replaced the
+            // parser with System.Uri and had to be closed because Box broke on exactly
+            // this difference, so it is pinned here for whoever tries again.
+            var uri = new Library.Utility.RelaxedUri("https://ExAmPle.COM/Some/Path");
+
+            Assert.AreEqual("ExAmPle.COM", uri.Host);
+            Assert.AreEqual("Some/Path", uri.Path);
+            Assert.IsTrue(uri.ToString().Contains("ExAmPle.COM"), "ToString must not change the host case");
+        }
+
+        [Test]
+        [Category("UriUtility")]
+        public static void TestSetSchemeOnlyChangesTheScheme()
+        {
+            var uri = new Library.Utility.RelaxedUri("http://user:pw@example.com:8080/a/b?x=1");
+            var changed = uri.SetScheme("https");
+
+            Assert.AreEqual("https", changed.Scheme);
+            Assert.AreEqual("http", uri.Scheme, "The original instance must not change");
+            Assert.AreEqual(uri.Host, changed.Host);
+            Assert.AreEqual(uri.Port, changed.Port);
+            Assert.AreEqual(uri.Path, changed.Path);
+            Assert.AreEqual(uri.Query, changed.Query);
+            Assert.AreEqual(uri.Username, changed.Username);
+            Assert.AreEqual(uri.Password, changed.Password);
+        }
+
+        [Test]
+        [Category("UriUtility")]
+        public static void TestSetPathOnlyChangesThePath()
+        {
+            var uri = new Library.Utility.RelaxedUri("http://user:pw@example.com:8080/a/b?x=1");
+            var changed = uri.SetPath("c/d");
+
+            Assert.AreEqual("c/d", changed.Path);
+            Assert.AreEqual("a/b", uri.Path, "The original instance must not change");
+            Assert.AreEqual(uri.Scheme, changed.Scheme);
+            Assert.AreEqual(uri.Host, changed.Host);
+            Assert.AreEqual(uri.Port, changed.Port);
+            Assert.AreEqual(uri.Query, changed.Query);
+            Assert.AreEqual(uri.Username, changed.Username);
+            Assert.AreEqual(uri.Password, changed.Password);
+
+            Assert.AreEqual("", uri.SetPath(null).Path, "A null path becomes an empty path");
+        }
+
+        [Test]
+        [Category("UriUtility")]
+        public static void TestSetQueryOnlyChangesTheQuery()
+        {
+            var uri = new Library.Utility.RelaxedUri("http://user:pw@example.com:8080/a/b?x=1");
+            var changed = uri.SetQuery("y=2");
+
+            Assert.AreEqual("y=2", changed.Query);
+            Assert.AreEqual("x=1", uri.Query, "The original instance must not change");
+            Assert.AreEqual(uri.Scheme, changed.Scheme);
+            Assert.AreEqual(uri.Host, changed.Host);
+            Assert.AreEqual(uri.Port, changed.Port);
+            Assert.AreEqual(uri.Path, changed.Path);
+            Assert.AreEqual(uri.Username, changed.Username);
+            Assert.AreEqual(uri.Password, changed.Password);
+
+            Assert.IsNull(uri.SetQuery(null).Query, "A null query stays null");
+        }
+
+        [Test]
+        [Category("UriUtility")]
+        public static void TestSetCredentialsOnlyChangesTheCredentials()
+        {
+            var uri = new Library.Utility.RelaxedUri("http://user:pw@example.com:8080/a/b?x=1");
+            var changed = uri.SetCredentials("other", "secret");
+
+            Assert.AreEqual("other", changed.Username);
+            Assert.AreEqual("secret", changed.Password);
+            Assert.AreEqual("user", uri.Username, "The original instance must not change");
+            Assert.AreEqual(uri.Scheme, changed.Scheme);
+            Assert.AreEqual(uri.Host, changed.Host);
+            Assert.AreEqual(uri.Port, changed.Port);
+            Assert.AreEqual(uri.Path, changed.Path);
+            Assert.AreEqual(uri.Query, changed.Query);
+
+            var cleared = uri.SetCredentials(null, null);
+            Assert.IsNull(cleared.Username);
+            Assert.IsNull(cleared.Password);
+        }
+
+        [Test]
+        [Category("UriUtility")]
+        public static void TestToStringRoundTripsThroughTheParser()
+        {
+            var uri = new Library.Utility.RelaxedUri("http://user:pw@example.com:8080/a/b?x=1");
+            var rebuilt = new Library.Utility.RelaxedUri(uri.ToString());
+
+            Assert.AreEqual(uri.Scheme, rebuilt.Scheme);
+            Assert.AreEqual(uri.Host, rebuilt.Host);
+            Assert.AreEqual(uri.Port, rebuilt.Port);
+            Assert.AreEqual(uri.Path, rebuilt.Path);
+            Assert.AreEqual(uri.Query, rebuilt.Query);
+            Assert.AreEqual(uri.Username, rebuilt.Username);
+            Assert.AreEqual(uri.Password, rebuilt.Password);
+        }
+
+        [Test]
+        [Category("UriUtility")]
+        public static void TestHostAndPath()
+        {
+            Assert.AreEqual("example.com/a/b", new Library.Utility.RelaxedUri("http://example.com/a/b").HostAndPath);
+            Assert.AreEqual("example.com", new Library.Utility.RelaxedUri("http://example.com").HostAndPath);
+            Assert.AreEqual("a/b", new Library.Utility.RelaxedUri("http", null, "a/b").HostAndPath);
+            Assert.AreEqual("", new Library.Utility.RelaxedUri("http", null, null).HostAndPath);
+        }
+
+        [Test]
+        [Category("UriUtility")]
+        public static void TestPathAndQuery()
+        {
+            Assert.AreEqual("a/b?x=1", new Library.Utility.RelaxedUri("http://example.com/a/b?x=1").PathAndQuery);
+            Assert.AreEqual("a/b", new Library.Utility.RelaxedUri("http://example.com/a/b").PathAndQuery);
+        }
+
+        [Test]
+        [Category("UriUtility")]
+        public static void TestQueryParameters()
+        {
+            var query = new Library.Utility.RelaxedUri("http://example.com/?a=b&c=d").QueryParameters;
+            Assert.AreEqual("b", query["a"]);
+            Assert.AreEqual("d", query["c"]);
+            Assert.AreEqual("b", query["A"], "Keys are matched without regard to case");
+
+            var decoded = new Library.Utility.RelaxedUri("http://example.com/?a=x%20y&b=p+q").QueryParameters;
+            Assert.AreEqual("x y", decoded["a"], "%20 is decoded");
+            Assert.AreEqual("p q", decoded["b"], "+ is decoded as a space");
+
+            var repeated = new Library.Utility.RelaxedUri("http://example.com/?a=1&a=2").QueryParameters;
+            Assert.AreEqual("1,2", repeated["a"], "A repeated key keeps both values");
+
+            Assert.AreEqual(0, new Library.Utility.RelaxedUri("http://example.com/").QueryParameters.Count,
+                "A url without a query has no parameters");
+        }
+
+        [Test]
+        [Category("UriUtility")]
+        public static void TestRequireHost()
+        {
+            Assert.DoesNotThrow(() => new Library.Utility.RelaxedUri("http://example.com/a").RequireHost());
+
+            var withoutHost = new Library.Utility.RelaxedUri("http", null, "a", null, "user", "secret");
+            var ex = Assert.Throws<System.ArgumentException>(() => withoutHost.RequireHost());
+            Assert.IsFalse(ex!.Message.Contains("secret"), "The message must not carry the password");
+        }
+
+        [Test]
+        [Category("UriUtility")]
+        public static void TestHostAndPathKeepsTheFolderCase()
+        {
+            // Several backends take a case sensitive remote name out of the authority:
+            // BoxBackend reads HostAndPath as the remote path, Dropbox reads
+            // UrlDecode(HostAndPath), and OpenStackStorage reads Host as the container.
+            // An RFC 3986 conformant parser lower-cases the authority, which is why #7097
+            // failed the Box.com tests on all three platforms, and CloudStack, with "The
+            // requested folder does not exist". That only showed up in the backend tests,
+            // which need credentials, so it is pinned here as well.
+            var box = new Library.Utility.RelaxedUri("box://MyBackups/Sub/");
+            Assert.AreEqual("MyBackups", box.Host);
+            Assert.AreEqual("MyBackups/Sub/", box.HostAndPath);
+
+            var container = new Library.Utility.RelaxedUri("openstack://MyContainer");
+            Assert.AreEqual("MyContainer", container.Host);
+            Assert.AreEqual("MyContainer", container.HostAndPath);
+
+            // The same has to survive being written back out and parsed again, because
+            // that is how the url reaches the backend after being edited in the UI.
+            var roundtrip = new Library.Utility.RelaxedUri(box.ToString());
+            Assert.AreEqual(box.HostAndPath, roundtrip.HostAndPath);
         }
     }
 }

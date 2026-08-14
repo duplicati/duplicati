@@ -12,7 +12,7 @@
 
 See %CLI_EXE% help <topic> for more information.
   General: example, changelog
-  Commands: backup, find, restore, delete, compact, test, compare, purge, vacuum
+  Commands: backup, sync, find, restore, delete, compact, test, compare, purge, vacuum
   Searching: list-filesets, list-folder-contents, list-file-versions, search-files
   Repair: repair, affected, list-broken-files, purge-broken-files
   Locking: set-locks, read-lock-info
@@ -95,6 +95,27 @@ Usage: %CLI_EXE% backup <storage-URL> "<source-path>" [<options>]
     This is the passphrase that is used to encrypt all data before it is uploaded. If an empty passphrase is specified, the backup will not be encrypted. This is the same as using --no-encryption.
   --prefix=<string>
     Replaces the default "duplicati" with <string> in the file names of the backup files. It is required to specify different prefixes if multiple backups are stored in the same target folder.
+
+
+# =============================================================================
+> duplicati.commandline.exe help sync
+
+Usage: %CLI_EXE% sync <storage-URL> "<source-path>" [<options>]
+
+  Mirrors <source-path> to <storage-URL> by copying the local files to the remote destination unencrypted. Unlike a backup, a sync keeps an exact mirror of the source on the destination: files are uploaded in their original (uncompressed, unencrypted) form, and with --sync-then-delete files that no longer exist locally are removed from the destination. Multiple source paths can be specified if they are separated by a space.
+
+  Because the data is stored unencrypted, encryption must be disabled with --no-encryption. The sync operation maintains its own local database to track what has been uploaded.
+
+  --no-encryption=<boolean>
+    Use this to make an unencrypted mirror. Encryption is not supported for sync and must be disabled.
+  --sync-remote-state=<UseRemoteState|UseLocalState|BlindlyUpload>
+    Controls how the sync determines the remote state of each folder. "UseRemoteState" enumerates the remote destination per folder (safest, one listing per folder). "UseLocalState" uses the local database and assumes it is up to date (faster, no extra listings). "BlindlyUpload" uploads every local file unconditionally without checking remote state (fastest, deletes are skipped with a warning). Default is "UseRemoteState".
+  --sync-then-delete=<boolean>
+    Deletes files on the remote that no longer exist locally, keeping the destination an exact mirror of the source. Default is false. Has no effect with --sync-remote-state=BlindlyUpload.
+  --sync-verify-hash=<boolean>
+    Verifies file content using SHA-256 hashes when size and time match, to detect files that changed without updating the timestamp. Default is false.
+  --sync-recheck=<boolean>
+    Forces a full remote listing to rebuild the local sync cache. Under "UseLocalState" this effectively behaves as "UseRemoteState" for the run and refreshes the local inventory. Default is false.
 
 
 # =============================================================================
@@ -293,7 +314,7 @@ Usage: %CLI_EXE% purge <storage-URL> <filenames> [<options>]
   --time=<time>
     Selects a specific version to purge from
   --no-auto-compact
-    Performs a compact process after purging files
+    Disables the automatic compacting that is otherwise performed after purging files
   --include=<filter>
     Selects files to purge, using filter syntax
 
@@ -561,6 +582,8 @@ For entering decimal values you must use the English notation, with a period as 
 Duplicati can apply globbing and regex filter rules to backup and restore specific files only. Globbing filters can be used in file names. To specify a regex filter put the filter in [brackets].
   Globbing: *.txt
   Regex: [.*test\.txt]
+
+Environment variables are expanded in filter values, source paths, and the restore path. On any platform you can use the Windows form %VAR%; on Linux and macOS you can also use the native forms $VAR and ${VAR}. An undefined $VAR or ${VAR} is left unchanged.
 
   --include=<filter>
     Adds an include filter
