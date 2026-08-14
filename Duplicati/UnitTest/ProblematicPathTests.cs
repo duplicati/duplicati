@@ -155,11 +155,12 @@ namespace Duplicati.UnitTest
 
             // Backup with verbatim asterisk in include filter should include
             // one directory in Linux and zero directories in Windows.
+            // On Windows zero files are examined, so the NoFilesInBackup warning is expected there.
             filter = new FilterExpression("@" + SystemIO.IO_OS.PathCombine(dirWithAsterisk, file));
             using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
                 var backupResults = await c.BackupAsync(new[] { this.DATAFOLDER }, filter);
-                TestUtils.AssertResults(backupResults);
+                TestUtils.AssertResults(backupResults, ignoredWarnings: ["NoFilesInBackup"]);
                 Assert.AreEqual(verbatimAsteriskShouldMatchCount, backupResults.ExaminedFiles);
             }
         }

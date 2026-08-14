@@ -20,7 +20,6 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System.Net;
-using System.Net.Security;
 using System.Runtime.CompilerServices;
 using System.Security.Authentication;
 using Duplicati.Library.Common.IO;
@@ -32,7 +31,6 @@ using FluentFTP;
 using FluentFTP.Client.BaseClient;
 using FluentFTP.Exceptions;
 using CoreUtility = Duplicati.Library.Utility.Utility;
-using Uri = System.Uri;
 
 namespace Duplicati.Library.Backend
 {
@@ -269,10 +267,10 @@ namespace Duplicati.Library.Backend
             _sslOptions = SslOptionsHelper.Parse(options);
             _sslValidator = new SslCertificateValidator(_sslOptions.AcceptAllCertificates, _sslOptions.AcceptSpecificCertificateHashes, _sslOptions.IgnoreRevocationFailure);
 
-            var u = new Utility.Uri(url);
+            var u = new Utility.RelaxedUri(url);
             u.RequireHost();
 
-            var auth = AuthOptionsHelper.Parse(options, u);
+            var auth = AuthOptionsHelper.Parse(options, u.Username, u.Password);
             if (auth.HasUsername)
             {
                 _userInfo = new NetworkCredential()

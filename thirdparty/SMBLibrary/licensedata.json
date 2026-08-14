@@ -1,0 +1,7 @@
+{
+  "name": "SMBLibrary",
+  "description": "SMBLibrary is a C# implementation of the SMB/CIFS protocol",
+  "link": "https://github.com/TalAloni/SMBLibrary",
+  "license": "LGPL-3.0-only",
+  "notes": ""
+}

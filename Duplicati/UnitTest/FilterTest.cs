@@ -172,7 +172,8 @@ namespace Duplicati.UnitTest
             {
                 var backupResults = await c.BackupAsync(new string[] { DATAFOLDER }, excludefilter);
                 Assert.AreEqual(0, backupResults.Errors.Count());
-                Assert.AreEqual(0, backupResults.Warnings.Count());
+                // The source now contains no files, so the NoFilesInBackup warning is expected
+                Assert.AreEqual(0, backupResults.Warnings.Count(x => !x.Contains("NoFilesInBackup")));
             }
 
             // Check we now have only one folder and no files
@@ -439,6 +440,84 @@ namespace Duplicati.UnitTest
             Assert.IsFalse(filter.Empty);
             Assert.IsTrue(filter.Matches("target-file.txt", out var result, out _));
             Assert.IsTrue(result, "Include filter should report a positive match result");
+        }
+
+        [Test]
+        [Category("Filter")]
+        public static void IsExcludeAllBeforeIncludesDetectsWildcardExcludeAll()
+        {
+            // A "*" exclude with no includes is the canonical "exclude everything" misconfiguration
+            var filter = new FilterExpression("*", false);
+            Assert.IsTrue(FilterExpression.IsExcludeAllBeforeIncludes(filter));
+        }
+
+        [Test]
+        [Category("Filter")]
+        public static void IsExcludeAllBeforeIncludesDetectsRegexExcludeAll()
+        {
+            // A regex that matches everything, used as an exclude with no includes
+            var filter = new FilterExpression("[.*]", false);
+            Assert.IsTrue(FilterExpression.IsExcludeAllBeforeIncludes(filter));
+        }
+
+        [Test]
+        [Category("Filter")]
+        public static void IsExcludeAllBeforeIncludesNotTriggeredByIncludeAll()
+        {
+            // A "*" include is not an "exclude everything" filter
+            var filter = new FilterExpression("*", true);
+            Assert.IsFalse(FilterExpression.IsExcludeAllBeforeIncludes(filter));
+        }
+
+        [Test]
+        [Category("Filter")]
+        public static void IsExcludeAllBeforeIncludesNotTriggeredBySpecificExcludesOnly()
+        {
+            // Specific excludes without a catch-all are not "exclude everything"
+            var filter = new FilterExpression("*.tmp", false);
+            Assert.IsFalse(FilterExpression.IsExcludeAllBeforeIncludes(filter));
+        }
+
+        [Test]
+        [Category("Filter")]
+        public static void IsExcludeAllBeforeIncludesNotTriggeredByIncludesThenExcludeAll()
+        {
+            // Include rules BEFORE exclude-all is a valid default-deny pattern
+            IFilter includeFilter = new FilterExpression("*.txt", true);
+            IFilter excludeFilter = new FilterExpression("*", false);
+            var filter = FilterExpression.Combine(includeFilter, excludeFilter);
+            Assert.IsFalse(FilterExpression.IsExcludeAllBeforeIncludes(filter));
+        }
+
+        [Test]
+        [Category("Filter")]
+        public static void IsExcludeAllBeforeIncludesTriggeredByExcludeAllThenIncludes()
+        {
+            // Exclude-all BEFORE include rules is misconfigured — the exclude-all
+            // swallows everything before includes can match
+            IFilter excludeFilter = new FilterExpression("*", false);
+            IFilter includeFilter = new FilterExpression("*.txt", true);
+            var filter = FilterExpression.Combine(excludeFilter, includeFilter);
+            Assert.IsTrue(FilterExpression.IsExcludeAllBeforeIncludes(filter));
+        }
+
+        [Test]
+        [Category("Filter")]
+        public static void IsExcludeAllBeforeIncludesNotTriggeredByEmptyFilter()
+        {
+            Assert.IsFalse(FilterExpression.IsExcludeAllBeforeIncludes(new FilterExpression()));
+            Assert.IsFalse(FilterExpression.IsExcludeAllBeforeIncludes(null));
+        }
+
+        [Test]
+        [Category("Filter")]
+        public static void IsExcludeAllBeforeIncludesDetectsJoinedExcludeAll()
+        {
+            // Two specific excludes joined together, one of which is "*", with no includes
+            var filter = FilterExpression.Combine(
+                new FilterExpression("*.tmp", false),
+                new FilterExpression("*", false));
+            Assert.IsTrue(FilterExpression.IsExcludeAllBeforeIncludes(filter));
         }
     }
 }

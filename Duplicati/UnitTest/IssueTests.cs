@@ -472,8 +472,9 @@ namespace Duplicati.UnitTest
             Directory.CreateDirectory(original_dir);
 
             // Backup the files
+            // The source contains only an empty folder, so the NoFilesInBackup warning is expected
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-                TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
+                TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]), ignoredWarnings: ["NoFilesInBackup"]);
 
             // Sleep to ensure timestamps are different
             await Task.Delay(1000);

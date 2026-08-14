@@ -29,7 +29,6 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using Duplicati.Library.Utility;
-using Uri = System.Uri;
 using System.Threading;
 
 namespace Duplicati.Library.Modules.Builtin

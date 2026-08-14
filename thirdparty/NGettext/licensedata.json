@@ -1,0 +1,7 @@
+{
+  "name": "NGettext",
+  "description": "NGettext is a .NET implementation of the GNU gettext internationalization library",
+  "link": "https://github.com/VitaliiTsilnyk/NGettext",
+  "license": "MIT",
+  "notes": ""
+}

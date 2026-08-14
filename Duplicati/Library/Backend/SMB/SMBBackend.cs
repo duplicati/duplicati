@@ -129,14 +129,14 @@ public class SMBBackend : IStreamingBackend, IFolderEnabledBackend, IRenameEnabl
         if (options == null)
             throw new ArgumentNullException(nameof(options));
 
-        var uri = new Utility.Uri(url);
+        var uri = new Utility.RelaxedUri(url);
         uri.RequireHost();
         _DnsName = uri.Host ?? "";
 
         var input = uri.Path.TrimEnd('/');
         var slashIndex = input.IndexOf('/');  // Find first slash to separate server and share if present.
 
-        var auth = AuthOptionsHelper.Parse(options, uri);
+        var auth = AuthOptionsHelper.Parse(options, uri.Username, uri.Password);
         var authDomain = options.GetValueOrDefault(AUTH_DOMAIN_OPTION);
         var transport = options.GetValueOrDefault(TRANSPORT_OPTION);
 

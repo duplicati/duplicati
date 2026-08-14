@@ -643,7 +643,8 @@ public class FilenClient : IDisposable
             using var request = new HttpRequestMessage(HttpMethod.Get, url);
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _authResult.ApiKey);
 
-            var response = await _httpClient.SendAsync(request, cancellationToken);
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+            response.EnsureSuccessStatusCode();
             var encrypted = await response.Content.ReadAsByteArrayAsync(cancellationToken);
 
             var decrypted = fileKey.DecryptData(file.Version, encrypted);

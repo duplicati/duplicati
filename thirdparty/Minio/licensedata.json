@@ -1,0 +1,7 @@
+{
+  "name": "Minio",
+  "description": "Minio Client SDK for .NET",
+  "link": "https://github.com/minio/minio-dotnet",
+  "license": "Apache-2.0",
+  "notes": ""
+}

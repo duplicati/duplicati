@@ -34,7 +34,6 @@ using Duplicati.Server;
 using Duplicati.Server.Database;
 using Duplicati.WebserverCore.Services;
 using Microsoft.Extensions.DependencyInjection;
-using Uri = System.Uri;
 
 namespace Duplicati.GUI.TrayIcon
 {

@@ -31,7 +31,6 @@ using System.Threading.Tasks;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
-using Uri = System.Uri;
 
 namespace Duplicati.Library.Modules.Builtin
 {

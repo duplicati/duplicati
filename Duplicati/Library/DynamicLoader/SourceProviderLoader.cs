@@ -69,7 +69,7 @@ namespace Duplicati.Library.DynamicLoader
             /// <returns>The instanciated SourceProvider or null if the url is not supported</returns>
             public ISourceProviderModule GetSourceProvider(string url, string mountPoint, Dictionary<string, string> options)
             {
-                var uri = new Utility.Uri(url);
+                var uri = new Utility.RelaxedUri(url);
 
                 LoadInterfaces();
 
@@ -107,7 +107,7 @@ namespace Duplicati.Library.DynamicLoader
             /// <returns>The supported commands or null if the url scheme was not supported</returns>
             public IReadOnlyList<ICommandLineArgument> GetSupportedCommands(string url)
             {
-                var uri = new Utility.Uri(url);
+                var uri = new Utility.RelaxedUri(url);
 
                 LoadInterfaces();
 
@@ -117,7 +117,7 @@ namespace Duplicati.Library.DynamicLoader
                     ISourceProviderModule b;
                     if (m_interfaces.TryGetValue(uri.Scheme, out b) && b != null)
                         return GetSupportedCommandsCached(b).ToList();
-                    else if (uri.Scheme.EndsWith("s", StringComparison.Ordinal))
+                    else if (uri.Scheme.EndsWith("s", StringComparison.OrdinalIgnoreCase))
                     {
                         var tmpscheme = uri.Scheme.Substring(0, uri.Scheme.Length - 1);
                         if (m_interfaces.TryGetValue(tmpscheme, out b) && b != null)
