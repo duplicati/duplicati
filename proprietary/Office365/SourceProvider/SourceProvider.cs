@@ -49,12 +49,12 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
     private readonly ConcurrentDictionary<string, bool> _enumerationCounter = new();
 
     /// <summary>
-    /// Cache of the resolved seat classification for a given user (by id). This is resolved
-    /// once per user and reused across the non-incrementing (gate) and incrementing (count)
-    /// license checks, as well as for item metadata, so that the shared-mailbox lookup is
-    /// performed at most once per user.
+    /// Cache of the resolved classification for a given user (by id). This is resolved once
+    /// per user and reused between the include filter and item metadata, so that the
+    /// shared-mailbox lookup is performed at most once per user. Seat counting does not use
+    /// this, as it is decided from the directory object alone.
     /// </summary>
-    private readonly ConcurrentDictionary<string, Task<UserSeatCategory>> _userSeatCache = new();
+    private readonly ConcurrentDictionary<string, Task<UserCategory>> _userCategoryCache = new();
 
     /// <summary>
     /// Cache of the resolved classification for a given site (by id). Resolved once per site
@@ -64,20 +64,26 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
     private readonly ConcurrentDictionary<string, Task<SiteCategory>> _siteCategoryCache = new();
 
     /// <summary>
-    /// The lazily built index of the sites that host the OneDrive of a disabled user.
+    /// The lazily built index of the sites that host the OneDrive of an unlicensed user.
     /// Built at most once per provider instance, and only if a personal site is encountered.
     /// </summary>
-    private Task<DisabledUserSiteIndex>? _disabledUserSiteIndex;
+    private Task<UnlicensedUserSiteIndex>? _unlicensedUserSiteIndex;
 
     /// <summary>
-    /// Guards the creation of <see cref="_disabledUserSiteIndex"/>.
+    /// Guards the creation of <see cref="_unlicensedUserSiteIndex"/>.
     /// </summary>
-    private readonly object _disabledUserSiteIndexLock = new();
+    private readonly object _unlicensedUserSiteIndexLock = new();
 
     /// <summary>
-    /// Whether a warning has been issued about a failed disabled-user lookup.
+    /// Whether a warning has been issued about a failed unlicensed-user lookup.
     /// </summary>
-    private int _disabledUserLookupWarningIssued = 0;
+    private int _unlicensedUserLookupWarningIssued = 0;
+
+    /// <summary>
+    /// Whether a warning has been issued about a user whose licensing state could not be
+    /// determined. See <see cref="UserCountsAsSeat"/>.
+    /// </summary>
+    private int _userLicenseStateWarningIssued = 0;
 
     /// <summary>
     /// The current number of users that has been enumerated.
@@ -302,41 +308,52 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
     }
 
     /// <summary>
-    /// Determines whether the given user consumes a Duplicati user seat.
-    /// Regular user mailboxes always count. Shared, room and equipment mailboxes only
-    /// count when they have additional storage, i.e. an assigned Exchange Online license.
+    /// Determines whether the account has one or more assigned Microsoft 365 licenses, or
+    /// <c>null</c> when that cannot be determined from the given directory object.
     /// </summary>
-    /// <param name="user">The user to classify.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns><c>true</c> if the user should count as a seat; otherwise <c>false</c>.</returns>
-    internal async Task<bool> UserCountsAsSeatAsync(GraphUser user, CancellationToken cancellationToken)
-    {
-        // Restores are unlimited; avoid any extra Graph calls for classification.
-        if (UsedForRestoreOperation)
-            return true;
+    /// <param name="user">The user to test.</param>
+    /// <returns>
+    /// <c>true</c> if the account has at least one assigned license, <c>false</c> if it has
+    /// none, and <c>null</c> if the licensing state is not known.
+    /// </returns>
+    private static bool? HasAssignedLicense(GraphUser user)
+        => user.AssignedLicenses == null
+            ? null
+            : user.AssignedLicenses.Count > 0;
 
-        var category = await ClassifyUserAsync(user, cancellationToken).ConfigureAwait(false);
-        return SeatCategoryCountsAsSeat(category);
+    /// <summary>
+    /// Determines whether the given user consumes a Duplicati user seat, which is the case
+    /// exactly when the account has one or more assigned Microsoft 365 licenses. An account
+    /// without a license cannot be used and is not paid for in the tenant, so it does not
+    /// consume a seat here either.
+    /// </summary>
+    /// <param name="user">The user to test.</param>
+    /// <returns><c>true</c> if the user should count as a seat; otherwise <c>false</c>.</returns>
+    internal bool UserCountsAsSeat(GraphUser user)
+    {
+        var licensed = HasAssignedLicense(user);
+        if (licensed != null)
+            return licensed.Value;
+
+        // The licensing state is only unknown if the user object was obtained without the
+        // assignedLicenses property, which is a defect in the caller rather than a property of
+        // the tenant. Count the seat rather than give it away, and report it once so that the
+        // cause is visible instead of silently deciding that no user consumes a seat.
+        if (Interlocked.Exchange(ref _userLicenseStateWarningIssued, 1) == 0)
+            Library.Logging.Log.WriteWarningMessage(LOGTAG, "UserLicenseStateUnavailable", null, Strings.UserLicenseStateUnavailable(user.Id));
+
+        return true;
     }
 
     /// <summary>
-    /// Determines whether the given seat category consumes a licensed seat. Only shared,
-    /// room and equipment mailboxes without additional storage do not consume a seat; every
-    /// other category (including unlicensed and undetermined regular mailboxes) counts, so
-    /// real user seats are never under-counted.
-    /// </summary>
-    private static bool SeatCategoryCountsAsSeat(UserSeatCategory category)
-        => category != UserSeatCategory.SharedMailboxWithoutStorage;
-
-    /// <summary>
-    /// Returns the cached seat classification for a user if it has already been resolved,
+    /// Returns the cached classification for a user if it has already been resolved,
     /// without triggering any Graph API call. Returns <c>null</c> when the classification has
     /// not been resolved yet (or has not completed successfully).
     /// </summary>
     /// <param name="userId">The user id.</param>
-    /// <returns>The resolved seat category, or <c>null</c> if not yet available.</returns>
-    internal UserSeatCategory? TryGetCachedUserSeatCategory(string userId)
-        => _userSeatCache.TryGetValue(userId, out var task) && task.IsCompletedSuccessfully
+    /// <returns>The resolved user category, or <c>null</c> if not yet available.</returns>
+    internal UserCategory? TryGetCachedUserCategory(string userId)
+        => _userCategoryCache.TryGetValue(userId, out var task) && task.IsCompletedSuccessfully
             ? task.Result
             : null;
 
@@ -364,9 +381,11 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
             || purpose.Equals("others", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
-    /// The seat classification of a user, used for reporting item counts.
+    /// The classification of a user, used for the include filter, for item metadata and for
+    /// reporting item counts. It does not decide whether the user consumes a seat; see
+    /// <see cref="UserCountsAsSeat"/> for that.
     /// </summary>
-    internal enum UserSeatCategory
+    internal enum UserCategory
     {
         /// <summary>A regular user mailbox with one or more assigned licenses.</summary>
         Licensed,
@@ -381,8 +400,8 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
     /// <summary>
     /// The classification of a SharePoint site, used for reporting item counts.
     /// Determined on a best-effort basis from the Microsoft Graph <c>site</c> object, plus a
-    /// lookup of the tenant's disabled users to separate out
-    /// <see cref="PersonalDisabledUser"/>.
+    /// lookup of the tenant's unlicensed users to separate out
+    /// <see cref="PersonalUnlicensedUser"/>.
     /// </summary>
     internal enum SiteCategory
     {
@@ -393,26 +412,29 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
         /// <summary>A modern communication site.</summary>
         Communication,
         /// <summary>
-        /// A personal (OneDrive for Business) site whose owner is an enabled account, or could
-        /// not be determined.
+        /// A personal (OneDrive for Business) site whose owner holds a Microsoft 365 license,
+        /// or could not be determined.
         /// </summary>
-        Personal,
+        PersonalLicensedUser,
         /// <summary>Any other or undetermined site type.</summary>
         Other,
-        /// <summary>A personal (OneDrive for Business) site owned by a disabled user account.</summary>
-        PersonalDisabledUser,
+        /// <summary>
+        /// A personal (OneDrive for Business) site owned by a user account without an assigned
+        /// Microsoft 365 license.
+        /// </summary>
+        PersonalUnlicensedUser,
     }
 
     /// <summary>
-    /// Maps a <see cref="UserSeatCategory"/> to its corresponding include-filter flag.
+    /// Maps a <see cref="UserCategory"/> to its corresponding include-filter flag.
     /// </summary>
-    private static SourceItems.Office365UserClassification ToClassificationFlag(UserSeatCategory category)
+    private static SourceItems.Office365UserClassification ToClassificationFlag(UserCategory category)
         => category switch
         {
-            UserSeatCategory.Licensed => SourceItems.Office365UserClassification.Licensed,
-            UserSeatCategory.Unlicensed => SourceItems.Office365UserClassification.Unlicensed,
-            UserSeatCategory.SharedMailboxWithStorage => SourceItems.Office365UserClassification.SharedMailboxWithStorage,
-            UserSeatCategory.SharedMailboxWithoutStorage => SourceItems.Office365UserClassification.SharedMailboxWithoutStorage,
+            UserCategory.Licensed => SourceItems.Office365UserClassification.Licensed,
+            UserCategory.Unlicensed => SourceItems.Office365UserClassification.Unlicensed,
+            UserCategory.SharedMailboxWithStorage => SourceItems.Office365UserClassification.SharedMailboxWithStorage,
+            UserCategory.SharedMailboxWithoutStorage => SourceItems.Office365UserClassification.SharedMailboxWithoutStorage,
             _ => SourceItems.Office365UserClassification.Licensed
         };
 
@@ -420,21 +442,21 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
     /// Maps a <see cref="SiteCategory"/> to its corresponding include-filter flag.
     /// </summary>
     /// <remarks>
-    /// <see cref="SiteCategory.Personal"/> maps to the enabled-owner flag rather than to the
-    /// <see cref="SourceItems.Office365SiteClassification.Personal"/> alias, because the alias
-    /// covers both owner states and would make a filter that excludes only one of them match
-    /// anyway. A site whose owner could not be determined is therefore filtered as if the owner
-    /// were enabled, which is the same assumption the seat counting makes.
+    /// <see cref="SiteCategory.PersonalLicensedUser"/> maps to the licensed-owner flag rather
+    /// than to the <see cref="SourceItems.Office365SiteClassification.Personal"/> alias, because
+    /// the alias covers both owner states and would make a filter that excludes only one of them
+    /// match anyway. A site whose owner could not be determined is therefore filtered as if the
+    /// owner were licensed, which is the same assumption the seat counting makes.
     /// </remarks>
     private static SourceItems.Office365SiteClassification ToClassificationFlag(SiteCategory category)
         => category switch
         {
-            SiteCategory.Group => SourceItems.Office365SiteClassification.Group,
-            SiteCategory.Classic => SourceItems.Office365SiteClassification.Classic,
-            SiteCategory.Communication => SourceItems.Office365SiteClassification.Communication,
-            SiteCategory.Personal => SourceItems.Office365SiteClassification.PersonalEnabledUser,
-            SiteCategory.PersonalDisabledUser => SourceItems.Office365SiteClassification.PersonalDisabledUser,
-            _ => SourceItems.Office365SiteClassification.Other
+            SiteCategory.Group => Office365SiteClassification.Group,
+            SiteCategory.Classic => Office365SiteClassification.Classic,
+            SiteCategory.Communication => Office365SiteClassification.Communication,
+            SiteCategory.PersonalLicensedUser => Office365SiteClassification.PersonalLicensedUser,
+            SiteCategory.PersonalUnlicensedUser => Office365SiteClassification.PersonalUnlicensedUser,
+            _ => Office365SiteClassification.Other
         };
 
     /// <summary>
@@ -498,8 +520,8 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns><c>true</c> if the site should be included; otherwise <c>false</c>.</returns>
     /// <remarks>
-    /// Separating a personal site owned by a disabled user from one owned by an active user
-    /// requires the disabled-user index, so when the include filter covers every
+    /// Separating a personal site owned by an unlicensed user from one owned by a licensed user
+    /// requires the unlicensed-user index, so when the include filter covers every
     /// classification the test is a tautology and is answered without classifying at all.
     /// That is the default configuration.
     /// </remarks>
@@ -514,8 +536,10 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
 
     /// <summary>
     /// Determines whether the given site consumes a Duplicati site seat. Personal (OneDrive)
-    /// sites owned by a disabled user account do not, since the account has been offboarded and
-    /// is no longer an active seat.
+    /// sites owned by a user account without an assigned Microsoft 365 license do not, which is
+    /// the same rule <see cref="UserCountsAsSeat"/> applies to the account itself: a seat is
+    /// consumed where Microsoft charges the tenant for the account. A site that is not personal
+    /// has no single owning account to attribute it to and therefore always counts.
     /// </summary>
     /// <param name="site">The site to classify.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
@@ -532,12 +556,12 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
 
     /// <summary>
     /// Determines whether the given site category consumes a licensed seat. Only personal
-    /// sites that could be positively attributed to a disabled user account are exempt; every
+    /// sites that could be positively attributed to an unlicensed user account are exempt; every
     /// other category (including personal sites whose owner could not be determined) counts,
     /// so site seats are never under-counted.
     /// </summary>
     private static bool SiteCategoryCountsAsSeat(SiteCategory category)
-        => category != SiteCategory.PersonalDisabledUser;
+        => category != SiteCategory.PersonalUnlicensedUser;
 
     /// <summary>
     /// Returns the cached classification for a site if it has already been resolved, without
@@ -552,40 +576,44 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
             : null;
 
     /// <summary>
-    /// Classifies a user into one of the <see cref="UserSeatCategory"/> buckets.
-    /// A licensed user (with assigned licenses) is <see cref="UserSeatCategory.Licensed"/>,
+    /// Classifies a user into one of the <see cref="UserCategory"/> buckets.
+    /// A licensed user (with assigned licenses) is <see cref="UserCategory.Licensed"/>,
     /// unless it is a shared/room/equipment mailbox, in which case it is
-    /// <see cref="UserSeatCategory.SharedMailboxWithStorage"/>. Unlicensed regular mailboxes
-    /// are <see cref="UserSeatCategory.Unlicensed"/>, and unlicensed shared mailboxes are
-    /// <see cref="UserSeatCategory.SharedMailboxWithoutStorage"/>.
+    /// <see cref="UserCategory.SharedMailboxWithStorage"/>. Unlicensed regular mailboxes
+    /// are <see cref="UserCategory.Unlicensed"/>, and unlicensed shared mailboxes are
+    /// <see cref="UserCategory.SharedMailboxWithoutStorage"/>.
     /// </summary>
     /// <param name="user">The user to classify.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>The user seat category.</returns>
+    /// <returns>The user category.</returns>
     /// <remarks>
-    /// The result is resolved once per user and cached, so the underlying
-    /// <c>mailboxSettings/userPurpose</c> lookup is performed at most once per user and is
-    /// shared between seat counting, the count operation and item metadata.
+    /// This costs one <c>mailboxSettings/userPurpose</c> Graph request per user, so it is only
+    /// resolved where the exact bucket is actually needed: a narrowed include filter, the
+    /// item metadata the user interface displays, and the count operation. Seat counting does
+    /// not use it. The result is resolved once per user and cached, so the lookup is performed
+    /// at most once per user and is shared between those callers.
     /// </remarks>
-    internal Task<UserSeatCategory> ClassifyUserAsync(GraphUser user, CancellationToken cancellationToken)
+    internal Task<UserCategory> ClassifyUserAsync(GraphUser user, CancellationToken cancellationToken)
     {
-        var task = _userSeatCache.GetOrAdd(user.Id, _ => ResolveUserSeatCategoryAsync(user, cancellationToken));
+        var task = _userCategoryCache.GetOrAdd(user.Id, _ => ResolveUserCategoryAsync(user, cancellationToken));
 
         // The cached task captured the cancellation token of whichever caller asked first, so a
         // cancelled lookup would otherwise stay cached and keep failing for the lifetime of the
         // provider. Evict it so the next caller retries with its own token.
         if (task.IsCanceled || task.IsFaulted)
-            _userSeatCache.TryRemove(new KeyValuePair<string, Task<UserSeatCategory>>(user.Id, task));
+            _userCategoryCache.TryRemove(new KeyValuePair<string, Task<UserCategory>>(user.Id, task));
 
         return task;
     }
 
     /// <summary>
-    /// Resolves the seat classification for a user. See <see cref="ClassifyUserAsync"/>.
+    /// Resolves the classification for a user. See <see cref="ClassifyUserAsync"/>.
     /// </summary>
-    private async Task<UserSeatCategory> ResolveUserSeatCategoryAsync(GraphUser user, CancellationToken cancellationToken)
+    private async Task<UserCategory> ResolveUserCategoryAsync(GraphUser user, CancellationToken cancellationToken)
     {
-        var hasStorage = user.AssignedLicenses is { Count: > 0 };
+        // An unknown licensing state is treated as licensed, so that the bucket agrees with the
+        // seat count, which counts the user in that case. See <see cref="HasAssignedLicense"/>.
+        var hasLicense = HasAssignedLicense(user) ?? true;
 
         string? purpose = null;
         try
@@ -601,13 +629,13 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
         var isShared = !string.IsNullOrWhiteSpace(purpose) && IsNonUserMailboxPurpose(purpose);
 
         if (isShared)
-            return hasStorage
-                ? UserSeatCategory.SharedMailboxWithStorage
-                : UserSeatCategory.SharedMailboxWithoutStorage;
+            return hasLicense
+                ? UserCategory.SharedMailboxWithStorage
+                : UserCategory.SharedMailboxWithoutStorage;
 
-        return hasStorage
-            ? UserSeatCategory.Licensed
-            : UserSeatCategory.Unlicensed;
+        return hasLicense
+            ? UserCategory.Licensed
+            : UserCategory.Unlicensed;
     }
 
     /// <summary>
@@ -620,22 +648,29 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
     /// </summary>
     /// <param name="site">The site to classify.</param>
     /// <returns>The site category.</returns>
+    /// <remarks>
+    /// The site object says nothing about the licensing state of the owner of a personal site,
+    /// so every personal site is reported as <see cref="SiteCategory.PersonalLicensedUser"/>
+    /// here. <see cref="ResolveSiteCategoryAsync"/> refines that once the owner is known, and
+    /// leaving it as the licensed bucket until then means an unresolved owner counts as a seat
+    /// rather than being given away.
+    /// </remarks>
     internal static SiteCategory ClassifySite(GraphSite site)
     {
         if (site.IsPersonalSite == true)
-            return SiteCategory.Personal;
+            return SiteCategory.PersonalLicensedUser;
 
         // OneDrive personal sites are hosted on the "-my" SharePoint host. Note that the
         // siteCollection facet is only populated on the root site of a site collection, so
         // this is a fallback for the root sites only.
         var host = site.SiteCollection?.Hostname;
         if (!string.IsNullOrWhiteSpace(host) && host.Contains("-my.", StringComparison.OrdinalIgnoreCase))
-            return SiteCategory.Personal;
+            return SiteCategory.PersonalLicensedUser;
 
         if (!string.IsNullOrWhiteSpace(site.WebUrl)
             && (site.WebUrl.Contains("-my.", StringComparison.OrdinalIgnoreCase)
                 || site.WebUrl.Contains("/personal/", StringComparison.OrdinalIgnoreCase)))
-            return SiteCategory.Personal;
+            return SiteCategory.PersonalLicensedUser;
 
         // The Graph site object does not expose the web template, so group/classic/
         // communication cannot be distinguished reliably from Graph alone.
@@ -644,13 +679,13 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
 
     /// <summary>
     /// Classifies a SharePoint site, additionally separating personal (OneDrive) sites owned
-    /// by a disabled user account into <see cref="SiteCategory.PersonalDisabledUser"/>.
+    /// by an unlicensed user account into <see cref="SiteCategory.PersonalUnlicensedUser"/>.
     /// </summary>
     /// <param name="site">The site to classify.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The site category.</returns>
     /// <remarks>
-    /// The result is resolved once per site and cached, so the disabled-user index is
+    /// The result is resolved once per site and cached, so the unlicensed-user index is
     /// consulted at most once per site and is shared between seat counting, the count
     /// operation and item metadata.
     /// </remarks>
@@ -663,7 +698,7 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
             return Task.FromResult(ClassifySite(site));
 
         // A site without an id cannot be cached, as the key would be shared with every other
-        // id-less site. The disabled-user index is cached independently of this, so resolving
+        // id-less site. The unlicensed-user index is cached independently of this, so resolving
         // it directly costs no more than a cache miss.
         if (string.IsNullOrWhiteSpace(site.Id))
             return ResolveSiteCategoryAsync(site, cancellationToken);
@@ -687,54 +722,62 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
         var category = ClassifySite(site);
 
         // Only personal sites have a single owning user account, so nothing else can be
-        // attributed to a disabled user.
-        if (category != SiteCategory.Personal)
+        // attributed to an unlicensed user.
+        if (category != SiteCategory.PersonalLicensedUser)
             return category;
 
-        var index = await GetDisabledUserSiteIndexAsync(cancellationToken).ConfigureAwait(false);
+        var index = await GetUnlicensedUserSiteIndexAsync(cancellationToken).ConfigureAwait(false);
         return index.Contains(site)
-            ? SiteCategory.PersonalDisabledUser
-            : SiteCategory.Personal;
+            ? SiteCategory.PersonalUnlicensedUser
+            : SiteCategory.PersonalLicensedUser;
     }
 
     /// <summary>
-    /// Gets the index of the sites hosting the OneDrive of a disabled user, building it on
+    /// Gets the index of the sites hosting the OneDrive of an unlicensed user, building it on
     /// first use.
     /// </summary>
-    private Task<DisabledUserSiteIndex> GetDisabledUserSiteIndexAsync(CancellationToken cancellationToken)
+    private Task<UnlicensedUserSiteIndex> GetUnlicensedUserSiteIndexAsync(CancellationToken cancellationToken)
     {
-        lock (_disabledUserSiteIndexLock)
+        lock (_unlicensedUserSiteIndexLock)
         {
             // A cancelled build captured the token of whichever caller asked first, so it must
             // not stay cached; rebuild it with the current caller's token instead.
-            var existing = _disabledUserSiteIndex;
+            var existing = _unlicensedUserSiteIndex;
             if (existing != null && !existing.IsCanceled && !existing.IsFaulted)
                 return existing;
 
-            return _disabledUserSiteIndex = BuildDisabledUserSiteIndexAsync(cancellationToken);
+            return _unlicensedUserSiteIndex = BuildUnlicensedUserSiteIndexAsync(cancellationToken);
         }
     }
 
     /// <summary>
-    /// Builds the index of the sites hosting the OneDrive of a disabled user.
+    /// Builds the index of the sites hosting the OneDrive of an unlicensed user.
     /// </summary>
     /// <remarks>
-    /// The whole index costs a single filtered listing of the tenant's disabled accounts,
-    /// selecting nothing but the user principal name. No request is made per account and none
-    /// per site: a personal site is matched to its owner through the site URL, because
+    /// The whole index costs a single listing of the tenant's accounts, selecting nothing but
+    /// the user principal name and the assigned licenses. No request is made per account and
+    /// none per site: a personal site is matched to its owner through the site URL, because
     /// SharePoint derives the URL of a personal site from the owner's user principal name (see
     /// <see cref="SanitizeUserPrincipalName"/>). Asking Graph instead — either which site hosts
-    /// each disabled user's OneDrive, or who owns each personal site — would cost one request
-    /// per account or per site, which is not acceptable while enumerating for display.
+    /// each account's OneDrive, or who owns each personal site — would cost one request per
+    /// account or per site, which is not acceptable while enumerating for display.
+    /// <para>
+    /// The unlicensed accounts cannot be selected server-side the way the disabled ones could:
+    /// filtering on <c>assignedLicenses</c> requires an advanced directory query, which needs a
+    /// <c>ConsistencyLevel</c> request header that the paged reader does not send. The listing is
+    /// therefore unfiltered and the licensing state is evaluated here, which costs one page per
+    /// <see cref="APIHelper.BIG_PAGE_SIZE"/> accounts in the tenant. The index is built at most
+    /// once per provider instance, and only if a personal site is encountered at all.
+    /// </para>
     /// <para>
     /// The URL is derived from the user principal name at the time the OneDrive is provisioned
-    /// and does not follow a later rename, so a renamed disabled account is not recognized. Such
-    /// a site keeps counting as a seat, which over-counts rather than under-counts, matching how
-    /// every other unresolved case is treated here.
+    /// and does not follow a later rename, so a renamed account is not recognized. Such a site
+    /// keeps counting as a seat, which over-counts rather than under-counts, matching how every
+    /// other unresolved case is treated here.
     /// </para>
     /// <para>
     /// A failure never propagates: the index is then built from whatever could be read, which
-    /// attributes the remaining personal sites to an active user and so over-counts seats
+    /// attributes the remaining personal sites to a licensed user and so over-counts seats
     /// rather than under-counting them. That incomplete index is still cached, because
     /// rebuilding it for every personal site would multiply the cost of a failure that is
     /// unlikely to be transient; it is retried on the next operation, since the index does not
@@ -742,14 +785,19 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
     /// warning so the over-counting is not silent.
     /// </para>
     /// </remarks>
-    private async Task<DisabledUserSiteIndex> BuildDisabledUserSiteIndexAsync(CancellationToken cancellationToken)
+    private async Task<UnlicensedUserSiteIndex> BuildUnlicensedUserSiteIndexAsync(CancellationToken cancellationToken)
     {
         var sanitizedUserPrincipalNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         try
         {
-            await foreach (var user in RootApi.ListDisabledUsersAsync(cancellationToken).ConfigureAwait(false))
+            await foreach (var user in RootApi.ListUserLicenseStatesAsync(cancellationToken).ConfigureAwait(false))
             {
                 cancellationToken.ThrowIfCancellationRequested();
+
+                // Only a positively unlicensed account is exempt. An account whose licensing
+                // state could not be read is left out of the index and so keeps its seat.
+                if (HasAssignedLicense(user) != false)
+                    continue;
 
                 var sanitized = SanitizeUserPrincipalName(user.UserPrincipalName);
                 if (sanitized != null)
@@ -760,14 +808,14 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
         {
             // Paging may fail part-way through, in which case the users listed so far are still
             // usable; only the remaining ones keep counting as a seat.
-            if (Interlocked.Exchange(ref _disabledUserLookupWarningIssued, 1) == 0)
-                Library.Logging.Log.WriteWarningMessage(LOGTAG, "DisabledUserLookupFailed", ex,
+            if (Interlocked.Exchange(ref _unlicensedUserLookupWarningIssued, 1) == 0)
+                Library.Logging.Log.WriteWarningMessage(LOGTAG, "UnlicensedUserLookupFailed", ex,
                     sanitizedUserPrincipalNames.Count == 0
-                        ? Strings.DisabledUserLookupFailed
-                        : Strings.DisabledUserLookupIncomplete(sanitizedUserPrincipalNames.Count));
+                        ? Strings.UnlicensedUserLookupFailed
+                        : Strings.UnlicensedUserLookupIncomplete(sanitizedUserPrincipalNames.Count));
         }
 
-        return new DisabledUserSiteIndex(sanitizedUserPrincipalNames);
+        return new UnlicensedUserSiteIndex(sanitizedUserPrincipalNames);
     }
 
     /// <summary>
@@ -818,19 +866,19 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
     }
 
     /// <summary>
-    /// A lookup of the sites that host the OneDrive of a disabled user account, keyed by the
+    /// A lookup of the sites that host the OneDrive of an unlicensed user account, keyed by the
     /// sanitized user principal name that SharePoint puts in the URL of a personal site.
     /// </summary>
     /// <param name="sanitizedUserPrincipalNames">
-    /// The sanitized user principal names of the disabled accounts.
+    /// The sanitized user principal names of the unlicensed accounts.
     /// </param>
-    private sealed class DisabledUserSiteIndex(HashSet<string> sanitizedUserPrincipalNames)
+    private sealed class UnlicensedUserSiteIndex(HashSet<string> sanitizedUserPrincipalNames)
     {
         /// <summary>
-        /// Determines whether the given site hosts the OneDrive of a disabled user account.
+        /// Determines whether the given site hosts the OneDrive of an unlicensed user account.
         /// </summary>
         /// <param name="site">The site to test.</param>
-        /// <returns><c>true</c> if the site belongs to a disabled user; otherwise <c>false</c>.</returns>
+        /// <returns><c>true</c> if the site belongs to an unlicensed user; otherwise <c>false</c>.</returns>
         public bool Contains(GraphSite site)
         {
             var owner = GetPersonalSiteOwnerSegment(site.WebUrl);
@@ -847,7 +895,9 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
     /// <param name="user">The user to classify.</param>
     /// <returns>The classification string suitable for item metadata.</returns>
     internal static string ClassifyUserFromDirectory(GraphUser user)
-        => user.AssignedLicenses is { Count: > 0 } ? "Licensed" : "Unlicensed";
+        // An unknown licensing state is reported as licensed, for the same reason it counts as
+        // a seat. See <see cref="HasAssignedLicense"/>.
+        => (HasAssignedLicense(user) ?? true) ? "Licensed" : "Unlicensed";
 
     /// <summary>
     /// Classifies a group using only the data already present on the directory object,
@@ -867,8 +917,8 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
     /// While seats remain, <see cref="LicenseApprovedForEntry"/> approves the entry whether or
     /// not it consumes one. Callers that only need the approval answer, and that do not
     /// increment the counters, can therefore skip resolving <c>countsAsSeat</c> until this
-    /// returns <c>true</c>. That matters for users, where resolving it costs a Graph request
-    /// per user.
+    /// returns <c>true</c>. That matters for sites, where resolving it requires the
+    /// unlicensed-user index.
     /// </remarks>
     internal bool SeatLimitReached(Office365MetaType type)
     {
@@ -896,8 +946,8 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
     /// <param name="increment">Whether to increment the counter if the license is approved.</param>
     /// <param name="countsAsSeat">
     /// Whether this entry consumes a licensed seat. When <c>false</c>, the entry is always
-    /// approved and never counted against the seat limit (used for shared mailboxes without
-    /// additional storage).
+    /// approved and never counted against the seat limit (used for unlicensed users, for
+    /// security groups and distribution lists, and for the personal sites of unlicensed users).
     /// </param>
     /// <returns><c>true</c> if the license is approved; otherwise, <c>false</c>.</returns>
     internal bool LicenseApprovedForEntry(string path, Office365MetaType type, string id, bool increment, bool countsAsSeat = true)
@@ -906,8 +956,8 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
         if (UsedForRestoreOperation)
             return true;
 
-        // Entries that do not consume a seat (e.g. shared mailboxes without extra storage)
-        // are always approved and never counted against the seat limit.
+        // Entries that do not consume a seat (e.g. users without an assigned license) are
+        // always approved and never counted against the seat limit.
         if (!countsAsSeat)
             return true;
 

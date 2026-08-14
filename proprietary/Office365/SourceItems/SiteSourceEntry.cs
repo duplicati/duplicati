@@ -24,7 +24,7 @@ internal class SiteSourceEntry(SourceProvider provider, string parentPath, Graph
             { "o365:Hostname", site.SiteCollection?.Hostname },
             { "o365:PersonalSite", site.IsPersonalSite?.ToString() },
             // Only the user interface consumes the classification, and resolving it may require
-            // the disabled-user lookup, so a backup does not pay for it.
+            // the unlicensed-user lookup, so a backup does not pay for it.
             { "o365:Classification", provider.EnumerationMode ? await GetSiteClassificationAsync(cancellationToken).ConfigureAwait(false) : null }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))
@@ -32,12 +32,12 @@ internal class SiteSourceEntry(SourceProvider provider, string parentPath, Graph
 
     /// <summary>
     /// Gets the classification string for treeview display, using the full classification
-    /// (which separates personal sites of disabled users) and falling back to the
+    /// (which separates personal sites of unlicensed users) and falling back to the
     /// site-object-only classification if it cannot be resolved.
     /// </summary>
     /// <remarks>
-    /// The full classification may require the disabled-user lookup, which costs a single
-    /// listing of the tenant's disabled accounts and is then shared by every other site. It is
+    /// The full classification may require the unlicensed-user lookup, which costs a single
+    /// listing of the tenant's accounts and is then shared by every other site. It is
     /// resolved here rather than while enumerating so that a listing that displays no personal
     /// site does not pay for it at all.
     /// </remarks>
@@ -62,7 +62,8 @@ internal class SiteSourceEntry(SourceProvider provider, string parentPath, Graph
 
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        // Personal sites belonging to a disabled user account do not consume a seat.
+        // Personal sites belonging to a user account without an assigned Microsoft 365 license
+        // do not consume a seat, the same way the account itself does not.
         var countsAsSeat = await provider.SiteCountsAsSeatAsync(site, cancellationToken).ConfigureAwait(false);
 
         if (!provider.LicenseApprovedForEntry(parentPath, Office365MetaType.Sites, site.Id, true, countsAsSeat))

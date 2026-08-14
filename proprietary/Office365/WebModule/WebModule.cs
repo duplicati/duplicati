@@ -170,16 +170,16 @@ public class WebModule : IWebModule
 
             switch (await client.ClassifyUserAsync(user, cancellationToken).ConfigureAwait(false))
             {
-                case SourceProvider.UserSeatCategory.Licensed:
+                case SourceProvider.UserCategory.Licensed:
                     result.Users.Licensed++;
                     break;
-                case SourceProvider.UserSeatCategory.Unlicensed:
+                case SourceProvider.UserCategory.Unlicensed:
                     result.Users.Unlicensed++;
                     break;
-                case SourceProvider.UserSeatCategory.SharedMailboxWithStorage:
+                case SourceProvider.UserCategory.SharedMailboxWithStorage:
                     result.Users.SharedMailboxWithStorage++;
                     break;
-                case SourceProvider.UserSeatCategory.SharedMailboxWithoutStorage:
+                case SourceProvider.UserCategory.SharedMailboxWithoutStorage:
                     result.Users.SharedMailboxWithoutStorage++;
                     break;
             }
@@ -214,11 +214,11 @@ public class WebModule : IWebModule
                 case SourceProvider.SiteCategory.Communication:
                     result.Sites.Communication++;
                     break;
-                case SourceProvider.SiteCategory.Personal:
-                    result.Sites.Personal++;
+                case SourceProvider.SiteCategory.PersonalLicensedUser:
+                    result.Sites.PersonalLicensedUser++;
                     break;
-                case SourceProvider.SiteCategory.PersonalDisabledUser:
-                    result.Sites.PersonalDisabledUser++;
+                case SourceProvider.SiteCategory.PersonalUnlicensedUser:
+                    result.Sites.PersonalUnlicensedUser++;
                     break;
                 default:
                     result.Sites.Other++;
@@ -289,7 +289,7 @@ public class WebModule : IWebModule
 
     /// <summary>
     /// The site item-count breakdown. Every category requires a seat except
-    /// <see cref="PersonalDisabledUser"/>.
+    /// <see cref="PersonalUnlicensedUser"/>.
     /// </summary>
     private sealed class SiteCounts
     {
@@ -306,10 +306,13 @@ public class WebModule : IWebModule
         public int Communication { get; set; }
 
         [System.Text.Json.Serialization.JsonPropertyName("personal")]
-        public int Personal { get; set; }
+        public int Personal => PersonalLicensedUser + PersonalUnlicensedUser;
 
-        [System.Text.Json.Serialization.JsonPropertyName("personalDisabledUser")]
-        public int PersonalDisabledUser { get; set; }
+        [System.Text.Json.Serialization.JsonPropertyName("personalLicensedUser")]
+        public int PersonalLicensedUser { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("personalUnlicensedUser")]
+        public int PersonalUnlicensedUser { get; set; }
 
         [System.Text.Json.Serialization.JsonPropertyName("other")]
         public int Other { get; set; }

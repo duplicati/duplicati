@@ -29,28 +29,30 @@ partial class SourceProvider
         }
 
         /// <summary>
-        /// Lists the users in the tenant whose account is disabled.
+        /// Lists the users in the tenant, carrying only what is needed to decide whether an
+        /// account holds a Microsoft 365 license and which personal site belongs to it.
         /// </summary>
         /// <remarks>
-        /// The filtering is done server-side and only the user principal name is selected, so
-        /// the cost is proportional to the number of disabled users rather than to the size of
-        /// the tenant. <c>$orderby</c> is deliberately omitted: combining it with a filter on
-        /// <c>accountEnabled</c> requires an advanced directory query, and the result is only
-        /// used to build a lookup set where the ordering is irrelevant.
+        /// The licensing state cannot be filtered server-side: a filter on
+        /// <c>assignedLicenses</c> is an advanced directory query and requires a
+        /// <c>ConsistencyLevel</c> request header, which the paged reader does not send. The
+        /// caller therefore evaluates it, and the cost is proportional to the size of the tenant
+        /// rather than to the number of unlicensed accounts. Only three properties are selected
+        /// to keep the pages small. <c>$orderby</c> is deliberately omitted, as the result is
+        /// only used to build a lookup set where the ordering is irrelevant.
         /// </remarks>
         /// <param name="ct">The cancellation token.</param>
         /// <returns>
-        /// An asynchronous enumerable of the disabled users, carrying only the id and the user
-        /// principal name.
+        /// An asynchronous enumerable of the users, carrying only the id, the user principal name
+        /// and the assigned licenses.
         /// </returns>
-        internal IAsyncEnumerable<GraphUser> ListDisabledUsersAsync(CancellationToken ct)
+        internal IAsyncEnumerable<GraphUser> ListUserLicenseStatesAsync(CancellationToken ct)
         {
             var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
 
             var url =
                 $"{baseUrl}/v1.0/users" +
-                $"?$filter={Uri.EscapeDataString("accountEnabled eq false")}" +
-                $"&$select={Uri.EscapeDataString("id,userPrincipalName")}" +
+                $"?$select={Uri.EscapeDataString("id,userPrincipalName,assignedLicenses")}" +
                 $"&$top={APIHelper.BIG_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphUser>(url, ct);

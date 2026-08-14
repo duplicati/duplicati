@@ -71,13 +71,9 @@ internal class MetaRootSourceEntry(SourceProvider provider, string mountPoint, O
                     if (!await provider.IsUserClassificationIncludedAsync(user, cancellationToken).ConfigureAwait(false))
                         continue;
 
-                    // Shared mailboxes without additional storage do not consume a seat, but
-                    // determining that costs a Graph call per user and the gate below only
-                    // needs the answer once the seat limit has been reached. Until then, assume
-                    // the user consumes a seat: the gate approves either way, and nothing is
-                    // counted here because this check does not increment.
-                    var countsAsSeat = !provider.SeatLimitReached(type)
-                        || await provider.UserCountsAsSeatAsync(user, cancellationToken).ConfigureAwait(false);
+                    // Only licensed accounts consume a seat, which the directory object
+                    // already answers without any Graph call.
+                    var countsAsSeat = provider.UserCountsAsSeat(user);
 
                     if (provider.LicenseApprovedForEntry(Path, type, user.Id, false, countsAsSeat))
                         yield return new UserSourceEntry(provider, Path, user);
@@ -129,8 +125,8 @@ internal class MetaRootSourceEntry(SourceProvider provider, string mountPoint, O
                     if (!await provider.IsSiteClassificationIncludedAsync(site, cancellationToken).ConfigureAwait(false))
                         continue;
 
-                    // Personal sites of disabled users do not consume a seat, but determining
-                    // that requires the disabled-user lookup and the gate below only needs the
+                    // Personal sites of unlicensed users do not consume a seat, but determining
+                    // that requires the unlicensed-user lookup and the gate below only needs the
                     // answer once the seat limit has been reached. Until then, assume the site
                     // consumes a seat: the gate approves either way, and nothing is counted
                     // here because this check does not increment.
