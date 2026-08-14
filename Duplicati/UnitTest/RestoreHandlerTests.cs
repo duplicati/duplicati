@@ -874,5 +874,139 @@ namespace Duplicati.UnitTest
                 DeterministicErrorBackend.ErrorGenerator = null;
             }
         }
+
+        /// <summary>
+        /// An abort must not record the files it was in the middle of as having failed to
+        /// restore. This runs over an existing restore target, which is what takes the file
+        /// processor through the paths that inspect the file already on disk.
+        /// </summary>
+        [Test]
+        [Category("RestoreHandler")]
+        public async Task AbortedRestoreOverExistingFilesDoesNotBlameThemAsync()
+        {
+            const int fileCount = 40;
+            const int volumesBeforeAbort = 3;
+
+            var backupOptions = new Dictionary<string, string>(this.TestOptions)
+            {
+                ["dblock-size"] = "200kb",
+                ["blocksize"] = "4kb"
+            };
+
+            var rng = new Random(42);
+            var data = new byte[32 * 1024];
+            for (var i = 0; i < fileCount; i++)
+            {
+                rng.NextBytes(data);
+                File.WriteAllBytes(Path.Combine(this.DATAFOLDER, $"file{i}"), data);
+            }
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, backupOptions, null))
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+
+            var restoreOptions = new Dictionary<string, string>(this.TestOptions)
+            {
+                ["dblock-size"] = "200kb",
+                ["blocksize"] = "4kb",
+                ["restore-path"] = this.RESTOREFOLDER,
+                ["restore-legacy"] = "false",
+                ["restore-with-local-blocks"] = "false",
+                ["restore-volume-downloaders"] = "4",
+                ["restore-volume-decryptors"] = "1",
+                ["restore-volume-decompressors"] = "1",
+                ["restore-file-processors"] = "1"
+            };
+
+            // First restore in full, so the second one has targets on disk to inspect. Without
+            // existing targets the file processor never opens them and the paths under test are
+            // not reached at all.
+            using (var c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
+                TestUtils.AssertResults(await c.RestoreAsync(new[] { "*" }));
+
+            // Corrupt every restored file so the second restore has real work to do on each of
+            // them rather than verifying them and moving on.
+            foreach (var path in Directory.GetFiles(this.RESTOREFOLDER, "*", SearchOption.AllDirectories))
+            {
+                var bytes = File.ReadAllBytes(path);
+                for (var i = 0; i < Math.Min(bytes.Length, 4096); i++)
+                    bytes[i] ^= 0xFF;
+                File.WriteAllBytes(path, bytes);
+            }
+
+            Library.DynamicLoader.BackendLoader.AddBackend(new DeterministicErrorBackend());
+            var downloaded = 0;
+            var enoughDownloaded = new TaskCompletionSource();
+
+            // A hook rather than a source of errors: it always answers "no error", but delays
+            // each volume fetch and signals before the delay, so the abort lands while the
+            // restore is still working rather than wherever the machine's speed puts it.
+            DeterministicErrorBackend.ErrorGenerator = (action, remotename) =>
+            {
+                if (action != DeterministicErrorBackend.BackendAction.GetBefore
+                    || !remotename.Contains(".dblock.", StringComparison.Ordinal))
+                    return false;
+
+                if (System.Threading.Interlocked.Increment(ref downloaded) >= volumesBeforeAbort)
+                    enoughDownloaded.TrySetResult();
+
+                System.Threading.Thread.Sleep(1500);
+                return false;
+            };
+
+            try
+            {
+                var restoreErrors = new System.Collections.Concurrent.ConcurrentQueue<string>();
+                // Spelled out rather than taken from the types, which are internal to
+                // Duplicati.Library.Main
+                const string restoreNamespace = "Duplicati.Library.Main.Operation.Restore.";
+
+                Library.Main.RestoreResults? restoreResults = null;
+                using var c2 = new Controller(new DeterministicErrorBackend().ProtocolKey + "://" + this.TARGETFOLDER, restoreOptions, null);
+                c2.OnOperationStarted += r => restoreResults = (Library.Main.RestoreResults)r;
+
+                using (Library.Logging.Log.StartScope(e =>
+                {
+                    if (e.Level == Library.Logging.LogMessageType.Error
+                        && e.Tag != null && e.Tag.StartsWith(restoreNamespace, StringComparison.Ordinal))
+                        restoreErrors.Enqueue($"{e.Tag.Split('.').Last()}/{e.Id}: {e.FormattedMessage}");
+                }))
+                {
+                    var restoreTask = Task.Run(async () => await c2.RestoreAsync(new[] { "*" }));
+
+                    var trigger = await Task.WhenAny(enoughDownloaded.Task, restoreTask, Task.Delay(TimeSpan.FromMinutes(1))).ConfigureAwait(false);
+                    if (trigger == restoreTask)
+                        Assert.Ignore("The restore finished before it could be aborted; the download hook is not slowing it down enough");
+                    if (trigger != enoughDownloaded.Task)
+                        Assert.Fail($"The restore did not download {volumesBeforeAbort} volumes within a minute");
+
+                    await c2.AbortAsync().ConfigureAwait(false);
+
+                    // Bounded: an abort that does not stop the restore has to fail the test
+                    // rather than hang the run.
+                    var grace = TimeSpan.FromMinutes(2);
+                    var stopped = await Task.WhenAny(restoreTask, Task.Delay(grace)).ConfigureAwait(false) == restoreTask;
+                    Assert.IsTrue(stopped, $"The abort did not stop the restore within {grace.TotalMinutes:F0} minutes");
+
+                    try { await restoreTask.ConfigureAwait(false); }
+                    catch (Exception) { /* the abort is expected to fault the operation */ }
+                }
+
+                NUnit.Framework.Assert.Multiple(() =>
+                {
+                    Assert.AreEqual(0, restoreResults!.BrokenLocalFiles.Count(),
+                        $"An aborted restore reported files it never finished as having failed to restore: {string.Join(", ", restoreResults.BrokenLocalFiles)}");
+
+                    Assert.AreEqual(0, restoreResults.BrokenRemoteFiles.Count(),
+                        $"An aborted restore blamed the backup for {string.Join(", ", restoreResults.BrokenRemoteFiles)}");
+
+                    Assert.AreEqual(0, restoreErrors.Count,
+                        $"An aborted restore reported errors:{Environment.NewLine}{string.Join(Environment.NewLine, restoreErrors)}");
+                });
+            }
+            finally
+            {
+                DeterministicErrorBackend.ErrorGenerator = null;
+            }
+        }
     }
 }
