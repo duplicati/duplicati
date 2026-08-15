@@ -60,8 +60,15 @@ internal static class UploadRealFilelist
                 // We ignore the stop signal, but not the pause and terminate
                 await taskreader.ProgressRendevouzAsync().ConfigureAwait(false);
 
-                await db.WriteFilesetAsync(filesetvolume, filesetid, taskreader.ProgressToken).ConfigureAwait(false);
-                filesetvolume.Close();
+                // Named separately from the phase around them: a report that this phase is
+                // where a backup stops cannot say which of the five things inside it is the
+                // one that stopped, and the commit and the upload are the only two that
+                // already say so for themselves.
+                using (new Logging.Timer(LOGTAG, "WriteFileset", "Writing the fileset"))
+                    await db.WriteFilesetAsync(filesetvolume, filesetid, taskreader.ProgressToken).ConfigureAwait(false);
+
+                using (new Logging.Timer(LOGTAG, "CloseFilesetVolume", "Closing the fileset volume"))
+                    filesetvolume.Close();
 
                 // We ignore the stop signal, but not the pause and terminate
                 await taskreader.ProgressRendevouzAsync().ConfigureAwait(false);
