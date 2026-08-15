@@ -713,4 +713,81 @@ public class SecretProviderSetSecretTests
             }
         }
     }
+
+    /// <summary>
+    /// Exercises the libsecret provider against whatever Secret Service is on the session
+    /// bus. Unlike the other providers here there is no way to point it at a container: the
+    /// service has to be on the same bus as this process, so the test runs where one exists
+    /// and skips where it does not.
+    /// </summary>
+    [Test]
+    [Category("SecretProviders.Remote")]
+    public async Task LibSecretProvider_SetSecret_Works_Async()
+    {
+        if (!OperatingSystem.IsLinux())
+        {
+            Assert.Ignore("The libsecret provider is only supported on Linux");
+            return;
+        }
+
+        var provider = new LibSecretLinuxProvider();
+        if (!await provider.IsSupported(CancellationToken.None).ConfigureAwait(false))
+        {
+            Assert.Ignore("No Secret Service is available on the session bus");
+            return;
+        }
+
+        // The default collection, not one of the test's own making: creating a collection
+        // asks the secret service for a new keyring, which it answers with a prompt for the
+        // keyring password, and a prompt needs a prompter to display it. Where there is none
+        // the service hands back "/" for both the collection and the prompt, so a test that
+        // created its own collection could only ever run in front of a desktop session.
+        //
+        // The keys below are named for this test and carry a fresh guid, so nothing that is
+        // already in the default collection is read, written or replaced.
+        await provider.InitializeAsync(new Uri("libsecret://"), CancellationToken.None).ConfigureAwait(false);
+        Assert.IsTrue(await provider.DoesCollectionExist(CancellationToken.None).ConfigureAwait(false),
+            "The default collection should be resolvable");
+
+        var key = $"duplicati-test-key-{Guid.NewGuid():N}";
+
+        await provider.SetSecretAsync(key, "value1", overwrite: false, CancellationToken.None).ConfigureAwait(false);
+        var resolved = await provider.ResolveSecretsAsync(new[] { key }, CancellationToken.None).ConfigureAwait(false);
+        Assert.AreEqual("value1", resolved[key], "The stored secret should come back unchanged");
+
+        // Writing the same key again without overwrite must not silently replace it.
+        // Caught by hand rather than with Assert.ThrowsAsync: the platform guard above does
+        // not reach inside a lambda, which CA1416 reports.
+        var refused = false;
+        try
+        {
+            await provider.SetSecretAsync(key, "value2", overwrite: false, CancellationToken.None).ConfigureAwait(false);
+        }
+        catch (Exception)
+        {
+            refused = true;
+        }
+        Assert.IsTrue(refused, "Storing over an existing key without overwrite should be refused");
+
+        var unchanged = await provider.ResolveSecretsAsync(new[] { key }, CancellationToken.None).ConfigureAwait(false);
+        Assert.AreEqual("value1", unchanged[key], "The refused write must leave the original value in place");
+
+        await provider.SetSecretAsync(key, "value2", overwrite: true, CancellationToken.None).ConfigureAwait(false);
+        var overwritten = await provider.ResolveSecretsAsync(new[] { key }, CancellationToken.None).ConfigureAwait(false);
+        Assert.AreEqual("value2", overwritten[key], "Overwriting should replace the stored value");
+
+        // A key that was never stored must not come back as a value.
+        var missingKey = $"duplicati-test-missing-{Guid.NewGuid():N}";
+        var reportedMissing = false;
+        try
+        {
+            var absent = await provider.ResolveSecretsAsync(new[] { missingKey }, CancellationToken.None).ConfigureAwait(false);
+            reportedMissing = !absent.ContainsKey(missingKey);
+        }
+        catch (Exception)
+        {
+            reportedMissing = true;
+        }
+        Assert.IsTrue(reportedMissing, "Resolving a key that does not exist must not yield a value");
+    }
 }
