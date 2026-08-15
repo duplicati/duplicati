@@ -64,6 +64,12 @@ namespace Duplicati.UnitTest
         [Test]
         public void ActionInvokedRaisesTheClickOnlyForTheDefaultAction()
         {
+            if (!OperatingSystem.IsLinux())
+            {
+                Assert.Ignore("The D-Bus notifier is only supported on Linux");
+                return;
+            }
+
             var clicked = 0;
             void OnClicked() => clicked++;
 
@@ -86,7 +92,15 @@ namespace Duplicati.UnitTest
         [Test]
         public void ActionInvokedWithoutACallbackIsHarmless()
         {
-            Assert.DoesNotThrow(() => LinuxDBusNotifier.HandleActionInvoked(null, (1u, "default"), null));
+            if (!OperatingSystem.IsLinux())
+            {
+                Assert.Ignore("The D-Bus notifier is only supported on Linux");
+                return;
+            }
+
+            // Called directly rather than through Assert.DoesNotThrow: the platform guard
+            // above does not reach inside a lambda, and the test fails on a throw either way.
+            LinuxDBusNotifier.HandleActionInvoked(null, (1u, "default"), null);
         }
     }
 }
