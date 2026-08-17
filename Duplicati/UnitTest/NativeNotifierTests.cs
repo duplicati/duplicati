@@ -22,6 +22,7 @@
 #nullable enable
 
 using System;
+using Duplicati.GUI.TrayIcon;
 using Duplicati.Library.Snapshots.Windows;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
@@ -55,5 +56,51 @@ namespace Duplicati.UnitTest
             Assert.IsTrue(clicked, "The stored callback must be invocable");
         }
 
+        /// <summary>
+        /// The Linux notifier decides what an ActionInvoked signal means. The decision is
+        /// reachable without a session bus; the notifier itself is not, because its
+        /// constructor takes the session bus connection.
+        /// </summary>
+        [Test]
+        public void ActionInvokedRaisesTheClickOnlyForTheDefaultAction()
+        {
+            if (!OperatingSystem.IsLinux())
+            {
+                Assert.Ignore("The D-Bus notifier is only supported on Linux");
+                return;
+            }
+
+            var clicked = 0;
+            void OnClicked() => clicked++;
+
+            // The body of the notification was clicked.
+            LinuxDBusNotifier.HandleActionInvoked(null, (1u, "default"), OnClicked);
+            Assert.AreEqual(1, clicked, "Clicking the notification body should raise the callback");
+
+            // One of the notification's own action buttons was used instead.
+            LinuxDBusNotifier.HandleActionInvoked(null, (1u, "open-log"), OnClicked);
+            Assert.AreEqual(1, clicked, "Another action must not be reported as a click on the notification");
+
+            // The subscription itself failed; there is no action to report.
+            LinuxDBusNotifier.HandleActionInvoked(new InvalidOperationException("bus went away"), default, OnClicked);
+            Assert.AreEqual(1, clicked, "A failed subscription must not be reported as a click");
+        }
+
+        /// <summary>
+        /// A notifier that was never given a callback must not throw when a signal arrives.
+        /// </summary>
+        [Test]
+        public void ActionInvokedWithoutACallbackIsHarmless()
+        {
+            if (!OperatingSystem.IsLinux())
+            {
+                Assert.Ignore("The D-Bus notifier is only supported on Linux");
+                return;
+            }
+
+            // Called directly rather than through Assert.DoesNotThrow: the platform guard
+            // above does not reach inside a lambda, and the test fails on a throw either way.
+            LinuxDBusNotifier.HandleActionInvoked(null, (1u, "default"), null);
+        }
     }
 }

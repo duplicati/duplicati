@@ -23,12 +23,15 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Runtime.Versioning;
 using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Logging;
 using Tmds.DBus.Protocol;
+
+[assembly: InternalsVisibleTo("Duplicati.UnitTest")]
 
 namespace Duplicati.GUI.TrayIcon;
 
@@ -164,20 +167,31 @@ public sealed class LinuxDBusNotifier : INativeNotifier
                     var reader = m.GetBodyReader();
                     return (id: reader.ReadUInt32(), key: reader.ReadString());
                 },
-                (Exception? ex, (uint id, string key) arg, object? _, object? _2) =>
-                {
-                    if (ex != null)
-                        Log.WriteWarningMessage(LOGTAG, "SignalError", ex, "Error in ActionInvoked signal");
-                    else if (arg.key == "default")
-                        NotificationClicked?.Invoke();
-                },
-                null, null, false, ObserverFlags.None
+                (Action<Notification<(uint id, string key)>>)(n =>
+                    HandleActionInvoked(n.Exception, n.HasValue ? n.Value : default, NotificationClicked)),
+                false, ObserverFlags.None, null
             ).AsTask().GetAwaiter().GetResult();
         }
         catch (Exception ex)
         {
             Log.WriteWarningMessage(LOGTAG, "SignalSubscribeFailed", ex, "Failed to subscribe to ActionInvoked");
         }
+    }
+
+    /// <summary>
+    /// Decides what an <c>ActionInvoked</c> signal means. Kept separate from the
+    /// subscription so it can be exercised without a session bus, which the notifier
+    /// itself requires to exist.
+    /// </summary>
+    /// <param name="exception">The error the subscription reported, if any.</param>
+    /// <param name="action">The signal payload: the notification id and the action key.</param>
+    /// <param name="notificationClicked">The callback to raise when the body of the notification was clicked.</param>
+    internal static void HandleActionInvoked(Exception? exception, (uint id, string key) action, Action? notificationClicked)
+    {
+        if (exception != null)
+            Log.WriteWarningMessage(LOGTAG, "SignalError", exception, "Error in ActionInvoked signal");
+        else if (action.key == "default")
+            notificationClicked?.Invoke();
     }
 
     private Task<uint> CallNotifyAsync(
