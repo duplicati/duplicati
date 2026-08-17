@@ -920,7 +920,12 @@ namespace Duplicati.UnitTest
             {
                 var backupResults = await c.BackupAsync(new string[] { DATAFOLDER });
                 TestUtils.AssertResults(backupResults);
-                Assert.AreEqual(expectedFilesets, (await c.ListAsync()).Filesets.Count());
+                var listResults = await c.ListAsync();
+                Assert.AreEqual(expectedFilesets, listResults.Filesets.Count(),
+                    $"The last backup reported {backupResults.AddedFiles} added and "
+                    + $"{backupResults.ModifiedFiles} modified file(s), "
+                    + $"{backupResults.AddedFolders} added and {backupResults.ModifiedFolders} modified folder(s). "
+                    + $"Versions present: {DescribeFilesets(listResults.Filesets)}");
             }
 
             // Test that we can recreate
@@ -938,7 +943,8 @@ namespace Duplicati.UnitTest
             {
                 var listResults = await c.ListAsync();
                 TestUtils.AssertResults(listResults);
-                Assert.AreEqual(expectedFilesets, listResults.Filesets.Count());
+                Assert.AreEqual(expectedFilesets, listResults.Filesets.Count(),
+                    $"Versions present after the recreate: {DescribeFilesets(listResults.Filesets)}");
             }
         }
 
@@ -1009,7 +1015,12 @@ namespace Duplicati.UnitTest
             {
                 var backupResults = await c.BackupAsync(new string[] { DATAFOLDER });
                 TestUtils.AssertResults(backupResults);
-                Assert.AreEqual(expectedFilesets, (await c.ListAsync()).Filesets.Count());
+                var listResults = await c.ListAsync();
+                Assert.AreEqual(expectedFilesets, listResults.Filesets.Count(),
+                    $"The last backup reported {backupResults.AddedFiles} added and "
+                    + $"{backupResults.ModifiedFiles} modified file(s), "
+                    + $"{backupResults.AddedFolders} added and {backupResults.ModifiedFolders} modified folder(s). "
+                    + $"Versions present: {DescribeFilesets(listResults.Filesets)}");
             }
 
             // Verify that all is in order
@@ -1031,7 +1042,8 @@ namespace Duplicati.UnitTest
             {
                 var listResults = await c.ListAsync();
                 TestUtils.AssertResults(listResults);
-                Assert.AreEqual(expectedFilesets, listResults.Filesets.Count());
+                Assert.AreEqual(expectedFilesets, listResults.Filesets.Count(),
+                    $"Versions present after the recreate: {DescribeFilesets(listResults.Filesets)}");
             }
         }
 
@@ -1172,7 +1184,12 @@ namespace Duplicati.UnitTest
             {
                 var backupResults = await c.BackupAsync(new string[] { DATAFOLDER });
                 TestUtils.AssertResults(backupResults);
-                Assert.AreEqual(expectedFilesets, (await c.ListAsync()).Filesets.Count());
+                var listResults = await c.ListAsync();
+                Assert.AreEqual(expectedFilesets, listResults.Filesets.Count(),
+                    $"The last backup reported {backupResults.AddedFiles} added and "
+                    + $"{backupResults.ModifiedFiles} modified file(s), "
+                    + $"{backupResults.AddedFolders} added and {backupResults.ModifiedFolders} modified folder(s). "
+                    + $"Versions present: {DescribeFilesets(listResults.Filesets)}");
             }
 
             // Verify that all is in order
@@ -1194,9 +1211,25 @@ namespace Duplicati.UnitTest
             {
                 var listResults = await c.ListAsync();
                 TestUtils.AssertResults(listResults);
-                Assert.AreEqual(expectedFilesets, listResults.Filesets.Count());
+                Assert.AreEqual(expectedFilesets, listResults.Filesets.Count(),
+                    $"Versions present after the recreate: {DescribeFilesets(listResults.Filesets)}");
             }
         }
+
+        /// <summary>
+        /// Names the versions a disruption test ended up with, for the message of the assertion
+        /// that counts them.
+        ///
+        /// These three tests interrupt a backup and then assert how many versions are left, and
+        /// the count is the only thing the failure says. Which versions they are, when they were
+        /// made and whether any of them is partial is the difference between a report that can be
+        /// acted on and two numbers.
+        /// </summary>
+        private static string DescribeFilesets(IEnumerable<IListResultFileset> filesets)
+            => string.Join(", ", filesets
+                .OrderBy(x => x.Version)
+                .Select(x => $"#{x.Version} {(x.IsFullBackup == 1 ? "full" : "partial")}"
+                    + $" at {x.Time.ToUniversalTime():HH:mm:ss}Z with {x.FileCount} file(s)"));
 
         private class LogSink : IMessageSink
         {

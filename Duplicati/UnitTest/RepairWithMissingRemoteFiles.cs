@@ -523,9 +523,13 @@ namespace Duplicati.UnitTest
             var corruptBothFiles = corruptLargeFile && corruptSmallFile;
             var destroyMetadata = scenario == 3;
 
-            // Destroy some source data (keep metadata)
+            // Destroy some source data (keep metadata).
+            // Flipped rather than assigned: the data is random, so one run in 256 already holds
+            // whatever constant is written here, and then nothing is destroyed at all. The repair
+            // recovers every block, no warning is raised, and the assertion below fails without
+            // anything being wrong.
             var prev = data[1];
-            data[1] = 1;
+            data[1] = (byte)~prev;
             if (corruptLargeFile)
             {
                 var timestamp = File.GetLastWriteTime(Path.Combine(DATAFOLDER, "a"));
