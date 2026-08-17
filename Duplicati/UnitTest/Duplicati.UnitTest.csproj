@@ -47,6 +47,7 @@
     <ProjectReference Include="..\..\proprietary\DiskImage\Duplicati.Proprietary.DiskImage.csproj" />
     <ProjectReference Include="..\WebserverCore\Duplicati.WebserverCore.csproj" />
     <ProjectReference Include="..\Library\Certificates\Duplicati.Library.Certificates.csproj" />
+    <ProjectReference Include="..\GUI\Duplicati.GUI.TrayIcon\Duplicati.GUI.TrayIcon.csproj" />
   </ItemGroup>
 
   <!-- Copy in WindowsModules for easier debug, or if we are targeting Windows -->
