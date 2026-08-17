@@ -40,6 +40,19 @@ namespace Duplicati.Library.ResultSerialization
         private class DynamicContractResolver : DefaultContractResolver
         {
             /// <summary>
+            /// The properties the backend statistics inherit from the result base class without
+            /// ever assigning them, so they serialize as a zero DateTime and an empty duration.
+            /// The text output leaves them out for the same reason; see BasicResults.ToString.
+            /// </summary>
+            private static readonly HashSet<string> UnsetOnBackendStatistics = new HashSet<string>(StringComparer.Ordinal)
+            {
+                "MainOperation",
+                "BeginTime",
+                "EndTime",
+                "Duration"
+            };
+
+            /// <summary>
             /// List of names to exclude
             /// </summary>
             private readonly HashSet<string> m_excludes;
@@ -61,10 +74,13 @@ namespace Duplicati.Library.ResultSerialization
             /// <param name="memberSerialization">Member serialization parameter.</param>
             protected override IList<JsonProperty> CreateProperties(Type type, MemberSerialization memberSerialization)
             {
+                var isBackendStatistics = typeof(IBackendStatstics).IsAssignableFrom(type);
+
                 return base
                     .CreateProperties(type, memberSerialization)
                     .Where(x => !m_excludes.Contains(x.PropertyName))
                     .Where(x => !typeof(Task).IsAssignableFrom(x.PropertyType))
+                    .Where(x => !(isBackendStatistics && UnsetOnBackendStatistics.Contains(x.PropertyName)))
                     .ToList();
             }
         }
