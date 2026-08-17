@@ -668,6 +668,239 @@ namespace Duplicati.UnitTest
                 var remaining = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM Metadataset JOIN Blockset ON Metadataset.BlocksetID = Blockset.ID WHERE Blockset.Length = 0");
                 Assert.AreEqual(0, remaining, "Zero-length metadata should have been replaced");
             }
+
+            // The repaired database must pass consistency verification, including the file list check.
+            var vopts = new Options(options);
+            await using (var db = await LocalDatabase.CreateLocalDatabaseAsync(options["dbpath"], "verify", true, null, CancellationToken.None).ConfigureAwait(false))
+                await db.VerifyConsistencyAsync(vopts.Blocksize, vopts.BlockhashSize, true, CancellationToken.None).ConfigureAwait(false);
+        }
+
+        [Test]
+        [Category("RepairHandler")]
+        public async Task RepairRelinksEmptyMetadataBlockWhenBlocksetEntryMissingAsync()
+        {
+            // The empty ({}) metadata blockset can lose its BlocksetEntry (and length) while the
+            // backing block still exists in the database. The metadata repair must relink the
+            // existing block (a database only operation, no remote access) so folders survive the
+            // file list consistency check. skip-metadata makes every entry, including the folder,
+            // share the empty metadata blockset.
+            var testopts = new Dictionary<string, string>(this.TestOptions) { ["skip-metadata"] = "true" };
+            Directory.CreateDirectory(Path.Combine(this.DATAFOLDER, "sub"));
+            File.WriteAllText(Path.Combine(this.DATAFOLDER, "sub", "a.txt"), "a");
+            using (var c = new Controller("file://" + this.TARGETFOLDER, testopts, null))
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+
+            var dbpath = testopts["dbpath"];
+
+            // Break the shared empty-metadata blockset: drop its BlocksetEntry and zero its length,
+            // while leaving the backing {} block in the Block table for the repair to relink.
+            long emptyBlocksetId;
+            using (var con = await SQLiteLoader.LoadConnectionAsync(dbpath))
+            using (var cmd = con.CreateCommand())
+            {
+                emptyBlocksetId = cmd.ExecuteScalarInt64("SELECT BlocksetID FROM Metadataset LIMIT 1");
+                Assert.Greater(emptyBlocksetId, -1, "Expected a metadata blockset");
+
+                cmd.SetCommandAndParameters("DELETE FROM BlocksetEntry WHERE BlocksetID = @Id")
+                    .SetParameterValue("@Id", emptyBlocksetId).ExecuteNonQuery();
+                cmd.SetCommandAndParameters("UPDATE Blockset SET Length = 0 WHERE ID = @Id")
+                    .SetParameterValue("@Id", emptyBlocksetId).ExecuteNonQuery();
+
+                var brokenBefore = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM Metadataset JOIN Blockset ON Metadataset.BlocksetID = Blockset.ID WHERE Blockset.Length = 0");
+                Assert.Greater(brokenBefore, 0, "Test setup should produce zero-length metadata entries");
+            }
+
+            var opts = new Options(testopts);
+            await using (var db = await LocalRepairDatabase.CreateRepairDatabaseAsync(dbpath, null, CancellationToken.None).ConfigureAwait(false))
+            {
+                await db.FixEmptyMetadatasetsAsync(opts, CancellationToken.None).ConfigureAwait(false);
+            }
+
+            using (var con = await SQLiteLoader.LoadConnectionAsync(dbpath))
+            using (var cmd = con.CreateCommand())
+            {
+                // The empty-metadata blockset must have its block entry and length restored.
+                var entries = cmd.SetCommandAndParameters("SELECT COUNT(*) FROM BlocksetEntry WHERE BlocksetID = @Id")
+                    .SetParameterValue("@Id", emptyBlocksetId).ExecuteScalarInt64(0);
+                Assert.Greater(entries, 0, "The missing block entry should have been relinked");
+
+                var length = cmd.SetCommandAndParameters("SELECT Length FROM Blockset WHERE ID = @Id")
+                    .SetParameterValue("@Id", emptyBlocksetId).ExecuteScalarInt64(-1);
+                Assert.Greater(length, 0, "The blockset length should have been restored");
+
+                var nullMeta = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM FileLookup WHERE MetadataID IS NULL");
+                Assert.AreEqual(0, nullMeta, "No files should have a NULL metadata id after repair");
+            }
+
+            // The database must be consistent after the repair completes, including the file list
+            // verification that requires folder metadata blocksets to have a real block entry.
+            await using (var db = await LocalDatabase.CreateLocalDatabaseAsync(dbpath, "verify", true, null, CancellationToken.None).ConfigureAwait(false))
+                await db.VerifyConsistencyAsync(opts.Blocksize, opts.BlockhashSize, true, CancellationToken.None).ConfigureAwait(false);
+        }
+
+        [Test]
+        [Category("RepairHandler")]
+        public async Task FixEmptyMetadataSkipsWhenReplacementDisabledAsync()
+        {
+            // With --disable-replace-missing-metadata, FixEmptyMetadatasets must not attempt to
+            // replace or consolidate metadata (that is the purge-broken-files job); it should leave
+            // the zero-length entries untouched and not throw.
+            var testopts = new Dictionary<string, string>(this.TestOptions)
+            {
+                ["skip-metadata"] = "true",
+                ["disable-replace-missing-metadata"] = "true"
+            };
+            File.WriteAllText(Path.Combine(this.DATAFOLDER, "a.txt"), "a");
+            File.WriteAllText(Path.Combine(this.DATAFOLDER, "b.txt"), "b");
+            using (var c = new Controller("file://" + this.TARGETFOLDER, testopts, null))
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+
+            var dbpath = testopts["dbpath"];
+
+            long brokenBefore;
+            using (var con = await SQLiteLoader.LoadConnectionAsync(dbpath))
+            using (var cmd = con.CreateCommand())
+            {
+                cmd.ExecuteNonQuery(@"
+                    DELETE FROM BlocksetEntry
+                    WHERE BlocksetID IN (SELECT BlocksetID FROM Metadataset)");
+                cmd.ExecuteNonQuery(@"
+                    UPDATE Blockset
+                    SET Length = 0
+                    WHERE ID IN (SELECT BlocksetID FROM Metadataset)");
+                brokenBefore = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM Metadataset JOIN Blockset ON Metadataset.BlocksetID = Blockset.ID WHERE Blockset.Length = 0");
+                Assert.Greater(brokenBefore, 0, "Test setup should produce zero-length metadata entries");
+            }
+
+            var opts = new Options(testopts);
+            await using (var db = await LocalRepairDatabase.CreateRepairDatabaseAsync(dbpath, null, CancellationToken.None).ConfigureAwait(false))
+            {
+                // Should complete without throwing and without modifying the entries.
+                await db.FixEmptyMetadatasetsAsync(opts, CancellationToken.None).ConfigureAwait(false);
+            }
+
+            using (var con = await SQLiteLoader.LoadConnectionAsync(dbpath))
+            using (var cmd = con.CreateCommand())
+            {
+                var brokenAfter = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM Metadataset JOIN Blockset ON Metadataset.BlocksetID = Blockset.ID WHERE Blockset.Length = 0");
+                Assert.AreEqual(brokenBefore, brokenAfter, "Zero-length metadata entries should be left untouched for purge-broken-files to handle");
+            }
+        }
+
+        [Test]
+        [Category("RepairHandler")]
+        public async Task FixEmptyMetadataFailsForFoldersWhenNoReplacementBlockAsync()
+        {
+            // When a folder/symlink has missing metadata and no empty ({}) metadata block exists to
+            // rebuild from, the repair cannot keep the entry consistently (the file list check
+            // requires a real metadata block). It must fail with actionable guidance rather than
+            // produce an inconsistent database.
+            var testopts = new Dictionary<string, string>(this.TestOptions);
+            Directory.CreateDirectory(Path.Combine(this.DATAFOLDER, "sub"));
+            File.WriteAllText(Path.Combine(this.DATAFOLDER, "sub", "a.txt"), "a");
+            using (var c = new Controller("file://" + this.TARGETFOLDER, testopts, null))
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+
+            var dbpath = testopts["dbpath"];
+
+            // Break the metadata of the folder entries and remove all block entries so no {} block
+            // can be located for a rebuild.
+            using (var con = await SQLiteLoader.LoadConnectionAsync(dbpath))
+            using (var cmd = con.CreateCommand())
+            {
+                cmd.ExecuteNonQuery($@"
+                    DELETE FROM BlocksetEntry
+                    WHERE BlocksetID IN (
+                        SELECT M.BlocksetID
+                        FROM Metadataset M
+                        JOIN FileLookup F ON F.MetadataID = M.ID
+                        WHERE F.BlocksetID = {LocalDatabase.FOLDER_BLOCKSET_ID})");
+
+                cmd.ExecuteNonQuery($@"
+                    UPDATE Blockset
+                    SET Length = 0
+                    WHERE ID IN (
+                        SELECT M.BlocksetID
+                        FROM Metadataset M
+                        JOIN FileLookup F ON F.MetadataID = M.ID
+                        WHERE F.BlocksetID = {LocalDatabase.FOLDER_BLOCKSET_ID})");
+
+                var brokenBefore = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM Metadataset JOIN Blockset ON Metadataset.BlocksetID = Blockset.ID WHERE Blockset.Length = 0");
+                Assert.Greater(brokenBefore, 0, "Test setup should produce zero-length folder metadata entries");
+            }
+
+            var opts = new Options(testopts);
+            await using (var db = await LocalRepairDatabase.CreateRepairDatabaseAsync(dbpath, null, CancellationToken.None).ConfigureAwait(false))
+            {
+                var ex = Assert.ThrowsAsync<UserInformationException>(async () =>
+                    await db.FixEmptyMetadatasetsAsync(opts, CancellationToken.None).ConfigureAwait(false));
+                Assert.AreEqual("MetadataRepairFailed", ex.HelpID);
+            }
+        }
+
+        [Test]
+        [Category("RepairHandler")]
+        public async Task BackupSeedsAndPinsEmptyMetadataBlockAsync()
+        {
+            // The backup should always seed the empty ({}) metadata block, and deleting all versions
+            // plus compacting must not evict it, so it remains available for database-only repairs.
+            var options = new Dictionary<string, string>(this.TestOptions)
+            {
+                ["keep-versions"] = "1",
+                ["no-auto-compact"] = "false",
+                ["threshold"] = "0"
+            };
+            File.WriteAllText(Path.Combine(this.DATAFOLDER, "a.txt"), "a");
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+
+            var opts = new Options(options);
+            var emptyMeta = Duplicati.Library.Main.Utility.WrapMetadata(new Dictionary<string, string>(), opts);
+            string emptyBlockHash;
+            using (var blockhasher = HashFactory.CreateHasher(opts.BlockHashAlgorithm))
+                emptyBlockHash = Convert.ToBase64String(blockhasher.ComputeHash(emptyMeta.Blob));
+            var emptyBlockSize = emptyMeta.Blob.Length;
+
+            // The empty metadata block must be present right after the backup.
+            using (var con = await SQLiteLoader.LoadConnectionAsync(options["dbpath"]))
+            using (var cmd = con.CreateCommand())
+            {
+                var count = cmd.SetCommandAndParameters("SELECT COUNT(*) FROM Block WHERE Hash = @Hash AND Size = @Size")
+                    .SetParameterValue("@Hash", emptyBlockHash)
+                    .SetParameterValue("@Size", emptyBlockSize)
+                    .ExecuteScalarInt64(0);
+                Assert.Greater(count, 0, "The empty metadata block should be seeded by the backup");
+            }
+
+            // Make several more backups with changing content so old versions are pruned and the
+            // volumes holding the original data become compactable.
+            for (var i = 0; i < 3; i++)
+            {
+                File.WriteAllText(Path.Combine(this.DATAFOLDER, "a.txt"), $"data-{i}-{new string('x', 2048)}");
+                using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                    TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+            }
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                await c.CompactAsync();
+
+            // After pruning and compaction, the pinned empty metadata block must still exist and not
+            // be marked as deleted.
+            using (var con = await SQLiteLoader.LoadConnectionAsync(options["dbpath"]))
+            using (var cmd = con.CreateCommand())
+            {
+                var count = cmd.SetCommandAndParameters("SELECT COUNT(*) FROM Block WHERE Hash = @Hash AND Size = @Size")
+                    .SetParameterValue("@Hash", emptyBlockHash)
+                    .SetParameterValue("@Size", emptyBlockSize)
+                    .ExecuteScalarInt64(0);
+                Assert.Greater(count, 0, "The empty metadata block should be pinned and survive compaction");
+
+                var deleted = cmd.SetCommandAndParameters("SELECT COUNT(*) FROM DeletedBlock WHERE Hash = @Hash AND Size = @Size")
+                    .SetParameterValue("@Hash", emptyBlockHash)
+                    .SetParameterValue("@Size", emptyBlockSize)
+                    .ExecuteScalarInt64(0);
+                Assert.AreEqual(0, deleted, "The pinned empty metadata block should never be marked deleted");
+            }
         }
     }
 }

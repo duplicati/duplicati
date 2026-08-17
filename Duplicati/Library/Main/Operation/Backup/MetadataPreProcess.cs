@@ -81,6 +81,12 @@ namespace Duplicati.Library.Main.Operation.Backup
                 var CHECKFILETIMEONLY = options.CheckFiletimeOnly;
                 var DISABLEFILETIMECHECK = options.DisableFiletimeCheck;
 
+                // Seed the empty ({}) metadata block so it is always present in the backup. This
+                // guarantees that a database-only repair can reconstruct missing metadata without
+                // needing remote access, even if no entry currently uses empty metadata. The block
+                // is pinned during compact so it is not evicted once seeded.
+                await AddMetadataToOutputAsync(string.Empty, emptymetadata, database, self.StreamBlockChannel, taskreader.ProgressToken).ConfigureAwait(false);
+
                 while (true)
                 {
                     var entry = await self.Input.ReadAsync();
