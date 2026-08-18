@@ -254,11 +254,13 @@ public static class SecretProviderHelper
         foreach (var v in realUriMap)
             foreach (var (s, k) in v.Value)
             {
-                var builder = new UriBuilder(realUriArguments[s]!);
-                var query = HttpUtility.ParseQueryString(builder.Query);
+                // System.UriBuilder collapses host-less urls with schemes it does
+                // not know ("s3://" becomes "s3:/"), so the query is replaced
+                // through the relaxed parser and re-imported into System.Uri
+                var uri = new Library.Utility.RelaxedUri(realUriArguments[s]!.OriginalString);
+                var query = HttpUtility.ParseQueryString(uri.Query ?? string.Empty);
                 query[k] = translated[v.Key];
-                builder.Query = query.ToString();
-                realUriArguments[s] = builder.Uri;
+                realUriArguments[s] = new System.Uri(uri.SetQuery(query.ToString()).ToString());
             }
 
         // Update internal uri arguments by replacing values

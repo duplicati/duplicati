@@ -113,7 +113,15 @@ public class SharedRemoteOperation
 
         var source = new Library.Utility.RelaxedUri(url);
         var path = (source.Path ?? "").TrimEnd('/') + "/" + additionalPath.TrimStart('/');
-        return new UriBuilder(url) { Path = path }.Uri.AbsoluteUri;
+        // The relaxed serializer adds the '/' between host and path itself. A
+        // host-less url without a path puts the appended path in the authority
+        // position ("s3://" + "sub" => "s3://sub"), while an existing path stays
+        // absolute ("file:///a" + "b" => "file:///a/b"). System.UriBuilder handled
+        // this implicitly, but collapses host-less urls with schemes it does not
+        // know ("s3://" becomes "s3:/")
+        if (!string.IsNullOrEmpty(source.Host) || string.IsNullOrEmpty(source.Path))
+            path = path.TrimStart('/');
+        return source.SetPath(path).ToString();
     }
 
     public static async Task<BackendTupleDisposeWrapper> GetBackendAsync(Connection connection, IApplicationSettings applicationSettings, string url, string? additionalPath, string? backupId, long connectionStringId, CancellationToken cancelToken)

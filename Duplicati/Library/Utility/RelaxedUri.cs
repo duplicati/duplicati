@@ -326,7 +326,11 @@ namespace Duplicati.Library.Utility
 
             if (!string.IsNullOrEmpty(host))
             {
-                s += UrlEncoding.UrlPathEncode(host);
+                // The parser keeps IPv6 literals bracketed; encoding the
+                // brackets would make the host unreadable to System.Uri
+                s += host.StartsWith("[", StringComparison.Ordinal) && host.EndsWith("]", StringComparison.Ordinal)
+                    ? host
+                    : UrlEncoding.UrlPathEncode(host);
                 if (port != -1)
                     s += ":" + port.ToString();
             }
@@ -395,13 +399,31 @@ namespace Duplicati.Library.Utility
         /// <param name="query">A collection of name value pairs to be translated into a query string.</param>
         public static string UriBuilder(string url, string path, NameValueCollection? query)
         {
-            var builder = new UriBuilder(url)
-            {
-                Path = new UrlPath(ExtractPath(url)).Append(path).ToString(),
-                Query = query != null ? UrlEncoding.BuildUriQuery(query) : null
-            };
-            return builder.Uri.AbsoluteUri;
+            // System.UriBuilder collapses host-less urls with schemes it does not
+            // know ("s3://" becomes "s3:/"), so the url is reassembled from the
+            // relaxed parts instead. The serializer adds the '/' between host and
+            // path itself. A host-less url without a path puts the appended path in
+            // the authority position ("s3://" + "sub" => "s3://sub"), while an
+            // existing path stays absolute ("file:///a" + "b" => "file:///a/b").
+            var uri = new RelaxedUri(url);
+            var newPath = new UrlPath(uri.Path).Append(path).ToString();
+            if (!string.IsNullOrEmpty(uri.Host) || string.IsNullOrEmpty(uri.Path))
+                newPath = newPath.TrimStart('/');
+            return uri
+                .SetPath(newPath)
+                .SetQuery(query != null ? EscapeUriQuery(UrlEncoding.BuildUriQuery(query)) : null)
+                .ToString();
         }
+
+        /// <summary>
+        /// Escapes a raw query string the way System.Uri does, without letting
+        /// System.Uri normalize the rest of the url. A '#' is encoded so it stays
+        /// in the query instead of becoming a fragment.
+        /// </summary>
+        /// <returns>The escaped query string</returns>
+        /// <param name="query">The raw query string</param>
+        private static string EscapeUriQuery(string query)
+            => new System.Uri("http://localhost/?" + query.Replace("#", "%23")).Query.TrimStart('?');
 
         /// <summary>
         /// Grab path part of a URI.
