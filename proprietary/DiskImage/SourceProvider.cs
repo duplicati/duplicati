@@ -110,23 +110,34 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
         if (string.IsNullOrEmpty(_devicePath))
             return;
 
+        _disk = (IRawDisk)await GetDiskAsync(_devicePath, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task<object> GetDiskAsync(string path, CancellationToken cancellationToken)
+    {
         if (OperatingSystem.IsWindows())
         {
-            _disk = new Windows(_devicePath.TrimEnd(Path.DirectorySeparatorChar));
-            if (!await _disk.InitializeAsync(cancellationToken))
-                throw new UserInformationException($"Failed to initialize disk: {_devicePath}", "DiskInitializeFailed");
+            var disk = new Windows(path.TrimEnd(Path.DirectorySeparatorChar));
+            if (!await disk.InitializeAsync(cancellationToken))
+                throw new UserInformationException($"Failed to initialize disk: {path}", "DiskInitializeFailed");
+
+            return disk;
         }
         else if (OperatingSystem.IsMacOS())
         {
-            _disk = new Mac(_devicePath);
-            if (!await _disk.InitializeAsync(cancellationToken))
-                throw new UserInformationException($"Failed to initialize disk: {_devicePath}", "DiskInitializeFailed");
+            var disk = new Mac(path);
+            if (!await disk.InitializeAsync(cancellationToken))
+                throw new UserInformationException($"Failed to initialize disk: {path}", "DiskInitializeFailed");
+
+            return disk;
         }
         else if (OperatingSystem.IsLinux())
         {
-            _disk = new Linux(_devicePath);
-            if (!await _disk.InitializeAsync(cancellationToken))
-                throw new UserInformationException($"Failed to initialize disk: {_devicePath}", "DiskInitializeFailed");
+            var disk = new Linux(path);
+            if (!await disk.InitializeAsync(cancellationToken))
+                throw new UserInformationException($"Failed to initialize disk: {path}", "DiskInitializeFailed");
+
+            return disk;
         }
         else
         {
@@ -157,6 +168,11 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
     {
         if (string.IsNullOrWhiteSpace(path) || path == "/")
             return new MachineRootSourceEntry();
+
+        // Special support for enumeration which does call initialize, but does it with
+        // an empty path.
+        if (_disk == null && string.IsNullOrWhiteSpace(_devicePath) && !string.IsNullOrWhiteSpace(path))
+            _disk = (IRawDisk)await GetDiskAsync(path, cancellationToken).ConfigureAwait(false);
 
         if (_disk == null)
             throw new InvalidOperationException("Provider not initialized.");
