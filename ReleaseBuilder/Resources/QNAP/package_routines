@@ -1,0 +1,31 @@
+######################################################################
+# Duplicati package specific install/uninstall routines.
+######################################################################
+
+PKG_PRE_REMOVE="{
+    # Stop the service (duplicati.sh stop will clean up its own Apache config)
+    if [ -x \"\$SYS_QPKG_DIR/duplicati.sh\" ]; then
+        \"\$SYS_QPKG_DIR/duplicati.sh\" stop >/dev/null 2>&1
+    fi
+}"
+
+PKG_MAIN_REMOVE="{
+    :
+}"
+
+PKG_POST_REMOVE="{
+    # QTS wipes the package install path on uninstall, but the backup
+    # database and settings live in .qpkg_data on the system volume and
+    # survive. Leave a note in the system event log so the user knows.
+    PERSIST_DIR=\"\$(/sbin/getcfg SHARE_DEF defVolMP -f /etc/config/def_share.info 2>/dev/null)/.qpkg_data/Duplicati\"
+    LOG_TOOL=\"\${CMD_LOG_TOOL:-/sbin/log_tool}\"
+    if [ -d \"\$PERSIST_DIR\" ] && [ -x \"\$LOG_TOOL\" ]; then
+        \"\$LOG_TOOL\" -t1 -uSystem -p127.0.0.1 -mlocalhost -a \"Duplicati was uninstalled. Your backup database and settings were retained at \$PERSIST_DIR. If you re-install Duplicati your settings are kept; otherwise manually delete the folder.\"
+    fi
+}"
+
+pkg_post_install(){
+    [ -f "$SYS_QPKG_DIR/duplicati.sh" ] && $CMD_CHMOD 755 "$SYS_QPKG_DIR/duplicati.sh"
+    [ -f "$SYS_QPKG_DIR/chroot-exec.sh" ] && $CMD_CHMOD 755 "$SYS_QPKG_DIR/chroot-exec.sh"
+    [ -d "$SYS_QPKG_DIR/bin" ] && $CMD_CHMOD 755 "$SYS_QPKG_DIR/bin/"*
+}

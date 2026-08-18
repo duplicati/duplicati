@@ -1,0 +1,33 @@
+FROM ubuntu:latest
+
+# Source build packages locally
+ARG DOCKER_BUILD_PROXY
+ENV DOCKER_BUILD_PROXY=$DOCKER_BUILD_PROXY
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Use the automatic Buildx variable to select the QDK package
+ARG TARGETARCH
+
+# Install QDK (QNAP Development Kit) and the tools qbuild needs
+RUN set -uex; \
+  export http_proxy=${HTTP_PROXY-${DOCKER_BUILD_PROXY}}; \
+  apt-get update; \
+  apt-get install --no-install-suggests --no-install-recommends -y \
+  ca-certificates \
+  wget \
+  rsync; \
+  case "${TARGETARCH}" in \
+    "amd64")  QDK_ARCH="amd64" ;; \
+    "arm64")  QDK_ARCH="arm64" ;; \
+    *) echo "Unsupported architecture: ${TARGETARCH}"; exit 1 ;; \
+  esac; \
+  wget -q "https://github.com/qnap-dev/QDK/releases/download/v2.5.3/qdk_2.5.3_${QDK_ARCH}.deb"; \
+  apt-get install -y "./qdk_2.5.3_${QDK_ARCH}.deb"; \
+  rm "./qdk_2.5.3_${QDK_ARCH}.deb"; \
+  apt-get clean all
+
+LABEL org.label-schema.name="duplicati/qnap-build" \
+  org.label-schema.version="20260810" \
+  org.label-schema.vendor="Duplicati" \
+  org.label-schema.docker.cmd="docker run -ti duplicati/qnap-build" \
+  org.label-schema.schema-version="1.0"

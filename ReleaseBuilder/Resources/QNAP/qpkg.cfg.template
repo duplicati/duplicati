@@ -1,0 +1,29 @@
+# QNAP package configuration for Duplicati
+# The %VERSION% placeholder is replaced during the build
+QPKG_NAME="Duplicati"
+QPKG_DISPLAY_NAME="Duplicati"
+QPKG_VER="%VERSION%"
+QPKG_AUTHOR="Duplicati Inc."
+QPKG_LICENSE="MIT"
+QPKG_SUMMARY="Duplicati backup client"
+QPKG_RC_NUM="101"
+QPKG_SERVICE_PROGRAM="duplicati.sh"
+QPKG_SERVICE_PORT="8200"
+QPKG_TIMEOUT="60,60"
+QTS_MINI_VERSION="5.0.0"
+
+# Route iframe through server, limit acces to admins
+QPKG_SYS_APP="1"
+QPKG_VISIBLE="1"
+QPKG_WEB_PORT="-1"
+QPKG_WEB_SSL_PORT="-1"
+
+# Target Web UI route (tells App Center where "Open" points)
+QPKG_WEBUI="/apps/duplicati/"
+
+# Desktop Window Configuration
+QPKG_DESKTOP_APP="1"
+QPKG_DESKTOP_APP_MAIN_PAGE="/apps/duplicati/"
+QPKG_DESKTOP_APP_ICON="duplicati.png"
+QPKG_DESKTOP_APP_WIN_WIDTH="1100"
+QPKG_DESKTOP_APP_WIN_HEIGHT="750"
