@@ -1,11 +1,10 @@
 // Copyright (c) 2026 Duplicati Inc. All rights reserved.
 
-using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Proprietary.DiskImage.Disk;
 using Duplicati.Proprietary.DiskImage.General;
@@ -17,9 +16,29 @@ namespace Duplicati.Proprietary.DiskImage.SourceItems;
 /// Represents a disk as a source entry for backup operations.
 /// This is the root entry in the disk image hierarchy.
 /// </summary>
-internal class DiskSourceEntry(SourceProvider provider, IRawDisk disk, string? mountPath)
-    : DiskImageEntryBase(mountPath ?? provider.MountedPath)
+internal class DiskSourceEntry(SourceProvider provider, IRawDisk disk, string subpath)
+    : DiskImageEntryBase(CalculatePath(provider.MountedPath, disk.DevicePath))
 {
+    /// <summary>
+    /// Helper to construct the slightly odd path needed.
+    /// </summary>
+    /// <param name="mountPoint">The mount point used</param>
+    /// <param name="devicePath">The disk device path</param>
+    /// <returns>The mounted full path</returns>
+    private static string CalculatePath(string mountPoint, string devicePath)
+    {
+        // Example: X:\Test\ + \\.\\PHYSICAL_DRIVE0 => X:\Test\\.\PHYSICAL_DRIVE0
+        devicePath = Util.AppendDirSeparator(devicePath);
+        if (string.IsNullOrWhiteSpace(mountPoint))
+            return devicePath;
+
+        if (SourceProvider.GetDevicePrefix().StartsWith(System.IO.Path.DirectorySeparatorChar) && mountPoint.EndsWith(System.IO.Path.DirectorySeparatorChar))
+            mountPoint = mountPoint.Substring(0, mountPoint.Length - 1);
+
+        return mountPoint + devicePath;
+
+    }
+
     /// <inheritdoc />
     public override bool IsFolder => true;
 
@@ -122,9 +141,19 @@ internal class DiskSourceEntry(SourceProvider provider, IRawDisk disk, string? m
             // Now yield the consolidated geometry metadata file with all geometry collected
             yield return new GeometrySourceEntry(this.Path, geometryMetadata);
 
+            // If the source pointed to a specific partition, only emit that one now
+            var subpathmarker = string.IsNullOrWhiteSpace(subpath) || subpath.StartsWith(System.IO.Path.DirectorySeparatorChar)
+                ? subpath
+                : System.IO.Path.DirectorySeparatorChar + subpath;
+
+
             // Then yield the actual partition and filesystem entries
             foreach (var partition in partitions)
-                yield return new PartitionSourceEntry(this.Path, partition, provider.TreatFilesystemAsUnknown);
+            {
+                var pse = new PartitionSourceEntry(this.Path, partition, provider.TreatFilesystemAsUnknown);
+                if (string.IsNullOrWhiteSpace(subpathmarker) || pse.Path.EndsWith(subpathmarker))
+                    yield return pse;
+            }
         }
         else
         {

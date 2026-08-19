@@ -83,7 +83,7 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
     }
 
     /// <inheritdoc />
-    public string MountedPath => $"{_mountPoint}root{System.IO.Path.DirectorySeparatorChar}";
+    public string MountedPath => _mountPoint;
 
     /// <inheritdoc />
     public string DisplayName => Strings.ProviderDisplayName;
@@ -166,7 +166,12 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
         if (_disk == null)
             throw new InvalidOperationException("Provider not initialized.");
 
-        yield return new DiskSourceEntry(this, _disk, null);
+        var diskpath = Util.AppendDirSeparator(_disk.DevicePath);
+        var subpath = _devicePath == diskpath
+            ? ""
+            : _devicePath.Substring(diskpath.Length);
+
+        yield return new DiskSourceEntry(this, _disk, subpath);
     }
 
     /// <inheritdoc />
@@ -186,7 +191,7 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
         if (_disk == null)
             throw new InvalidOperationException("Provider not initialized.");
 
-        var dse = new DiskSourceEntry(this, _disk, Util.AppendDirSeparator(_disk.DevicePath));
+        var dse = new DiskSourceEntry(this, _disk, "");
 
         // Workaround for the "root" element in the path
         if (Util.AppendDirSeparator(_disk.DevicePath) == path)
