@@ -17,8 +17,8 @@ namespace Duplicati.Proprietary.DiskImage.SourceItems;
 /// Represents a disk as a source entry for backup operations.
 /// This is the root entry in the disk image hierarchy.
 /// </summary>
-internal class DiskSourceEntry(SourceProvider provider, IRawDisk disk)
-    : DiskImageEntryBase(provider.MountedPath)
+internal class DiskSourceEntry(SourceProvider provider, IRawDisk disk, string? mountPath)
+    : DiskImageEntryBase(mountPath ?? provider.MountedPath)
 {
     /// <inheritdoc />
     public override bool IsFolder => true;

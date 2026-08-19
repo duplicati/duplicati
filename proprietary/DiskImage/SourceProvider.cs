@@ -10,7 +10,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
-using Duplicati.Library.Utility;
 using Duplicati.Proprietary.DiskImage.Disk;
 using Duplicati.Proprietary.DiskImage.General;
 using Duplicati.Proprietary.DiskImage.SourceItems;
@@ -116,30 +115,34 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
 
     private async Task<object> GetDiskAsync(string path, CancellationToken cancellationToken)
     {
+        var prefix = GetDevicePrefix();
+        List<string> parts = [.. path[prefix.Length..].Split(Path.DirectorySeparatorChar, 2)];
+        var physicalDrivePath = prefix + parts.First();
+
         if (OperatingSystem.IsWindows())
         {
-            var disk = new Windows(path.TrimEnd(Path.DirectorySeparatorChar));
+            var disk = new Windows(physicalDrivePath.TrimEnd(Path.DirectorySeparatorChar));
             var msg = await disk.InitializeAsync(cancellationToken);
             if (!string.IsNullOrWhiteSpace(msg))
-                throw new UserInformationException($"Failed to initialize disk: {path}, {msg}", "DiskInitializeFailed");
+                throw new UserInformationException($"Failed to initialize disk: {physicalDrivePath}, {msg}", "DiskInitializeFailed");
 
             return disk;
         }
         else if (OperatingSystem.IsMacOS())
         {
-            var disk = new Mac(path);
+            var disk = new Mac(physicalDrivePath);
             var msg = await disk.InitializeAsync(cancellationToken);
             if (!string.IsNullOrWhiteSpace(msg))
-                throw new UserInformationException($"Failed to initialize disk: {path}, {msg}", "DiskInitializeFailed");
+                throw new UserInformationException($"Failed to initialize disk: {physicalDrivePath}, {msg}", "DiskInitializeFailed");
 
             return disk;
         }
         else if (OperatingSystem.IsLinux())
         {
-            var disk = new Linux(path);
+            var disk = new Linux(physicalDrivePath);
             var msg = await disk.InitializeAsync(cancellationToken);
             if (!string.IsNullOrWhiteSpace(msg))
-                throw new UserInformationException($"Failed to initialize disk: {path}, {msg}", "DiskInitializeFailed");
+                throw new UserInformationException($"Failed to initialize disk: {physicalDrivePath}, {msg}", "DiskInitializeFailed");
 
             return disk;
         }
@@ -163,8 +166,7 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
         if (_disk == null)
             throw new InvalidOperationException("Provider not initialized.");
 
-        var root = new DiskSourceEntry(this, _disk);
-        yield return root;
+        yield return new DiskSourceEntry(this, _disk, null);
     }
 
     /// <inheritdoc />
@@ -176,19 +178,7 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
         // Special support for browser enumeration which does call initialize,
         // but does it with an empty path.
         if (_disk == null && string.IsNullOrWhiteSpace(_devicePath) && !string.IsNullOrWhiteSpace(path))
-        {
-            var prefix = GetDevicePrefix();
-            List<string> parts = [.. path[prefix.Length..].Split(Path.DirectorySeparatorChar, 2)];
-            var physicalDrivePath = prefix + parts.First();
-
-            _disk = (IRawDisk)await GetDiskAsync(physicalDrivePath, cancellationToken).ConfigureAwait(false);
-        }
-
-        // This is also a fix for the browsing enumeration, but from
-        // a place where the disk has been selected
-        if (_disk != null && string.IsNullOrWhiteSpace(_mountPoint))
-                _mountPoint = Util.AppendDirSeparator(_disk.DevicePath);
-
+            _disk = (IRawDisk)await GetDiskAsync(path, cancellationToken).ConfigureAwait(false);
 
         if (_entryCache.TryGetValue(path, out var cachedEntry))
             return cachedEntry;
@@ -196,7 +186,7 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
         if (_disk == null)
             throw new InvalidOperationException("Provider not initialized.");
 
-        var dse = new DiskSourceEntry(this, _disk);
+        var dse = new DiskSourceEntry(this, _disk, Util.AppendDirSeparator(_disk.DevicePath));
 
         // Workaround for the "root" element in the path
         if (Util.AppendDirSeparator(_disk.DevicePath) == path)
