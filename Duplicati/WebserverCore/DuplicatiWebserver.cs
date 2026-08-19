@@ -346,6 +346,7 @@ public class DuplicatiWebserver
         app.UseAuthorization();
 
         app.UseSynologyDsmAuthIfEnabled();
+        app.UseQnapAuthIfEnabled();
 
         if (EnableSwagger)
         {

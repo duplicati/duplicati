@@ -32,7 +32,7 @@ These tools are used by the build process, each tool can be changed by using the
 - `CODESIGN=codesign`: Optional. Used to sign MacOS binaries and packages.
 - `PRODUCTSIGN=productsign`: Optional. Used to sign MacOS packages.
 - `WIX=wixl`: Optional. Required to build the Windows MSI packages.
-- `DOCKER=docker`: Optional. Required to build some Linux packages.
+- `DOCKER=docker`: Optional. Required to build some Linux packages, including the QNAP QPKG package which uses the QNAP Development Kit (QDK) in a Docker container.
 
 # Invoking the tool
 

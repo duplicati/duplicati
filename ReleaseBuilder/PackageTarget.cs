@@ -104,7 +104,11 @@ public enum PackageType
     /// <summary>
     /// The synology Spk format
     /// </summary>
-    SynologySpk
+    SynologySpk,
+    /// <summary>
+    /// The QNAP Qpkg format
+    /// </summary>
+    QnapQpkg
 }
 
 /// <summary>
@@ -182,6 +186,7 @@ public record PackageTarget(OSType OS, ArchType Arch, InterfaceType Interface, P
             PackageType.DMG => "dmg",
             PackageType.MacPkg => "pkg",
             PackageType.SynologySpk => "spk",
+            PackageType.QnapQpkg => "qpkg",
             PackageType.Docker => "docker",
             _ => throw new Exception("Not supported package type")
         };
