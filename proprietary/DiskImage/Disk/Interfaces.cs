@@ -53,16 +53,16 @@ internal interface IRawDisk : IDisposable
     /// Initializes the disk access interface.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>True if initialization was successful.</returns>
-    Task<bool> InitializeAsync(CancellationToken cancellationToken);
+    /// <returns><c>null</c> if initialization was successful, otherwise an error message.</returns>
+    Task<string?> InitializeAsync(CancellationToken cancellationToken);
 
     /// <summary>
     /// Initializes the disk access interface with write access.
     /// </summary>
     /// <param name="enableWrite">Whether to enable write access.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>True if initialization was successful.</returns>
-    Task<bool> InitializeAsync(bool enableWrite, CancellationToken cancellationToken);
+    /// <returns><c>null</c> if initialization was successful, otherwise an error message.</returns>
+    Task<string?> InitializeAsync(bool enableWrite, CancellationToken cancellationToken);
 
     /// <summary>
     /// Finalizes the disk access interface.

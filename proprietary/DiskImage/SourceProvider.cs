@@ -119,24 +119,27 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
         if (OperatingSystem.IsWindows())
         {
             var disk = new Windows(path.TrimEnd(Path.DirectorySeparatorChar));
-            if (!await disk.InitializeAsync(cancellationToken))
-                throw new UserInformationException($"Failed to initialize disk: {path}", "DiskInitializeFailed");
+            var msg = await disk.InitializeAsync(cancellationToken);
+            if (!string.IsNullOrWhiteSpace(msg))
+                throw new UserInformationException($"Failed to initialize disk: {path}, {msg}", "DiskInitializeFailed");
 
             return disk;
         }
         else if (OperatingSystem.IsMacOS())
         {
             var disk = new Mac(path);
-            if (!await disk.InitializeAsync(cancellationToken))
-                throw new UserInformationException($"Failed to initialize disk: {path}", "DiskInitializeFailed");
+            var msg = await disk.InitializeAsync(cancellationToken);
+            if (!string.IsNullOrWhiteSpace(msg))
+                throw new UserInformationException($"Failed to initialize disk: {path}, {msg}", "DiskInitializeFailed");
 
             return disk;
         }
         else if (OperatingSystem.IsLinux())
         {
             var disk = new Linux(path);
-            if (!await disk.InitializeAsync(cancellationToken))
-                throw new UserInformationException($"Failed to initialize disk: {path}", "DiskInitializeFailed");
+            var msg = await disk.InitializeAsync(cancellationToken);
+            if (!string.IsNullOrWhiteSpace(msg))
+                throw new UserInformationException($"Failed to initialize disk: {path}, {msg}", "DiskInitializeFailed");
 
             return disk;
         }
@@ -176,7 +179,7 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
         {
             var prefix = GetDevicePrefix();
             List<string> parts = [.. path[prefix.Length..].Split(Path.DirectorySeparatorChar, 2)];
-            var physicalDrivePath  = prefix + parts.First();
+            var physicalDrivePath = prefix + parts.First();
 
             _disk = (IRawDisk)await GetDiskAsync(physicalDrivePath, cancellationToken).ConfigureAwait(false);
 
