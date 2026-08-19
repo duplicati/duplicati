@@ -182,10 +182,13 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
             var physicalDrivePath = prefix + parts.First();
 
             _disk = (IRawDisk)await GetDiskAsync(physicalDrivePath, cancellationToken).ConfigureAwait(false);
-
-            if (_disk != null)
-                _mountPoint = Util.AppendDirSeparator(_disk.DevicePath);
         }
+
+        // This is also a fix for the browsing enumeration, but from
+        // a place where the disk has been selected
+        if (_disk != null && string.IsNullOrWhiteSpace(_mountPoint))
+                _mountPoint = Util.AppendDirSeparator(_disk.DevicePath);
+
 
         if (_entryCache.TryGetValue(path, out var cachedEntry))
             return cachedEntry;
