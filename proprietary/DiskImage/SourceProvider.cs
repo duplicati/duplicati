@@ -8,10 +8,11 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 using Duplicati.Proprietary.DiskImage.Disk;
 using Duplicati.Proprietary.DiskImage.General;
-using Duplicati.Proprietary.DiskImage.Partition;
 using Duplicati.Proprietary.DiskImage.SourceItems;
 
 namespace Duplicati.Proprietary.DiskImage;
@@ -169,20 +170,35 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
         if (string.IsNullOrWhiteSpace(path) || path == "/")
             return new MachineRootSourceEntry();
 
-        // Special support for enumeration which does call initialize, but does it with
-        // an empty path.
+        // Special support for browser enumeration which does call initialize,
+        // but does it with an empty path.
         if (_disk == null && string.IsNullOrWhiteSpace(_devicePath) && !string.IsNullOrWhiteSpace(path))
-            _disk = (IRawDisk)await GetDiskAsync(path, cancellationToken).ConfigureAwait(false);
+        {
+            var prefix = GetDevicePrefix();
+            List<string> parts = [.. path[prefix.Length..].Split(Path.DirectorySeparatorChar, 2)];
+            var physicalDrivePath  = prefix + parts.First();
 
-        if (_disk == null)
-            throw new InvalidOperationException("Provider not initialized.");
+            _disk = (IRawDisk)await GetDiskAsync(physicalDrivePath, cancellationToken).ConfigureAwait(false);
+
+            if (_disk != null)
+                _mountPoint = Util.AppendDirSeparator(_disk.DevicePath);
+        }
 
         if (_entryCache.TryGetValue(path, out var cachedEntry))
             return cachedEntry;
 
+        if (_disk == null)
+            throw new InvalidOperationException("Provider not initialized.");
+
+        var dse = new DiskSourceEntry(this, _disk);
+
+        // Workaround for the "root" element in the path
+        if (Util.AppendDirSeparator(_disk.DevicePath) == path)
+            return dse;
+
         // Simple implementation: enumerate from root to find the entry
         // In a real implementation, we would parse the path and resolve it efficiently
-        await foreach (var entry in EnumerateRecursive(new DiskSourceEntry(this, _disk), cancellationToken))
+        await foreach (var entry in EnumerateRecursive(dse, cancellationToken))
         {
             if (entry.Path == path && entry.IsFolder == isFolder)
             {
