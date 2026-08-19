@@ -98,7 +98,8 @@ public static partial class Command
         PackageType.Docker,
         PackageType.Deb,
         PackageType.RPM,
-        PackageType.AppImage
+        PackageType.AppImage,
+        PackageType.QnapQpkg
     };
 
     /// <summary>
