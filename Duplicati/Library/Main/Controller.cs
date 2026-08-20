@@ -1369,14 +1369,14 @@ namespace Duplicati.Library.Main
                             // If there are no excludes, there is no need to keep the folder as a filter
                             if (excludes)
                             {
-                                Logging.Log.WriteVerboseMessage(LOGTAG, "RemovingSubfolderSource", "Removing source \"{0}\" because it is a subfolder or subfile of \"{1}\", and using it as an include filter", sources[i], sources[j]);
+                                Logging.Log.WriteVerboseMessage(LOGTAG, "RemovingSubfolderSource", "Removing source \"{0}\" because it is a folder or file inside \"{1}\", and using it as an include filter", sources[i], sources[j]);
                                 filter = JoinedFilterExpression.Join(new FilterExpression(sources[i]), filter);
                             }
                             else
-                                Logging.Log.WriteVerboseMessage(LOGTAG, "RemovingSubfolderSource", "Removing source \"{0}\" because it is a subfolder or subfile of \"{1}\"", sources[i], sources[j]);
+                                Logging.Log.WriteVerboseMessage(LOGTAG, "RemovingSubfolderSource", "Removing source \"{0}\" because it is a folder or file inside \"{1}\"", sources[i], sources[j]);
                         }
                         else
-                            Logging.Log.WriteVerboseMessage(LOGTAG, "RemovingSubfolderSource", "Removing source \"{0}\" because it is a subfolder or subfile of \"{1}\"", sources[i], sources[j]);
+                            Logging.Log.WriteVerboseMessage(LOGTAG, "RemovingSubfolderSource", "Removing source \"{0}\" because it is a folder or file inside \"{1}\"", sources[i], sources[j]);
 
                         sources.RemoveAt(i);
                         i--;
