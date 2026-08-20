@@ -56,6 +56,12 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
     private readonly bool _treatFilesystemAsUnknown;
 
     /// <summary>
+    /// The subpath within the disk hierarchy that the device URL points to
+    /// (the part after the device name, e.g. a partition), or empty if the URL targets the whole disk.
+    /// </summary>
+    private string _subpath = string.Empty;
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="SourceProvider"/> class.
     /// Default constructor for metadata loading.
     /// </summary>
@@ -118,6 +124,7 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
         var prefix = GetDevicePrefix();
         List<string> parts = [.. path[prefix.Length..].Split(Path.DirectorySeparatorChar, 2)];
         var physicalDrivePath = prefix + parts.First();
+        _subpath = parts.Count > 1 ? parts[1] : string.Empty;
 
         if (OperatingSystem.IsWindows())
         {
@@ -166,12 +173,7 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
         if (_disk == null)
             throw new InvalidOperationException("Provider not initialized.");
 
-        var diskpath = Util.AppendDirSeparator(_disk.DevicePath);
-        var subpath = _devicePath == diskpath
-            ? ""
-            : _devicePath.Substring(diskpath.Length);
-
-        yield return new DiskSourceEntry(this, _disk, subpath);
+        yield return new DiskSourceEntry(this, _disk, _subpath);
     }
 
     /// <inheritdoc />
@@ -194,7 +196,7 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
         var dse = new DiskSourceEntry(this, _disk, "");
 
         // Workaround for the "root" element in the path
-        if (Util.AppendDirSeparator(_disk.DevicePath) == path)
+        if (Util.AppendDirSeparator(_disk.DevicePath) == path || _disk.DevicePath == path)
             return dse;
 
         // Simple implementation: enumerate from root to find the entry
