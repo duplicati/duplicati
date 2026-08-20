@@ -180,7 +180,21 @@ namespace Duplicati.Library.Utility
             // produces are recognized as the same Windows path and round-trip cleanly.
             if (url.StartsWith("file://", StringComparison.OrdinalIgnoreCase))
             {
-                var candidate = UrlEncoding.UrlDecode(url.Substring("file://".Length));
+                // A query string may follow the path. Split it off before decoding,
+                // following standard query string logic: only a raw '?' delimits the
+                // query, an encoded %3F stays part of the path. A Windows path cannot
+                // contain a '?', so the split is safe.
+                var remainder = url.Substring("file://".Length);
+                string? query = null;
+                var queryIndex = remainder.IndexOf('?');
+                if (queryIndex >= 0)
+                {
+                    query = remainder.Substring(queryIndex + 1);
+                    remainder = remainder.Substring(0, queryIndex);
+                }
+
+                var candidate = UrlEncoding.UrlDecode(remainder);
+
                 // also accept the correctly-encoded file:///C:\ triple-slash form
                 if (candidate.StartsWith("/", StringComparison.Ordinal) && WINDOWS_PATH.IsMatch(candidate))
                     candidate = candidate.Substring(1);
@@ -191,7 +205,7 @@ namespace Duplicati.Library.Utility
                     this.Host = null;
                     this.Path = System.IO.Path.GetFullPath(candidate);
                     this.Port = -1;
-                    this.Query = null;
+                    this.Query = query;
                     this.Username = null;
                     this.Password = null;
                     return;
