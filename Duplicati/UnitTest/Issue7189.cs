@@ -103,14 +103,14 @@ namespace Duplicati.UnitTest
 
         /// <summary>
         /// Covers the case where a source file sits inside another source folder
-        /// (e.g. "parent/" and "parent/sub/inner.txt"). Since files are never
-        /// pruned from the source list, the file is enumerated both via the
-        /// folder scan and as an explicit file source. This test documents the
-        /// resulting behavior.
+        /// (e.g. "parent/" and "parent/sub/inner.txt"). The file is redundant
+        /// and should be pruned from the source list, avoiding the duplicate
+        /// enumeration that would otherwise cause a FileProcessingFailed warning
+        /// (UNIQUE constraint failed: FilesetEntry.FilesetID, FilesetEntry.FileID).
         /// </summary>
         [Test]
         [Category("Targeted")]
-        public async Task FileInsideIncludedFolderIsKeptAsSourceAsync()
+        public async Task FileInsideIncludedFolderIsPrunedAndBackedUpAsync()
         {
             var parentFolder = Path.Combine(DATAFOLDER, "parent");
             var subFolder = Path.Combine(parentFolder, "sub");
@@ -127,25 +127,16 @@ namespace Duplicati.UnitTest
             {
                 var results = await c.BackupAsync([parentFolder, innerFile]);
                 Assert.AreEqual(0, results.Errors.Count(), "Backup should succeed");
+                Assert.AreEqual(0, results.Warnings.Count(), "Backup should not emit warnings");
             }
 
-            // The file source must NOT be pruned, even though it is inside the folder source
-            Assert.That(logSink.Entries.Any(x => x.Id == "RemovingSubfolderSource"), Is.False,
-                "A file source should not be pruned, even if it sits inside another source folder");
+            // The redundant file source should be pruned, as it is inside the folder source
+            Assert.That(logSink.Entries.Any(x => x.Id == "RemovingSubfolderSource"), Is.True,
+                "A file source inside another source folder should be pruned from the source list");
 
-            // Because the file is enumerated twice (folder scan + explicit file source),
-            // the second processing fails to insert into the fileset with a duplicate-path
-            // constraint violation, surfaced as a FileProcessingFailed warning.
-            // This documents the current behavior; ideally the duplicate would be
-            // detected with a better message.
-            var duplicateWarnings = logSink.Entries
-                .Where(x => x.Id == "FileProcessingFailed" && x.FormattedMessage.Contains(innerFile))
-                .ToList();
-            Assert.That(duplicateWarnings, Has.Count.EqualTo(1),
-                "The double enumeration of the file source should surface as a FileProcessingFailed warning");
-            Assert.That(duplicateWarnings[0].Exception, Is.Not.Null
-                .And.Message.Contains("FilesetEntry"),
-                "The warning should be caused by a duplicate FilesetEntry");
+            // The prune must happen before enumeration, so the file is only processed once
+            Assert.That(logSink.Entries.Any(x => x.Id == "FileProcessingFailed"), Is.False,
+                "The file should not be processed twice, which previously caused a duplicate FilesetEntry warning");
 
             // Restore everything and verify both files are present exactly once
             var restoreOptions = new Dictionary<string, string>(TestOptions)
@@ -166,7 +157,62 @@ namespace Duplicati.UnitTest
             Assert.That(restoredFiles.Any(x => x.EndsWith("root.txt")), Is.True,
                 "The folder contents should be in the backup");
             Assert.That(restoredFiles.Count(x => x.EndsWith(Path.Combine("sub", "inner.txt"))), Is.EqualTo(1),
-                "The inner file should be restored exactly once, even though it was enumerated via two sources");
+                "The inner file should be restored exactly once");
+        }
+
+        /// <summary>
+        /// When a file source inside an included folder is pruned and exclude
+        /// filters are present, the file is re-added as an include filter so it
+        /// is still backed up, even if it matches an exclude filter.
+        /// </summary>
+        [Test]
+        [Category("Targeted")]
+        public async Task PrunedFileInsideIncludedFolderSurvivesExcludeFilterAsync()
+        {
+            var parentFolder = Path.Combine(DATAFOLDER, "parent");
+            var subFolder = Path.Combine(parentFolder, "sub");
+            Directory.CreateDirectory(subFolder);
+            File.WriteAllText(Path.Combine(parentFolder, "root.txt"), "root contents");
+            var innerFile = Path.Combine(subFolder, "inner.txt");
+            File.WriteAllText(innerFile, "inner contents");
+
+            // Exclude all .txt files; the explicit file source should still be
+            // backed up because it is re-added as an include filter
+            var filter = new Library.Utility.FilterExpression("*.txt", false);
+
+            var logSink = new LogSink();
+            using var isolatingScope = Log.StartIsolatingScope(true);
+            using var log = Log.StartScope(logSink, LogMessageType.Verbose);
+
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, TestOptions, null))
+            {
+                var results = await c.BackupAsync([parentFolder, innerFile], filter);
+                Assert.AreEqual(0, results.Errors.Count(), "Backup should succeed");
+            }
+
+            Assert.That(logSink.Entries.Any(x => x.Id == "RemovingSubfolderSource"
+                    && x.FormattedMessage.Contains("include filter")), Is.True,
+                "The pruned file source should be re-added as an include filter when exclude filters are present");
+
+            var restoreOptions = new Dictionary<string, string>(TestOptions)
+            {
+                ["restore-path"] = RESTOREFOLDER
+            };
+
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, restoreOptions, null))
+            {
+                var results = await c.RestoreAsync(null);
+                Assert.AreEqual(0, results.Errors.Count(), "Restore should succeed");
+            }
+
+            var restoredFiles = Directory.GetFiles(RESTOREFOLDER, "*", SearchOption.AllDirectories)
+                .Select(x => Path.GetRelativePath(RESTOREFOLDER, x))
+                .ToList();
+
+            Assert.That(restoredFiles.Any(x => x.EndsWith(Path.Combine("sub", "inner.txt"))), Is.True,
+                "The explicit file source should be backed up via the include filter, despite the exclude filter");
+            Assert.That(restoredFiles.Any(x => x.EndsWith("root.txt")), Is.False,
+                "The non-source .txt file should be excluded by the filter");
         }
 
         /// <summary>
