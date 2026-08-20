@@ -27,7 +27,7 @@ internal class DiskSourceEntry(SourceProvider provider, IRawDisk disk, string su
     /// <returns>The mounted full path</returns>
     private static string CalculatePath(string mountPoint, string devicePath)
     {
-        // Example: X:\Test\ + \\.\\PHYSICAL_DRIVE0 => X:\Test\\.\PHYSICAL_DRIVE0
+        // Example: X:\Test\ + \\.\PHYSICAL_DRIVE0 => X:\Test\\.\PHYSICAL_DRIVE0
         devicePath = Util.AppendDirSeparator(devicePath);
         if (string.IsNullOrWhiteSpace(mountPoint))
             return devicePath;
