@@ -138,6 +138,7 @@ namespace Duplicati.Library.Main
 
             CheckAutoCompactInterval();
             CheckAutoVacuumInterval();
+            SourceProviderFactory.EnableMetadataStorageIfRequiredBySources(inputsources, m_options.RawOptions);
 
             return await RunActionAsync(new BackupResults(), inputsources, inputFilter, false, static async config =>
             {

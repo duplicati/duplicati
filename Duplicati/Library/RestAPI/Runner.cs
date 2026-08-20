@@ -1512,6 +1512,15 @@ namespace Duplicati.Server
                 if (o.Name.StartsWith("--", StringComparison.Ordinal) && TestIfOptionApplies())
                     options[o.Name.Substring(2)] = o.Value;
 
+            // Enable metadata storage if any of the backup's sources require it,
+            // even if the current operation is not a backup
+            var sources =
+                (from n in backup.Sources
+                 let p = SpecialFolders.ExpandEnvironmentVariables(n)
+                 where !string.IsNullOrWhiteSpace(p)
+                 select p).ToArray();
+            Library.Main.Operation.Common.SourceProviderFactory.EnableMetadataStorageIfRequiredBySources(sources, options);
+
             // The server hangs if the module is enabled as there is no console attached
             DisableModule("console-password-input", options);
 
