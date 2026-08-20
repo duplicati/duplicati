@@ -32,6 +32,9 @@ public class Combiner(IEnumerable<ISourceProvider> providers) : ISourceProvider
     /// <inheritdoc/>
     public string MountedPath => string.Empty;
 
+    /// <inheritdoc />
+    public bool NeedsStoredMetadata => providers.Any(x => x.NeedsStoredMetadata);
+
     /// <summary>
     /// The providers to combine
     /// </summary>

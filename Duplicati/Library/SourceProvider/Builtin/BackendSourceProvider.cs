@@ -52,6 +52,9 @@ public class BackendSourceProvider(IFolderEnabledBackend backend, string mounted
     /// <inheritdoc/>
     public IList<ICommandLineArgument> SupportedCommands => backend.SupportedCommands;
 
+    /// <inheritdoc />
+    public bool NeedsStoredMetadata => false;
+
     /// <summary>
     /// The prepared root entry, if any
     /// </summary>

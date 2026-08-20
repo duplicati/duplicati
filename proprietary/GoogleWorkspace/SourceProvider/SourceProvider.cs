@@ -110,6 +110,9 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
 
     public string MountedPath => _mountPoint;
 
+    /// <inheritdoc />
+    public bool NeedsStoredMetadata => true;
+
     public void Dispose()
     {
     }

@@ -50,6 +50,61 @@ namespace Duplicati.Library.Main.Operation.Common
         private static readonly string LOGTAG = Log.LogTagFromType(typeof(SourceProviderFactory));
 
         /// <summary>
+        /// The option that enables storing metadata content in the database
+        /// </summary>
+        public const string StoreMetadataContentInDatabaseOption = "store-metadata-content-in-database";
+
+        /// <summary>
+        /// Enables the "store-metadata-content-in-database" option if any of the sources
+        /// is provided by a source provider that requires it, and the option is not already set
+        /// </summary>
+        /// <param name="sources">The sources to check</param>
+        /// <param name="options">The options to update</param>
+        /// <returns>True if the option was enabled; false otherwise</returns>
+        public static bool EnableMetadataStorageIfRequiredBySources(IEnumerable<string>? sources, IDictionary<string, string?> options)
+        {
+            if (sources == null || options.ContainsKey(StoreMetadataContentInDatabaseOption))
+                return false;
+
+            // Find the keys of the source providers that require metadata to be stored in the database
+            var providersRequiringMetadata = SourceProviderLoader.Modules
+                .Where(x => x.NeedsStoredMetadata)
+                .Select(x => x.Key)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            if (providersRequiringMetadata.Count == 0)
+                return false;
+
+            foreach (var source in sources)
+            {
+                // Remote sources are given on the form "@mountpoint|url"
+                var match = Regex.Match(source, @"^@(?<mountpoint>[^|]+)\|(?<url>.+)$", RegexOptions.IgnoreCase);
+                if (!match.Success)
+                    continue;
+
+                string scheme;
+                try
+                {
+                    scheme = new Duplicati.Library.Utility.RelaxedUri(match.Groups["url"].Value).Scheme;
+                }
+                catch
+                {
+                    // Invalid source urls are reported when the source provider is loaded
+                    continue;
+                }
+
+                if (providersRequiringMetadata.Contains(scheme))
+                {
+                    Log.WriteInformationMessage(LOGTAG, "AutoEnableMetadataStorage", "The source provider \"{0}\" requires metadata to be stored in the database, automatically enabling the option --{1}", scheme, StoreMetadataContentInDatabaseOption);
+                    options[StoreMetadataContentInDatabaseOption] = "true";
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// Gets a single source provider for the given sources
         /// </summary>
         /// <param name="sources">The sources to get providers for</param>

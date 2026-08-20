@@ -221,6 +221,9 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
     public string MountedPath => _mountPoint;
 
     /// <inheritdoc />
+    public bool NeedsStoredMetadata => true;
+
+    /// <inheritdoc />
     public void Dispose()
     {
         _apiHelper?.Dispose();
