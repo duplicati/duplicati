@@ -18,6 +18,8 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+using Duplicati.Library.Logging;
+
 namespace Duplicati.Library.RemoteControl;
 
 /// <summary>
@@ -25,6 +27,11 @@ namespace Duplicati.Library.RemoteControl;
 /// </summary>
 public class PeriodicRefresher : IDisposable
 {
+    /// <summary>
+    /// The log tag for messages from this class
+    /// </summary>
+    private static readonly string LogTag = Log.LogTagFromType<PeriodicRefresher>();
+
     /// <summary>
     /// The last time the refresh was done
     /// </summary>
@@ -89,10 +96,23 @@ public class PeriodicRefresher : IDisposable
             if (t == _tcs.Task)
                 Interlocked.Exchange(ref _tcs, new TaskCompletionSource<bool>());
 
-            if ((_lastRefresh + _minimumRefreshInterval) < DateTime.Now)
+            if ((_lastRefresh + _minimumRefreshInterval) < DateTime.UtcNow)
             {
-                _lastRefresh = DateTime.Now;
-                await _refreshAction(_cts.Token);
+                _lastRefresh = DateTime.UtcNow;
+
+                // Never let a failing action terminate the loop,
+                // as that would stop all periodic work permanently
+                try
+                {
+                    await _refreshAction(_cts.Token);
+                }
+                catch (Exception ex)
+                {
+                    if (_cts.Token.IsCancellationRequested)
+                        return;
+
+                    SafeLog.Write(LogMessageType.Warning, LogTag, "PeriodicRefreshFailed", ex, "Periodic refresh action failed");
+                }
             }
         }
     }
