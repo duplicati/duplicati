@@ -276,7 +276,7 @@ public class KeepRemoteConnection : IDisposable
                 else if ((_state == ConnectionState.Authenticated || _state == ConnectionState.WelcomeReceived) && _lastMessageReceived.Add(NoResponseTimeout) < DateTimeOffset.UtcNow)
                 {
                     SetState(ConnectionState.Error);
-                    Log.WriteMessage(LogMessageType.Warning, LogTag, "WebsocketDisconnect", "No response from server");
+                    SafeLog.Write(LogMessageType.Warning, LogTag, "WebsocketDisconnect", null, "No response from server");
                     _client.Stop(System.Net.WebSockets.WebSocketCloseStatus.NormalClosure, "No response").FireAndForget();
                 }
 
@@ -300,19 +300,37 @@ public class KeepRemoteConnection : IDisposable
             RefreshCertificatesAsync,
             _cancellationTokenSource.Token);
 
+        // Note: this handler is invoked synchronously by the websocket client.
+        // An exception escaping here would detach the subscription and be passed
+        // back into the websocket client, leaving it unable to ever reconnect,
+        // so everything in here must be exception free.
         using var h1 = _client.DisconnectionHappened.Subscribe(info =>
         {
-            SetState(ConnectionState.NotConnected);
-            _serverCertificate = null;
-            _serverPublicKey = null;
-            if (!IsAutoReconnectDisabled())
+            try
             {
-                reconnectHelper.Signal();
-                Log.WriteMessage(LogMessageType.Warning, LogTag, "WebsocketDisconnect", $"Disconnected from server. Type: {info.Type}, Status: {info.CloseStatus}, Description: {info.CloseStatusDescription}");
+                SetState(ConnectionState.NotConnected);
+                _serverCertificate = null;
+                _serverPublicKey = null;
+                if (!IsAutoReconnectDisabled())
+                {
+                    reconnectHelper.Signal();
+                    SafeLog.Write(LogMessageType.Warning, LogTag, "WebsocketDisconnect", null, "Disconnected from server. Type: {0}, Status: {1}, Description: {2}", info.Type, info.CloseStatus, info.CloseStatusDescription);
+                }
+                else
+                {
+                    SafeLog.Write(LogMessageType.Information, LogTag, "WebsocketDisconnect", null, "Disconnected from the server. Auto-reconnect disabled until {0}", _refreshSettingsBy.ToLocalTime());
+                }
             }
-            else
+            catch (Exception ex)
             {
-                Log.WriteMessage(LogMessageType.Information, LogTag, "WebsocketDisconnect", "Disconnected from the server. Auto-reconnect disabled until {0}", _refreshSettingsBy.ToLocalTime());
+                // Make sure the reconnect is still attempted, even if the handler failed
+                try
+                {
+                    if (!IsAutoReconnectDisabled())
+                        reconnectHelper.Signal();
+                }
+                catch { }
+                SafeLog.Write(LogMessageType.Warning, LogTag, "WebsocketDisconnectHandlerError", ex, "Failed to handle the disconnect event");
             }
         });
 
@@ -323,6 +341,9 @@ public class KeepRemoteConnection : IDisposable
             // and the SelectMany allows us to handle multiple messages concurrently.
             // Only the initial handshake requires strict ordering, but here the
             // server will only send a single message anyway.
+            // Nothing must escape this handler; an exception here would detach the
+            // subscription, and no further messages would ever be processed,
+            // leaving the connection unable to complete the handshake
             .SelectMany(async msg =>
             {
                 try
@@ -331,7 +352,7 @@ public class KeepRemoteConnection : IDisposable
                 }
                 catch (Exception ex)
                 {
-                    Log.WriteMessage(LogMessageType.Warning, LogTag, "MessageProcessingError", ex, "Failed to process message: {0}", msg);
+                    SafeLog.Write(LogMessageType.Warning, LogTag, "MessageProcessingError", ex, "Failed to process message");
                 }
                 return System.Reactive.Unit.Default;
             })
@@ -361,9 +382,9 @@ public class KeepRemoteConnection : IDisposable
 
         _lastMessageReceived = DateTimeOffset.UtcNow;
         if (_state == ConnectionState.NotConnected)
-            Log.WriteMessage(LogMessageType.Verbose, LogTag, "WebsocketMessage", "Received message from server: {0}", msg);
+            SafeLog.Write(LogMessageType.Verbose, LogTag, "WebsocketMessage", null, "Received message from server: {0}", msg);
         else // Encrypted messages are not logged, as the content has no meaning before being decrypted
-            Log.WriteMessage(LogMessageType.Verbose, LogTag, "WebsocketMessage", "Received encrypted message from server");
+            SafeLog.Write(LogMessageType.Verbose, LogTag, "WebsocketMessage", null, "Received encrypted message from server");
 
         try
         {
@@ -461,7 +482,7 @@ public class KeepRemoteConnection : IDisposable
             }
             else if (_state == ConnectionState.Authenticated)
             {
-                Log.WriteVerboseMessage(LogTag, "WebsocketMessage", "Processing message of type {0}", envelope.GetMessageType());
+                SafeLog.Write(LogMessageType.Verbose, LogTag, "WebsocketMessage", null, "Processing message of type {0}", envelope.GetMessageType());
                 switch (envelope.GetMessageType())
                 {
                     case MessageType.Pong:
@@ -480,7 +501,7 @@ public class KeepRemoteConnection : IDisposable
                             response => SendEnvelope(envelope.RespondWith(response)),
                             refreshSettingsBy =>
                             {
-                                _refreshSettingsBy = DateTimeOffset.FromUnixTimeMilliseconds(Math.Max(refreshSettingsBy.ToUnixTimeMilliseconds(), DateTimeOffset.UtcNow.AddSeconds(30).ToUnixTimeMilliseconds()));
+                                _refreshSettingsBy = DateTimeOffset.FromUnixTimeMilliseconds(Math.Min(Math.Max(refreshSettingsBy.ToUnixTimeMilliseconds(), DateTimeOffset.UtcNow.AddSeconds(30).ToUnixTimeMilliseconds()), DateTimeOffset.UtcNow.AddDays(7).ToUnixTimeMilliseconds()));
                                 _client.Stop(System.Net.WebSockets.WebSocketCloseStatus.NormalClosure, "Disconnect requested").FireAndForget();
                             }
                         ));
@@ -498,7 +519,7 @@ public class KeepRemoteConnection : IDisposable
         catch (Exception ex)
         {
             SetState(ConnectionState.Error);
-            Log.WriteMessage(LogMessageType.Error, LogTag, "WebsocketMessage", ex, "Failed to process message: {0}", msg);
+            SafeLog.Write(LogMessageType.Error, LogTag, "WebsocketMessage", ex, "Failed to process message");
 
             await _client.Stop(System.Net.WebSockets.WebSocketCloseStatus.NormalClosure, "Error");
             reconnectHelper.Signal();
@@ -650,19 +671,30 @@ public class KeepRemoteConnection : IDisposable
     {
         using var client = HttpClientHelper.CreateClient(); // We won't set infiniteTimeout and keep the default 100s timeout
         var response = await client.GetAsync(_certificateUrl, cancelToken);
-        if (response.IsSuccessStatusCode)
+        if (!response.IsSuccessStatusCode)
         {
-            await using var stream = await response.Content.ReadAsStreamAsync(cancelToken);
-            var serverKeys = await JsonSerializer.DeserializeAsync<IEnumerable<MiniServerCertificate>>(stream, options: RegisterForRemote.JsonOptions, cancellationToken: cancelToken);
-            if (serverKeys != null && serverKeys.Any())
-            {
-                _serverKeys = serverKeys
-                    .Where(x => !x.HasExpired() && !string.IsNullOrWhiteSpace(x.PublicKeyHash) && !string.IsNullOrWhiteSpace(x.PublicKey))
-                    .ToList();
-
-                await InvokeReKeyAsync();
-            }
+            SafeLog.Write(LogMessageType.Warning, LogTag, "CertificateRefreshFailed", null, "Failed to refresh the server certificates, status code: {0}", response.StatusCode);
+            return;
         }
+
+        await using var stream = await response.Content.ReadAsStreamAsync(cancelToken);
+        var serverKeys = await JsonSerializer.DeserializeAsync<IEnumerable<MiniServerCertificate>>(stream, options: RegisterForRemote.JsonOptions, cancellationToken: cancelToken);
+
+        var usableKeys = (serverKeys ?? [])
+            .Where(x => !x.HasExpired() && !string.IsNullOrWhiteSpace(x.PublicKeyHash) && !string.IsNullOrWhiteSpace(x.PublicKey))
+            .ToList();
+
+        // Never discard the keys we already have in favor of nothing;
+        // the previous keys are stored, and replacing them with an empty
+        // list would make it impossible to validate the server, also after a restart
+        if (usableKeys.Count == 0)
+        {
+            SafeLog.Write(LogMessageType.Warning, LogTag, "CertificateRefreshEmpty", null, "The server returned no usable certificates, keeping the previous certificates");
+            return;
+        }
+
+        _serverKeys = usableKeys;
+        await InvokeReKeyAsync();
     }
 
     /// </inheritdoc>
@@ -716,7 +748,7 @@ public class KeepRemoteConnection : IDisposable
         {
             try
             {
-                Log.WriteVerboseMessage(LogTag, "WebsocketCommand", "Handling command {0} {1}", CommandRequestMessage.Method, CommandRequestMessage.Path);
+                SafeLog.Write(LogMessageType.Verbose, LogTag, "WebsocketCommand", null, "Handling command {0} {1}", CommandRequestMessage.Method, CommandRequestMessage.Path);
 
                 var request = new HttpRequestMessage(new HttpMethod(CommandRequestMessage.Method), CommandRequestMessage.Path);
                 if (!string.IsNullOrWhiteSpace(CommandRequestMessage.Body))
