@@ -124,10 +124,8 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
 
     private async Task<object> GetDiskAsync(string path, CancellationToken cancellationToken)
     {
-        var prefix = GetDevicePrefix();
-        List<string> parts = [.. path[prefix.Length..].Split(Path.DirectorySeparatorChar, 2)];
-        var physicalDrivePath = prefix + parts.First();
-        _subpath = parts.Count > 1 ? parts[1] : string.Empty;
+        var (physicalDrivePath, subpath) = SplitDeviceAndSubpath(path);
+        _subpath = subpath;
 
         if (OperatingSystem.IsWindows())
         {
@@ -269,6 +267,32 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
             return Linux.Prefix;
         else
             throw new PlatformNotSupportedException(Strings.PlatformNotSupported);
+    }
+
+    /// <summary>
+    /// Splits a host-and-path value (e.g. from a device URL) into the disk device
+    /// path and an optional subpath within the disk hierarchy (e.g. a partition
+    /// segment such as "part_GPT_1").
+    /// </summary>
+    /// <param name="hostAndPath">The host and path value to split.</param>
+    /// <returns>
+    /// A tuple with the disk device path and the subpath. The subpath is empty when
+    /// the value targets the whole disk.
+    /// </returns>
+    public static (string DevicePath, string Subpath) SplitDeviceAndSubpath(string hostAndPath)
+    {
+        var prefix = GetDevicePrefix();
+        if (!hostAndPath.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            return (hostAndPath, string.Empty);
+
+        var remainder = hostAndPath[prefix.Length..];
+        var separatorIndex = remainder.IndexOf(Path.DirectorySeparatorChar);
+        if (separatorIndex < 0)
+            return (hostAndPath, string.Empty);
+
+        var devicePath = prefix + remainder[..separatorIndex];
+        var subpath = remainder[(separatorIndex + 1)..].Trim(Path.DirectorySeparatorChar);
+        return (devicePath, subpath);
     }
 
     /// <inheritdoc />
