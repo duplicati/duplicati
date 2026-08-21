@@ -271,21 +271,24 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     /// <summary>
-    /// Tests that ParsePartition throws InvalidOperationException for non-existent partitions.
+    /// Tests that ParsePartition throws UserInformationException for partitions that
+    /// do not exist on the target disk when the backup contains no partition
+    /// information (partitioninfo.json) to create them from.
     /// </summary>
     [Test]
-    public void Test_RestoreProvider_ParsePartition_NonExistentPartition_ThrowsInvalidOperationException()
+    public void Test_RestoreProvider_ParsePartition_NonExistentPartition_ThrowsUserInformationException()
     {
         using var provider = CreateRestoreProviderForPathParsingTests();
         var parsePartitionMethod = typeof(RestoreProvider).GetMethod("ParsePartition", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
         Assert.IsNotNull(parsePartitionMethod, "ParsePartition method should exist.");
 
-        // Test with partition number that doesn't exist
+        // Test with partition number that doesn't exist; without partition info in
+        // the backup, the partition cannot be created on the target disk
         var ex = Assert.Throws<TargetInvocationException>(() =>
             parsePartitionMethod!.Invoke(provider, ["part_GPT_99"]),
             "Should throw for non-existent partition.");
-        Assert.IsInstanceOf<InvalidOperationException>(ex!.InnerException, "Inner exception should be InvalidOperationException.");
+        Assert.IsInstanceOf<UserInformationException>(ex!.InnerException, "Inner exception should be UserInformationException.");
     }
 
     /// <summary>
@@ -723,9 +726,11 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     /// <summary>
     /// Tests that ParsePartition still throws for a non-existent partition when not
     /// restoring into a partition (no subpath), even if only one partition is registered.
+    /// Without partition information in the backup, the partition cannot be created
+    /// on the target disk.
     /// </summary>
     [Test]
-    public void Test_RestoreProvider_ParsePartition_DifferentSourceNumberWithoutSubpath_ThrowsInvalidOperationException()
+    public void Test_RestoreProvider_ParsePartition_DifferentSourceNumberWithoutSubpath_ThrowsUserInformationException()
     {
         var targetPartition = CreateTargetPartition();
         using var provider = CreateRestoreProviderForPartitionTargetTests(string.Empty, targetPartition);
@@ -736,7 +741,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
         var ex = Assert.Throws<TargetInvocationException>(() =>
             parsePartitionMethod!.Invoke(provider, ["part_GPT_2"]),
             "Should throw for a non-existent partition when not in subpath mode.");
-        Assert.IsInstanceOf<InvalidOperationException>(ex!.InnerException, "Inner exception should be InvalidOperationException.");
+        Assert.IsInstanceOf<UserInformationException>(ex!.InnerException, "Inner exception should be UserInformationException.");
     }
 
     /// <summary>

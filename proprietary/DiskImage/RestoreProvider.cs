@@ -80,13 +80,31 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     private GeometryMetadata? _geometryMetadata;
 
     /// <summary>
-    /// Stores partition info metadata parsed from restored partitioninfo.json files,
-    /// keyed by the source partition number found in the restored path. Provides the
-    /// partition size and filesystem block size when geometry.json is not part of the
-    /// restore selection (e.g. when only a single partition is restored). Only
-    /// populated when the restore target is a specific partition.
+    /// Stores partition info metadata parsed from restored partitioninfo.json files.
+    /// When the restore target is a specific partition, this is keyed by the target
+    /// partition number and provides the partition size and filesystem block size
+    /// when geometry.json is not part of the restore selection. When the restore
+    /// target is a whole disk, this is keyed by the source partition number and is
+    /// used to create target partitions for partition backups.
     /// </summary>
     private readonly ConcurrentDictionary<int, PartitionInfoMetadata> _partitionInfos = new();
+
+    /// <summary>
+    /// Maps source partition numbers to partitions created on the target disk
+    /// during this restore (whole-disk target without geometry metadata).
+    /// </summary>
+    private readonly Dictionary<int, IPartition> _createdPartitions = [];
+
+    /// <summary>
+    /// The allocations for partitions created during this restore, whose partition
+    /// table entries are written to the target disk during Finalize.
+    /// </summary>
+    private readonly List<PartitionCreator.AllocatedPartition> _pendingPartitionCreations = [];
+
+    /// <summary>
+    /// Serializes partition creation, which can be triggered from concurrent writes.
+    /// </summary>
+    private readonly Lock _creationLock = new();
 
     private List<IPartition> _partitions = [];
     private List<IFilesystem> _filesystems = [];
@@ -337,15 +355,88 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
             return _partitions.FirstOrDefault()
                 ?? throw new InvalidOperationException("The target partition has not been resolved.");
 
-        // Full-disk restore: match the source partition from the path
-        var partition = _partitions.FirstOrDefault(p =>
-            p.PartitionNumber == pn &&
-            p.PartitionTable.TableType == ptType);
+        // Full-disk restore: match the source partition from the path. The lookup
+        // is done under the creation lock because CreateTargetPartition (triggered
+        // by concurrent writes) adds to the list.
+        IPartition? partition;
+        lock (_creationLock)
+        {
+            partition = _partitions.FirstOrDefault(p =>
+                p.PartitionNumber == pn &&
+                p.PartitionTable.TableType == ptType);
+        }
 
         if (partition == null)
-            throw new InvalidOperationException($"Partition not found for segment: {segment}. Partition number {pn} with table type {ptType} not in reconstructed partitions.");
+        {
+            // The restore set contains partition data but no geometry metadata
+            // (e.g. a partition backup), so the partition does not exist in the
+            // reconstructed structures. Create the partition on the target disk.
+            partition = CreateTargetPartition(pn);
+        }
 
         return partition;
+    }
+
+    /// <summary>
+    /// Creates a new partition on the target disk for a partition backup being
+    /// restored to a whole-disk target. The partition is allocated in free space
+    /// (preferring the source partition's original offset) and registered so that
+    /// restored content maps to it; the partition table entry is written during
+    /// Finalize. Requires partition information (partitioninfo.json) from the backup.
+    /// </summary>
+    /// <param name="sourceNumber">The source partition number.</param>
+    /// <returns>The created partition.</returns>
+    /// <exception cref="UserInformationException">Thrown if the backup has no partition information, the partition table is skipped, or the disk has no suitable free space.</exception>
+    private IPartition CreateTargetPartition(int sourceNumber)
+    {
+        lock (_creationLock)
+        {
+            if (_createdPartitions.TryGetValue(sourceNumber, out var existing))
+                return existing;
+
+            if (!_partitionInfos.TryGetValue(sourceNumber, out var info) || info.Partition == null)
+                throw new UserInformationException($"The backup does not contain partition information ({PartitionInfoMetadata.FileName}) for partition {sourceNumber}. Restoring partition data to a whole-disk target requires a backup that includes partition information.", "DiskRestorePartitionInfoMissing");
+
+            if (_skipPartitionTable)
+                throw new UserInformationException($"Cannot create a partition on the target disk '{_devicePath}' because the partition table is excluded from the restore ({OptionsHelper.DISK_RESTORE_SKIP_PARTITION_TABLE_OPTION} is set). Restore to an existing partition on the target disk instead, or unset the option.", "DiskRestorePartitionCreationSkipped");
+
+            var source = info.Partition;
+            var allocated = PartitionCreator.AllocateAsync(
+                _targetDisk!,
+                source.Size,
+                source.StartOffset,
+                source.Type,
+                source.FilesystemType,
+                source.Name,
+                source.VolumeGuid,
+                _pendingPartitionCreations,
+                CancellationToken.None).Await();
+
+            var partition = new BasePartition
+            {
+                PartitionNumber = sourceNumber,
+                Type = source.Type,
+                PartitionTable = new ReconstructedPartitionTable(_targetDisk!, allocated.TableType),
+                StartOffset = allocated.StartOffset,
+                Size = allocated.Size,
+                Name = source.Name,
+                FilesystemType = source.FilesystemType,
+                VolumeGuid = source.VolumeGuid,
+                RawDisk = _targetDisk,
+                StartingLba = allocated.StartOffset / _targetDisk!.SectorSize,
+                EndingLba = (allocated.StartOffset + allocated.Size) / _targetDisk!.SectorSize - 1,
+                Attributes = 0
+            };
+
+            _partitions.Add(partition);
+            _createdPartitions[sourceNumber] = partition;
+            _pendingPartitionCreations.Add(allocated);
+
+            Log.WriteInformationMessage(LOGTAG, "RestoreTargetPartitionCreated",
+                $"Creating partition for source partition {sourceNumber} on {_devicePath}, offset: {allocated.StartOffset}, size: {allocated.Size} bytes; the partition table entry is written when the restore completes");
+
+            return partition;
+        }
     }
 
     /// <summary>
@@ -371,13 +462,21 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
         // Find the filesystem in our reconstructed list
         var fs = _filesystems.FirstOrDefault(f => f.Partition.PartitionNumber == partition.PartitionNumber && f.Type == fsType);
 
-        if (fs == null && !string.IsNullOrEmpty(_subpath))
+        // Read under the creation lock, as CreateTargetPartition (triggered by
+        // concurrent writes) adds to the dictionary
+        bool isCreatedPartition;
+        lock (_creationLock)
+            isCreatedPartition = _createdPartitions.ContainsKey(partition.PartitionNumber);
+
+        if (fs == null && (!string.IsNullOrEmpty(_subpath) || isCreatedPartition))
         {
-            // When restoring into a target partition, geometry.json is not part of
-            // the restore selection. The partition info file (restored as a priority
-            // file before any partition content) provides the block size and source
-            // partition size, and is required for the restore. The info is keyed by
-            // the target partition number; all content maps to the target partition.
+            // When restoring into a target partition, or into a partition created
+            // on the target disk, geometry.json is not part of the restore selection.
+            // The partition info file (restored as a priority file before any
+            // partition content) provides the block size and source partition size,
+            // and is required for the restore. For a partition target the info is
+            // keyed by the target partition number; for created partitions by the
+            // source partition number (which the created partition carries).
             if (!_partitionInfos.TryGetValue(partition.PartitionNumber, out var info))
                 throw new UserInformationException($"The backup does not contain partition information ({PartitionInfoMetadata.FileName}) for the partition being restored. Restoring directly into a partition requires a backup that includes partition information.", "DiskRestorePartitionInfoMissing");
 
@@ -503,8 +602,10 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
 
     /// <summary>
     /// Opens a stream for writing partition info metadata (captured when disposed).
-    /// Only used when restoring into a partition; ignored for whole-disk restores,
-    /// where geometry.json provides the metadata.
+    /// When restoring into a partition, the info is keyed by the target partition;
+    /// for whole-disk restores it is keyed by the source partition number and is
+    /// used to create partitions on the target disk when the backup has no
+    /// geometry metadata.
     /// </summary>
     private Task<Stream> OpenWritePartitionInfo(string path, CancellationToken cancel)
         => Task.FromResult<Stream>(new CaptureStream(new MemoryStream(), data => CapturePartitionInfo(path, data)));
@@ -533,14 +634,6 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     /// <exception cref="UserInformationException">Thrown if the restore set contains info for multiple source partitions, which cannot be restored into a single partition.</exception>
     private void CapturePartitionInfo(string path, ReadOnlyMemory<byte> data)
     {
-        if (string.IsNullOrEmpty(_subpath))
-        {
-            // Whole-disk restore: geometry.json provides the metadata, and there
-            // may be multiple partition info files, so they are not stored
-            Log.WriteVerboseMessage(LOGTAG, "PartitionInfoIgnored", $"Ignoring partition info from '{path}' because the restore target is a whole disk.");
-            return;
-        }
-
         PartitionInfoMetadata? info;
         try
         {
@@ -574,6 +667,18 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
             return;
         }
 
+        if (string.IsNullOrEmpty(_subpath))
+        {
+            // Whole-disk restore: geometry.json normally provides the metadata.
+            // The info is stored keyed by the source partition number so that
+            // partition backups (which have no geometry.json) can be restored by
+            // creating the partition on the target disk.
+            _partitionInfos[newNumber] = info;
+            Log.WriteInformationMessage(LOGTAG, "PartitionInfoParsed",
+                $"Parsed partition info for source partition {newNumber}: filesystem {info.Filesystem?.Type}, block size {info.Filesystem?.BlockSize}, source size {info.Partition?.Size} bytes");
+            return;
+        }
+
         // The info describes the source partition, but is keyed by the target
         // partition: when a target partition has been set, all restored content
         // maps to it regardless of the partition numbers in the paths
@@ -600,12 +705,17 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
 
     /// <summary>
     /// Gets the partition info captured for the target partition, if any.
+    /// Only applies when the restore target is a specific partition; whole-disk
+    /// restores store infos keyed by source partition number.
     /// </summary>
     /// <param name="info">The captured partition info, or <c>null</c> if none was captured.</param>
     /// <returns><c>true</c> if partition info was captured for the target partition; otherwise, <c>false</c>.</returns>
     private bool TryGetTargetPartitionInfo(out PartitionInfoMetadata? info)
     {
         info = null;
+        if (string.IsNullOrEmpty(_subpath))
+            return false;
+
         var target = _partitions.FirstOrDefault();
         return target != null && _partitionInfos.TryGetValue(target.PartitionNumber, out info);
     }
@@ -1000,6 +1110,37 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
             }
             processedCount += diskItems.Count;
             progressCallback?.Invoke(processedCount / (double)totalItems);
+        }
+
+        // Write partition table entries for partitions created during this restore
+        // (partition backups restored to a whole-disk target). The partition content
+        // has already been written to the allocated space; adding the table entries
+        // last ensures an interrupted restore leaves no entries pointing at
+        // incomplete data.
+        if (_pendingPartitionCreations.Count > 0)
+        {
+            if (_skipPartitionTable)
+            {
+                // Unreachable: partition creation is refused when the partition
+                // table is skipped. Guarded here for safety.
+                Log.WriteWarningMessage(LOGTAG, "PartitionCreationSkipped", null,
+                    "Skipping creation of partition table entries because the partition table is excluded from the restore.");
+            }
+            else
+            {
+                try
+                {
+                    await PartitionCreator.WritePartitionsAsync(_targetDisk, _pendingPartitionCreations, cancel).ConfigureAwait(false);
+                    Log.WriteInformationMessage(LOGTAG, "PartitionEntriesWritten",
+                        $"Successfully wrote {_pendingPartitionCreations.Count} partition table entrie(s) to {_devicePath}.");
+                }
+                catch (Exception ex)
+                {
+                    Log.WriteErrorMessage(LOGTAG, "PartitionCreationFailed", ex,
+                        $"Failed to create the partition on the target disk: {ex.Message}");
+                    throw;
+                }
+            }
         }
 
         // Restore partition-level items
