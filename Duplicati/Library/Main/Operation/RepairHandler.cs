@@ -440,7 +440,9 @@ namespace Duplicati.Library.Main.Operation
                             foreach (var p in m_options.ControlFiles.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
                                 fsw.AddControlFile(p, m_options.GetCompressionHintFromFilename(p));
 
-                        fsw.CreateFilesetFile(isfull);
+                        // The replacement file has a new name, and therefore a new time,
+                        // but it still describes the fileset at its original time.
+                        fsw.CreateFilesetFile(isfull, timestamp);
                         await db
                             .WriteFilesetAsync(fsw, filesetId, cancellationToken)
                             .ConfigureAwait(false);
@@ -685,7 +687,10 @@ namespace Duplicati.Library.Main.Operation
                 foreach (var p in m_options.ControlFiles.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
                     volumeWriter.AddControlFile(p, m_options.GetCompressionHintFromFilename(p));
 
-            volumeWriter.CreateFilesetFile(isPrevFull);
+            // The replacement file has a new name, and therefore a new time, but it still
+            // describes the fileset at its original time. Recording it keeps the time after
+            // a database recreate, which takes the time from the filename otherwise.
+            volumeWriter.CreateFilesetFile(isPrevFull, filesetTime);
             var newFilesetID = await db
                 .CreateFilesetAsync(volumeWriter.VolumeID, filesetTime, cancellationToken)
                 .ConfigureAwait(false);

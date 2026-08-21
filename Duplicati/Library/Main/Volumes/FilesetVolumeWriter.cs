@@ -215,11 +215,20 @@ namespace Duplicati.Library.Main.Volumes
             AddMetaEntry(FilelistEntryType.Symlink, name, metahash, metasize, metablockhash, metablocklisthashes);
         }
 
-        public void CreateFilesetFile(bool isFullBackup)
+        /// <summary>
+        /// Writes the fileset file into the volume.
+        /// </summary>
+        /// <param name="isFullBackup">Whether the fileset is a full backup.</param>
+        /// <param name="filesetTime">
+        /// The time of the fileset, when it differs from the time in this volume's filename.
+        /// Only needed when replacing a dlist file, which has to be given a new name and
+        /// therefore a new time. Leave it out to keep using the filename.
+        /// </param>
+        public void CreateFilesetFile(bool isFullBackup, DateTime? filesetTime = null)
         {
             using (var sr = new StreamWriter(this.m_compression.CreateFile(FILESET_FILENAME, CompressionHint.Compressible, DateTime.UtcNow), ENCODING))
             {
-                sr.Write(FilesetData.GetFilesetInstance(isFullBackup));
+                sr.Write(FilesetData.GetFilesetInstance(isFullBackup, filesetTime));
             }
         }
 

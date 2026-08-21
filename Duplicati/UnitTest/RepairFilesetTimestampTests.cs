@@ -107,6 +107,38 @@ public class RepairFilesetTimestampTests : BasicSetupHelper
 
     [Test]
     [Category("Targeted")]
+    public async Task RepairKeepsTheFilesetTimeAcrossADatabaseRecreateAsync()
+    {
+        await RunBackupAsync("a.txt");
+        Thread.Sleep(1100);
+        await RunBackupAsync("b.txt");
+
+        var before = await GetFilesetsAsync();
+
+        foreach (var f in Directory.GetFiles(TARGETFOLDER, "*.dlist.*"))
+            File.Delete(f);
+
+        await RunRepairAsync();
+
+        var afterRepair = await GetFilesetsAsync();
+        Assert.That(afterRepair.Select(x => x.Time).ToArray(), Is.EqualTo(before.Select(x => x.Time).ToArray()),
+            $"Repair moved the filesets in time.{Environment.NewLine}before: {Describe(before)}{Environment.NewLine}after:  {Describe(afterRepair)}");
+
+        // Rebuilding the local database from the destination has to give the same times
+        // back. Keeping them only in the database would hold just until the next recreate,
+        // because a recreate takes the time from the file name.
+        File.Delete(DBFILE);
+        await RunRepairAsync();
+
+        var afterRecreate = await GetFilesetsAsync();
+        Assert.That(afterRecreate.Select(x => x.Time).ToArray(), Is.EqualTo(before.Select(x => x.Time).ToArray()),
+            $"Recreating the database lost the fileset times.{Environment.NewLine}before:   {Describe(before)}{Environment.NewLine}recreate: {Describe(afterRecreate)}");
+        Assert.That(afterRecreate.Select(x => x.IsFull).ToArray(), Is.EqualTo(before.Select(x => x.IsFull).ToArray()),
+            "Each version must still describe the same backup after a recreate");
+    }
+
+    [Test]
+    [Category("Targeted")]
     public async Task RepairKeepsTheFilesetTimeWhenOneDlistFileIsMissingAsync()
     {
         await RunBackupAsync("a.txt");

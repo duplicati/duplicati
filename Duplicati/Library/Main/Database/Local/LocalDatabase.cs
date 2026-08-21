@@ -3102,6 +3102,29 @@ namespace Duplicati.Library.Main.Database.Local
         }
 
         /// <summary>
+        /// Updates the timestamp of a fileset.
+        /// </summary>
+        /// <param name="fileSetId">The ID of the fileset to update.</param>
+        /// <param name="timestamp">The timestamp to record.</param>
+        /// <param name="token">Cancellation token to monitor for cancellation requests.</param>
+        /// <returns>A task that completes when the timestamp has been updated.</returns>
+        public async Task UpdateFilesetTimestampAsync(long fileSetId, DateTime timestamp, CancellationToken token)
+        {
+            await using var cmd = await m_connection.CreateCommandAsync(@"
+                UPDATE ""Fileset""
+                SET ""Timestamp"" = @Timestamp
+                WHERE ""ID"" = @FilesetId
+            ", token)
+                .ConfigureAwait(false);
+
+            await cmd.SetTransaction(m_rtr)
+                .SetParameterValue("@FilesetId", fileSetId)
+                .SetParameterValue("@Timestamp", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(timestamp))
+                .ExecuteNonQueryAsync(true, token)
+                .ConfigureAwait(false);
+        }
+
+        /// <summary>
         /// Removes all entries in the fileset entry table for a given fileset ID.
         /// </summary>
         /// <param name="filesetId">The fileset ID to clear.</param>
