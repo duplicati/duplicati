@@ -583,6 +583,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         }
                         sw_work_results?.Stop();
 
+                        await SignalIfPriorityFilesAreDone(file, modules, results.TaskControl);
                         await RestoreHandler.InvokeFileRestoredAsync(modules, file.Version, file.TargetPath, file.BackupTimestamp, results.TaskControl.ProgressToken).ConfigureAwait(false);
 
                         Logging.Log.WriteVerboseMessage(LOGTAG, "RestoredFile", $"{my_id} Restored file {{0}}", file.TargetPath);
@@ -749,63 +750,76 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="modules">The loaded generic modules, used to dispatch the bulk-restore-start callback. May be null.</param>
         /// <param name="taskReader">The task reader, used to abandon the wait if a shutdown is requested.</param>
         /// <returns><c>true</c> if the caller should carry on with the file; <c>false</c> if the wait was abandoned because the restore is stopping.</returns>
+        private static async Task SignalIfPriorityFilesAreDone(FileRequest file, IEnumerable<IGenericModule>? modules, Common.ITaskReader taskReader)
+        {
+            if (!file.IsPriorityFile)
+                return;
+
+            // This is a priority file - decrement the counter
+            var shouldSignal = false;
+            lock (priority_files_lock)
+            {
+                priority_files_remaining--;
+                if (priority_files_remaining <= 0 && !priority_files_completed.Task.IsCompleted)
+                    shouldSignal = true;
+            }
+
+            if (shouldSignal)
+            {
+                // All priority files have been restored and the bulk restore is starting.
+                // The first processor to detect completion notifies the restore callback
+                // modules before signaling the other processors to continue.
+                try
+                {
+                    await RestoreHandler.InvokeBulkRestoreStartAsync(modules, taskReader.ProgressToken).ConfigureAwait(false);
+                }
+                finally
+                {
+                    priority_files_completed.SetResult();
+                }
+            }
+        }        
+
+        /// <summary>
+        /// Waits for all priority files to be processed before allowing non-priority files to be processed.
+        /// If the current file is a priority file, it decrements the counter and signals completion when all priority files are done.
+        /// If the current file is not a priority file, it waits until all priority files have been processed.
+        /// When the last priority file is processed, <see cref="RestoreHandler.InvokeBulkRestoreStartAsync"/> is
+        /// invoked to notify restore callback modules that the bulk restore is starting.
+        /// </summary>
+        /// <param name="file">The file request being processed.</param>
+        /// <param name="modules">The loaded generic modules, used to dispatch the bulk-restore-start callback. May be null.</param>
+        /// <param name="taskReader">The task reader, used to abandon the wait if a shutdown is requested.</param>
+        /// <returns><c>true</c> if the caller should carry on with the file; <c>false</c> if the wait was abandoned because the restore is stopping.</returns>
         private static async Task<bool> WaitForPriorityFilesIfNeededAsync(FileRequest file, IEnumerable<IGenericModule>? modules, Common.ITaskReader taskReader)
         {
             if (file.IsPriorityFile)
-            {
-                // This is a priority file - decrement the counter
-                var shouldSignal = false;
-                lock (priority_files_lock)
-                {
-                    priority_files_remaining--;
-                    if (priority_files_remaining <= 0 && !priority_files_completed.Task.IsCompleted)
-                        shouldSignal = true;
-                }
+                return true;
 
-                if (shouldSignal)
+            // This is not a priority file - wait for all priority files to complete
+            // Only wait if there are still priority files remaining
+            bool shouldWait;
+            lock (priority_files_lock)
+                shouldWait = priority_files_remaining > 0;
+
+            if (shouldWait)
+            {
+                // The completion source is only ever signalled by a processor that handles a
+                // priority file, so if the restore stops or is aborted before every priority
+                // file has been emitted, nothing will release this wait. Without a token the
+                // processor would sit here forever, and the restore's Task.WhenAll over the
+                // process network would never return.
+                using var cts = CancellationTokenSource.CreateLinkedTokenSource(taskReader.ProgressToken, taskReader.StopToken);
+                try
                 {
-                    // All priority files have been restored and the bulk restore is starting.
-                    // The first processor to detect completion notifies the restore callback
-                    // modules before signaling the other processors to continue.
-                    try
-                    {
-                        await RestoreHandler.InvokeBulkRestoreStartAsync(modules, taskReader.ProgressToken).ConfigureAwait(false);
-                    }
-                    finally
-                    {
-                        priority_files_completed.SetResult();
-                    }
+                    await priority_files_completed.Task.WaitAsync(cts.Token).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    return false;
                 }
             }
-            else
-            {
-                // This is not a priority file - wait for all priority files to complete
-                // Only wait if there are still priority files remaining
-                bool shouldWait;
-                lock (priority_files_lock)
-                {
-                    shouldWait = priority_files_remaining > 0;
-                }
-
-                if (shouldWait)
-                {
-                    // The completion source is only ever signalled by a processor that handles a
-                    // priority file, so if the restore stops or is aborted before every priority
-                    // file has been emitted, nothing will release this wait. Without a token the
-                    // processor would sit here forever, and the restore's Task.WhenAll over the
-                    // process network would never return.
-                    using var cts = CancellationTokenSource.CreateLinkedTokenSource(taskReader.ProgressToken, taskReader.StopToken);
-                    try
-                    {
-                        await priority_files_completed.Task.WaitAsync(cts.Token).ConfigureAwait(false);
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        return false;
-                    }
-                }
-            }
-
+        
             return true;
         }
 

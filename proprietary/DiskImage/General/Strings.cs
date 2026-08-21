@@ -84,7 +84,7 @@ internal static class Strings
     /// <summary>
     /// Error message for when device cannot be opened for writing.
     /// </summary>
-    public static string RestoreDeviceNotWriteable => LC.L("Failed to open device for write access: {0}");
+    public static string RestoreDeviceNotWriteable => LC.L("Failed to open device for write access: {0}, {1}");
 
     /// <summary>
     /// Error message for when restore path is invalid.

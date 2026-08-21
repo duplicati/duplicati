@@ -154,14 +154,14 @@ namespace Duplicati.Proprietary.DiskImage.Disk
         }
 
         /// <inheritdoc />
-        public Task<bool> InitializeAsync(CancellationToken cancellationToken)
+        public Task<string?> InitializeAsync(CancellationToken cancellationToken)
             => InitializeAsync(false, cancellationToken);
 
         /// <inheritdoc />
-        public async Task<bool> InitializeAsync(bool enableWrite, CancellationToken cancellationToken)
+        public async Task<string?> InitializeAsync(bool enableWrite, CancellationToken cancellationToken)
         {
             if (m_initialized)
-                return true;
+                return null;
 
             // Determine access rights
             var access = enableWrite
@@ -181,7 +181,9 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             if (m_deviceHandle.IsInvalid)
             {
                 m_deviceHandle = null;
-                return false;
+                var error = Marshal.GetLastWin32Error();
+                var msg = new System.ComponentModel.Win32Exception(error).Message;
+                return $"Unable to open physical device: {msg} (Win32 Error Code: {error})";
             }
 
             // Allow extended DASD I/O
@@ -196,7 +198,9 @@ namespace Duplicati.Proprietary.DiskImage.Disk
 
             m_writeable = enableWrite;
             m_initialized = true;
-            return true;
+            // Suppress warning
+            await Task.CompletedTask;
+            return null;
         }
 
         /// <inheritdoc />
