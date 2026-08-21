@@ -141,36 +141,38 @@ namespace Duplicati.Proprietary.DiskImage.Disk
         }
 
         /// <inheritdoc />
-        public Task<bool> InitializeAsync(CancellationToken cancellationToken)
+        public Task<string?> InitializeAsync(CancellationToken cancellationToken)
             => InitializeAsync(false, cancellationToken);
 
         /// <inheritdoc />
-        public Task<bool> InitializeAsync(bool enableWrite, CancellationToken cancellationToken)
+        public async Task<string?> InitializeAsync(bool enableWrite, CancellationToken cancellationToken)
         {
             if (m_initialized)
-                return Task.FromResult(true);
+                return null;
 
             // Open the device without O_DIRECT initially
-            int flags = enableWrite ? O_RDWR : O_RDONLY;
+            var flags = enableWrite ? O_RDWR : O_RDONLY;
             m_fileDescriptor = open(m_devicePath, flags);
 
             if (m_fileDescriptor < 0)
             {
-                int errorCode = Marshal.GetLastWin32Error();
-                string errorMessage = Marshal.GetPInvokeErrorMessage(errorCode);
-                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "initialize", null, $"Failed to open device {m_devicePath}: {errorMessage} (errno: {errorCode})");
-                return Task.FromResult(false);
+                var errorCode = Marshal.GetLastWin32Error();
+                var errorMessage = Marshal.GetPInvokeErrorMessage(errorCode);
+                var err = $"Failed to open device {m_devicePath}: {errorMessage} (errno: {errorCode})";
+                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "initialize", null, err);
+                return err;
             }
 
             // Use F_NOCACHE to bypass kernel cache (equivalent to O_DIRECT on Linux)
             if (fcntl_nocache(m_fileDescriptor) < 0)
             {
-                int errorCode = Marshal.GetLastWin32Error();
-                string errorMessage = Marshal.GetPInvokeErrorMessage(errorCode);
-                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "initialize", null, $"Failed to set F_NOCACHE on device {m_devicePath}: {errorMessage} (errno: {errorCode})");
+                var errorCode = Marshal.GetLastWin32Error();
+                var errorMessage = Marshal.GetPInvokeErrorMessage(errorCode);
+                var err = $"Failed to set F_NOCACHE on device {m_devicePath}: {errorMessage} (errno: {errorCode})";
+                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "initialize", null, err);
                 close(m_fileDescriptor);
                 m_fileDescriptor = -1;
-                return Task.FromResult(false);
+                return err;
             }
 
             // Get disk geometry using ioctls
@@ -180,11 +182,12 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                 uint blockSize = 0;
                 if (ioctl_uint32(m_fileDescriptor, DKIOCGETBLOCKSIZE, ref blockSize) < 0)
                 {
-                    int errorCode = Marshal.GetLastWin32Error();
+                    var errorCode = Marshal.GetLastWin32Error();
                     close(m_fileDescriptor);
                     m_fileDescriptor = -1;
-                    Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "initialize", null, $"Failed to get block size: {Marshal.GetPInvokeErrorMessage(errorCode)} (errno: {errorCode})");
-                    return Task.FromResult(false);
+                    var err = $"Failed to get block size: {Marshal.GetPInvokeErrorMessage(errorCode)} (errno: {errorCode})";
+                    Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "initialize", null, err);
+                    return err;
                 }
                 m_sectorSize = blockSize;
 
@@ -192,11 +195,12 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                 ulong blockCount = 0;
                 if (ioctl_uint64(m_fileDescriptor, DKIOCGETBLOCKCOUNT, ref blockCount) < 0)
                 {
-                    int errorCode = Marshal.GetLastWin32Error();
+                    var errorCode = Marshal.GetLastWin32Error();
                     close(m_fileDescriptor);
                     m_fileDescriptor = -1;
-                    Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "initialize", null, $"Failed to get block count: {Marshal.GetPInvokeErrorMessage(errorCode)} (errno: {errorCode})");
-                    return Task.FromResult(false);
+                    var err = $"Failed to get block count: {Marshal.GetPInvokeErrorMessage(errorCode)} (errno: {errorCode})";
+                    Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "initialize", null, err);
+                    return err;
                 }
 
                 m_size = (long)(blockCount * blockSize);
@@ -204,14 +208,14 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                 m_initialized = true;
 
                 Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "initialize", $"Successfully initialized disk {m_devicePath}: Size={m_size}, SectorSize={m_sectorSize}");
-                return Task.FromResult(true);
+                return null;
             }
             catch (Exception ex)
             {
                 close(m_fileDescriptor);
                 m_fileDescriptor = -1;
                 Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "initialize", ex, "Failed to initialize disk");
-                return Task.FromResult(false);
+                return $"Failed to initialize disk: {ex.Message}";
             }
         }
 

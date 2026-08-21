@@ -155,8 +155,9 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
             if (!await _targetDisk.AutoUnmountAsync(cancel).ConfigureAwait(false))
                 throw new UserInformationException($"Failed to auto unmount target disk: {_devicePath}. Ensure the disk is not in use and you have sufficient permissions.", "DiskAutoUnmountFailed");
 
-        if (!await _targetDisk.InitializeAsync(enableWrite: true, cancel))
-            throw new UserInformationException(string.Format(Strings.RestoreDeviceNotWriteable, _devicePath), "DiskInitializeFailed");
+        var msg = await _targetDisk.InitializeAsync(enableWrite: true, cancel);
+        if (!string.IsNullOrWhiteSpace(msg))
+            throw new UserInformationException(string.Format(Strings.RestoreDeviceNotWriteable, _devicePath, msg), "DiskInitializeFailed");
 
         // Validate target size if requested
         if (_validateSize)
