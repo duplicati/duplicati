@@ -549,10 +549,26 @@ namespace Duplicati.Library.Main.Operation
             };
         }
 
+        /// <summary>
+        /// The operations that only read from the destination. Running out of room there cannot
+        /// stop them and they cannot cause it, so the quota is recorded for them without being
+        /// reported on. A destination that is full or mounted read-only reports no free space,
+        /// and a restore from one of those succeeds; see issue #3672.
+        /// </summary>
+        /// <remarks>
+        /// Listed the way round that leaves an operation added later reporting as it does now,
+        /// because missing a destination that has genuinely filled up is worse than saying so
+        /// where it does not matter.
+        /// </remarks>
+        private static bool OnlyReadsFromBackend(OperationMode operation)
+            => operation is OperationMode.Restore or OperationMode.ListBrokenFiles;
+
         private static async Task CheckQuotaAsync(IBackendManager backendManager, Options options, IBackendWriter log, long knownFileSize)
         {
             if (options.QuotaDisable)
                 return;
+
+            var reportShortage = !OnlyReadsFromBackend(log.MainOperation);
 
             var quota = await backendManager.GetQuotaInfoAsync(CancellationToken.None).ConfigureAwait(false);
             if (quota != null)
@@ -565,12 +581,12 @@ namespace Duplicati.Library.Main.Operation
                 // (both at the start and end, for example), the log keeps track of
                 // whether a quota error or warning has been sent already.
                 // Note that an error can still be sent later even if a warning was sent earlier.
-                if (!log.ReportedQuotaError && quota.FreeQuotaSpace == 0)
+                if (reportShortage && !log.ReportedQuotaError && quota.FreeQuotaSpace == 0)
                 {
                     log.ReportedQuotaError = true;
                     Logging.Log.WriteErrorMessage(LOGTAG, "BackendQuotaExceeded", null, "Backend quota has been exceeded: Using {0} of {1} ({2} available)", Library.Utility.Utility.FormatSizeString(knownFileSize), Library.Utility.Utility.FormatSizeString(quota.TotalQuotaSpace), Library.Utility.Utility.FormatSizeString(quota.FreeQuotaSpace));
                 }
-                else if (!log.ReportedQuotaWarning && !log.ReportedQuotaError && quota.FreeQuotaSpace >= 0) // Negative value means the backend didn't return the quota info
+                else if (reportShortage && !log.ReportedQuotaWarning && !log.ReportedQuotaError && quota.FreeQuotaSpace >= 0) // Negative value means the backend didn't return the quota info
                 {
                     // Warnings are sent if the available free space is less than the given percentage of the total backup size.
                     double warningThreshold = options.QuotaWarningThreshold / (double)100;
@@ -586,12 +602,12 @@ namespace Duplicati.Library.Main.Operation
             if (log.AssignedQuotaSpace != -1)
             {
                 // Check assigned quota
-                if (!log.ReportedQuotaError && knownFileSize > log.AssignedQuotaSpace)
+                if (reportShortage && !log.ReportedQuotaError && knownFileSize > log.AssignedQuotaSpace)
                 {
                     log.ReportedQuotaError = true;
                     Logging.Log.WriteErrorMessage(LOGTAG, "AssignedQuotaExceeded", null, "Assigned quota has been exceeded: Using {0} of {1}", Library.Utility.Utility.FormatSizeString(knownFileSize), Library.Utility.Utility.FormatSizeString(log.AssignedQuotaSpace));
                 }
-                else if (!log.ReportedQuotaWarning && !log.ReportedQuotaError)
+                else if (reportShortage && !log.ReportedQuotaWarning && !log.ReportedQuotaError)
                 {
                     // Warnings are sent if the available free space is less than the given percentage of the total backup size.
                     double warningThreshold = options.QuotaWarningThreshold / (double)100;

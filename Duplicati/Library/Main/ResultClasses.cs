@@ -39,6 +39,12 @@ namespace Duplicati.Library.Main
         bool ReportedQuotaWarning { get; set; }
 
         /// <summary>
+        /// The operation the backend is working for, which decides whether running out of room
+        /// at the destination is something it can suffer from.
+        /// </summary>
+        OperationMode MainOperation { get; }
+
+        /// <summary>
         /// The backend sends this event when performing an action
         /// </summary>
         /// <param name="action">The action performed</param>
