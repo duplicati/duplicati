@@ -440,6 +440,55 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     }
 
     /// <summary>
+    /// Resolves the partition for partition-level content whose restore path has no
+    /// partition segment. This shape results from a restore selection that lies
+    /// entirely within a single source partition, where the restore path mapping
+    /// stripped the partition folder as part of the common prefix. When the restore
+    /// target is a partition, the content maps to it. For a whole-disk target, the
+    /// partition info captured from the backup (a priority file, restored before any
+    /// partition content) identifies the source partition: an existing partition
+    /// with that number is used when present, otherwise a new partition is created
+    /// on the target disk.
+    /// </summary>
+    /// <returns>The partition the content maps to.</returns>
+    /// <exception cref="UserInformationException">Thrown if the backup has no partition information, or contains information for multiple partitions, which cannot be told apart without partition segments in the paths.</exception>
+    /// <exception cref="InvalidOperationException">Thrown if the target partition has not been resolved (partition target only).</exception>
+    private IPartition ResolveImplicitTargetPartition()
+    {
+        // When restoring into a target partition, all partition content maps to
+        // that partition
+        if (!string.IsNullOrEmpty(_subpath))
+            return _partitions.FirstOrDefault()
+                ?? throw new InvalidOperationException("The target partition has not been resolved.");
+
+        int sourceNumber;
+        lock (_creationLock)
+        {
+            if (_partitionInfos.IsEmpty)
+                throw new UserInformationException($"The backup does not contain partition information ({PartitionInfoMetadata.FileName}) for the partition being restored. Restoring partition data to a whole-disk target requires a backup that includes partition information; alternatively, restore to an existing partition on the target disk (e.g. '{_restorePath}{Path.DirectorySeparatorChar}part_GPT_1').", "DiskRestorePartitionInfoMissing");
+
+            // Whole-disk restores key the info by source partition number; more
+            // than one entry means the restore set spans multiple source partitions
+            // and the stripped paths cannot be attributed to a single partition.
+            if (_partitionInfos.Count > 1)
+                throw new UserInformationException($"The restore data contains partition-level data for multiple partitions, but the restore paths do not identify the partition. Restore the partitions including their partition folders, or restore each partition to a partition on the target disk instead (e.g. '{_restorePath}{Path.DirectorySeparatorChar}part_GPT_1').", "DiskRestoreAmbiguousPartitionContent");
+
+            sourceNumber = _partitionInfos.Keys.First();
+
+            // The lookup is done under the creation lock because CreateTargetPartition
+            // (triggered by concurrent writes) adds to the list.
+            var partition = _partitions.FirstOrDefault(p => p.PartitionNumber == sourceNumber);
+            if (partition != null)
+                return partition;
+        }
+
+        // The restore set contains partition data but no geometry metadata
+        // (e.g. a partition backup), so the partition does not exist in the
+        // reconstructed structures. Create the partition on the target disk.
+        return CreateTargetPartition(sourceNumber);
+    }
+
+    /// <summary>
     /// Parses a filesystem segment from the path and returns the corresponding filesystem.
     /// The segment is expected to be in the format "fs_{FileSystemType}", e.g. "fs_NTFS".
     /// </summary>
@@ -508,6 +557,10 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     /// Parses the given path to determine if it refers to a disk-level item, partition, partition info file, or file, and returns the corresponding objects.
     /// The path is expected to be in the format:
     /// root/part_{PartitionTableType}_{PartitionNumber}/fs_{FileSystemType}/path/to/file
+    /// When the restore selection lies entirely within a single source partition, the
+    /// restore path mapping strips the partition folder as part of the common prefix;
+    /// such paths carry no part_ segment and are resolved through the captured
+    /// partition info (see <see cref="ResolveImplicitTargetPartition"/>).
     /// </summary>
     /// <param name="path">The path to parse.</param>
     /// <returns>A tuple containing the item type, partition, and filesystem.</returns>
@@ -573,13 +626,28 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
             return (RestorePathType.Partition, partition, null);
         }
 
-        // No partition segment in the path. Partition-level content (filesystem blocks
-        // or a partition info file) only has this shape when a partition backup is
-        // restored to a whole-disk target; there is no partition to write the blocks
-        // into, so fail instead of silently dropping the data.
-        if (segments.Any(s => s.StartsWith("fs_", StringComparison.OrdinalIgnoreCase))
-            || (segments.Length > 0 && segments[^1].Equals(PartitionInfoMetadata.FileName, StringComparison.OrdinalIgnoreCase)))
-            throw new UserInformationException($"The restore data contains partition-level data, but the restore target '{_restorePath}' is a whole disk. Restore to a partition on the target disk instead (e.g. '{_restorePath}{Path.DirectorySeparatorChar}part_GPT_1').", "DiskRestorePartitionContentToDiskTarget");
+        // No partition segment in the path. Partition-level content has this shape
+        // when the restore selection is entirely within a single source partition:
+        // the restore path mapping strips the common prefix, which then includes
+        // the partition folder. The content belongs to that single source partition.
+        var implicitFilesystemSegment = segments.FirstOrDefault(s => s.StartsWith("fs_", StringComparison.OrdinalIgnoreCase));
+
+        // A partition info file sits directly in the partition folder, so with the
+        // partition folder stripped it appears at the root. It is not resolved to a
+        // partition here, as it is restored during the priority-file phase where the
+        // geometry-based reconstruction may not have run yet. A file of the same
+        // name inside a filesystem (fs_ segment present) is regular file content.
+        if (implicitFilesystemSegment == null
+            && segments.Length > 0
+            && segments[^1].Equals(PartitionInfoMetadata.FileName, StringComparison.OrdinalIgnoreCase))
+            return (RestorePathType.PartitionInfo, null, null);
+
+        if (implicitFilesystemSegment != null)
+        {
+            var partition = ResolveImplicitTargetPartition();
+            var filesystem = ParseFilesystem(partition, implicitFilesystemSegment);
+            return (RestorePathType.File, partition, filesystem);
+        }
 
         return (RestorePathType.Disk, null, null);
     }
@@ -827,10 +895,11 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
             return Task.FromResult<Stream>(new MemoryStream(data));
         }
 
-        // Partition info is only captured when the restore target is a specific
-        // partition. Whole-disk restores intentionally do not store it (there may
-        // be multiple such files and geometry.json provides the metadata), so
-        // return an empty stream instead of failing.
+        // Partition info is only readable when the restore target is a specific
+        // partition, where it is keyed by the target partition number. Whole-disk
+        // restores store infos keyed by source partition number, which the path
+        // does not identify (there may be several, and geometry.json provides the
+        // metadata), so return an empty stream instead of failing.
         Log.WriteVerboseMessage(LOGTAG, "PartitionInfoNotAvailable", $"Partition info metadata for '{path}' was not captured; returning an empty stream.");
         return Task.FromResult<Stream>(new MemoryStream());
     }
@@ -1050,7 +1119,7 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
         if (_targetDisk == null)
             throw new InvalidOperationException("Provider not initialized.");
 
-        var totalItems = _pendingWrites.Count;
+        var totalItems = _pendingWrites.Count + _pendingPartitionCreations.Count;
         if (totalItems == 0)
         {
             Log.WriteInformationMessage(LOGTAG, "RestoreNoItems", "No items to restore.");

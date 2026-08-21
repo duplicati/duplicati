@@ -568,28 +568,146 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     }
 
     /// <summary>
-    /// Tests that ParsePath fails for partition-level content when the target is a
-    /// whole disk, since there is no partition to write the content into.
+    /// Tests that ParsePath fails for filesystem content without a partition segment
+    /// when the target is a whole disk and no partition info has been captured, as
+    /// the partition to write the content into cannot be identified.
     /// </summary>
     [Test]
-    public void Test_RestoreProvider_ParsePath_PartitionContentOnDiskTarget_Throws()
+    public void Test_RestoreProvider_ParsePath_PartitionContentOnDiskTargetWithoutInfo_Throws()
     {
         using var provider = CreateRestoreProviderForPathParsingTests();
         var parsePathMethod = typeof(RestoreProvider).GetMethod("ParsePath", BindingFlags.NonPublic | BindingFlags.Instance);
 
         Assert.IsNotNull(parsePathMethod, "ParsePath method should exist.");
 
-        // Filesystem block without a partition segment indicates a partition backup
+        // Filesystem block without a partition segment and no captured partition
+        // info: the source partition cannot be identified
         var ex = Assert.Throws<TargetInvocationException>(() =>
             parsePathMethod!.Invoke(provider, ["fs_NTFS/0000AB"]),
-            "Should throw for filesystem content without a partition segment.");
+            "Should throw for filesystem content without a partition segment when no partition info was captured.");
         Assert.IsInstanceOf<UserInformationException>(ex!.InnerException, "Inner exception should be UserInformationException.");
+    }
 
-        // A partition info file without a partition segment likewise
-        ex = Assert.Throws<TargetInvocationException>(() =>
-            parsePathMethod!.Invoke(provider, [PartitionInfoMetadata.FileName]),
-            "Should throw for a partition info file without a partition segment.");
+    /// <summary>
+    /// Tests that ParsePath identifies a partition info file at the root (the
+    /// partition folder was stripped by the restore path mapping) as a partition
+    /// info item.
+    /// </summary>
+    [Test]
+    public void Test_RestoreProvider_ParsePath_PartitionInfoWithoutPartitionSegment_ReturnsPartitionInfoType()
+    {
+        using var provider = CreateRestoreProviderForPathParsingTests();
+        var parsePathMethod = typeof(RestoreProvider).GetMethod("ParsePath", BindingFlags.NonPublic | BindingFlags.Instance);
+
+        Assert.IsNotNull(parsePathMethod, "ParsePath method should exist.");
+
+        var result = parsePathMethod!.Invoke(provider, [PartitionInfoMetadata.FileName]);
+        Assert.IsNotNull(result, "Should return a tuple.");
+
+        var tuple = ((RestorePathType Type, IPartition? Partition, IFilesystem? Filesystem))result!;
+        Assert.AreEqual(RestorePathType.PartitionInfo, tuple.Type, "Type should be 'PartitionInfo'.");
+        Assert.IsNull(tuple.Partition, "Partition should be null for partition info.");
+        Assert.IsNull(tuple.Filesystem, "Filesystem should be null for partition info.");
+    }
+
+    /// <summary>
+    /// Tests that ParsePath maps filesystem content without a partition segment to
+    /// the partition identified by the captured partition info (whole-disk target).
+    /// </summary>
+    [Test]
+    public void Test_RestoreProvider_ParsePath_PartitionContentOnDiskTargetWithInfo_ReturnsFile()
+    {
+        using var provider = CreateRestoreProviderForPathParsingTests();
+        var parsePathMethod = typeof(RestoreProvider).GetMethod("ParsePath", BindingFlags.NonPublic | BindingFlags.Instance);
+
+        Assert.IsNotNull(parsePathMethod, "ParsePath method should exist.");
+
+        // Partition info for source partition 2, which exists in the mock set
+        GetPartitionInfos(provider)[2] = CreateTestPartitionInfo(2, 41943040, 4096, FileSystemType.NTFS);
+
+        var result = parsePathMethod!.Invoke(provider, ["fs_NTFS/data/file.txt"]);
+        Assert.IsNotNull(result, "Should return a tuple.");
+
+        var tuple = ((RestorePathType Type, IPartition? Partition, IFilesystem? Filesystem))result!;
+        Assert.AreEqual(RestorePathType.File, tuple.Type, "Type should be 'File'.");
+        Assert.IsNotNull(tuple.Partition, "Partition should not be null.");
+        Assert.AreEqual(2, tuple.Partition!.PartitionNumber, "Should resolve to the partition identified by the captured partition info.");
+        Assert.IsNotNull(tuple.Filesystem, "Filesystem should not be null.");
+        Assert.AreEqual(FileSystemType.NTFS, tuple.Filesystem!.Type, "Filesystem type should be NTFS.");
+    }
+
+    /// <summary>
+    /// Tests that ParsePath fails for filesystem content without a partition segment
+    /// when partition info for multiple source partitions was captured, as the
+    /// content cannot be attributed to a single partition.
+    /// </summary>
+    [Test]
+    public void Test_RestoreProvider_ParsePath_PartitionContentOnDiskTargetMultipleInfos_Throws()
+    {
+        using var provider = CreateRestoreProviderForPathParsingTests();
+        var parsePathMethod = typeof(RestoreProvider).GetMethod("ParsePath", BindingFlags.NonPublic | BindingFlags.Instance);
+
+        Assert.IsNotNull(parsePathMethod, "ParsePath method should exist.");
+
+        GetPartitionInfos(provider)[1] = CreateTestPartitionInfo(1, 20971520, 4096, FileSystemType.FAT32);
+        GetPartitionInfos(provider)[2] = CreateTestPartitionInfo(2, 41943040, 4096, FileSystemType.NTFS);
+
+        var ex = Assert.Throws<TargetInvocationException>(() =>
+            parsePathMethod!.Invoke(provider, ["fs_NTFS/0000AB"]),
+            "Should throw when partition info for multiple source partitions was captured.");
         Assert.IsInstanceOf<UserInformationException>(ex!.InnerException, "Inner exception should be UserInformationException.");
+    }
+
+    /// <summary>
+    /// Tests that ParsePath maps filesystem content without a partition segment to
+    /// the resolved target partition when restoring into a partition (subpath mode).
+    /// </summary>
+    [Test]
+    public void Test_RestoreProvider_ParsePath_PartitionContentWithoutSegmentWithSubpath_MapsToTargetPartition()
+    {
+        var targetPartition = CreateTargetPartition();
+        using var provider = CreateRestoreProviderForPartitionTargetTests("part_GPT_1", targetPartition);
+        var parsePathMethod = typeof(RestoreProvider).GetMethod("ParsePath", BindingFlags.NonPublic | BindingFlags.Instance);
+
+        Assert.IsNotNull(parsePathMethod, "ParsePath method should exist.");
+
+        // Partition info describing source partition 2 was captured for target partition 1
+        GetPartitionInfos(provider)[1] = CreateTestPartitionInfo(2, 10485760, 4096, FileSystemType.NTFS);
+
+        var result = parsePathMethod!.Invoke(provider, ["fs_NTFS/data/file.txt"]);
+        Assert.IsNotNull(result, "Should return a tuple.");
+
+        var tuple = ((RestorePathType Type, IPartition? Partition, IFilesystem? Filesystem))result!;
+        Assert.AreEqual(RestorePathType.File, tuple.Type, "Type should be 'File'.");
+        Assert.IsNotNull(tuple.Partition, "Partition should not be null.");
+        Assert.AreEqual(1, tuple.Partition!.PartitionNumber, "Should resolve to the target partition number.");
+        Assert.AreSame(targetPartition, tuple.Partition, "Should return the resolved target partition.");
+        Assert.IsNotNull(tuple.Filesystem, "Filesystem should not be null.");
+        Assert.AreEqual(FileSystemType.NTFS, tuple.Filesystem!.Type, "Filesystem type should be NTFS.");
+    }
+
+    /// <summary>
+    /// Tests that writing a partition info file at the root (the partition folder
+    /// was stripped by the restore path mapping) during a whole-disk restore
+    /// captures the metadata keyed by the source partition number.
+    /// </summary>
+    [Test]
+    public async Task Test_RestoreProvider_OpenWrite_PartitionInfoWithoutSegment_CapturedBySourceNumber()
+    {
+        using var provider = CreateRestoreProviderForPathParsingTests();
+
+        var info = CreateTestPartitionInfo(2, 41943040, 4096, FileSystemType.NTFS);
+        var bytes = System.Text.Encoding.UTF8.GetBytes(info.ToJson());
+
+        await using (var stream = await provider.OpenWrite(PartitionInfoMetadata.FileName, CancellationToken.None))
+        {
+            await stream.WriteAsync(bytes);
+        }
+
+        var infos = GetPartitionInfos(provider);
+        Assert.IsTrue(infos.TryGetValue(2, out var captured), "Partition info should be captured under the source partition number.");
+        Assert.AreEqual(4096, captured!.Filesystem!.BlockSize, "Block size should be preserved.");
+        Assert.AreEqual(FileSystemType.NTFS, captured.Filesystem.Type, "Filesystem type should be preserved.");
     }
 
     /// <summary>
