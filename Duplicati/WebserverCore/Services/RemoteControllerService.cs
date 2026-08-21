@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+using Duplicati.Library.Logging;
 using Duplicati.Library.RemoteControl;
 using Duplicati.Server;
 using Duplicati.Server.Database;
@@ -35,6 +36,26 @@ namespace Duplicati.WebserverCore.Services;
 /// <param name="eventPollNotify">The event poll notifier</param>
 public class RemoteControllerService(Connection connection, IRemoteControllerHandler controllerHandler, EventPollNotify eventPollNotify) : IRemoteController
 {
+    /// <summary>
+    /// The log tag for messages from this class
+    /// </summary>
+    private static readonly string LOGTAG = Log.LogTagFromType<RemoteControllerService>();
+
+    /// <summary>
+    /// How often the connection is checked for being alive
+    /// </summary>
+    private static readonly TimeSpan WatchdogInterval = TimeSpan.FromMinutes(1);
+
+    /// <summary>
+    /// How long the connection is allowed to stay unconnected before it is recreated
+    /// </summary>
+    private static readonly TimeSpan MaxDisconnectedPeriod = TimeSpan.FromMinutes(15);
+
+    /// <summary>
+    /// Lock guarding the connection instance and the watchdog state
+    /// </summary>
+    private readonly object _lock = new object();
+
     /// <summary>
     /// Gets a value indicating whether remote control is enabled.
     /// </summary>
@@ -64,19 +85,69 @@ public class RemoteControllerService(Connection connection, IRemoteControllerHan
     /// </summary>
     private KeepRemoteConnection? _keepRemoteConnection;
 
+    /// <summary>
+    /// The cancellation source for the watchdog task
+    /// </summary>
+    private CancellationTokenSource? _watchdogCancellation;
+
+    /// <summary>
+    /// The last time the connection was known to be healthy
+    /// </summary>
+    private DateTime _lastHealthy = DateTime.UtcNow;
+
     /// </inheritdoc>
     public void Enable(bool forceConnect)
     {
-        if (_keepRemoteConnection != null)
-            return;
+        lock (_lock)
+        {
+            if (_keepRemoteConnection != null)
+            {
+                // If the previous connection is still alive, there is nothing to do,
+                // otherwise the dead connection is replaced with a new one
+                if (!_keepRemoteConnection.RunAsync().IsCompleted)
+                    return;
 
-        if (!CanEnable)
-            throw new InvalidOperationException("Remote control is not configured");
+                DisposeConnection();
+            }
 
+            if (!CanEnable)
+                throw new InvalidOperationException("Remote control is not configured");
+
+            CreateConnection(forceConnect);
+
+            _watchdogCancellation ??= StartWatchdog();
+        }
+
+        connection.ApplicationSettings.RemoteControlEnabled = true;
+        eventPollNotify.SignalRemoteControlUpdate();
+    }
+
+    /// </inheritdoc>
+    public void Disable()
+    {
+        lock (_lock)
+        {
+            _watchdogCancellation?.Cancel();
+            _watchdogCancellation?.Dispose();
+            _watchdogCancellation = null;
+            DisposeConnection();
+        }
+
+        connection.ApplicationSettings.RemoteControlEnabled = false;
+        eventPollNotify.SignalRemoteControlUpdate();
+    }
+
+    /// <summary>
+    /// Creates the connection to the remote server.
+    /// Must be called while holding the lock.
+    /// </summary>
+    /// <param name="forceConnect">If the connection should be force enabled, ignoring re-connect delays</param>
+    private void CreateConnection(bool forceConnect)
+    {
         var config = JsonConvert.DeserializeObject<RemoteControlConfig>(connection.ApplicationSettings.RemoteControlConfig ?? string.Empty)
             ?? throw new InvalidOperationException("Invalid remote control configuration");
 
-        _keepRemoteConnection = KeepRemoteConnection.CreateRemoteListener(
+        var remoteConnection = KeepRemoteConnection.CreateRemoteListener(
             config.ServerUrl,
             config.Token,
             config.CertificateUrl,
@@ -90,19 +161,112 @@ public class RemoteControllerService(Connection connection, IRemoteControllerHan
             controllerHandler.OnMessageAsync
         );
 
-        _keepRemoteConnection.StateChanged += (_, _) => eventPollNotify.SignalRemoteControlUpdate();
+        remoteConnection.StateChanged += (_, _) => eventPollNotify.SignalRemoteControlUpdate();
 
-        connection.ApplicationSettings.RemoteControlEnabled = true;
-        eventPollNotify.SignalRemoteControlUpdate();
+        // Make sure a crash in the connection handler is reported and not silently discarded
+        remoteConnection.RunAsync().ContinueWith(t =>
+        {
+            if (t.IsFaulted)
+                Log.WriteWarningMessage(LOGTAG, "RemoteControlStopped", t.Exception, "The remote control connection stopped unexpectedly");
+        }, TaskContinuationOptions.ExecuteSynchronously);
+
+        _keepRemoteConnection = remoteConnection;
+        _lastHealthy = DateTime.UtcNow;
     }
 
-    /// </inheritdoc>
-    public void Disable()
+    /// <summary>
+    /// Disposes the current connection, if any.
+    /// Must be called while holding the lock.
+    /// </summary>
+    private void DisposeConnection()
     {
-        _keepRemoteConnection?.Dispose();
+        try { _keepRemoteConnection?.Dispose(); }
+        catch (Exception ex) { Log.WriteWarningMessage(LOGTAG, "RemoteControlDisposeError", ex, "Failed to dispose the remote control connection"); }
         _keepRemoteConnection = null;
-        connection.ApplicationSettings.RemoteControlEnabled = false;
-        eventPollNotify.SignalRemoteControlUpdate();
+    }
+
+    /// <summary>
+    /// Starts the task that monitors the connection and recreates it if it is stuck.
+    /// Must be called while holding the lock.
+    /// </summary>
+    /// <returns>The cancellation source for the watchdog task</returns>
+    private CancellationTokenSource StartWatchdog()
+    {
+        var cancellation = new CancellationTokenSource();
+        var token = cancellation.Token;
+
+        _ = Task.Run(async () =>
+        {
+            while (!token.IsCancellationRequested)
+            {
+                try
+                {
+                    await Task.Delay(WatchdogInterval, token).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    return;
+                }
+
+                try
+                {
+                    CheckConnection(token);
+                }
+                catch (Exception ex)
+                {
+                    Log.WriteWarningMessage(LOGTAG, "RemoteControlWatchdogError", ex, "Failed to check the remote control connection");
+                }
+            }
+        }, CancellationToken.None);
+
+        return cancellation;
+    }
+
+    /// <summary>
+    /// Checks that the connection is alive, and recreates it if it is not.
+    /// The connection is expected to reconnect on its own, so this only guards
+    /// against the connection handler stopping or getting stuck in a state
+    /// where it no longer attempts to reconnect.
+    /// </summary>
+    /// <param name="token">The token that is cancelled when remote control is disabled</param>
+    private void CheckConnection(CancellationToken token)
+    {
+        lock (_lock)
+        {
+            // Checked inside the lock, so a disable cannot be raced by a restart
+            if (token.IsCancellationRequested || !IsEnabled || !CanEnable)
+                return;
+
+            var remoteConnection = _keepRemoteConnection;
+
+            string reason;
+            if (remoteConnection == null)
+            {
+                reason = "the connection is missing";
+            }
+            else if (remoteConnection.RunAsync().IsCompleted)
+            {
+                reason = "the connection handler has stopped";
+            }
+            else if (remoteConnection.State == KeepRemoteConnection.ConnectionState.Authenticated || remoteConnection.IsAutoReconnectDisabled())
+            {
+                // Connected, or intentionally not connecting
+                _lastHealthy = DateTime.UtcNow;
+                return;
+            }
+            else if (_lastHealthy + MaxDisconnectedPeriod < DateTime.UtcNow)
+            {
+                reason = $"it has not been connected for {MaxDisconnectedPeriod.TotalMinutes} minutes";
+            }
+            else
+            {
+                return;
+            }
+
+            Log.WriteWarningMessage(LOGTAG, "RemoteControlRestart", null, "Restarting the remote control connection because {0}", reason);
+            DisposeConnection();
+            CreateConnection(false);
+        }
     }
 
     /// </inheritdoc>
