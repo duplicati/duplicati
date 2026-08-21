@@ -385,6 +385,15 @@ namespace Duplicati.Library.Main.Operation.Backup
             );
         }
 
+        public Task RefreshQueryStatisticsAsync(CancellationToken cancellationToken)
+        {
+            return RunOnMainAsync(async () =>
+                await m_database
+                    .RefreshQueryStatisticsAsync(cancellationToken)
+                    .ConfigureAwait(false)
+            );
+        }
+
         public Task RemoveRemoteVolumeAsync(string remoteFilename, CancellationToken cancellationToken)
         {
             return RunOnMainAsync(async () =>
