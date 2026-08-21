@@ -1376,6 +1376,45 @@ namespace Duplicati.Library.Main.Database.Local
         }
 
         /// <summary>
+        /// The number of rows ANALYZE samples per index. SQLite recommends 400 as a value that
+        /// keeps the cost bounded while still producing usable estimates.
+        /// </summary>
+        private const long StatisticsAnalysisLimit = 400;
+
+        /// <summary>
+        /// Rebuilds the query statistics if the ones recorded no longer describe the database.
+        ///
+        /// A backup that starts from an almost empty database leaves "sqlite_stat1" saying the
+        /// tables hold a row or two, and then fills them with tens of thousands. The planner keeps
+        /// believing the recorded numbers, and picks join orders for the fileset and consistency
+        /// queries that do not finish in any reasonable time.
+        ///
+        /// The mask matters. 0x10000 is what makes SQLite look at every table rather than only
+        /// the ones this connection has touched, and without it the pragma does nothing at all
+        /// while a transaction is open -- which one always is here. 0x0002 is the ANALYZE step.
+        /// SQLite recommends exactly this combination for long-lived connections.
+        /// </summary>
+        /// <param name="token">Cancellation token to monitor for cancellation requests.</param>
+        /// <returns>A task that completes when the statistics have been refreshed, if they needed it.</returns>
+        public async Task RefreshQueryStatisticsAsync(CancellationToken token)
+        {
+            await using var cmd = m_connection.CreateCommand()
+                .SetTransaction(m_rtr);
+
+            using (new Logging.Timer(LOGTAG, "RefreshQueryStatistics", "Refreshing the query statistics"))
+            {
+                await cmd.ExecuteNonQueryAsync($"PRAGMA analysis_limit={StatisticsAnalysisLimit}", token)
+                    .ConfigureAwait(false);
+
+                // SQLite decides for itself which tables have moved far enough to be worth
+                // re-analyzing, so there is nothing to gain from guessing at that here. On a
+                // database whose statistics already fit, this costs about four milliseconds.
+                await cmd.ExecuteNonQueryAsync("PRAGMA optimize=0x10002", token)
+                    .ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
         /// Performs a VACUUM operation on the database to reclaim unused space.
         /// This operation can help optimize the database performance by defragmenting it.
         /// Note: This operation can take a significant amount of time depending on the size of the database.
