@@ -160,16 +160,17 @@ namespace Duplicati.Library.Backend
         }
 
         /// <summary>
-        /// Turns the path from the destination url into the one used against the server: rooted,
-        /// ending in a separator, and decoded.
+        /// Turns the escaped path of the destination url into the one the responses are compared
+        /// against: rooted, ending in a separator, and decoded exactly once.
         /// </summary>
         /// <remarks>
-        /// The decoding has to leave a "+" alone. Only a query string spells a space that way, so
-        /// reading it as one renames a folder called "My+Folder" to "My Folder" and nothing found
-        /// at the destination matches afterwards. Reported as issue #4880.
+        /// This decodes with <see cref="Utility.UrlEncoding.UrlPathDecode"/>, which is what the
+        /// five places that read a path out of a PROPFIND response use. The configured path and
+        /// the names taken from the responses are compared with StartsWith, so they have to come
+        /// out of the same decoder or the comparison stops matching.
         /// </remarks>
-        /// <param name="path">The path from the url</param>
-        /// <returns>The path to use against the server</returns>
+        /// <param name="path">The escaped path, as <see cref="System.Uri.AbsolutePath"/> gives it</param>
+        /// <returns>The path to compare the responses against</returns>
         internal static string NormalizePath(string path)
         {
             if (!path.StartsWith("/", StringComparison.Ordinal))
@@ -178,11 +179,63 @@ namespace Duplicati.Library.Backend
             return Utility.UrlEncoding.UrlPathDecode(Util.AppendDirSeparator(path, "/"));
         }
 
+        /// <summary>
+        /// The parts of a webdav url that the backend configures itself from.
+        /// </summary>
+        /// <param name="Host">The server to connect to. An IPv6 literal keeps its brackets.</param>
+        /// <param name="Port">The port, or -1 when the url does not name one.</param>
+        /// <param name="Path">The path, decoded, rooted and ending in a separator. Compared against the responses.</param>
+        /// <param name="EscapedPath">The same path still escaped, rooted and ending in a separator. Used to build the requests.</param>
+        /// <param name="Username">The user from the url, or null when it has none.</param>
+        /// <param name="Password">The password from the url, or null when it has none.</param>
+        /// <remarks>
+        /// The two paths are separate on purpose. Reading a path out of a url that had already been
+        /// decoded is what turned a folder named "My+Folder" into "My Folder": a "+" means a space
+        /// in a query string and nowhere else, and decoding twice also lost a literal percent sign.
+        /// Reported as issue #4880.
+        /// </remarks>
+        internal readonly record struct WebDavUrl(string Host, int Port, string Path, string EscapedPath, string? Username, string? Password);
+
+        /// <summary>
+        /// Splits a webdav url into the parts the backend needs.
+        /// </summary>
+        /// <param name="url">The url to split.</param>
+        /// <returns>The parts the backend needs.</returns>
+        internal static WebDavUrl ParseWebDavUrl(string url)
+        {
+            var uri = new System.Uri(url);
+            uri.RequireHost(url);
+            uri.RequireNoFragment(url);
+
+            // AbsolutePath is still escaped, which is what the requests need. The previous parser
+            // handed the path over already decoded, so decoding it again lost anything that was
+            // spelled with a percent sign.
+            var escaped = Util.AppendDirSeparator(uri.AbsolutePath, "/");
+
+            // The user info is not decoded, so it is decoded here.
+            var userinfo = uri.UserInfo.Split(new[] { ':' }, 2);
+            var username = userinfo.Length > 0 && userinfo[0].Length > 0 ? System.Uri.UnescapeDataString(userinfo[0]) : null;
+            var password = userinfo.Length > 1 ? System.Uri.UnescapeDataString(userinfo[1]) : null;
+
+            // webdav is not a scheme with a registered default port, so an url without one answers
+            // -1 here, the same way the previous parser did.
+            return new WebDavUrl(uri.Host, uri.Port, NormalizePath(escaped), escaped, username, password);
+        }
+
+        /// <summary>
+        /// Constructor used by the tests, so the requests can be observed without a server.
+        /// </summary>
+        /// <param name="url">The destination url</param>
+        /// <param name="options">The options to use</param>
+        /// <param name="handler">The handler that answers the requests</param>
+        internal WEBDAV(string url, Dictionary<string, string?> options, HttpMessageHandler handler)
+            : this(url, options)
+            => m_httpClient = new HttpClient(handler) { Timeout = Timeout.InfiniteTimeSpan };
+
         public WEBDAV(string url, Dictionary<string, string?> options)
         {
-            var u = new Utility.RelaxedUri(url);
-            u.RequireHost();
-            m_dnsName = u.Host ?? "";
+            var u = ParseWebDavUrl(url);
+            m_dnsName = u.Host;
             var auth = AuthOptionsHelper.Parse(options, u.Username, u.Password);
             if (auth.HasUsername)
             {
@@ -203,10 +256,16 @@ namespace Duplicati.Library.Backend
             if (m_forceDigestAuthentication && m_userInfo == null)
                 throw new UserInformationException(Strings.WEBDAV.UsernameRequired, "UsernameRequired");
 
-            m_url = u.SetScheme(m_certificateOptions.UseSSL ? "https" : "http").SetCredentials(null, null).SetQuery(null).ToString();
-            m_url = Util.AppendDirSeparator(m_url, "/");
+            // The escaped path goes into the url the requests are sent to, so a folder named
+            // "My+Folder" is asked for by that name rather than by "My Folder".
+            m_url = m_certificateOptions.UseSSL ? "https" : "http";
+            m_url += "://" + u.Host + (u.Port >= 0 ? ":" + u.Port.ToString() : "") + u.EscapedPath;
 
-            m_path = NormalizePath(u.Path);
+            m_path = u.Path;
+
+            // The four urls below are only ever used as candidate prefixes for the paths a server
+            // puts in a PROPFIND response, and the shapes they happen to have are what makes that
+            // matching tolerant. They keep the previous builder so the candidates stay the same.
             m_rawurl = new Utility.RelaxedUri(m_certificateOptions.UseSSL ? "https" : "http", u.Host, m_path).ToString();
 
             int port = u.Port;
