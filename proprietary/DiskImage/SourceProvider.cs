@@ -104,7 +104,7 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
     public IList<ICommandLineArgument> SupportedCommands => OptionsHelper.SupportedCommands;
 
     /// <inheritdoc />
-    public bool NeedsStoredMetadata => false;
+    public bool NeedsStoredMetadata => true;
 
     /// <summary>
     /// Gets a value indicating whether to treat filesystems as unknown (force raw block-based backup).
