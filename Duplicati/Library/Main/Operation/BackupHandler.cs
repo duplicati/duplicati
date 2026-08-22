@@ -699,6 +699,12 @@ namespace Duplicati.Library.Main.Operation
                                 .CreateFilesetAsync(filesetvolumeid, VolumeBase.ParseFilename(filesetvolume.RemoteFilename).Time, m_taskReader.ProgressToken)
                                 .ConfigureAwait(false);
 
+                            // Record the version label, if one is set
+                            if (!string.IsNullOrWhiteSpace(m_options.VersionName))
+                                await db
+                                    .UpdateFilesetLabelAsync(filesetid, m_options.VersionName, m_taskReader.ProgressToken)
+                                    .ConfigureAwait(false);
+
                             var journalService = GetJournalService(source, filter, lastfilesetid);
 
                             // Start parallel scan, or use the database

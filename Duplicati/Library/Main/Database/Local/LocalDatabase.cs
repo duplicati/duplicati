@@ -3102,6 +3102,53 @@ namespace Duplicati.Library.Main.Database.Local
         }
 
         /// <summary>
+        /// Updates the label of a fileset.
+        /// </summary>
+        /// <param name="filesetId">The fileset to update.</param>
+        /// <param name="label">The label to set, or null to clear the label.</param>
+        /// <param name="token">Cancellation token to monitor for cancellation requests.</param>
+        /// <returns>A task that completes when the update is finished.</returns>
+        public async Task UpdateFilesetLabelAsync(long filesetId, string? label, CancellationToken token)
+        {
+            await using var cmd = await m_connection.CreateCommandAsync(@"
+                UPDATE ""Fileset""
+                SET ""Label"" = @Label
+                WHERE ""ID"" = @FilesetId
+            ", token)
+                .ConfigureAwait(false);
+
+            await cmd.SetTransaction(m_rtr)
+                .SetParameterValue("@FilesetId", filesetId)
+                .SetParameterValue("@Label", string.IsNullOrWhiteSpace(label) ? null : label)
+                .ExecuteNonQueryAsync(true, token)
+                .ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Gets the timestamp and label of all filesets that have a non-null label.
+        /// </summary>
+        /// <param name="token">Cancellation token to monitor for cancellation requests.</param>
+        /// <returns>An asynchronous enumerable of key-value pairs, where each pair contains the fileset timestamp (UTC) and its label.</returns>
+        public async IAsyncEnumerable<KeyValuePair<DateTime, string>> GetFilesetLabelsAsync([EnumeratorCancellation] CancellationToken token)
+        {
+            await using var cmd = await m_connection.CreateCommandAsync(@"
+                SELECT
+                    ""Timestamp"",
+                    ""Label""
+                FROM ""Fileset""
+                WHERE ""Label"" IS NOT NULL
+            ", token)
+                .ConfigureAwait(false);
+
+            await using var rd = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false);
+            while (await rd.ReadAsync(token).ConfigureAwait(false))
+                yield return new KeyValuePair<DateTime, string>(
+                    ParseFromEpochSeconds(rd.ConvertValueToInt64(0)),
+                    rd.ConvertValueToString(1) ?? ""
+                );
+        }
+
+        /// <summary>
         /// Removes all entries in the fileset entry table for a given fileset ID.
         /// </summary>
         /// <param name="filesetId">The fileset ID to clear.</param>
