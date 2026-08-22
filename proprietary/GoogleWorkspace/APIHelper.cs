@@ -47,7 +47,11 @@ public class APIHelper
         var backoffInitializer = new BackOffInitializer();
         if (!string.IsNullOrEmpty(_serviceAccountJson))
         {
-            var credential = GoogleCredential.FromJson(_serviceAccountJson)
+            // Read as a service account and nothing else: the impersonation below is domain-wide
+            // delegation, which no other kind of credential can do, and the loader that takes any
+            // kind would read whatever arrived.
+            var credential = CredentialFactory.FromJson<ServiceAccountCredential>(_serviceAccountJson)
+                .ToGoogleCredential()
                 .CreateScoped(scopes.ToArray());
 
             var userToImpersonate = userId ?? _adminEmail;
