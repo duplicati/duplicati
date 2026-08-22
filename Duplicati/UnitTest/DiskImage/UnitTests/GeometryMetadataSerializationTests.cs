@@ -497,4 +497,71 @@ public partial class DiskImageUnitTests : BasicSetupHelper
         Assert.IsNull(result.Filesystems, "Filesystems should be null.");
     }
 
+    /// <summary>
+    /// Tests that a fully populated PartitionInfoMetadata can be serialized to JSON
+    /// and deserialized back, preserving all field values.
+    /// </summary>
+    [Test]
+    public void Test_PartitionInfoMetadata_RoundTrip_PreservesAllFields()
+    {
+        var original = new PartitionInfoMetadata
+        {
+            Partition = new PartitionGeometry
+            {
+                Number = 2,
+                Type = PartitionType.Primary,
+                StartOffset = 512 * 2048,
+                Size = 40 * MiB,
+                Name = "Test Partition",
+                FilesystemType = FileSystemType.NTFS,
+                VolumeGuid = Guid.Parse("12345678-1234-1234-1234-123456789abc"),
+                TableType = PartitionTableType.GPT
+            },
+            Filesystem = new FilesystemGeometry
+            {
+                PartitionNumber = 2,
+                Type = FileSystemType.NTFS,
+                PartitionStartOffset = 512 * 2048,
+                BlockSize = 1024 * 1024,
+                Metadata = "{\"label\":\"NTFS_VOL\"}"
+            }
+        };
+
+        var json = original.ToJson();
+        var deserialized = PartitionInfoMetadata.FromJson(json);
+
+        Assert.IsNotNull(deserialized, "Deserialized object should not be null.");
+        Assert.AreEqual(PartitionInfoMetadata.CurrentVersion, deserialized!.Version, "Version should be the current version.");
+
+        Assert.IsNotNull(deserialized.Partition, "Partition should not be null.");
+        Assert.AreEqual(2, deserialized.Partition!.Number, "Partition number should be preserved.");
+        Assert.AreEqual(40 * MiB, deserialized.Partition.Size, "Partition size should be preserved.");
+        Assert.AreEqual(512 * 2048, deserialized.Partition.StartOffset, "Partition start offset should be preserved.");
+        Assert.AreEqual(FileSystemType.NTFS, deserialized.Partition.FilesystemType, "Partition filesystem type should be preserved.");
+        Assert.AreEqual(PartitionTableType.GPT, deserialized.Partition.TableType, "Partition table type should be preserved.");
+        Assert.AreEqual(Guid.Parse("12345678-1234-1234-1234-123456789abc"), deserialized.Partition.VolumeGuid, "Partition volume GUID should be preserved.");
+
+        Assert.IsNotNull(deserialized.Filesystem, "Filesystem should not be null.");
+        Assert.AreEqual(FileSystemType.NTFS, deserialized.Filesystem!.Type, "Filesystem type should be preserved.");
+        Assert.AreEqual(1024 * 1024, deserialized.Filesystem.BlockSize, "Filesystem block size should be preserved.");
+        Assert.AreEqual(2, deserialized.Filesystem.PartitionNumber, "Filesystem partition number should be preserved.");
+        Assert.AreEqual("{\"label\":\"NTFS_VOL\"}", deserialized.Filesystem.Metadata, "Filesystem metadata should be preserved.");
+    }
+
+    /// <summary>
+    /// Tests that deserializing an empty JSON object creates a PartitionInfoMetadata
+    /// with default property values.
+    /// </summary>
+    [Test]
+    public void Test_PartitionInfoMetadata_FromJson_EmptyObject_CreatesDefaultInstance()
+    {
+        var result = PartitionInfoMetadata.FromJson("{}");
+
+        Assert.IsNotNull(result, "Should create an instance from empty JSON object.");
+        Assert.AreEqual(PartitionInfoMetadata.CurrentVersion, result!.Version, "Version should have the default value.");
+        Assert.IsNull(result.Partition, "Partition should be null.");
+        Assert.IsNull(result.Filesystem, "Filesystem should be null.");
+    }
+
+
 }

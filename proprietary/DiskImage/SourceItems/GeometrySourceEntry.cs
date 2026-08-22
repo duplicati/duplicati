@@ -21,7 +21,7 @@ internal class GeometrySourceEntry : DiskImageEntryBase
     private readonly GeometryMetadata _metadata;
 
     public GeometrySourceEntry(string parentPath, GeometryMetadata metadata)
-        : base(System.IO.Path.Combine(parentPath, "geometry.json"))
+        : base(System.IO.Path.Combine(parentPath, GeometryMetadata.FileName))
     {
         _metadata = metadata;
     }
