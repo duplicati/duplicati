@@ -246,7 +246,7 @@ public class SecretProviderSetSecretTests
         try
         {
             var builder = new SecretManagerServiceClientBuilder();
-            builder.Credential = GoogleCredential.FromJson(serviceAccountJson);
+            builder.Credential = CredentialFactory.FromJson<ServiceAccountCredential>(serviceAccountJson).ToGoogleCredential();
             cleanupClient = builder.Build();
 
             var provider = new GCSSecretProvider();
