@@ -106,7 +106,8 @@ public class BackupListing : IEndpointV2
                         Time = x.Time,
                         IsFullBackup = x.IsFullBackup,
                         FileCount = x.FileCount,
-                        FileSizes = x.FileSizes
+                        FileSizes = x.FileSizes,
+                        Label = x.Label
                     })
             );
         }

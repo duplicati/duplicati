@@ -61,6 +61,13 @@ internal static class UploadRealFilelist
                 await taskreader.ProgressRendevouzAsync().ConfigureAwait(false);
 
                 await db.WriteFilesetAsync(filesetvolume, filesetid, taskreader.ProgressToken).ConfigureAwait(false);
+
+                // Best effort: store the current set of labels with the backup,
+                // so they can be recovered if the local database is recreated
+                var labels = await db.GetFilesetLabelsAsync(taskreader.ProgressToken).ConfigureAwait(false);
+                if (labels.Length > 0)
+                    filesetvolume.AddLabelsFile(labels);
+
                 filesetvolume.Close();
 
                 // We ignore the stop signal, but not the pause and terminate

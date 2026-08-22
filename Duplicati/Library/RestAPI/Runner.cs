@@ -314,6 +314,27 @@ namespace Duplicati.Server
                 extraOptions ?? new Dictionary<string, string?>());
         }
 
+        /// <summary>
+        /// Creates a task that updates the label of a backup version.
+        /// </summary>
+        /// <param name="backup">The backup to update the version label for</param>
+        /// <param name="version">The version to update</param>
+        /// <param name="label">The label to set, or null to clear the label</param>
+        /// <returns>The runner task</returns>
+        public static IRunnerData CreateSetVersionLabelTask(IBackup backup, long version, string? label)
+        {
+            var dict = new Dictionary<string, string?>
+            {
+                ["version"] = version.ToString(CultureInfo.InvariantCulture),
+                ["version-name"] = label ?? ""
+            };
+
+            return CreateTask(
+                DuplicatiOperation.SetVersionLabel,
+                backup,
+                dict);
+        }
+
         public static IRunnerData CreateListFolderContents(IBackup backup, string[]? folders, DateTime time, int pageSize, int pageOffset, bool returnExtended)
         {
             var dict = new Dictionary<string, string?>();
@@ -1006,6 +1027,12 @@ namespace Duplicati.Server
                         case DuplicatiOperation.ListFilesets:
                             {
                                 var r = await controller.ListFilesetsAsync().ConfigureAwait(false);
+                                UpdateMetadataBase(databaseConnection, eventPollNotify, notificationUpdateService, backup, r);
+                                return r;
+                            }
+                        case DuplicatiOperation.SetVersionLabel:
+                            {
+                                var r = await controller.SetVersionLabelAsync().ConfigureAwait(false);
                                 UpdateMetadataBase(databaseConnection, eventPollNotify, notificationUpdateService, backup, r);
                                 return r;
                             }

@@ -106,6 +106,10 @@ namespace Duplicati.Library.Interface
         DateTime Time { get; }
         long FileCount { get; }
         long FileSizes { get; }
+        /// <summary>
+        /// The label assigned to the version, or null if no label is set
+        /// </summary>
+        string Label { get; }
     }
 
     public interface IListResults : IBasicResults
@@ -140,6 +144,29 @@ namespace Duplicati.Library.Interface
         /// The size of the files in the fileset; not set if listing remote
         /// </summary>
         long? FileSizes { get; }
+        /// <summary>
+        /// The label assigned to the version; not set if listing remote or no label is set
+        /// </summary>
+        string Label { get; }
+    }
+
+    /// <summary>
+    /// The result of a set version label operation
+    /// </summary>
+    public interface ISetVersionLabelResults : IBasicResults
+    {
+        /// <summary>
+        /// The backup version that was updated
+        /// </summary>
+        long BackupVersion { get; }
+        /// <summary>
+        /// The timestamp of the version that was updated
+        /// </summary>
+        DateTime Time { get; }
+        /// <summary>
+        /// The label that was assigned, or null if the label was cleared
+        /// </summary>
+        string Label { get; }
     }
 
     /// <summary>
