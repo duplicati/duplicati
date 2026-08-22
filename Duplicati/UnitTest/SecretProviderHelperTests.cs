@@ -117,6 +117,51 @@ public class SecretProviderHelperTests : BasicSetupHelper
 
     [Test]
     [Category("SecretHelper")]
+    public async Task ReplaceSecretsInHostlessSystemUriAsync()
+    {
+        var secretProvider = new MockedSecretProvider();
+        secretProvider.Secrets["key1"] = "secret1";
+
+        var settings = new Dictionary<string, string>();
+
+        // System.UriBuilder collapses host-less urls with schemes it does not
+        // know ("test://?..." becomes "test:/?..."); the replacement must keep
+        // the '//' intact
+        var argsSys = new[] {
+            new System.Uri("test://?pass=$key1&other=123")
+        };
+
+        var argsInternal = Array.Empty<Library.Utility.RelaxedUri>();
+
+        await SecretProviderHelper.ApplySecretProviderAsync(argsSys, argsInternal, settings, null, secretProvider, CancellationToken.None);
+
+        Assert.AreEqual("test:///?pass=secret1&other=123", argsSys[0].ToString());
+    }
+
+    [Test]
+    [Category("SecretHelper")]
+    public async Task ReplaceSecretsWithIpv6HostAsync()
+    {
+        var secretProvider = new MockedSecretProvider();
+        secretProvider.Secrets["key1"] = "secret1";
+
+        var settings = new Dictionary<string, string>();
+
+        // The brackets of an IPv6 literal host must survive the round-trip
+        // through the relaxed parser, or the re-import into System.Uri fails
+        var argsSys = new[] {
+            new System.Uri("http://[::1]:8080/path?pass=$key1&other=123")
+        };
+
+        var argsInternal = Array.Empty<Library.Utility.RelaxedUri>();
+
+        await SecretProviderHelper.ApplySecretProviderAsync(argsSys, argsInternal, settings, null, secretProvider, CancellationToken.None);
+
+        Assert.AreEqual("http://[::1]:8080/path?pass=secret1&other=123", argsSys[0].ToString());
+    }
+
+    [Test]
+    [Category("SecretHelper")]
     public async Task ReplaceSecretsWithSlashKeysAsync()
     {
         var secretProvider = new MockedSecretProvider();

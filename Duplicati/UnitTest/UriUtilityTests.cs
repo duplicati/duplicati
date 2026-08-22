@@ -40,6 +40,39 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("UriUtility")]
+        public static void TestUrlBuilderWithNonStandardScheme()
+        {
+            // System.UriBuilder collapses host-less urls with schemes it does not
+            // know ("s3://" becomes "s3:/"); the relaxed assembly must keep them intact
+            var query = new NameValueCollection { { "a", "b" } };
+            Assert.AreEqual("s3://bucket/prefix/sub?a=b", Library.Utility.RelaxedUri.UriBuilder("s3://bucket/prefix", "sub", query));
+            // A host-less url without a path puts the appended path in the authority position
+            Assert.AreEqual("s3://sub?a=b", Library.Utility.RelaxedUri.UriBuilder("s3://", "sub", query));
+            // An existing absolute path keeps its leading slash
+            Assert.AreEqual("file:///mnt/backup/sub", Library.Utility.RelaxedUri.UriBuilder("file:///mnt/backup", "sub", null));
+            Assert.AreEqual("dropbox://folder/sub", Library.Utility.RelaxedUri.UriBuilder("dropbox://folder?authid=x", "sub", null));
+        }
+
+        [Test]
+        [Category("UriUtility")]
+        public static void TestUrlBuilderWithIpv6Host()
+        {
+            // The brackets of an IPv6 literal host must not be percent-encoded,
+            // or System.Uri can no longer parse the result
+            Assert.AreEqual("http://[::1]:8080/a/b", Library.Utility.RelaxedUri.UriBuilder("http://[::1]:8080/a", "b"));
+            Assert.AreEqual("http://[1:2:3::4]/a/b?x=1", Library.Utility.RelaxedUri.UriBuilder("http://[1:2:3::4]/a", "b", new NameValueCollection { { "x", "1" } }));
+        }
+
+        [Test]
+        [Category("UriUtility")]
+        public static void TestUriToStringKeepsIpv6Brackets()
+        {
+            var url = "http://user:pw@[::1]:8080/a/b?x=1";
+            Assert.AreEqual(url, new Library.Utility.RelaxedUri(url).ToString());
+        }
+
+        [Test]
+        [Category("UriUtility")]
         public static void TestExtractPath()
         {
             var url = "http://localhost/a/b";
