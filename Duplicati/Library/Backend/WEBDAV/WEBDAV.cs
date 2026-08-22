@@ -26,6 +26,8 @@ using Duplicati.Library.Utility.Options;
 using System.Net;
 using System.Runtime.CompilerServices;
 
+[assembly: InternalsVisibleTo("Duplicati.UnitTest")]
+
 namespace Duplicati.Library.Backend
 {
     public class WEBDAV : IStreamingBackend, IRenameEnabledBackend
@@ -157,6 +159,25 @@ namespace Duplicati.Library.Backend
             m_propfindPathPrefixes = null!;
         }
 
+        /// <summary>
+        /// Turns the path from the destination url into the one used against the server: rooted,
+        /// ending in a separator, and decoded.
+        /// </summary>
+        /// <remarks>
+        /// The decoding has to leave a "+" alone. Only a query string spells a space that way, so
+        /// reading it as one renames a folder called "My+Folder" to "My Folder" and nothing found
+        /// at the destination matches afterwards. Reported as issue #4880.
+        /// </remarks>
+        /// <param name="path">The path from the url</param>
+        /// <returns>The path to use against the server</returns>
+        internal static string NormalizePath(string path)
+        {
+            if (!path.StartsWith("/", StringComparison.Ordinal))
+                path = "/" + path;
+
+            return Utility.UrlEncoding.UrlPathDecode(Util.AppendDirSeparator(path, "/"));
+        }
+
         public WEBDAV(string url, Dictionary<string, string?> options)
         {
             var u = new Utility.RelaxedUri(url);
@@ -185,12 +206,7 @@ namespace Duplicati.Library.Backend
             m_url = u.SetScheme(m_certificateOptions.UseSSL ? "https" : "http").SetCredentials(null, null).SetQuery(null).ToString();
             m_url = Util.AppendDirSeparator(m_url, "/");
 
-            m_path = u.Path;
-            if (!m_path.StartsWith("/", StringComparison.Ordinal))
-                m_path = "/" + m_path;
-            m_path = Util.AppendDirSeparator(m_path, "/");
-
-            m_path = Utility.UrlEncoding.UrlDecode(m_path);
+            m_path = NormalizePath(u.Path);
             m_rawurl = new Utility.RelaxedUri(m_certificateOptions.UseSSL ? "https" : "http", u.Host, m_path).ToString();
 
             int port = u.Port;
@@ -238,7 +254,7 @@ namespace Duplicati.Library.Backend
             if (path == null)
                 return;
 
-            var normalized = Utility.UrlEncoding.UrlDecode(path.Replace("+", "%2B"));
+            var normalized = Utility.UrlEncoding.UrlPathDecode(path);
 
             if (!normalized.StartsWith("/", StringComparison.Ordinal))
                 normalized = "/" + normalized;
@@ -264,17 +280,17 @@ namespace Duplicati.Library.Backend
                 }
                 else
                 {
-                    var decodedValue = Utility.UrlEncoding.UrlDecode(trimmed.Replace("+", "%2B"));
+                    var decodedValue = Utility.UrlEncoding.UrlPathDecode(trimmed);
                     return ExtractRelativeFromDecodedPath(decodedValue);
                 }
             }
 
-            var decodedPath = Utility.UrlEncoding.UrlDecode(hrefUri.AbsolutePath.Replace("+", "%2B"));
+            var decodedPath = Utility.UrlEncoding.UrlPathDecode(hrefUri.AbsolutePath);
             var name = ExtractRelativeFromDecodedPath(decodedPath);
             if (!string.IsNullOrEmpty(name))
                 return name;
 
-            var decodedHref = Utility.UrlEncoding.UrlDecode(trimmed.Replace("+", "%2B"));
+            var decodedHref = Utility.UrlEncoding.UrlPathDecode(trimmed);
             return ExtractRelativeFromDecodedPath(decodedHref);
         }
 
@@ -329,7 +345,7 @@ namespace Duplicati.Library.Backend
             if (string.IsNullOrWhiteSpace(hrefValue))
                 return null;
 
-            string name = Utility.UrlEncoding.UrlDecode(hrefValue.Replace("+", "%2B"));
+            string name = Utility.UrlEncoding.UrlPathDecode(hrefValue);
 
             string cmp_path;
 

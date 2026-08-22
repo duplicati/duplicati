@@ -54,6 +54,27 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Utility")]
+        public static void PlusIsACharacterInAPath()
+        {
+            // Only a query string spells a space as a plus, so a folder named "a+b" keeps its
+            // name. Decoding a path with UrlDecode instead renames it to "a b", which is what
+            // issue #4880 was about.
+            Assert.AreEqual("a+b", Library.Utility.UrlEncoding.UrlPathDecode("a+b"));
+            Assert.AreEqual("a b", Library.Utility.UrlEncoding.UrlPathDecode("a%20b"));
+            Assert.AreEqual("a+b", Library.Utility.UrlEncoding.UrlPathDecode("a%2Bb"));
+
+            // The rest of the decoding is unchanged
+            Assert.AreEqual("Mäppe", Library.Utility.UrlEncoding.UrlPathDecode("M%C3%A4ppe"));
+            Assert.AreEqual("æ", Library.Utility.UrlEncoding.UrlPathDecode("%u00e6"));
+
+            // And what the five call sites in the WebDAV backend spell by hand is the same thing
+            Assert.AreEqual(
+                Library.Utility.UrlEncoding.UrlDecode("a+b%20c".Replace("+", "%2B")),
+                Library.Utility.UrlEncoding.UrlPathDecode("a+b%20c"));
+        }
+
+        [Test]
+        [Category("Utility")]
         public static void MultiByteSequencesAreDecoded()
         {
             // Every %XX is matched on its own, so decoding a character that takes
