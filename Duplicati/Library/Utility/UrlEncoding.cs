@@ -100,12 +100,29 @@ namespace Duplicati.Library.Utility
         private static readonly System.Text.RegularExpressions.Regex RE_NUMBER = new System.Text.RegularExpressions.Regex(@"(\%(?<number>([0-9]|[a-f]|[A-F]){2}))|(\+)|(\%u(?<unicode>([0-9]|[a-f]|[A-F]){4}))", System.Text.RegularExpressions.RegexOptions.Compiled);
 
         /// <summary>
+        /// Decodes the path part of a URL, where a "+" is the character itself rather than a
+        /// space. Only a query string spells a space that way, so decoding a path with
+        /// <see cref="UrlDecode"/> turns a folder named "a+b" into one named "a b".
+        /// </summary>
+        /// <returns>The decoded path</returns>
+        /// <param name="value">The path to decode</param>
+        /// <param name="encoding">The encoding to use</param>
+        public static string UrlPathDecode(string value, System.Text.Encoding? encoding = null)
+        {
+            if (value == null)
+                throw new ArgumentNullException(nameof(value));
+
+            return UrlDecode(value, encoding, plusIsSpace: false);
+        }
+
+        /// <summary>
         /// Decodes a URL, like System.Web.HttpUtility.UrlDecode
         /// </summary>
         /// <returns>The decoded URL</returns>
         /// <param name="value">The URL fragment to decode</param>
         /// <param name="encoding">The encoding to use</param>
-        public static string UrlDecode(string value, System.Text.Encoding? encoding = null)
+        /// <param name="plusIsSpace">True to read "+" as a space, as a query string spells it</param>
+        public static string UrlDecode(string value, System.Text.Encoding? encoding = null, bool plusIsSpace = true)
         {
             if (value == null)
                 throw new ArgumentNullException(nameof(value));
@@ -119,7 +136,7 @@ namespace Duplicati.Library.Utility
             return RE_NUMBER.Replace(value, (m) =>
             {
                 if (m.Value == "+")
-                    return " ";
+                    return plusIsSpace ? " " : "+";
 
                 try
                 {
