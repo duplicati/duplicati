@@ -30,6 +30,8 @@ using System.Net.Http.Headers;
 using System.Runtime.CompilerServices;
 using System.Text;
 
+[assembly: InternalsVisibleTo("Duplicati.UnitTest")]
+
 namespace Duplicati.Library.Backend
 {
     /// <summary>
@@ -196,7 +198,7 @@ namespace Duplicati.Library.Backend
                 // We pick a random file name (using a guid) to make sure we don't conflict with an existing file
                 var dnsTestFile = string.Format("DNSNameTest-{0}", Guid.NewGuid());
                 var drivePrefix = await GetDrivePrefix(cancelToken).ConfigureAwait(false);
-                var uploadSession = await this.PostAsync<UploadSession>(string.Format("{0}/root:{1}{2}:/createUploadSession", drivePrefix, this.RootPath, NormalizeSlashes(dnsTestFile)), dummyUploadSession, cancelToken).ConfigureAwait(false);
+                var uploadSession = await this.PostAsync<UploadSession>(RootItemUrl(drivePrefix, dnsTestFile) + ":/createUploadSession", dummyUploadSession, cancelToken).ConfigureAwait(false);
 
                 // Canceling an upload session is done by sending a DELETE to the upload URL
                 await m_retryAfter.WaitForRetryAfterAsync(cancelToken).ConfigureAwait(false);
@@ -268,7 +270,7 @@ namespace Duplicati.Library.Backend
                 try
                 {
                     folderItem = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken,
-                        ct => GetAsync<DriveItem>(string.Format("{0}/root:{1}", drivePrefix, NormalizeSlashes(nextPath)), ct)
+                        ct => GetAsync<DriveItem>(string.Format("{0}/root:{1}", drivePrefix, ToUrlPath(nextPath)), ct)
                     ).ConfigureAwait(false);
                 }
                 catch (DriveItemNotFoundException)
@@ -331,7 +333,7 @@ namespace Duplicati.Library.Backend
             if (targetPath == "/" || string.IsNullOrEmpty(targetPath))
                 url = $"{drivePrefix}/root/children";
             else
-                url = $"{drivePrefix}/root:{targetPath}:/children";
+                url = $"{drivePrefix}/root:{ToUrlPath(targetPath)}:/children";
 
             await foreach (var item in this.Enumerate<DriveItem>(url, cancelToken).ConfigureAwait(false))
             {
@@ -349,7 +351,7 @@ namespace Duplicati.Library.Backend
             if (targetPath == "/" || string.IsNullOrEmpty(targetPath))
                 url = $"{drivePrefix}/root";
             else
-                url = $"{drivePrefix}/root:{targetPath}";
+                url = $"{drivePrefix}/root:{ToUrlPath(targetPath)}";
 
             try
             {
@@ -369,7 +371,7 @@ namespace Duplicati.Library.Backend
         public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
             var drivePrefix = await GetDrivePrefix(cancelToken).ConfigureAwait(false);
-            await foreach (var item in this.Enumerate<DriveItem>(string.Format("{0}/root:{1}:/children", drivePrefix, this.RootPath), cancelToken).ConfigureAwait(false))
+            await foreach (var item in this.Enumerate<DriveItem>(RootItemUrl(drivePrefix) + ":/children", cancelToken).ConfigureAwait(false))
             {
                 // Exclude non-files and deleted items (not sure if they show up in this listing, but make sure anyway)
                 if (item.IsFile && !item.IsDeleted)
@@ -391,7 +393,7 @@ namespace Duplicati.Library.Backend
             {
                 var drivePrefix = await GetDrivePrefix(cancelToken).ConfigureAwait(false);
                 m_retryAfter.WaitForRetryAfter();
-                string getUrl = string.Format("{0}/root:{1}{2}:/content", drivePrefix, this.RootPath, NormalizeSlashes(remotename));
+                string getUrl = RootItemUrl(drivePrefix, remotename) + ":/content";
                 using (var response = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken,
                     ct => m_client.GetAsync(getUrl, HttpCompletionOption.ResponseHeadersRead, ct)
                 ).ConfigureAwait(false))
@@ -416,7 +418,7 @@ namespace Duplicati.Library.Backend
             {
                 var drivePrefix = await GetDrivePrefix(cancelToken).ConfigureAwait(false);
                 await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken,
-                    ct => PatchAsync(string.Format("{0}/root:{1}{2}", drivePrefix, this.RootPath, NormalizeSlashes(oldname)), new DriveItem() { Name = newname }, ct)
+                    ct => PatchAsync(RootItemUrl(drivePrefix, oldname), new DriveItem() { Name = newname }, ct)
                 ).ConfigureAwait(false);
             }
             catch (DriveItemNotFoundException ex)
@@ -440,7 +442,7 @@ namespace Duplicati.Library.Backend
             if (stream.Length < PUT_MAX_SIZE)
             {
                 await m_retryAfter.WaitForRetryAfterAsync(cancelToken).ConfigureAwait(false);
-                string putUrl = string.Format("{0}/root:{1}{2}:/content", drivePrefix, this.RootPath, NormalizeSlashes(remotename));
+                string putUrl = RootItemUrl(drivePrefix, remotename) + ":/content";
                 using (var timeoutStream = stream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false))
                 using (var streamContent = new StreamContent(timeoutStream))
                 {
@@ -459,7 +461,7 @@ namespace Duplicati.Library.Backend
                 // The documentation seems somewhat contradictory - it states that uploads must be done sequentially,
                 // but also states that the nextExpectedRanges value returned may indicate multiple ranges...
                 // For now, this plays it safe and does a sequential upload.
-                string createSessionUrl = string.Format("{0}/root:{1}{2}:/createUploadSession", drivePrefix, this.RootPath, NormalizeSlashes(remotename));
+                string createSessionUrl = RootItemUrl(drivePrefix, remotename) + ":/createUploadSession";
                 await m_retryAfter.WaitForRetryAfterAsync(cancelToken).ConfigureAwait(false);
                 using (var createSessionRequest = new HttpRequestMessage(HttpMethod.Post, createSessionUrl))
                 using (var createSessionResponse = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => this.m_client.SendAsync(createSessionRequest, ct)).ConfigureAwait(false))
@@ -639,7 +641,7 @@ namespace Duplicati.Library.Backend
             {
                 var drivePrefix = await GetDrivePrefix(cancelToken).ConfigureAwait(false);
                 await m_retryAfter.WaitForRetryAfterAsync(cancelToken).ConfigureAwait(false);
-                string deleteUrl = string.Format("{0}/root:{1}{2}", drivePrefix, this.RootPath, NormalizeSlashes(remotename));
+                string deleteUrl = RootItemUrl(drivePrefix, remotename);
                 using (var response = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => this.m_client.DeleteAsync(deleteUrl, ct)).ConfigureAwait(false))
                     this.CheckResponse(response);
             }
@@ -655,7 +657,7 @@ namespace Duplicati.Library.Backend
             try
             {
                 var drivePrefix = await GetDrivePrefix(cancelToken).ConfigureAwait(false);
-                string rootPath = string.Format("{0}/root:{1}", drivePrefix, this.RootPath);
+                string rootPath = RootItemUrl(drivePrefix);
                 await this.GetAsync<DriveItem>(rootPath, cancelToken).ConfigureAwait(false);
             }
             catch (DriveItemNotFoundException ex)
@@ -677,10 +679,13 @@ namespace Duplicati.Library.Backend
 
         protected virtual Task<string> GetRootPathFromUrlAsync(string url, CancellationToken cancelToken)
         {
-            // Extract out the path to the backup root folder from the given URI
+            // Extract out the path to the backup root folder from the given URI.
+            // RelaxedUri decodes both the host and the path as it parses, so HostAndPath is
+            // already the name of the folder; decoding it again would lose anything spelled
+            // with a percent sign.
             var uri = new Utility.RelaxedUri(url);
 
-            return Task.FromResult(Utility.UrlEncoding.UrlDecode(uri.HostAndPath));
+            return Task.FromResult(uri.HostAndPath);
         }
 
         protected Task<T> GetAsync<T>(string url, CancellationToken cancelToken)
@@ -832,6 +837,31 @@ namespace Duplicati.Library.Backend
 
             throw new UploadSessionException(createSessionResponse, fragment, fragmentCount, ex);
         }
+
+        /// <summary>
+        /// Builds the url of an item under the configured root folder.
+        /// </summary>
+        /// <param name="drivePrefix">The prefix naming the drive, from GetDrivePrefix</param>
+        /// <param name="relativeName">The name under the root folder, or empty for the folder itself</param>
+        /// <returns>The url, without the suffix that says what to do with the item</returns>
+        internal string RootItemUrl(string drivePrefix, string relativeName = "")
+            => string.Format("{0}/root:{1}{2}", drivePrefix, ToUrlPath(this.RootPath),
+                string.IsNullOrEmpty(relativeName) ? string.Empty : ToUrlPath(relativeName));
+
+        /// <summary>
+        /// Turns a folder path into the form a Graph url needs: the separators stay separators and
+        /// everything else is escaped.
+        /// </summary>
+        /// <remarks>
+        /// Graph reads the path in the url percent-decoded, so the name of the folder and the text
+        /// in the url are not the same string. Without this, a folder named "a%20b" and a folder
+        /// named "a b" are the same request, and a name containing a '#' cuts the rest of the url
+        /// off as a fragment.
+        /// </remarks>
+        /// <param name="path">The path, as the folders are named</param>
+        /// <returns>The path as a url says it</returns>
+        private static string ToUrlPath(string path)
+            => string.Join("/", NormalizeSlashes(path).Split('/').Select(x => Utility.UrlEncoding.UrlPathEncode(x)));
 
         /// <summary>
         /// Normalizes the slashes in a url fragment. For example:
