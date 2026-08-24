@@ -18,7 +18,7 @@ namespace Duplicati.Proprietary.DiskImage.Partition;
 internal class ReconstructedPartitionTable : IPartitionTable
 {
     private readonly IRawDisk _rawDisk;
-    private readonly GeometryMetadata _geometry;
+    private readonly GeometryMetadata? _geometry;
     private bool _disposed = false;
 
     /// <summary>
@@ -31,6 +31,18 @@ internal class ReconstructedPartitionTable : IPartitionTable
     {
         _rawDisk = rawDisk;
         _geometry = geometry;
+        TableType = tableType;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ReconstructedPartitionTable"/> class
+    /// without geometry metadata, for partitions created on the target disk during restore.
+    /// </summary>
+    /// <param name="rawDisk">The raw disk.</param>
+    /// <param name="tableType">The partition table type (GPT or MBR).</param>
+    public ReconstructedPartitionTable(IRawDisk rawDisk, PartitionTableType tableType)
+    {
+        _rawDisk = rawDisk;
         TableType = tableType;
     }
 

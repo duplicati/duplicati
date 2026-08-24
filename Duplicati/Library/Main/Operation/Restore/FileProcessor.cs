@@ -66,6 +66,23 @@ namespace Duplicati.Library.Main.Operation.Restore
         public static int priority_files_remaining;
         public static object priority_files_lock = new object();
         public static TaskCompletionSource priority_files_completed = new();
+
+        /// <summary>
+        /// Faults the priority-file barrier if the given file is a priority file.
+        /// The barrier is only signaled on the success path, so a priority file that
+        /// fails terminally would otherwise leave the other processors waiting for it
+        /// forever, stalling the restore instead of failing with the real error.
+        /// </summary>
+        /// <param name="file">The file that failed.</param>
+        /// <param name="ex">The error that caused the failure.</param>
+        private static void FaultPriorityBarrierIfPriorityFile(FileRequest file, Exception ex)
+        {
+            if (!file.IsPriorityFile)
+                return;
+
+            lock (priority_files_lock)
+                priority_files_completed.TrySetException(ex);
+        }
         /// <summary>
         /// The current file processor ID. Used for debugging.
         /// </summary>
@@ -112,6 +129,10 @@ namespace Duplicati.Library.Main.Operation.Restore
                 // ID for this file processor, used for debugging.
                 var my_id = Interlocked.Increment(ref processor_id);
 
+                // The file currently being restored, tracked so a terminal failure
+                // of a priority file can fault the priority barrier
+                FileRequest? current_file = null;
+
                 try
                 {
                     using var filehasher = HashFactory.CreateHasher(options.FileHashAlgorithm);
@@ -124,6 +145,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         sw_file?.Start();
                         var file = await self.Input.ReadAsync().ConfigureAwait(false);
                         sw_file?.Stop();
+                        current_file = file;
 
                         // A stop means "finish the current file and stop", so the check sits at
                         // the top of the loop: whatever was being restored when the stop arrived
@@ -200,13 +222,16 @@ namespace Duplicati.Library.Main.Operation.Restore
                         catch (Exception ex) when (!RestoreCancellation.IsShutdownRequested(results.TaskControl))
                         {
                             Logging.Log.WriteErrorMessage(LOGTAG, "VerifyTargetBlocks", ex, "Error during checking the target file");
+                            FaultPriorityBarrierIfPriorityFile(file, ex);
                             continue;
                         }
                         long bytes_written = 0;
                         sw_work_verify_target?.Stop();
                         if (blocks.Length != missing_blocks.Count + verified_blocks.Count)
                         {
-                            Logging.Log.WriteErrorMessage(LOGTAG, "BlockCountMismatch", null, $"Block count mismatch for {file.TargetPath} - expected: {blocks.Length}, actual: {missing_blocks.Count + verified_blocks.Count}");
+                            var error = $"Block count mismatch for {file.TargetPath} - expected: {blocks.Length}, actual: {missing_blocks.Count + verified_blocks.Count}";
+                            Logging.Log.WriteErrorMessage(LOGTAG, "BlockCountMismatch", null, error);
+                            FaultPriorityBarrierIfPriorityFile(file, new InvalidOperationException(error));
                             continue;
                         }
 
@@ -608,6 +633,13 @@ namespace Duplicati.Library.Main.Operation.Restore
                 }
                 catch (Exception ex)
                 {
+                    // A priority file that fails terminally must fault the priority
+                    // barrier: it is only signaled on the success path, so without this
+                    // the other processors would wait for it forever and the restore
+                    // would stall instead of failing with the real error.
+                    if (current_file != null)
+                        FaultPriorityBarrierIfPriorityFile(current_file, ex);
+
                     Logging.Log.WriteErrorMessage(LOGTAG, "FileProcessingError", ex, "Error during file processing");
                     throw;
                 }
@@ -775,7 +807,10 @@ namespace Duplicati.Library.Main.Operation.Restore
                 }
                 finally
                 {
-                    priority_files_completed.SetResult();
+                    // TrySetResult: the barrier may already have been faulted by a
+                    // terminally failed priority file, in which case SetResult would
+                    // throw and mask the real error
+                    priority_files_completed.TrySetResult();
                 }
             }
         }        
