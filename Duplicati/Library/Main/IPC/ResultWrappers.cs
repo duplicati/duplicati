@@ -229,6 +229,20 @@ public class SetLockResultsWrapper : BasicResultsWrapper, ISetLockResults
 }
 
 /// <summary>
+/// Wrapper for set version label results
+/// </summary>
+public class SetVersionLabelResultsWrapper : BasicResultsWrapper, ISetVersionLabelResults
+{
+    public SetVersionLabelResultsWrapper(SetVersionLabelResultsDto dto) : base(dto) { }
+
+    protected new SetVersionLabelResultsDto _dto => (SetVersionLabelResultsDto)base._dto;
+
+    public long BackupVersion => _dto.BackupVersion;
+    public DateTime Time => _dto.Time;
+    public string Label => _dto.Label;
+}
+
+/// <summary>
 /// Wrapper for remote synchronization results
 /// </summary>
 public class RemoteSynchronizationResultsWrapper : BasicResultsWrapper, IRemoteSynchronizationResults
@@ -302,6 +316,7 @@ public class ListResultFilesetWrapper : IListResultFileset
     public DateTime Time => _dto.Time;
     public long FileCount => _dto.FileCount;
     public long FileSizes => _dto.FileSizes;
+    public string Label => _dto.Label;
 }
 
 /// <summary>
@@ -350,6 +365,7 @@ public class ListFilesetResultFilesetWrapper : IListFilesetResultFileset
     public DateTime Time => _dto.Time;
     public long? FileCount => _dto.FileCount;
     public long? FileSizes => _dto.FileSizes;
+    public string Label => _dto.Label;
 }
 
 /// <summary>

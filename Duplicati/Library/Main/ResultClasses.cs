@@ -617,17 +617,27 @@ namespace Duplicati.Library.Main
         public DateTime Time { get; private set; }
         public long FileCount { get; private set; }
         public long FileSizes { get; private set; }
-        public ListResultFileset(long version, int isFullBackup, DateTime time, long fileCount, long fileSizes)
+        public string Label { get; private set; }
+        public ListResultFileset(long version, int isFullBackup, DateTime time, long fileCount, long fileSizes, string label = null)
         {
             this.Version = version;
             this.IsFullBackup = isFullBackup;
             this.Time = time;
             this.FileCount = fileCount;
             this.FileSizes = fileSizes;
+            this.Label = label;
         }
     }
 
-    internal sealed record ListFilesetResultFileset(long Version, DateTime Time, bool? IsFullBackup, long? FileCount, long? FileSizes) : IListFilesetResultFileset;
+    internal sealed record ListFilesetResultFileset(long Version, DateTime Time, bool? IsFullBackup, long? FileCount, long? FileSizes, string Label = null) : IListFilesetResultFileset;
+
+    internal class SetVersionLabelResults : BasicResults, ISetVersionLabelResults
+    {
+        public override OperationMode MainOperation => OperationMode.SetVersionLabel;
+        public long BackupVersion { get; set; }
+        public DateTime Time { get; set; }
+        public string Label { get; set; }
+    }
 
 
     internal class ListFilesetResults : BasicResults, IListFilesetResults

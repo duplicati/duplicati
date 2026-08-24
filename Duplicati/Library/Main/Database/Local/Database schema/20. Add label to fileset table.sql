@@ -1,0 +1,1 @@
+ALTER TABLE "Fileset" ADD COLUMN "Label" TEXT NULL;

@@ -92,7 +92,7 @@ namespace Duplicati.Library.Main.Operation
                         m_result.SetResult(
                             await filesets
                                 .QuickSetsAsync(m_result.TaskControl.ProgressToken)
-                                .Select(x => new ListResultFileset(x.Version, x.IsFullBackup, x.Time, x.FileCount, x.FileSizes))
+                                .Select(x => new ListResultFileset(x.Version, x.IsFullBackup, x.Time, x.FileCount, x.FileSizes, x.Label))
                                 .ToArrayAsync(cancellationToken: m_result.TaskControl.ProgressToken)
                                 .ConfigureAwait(false),
                             null
@@ -103,7 +103,7 @@ namespace Duplicati.Library.Main.Operation
                         m_result.SetResult(
                             await filesets
                                 .SetsAsync(m_result.TaskControl.ProgressToken)
-                                .Select(x => new ListResultFileset(x.Version, x.IsFullBackup, x.Time, x.FileCount, x.FileSizes))
+                                .Select(x => new ListResultFileset(x.Version, x.IsFullBackup, x.Time, x.FileCount, x.FileSizes, x.Label))
                                 .ToArrayAsync(cancellationToken: m_result.TaskControl.ProgressToken)
                                 .ConfigureAwait(false),
                             files == null

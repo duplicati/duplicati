@@ -427,6 +427,10 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
         => await Rpc.InvokeAsync<ISetLockResults>(nameof(IController.SetLocksAsync)).ConfigureAwait(false);
 
     /// <inheritdoc />
+    public async Task<ISetVersionLabelResults> SetVersionLabelAsync()
+        => await Rpc.InvokeAsync<ISetVersionLabelResults>(nameof(IController.SetVersionLabelAsync)).ConfigureAwait(false);
+
+    /// <inheritdoc />
     public async Task<IReadLockInfoResults> ReadLockInfoAsync()
         => await Rpc.InvokeAsync<IReadLockInfoResults>(nameof(IController.ReadLockInfoAsync)).ConfigureAwait(false);
 

@@ -80,6 +80,10 @@ namespace Duplicati.Library.Main.Database.Local
             /// Gets or sets the total size of files in the fileset.
             /// </summary>
             public long FileSizes { get; set; }
+            /// <summary>
+            /// Gets or sets the label assigned to the fileset, if any.
+            /// </summary>
+            public string? Label { get; set; }
         }
 
         /// <summary>

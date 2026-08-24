@@ -39,6 +39,7 @@ namespace Duplicati.UnitTest
             public DateTime Time { get; }
             public long FileCount { get; }
             public long FileSizes { get; }
+            public string Label { get; }
 
             public Fileset(int version, int backupType, DateTime time)
             {

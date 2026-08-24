@@ -16,6 +16,7 @@ See %CLI_EXE% help <topic> for more information.
   Searching: list-filesets, list-folder-contents, list-file-versions, search-files
   Repair: repair, affected, list-broken-files, purge-broken-files
   Locking: set-locks, read-lock-info
+  Versions: set-version-label
   Debug: debug, logging, create-report, test-filters, system-info, send-mail
   Targets: %BACKENDS%
   Modules: %ENCRYPTIONMODULES%, %COMPRESSIONMODULES%, %GENERICMODULES%
@@ -396,6 +397,21 @@ Usage: %CLI_EXE% set-locks <storage-URL> [<options>]
   --remote-file-lock-duration=<time>
     Sets how long the remote volumes should be protected (for example, 30D).
     The lock expiration is computed as: now + file-lock-duration.
+
+# =============================================================================
+> duplicati.commandline.exe help set-version-label
+> duplicati.commandline.exe help setversionlabel
+
+Usage: %CLI_EXE% set-version-label <storage-URL> <version> <label> [<options>]
+
+  Updates the label of a backup version.
+  This operation requires a local database (set --dbpath if it is not found automatically).
+
+  The version is the number reported by the list-filesets command.
+  Use an empty label ("") to clear the label.
+
+  The label is stored in the local database and included in the fileset
+  of the next backup. Labels could be lost if no new backup is made.
 
 # =============================================================================
 > duplicati.commandline.exe help read-lock-info

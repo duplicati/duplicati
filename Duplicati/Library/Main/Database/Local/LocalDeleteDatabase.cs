@@ -348,7 +348,8 @@ namespace Duplicati.Library.Main.Database.Local
             cmd.SetCommandAndParameters(@"
                     SELECT
                         ""IsFullBackup"",
-                        ""Timestamp""
+                        ""Timestamp"",
+                        ""Label""
                     FROM ""Fileset""
                     ORDER BY ""Timestamp"" DESC
                 ");
@@ -362,7 +363,8 @@ namespace Duplicati.Library.Main.Database.Local
                     reader.GetInt32(0),
                     ParseFromEpochSeconds(reader.ConvertValueToInt64(1)).ToLocalTime(),
                     -1L,
-                    -1L
+                    -1L,
+                    reader.ConvertValueToString(2)
                 );
             }
         }

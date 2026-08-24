@@ -227,6 +227,7 @@ namespace Duplicati.Library.Main.Volumes
         protected const string FILESET_FILENAME = "fileset";
         protected const string MANIFEST_FILENAME = "manifest";
         protected const string FILELIST = "filelist.json";
+        protected const string LABELS_FILENAME = "labels.json";
 
         protected const string INDEX_VOLUME_FOLDER = "vol/";
         protected const string INDEX_BLOCKLIST_FOLDER = "list/";

@@ -254,6 +254,11 @@ namespace Duplicati.Library.Main.Operation
             var filelistWork = (from n in filelists orderby n.Time select new RemoteVolume(n.File) as IRemoteVolume).ToList();
             Logging.Log.WriteInformationMessage(LOGTAG, "RebuildStarted", "Rebuild database started, downloading {0} filelists", filelistWork.Count);
 
+            // The newest filelist is the authority for version labels,
+            // even if it does not contain a labels.json file
+            var newestFilelistName = filelists.First().File.Name;
+            IReadOnlyDictionary<DateTime, string> remoteLabels = null;
+
             var progress = 0;
 
             // Register the files we are working with, if not already updated
@@ -330,6 +335,11 @@ namespace Duplicati.Library.Main.Operation
 
                         await RecreateFilesetFromRemoteListAsync(restoredb, compressor, filesetid, m_options, filter, m_result.TaskControl.ProgressToken)
                             .ConfigureAwait(false);
+
+                        // Grab the labels from the newest filelist volume;
+                        // they are applied as the final step of the recreate
+                        if (string.Equals(name, newestFilelistName, StringComparison.Ordinal))
+                            remoteLabels = VolumeReaderBase.GetLabelsData(compressor);
                     }
                 }
                 catch (Exception ex)
@@ -685,6 +695,10 @@ namespace Duplicati.Library.Main.Operation
 
             await restoredb.CleanupMissingVolumesAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false);
 
+            // Apply the labels from the newest filelist as the final step of the recreate
+            await ApplyLabelsFromFilelistAsync(restoredb, remoteLabels, m_result.TaskControl.ProgressToken)
+                .ConfigureAwait(false);
+
             if (!m_options.RepairOnlyPaths && m_options.StoreMetadataContentInDatabase)
             {
                 await RestoreMetadataContentAsync(backendManager, restoredb, m_result.TaskControl.ProgressToken)
@@ -744,6 +758,68 @@ namespace Duplicati.Library.Main.Operation
             }
 
             m_result.EndTime = DateTime.UtcNow;
+        }
+
+        /// <summary>
+        /// The maximum time a fileset timestamp may be newer than the label timestamp
+        /// and still be considered a match. Filelist timestamps can drift slightly
+        /// when the remote filename is probed or recreated, so an exact match is
+        /// not guaranteed.
+        /// </summary>
+        private static readonly TimeSpan MAX_LABEL_TIMESTAMP_DRIFT = TimeSpan.FromSeconds(15);
+
+        /// <summary>
+        /// Applies the labels found in the newest filelist volume to the recreated database.
+        /// The labels are matched to filesets by timestamp; as filelist timestamps can
+        /// drift slightly, the nearest fileset with a timestamp that is the same or newer
+        /// than the label timestamp, within <see cref="MAX_LABEL_TIMESTAMP_DRIFT"/>, is used.
+        /// </summary>
+        /// <param name="restoredb">The database being recreated.</param>
+        /// <param name="labels">The labels read from the newest filelist volume, or null if the newest filelist was not processed.</param>
+        /// <param name="token">Cancellation token to monitor for cancellation requests.</param>
+        /// <returns>A task that completes when the labels have been applied.</returns>
+        private static async Task ApplyLabelsFromFilelistAsync(LocalRecreateDatabase restoredb, IReadOnlyDictionary<DateTime, string> labels, CancellationToken token)
+        {
+            if (labels == null || labels.Count == 0)
+                return;
+
+            var filesets = await restoredb
+                .FilesetTimesAsync(token)
+                .ToArrayAsync(cancellationToken: token)
+                .ConfigureAwait(false);
+
+            var updated = 0;
+            foreach (var (labeltime, label) in labels)
+            {
+                var labeltimeUtc = labeltime.ToUniversalTime();
+
+                // Find the fileset with the nearest timestamp that is the same or
+                // newer than the label timestamp, within the allowed drift
+                var best = filesets
+                    .Select(x => new { FilesetId = x.Key, Drift = x.Value.ToUniversalTime() - labeltimeUtc })
+                    .Where(x => x.Drift >= TimeSpan.Zero && x.Drift <= MAX_LABEL_TIMESTAMP_DRIFT)
+                    .OrderBy(x => x.Drift)
+                    .FirstOrDefault();
+
+                if (best == null)
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "LabelWithoutMatchingFileset", null, "No fileset found matching the label \"{0}\" with timestamp {1:u}", label, labeltimeUtc);
+                    continue;
+                }
+
+                await restoredb
+                    .UpdateFilesetLabelAsync(best.FilesetId, label, token)
+                    .ConfigureAwait(false);
+                updated++;
+            }
+
+            if (updated > 0)
+            {
+                Logging.Log.WriteInformationMessage(LOGTAG, "LabelsRestoredFromFilelist", "Restored {0} version labels from the filelist volume", updated);
+                await restoredb.Transaction
+                    .CommitAsync(token)
+                    .ConfigureAwait(false);
+            }
         }
 
         private sealed record MetadataBlockRef(long MetadataId, long BlockIndex, string BlockHash, long BlockSize);

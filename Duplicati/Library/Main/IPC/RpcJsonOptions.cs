@@ -119,6 +119,7 @@ public class ResultsDtoConverterFactory : JsonConverterFactory
         [typeof(ICreateLogDatabaseResults)] = (typeof(CreateLogDatabaseResultsDto), typeof(CreateLogDatabaseResultsWrapper)),
         [typeof(IListRemoteResults)] = (typeof(ListRemoteResultsDto), typeof(ListRemoteResultsWrapper)),
         [typeof(ISetLockResults)] = (typeof(SetLockResultsDto), typeof(SetLockResultsWrapper)),
+        [typeof(ISetVersionLabelResults)] = (typeof(SetVersionLabelResultsDto), typeof(SetVersionLabelResultsWrapper)),
         [typeof(IReadLockInfoResults)] = (typeof(ReadLockInfoResultsDto), typeof(ReadLockInfoResultsWrapper)),
         [typeof(IRecreateDatabaseResults)] = (typeof(RecreateDatabaseResultsDto), typeof(RecreateDatabaseResultsWrapper)),
         [typeof(IPurgeFilesResults)] = (typeof(PurgeFilesResultsDto), typeof(PurgeFilesResultsWrapper)),

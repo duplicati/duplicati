@@ -414,6 +414,36 @@ public class SetLockResultsDto : BasicResultsDto
 }
 
 /// <summary>
+/// DTO for set version label results
+/// </summary>
+[Serializable]
+public class SetVersionLabelResultsDto : BasicResultsDto
+{
+    public long BackupVersion { get; set; }
+    public DateTime Time { get; set; }
+    public string Label { get; set; }
+
+    public static SetVersionLabelResultsDto FromResults(ISetVersionLabelResults results)
+    {
+        if (results == null) return null;
+        return new SetVersionLabelResultsDto
+        {
+            BeginTime = results.BeginTime,
+            EndTime = results.EndTime,
+            Duration = results.Duration,
+            Errors = results.Errors?.ToList() ?? new List<string>(),
+            Warnings = results.Warnings?.ToList() ?? new List<string>(),
+            Messages = results.Messages?.ToList() ?? new List<string>(),
+            ParsedResult = results.ParsedResult,
+            Interrupted = results.Interrupted,
+            BackupVersion = results.BackupVersion,
+            Time = results.Time,
+            Label = results.Label
+        };
+    }
+}
+
+/// <summary>
 /// DTO for remote synchronization results
 /// </summary>
 [Serializable]
@@ -539,6 +569,7 @@ public class ListResultFilesetDto
     public DateTime Time { get; set; }
     public long FileCount { get; set; }
     public long FileSizes { get; set; }
+    public string Label { get; set; }
 
     public static ListResultFilesetDto FromResult(IListResultFileset result)
     {
@@ -549,7 +580,8 @@ public class ListResultFilesetDto
             IsFullBackup = result.IsFullBackup,
             Time = result.Time,
             FileCount = result.FileCount,
-            FileSizes = result.FileSizes
+            FileSizes = result.FileSizes,
+            Label = result.Label
         };
     }
 }
@@ -613,6 +645,7 @@ public class ListFilesetResultFilesetDto
     public DateTime Time { get; set; }
     public long? FileCount { get; set; }
     public long? FileSizes { get; set; }
+    public string Label { get; set; }
 
     public static ListFilesetResultFilesetDto FromResult(IListFilesetResultFileset result)
     {
@@ -623,7 +656,8 @@ public class ListFilesetResultFilesetDto
             IsFullBackup = result.IsFullBackup,
             Time = result.Time,
             FileCount = result.FileCount,
-            FileSizes = result.FileSizes
+            FileSizes = result.FileSizes,
+            Label = result.Label
         };
     }
 }

@@ -362,6 +362,25 @@ namespace Duplicati.Library.Main.Operation.Backup
             );
         }
 
+        public Task UpdateFilesetLabelAsync(long filesetid, string label, CancellationToken cancellationToken)
+        {
+            return RunOnMainAsync(async () =>
+                await m_database
+                    .UpdateFilesetLabelAsync(filesetid, label, cancellationToken)
+                    .ConfigureAwait(false)
+            );
+        }
+
+        public Task<KeyValuePair<DateTime, string>[]> GetFilesetLabelsAsync(CancellationToken cancellationToken)
+        {
+            return RunOnMainAsync(async () =>
+                await m_database
+                    .GetFilesetLabelsAsync(cancellationToken)
+                    .ToArrayAsync(cancellationToken: cancellationToken)
+                    .ConfigureAwait(false)
+            );
+        }
+
         public Task<IAsyncEnumerable<string>> GetMissingIndexFilesAsync(CancellationToken cancellationToken)
         {
             return RunOnMainAsync(() => m_database.GetMissingIndexFilesAsync(cancellationToken));

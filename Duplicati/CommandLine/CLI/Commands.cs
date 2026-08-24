@@ -389,10 +389,11 @@ namespace Duplicati.CommandLine
                 outwriter.WriteLine("Listing filesets:");
                 foreach (var e in res.Filesets)
                 {
+                    var label = string.IsNullOrWhiteSpace(e.Label) ? "" : $" [{e.Label}]";
                     if (e.FileCount != null && e.FileSizes != null && e.IsFullBackup != null)
-                        outwriter.WriteLine($"{e.Version}\t: {e.Time} ({e.FileCount.Value} files, {Library.Utility.Utility.FormatSizeString(e.FileSizes.Value)}){(e.IsFullBackup.Value ? "" : ", partial")}");
+                        outwriter.WriteLine($"{e.Version}\t: {e.Time}{label} ({e.FileCount.Value} files, {Library.Utility.Utility.FormatSizeString(e.FileSizes.Value)}){(e.IsFullBackup.Value ? "" : ", partial")}");
                     else
-                        outwriter.WriteLine($"{e.Version}\t: {e.Time}");
+                        outwriter.WriteLine($"{e.Version}\t: {e.Time}{label}");
                 }
             }
 
@@ -581,10 +582,11 @@ namespace Duplicati.CommandLine
 
                     foreach (var e in res.Filesets)
                     {
+                        var label = string.IsNullOrWhiteSpace(e.Label) ? "" : $" [{e.Label}]";
                         if (e.FileCount >= 0)
-                            outwriter.WriteLine("{0}\t: {1} ({2} files, {3})", e.Version, e.Time, e.FileCount, Library.Utility.Utility.FormatSizeString(e.FileSizes));
+                            outwriter.WriteLine("{0}\t: {1}{2} ({3} files, {4})", e.Version, e.Time, label, e.FileCount, Library.Utility.Utility.FormatSizeString(e.FileSizes));
                         else
-                            outwriter.WriteLine("{0}\t: {1}", e.Version, e.Time);
+                            outwriter.WriteLine("{0}\t: {1}{2}", e.Version, e.Time, label);
                     }
                 }
                 else if (isRequestForFiles)
@@ -1330,6 +1332,50 @@ namespace Duplicati.CommandLine
                 setup(i);
                 foreach (var l in i.SendMailAsync().Await().Lines)
                     outwriter.WriteLine(l);
+            }
+
+            return 0;
+        }
+
+        /// <summary>
+        /// Updates the label of a backup version.
+        /// The version and label are given as arguments;
+        /// an empty label clears the label.
+        /// </summary>
+        public static int SetVersionLabel(
+            TextWriter outwriter,
+            Action<Duplicati.Library.Main.Controller> setup,
+            List<string> args,
+            Dictionary<string, string> options,
+            Library.Utility.IFilter filter)
+        {
+            if (args.Count != 3)
+                return PrintWrongNumberOfArguments(outwriter, args, 3);
+
+            if (!long.TryParse(args[1], out var version))
+            {
+                outwriter.WriteLine("The version must be a number, got: \"{0}\"", args[1]);
+                return 200;
+            }
+
+            options["version"] = version.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            options["version-name"] = args[2];
+
+            using (var console = new ConsoleOutput(outwriter, options))
+            using (var controller = new Library.Main.Controller(args[0], options, console))
+            {
+                setup(controller);
+                var res = controller.SetVersionLabelAsync().Await();
+
+                if (console.FullResults)
+                {
+                    Library.Utility.Utility.PrintSerializeObject(res, outwriter);
+                    outwriter.WriteLine();
+                }
+                else
+                {
+                    outwriter.WriteLine("Updated label for version {0} ({1}) to \"{2}\"", res.BackupVersion, res.Time, res.Label);
+                }
             }
 
             return 0;

@@ -96,4 +96,9 @@ public sealed record ListFilesetsResponseItem
     /// The total size of the fileset
     /// </summary>
     public required long? FileSizes { get; init; }
+
+    /// <summary>
+    /// The label assigned to the version, or null if no label is set
+    /// </summary>
+    public string? Label { get; init; }
 }
