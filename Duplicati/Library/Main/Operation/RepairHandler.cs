@@ -534,7 +534,10 @@ namespace Duplicati.Library.Main.Operation
                                     .ConfigureAwait(false);
                             var volumeWriter = newEntry = new FilesetVolumeWriter(m_options, fileTime);
 
-                            await RunRepairDlistAsync(backendManager, db, volumeWriter, n, fileTime, cancellationToken).ConfigureAwait(false);
+                            // The replacement file needs a name that is not taken, but the fileset
+                            // itself keeps its original time: the fileset time is what orders the
+                            // backup versions, so moving it can renumber them.
+                            await RunRepairDlistAsync(backendManager, db, volumeWriter, n, timestamp, cancellationToken).ConfigureAwait(false);
                         }
                         catch (Exception ex)
                         {
