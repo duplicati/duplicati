@@ -125,40 +125,67 @@ namespace Duplicati.Library.Main.Database.Local
             await using var cmd = m_connection.CreateCommand(m_rtr);
             var deleted = 0;
 
-            await using (var tempTable = await TemporaryDbValueList.CreateAsync(this, toDelete.Select(Library.Utility.Utility.NormalizeDateTimeToEpochSeconds), token).ConfigureAwait(false))
-                deleted += await (
-                    await cmd.SetCommandAndParameters(@"
-                            DELETE FROM ""Fileset""
-                            WHERE ""Timestamp"" IN (@Timestamps)
-                        ")
-                        .ExpandInClauseParameterMssqliteAsync("@Timestamps", tempTable, token)
-                        .ConfigureAwait(false)
-                )
-                    .ExecuteNonQueryAsync(true, token)
+            // Capture the IDs of the filesets being deleted, so the cascading deletes
+            // can target exactly those rows instead of scanning the full tables
+            // for entries that are no longer referenced
+            var deletedFilesetsTable = $"DeletedFilesets-{Library.Utility.Utility.GetHexGuid()}";
+
+            try
+            {
+                await using (var tempTable = await TemporaryDbValueList.CreateAsync(this, toDelete.Select(Library.Utility.Utility.NormalizeDateTimeToEpochSeconds), token).ConfigureAwait(false))
+                {
+                    var timestamps = await tempTable.GetInClauseAsync(token).ConfigureAwait(false);
+                    await cmd.ExecuteNonQueryAsync($@"
+                            CREATE {TEMPORARY} TABLE ""{deletedFilesetsTable}"" AS
+                            SELECT ""ID""
+                            FROM ""Fileset""
+                            WHERE ""Timestamp"" IN ({timestamps})
+                        ", token)
+                        .ConfigureAwait(false);
+                }
+
+                deleted += await cmd.ExecuteNonQueryAsync($@"
+                        DELETE FROM ""Fileset""
+                        WHERE ""ID"" IN (
+                            SELECT ""ID""
+                            FROM ""{deletedFilesetsTable}""
+                        )
+                    ", token)
                     .ConfigureAwait(false);
 
-            if (deleted != toDelete.Length)
-                throw new Exception($"Unexpected number of deleted filesets {deleted} vs {toDelete.Length}");
+                if (deleted != toDelete.Length)
+                    throw new Exception($"Unexpected number of deleted filesets {deleted} vs {toDelete.Length}");
+
+                //Then we delete all entries belonging to the deleted filesets
+                await cmd.ExecuteNonQueryAsync($@"
+                        DELETE FROM ""FilesetEntry""
+                        WHERE ""FilesetID"" IN (
+                            SELECT ""ID""
+                            FROM ""{deletedFilesetsTable}""
+                        )
+                    ", token)
+                    .ConfigureAwait(false);
+
+                await cmd.ExecuteNonQueryAsync($@"
+                        DELETE FROM ""ChangeJournalData""
+                        WHERE ""FilesetID"" IN (
+                            SELECT ""ID""
+                            FROM ""{deletedFilesetsTable}""
+                        )
+                    ", token)
+                    .ConfigureAwait(false);
+            }
+            finally
+            {
+                try
+                {
+                    await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{deletedFilesetsTable}""", token)
+                        .ConfigureAwait(false);
+                }
+                catch { }
+            }
 
             //Then we delete anything that is no longer being referenced
-            await cmd.ExecuteNonQueryAsync(@"
-                    DELETE FROM ""FilesetEntry""
-                    WHERE ""FilesetID"" NOT IN (
-                        SELECT DISTINCT ""ID""
-                        FROM ""Fileset""
-                    )
-                ", token)
-                .ConfigureAwait(false);
-
-            await cmd.ExecuteNonQueryAsync(@"
-                    DELETE FROM ""ChangeJournalData""
-                    WHERE ""FilesetID"" NOT IN (
-                        SELECT DISTINCT ""ID""
-                        FROM ""Fileset""
-                    )
-                ", token)
-                .ConfigureAwait(false);
-
             await cmd.ExecuteNonQueryAsync(@"
                     DELETE FROM ""FileLookup""
                     WHERE ""ID"" NOT IN (
