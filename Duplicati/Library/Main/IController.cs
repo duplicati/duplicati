@@ -251,6 +251,14 @@ public interface IController : IDisposable
     Task<ISetLockResults> SetLocksAsync();
 
     /// <summary>
+    /// Updates the label of a backup version.
+    /// The version is selected with the --version option and the label
+    /// with the --version-name option; an empty label clears the label.
+    /// </summary>
+    /// <returns>The set version label results</returns>
+    Task<ISetVersionLabelResults> SetVersionLabelAsync();
+
+    /// <summary>
     /// Sets the secret provider to use for all operations
     /// </summary>
     /// <param name="secretProvider">The secret provider to use</param>

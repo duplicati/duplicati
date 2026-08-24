@@ -76,7 +76,8 @@ namespace Duplicati.Library.Main
         SearchFiles,
         SetLock,
         ReadLockInfo,
-        RemoteSynchronization
+        RemoteSynchronization,
+        SetVersionLabel
     }
 
     /// <summary>
