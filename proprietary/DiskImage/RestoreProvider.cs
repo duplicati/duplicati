@@ -20,7 +20,31 @@ using Duplicati.Proprietary.DiskImage.Partition;
 namespace Duplicati.Proprietary.DiskImage;
 
 /// <summary>
+/// The type of item a restore path refers to within the disk image hierarchy.
+/// </summary>
+internal enum RestorePathType
+{
+    /// <summary>The path refers to the disk-level geometry metadata file (geometry.json).</summary>
+    Geometry,
+
+    /// <summary>The path refers to a partition-level info file (partitioninfo.json).</summary>
+    PartitionInfo,
+
+    /// <summary>The path refers to disk-level data (e.g. the partition table).</summary>
+    Disk,
+
+    /// <summary>The path refers to partition-level data.</summary>
+    Partition,
+
+    /// <summary>The path refers to a file within a filesystem on a partition.</summary>
+    File
+}
+
+/// <summary>
 /// Restore provider for disk images. Allows restoring disk images back to physical disks.
+/// When the target URL points to a partition within a disk (e.g. part_GPT_1), the data
+/// is restored into that partition instead, which also supports backups of a single
+/// partition that have no geometry metadata.
 /// </summary>
 public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDisposable
 {
@@ -28,6 +52,14 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
 
     private readonly string _devicePath;
     private readonly string _restorePath;
+
+    /// <summary>
+    /// The subpath within the disk hierarchy that the target URL points to
+    /// (the part after the device name, e.g. a partition segment such as
+    /// "part_GPT_1"), or empty if the URL targets the whole disk.
+    /// </summary>
+    private readonly string _subpath;
+
     private readonly bool _autoUnmount;
     private readonly bool _skipPartitionTable;
     private readonly bool _validateSize;
@@ -46,6 +78,33 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     /// Used to reconstruct disk, partition, and filesystem structures.
     /// </summary>
     private GeometryMetadata? _geometryMetadata;
+
+    /// <summary>
+    /// Stores partition info metadata parsed from restored partitioninfo.json files.
+    /// When the restore target is a specific partition, this is keyed by the target
+    /// partition number and provides the partition size and filesystem block size
+    /// when geometry.json is not part of the restore selection. When the restore
+    /// target is a whole disk, this is keyed by the source partition number and is
+    /// used to create target partitions for partition backups.
+    /// </summary>
+    private readonly ConcurrentDictionary<int, PartitionInfoMetadata> _partitionInfos = new();
+
+    /// <summary>
+    /// Maps source partition numbers to partitions created on the target disk
+    /// during this restore (whole-disk target without geometry metadata).
+    /// </summary>
+    private readonly Dictionary<int, IPartition> _createdPartitions = [];
+
+    /// <summary>
+    /// The allocations for partitions created during this restore, whose partition
+    /// table entries are written to the target disk during Finalize.
+    /// </summary>
+    private readonly List<PartitionCreator.AllocatedPartition> _pendingPartitionCreations = [];
+
+    /// <summary>
+    /// Serializes partition creation, which can be triggered from concurrent writes.
+    /// </summary>
+    private readonly Lock _creationLock = new();
 
     private List<IPartition> _partitions = [];
     private List<IFilesystem> _filesystems = [];
@@ -99,6 +158,7 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     {
         _devicePath = null!;
         _restorePath = null!;
+        _subpath = string.Empty;
         _skipPartitionTable = false;
         _validateSize = true;
         _hasSetOverwriteOption = false;
@@ -113,7 +173,12 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     {
         var uri = new Library.Utility.RelaxedUri(url);
         _restorePath = uri.HostAndPath;
-        _devicePath = uri.HostAndPath;
+
+        // Split the target into the disk device path and an optional subpath
+        // within the disk hierarchy (e.g. a partition). When a subpath is present,
+        // the restore writes into that partition instead of rewriting the whole disk,
+        // which also allows restoring partition backups that have no geometry.json.
+        (_devicePath, _subpath) = SourceProvider.SplitDeviceAndSubpath(uri.HostAndPath);
 
         _skipPartitionTable = Utility.ParseBoolOption(options, OptionsHelper.DISK_RESTORE_SKIP_PARTITION_TABLE_OPTION);
         _validateSize = Utility.ParseBoolOption(options, OptionsHelper.DISK_RESTORE_VALIDATE_SIZE_OPTION);
@@ -159,12 +224,57 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
         if (!string.IsNullOrWhiteSpace(msg))
             throw new UserInformationException(string.Format(Strings.RestoreDeviceNotWriteable, _devicePath, msg), "DiskInitializeFailed");
 
+        // When the target URL points to a partition within the disk, resolve the
+        // target partition from the disk's partition table. This allows restoring
+        // backups of a single partition (which have no geometry.json) directly
+        // into that partition.
+        if (!string.IsNullOrEmpty(_subpath))
+            await ResolveTargetPartitionAsync(cancel).ConfigureAwait(false);
+
         // Validate target size if requested
         if (_validateSize)
         {
             // Size validation will be done during Finalize when we have source metadata
             Log.WriteInformationMessage(LOGTAG, "RestoreSizeValidationEnabled", "Target size validation is enabled.");
         }
+    }
+
+    /// <summary>
+    /// Resolves the target partition identified by <see cref="_subpath"/> from the
+    /// target disk's partition table and registers it, so that restore paths
+    /// referencing the partition can be mapped without geometry metadata.
+    /// </summary>
+    /// <param name="cancel">Cancellation token.</param>
+    /// <returns>An awaitable task.</returns>
+    /// <exception cref="UserInformationException">Thrown if the subpath does not identify a partition, or the partition cannot be found on the target disk.</exception>
+    private async Task ResolveTargetPartitionAsync(CancellationToken cancel)
+    {
+        var segment = _subpath.Split(Path.DirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+        if (string.IsNullOrEmpty(segment))
+            throw new UserInformationException(string.Format(Strings.RestoreInvalidPath, _restorePath), "DiskRestoreInvalidPath");
+
+        // The segment is expected in the format "part_{PartitionTableType}_{PartitionNumber}", e.g. "part_GPT_1"
+        var parts = segment.Split('_');
+        if (parts.Length < 3
+            || !parts[0].Equals("part", StringComparison.OrdinalIgnoreCase)
+            || !Enum.TryParse<PartitionTableType>(parts[1], true, out var ptType)
+            || !int.TryParse(parts[2], out var partitionNumber))
+            throw new UserInformationException($"The restore target '{_restorePath}' does not point to a partition. Expected format: part_{{PartitionTableType}}_{{PartitionNumber}}", "DiskRestoreInvalidPartitionPath");
+
+        var table = await PartitionTableFactory.CreateAsync(_targetDisk!, cancel).ConfigureAwait(false);
+        if (table == null || table.TableType == PartitionTableType.Unknown)
+            throw new UserInformationException($"The target disk '{_devicePath}' does not have a recognizable partition table, so the target partition '{segment}' cannot be resolved.", "DiskRestoreNoPartitionTable");
+
+        if (table.TableType != ptType)
+            throw new UserInformationException($"The target disk '{_devicePath}' uses a {table.TableType} partition table, which does not match the requested {ptType} partition '{segment}'.", "DiskRestorePartitionTableMismatch");
+
+        var partition = await table.GetPartitionAsync(partitionNumber, cancel).ConfigureAwait(false)
+            ?? throw new UserInformationException(string.Format(Strings.RestoreTargetNotFound, $"{_devicePath}/{segment}"), "DiskRestorePartitionNotFound");
+
+        _partitions.Add(partition);
+
+        Log.WriteInformationMessage(LOGTAG, "RestoreTargetPartitionResolved",
+            $"Restoring into partition {partitionNumber} ({ptType}) on {_devicePath}, offset: {partition.StartOffset}, size: {partition.Size} bytes");
     }
 
     /// <inheritdoc />
@@ -217,6 +327,9 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     /// <summary>
     /// Parses a partition segment from the path and returns the corresponding partition.
     /// The segment is expected to be in the format "part_{PartitionTableType}_{PartitionNumber}", e.g. "part_GPT_1".
+    /// When a target partition has been set, it is always returned, as the partition number
+    /// in the path refers to the source partition. Only for full-disk restores is the
+    /// segment matched against the source partitions.
     /// </summary>
     /// <param name="segment">The partition segment string.</param>
     /// <returns>The corresponding partition.</returns>
@@ -236,15 +349,143 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
         if (!int.TryParse(parts[2], out var pn))
             throw new InvalidOperationException($"Unable to parse partition number from segment: {segment}. Tried {parts[2]}");
 
-        // Find the partition in our reconstructed list
-        var partition = _partitions.FirstOrDefault(p =>
-            p.PartitionNumber == pn &&
-            p.PartitionTable.TableType == ptType);
+        // When restoring into a target partition, all partition content maps to that
+        // partition; the number in the path is the source partition's and is not matched
+        if (!string.IsNullOrEmpty(_subpath))
+            return _partitions.FirstOrDefault()
+                ?? throw new InvalidOperationException("The target partition has not been resolved.");
+
+        // Full-disk restore: match the source partition from the path. The lookup
+        // is done under the creation lock because CreateTargetPartition (triggered
+        // by concurrent writes) adds to the list.
+        IPartition? partition;
+        lock (_creationLock)
+        {
+            partition = _partitions.FirstOrDefault(p =>
+                p.PartitionNumber == pn &&
+                p.PartitionTable.TableType == ptType);
+        }
 
         if (partition == null)
-            throw new InvalidOperationException($"Partition not found for segment: {segment}. Partition number {pn} with table type {ptType} not in reconstructed partitions.");
+        {
+            // The restore set contains partition data but no geometry metadata
+            // (e.g. a partition backup), so the partition does not exist in the
+            // reconstructed structures. Create the partition on the target disk.
+            partition = CreateTargetPartition(pn);
+        }
 
         return partition;
+    }
+
+    /// <summary>
+    /// Creates a new partition on the target disk for a partition backup being
+    /// restored to a whole-disk target. The partition is allocated in free space
+    /// (preferring the source partition's original offset) and registered so that
+    /// restored content maps to it; the partition table entry is written during
+    /// Finalize. Requires partition information (partitioninfo.json) from the backup.
+    /// </summary>
+    /// <param name="sourceNumber">The source partition number.</param>
+    /// <returns>The created partition.</returns>
+    /// <exception cref="UserInformationException">Thrown if the backup has no partition information, the partition table is skipped, or the disk has no suitable free space.</exception>
+    private IPartition CreateTargetPartition(int sourceNumber)
+    {
+        lock (_creationLock)
+        {
+            if (_createdPartitions.TryGetValue(sourceNumber, out var existing))
+                return existing;
+
+            if (!_partitionInfos.TryGetValue(sourceNumber, out var info) || info.Partition == null)
+                throw new UserInformationException($"The backup does not contain partition information ({PartitionInfoMetadata.FileName}) for partition {sourceNumber}. Restoring partition data to a whole-disk target requires a backup that includes partition information.", "DiskRestorePartitionInfoMissing");
+
+            if (_skipPartitionTable)
+                throw new UserInformationException($"Cannot create a partition on the target disk '{_devicePath}' because the partition table is excluded from the restore ({OptionsHelper.DISK_RESTORE_SKIP_PARTITION_TABLE_OPTION} is set). Restore to an existing partition on the target disk instead, or unset the option.", "DiskRestorePartitionCreationSkipped");
+
+            var source = info.Partition;
+            var allocated = PartitionCreator.AllocateAsync(
+                _targetDisk!,
+                source.Size,
+                source.StartOffset,
+                source.Type,
+                source.FilesystemType,
+                source.Name,
+                source.VolumeGuid,
+                _pendingPartitionCreations,
+                CancellationToken.None).Await();
+
+            var partition = new BasePartition
+            {
+                PartitionNumber = sourceNumber,
+                Type = source.Type,
+                PartitionTable = new ReconstructedPartitionTable(_targetDisk!, allocated.TableType),
+                StartOffset = allocated.StartOffset,
+                Size = allocated.Size,
+                Name = source.Name,
+                FilesystemType = source.FilesystemType,
+                VolumeGuid = source.VolumeGuid,
+                RawDisk = _targetDisk,
+                StartingLba = allocated.StartOffset / _targetDisk!.SectorSize,
+                EndingLba = (allocated.StartOffset + allocated.Size) / _targetDisk!.SectorSize - 1,
+                Attributes = 0
+            };
+
+            _partitions.Add(partition);
+            _createdPartitions[sourceNumber] = partition;
+            _pendingPartitionCreations.Add(allocated);
+
+            Log.WriteInformationMessage(LOGTAG, "RestoreTargetPartitionCreated",
+                $"Creating partition for source partition {sourceNumber} on {_devicePath}, offset: {allocated.StartOffset}, size: {allocated.Size} bytes; the partition table entry is written when the restore completes");
+
+            return partition;
+        }
+    }
+
+    /// <summary>
+    /// Resolves the partition for partition-level content whose restore path has no
+    /// partition segment. This shape results from a restore selection that lies
+    /// entirely within a single source partition, where the restore path mapping
+    /// stripped the partition folder as part of the common prefix. When the restore
+    /// target is a partition, the content maps to it. For a whole-disk target, the
+    /// partition info captured from the backup (a priority file, restored before any
+    /// partition content) identifies the source partition: an existing partition
+    /// with that number is used when present, otherwise a new partition is created
+    /// on the target disk.
+    /// </summary>
+    /// <returns>The partition the content maps to.</returns>
+    /// <exception cref="UserInformationException">Thrown if the backup has no partition information, or contains information for multiple partitions, which cannot be told apart without partition segments in the paths.</exception>
+    /// <exception cref="InvalidOperationException">Thrown if the target partition has not been resolved (partition target only).</exception>
+    private IPartition ResolveImplicitTargetPartition()
+    {
+        // When restoring into a target partition, all partition content maps to
+        // that partition
+        if (!string.IsNullOrEmpty(_subpath))
+            return _partitions.FirstOrDefault()
+                ?? throw new InvalidOperationException("The target partition has not been resolved.");
+
+        int sourceNumber;
+        lock (_creationLock)
+        {
+            if (_partitionInfos.IsEmpty)
+                throw new UserInformationException($"The backup does not contain partition information ({PartitionInfoMetadata.FileName}) for the partition being restored. Restoring partition data to a whole-disk target requires a backup that includes partition information; alternatively, restore to an existing partition on the target disk (e.g. '{_restorePath}{Path.DirectorySeparatorChar}part_GPT_1').", "DiskRestorePartitionInfoMissing");
+
+            // Whole-disk restores key the info by source partition number; more
+            // than one entry means the restore set spans multiple source partitions
+            // and the stripped paths cannot be attributed to a single partition.
+            if (_partitionInfos.Count > 1)
+                throw new UserInformationException($"The restore data contains partition-level data for multiple partitions, but the restore paths do not identify the partition. Restore the partitions including their partition folders, or restore each partition to a partition on the target disk instead (e.g. '{_restorePath}{Path.DirectorySeparatorChar}part_GPT_1').", "DiskRestoreAmbiguousPartitionContent");
+
+            sourceNumber = _partitionInfos.Keys.First();
+
+            // The lookup is done under the creation lock because CreateTargetPartition
+            // (triggered by concurrent writes) adds to the list.
+            var partition = _partitions.FirstOrDefault(p => p.PartitionNumber == sourceNumber);
+            if (partition != null)
+                return partition;
+        }
+
+        // The restore set contains partition data but no geometry metadata
+        // (e.g. a partition backup), so the partition does not exist in the
+        // reconstructed structures. Create the partition on the target disk.
+        return CreateTargetPartition(sourceNumber);
     }
 
     /// <summary>
@@ -269,6 +510,43 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
 
         // Find the filesystem in our reconstructed list
         var fs = _filesystems.FirstOrDefault(f => f.Partition.PartitionNumber == partition.PartitionNumber && f.Type == fsType);
+
+        // Read under the creation lock, as CreateTargetPartition (triggered by
+        // concurrent writes) adds to the dictionary
+        bool isCreatedPartition;
+        lock (_creationLock)
+            isCreatedPartition = _createdPartitions.ContainsKey(partition.PartitionNumber);
+
+        if (fs == null && (!string.IsNullOrEmpty(_subpath) || isCreatedPartition))
+        {
+            // When restoring into a target partition, or into a partition created
+            // on the target disk, geometry.json is not part of the restore selection.
+            // The partition info file (restored as a priority file before any
+            // partition content) provides the block size and source partition size,
+            // and is required for the restore. For a partition target the info is
+            // keyed by the target partition number; for created partitions by the
+            // source partition number (which the created partition carries).
+            if (!_partitionInfos.TryGetValue(partition.PartitionNumber, out var info))
+                throw new UserInformationException($"The backup does not contain partition information ({PartitionInfoMetadata.FileName}) for the partition being restored. Restoring directly into a partition requires a backup that includes partition information.", "DiskRestorePartitionInfoMissing");
+
+            if (info.Filesystem != null && info.Filesystem.Type != fsType)
+                throw new InvalidOperationException($"The backup describes the filesystem on the restored partition as {info.Filesystem.Type}, but the restore path refers to it as {fsType}.");
+
+            if (_validateSize && info.Partition != null && info.Partition.Size > partition.Size)
+                throw new UserInformationException(
+                    string.Format(Strings.RestoreTargetTooSmall, partition.Size, info.Partition.Size),
+                    "RestoreTargetTooSmall");
+
+            var blockSize = info.Filesystem is { BlockSize: > 0 } fsGeom
+                ? fsGeom.BlockSize
+                : throw new UserInformationException($"The partition information ({PartitionInfoMetadata.FileName}) in the backup does not provide a valid block size.", "DiskRestoreBlockSizeMissing");
+
+            fs = new UnknownFilesystem(partition, blockSize, fsType);
+            _filesystems.Add(fs);
+            Log.WriteInformationMessage(LOGTAG, "FilesystemHandlerCreated",
+                $"Created block-level filesystem handler (reported as {fsType}) for target partition {partition.PartitionNumber} with block size {blockSize}; content is restored as raw blocks");
+        }
+
         if (fs == null)
             throw new InvalidOperationException($"No matching filesystem found for segment: {segment} with type {fsType}");
 
@@ -276,14 +554,18 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     }
 
     /// <summary>
-    /// Parses the given path to determine if it refers to a disk-level item, partition, or file, and returns the corresponding objects.
+    /// Parses the given path to determine if it refers to a disk-level item, partition, partition info file, or file, and returns the corresponding objects.
     /// The path is expected to be in the format:
     /// root/part_{PartitionTableType}_{PartitionNumber}/fs_{FileSystemType}/path/to/file
+    /// When the restore selection lies entirely within a single source partition, the
+    /// restore path mapping strips the partition folder as part of the common prefix;
+    /// such paths carry no part_ segment and are resolved through the captured
+    /// partition info (see <see cref="ResolveImplicitTargetPartition"/>).
     /// </summary>
     /// <param name="path">The path to parse.</param>
     /// <returns>A tuple containing the item type, partition, and filesystem.</returns>
     /// <exception cref="InvalidOperationException">Thrown if the path cannot be parsed.</exception>
-    internal (string, IPartition?, IFilesystem?) ParsePath(string path)
+    internal (RestorePathType Type, IPartition? Partition, IFilesystem? Filesystem) ParsePath(string path)
     {
         // For disk image restore, the path is expected to be in the format:
         // root/part_{PartitionTableType}_{PartitionNumber}/fs_{FileSystemType}/path/to/file
@@ -296,25 +578,78 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
         var separators = OperatingSystem.IsWindows() ? new[] { '/', '\\' } : new[] { '/' };
 
         if (IsGeometryFile(path))
-            return ("geometry", null, null);
+        {
+            // The path matches the target disk's own geometry file. With a partition
+            // target this still means the restore set contains a full-disk backup
+            if (!string.IsNullOrEmpty(_subpath))
+                throw DiskContentToPartitionTarget();
+            return (RestorePathType.Geometry, null, null);
+        }
 
         var segments = path.Split(separators, StringSplitOptions.RemoveEmptyEntries) ??
             throw new InvalidOperationException($"Unable to parse path: {path}");
 
+        // When the restore target is a single partition, a geometry file in the
+        // restore set indicates a full-disk backup, which cannot be restored into
+        // a partition (its partition table and other partitions would have nowhere
+        // to go). Fail here, before any partition content is written. The geometry
+        // file sits at the disk or partition level, so a file named geometry.json
+        // inside a filesystem (fs_ segment present) is regular file content and is
+        // restored like any other file.
+        if (!string.IsNullOrEmpty(_subpath)
+            && segments.Length > 0
+            && segments[^1].Equals(GeometryMetadata.FileName, StringComparison.OrdinalIgnoreCase)
+            && !segments.Any(s => s.StartsWith("fs_", StringComparison.OrdinalIgnoreCase)))
+            throw DiskContentToPartitionTarget();
+
+        static UserInformationException DiskContentToPartitionTarget()
+            => new($"The backup contains a full disk image (including '{GeometryMetadata.FileName}'), which cannot be restored into a single partition. Restore to a whole-disk target instead.", "DiskRestoreDiskContentToPartitionTarget");
 
         string? partitionSegment = segments.FirstOrDefault(s => s.StartsWith("part_", StringComparison.OrdinalIgnoreCase));
         if (!string.IsNullOrEmpty(partitionSegment))
         {
-            var partition = ParsePartition(partitionSegment);
             string? filesystemSegment = segments.FirstOrDefault(s => s.StartsWith("fs_", StringComparison.OrdinalIgnoreCase));
+
+            // A partition info file sits directly in the partition folder and
+            // travels with the partition content. It is not resolved to a
+            // partition here, as it is restored during the priority-file phase
+            // where the geometry-based reconstruction may not have run yet.
+            if (filesystemSegment == null && segments[^1].Equals(PartitionInfoMetadata.FileName, StringComparison.OrdinalIgnoreCase))
+                return (RestorePathType.PartitionInfo, null, null);
+
+            var partition = ParsePartition(partitionSegment);
             if (!string.IsNullOrEmpty(filesystemSegment))
             {
                 var filesystem = ParseFilesystem(partition, filesystemSegment);
-                return ("file", partition, filesystem);
+                return (RestorePathType.File, partition, filesystem);
             }
-            return ("partition", partition, null);
+            return (RestorePathType.Partition, partition, null);
         }
-        return ("disk", null, null);
+
+        // No partition segment in the path. Partition-level content has this shape
+        // when the restore selection is entirely within a single source partition:
+        // the restore path mapping strips the common prefix, which then includes
+        // the partition folder. The content belongs to that single source partition.
+        var implicitFilesystemSegment = segments.FirstOrDefault(s => s.StartsWith("fs_", StringComparison.OrdinalIgnoreCase));
+
+        // A partition info file sits directly in the partition folder, so with the
+        // partition folder stripped it appears at the root. It is not resolved to a
+        // partition here, as it is restored during the priority-file phase where the
+        // geometry-based reconstruction may not have run yet. A file of the same
+        // name inside a filesystem (fs_ segment present) is regular file content.
+        if (implicitFilesystemSegment == null
+            && segments.Length > 0
+            && segments[^1].Equals(PartitionInfoMetadata.FileName, StringComparison.OrdinalIgnoreCase))
+            return (RestorePathType.PartitionInfo, null, null);
+
+        if (implicitFilesystemSegment != null)
+        {
+            var partition = ResolveImplicitTargetPartition();
+            var filesystem = ParseFilesystem(partition, implicitFilesystemSegment);
+            return (RestorePathType.File, partition, filesystem);
+        }
+
+        return (RestorePathType.Disk, null, null);
     }
 
     /// <inheritdoc />
@@ -324,12 +659,133 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
 
         return typeStr switch
         {
-            "geometry" => OpenWriteGeometry(cancel),
-            "disk" => OpenWriteDisk(path, cancel),
-            "partition" => OpenWritePartition(path, partition!, cancel),
-            "file" => filesystem!.OpenWriteStreamAsync(path, cancel),
+            RestorePathType.Geometry => OpenWriteGeometry(cancel),
+            RestorePathType.PartitionInfo => OpenWritePartitionInfo(path, cancel),
+            RestorePathType.Disk => OpenWriteDisk(path, cancel),
+            RestorePathType.Partition => OpenWritePartition(path, partition!, cancel),
+            RestorePathType.File => filesystem!.OpenWriteStreamAsync(path, cancel),
             _ => throw new NotSupportedException($"Unsupported item type: {typeStr}")
         };
+    }
+
+    /// <summary>
+    /// Opens a stream for writing partition info metadata (captured when disposed).
+    /// When restoring into a partition, the info is keyed by the target partition;
+    /// for whole-disk restores it is keyed by the source partition number and is
+    /// used to create partitions on the target disk when the backup has no
+    /// geometry metadata.
+    /// </summary>
+    private Task<Stream> OpenWritePartitionInfo(string path, CancellationToken cancel)
+        => Task.FromResult<Stream>(new CaptureStream(new MemoryStream(), data => CapturePartitionInfo(path, data)));
+
+    /// <summary>
+    /// Opens a stream for read-write access to partition info metadata.
+    /// </summary>
+    private async Task<Stream> OpenReadWritePartitionInfo(string path, CancellationToken cancel)
+    {
+        var stream = new MemoryStream();
+        if (TryGetTargetPartitionInfo(out var existing))
+        {
+            var current = System.Text.Encoding.UTF8.GetBytes(existing!.ToJson());
+            await stream.WriteAsync(current, cancel);
+            stream.Position = 0;
+        }
+
+        return new CaptureStream(stream, data => CapturePartitionInfo(path, data));
+    }
+
+    /// <summary>
+    /// Captures and parses partition info metadata written during restore.
+    /// </summary>
+    /// <param name="path">The path of the partition info file.</param>
+    /// <param name="data">The written data.</param>
+    /// <exception cref="UserInformationException">Thrown if the restore set contains info for multiple source partitions, which cannot be restored into a single partition.</exception>
+    private void CapturePartitionInfo(string path, ReadOnlyMemory<byte> data)
+    {
+        PartitionInfoMetadata? info;
+        try
+        {
+            var json = System.Text.Encoding.UTF8.GetString(data.Span);
+            info = PartitionInfoMetadata.FromJson(json);
+        }
+        catch (Exception ex)
+        {
+            Log.WriteWarningMessage(LOGTAG, "PartitionInfoParseFailed", ex, $"Failed to parse partition info from '{path}'.");
+            return;
+        }
+
+        if (info == null)
+        {
+            Log.WriteWarningMessage(LOGTAG, "PartitionInfoParseFailed", null, $"Failed to parse partition info from '{path}': parsed object was null.");
+            return;
+        }
+
+        if (info.Version > PartitionInfoMetadata.CurrentVersion)
+            Log.WriteWarningMessage(LOGTAG, "PartitionInfoVersionNewer", null,
+                $"The partition info from '{path}' has version {info.Version}, which is newer than the supported version {PartitionInfoMetadata.CurrentVersion}. Some fields may be ignored.");
+
+        // Without the source partition number, multi-partition conflicts cannot be
+        // detected and the size validation in ParseFilesystem has no source size.
+        // Refuse to store incomplete info so a previously captured, complete info
+        // is not silently overwritten by a lesser one.
+        if (info.Partition?.Number is not int newNumber)
+        {
+            Log.WriteWarningMessage(LOGTAG, "PartitionInfoIncomplete", null,
+                $"Ignoring partition info from '{path}' because it does not identify the source partition.");
+            return;
+        }
+
+        if (string.IsNullOrEmpty(_subpath))
+        {
+            // Whole-disk restore: geometry.json normally provides the metadata.
+            // The info is stored keyed by the source partition number so that
+            // partition backups (which have no geometry.json) can be restored by
+            // creating the partition on the target disk.
+            _partitionInfos[newNumber] = info;
+            Log.WriteInformationMessage(LOGTAG, "PartitionInfoParsed",
+                $"Parsed partition info for source partition {newNumber}: filesystem {info.Filesystem?.Type}, block size {info.Filesystem?.BlockSize}, source size {info.Partition?.Size} bytes");
+            return;
+        }
+
+        // The info describes the source partition, but is keyed by the target
+        // partition: when a target partition has been set, all restored content
+        // maps to it regardless of the partition numbers in the paths
+        var target = _partitions.FirstOrDefault();
+        if (target == null)
+        {
+            Log.WriteWarningMessage(LOGTAG, "PartitionInfoParseFailed", null, $"Failed to capture partition info from '{path}': the target partition has not been resolved.");
+            return;
+        }
+
+        // A second partition info describing a different source partition means the
+        // restore set contains multiple partitions (e.g. a disk backup without the
+        // geometry file), which cannot be mapped into the single target partition.
+        // Since incomplete infos are rejected above, any existing entry always has
+        // a source partition number to compare against.
+        if (_partitionInfos.TryGetValue(target.PartitionNumber, out var existing)
+            && existing.Partition!.Number != newNumber)
+            throw new UserInformationException($"The backup contains data for multiple partitions (at least partitions {existing.Partition.Number} and {newNumber}), which cannot be restored into a single partition. Restore to a whole-disk target instead.", "DiskRestoreDiskContentToPartitionTarget");
+
+        _partitionInfos[target.PartitionNumber] = info;
+        Log.WriteInformationMessage(LOGTAG, "PartitionInfoParsed",
+            $"Parsed partition info for target partition {target.PartitionNumber}: filesystem {info.Filesystem?.Type}, block size {info.Filesystem?.BlockSize}, source size {info.Partition?.Size} bytes");
+    }
+
+    /// <summary>
+    /// Gets the partition info captured for the target partition, if any.
+    /// Only applies when the restore target is a specific partition; whole-disk
+    /// restores store infos keyed by source partition number.
+    /// </summary>
+    /// <param name="info">The captured partition info, or <c>null</c> if none was captured.</param>
+    /// <returns><c>true</c> if partition info was captured for the target partition; otherwise, <c>false</c>.</returns>
+    private bool TryGetTargetPartitionInfo(out PartitionInfoMetadata? info)
+    {
+        info = null;
+        if (string.IsNullOrEmpty(_subpath))
+            return false;
+
+        var target = _partitions.FirstOrDefault();
+        return target != null && _partitionInfos.TryGetValue(target.PartitionNumber, out info);
     }
 
     /// <summary>
@@ -406,10 +862,11 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
 
         return typeStr switch
         {
-            "disk" => OpenReadDisk(path, cancel),
-            "partition" => OpenReadPartition(path, partition!, cancel),
-            "geometry" => OpenReadGeometry(cancel),
-            "file" => filesystem!.OpenReadStreamAsync(path, cancel),
+            RestorePathType.Disk => OpenReadDisk(path, cancel),
+            RestorePathType.Partition => OpenReadPartition(path, partition!, cancel),
+            RestorePathType.Geometry => OpenReadGeometry(cancel),
+            RestorePathType.PartitionInfo => OpenReadPartitionInfo(path, cancel),
+            RestorePathType.File => filesystem!.OpenReadStreamAsync(path, cancel),
             _ => throw new NotSupportedException($"Unsupported item type: {typeStr}")
         };
     }
@@ -425,6 +882,26 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
         var json = _geometryMetadata.ToJson();
         var data = System.Text.Encoding.UTF8.GetBytes(json);
         return Task.FromResult<Stream>(new MemoryStream(data));
+    }
+
+    /// <summary>
+    /// Opens a stream for reading partition info metadata.
+    /// </summary>
+    private Task<Stream> OpenReadPartitionInfo(string path, CancellationToken cancel)
+    {
+        if (TryGetTargetPartitionInfo(out var info))
+        {
+            var data = System.Text.Encoding.UTF8.GetBytes(info!.ToJson());
+            return Task.FromResult<Stream>(new MemoryStream(data));
+        }
+
+        // Partition info is only readable when the restore target is a specific
+        // partition, where it is keyed by the target partition number. Whole-disk
+        // restores store infos keyed by source partition number, which the path
+        // does not identify (there may be several, and geometry.json provides the
+        // metadata), so return an empty stream instead of failing.
+        Log.WriteVerboseMessage(LOGTAG, "PartitionInfoNotAvailable", $"Partition info metadata for '{path}' was not captured; returning an empty stream.");
+        return Task.FromResult<Stream>(new MemoryStream());
     }
 
     /// <summary>
@@ -456,10 +933,11 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
 
         return typeStr switch
         {
-            "disk" => OpenWriteDisk(path, cancel), // For disk-level, we treat read-write as write since we only capture the data to be written during Finalize
-            "partition" => Task.FromResult((Stream)new MemoryStream()),
-            "geometry" => OpenReadWriteGeometry(cancel),
-            "file" => filesystem!.OpenReadWriteStreamAsync(path, cancel),
+            RestorePathType.Disk => OpenWriteDisk(path, cancel), // For disk-level, we treat read-write as write since we only capture the data to be written during Finalize
+            RestorePathType.Partition => Task.FromResult((Stream)new MemoryStream()),
+            RestorePathType.Geometry => OpenReadWriteGeometry(cancel),
+            RestorePathType.PartitionInfo => OpenReadWritePartitionInfo(path, cancel),
+            RestorePathType.File => filesystem!.OpenReadWriteStreamAsync(path, cancel),
             _ => throw new NotSupportedException($"Unsupported item type: {typeStr}")
         };
     }
@@ -497,6 +975,15 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
                 {
                     _geometryMetadata = newGeometry;
 
+                    if (!string.IsNullOrEmpty(_subpath))
+                    {
+                        // The restore target is a single partition, so disk-level
+                        // geometry must not be applied to the target disk.
+                        Log.WriteInformationMessage(LOGTAG, "GeometryMetadataIgnored",
+                            "Geometry metadata was restored, but the restore target is a partition; the partition table and disk structures of the target disk will not be modified.");
+                        return;
+                    }
+
                     // Clear existing reconstructed objects
                     foreach (var part in _partitions)
                         part.Dispose();
@@ -528,6 +1015,14 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     }
 
     /// <summary>
+    /// Returns the number of bytes needed to encode the JSON string as UTF-8.
+    /// </summary>
+    /// <param name="json">The JSON string; can be <c>null</c></param>
+    /// <returns>The length in bytes, or 0 if the string is null or empty</returns>
+    private static long GetJsonUtf8Length(string? json)
+        => string.IsNullOrWhiteSpace(json) ? 0L : System.Text.Encoding.UTF8.GetByteCount(json);
+
+    /// <summary>
     /// Gets the length of a file at the specified path.
     /// </summary>
     /// <param name="path">The path to the file.</param>
@@ -539,10 +1034,11 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
 
         return typeStr switch
         {
-            "disk" => Task.FromResult(0L),
-            "partition" => Task.FromResult(0L),
-            "geometry" => Task.FromResult((long)_geometryMetadata!.ToJson().Count()),
-            "file" => filesystem!.GetFileLengthAsync(path, cancel),
+            RestorePathType.Disk => Task.FromResult(0L),
+            RestorePathType.Partition => Task.FromResult(0L),
+            RestorePathType.Geometry => Task.FromResult(GetJsonUtf8Length(_geometryMetadata?.ToJson())),
+            RestorePathType.PartitionInfo => Task.FromResult(TryGetTargetPartitionInfo(out var info) ? GetJsonUtf8Length(info?.ToJson()) : 0L),
+            RestorePathType.File => filesystem!.GetFileLengthAsync(path, cancel),
             _ => throw new NotSupportedException($"Unsupported item type: {typeStr}")
         };
     }
@@ -560,6 +1056,28 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     {
         // TODO properly handle metadata
 
+        // When the entry describes a source partition, validate that the target
+        // partition is large enough to hold the source partition's data.
+        if (_validateSize
+            && metadata.TryGetValue("diskimage:Type", out var entryType)
+            && string.Equals(entryType, "partition", StringComparison.OrdinalIgnoreCase)
+            && metadata.TryGetValue("partition:Number", out var numberStr)
+            && int.TryParse(numberStr, out var partitionNumber)
+            && metadata.TryGetValue("partition:Size", out var sizeStr)
+            && long.TryParse(sizeStr, out var sourceSize))
+        {
+            // When a target partition has been set, it is always the target of the
+            // restore; otherwise match the source partition number (full-disk restore).
+            var target = !string.IsNullOrEmpty(_subpath)
+                ? _partitions.FirstOrDefault()
+                : _partitions.FirstOrDefault(p => p.PartitionNumber == partitionNumber);
+
+            if (target != null && sourceSize > target.Size)
+                throw new UserInformationException(
+                    string.Format(Strings.RestoreTargetTooSmall, target.Size, sourceSize),
+                    "RestoreTargetTooSmall");
+        }
+
         return Task.FromResult(true);
     }
 
@@ -574,7 +1092,7 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     /// <inheritdoc />
     public IList<string> GetPriorityFiles()
     {
-        return ["geometry.json"];
+        return [GeometryMetadata.FileName, PartitionInfoMetadata.FileName];
     }
 
     /// <summary>
@@ -590,7 +1108,7 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
 
         string geometryDevicePath = NormalizePath(_targetDisk.DevicePath);
 
-        string expectedGeometryPath = $"{geometryDevicePath}{Path.DirectorySeparatorChar}geometry.json";
+        string expectedGeometryPath = $"{geometryDevicePath}{Path.DirectorySeparatorChar}{GeometryMetadata.FileName}";
 
         return string.Equals(path, expectedGeometryPath, StringComparison.OrdinalIgnoreCase);
     }
@@ -601,7 +1119,7 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
         if (_targetDisk == null)
             throw new InvalidOperationException("Provider not initialized.");
 
-        var totalItems = _pendingWrites.Count;
+        var totalItems = _pendingWrites.Count + _pendingPartitionCreations.Count;
         if (totalItems == 0)
         {
             Log.WriteInformationMessage(LOGTAG, "RestoreNoItems", "No items to restore.");
@@ -619,7 +1137,14 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
         // Restore disk-level items (partition table)
         if (!_skipPartitionTable && diskItems.Count > 0)
         {
-            if (_geometryMetadata?.PartitionTable != null)
+            if (!string.IsNullOrEmpty(_subpath))
+            {
+                // The restore target is a single partition, so the partition table
+                // of the target disk must not be modified.
+                Log.WriteWarningMessage(LOGTAG, "PartitionTableRestoreSkipped", null,
+                    "Skipping partition table restore because the restore target is a partition, not a whole disk.");
+            }
+            else if (_geometryMetadata?.PartitionTable != null)
             {
                 try
                 {
@@ -654,6 +1179,37 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
             }
             processedCount += diskItems.Count;
             progressCallback?.Invoke(processedCount / (double)totalItems);
+        }
+
+        // Write partition table entries for partitions created during this restore
+        // (partition backups restored to a whole-disk target). The partition content
+        // has already been written to the allocated space; adding the table entries
+        // last ensures an interrupted restore leaves no entries pointing at
+        // incomplete data.
+        if (_pendingPartitionCreations.Count > 0)
+        {
+            if (_skipPartitionTable)
+            {
+                // Unreachable: partition creation is refused when the partition
+                // table is skipped. Guarded here for safety.
+                Log.WriteWarningMessage(LOGTAG, "PartitionCreationSkipped", null,
+                    "Skipping creation of partition table entries because the partition table is excluded from the restore.");
+            }
+            else
+            {
+                try
+                {
+                    await PartitionCreator.WritePartitionsAsync(_targetDisk, _pendingPartitionCreations, cancel).ConfigureAwait(false);
+                    Log.WriteInformationMessage(LOGTAG, "PartitionEntriesWritten",
+                        $"Successfully wrote {_pendingPartitionCreations.Count} partition table entrie(s) to {_devicePath}.");
+                }
+                catch (Exception ex)
+                {
+                    Log.WriteErrorMessage(LOGTAG, "PartitionCreationFailed", ex,
+                        $"Failed to create the partition on the target disk: {ex.Message}");
+                    throw;
+                }
+            }
         }
 
         // Restore partition-level items
