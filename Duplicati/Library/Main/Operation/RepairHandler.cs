@@ -1410,6 +1410,17 @@ namespace Duplicati.Library.Main.Operation
             if (await db.RepairInProgressAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false) || await db.PartiallyRecreatedAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                 Logging.Log.WriteWarningMessage(LOGTAG, "InProgressDatabase", null, "The database is marked as \"in-progress\" and may be incomplete.");
 
+            // The shared empty-file blockset is the only blockset for which a recorded length of 0 is
+            // legitimate, and it is identified by hash as well as by length.
+            var emptyFileHash = Utility.CalculateEmptyFileHash(m_options);
+
+            await db
+                .FixOrphanBlocksetEntriesAsync(m_options.Dryrun, m_result.TaskControl.ProgressToken)
+                .ConfigureAwait(false);
+            await db
+                .FixEmptyBlocksetWithBlocksAsync(emptyFileHash, m_options.Dryrun, m_result.TaskControl.ProgressToken)
+                .ConfigureAwait(false);
+
             await db.FixDuplicateMetahashAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false);
             await db.FixDuplicateFileentriesAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false);
             await db.FixDuplicatePathsInFilesetsAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false);
@@ -1421,6 +1432,11 @@ namespace Duplicati.Library.Main.Operation
                 .ConfigureAwait(false);
             await db
                 .FixEmptyMetadatasetsAsync(m_options, m_result.TaskControl.ProgressToken)
+                .ConfigureAwait(false);
+
+            // Run this last, so mismatches that the steps above have resolved are not reported.
+            await db
+                .ReportBlocksetLengthMismatchesAsync(emptyFileHash, m_result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);
         }
 

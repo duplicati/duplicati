@@ -133,6 +133,27 @@ namespace Duplicati.Library.Main
             => new Metahash(values, options);
 
         /// <summary>
+        /// Computes the file hash of a zero-byte file, base64 encoded.
+        /// </summary>
+        /// <remarks>
+        /// This is the hash of the blockset that every empty file in the backup shares.
+        /// Because <c>Blockset</c> is unique on <c>("FullHash", "Length")</c>, there is at most one
+        /// such row, and it is the only blockset for which a recorded length of 0 is legitimate.
+        /// Matching on the hash as well as the length makes it possible to tell that row apart from a
+        /// corrupt blockset that merely claims to be zero-length while still having blocks attached.
+        /// </remarks>
+        /// <param name="options">The options to use for hashing</param>
+        /// <returns>The base64 encoded file hash of zero bytes</returns>
+        public static string CalculateEmptyFileHash(Options options)
+        {
+            using var filehasher = HashFactory.CreateHasher(options.FileHashAlgorithm);
+            if (filehasher == null)
+                throw new Interface.UserInformationException(Strings.Common.InvalidHashAlgorithm(options.FileHashAlgorithm), "FileHashAlgorithmNotSupported");
+
+            return Convert.ToBase64String(filehasher.ComputeHash(Array.Empty<byte>()));
+        }
+
+        /// <summary>
         /// Updates the options with settings from the data, if any.
         /// </summary>
         /// <param name="db">The database to read from.</param>
