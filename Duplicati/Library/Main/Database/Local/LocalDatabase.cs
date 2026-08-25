@@ -1865,7 +1865,8 @@ namespace Duplicati.Library.Main.Database.Local
                     do
                     {
                         if (c < 5)
-                            sb.AppendFormat("{0}, actual size {1}, dbsize {2}, blocksetid: {3}{4}", rd.GetValue(3), rd.GetValue(1), rd.GetValue(0), rd.GetValue(2), Environment.NewLine);
+                            // Reader columns: 0 = CalcLen (summed block sizes), 1 = Length (recorded), 2 = BlocksetID, 3 = Path
+                            sb.AppendFormat("{0}, dbsize {1}, actual size {2}, blocksetid: {3}{4}", rd.GetValue(3), rd.GetValue(1), rd.GetValue(0), rd.GetValue(2), Environment.NewLine);
                         c++;
                     } while (await rd.ReadAsync(token).ConfigureAwait(false));
 
@@ -1873,7 +1874,7 @@ namespace Duplicati.Library.Main.Database.Local
                     if (c > 0)
                         sb.AppendFormat("... and {0} more", c);
 
-                    sb.Append(". Run repair to fix it.");
+                    sb.Append(". Run repair to fix it. If repair cannot fix it, use list-broken-files and purge-broken-files to remove the affected files.");
                     throw new DatabaseInconsistencyException(sb.ToString());
                 }
 
