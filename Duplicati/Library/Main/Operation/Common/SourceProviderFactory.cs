@@ -85,7 +85,7 @@ namespace Duplicati.Library.Main.Operation.Common
                 string scheme;
                 try
                 {
-                    scheme = new Duplicati.Library.Utility.RelaxedUri(match.Groups["url"].Value).Scheme;
+                    scheme = new Duplicati.Library.Utility.Uri(match.Groups["url"].Value).Scheme;
                 }
                 catch
                 {
