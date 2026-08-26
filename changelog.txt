@@ -1,3 +1,119 @@
+2026-08-26 - 2.3.1.1_beta_2026-08-26
+==========
+# 2026-08-26 - 2.3.1.1_beta_2026-08-26
+
+This release is a Beta release intended to be used for testing to identify any issues before releasing the next stable version.
+
+# Partition level full disk backup and restore
+
+The full disk backup feature now supports selecting individual partitions as backup sources, in addition to entire disks. This makes it more intuitive to back up a specific partition without filtering.
+
+Restore now also supports partition-to-partition restores, so it is possible to restore a single partition from a full disk backup, or restore a partition backup to a different partition.
+
+# Desktop notifications on all platforms
+
+Desktop notifications are now supported on all platforms. Windows toast notifications have been implemented (with click-to-open support), and native notification support has been added for macOS and Linux (via DBus), thanks @JamBalaya56562.
+
+# Restore cancellation and reliability improvements
+
+Several issues with the restore process have been fixed. Restores now properly respond to stop/abort requests, file reads and writes can be interrupted, and a critical bug with wrong seek offsets for partial blocks has been fixed, which could cause restores to fail for most files, thanks @JamBalaya56562.
+
+# Misconfigured filter detection
+
+A new warning system detects when filters are configured to unconditionally exclude everything. A post-backup check also warns if no files were examined during backup, which helps catch misconfigurations that would otherwise silently produce empty backups.
+
+# More robust server connection
+
+The remote server connection has been hardened against network events that could cause it to drop. A watchdog monitors the connection and restarts it if it has been unresponsive for an extended period.
+
+# Improved MS365 license counting
+
+The MS365 license counting logic has been simplified. A Duplicati license is now required if an MS365 license is assigned, without needing per-user lookups. The same logic applies to both users and sites, and personal sites of users without a license are not counted.
+
+# Faster delete operations
+
+The database query for deleting old backup versions has been optimized, significantly speeding up the delete operation for large backups.
+
+# Fixed index file recreation
+
+An issue where recreated index files could be incomplete has been fixed. The index file recreation now happens after block volumes are fully processed, ensuring all blocklists are included. This fixes the intermittent "Found N faulty index files" verification error.
+
+# Security fix for credential leaks
+
+Fixed an issue where credentials embedded in URLs could leak into log messages, but only on malformed URLs, thanks @JamBalaya56562.
+
+# Auto-configure database metadata
+
+When using a source provider that requires database metadata (such as full disk backup), the `--store-metadata-content-in-database` option is now automatically applied when needed. This can still be overridden manually.
+
+## Detailed list of changes
+
+- Added partition-level full disk backup and partition-to-partition restore support
+- Added Windows toast notifications with click-to-open, thanks @JamBalaya56562
+- Added macOS native notifications
+- Added Linux DBus notifications
+- Added detection and warning for misconfigured filters that exclude everything
+- Added watchdog for more robust console connection handling
+- Added automatic database metadata configuration for source providers that need it
+- Added index on restore file table join columns for better restore performance, thanks @JamBalaya56562
+- Added `sync` command to CLI help output
+- Simplified MS365 license counting to check license assignment without per-user lookups
+- Improved MS365 user/site listing with alphabetical sorting and fewer API calls
+- Improved HyperV and MSSQL enumeration to handle errors gracefully
+- Improved pagination for backend listing results
+- Fixed wrong seek offset in restore when copying verified local blocks, which could break restores, thanks @JamBalaya56562
+- Fixed restore not responding to stop/abort requests, thanks @JamBalaya56562
+- Fixed restore cancellation not interrupting file reads and writes, thanks @JamBalaya56562
+- Fixed local files being incorrectly marked as broken when a shutdown interrupted writes, thanks @JamBalaya56562
+- Fixed requested shutdown being reported as a failure instead of a user-initiated stop, thanks @JamBalaya56562
+- Fixed index file recreation producing incomplete index files
+- Fixed similarly named paths being incorrectly excluded from backup sources
+- Fixed quota errors being reported during read-only operations like restore, thanks @JamBalaya56562
+- Fixed stale query statistics causing slow backups, thanks @JamBalaya56562
+- Fixed backend statistics reporting unset timestamps in JSON output, thanks @JamBalaya56562
+- Fixed legacy symlink folder restore using wrong path, thanks @JamBalaya56562
+- Fixed slow query monitoring not tracking database queries, thanks @JamBalaya56562
+- Fixed credentials leaking through URL sanitizer on malformed URLs, thanks @JamBalaya56562
+- Fixed destination connection test failing on missing probe file, thanks @JamBalaya56562
+- Fixed invalid update check interval being silently ignored, thanks @JamBalaya56562
+- Fixed Google credentials not being read as service accounts, thanks @JamBalaya56562
+- Fixed SharpAESCrypt version inconsistency across projects, thanks @JamBalaya56562
+- Fixed Linux notifier using obsolete DBus API, thanks @JamBalaya56562
+- Fixed Microsoft.Extensions packages left at older versions, thanks @JamBalaya56562
+- Fixed SecretProvider package version alignment, thanks @JamBalaya56562
+- Fixed Box folder lookup failing when folder name already exists, thanks @JamBalaya56562
+- Fixed Box backend ignoring the requested path in entry lookups, thanks @JamBalaya56562
+- Fixed IDrive e2 backend `GetEntryAsync` returning null for all paths, thanks @JamBalaya56562
+- Fixed pCloud uploads not checking HTTP response status, thanks @JamBalaya56562
+- Fixed Tahoe-LAFS deletes not checking response status, thanks @JamBalaya56562
+- Fixed Filejump error handler infinite recursion causing stack overflow, thanks @JamBalaya56562
+- Fixed Filen downloads not checking response status before decrypting, thanks @JamBalaya56562
+- Fixed full disk provider not initializing when listing folders
+- Updated all NuGet packages to latest versions
+- Updated SSH.NET dependency
+- Updated all translations, thanks to all translators
+- Updated licenses project with missing packages
+
+## Changes in ngclient
+
+- Added support for choosing sort order in the file tree
+- Added support for partition-level full disk backup and restore in the UI
+- Added warning if filters appear to exclude everything
+- Added load-more pagination for file browsing
+- Added prefill of restore options from configured settings, thanks @JamBalaya56562
+- Added option to allow encryption changes for imported backups, thanks @JamBalaya56562
+- Improved schedule summary with templates, reducing translation burden, thanks @JamBalaya56562
+- Improved MS365 tenant counter display
+- Disabled menu options that do not apply to sync jobs
+- Fixed Chinese locale selection, thanks @JamBalaya56562 and @scambra
+- Fixed source filter highlighting, thanks @JamBalaya56562
+- Fixed commandline output auto-scrolling, thanks @JamBalaya56562
+- Fixed remote source selection copy, thanks @JamBalaya56562
+- Fixed destination editor identity preservation, thanks @JamBalaya56562
+- Fixed usage statistics compatibility across UIs, thanks @JamBalaya56562
+- Fixed absolute assets path ignoring X-Forwarded-Prefix header, thanks @scambra
+- Updated all translations, thanks to all translators
+
 2026-07-28 - 2.3.1.0_beta_2026-07-28
 ==========
 This release is a Beta release intended to be used for testing to identify any issues before releasing the next stable version.
