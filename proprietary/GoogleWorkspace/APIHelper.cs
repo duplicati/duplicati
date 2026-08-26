@@ -92,6 +92,96 @@ public class APIHelper
         }
     }
 
+    /// <summary>
+    /// The OAuth token info endpoint used to inspect the scopes granted to an access token.
+    /// </summary>
+    private const string TOKEN_INFO_URL = "https://oauth2.googleapis.com/tokeninfo";
+
+    /// <summary>
+    /// Determines which OAuth scopes are currently granted to the configured credentials.
+    /// </summary>
+    /// <remarks>
+    /// For a service account with domain-wide delegation, the token endpoint rejects token
+    /// requests for scopes that have not been granted to the service account in the Admin
+    /// console, so a token is requested for each scope individually to probe the grant.
+    /// There is no API to enumerate the delegated scopes, so grants outside of
+    /// <paramref name="scopes"/> cannot be detected for service accounts.
+    /// For a user credential (refresh token), the granted scopes are read from the token
+    /// info endpoint, which reports every scope consented to, including scopes outside of
+    /// <paramref name="scopes"/>.
+    /// </remarks>
+    /// <param name="scopes">The scopes to check.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The granted scopes; for service accounts a subset of <paramref name="scopes"/>.</returns>
+    public async Task<IReadOnlySet<string>> GetGrantedScopesAsync(IEnumerable<string> scopes, CancellationToken cancellationToken)
+    {
+        var requested = scopes.Distinct(StringComparer.Ordinal).ToList();
+        var granted = new HashSet<string>(StringComparer.Ordinal);
+
+        if (!string.IsNullOrEmpty(_serviceAccountJson))
+        {
+            var probes = requested.Select(async scope =>
+            {
+                try
+                {
+                    var credential = CredentialFactory.FromJson<ServiceAccountCredential>(_serviceAccountJson)
+                        .ToGoogleCredential()
+                        .CreateScoped(scope);
+
+                    if (!string.IsNullOrEmpty(_adminEmail))
+                        credential = (GoogleCredential)credential.CreateWithUser(_adminEmail);
+
+                    await ((ITokenAccess)credential).GetAccessTokenForRequestAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+                    return scope;
+                }
+                catch
+                {
+                    // The scope is not granted to the service account
+                    return null;
+                }
+            });
+
+            foreach (var scope in await Task.WhenAll(probes).ConfigureAwait(false))
+                if (scope != null)
+                    granted.Add(scope);
+        }
+        else if (!string.IsNullOrEmpty(_clientId) && !string.IsNullOrEmpty(_clientSecret) && !string.IsNullOrEmpty(_refreshToken))
+        {
+            var credential = new UserCredential(new GoogleAuthorizationCodeFlow(
+                new GoogleAuthorizationCodeFlow.Initializer
+                {
+                    ClientSecrets = new ClientSecrets
+                    {
+                        ClientId = _clientId,
+                        ClientSecret = _clientSecret
+                    }
+                }),
+                "user",
+                new Google.Apis.Auth.OAuth2.Responses.TokenResponse { RefreshToken = _refreshToken });
+
+            var accessToken = await credential.GetAccessTokenForRequestAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            using var client = Duplicati.Library.Utility.HttpClientHelper.CreateClient();
+            using var response = await client.GetAsync($"{TOKEN_INFO_URL}?access_token={Uri.EscapeDataString(accessToken)}", cancellationToken).ConfigureAwait(false);
+            response.EnsureSuccessStatusCode();
+
+            using var doc = System.Text.Json.JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false));
+            if (doc.RootElement.TryGetProperty("scope", out var scopeElement) && scopeElement.ValueKind == System.Text.Json.JsonValueKind.String)
+            {
+                // Report every consented scope, including scopes that were not requested,
+                // so that grants that are not needed can be identified.
+                foreach (var scope in scopeElement.GetString()!.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+                    granted.Add(scope);
+            }
+        }
+        else
+        {
+            throw new Exception("Missing credentials");
+        }
+
+        return granted;
+    }
+
     public void TestConnection()
     {
         if (_isRestoreOperation)
