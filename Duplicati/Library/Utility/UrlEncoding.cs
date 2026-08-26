@@ -173,17 +173,6 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <returns>The parsed query string</returns>
         /// <param name="query">The query to parse</param>
-        public static NameValueCollection ParseQueryString(string query)
-        {
-            return ParseQueryString(query, true);
-        }
-
-        /// <summary>
-        /// Parses the query string.
-        /// This is a local implementation of System.Web.HttpUtility.ParseQueryString, kept for consistent behavior (originally added due to Mono limitations)
-        /// </summary>
-        /// <returns>The parsed query string</returns>
-        /// <param name="query">The query to parse</param>
         /// <param name="decodeValues">Whether to the parameter values should be decoded or not.</param>
         public static NameValueCollection ParseQueryString(string query, bool decodeValues)
         {
@@ -215,9 +204,8 @@ namespace Duplicati.Library.Utility
         /// <returns>The generated querystring</returns>
         /// <param name="query">A collection of name value pairs to be translated into a query string</param>
         /// <param name="delimiter">The delimiter to separate key value pairs in the query string</param>
-        public static string BuildUriQuery(NameValueCollection query, string delimiter)
+        internal static string BuildUriQuery(NameValueCollection query, string delimiter)
         {
-
             if (query == null)
                 throw new ArgumentNullException(nameof(query));
 
@@ -234,14 +222,27 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
-        /// Build the querystring to be used in a URL
+        /// Build the querystring to be used in a URL and encodes all parameters
         /// </summary>
         /// <returns>The generated querystring</returns>
         /// <param name="query">A collection of name value pairs to be translated into a query string that is
         /// ampersand delimited.</param>
-        public static string BuildUriQuery(NameValueCollection query)
+        /// <param name="preEncoded">A value indicating if the values are already encoded</param>
+        public static string BuildUriQuery(NameValueCollection query, bool preEncoded)
         {
-            return BuildUriQuery(query, "&");
+            if (preEncoded)
+                return BuildUriQuery(query, "&");
+
+            var qp = new NameValueCollection();
+            foreach (var k in query.AllKeys)
+            {
+                var v = query.Get(k);
+                qp[k] = string.IsNullOrEmpty(v)
+                    ? v
+                    : UrlEncode(v);
+            }
+
+            return BuildUriQuery(qp, "&");
         }
     }
 }

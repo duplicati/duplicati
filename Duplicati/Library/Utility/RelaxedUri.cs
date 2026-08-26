@@ -123,12 +123,22 @@ namespace Duplicati.Library.Utility
                     if (Query == null)
                         m_queryParams = new NameValueCollection();
                     else
-                        m_queryParams = UrlEncoding.ParseQueryString(Query);
+                        m_queryParams = UrlEncoding.ParseQueryString(Query, true);
                 }
 
                 return m_queryParams;
             }
         }
+
+        // TODO: Maybe we should return EncodedNameValueCollection and 
+        // DecodedNameValueCollection so the callers do not need to
+        // keep track of the flag.
+
+        /// <summary>
+        /// Returns the query parameters with the values in their original URL encoding.
+        /// </summary>
+        public NameValueCollection GetEncodedQueryParameters()
+            => UrlEncoding.ParseQueryString(Query ?? "", false);
 
         /// <summary>
         /// Gets the host and path.
@@ -407,12 +417,13 @@ namespace Duplicati.Library.Utility
         /// <param name="url">Base URL, containing schema, host, port.</param>
         /// <param name="path">Base path.</param>
         /// <param name="query">A collection of name value pairs to be translated into a query string.</param>
-        public static string UriBuilder(string url, string path, NameValueCollection? query)
+        /// <param name="preEncoded">A value indicating if the query contains pre-encoded values</param>
+        public static string UriBuilder(string url, string path, NameValueCollection? query, bool preEncoded)
         {
             var builder = new UriBuilder(url)
             {
                 Path = new UrlPath(ExtractPath(url)).Append(path).ToString(),
-                Query = query != null ? UrlEncoding.BuildUriQuery(query) : null
+                Query = query != null ? UrlEncoding.BuildUriQuery(query, preEncoded) : null
             };
             return builder.Uri.AbsoluteUri;
         }
@@ -436,7 +447,7 @@ namespace Duplicati.Library.Utility
         /// <param name="path">Base path.</param>
         public static string UriBuilder(string url, string path)
         {
-            return UriBuilder(url, path, null);
+            return UriBuilder(url, path, null, true);
         }
     }
 }
