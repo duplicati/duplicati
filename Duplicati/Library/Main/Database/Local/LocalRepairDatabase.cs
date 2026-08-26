@@ -2226,10 +2226,21 @@ namespace Duplicati.Library.Main.Database.Local
 
             Logging.Log.WriteInformationMessage(LOGTAG, "ZeroLengthMetadata", "Found {0} zero-length metadata entries", emptyMetaCount);
 
-            // Create replacement metadata
+            // Locate replacement metadata: the canonical empty metadata blob if it happens to be stored in
+            // this backup, otherwise the smallest metadata that is actually restorable. The latter does not
+            // describe the files it gets assigned to, so they lose their permissions and timestamps.
             var emptyMeta = Utility.WrapMetadata(new Dictionary<string, string>(), options);
-            var emptyBlocksetId = await GetEmptyMetadataBlocksetIdAsync(Array.Empty<long>(), emptyMeta.FileHash, emptyMeta.Blob.Length, token)
+            var emptyBlocksetId = await FindExactMetadataBlocksetIdAsync(Array.Empty<long>(), emptyMeta.FileHash, emptyMeta.Blob.Length, token)
                 .ConfigureAwait(false);
+
+            if (emptyBlocksetId < 0)
+            {
+                emptyBlocksetId = await FindSmallestUsableMetadataBlocksetIdAsync(Array.Empty<long>(), token)
+                    .ConfigureAwait(false);
+
+                if (emptyBlocksetId >= 0)
+                    Logging.Log.WriteInformationMessage(LOGTAG, "ReplacementMetadataIsNotEmpty", "The empty metadata entry is not present in the backup, using the smallest available metadata as replacement. The affected files will lose their original permissions and timestamps.");
+            }
 
             if (emptyBlocksetId < 0)
                 throw new Interface.UserInformationException(

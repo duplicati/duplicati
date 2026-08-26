@@ -104,14 +104,32 @@ namespace Duplicati.Library.Main.Operation
                 if (!m_options.DisableReplaceMissingMetadata)
                 {
                     var emptymetadata = Utility.WrapMetadata(new Dictionary<string, string>(), m_options);
+                    // The volumes that are missing cannot supply blocks, so a blockset that depends on them
+                    // is no more restorable than the metadata we are replacing.
+                    var unavailableVolumeIds = (missing ?? []).Select(x => x.ID).ToArray();
+
                     replacementMetadataBlocksetId = await db
-                        .GetEmptyMetadataBlocksetIdAsync(
-                            (missing ?? []).Select(x => x.ID),
+                        .FindExactMetadataBlocksetIdAsync(
+                            unavailableVolumeIds,
                             emptymetadata.FileHash,
                             emptymetadata.Blob.Length,
                             m_result.TaskControl.ProgressToken
                         )
                         .ConfigureAwait(false);
+
+                    if (replacementMetadataBlocksetId < 0)
+                    {
+                        // The canonical empty metadata blob is not stored in this backup, so fall back to
+                        // the smallest metadata that is actually restorable. Its contents do not describe
+                        // the files it gets assigned to, so they lose their permissions and timestamps.
+                        replacementMetadataBlocksetId = await db
+                            .FindSmallestUsableMetadataBlocksetIdAsync(unavailableVolumeIds, m_result.TaskControl.ProgressToken)
+                            .ConfigureAwait(false);
+
+                        if (replacementMetadataBlocksetId >= 0)
+                            Logging.Log.WriteInformationMessage(LOGTAG, "ReplacementMetadataIsNotEmpty", "The empty metadata entry is not present in the backup, using the smallest available metadata as replacement. The affected files will lose their original permissions and timestamps.");
+                    }
+
                     if (replacementMetadataBlocksetId < 0)
                         throw new UserInformationException($"Failed to locate an empty metadata blockset to replace missing metadata. Set the option --disable-replace-missing-metadata=true to ignore this and drop files with missing metadata.", "FailedToLocateEmptyMetadataBlockset");
                 }
