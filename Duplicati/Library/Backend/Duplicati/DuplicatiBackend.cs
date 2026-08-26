@@ -187,7 +187,8 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
             [AUTH_API_KEY_OPTION] = apiKey,
         };
 
-        var qp = uri.QueryParameters;
+        // Prevent decoding the values here
+        var qp = Utility.Uri.ParseQueryString(uri.Query ?? "", false);
         foreach (var kvp in opts)
             if (!string.IsNullOrWhiteSpace(kvp.Value) && string.IsNullOrWhiteSpace(qp.Get(kvp.Key)))
                 qp[kvp.Key] = Utility.Uri.UrlEncode(kvp.Value);
