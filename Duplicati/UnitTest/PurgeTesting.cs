@@ -273,14 +273,18 @@ namespace Duplicati.UnitTest
             {
                 var purgeResults = await c.PurgeBrokenFilesAsync(null);
                 Assert.AreEqual(0, purgeResults.Errors.Count());
-                Assert.AreEqual(0, purgeResults.Warnings.Count());
+                // The deleted dblock also held metadata, so the affected files are recovered by
+                // assigning replacement metadata, which is reported as a warning
+                Assert.AreEqual(1, purgeResults.Warnings.Count(x => x.Contains("MetadataReplacedWithEmpty")));
+                Assert.AreEqual(0, purgeResults.Warnings.Count(x => !x.Contains("MetadataReplacedWithEmpty")));
             }
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
                 var brk = await c.PurgeBrokenFilesAsync(null);
                 Assert.AreEqual(0, brk.Errors.Count());
-                Assert.AreEqual(0, brk.Warnings.Count());
+                Assert.AreEqual(1, brk.Warnings.Count(x => x.Contains("MetadataReplacedWithEmpty")));
+                Assert.AreEqual(0, brk.Warnings.Count(x => !x.Contains("MetadataReplacedWithEmpty")));
 
                 var modFilesets = 0L;
                 if (brk.DeleteResults != null)

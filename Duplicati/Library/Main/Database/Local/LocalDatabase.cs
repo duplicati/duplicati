@@ -1951,6 +1951,22 @@ namespace Duplicati.Library.Main.Database.Local
             if (await cmd.ExecuteScalarInt64Async(token).ConfigureAwait(false) != 0)
                 throw new DatabaseInconsistencyException("Detected non-empty blocksets with no associated blocks!");
 
+            // Metadata always has contents - the smallest possible blob is a serialized empty dictionary -
+            // so a metadata entry with a length of 0 can never be restored. This is a warning rather than an
+            // exception: it must not fail otherwise-working backups, and purge-broken-files can recover the
+            // affected files.
+            cmd.SetCommandAndParameters(@"
+                SELECT COUNT(*)
+                FROM ""Metadataset""
+                JOIN ""Blockset""
+                    ON ""Metadataset"".""BlocksetID"" = ""Blockset"".""ID""
+                WHERE ""Blockset"".""Length"" = 0
+            ");
+
+            var zeroLengthMetadata = await cmd.ExecuteScalarInt64Async(0, token).ConfigureAwait(false);
+            if (zeroLengthMetadata != 0)
+                Logging.Log.WriteWarningMessage(LOGTAG, "ZeroLengthMetadata", null, "Found {0} metadata entrie(s) with a length of 0, which cannot be restored. Run repair to fix it, or use the {1} and {2} commands to recover the affected files.", zeroLengthMetadata, "list-broken-files", "purge-broken-files");
+
             cmd.SetCommandAndParameters(@"
                 SELECT COUNT(*)
                 FROM ""FileLookup""

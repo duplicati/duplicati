@@ -84,6 +84,40 @@ public class ZeroLengthMetadataTests : BasicSetupHelper
             .ExecuteScalarInt64(0);
 
     /// <summary>
+    /// Points the metadata of the named file at the shared empty-file blockset, which is the state
+    /// reported in the wild: a metadata entry with a length of 0, sharing its blockset with every empty
+    /// file in the backup.
+    /// </summary>
+    /// <returns>The metadata id that was repointed.</returns>
+    private static async Task<long> PointMetadataAtSharedEmptyBlocksetAsync(SqliteCommand cmd, string path, long sharedEmptyBlocksetId)
+    {
+        var metadataId = cmd
+            .SetCommandAndParameters(@"SELECT ""MetadataID"" FROM ""File"" WHERE ""Path"" LIKE @Path")
+            .SetParameterValue("@Path", "%" + path)
+            .ExecuteScalarInt64(-1);
+
+        Assert.That(metadataId, Is.GreaterThanOrEqualTo(0), $"No metadata found for {path}");
+
+        var updated = await cmd
+            .SetCommandAndParameters(@"UPDATE ""Metadataset"" SET ""BlocksetID"" = @BlocksetId WHERE ""ID"" = @Id")
+            .SetParameterValue("@BlocksetId", sharedEmptyBlocksetId)
+            .SetParameterValue("@Id", metadataId)
+            .ExecuteNonQueryAsync();
+
+        Assert.That(updated, Is.EqualTo(1), "Metadata was not repointed");
+        return metadataId;
+    }
+
+    /// <summary>
+    /// Returns the blockset the given metadata entry points at.
+    /// </summary>
+    private static long GetMetadataBlocksetId(SqliteCommand cmd, long metadataId)
+        => cmd
+            .SetCommandAndParameters(@"SELECT ""BlocksetID"" FROM ""Metadataset"" WHERE ""ID"" = @Id")
+            .SetParameterValue("@Id", metadataId)
+            .ExecuteScalarInt64(-1);
+
+    /// <summary>
     /// Attaches an existing block to a blockset, simulating the damage seen in the wild.
     /// </summary>
     private static async Task AttachBlockAsync(SqliteCommand cmd, long blocksetId)
@@ -278,6 +312,175 @@ public class ZeroLengthMetadataTests : BasicSetupHelper
         {
             Assert.That(CountBlocksetEntries(cmd, emptyBlocksetId), Is.EqualTo(1), "A dry-run must not strip blocks");
             Assert.That(CountBlocksetEntries(cmd, orphanBlocksetId), Is.EqualTo(1), "A dry-run must not remove orphaned entries");
+        }
+    }
+
+    [Test]
+    [Category("Targeted")]
+    public async Task ListBrokenFilesReportsUnrestorableMetadataAsync()
+    {
+        var options = await BackupWithEmptyFileAsync();
+        var opts = new Options(options);
+        var emptyFileHash = Duplicati.Library.Main.Utility.CalculateEmptyFileHash(opts);
+
+        using (var con = await SQLiteLoader.LoadConnectionAsync(options["dbpath"]))
+        using (var cmd = con.CreateCommand())
+            await PointMetadataAtSharedEmptyBlocksetAsync(cmd, "a.txt", GetSharedEmptyBlocksetId(cmd, emptyFileHash));
+
+        using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+        {
+            var res = await c.ListBrokenFilesAsync(null);
+            Assert.That(res.Errors.Count(), Is.EqualTo(0));
+
+            var broken = res.BrokenFiles.SelectMany(x => x.Item3).Select(x => x.Item1).ToArray();
+            Assert.That(broken.Length, Is.EqualTo(1), "Expected exactly one broken file, got: " + string.Join(", ", broken));
+            Assert.That(broken[0], Does.EndWith("a.txt"), "The file with the unrestorable metadata should be reported");
+        }
+    }
+
+    [Test]
+    [Category("Targeted")]
+    public async Task PurgeRecoversUnrestorableMetadataAsync()
+    {
+        var options = await BackupWithEmptyFileAsync();
+        var opts = new Options(options);
+        var emptyFileHash = Duplicati.Library.Main.Utility.CalculateEmptyFileHash(opts);
+
+        long metadataId;
+        long emptyBlocksetId;
+        using (var con = await SQLiteLoader.LoadConnectionAsync(options["dbpath"]))
+        using (var cmd = con.CreateCommand())
+        {
+            emptyBlocksetId = GetSharedEmptyBlocksetId(cmd, emptyFileHash);
+            metadataId = await PointMetadataAtSharedEmptyBlocksetAsync(cmd, "a.txt", emptyBlocksetId);
+        }
+
+        var dlistsBefore = Directory.GetFiles(this.TARGETFOLDER, "*.dlist.*").Length;
+
+        using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+        {
+            var res = await c.PurgeBrokenFilesAsync(null);
+            Assert.That(res.Errors.Count(), Is.EqualTo(0));
+            Assert.That(res.Warnings.Count(x => x.Contains("MetadataReplacedWithEmpty")), Is.EqualTo(1), "The recovery should be reported");
+            TestUtils.AssertResults(res, "MetadataReplacedWithEmpty");
+
+            Assert.That(res.DeleteResults, Is.Null, "No fileset should have been deleted");
+            Assert.That(res.PurgeResults?.RemovedFileCount, Is.EqualTo(0), "No file should have been removed");
+            Assert.That(res.PurgeResults?.RewrittenFileLists, Is.EqualTo(1), "The filelist must be rewritten, or the replacement is not persisted");
+        }
+
+        using (var con = await SQLiteLoader.LoadConnectionAsync(options["dbpath"]))
+        using (var cmd = con.CreateCommand())
+        {
+            Assert.That(GetMetadataBlocksetId(cmd, metadataId), Is.Not.EqualTo(emptyBlocksetId), "The metadata should point at a restorable blockset");
+            Assert.That(
+                cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""Metadataset"" JOIN ""Blockset"" ON ""Metadataset"".""BlocksetID"" = ""Blockset"".""ID"" WHERE ""Blockset"".""Length"" = 0", -1),
+                Is.EqualTo(0),
+                "No metadata entry may have a length of 0");
+        }
+
+        // The empty file keeps the shared blockset, and both files are still in the backup
+        Assert.That(Directory.GetFiles(this.TARGETFOLDER, "*.dlist.*").Length, Is.EqualTo(dlistsBefore), "The old filelist should have been replaced");
+
+        using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+        {
+            var files = (await c.ListAsync("*")).Files.Select(x => x.Path).ToArray();
+            Assert.That(files.Count(x => x.EndsWith("a.txt")), Is.EqualTo(1), "The recovered file should still be in the backup");
+            Assert.That(files.Count(x => x.EndsWith("empty.txt")), Is.EqualTo(1), "The empty file should not have been touched");
+
+            TestUtils.AssertResults(await c.TestAsync(int.MaxValue));
+        }
+    }
+
+    [Test]
+    [Category("Targeted")]
+    public async Task PurgeRemovesFileWhenReplacementIsDisabledAsync()
+    {
+        var options = await BackupWithEmptyFileAsync();
+        options["disable-replace-missing-metadata"] = "true";
+
+        var opts = new Options(options);
+        var emptyFileHash = Duplicati.Library.Main.Utility.CalculateEmptyFileHash(opts);
+
+        using (var con = await SQLiteLoader.LoadConnectionAsync(options["dbpath"]))
+        using (var cmd = con.CreateCommand())
+            await PointMetadataAtSharedEmptyBlocksetAsync(cmd, "a.txt", GetSharedEmptyBlocksetId(cmd, emptyFileHash));
+
+        using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+        {
+            var res = await c.PurgeBrokenFilesAsync(null);
+            Assert.That(res.Errors.Count(), Is.EqualTo(0));
+            Assert.That(res.Warnings.Count(x => x.Contains("MetadataReplacedWithEmpty")), Is.EqualTo(0), "Nothing should have been recovered");
+            Assert.That(res.PurgeResults?.RemovedFileCount, Is.EqualTo(1), "The file should have been removed");
+        }
+
+        using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+        {
+            var files = (await c.ListAsync("*")).Files.Select(x => x.Path).ToArray();
+            Assert.That(files.Any(x => x.EndsWith("a.txt")), Is.False, "The file should have been removed");
+            Assert.That(files.Count(x => x.EndsWith("empty.txt")), Is.EqualTo(1), "The empty file should not have been touched");
+        }
+    }
+
+    [Test]
+    [Category("Targeted")]
+    public async Task ScopedPurgeDoesNotTouchSharedMetadataAsync()
+    {
+        var options = await BackupWithEmptyFileAsync();
+        var opts = new Options(options);
+        var emptyFileHash = Duplicati.Library.Main.Utility.CalculateEmptyFileHash(opts);
+
+        // A second version that keeps the unchanged file, and therefore shares its metadata row
+        Thread.Sleep(2000);
+        File.WriteAllText(Path.Combine(this.DATAFOLDER, "b.txt"), "more data");
+        using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+
+        long metadataId;
+        long emptyBlocksetId;
+        using (var con = await SQLiteLoader.LoadConnectionAsync(options["dbpath"]))
+        using (var cmd = con.CreateCommand())
+        {
+            emptyBlocksetId = GetSharedEmptyBlocksetId(cmd, emptyFileHash);
+            metadataId = await PointMetadataAtSharedEmptyBlocksetAsync(cmd, "a.txt", emptyBlocksetId);
+
+            Assert.That(
+                cmd.SetCommandAndParameters(@"SELECT COUNT(DISTINCT ""FilesetID"") FROM ""FilesetEntry"" JOIN ""FileLookup"" ON ""FileLookup"".""ID"" = ""FilesetEntry"".""FileID"" WHERE ""FileLookup"".""MetadataID"" = @Id")
+                    .SetParameterValue("@Id", metadataId)
+                    .ExecuteScalarInt64(0),
+                Is.EqualTo(2),
+                "Both versions should share the damaged metadata row");
+        }
+
+        // Only version 0 gets a new filelist, so repointing the shared row would leave version 1
+        // referencing the old metadata, and a later recreate would reintroduce the damage
+        var scopedOptions = new Dictionary<string, string>(options) { ["version"] = "0" };
+        using (var c = new Controller("file://" + this.TARGETFOLDER, scopedOptions, null))
+        {
+            var res = await c.PurgeBrokenFilesAsync(null);
+            Assert.That(res.Errors.Count(), Is.EqualTo(0));
+            Assert.That(res.Warnings.Count(x => x.Contains("ReplaceableMetadataOutsideSelection")), Is.EqualTo(1), "The skipped replacement should be reported");
+            Assert.That(res.Warnings.Count(x => x.Contains("MetadataReplacedWithEmpty")), Is.EqualTo(0), "Nothing should have been recovered");
+
+            // Without the replacement there is nothing to recover the file with, so it is removed from
+            // the selected version, which is what the warning says happens
+            Assert.That(res.PurgeResults?.RemovedFileCount, Is.EqualTo(1), "The affected file should have been removed from the selected version");
+        }
+
+        using (var con = await SQLiteLoader.LoadConnectionAsync(options["dbpath"]))
+        using (var cmd = con.CreateCommand())
+            Assert.That(GetMetadataBlocksetId(cmd, metadataId), Is.EqualTo(emptyBlocksetId), "The shared metadata row must not have been repointed");
+
+        using (var c = new Controller("file://" + this.TARGETFOLDER, scopedOptions, null))
+        {
+            var newest = (await c.ListAsync("*")).Files.Select(x => x.Path).ToArray();
+            Assert.That(newest.Any(x => x.EndsWith("a.txt")), Is.False, "The affected file should be gone from the purged version");
+        }
+
+        using (var c = new Controller("file://" + this.TARGETFOLDER, new Dictionary<string, string>(options) { ["version"] = "1" }, null))
+        {
+            var older = (await c.ListAsync("*")).Files.Select(x => x.Path).ToArray();
+            Assert.That(older.Count(x => x.EndsWith("a.txt")), Is.EqualTo(1), "The unselected version should be untouched");
         }
     }
 }

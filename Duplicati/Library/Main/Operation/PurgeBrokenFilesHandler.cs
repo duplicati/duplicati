@@ -87,21 +87,31 @@ namespace Duplicati.Library.Main.Operation
                     .ToListAsync(cancellationToken: m_result.TaskControl.ProgressToken)
                     .ConfigureAwait(false);
 
-                var compare_list = sets.Select(async x => new
-                {
-                    FilesetID = x.FilesetID,
-                    Timestamp = x.FilesetTime,
-                    RemoveCount = x.RemoveCount,
-                    Version = filesets.FindIndex(y => y.Key == x.FilesetID),
-                    SetCount = await db
-                        .GetFilesetFileCountAsync(x.FilesetID, m_result.TaskControl.ProgressToken)
-                        .ConfigureAwait(false)
-                })
-                    .Select(x => x.Result)
-                    .ToArray();
-
+                var replaceMetadata = !m_options.DisableReplaceMissingMetadata;
                 var replacementMetadataBlocksetId = -1L;
-                if (!m_options.DisableReplaceMissingMetadata)
+                // The number of files per fileset that the replacement recovers, i.e. that were only broken
+                // because their metadata could not be restored.
+                var recoveredFileCounts = new Dictionary<long, long>();
+
+                if (replaceMetadata)
+                {
+                    // Metadata rows are shared between filesets, but only the selected filesets get a new
+                    // filelist. Replacing the shared rows while some filelist keeps referencing the old
+                    // metadata means a later database recreate reintroduces the damage, so refuse to do it.
+                    // Without a version filter every fileset with replaceable metadata is broken, and is
+                    // therefore part of the selection, so this can only trigger for a scoped purge.
+                    var outsideSelection = (await db.GetFilesetsWithReplaceableMetadataAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false))
+                        .Except(sets.Select(x => x.FilesetID))
+                        .ToArray();
+
+                    if (outsideSelection.Length > 0)
+                    {
+                        Logging.Log.WriteWarningMessage(LOGTAG, "ReplaceableMetadataOutsideSelection", null, "Not replacing metadata that cannot be restored, because {0} fileset(s) outside the selected versions reference the same metadata entries, and only the selected filelists are rewritten. The affected files are removed from the selected version(s) instead. Run {1} without {2} and {3} to recover them by replacing the metadata.", outsideSelection.Length, "purge-broken-files", "--version", "--time");
+                        replaceMetadata = false;
+                    }
+                }
+
+                if (replaceMetadata)
                 {
                     var emptymetadata = Utility.WrapMetadata(new Dictionary<string, string>(), m_options);
                     // The volumes that are missing cannot supply blocks, so a blockset that depends on them
@@ -133,6 +143,42 @@ namespace Duplicati.Library.Main.Operation
                     if (replacementMetadataBlocksetId < 0)
                         throw new UserInformationException($"Failed to locate an empty metadata blockset to replace missing metadata. Set the option --disable-replace-missing-metadata=true to ignore this and drop files with missing metadata.", "FailedToLocateEmptyMetadataBlockset");
                 }
+
+                // Project the per-fileset broken-file counts for the state after the replacement. Without
+                // this, a fileset whose files are only metadata-broken counts as fully broken and gets
+                // deleted, instead of being rewritten with the replacement metadata.
+                var brokenCounts = sets.ToDictionary(x => x.FilesetID, x => x.RemoveCount);
+                if (replaceMetadata)
+                {
+                    var projected = new Dictionary<long, long>();
+                    await foreach (var p in db.GetBrokenFilesetsAsync(m_options.Time, m_options.Version, ignoreReplaceableMetadata: true, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
+                        projected[p.FilesetID] = p.RemoveFileCount;
+
+                    foreach (var set in sets)
+                    {
+                        var remaining = projected.TryGetValue(set.FilesetID, out var r) ? r : 0;
+                        recoveredFileCounts[set.FilesetID] = set.RemoveCount - remaining;
+                        brokenCounts[set.FilesetID] = remaining;
+                    }
+
+                    var recovered = recoveredFileCounts.Values.Sum();
+                    if (recovered > 0)
+                        Logging.Log.WriteWarningMessage(LOGTAG, "MetadataReplacedWithEmpty", null, "Recovering {0} file(s) by replacing metadata that cannot be restored. The affected files keep their contents, but lose their original permissions and timestamps. Use {1} to remove them instead.", recovered, "--disable-replace-missing-metadata");
+                }
+
+                var compare_list = sets.Select(async x => new
+                {
+                    FilesetID = x.FilesetID,
+                    Timestamp = x.FilesetTime,
+                    RemoveCount = brokenCounts[x.FilesetID],
+                    RecoverCount = recoveredFileCounts.TryGetValue(x.FilesetID, out var recovered) ? recovered : 0,
+                    Version = filesets.FindIndex(y => y.Key == x.FilesetID),
+                    SetCount = await db
+                        .GetFilesetFileCountAsync(x.FilesetID, m_result.TaskControl.ProgressToken)
+                        .ConfigureAwait(false)
+                })
+                    .Select(x => x.Result)
+                    .ToArray();
 
                 var fully_emptied = compare_list.Where(x => x.RemoveCount == x.SetCount).ToArray();
                 var to_purge = compare_list.Where(x => x.RemoveCount != x.SetCount).ToArray();
@@ -178,7 +224,7 @@ namespace Duplicati.Library.Main.Operation
 
                     foreach (var bs in to_purge)
                     {
-                        Logging.Log.WriteInformationMessage(LOGTAG, "PurgingFiles", "Purging {0} file(s) from fileset {1}", bs.RemoveCount, bs.Timestamp.ToLocalTime());
+                        Logging.Log.WriteInformationMessage(LOGTAG, "PurgingFiles", "Purging {0} file(s) from fileset {1}, recovering {2} file(s) with replacement metadata", bs.RemoveCount, bs.Timestamp.ToLocalTime(), bs.RecoverCount);
                         var opts = new Options(new Dictionary<string, string?>(m_options.RawOptions));
 
                         await using (var pgdb = await LocalPurgeDatabase.CreateAsync(db, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
@@ -203,10 +249,20 @@ namespace Duplicati.Library.Main.Operation
 
                                 // Update entries that would be removed because of missing metadata
                                 var updatedEntries = 0;
-                                if (!m_options.DisableReplaceMissingMetadata)
-                                    updatedEntries = await db.ReplaceMetadataAsync(filesetid, replacementMetadataBlocksetId, m_result.TaskControl.ProgressToken);
+                                if (replaceMetadata)
+                                {
+                                    await db.ReplaceMetadataAsync(filesetid, replacementMetadataBlocksetId, m_result.TaskControl.ProgressToken);
 
-                                await db.InsertBrokenFileIDsIntoTableAsync(filesetid, tablename, "FileID", m_result.TaskControl.ProgressToken);
+                                    // Report the projected recovery, not the number of rows the update
+                                    // touched: metadata rows are shared between filesets, so the first
+                                    // fileset repairs rows the later ones also use, and they would all
+                                    // report zero. A non-zero count here is what makes PurgeFilesHandler
+                                    // write a new filelist even when nothing is removed, which is what
+                                    // persists the replacement at the destination.
+                                    updatedEntries = (int)bs.RecoverCount;
+                                }
+
+                                await db.InsertBrokenFileIDsIntoTableAsync(filesetid, tablename, "FileID", ignoreReplaceableMetadata: replaceMetadata, m_result.TaskControl.ProgressToken);
                                 return updatedEntries;
                             }).ConfigureAwait(false);
                         }
