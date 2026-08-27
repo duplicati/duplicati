@@ -71,7 +71,7 @@ namespace Duplicati.Library.Backend.WebApi
                 { QueryParam.Project, projectId }
             };
 
-            return Utility.RelaxedUri.UriBuilder(Url.API, Path.Bucket, queryParams);
+            return Utility.RelaxedUri.UriBuilder(Url.API, Path.Bucket, queryParams, false);
         }
 
         public static string RenameUrl(string bucketId, string objectId)
@@ -98,7 +98,7 @@ namespace Duplicati.Library.Backend.WebApi
                 queryParams.Set(QueryParam.PageToken, token);
             }
 
-            return Utility.RelaxedUri.UriBuilder(Url.API, BucketObjectPath(bucketId), queryParams);
+            return Utility.RelaxedUri.UriBuilder(Url.API, BucketObjectPath(bucketId), queryParams, false);
         }
 
         public static string PutUrl(string bucketId)
@@ -108,7 +108,7 @@ namespace Duplicati.Library.Backend.WebApi
                 { QueryParam.UploadType, QueryValue.Resumable }
             };
             var path = UrlPath.Create(Path.Bucket).Append(bucketId).Append(Path.Object).ToString();
-            return Utility.RelaxedUri.UriBuilder(Url.UPLOAD, path, queryParams);
+            return Utility.RelaxedUri.UriBuilder(Url.UPLOAD, path, queryParams, false);
         }
 
         public static string GetUrl(string bucketId, string objectId)
@@ -120,7 +120,7 @@ namespace Duplicati.Library.Backend.WebApi
                 };
             var path = BucketObjectPath(bucketId, objectId);
 
-            return Utility.RelaxedUri.UriBuilder(Url.API, path, queryParams);
+            return Utility.RelaxedUri.UriBuilder(Url.API, path, queryParams, false);
         }
 
         public static string MetadataUrl(string bucketId, string objectId)
@@ -252,16 +252,16 @@ namespace Duplicati.Library.Backend.WebApi
         }
 
         private static string FileQueryUrl(NameValueCollection values)
-            => Utility.RelaxedUri.UriBuilder(Url.DRIVE, Path.File, values);
+            => Utility.RelaxedUri.UriBuilder(Url.DRIVE, Path.File, values, false);
 
         private static string FileQueryUrl(string fileId, NameValueCollection? values = null)
-            => Utility.RelaxedUri.UriBuilder(Url.DRIVE, UrlPath.Create(Path.File).Append(fileId).ToString(), values);
+            => Utility.RelaxedUri.UriBuilder(Url.DRIVE, UrlPath.Create(Path.File).Append(fileId).ToString(), values, false);
 
         private static string FileUploadUrl(string fileId, NameValueCollection? values)
-            => Utility.RelaxedUri.UriBuilder(Url.UPLOAD, UrlPath.Create(Path.File).Append(fileId).ToString(), values);
+            => Utility.RelaxedUri.UriBuilder(Url.UPLOAD, UrlPath.Create(Path.File).Append(fileId).ToString(), values, false);
 
         private static string FileUploadUrl(NameValueCollection values)
-            => Utility.RelaxedUri.UriBuilder(Url.UPLOAD, Path.File, values);
+            => Utility.RelaxedUri.UriBuilder(Url.UPLOAD, Path.File, values, false);
 
         private static NameValueCollection AddTeamDriveParam(string? teamDriveId)
         {

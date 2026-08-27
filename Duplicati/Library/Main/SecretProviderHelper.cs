@@ -268,9 +268,9 @@ public static class SecretProviderHelper
             foreach (var (s, k) in v.Value)
             {
                 var uri = internalUriArguments[s];
-                var kp = uri.QueryParameters;
+                var kp = uri.GetEncodedQueryParameters();
                 kp[k] = Library.Utility.UrlEncoding.UrlEncode(translated[v.Key]);
-                uri = uri.SetQuery(Library.Utility.UrlEncoding.BuildUriQuery(kp));
+                uri = uri.SetQuery(Library.Utility.UrlEncoding.BuildUriQuery(kp, true));
                 internalUriArguments[s] = uri;
             }
 

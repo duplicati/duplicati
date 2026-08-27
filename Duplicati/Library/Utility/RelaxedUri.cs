@@ -123,12 +123,22 @@ namespace Duplicati.Library.Utility
                     if (Query == null)
                         m_queryParams = new NameValueCollection();
                     else
-                        m_queryParams = UrlEncoding.ParseQueryString(Query);
+                        m_queryParams = UrlEncoding.ParseQueryString(Query, true);
                 }
 
                 return m_queryParams;
             }
         }
+
+        // TODO: Maybe we should return EncodedNameValueCollection and 
+        // DecodedNameValueCollection so the callers do not need to
+        // keep track of the flag.
+
+        /// <summary>
+        /// Returns the query parameters with the values in their original URL encoding.
+        /// </summary>
+        public NameValueCollection GetEncodedQueryParameters()
+            => UrlEncoding.ParseQueryString(Query ?? "", false);
 
         /// <summary>
         /// Gets the host and path.
@@ -180,7 +190,21 @@ namespace Duplicati.Library.Utility
             // produces are recognized as the same Windows path and round-trip cleanly.
             if (url.StartsWith("file://", StringComparison.OrdinalIgnoreCase))
             {
-                var candidate = UrlEncoding.UrlDecode(url.Substring("file://".Length));
+                // A query string may follow the path. Split it off before decoding,
+                // following standard query string logic: only a raw '?' delimits the
+                // query, an encoded %3F stays part of the path. A Windows path cannot
+                // contain a '?', so the split is safe.
+                var remainder = url.Substring("file://".Length);
+                string? query = null;
+                var queryIndex = remainder.IndexOf('?');
+                if (queryIndex >= 0)
+                {
+                    query = remainder.Substring(queryIndex + 1);
+                    remainder = remainder.Substring(0, queryIndex);
+                }
+
+                var candidate = UrlEncoding.UrlDecode(remainder);
+
                 // also accept the correctly-encoded file:///C:\ triple-slash form
                 if (candidate.StartsWith("/", StringComparison.Ordinal) && WINDOWS_PATH.IsMatch(candidate))
                     candidate = candidate.Substring(1);
@@ -191,7 +215,7 @@ namespace Duplicati.Library.Utility
                     this.Host = null;
                     this.Path = System.IO.Path.GetFullPath(candidate);
                     this.Port = -1;
-                    this.Query = null;
+                    this.Query = query;
                     this.Username = null;
                     this.Password = null;
                     return;
@@ -397,7 +421,8 @@ namespace Duplicati.Library.Utility
         /// <param name="url">Base URL, containing schema, host, port.</param>
         /// <param name="path">Base path.</param>
         /// <param name="query">A collection of name value pairs to be translated into a query string.</param>
-        public static string UriBuilder(string url, string path, NameValueCollection? query)
+        /// <param name="preEncoded">A value indicating if the query contains pre-encoded values</param>
+        public static string UriBuilder(string url, string path, NameValueCollection? query, bool preEncoded)
         {
             // System.UriBuilder collapses host-less urls with schemes it does not
             // know ("s3://" becomes "s3:/"), so the url is reassembled from the
@@ -411,7 +436,7 @@ namespace Duplicati.Library.Utility
                 newPath = newPath.TrimStart('/');
             return uri
                 .SetPath(newPath)
-                .SetQuery(query != null ? EscapeUriQuery(UrlEncoding.BuildUriQuery(query)) : null)
+                .SetQuery(query != null ? EscapeUriQuery(UrlEncoding.BuildUriQuery(query, preEncoded)) : null)
                 .ToString();
         }
 
@@ -444,7 +469,7 @@ namespace Duplicati.Library.Utility
         /// <param name="path">Base path.</param>
         public static string UriBuilder(string url, string path)
         {
-            return UriBuilder(url, path, null);
+            return UriBuilder(url, path, null, true);
         }
     }
 }

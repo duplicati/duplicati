@@ -1,6 +1,5 @@
-using System.CommandLine.Binding;
+using System.CommandLine;
 using System.Dynamic;
-using Duplicati.Library.Backend;
 using Newtonsoft.Json;
 
 namespace Duplicati.CommandLine.ServerUtil;
@@ -12,7 +11,7 @@ namespace Duplicati.CommandLine.ServerUtil;
 /// This class captures command execution details, messages, and exceptions, providing flexibility to either output them to the console
 /// or serialize them into a JSON format based on the <paramref name="jsonOutput"/> parameter.
 /// </remarks>
-public sealed class OutputInterceptor(bool jsonOutput, BindingContext bindingContext)
+public sealed class OutputInterceptor(bool jsonOutput, ParseResult parseResult)
 {
     private readonly DateTimeOffset _timestamp = DateTimeOffset.Now;
     private readonly List<string> _commandMessages = [];
@@ -24,9 +23,9 @@ public sealed class OutputInterceptor(bool jsonOutput, BindingContext bindingCon
     public int ExitCode { get; set; }
 
     /// <summary>
-    /// Gets the binding context associated with this interceptor.
+    /// Gets the parse result associated with this interceptor.
     /// </summary>
-    public BindingContext BindingContext { get; } = bindingContext ?? throw new ArgumentNullException(nameof(bindingContext));
+    public ParseResult ParseResult { get; } = parseResult ?? throw new ArgumentNullException(nameof(parseResult));
 
     /// <summary>
     /// Sets the command string to be intercepted and tracked.
@@ -67,7 +66,7 @@ public sealed class OutputInterceptor(bool jsonOutput, BindingContext bindingCon
             Console.WriteLine(message);
         }
     }
-    
+
     public void AppendCustomObject(string keyName, object? customObject)
     {
         _extendedProperties.Add(keyName, customObject);
@@ -102,7 +101,7 @@ public sealed class OutputInterceptor(bool jsonOutput, BindingContext bindingCon
     public string? GetSerializedResult()
     {
         if (!JsonOutputMode) return null;
-        
+
         dynamic result = new ExpandoObject();
         result.Timestamp = _timestamp.ToString("O");
         result.UnixTimestamp = _timestamp.ToUnixTimeSeconds();

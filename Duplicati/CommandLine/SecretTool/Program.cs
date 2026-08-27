@@ -20,9 +20,6 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System.CommandLine;
-using System.CommandLine.Builder;
-using System.CommandLine.NamingConventionBinder;
-using System.CommandLine.Parsing;
 using Duplicati.Library.DynamicLoader;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
@@ -37,33 +34,46 @@ public static class Program
     /// <summary>
     /// The main entry point for the application.
     /// </summary>
-    public static Task<int> Main(string[] args)
+    public static async Task<int> Main(string[] args)
     {
         Library.AutoUpdater.PreloadSettingsLoader.ConfigurePreloadSettings(ref args, Library.AutoUpdater.PackageHelper.NamedExecutable.SecretTool);
 
+        var testSecretUrlArg = new Argument<string>("secret-url") { Description = "The connection string to the secret provider" };
+        var testSecretsArg = new Argument<string[]>("secrets") { Description = "The secrets to fetch", Arity = ArgumentArity.OneOrMore };
         var testcmd = new Command("test", "Tests the secret provider")
         {
-            new Argument<string>("secret-url", description: "The connection string to the secret provider"),
-            new Argument<string[]>("secrets", description: "The secrets to fetch") { Arity = ArgumentArity.OneOrMore }
+            testSecretUrlArg,
+            testSecretsArg
         };
-        testcmd.Handler = CommandHandler.Create(RunTest);
+        testcmd.SetAction((parseResult, ct) => RunTest(
+            parseResult.GetValue(testSecretUrlArg)!,
+            parseResult.GetValue(testSecretsArg)!));
 
+        var infoSecretUrlArg = new Argument<string?>("secret-url") { Description = "The connection string to the secret provider, or just the leading part of the URL", Arity = ArgumentArity.ZeroOrOne };
         var infocmd = new Command("info", "Displays information about the secret provider")
         {
-            new Argument<string>("secret-url", description: "The connection string to the secret provider, or just the leading part of the URL") { Arity = ArgumentArity.ZeroOrOne }
+            infoSecretUrlArg
         };
-        infocmd.Handler = CommandHandler.Create(ShowInfo);
+        infocmd.SetAction((parseResult, ct) => ShowInfo(
+            parseResult.GetValue(infoSecretUrlArg)));
 
+        var setSecretUrlArg = new Argument<string>("secret-url") { Description = "The connection string to the secret provider" };
+        var setKeyArg = new Argument<string>("key") { Description = "The secret key to store" };
+        var setValueArg = new Argument<string?>("value") { Description = "The secret value to store", DefaultValueFactory = _ => null, Arity = ArgumentArity.ZeroOrOne };
         var setcmd = new Command("set", "Stores a secret value in the configured provider")
         {
-            new Argument<string>("secret-url", description: "The connection string to the secret provider"),
-            new Argument<string>("key", description: "The secret key to store"),
-            new Argument<string?>("value", description: "The secret value to store", getDefaultValue: () => null) { Arity = ArgumentArity.ZeroOrOne }
+            setSecretUrlArg,
+            setKeyArg,
+            setValueArg
         };
 
-        var overwriteOption = new Option<bool>("--overwrite", "Overwrite the secret if it already exists");
-        setcmd.AddOption(overwriteOption);
-        setcmd.Handler = CommandHandler.Create<string, string, string?, bool>(SetSecret);
+        var overwriteOption = new Option<bool>("--overwrite") { Description = "Overwrite the secret if it already exists" };
+        setcmd.Options.Add(overwriteOption);
+        setcmd.SetAction((parseResult, ct) => SetSecret(
+            parseResult.GetValue(setSecretUrlArg)!,
+            parseResult.GetValue(setKeyArg)!,
+            parseResult.GetValue(setValueArg),
+            parseResult.GetValue(overwriteOption)));
 
         var cmd = new RootCommand("Duplicati Secret Tool")
         {
@@ -72,25 +82,23 @@ public static class Program
             setcmd
         };
 
-        return new CommandLineBuilder(cmd)
-            .UseDefaults()
-            .UseExceptionHandler((ex, context) =>
-            {
-                if (ex is UserInformationException userInformationException)
-                {
-                    Console.WriteLine("ErrorID: {0}", userInformationException.HelpID);
-                    Console.WriteLine("Message: {0}", userInformationException.Message);
-                    context.ExitCode = 2;
-                }
-                else
-                {
-                    Console.WriteLine("Exception: " + ex);
-                    context.ExitCode = 1;
-                }
-            })
-            .UseAdditionalHelpAliases()
-            .Build()
-            .InvokeAsync(args);
+        cmd.UseAdditionalHelpAliases();
+
+        try
+        {
+            return await cmd.Parse(args).InvokeAsync(new InvocationConfiguration { EnableDefaultExceptionHandler = false });
+        }
+        catch (UserInformationException userInformationException)
+        {
+            Console.WriteLine("ErrorID: {0}", userInformationException.HelpID);
+            Console.WriteLine("Message: {0}", userInformationException.Message);
+            return 2;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Exception: " + ex);
+            return 1;
+        }
     }
 
     /// <summary>

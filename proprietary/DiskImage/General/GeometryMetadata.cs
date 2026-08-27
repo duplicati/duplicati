@@ -15,6 +15,11 @@ namespace Duplicati.Proprietary.DiskImage.General;
 public class GeometryMetadata
 {
     /// <summary>
+    /// The file name used for the geometry metadata file at the disk level.
+    /// </summary>
+    public const string FileName = "geometry.json";
+
+    /// <summary>
     /// The version of the metadata format.
     /// </summary>
     public int Version { get; set; } = 1;
@@ -181,32 +186,85 @@ public class PartitionGeometry
 }
 
 /// <summary>
-/// Filesystem-level geometry information.
+/// Geometry information for a filesystem, used for reconstruction after restore.
 /// </summary>
 public class FilesystemGeometry
 {
-    /// <summary>
-    /// The partition number this filesystem resides on.
-    /// </summary>
-    public int PartitionNumber { get; set; }
-
     /// <summary>
     /// The type of filesystem.
     /// </summary>
     public FileSystemType Type { get; set; }
 
     /// <summary>
-    /// The starting offset of the partition in bytes.
+    /// The partition number containing this filesystem.
+    /// </summary>
+    public int PartitionNumber { get; set; }
+
+    /// <summary>
+    /// The starting offset of the partition containing this filesystem.
     /// </summary>
     public long PartitionStartOffset { get; set; }
 
     /// <summary>
-    /// The block size used by the filesystem.
+    /// Block size used for reading/writing.
     /// </summary>
     public int BlockSize { get; set; }
 
     /// <summary>
-    /// Filesystem-specific metadata as a JSON string.
+    /// Filesystem-specific metadata as JSON.
     /// </summary>
     public string? Metadata { get; set; }
+}
+
+/// <summary>
+/// Consolidated info for a single partition, stored as partitioninfo.json inside
+/// the partition folder. Unlike geometry.json (which sits at the disk level),
+/// this file is included when a restore selection contains only the partition,
+/// providing the partition size and filesystem block size without geometry metadata.
+/// </summary>
+public sealed record PartitionInfoMetadata
+{
+    /// <summary>
+    /// The file name used for the partition info file within a partition folder.
+    /// </summary>
+    public const string FileName = "partitioninfo.json";
+
+    /// <summary>
+    /// The current version of the partition info format.
+    /// </summary>
+    public const int CurrentVersion = 1;
+
+    /// <summary>
+    /// The version of the partition info format.
+    /// </summary>
+    public int Version { get; init; } = CurrentVersion;
+
+    /// <summary>
+    /// Geometry information for the partition.
+    /// </summary>
+    public PartitionGeometry? Partition { get; init; }
+
+    /// <summary>
+    /// Geometry information for the filesystem on the partition, including the block size.
+    /// </summary>
+    public FilesystemGeometry? Filesystem { get; init; }
+
+    /// <summary>
+    /// JSON serializer options with string enum conversion.
+    /// </summary>
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        WriteIndented = true,
+        Converters = { new JsonStringEnumConverter() }
+    };
+
+    /// <summary>
+    /// Serializes this metadata to JSON.
+    /// </summary>
+    public string ToJson() => JsonSerializer.Serialize(this, JsonOptions);
+
+    /// <summary>
+    /// Deserializes partition info from JSON.
+    /// </summary>
+    public static PartitionInfoMetadata? FromJson(string json) => JsonSerializer.Deserialize<PartitionInfoMetadata>(json, JsonOptions);
 }

@@ -221,6 +221,9 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
     public string MountedPath => _mountPoint;
 
     /// <inheritdoc />
+    public bool NeedsStoredMetadata => true;
+
+    /// <inheritdoc />
     public void Dispose()
     {
         _apiHelper?.Dispose();
@@ -239,6 +242,18 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
     /// <inheritdoc />
     public Task TestAsync(CancellationToken cancellationToken)
         => _apiHelper.AcquireAccessTokenAsync(false, cancellationToken);
+
+    /// <summary>
+    /// Gets the application permissions granted to the app registration, as listed in
+    /// the roles claim of the acquired access token.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The names of the granted application permissions.</returns>
+    internal async Task<IReadOnlySet<string>> GetGrantedApplicationPermissionsAsync(CancellationToken cancellationToken)
+    {
+        var token = await _apiHelper.AcquireAccessTokenAsync(false, cancellationToken).ConfigureAwait(false);
+        return GraphPermissions.ExtractGrantedRoles(token);
+    }
 
     /// <inheritdoc />
     public async IAsyncEnumerable<ISourceProviderEntry> EnumerateAsync([EnumeratorCancellation] CancellationToken cancellationToken)

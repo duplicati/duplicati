@@ -146,9 +146,9 @@ namespace Duplicati.WebserverCore.Endpoints.V2
                 resultUri = resultUri.SetCredentials(resultUri.Username, csUri.Password);
 
             // Merge Query Parameters
-            // Use decodeValues=false to preserve encoding
-            var csQuery = Duplicati.Library.Utility.UrlEncoding.ParseQueryString(csUri.Query ?? "", false);
-            var backupQuery = Duplicati.Library.Utility.UrlEncoding.ParseQueryString(backupUri.Query ?? "", false);
+            // Preserve encoding to keep value strings unmodified
+            var csQuery = csUri.GetEncodedQueryParameters();
+            var backupQuery = backupUri.GetEncodedQueryParameters();
 
             var mergedQuery = new System.Collections.Specialized.NameValueCollection(backupQuery);
 
@@ -158,7 +158,7 @@ namespace Duplicati.WebserverCore.Endpoints.V2
                     mergedQuery[key] = csQuery[key];
             }
 
-            resultUri = resultUri.SetQuery(Duplicati.Library.Utility.UrlEncoding.BuildUriQuery(mergedQuery));
+            resultUri = resultUri.SetQuery(Duplicati.Library.Utility.UrlEncoding.BuildUriQuery(mergedQuery, true));
 
             return resultUri.ToString();
         }

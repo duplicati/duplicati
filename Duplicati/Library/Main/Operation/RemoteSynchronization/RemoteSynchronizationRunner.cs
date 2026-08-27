@@ -22,7 +22,6 @@
 using System;
 using System.Collections.Generic;
 using System.CommandLine;
-using System.CommandLine.NamingConventionBinder;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -55,42 +54,80 @@ public static class RemoteSynchronizationRunner
     /// <returns>0 on success, -1 on abort, and the number of errors encountered otherwise.</returns>
     public static async Task<int> RunAsync(string[] args)
     {
-        var arg_src = new Argument<string>(name: "backend_src", description: Strings.SourceBackendDescription);
-        var arg_dst = new Argument<string>(name: "backend_dst", description: Strings.DestinationBackendDescription);
+        var arg_src = new Argument<string>("backend_src") { Description = Strings.SourceBackendDescription };
+        var arg_dst = new Argument<string>("backend_dst") { Description = Strings.DestinationBackendDescription };
+
+        var opt_auto_create_folders = new Option<bool>("--auto-create-folders") { Description = Strings.AutoCreateFoldersDescription, DefaultValueFactory = _ => true };
+        var opt_backend_retries = new Option<int>("--backend-retries") { Description = Strings.BackendRetriesDescription, DefaultValueFactory = _ => 3, Arity = ArgumentArity.ExactlyOne };
+        var opt_backend_retry_delay = new Option<int>("--backend-retry-delay") { Description = Strings.BackendRetryDelayDescription, DefaultValueFactory = _ => 1000, Arity = ArgumentArity.ExactlyOne };
+        var opt_backend_retry_with_exponential_backoff = new Option<bool>("--backend-retry-with-exponential-backoff") { Description = Strings.BackendRetryWithExponentialBackoffDescription, DefaultValueFactory = _ => true };
+        var opt_confirm = new Option<bool>("--confirm", "--yes", "-y") { Description = Strings.ConfirmDescription, DefaultValueFactory = _ => false };
+        var opt_dry_run = new Option<bool>("--dry-run", "-d") { Description = Strings.DryRunDescription, DefaultValueFactory = _ => false };
+        var opt_dst_options = OptionWithMultipleTokens("--dst-options", Strings.DstOptionsDescription);
+        var opt_force = new Option<bool>("--force", "-f") { Description = Strings.ForceDescription, DefaultValueFactory = _ => false };
+        var opt_global_options = OptionWithMultipleTokens("--global-options", Strings.GlobalOptionsDescription);
+        var opt_log_file = new Option<string>("--log-file") { Description = Strings.LogFileDescription, DefaultValueFactory = _ => "", Arity = ArgumentArity.ExactlyOne };
+        var opt_log_level = new Option<string>("--log-level") { Description = Strings.LogLevelDescription, DefaultValueFactory = _ => "Information", Arity = ArgumentArity.ExactlyOne };
+        var opt_parse_arguments_only = new Option<bool>("--parse-arguments-only") { Description = Strings.ParseArgumentsOnlyDescription, DefaultValueFactory = _ => false };
+        var opt_progress = new Option<bool>("--progress") { Description = Strings.ProgressDescription, DefaultValueFactory = _ => false };
+        var opt_retention = new Option<bool>("--retention") { Description = Strings.RetentionDescription, DefaultValueFactory = _ => false };
+        var opt_retry = new Option<int>("--retry") { Description = Strings.RetryDescription, DefaultValueFactory = _ => 3, Arity = ArgumentArity.ExactlyOne };
+        var opt_src_options = OptionWithMultipleTokens("--src-options", Strings.SrcOptionsDescription);
+        var opt_verify_contents = new Option<bool>("--verify-contents") { Description = Strings.VerifyContentsDescription, DefaultValueFactory = _ => false };
+        var opt_verify_get_after_put = new Option<bool>("--verify-get-after-put") { Description = Strings.VerifyGetAfterPutDescription, DefaultValueFactory = _ => false };
 
         var root_cmd = new RootCommand(Strings.RootCommandDescription)
             {
                 arg_src,
                 arg_dst,
-
-                new Option<bool>(aliases: ["--auto-create-folders"], description: Strings.AutoCreateFoldersDescription, getDefaultValue: () => true),
-                new Option<int>(aliases: ["--backend-retries"], description: Strings.BackendRetriesDescription, getDefaultValue: () => 3) { Arity = ArgumentArity.ExactlyOne },
-                new Option<int>(aliases: ["--backend-retry-delay"], description: Strings.BackendRetryDelayDescription, getDefaultValue: () => 1000) { Arity = ArgumentArity.ExactlyOne },
-                new Option<bool>(aliases: ["--backend-retry-with-exponential-backoff"], description: Strings.BackendRetryWithExponentialBackoffDescription, getDefaultValue: () => true),
-                new Option<bool>(aliases: ["--confirm", "--yes", "-y"], description: Strings.ConfirmDescription, getDefaultValue: () => false),
-                new Option<bool>(aliases: ["--dry-run", "-d"], description: Strings.DryRunDescription, getDefaultValue: () => false),
-                OptionWithMultipleTokens(aliases: ["--dst-options"], description: Strings.DstOptionsDescription, getDefaultValue: () => []),
-                new Option<bool>(aliases: ["--force", "-f"], description: Strings.ForceDescription, getDefaultValue: () => false),
-                OptionWithMultipleTokens(aliases: ["--global-options"], description: Strings.GlobalOptionsDescription, getDefaultValue: () => []),
-                new Option<string>(aliases: ["--log-file"], description: Strings.LogFileDescription, getDefaultValue: () => "") { Arity = ArgumentArity.ExactlyOne },
-                new Option<string>(aliases: ["--log-level"], description: Strings.LogLevelDescription, getDefaultValue: () => "Information") { Arity = ArgumentArity.ExactlyOne },
-                new Option<bool>(aliases: ["--parse-arguments-only"], description: Strings.ParseArgumentsOnlyDescription, getDefaultValue: () => false),
-                new Option<bool>(aliases: ["--progress"], description: Strings.ProgressDescription, getDefaultValue: () => false),
-                new Option<bool>(aliases: ["--retention"], description: Strings.RetentionDescription, getDefaultValue: () => false),
-                new Option<int>(aliases: ["--retry"], description: Strings.RetryDescription, getDefaultValue: () => 3) { Arity = ArgumentArity.ExactlyOne },
-                OptionWithMultipleTokens(aliases: ["--src-options"], description: Strings.SrcOptionsDescription, getDefaultValue: () => []),
-                new Option<bool>(aliases: ["--verify-contents"], description: Strings.VerifyContentsDescription, getDefaultValue: () => false),
-                new Option<bool>(aliases: ["--verify-get-after-put"], description: Strings.VerifyGetAfterPutDescription, getDefaultValue: () => false),
+                opt_auto_create_folders,
+                opt_backend_retries,
+                opt_backend_retry_delay,
+                opt_backend_retry_with_exponential_backoff,
+                opt_confirm,
+                opt_dry_run,
+                opt_dst_options,
+                opt_force,
+                opt_global_options,
+                opt_log_file,
+                opt_log_level,
+                opt_parse_arguments_only,
+                opt_progress,
+                opt_retention,
+                opt_retry,
+                opt_src_options,
+                opt_verify_contents,
+                opt_verify_get_after_put,
             };
 
-        root_cmd.Handler = CommandHandler.Create((string backend_src, string backend_dst, RemoteSynchronizationConfig config, CancellationToken token) =>
+        root_cmd.SetAction((parseResult, cancellationToken) =>
         {
-            var config_with_args = config with { Dst = backend_dst, Src = backend_src };
+            var config = new RemoteSynchronizationConfig(
+                Src: parseResult.GetValue(arg_src)!,
+                Dst: parseResult.GetValue(arg_dst)!,
+                AutoCreateFolders: parseResult.GetValue(opt_auto_create_folders),
+                BackendRetries: parseResult.GetValue(opt_backend_retries),
+                BackendRetryDelay: parseResult.GetValue(opt_backend_retry_delay),
+                BackendRetryWithExponentialBackoff: parseResult.GetValue(opt_backend_retry_with_exponential_backoff),
+                Confirm: parseResult.GetValue(opt_confirm),
+                DryRun: parseResult.GetValue(opt_dry_run),
+                DstOptions: parseResult.GetValue(opt_dst_options) ?? [],
+                Force: parseResult.GetValue(opt_force),
+                GlobalOptions: parseResult.GetValue(opt_global_options) ?? [],
+                LogFile: parseResult.GetValue(opt_log_file) ?? "",
+                LogLevel: parseResult.GetValue(opt_log_level) ?? "Information",
+                ParseArgumentsOnly: parseResult.GetValue(opt_parse_arguments_only),
+                Progress: parseResult.GetValue(opt_progress),
+                Retention: parseResult.GetValue(opt_retention),
+                Retry: parseResult.GetValue(opt_retry),
+                SrcOptions: parseResult.GetValue(opt_src_options) ?? [],
+                VerifyContents: parseResult.GetValue(opt_verify_contents),
+                VerifyGetAfterPut: parseResult.GetValue(opt_verify_get_after_put));
 
-            return RunAsync(config_with_args, token);
+            return RunAsync(config, cancellationToken);
         });
 
-        return await root_cmd.InvokeAsync(args).ConfigureAwait(false);
+        return await root_cmd.Parse(args).InvokeAsync().ConfigureAwait(false);
     }
 
     /// <summary>
@@ -596,13 +633,15 @@ public static class RemoteSynchronizationRunner
     /// <summary>
     /// Creates an option that allows multiple tokens and multiple arguments per token.
     /// </summary>
-    /// <param name="aliases">The aliases for the option.</param>
+    /// <param name="name">The name for the option.</param>
     /// <param name="description">The description for the option.</param>
     /// <returns>The created option.</returns>
-    private static Option<List<string>> OptionWithMultipleTokens(string[] aliases, string description, Func<List<string>> getDefaultValue)
+    private static Option<List<string>> OptionWithMultipleTokens(string name, string description)
     {
-        return new Option<List<string>>(aliases: aliases, description: description, getDefaultValue: getDefaultValue)
+        return new Option<List<string>>(name)
         {
+            Description = description,
+            DefaultValueFactory = _ => [],
             Arity = ArgumentArity.OneOrMore,
             AllowMultipleArgumentsPerToken = true
         };

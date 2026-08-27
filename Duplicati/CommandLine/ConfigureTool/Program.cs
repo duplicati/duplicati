@@ -20,8 +20,6 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System.CommandLine;
-using System.CommandLine.Builder;
-using System.CommandLine.Parsing;
 using System.Reflection;
 using Duplicati.CommandLine.ConfigureTool.Commands;
 using Duplicati.Library.Interface;
@@ -59,27 +57,30 @@ public static class Program
             secureDataFolderCmd
         };
 
-        return new CommandLineBuilder(rootCmd)
-            .UseDefaults()
-            .UseExceptionHandler((ex, context) =>
+        try
+        {
+            return rootCmd.Parse(args).InvokeAsync(new InvocationConfiguration
             {
-                var rex = ex is TargetInvocationException tie
-                    ? tie.InnerException
-                    : ex;
+                EnableDefaultExceptionHandler = false
+            });
+        }
+        catch (Exception ex)
+        {
+            var rex = ex is TargetInvocationException tie
+                ? tie.InnerException
+                : ex;
 
-                if (rex is UserInformationException userInformationException)
-                {
-                    Console.WriteLine("ErrorID: {0}", userInformationException.HelpID);
-                    Console.WriteLine("Message: {0}", userInformationException.Message);
-                    context.ExitCode = 2;
-                }
-                else
-                {
-                    Console.WriteLine("Exception: " + rex);
-                    context.ExitCode = 1;
-                }
-            })
-            .Build()
-            .InvokeAsync(args);
+            if (rex is UserInformationException userInformationException)
+            {
+                Console.WriteLine("ErrorID: {0}", userInformationException.HelpID);
+                Console.WriteLine("Message: {0}", userInformationException.Message);
+                return Task.FromResult(2);
+            }
+            else
+            {
+                Console.WriteLine("Exception: " + rex);
+                return Task.FromResult(1);
+            }
+        }
     }
 }

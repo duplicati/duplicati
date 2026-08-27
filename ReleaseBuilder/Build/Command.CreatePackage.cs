@@ -205,6 +205,10 @@ public static partial class Command
                     await BuildSynologySpkPackage(baseDir, buildRoot, tempFile, target, rtcfg);
                     break;
 
+                case PackageType.QnapQpkg:
+                    await BuildQnapQpkgPackage(baseDir, buildRoot, tempFile, target, rtcfg);
+                    break;
+
                 default:
                     throw new Exception($"Unsupported package type: {target.Package}");
             }
@@ -431,10 +435,20 @@ public static partial class Command
                 _ => throw new Exception($"Unsupported AppImage architecture: {target.Arch}")
             };
 
-            var appImageName = Path.GetFileName(appImageFile);
+            // The AppImage is created with the final package name (not the
+            // temporary name), so the generated zsync file points to the
+            // correct remote filename
+            var appImageName = $"duplicati-{rtcfg.ReleaseInfo.ReleaseName}-{target.PackageTargetString}";
             var appImageTempPath = Path.Combine(tmpRoot, appImageName);
             if (File.Exists(appImageTempPath))
                 File.Delete(appImageTempPath);
+
+            // The update information points to a fixed "latest" zsync file,
+            // so AppImageUpdate can always find the most recent version
+            var zsyncName = $"latest-{target.ArchString}.zsync";
+            var zsyncUrl = ReplaceVersionPlaceholders(rtcfg.Configuration.ExtraSettings.PackageUrls.First(), rtcfg.ReleaseInfo)
+                .Replace("${FILENAME}", System.Web.HttpUtility.UrlEncode(zsyncName));
+            var updateInfo = $"zsync|{zsyncUrl}";
 
             await ProcessHelper.Execute([
                 "docker", "run",
@@ -444,6 +458,7 @@ public static partial class Command
                 "-e", $"ARCH={appImageArch}",
                 "duplicati/appimage-build:latest",
                 "/usr/local/bin/appimagetool",
+                "-u", updateInfo,
                 "/build/AppDir",
                 $"/build/{appImageName}"
             ]);
@@ -452,6 +467,15 @@ public static partial class Command
                 File.Delete(appImageFile);
 
             File.Move(appImageTempPath, appImageFile);
+
+            // Move the generated zsync file into the packages folder
+            // with the fixed "latest" name
+            var zsyncTempPath = appImageTempPath + ".zsync";
+            if (!File.Exists(zsyncTempPath))
+                throw new Exception($"AppImage update information was embedded, but no zsync file was generated: {zsyncTempPath}");
+
+            File.Move(zsyncTempPath, Path.Combine(Path.GetDirectoryName(appImageFile)!, zsyncName), true);
+
             Directory.Delete(tmpRoot, true);
         }
 
@@ -1402,6 +1426,291 @@ public static partial class Command
                 TarFile.CreateFromDirectory(spkRoot, outStream, includeBaseDirectory: false);
 
             Directory.Delete(tmpRoot, true);
+        }
+
+        /// <summary>
+        /// Builds a QNAP QPKG package using Docker with the QNAP Development Kit (QDK).
+        /// </summary>
+        /// <remarks>
+        /// QPKG packages are self-extracting archives created by the QDK <c>qbuild</c> tool.
+        /// The payload is extracted to the package folder on the NAS, and the service
+        /// script <c>duplicati.sh</c> is registered as the start/stop program.
+        /// </remarks>
+        /// <param name="baseDir">The base directory.</param>
+        /// <param name="buildRoot">The build root directory.</param>
+        /// <param name="qpkgFile">The QPKG file to generate.</param>
+        /// <param name="target">The package target.</param>
+        /// <param name="rtcfg">The runtime configuration.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        static async Task BuildQnapQpkgPackage(string baseDir, string buildRoot, string qpkgFile, PackageTarget target, RuntimeConfig rtcfg)
+        {
+            if (target.OS != OSType.Linux)
+                throw new Exception($"QNAP QPKG is only supported for Linux targets, got: {target.OS}");
+
+            // QNAP package is a server-style package (Duplicati.Server)
+            if (target.Interface != InterfaceType.Cli)
+                throw new Exception($"QNAP QPKG is only supported for CLI/server interface, got: {target.Interface}");
+
+            var qnapResourcesDir = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "QNAP");
+            if (!Directory.Exists(qnapResourcesDir))
+                throw new DirectoryNotFoundException($"QNAP resources folder not found: {qnapResourcesDir}");
+
+            // Map to the QNAP/QDK architecture identifiers
+            var qnapArch = target.Arch switch
+            {
+                ArchType.x64 => "x86_64",
+                ArchType.Arm64 => "arm_64",
+                ArchType.Arm7 => "arm-x41",
+                _ => throw new Exception($"Unsupported QNAP architecture: {target.Arch}")
+            };
+
+            // Map to the Docker platform used to build the Debian rootfs
+            var dockerPlatform = target.Arch switch
+            {
+                ArchType.x64 => "linux/amd64",
+                ArchType.Arm64 => "linux/arm64",
+                ArchType.Arm7 => "linux/arm/v7",
+                _ => throw new Exception($"Unsupported QNAP architecture: {target.Arch}")
+            };
+
+            var tmpRoot = Path.Combine(buildRoot, "tmp-qnap");
+            if (Directory.Exists(tmpRoot))
+                Directory.Delete(tmpRoot, true);
+            Directory.CreateDirectory(tmpRoot);
+
+            // Set up the QDK build root, with the chroot rootfs in the arch-specific folder.
+            // The server runs inside a chroot (see duplicati.sh), with the binaries in /app
+            var pkgRoot = Path.Combine(tmpRoot, "qpkg");
+            var dataDir = Path.Combine(pkgRoot, qnapArch);
+            var rootfsDir = Path.Combine(dataDir, "rootfs");
+            var appDir = Path.Combine(rootfsDir, "app");
+            Directory.CreateDirectory(appDir);
+
+            // Build a minimal Debian rootfs that provides the glibc runtime environment.
+            // QNAP QTS ships a very old glibc that cannot run the .NET binaries directly,
+            // so the package bundles a self-contained Debian userspace to chroot into
+            await CreateDebianRootfs(tmpRoot, qnapArch, dockerPlatform);
+
+            // Copy build output into the payload
+            EnvHelper.CopyDirectory(Path.Combine(buildRoot, target.BuildTargetString), appDir, recursive: true);
+
+            // Make the payload consistent with other Linux packages
+            await PackageSupport.InstallPackageIdentifier(appDir, target);
+            await PackageSupport.RenameExecutables(appDir);
+            await PackageSupport.SetPermissionFlags(appDir, rtcfg);
+
+            // Include license file in the payload so it is available in the installed directory
+            File.Copy(
+                Path.Combine(baseDir, "LICENSE"),
+                Path.Combine(dataDir, "LICENSE"),
+                overwrite: true
+            );
+
+            // Install the service script into the shared folder
+            var sharedFolder = Path.Combine(pkgRoot, "shared");
+            Directory.CreateDirectory(sharedFolder);
+            var serviceScript = Path.Combine(sharedFolder, "duplicati.sh");
+            File.Copy(Path.Combine(qnapResourcesDir, "shared", "duplicati.sh"), serviceScript, overwrite: true);
+
+            // Install the helper that sets up the chroot for command-line use
+            var chrootScript = Path.Combine(sharedFolder, "chroot-exec.sh");
+            File.Copy(Path.Combine(qnapResourcesDir, "shared", "chroot-exec.sh"), chrootScript, overwrite: true);
+
+            // Generate an executable helper for each binary in the payload,
+            // so the tools can be invoked as normal executables from the
+            // commandline; each helper forwards to chroot-exec.sh
+            var helperFolder = Path.Combine(sharedFolder, "bin");
+            Directory.CreateDirectory(helperFolder);
+            var helperScripts = ExecutableRenames.Values
+                .Where(x => File.Exists(Path.Combine(appDir, x)))
+                .Select(x => Path.Combine(helperFolder, x))
+                .ToList();
+
+            foreach (var helper in helperScripts)
+            {
+                var exe = Path.GetFileName(helper);
+                File.WriteAllText(helper,
+                    "#!/bin/sh\n" +
+                    $"# Runs {exe} inside the Duplicati package chroot; see chroot-exec.sh\n" +
+                    $"exec \"$(dirname \"$0\")/../chroot-exec.sh\" {exe} \"$@\"\n");
+            }
+
+            if (!OperatingSystem.IsWindows())
+            {
+                var execFlags = UnixFileMode.UserRead
+                    | UnixFileMode.UserWrite
+                    | UnixFileMode.UserExecute
+                    | UnixFileMode.GroupRead
+                    | UnixFileMode.GroupExecute
+                    | UnixFileMode.OtherRead
+                    | UnixFileMode.OtherExecute;
+
+                File.SetUnixFileMode(serviceScript, execFlags);
+                File.SetUnixFileMode(chrootScript, execFlags);
+                foreach (var helper in helperScripts)
+                    File.SetUnixFileMode(helper, execFlags);
+            }
+
+            // Write the package configuration with the current version
+            File.WriteAllText(
+                Path.Combine(pkgRoot, "qpkg.cfg"),
+                File.ReadAllText(Path.Combine(qnapResourcesDir, "qpkg.cfg.template"))
+                    .Replace("%VERSION%", rtcfg.ReleaseInfo.Version.ToString())
+            );
+
+            // Install the package routines and icons
+            File.Copy(
+                Path.Combine(qnapResourcesDir, "package_routines"),
+                Path.Combine(pkgRoot, "package_routines"),
+                overwrite: true
+            );
+            EnvHelper.CopyDirectory(Path.Combine(qnapResourcesDir, "icons"), Path.Combine(pkgRoot, "icons"), recursive: true);
+
+            // Copy the Docker build file
+            File.Copy(
+                Path.Combine(qnapResourcesDir, "Dockerfile.build"),
+                Path.Combine(tmpRoot, "Dockerfile"),
+                true
+            );
+
+            // Build a Docker image with QDK installed
+            await ProcessHelper.Execute([
+                "docker", "build",
+                "-t", "duplicati/qnap-build:latest",
+                tmpRoot
+            ], workingDirectory: tmpRoot);
+
+            // Docker desktop has some sync issues
+            await Task.Delay(TimeSpan.FromSeconds(5));
+
+            var outputDir = Path.Combine(tmpRoot, "out");
+            Directory.CreateDirectory(outputDir);
+
+            // Build the QPKG package with qbuild
+            await ProcessHelper.Execute([
+                "docker", "run",
+                "--workdir", "/build",
+                "--volume", $"{tmpRoot}:/build:rw",
+                "duplicati/qnap-build:latest",
+                "qbuild", "--root", "/build/qpkg", "--build-arch", qnapArch, "--build-dir", "/build/out"
+            ]);
+
+            // The output is a single .qpkg file named by qbuild
+            var builtFiles = Directory.GetFiles(outputDir, "*.qpkg");
+            if (builtFiles.Length != 1)
+                throw new Exception($"Expected a single QPKG file in {outputDir}, found {builtFiles.Length}");
+
+            if (File.Exists(qpkgFile))
+                File.Delete(qpkgFile);
+
+            File.Move(builtFiles[0], qpkgFile);
+            Directory.Delete(tmpRoot, true);
+        }
+
+        /// <summary>
+        /// Creates a minimal Debian rootfs for the QNAP chroot environment.
+        /// </summary>
+        /// <remarks>
+        /// A <c>debian:bookworm-slim</c> container is created with only the runtime
+        /// dependencies installed and unneeded files stripped out. The filesystem
+        /// is exported and extracted into the package payload. Extraction happens
+        /// inside a container, so device nodes, symlinks and file ownership are
+        /// preserved correctly, even on hosts where tar extraction is restricted.
+        /// </remarks>
+        /// <param name="tmpRoot">The temporary build root directory.</param>
+        /// <param name="qnapArch">The QNAP/QDK architecture identifier.</param>
+        /// <param name="dockerPlatform">The Docker platform to build the rootfs for.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        static async Task CreateDebianRootfs(string tmpRoot, string qnapArch, string dockerPlatform)
+        {
+            // Setup script for the rootfs container: install the runtime dependencies,
+            // then strip everything that is not needed to load and run the .NET app.
+            // Only the dynamic loader, glibc, the listed runtime libraries, timezone
+            // data, CA certificates and a minimal shell/tool set (for Duplicati
+            // run-script support) are kept.
+            const string rootfsSetupScript = """
+                set -e
+                apt-get update
+                apt-get install -y --no-install-recommends ca-certificates zlib1g libstdc++6 libgcc-s1 libssl3 libicu72
+
+                # Remove package management (apt/dpkg) and their data files
+                rm -rf /etc/apt /etc/dpkg /usr/lib/apt /usr/lib/dpkg /var/lib/apt /var/lib/dpkg /var/cache/apt /usr/share/keyrings
+                rm -f /usr/bin/apt* /usr/bin/dpkg* /usr/sbin/dpkg* /usr/bin/gpgv* /usr/bin/dselect
+                rm -f /usr/lib/*/libapt-pkg* /usr/lib/*/libgnutls* /usr/lib/*/libp11-kit* /usr/lib/*/libtasn1* /usr/lib/*/libidn2* /usr/lib/*/libunistring* /usr/lib/*/libgcrypt* /usr/lib/*/libgpg-error* /usr/lib/*/libzstd* /usr/lib/*/libxxhash* /usr/lib/*/liblz4* /usr/lib/*/libbz2* /usr/lib/*/libmd* /usr/lib/*/libdb-5.3*
+
+                # Remove Perl (only used by dpkg/debconf)
+                rm -rf /usr/lib/*/perl-base /usr/share/perl /usr/share/perl5 /usr/share/debconf
+                rm -f /usr/bin/perl*
+
+                # Remove systemd support (the chroot runs the daemon directly)
+                rm -rf /usr/lib/systemd /lib/systemd /etc/systemd /usr/share/polkit-1 /usr/lib/tmpfiles.d /usr/lib/sysusers.d
+                rm -f /usr/lib/*/libsystemd* /usr/lib/*/libudev*
+
+                # Remove bash (dash remains as /bin/sh for Duplicati run-script support) and terminal databases
+                rm -f /bin/bash /usr/lib/*/libncurses* /usr/lib/*/libtinfo* /usr/lib/*/libtic* /usr/lib/*/libreadline* /usr/lib/*/libhistory*
+                rm -rf /usr/share/terminfo /lib/terminfo /usr/lib/terminfo /usr/share/tabset
+
+                # Remove system administration tools and libraries that are unusable inside the chroot
+                # (note: libss.so.* is the e2fsprogs library; libssl.so.3 must be kept!)
+                rm -rf /usr/sbin /usr/share/pam /usr/share/pam-configs /usr/share/util-linux /usr/lib/*/security
+                rm -f /usr/lib/*/libmount* /usr/lib/*/libblkid* /usr/lib/*/libsmartcols* /usr/lib/*/libfdisk* /usr/lib/*/libuuid* /usr/lib/*/libext2fs* /usr/lib/*/libe2p* /usr/lib/*/libcom_err* /usr/lib/*/libss.so.* /usr/lib/*/libpam* /usr/lib/*/libaudit* /usr/lib/*/libcap-ng* /usr/lib/*/libsemanage* /usr/lib/*/libsepol* /usr/lib/*/libcrypt.so.* /usr/lib/*/libnsl* /usr/lib/*/libtirpc*
+
+                # Remove binaries that only work with the libraries removed above
+                # (mount/filesystem tools, login/user management, terminal tools)
+                rm -f /usr/bin/chage /usr/bin/chattr /usr/bin/chfn /usr/bin/chsh /usr/bin/clear /usr/bin/clear_console /usr/bin/dmesg /usr/bin/fincore /usr/bin/findmnt /usr/bin/gpasswd /usr/bin/infocmp /usr/bin/lastlog /usr/bin/logger /usr/bin/login /usr/bin/lsattr /usr/bin/lsblk /usr/bin/lscpu /usr/bin/lsfd /usr/bin/lsipc /usr/bin/lsirq /usr/bin/lslocks /usr/bin/lslogins /usr/bin/lsmem /usr/bin/lsns /usr/bin/more /usr/bin/mount /usr/bin/mountpoint /usr/bin/newgrp /usr/bin/partx /usr/bin/passwd /usr/bin/prlimit /usr/bin/setpriv /usr/bin/setterm /usr/bin/su /usr/bin/tabs /usr/bin/tic /usr/bin/toe /usr/bin/tput /usr/bin/tset /usr/bin/umount /usr/bin/wdctl
+
+                # Remove scripts whose interpreters have been removed (Perl/bash scripts)
+                rm -f /usr/bin/adduser /usr/bin/deluser /usr/bin/debconf* /usr/bin/dpkg-reconfigure /usr/bin/update-alternatives /usr/bin/c_rehash /usr/bin/deb-systemd-helper /usr/bin/deb-systemd-invoke /usr/bin/tzselect /usr/bin/ldd
+
+                # Remove documentation and other arch-independent data
+                rm -rf /usr/share/doc /usr/share/man /usr/share/info /usr/share/locale /usr/lib/locale /usr/share/common-licenses /usr/share/pixmaps /usr/share/menu /usr/share/misc /usr/share/gcc
+
+                # Clean package caches, logs and temp files
+                rm -rf /var/lib/apt/lists/* /var/cache/apt/* /var/log/* /var/tmp/* /tmp/*
+                """;
+
+            // Create a container that installs the runtime dependencies and strips unneeded files
+            var containerId = (await ProcessHelper.ExecuteWithOutput([
+                "docker", "create",
+                "--platform", dockerPlatform,
+                "debian:bookworm-slim",
+                "sh", "-c",
+                rootfsSetupScript
+            ])).Trim();
+
+            var rootfsTar = Path.Combine(tmpRoot, "rootfs.tar");
+            try
+            {
+                // Run the setup script inside the container
+                await ProcessHelper.Execute(["docker", "start", "--attach", containerId]);
+
+                // Export the resulting filesystem
+                await ProcessHelper.Execute(["docker", "export", containerId, "-o", rootfsTar]);
+            }
+            finally
+            {
+                await ProcessHelper.Execute(["docker", "rm", containerId]);
+            }
+
+            try
+            {
+                // Extract the rootfs inside a container, so device nodes, symlinks
+                // and file ownership are handled correctly; BusyBox tar (Alpine) is
+                // used because GNU tar cannot extract the docker export stream
+                var rel = $"qpkg/{qnapArch}/rootfs";
+                await ProcessHelper.Execute([
+                    "docker", "run", "--rm",
+                    "--platform", dockerPlatform,
+                    "--volume", $"{tmpRoot}:/work",
+                    "alpine:3.18",
+                    "sh", "-c",
+                    $"mkdir -p /work/{rel} && tar -xf /work/rootfs.tar -C /work/{rel} && mkdir -p /work/{rel}/proc /work/{rel}/dev /work/{rel}/sys /work/{rel}/share /work/{rel}/data /work/{rel}/app"
+                ]);
+            }
+            finally
+            {
+                File.Delete(rootfsTar);
+            }
         }
 
     }

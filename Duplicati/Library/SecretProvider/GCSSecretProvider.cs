@@ -138,10 +138,14 @@ public class GCSSecretProvider : ISecretProvider
             };
 
         GoogleCredential credential;
+        // Read as a service account and nothing else. Both options are documented as taking the
+        // JSON key of a service account, and the loader that takes any kind of credential would
+        // read whatever arrived -- including an external account configuration, which names the
+        // endpoint it fetches tokens from.
         if (!string.IsNullOrWhiteSpace(cfg.ServiceAccountJson))
-            credential = GoogleCredential.FromJson(cfg.ServiceAccountJson);
+            credential = CredentialFactory.FromJson<ServiceAccountCredential>(cfg.ServiceAccountJson).ToGoogleCredential();
         else if (!string.IsNullOrWhiteSpace(cfg.ServiceAccountFile))
-            credential = GoogleCredential.FromFile(cfg.ServiceAccountFile);
+            credential = CredentialFactory.FromFile<ServiceAccountCredential>(cfg.ServiceAccountFile).ToGoogleCredential();
         else if (!string.IsNullOrWhiteSpace(cfg.AccessToken))
             credential = GoogleCredential.FromAccessToken(cfg.AccessToken);
         else

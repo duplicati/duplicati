@@ -1,62 +1,50 @@
-using System.CommandLine.Binding;
-using System.CommandLine.Parsing;
+using System.CommandLine;
 
 namespace Duplicati.CommandLine.ServerUtil;
 
 /// <summary>
-/// An abstract binder class for managing a singleton instance of <see cref="OutputInterceptor"/>.
+/// Manages a singleton instance of <see cref="OutputInterceptor"/>.
 /// </summary>
 /// <remarks>
-/// This class ensures that only one instance of <see cref="OutputInterceptor"/> is associated with a given <see cref="BindingContext"/>.
+/// This class ensures that only one instance of <see cref="OutputInterceptor"/> is associated with a given <see cref="ParseResult"/>.
 /// </remarks>
-public abstract class OutputInterceptorBinder : BinderBase<OutputInterceptor>
+public static class OutputInterceptorBinder
 {
     private static OutputInterceptor? _instance;
 
     /// <summary>
     /// Gets the current instance of <see cref="OutputInterceptor"/>.
     /// </summary>
-    /// <exception cref="InvalidOperationException">Thrown when the instance has not been initialized.</exception>
     public static OutputInterceptor? Instance => _instance;
 
     /// <summary>
-    /// Retrieves or creates a <see cref="OutputInterceptor"/> instance for the specified binding context.
+    /// Retrieves or creates a <see cref="OutputInterceptor"/> instance for the specified parse result.
     /// </summary>
-    /// <param name="bindingContext">The binding context to associate with the interceptor. Must not be null.</param>
+    /// <param name="parseResult">The parse result to associate with the interceptor. Must not be null.</param>
     /// <returns>The existing or newly created <see cref="OutputInterceptor"/> instance.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="bindingContext"/> is null.</exception>
-    public static OutputInterceptor GetConsoleInterceptor(BindingContext bindingContext)
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="parseResult"/> is null.</exception>
+    public static OutputInterceptor GetConsoleInterceptor(ParseResult parseResult)
     {
-        ArgumentNullException.ThrowIfNull(bindingContext, nameof(bindingContext));
+        ArgumentNullException.ThrowIfNull(parseResult, nameof(parseResult));
 
-        if (_instance is not null && ReferenceEquals(_instance.BindingContext, bindingContext))
+        if (_instance is not null && ReferenceEquals(_instance.ParseResult, parseResult))
         {
             return _instance;
         }
 
-        _instance = CreateInterceptor(bindingContext);
+        _instance = CreateInterceptor(parseResult);
         return _instance;
     }
 
     /// <summary>
-    /// Gets the bound <see cref="OutputInterceptor"/> value for the specified binding context.
+    /// Creates a new <see cref="OutputInterceptor"/> instance with the specified parse result.
     /// </summary>
-    /// <param name="bindingContext">The binding context to retrieve the interceptor for.</param>
-    /// <returns>The associated <see cref="OutputInterceptor"/> instance.</returns>
-    protected override OutputInterceptor GetBoundValue(BindingContext bindingContext)
-    {
-        return GetConsoleInterceptor(bindingContext);
-    }
-
-    /// <summary>
-    /// Creates a new <see cref="OutputInterceptor"/> instance with the specified binding context.
-    /// </summary>
-    /// <param name="bindingContext">The binding context to initialize the interceptor with.</param>
+    /// <param name="parseResult">The parse result to initialize the interceptor with.</param>
     /// <returns>A new <see cref="OutputInterceptor"/> instance.</returns>
-    private static OutputInterceptor CreateInterceptor(BindingContext bindingContext)
+    private static OutputInterceptor CreateInterceptor(ParseResult parseResult)
     {
-        var interceptor = new OutputInterceptor(bindingContext.ParseResult.Tokens.Any(x => x is { Type: TokenType.Option, Value: "--json" }), bindingContext);
-        interceptor.SetCommand(bindingContext.ParseResult.CommandResult.Command.Name);
+        var interceptor = new OutputInterceptor(parseResult.GetValue(SettingsBinder.jsonOutputOption), parseResult);
+        interceptor.SetCommand(parseResult.CommandResult.Command.Name);
         return interceptor;
     }
 }

@@ -16,7 +16,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-14 16:08+0200\n"
+"POT-Creation-Date: 2026-08-25 09:53+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: Martin Rovňák <rovnakm@gmail.com>, 2026\n"
 "Language-Team: Slovak (https://app.transifex.com/duplicati/teams/67655/sk/)\n"
@@ -53,8 +53,8 @@ msgstr ""
 msgid "Set thread level utilized for crypting"
 msgstr "Nastavte úroveň vlákna používanú na šifrovanie"
 
-#: Library/Encryption/Strings.cs:33 Library/Main/Strings.cs:208
-#: Library/Main/Strings.cs:268
+#: Library/Encryption/Strings.cs:33 Library/Main/Strings.cs:210
+#: Library/Main/Strings.cs:270
 #, csharp-format
 msgid "The option --{0} is no longer used and has been deprecated."
 msgstr "Možnosť --{0} sa už nepoužíva a bola zrušená."
@@ -574,11 +574,11 @@ msgstr "Vážna chyba v Duplicati: {0}"
 msgid "Unsupported version of SQLite detected ({0}), must be {1} or higher"
 msgstr "Zistená nepodporovaná verzia SQLite ({0}), musí byť {1} alebo vyššia"
 
-#: Library/RestAPI/Strings.cs:67 Library/Main/Strings.cs:289
+#: Library/RestAPI/Strings.cs:67 Library/Main/Strings.cs:291
 msgid "Clean up old log data"
 msgstr "Vyčistiť staré záznamy"
 
-#: Library/RestAPI/Strings.cs:75 Library/Main/Strings.cs:103
+#: Library/RestAPI/Strings.cs:75 Library/Main/Strings.cs:105
 msgid "Temporary storage folder"
 msgstr "Dočasný adresár"
 
@@ -612,39 +612,39 @@ msgstr "Nešifrovať"
 msgid "Passphrase used to encrypt backups"
 msgstr "Heslo použité pre šifrované zálohy"
 
-#: Library/Main/Strings.cs:83
+#: Library/Main/Strings.cs:85
 msgid "Show all versions"
 msgstr "Zobraziť všetky verzie"
 
-#: Library/Main/Strings.cs:91
+#: Library/Main/Strings.cs:93
 msgid "Show folder contents"
 msgstr "Zobraziť obsah adresára"
 
-#: Library/Main/Strings.cs:93
+#: Library/Main/Strings.cs:95
 msgid "Time to wait between retries"
 msgstr "Čas medzi opakovaniami"
 
-#: Library/Main/Strings.cs:138
+#: Library/Main/Strings.cs:140
 msgid "Log information level"
 msgstr "Log informačná úroveň"
 
-#: Library/Main/Strings.cs:181
+#: Library/Main/Strings.cs:183
 msgid "Exclude files by attribute"
 msgstr "Vylúčenie súborov podľa atribútov"
 
-#: Library/Main/Strings.cs:187
+#: Library/Main/Strings.cs:189
 msgid "Name of the backup"
 msgstr "Názov zálohy"
 
-#: Library/Main/Strings.cs:205
+#: Library/Main/Strings.cs:207
 msgid "List of deleted files"
 msgstr "Zoznam zmazaných súborov"
 
-#: Library/Main/Strings.cs:228
+#: Library/Main/Strings.cs:230
 msgid "Maximum number of small volumes"
 msgstr "Maximálny počet malých častí"
 
-#: Library/Main/Strings.cs:250
+#: Library/Main/Strings.cs:252
 msgid "Overwrite files when restoring"
 msgstr "Prepísanie súborov pri obnove"
 

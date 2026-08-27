@@ -106,9 +106,15 @@ public class ParsingTests : DiskImageTests
             await foreach (var entry in partitionEntry.Enumerate(CancellationToken.None))
                 fsEntries.Add(entry);
 
-        // Check for filesystem entries
-        Assert.That(fsEntries.All(x => x.Path.Contains("fs_")));
-        Assert.That(fsEntries.Count, Is.GreaterThan(0), "Should have at least one filesystem entry");
+        // Check for the partition info entry, which sits in the partition folder
+        // next to the filesystem entries
+        var partitionInfoEntries = fsEntries.Where(x => x.Path.EndsWith(PartitionInfoMetadata.FileName)).ToList();
+        Assert.That(partitionInfoEntries.Count, Is.EqualTo(partitionEntries.Count), "Each partition should have a partition info entry");
+
+        // Check for filesystem entries (all non-partition-info entries)
+        var filesystemEntries = fsEntries.Where(x => !x.Path.EndsWith(PartitionInfoMetadata.FileName)).ToList();
+        Assert.That(filesystemEntries.All(x => x.Path.Contains("fs_")), Is.True, "All filesystem entries should have an fs_ path segment");
+        Assert.That(filesystemEntries.Count, Is.GreaterThan(0), "Should have at least one filesystem entry");
     }
 
     [Test]

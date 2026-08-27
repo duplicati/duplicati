@@ -1,11 +1,10 @@
 // Copyright (c) 2026 Duplicati Inc. All rights reserved.
 
-using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Proprietary.DiskImage.Disk;
 using Duplicati.Proprietary.DiskImage.General;
@@ -17,9 +16,29 @@ namespace Duplicati.Proprietary.DiskImage.SourceItems;
 /// Represents a disk as a source entry for backup operations.
 /// This is the root entry in the disk image hierarchy.
 /// </summary>
-internal class DiskSourceEntry(SourceProvider provider, IRawDisk disk)
-    : DiskImageEntryBase(provider.MountedPath)
+internal class DiskSourceEntry(SourceProvider provider, IRawDisk disk, string subpath)
+    : DiskImageEntryBase(CalculatePath(provider.MountedPath, disk.DevicePath))
 {
+    /// <summary>
+    /// Helper to construct the slightly odd path needed.
+    /// </summary>
+    /// <param name="mountPoint">The mount point used</param>
+    /// <param name="devicePath">The disk device path</param>
+    /// <returns>The mounted full path</returns>
+    private static string CalculatePath(string mountPoint, string devicePath)
+    {
+        // Example: X:\Test\ + \\.\PHYSICAL_DRIVE0 => X:\Test\\.\PHYSICAL_DRIVE0
+        devicePath = Util.AppendDirSeparator(devicePath);
+        if (string.IsNullOrWhiteSpace(mountPoint))
+            return devicePath;
+
+        if (SourceProvider.GetDevicePrefix().StartsWith(System.IO.Path.DirectorySeparatorChar) && mountPoint.EndsWith(System.IO.Path.DirectorySeparatorChar))
+            mountPoint = mountPoint.Substring(0, mountPoint.Length - 1);
+
+        return mountPoint + devicePath;
+
+    }
+
     /// <inheritdoc />
     public override bool IsFolder => true;
 
@@ -122,15 +141,46 @@ internal class DiskSourceEntry(SourceProvider provider, IRawDisk disk)
             // Now yield the consolidated geometry metadata file with all geometry collected
             yield return new GeometrySourceEntry(this.Path, geometryMetadata);
 
+            // If the source pointed to a specific partition, only emit that one now.
+            // The subpath has no leading or trailing separator (e.g. "part_GPT_1"),
+            // while the partition entry paths end with a separator, so the paths
+            // are normalized before comparing.
+            var subpathmarker = string.IsNullOrWhiteSpace(subpath)
+                ? string.Empty
+                : System.IO.Path.DirectorySeparatorChar + subpath.Trim(System.IO.Path.DirectorySeparatorChar);
+
             // Then yield the actual partition and filesystem entries
             foreach (var partition in partitions)
-                yield return new PartitionSourceEntry(this.Path, partition, provider.TreatFilesystemAsUnknown);
+            {
+                var pse = new PartitionSourceEntry(this.Path, partition, provider.TreatFilesystemAsUnknown);
+                if (string.IsNullOrEmpty(subpathmarker) || IsPartitionPathMatch(pse.Path, subpathmarker))
+                    yield return pse;
+            }
         }
         else
         {
             // No partition table found, still yield the disk geometry
             yield return new GeometrySourceEntry(this.Path, geometryMetadata);
         }
+    }
+
+    /// <summary>
+    /// Checks whether a partition entry path matches the requested subpath marker.
+    /// </summary>
+    /// <param name="partitionPath">The partition entry path, which ends with a directory separator.</param>
+    /// <param name="subpathmarker">The subpath marker, prefixed with a directory separator and without a trailing one (e.g. "\part_GPT_1").</param>
+    /// <returns>True if the subpath targets this partition or an entry inside it; false otherwise.</returns>
+    private static bool IsPartitionPathMatch(string partitionPath, string subpathmarker)
+    {
+        var trimmedPath = partitionPath.TrimEnd(System.IO.Path.DirectorySeparatorChar);
+
+        // The subpath targets this partition
+        if (trimmedPath.EndsWith(subpathmarker, Library.Utility.Utility.ClientFilenameStringComparison))
+            return true;
+
+        // The subpath targets an entry inside this partition (e.g. a folder in its filesystem)
+        var partitionFolder = trimmedPath.Substring(trimmedPath.LastIndexOf(System.IO.Path.DirectorySeparatorChar));
+        return subpathmarker.StartsWith(partitionFolder + System.IO.Path.DirectorySeparatorChar, Library.Utility.Utility.ClientFilenameStringComparison);
     }
 
     /// <inheritdoc />

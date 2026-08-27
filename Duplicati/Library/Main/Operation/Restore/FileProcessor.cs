@@ -66,6 +66,23 @@ namespace Duplicati.Library.Main.Operation.Restore
         public static int priority_files_remaining;
         public static object priority_files_lock = new object();
         public static TaskCompletionSource priority_files_completed = new();
+
+        /// <summary>
+        /// Faults the priority-file barrier if the given file is a priority file.
+        /// The barrier is only signaled on the success path, so a priority file that
+        /// fails terminally would otherwise leave the other processors waiting for it
+        /// forever, stalling the restore instead of failing with the real error.
+        /// </summary>
+        /// <param name="file">The file that failed.</param>
+        /// <param name="ex">The error that caused the failure.</param>
+        private static void FaultPriorityBarrierIfPriorityFile(FileRequest file, Exception ex)
+        {
+            if (!file.IsPriorityFile)
+                return;
+
+            lock (priority_files_lock)
+                priority_files_completed.TrySetException(ex);
+        }
         /// <summary>
         /// The current file processor ID. Used for debugging.
         /// </summary>
@@ -112,6 +129,10 @@ namespace Duplicati.Library.Main.Operation.Restore
                 // ID for this file processor, used for debugging.
                 var my_id = Interlocked.Increment(ref processor_id);
 
+                // The file currently being restored, tracked so a terminal failure
+                // of a priority file can fault the priority barrier
+                FileRequest? current_file = null;
+
                 try
                 {
                     using var filehasher = HashFactory.CreateHasher(options.FileHashAlgorithm);
@@ -124,6 +145,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         sw_file?.Start();
                         var file = await self.Input.ReadAsync().ConfigureAwait(false);
                         sw_file?.Stop();
+                        current_file = file;
 
                         // A stop means "finish the current file and stop", so the check sits at
                         // the top of the loop: whatever was being restored when the stop arrived
@@ -200,13 +222,16 @@ namespace Duplicati.Library.Main.Operation.Restore
                         catch (Exception ex) when (!RestoreCancellation.IsShutdownRequested(results.TaskControl))
                         {
                             Logging.Log.WriteErrorMessage(LOGTAG, "VerifyTargetBlocks", ex, "Error during checking the target file");
+                            FaultPriorityBarrierIfPriorityFile(file, ex);
                             continue;
                         }
                         long bytes_written = 0;
                         sw_work_verify_target?.Stop();
                         if (blocks.Length != missing_blocks.Count + verified_blocks.Count)
                         {
-                            Logging.Log.WriteErrorMessage(LOGTAG, "BlockCountMismatch", null, $"Block count mismatch for {file.TargetPath} - expected: {blocks.Length}, actual: {missing_blocks.Count + verified_blocks.Count}");
+                            var error = $"Block count mismatch for {file.TargetPath} - expected: {blocks.Length}, actual: {missing_blocks.Count + verified_blocks.Count}";
+                            Logging.Log.WriteErrorMessage(LOGTAG, "BlockCountMismatch", null, error);
+                            FaultPriorityBarrierIfPriorityFile(file, new InvalidOperationException(error));
                             continue;
                         }
 
@@ -583,6 +608,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         }
                         sw_work_results?.Stop();
 
+                        await SignalIfPriorityFilesAreDone(file, modules, results.TaskControl);
                         await RestoreHandler.InvokeFileRestoredAsync(modules, file.Version, file.TargetPath, file.BackupTimestamp, results.TaskControl.ProgressToken).ConfigureAwait(false);
 
                         Logging.Log.WriteVerboseMessage(LOGTAG, "RestoredFile", $"{my_id} Restored file {{0}}", file.TargetPath);
@@ -607,6 +633,13 @@ namespace Duplicati.Library.Main.Operation.Restore
                 }
                 catch (Exception ex)
                 {
+                    // A priority file that fails terminally must fault the priority
+                    // barrier: it is only signaled on the success path, so without this
+                    // the other processors would wait for it forever and the restore
+                    // would stall instead of failing with the real error.
+                    if (current_file != null)
+                        FaultPriorityBarrierIfPriorityFile(current_file, ex);
+
                     Logging.Log.WriteErrorMessage(LOGTAG, "FileProcessingError", ex, "Error during file processing");
                     throw;
                 }
@@ -749,63 +782,79 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="modules">The loaded generic modules, used to dispatch the bulk-restore-start callback. May be null.</param>
         /// <param name="taskReader">The task reader, used to abandon the wait if a shutdown is requested.</param>
         /// <returns><c>true</c> if the caller should carry on with the file; <c>false</c> if the wait was abandoned because the restore is stopping.</returns>
+        private static async Task SignalIfPriorityFilesAreDone(FileRequest file, IEnumerable<IGenericModule>? modules, Common.ITaskReader taskReader)
+        {
+            if (!file.IsPriorityFile)
+                return;
+
+            // This is a priority file - decrement the counter
+            var shouldSignal = false;
+            lock (priority_files_lock)
+            {
+                priority_files_remaining--;
+                if (priority_files_remaining <= 0 && !priority_files_completed.Task.IsCompleted)
+                    shouldSignal = true;
+            }
+
+            if (shouldSignal)
+            {
+                // All priority files have been restored and the bulk restore is starting.
+                // The first processor to detect completion notifies the restore callback
+                // modules before signaling the other processors to continue.
+                try
+                {
+                    await RestoreHandler.InvokeBulkRestoreStartAsync(modules, taskReader.ProgressToken).ConfigureAwait(false);
+                }
+                finally
+                {
+                    // TrySetResult: the barrier may already have been faulted by a
+                    // terminally failed priority file, in which case SetResult would
+                    // throw and mask the real error
+                    priority_files_completed.TrySetResult();
+                }
+            }
+        }        
+
+        /// <summary>
+        /// Waits for all priority files to be processed before allowing non-priority files to be processed.
+        /// If the current file is a priority file, it decrements the counter and signals completion when all priority files are done.
+        /// If the current file is not a priority file, it waits until all priority files have been processed.
+        /// When the last priority file is processed, <see cref="RestoreHandler.InvokeBulkRestoreStartAsync"/> is
+        /// invoked to notify restore callback modules that the bulk restore is starting.
+        /// </summary>
+        /// <param name="file">The file request being processed.</param>
+        /// <param name="modules">The loaded generic modules, used to dispatch the bulk-restore-start callback. May be null.</param>
+        /// <param name="taskReader">The task reader, used to abandon the wait if a shutdown is requested.</param>
+        /// <returns><c>true</c> if the caller should carry on with the file; <c>false</c> if the wait was abandoned because the restore is stopping.</returns>
         private static async Task<bool> WaitForPriorityFilesIfNeededAsync(FileRequest file, IEnumerable<IGenericModule>? modules, Common.ITaskReader taskReader)
         {
             if (file.IsPriorityFile)
-            {
-                // This is a priority file - decrement the counter
-                var shouldSignal = false;
-                lock (priority_files_lock)
-                {
-                    priority_files_remaining--;
-                    if (priority_files_remaining <= 0 && !priority_files_completed.Task.IsCompleted)
-                        shouldSignal = true;
-                }
+                return true;
 
-                if (shouldSignal)
+            // This is not a priority file - wait for all priority files to complete
+            // Only wait if there are still priority files remaining
+            bool shouldWait;
+            lock (priority_files_lock)
+                shouldWait = priority_files_remaining > 0;
+
+            if (shouldWait)
+            {
+                // The completion source is only ever signalled by a processor that handles a
+                // priority file, so if the restore stops or is aborted before every priority
+                // file has been emitted, nothing will release this wait. Without a token the
+                // processor would sit here forever, and the restore's Task.WhenAll over the
+                // process network would never return.
+                using var cts = CancellationTokenSource.CreateLinkedTokenSource(taskReader.ProgressToken, taskReader.StopToken);
+                try
                 {
-                    // All priority files have been restored and the bulk restore is starting.
-                    // The first processor to detect completion notifies the restore callback
-                    // modules before signaling the other processors to continue.
-                    try
-                    {
-                        await RestoreHandler.InvokeBulkRestoreStartAsync(modules, taskReader.ProgressToken).ConfigureAwait(false);
-                    }
-                    finally
-                    {
-                        priority_files_completed.SetResult();
-                    }
+                    await priority_files_completed.Task.WaitAsync(cts.Token).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    return false;
                 }
             }
-            else
-            {
-                // This is not a priority file - wait for all priority files to complete
-                // Only wait if there are still priority files remaining
-                bool shouldWait;
-                lock (priority_files_lock)
-                {
-                    shouldWait = priority_files_remaining > 0;
-                }
-
-                if (shouldWait)
-                {
-                    // The completion source is only ever signalled by a processor that handles a
-                    // priority file, so if the restore stops or is aborted before every priority
-                    // file has been emitted, nothing will release this wait. Without a token the
-                    // processor would sit here forever, and the restore's Task.WhenAll over the
-                    // process network would never return.
-                    using var cts = CancellationTokenSource.CreateLinkedTokenSource(taskReader.ProgressToken, taskReader.StopToken);
-                    try
-                    {
-                        await priority_files_completed.Task.WaitAsync(cts.Token).ConfigureAwait(false);
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        return false;
-                    }
-                }
-            }
-
+        
             return true;
         }
 

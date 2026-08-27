@@ -138,11 +138,13 @@ namespace Duplicati.Library.Main
 
             CheckAutoCompactInterval();
             CheckAutoVacuumInterval();
+            SourceProviderFactory.EnableMetadataStorageIfRequiredBySources(inputsources, m_options.RawOptions);
 
             return await RunActionAsync(new BackupResults(), inputsources, inputFilter, false, static async config =>
             {
+                var (expandedSources, filter) = ExpandInputSources(config.Paths, config.Filter, config.Options);
                 using (var h = new Operation.BackupHandler(config.Options, config.Result))
-                    await h.RunAsync(ExpandInputSources(config.Paths, config.Filter, config.Options), config.BackendManager, config.Filter)
+                    await h.RunAsync(expandedSources, config.BackendManager, filter)
                         .ConfigureAwait(false);
 
                 UsageReporter.Reporter.Report("BACKUP_FILECOUNT", config.Result.ExaminedFiles);
@@ -224,6 +226,12 @@ namespace Duplicati.Library.Main
         public async Task<IListFilesetResults> ListFilesetsAsync()
             => await RunActionAsync(new ListFilesetResults(), null, null, false, static config =>
                 Operation.ListFilesetsHandler.RunAsync(config.Options, config.Result, config.BackendManager)
+            ).ConfigureAwait(false);
+
+        /// <inheritdoc />
+        public async Task<ISetVersionLabelResults> SetVersionLabelAsync()
+            => await RunActionAsync(new SetVersionLabelResults(), null, null, false, static config =>
+                Operation.SetVersionLabelHandler.RunAsync(config.Options, config.Result)
             ).ConfigureAwait(false);
 
         /// <inheritdoc />
@@ -429,8 +437,11 @@ namespace Duplicati.Library.Main
             using (Logging.Log.StartScope(m_messageSink.WriteMessage, x => x.FilterTag.Contains(filtertag)))
             {
                 return await RunActionAsync(new TestFilterResults(), paths, inputFilter, false, static config =>
-                    new Operation.TestFilterHandler(config.Options, config.Result)
-                        .RunAsync(ExpandInputSources(config.Paths, config.Filter, config.Options), config.Filter)
+                {
+                    var (expandedSources, filter) = ExpandInputSources(config.Paths, config.Filter, config.Options);
+                    return new Operation.TestFilterHandler(config.Options, config.Result)
+                        .RunAsync(expandedSources, filter);
+                }
                 ).ConfigureAwait(false);
             }
         }
@@ -1179,7 +1190,7 @@ namespace Duplicati.Library.Main
         /// <param name="filter">The filter.</param>
         /// <param name="options">The options.</param>
         /// <returns>The expanded and filtered sources.</returns>
-        private static string[] ExpandInputSources(string[] inputsources, IFilter filter, Options options)
+        private static (string[] Sources, IFilter Filter) ExpandInputSources(string[] inputsources, IFilter filter, Options options)
         {
             if (inputsources == null || inputsources.Length == 0)
                 throw new UserInformationException(Strings.Controller.NoSourceFoldersError, "NoSourceFolders");
@@ -1352,7 +1363,9 @@ namespace Duplicati.Library.Main
             //Sanity check for multiple inclusions of the same folder
             for (int i = 0; i < sources.Count; i++)
                 for (int j = 0; j < sources.Count; j++)
-                    if (i != j && sources[i].StartsWith(sources[j], Library.Utility.Utility.ClientFilenameStringComparison) && sources[i].EndsWith(Util.DirectorySeparatorString, Library.Utility.Utility.ClientFilenameStringComparison))
+                    if (i != j
+                        && sources[i].StartsWith(sources[j], Library.Utility.Utility.ClientFilenameStringComparison)
+                        && sources[j].EndsWith(Util.DirectorySeparatorString, Library.Utility.Utility.ClientFilenameStringComparison))
                     {
                         if (filter != null)
                         {
@@ -1363,14 +1376,14 @@ namespace Duplicati.Library.Main
                             // If there are no excludes, there is no need to keep the folder as a filter
                             if (excludes)
                             {
-                                Logging.Log.WriteVerboseMessage(LOGTAG, "RemovingSubfolderSource", "Removing source \"{0}\" because it is a subfolder of \"{1}\", and using it as an include filter", sources[i], sources[j]);
+                                Logging.Log.WriteVerboseMessage(LOGTAG, "RemovingSubfolderSource", "Removing source \"{0}\" because it is a folder or file inside \"{1}\", and using it as an include filter", sources[i], sources[j]);
                                 filter = JoinedFilterExpression.Join(new FilterExpression(sources[i]), filter);
                             }
                             else
-                                Logging.Log.WriteVerboseMessage(LOGTAG, "RemovingSubfolderSource", "Removing source \"{0}\" because it is a subfolder or subfile of \"{1}\"", sources[i], sources[j]);
+                                Logging.Log.WriteVerboseMessage(LOGTAG, "RemovingSubfolderSource", "Removing source \"{0}\" because it is a folder or file inside \"{1}\"", sources[i], sources[j]);
                         }
                         else
-                            Logging.Log.WriteVerboseMessage(LOGTAG, "RemovingSubfolderSource", "Removing source \"{0}\" because it is a subfolder or subfile of \"{1}\"", sources[i], sources[j]);
+                            Logging.Log.WriteVerboseMessage(LOGTAG, "RemovingSubfolderSource", "Removing source \"{0}\" because it is a folder or file inside \"{1}\"", sources[i], sources[j]);
 
                         sources.RemoveAt(i);
                         i--;
@@ -1381,7 +1394,7 @@ namespace Duplicati.Library.Main
             if (sources.Count == 0)
                 throw new UserInformationException(Strings.Controller.NoSourcesError, "NoSources");
 
-            return sources.ToArray();
+            return (sources.ToArray(), filter);
         }
 
         /// <inheritdoc />

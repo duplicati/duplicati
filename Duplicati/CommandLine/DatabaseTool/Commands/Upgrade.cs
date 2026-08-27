@@ -19,7 +19,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 using System.CommandLine;
-using System.CommandLine.NamingConventionBinder;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
@@ -37,88 +36,135 @@ public static class Upgrade
     /// Creates the downgrade command
     /// </summary>
     /// <returns>The downgrade command</returns>
-    public static Command Create() =>
-        new Command("upgrade", "Upgrades one or more databases to a larger version")
+    public static Command Create()
+    {
+        var databasesArgument = new Argument<string[]>("databases")
         {
-            new Argument<string[]>("databases", "The databases to upgrade") {
-                Arity = ArgumentArity.ZeroOrMore
-            },
-            new Option<DirectoryInfo>("--server-datafolder", description: "The folder with databases", getDefaultValue: () => new DirectoryInfo(DataFolderLocator.GetDefaultStorageFolder(DataFolderManager.SERVER_DATABASE_FILENAME, false, true))),
-            new Option<int>("--server-version", description: "The version to upgrade the server database to; zero or less means latest", getDefaultValue: () => 0),
-            new Option<int>("--local-version", description: "The version to upgrade local databases to; zero or less means latest", getDefaultValue: () => 0),
-            new Option<int>("--sync-version", description: "The version to upgrade sync databases to; zero or less means latest", getDefaultValue: () => 0),
-            new Option<bool>("--no-backups", description: "Do not create backups before upgrade", getDefaultValue: () => false),
-            new Option<bool>("--include-untracked-databases", description: "Include untracked databases in the upgrade process", getDefaultValue: () => false)
-        }
-        .WithHandler(CommandHandler.Create<string[], DirectoryInfo, int, int, int, bool, bool>((databases, serverdatafolder, serverversion, localversion, syncversion, nobackups, includeuntrackeddatabases) =>
+            Arity = ArgumentArity.ZeroOrMore,
+            Description = "The databases to upgrade"
+        };
+        var serverDatafolderOption = new Option<DirectoryInfo>("--server-datafolder")
+        {
+            Description = "The folder with databases",
+            DefaultValueFactory = _ => new DirectoryInfo(DataFolderLocator.GetDefaultStorageFolder(DataFolderManager.SERVER_DATABASE_FILENAME, false, true))
+        };
+        var serverVersionOption = new Option<int>("--server-version")
+        {
+            Description = "The version to upgrade the server database to; zero or less means latest",
+            DefaultValueFactory = _ => 0
+        };
+        var localVersionOption = new Option<int>("--local-version")
+        {
+            Description = "The version to upgrade local databases to; zero or less means latest",
+            DefaultValueFactory = _ => 0
+        };
+        var syncVersionOption = new Option<int>("--sync-version")
+        {
+            Description = "The version to upgrade sync databases to; zero or less means latest",
+            DefaultValueFactory = _ => 0
+        };
+        var noBackupsOption = new Option<bool>("--no-backups")
+        {
+            Description = "Do not create backups before upgrade",
+            DefaultValueFactory = _ => false
+        };
+        var includeUntrackedDatabasesOption = new Option<bool>("--include-untracked-databases")
+        {
+            Description = "Include untracked databases in the upgrade process",
+            DefaultValueFactory = _ => false
+        };
+
+        var cmd = new Command("upgrade", "Upgrades one or more databases to a larger version")
+        {
+            databasesArgument,
+            serverDatafolderOption,
+            serverVersionOption,
+            localVersionOption,
+            syncVersionOption,
+            noBackupsOption,
+            includeUntrackedDatabasesOption
+        };
+
+        cmd.SetAction(parseResult =>
+        {
+            var databases = parseResult.GetValue(databasesArgument) ?? [];
+            var serverdatafolder = parseResult.GetValue(serverDatafolderOption)!;
+            var serverversion = parseResult.GetValue(serverVersionOption);
+            var localversion = parseResult.GetValue(localVersionOption);
+            var syncversion = parseResult.GetValue(syncVersionOption);
+            var nobackups = parseResult.GetValue(noBackupsOption);
+            var includeuntrackeddatabases = parseResult.GetValue(includeUntrackedDatabasesOption);
+
+            databases = Helper.FindAllDatabasesAsync(databases, serverdatafolder.FullName, includeuntrackeddatabases).Await();
+            if (databases.Length == 0)
             {
-                databases = Helper.FindAllDatabasesAsync(databases, serverdatafolder.FullName, includeuntrackeddatabases).Await();
-                if (databases.Length == 0)
+                Console.WriteLine("No databases found to upgrade");
+                return;
+            }
+
+            var serverVersions = ExtractScriptsFromAssembly(typeof(Library.RestAPI.Database.DatabaseSchemaMarker));
+            var localVersions = ExtractScriptsFromAssembly(typeof(Library.Main.Database.Local.DatabaseSchemaMarker));
+            var syncVersions = ExtractScriptsFromAssembly(typeof(Library.Main.Database.Sync.DatabaseSchemaMarker));
+
+            if (serverversion <= 0)
+                serverversion = serverVersions.Max(x => x.Version);
+            if (localversion <= 0)
+                localversion = localVersions.Max(x => x.Version);
+            if (syncversion <= 0)
+                syncversion = syncVersions.Any() ? syncVersions.Max(x => x.Version) : 1;
+
+            if (serverversion > serverVersions.Max(x => x.Version))
+                throw new UserInformationException($"Server version {serverversion} is greater than the latest version {serverVersions.Max(x => x.Version)}", "UnsupportedUpgradeVersion");
+            if (localversion > localVersions.Max(x => x.Version))
+                throw new UserInformationException($"Local version {localversion} is greater than the latest version {localVersions.Max(x => x.Version)}", "UnsupportedUpgradeVersion");
+            var maxSyncVersion = syncVersions.Any() ? syncVersions.Max(x => x.Version) : 1;
+            if (syncversion > maxSyncVersion)
+                throw new UserInformationException($"Sync version {syncversion} is greater than the latest version {maxSyncVersion}", "UnsupportedUpgradeVersion");
+
+            foreach (var db in databases)
+            {
+                Console.WriteLine($"Examining {db} ...");
+                if (!File.Exists(db))
                 {
-                    Console.WriteLine("No databases found to upgrade");
-                    return;
+                    Console.WriteLine($"Database {db} does not exist");
+                    continue;
                 }
 
-                var serverVersions = ExtractScriptsFromAssembly(typeof(Library.RestAPI.Database.DatabaseSchemaMarker));
-                var localVersions = ExtractScriptsFromAssembly(typeof(Library.Main.Database.Local.DatabaseSchemaMarker));
-                var syncVersions = ExtractScriptsFromAssembly(typeof(Library.Main.Database.Sync.DatabaseSchemaMarker));
-
-                if (serverversion <= 0)
-                    serverversion = serverVersions.Max(x => x.Version);
-                if (localversion <= 0)
-                    localversion = localVersions.Max(x => x.Version);
-                if (syncversion <= 0)
-                    syncversion = syncVersions.Any() ? syncVersions.Max(x => x.Version) : 1;
-
-                if (serverversion > serverVersions.Max(x => x.Version))
-                    throw new UserInformationException($"Server version {serverversion} is greater than the latest version {serverVersions.Max(x => x.Version)}", "UnsupportedUpgradeVersion");
-                if (localversion > localVersions.Max(x => x.Version))
-                    throw new UserInformationException($"Local version {localversion} is greater than the latest version {localVersions.Max(x => x.Version)}", "UnsupportedUpgradeVersion");
-                var maxSyncVersion = syncVersions.Any() ? syncVersions.Max(x => x.Version) : 1;
-                if (syncversion > maxSyncVersion)
-                    throw new UserInformationException($"Sync version {syncversion} is greater than the latest version {maxSyncVersion}", "UnsupportedUpgradeVersion");
-
-                foreach (var db in databases)
+                int version;
+                DatabaseType type;
+                try
                 {
-                    Console.WriteLine($"Examining {db} ...");
-                    if (!File.Exists(db))
-                    {
-                        Console.WriteLine($"Database {db} does not exist");
-                        continue;
-                    }
-
-                    int version;
-                    DatabaseType type;
-                    try
-                    {
-                        (version, type) = Helper.ExamineDatabaseAsync(db).Await();
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Error reading database {db}: {ex.Message}");
-                        continue;
-                    }
-
-                    var targetVersion = type switch
-                    {
-                        DatabaseType.Server => serverversion,
-                        DatabaseType.Sync => syncversion,
-                        DatabaseType.Backup => localversion,
-                        _ => throw new Exception($"Unknown database type: {type}")
-                    };
-
-                    var scripts = type switch
-                    {
-                        DatabaseType.Server => serverVersions,
-                        DatabaseType.Sync => syncVersions,
-                        DatabaseType.Backup => localVersions,
-                        _ => throw new Exception($"Unknown database type: {type}")
-                    };
-
-                    Console.WriteLine($"Database {db} is version {version} and is a {type} database");
-                    ApplyUpgradeAsync(db, version, targetVersion, scripts, nobackups).Await();
+                    (version, type) = Helper.ExamineDatabaseAsync(db).Await();
                 }
-            }));
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error reading database {db}: {ex.Message}");
+                    continue;
+                }
+
+                var targetVersion = type switch
+                {
+                    DatabaseType.Server => serverversion,
+                    DatabaseType.Sync => syncversion,
+                    DatabaseType.Backup => localversion,
+                    _ => throw new Exception($"Unknown database type: {type}")
+                };
+
+                var scripts = type switch
+                {
+                    DatabaseType.Server => serverVersions,
+                    DatabaseType.Sync => syncVersions,
+                    DatabaseType.Backup => localVersions,
+                    _ => throw new Exception($"Unknown database type: {type}")
+                };
+
+                Console.WriteLine($"Database {db} is version {version} and is a {type} database");
+                ApplyUpgradeAsync(db, version, targetVersion, scripts, nobackups).Await();
+            }
+        });
+
+        return cmd;
+    }
 
     /// <summary>
     /// Finds all upgrade scripts in the assembly

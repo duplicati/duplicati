@@ -66,6 +66,7 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
         "v2:backup:list-broken-files",
         "v2:backup:purge-broken-files",
         "v2:backup:delete-versions",
+        "v2:backup:set-version-label",
 
         // "v1:subscribe:scheduler",
     ];

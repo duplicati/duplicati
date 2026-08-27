@@ -29,6 +29,11 @@ namespace Duplicati.Library.Main.Volumes
 {
     public abstract class VolumeReaderBase : VolumeBase, IDisposable
     {
+        /// <summary>
+        /// The tag used for log messages
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(VolumeReaderBase));
+
         public bool IsFullBackup { get; set; }
 
         protected readonly bool m_disposeCompression = false;
@@ -131,6 +136,56 @@ namespace Duplicati.Library.Main.Volumes
                 using (var fs = new StreamReader(s, ENCODING))
                 {
                     return JsonConvert.DeserializeObject<FilesetData>(fs.ReadToEnd());
+                }
+            }
+        }
+
+        /// <summary>
+        /// Reads the labels.json file from a fileset volume, if present.
+        /// </summary>
+        /// <param name="compressor">The compressor to use</param>
+        /// <returns>A dictionary mapping backup timestamps (UTC) to labels; empty if the volume has no labels file or the file cannot be parsed</returns>
+        public static IReadOnlyDictionary<DateTime, string> GetLabelsData(ICompression compressor)
+        {
+            using (var s = compressor.OpenRead(LABELS_FILENAME))
+            {
+                if (s == null)
+                    return new Dictionary<DateTime, string>();
+
+                using (var fs = new StreamReader(s, ENCODING))
+                {
+                    Dictionary<string, string> data;
+                    try
+                    {
+                        data = JsonConvert.DeserializeObject<Dictionary<string, string>>(fs.ReadToEnd());
+                    }
+                    catch (Exception ex)
+                    {
+                        // A corrupt labels file should not fail the operation using the volume
+                        Logging.Log.WriteWarningMessage(LOGTAG, "InvalidLabelsFile", ex, "Failed to parse the {0} file in the volume, ignoring it", LABELS_FILENAME);
+                        return new Dictionary<DateTime, string>();
+                    }
+
+                    if (data == null)
+                        return new Dictionary<DateTime, string>();
+
+                    var res = new Dictionary<DateTime, string>();
+                    foreach (var kv in data)
+                    {
+                        if (string.IsNullOrWhiteSpace(kv.Value))
+                            continue;
+
+                        try
+                        {
+                            res[Library.Utility.Utility.DeserializeDateTime(kv.Key).ToUniversalTime()] = kv.Value;
+                        }
+                        catch
+                        {
+                            // Ignore entries with unparseable timestamps
+                        }
+                    }
+
+                    return res;
                 }
             }
         }
