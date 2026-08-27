@@ -173,5 +173,5 @@ public class ErrorResponse
     /// <summary>
     /// Validation errors by field
     /// </summary>
-    public Dictionary<string, string>? Errors { get; set; }
+    public Dictionary<string, string[]>? Errors { get; set; }
 }

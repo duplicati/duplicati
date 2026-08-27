@@ -31,6 +31,8 @@ using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
 using FileEntry = Duplicati.Library.Common.IO.FileEntry;
 
+[assembly: InternalsVisibleTo("Duplicati.UnitTest")]
+
 namespace Duplicati.Library.Backend.DrimeCloud;
 
 /// <summary>
@@ -217,6 +219,26 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
 
         // Parse soft delete option
         _softDelete = Utility.Utility.ParseBoolOption(options, SOFT_DELETE_OPTION);
+    }
+
+    /// <summary>
+    /// Constructor that takes a preconfigured message handler, used for testing
+    /// </summary>
+    /// <param name="url">Backend URL</param>
+    /// <param name="options">Options dictionary</param>
+    /// <param name="handler">The message handler to send requests through</param>
+    internal DrimeBackend(string url, Dictionary<string, string?> options, HttpMessageHandler handler)
+        : this(url, options)
+    {
+        _httpClient = new HttpClient(handler)
+        {
+            Timeout = Timeout.InfiniteTimeSpan,
+            BaseAddress = new System.Uri(_apiUrl.TrimEnd('/') + "/")
+        };
+
+        // GetClientAsync hands back a client that already carries an authorization
+        // header, so setting one here keeps the login round-trip out of the tests
+        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "test-token");
     }
 
     /// <inheritdoc/>
@@ -437,10 +459,23 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
         };
         request.Headers.Add("Accept", "application/json");
 
-        var response = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken,
-            ct => client.SendAsync(request, ct)).ConfigureAwait(false);
+        try
+        {
+            var response = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken,
+                ct => client.SendAsync(request, ct)).ConfigureAwait(false);
 
-        await EnsureSuccessStatusCodeAsync(response).ConfigureAwait(false);
+            await EnsureSuccessStatusCodeAsync(response).ConfigureAwait(false);
+        }
+        catch
+        {
+            // The request may have reached Drime even though the answer did not reach
+            // us, which leaves the cache holding an id that no longer resolves. Drop
+            // the whole cache rather than the one name, because an upload asks the
+            // cache whether the name is taken and would otherwise skip the delete it
+            // has to make before it can reuse the name.
+            _fileCache = null;
+            throw;
+        }
 
         // Remove from cache
         _fileCache?.TryRemove(remotename, out var _);
@@ -734,9 +769,10 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
 
         // Try to parse JSON error response, but handle non-JSON responses gracefully
         string? errorMessage = null;
+        ErrorResponse? result = null;
         try
         {
-            var result = JsonSerializer.Deserialize<ErrorResponse>(body, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            result = JsonSerializer.Deserialize<ErrorResponse>(body, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             errorMessage = result?.Message;
         }
         catch (JsonException)
@@ -745,6 +781,14 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
             if (!string.IsNullOrWhiteSpace(body))
                 errorMessage = body.Trim();
         }
+
+        // Deleting an entry that is no longer there is reported as a validation
+        // failure on the ids rather than as a 404, and entryIds is only ever sent
+        // by DeleteAsync. BackendManager confirms this against a listing before it
+        // accepts the delete, so report it as the file being missing rather than
+        // deciding here that the delete succeeded.
+        if (result?.Errors?.ContainsKey("entryIds") == true)
+            throw new FileMissingException();
 
         if (!string.IsNullOrWhiteSpace(errorMessage))
             throw new InvalidOperationException($"Request failed: {errorMessage}");
