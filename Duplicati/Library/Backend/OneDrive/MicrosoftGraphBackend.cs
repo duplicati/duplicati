@@ -196,7 +196,7 @@ namespace Duplicati.Library.Backend
                 // We pick a random file name (using a guid) to make sure we don't conflict with an existing file
                 var dnsTestFile = string.Format("DNSNameTest-{0}", Guid.NewGuid());
                 var drivePrefix = await GetDrivePrefix(cancelToken).ConfigureAwait(false);
-                var uploadSession = await this.PostAsync<UploadSession>(string.Format("{0}/root:{1}{2}:/createUploadSession", drivePrefix, this.RootPath, NormalizeSlashes(dnsTestFile)), dummyUploadSession, cancelToken).ConfigureAwait(false);
+                var uploadSession = await this.PostAsync<UploadSession>(BuildRootUrl(drivePrefix, this.RootPath, NormalizeSlashes(dnsTestFile), "createUploadSession"), dummyUploadSession, cancelToken).ConfigureAwait(false);
 
                 // Canceling an upload session is done by sending a DELETE to the upload URL
                 await m_retryAfter.WaitForRetryAfterAsync(cancelToken).ConfigureAwait(false);
@@ -268,7 +268,7 @@ namespace Duplicati.Library.Backend
                 try
                 {
                     folderItem = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken,
-                        ct => GetAsync<DriveItem>(string.Format("{0}/root:{1}", drivePrefix, NormalizeSlashes(nextPath)), ct)
+                        ct => GetAsync<DriveItem>(BuildRootUrl(drivePrefix, NormalizeSlashes(nextPath)), ct)
                     ).ConfigureAwait(false);
                 }
                 catch (DriveItemNotFoundException)
@@ -327,11 +327,7 @@ namespace Duplicati.Library.Backend
             var drivePrefix = await GetDrivePrefix(cancelToken).ConfigureAwait(false);
             var targetPath = GetAbsolutePath(path);
 
-            string url;
-            if (targetPath == "/" || string.IsNullOrEmpty(targetPath))
-                url = $"{drivePrefix}/root/children";
-            else
-                url = $"{drivePrefix}/root:{targetPath}:/children";
+            var url = BuildRootUrl(drivePrefix, targetPath, action: "children");
 
             await foreach (var item in this.Enumerate<DriveItem>(url, cancelToken).ConfigureAwait(false))
             {
@@ -345,11 +341,7 @@ namespace Duplicati.Library.Backend
             var drivePrefix = await GetDrivePrefix(cancellationToken).ConfigureAwait(false);
             var targetPath = GetAbsolutePath(path);
 
-            string url;
-            if (targetPath == "/" || string.IsNullOrEmpty(targetPath))
-                url = $"{drivePrefix}/root";
-            else
-                url = $"{drivePrefix}/root:{targetPath}";
+            var url = BuildRootUrl(drivePrefix, targetPath);
 
             try
             {
@@ -369,13 +361,11 @@ namespace Duplicati.Library.Backend
         public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
             var drivePrefix = await GetDrivePrefix(cancelToken).ConfigureAwait(false);
-            await foreach (var item in this.Enumerate<DriveItem>(string.Format("{0}/root:{1}:/children", drivePrefix, this.RootPath), cancelToken).ConfigureAwait(false))
+            await foreach (var item in this.Enumerate<DriveItem>(BuildRootUrl(drivePrefix, this.RootPath, action: "children"), cancelToken).ConfigureAwait(false))
             {
                 // Exclude non-files and deleted items (not sure if they show up in this listing, but make sure anyway)
-                if (item.IsFile && !item.IsDeleted)
-                {
+                if (!item.IsDeleted)
                     yield return ParseEntry(item);
-                }
             }
         }
 
@@ -391,7 +381,7 @@ namespace Duplicati.Library.Backend
             {
                 var drivePrefix = await GetDrivePrefix(cancelToken).ConfigureAwait(false);
                 m_retryAfter.WaitForRetryAfter();
-                string getUrl = string.Format("{0}/root:{1}{2}:/content", drivePrefix, this.RootPath, NormalizeSlashes(remotename));
+                string getUrl = BuildRootUrl(drivePrefix, this.RootPath, NormalizeSlashes(remotename), "content");
                 using (var response = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken,
                     ct => m_client.GetAsync(getUrl, HttpCompletionOption.ResponseHeadersRead, ct)
                 ).ConfigureAwait(false))
@@ -416,7 +406,7 @@ namespace Duplicati.Library.Backend
             {
                 var drivePrefix = await GetDrivePrefix(cancelToken).ConfigureAwait(false);
                 await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken,
-                    ct => PatchAsync(string.Format("{0}/root:{1}{2}", drivePrefix, this.RootPath, NormalizeSlashes(oldname)), new DriveItem() { Name = newname }, ct)
+                    ct => PatchAsync(BuildRootUrl(drivePrefix, this.RootPath, NormalizeSlashes(oldname)), new DriveItem() { Name = newname }, ct)
                 ).ConfigureAwait(false);
             }
             catch (DriveItemNotFoundException ex)
@@ -440,7 +430,7 @@ namespace Duplicati.Library.Backend
             if (stream.Length < PUT_MAX_SIZE)
             {
                 await m_retryAfter.WaitForRetryAfterAsync(cancelToken).ConfigureAwait(false);
-                string putUrl = string.Format("{0}/root:{1}{2}:/content", drivePrefix, this.RootPath, NormalizeSlashes(remotename));
+                string putUrl = BuildRootUrl(drivePrefix, this.RootPath, NormalizeSlashes(remotename), "content");
                 using (var timeoutStream = stream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false))
                 using (var streamContent = new StreamContent(timeoutStream))
                 {
@@ -459,7 +449,7 @@ namespace Duplicati.Library.Backend
                 // The documentation seems somewhat contradictory - it states that uploads must be done sequentially,
                 // but also states that the nextExpectedRanges value returned may indicate multiple ranges...
                 // For now, this plays it safe and does a sequential upload.
-                string createSessionUrl = string.Format("{0}/root:{1}{2}:/createUploadSession", drivePrefix, this.RootPath, NormalizeSlashes(remotename));
+                string createSessionUrl = BuildRootUrl(drivePrefix, this.RootPath, NormalizeSlashes(remotename), "createUploadSession");
                 await m_retryAfter.WaitForRetryAfterAsync(cancelToken).ConfigureAwait(false);
                 using (var createSessionRequest = new HttpRequestMessage(HttpMethod.Post, createSessionUrl))
                 using (var createSessionResponse = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => this.m_client.SendAsync(createSessionRequest, ct)).ConfigureAwait(false))
@@ -639,7 +629,7 @@ namespace Duplicati.Library.Backend
             {
                 var drivePrefix = await GetDrivePrefix(cancelToken).ConfigureAwait(false);
                 await m_retryAfter.WaitForRetryAfterAsync(cancelToken).ConfigureAwait(false);
-                string deleteUrl = string.Format("{0}/root:{1}{2}", drivePrefix, this.RootPath, NormalizeSlashes(remotename));
+                string deleteUrl = BuildRootUrl(drivePrefix, this.RootPath, NormalizeSlashes(remotename));
                 using (var response = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => this.m_client.DeleteAsync(deleteUrl, ct)).ConfigureAwait(false))
                     this.CheckResponse(response);
             }
@@ -655,8 +645,7 @@ namespace Duplicati.Library.Backend
             try
             {
                 var drivePrefix = await GetDrivePrefix(cancelToken).ConfigureAwait(false);
-                string rootPath = string.Format("{0}/root:{1}", drivePrefix, this.RootPath);
-                await this.GetAsync<DriveItem>(rootPath, cancelToken).ConfigureAwait(false);
+                await this.GetAsync<DriveItem>(BuildRootUrl(drivePrefix, this.RootPath), cancelToken).ConfigureAwait(false);
             }
             catch (DriveItemNotFoundException ex)
             {
@@ -831,6 +820,37 @@ namespace Duplicati.Library.Backend
             }
 
             throw new UploadSessionException(createSessionResponse, fragment, fragmentCount, ex);
+        }
+
+        /// <summary>
+        /// Concatenates the parts into an url that addresses an item in the drive,
+        /// using the colon-based path addressing scheme.
+        /// If the combined root path and path is empty, the drive root is addressed
+        /// directly, without a trailing colon.
+        /// For example:
+        ///   ("/v1.0/me/drive", "", null, null) => "/v1.0/me/drive/root"
+        ///   ("/v1.0/me/drive", "", null, "children") => "/v1.0/me/drive/root/children"
+        ///   ("/v1.0/me/drive", "/backup", null, null) => "/v1.0/me/drive/root:/backup"
+        ///   ("/v1.0/me/drive", "/backup", "/file.txt", "content") => "/v1.0/me/drive/root:/backup/file.txt:/content"
+        /// </summary>
+        /// <param name="drivePrefix">Prefix for the drive to use, for example "/v1.0/me/drive"</param>
+        /// <param name="rootPath">Path to the backup root folder, may be empty</param>
+        /// <param name="path">Optional path to the item, relative to the backup root folder</param>
+        /// <param name="action">Optional action to perform on the item, for example "content" or "children"</param>
+        /// <returns>The concatenated url</returns>
+        private static string BuildRootUrl(string drivePrefix, string? rootPath, string? path = null, string? action = null)
+        {
+            var fullPath = (string.IsNullOrWhiteSpace(rootPath) ? string.Empty : rootPath) + path;
+
+            var isRoot = string.IsNullOrEmpty(fullPath) || fullPath == "/";
+            var url = isRoot
+                ? $"{drivePrefix}/root"
+                : $"{drivePrefix}/root:{fullPath}";
+
+            if (!string.IsNullOrEmpty(action))
+                url += isRoot ? $"/{action}" : $":/{action}";
+
+            return url;
         }
 
         /// <summary>
