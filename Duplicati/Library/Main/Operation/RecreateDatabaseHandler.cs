@@ -993,6 +993,15 @@ namespace Duplicati.Library.Main.Operation
                 .UpdateFullBackupStateInFilesetAsync(filesetid, filesetData.IsFullBackup, cancellationToken)
                 .ConfigureAwait(false);
 
+            // The fileset was created from the time in the filename. A dlist file that
+            // replaced an earlier one has a new name, and therefore a new time, so it
+            // records the time of the fileset it describes. Use that when it is present.
+            var recordedTime = filesetData.GetFilesetTime();
+            if (recordedTime.HasValue)
+                await restoredb
+                    .UpdateFilesetTimestampAsync(filesetid, recordedTime.Value, cancellationToken)
+                    .ConfigureAwait(false);
+
             // clear any existing fileset entries
             await restoredb.ClearFilesetEntriesAsync(filesetid, cancellationToken).ConfigureAwait(false);
 
