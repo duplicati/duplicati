@@ -106,6 +106,13 @@ namespace Duplicati.Library.Main.Operation.Backup
                 await database.AppendFilesFromPreviousSetAsync(null, newFilesetID, prevId, fileTime, taskreader.ProgressToken).ConfigureAwait(false);
 
                 await database.WriteFilesetAsync(fsw, newFilesetID, taskreader.ProgressToken).ConfigureAwait(false);
+
+                // Best effort: store the current set of labels with the backup,
+                // so they can be recovered if the local database is recreated
+                var labels = await database.GetFilesetLabelsAsync(taskreader.ProgressToken).ConfigureAwait(false);
+                if (labels.Length > 0)
+                    fsw.AddLabelsFile(labels);
+
                 fsw.Close();
 
                 if (!await taskreader.ProgressRendevouzAsync().ConfigureAwait(false))

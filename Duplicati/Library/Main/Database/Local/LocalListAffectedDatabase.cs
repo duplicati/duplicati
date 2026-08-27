@@ -80,6 +80,10 @@ namespace Duplicati.Library.Main.Database.Local
             /// Gets or sets the total size of files in the fileset.
             /// </summary>
             public long FileSizes { get; set; }
+            /// <summary>
+            /// Gets or sets the label assigned to the fileset, if any.
+            /// </summary>
+            public string? Label { get; set; }
         }
 
         /// <summary>
@@ -182,7 +186,7 @@ namespace Duplicati.Library.Main.Database.Local
                 .ExpandInClauseParameterMssqliteAsync("@Names", tmptable, token)
                 .ConfigureAwait(false);
             await using var rd = await cmd
-                .ExecuteReaderAsync(token)
+                .ExecuteReaderAsync(writeLog: false, token)
                 .ConfigureAwait(false);
             while (await rd.ReadAsync(token).ConfigureAwait(false))
             {
@@ -269,7 +273,7 @@ namespace Duplicati.Library.Main.Database.Local
                 .ExpandInClauseParameterMssqliteAsync("@Names", tmptable, token)
                 .ConfigureAwait(false);
             await using var rd = await cmd
-                .ExecuteReaderAsync(token)
+                .ExecuteReaderAsync(writeLog: false, token)
                 .ConfigureAwait(false);
             while (await rd.ReadAsync(token).ConfigureAwait(false))
                 yield return new ListResultFile()
@@ -319,7 +323,7 @@ namespace Duplicati.Library.Main.Database.Local
                 foreach ((var x, var i) in slice.Select((x, i) => (x, i)))
                     cmd.SetParameterValue($"@Message{i}", "%" + x + "%");
 
-                await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+                await using var rd = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false);
                 while (await rd.ReadAsync(token).ConfigureAwait(false))
                     yield return new ListResultRemoteLog()
                     {
@@ -414,7 +418,7 @@ namespace Duplicati.Library.Main.Database.Local
             await cmd.ExpandInClauseParameterMssqliteAsync("@Names", tmptable, token)
                 .ConfigureAwait(false);
             await using var rd = await cmd
-                .ExecuteReaderAsync(token)
+                .ExecuteReaderAsync(writeLog: false, token)
                 .ConfigureAwait(false);
             while (await rd.ReadAsync(token).ConfigureAwait(false))
                 yield return new ListResultRemoteVolume()

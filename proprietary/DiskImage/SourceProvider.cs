@@ -8,10 +8,10 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Proprietary.DiskImage.Disk;
 using Duplicati.Proprietary.DiskImage.General;
-using Duplicati.Proprietary.DiskImage.Partition;
 using Duplicati.Proprietary.DiskImage.SourceItems;
 
 namespace Duplicati.Proprietary.DiskImage;
@@ -56,6 +56,12 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
     private readonly bool _treatFilesystemAsUnknown;
 
     /// <summary>
+    /// The subpath within the disk hierarchy that the device URL points to
+    /// (the part after the device name, e.g. a partition), or empty if the URL targets the whole disk.
+    /// </summary>
+    private string _subpath = string.Empty;
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="SourceProvider"/> class.
     /// Default constructor for metadata loading.
     /// </summary>
@@ -83,7 +89,7 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
     }
 
     /// <inheritdoc />
-    public string MountedPath => $"{_mountPoint}root{System.IO.Path.DirectorySeparatorChar}";
+    public string MountedPath => _mountPoint;
 
     /// <inheritdoc />
     public string DisplayName => Strings.ProviderDisplayName;
@@ -96,6 +102,9 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
 
     /// <inheritdoc />
     public IList<ICommandLineArgument> SupportedCommands => OptionsHelper.SupportedCommands;
+
+    /// <inheritdoc />
+    public bool NeedsStoredMetadata => true;
 
     /// <summary>
     /// Gets a value indicating whether to treat filesystems as unknown (force raw block-based backup).
@@ -110,23 +119,40 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
         if (string.IsNullOrEmpty(_devicePath))
             return;
 
+        _disk = (IRawDisk)await GetDiskAsync(_devicePath, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task<object> GetDiskAsync(string path, CancellationToken cancellationToken)
+    {
+        var (physicalDrivePath, subpath) = SplitDeviceAndSubpath(path);
+        _subpath = subpath;
+
         if (OperatingSystem.IsWindows())
         {
-            _disk = new Windows(_devicePath.TrimEnd(Path.DirectorySeparatorChar));
-            if (!await _disk.InitializeAsync(cancellationToken))
-                throw new UserInformationException($"Failed to initialize disk: {_devicePath}", "DiskInitializeFailed");
+            var disk = new Windows(physicalDrivePath.TrimEnd(Path.DirectorySeparatorChar));
+            var msg = await disk.InitializeAsync(cancellationToken);
+            if (!string.IsNullOrWhiteSpace(msg))
+                throw new UserInformationException($"Failed to initialize disk: {physicalDrivePath}, {msg}", "DiskInitializeFailed");
+
+            return disk;
         }
         else if (OperatingSystem.IsMacOS())
         {
-            _disk = new Mac(_devicePath);
-            if (!await _disk.InitializeAsync(cancellationToken))
-                throw new UserInformationException($"Failed to initialize disk: {_devicePath}", "DiskInitializeFailed");
+            var disk = new Mac(physicalDrivePath);
+            var msg = await disk.InitializeAsync(cancellationToken);
+            if (!string.IsNullOrWhiteSpace(msg))
+                throw new UserInformationException($"Failed to initialize disk: {physicalDrivePath}, {msg}", "DiskInitializeFailed");
+
+            return disk;
         }
         else if (OperatingSystem.IsLinux())
         {
-            _disk = new Linux(_devicePath);
-            if (!await _disk.InitializeAsync(cancellationToken))
-                throw new UserInformationException($"Failed to initialize disk: {_devicePath}", "DiskInitializeFailed");
+            var disk = new Linux(physicalDrivePath);
+            var msg = await disk.InitializeAsync(cancellationToken);
+            if (!string.IsNullOrWhiteSpace(msg))
+                throw new UserInformationException($"Failed to initialize disk: {physicalDrivePath}, {msg}", "DiskInitializeFailed");
+
+            return disk;
         }
         else
         {
@@ -148,8 +174,7 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
         if (_disk == null)
             throw new InvalidOperationException("Provider not initialized.");
 
-        var root = new DiskSourceEntry(this, _disk);
-        yield return root;
+        yield return new DiskSourceEntry(this, _disk, _subpath);
     }
 
     /// <inheritdoc />
@@ -158,15 +183,26 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
         if (string.IsNullOrWhiteSpace(path) || path == "/")
             return new MachineRootSourceEntry();
 
-        if (_disk == null)
-            throw new InvalidOperationException("Provider not initialized.");
+        // Special support for browser enumeration which does call initialize,
+        // but does it with an empty path.
+        if (_disk == null && string.IsNullOrWhiteSpace(_devicePath) && !string.IsNullOrWhiteSpace(path))
+            _disk = (IRawDisk)await GetDiskAsync(path, cancellationToken).ConfigureAwait(false);
 
         if (_entryCache.TryGetValue(path, out var cachedEntry))
             return cachedEntry;
 
+        if (_disk == null)
+            throw new InvalidOperationException("Provider not initialized.");
+
+        var dse = new DiskSourceEntry(this, _disk, "");
+
+        // Workaround for the "root" element in the path
+        if (Util.AppendDirSeparator(_disk.DevicePath) == path || _disk.DevicePath == path)
+            return dse;
+
         // Simple implementation: enumerate from root to find the entry
         // In a real implementation, we would parse the path and resolve it efficiently
-        await foreach (var entry in EnumerateRecursive(new DiskSourceEntry(this, _disk), cancellationToken))
+        await foreach (var entry in EnumerateRecursive(dse, cancellationToken))
         {
             if (entry.Path == path && entry.IsFolder == isFolder)
             {
@@ -231,6 +267,32 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
             return Linux.Prefix;
         else
             throw new PlatformNotSupportedException(Strings.PlatformNotSupported);
+    }
+
+    /// <summary>
+    /// Splits a host-and-path value (e.g. from a device URL) into the disk device
+    /// path and an optional subpath within the disk hierarchy (e.g. a partition
+    /// segment such as "part_GPT_1").
+    /// </summary>
+    /// <param name="hostAndPath">The host and path value to split.</param>
+    /// <returns>
+    /// A tuple with the disk device path and the subpath. The subpath is empty when
+    /// the value targets the whole disk.
+    /// </returns>
+    public static (string DevicePath, string Subpath) SplitDeviceAndSubpath(string hostAndPath)
+    {
+        var prefix = GetDevicePrefix();
+        if (!hostAndPath.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            return (hostAndPath, string.Empty);
+
+        var remainder = hostAndPath[prefix.Length..];
+        var separatorIndex = remainder.IndexOf(Path.DirectorySeparatorChar);
+        if (separatorIndex < 0)
+            return (hostAndPath, string.Empty);
+
+        var devicePath = prefix + remainder[..separatorIndex];
+        var subpath = remainder[(separatorIndex + 1)..].Trim(Path.DirectorySeparatorChar);
+        return (devicePath, subpath);
     }
 
     /// <inheritdoc />

@@ -117,6 +117,10 @@ namespace Duplicati.Library.Main.Database.Local
             /// Gets the total sizes of files in the fileset.
             /// </summary>
             long FileSizes { get; }
+            /// <summary>
+            /// Gets the label assigned to the fileset, or null if no label is set.
+            /// </summary>
+            string? Label { get; }
         }
 
         /// <summary>
@@ -226,7 +230,8 @@ namespace Duplicati.Library.Main.Database.Local
                         SELECT DISTINCT
                             ""ID"" AS ""FilesetID"",
                             ""IsFullBackup"" AS ""IsFullBackup"",
-                            ""Timestamp"" AS ""Timestamp""
+                            ""Timestamp"" AS ""Timestamp"",
+                            ""Label"" AS ""Label""
                         FROM ""Fileset"" {Query}
                     ", Values, token)
                         .ConfigureAwait(false);
@@ -269,6 +274,10 @@ namespace Duplicati.Library.Main.Database.Local
                 /// The total sizes of files in this fileset.
                 /// </summary>
                 public long FileSizes { get; private set; }
+                /// <summary>
+                /// The label assigned to this fileset, if any.
+                /// </summary>
+                public string? Label { get; private set; }
 
                 /// <summary>
                 /// Initializes a new instance of the <see cref="Fileset"/> class.
@@ -278,13 +287,15 @@ namespace Duplicati.Library.Main.Database.Local
                 /// <param name="time">The timestamp of the fileset, indicating when it was created.</param>
                 /// <param name="filecount">The count of files in this fileset.</param>
                 /// <param name="filesizes">The total sizes of files in this fileset.</param>
-                public Fileset(long version, int isFullBackup, DateTime time, long filecount, long filesizes)
+                /// <param name="label">The label assigned to the fileset, if any.</param>
+                public Fileset(long version, int isFullBackup, DateTime time, long filecount, long filesizes, string? label)
                 {
                     Version = version;
                     IsFullBackup = isFullBackup;
                     Time = time;
                     FileCount = filecount;
                     FileSizes = filesizes;
+                    Label = label;
                 }
             }
 
@@ -494,7 +505,7 @@ namespace Duplicati.Library.Main.Database.Local
                     SELECT DISTINCT ""Path""
                     FROM ""{table}""
                 ");
-                await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+                await using var rd = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false);
                 while (await rd.ReadAsync(token).ConfigureAwait(false))
                 {
                     var s = rd.ConvertValueToString(0) ?? "";
@@ -582,7 +593,7 @@ namespace Duplicati.Library.Main.Database.Local
                             await foreach (var n in SelectFolderEntriesAsync(cmd, pathprefix, tmpnames.Tablename, token).Distinct().ConfigureAwait(false))
                                 await c2
                                     .SetParameterValue("@Path", n)
-                                    .ExecuteNonQueryAsync(token) // Not logging as we log the total time
+                                    .ExecuteNonQueryAsync(writeLog: false, token) // Not logging as we log the total time
                                     .ConfigureAwait(false);
 
                         await c2.ExecuteNonQueryAsync($@"
@@ -796,7 +807,8 @@ namespace Duplicati.Library.Main.Database.Local
                 await using var rd = await cmd.ExecuteReaderAsync(@"
                     SELECT DISTINCT
                         ""ID"",
-                        ""IsFullBackup""
+                        ""IsFullBackup"",
+                        ""Label""
                     FROM ""Fileset""
                     ORDER BY ""Timestamp"" DESC
                 ", token)
@@ -805,6 +817,7 @@ namespace Duplicati.Library.Main.Database.Local
                 {
                     var id = rd.ConvertValueToInt64(0);
                     var backupType = rd.GetInt32(1);
+                    var label = rd.ConvertValueToString(2);
                     var e = dict[id];
 
                     yield return new Fileset(
@@ -812,7 +825,8 @@ namespace Duplicati.Library.Main.Database.Local
                         backupType,
                         m_filesets[e].Value,
                         -1L,
-                        -1L
+                        -1L,
+                        label
                     );
                 }
             }
@@ -848,7 +862,8 @@ namespace Duplicati.Library.Main.Database.Local
                         ""A"".""FilesetID"",
                         ""A"".""IsFullBackup"",
                         ""B"".""FileCount"",
-                        ""B"".""FileSizes""
+                        ""B"".""FileSizes"",
+                        ""A"".""Label""
                     FROM ""{m_tablename}"" ""A""
                     LEFT OUTER JOIN ( {summation} ) ""B""
                         ON ""A"".""FilesetID"" = ""B"".""FilesetID""
@@ -863,13 +878,15 @@ namespace Duplicati.Library.Main.Database.Local
                     var e = dict[id];
                     var filecount = rd.ConvertValueToInt64(2, -1L);
                     var filesizes = rd.ConvertValueToInt64(3, -1L);
+                    var label = rd.ConvertValueToString(4);
 
                     yield return new Fileset(
                         e,
                         isFullBackup,
                         m_filesets[e].Value,
                         filecount,
-                        filesizes
+                        filesizes,
+                        label
                     );
                 }
             }
@@ -917,7 +934,8 @@ namespace Duplicati.Library.Main.Database.Local
         /// <param name="Time">The timestamp of the fileset.</param>
         /// <param name="FileCount">The number of files in the fileset.</param>
         /// <param name="FileSizes">>The total size of files in the fileset.</param>
-        private sealed record FilesetEntry(long Version, long ID, bool? IsFullBackup, DateTime Time, long? FileCount, long? FileSizes) : IListFilesetResultFileset;
+        /// <param name="Label">The label assigned to the fileset, if any.</param>
+        private sealed record FilesetEntry(long Version, long ID, bool? IsFullBackup, DateTime Time, long? FileCount, long? FileSizes, string? Label) : IListFilesetResultFileset;
 
         /// <summary>
         /// Lists all filesets with summary data.
@@ -932,7 +950,8 @@ namespace Duplicati.Library.Main.Database.Local
                     ""f"".""Timestamp"",
                     ""f"".""IsFullBackup"",
                     COUNT(""fe"".""FileID"") AS ""NumberOfFiles"",
-                    COALESCE(SUM(""b"".""Length""), 0) AS ""TotalFileSize""
+                    COALESCE(SUM(""b"".""Length""), 0) AS ""TotalFileSize"",
+                    ""f"".""Label""
                 FROM ""Fileset"" ""f""
                 LEFT JOIN ""FilesetEntry"" ""fe""
                     ON ""f"".""ID"" = ""fe"".""FilesetID""
@@ -953,13 +972,15 @@ namespace Duplicati.Library.Main.Database.Local
                 var isFullBackup = rd.GetInt32(2) == BackupType.FULL_BACKUP;
                 var filecount = rd.ConvertValueToInt64(3, -1L);
                 var filesizes = rd.ConvertValueToInt64(4, -1L);
+                var label = rd.ConvertValueToString(5);
 
                 yield return new FilesetEntry(
                     version++, id,
                     isFullBackup,
                     time,
                     filecount,
-                    filesizes
+                    filesizes,
+                    label
                 );
             }
         }

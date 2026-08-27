@@ -32,6 +32,9 @@ public class LocalFileSource(ISnapshotService snapshotService) : ISourceProvider
     /// <inheritdoc/>
     public string MountedPath => string.Empty;
 
+    /// <inheritdoc />
+    public bool NeedsStoredMetadata => false;
+
     /// <inheritdoc/>
     public Task InitializeAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 

@@ -138,11 +138,13 @@ namespace Duplicati.Library.Main
 
             CheckAutoCompactInterval();
             CheckAutoVacuumInterval();
+            SourceProviderFactory.EnableMetadataStorageIfRequiredBySources(inputsources, m_options.RawOptions);
 
             return await RunActionAsync(new BackupResults(), inputsources, inputFilter, false, static async config =>
             {
+                var (expandedSources, filter) = ExpandInputSources(config.Paths, config.Filter, config.Options);
                 using (var h = new Operation.BackupHandler(config.Options, config.Result))
-                    await h.RunAsync(ExpandInputSources(config.Paths, config.Filter, config.Options), config.BackendManager, config.Filter)
+                    await h.RunAsync(expandedSources, config.BackendManager, filter)
                         .ConfigureAwait(false);
 
                 UsageReporter.Reporter.Report("BACKUP_FILECOUNT", config.Result.ExaminedFiles);
@@ -224,6 +226,12 @@ namespace Duplicati.Library.Main
         public async Task<IListFilesetResults> ListFilesetsAsync()
             => await RunActionAsync(new ListFilesetResults(), null, null, false, static config =>
                 Operation.ListFilesetsHandler.RunAsync(config.Options, config.Result, config.BackendManager)
+            ).ConfigureAwait(false);
+
+        /// <inheritdoc />
+        public async Task<ISetVersionLabelResults> SetVersionLabelAsync()
+            => await RunActionAsync(new SetVersionLabelResults(), null, null, false, static config =>
+                Operation.SetVersionLabelHandler.RunAsync(config.Options, config.Result)
             ).ConfigureAwait(false);
 
         /// <inheritdoc />
@@ -429,8 +437,11 @@ namespace Duplicati.Library.Main
             using (Logging.Log.StartScope(m_messageSink.WriteMessage, x => x.FilterTag.Contains(filtertag)))
             {
                 return await RunActionAsync(new TestFilterResults(), paths, inputFilter, false, static config =>
-                    new Operation.TestFilterHandler(config.Options, config.Result)
-                        .RunAsync(ExpandInputSources(config.Paths, config.Filter, config.Options), config.Filter)
+                {
+                    var (expandedSources, filter) = ExpandInputSources(config.Paths, config.Filter, config.Options);
+                    return new Operation.TestFilterHandler(config.Options, config.Result)
+                        .RunAsync(expandedSources, filter);
+                }
                 ).ConfigureAwait(false);
             }
         }
@@ -603,7 +614,12 @@ namespace Duplicati.Library.Main
 
                     if (resultSetter.EndTime.Ticks == 0)
                         resultSetter.EndTime = DateTime.UtcNow;
-                    resultSetter.Interrupted = false;
+
+                    // The operation returned, but if a stop was requested it returned early, so
+                    // the run did not cover everything it was asked to. Its numbers must not be
+                    // recorded as the latest state of the backup, which is what this flag decides
+                    // (see Runner.UpdateMetadata).
+                    resultSetter.Interrupted = m_currentTaskControl?.StopToken.IsCancellationRequested == true;
 
                     // The post-operation result/log writes target the backup LocalDatabase schema
                     // (Operation, LogData, DeletedVolume tables). The sync database has its own
@@ -674,6 +690,46 @@ namespace Duplicati.Library.Main
                     await OperationCompleteAsync(result, null, filter).ConfigureAwait(false);
 
                     return result;
+                }
+                // Handle an abort requested through AbortAsync, which reaches this point as a
+                // cancellation. Reported the way the run-script abort above is: the user asked
+                // for it, so it is not a failure of the backup.
+                //
+                // The guard consults the token rather than the exception type. The progress token
+                // is only ever cancelled by TaskControl.Terminate, so a cancellation from anything
+                // else - an HttpClient request timeout, which surfaces as a TaskCanceledException,
+                // or the caller's own token - still falls through to the failure path below.
+                catch (OperationCanceledException) when (m_currentTaskControl?.ProgressToken.IsCancellationRequested == true)
+                {
+                    ReportModulesHandler?.OperationException = null; // Requested aborts are not failures.
+                    resultSetter.EndTime = DateTime.UtcNow;
+                    resultSetter.Interrupted = true;
+
+                    // Information rather than an error: the operation did what it was told to do.
+                    // Fatal is deliberately not set, and the phase is left alone, so the operation
+                    // is not presented as having errored.
+                    Logging.Log.WriteInformationMessage(LOGTAG, "TerminatedOperation", "Terminating operation {0} by request", m_options.MainAction);
+
+                    try
+                    {
+                        // Write logs to previous operation if database exists.
+                        // Sync uses its own database schema
+                        if (File.Exists(m_options.Dbpath) && !m_options.Dryrun && m_options.MainAction != OperationMode.Sync)
+                            await using (var db = await LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, null, true, null, CancellationToken.None).ConfigureAwait(false))
+                                await db.WriteResultsAndCommitAsync(result, CancellationToken.None).ConfigureAwait(false);
+                    }
+                    catch (Exception we)
+                    {
+                        Logging.Log.WriteWarningMessage(LOGTAG, "FailedWriteOperation", we, we.Message);
+                    }
+
+                    // Reported without the exception: ReportHelper forces the Fatal level whenever
+                    // it is given one, regardless of the result's own classification.
+                    await OperationCompleteAsync(result, null, filter).ConfigureAwait(false);
+
+                    // Still propagated. Callers rely on an abort surfacing as an exception rather
+                    // than as a returned result.
+                    throw;
                 }
                 catch (Exception ex)
                 {
@@ -1134,7 +1190,7 @@ namespace Duplicati.Library.Main
         /// <param name="filter">The filter.</param>
         /// <param name="options">The options.</param>
         /// <returns>The expanded and filtered sources.</returns>
-        private static string[] ExpandInputSources(string[] inputsources, IFilter filter, Options options)
+        private static (string[] Sources, IFilter Filter) ExpandInputSources(string[] inputsources, IFilter filter, Options options)
         {
             if (inputsources == null || inputsources.Length == 0)
                 throw new UserInformationException(Strings.Controller.NoSourceFoldersError, "NoSourceFolders");
@@ -1307,7 +1363,9 @@ namespace Duplicati.Library.Main
             //Sanity check for multiple inclusions of the same folder
             for (int i = 0; i < sources.Count; i++)
                 for (int j = 0; j < sources.Count; j++)
-                    if (i != j && sources[i].StartsWith(sources[j], Library.Utility.Utility.ClientFilenameStringComparison) && sources[i].EndsWith(Util.DirectorySeparatorString, Library.Utility.Utility.ClientFilenameStringComparison))
+                    if (i != j
+                        && sources[i].StartsWith(sources[j], Library.Utility.Utility.ClientFilenameStringComparison)
+                        && sources[j].EndsWith(Util.DirectorySeparatorString, Library.Utility.Utility.ClientFilenameStringComparison))
                     {
                         if (filter != null)
                         {
@@ -1318,14 +1376,14 @@ namespace Duplicati.Library.Main
                             // If there are no excludes, there is no need to keep the folder as a filter
                             if (excludes)
                             {
-                                Logging.Log.WriteVerboseMessage(LOGTAG, "RemovingSubfolderSource", "Removing source \"{0}\" because it is a subfolder of \"{1}\", and using it as an include filter", sources[i], sources[j]);
+                                Logging.Log.WriteVerboseMessage(LOGTAG, "RemovingSubfolderSource", "Removing source \"{0}\" because it is a folder or file inside \"{1}\", and using it as an include filter", sources[i], sources[j]);
                                 filter = JoinedFilterExpression.Join(new FilterExpression(sources[i]), filter);
                             }
                             else
-                                Logging.Log.WriteVerboseMessage(LOGTAG, "RemovingSubfolderSource", "Removing source \"{0}\" because it is a subfolder or subfile of \"{1}\"", sources[i], sources[j]);
+                                Logging.Log.WriteVerboseMessage(LOGTAG, "RemovingSubfolderSource", "Removing source \"{0}\" because it is a folder or file inside \"{1}\"", sources[i], sources[j]);
                         }
                         else
-                            Logging.Log.WriteVerboseMessage(LOGTAG, "RemovingSubfolderSource", "Removing source \"{0}\" because it is a subfolder or subfile of \"{1}\"", sources[i], sources[j]);
+                            Logging.Log.WriteVerboseMessage(LOGTAG, "RemovingSubfolderSource", "Removing source \"{0}\" because it is a folder or file inside \"{1}\"", sources[i], sources[j]);
 
                         sources.RemoveAt(i);
                         i--;
@@ -1336,7 +1394,7 @@ namespace Duplicati.Library.Main
             if (sources.Count == 0)
                 throw new UserInformationException(Strings.Controller.NoSourcesError, "NoSources");
 
-            return sources.ToArray();
+            return (sources.ToArray(), filter);
         }
 
         /// <inheritdoc />

@@ -115,8 +115,10 @@ internal class GroupSourceEntry(SourceProvider provider, string parentPath, Grap
                 { "o365:Visibility", group.Visibility },
                 { "o365:MailEnabled", group.MailEnabled.ToString() },
                 { "o365:SecurityEnabled", group.SecurityEnabled.ToString() },
-                { "o365:Classification", SourceProvider.ClassifyGroupFromDirectory(group) },
+                // Emitted only while enumerating for display, so that the classification is
+                // present or absent consistently across users, groups and sites.
+                { "o365:Classification", provider.EnumerationMode ? SourceProvider.ClassifyGroupFromDirectory(group) : null },
             }
-            .WhereNotNull()
+            .Where(kvp => !string.IsNullOrEmpty(kvp.Value))
             .ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
 }

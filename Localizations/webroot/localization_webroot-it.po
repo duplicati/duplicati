@@ -3304,8 +3304,8 @@ msgstr ""
 "consentiti a quelli elencati qui. L'accesso IP e localhost diretti sono "
 "sempre consentiti. È possibile fornire più nomi di host con un separatore di"
 " punto e virgola.  Se uno dei nomi di host consentiti è un asterisco (*), "
-"tutti i nomi host sono consentiti e questa funzione è disattivare. Se il "
-"campo è vuoto, è consentito solo l'accesso all'indirizzo IP e a localhost."
+"tutti i nomi host sono consentiti e questa funzione è disattiva. Se il campo"
+" è vuoto, è consentito solo l'accesso all'indirizzo IP e a localhost."
 
 #: scripts/controllers/RestoreController.js:34
 msgid "Today"

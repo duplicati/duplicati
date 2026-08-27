@@ -544,7 +544,7 @@ namespace Duplicati.Library.Main.Database.Local
                             {
                                 await cmd
                                     .SetParameterValue("@Path", s)
-                                    .ExecuteNonQueryAsync(token) // Not logging as we log the total time
+                                    .ExecuteNonQueryAsync(writeLog: false, token) // Not logging as we log the total time
                                     .ConfigureAwait(false);
                             }
 
@@ -590,7 +590,7 @@ namespace Duplicati.Library.Main.Database.Local
                                     FROM ""{m_tempfiletable}""
                                 )
                             ");
-                            await using (var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false))
+                            await using (var rd = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false))
                                 while (await rd.ReadAsync(token).ConfigureAwait(false))
                                     sb.AppendLine(rd.ConvertValueToString(0));
 
@@ -654,7 +654,7 @@ namespace Duplicati.Library.Main.Database.Local
 
                         using (new Logging.Timer(LOGTAG, "ApplyFilter", "Iterating files with filter"))
                         {
-                            await using var rd = await cmd.ExecuteReaderAsync(token)
+                            await using var rd = await cmd.ExecuteReaderAsync(writeLog: false, token)
                                 .ConfigureAwait(false);
                             while (await rd.ReadAsync(token).ConfigureAwait(false))
                             {
@@ -675,7 +675,7 @@ namespace Duplicati.Library.Main.Database.Local
                                         .SetParameterValue("@Path", values[1])
                                         .SetParameterValue("@BlocksetID", values[2])
                                         .SetParameterValue("@MetadataID", values[3])
-                                        .ExecuteNonQueryAsync(token) // Not logging as we log the total time
+                                        .ExecuteNonQueryAsync(writeLog: false, token) // Not logging as we log the total time
                                         .ConfigureAwait(false);
                                 }
                             }
@@ -705,6 +705,20 @@ namespace Duplicati.Library.Main.Database.Local
                     ", token)
                         .ConfigureAwait(false);
 
+                    // Both of these are joined on when the missing blocks are collected, and
+                    // without them SQLite builds a transient index of its own for each join.
+                    await cmd.ExecuteNonQueryAsync($@"
+                        CREATE INDEX ""{m_tempfiletable}_BlocksetID""
+                        ON ""{m_tempfiletable}"" (""BlocksetID"")
+                    ", token)
+                        .ConfigureAwait(false);
+
+                    await cmd.ExecuteNonQueryAsync($@"
+                        CREATE INDEX ""{m_tempfiletable}_MetadataID""
+                        ON ""{m_tempfiletable}"" (""MetadataID"")
+                    ", token)
+                        .ConfigureAwait(false);
+
                     cmd.SetCommandAndParameters($@"
                         SELECT
                             COUNT(DISTINCT ""{m_tempfiletable}"".""Path""),
@@ -714,7 +728,7 @@ namespace Duplicati.Library.Main.Database.Local
                             ""Blockset""
                         WHERE ""{m_tempfiletable}"".""BlocksetID"" = ""Blockset"".""ID""
                     ");
-                    await using (var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false))
+                    await using (var rd = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false))
                     {
                         var filecount = 0L;
                         var filesize = 0L;
@@ -761,7 +775,7 @@ namespace Duplicati.Library.Main.Database.Local
             ")
                 .SetTransaction(m_rtr);
 
-            await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+            await using var rd = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false);
             var filecount = 0L;
             var filesize = 0L;
             if (await rd.ReadAsync(token).ConfigureAwait(false))
@@ -802,7 +816,7 @@ namespace Duplicati.Library.Main.Database.Local
                 SELECT ""Path""
                 FROM ""{m_tempfiletable}""
             ");
-            await using (var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false))
+            await using (var rd = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false))
                 while (await rd.ReadAsync(token).ConfigureAwait(false))
                 {
                     var path = rd.ConvertValueToString(0);
@@ -857,7 +871,7 @@ namespace Duplicati.Library.Main.Database.Local
                 .SetParameterValue("@FilesetId", filesetId);
 
             await insertCmd.ExpandInClauseParameterMssqliteAsync("@ParentPaths", parentTable, token).ConfigureAwait(false);
-            await insertCmd.ExecuteNonQueryAsync(token).ConfigureAwait(false);
+            await insertCmd.ExecuteNonQueryAsync(writeLog: false, token).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -876,7 +890,7 @@ namespace Duplicati.Library.Main.Database.Local
             ")
                 .SetTransaction(m_rtr);
 
-            await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+            await using var rd = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false);
             while (await rd.ReadAsync(token).ConfigureAwait(false))
             {
                 var id = rd.ConvertValueToInt64(0);
@@ -897,7 +911,7 @@ namespace Duplicati.Library.Main.Database.Local
                 .SetTransaction(m_rtr);
 
             await delCmd.ExpandInClauseParameterMssqliteAsync("@Ids", tmptable, token).ConfigureAwait(false);
-            await delCmd.ExecuteNonQueryAsync(token).ConfigureAwait(false);
+            await delCmd.ExecuteNonQueryAsync(writeLog: false, token).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -1578,7 +1592,7 @@ namespace Duplicati.Library.Main.Database.Local
                         ""BlocksetEntry"".""Index""
                 ")
                     .SetTransaction(db.Transaction);
-                await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+                await using var rd = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false);
                 if (await rd.ReadAsync(token).ConfigureAwait(false))
                 {
                     var more = true;
@@ -1775,7 +1789,7 @@ namespace Duplicati.Library.Main.Database.Local
                         ""B"".""Index""
                 ")
                     .SetTransaction(db.Transaction);
-                await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+                await using var rd = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false);
                 var more = await rd.ReadAsync(token).ConfigureAwait(false);
 
                 while (more)
@@ -1842,7 +1856,7 @@ namespace Duplicati.Library.Main.Database.Local
             // Now it is likely to restore all files from front to back. Large files will always be done last.
             // One could also use like the average block number in a volume, that needs to be measured.
 
-            await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+            await using var rd = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false);
             while (await rd.ReadAsync(token).ConfigureAwait(false))
             {
                 yield return new RemoteVolume(
@@ -1936,7 +1950,7 @@ namespace Duplicati.Library.Main.Database.Local
                     {
                         await c.SetParameterValue("@Hash", s.Key)
                             .SetParameterValue("@Size", s.Value)
-                            .ExecuteNonQueryAsync(token) // Not logging as we log the total time
+                            .ExecuteNonQueryAsync(writeLog: false, token) // Not logging as we log the total time
                             .ConfigureAwait(false);
                     }
 
@@ -1958,7 +1972,7 @@ namespace Duplicati.Library.Main.Database.Local
                 {
                     await using var c = m_db.Connection.CreateCommand(@$"DROP TABLE IF EXISTS ""{m_tmptable}""")
                         .SetTransaction(m_db.Transaction);
-                    await c.ExecuteNonQueryAsync().ConfigureAwait(false);
+                    await c.ExecuteNonQueryAsync(writeLog: false, default).ConfigureAwait(false);
                     await m_db.Transaction.CommitAsync().ConfigureAwait(false);
                 }
             }
@@ -2056,7 +2070,7 @@ namespace Duplicati.Library.Main.Database.Local
                 ")
                     .SetTransaction(m_db.Transaction);
 
-                await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+                await using var rd = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false);
                 if (await rd.ReadAsync(token).ConfigureAwait(false))
                 {
                     var more = true;
@@ -2110,7 +2124,7 @@ namespace Duplicati.Library.Main.Database.Local
                 ")
                     .SetTransaction(m_db.Transaction);
 
-                await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+                await using var rd = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false);
                 if (await rd.ReadAsync(token).ConfigureAwait(false))
                 {
                     var more = true;
@@ -2216,7 +2230,7 @@ namespace Duplicati.Library.Main.Database.Local
                 .SetTransaction(m_rtr)
                 .SetParameterValue("@Verified", !onlyNonVerified);
 
-            await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+            await using var rd = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false);
             while (await rd.ReadAsync(token).ConfigureAwait(false))
                 yield return new FileToRestore(
                     rd.ConvertValueToInt64(0), rd.ConvertValueToString(1) ?? "", rd.ConvertValueToString(2) ?? "", rd.ConvertValueToInt64(3));
@@ -2256,7 +2270,7 @@ namespace Duplicati.Library.Main.Database.Local
         {
             await using var cmd = m_connection.CreateCommand($@"DROP TABLE IF EXISTS ""{tableName}""")
                 .SetTransaction(m_rtr);
-            await cmd.ExecuteNonQueryAsync(token).ConfigureAwait(false);
+            await cmd.ExecuteNonQueryAsync(writeLog: false, token).ConfigureAwait(false);
             await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
         }
 
@@ -2286,7 +2300,7 @@ namespace Duplicati.Library.Main.Database.Local
                 ")
                     .SetTransaction(m_rtr)
                     .SetParameterValue("@TargetFileId", targetfileid);
-                await cmd.ExecuteNonQueryAsync(token).ConfigureAwait(false);
+                await cmd.ExecuteNonQueryAsync(writeLog: false, token).ConfigureAwait(false);
             }
             finally
             {
@@ -2319,7 +2333,7 @@ namespace Duplicati.Library.Main.Database.Local
                     AND ""{m_tempfiletable}"".""DataVerified"" = 1
             ")
                 .SetTransaction(m_rtr);
-            var added = await cmd.ExecuteNonQueryAsync(token).ConfigureAwait(false);
+            var added = await cmd.ExecuteNonQueryAsync(writeLog: false, token).ConfigureAwait(false);
             // Commit so the appended hashes are durable and visible to the separate
             // connection used by the next version's restore (which reads this table to
             // exclude already-restored files).
@@ -2356,7 +2370,7 @@ namespace Duplicati.Library.Main.Database.Local
                 )
             ")
                 .SetTransaction(m_rtr);
-            return await cmd.ExecuteNonQueryAsync(token).ConfigureAwait(false);
+            return await cmd.ExecuteNonQueryAsync(writeLog: false, token).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -2390,7 +2404,7 @@ namespace Duplicati.Library.Main.Database.Local
             ")
                 .SetTransaction(m_rtr)
                 .SetParameterValue("@MaxSize", maxSize);
-            return await cmd.ExecuteNonQueryAsync(token).ConfigureAwait(false);
+            return await cmd.ExecuteNonQueryAsync(writeLog: false, token).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -2421,7 +2435,7 @@ namespace Duplicati.Library.Main.Database.Local
                 ")
                     .SetTransaction(m_rtr);
 
-                await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+                await using var rd = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false);
                 while (await rd.ReadAsync(token).ConfigureAwait(false))
                     yield return new FileRequest(
                         rd.ConvertValueToInt64(0),
@@ -2525,7 +2539,7 @@ namespace Duplicati.Library.Main.Database.Local
                 ")
                     .SetTransaction(m_rtr);
 
-                await using var reader = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+                await using var reader = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false);
                 while (await reader.ReadAsync(token).ConfigureAwait(false))
                     yield return (
                         reader.ConvertValueToInt64(0),
@@ -2566,7 +2580,7 @@ namespace Duplicati.Library.Main.Database.Local
                     .SetTransaction(transaction)
                     .SetParameterValue("@BlocksetID", blocksetID);
 
-                await using var reader = await cmd.ExecuteReaderAsync(token)
+                await using var reader = await cmd.ExecuteReaderAsync(writeLog: false, token)
                     .ConfigureAwait(false);
                 for (long i = 0; await reader.ReadAsync(token).ConfigureAwait(false); i++)
                     yield return new BlockRequest(
@@ -2616,7 +2630,7 @@ namespace Duplicati.Library.Main.Database.Local
                     .SetTransaction(transaction)
                     .SetParameterValue("@FileID", fileID);
 
-                await using var reader = await cmd.ExecuteReaderAsync(token)
+                await using var reader = await cmd.ExecuteReaderAsync(writeLog: false, token)
                     .ConfigureAwait(false);
                 for (long i = 0; await reader.ReadAsync(token).ConfigureAwait(false); i++)
                 {
@@ -2685,7 +2699,7 @@ namespace Duplicati.Library.Main.Database.Local
                     .SetTransaction(transaction)
                     .SetParameterValue("@VolumeID", VolumeID);
 
-                await using var reader = await cmd.ExecuteReaderAsync(token)
+                await using var reader = await cmd.ExecuteReaderAsync(writeLog: false, token)
                     .ConfigureAwait(false);
                 while (await reader.ReadAsync(token).ConfigureAwait(false))
                     yield return (
@@ -2976,7 +2990,7 @@ namespace Duplicati.Library.Main.Database.Local
                 m_hasUpdates = false;
                 await using var rd = await m_statUpdateCommand
                     .SetTransaction(m_db.Transaction)
-                    .ExecuteReaderAsync(token)
+                    .ExecuteReaderAsync(writeLog: false, token)
                     .ConfigureAwait(false);
 
                 var filesprocessed = 0L;
@@ -3135,7 +3149,7 @@ namespace Duplicati.Library.Main.Database.Local
                 .SetTransaction(m_rtr)
                 .SetParameterValue("@BlocksetID", FOLDER_BLOCKSET_ID);
 
-            await using var rd = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+            await using var rd = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false);
             while (await rd.ReadAsync(token).ConfigureAwait(false))
                 yield return rd.ConvertValueToString(0) ?? "";
         }
@@ -3291,7 +3305,7 @@ namespace Duplicati.Library.Main.Database.Local
 
                 using (new Logging.Timer(LOGTAG, "CheckLocalSourceExists", "Checking if local source files exist"))
                 {
-                    await using (var rd = await cmdReader.ExecuteReaderAsync(token).ConfigureAwait(false))
+                    await using (var rd = await cmdReader.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false))
                     {
                         while (await rd.ReadAsync(token).ConfigureAwait(false))
                         {
@@ -3300,7 +3314,7 @@ namespace Duplicati.Library.Main.Database.Local
                             {
                                 await cmd
                                     .SetParameterValue("@Path", sourcepath)
-                                    .ExecuteNonQueryAsync(token) // Not logging as we log the total time
+                                    .ExecuteNonQueryAsync(writeLog: false, token) // Not logging as we log the total time
                                     .ConfigureAwait(false);
                             }
                             else

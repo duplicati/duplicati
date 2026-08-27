@@ -90,7 +90,8 @@ public static partial class Command
         public static string CreatePackageJson(IEnumerable<CreatePackage.BuiltPackage> packages, RuntimeConfig rtcfg)
         {
             var entries = packages.Select(f => (f.Target.PackageTargetString, Entry: new PackageEntry(
-                url: $"https://updates.duplicati.com/{rtcfg.ReleaseInfo.Channel.ToString().ToLowerInvariant()}/{System.Web.HttpUtility.UrlEncode(Path.GetFileName(f.CreatedFile))}",
+                url: ReplaceVersionPlaceholders(rtcfg.Configuration.ExtraSettings.PackageUrls.First(), rtcfg.ReleaseInfo)
+                    .Replace("${FILENAME}", System.Web.HttpUtility.UrlEncode(Path.GetFileName(f.CreatedFile))),
                 filename: Path.GetFileName(f.CreatedFile),
                 md5: CalculateHash(f.CreatedFile, "md5"),
                 sha256: CalculateHash(f.CreatedFile, "sha256"),

@@ -90,8 +90,21 @@ namespace Duplicati.Library.Main.Operation.Restore
                         Logging.Log.WriteExplicitMessage(LOGTAG, "BlockVolumeReader", null, "Created BlockVolumeReader for volume {0} (ID: {1})", volume_name, volume_id);
 
                         sw_write?.Start();
-                        // Pass the decrypted volume to the `VolumeDecompressor` process.
-                        await self.Output.WriteAsync((volume_id, volume_wrapper)).ConfigureAwait(false);
+                        try
+                        {
+                            // Pass the decrypted volume to the `VolumeDecompressor` process.
+                            await self.Output.WriteAsync((volume_id, volume_wrapper)).ConfigureAwait(false);
+                        }
+                        catch (Exception)
+                        {
+                            // The handoff failed, so no other process took ownership and nothing
+                            // else will dispose the volume. Without this the decrypted temporary
+                            // file stays open and is left behind, because the volume reader holds
+                            // it without `FileShare.Delete` and `TempFile`'s finalizer therefore
+                            // cannot delete it.
+                            volume_wrapper.Dispose();
+                            throw;
+                        }
                         sw_write?.Stop();
                         Logging.Log.WriteExplicitMessage(LOGTAG, "DecryptVolume", null, "Passed decrypted volume {0} (ID: {1}) to next stage", volume_name, volume_id);
                     }

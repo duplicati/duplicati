@@ -179,5 +179,66 @@ namespace Duplicati.UnitTest
                 }
             }
         }
+
+        /// <summary>
+        /// Restores a directory symlink through both restore engines. The legacy engine applies
+        /// the stored metadata itself, and that is where a folder used to be created at the
+        /// symlink's own path, so this is the only test that covers it.
+        /// </summary>
+        [Test]
+        [Category("SymLink")]
+        public async Task SymlinkRestoreCreatesNoFolderAtItsOwnPathAsync([Values(true, false)] bool legacyRestore)
+        {
+            // Create symlink target directory with files in it
+            const string targetDirName = "target";
+            var targetDir = systemIO.PathCombine(this.DATAFOLDER, targetDirName);
+            systemIO.DirectoryCreate(targetDir);
+            foreach (var file in new[] { "a.txt", "b.txt", "c.txt" })
+                TestUtils.WriteFile(systemIO.PathCombine(targetDir, file), Encoding.Default.GetBytes(file));
+
+            const string symlinkDirName = "symlink";
+            var symlinkDir = systemIO.PathCombine(this.DATAFOLDER, symlinkDirName);
+            try
+            {
+                systemIO.CreateSymlink(symlinkDir, targetDir, asDir: true);
+            }
+            catch (Exception e)
+            {
+                // If client cannot create symlinks, mark test as ignored
+                Assert.Ignore($"Client could not create a symbolic link. Error reported: {e.Message}");
+            }
+
+            using (Controller c = new("file://" + this.TARGETFOLDER, this.TestOptions, null))
+            {
+                var backupResults = await c.BackupAsync(new[] { this.DATAFOLDER });
+                Assert.AreEqual(0, backupResults.Errors.Count());
+                Assert.AreEqual(0, backupResults.Warnings.Count());
+            }
+
+            Dictionary<string, string> restoreOptions = new(this.TestOptions)
+            {
+                ["restore-path"] = this.RESTOREFOLDER,
+                // The stored target is in the source folder, which is outside the restore target
+                ["allow-restore-outside-target-directory"] = "true",
+                ["restore-legacy"] = legacyRestore.ToString()
+            };
+
+            using (Controller c = new("file://" + this.TARGETFOLDER, restoreOptions, null))
+            {
+                var restoreResults = await c.RestoreAsync(null);
+                Assert.AreEqual(0, restoreResults.Errors.Count());
+
+                // The legacy engine used to report "Creating missing folder <path> for target
+                // <path>\" here, because the parent of a directory entry was computed as the
+                // entry itself.
+                Assert.AreEqual(0, restoreResults.Warnings.Count(),
+                    $"warnings: {string.Join("; ", restoreResults.Warnings)}");
+
+                var restored = systemIO.PathCombine(this.RESTOREFOLDER, symlinkDirName);
+                Assert.That(systemIO.IsSymlink(restored), Is.True, "the restored path is not a symlink");
+                Assert.That(systemIO.PathGetFullPath(systemIO.GetSymlinkTarget(restored)),
+                    Is.EqualTo(systemIO.PathGetFullPath(targetDir)));
+            }
+        }
     }
 }

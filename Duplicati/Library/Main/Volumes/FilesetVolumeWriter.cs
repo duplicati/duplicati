@@ -21,6 +21,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Newtonsoft.Json;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database.Local;
@@ -220,6 +221,22 @@ namespace Duplicati.Library.Main.Volumes
             using (var sr = new StreamWriter(this.m_compression.CreateFile(FILESET_FILENAME, CompressionHint.Compressible, DateTime.UtcNow), ENCODING))
             {
                 sr.Write(FilesetData.GetFilesetInstance(isFullBackup));
+            }
+        }
+
+        /// <summary>
+        /// Adds the labels.json file to the volume, containing the labels of all backup versions.
+        /// </summary>
+        /// <param name="labels">The labels to write, where the key is the backup timestamp and the value is the label.</param>
+        public void AddLabelsFile(IEnumerable<KeyValuePair<DateTime, string>> labels)
+        {
+            var data = labels.ToDictionary(
+                x => Library.Utility.Utility.SerializeDateTime(x.Key.ToUniversalTime()),
+                x => x.Value);
+
+            using (var sr = new StreamWriter(this.m_compression.CreateFile(LABELS_FILENAME, CompressionHint.Compressible, DateTime.UtcNow), ENCODING))
+            {
+                sr.Write(JsonConvert.SerializeObject(data));
             }
         }
 

@@ -175,14 +175,14 @@ namespace Duplicati.Proprietary.DiskImage.Disk
         }
 
         /// <inheritdoc />
-        public Task<bool> InitializeAsync(CancellationToken cancellationToken)
+        public Task<string?> InitializeAsync(CancellationToken cancellationToken)
             => InitializeAsync(false, cancellationToken);
 
         /// <inheritdoc />
-        public async Task<bool> InitializeAsync(bool enableWrite, CancellationToken cancellationToken)
+        public async Task<string?> InitializeAsync(bool enableWrite, CancellationToken cancellationToken)
         {
             if (m_initialized)
-                return true;
+                return null;
 
             if (enableWrite && (await GetMountedPartitionsAsync(cancellationToken)).Count > 0)
             {
@@ -196,10 +196,11 @@ namespace Duplicati.Proprietary.DiskImage.Disk
 
             if (m_fileDescriptor < 0)
             {
-                int errorCode = Marshal.GetLastWin32Error();
-                string errorMessage = Marshal.GetPInvokeErrorMessage(errorCode); ;
-                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "initialize", null, $"Failed to open device {m_devicePath}: {errorMessage} (errno: {errorCode})");
-                return false;
+                var errorCode = Marshal.GetLastWin32Error();
+                var errorMessage = Marshal.GetPInvokeErrorMessage(errorCode); ;
+                var err = $"Failed to open device {m_devicePath}: {errorMessage} (errno: {errorCode})";
+                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "initialize", null, err);
+                return err;
             }
 
             // Get disk geometry using ioctls
@@ -209,11 +210,12 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                 uint blockSize = 0;
                 if (ioctl_uint32(m_fileDescriptor, BLKSSZGET, ref blockSize) < 0)
                 {
-                    int errorCode = Marshal.GetLastWin32Error();
+                    var errorCode = Marshal.GetLastWin32Error();
                     close(m_fileDescriptor);
                     m_fileDescriptor = -1;
-                    Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "initialize", null, $"Failed to get block size: errno {errorCode}");
-                    return false;
+                    var err = $"Failed to get block size: errno {errorCode}";
+                    Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "initialize", null, err);
+                    return err;
                 }
                 m_sectorSize = blockSize;
 
@@ -221,11 +223,12 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                 ulong sizeInBytes = 0;
                 if (ioctl_uint64(m_fileDescriptor, BLKGETSIZE64, ref sizeInBytes) < 0)
                 {
-                    int errorCode = Marshal.GetLastWin32Error();
+                    var errorCode = Marshal.GetLastWin32Error();
                     close(m_fileDescriptor);
                     m_fileDescriptor = -1;
-                    Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "initialize", null, $"Failed to get disk size: errno {errorCode}");
-                    return false;
+                    var err = $"Failed to get disk size: errno {errorCode}";
+                    Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "initialize", null, err);
+                    return err;
                 }
 
                 m_size = (long)sizeInBytes;
@@ -233,14 +236,14 @@ namespace Duplicati.Proprietary.DiskImage.Disk
                 m_initialized = true;
 
                 Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "initialize", $"Successfully initialized disk {m_devicePath}: Size={m_size}, SectorSize={m_sectorSize}");
-                return true;
+                return null;
             }
             catch (Exception ex)
             {
                 close(m_fileDescriptor);
                 m_fileDescriptor = -1;
                 Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "initialize", ex, "Failed to initialize disk");
-                return false;
+                return $"Failed to initialize disk: {ex.Message}";
             }
         }
 

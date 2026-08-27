@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="SharpAESCrypt" Version="2.0.3" />
+    <PackageReference Include="SharpAESCrypt" Version="3.0.0" />
   </ItemGroup>
 
 </Project>

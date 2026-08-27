@@ -12,7 +12,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-19 16:29+0200\n"
+"POT-Creation-Date: 2026-08-25 09:53+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: Andi Chandler <andi@gowling.com>, 2026\n"
 "Language-Team: English (United Kingdom) (https://app.transifex.com/duplicati/teams/67655/en_GB/)\n"
@@ -44,8 +44,8 @@ msgid ""
 msgstr ""
 "Use this option to set the thread level allowed for AES crypt operations."
 
-#: Library/Encryption/Strings.cs:33 Library/Main/Strings.cs:208
-#: Library/Main/Strings.cs:266
+#: Library/Encryption/Strings.cs:33 Library/Main/Strings.cs:210
+#: Library/Main/Strings.cs:270
 #, csharp-format
 msgid "The option --{0} is no longer used and has been deprecated."
 msgstr "The option --{0} is no longer used and has been deprecated."
@@ -381,7 +381,7 @@ msgstr ""
 "must also be set."
 
 #: Library/Backend/OpenStack/Strings.cs:31 Library/Backend/S3/Strings.cs:33
-#: Library/Backend/Mega/Strings.cs:27 Library/Utility/Strings.cs:96
+#: Library/Backend/Mega/Strings.cs:27 Library/Utility/Strings.cs:97
 msgid "Supply the password used to connect to the server"
 msgstr "Supply the password used to connect to the server"
 
@@ -394,7 +394,7 @@ msgid "Supply the domain used to connect to the server"
 msgstr "Supply the domain used to connect to the server"
 
 #: Library/Backend/OpenStack/Strings.cs:34 Library/Backend/S3/Strings.cs:34
-#: Library/Backend/Mega/Strings.cs:28 Library/Utility/Strings.cs:97
+#: Library/Backend/Mega/Strings.cs:28 Library/Utility/Strings.cs:98
 msgid ""
 "The username used to connect to the server. This may also be supplied as the"
 " environment variable \"AUTH_USERNAME\"."
@@ -403,7 +403,7 @@ msgstr ""
 " environment variable \"AUTH_USERNAME\"."
 
 #: Library/Backend/OpenStack/Strings.cs:35 Library/Backend/S3/Strings.cs:35
-#: Library/Backend/Mega/Strings.cs:29 Library/Utility/Strings.cs:98
+#: Library/Backend/Mega/Strings.cs:29 Library/Utility/Strings.cs:99
 msgid "Supply the username used to connect to the server"
 msgstr "Supply the username used to connect to the server"
 
@@ -651,7 +651,7 @@ msgstr "use-ssl is deprecated, use ftp-ssl-protocols instead."
 msgid "The file {0} was not found. Message: {1}"
 msgstr "The file {0} was not found. Message: {1}"
 
-#: Library/Backend/FTP/Strings.cs:70 Library/Utility/Strings.cs:128
+#: Library/Backend/FTP/Strings.cs:70 Library/Utility/Strings.cs:129
 #, csharp-format
 msgid "Error writing file: {0}, error: {1}"
 msgstr "Error writing file: {0}, error: {1}"
@@ -703,7 +703,7 @@ msgid "Access Key ID"
 msgstr "Access Key ID"
 
 #: Library/Backend/S3/Strings.cs:32 Library/Backend/Mega/Strings.cs:26
-#: Library/Utility/Strings.cs:95
+#: Library/Utility/Strings.cs:96
 msgid ""
 "The password used to connect to the server. This may also be supplied as the"
 " environment variable \"AUTH_PASSWORD\"."
@@ -1243,13 +1243,13 @@ msgid "Dropbox"
 msgstr "Dropbox"
 
 #: Library/Backend/Dropbox/Strings.cs:29
-#: Library/Backend/OAuthHelper/Strings.cs:29 Library/Utility/Strings.cs:104
+#: Library/Backend/OAuthHelper/Strings.cs:29 Library/Utility/Strings.cs:105
 #, csharp-format
 msgid "The authorization token retrieved from {0}"
 msgstr "The authorisation token retrieved from {0}"
 
 #: Library/Backend/Dropbox/Strings.cs:30
-#: Library/Backend/OAuthHelper/Strings.cs:30 Library/Utility/Strings.cs:105
+#: Library/Backend/OAuthHelper/Strings.cs:30 Library/Utility/Strings.cs:106
 msgid "The authorization code"
 msgstr "The authorisation code"
 
@@ -1436,11 +1436,11 @@ msgstr ""
 "hostnames are \"*\", all hostnames are allowed and the hostname checking is "
 "disabled."
 
-#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:286
+#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:290
 msgid "Set the time after which log data will be purged from the database."
 msgstr "Set the time after which log data will be purged from the database."
 
-#: Library/RestAPI/Strings.cs:67 Library/Main/Strings.cs:287
+#: Library/RestAPI/Strings.cs:67 Library/Main/Strings.cs:291
 msgid "Clean up old log data"
 msgstr "Clean up old log data"
 
@@ -1466,20 +1466,20 @@ msgstr ""
 "database. This option can also be set with the environment variable {0}. Use"
 " the option --{1} to disable the database scrambling."
 
-#: Library/RestAPI/Strings.cs:75 Library/Main/Strings.cs:103
+#: Library/RestAPI/Strings.cs:75 Library/Main/Strings.cs:105
 msgid "Temporary storage folder"
 msgstr "Temporary storage folder"
 
-#: Library/RestAPI/Strings.cs:98 Library/RestAPI/Strings.cs:143
+#: Library/RestAPI/Strings.cs:98 Library/RestAPI/Strings.cs:144
 #, csharp-format
 msgid "Server has started and is listening on {0}, port {1}"
 msgstr "Server has started and is listening on {0}, port {1}"
 
-#: Library/RestAPI/Strings.cs:113
+#: Library/RestAPI/Strings.cs:114
 msgid "Register for remote control"
 msgstr "Register for remote control"
 
-#: Library/RestAPI/Strings.cs:139
+#: Library/RestAPI/Strings.cs:140
 #, csharp-format
 msgid ""
 "Unable to find a valid date, given the start date {0}, the repetition "
@@ -1488,7 +1488,7 @@ msgstr ""
 "Unable to find a valid date, given the start date {0}, the repetition "
 "interval {1} and the allowed days {2}"
 
-#: Library/RestAPI/Strings.cs:145
+#: Library/RestAPI/Strings.cs:146
 #, csharp-format
 msgid "Unable to open a socket for listening, tried ports: {0}"
 msgstr "Unable to open a socket for listening, tried ports: {0}"
@@ -1729,7 +1729,7 @@ msgstr "The time to list/restore files"
 msgid "The version to list/restore files"
 msgstr "The version to list/restore files"
 
-#: Library/Main/Strings.cs:82
+#: Library/Main/Strings.cs:84
 msgid ""
 "When searching for files, only the most recent backup is searched. Use this "
 "option to show all previous versions too."
@@ -1737,11 +1737,11 @@ msgstr ""
 "When searching for files, only the most recent backup is searched. Use this "
 "option to show all previous versions too."
 
-#: Library/Main/Strings.cs:83
+#: Library/Main/Strings.cs:85
 msgid "Show all versions"
 msgstr "Show all versions"
 
-#: Library/Main/Strings.cs:84
+#: Library/Main/Strings.cs:86
 msgid ""
 "When searching for files, all matching files are returned. Use this option "
 "to return only the largest common prefix path."
@@ -1749,11 +1749,11 @@ msgstr ""
 "When searching for files, all matching files are returned. Use this option "
 "to return only the largest common prefix path."
 
-#: Library/Main/Strings.cs:85
+#: Library/Main/Strings.cs:87
 msgid "Show largest prefix"
 msgstr "Show largest prefix"
 
-#: Library/Main/Strings.cs:90
+#: Library/Main/Strings.cs:92
 msgid ""
 "When searching for files, all matching files are returned. Use this option "
 "to return only the entries found in the folder specified as filter."
@@ -1761,11 +1761,11 @@ msgstr ""
 "When searching for files, all matching files are returned. Use this option "
 "to return only the entries found in the folder specified as filter."
 
-#: Library/Main/Strings.cs:91
+#: Library/Main/Strings.cs:93
 msgid "Show folder contents"
 msgstr "Show folder contents"
 
-#: Library/Main/Strings.cs:92
+#: Library/Main/Strings.cs:94
 msgid ""
 "After a failed transmission, Duplicati will wait a short period before "
 "attempting again. This is useful if the network drops out occasionally "
@@ -1775,23 +1775,23 @@ msgstr ""
 "attempting again. This is useful if the network drops out occasionally "
 "during transmissions."
 
-#: Library/Main/Strings.cs:93
+#: Library/Main/Strings.cs:95
 msgid "Time to wait between retries"
 msgstr "Time to wait between retries"
 
-#: Library/Main/Strings.cs:97
+#: Library/Main/Strings.cs:99
 msgid "Set control files"
 msgstr "Set control files"
 
-#: Library/Main/Strings.cs:106
+#: Library/Main/Strings.cs:108
 msgid "Thread priority"
 msgstr "Thread priority"
 
-#: Library/Main/Strings.cs:108
+#: Library/Main/Strings.cs:110
 msgid "Limit the size of the volumes"
 msgstr "Limit the size of the volumes"
 
-#: Library/Main/Strings.cs:115
+#: Library/Main/Strings.cs:117
 msgid ""
 "Duplicati supports pluggable compression modules. Use this option to select "
 "a module to use for compression. This is only applied when creating new "
@@ -1803,11 +1803,11 @@ msgstr ""
 "volumes, when reading an existing file, the filename is used to select the "
 "compression module."
 
-#: Library/Main/Strings.cs:116
+#: Library/Main/Strings.cs:118
 msgid "Select what module to use for compression"
 msgstr "Select what module to use for compression"
 
-#: Library/Main/Strings.cs:117
+#: Library/Main/Strings.cs:119
 msgid ""
 "Duplicati supports pluggable encryption modules. Use this option to select a"
 " module to use for encryption. This is only applied when creating new "
@@ -1819,15 +1819,15 @@ msgstr ""
 "volumes, when reading an existing file, the filename is used to select the "
 "encryption module."
 
-#: Library/Main/Strings.cs:118
+#: Library/Main/Strings.cs:120
 msgid "Select what module to use for encryption"
 msgstr "Select what module to use for encryption"
 
-#: Library/Main/Strings.cs:130
+#: Library/Main/Strings.cs:132
 msgid "The path where ready volumes are placed until uploaded"
 msgstr "The path where ready volumes are placed until uploaded"
 
-#: Library/Main/Strings.cs:131
+#: Library/Main/Strings.cs:133
 msgid ""
 "When performing asynchronous uploads, the maximum number of concurrent "
 "uploads allowed. Set to zero to disable the limit."
@@ -1835,28 +1835,28 @@ msgstr ""
 "When performing asynchronous uploads, the maximum number of concurrent "
 "uploads allowed. Set to zero to disable the limit."
 
-#: Library/Main/Strings.cs:132
+#: Library/Main/Strings.cs:134
 msgid "The number of concurrent uploads allowed"
 msgstr "The number of concurrent uploads allowed"
 
-#: Library/Main/Strings.cs:136
+#: Library/Main/Strings.cs:138
 msgid "Log internal information to a file"
 msgstr "Log internal information to a file"
 
-#: Library/Main/Strings.cs:138
+#: Library/Main/Strings.cs:140
 msgid "Log information level"
 msgstr "Log information level"
 
-#: Library/Main/Strings.cs:146
-msgid ""
-"If Duplicati detects that the target folder is missing, it will create it "
-"automatically. Activate this option to prevent automatic folder creation."
-msgstr ""
-"If Duplicati detects that the target folder is missing, it will create it "
-"automatically. Activate this option to prevent automatic folder creation."
-
 #: Library/Main/Strings.cs:148
 msgid ""
+"If Duplicati detects that the target folder is missing, it will create it "
+"automatically. Activate this option to prevent automatic folder creation."
+msgstr ""
+"If Duplicati detects that the target folder is missing, it will create it "
+"automatically. Activate this option to prevent automatic folder creation."
+
+#: Library/Main/Strings.cs:150
+msgid ""
 "Use this option to exclude faulty writers from a snapshot. This is "
 "equivalent to the -wx flag of the vshadow.exe tool, except that it only "
 "accepts writer class GUIDs, and not component names or instance GUIDs. "
@@ -1869,25 +1869,25 @@ msgstr ""
 "Multiple GUIDs must be separated with a semicolon, and most forms of GUIDs "
 "are allowed, including with and without curly braces."
 
-#: Library/Main/Strings.cs:149
+#: Library/Main/Strings.cs:151
 msgid ""
 "A semicolon separated list of guids of VSS writers to exclude (Windows only)"
 msgstr ""
 "A semicolon separated list of guids of VSS writers to exclude (Windows only)"
 
-#: Library/Main/Strings.cs:161
+#: Library/Main/Strings.cs:163
 msgid "Verify uploads by listing contents"
 msgstr "Verify uploads by listing contents"
 
-#: Library/Main/Strings.cs:163
+#: Library/Main/Strings.cs:165
 msgid "Upload files synchronously"
 msgstr "Upload files synchronously"
 
-#: Library/Main/Strings.cs:165
+#: Library/Main/Strings.cs:167
 msgid "Do not re-use connections"
 msgstr "Do not re-use connections"
 
-#: Library/Main/Strings.cs:166
+#: Library/Main/Strings.cs:168
 msgid ""
 "When an error occurs, Duplicati will silently retry, and only report the "
 "number of retries. Enable this option to have the error messages displayed "
@@ -1897,23 +1897,23 @@ msgstr ""
 "number of retries. Enable this option to have the error messages displayed "
 "when a retry is performed."
 
-#: Library/Main/Strings.cs:167
+#: Library/Main/Strings.cs:169
 msgid "Show error messages when a retry is performed"
 msgstr "Show error messages when a retry is performed"
 
-#: Library/Main/Strings.cs:169
+#: Library/Main/Strings.cs:171
 msgid "Upload empty backup files"
 msgstr "Upload empty backup files"
 
-#: Library/Main/Strings.cs:173
+#: Library/Main/Strings.cs:175
 msgid "Threshold for warning about low quota"
 msgstr "Threshold for warning about low quota"
 
-#: Library/Main/Strings.cs:177
+#: Library/Main/Strings.cs:179
 msgid "Symlink handling"
 msgstr "Symlink handling"
 
-#: Library/Main/Strings.cs:178
+#: Library/Main/Strings.cs:180
 #, csharp-format
 msgid ""
 "Use this option to handle hardlinks (only works on Linux/OSX). The \"{0}\" "
@@ -1928,15 +1928,15 @@ msgstr ""
 "information, and treat each hardlink as a unique path. The option \"{2}\" "
 "will ignore all hardlinks with more than one link."
 
-#: Library/Main/Strings.cs:179
+#: Library/Main/Strings.cs:181
 msgid "Hardlink handling"
 msgstr "Hardlink handling"
 
-#: Library/Main/Strings.cs:181
+#: Library/Main/Strings.cs:183
 msgid "Exclude files by attribute"
 msgstr "Exclude files by attribute"
 
-#: Library/Main/Strings.cs:184
+#: Library/Main/Strings.cs:186
 msgid ""
 "Activate this option to map VSS snapshots to a drive (similar to SUBST, "
 "using Win32 DefineDosDevice). This will create temporary drives that are "
@@ -1948,19 +1948,19 @@ msgstr ""
 "then used to access the contents of a snapshot. This workaround can speed up"
 " file access on Windows XP."
 
-#: Library/Main/Strings.cs:185
+#: Library/Main/Strings.cs:187
 msgid "Map snapshots to a drive (Windows only)"
 msgstr "Map snapshots to a drive (Windows only)"
 
-#: Library/Main/Strings.cs:187
+#: Library/Main/Strings.cs:189
 msgid "Name of the backup"
 msgstr "Name of the backup"
 
-#: Library/Main/Strings.cs:197
+#: Library/Main/Strings.cs:199
 msgid "Manage non-compressible file extensions"
 msgstr "Manage non-compressible file extensions"
 
-#: Library/Main/Strings.cs:198
+#: Library/Main/Strings.cs:200
 msgid ""
 "The block size determines how files are fragmented. Choosing a large value "
 "will cause a larger overhead on file changes, choosing a small value will "
@@ -1972,31 +1972,31 @@ msgstr ""
 "cause a large overhead on storage of file lists. Note that the value cannot "
 "be changed after remote files are created."
 
-#: Library/Main/Strings.cs:199
+#: Library/Main/Strings.cs:201
 msgid "Block size used in hashing"
 msgstr "Block size used in hashing"
 
-#: Library/Main/Strings.cs:201
+#: Library/Main/Strings.cs:203
 msgid "List of files to examine for changes"
 msgstr "List of files to examine for changes"
 
-#: Library/Main/Strings.cs:203
+#: Library/Main/Strings.cs:205
 msgid "Path to the local state database"
 msgstr "Path to the local state database"
 
-#: Library/Main/Strings.cs:205
+#: Library/Main/Strings.cs:207
 msgid "List of deleted files"
 msgstr "List of deleted files"
 
-#: Library/Main/Strings.cs:207
+#: Library/Main/Strings.cs:209
 msgid "Reduce memory footprint by disabling in-memory lookups"
 msgstr "Reduce memory footprint by disabling in-memory lookups"
 
-#: Library/Main/Strings.cs:210
+#: Library/Main/Strings.cs:212
 msgid "Do not query backend at startup"
 msgstr "Do not query backend at startup"
 
-#: Library/Main/Strings.cs:211
+#: Library/Main/Strings.cs:215
 msgid ""
 "The index files are used to limit the need for downloading dblock files when"
 " there is no local database present. The more information is recorded in the"
@@ -2010,7 +2010,7 @@ msgstr ""
 "tradeoff is that larger index files take up more remote space and which may "
 "never be used."
 
-#: Library/Main/Strings.cs:213
+#: Library/Main/Strings.cs:217
 msgid ""
 "As files are changed, some data stored at the remote destination may not be "
 "required. This option controls how much wasted space the destination can "
@@ -2022,19 +2022,19 @@ msgstr ""
 "contain before being reclaimed. This value is a percentage used on each "
 "volume and the total storage."
 
-#: Library/Main/Strings.cs:214
+#: Library/Main/Strings.cs:218
 msgid "The maximum wasted space in percent"
 msgstr "The maximum wasted space in percent"
 
-#: Library/Main/Strings.cs:218
+#: Library/Main/Strings.cs:222
 msgid "The hash algorithm used on blocks"
 msgstr "The hash algorithm used on blocks"
 
-#: Library/Main/Strings.cs:220
+#: Library/Main/Strings.cs:224
 msgid "The hash algorithm used on files"
 msgstr "The hash algorithm used on files"
 
-#: Library/Main/Strings.cs:221
+#: Library/Main/Strings.cs:225
 msgid ""
 "If a large number of small files are detected during a backup, or wasted "
 "space is found after deleting backups, the remote data will be compacted. "
@@ -2046,11 +2046,11 @@ msgstr ""
 "Use this option to disable such automatic compacting and only compact when "
 "running the compact command."
 
-#: Library/Main/Strings.cs:222
+#: Library/Main/Strings.cs:226
 msgid "Disable automatic compacting"
 msgstr "Disable automatic compacting"
 
-#: Library/Main/Strings.cs:223
+#: Library/Main/Strings.cs:227
 msgid ""
 "When examining the size of a volume in consideration for compacting, a small"
 " tolerance value is used, by default 20 percent of the volume size. This "
@@ -2062,11 +2062,11 @@ msgstr ""
 "ensures that large volumes which may have a few bytes wasted space are not "
 "downloaded and rewritten."
 
-#: Library/Main/Strings.cs:224
+#: Library/Main/Strings.cs:228
 msgid "Volume size threshold"
 msgstr "Volume size threshold"
 
-#: Library/Main/Strings.cs:225
+#: Library/Main/Strings.cs:229
 msgid ""
 "To avoid filling the remote storage with small files, this value can force "
 "grouping small files. The small volumes will always be combined when they "
@@ -2076,11 +2076,11 @@ msgstr ""
 "grouping small files. The small volumes will always be combined when they "
 "can fill an entire volume."
 
-#: Library/Main/Strings.cs:226
+#: Library/Main/Strings.cs:230
 msgid "Maximum number of small volumes"
 msgstr "Maximum number of small volumes"
 
-#: Library/Main/Strings.cs:227
+#: Library/Main/Strings.cs:231
 msgid ""
 "Enable this option to look into other files on this machine to find existing"
 " blocks. This is a fairly slow operation but can limit the size of "
@@ -2090,23 +2090,23 @@ msgstr ""
 " blocks. This is a fairly slow operation but can limit the size of "
 "downloads."
 
-#: Library/Main/Strings.cs:228
+#: Library/Main/Strings.cs:232
 msgid "Use local file data when restoring"
 msgstr "Use local file data when restoring"
 
-#: Library/Main/Strings.cs:233
+#: Library/Main/Strings.cs:237
 msgid "Keep a number of versions"
 msgstr "Keep a number of versions"
 
-#: Library/Main/Strings.cs:234
+#: Library/Main/Strings.cs:238
 msgid "Use this option to set the timespan in which backups are kept."
 msgstr "Use this option to set the timespan in which backups are kept."
 
-#: Library/Main/Strings.cs:235
+#: Library/Main/Strings.cs:239
 msgid "Keep all versions within a timespan"
 msgstr "Keep all versions within a timespan"
 
-#: Library/Main/Strings.cs:238
+#: Library/Main/Strings.cs:242
 msgid ""
 "Use this option to reduce the number of versions that are kept with "
 "increasing version age by deleting most of the old backups. The expected "
@@ -2126,19 +2126,19 @@ msgstr ""
 "also supports using the specifier \"U\" to indicate an unlimited time "
 "interval."
 
-#: Library/Main/Strings.cs:239
+#: Library/Main/Strings.cs:243
 msgid "Reduce number of versions by deleting old intermediate backups"
 msgstr "Reduce number of versions by deleting old intermediate backups"
 
-#: Library/Main/Strings.cs:242
+#: Library/Main/Strings.cs:246
 msgid "Ignore missing source elements"
 msgstr "Ignore missing source elements"
 
-#: Library/Main/Strings.cs:248
+#: Library/Main/Strings.cs:252
 msgid "Overwrite files when restoring"
 msgstr "Overwrite files when restoring"
 
-#: Library/Main/Strings.cs:249
+#: Library/Main/Strings.cs:253
 msgid ""
 "Use this option to increase the amount of output generated when running an "
 "option. Generally this option will produce a line for each file processed."
@@ -2146,11 +2146,11 @@ msgstr ""
 "Use this option to increase the amount of output generated when running an "
 "option. Generally this option will produce a line for each file processed."
 
-#: Library/Main/Strings.cs:250
+#: Library/Main/Strings.cs:254
 msgid "Output more progress information"
 msgstr "Output more progress information"
 
-#: Library/Main/Strings.cs:252
+#: Library/Main/Strings.cs:256
 msgid ""
 "Use this option to increase the amount of output generated as the result of "
 "the operation, including all filenames."
@@ -2158,11 +2158,11 @@ msgstr ""
 "Use this option to increase the amount of output generated as the result of "
 "the operation, including all filenames."
 
-#: Library/Main/Strings.cs:253
+#: Library/Main/Strings.cs:257
 msgid "Output full results"
 msgstr "Output full results"
 
-#: Library/Main/Strings.cs:254
+#: Library/Main/Strings.cs:258
 msgid ""
 "Use this option to upload a verification file after changing the remote "
 "storage. The file is not encrypted and contains the size and SHA256 hashes "
@@ -2174,31 +2174,31 @@ msgstr ""
 "of all the remote files and can be used to verify the integrity of the "
 "files."
 
-#: Library/Main/Strings.cs:255
+#: Library/Main/Strings.cs:259
 msgid "Determine if verification files are uploaded"
 msgstr "Determine if verification files are uploaded"
 
-#: Library/Main/Strings.cs:257
+#: Library/Main/Strings.cs:261
 msgid "The number of samples to test after a backup"
 msgstr "The number of samples to test after a backup"
 
-#: Library/Main/Strings.cs:259
+#: Library/Main/Strings.cs:263
 msgid "The percentage of samples to test after a backup"
 msgstr "The percentage of samples to test after a backup"
 
-#: Library/Main/Strings.cs:265
+#: Library/Main/Strings.cs:269
 msgid "Size of the file read buffer"
 msgstr "Size of the file read buffer"
 
-#: Library/Main/Strings.cs:268
+#: Library/Main/Strings.cs:272
 msgid "Allow the passphrase to change"
 msgstr "Allow the passphrase to change"
 
-#: Library/Main/Strings.cs:270
+#: Library/Main/Strings.cs:274
 msgid "List only filesets"
 msgstr "List only filesets"
 
-#: Library/Main/Strings.cs:272
+#: Library/Main/Strings.cs:276
 msgid ""
 "Use this option to disable the storage of metadata, such as file timestamps."
 " Disabling metadata storage will speed up the backup and restore operations,"
@@ -2208,7 +2208,7 @@ msgstr ""
 " Disabling metadata storage will speed up the backup and restore operations,"
 " but does not affect file size much."
 
-#: Library/Main/Strings.cs:274
+#: Library/Main/Strings.cs:278
 msgid ""
 "By default permissions are not restored as they might prevent you from "
 "accessing your files. Use this option to restore the permissions as well."
@@ -2216,11 +2216,11 @@ msgstr ""
 "By default permissions are not restored as they might prevent you from "
 "accessing your files. Use this option to restore the permissions as well."
 
-#: Library/Main/Strings.cs:275
+#: Library/Main/Strings.cs:279
 msgid "Restore file permissions"
 msgstr "Restore file permissions"
 
-#: Library/Main/Strings.cs:276
+#: Library/Main/Strings.cs:280
 msgid ""
 "After restoring files, the file hash of all restored files are checked to "
 "verify that the restore was successful. Use this option to disable the check"
@@ -2230,11 +2230,11 @@ msgstr ""
 "verify that the restore was successful. Use this option to disable the check"
 " and avoid waiting for the verification."
 
-#: Library/Main/Strings.cs:277
+#: Library/Main/Strings.cs:281
 msgid "Skip restored file check"
 msgstr "Skip restored file check"
 
-#: Library/Main/Strings.cs:278
+#: Library/Main/Strings.cs:282
 msgid ""
 "Duplicati will attempt to use data from source files to minimize the amount "
 "of downloaded data. Use this option to skip this optimization and only use "
@@ -2244,11 +2244,11 @@ msgstr ""
 "of downloaded data. Use this option to skip this optimisation and only use "
 "remote data."
 
-#: Library/Main/Strings.cs:279
+#: Library/Main/Strings.cs:283
 msgid "Do not use local data"
 msgstr "Do not use local data"
 
-#: Library/Main/Strings.cs:284
+#: Library/Main/Strings.cs:288
 msgid ""
 "Use this option to increase verification by checking the hash of blocks read"
 " from a volume before patching restored files with the data."
@@ -2256,11 +2256,11 @@ msgstr ""
 "Use this option to increase verification by checking the hash of blocks read"
 " from a volume before patching restored files with the data."
 
-#: Library/Main/Strings.cs:285
+#: Library/Main/Strings.cs:289
 msgid "Check block hashes"
 msgstr "Check block hashes"
 
-#: Library/Main/Strings.cs:288
+#: Library/Main/Strings.cs:292
 msgid ""
 "Use this option to build a searchable local database which only contains "
 "path information. This option is usable for quickly building a database to "
@@ -2272,15 +2272,15 @@ msgstr ""
 "locate certain content without needing to reconstruct all information. The "
 "resulting database can be searched, but cannot be used to restore data with."
 
-#: Library/Main/Strings.cs:289
+#: Library/Main/Strings.cs:293
 msgid "Repair database with paths"
 msgstr "Repair database with paths"
 
-#: Library/Main/Strings.cs:293
+#: Library/Main/Strings.cs:297
 msgid "Force the locale setting"
 msgstr "Force the locale setting"
 
-#: Library/Main/Strings.cs:294
+#: Library/Main/Strings.cs:298
 msgid ""
 "By default, dates are displayed in the calendar format, meaning \"Today\" or"
 " \"Last Thursday\". By setting this option, only the actual dates are "
@@ -2290,11 +2290,11 @@ msgstr ""
 " \"Last Thursday\". By setting this option, only the actual dates are "
 "displayed, \"Nov 12, 2018, 8:01 AM\" for example."
 
-#: Library/Main/Strings.cs:297
+#: Library/Main/Strings.cs:301
 msgid "Handle file communication with backend using threaded pipes"
 msgstr "Handle file communication with backend using threaded pipes"
 
-#: Library/Main/Strings.cs:298
+#: Library/Main/Strings.cs:302
 msgid ""
 "Use this option to set the maximum number of threads used. Setting this "
 "value to zero or less will dynamically balance the number of active threads "
@@ -2304,21 +2304,21 @@ msgstr ""
 "value to zero or less will dynamically balance the number of active threads "
 "to fit the hardware."
 
-#: Library/Main/Strings.cs:299
+#: Library/Main/Strings.cs:303
 msgid "Limit number of concurrent threads"
 msgstr "Limit number of concurrent threads"
 
-#: Library/Main/Strings.cs:300
+#: Library/Main/Strings.cs:304
 msgid ""
 "Use this option to set the number of processes that perform hashing of data."
 msgstr ""
 "Use this option to set the number of processes that perform hashing of data."
 
-#: Library/Main/Strings.cs:301
+#: Library/Main/Strings.cs:305
 msgid "Specify the number of concurrent hashing processes"
 msgstr "Specify the number of concurrent hashing processes"
 
-#: Library/Main/Strings.cs:302
+#: Library/Main/Strings.cs:306
 msgid ""
 "Use this option to set the number of processes that perform compression of "
 "output data."
@@ -2326,11 +2326,11 @@ msgstr ""
 "Use this option to set the number of processes that perform compression of "
 "output data."
 
-#: Library/Main/Strings.cs:303
+#: Library/Main/Strings.cs:307
 msgid "Specify the number of concurrent compression processes"
 msgstr "Specify the number of concurrent compression processes"
 
-#: Library/Main/Strings.cs:306
+#: Library/Main/Strings.cs:310
 msgid ""
 "If Duplicati detects that the previous backup did not complete, it will "
 "generate a filelist that is a merge of the last completed backup and the "
@@ -2340,11 +2340,11 @@ msgstr ""
 "generate a filelist that is a merge of the last completed backup and the "
 "contents that were uploaded in the incomplete backup session."
 
-#: Library/Main/Strings.cs:313
+#: Library/Main/Strings.cs:317
 msgid "Allow removing all filesets"
 msgstr "Allow removing all filesets"
 
-#: Library/Main/Strings.cs:314
+#: Library/Main/Strings.cs:318
 msgid ""
 "Some operations that manipulate the local database leave unused entries "
 "behind. These entries are not deleted from a hard drive until a VACUUM "
@@ -2360,11 +2360,11 @@ msgstr ""
 "this to true will allow Duplicati to perform VACUUM operations at its "
 "discretion."
 
-#: Library/Main/Strings.cs:317
+#: Library/Main/Strings.cs:321
 msgid "Disable the read-ahead scanner"
 msgstr "Disable the read-ahead scanner"
 
-#: Library/Main/Strings.cs:318
+#: Library/Main/Strings.cs:322
 msgid ""
 "In backups with a large number of filesets, the verification can take up a "
 "large part of the backup time. If you disable the checks, make sure you run "
@@ -2374,19 +2374,19 @@ msgstr ""
 "large part of the backup time. If you disable the checks, make sure you run "
 "regular check commands to ensure that everything is working as expected."
 
-#: Library/Main/Strings.cs:319
+#: Library/Main/Strings.cs:323
 msgid "Disable filelist consistency checks"
 msgstr "Disable filelist consistency checks"
 
-#: Library/Main/Strings.cs:321
+#: Library/Main/Strings.cs:325
 msgid "Disable the backup when on battery power"
 msgstr "Disable the backup when on battery power"
 
-#: Library/Main/Strings.cs:324
+#: Library/Main/Strings.cs:328
 msgid "Log file information level"
 msgstr "Log file information level"
 
-#: Library/Main/Strings.cs:325
+#: Library/Main/Strings.cs:329
 #, csharp-format
 msgid ""
 "This option accepts filters that removes or includes messages regardless of "
@@ -2401,11 +2401,11 @@ msgstr ""
 "they start with '-'. Regular expressions are supported within hard braces. "
 "Example: \"+Path*{0}+*Mail*{0}-[.*DNS]\" "
 
-#: Library/Main/Strings.cs:330
+#: Library/Main/Strings.cs:334
 msgid "Console information level"
 msgstr "Console information level"
 
-#: Library/Main/Strings.cs:341
+#: Library/Main/Strings.cs:345
 msgid ""
 "Use this option to set a filename, or list of filenames, that indicate "
 "exclusion of a folder which contains it. A common use would be to have a "
@@ -2417,11 +2417,11 @@ msgstr ""
 "file named something like \".nobackup\" and place this file into folders "
 "that should not be backed up."
 
-#: Library/Main/Strings.cs:342
+#: Library/Main/Strings.cs:346
 msgid "List of filenames that exclude folders"
 msgstr "List of filenames that exclude folders"
 
-#: Library/Main/Strings.cs:348
+#: Library/Main/Strings.cs:352
 #, csharp-format
 msgid ""
 "To improve performance of the backups, frequent database queries are not "
@@ -2434,7 +2434,7 @@ msgstr ""
 "remember to set either --{0}={2} or --{1}={2} to report the additional log "
 "data"
 
-#: Library/Main/Strings.cs:436
+#: Library/Main/Strings.cs:440
 #, csharp-format
 msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
@@ -2443,12 +2443,12 @@ msgstr ""
 "The cryptolibrary does not support re-usable transforms for the hash "
 "algorithm {0}"
 
-#: Library/Main/Strings.cs:437
+#: Library/Main/Strings.cs:441
 #, csharp-format
 msgid "The cryptolibrary does not support the hash algorithm {0}"
 msgstr "The cryptolibrary does not support the hash algorithm {0}"
 
-#: Library/Main/Strings.cs:438
+#: Library/Main/Strings.cs:442
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr "The passphrase cannot be changed for an existing backup"
 
@@ -2684,12 +2684,12 @@ msgid "The name of the parameter to send the message as"
 msgstr "The name of the parameter to send the message as"
 
 #: Library/Modules/Builtin/Strings.cs:277
-#: Library/Modules/Builtin/Strings.cs:312 Library/Utility/Strings.cs:84
+#: Library/Modules/Builtin/Strings.cs:312 Library/Utility/Strings.cs:85
 msgid "Accept any server certificate"
 msgstr "Accept any server certificate"
 
 #: Library/Modules/Builtin/Strings.cs:279
-#: Library/Modules/Builtin/Strings.cs:314 Library/Utility/Strings.cs:86
+#: Library/Modules/Builtin/Strings.cs:314 Library/Utility/Strings.cs:87
 msgid "Optionally accept a known SSL certificate"
 msgstr "Optionally accept a known SSL certificate"
 
@@ -2763,21 +2763,21 @@ msgstr "The Uri is invalid: {0}"
 msgid "The Uri is missing a hostname: {0}"
 msgstr "The Uri is missing a hostname: {0}"
 
-#: Library/Utility/Strings.cs:55
+#: Library/Utility/Strings.cs:56
 #, csharp-format
 msgid "{0} bytes"
 msgstr "{0} bytes"
 
-#: Library/Utility/Strings.cs:60
+#: Library/Utility/Strings.cs:61
 #, csharp-format
 msgid "The string \"{0}\" could not be parsed into a date"
 msgstr "The string \"{0}\" could not be parsed into a date"
 
-#: Library/Utility/Strings.cs:64
+#: Library/Utility/Strings.cs:65
 msgid "Cannot read and write on the same stream"
 msgstr "Cannot read and write on the same stream"
 
-#: Library/Utility/Strings.cs:68
+#: Library/Utility/Strings.cs:69
 #, csharp-format
 msgid ""
 "The string {0} does not represent a known filter group name. Valid values "
@@ -2786,31 +2786,31 @@ msgstr ""
 "The string {0} does not represent a known filter group name. Valid values "
 "are: {1}"
 
-#: Library/Utility/Strings.cs:108
+#: Library/Utility/Strings.cs:109
 msgid "Alternate OAuth URL"
 msgstr "Alternate OAuth URL"
 
-#: Library/Utility/Strings.cs:117
+#: Library/Utility/Strings.cs:118
 #, csharp-format
 msgid "The value \"{1}\" supplied to --{0} does not represent a valid integer"
 msgstr "The value \"{1}\" supplied to --{0} does not represent a valid integer"
 
-#: Library/Utility/Strings.cs:118
+#: Library/Utility/Strings.cs:119
 #, csharp-format
 msgid "The value \"{1}\" supplied to --{0} does not represent a valid path"
 msgstr "The value \"{1}\" supplied to --{0} does not represent a valid path"
 
-#: Library/Utility/Strings.cs:119
+#: Library/Utility/Strings.cs:120
 #, csharp-format
 msgid "The value \"{1}\" supplied to --{0} does not represent a valid size"
 msgstr "The value \"{1}\" supplied to --{0} does not represent a valid size"
 
-#: Library/Utility/Strings.cs:120
+#: Library/Utility/Strings.cs:121
 #, csharp-format
 msgid "The value \"{1}\" supplied to --{0} does not represent a valid time"
 msgstr "The value \"{1}\" supplied to --{0} does not represent a valid time"
 
-#: Library/Utility/Strings.cs:121
+#: Library/Utility/Strings.cs:122
 #, csharp-format
 msgid ""
 "The size \"{1}\" supplied to --{0} does not have a multiplier (b, kb, mb, "
@@ -2821,37 +2821,37 @@ msgstr ""
 "etc). A multiplier is recommended to avoid unexpected changes if the program"
 " is updated."
 
-#: Library/Utility/Strings.cs:126
+#: Library/Utility/Strings.cs:127
 #, csharp-format
 msgid "Error on deleting file: {0}, error: {1}"
 msgstr "Error on deleting file: {0}, error: {1}"
 
-#: Library/Utility/Strings.cs:127
+#: Library/Utility/Strings.cs:128
 #, csharp-format
 msgid "Error reading file: {0}, error: {1}"
 msgstr "Error reading file: {0}, error: {1}"
 
-#: Library/Utility/FilterGroups.cs:194
+#: Library/Utility/FilterGroups.cs:184
 #, csharp-format
 msgid "{0}: Selects no filters."
 msgstr "{0}: Selects no filters."
 
-#: Library/Utility/FilterGroups.cs:195
+#: Library/Utility/FilterGroups.cs:185
 #, csharp-format
 msgid "{0}: A set of default exclude filters, currently evaluates to: {1}."
 msgstr "{0}: A set of default exclude filters, currently evaluates to: {1}."
 
-#: Library/Utility/FilterGroups.cs:196
+#: Library/Utility/FilterGroups.cs:186
 #, csharp-format
 msgid "{0}: A set of default include filters, currently evaluates to: {1}."
 msgstr "{0}: A set of default include filters, currently evaluates to: {1}."
 
-#: Library/Utility/FilterGroups.cs:207
+#: Library/Utility/FilterGroups.cs:197
 #, csharp-format
 msgid " Aliases: {0}"
 msgstr " Aliases: {0}"
 
-#: Library/Utility/FilterGroups.cs:220
+#: Library/Utility/FilterGroups.cs:210
 #, csharp-format
 msgid ""
 "{0}: Files that are owned by the system or not suited to be backed up. This "
@@ -2862,7 +2862,7 @@ msgstr ""
 "includes any operating system reported protected files. Most users should at"
 " least apply these filters."
 
-#: Library/Utility/FilterGroups.cs:222
+#: Library/Utility/FilterGroups.cs:212
 #, csharp-format
 msgid ""
 "{0}: Files that belong to the operating system. These files are restored "
@@ -2871,13 +2871,13 @@ msgstr ""
 "{0}: Files that belong to the operating system. These files are restored "
 "when the operating system is re-installed."
 
-#: Library/Utility/FilterGroups.cs:224
+#: Library/Utility/FilterGroups.cs:214
 #, csharp-format
 msgid "{0}: Files and folders that are known to be storage of temporary data."
 msgstr ""
 "{0}: Files and folders that are known to be storage of temporary data."
 
-#: Library/Utility/FilterGroups.cs:226
+#: Library/Utility/FilterGroups.cs:216
 #, csharp-format
 msgid ""
 "{0}: Files and folders that are known cache locations for the operating "
@@ -2886,7 +2886,7 @@ msgstr ""
 "{0}: Files and folders that are known cache locations for the operating "
 "system and various applications"
 
-#: Library/Utility/FilterGroups.cs:228
+#: Library/Utility/FilterGroups.cs:218
 #, csharp-format
 msgid "{0}: Installed programs and their libraries, but not their settings."
 msgstr "{0}: Installed programs and their libraries, but not their settings."

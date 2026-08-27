@@ -67,3 +67,8 @@ end_of_line = crlf
 
 [*.js]
 indent_size = 2
+
+[Duplicati/Library/Main/**.cs]
+# The database queries must go through the extension overloads that register with
+# SlowQueryMonitor; see BannedSymbols.txt in that project.
+dotnet_diagnostic.RS0030.severity = error

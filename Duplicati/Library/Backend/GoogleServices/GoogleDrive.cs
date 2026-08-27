@@ -566,8 +566,8 @@ namespace Duplicati.Library.Backend.GoogleDrive
                 "trashed=false"
             };
 
-            var encodedFileQuery = Utility.UrlEncoding.UrlEncode(string.Join(" and ", fileQuery.Where(x => x != null)));
-            var url = WebApi.GoogleDrive.ListUrl(encodedFileQuery, m_teamDriveID);
+            var fileQueryString = string.Join(" and ", fileQuery.Where(x => x != null));
+            var url = WebApi.GoogleDrive.ListUrl(fileQueryString, m_teamDriveID);
 
             while (true)
             {
@@ -587,7 +587,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
                 if (string.IsNullOrWhiteSpace(token))
                     break;
 
-                url = WebApi.GoogleDrive.ListUrl(encodedFileQuery, m_teamDriveID, token);
+                url = WebApi.GoogleDrive.ListUrl(fileQueryString, m_teamDriveID, token);
             }
         }
 

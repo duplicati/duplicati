@@ -193,12 +193,12 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
             [AUTH_API_KEY_OPTION] = apiKey,
         };
 
-        var qp = uri.QueryParameters;
+        var qp = uri.GetEncodedQueryParameters();
         foreach (var kvp in opts)
             if (!string.IsNullOrWhiteSpace(kvp.Value) && string.IsNullOrWhiteSpace(qp.Get(kvp.Key)))
                 qp[kvp.Key] = Utility.UrlEncoding.UrlEncode(kvp.Value);
 
-        var query = Utility.UrlEncoding.BuildUriQuery(qp);
+        var query = Utility.UrlEncoding.BuildUriQuery(qp, true);
 
         if (string.IsNullOrWhiteSpace(uri.HostAndPath) && !string.IsNullOrWhiteSpace(endpoint))
             uri = new Utility.RelaxedUri(endpoint).SetScheme(uri.Scheme).SetQuery(null);

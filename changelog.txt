@@ -1,3 +1,227 @@
+2026-08-25 - 2.3.0.110_canary_2026-08-25
+==========
+This release is a canary release intended to be used for testing.
+
+# Database update to version 20
+
+This release updates the local database schema to version 20. The update adds a label column to the fileset table and is applied automatically on first use. After the update, the database can no longer be opened by earlier versions of Duplicati. If you need to downgrade, the bundled database tool (`duplicati-database-tool`) can downgrade the database back to version 19; downgrading removes the labels, but otherwise causes no data loss.
+
+# Labels on backup versions
+
+Backup versions can now carry an optional text label. Labels have no functional purpose, but they help mark and distinguish versions, for example when backups are hand-curated instead of running on a schedule. The CLI and UI supports setting and showing labels.
+
+# Partition-level backup and restore
+
+It is now possible to select a single disk partition as the backup source, instead of selecting the full disk and filtering the unwanted partitions. Restores are likewise more flexible: in addition to disk-to-disk restores, a single partition can now be restored into a partition on another disk, creating the partition as needed.
+
+This also fixes a bug where a failing priority file would leave the restore stuck until it was cancelled, and a number of issues with enumerating and filtering disks and partitions, in particular on Windows.
+
+# Automatic metadata storage for sources that need it
+
+Backups using a source provider that relies on database metadata, such as the disk image provider, previously required the user to set `--store-metadata-content-in-database=true` manually. The setting is now applied automatically when the source needs it, and can still be overridden by setting the option explicitly.
+
+# QNAP packages
+
+This release adds native QNAP package support. Similar to the Synology package, it integrates with the QNAP OS, uses the built-in authentication, and only allows access for administrators.
+
+# Stricter Google Cloud Storage credentials
+
+Google Cloud Storage credentials are now read as service account credentials, which is what the options are documented to take. Other credential types, such as stored user credentials or external account configurations, are now refused. If you authenticate to Google Cloud Storage, or the Google Cloud secret provider, with anything other than a service account key, you need to switch to a service account key.
+
+## Detailed list of changes
+
+- Updated all localizations, thanks to all translators
+- Added labels to backup versions, with CLI, API, and UI support
+- Added partition-level backup and partition-to-partition restore
+- Fixed disk image provider not initializing when listing drives, and improved disk enumeration and filter handling on Windows
+- Automatically enabled `--store-metadata-content-in-database` when the source provider requires it
+- Added native QNAP package support
+- Added a watchdog that restarts a stale remote management connection, and fixed issues that could drop the connection
+- Google Cloud Storage credentials are now read strictly as service accounts, thanks @JamBalaya56562
+- Fixed WebDAV destinations with a `+` in the path reporting uploaded files as missing, thanks @JamBalaya56562
+- Fixed Windows `file://` target URLs with a query string being misparsed
+- Stopped reporting quota errors on read-only operations such as restore, thanks @JamBalaya56562
+- Fixed stale SQLite query statistics causing extremely slow fileset and consistency queries on growing databases, thanks @JamBalaya56562
+- Sped up cleanup after deleting a backup version by avoiding a full table scan
+- Fixed a similarly named file and folder in the source causing the folder to be omitted, and allowed explicitly including a file inside an excluded folder
+- Fixed backend statistics reporting a bogus zero timestamp in the operation log, thanks @JamBalaya56562
+- Fixed Linux desktop notifications using an unsupported signal API, thanks @JamBalaya56562
+- Fixed a restore with failing priority files getting stuck instead of failing
+- Aligned SharpAESCrypt, AWSSDK.Core, Azure.Core, and Microsoft.Extensions package versions across the solution, thanks @JamBalaya56562
+
+## Updates to ngclient
+
+- Added settings to control sorting of tree views
+- Added support for editing version labels
+- Disabled menu options that do not apply to sync jobs
+- Fixed the destination editor mixing up connection state when a destination is removed, thanks @JamBalaya56562
+- Allowed changing encryption settings for imported backups, thanks @JamBalaya56562
+- Fixed the usage statistics setting not matching the format used by the legacy UI and server settings, thanks @JamBalaya56562
+- Added a plain-language summary to the custom schedule editor, thanks @JamBalaya56562
+- Added support for browsing disks and partitions and for restoring disk images and partitions
+- Fixed Chinese locale selection, thanks @JamBalaya56562
+- Fixed absolute asset paths ignoring the path prefix when running behind a reverse proxy, thanks @scambra
+- Updated all translations, thanks to all translators
+
+2026-08-14 - 2.3.0.109_canary_2026-08-14
+==========
+This release is a canary release intended to be used for testing.
+
+# Native desktop notifications
+
+This release adds native desktop notifications on all supported desktop platforms. Backup results and other tray-icon notifications are now shown as real operating-system notifications instead of only appearing inside the UI.
+
+On Windows, notifications are shown as Windows toast notifications with click-to-open support, thanks @JamBalaya56562. On macOS, notifications are shown via the native notification center. On Linux, notifications are sent over DBus and integrate with the desktop environment's notification daemon.
+
+# Native environment variable syntax on Linux and macOS
+
+Paths and filters now support the native `$VAR` and `${VAR}` environment variable syntax on Linux and macOS, most notably `$HOME`, thanks @JamBalaya56562. Previously only the Windows-style `%VAR%` syntax was expanded, so the native forms were silently left unexpanded on non-Windows systems.
+
+The expansion is additive: `%VAR%` keeps working everywhere, and an undefined variable is left as-is. If you previously worked around this with literal `$` characters in paths or filters, those entries will now be expanded.
+
+# Restore improvements and fixes
+
+Several restore issues have been fixed in this release, thanks @JamBalaya56562. Restore now honors stop requests promptly: an abort interrupts in-progress file reads and writes, where it previously could keep running for minutes after the request. An aborted restore no longer reports errors, blames the backup, or leaks temporary files, and files that a shutdown interrupted are no longer listed as broken. A requested shutdown is in general no longer reported as a failure. Two bugs that could corrupt restored data were fixed: a wrong seek offset when copying verified local blocks, and an incorrect buffer copy when merging a hash fragment. Restore now also preserves the selected folder and applies configured default options (such as `--restore-permissions`) when the restore request does not explicitly specify them. On the legacy restore engine, restoring a directory symlink no longer creates a real folder in its place.
+
+# Stricter validation of settings
+
+This release adds validation in places that previously failed silently, which may surface new warnings or errors after upgrading:
+
+- Misconfigured filters are now detected and reported with a warning, instead of silently matching nothing.
+- An unusable update check interval is now rejected instead of being ignored.
+- An invalid webservice timezone now fails instead of being silently reset.
+
+## Detailed list of changes
+
+- Let an abort interrupt the restore's file reads and writes, so a restore stops promptly, thanks @JamBalaya56562
+- Stopped listing files interrupted by a shutdown as broken during restore, thanks @JamBalaya56562
+- Stopped reporting a requested shutdown as a failure, thanks @JamBalaya56562
+- Fixed the legacy restore engine creating a real folder in place of a directory symlink, thanks @JamBalaya56562
+- Ran all main database queries through the slow-query monitor, so `--long-database-query-threshold` now warns about hanging queries, thanks @JamBalaya56562
+- Added native desktop notifications: Windows toast notifications with click-to-open, macOS notifications, and Linux DBus notifications, thanks @JamBalaya56562
+- Added support for native `$VAR`/`${VAR}` environment variable syntax in paths and filters on Linux and macOS, thanks @JamBalaya56562
+- Made restore honor stop requests; aborted restores no longer report errors, blame the backup, or leak temp files, thanks @JamBalaya56562
+- Fixed wrong seek offset when copying verified local blocks during restore, thanks @JamBalaya56562
+- Fixed incorrect buffer copy when merging a hash fragment during restore, thanks @JamBalaya56562
+- Preserved the selected folder during restore, thanks @JamBalaya56562
+- Let configured default options apply when restore options are not specified, thanks @JamBalaya56562
+- Prevented credentials from leaking through URL sanitizing on malformed URLs, thanks @JamBalaya56562
+- Fixed corrupted target URL for local paths containing `@`, thanks @JamBalaya56562
+- Matched backend URL schemes without regard to case, thanks @JamBalaya56562
+- Fixed decoding of `%uXXXX` unicode escapes in URLs, thanks @JamBalaya56562
+- Kept repeated path components in alternate update URLs, thanks @JamBalaya56562
+- Parsed SSH, SMB, FTP, XMPP, pCloud, Tahoe-LAFS, and OAuth login URLs with the standard URI parser, thanks @JamBalaya56562
+- Renamed the internal URL parser to `RelaxedUri`
+- Removed unused parts of the relaxed URL parser and documented its constraints, thanks @JamBalaya56562
+- Re-created missing index files after the block volumes are processed, thanks @JamBalaya56562
+- Recomputed the next scheduled run when weekdays or interval change, thanks @JamBalaya56562
+- Fixed logout not awaiting invalidation and not clearing the refresh cookie, thanks @JamBalaya56562
+- Improved console connection reconnect handling and allowed concurrent message processing
+- Guarded Hyper-V and MSSQL enumeration against errors
+- Simplified MS365 seat counting and improved site classification
+- Fixed MS365 user listing classification and return results sorted
+- Fixed pagination when listing backend destination folders
+- Treated an existing folder as success when auto-creating a destination, thanks @JamBalaya56562
+- Made the connection test accept a missing probe file, thanks @JamBalaya56562
+- Fixed Box folder resolution when the folder name is already in use, thanks @JamBalaya56562
+- Fixed Box lookups ignoring the requested path, thanks @JamBalaya56562
+- Fixed IDrive e2 reporting existing entries as missing, thanks @JamBalaya56562
+- Reported the server error when a multipart upload fails, thanks @JamBalaya56562
+- Observed read timeout on chunked uploads to Google and Dropbox, thanks @JamBalaya56562
+- Checked response status before decrypting a Filen download, thanks @JamBalaya56562
+- Checked response status before treating a pCloud upload as done, thanks @JamBalaya56562
+- Checked response status when deleting a Tahoe-LAFS file, thanks @JamBalaya56562
+- Fixed Filejump error handler calling itself indefinitely, thanks @JamBalaya56562
+- Made BackendTester cleanup accept an already deleted file, thanks @JamBalaya56562
+- Added detection of misconfigured filters with a warning
+- Rejected unusable update check intervals instead of ignoring them, thanks @JamBalaya56562
+- Failed on an invalid webservice timezone instead of silently resetting it, thanks @JamBalaya56562
+- Updated the help text for the sync command
+- Relaxed data folder permission checks for debug builds
+- Synced Japanese and Chinese README files with the English version, thanks @JamBalaya56562
+- Updated all packages to latest versions
+- Updated SSH.NET and BouncyCastle dependencies
+- Updated js-yaml, fast-uri, and postcss dependencies
+- Updated the licenses project
+
+## Updates to ngclient
+
+- Fixed commandline autoscrolling, thanks @JamBalaya56562
+- Fixed source filter highlighting, thanks @JamBalaya56562
+- Prefill restore settings from configured backup settings, thanks @JamBalaya56562
+- Updated Google Workspace icon
+- Fixed pagination in source tree
+- Database query timeout is now a "short time" type
+- Added a visual warning if filters are "exclude all"
+- Use `-filename*` as the default new filter to avoid having exclude all as the default
+- Updated all translations, thanks all translators
+
+2026-07-20 - 2.3.0.108_canary_2026-07-20
+==========
+This release is a canary release intended to be used for testing.
+
+If no major faults are found, **this release is intended to be the basis of the next beta release**.
+
+# MS365 subsites and shared mailboxes
+
+This release improves the Microsoft 365 backup support with two additions.
+Support for backing up SharePoint subsites has been added, making it possible
+to include sub-sites beneath a site collection in a backup.
+
+The handling of shared mailboxes has also been improved, with better detection
+and enumeration of shared mailboxes within a tenant.
+
+The license counter now excludes shared mailboxes without a license, and supports
+top-level filtering of users/sites/groups based on classification.
+
+An extra information button is added to the source page that shows a summary
+of what content was found in the MS365 tenant.
+
+# Case-insensitive remote filename matching
+
+A new option has been added to perform case-insensitive matching of remote
+filenames. This helps with backends that do not preserve filename casing, and
+prevents issues where files cannot be found because of case differences.
+
+# Improved filter parsing
+
+The filter parsing logic has been improved to handle more edge cases and
+produce more predictable results when building filter expressions.
+
+# Added `wipe-encryption` to database tool
+
+The database tool now supports a `wipe-encryption` command that can be used to remove all encrypted fields from a server database. With this command it is possible to get an encrypted database back into a state where it can be opened again. After encrypted fields are wiped, the user can then edit backups and settings to replace the lost data.
+
+## Detailed list of changes
+
+- Make BackendTester actually retry failed uploads, thanks @JamBalaya56562
+- Fix `--restore-preallocate-size` option having no effect, thanks @JamBalaya56562
+- Re-introduce `insecure-permissions.txt` file in install folder
+- Use the application data folder for the control directory filter, thanks @JamBalaya56562
+- Fix several options declared as Integer that are not integers, thanks @JamBalaya56562
+- Add case-insensitive remote filename matching, thanks @JamBalaya56562
+- Fix broken date-time format strings, thanks @JamBalaya56562
+- Fix secure-datafolder for service permissions
+- Log errors when user-supplied settings fail to parse, thanks @JamBalaya56562
+- Support MS365 subsites in backup and restore
+- Updated all translations, thanks to all translators
+- Fixed pulling mulitple new languages
+- Improve MS365 shared mailbox handling and item classification
+- Improve filter parsing with regards to embedded path separators
+- Fixed restore-control-files with non-standard options
+- Unify `--datafolder` option name in configuretool
+- Fail the backend test when verification finds a problem, thanks @JamBalaya56562
+- Use local executable name for configuretool
+- Fix loading of locale files with hyphenated culture names, thanks @JamBalaya56562
+
+## UI updates
+
+- Added option to manually start a console-managed backup
+- Added `tr` and `ko` languages to the UI
+- Updated all translations, thanks to all translators
+- Fixed an error attempting to save a backup with a schedule
+- Added button to show MS365 tenant counters
+
 2026-07-13 - 2.3.0.107_canary_2026-07-13
 ==========
 This release is a canary release intended to be used for testing.

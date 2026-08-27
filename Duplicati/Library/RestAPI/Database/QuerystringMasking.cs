@@ -50,7 +50,7 @@ public static class QuerystringMasking
             return urlstring;
 
         var modified = false;
-        var query = Library.Utility.UrlEncoding.ParseQueryString(url.Query, false);
+        var query = url.GetEncodedQueryParameters();
         foreach (var k in query.AllKeys)
         {
             if (k is null) continue;
@@ -63,7 +63,7 @@ public static class QuerystringMasking
 
         if (!modified) return urlstring;
 
-        url = url.SetQuery(Library.Utility.UrlEncoding.BuildUriQuery(query));
+        url = url.SetQuery(Library.Utility.UrlEncoding.BuildUriQuery(query, true));
         return url.ToString();
     }
 
@@ -92,7 +92,7 @@ public static class QuerystringMasking
         if (string.IsNullOrWhiteSpace(newUb.Query))
             return newUrl;
 
-        var newQuery = Library.Utility.UrlEncoding.ParseQueryString(newUb.Query, false);
+        var newQuery = newUb.GetEncodedQueryParameters();
 
         var modified = false;
         foreach (var key in newQuery.AllKeys)
@@ -139,7 +139,7 @@ public static class QuerystringMasking
         if (!modified)
             return newUrl;
 
-        newUb = newUb.SetQuery(Library.Utility.UrlEncoding.BuildUriQuery(newQuery));
+        newUb = newUb.SetQuery(Library.Utility.UrlEncoding.BuildUriQuery(newQuery, true));
 
         return newUb.ToString();
 

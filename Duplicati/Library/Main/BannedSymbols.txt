@@ -1,0 +1,6 @@
+M:Microsoft.Data.Sqlite.SqliteCommand.ExecuteReaderAsync;Call the ExecuteReaderAsync extension with writeLog so the query is registered with SlowQueryMonitor
+M:Microsoft.Data.Sqlite.SqliteCommand.ExecuteReaderAsync(System.Threading.CancellationToken);Call the ExecuteReaderAsync extension with writeLog so the query is registered with SlowQueryMonitor
+M:System.Data.Common.DbCommand.ExecuteNonQueryAsync;Call the ExecuteNonQueryAsync extension with writeLog so the query is registered with SlowQueryMonitor
+M:System.Data.Common.DbCommand.ExecuteNonQueryAsync(System.Threading.CancellationToken);Call the ExecuteNonQueryAsync extension with writeLog so the query is registered with SlowQueryMonitor
+M:System.Data.Common.DbCommand.ExecuteScalarAsync;Call the ExecuteScalarAsync extension with writeLog so the query is registered with SlowQueryMonitor
+M:System.Data.Common.DbCommand.ExecuteScalarAsync(System.Threading.CancellationToken);Call the ExecuteScalarAsync extension with writeLog so the query is registered with SlowQueryMonitor

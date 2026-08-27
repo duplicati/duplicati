@@ -20,7 +20,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-19 16:29+0200\n"
+"POT-Creation-Date: 2026-08-25 09:53+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: Yurdakul Sezgin, 2026\n"
 "Language-Team: Turkish (Turkey) (https://app.transifex.com/duplicati/teams/67655/tr_TR/)\n"
@@ -57,8 +57,8 @@ msgstr ""
 msgid "Set thread level utilized for crypting"
 msgstr "Cripting için kullanılan iş parçacığı seviyesini ayarlayın"
 
-#: Library/Encryption/Strings.cs:33 Library/Main/Strings.cs:208
-#: Library/Main/Strings.cs:266
+#: Library/Encryption/Strings.cs:33 Library/Main/Strings.cs:210
+#: Library/Main/Strings.cs:270
 #, csharp-format
 msgid "The option --{0} is no longer used and has been deprecated."
 msgstr "-{0} seçeneği artık kullanılmıyor ve kullanımdan kaldırıldı."
@@ -532,7 +532,7 @@ msgstr ""
 "değişkeni olarak da sağlanabilir. Parola verilirse, -{0} da ayarlanmalıdır."
 
 #: Library/Backend/OpenStack/Strings.cs:31 Library/Backend/S3/Strings.cs:33
-#: Library/Backend/Mega/Strings.cs:27 Library/Utility/Strings.cs:96
+#: Library/Backend/Mega/Strings.cs:27 Library/Utility/Strings.cs:97
 msgid "Supply the password used to connect to the server"
 msgstr "Sunucuya bağlanmak için kullanılan parolayı giriniz"
 
@@ -545,7 +545,7 @@ msgid "Supply the domain used to connect to the server"
 msgstr "Sunucuya bağlanmak için kullanılan alan adını giriniz"
 
 #: Library/Backend/OpenStack/Strings.cs:34 Library/Backend/S3/Strings.cs:34
-#: Library/Backend/Mega/Strings.cs:28 Library/Utility/Strings.cs:97
+#: Library/Backend/Mega/Strings.cs:28 Library/Utility/Strings.cs:98
 msgid ""
 "The username used to connect to the server. This may also be supplied as the"
 " environment variable \"AUTH_USERNAME\"."
@@ -554,7 +554,7 @@ msgstr ""
 "çevre değişkeni olarak da sağlanabilir."
 
 #: Library/Backend/OpenStack/Strings.cs:35 Library/Backend/S3/Strings.cs:35
-#: Library/Backend/Mega/Strings.cs:29 Library/Utility/Strings.cs:98
+#: Library/Backend/Mega/Strings.cs:29 Library/Utility/Strings.cs:99
 msgid "Supply the username used to connect to the server"
 msgstr "Sunucuya bağlanmak için kullanılan kullanıcı adını giriniz"
 
@@ -899,7 +899,7 @@ msgstr ""
 msgid "Error creating folder {0}, gave folder: {1}"
 msgstr "Klasör {0} oluşturulurken hata oluştu, klasör: {1}"
 
-#: Library/Backend/FTP/Strings.cs:70 Library/Utility/Strings.cs:128
+#: Library/Backend/FTP/Strings.cs:70 Library/Utility/Strings.cs:129
 #, csharp-format
 msgid "Error writing file: {0}, error: {1}"
 msgstr "Dosya yazarken hata: {0}, hata: {1}"
@@ -1199,7 +1199,7 @@ msgid "Access Key ID"
 msgstr "Erişim Anahtarı Kimliği"
 
 #: Library/Backend/S3/Strings.cs:32 Library/Backend/Mega/Strings.cs:26
-#: Library/Utility/Strings.cs:95
+#: Library/Utility/Strings.cs:96
 msgid ""
 "The password used to connect to the server. This may also be supplied as the"
 " environment variable \"AUTH_PASSWORD\"."
@@ -1266,7 +1266,7 @@ msgstr ""
 "bağlantıları ile ilgili sorunları olduğunu unutmayın."
 
 #: Library/Backend/S3/Strings.cs:47 Library/Backend/TahoeLAFS/Strings.cs:29
-#: Library/Utility/Strings.cs:88
+#: Library/Utility/Strings.cs:89
 msgid "Instruct Duplicati to use an SSL (https) connection"
 msgstr "Duplicati'ye bir SSL (https) bağlantısı kullanmasını talimat verin"
 
@@ -3169,13 +3169,13 @@ msgid "Dropbox"
 msgstr "Dropbox"
 
 #: Library/Backend/Dropbox/Strings.cs:29
-#: Library/Backend/OAuthHelper/Strings.cs:29 Library/Utility/Strings.cs:104
+#: Library/Backend/OAuthHelper/Strings.cs:29 Library/Utility/Strings.cs:105
 #, csharp-format
 msgid "The authorization token retrieved from {0}"
 msgstr "{0} 'dan alınan yetkilendirme jetonu"
 
 #: Library/Backend/Dropbox/Strings.cs:30
-#: Library/Backend/OAuthHelper/Strings.cs:30 Library/Utility/Strings.cs:105
+#: Library/Backend/OAuthHelper/Strings.cs:30 Library/Utility/Strings.cs:106
 msgid "The authorization code"
 msgstr "Yetkilendirme Kodu"
 
@@ -3349,7 +3349,7 @@ msgstr ""
 msgid "Tahoe-LAFS"
 msgstr "Tahoe-LAFS"
 
-#: Library/Backend/TahoeLAFS/Strings.cs:28 Library/Utility/Strings.cs:87
+#: Library/Backend/TahoeLAFS/Strings.cs:28 Library/Utility/Strings.cs:88
 msgid ""
 "Use this option to communicate using Secure Socket Layer (SSL) over http "
 "(https)."
@@ -4250,13 +4250,13 @@ msgstr ""
 "Otomatik güncelleme denetimini devre dışı bırakmak için bu seçeneği "
 "kullanın. El ile güncelleme denetimleri yine de yapılabilir."
 
-#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:286
+#: Library/RestAPI/Strings.cs:66 Library/Main/Strings.cs:290
 msgid "Set the time after which log data will be purged from the database."
 msgstr ""
 "Günlük verilerinin veritabanından ne kadar süre sonra temizleneceğini "
 "ayarlayın."
 
-#: Library/RestAPI/Strings.cs:67 Library/Main/Strings.cs:287
+#: Library/RestAPI/Strings.cs:67 Library/Main/Strings.cs:291
 msgid "Clean up old log data"
 msgstr "Eski günlük verilerini temizleyin"
 
@@ -4312,7 +4312,7 @@ msgstr ""
 msgid "Set the database encryption key"
 msgstr "Veritabanı şifreleme anahtarını ayarla"
 
-#: Library/RestAPI/Strings.cs:74 Library/Main/Strings.cs:102
+#: Library/RestAPI/Strings.cs:74 Library/Main/Strings.cs:104
 msgid ""
 "Use this option to supply an alternative folder for temporary storage. By "
 "default the system default temporary folder is used. Note that also SQLite "
@@ -4322,7 +4322,7 @@ msgstr ""
 "kullanın. Varsayılan olarak sistemin varsayılan geçici klasörü kullanılır. "
 "SQLite'ın da geçici dosyalarını bu geçici klasöre koyacağını unutmayın."
 
-#: Library/RestAPI/Strings.cs:75 Library/Main/Strings.cs:103
+#: Library/RestAPI/Strings.cs:75 Library/Main/Strings.cs:105
 msgid "Temporary storage folder"
 msgstr "Geçici depolama klasörü"
 
@@ -4472,7 +4472,7 @@ msgstr ""
 msgid "The Windows event log is not supported on this platform"
 msgstr "Windows olay günlüğü bu platformda desteklenmiyor"
 
-#: Library/RestAPI/Strings.cs:98 Library/RestAPI/Strings.cs:143
+#: Library/RestAPI/Strings.cs:98 Library/RestAPI/Strings.cs:144
 #, csharp-format
 msgid "Server has started and is listening on {0}, port {1}"
 msgstr "Sunucu başladı ve {0}, bağlantı noktası {1} üzerinde dinliyor"
@@ -4557,11 +4557,11 @@ msgstr ""
 msgid "The timezone {0} is not valid"
 msgstr "{0} saat dilimi geçerli değil"
 
-#: Library/RestAPI/Strings.cs:110
+#: Library/RestAPI/Strings.cs:111
 msgid "Set the encryption key for the settings database"
 msgstr "Ayarlar veritabanı için şifreleme anahtarını ayarla"
 
-#: Library/RestAPI/Strings.cs:111
+#: Library/RestAPI/Strings.cs:112
 #, csharp-format
 msgid ""
 "Use this option to set the encryption key for the settings database. This "
@@ -4570,16 +4570,16 @@ msgstr ""
 "Ayarlar veritabanı için şifreleme anahtarını ayarlamak amacıyla bu seçeneği "
 "kullanın. Bu seçenek {0} ortam değişkeniyle de ayarlanabilir."
 
-#: Library/RestAPI/Strings.cs:112
+#: Library/RestAPI/Strings.cs:113
 #, csharp-format
 msgid "Invalid pause/resume state: {0}"
 msgstr "Geçersiz duraklat/sürdür durumu: {0}"
 
-#: Library/RestAPI/Strings.cs:113
+#: Library/RestAPI/Strings.cs:114
 msgid "Register for remote control"
 msgstr "Uzaktan denetim için kaydol"
 
-#: Library/RestAPI/Strings.cs:114
+#: Library/RestAPI/Strings.cs:115
 msgid ""
 "Register for remote control using the pre-authenticated url. If the server "
 "is already registered, this option has no effect"
@@ -4587,11 +4587,11 @@ msgstr ""
 "Önceden doğrulanmış URL'yi kullanarak uzaktan denetim için kaydol. Sunucu "
 "zaten kayıtlıysa bu seçeneğin etkisi yoktur"
 
-#: Library/RestAPI/Strings.cs:115
+#: Library/RestAPI/Strings.cs:116
 msgid "Force register for remote control"
 msgstr "Uzaktan denetim için kaydı zorla"
 
-#: Library/RestAPI/Strings.cs:116
+#: Library/RestAPI/Strings.cs:117
 msgid ""
 "Forces a re-registration if the server is already registered. If the server "
 "is not already registered, this option has no effect."
@@ -4599,27 +4599,27 @@ msgstr ""
 "Sunucu zaten kayıtlıysa yeniden kaydı zorlar. Sunucu henüz kayıtlı değilse "
 "bu seçeneğin etkisi yoktur."
 
-#: Library/RestAPI/Strings.cs:117
+#: Library/RestAPI/Strings.cs:118
 msgid ""
 "The server is already registered for remote control, ignoring registration "
 "request"
 msgstr "Sunucu uzaktan denetim için zaten kayıtlı, kayıt isteği yok sayılıyor"
 
-#: Library/RestAPI/Strings.cs:118
+#: Library/RestAPI/Strings.cs:119
 #, csharp-format
 msgid "The server is registered, use the following link to claim it: {0}"
 msgstr "Sunucu kaydedildi, sahiplenmek için şu bağlantıyı kullanın: {0}"
 
-#: Library/RestAPI/Strings.cs:119
+#: Library/RestAPI/Strings.cs:120
 #, csharp-format
 msgid "The server registration failed: {0}"
 msgstr "Sunucu kaydı başarısız oldu: {0}"
 
-#: Library/RestAPI/Strings.cs:120
+#: Library/RestAPI/Strings.cs:121
 msgid "Set the allowed backends for remote control"
 msgstr "Uzaktan denetim için izin verilen arka uçları ayarla"
 
-#: Library/RestAPI/Strings.cs:121
+#: Library/RestAPI/Strings.cs:122
 msgid ""
 "Set the allowed backends for remote control. The value is a comma-separated "
 "list of backend names. If this option is not set, all backends are allowed. "
@@ -4630,11 +4630,11 @@ msgstr ""
 "izin verilir. Veri saklamak için kullanılabilecek arka uçları kısıtlamak "
 "amacıyla bu seçeneği kullanın."
 
-#: Library/RestAPI/Strings.cs:122
+#: Library/RestAPI/Strings.cs:123
 msgid "Set the allowed encryption modules for remote control"
 msgstr "Uzaktan denetim için izin verilen şifreleme modüllerini ayarla"
 
-#: Library/RestAPI/Strings.cs:123
+#: Library/RestAPI/Strings.cs:124
 msgid ""
 "Set the allowed encryption modules for remote control. The value is a comma-"
 "separated list of encryption module names. If this option is not set, all "
@@ -4647,11 +4647,11 @@ msgstr ""
 "kullanılabilecek şifreleme modüllerini kısıtlamak amacıyla bu seçeneği "
 "kullanın."
 
-#: Library/RestAPI/Strings.cs:124
+#: Library/RestAPI/Strings.cs:125
 msgid "Set the allowed compression modules for remote control"
 msgstr "Uzaktan denetim için izin verilen sıkıştırma modüllerini ayarla"
 
-#: Library/RestAPI/Strings.cs:125
+#: Library/RestAPI/Strings.cs:126
 msgid ""
 "Set the allowed compression modules for remote control. The value is a "
 "comma-separated list of compression module names. If this option is not set,"
@@ -4664,28 +4664,28 @@ msgstr ""
 "kullanılabilecek sıkıştırma modüllerini kısıtlamak amacıyla bu seçeneği "
 "kullanın."
 
-#: Library/RestAPI/Strings.cs:126
+#: Library/RestAPI/Strings.cs:127
 msgid "Failed to get encryption key from secret provider"
 msgstr "Gizli anahtar sağlayıcısından şifreleme anahtarı alınamadı"
 
-#: Library/RestAPI/Strings.cs:127
+#: Library/RestAPI/Strings.cs:128
 msgid "Failed to set encryption key in secret provider"
 msgstr "Gizli anahtar sağlayıcısında şifreleme anahtarı ayarlanamadı"
 
-#: Library/RestAPI/Strings.cs:128
+#: Library/RestAPI/Strings.cs:129
 msgid "Configure HTTPS certificates"
 msgstr "HTTPS sertifikalarını yapılandır"
 
-#: Library/RestAPI/Strings.cs:129
+#: Library/RestAPI/Strings.cs:130
 msgid "Automatically generate and configure HTTPS certificates for the server"
 msgstr ""
 "Sunucu için HTTPS sertifikalarını otomatik olarak oluştur ve yapılandır"
 
-#: Library/RestAPI/Strings.cs:130
+#: Library/RestAPI/Strings.cs:131
 msgid "HTTPS hostnames"
 msgstr "HTTPS ana bilgisayar adları"
 
-#: Library/RestAPI/Strings.cs:131
+#: Library/RestAPI/Strings.cs:132
 msgid ""
 "Comma-separated list of hostnames to include in the HTTPS certificate (used "
 "with --configure-https)"
@@ -4693,21 +4693,21 @@ msgstr ""
 "HTTPS sertifikasına dahil edilecek ana bilgisayar adlarının virgülle "
 "ayrılmış listesi (--configure-https ile kullanılır)"
 
-#: Library/RestAPI/Strings.cs:132
+#: Library/RestAPI/Strings.cs:133
 msgid "Suppress the initial welcome page"
 msgstr "İlk karşılama sayfasını gizle"
 
-#: Library/RestAPI/Strings.cs:133
+#: Library/RestAPI/Strings.cs:134
 msgid ""
 "Suppress the welcome page that is shown when first using the web interface"
 msgstr ""
 "Web arayüzü ilk kez kullanıldığında gösterilen karşılama sayfasını gizle"
 
-#: Library/RestAPI/Strings.cs:134
+#: Library/RestAPI/Strings.cs:135
 msgid "Store task configuration with backup"
 msgstr "Görev yapılandırmasını yedekle birlikte sakla"
 
-#: Library/RestAPI/Strings.cs:135
+#: Library/RestAPI/Strings.cs:136
 msgid ""
 "Controls whether the backup configuration is stored as a control file in the"
 " backup. When encryption is enabled, {StoreTaskConfigMode.Auto} is "
@@ -4733,7 +4733,7 @@ msgstr ""
 "tek başına bir yapılandırma değişikliğinin yeni bir yedek sürümü olarak "
 "değerlendirilmeyeceğini unutmayın."
 
-#: Library/RestAPI/Strings.cs:139
+#: Library/RestAPI/Strings.cs:140
 #, csharp-format
 msgid ""
 "Unable to find a valid date, given the start date {0}, the repetition "
@@ -4742,7 +4742,7 @@ msgstr ""
 "Başlangıç tarihi {0}, tekrar aralığı {1} ve izin verilen günler {2} göz "
 "önüne alındığında geçerli bir tarih bulunamıyor"
 
-#: Library/RestAPI/Strings.cs:144
+#: Library/RestAPI/Strings.cs:145
 msgid ""
 "SSL certificate password option has no meaning when provided without SSL "
 "certificate file option!"
@@ -4750,7 +4750,7 @@ msgstr ""
 "SSL sertifika parolası seçeneği, SSL sertifika dosyası seçeneği olmadan "
 "sağlandığında anlamsızdır!"
 
-#: Library/RestAPI/Strings.cs:145
+#: Library/RestAPI/Strings.cs:146
 #, csharp-format
 msgid "Unable to open a socket for listening, tried ports: {0}"
 msgstr "Dinlemek için bir soket açılamıyor, denenen bağlantı noktaları: {0}"
@@ -4795,7 +4795,7 @@ msgstr ""
 msgid "ZIP compression"
 msgstr "ZIP sıkıştırma"
 
-#: Library/Compression/Strings.cs:28 Library/Main/Strings.cs:229
+#: Library/Compression/Strings.cs:28 Library/Main/Strings.cs:233
 #, csharp-format
 msgid "Use the option --{0} instead."
 msgstr "Bunun yerine --{0} seçeneğini kullanın."
@@ -5562,7 +5562,7 @@ msgstr ""
 msgid "The version to list/restore files"
 msgstr "Dosyaların listeleneceği/geri yükleneceği sürüm"
 
-#: Library/Main/Strings.cs:82
+#: Library/Main/Strings.cs:84
 msgid ""
 "When searching for files, only the most recent backup is searched. Use this "
 "option to show all previous versions too."
@@ -5570,11 +5570,11 @@ msgstr ""
 "Dosyalar aranırken yalnızca en son yedekte arama yapılır. Önceki tüm "
 "sürümleri de göstermek için bu seçeneği kullanın."
 
-#: Library/Main/Strings.cs:83
+#: Library/Main/Strings.cs:85
 msgid "Show all versions"
 msgstr "Tüm sürümleri göster"
 
-#: Library/Main/Strings.cs:84
+#: Library/Main/Strings.cs:86
 msgid ""
 "When searching for files, all matching files are returned. Use this option "
 "to return only the largest common prefix path."
@@ -5582,11 +5582,11 @@ msgstr ""
 "Dosyalar aranırken eşleşen tüm dosyalar döndürülür. Yalnızca en büyük ortak "
 "önek yolunu döndürmek için bu seçeneği kullanın."
 
-#: Library/Main/Strings.cs:85
+#: Library/Main/Strings.cs:87
 msgid "Show largest prefix"
 msgstr "En büyük öneki göster"
 
-#: Library/Main/Strings.cs:86
+#: Library/Main/Strings.cs:88
 msgid ""
 "Use this option to rename files instead of deleting them. The value is the "
 "prefix to add to the filename. If the backend supports renaming, the file is"
@@ -5600,11 +5600,11 @@ msgstr ""
 "adla yeniden yüklenir ve ardından silinir. Önek bir klasör ayırıcı "
 "içeriyorsa hedef klasör mevcut olmalıdır."
 
-#: Library/Main/Strings.cs:87
+#: Library/Main/Strings.cs:89
 msgid "Prefix for soft-deleted files"
 msgstr "Geçici silinen dosyalar için önek"
 
-#: Library/Main/Strings.cs:88
+#: Library/Main/Strings.cs:90
 msgid ""
 "Use this option to prevent the backend from renaming files, even if the "
 "backend supports it. This will force the soft-delete operation to download, "
@@ -5614,11 +5614,11 @@ msgstr ""
 "için bu seçeneği kullanın. Bu, geçici silme işlemini indirme, yeni adla "
 "yeniden yükleme ve ardından özgün dosyayı silme yoluna zorlar."
 
-#: Library/Main/Strings.cs:89
+#: Library/Main/Strings.cs:91
 msgid "Prevent backend rename"
 msgstr "Arka uç yeniden adlandırmasını engelle"
 
-#: Library/Main/Strings.cs:90
+#: Library/Main/Strings.cs:92
 msgid ""
 "When searching for files, all matching files are returned. Use this option "
 "to return only the entries found in the folder specified as filter."
@@ -5626,11 +5626,11 @@ msgstr ""
 "Dosyalar aranırken eşleşen tüm dosyalar döndürülür. Yalnızca filtre olarak "
 "belirtilen klasörde bulunan girdileri döndürmek için bu seçeneği kullanın."
 
-#: Library/Main/Strings.cs:91
+#: Library/Main/Strings.cs:93
 msgid "Show folder contents"
 msgstr "Klasör içeriğini göster"
 
-#: Library/Main/Strings.cs:92
+#: Library/Main/Strings.cs:94
 msgid ""
 "After a failed transmission, Duplicati will wait a short period before "
 "attempting again. This is useful if the network drops out occasionally "
@@ -5640,11 +5640,11 @@ msgstr ""
 "süre bekler. Bu, aktarımlar sırasında ağın ara sıra kesilmesi durumunda "
 "kullanışlıdır."
 
-#: Library/Main/Strings.cs:93
+#: Library/Main/Strings.cs:95
 msgid "Time to wait between retries"
 msgstr "Yeniden denemeler arasında beklenecek süre"
 
-#: Library/Main/Strings.cs:94
+#: Library/Main/Strings.cs:96
 msgid ""
 "After a failed transmission, Duplicati will wait a short period before "
 "attempting again. This period is controlled by the retry-delay option. Use "
@@ -5654,11 +5654,11 @@ msgstr ""
 "süre bekler. Bu süre retry-delay seçeneğiyle denetlenir. Her ardışık "
 "başarısızlıkta bu süreyi ikiye katlamak için bu seçeneği kullanın."
 
-#: Library/Main/Strings.cs:95
+#: Library/Main/Strings.cs:97
 msgid "Exponential backoff for backend errors"
 msgstr "Arka uç hataları için üstel geri çekilme"
 
-#: Library/Main/Strings.cs:96
+#: Library/Main/Strings.cs:98
 #, csharp-format
 msgid ""
 "Use this option to attach extra files to the newly uploaded filelists. The "
@@ -5669,11 +5669,11 @@ msgstr ""
 "kullanın. Bağımsız değişken, dahil edilecek dosyanın yoludur. Yol ayırıcı "
 "(\"{0}\") kullanılarak birden çok dosya sağlanabilir"
 
-#: Library/Main/Strings.cs:97
+#: Library/Main/Strings.cs:99
 msgid "Set control files"
 msgstr "Denetim dosyalarını ayarla"
 
-#: Library/Main/Strings.cs:98
+#: Library/Main/Strings.cs:100
 msgid ""
 "If the hash for the volume does not match, Duplicati will refuse to use the "
 "backup. Activate this option to allow Duplicati to proceed anyway."
@@ -5682,11 +5682,11 @@ msgstr ""
 "Duplicati'nin yine de devam etmesine izin vermek için bu seçeneği "
 "etkinleştirin."
 
-#: Library/Main/Strings.cs:99
+#: Library/Main/Strings.cs:101
 msgid "Skip hash checks"
 msgstr "Sağlama denetimlerini atla"
 
-#: Library/Main/Strings.cs:100
+#: Library/Main/Strings.cs:102
 msgid ""
 "This option allows you to exclude files that are larger than the given "
 "value. Use this to prevent backups becoming extremely large. When restoring,"
@@ -5696,11 +5696,11 @@ msgstr ""
 "Yedeklerin aşırı büyümesini önlemek için bunu kullanın. Geri yükleme "
 "sırasında bu değerden büyük dosyalar geri yüklenmez."
 
-#: Library/Main/Strings.cs:101
+#: Library/Main/Strings.cs:103
 msgid "Limit the size of files being backed up or restored"
 msgstr "Yedeklenen veya geri yüklenen dosyaların boyutunu sınırla"
 
-#: Library/Main/Strings.cs:104
+#: Library/Main/Strings.cs:106
 msgid ""
 "The option --thread-priority has no effect, use the operating system "
 "controls to set the process priority"
@@ -5708,7 +5708,7 @@ msgstr ""
 "--thread-priority seçeneğinin etkisi yoktur; süreç önceliğini ayarlamak için"
 " işletim sistemi denetimlerini kullanın"
 
-#: Library/Main/Strings.cs:105
+#: Library/Main/Strings.cs:107
 msgid ""
 "Select another thread priority for the process. Use this to set Duplicati to"
 " be more or less CPU intensive."
@@ -5716,11 +5716,11 @@ msgstr ""
 "Süreç için başka bir iş parçacığı önceliği seçin. Duplicati'yi daha çok veya"
 " daha az CPU yoğun yapmak için bunu kullanın."
 
-#: Library/Main/Strings.cs:106
+#: Library/Main/Strings.cs:108
 msgid "Thread priority"
 msgstr "İş parçacığı önceliği"
 
-#: Library/Main/Strings.cs:107
+#: Library/Main/Strings.cs:109
 msgid ""
 "This option can change the maximum size of dblock files. Changing the size "
 "can be useful if the backend has a limit on the size of each individual "
@@ -5730,11 +5730,11 @@ msgstr ""
 "değiştirmek, arka ucun her bir dosyanın boyutunda sınırı varsa kullanışlı "
 "olabilir."
 
-#: Library/Main/Strings.cs:108
+#: Library/Main/Strings.cs:110
 msgid "Limit the size of the volumes"
 msgstr "Birimlerin boyutunu sınırla"
 
-#: Library/Main/Strings.cs:109
+#: Library/Main/Strings.cs:111
 msgid ""
 "Use this option to disallow usage of the streaming interface, which means "
 "that transfer progress bars will not show, and bandwidth throttle settings "
@@ -5744,15 +5744,15 @@ msgstr ""
 "aktarım ilerleme çubuklarının gösterilmeyeceği ve bant genişliği kısıtlama "
 "ayarlarının yok sayılacağı anlamına gelir."
 
-#: Library/Main/Strings.cs:110
+#: Library/Main/Strings.cs:112
 msgid "Disable use of the streaming transfer method"
 msgstr "Akış aktarım yönteminin kullanımını devre dışı bırak"
 
-#: Library/Main/Strings.cs:111
+#: Library/Main/Strings.cs:113
 msgid "Set the read/write timeout for the connection"
 msgstr "Bağlantı için okuma/yazma zaman aşımını ayarla"
 
-#: Library/Main/Strings.cs:112
+#: Library/Main/Strings.cs:114
 msgid ""
 "The read/write timeout is the maximum amount of time to wait for any "
 "activity during a transfer. If no activity is detected for this period, the "
@@ -5764,7 +5764,7 @@ msgstr ""
 "kopmuş sayılır ve aktarım durdurulur. Devre dışı bırakmak için 0s olarak "
 "ayarlayın"
 
-#: Library/Main/Strings.cs:113
+#: Library/Main/Strings.cs:115
 msgid ""
 "Use this option to make sure the contents of the manifest file are not read."
 " This also implies that file hashes are not checked either. Use only for "
@@ -5774,11 +5774,11 @@ msgstr ""
 "seçeneği kullanın. Bu, dosya sağlamalarının da denetlenmediği anlamına "
 "gelir. Yalnızca felaket kurtarma için kullanın."
 
-#: Library/Main/Strings.cs:114
+#: Library/Main/Strings.cs:116
 msgid "Disable manifests verification"
 msgstr "Bildirim doğrulamasını devre dışı bırak"
 
-#: Library/Main/Strings.cs:115
+#: Library/Main/Strings.cs:117
 msgid ""
 "Duplicati supports pluggable compression modules. Use this option to select "
 "a module to use for compression. This is only applied when creating new "
@@ -5790,11 +5790,11 @@ msgstr ""
 "yeni birimler oluşturulurken uygulanır; mevcut bir dosya okunurken "
 "sıkıştırma modülünü seçmek için dosya adı kullanılır."
 
-#: Library/Main/Strings.cs:116
+#: Library/Main/Strings.cs:118
 msgid "Select what module to use for compression"
 msgstr "Sıkıştırma için hangi modülün kullanılacağını seç"
 
-#: Library/Main/Strings.cs:117
+#: Library/Main/Strings.cs:119
 msgid ""
 "Duplicati supports pluggable encryption modules. Use this option to select a"
 " module to use for encryption. This is only applied when creating new "
@@ -5806,11 +5806,11 @@ msgstr ""
 "yeni birimler oluşturulurken uygulanır; mevcut bir dosya okunurken şifreleme"
 " modülünü seçmek için dosya adı kullanılır."
 
-#: Library/Main/Strings.cs:118
+#: Library/Main/Strings.cs:120
 msgid "Select what module to use for encryption"
 msgstr "Şifreleme için hangi modülün kullanılacağını seç"
 
-#: Library/Main/Strings.cs:119
+#: Library/Main/Strings.cs:121
 msgid ""
 "Duplicati supports pluggable parity modules that create error-correction "
 "data for remote volumes, allowing damaged volumes to be repaired on "
@@ -5825,27 +5825,27 @@ msgstr ""
 " vardır (örneğin, yedeklilik düzeyi); ayrıntılar için eşlik modülü yardımına"
 " bakın."
 
-#: Library/Main/Strings.cs:120
+#: Library/Main/Strings.cs:122
 msgid "Select what module to use for parity"
 msgstr "Parite için hangi modülün kullanılacağını seçin"
 
-#: Library/Main/Strings.cs:121
+#: Library/Main/Strings.cs:123
 msgid "Supply one or more module names, separated by commas to unload them."
 msgstr "Kaldırmak için virgülle ayrılmış bir veya daha çok modül adı girin."
 
-#: Library/Main/Strings.cs:122
+#: Library/Main/Strings.cs:124
 msgid "Disable one or more modules"
 msgstr "Bir veya daha çok modülü devre dışı bırak"
 
-#: Library/Main/Strings.cs:123
+#: Library/Main/Strings.cs:125
 msgid "Supply one or more module names, separated by commas to load them."
 msgstr "Yüklemek için virgülle ayrılmış bir veya daha çok modül adı girin."
 
-#: Library/Main/Strings.cs:124
+#: Library/Main/Strings.cs:126
 msgid "Enable one or more modules"
 msgstr "Bir veya daha çok modülü etkinleştir"
 
-#: Library/Main/Strings.cs:125
+#: Library/Main/Strings.cs:127
 msgid ""
 "This setting controls the usage of snapshots, which allows Duplicati to "
 "backup files that are locked by other programs. If this is set to \"off\", "
@@ -5875,11 +5875,11 @@ msgstr ""
 " macOS'ta Apple Dosya Sistemi (APFS) anlık görüntülerini kullanır ve root "
 "ayrıcalıkları gerektirir."
 
-#: Library/Main/Strings.cs:126
+#: Library/Main/Strings.cs:128
 msgid "Control the use of disk snapshots"
 msgstr "Disk anlık görüntülerinin kullanımını denetle"
 
-#: Library/Main/Strings.cs:127
+#: Library/Main/Strings.cs:129
 msgid ""
 "The snapshot provider implementation for Windows. The Vanara version is the "
 "default and supports all features and integrates directly with Windows on "
@@ -5893,11 +5893,11 @@ msgstr ""
 "taşınabilirdir ancak daha az özelliğe sahiptir. AlphaVSS eski sağlayıcıdır "
 "ve VC++ Redist kurulu olmasını gerektirir."
 
-#: Library/Main/Strings.cs:128
+#: Library/Main/Strings.cs:130
 msgid "The snapshot provider implementation to use"
 msgstr "Kullanılacak anlık görüntü sağlayıcı uygulaması"
 
-#: Library/Main/Strings.cs:129
+#: Library/Main/Strings.cs:131
 msgid ""
 "The pre-generated volumes will be placed into the temporary folder by "
 "default. This option can set a different folder for placing the temporary "
@@ -5907,11 +5907,11 @@ msgstr ""
 " Bu seçenek, geçici birimlerin yerleştirileceği farklı bir klasör "
 "ayarlayabilir. Adına rağmen bu, eşzamanlı çalıştırmalar için de geçerlidir."
 
-#: Library/Main/Strings.cs:130
+#: Library/Main/Strings.cs:132
 msgid "The path where ready volumes are placed until uploaded"
 msgstr "Hazır birimlerin yüklenene kadar yerleştirildiği yol"
 
-#: Library/Main/Strings.cs:131
+#: Library/Main/Strings.cs:133
 msgid ""
 "When performing asynchronous uploads, the maximum number of concurrent "
 "uploads allowed. Set to zero to disable the limit."
@@ -5919,11 +5919,11 @@ msgstr ""
 "Zaman uyumsuz yüklemeler yapılırken izin verilen en fazla eşzamanlı yükleme "
 "sayısı. Sınırı devre dışı bırakmak için sıfır olarak ayarlayın."
 
-#: Library/Main/Strings.cs:132
+#: Library/Main/Strings.cs:134
 msgid "The number of concurrent uploads allowed"
 msgstr "İzin verilen eşzamanlı yükleme sayısı"
 
-#: Library/Main/Strings.cs:133
+#: Library/Main/Strings.cs:135
 msgid ""
 "Activate this option to make some error messages more verbose, which may "
 "help you track down a particular issue."
@@ -5931,19 +5931,19 @@ msgstr ""
 "Belirli bir sorunu izlemenize yardımcı olabilecek şekilde bazı hata "
 "iletilerini daha ayrıntılı hale getirmek için bu seçeneği etkinleştirin."
 
-#: Library/Main/Strings.cs:134
+#: Library/Main/Strings.cs:136
 msgid "Enable debugging output"
 msgstr "Hata ayıklama çıktısını etkinleştir"
 
-#: Library/Main/Strings.cs:135
+#: Library/Main/Strings.cs:137
 msgid "Log information to the file specified."
 msgstr "Günlük bilgilerini belirtilen dosyaya kaydet."
 
-#: Library/Main/Strings.cs:136
+#: Library/Main/Strings.cs:138
 msgid "Log internal information to a file"
 msgstr "İç bilgileri bir dosyaya günlükle"
 
-#: Library/Main/Strings.cs:137 Library/Main/Strings.cs:323
+#: Library/Main/Strings.cs:139 Library/Main/Strings.cs:327
 #, csharp-format
 msgid ""
 "Specify the amount of log information to write into the file specified by "
@@ -5952,16 +5952,16 @@ msgstr ""
 "--{0} seçeneğiyle belirtilen dosyaya yazılacak günlük bilgisi miktarını "
 "belirtin."
 
-#: Library/Main/Strings.cs:138
+#: Library/Main/Strings.cs:140
 msgid "Log information level"
 msgstr "Günlük bilgi düzeyi"
 
-#: Library/Main/Strings.cs:139 Library/Main/Strings.cs:251
+#: Library/Main/Strings.cs:141 Library/Main/Strings.cs:255
 #, csharp-format
 msgid "Use the options --{0} and --{1} instead."
 msgstr "Bunun yerine --{0} ve --{1} seçeneklerini kullanın."
 
-#: Library/Main/Strings.cs:140
+#: Library/Main/Strings.cs:142
 msgid ""
 "Suppress warnings and log them as information instead. Use this if you need "
 "to silence specific warnings. This option accepts a comma separated list of "
@@ -5971,11 +5971,11 @@ msgstr ""
 "susturmanız gerekiyorsa bunu kullanın. Bu seçenek, virgülle ayrılmış uyarı "
 "kimlikleri listesi kabul eder."
 
-#: Library/Main/Strings.cs:141
+#: Library/Main/Strings.cs:143
 msgid "Suppress specific warnings"
 msgstr "Belirli uyarıları gizle"
 
-#: Library/Main/Strings.cs:142
+#: Library/Main/Strings.cs:144
 #, csharp-format
 msgid ""
 "Enable logging of HTTP request diagnostics. Messages are logged at the {0} "
@@ -5984,11 +5984,11 @@ msgstr ""
 "HTTP istek tanılamalarının günlüğe kaydını etkinleştir. İletiler {0} "
 "düzeyinde günlüklenir; günlüğün o düzeyde çıktı verdiğinden emin olun."
 
-#: Library/Main/Strings.cs:143
+#: Library/Main/Strings.cs:145
 msgid "Log HTTP requests"
 msgstr "HTTP isteklerini günlükle"
 
-#: Library/Main/Strings.cs:144
+#: Library/Main/Strings.cs:146
 #, csharp-format
 msgid ""
 "Enable logging of socket data. A value of 0 logs only event messages, a "
@@ -6000,11 +6000,11 @@ msgstr ""
 " dışı bırakmak için -1 kullanın. İletiler {0} düzeyinde günlüklenir; "
 "günlüğün o düzeyde çıktı verdiğinden emin olun."
 
-#: Library/Main/Strings.cs:145
+#: Library/Main/Strings.cs:147
 msgid "Log socket data"
 msgstr "Soket verilerini günlükle"
 
-#: Library/Main/Strings.cs:146
+#: Library/Main/Strings.cs:148
 msgid ""
 "If Duplicati detects that the target folder is missing, it will create it "
 "automatically. Activate this option to prevent automatic folder creation."
@@ -6013,11 +6013,11 @@ msgstr ""
 "oluşturur. Otomatik klasör oluşturmayı önlemek için bu seçeneği "
 "etkinleştirin."
 
-#: Library/Main/Strings.cs:147
+#: Library/Main/Strings.cs:149
 msgid "Disable automatic folder creation"
 msgstr "Otomatik klasör oluşturmayı devre dışı bırak"
 
-#: Library/Main/Strings.cs:148
+#: Library/Main/Strings.cs:150
 msgid ""
 "Use this option to exclude faulty writers from a snapshot. This is "
 "equivalent to the -wx flag of the vshadow.exe tool, except that it only "
@@ -6032,14 +6032,14 @@ msgstr ""
 "süslü parantezli veya parantezsiz olmak üzere çoğu GUID biçimine izin "
 "verilir."
 
-#: Library/Main/Strings.cs:149
+#: Library/Main/Strings.cs:151
 msgid ""
 "A semicolon separated list of guids of VSS writers to exclude (Windows only)"
 msgstr ""
 "Hariç tutulacak VSS yazıcılarının GUID'lerinin noktalı virgülle ayrılmış "
 "listesi (yalnızca Windows)"
 
-#: Library/Main/Strings.cs:150
+#: Library/Main/Strings.cs:152
 msgid ""
 "This setting controls the usage of NTFS USN numbers, which allows Duplicati "
 "to obtain a list of files and folders much faster. If this is set to "
@@ -6060,11 +6060,11 @@ msgstr ""
 "Duplicati'nin yedeklemeyi durdurmasına neden olur. Bu özellik yönetici "
 "ayrıcalıkları gerektirir."
 
-#: Library/Main/Strings.cs:151
+#: Library/Main/Strings.cs:153
 msgid "Control the use of NTFS Update Sequence Numbers"
 msgstr "NTFS Güncelleme Sıra Numaralarının (USN) kullanımını denetle"
 
-#: Library/Main/Strings.cs:152
+#: Library/Main/Strings.cs:154
 msgid ""
 "When reading files, Duplicati can use the Windows BackupRead API to read "
 "files that are locked by other applications. This is useful for files that "
@@ -6086,15 +6086,15 @@ msgstr ""
 "\"required\" ayarı, başarısız olursa Duplicati'nin yedeklemeyi durdurmasına "
 "neden olur. Bu özellik yönetici ayrıcalıkları gerektirir."
 
-#: Library/Main/Strings.cs:153
+#: Library/Main/Strings.cs:155
 msgid "Use BackupRead API to read files"
 msgstr "Dosyaları okumak için BackupRead API'sini kullan"
 
-#: Library/Main/Strings.cs:154
+#: Library/Main/Strings.cs:156
 msgid "Ignore advisory locking"
 msgstr "Tavsiye niteliğindeki kilitlemeyi yok say"
 
-#: Library/Main/Strings.cs:155
+#: Library/Main/Strings.cs:157
 msgid ""
 "When reading files Duplicati can skip files that are marked locked by "
 "another application to ensure consistency. This flag can disable the check "
@@ -6105,11 +6105,11 @@ msgstr ""
 "denetimi devre dışı bırakabilir ve kilitli dosyaların iyimser okunmasını "
 "sağlayabilir."
 
-#: Library/Main/Strings.cs:156
+#: Library/Main/Strings.cs:158
 msgid "Ignore backup exclusion attributes"
 msgstr "Yedekleme hariç tutma özniteliklerini yok say"
 
-#: Library/Main/Strings.cs:157
+#: Library/Main/Strings.cs:159
 msgid ""
 "By default, Duplicati will skip files marked with backup exclusion extended "
 "attributes, such as the macOS com.apple.backupd flag or a Linux "
@@ -6121,7 +6121,7 @@ msgstr ""
 "öznitelikleriyle işaretlenmiş dosyaları atlar. Genişletilmiş öznitelikleri "
 "yok saymak için bu seçeneği etkinleştirin."
 
-#: Library/Main/Strings.cs:158
+#: Library/Main/Strings.cs:160
 #, csharp-format
 msgid ""
 "When matching timestamps, Duplicati will adjust the times by a small "
@@ -6142,19 +6142,19 @@ msgstr ""
 "(en fazla 1 saat) ekler. Toleransı devre dışı bırakıp katı zaman denetimi "
 "kullanmak için bu seçeneği kullanın."
 
-#: Library/Main/Strings.cs:159
+#: Library/Main/Strings.cs:161
 msgid "Deactivate tolerance when comparing times"
 msgstr "Zamanları karşılaştırırken toleransı devre dışı bırak"
 
-#: Library/Main/Strings.cs:160
+#: Library/Main/Strings.cs:162
 msgid "Use this option to verify uploads by listing contents."
 msgstr "Yüklemeleri içerik listeleyerek doğrulamak için bu seçeneği kullanın."
 
-#: Library/Main/Strings.cs:161
+#: Library/Main/Strings.cs:163
 msgid "Verify uploads by listing contents"
 msgstr "Yüklemeleri içerik listeleyerek doğrula"
 
-#: Library/Main/Strings.cs:162
+#: Library/Main/Strings.cs:164
 msgid ""
 "Disables uploading multiple files concurrently to preserve bandwith. This "
 "will have the same effect as setting --asynchronous-upload-limit=1 but "
@@ -6166,11 +6166,11 @@ msgstr ""
 "etkiye sahiptir ancak ek olarak ilgili yüklemeleri bekler. Oluşturulmakta "
 "olan birim yükleme sınırına dahil edilmez."
 
-#: Library/Main/Strings.cs:163
+#: Library/Main/Strings.cs:165
 msgid "Upload files synchronously"
 msgstr "Dosyaları eşzamanlı yükle"
 
-#: Library/Main/Strings.cs:164
+#: Library/Main/Strings.cs:166
 msgid ""
 "Duplicati will attempt to perform multiple operations on a single "
 "connection, as this avoids repeated login attempts, and thus speeds up the "
@@ -6181,11 +6181,11 @@ msgstr ""
 "hızlandırdığı için birden çok işlemi tek bir bağlantıda yapmaya çalışır. Her"
 " işlemin ayrı bir bağlantıda yapılmasını sağlamak için bu seçeneği kullanın."
 
-#: Library/Main/Strings.cs:165
+#: Library/Main/Strings.cs:167
 msgid "Do not re-use connections"
 msgstr "Bağlantıları yeniden kullanma"
 
-#: Library/Main/Strings.cs:166
+#: Library/Main/Strings.cs:168
 msgid ""
 "When an error occurs, Duplicati will silently retry, and only report the "
 "number of retries. Enable this option to have the error messages displayed "
@@ -6195,11 +6195,11 @@ msgstr ""
 "deneme sayısını bildirir. Yeniden deneme yapıldığında hata iletilerinin "
 "görüntülenmesi için bu seçeneği etkinleştirin."
 
-#: Library/Main/Strings.cs:167
+#: Library/Main/Strings.cs:169
 msgid "Show error messages when a retry is performed"
 msgstr "Yeniden deneme yapıldığında hata iletilerini göster"
 
-#: Library/Main/Strings.cs:168
+#: Library/Main/Strings.cs:170
 msgid ""
 "If no files have changed, Duplicati will not upload a backup set. If the "
 "backup data is used to verify that a backup was executed, this option will "
@@ -6210,11 +6210,11 @@ msgstr ""
 "bu seçenek Duplicati'nin boş olsa bile bir yedekleme kümesi yüklemesini "
 "sağlar."
 
-#: Library/Main/Strings.cs:169
+#: Library/Main/Strings.cs:171
 msgid "Upload empty backup files"
 msgstr "Boş yedekleme dosyalarını yükle"
 
-#: Library/Main/Strings.cs:170
+#: Library/Main/Strings.cs:172
 msgid ""
 "Set a limit to the amount of storage used on the backend (by this backup). "
 "This is in addition to the full backend quota, if available. Note: Backups "
@@ -6224,11 +6224,11 @@ msgstr ""
 "koy. Bu, varsa tam arka uç kotasına ek olarak uygulanır. Not: Yedeklemeler "
 "kota aşılsa da devam eder. Bu yalnızca uyarı ve hata iletileri oluşturur."
 
-#: Library/Main/Strings.cs:171
+#: Library/Main/Strings.cs:173
 msgid "Limit storage use"
 msgstr "Depolama kullanımını sınırla"
 
-#: Library/Main/Strings.cs:172
+#: Library/Main/Strings.cs:174
 msgid ""
 "Set a threshold for when to warn about the backend quota being nearly "
 "exceeded. It is given as a percentage, and a warning is generated if the "
@@ -6242,11 +6242,11 @@ msgstr ""
 "bir uyarı oluşturulur. Arka uç kota bilgisini bildirmiyorsa bu değer yok "
 "sayılır."
 
-#: Library/Main/Strings.cs:173
+#: Library/Main/Strings.cs:175
 msgid "Threshold for warning about low quota"
 msgstr "Düşük kota uyarısı için eşik"
 
-#: Library/Main/Strings.cs:174
+#: Library/Main/Strings.cs:176
 #, csharp-format
 msgid ""
 "Disable the quota reported by the backend. The option --{0} can still be "
@@ -6255,11 +6255,11 @@ msgstr ""
 "Arka ucun bildirdiği kotayı devre dışı bırak. --{0} seçeneği yine de el ile "
 "kota ayarlamak için kullanılabilir"
 
-#: Library/Main/Strings.cs:175
+#: Library/Main/Strings.cs:177
 msgid "Disable backend quota"
 msgstr "Arka uç kotasını devre dışı bırak"
 
-#: Library/Main/Strings.cs:176
+#: Library/Main/Strings.cs:178
 #, csharp-format
 msgid ""
 "Use this option to handle symlinks differently. The \"{0}\" option will "
@@ -6279,11 +6279,11 @@ msgstr ""
 "yedeklenip geri yüklenmesine neden olur. Duplicati'nin eski sürümleri bu "
 "seçeneği desteklemiyordu ve \"{2}\" belirtilmiş gibi davranıyordu."
 
-#: Library/Main/Strings.cs:177
+#: Library/Main/Strings.cs:179
 msgid "Symlink handling"
 msgstr "Sembolik bağlantı işleme"
 
-#: Library/Main/Strings.cs:178
+#: Library/Main/Strings.cs:180
 #, csharp-format
 msgid ""
 "Use this option to handle hardlinks (only works on Linux/OSX). The \"{0}\" "
@@ -6299,11 +6299,11 @@ msgstr ""
 "her sabit bağlantıyı benzersiz bir yol olarak değerlendirir. \"{2}\" "
 "seçeneği, birden fazla bağlantısı olan tüm sabit bağlantıları yok sayar."
 
-#: Library/Main/Strings.cs:179
+#: Library/Main/Strings.cs:181
 msgid "Hardlink handling"
 msgstr "Sabit bağlantı işleme"
 
-#: Library/Main/Strings.cs:180
+#: Library/Main/Strings.cs:182
 msgid ""
 "Use this option to exclude files with certain attributes. Use a comma "
 "separated list of attribute names to specify more than one."
@@ -6312,15 +6312,15 @@ msgstr ""
 "kullanın. Birden fazlasını belirtmek için virgülle ayrılmış öznitelik adları"
 " listesi kullanın."
 
-#: Library/Main/Strings.cs:181
+#: Library/Main/Strings.cs:183
 msgid "Exclude files by attribute"
 msgstr "Dosyaları özniteliğe göre hariç tut"
 
-#: Library/Main/Strings.cs:182
+#: Library/Main/Strings.cs:184
 msgid "Exclude non-local files"
 msgstr "Yerel olmayan dosyaları hariç tut"
 
-#: Library/Main/Strings.cs:183
+#: Library/Main/Strings.cs:185
 msgid ""
 "Use this option to exclude files that are not stored locally, such as those "
 "from synchroniztion tools like Dropbox, OneDrive, etc."
@@ -6328,7 +6328,7 @@ msgstr ""
 "Dropbox, OneDrive vb. eşitleme araçlarından gelenler gibi yerel olarak "
 "saklanmayan dosyaları hariç tutmak için bu seçeneği kullanın."
 
-#: Library/Main/Strings.cs:184
+#: Library/Main/Strings.cs:186
 msgid ""
 "Activate this option to map VSS snapshots to a drive (similar to SUBST, "
 "using Win32 DefineDosDevice). This will create temporary drives that are "
@@ -6340,11 +6340,11 @@ msgstr ""
 "içeriğine erişmek için kullanılan geçici sürücüler oluşturur. Bu geçici "
 "çözüm, Windows XP'de dosya erişimini hızlandırabilir."
 
-#: Library/Main/Strings.cs:185
+#: Library/Main/Strings.cs:187
 msgid "Map snapshots to a drive (Windows only)"
 msgstr "Anlık görüntüleri bir sürücüye eşle (yalnızca Windows)"
 
-#: Library/Main/Strings.cs:186
+#: Library/Main/Strings.cs:188
 msgid ""
 "A display name that is attached to this backup. This can be used to identify"
 " the backup when sending mail or running scripts."
@@ -6352,11 +6352,11 @@ msgstr ""
 "Bu yedeklemeye iliştirilen bir görünen ad. Bu, e-posta gönderirken veya "
 "betik çalıştırırken yedeklemeyi tanımlamak için kullanılabilir."
 
-#: Library/Main/Strings.cs:187
+#: Library/Main/Strings.cs:189
 msgid "Name of the backup"
 msgstr "Yedeklemenin adı"
 
-#: Library/Main/Strings.cs:188
+#: Library/Main/Strings.cs:190
 msgid ""
 "A unique identification for this backup. This can be used to identify the "
 "backup when sending mail or running scripts."
@@ -6364,11 +6364,11 @@ msgstr ""
 "Bu yedekleme için benzersiz bir kimlik. Bu, e-posta gönderirken veya betik "
 "çalıştırırken yedeklemeyi tanımlamak için kullanılabilir."
 
-#: Library/Main/Strings.cs:189
+#: Library/Main/Strings.cs:191
 msgid "Backup ID"
 msgstr "Yedekleme kimliği"
 
-#: Library/Main/Strings.cs:190
+#: Library/Main/Strings.cs:192
 msgid ""
 "A unique identification of the machine running the backup. This can be used "
 "to identify the machine when sending mail or running scripts."
@@ -6376,11 +6376,11 @@ msgstr ""
 "Yedeklemeyi çalıştıran makinenin benzersiz kimliği. Bu, e-posta gönderirken "
 "veya betik çalıştırırken makineyi tanımlamak için kullanılabilir."
 
-#: Library/Main/Strings.cs:191
+#: Library/Main/Strings.cs:193
 msgid "Machine ID"
 msgstr "Makine kimliği"
 
-#: Library/Main/Strings.cs:192
+#: Library/Main/Strings.cs:194
 msgid ""
 "The name of the machine running the backup. This can be used to identify the"
 " machine when sending mail or running scripts."
@@ -6388,15 +6388,15 @@ msgstr ""
 "Yedeklemeyi çalıştıran makinenin adı. Bu, e-posta gönderirken veya betik "
 "çalıştırırken makineyi tanımlamak için kullanılabilir."
 
-#: Library/Main/Strings.cs:193
+#: Library/Main/Strings.cs:195
 msgid "Machine name"
 msgstr "Makine adı"
 
-#: Library/Main/Strings.cs:194
+#: Library/Main/Strings.cs:196
 msgid "The time of the next scheduled run"
 msgstr "Bir sonraki zamanlanmış çalıştırmanın saati"
 
-#: Library/Main/Strings.cs:195
+#: Library/Main/Strings.cs:197
 msgid ""
 "This property is a reporting option and does not affect the actual scheduled"
 " time. Use this option to inform a reporting destination about the next "
@@ -6406,7 +6406,7 @@ msgstr ""
 "Yedeklemenin çalışacağı bir sonraki beklenen saat hakkında bir raporlama "
 "hedefini bilgilendirmek için bu seçeneği kullanın."
 
-#: Library/Main/Strings.cs:196
+#: Library/Main/Strings.cs:198
 #, csharp-format
 msgid ""
 "Use this option to point to a text file where each line contains a file "
@@ -6424,11 +6424,11 @@ msgstr ""
 "değerlendirir. Örnek olarak da hizmet eden varsayılan bir dosya "
 "sağlanmıştır. Varsayılan dosya {0} konumundadır."
 
-#: Library/Main/Strings.cs:197
+#: Library/Main/Strings.cs:199
 msgid "Manage non-compressible file extensions"
 msgstr "Sıkıştırılamayan dosya uzantılarını yönet"
 
-#: Library/Main/Strings.cs:198
+#: Library/Main/Strings.cs:200
 msgid ""
 "The block size determines how files are fragmented. Choosing a large value "
 "will cause a larger overhead on file changes, choosing a small value will "
@@ -6440,11 +6440,11 @@ msgstr ""
 "dosya listelerinin saklanmasında büyük ek yüke neden olur. Uzak dosyalar "
 "oluşturulduktan sonra değerin değiştirilemeyeceğini unutmayın."
 
-#: Library/Main/Strings.cs:199
+#: Library/Main/Strings.cs:201
 msgid "Block size used in hashing"
 msgstr "Sağlamada (hash) kullanılan blok boyutu"
 
-#: Library/Main/Strings.cs:200
+#: Library/Main/Strings.cs:202
 msgid ""
 "Use this option to limit the scan to only files that are known to have "
 "changed. This is usually only activated in combination with a filesystem "
@@ -6454,20 +6454,20 @@ msgstr ""
 "kullanın. Bu genellikle yalnızca dosya değişikliklerini takip eden bir dosya"
 " sistemi izleyicisiyle birlikte etkinleştirilir."
 
-#: Library/Main/Strings.cs:201
+#: Library/Main/Strings.cs:203
 msgid "List of files to examine for changes"
 msgstr "Değişiklik açısından incelenecek dosyaların listesi"
 
-#: Library/Main/Strings.cs:202
+#: Library/Main/Strings.cs:204
 msgid ""
 "Path to the file containing the local cache of the remote file database."
 msgstr "Uzak dosya veritabanının yerel önbelleğini içeren dosyanın yolu."
 
-#: Library/Main/Strings.cs:203
+#: Library/Main/Strings.cs:205
 msgid "Path to the local state database"
 msgstr "Yerel durum veritabanının yolu"
 
-#: Library/Main/Strings.cs:204
+#: Library/Main/Strings.cs:206
 #, csharp-format
 msgid ""
 "Use this option to supply a list of deleted files. This option will be "
@@ -6476,11 +6476,11 @@ msgstr ""
 "Silinen dosyaların listesini sağlamak için bu seçeneği kullanın. --{0} "
 "seçeneği de ayarlanmadıkça bu seçenek yok sayılır."
 
-#: Library/Main/Strings.cs:205
+#: Library/Main/Strings.cs:207
 msgid "List of deleted files"
 msgstr "Silinen dosyaların listesi"
 
-#: Library/Main/Strings.cs:206
+#: Library/Main/Strings.cs:208
 msgid ""
 "Use this option to reduce the memory footprint by not keeping paths and "
 "modification timestamps in memory."
@@ -6488,11 +6488,11 @@ msgstr ""
 "Yolları ve değişiklik zaman damgalarını bellekte tutmayarak bellek "
 "kullanımını azaltmak için bu seçeneği kullanın."
 
-#: Library/Main/Strings.cs:207
+#: Library/Main/Strings.cs:209
 msgid "Reduce memory footprint by disabling in-memory lookups"
 msgstr "Bellek içi aramaları devre dışı bırakarak bellek kullanımını azalt"
 
-#: Library/Main/Strings.cs:209
+#: Library/Main/Strings.cs:211
 msgid ""
 "If this option is set, the local database is not compared to the remote "
 "filelist on startup. The intended usage for this option is to work correctly"
@@ -6502,11 +6502,11 @@ msgstr ""
 "karşılaştırılmaz. Bu seçeneğin amaçlanan kullanımı, dosya listelemenin bozuk"
 " veya kullanılamaz olduğu durumlarda doğru çalışmaktır."
 
-#: Library/Main/Strings.cs:210
+#: Library/Main/Strings.cs:212
 msgid "Do not query backend at startup"
 msgstr "Başlangıçta arka ucu sorgulama"
 
-#: Library/Main/Strings.cs:211
+#: Library/Main/Strings.cs:215
 msgid ""
 "The index files are used to limit the need for downloading dblock files when"
 " there is no local database present. The more information is recorded in the"
@@ -6520,11 +6520,11 @@ msgstr ""
 "Bunun bedeli, daha büyük dizin dosyalarının daha fazla uzak alan kaplaması "
 "ve hiç kullanılmayabilecek olmasıdır."
 
-#: Library/Main/Strings.cs:212
+#: Library/Main/Strings.cs:216
 msgid "Determine usage of index files"
 msgstr "Dizin dosyalarının kullanımını belirle"
 
-#: Library/Main/Strings.cs:213
+#: Library/Main/Strings.cs:217
 msgid ""
 "As files are changed, some data stored at the remote destination may not be "
 "required. This option controls how much wasted space the destination can "
@@ -6536,11 +6536,11 @@ msgstr ""
 "içerebileceğini denetler. Bu değer, her birimde ve toplam depolamada "
 "kullanılan bir yüzdedir."
 
-#: Library/Main/Strings.cs:214
+#: Library/Main/Strings.cs:218
 msgid "The maximum wasted space in percent"
 msgstr "Yüzde olarak en fazla boşa harcanan alan"
 
-#: Library/Main/Strings.cs:215
+#: Library/Main/Strings.cs:219
 msgid ""
 "Use this option to experiment with different settings and observe the "
 "outcome without changing actual files."
@@ -6548,11 +6548,11 @@ msgstr ""
 "Farklı ayarları denemek ve gerçek dosyaları değiştirmeden sonucu gözlemlemek"
 " için bu seçeneği kullanın."
 
-#: Library/Main/Strings.cs:216
+#: Library/Main/Strings.cs:220
 msgid "Do not perform any modifications"
 msgstr "Hiçbir değişiklik yapma"
 
-#: Library/Main/Strings.cs:217
+#: Library/Main/Strings.cs:221
 msgid ""
 "This is a very advanced option! Use this option to select a block hash "
 "algorithm with smaller or larger hash size, for performance or storage space"
@@ -6562,11 +6562,11 @@ msgstr ""
 "nedenleriyle daha küçük veya daha büyük sağlama (hash) boyutuna sahip bir "
 "blok sağlama algoritması seçmek için bu seçeneği kullanın."
 
-#: Library/Main/Strings.cs:218
+#: Library/Main/Strings.cs:222
 msgid "The hash algorithm used on blocks"
 msgstr "Bloklarda kullanılan sağlama algoritması"
 
-#: Library/Main/Strings.cs:219
+#: Library/Main/Strings.cs:223
 msgid ""
 "This is a very advanced option! Use this option to select a file hash "
 "algorithm with smaller or larger hash size, for performance or storage space"
@@ -6576,11 +6576,11 @@ msgstr ""
 "nedenleriyle daha küçük veya daha büyük sağlama (hash) boyutuna sahip bir "
 "dosya sağlama algoritması seçmek için bu seçeneği kullanın."
 
-#: Library/Main/Strings.cs:220
+#: Library/Main/Strings.cs:224
 msgid "The hash algorithm used on files"
 msgstr "Dosyalarda kullanılan sağlama algoritması"
 
-#: Library/Main/Strings.cs:221
+#: Library/Main/Strings.cs:225
 msgid ""
 "If a large number of small files are detected during a backup, or wasted "
 "space is found after deleting backups, the remote data will be compacted. "
@@ -6592,11 +6592,11 @@ msgstr ""
 "(compact). Bu tür otomatik sıkıştırmayı devre dışı bırakmak ve yalnızca "
 "compact komutu çalıştırıldığında sıkıştırmak için bu seçeneği kullanın."
 
-#: Library/Main/Strings.cs:222
+#: Library/Main/Strings.cs:226
 msgid "Disable automatic compacting"
 msgstr "Otomatik sıkıştırmayı (compact) devre dışı bırak"
 
-#: Library/Main/Strings.cs:223
+#: Library/Main/Strings.cs:227
 msgid ""
 "When examining the size of a volume in consideration for compacting, a small"
 " tolerance value is used, by default 20 percent of the volume size. This "
@@ -6608,11 +6608,11 @@ msgstr ""
 "yüzde 20'si. Bu, birkaç bayt boşa harcanan alanı olabilecek büyük birimlerin"
 " indirilip yeniden yazılmamasını sağlar."
 
-#: Library/Main/Strings.cs:224
+#: Library/Main/Strings.cs:228
 msgid "Volume size threshold"
 msgstr "Birim boyutu eşiği"
 
-#: Library/Main/Strings.cs:225
+#: Library/Main/Strings.cs:229
 msgid ""
 "To avoid filling the remote storage with small files, this value can force "
 "grouping small files. The small volumes will always be combined when they "
@@ -6622,11 +6622,11 @@ msgstr ""
 "dosyaların gruplanmasını zorlayabilir. Küçük birimler, tam bir birimi "
 "doldurabildiklerinde her zaman birleştirilir."
 
-#: Library/Main/Strings.cs:226
+#: Library/Main/Strings.cs:230
 msgid "Maximum number of small volumes"
 msgstr "En fazla küçük birim sayısı"
 
-#: Library/Main/Strings.cs:227
+#: Library/Main/Strings.cs:231
 msgid ""
 "Enable this option to look into other files on this machine to find existing"
 " blocks. This is a fairly slow operation but can limit the size of "
@@ -6636,11 +6636,11 @@ msgstr ""
 " seçeneği etkinleştirin. Bu oldukça yavaş bir işlemdir ancak indirmelerin "
 "boyutunu sınırlayabilir."
 
-#: Library/Main/Strings.cs:228
+#: Library/Main/Strings.cs:232
 msgid "Use local file data when restoring"
 msgstr "Geri yüklerken yerel dosya verilerini kullan"
 
-#: Library/Main/Strings.cs:230
+#: Library/Main/Strings.cs:234
 msgid ""
 "When listing contents or when restoring files, the local database can be "
 "skipped. This is usually slower, but can be used to verify the actual "
@@ -6650,11 +6650,11 @@ msgstr ""
 "atlanabilir. Bu genellikle daha yavaştır ancak uzak deponun gerçek içeriğini"
 " doğrulamak için kullanılabilir."
 
-#: Library/Main/Strings.cs:231
+#: Library/Main/Strings.cs:235
 msgid "Disable the local database"
 msgstr "Yerel veritabanını devre dışı bırak"
 
-#: Library/Main/Strings.cs:232
+#: Library/Main/Strings.cs:236
 msgid ""
 "Use this option to set number of versions to keep. Supply -1 to keep all "
 "versions."
@@ -6662,20 +6662,20 @@ msgstr ""
 "Tutulacak sürüm sayısını ayarlamak için bu seçeneği kullanın. Tüm sürümleri "
 "tutmak için -1 girin."
 
-#: Library/Main/Strings.cs:233
+#: Library/Main/Strings.cs:237
 msgid "Keep a number of versions"
 msgstr "Belirli sayıda sürüm tut"
 
-#: Library/Main/Strings.cs:234
+#: Library/Main/Strings.cs:238
 msgid "Use this option to set the timespan in which backups are kept."
 msgstr ""
 "Yedeklerin tutulacağı zaman aralığını ayarlamak için bu seçeneği kullanın."
 
-#: Library/Main/Strings.cs:235
+#: Library/Main/Strings.cs:239
 msgid "Keep all versions within a timespan"
 msgstr "Bir zaman aralığındaki tüm sürümleri tut"
 
-#: Library/Main/Strings.cs:236
+#: Library/Main/Strings.cs:240
 msgid ""
 "Sets how long uploaded backup files should be protected with an immutable "
 "object lock (for example, 30d). If this option is not set, the files will "
@@ -6686,11 +6686,11 @@ msgstr ""
 "süre korunacağını ayarlar (örneğin 30d). Bu seçenek ayarlanmazsa dosyalar "
 "nesne kilidiyle korunmaz. Tüm hedefler nesne kilitlemeyi desteklemez."
 
-#: Library/Main/Strings.cs:237
+#: Library/Main/Strings.cs:241
 msgid "Lock duration for remote backup files"
 msgstr "Uzak yedekleme dosyaları için kilit süresi"
 
-#: Library/Main/Strings.cs:238
+#: Library/Main/Strings.cs:242
 msgid ""
 "Use this option to reduce the number of versions that are kept with "
 "increasing version age by deleting most of the old backups. The expected "
@@ -6710,11 +6710,11 @@ msgstr ""
 "zaman aralığını belirtmek için \"U\" belirticisinin kullanımını da "
 "destekler."
 
-#: Library/Main/Strings.cs:239
+#: Library/Main/Strings.cs:243
 msgid "Reduce number of versions by deleting old intermediate backups"
 msgstr "Eski ara yedekleri silerek sürüm sayısını azalt"
 
-#: Library/Main/Strings.cs:240
+#: Library/Main/Strings.cs:244
 #, csharp-format
 msgid ""
 "The retention policy value '{0}' is not valid. Each entry must consist of a "
@@ -6724,7 +6724,7 @@ msgstr ""
 "üste ile ayrılmış bir zaman aralığı ve bir sıklık değerinden oluşmalıdır; "
 "örneğin '7D:1D'."
 
-#: Library/Main/Strings.cs:241
+#: Library/Main/Strings.cs:245
 msgid ""
 "Use this option to continue even if some source entries are missing. When "
 "this option is set, no warning is emitted for missing sources."
@@ -6732,11 +6732,11 @@ msgstr ""
 "Bazı kaynak girdileri eksik olsa bile devam etmek için bu seçeneği kullanın."
 " Bu seçenek ayarlandığında, eksik kaynaklar için uyarı verilmez."
 
-#: Library/Main/Strings.cs:242
+#: Library/Main/Strings.cs:246
 msgid "Ignore missing source elements"
 msgstr "Eksik kaynak öğelerini yok say"
 
-#: Library/Main/Strings.cs:243
+#: Library/Main/Strings.cs:247
 msgid ""
 "Use this option to abort the backup if any source path is missing. This "
 "overrides the default behavior of logging a warning and continuing."
@@ -6745,11 +6745,11 @@ msgstr ""
 "kullanın. Bu, uyarı günlükleyip devam etme şeklindeki varsayılan davranışı "
 "geçersiz kılar."
 
-#: Library/Main/Strings.cs:244
+#: Library/Main/Strings.cs:248
 msgid "Abort backup if a source is missing"
 msgstr "Bir kaynak eksikse yedeklemeyi durdur"
 
-#: Library/Main/Strings.cs:245
+#: Library/Main/Strings.cs:249
 msgid ""
 "Use this option to prevent backups from running if one or more source "
 "folders are empty. This is useful to prevent backups from running when the "
@@ -6761,11 +6761,11 @@ msgstr ""
 "kullanılamadığı durumlarda yedeklemelerin çalışmasını önlemek için "
 "yararlıdır. Bu yalnızca dosya sistemi kaynak yolları için çalışır."
 
-#: Library/Main/Strings.cs:246
+#: Library/Main/Strings.cs:250
 msgid "Prevent backups from running if source folders are empty"
 msgstr "Kaynak klasörler boşsa yedeklemelerin çalışmasını önle"
 
-#: Library/Main/Strings.cs:247
+#: Library/Main/Strings.cs:251
 msgid ""
 "Use this option to overwrite target files when restoring. If this option is "
 "not set, the files will be restored with a timestamp and a number appended."
@@ -6774,11 +6774,11 @@ msgstr ""
 " seçenek ayarlanmazsa, dosyalar sonuna zaman damgası ve numara eklenerek "
 "geri yüklenir."
 
-#: Library/Main/Strings.cs:248
+#: Library/Main/Strings.cs:252
 msgid "Overwrite files when restoring"
 msgstr "Geri yüklerken dosyaların üzerine yaz"
 
-#: Library/Main/Strings.cs:249
+#: Library/Main/Strings.cs:253
 msgid ""
 "Use this option to increase the amount of output generated when running an "
 "option. Generally this option will produce a line for each file processed."
@@ -6786,11 +6786,11 @@ msgstr ""
 "Bir işlem çalıştırılırken üretilen çıktı miktarını artırmak için bu seçeneği"
 " kullanın. Genellikle bu seçenek, işlenen her dosya için bir satır üretir."
 
-#: Library/Main/Strings.cs:250
+#: Library/Main/Strings.cs:254
 msgid "Output more progress information"
 msgstr "Daha fazla ilerleme bilgisi göster"
 
-#: Library/Main/Strings.cs:252
+#: Library/Main/Strings.cs:256
 msgid ""
 "Use this option to increase the amount of output generated as the result of "
 "the operation, including all filenames."
@@ -6798,11 +6798,11 @@ msgstr ""
 "İşlemin sonucu olarak üretilen çıktı miktarını, tüm dosya adları dahil, "
 "artırmak için bu seçeneği kullanın."
 
-#: Library/Main/Strings.cs:253
+#: Library/Main/Strings.cs:257
 msgid "Output full results"
 msgstr "Tam sonuçları göster"
 
-#: Library/Main/Strings.cs:254
+#: Library/Main/Strings.cs:258
 msgid ""
 "Use this option to upload a verification file after changing the remote "
 "storage. The file is not encrypted and contains the size and SHA256 hashes "
@@ -6814,11 +6814,11 @@ msgstr ""
 " sağlamalarını içerir ve dosyaların bütünlüğünü doğrulamak için "
 "kullanılabilir."
 
-#: Library/Main/Strings.cs:255
+#: Library/Main/Strings.cs:259
 msgid "Determine if verification files are uploaded"
 msgstr "Doğrulama dosyalarının yüklenip yüklenmeyeceğini belirle"
 
-#: Library/Main/Strings.cs:256
+#: Library/Main/Strings.cs:260
 #, csharp-format
 msgid ""
 "After a backup is completed, some (dblock, dindex, dlist) files from the "
@@ -6833,11 +6833,11 @@ msgstr ""
 "iki seçeneğin işaret ettiği en büyük değerdir. Bu değer 0 olarak ayarlanırsa"
 " veya --{1} seçeneği ayarlanmışsa, hiçbir uzak dosya doğrulanmaz."
 
-#: Library/Main/Strings.cs:257
+#: Library/Main/Strings.cs:261
 msgid "The number of samples to test after a backup"
 msgstr "Yedeklemeden sonra sınanacak örnek sayısı"
 
-#: Library/Main/Strings.cs:258
+#: Library/Main/Strings.cs:262
 #, csharp-format
 msgid ""
 "After a backup is completed, some samples (one sample is 1 dblock, 1 dindex,"
@@ -6854,11 +6854,11 @@ msgstr ""
 "işaret ettiği en büyük değerdir. --{1} seçeneği sağlanmışsa, hiçbir uzak "
 "dosya doğrulanmaz."
 
-#: Library/Main/Strings.cs:259
+#: Library/Main/Strings.cs:263
 msgid "The percentage of samples to test after a backup"
 msgstr "Yedeklemeden sonra sınanacak örnek yüzdesi"
 
-#: Library/Main/Strings.cs:260
+#: Library/Main/Strings.cs:264
 #, csharp-format
 msgid ""
 "After a backup is completed, some (dblock, dindex, dlist) files from the "
@@ -6877,11 +6877,11 @@ msgstr ""
 "otomatik olarak ayarlanır. ListAndIndexes, True gibidir ancak yalnızca dlist"
 " ve dizin birimleri işlenir."
 
-#: Library/Main/Strings.cs:261
+#: Library/Main/Strings.cs:265
 msgid "Activate in-depth verification of files"
 msgstr "Dosyaların derinlemesine doğrulamasını etkinleştir"
 
-#: Library/Main/Strings.cs:262
+#: Library/Main/Strings.cs:266
 msgid ""
 "Use this option to prevent automatic replacement of index files that are "
 "missing content during the testing phase. Creating repaired index files "
@@ -6892,11 +6892,11 @@ msgstr ""
 "dosyaları oluşturmak biraz daha uzun sürer ancak çok yavaş veritabanı "
 "yeniden oluşturmalarını önler"
 
-#: Library/Main/Strings.cs:263
+#: Library/Main/Strings.cs:267
 msgid "Don't fix defective index files"
 msgstr "Kusurlu dizin dosyalarını onarma"
 
-#: Library/Main/Strings.cs:264
+#: Library/Main/Strings.cs:268
 msgid ""
 "Use this size to control how many bytes are read from a file before "
 "processing."
@@ -6904,11 +6904,11 @@ msgstr ""
 "İşlemeden önce bir dosyadan kaç bayt okunacağını denetlemek için bu boyutu "
 "kullanın."
 
-#: Library/Main/Strings.cs:265
+#: Library/Main/Strings.cs:269
 msgid "Size of the file read buffer"
 msgstr "Dosya okuma arabelleğinin boyutu"
 
-#: Library/Main/Strings.cs:267
+#: Library/Main/Strings.cs:271
 msgid ""
 "Use this option to allow the passphrase to change. Note that this option is "
 "not permitted for a backup or repair operation."
@@ -6916,11 +6916,11 @@ msgstr ""
 "Parolanın değişmesine izin vermek için bu seçeneği kullanın. Bu seçeneğe "
 "yedekleme veya onarım işlemi için izin verilmediğini unutmayın."
 
-#: Library/Main/Strings.cs:268
+#: Library/Main/Strings.cs:272
 msgid "Allow the passphrase to change"
 msgstr "Parolanın değişmesine izin ver"
 
-#: Library/Main/Strings.cs:269
+#: Library/Main/Strings.cs:273
 msgid ""
 "Use this option to only list filesets and avoid traversing file names and "
 "other metadata which slows down the process."
@@ -6928,11 +6928,11 @@ msgstr ""
 "Yalnızca dosya kümelerini listelemek ve süreci yavaşlatan dosya adları ile "
 "diğer üst verilerin taranmasını önlemek için bu seçeneği kullanın."
 
-#: Library/Main/Strings.cs:270
+#: Library/Main/Strings.cs:274
 msgid "List only filesets"
 msgstr "Yalnızca dosya kümelerini listele"
 
-#: Library/Main/Strings.cs:272
+#: Library/Main/Strings.cs:276
 msgid ""
 "Use this option to disable the storage of metadata, such as file timestamps."
 " Disabling metadata storage will speed up the backup and restore operations,"
@@ -6942,11 +6942,11 @@ msgstr ""
 "için bu seçeneği kullanın. Üst veri saklamayı devre dışı bırakmak yedekleme "
 "ve geri yükleme işlemlerini hızlandırır ancak dosya boyutunu pek etkilemez."
 
-#: Library/Main/Strings.cs:273
+#: Library/Main/Strings.cs:277
 msgid "Do not store metadata"
 msgstr "Üst verileri saklama"
 
-#: Library/Main/Strings.cs:274
+#: Library/Main/Strings.cs:278
 msgid ""
 "By default permissions are not restored as they might prevent you from "
 "accessing your files. Use this option to restore the permissions as well."
@@ -6954,11 +6954,11 @@ msgstr ""
 "Varsayılan olarak izinler, dosyalarınıza erişmenizi engelleyebileceği için "
 "geri yüklenmez. İzinleri de geri yüklemek için bu seçeneği kullanın."
 
-#: Library/Main/Strings.cs:275
+#: Library/Main/Strings.cs:279
 msgid "Restore file permissions"
 msgstr "Dosya izinlerini geri yükle"
 
-#: Library/Main/Strings.cs:276
+#: Library/Main/Strings.cs:280
 msgid ""
 "After restoring files, the file hash of all restored files are checked to "
 "verify that the restore was successful. Use this option to disable the check"
@@ -6969,11 +6969,11 @@ msgstr ""
 "Denetimi devre dışı bırakmak ve doğrulamayı beklememek için bu seçeneği "
 "kullanın."
 
-#: Library/Main/Strings.cs:277
+#: Library/Main/Strings.cs:281
 msgid "Skip restored file check"
 msgstr "Geri yüklenen dosya denetimini atla"
 
-#: Library/Main/Strings.cs:278
+#: Library/Main/Strings.cs:282
 msgid ""
 "Duplicati will attempt to use data from source files to minimize the amount "
 "of downloaded data. Use this option to skip this optimization and only use "
@@ -6983,11 +6983,11 @@ msgstr ""
 " verileri kullanmaya çalışır. Bu iyileştirmeyi atlamak ve yalnızca uzak "
 "verileri kullanmak için bu seçeneği kullanın."
 
-#: Library/Main/Strings.cs:279
+#: Library/Main/Strings.cs:283
 msgid "Do not use local data"
 msgstr "Yerel verileri kullanma"
 
-#: Library/Main/Strings.cs:280
+#: Library/Main/Strings.cs:284
 #, csharp-format
 msgid ""
 "The default is now to not use local blocks for restore. To opt-in for using "
@@ -6996,7 +6996,7 @@ msgstr ""
 "Varsayılan artık geri yükleme için yerel blokları kullanmamaktır. Yerel "
 "blokları kullanmayı seçmek için --{0} seçeneğini ayarlayın."
 
-#: Library/Main/Strings.cs:281
+#: Library/Main/Strings.cs:285
 msgid ""
 "Use this option to allow Duplicati to use blocks found on disk when "
 "performing restores, instead of only using files in remote storage."
@@ -7005,11 +7005,11 @@ msgstr ""
 "kullanmak yerine diskte bulunan blokları da kullanmasına izin vermek için bu"
 " seçeneği kullanın."
 
-#: Library/Main/Strings.cs:282
+#: Library/Main/Strings.cs:286
 msgid "Use existing data for restore"
 msgstr "Geri yükleme için mevcut verileri kullan"
 
-#: Library/Main/Strings.cs:284
+#: Library/Main/Strings.cs:288
 msgid ""
 "Use this option to increase verification by checking the hash of blocks read"
 " from a volume before patching restored files with the data."
@@ -7018,11 +7018,11 @@ msgstr ""
 "blokların sağlamasını denetleyerek doğrulamayı artırmak için bu seçeneği "
 "kullanın."
 
-#: Library/Main/Strings.cs:285
+#: Library/Main/Strings.cs:289
 msgid "Check block hashes"
 msgstr "Blok sağlamalarını denetle"
 
-#: Library/Main/Strings.cs:288
+#: Library/Main/Strings.cs:292
 msgid ""
 "Use this option to build a searchable local database which only contains "
 "path information. This option is usable for quickly building a database to "
@@ -7035,11 +7035,11 @@ msgstr ""
 "kullanılabilir. Ortaya çıkan veritabanında arama yapılabilir ancak veri geri"
 " yüklemek için kullanılamaz."
 
-#: Library/Main/Strings.cs:289
+#: Library/Main/Strings.cs:293
 msgid "Repair database with paths"
 msgstr "Veritabanını yollarla onar"
 
-#: Library/Main/Strings.cs:290
+#: Library/Main/Strings.cs:294
 msgid ""
 "Use this option to ignore that the remote destination contains newer "
 "contents than the database. This should only be used when the database is "
@@ -7051,11 +7051,11 @@ msgstr ""
 "hedefin doğru olmadığı durumlarda kullanılmalıdır; aksi halde veri kaybı "
 "olabilir."
 
-#: Library/Main/Strings.cs:291
+#: Library/Main/Strings.cs:295
 msgid "Ignore outdated database files"
 msgstr "Güncelliğini yitirmiş veritabanı dosyalarını yok say"
 
-#: Library/Main/Strings.cs:292
+#: Library/Main/Strings.cs:296
 msgid ""
 "By default, your system locale and culture settings will be used. In some "
 "cases you may prefer to run with another locale, for example to get messages"
@@ -7068,11 +7068,11 @@ msgstr ""
 "seçeneği kullanın. \"Değişmez Kültür\"ü (Invariant Culture) seçmek için boş "
 "bir dize girin."
 
-#: Library/Main/Strings.cs:293
+#: Library/Main/Strings.cs:297
 msgid "Force the locale setting"
 msgstr "Yerel ayarı zorla"
 
-#: Library/Main/Strings.cs:294
+#: Library/Main/Strings.cs:298
 msgid ""
 "By default, dates are displayed in the calendar format, meaning \"Today\" or"
 " \"Last Thursday\". By setting this option, only the actual dates are "
@@ -7082,11 +7082,11 @@ msgstr ""
 "Perşembe\" olarak görüntülenir. Bu seçenek ayarlanarak yalnızca gerçek "
 "tarihler görüntülenir, örneğin \"12 Kas 2018, 08:01\"."
 
-#: Library/Main/Strings.cs:295
+#: Library/Main/Strings.cs:299
 msgid "Force the display of the actual date instead of calendar date"
 msgstr "Takvim tarihi yerine gerçek tarihin görüntülenmesini zorla"
 
-#: Library/Main/Strings.cs:296
+#: Library/Main/Strings.cs:300
 msgid ""
 "Use this option to disable multithreaded handling of up- and downloads. That"
 " can significantly speed up backend operations depending on the hardware "
@@ -7097,12 +7097,12 @@ msgstr ""
 "ucunuzun aktarım hızına bağlı olarak arka uç işlemlerini önemli ölçüde "
 "hızlandırabilir."
 
-#: Library/Main/Strings.cs:297
+#: Library/Main/Strings.cs:301
 msgid "Handle file communication with backend using threaded pipes"
 msgstr ""
 "Dosya iletişimini arka uçla işlemek için iş parçacıklı kanalları kullanın."
 
-#: Library/Main/Strings.cs:298
+#: Library/Main/Strings.cs:302
 msgid ""
 "Use this option to set the maximum number of threads used. Setting this "
 "value to zero or less will dynamically balance the number of active threads "
@@ -7112,22 +7112,22 @@ msgstr ""
 "kullanın. Bu değeri sıfır veya daha az olarak ayarlamak, etkin iş parçacığı "
 "sayısını donanıma uyacak şekilde dinamik olarak dengeler."
 
-#: Library/Main/Strings.cs:299
+#: Library/Main/Strings.cs:303
 msgid "Limit number of concurrent threads"
 msgstr "Eşzamanlı iş parçacığı sayısını sınırla"
 
-#: Library/Main/Strings.cs:300
+#: Library/Main/Strings.cs:304
 msgid ""
 "Use this option to set the number of processes that perform hashing of data."
 msgstr ""
 "Verilerin sağlamasını (hash) yapan süreç sayısını ayarlamak için bu seçeneği"
 " kullanın."
 
-#: Library/Main/Strings.cs:301
+#: Library/Main/Strings.cs:305
 msgid "Specify the number of concurrent hashing processes"
 msgstr "Eşzamanlı sağlama süreçlerinin sayısını belirt"
 
-#: Library/Main/Strings.cs:302
+#: Library/Main/Strings.cs:306
 msgid ""
 "Use this option to set the number of processes that perform compression of "
 "output data."
@@ -7135,15 +7135,15 @@ msgstr ""
 "Çıktı verilerini sıkıştıran süreç sayısını ayarlamak için bu seçeneği "
 "kullanın."
 
-#: Library/Main/Strings.cs:303
+#: Library/Main/Strings.cs:307
 msgid "Specify the number of concurrent compression processes"
 msgstr "Eşzamanlı sıkıştırma süreçlerinin sayısını belirt"
 
-#: Library/Main/Strings.cs:304
+#: Library/Main/Strings.cs:308
 msgid "Specify the number of concurrent files to open"
 msgstr "Eşzamanlı olarak açılacak dosya sayısını belirt"
 
-#: Library/Main/Strings.cs:305
+#: Library/Main/Strings.cs:309
 msgid ""
 "Use this option to set the number of concurrent files to open. This could "
 "accelerate big backups involving lot of files, such as an initial backup"
@@ -7152,7 +7152,7 @@ msgstr ""
 "kullanın. Bu, ilk yedekleme gibi çok sayıda dosya içeren büyük yedeklemeleri"
 " hızlandırabilir"
 
-#: Library/Main/Strings.cs:306
+#: Library/Main/Strings.cs:310
 msgid ""
 "If Duplicati detects that the previous backup did not complete, it will "
 "generate a filelist that is a merge of the last completed backup and the "
@@ -7162,11 +7162,11 @@ msgstr ""
 "yedekleme ile eksik yedekleme oturumunda yüklenen içeriklerin birleşimi olan"
 " bir dosya listesi oluşturur."
 
-#: Library/Main/Strings.cs:307
+#: Library/Main/Strings.cs:311
 msgid "Disable synthetic filelist"
 msgstr "Sentetik dosya listesini devre dışı bırak"
 
-#: Library/Main/Strings.cs:308
+#: Library/Main/Strings.cs:312
 msgid ""
 "This option instructs Duplicati to not look at metadata or filesize when "
 "deciding to scan a file for changes. Use this option if you have a large "
@@ -7178,11 +7178,11 @@ msgstr ""
 "sayıda dosyanız varsa ve değişmemiş dosyalarla taramanın uzun sürdüğünü fark"
 " ediyorsanız bu seçeneği kullanın."
 
-#: Library/Main/Strings.cs:309
+#: Library/Main/Strings.cs:313
 msgid "Check only file lastmodified"
 msgstr "Yalnızca dosyanın son değiştirilme zamanını denetle"
 
-#: Library/Main/Strings.cs:310
+#: Library/Main/Strings.cs:314
 msgid ""
 "When restore a subset of a backup into a new folder, the shortest possible "
 "path is used to avoid generating deep paths with empty folders. Use this "
@@ -7194,11 +7194,11 @@ msgstr ""
 " boş klasörler dahil özgün klasör yapısının tamamının korunması için bu "
 "sıkıştırmayı atlamak amacıyla bu seçeneği kullanın."
 
-#: Library/Main/Strings.cs:311
+#: Library/Main/Strings.cs:315
 msgid "Disable path compression on restore"
 msgstr "Geri yüklemede yol sıkıştırmasını devre dışı bırak"
 
-#: Library/Main/Strings.cs:312
+#: Library/Main/Strings.cs:316
 msgid ""
 "By default, the last fileset cannot be removed. This is a safeguard to make "
 "sure that all remote data is not deleted by a configuration mistake. Use "
@@ -7210,11 +7210,11 @@ msgstr ""
 "dosya kümelerinin silinebilmesi için bu korumayı devre dışı bırakmak "
 "amacıyla bu seçeneği kullanın."
 
-#: Library/Main/Strings.cs:313
+#: Library/Main/Strings.cs:317
 msgid "Allow removing all filesets"
 msgstr "Tüm dosya kümelerinin kaldırılmasına izin ver"
 
-#: Library/Main/Strings.cs:314
+#: Library/Main/Strings.cs:318
 msgid ""
 "Some operations that manipulate the local database leave unused entries "
 "behind. These entries are not deleted from a hard drive until a VACUUM "
@@ -7230,13 +7230,13 @@ msgstr ""
 "olarak ayarlamak, Duplicati'nin kendi takdirine göre VACUUM işlemleri "
 "yapmasına izin verir."
 
-#: Library/Main/Strings.cs:315
+#: Library/Main/Strings.cs:319
 msgid "Allow automatic rebuilding of local database to save space"
 msgstr ""
 "Alan kazanmak için yerel veritabanının otomatik yeniden oluşturulmasına izin"
 " ver"
 
-#: Library/Main/Strings.cs:316
+#: Library/Main/Strings.cs:320
 msgid ""
 "When this flag is enabled, the scanner that computes the size of source "
 "files is disabled, and instead the reported size is read from the database. "
@@ -7249,11 +7249,11 @@ msgstr ""
 "yedeklemeyi hızlandırabilir ancak daha az doğru bir ilerleme göstergesi "
 "verir."
 
-#: Library/Main/Strings.cs:317
+#: Library/Main/Strings.cs:321
 msgid "Disable the read-ahead scanner"
 msgstr "İleri okuma tarayıcısını devre dışı bırak"
 
-#: Library/Main/Strings.cs:318
+#: Library/Main/Strings.cs:322
 msgid ""
 "In backups with a large number of filesets, the verification can take up a "
 "large part of the backup time. If you disable the checks, make sure you run "
@@ -7264,11 +7264,11 @@ msgstr ""
 "beklendiği gibi çalıştığından emin olmak için düzenli denetim komutları "
 "çalıştırdığınızdan emin olun."
 
-#: Library/Main/Strings.cs:319
+#: Library/Main/Strings.cs:323
 msgid "Disable filelist consistency checks"
 msgstr "Dosya listesi tutarlılık denetimlerini devre dışı bırak"
 
-#: Library/Main/Strings.cs:320
+#: Library/Main/Strings.cs:324
 msgid ""
 "Use this option to disable a scheduled backup if the system is detected to "
 "be running on battery power (manual or command line backups will still be "
@@ -7280,15 +7280,15 @@ msgstr ""
 "yedeklemeleri yine çalıştırılır). Algılanan güç kaynağı şebeke (örn. AC) "
 "veya bilinmiyorsa, zamanlanmış yedeklemeler normal şekilde devam eder."
 
-#: Library/Main/Strings.cs:321
+#: Library/Main/Strings.cs:325
 msgid "Disable the backup when on battery power"
 msgstr "Pil gücündeyken yedeklemeyi devre dışı bırak"
 
-#: Library/Main/Strings.cs:324
+#: Library/Main/Strings.cs:328
 msgid "Log file information level"
 msgstr "Günlük dosyası bilgi düzeyi"
 
-#: Library/Main/Strings.cs:325
+#: Library/Main/Strings.cs:329
 #, csharp-format
 msgid ""
 "This option accepts filters that removes or includes messages regardless of "
@@ -7303,11 +7303,11 @@ msgstr ""
 "başlamadıkça dahil edici sayılır. Köşeli parantezler içinde düzenli ifadeler"
 " desteklenir. Örnek: \"+Path*{0}+*Mail*{0}-[.*DNS]\" "
 
-#: Library/Main/Strings.cs:326
+#: Library/Main/Strings.cs:330
 msgid "Apply filters to the file log data"
 msgstr "Dosya günlüğü verilerine filtre uygula"
 
-#: Library/Main/Strings.cs:327
+#: Library/Main/Strings.cs:331
 #, csharp-format
 msgid ""
 "This is a simplified version of the --{0} option. It will ignore all log "
@@ -7318,23 +7318,23 @@ msgstr ""
 "sahip tüm günlük iletilerini yok sayar. Liste, virgülle ayrılmış günlük "
 "iletisi kimlikleri listesidir."
 
-#: Library/Main/Strings.cs:328 Library/Main/Strings.cs:334
+#: Library/Main/Strings.cs:332 Library/Main/Strings.cs:338
 msgid "Ignore log messages with the specified IDs"
 msgstr "Belirtilen kimliklere sahip günlük iletilerini yok say"
 
-#: Library/Main/Strings.cs:329
+#: Library/Main/Strings.cs:333
 msgid "Specify the amount of log information to output to the console."
 msgstr "Konsola yazılacak günlük bilgisi miktarını belirtin."
 
-#: Library/Main/Strings.cs:330
+#: Library/Main/Strings.cs:334
 msgid "Console information level"
 msgstr "Konsol bilgi düzeyi"
 
-#: Library/Main/Strings.cs:332
+#: Library/Main/Strings.cs:336
 msgid "Apply filters to the console log data"
 msgstr "Konsol günlüğü verilerine filtre uygula"
 
-#: Library/Main/Strings.cs:336
+#: Library/Main/Strings.cs:340
 msgid ""
 "This option instructs the operating system to set the current process to use"
 " the lowest IO priority level, which can make operations run slower but will"
@@ -7344,20 +7344,20 @@ msgstr ""
 "kullanmasını söyler; bu, işlemlerin daha yavaş çalışmasına neden olabilir "
 "ancak aynı anda çalışan diğer işlemleri daha az etkiler."
 
-#: Library/Main/Strings.cs:337
+#: Library/Main/Strings.cs:341
 msgid "Set the process to use low IO priority"
 msgstr "Süreci düşük G/Ç önceliği kullanacak şekilde ayarla"
 
-#: Library/Main/Strings.cs:339
+#: Library/Main/Strings.cs:343
 msgid "Use this option to remove all empty folders from a backup."
 msgstr ""
 "Bir yedeklemeden tüm boş klasörleri kaldırmak için bu seçeneği kullanın."
 
-#: Library/Main/Strings.cs:340
+#: Library/Main/Strings.cs:344
 msgid "Exclude empty folders"
 msgstr "Boş klasörleri hariç tut"
 
-#: Library/Main/Strings.cs:341
+#: Library/Main/Strings.cs:345
 msgid ""
 "Use this option to set a filename, or list of filenames, that indicate "
 "exclusion of a folder which contains it. A common use would be to have a "
@@ -7369,11 +7369,11 @@ msgstr ""
 "kullanım, \".nobackup\" gibi adlandırılmış bir dosya oluşturup bu dosyayı "
 "yedeklenmemesi gereken klasörlere koymaktır."
 
-#: Library/Main/Strings.cs:342
+#: Library/Main/Strings.cs:346
 msgid "List of filenames that exclude folders"
 msgstr "Klasörleri hariç tutan dosya adlarının listesi"
 
-#: Library/Main/Strings.cs:343
+#: Library/Main/Strings.cs:347
 msgid ""
 "If symlink metadata is applied, it will usually mean changing the symlink "
 "target, instead of the symlink itself. For this reason, metadata is not "
@@ -7386,11 +7386,11 @@ msgstr ""
 "verilerin sembolik bağlantılara da uygulanmasını sağlamak için "
 "kullanılabilir."
 
-#: Library/Main/Strings.cs:344
+#: Library/Main/Strings.cs:348
 msgid "Apply metadata to symlinks"
 msgstr "Üst verileri sembolik bağlantılara uygula"
 
-#: Library/Main/Strings.cs:345
+#: Library/Main/Strings.cs:349
 msgid ""
 "When running in unittest mode, no automatic fixes are applied, which assumes"
 " that the input data is always in perfect shape. This option is not intended"
@@ -7402,11 +7402,11 @@ msgstr ""
 "yedeklemelerde kullanım için tasarlanmamıştır; olası sorunları ortaya "
 "çıkarmak amacıyla sınama için gereklidir."
 
-#: Library/Main/Strings.cs:346
+#: Library/Main/Strings.cs:350
 msgid "Activate unittest mode"
 msgstr "Unittest modunu etkinleştir"
 
-#: Library/Main/Strings.cs:348
+#: Library/Main/Strings.cs:352
 #, csharp-format
 msgid ""
 "To improve performance of the backups, frequent database queries are not "
@@ -7419,15 +7419,15 @@ msgstr ""
 " bu seçeneği etkinleştirin ve ek günlük verilerini bildirmek için --{0}={2} "
 "veya --{1}={2} ayarlamayı unutmayın"
 
-#: Library/Main/Strings.cs:349
+#: Library/Main/Strings.cs:353
 msgid "Activate logging of all database queries"
 msgstr "Tüm veritabanı sorgularının günlüğe kaydını etkinleştir"
 
-#: Library/Main/Strings.cs:350
+#: Library/Main/Strings.cs:354
 msgid "The threshold for a database query to be considered slow"
 msgstr "Bir veritabanı sorgusunun yavaş sayılması için eşik"
 
-#: Library/Main/Strings.cs:351
+#: Library/Main/Strings.cs:355
 msgid ""
 "If any query takes longer than this threshold, it will be logged with a "
 "warning as a slow query. Set this value to less than 0 seconds to disable "
@@ -7437,11 +7437,11 @@ msgstr ""
 "günlüklenir. İzleyiciyi devre dışı bırakmak için bu değeri 0 saniyeden az "
 "olarak ayarlayın."
 
-#: Library/Main/Strings.cs:352
+#: Library/Main/Strings.cs:356
 msgid "Store metadata content in the database"
 msgstr "Üst veri içeriğini veritabanında sakla"
 
-#: Library/Main/Strings.cs:353
+#: Library/Main/Strings.cs:357
 msgid ""
 "By default, metadata content is only stored in the remote volumes. Use this "
 "option to also store metadata content in the local database, which can speed"
@@ -7451,7 +7451,7 @@ msgstr ""
 "veri içeriğini yerel veritabanında da saklamak için bu seçeneği kullanın; "
 "bu, artan veritabanı boyutu pahasına bazı işlemleri hızlandırabilir."
 
-#: Library/Main/Strings.cs:354
+#: Library/Main/Strings.cs:358
 msgid ""
 "If dblock files are missing from the destination, you can attempt to rebuild"
 " them using local source data. However, since the local data may have "
@@ -7465,11 +7465,11 @@ msgstr ""
 "yavaş olabilir. Eksik dblock dosyalarını yeniden oluşturmayı denemek için bu"
 " seçeneği kullanın."
 
-#: Library/Main/Strings.cs:355
+#: Library/Main/Strings.cs:359
 msgid "Rebuild dblock files when missing"
 msgstr "Eksik olduğunda dblock dosyalarını yeniden oluştur"
 
-#: Library/Main/Strings.cs:356
+#: Library/Main/Strings.cs:360
 msgid ""
 "If rebuilding dblock files, the process will attempt to use local data to "
 "fill in missing blocks. If it is not possible to fill in all missing blocks,"
@@ -7483,19 +7483,19 @@ msgstr ""
 "çalışır. Bu davranışı devre dışı bırakmak ve yalnızca eksiksiz dblock'lar "
 "oluşturmak için bu seçeneği kullanın."
 
-#: Library/Main/Strings.cs:357
+#: Library/Main/Strings.cs:361
 msgid "Disable partial dblock recovery"
 msgstr "Kısmi dblock kurtarmayı devre dışı bırak"
 
-#: Library/Main/Strings.cs:358
+#: Library/Main/Strings.cs:362
 msgid "list-broken-files"
 msgstr "list-broken-files"
 
-#: Library/Main/Strings.cs:359
+#: Library/Main/Strings.cs:363
 msgid "Disable replacement of missing metadata"
 msgstr "Eksik üst verilerin değiştirilmesini devre dışı bırak"
 
-#: Library/Main/Strings.cs:360
+#: Library/Main/Strings.cs:364
 msgid ""
 "If this option is enabled, the purge-broken-files command will skip "
 "calculating the size of the removed files. This can speed up the operation "
@@ -7504,11 +7504,11 @@ msgstr ""
 "Bu seçenek etkinse, purge-broken-files komutu kaldırılan dosyaların boyutunu"
 " hesaplamayı atlar. Bu, büyük veri kümelerinde işlemi hızlandırabilir."
 
-#: Library/Main/Strings.cs:361
+#: Library/Main/Strings.cs:365
 msgid "Skip calculating removed file size"
 msgstr "Kaldırılan dosya boyutunu hesaplamayı atla"
 
-#: Library/Main/Strings.cs:363
+#: Library/Main/Strings.cs:367
 msgid ""
 "The minimum amount of time that must elapse after the last compaction before"
 " another will be automatically triggered at the end of a backup job. "
@@ -7520,11 +7520,11 @@ msgstr ""
 "Otomatik sıkıştırma uzun süren bir işlem olabilir ve her yedeklemeden sonra "
 "çalıştırılması istenmeyebilir."
 
-#: Library/Main/Strings.cs:364
+#: Library/Main/Strings.cs:368
 msgid "Minimum time between auto compactions"
 msgstr "Otomatik sıkıştırmalar arasındaki en az süre"
 
-#: Library/Main/Strings.cs:365
+#: Library/Main/Strings.cs:369
 msgid ""
 "The minimum amount of time that must elapse after the last vacuum before "
 "another will be automatically triggered at the end of a backup job. "
@@ -7536,15 +7536,15 @@ msgstr ""
 "süren bir işlem olabilir ve her yedeklemeden sonra çalıştırılması "
 "istenmeyebilir."
 
-#: Library/Main/Strings.cs:366
+#: Library/Main/Strings.cs:370
 msgid "Minimum time between auto vacuums"
 msgstr "Otomatik vacuum'lar arasındaki en az süre"
 
-#: Library/Main/Strings.cs:367
+#: Library/Main/Strings.cs:371
 msgid "Secret provider to use for reading credentials"
 msgstr "Kimlik bilgilerini okumak için kullanılacak gizli anahtar sağlayıcısı"
 
-#: Library/Main/Strings.cs:368
+#: Library/Main/Strings.cs:372
 #, csharp-format
 msgid ""
 "Configures a secret provider to use for reading credentials. Use the "
@@ -7557,11 +7557,11 @@ msgstr ""
 " komut satırı aracını kullanın. Bu değer '$' ile başlıyorsa veya '%' ile "
 "başlayıp bitiyorsa ortam değişkeni olarak yorumlanır."
 
-#: Library/Main/Strings.cs:369
+#: Library/Main/Strings.cs:373
 msgid "Pattern for secrets"
 msgstr "Gizli anahtarlar için desen"
 
-#: Library/Main/Strings.cs:370
+#: Library/Main/Strings.cs:374
 msgid ""
 "Use this option to specify a pattern for secret provider options. The "
 "pattern is used to find values that are intended to be translated by the "
@@ -7572,11 +7572,11 @@ msgstr ""
 "amaçlanan değerleri bulmak için kullanılır. Desenler önek olarak "
 "değerlendirilir; süslü parantezler desteklenir."
 
-#: Library/Main/Strings.cs:371
+#: Library/Main/Strings.cs:375
 msgid "Cache rules for the secret provider"
 msgstr "Gizli anahtar sağlayıcısı için önbellek kuralları"
 
-#: Library/Main/Strings.cs:372
+#: Library/Main/Strings.cs:376
 msgid ""
 "Use this option to set the allowed caching of credentials from the secret "
 "provider. Setting a cache level may reduce the security but allow the "
@@ -7587,11 +7587,11 @@ msgstr ""
 "ayarlamak güvenliği azaltabilir ancak sağlayıcı kesintilerine rağmen "
 "yedeklemelerin devam etmesini sağlayabilir."
 
-#: Library/Main/Strings.cs:374
+#: Library/Main/Strings.cs:378
 msgid "CPU intensity level"
 msgstr "CPU yoğunluk düzeyi"
 
-#: Library/Main/Strings.cs:375
+#: Library/Main/Strings.cs:379
 msgid ""
 "Set the CPU intensity level to limit CPU resource utilization. A higher "
 "number translates into a higher utilization budget. E.g. 10 would mean no "
@@ -7601,20 +7601,20 @@ msgstr ""
 " yüksek bir sayı daha yüksek kullanım bütçesi anlamına gelir. Örn. 10, "
 "kısıtlama olmaması demektir. 1-10 arasında bir tamsayı olmalıdır."
 
-#: Library/Main/Strings.cs:377
+#: Library/Main/Strings.cs:381
 msgid "Remote synchronization configuration"
 msgstr "Uzak eşitleme yapılandırması"
 
-#: Library/Main/Strings.cs:378
+#: Library/Main/Strings.cs:382
 msgid ""
 "JSON string or file path containing remote synchronization configuration"
 msgstr "Uzak eşitleme yapılandırmasını içeren JSON dizesi veya dosya yolu"
 
-#: Library/Main/Strings.cs:380
+#: Library/Main/Strings.cs:384
 msgid "Maximum cache size for restoring files"
 msgstr "Dosyaları geri yüklemek için en büyük önbellek boyutu"
 
-#: Library/Main/Strings.cs:381
+#: Library/Main/Strings.cs:385
 msgid ""
 "Use this option to set the maximum size of the cache used for restoring "
 "files. The cache is used to store the data blocks that are downloaded from "
@@ -7627,11 +7627,11 @@ msgstr ""
 "bölünebilir olduğu varsayılır; 0 olması durumu hariç, bu blok önbelleğini "
 "devre dışı bırakır."
 
-#: Library/Main/Strings.cs:382
+#: Library/Main/Strings.cs:386
 msgid "Eviction ratio of the data block cache during restore"
 msgstr "Geri yükleme sırasında veri bloğu önbelleğinin tahliye oranı"
 
-#: Library/Main/Strings.cs:383
+#: Library/Main/Strings.cs:387
 msgid ""
 "Use this option to set the eviction ratio of the data block cache during "
 "restore. The eviction ratio is the percentage of the cache that is evicted "
@@ -7643,13 +7643,13 @@ msgstr ""
 " önbellek yüzdesidir. Varsayılan değer 50'dir; yani önbellek dolduğunda "
 "önbelleğin %50'si tahliye edilir."
 
-#: Library/Main/Strings.cs:384
+#: Library/Main/Strings.cs:388
 msgid "Number of concurrent FileProcessors processes used during restore"
 msgstr ""
 "Geri yükleme sırasında kullanılan eşzamanlı FileProcessors süreçlerinin "
 "sayısı"
 
-#: Library/Main/Strings.cs:385
+#: Library/Main/Strings.cs:389
 msgid ""
 "Use this option to set the number of concurrent FileProcessors processes "
 "used during restore. A FileProcessor processes one file at a time, and "
@@ -7660,11 +7660,11 @@ msgstr ""
 "bir dosyayı işler ve FileProcessor sayısını artırmak geri yükleme "
 "performansını iyileştirebilir."
 
-#: Library/Main/Strings.cs:386
+#: Library/Main/Strings.cs:390
 msgid "Use legacy restore method"
 msgstr "Eski geri yükleme yöntemini kullan"
 
-#: Library/Main/Strings.cs:387
+#: Library/Main/Strings.cs:391
 msgid ""
 "Use this option to use the legacy restore method. The legacy restore method "
 "is slower than the new method, but may be more reliable in some cases."
@@ -7673,11 +7673,11 @@ msgstr ""
 "yükleme yöntemi yeni yöntemden daha yavaştır ancak bazı durumlarda daha "
 "güvenilir olabilir."
 
-#: Library/Main/Strings.cs:388
+#: Library/Main/Strings.cs:392
 msgid "Restore all targeted versions into timestamp folders"
 msgstr "Hedeflenen tüm sürümleri zaman damgası klasörlerine geri yükle"
 
-#: Library/Main/Strings.cs:389
+#: Library/Main/Strings.cs:393
 msgid ""
 "Use this option to restore every targeted backup version, instead of just "
 "the most recent matching one. Each version is restored into its own "
@@ -7689,11 +7689,11 @@ msgstr ""
 "altında, yedekleme zaman damgasıyla adlandırılmış (örn. 20241224-130255) "
 "kendi alt klasörüne geri yüklenir. Ayarlandığında "
 
-#: Library/Main/Strings.cs:390
+#: Library/Main/Strings.cs:394
 msgid "Preallocate size of restored files"
 msgstr "Geri yüklenen dosyaların boyutunu önceden ayır"
 
-#: Library/Main/Strings.cs:391
+#: Library/Main/Strings.cs:395
 msgid ""
 "Use this option to toggle whether to set the size of the restored files "
 "before they are written to disk. This can help to reduce fragmentation and "
@@ -7704,11 +7704,11 @@ msgstr ""
 "azaltmaya ve bazı dosya sistemlerinde performansı artırmaya yardımcı "
 "olabilir."
 
-#: Library/Main/Strings.cs:392
+#: Library/Main/Strings.cs:396
 msgid "Hints to the desired maximum size of the restore volume cache"
 msgstr "Geri yükleme birim önbelleğinin istenen en büyük boyutu için ipucu"
 
-#: Library/Main/Strings.cs:393
+#: Library/Main/Strings.cs:397
 msgid ""
 "Use this option to hint the maximum desired size of the restore volume "
 "cache. The restore volume cache is used to store the volumes from the remote"
@@ -7730,12 +7730,12 @@ msgstr ""
 "disk alanı duyarlı tahliye kullanılır (bkz. restore-volume-cache-min-free). "
 "Önbelleklemeyi tamamen devre dışı bırakmak için 0 olarak ayarlayın."
 
-#: Library/Main/Strings.cs:394
+#: Library/Main/Strings.cs:398
 msgid ""
 "Minimum free disk space to maintain in the temp directory during restore"
 msgstr "Geri yükleme sırasında geçici dizinde korunacak en az boş disk alanı"
 
-#: Library/Main/Strings.cs:395
+#: Library/Main/Strings.cs:399
 msgid ""
 "When restore-volume-cache-hint is unset (unlimited mode), the restore volume"
 " cache evicts least-recently-used volumes whenever the free space in the "
@@ -7749,13 +7749,13 @@ msgstr ""
 "sayı gigabayt olarak yorumlanır. restore-volume-cache-hint belirli bir "
 "boyuta veya 0'a ayarlandığında etkisi yoktur."
 
-#: Library/Main/Strings.cs:396
+#: Library/Main/Strings.cs:400
 msgid "Number of concurrent FileDecompressor processes used during restore"
 msgstr ""
 "Geri yükleme sırasında kullanılan eşzamanlı FileDecompressor süreçlerinin "
 "sayısı"
 
-#: Library/Main/Strings.cs:397
+#: Library/Main/Strings.cs:401
 msgid ""
 "Use this option to set the number of concurrent FileDecompressor processes "
 "used during restore. A FileDecompressor processes one volume at a time, and "
@@ -7768,13 +7768,13 @@ msgstr ""
 "FileDecompressor sayısını artırmak geri yükleme performansını "
 "iyileştirebilir."
 
-#: Library/Main/Strings.cs:398
+#: Library/Main/Strings.cs:402
 msgid "Number of concurrent FileDecryptor processes used during restore"
 msgstr ""
 "Geri yükleme sırasında kullanılan eşzamanlı FileDecryptor süreçlerinin "
 "sayısı"
 
-#: Library/Main/Strings.cs:399
+#: Library/Main/Strings.cs:403
 msgid ""
 "Use this option to set the number of concurrent FileDecryptor processes used"
 " during restore. A FileDecryptor processes one volume at a time, and "
@@ -7786,13 +7786,13 @@ msgstr ""
 "bir birimi işler ve darboğaz şifre çözme ise FileDecryptor sayısını artırmak"
 " geri yükleme performansını iyileştirebilir."
 
-#: Library/Main/Strings.cs:400
+#: Library/Main/Strings.cs:404
 msgid "Number of concurrent FileDownloader processes used during restore"
 msgstr ""
 "Geri yükleme sırasında kullanılan eşzamanlı FileDownloader süreçlerinin "
 "sayısı"
 
-#: Library/Main/Strings.cs:401
+#: Library/Main/Strings.cs:405
 msgid ""
 "Use this option to set the number of concurrent FileDownloader processes "
 "used during restore. A FileDownloader processes one volume at a time, and "
@@ -7804,11 +7804,11 @@ msgstr ""
 " bir birimi işler ve darboğaz indirme ise FileDownloader sayısını artırmak "
 "geri yükleme performansını iyileştirebilir."
 
-#: Library/Main/Strings.cs:402
+#: Library/Main/Strings.cs:406
 msgid "Size of buffers of the channels used during restore"
 msgstr "Geri yükleme sırasında kullanılan kanalların arabellek boyutu"
 
-#: Library/Main/Strings.cs:403
+#: Library/Main/Strings.cs:407
 msgid ""
 "Use this option to set the size of the buffers of the channels used during "
 "restore. The buffers are used to allow for better asynchronous communication"
@@ -7820,11 +7820,11 @@ msgstr ""
 "arasında daha iyi zaman uyumsuz iletişime olanak tanımak için kullanılır. "
 "Arabellek boyutunu artırmak geri yükleme performansını iyileştirebilir."
 
-#: Library/Main/Strings.cs:404
+#: Library/Main/Strings.cs:408
 msgid "Allow restore outside target directory"
 msgstr "Hedef dizinin dışına geri yüklemeye izin ver"
 
-#: Library/Main/Strings.cs:405
+#: Library/Main/Strings.cs:409
 msgid ""
 "Use this option to allow the restore process to write files outside the "
 "target directory. This is normally disabled to prevent path traversal "
@@ -7837,11 +7837,11 @@ msgstr ""
 "konuma (örn. sembolik bağlantılar aracılığıyla) geri yüklemeniz gerekiyorsa "
 "etkinleştirilebilir."
 
-#: Library/Main/Strings.cs:406
+#: Library/Main/Strings.cs:410
 msgid "Enable internal profiling"
 msgstr "İç profillemeyi etkinleştir"
 
-#: Library/Main/Strings.cs:407
+#: Library/Main/Strings.cs:411
 msgid ""
 "Use this option to enable internal profiling. Profiling is used to measure "
 "the performance of the internal code. The profiling data is written to the "
@@ -7852,11 +7852,11 @@ msgstr ""
 "dosyasına yazılır ve performans darboğazlarını belirlemek için "
 "kullanılabilir."
 
-#: Library/Main/Strings.cs:408
+#: Library/Main/Strings.cs:412
 msgid "Ignore update if version exists"
 msgstr "Sürüm mevcutsa güncellemeyi yok say"
 
-#: Library/Main/Strings.cs:409
+#: Library/Main/Strings.cs:413
 msgid ""
 "Use this option to ignore the update if the version already exists. This can"
 " be used to avoid errors if asking to update the database with a version "
@@ -7866,11 +7866,11 @@ msgstr ""
 "veritabanını zaten mevcut olan bir sürümle güncellemeyi isterken "
 "oluşabilecek hatalardan kaçınmak için kullanılabilir."
 
-#: Library/Main/Strings.cs:410
+#: Library/Main/Strings.cs:414
 msgid "Disable special handling for photo libraries on MacOS"
 msgstr "MacOS'ta fotoğraf kitaplıkları için özel işlemeyi devre dışı bırak"
 
-#: Library/Main/Strings.cs:411
+#: Library/Main/Strings.cs:415
 msgid ""
 "Use this option to disable special handling for photo libraries on MacOS. By"
 " default, Duplicati will attempt to read the contents of photo libraries and"
@@ -7884,11 +7884,11 @@ msgstr ""
 "yerine tek tek fotoğrafları yedeklemeye çalışır. Bu seçenek, bu davranışı "
 "devre dışı bırakır ve kitaplığı normal bir klasör olarak yedekler."
 
-#: Library/Main/Strings.cs:412
+#: Library/Main/Strings.cs:416
 msgid "Path to the Photos library"
 msgstr "Photos kitaplığının yolu"
 
-#: Library/Main/Strings.cs:413
+#: Library/Main/Strings.cs:417
 msgid ""
 "Use this option to specify the path to the Photos library on MacOS. This "
 "option is only relevant if the Photos library is not in the default "
@@ -7897,11 +7897,11 @@ msgstr ""
 "MacOS'ta Photos kitaplığının yolunu belirtmek için bu seçeneği kullanın. Bu "
 "seçenek yalnızca Photos kitaplığı varsayılan konumda değilse anlamlıdır."
 
-#: Library/Main/Strings.cs:414
+#: Library/Main/Strings.cs:418
 msgid "Refresh lock information during repair"
 msgstr "Onarım sırasında kilit bilgilerini yenile"
 
-#: Library/Main/Strings.cs:415
+#: Library/Main/Strings.cs:419
 msgid ""
 "Use this option to refresh the object lock expiration information from the "
 "backend during a repair operation. This will query the backend for the "
@@ -7914,11 +7914,11 @@ msgstr ""
 "durumu için arka ucu sorgular ve yerel veritabanını buna göre günceller. "
 "Arka uç kilitlemeyi desteklemiyorsa bu seçenek yok sayılır."
 
-#: Library/Main/Strings.cs:416
+#: Library/Main/Strings.cs:420
 msgid "Perform a complete refresh of lock information"
 msgstr "Kilit bilgilerinin tam yenilenmesini gerçekleştir"
 
-#: Library/Main/Strings.cs:417
+#: Library/Main/Strings.cs:421
 msgid ""
 "Use this option to perform a complete refresh of lock information from the "
 "backend. This will query the backend for the current lock status of each "
@@ -7932,43 +7932,43 @@ msgstr ""
 "belirtilmezse, yalnızca kilit bilgisi olmayan uzak birimlerin kilit "
 "bilgileri yenilenir."
 
-#: Library/Main/Strings.cs:418
+#: Library/Main/Strings.cs:422
 msgid "Force remote recheck"
 msgstr "Uzak yeniden denetimi zorla"
 
-#: Library/Main/Strings.cs:419
+#: Library/Main/Strings.cs:423
 msgid "Forces a full remote listing to rebuild the local sync cache"
 msgstr ""
 "Yerel eşitleme önbelleğini yeniden oluşturmak için tam bir uzak listelemeyi "
 "zorlar"
 
-#: Library/Main/Strings.cs:420
+#: Library/Main/Strings.cs:424
 msgid "Delete orphaned files"
 msgstr "Sahipsiz dosyaları sil"
 
-#: Library/Main/Strings.cs:421
+#: Library/Main/Strings.cs:425
 msgid "Deletes files on the remote that no longer exist locally"
 msgstr "Artık yerelde bulunmayan dosyaları uzak konumda siler"
 
-#: Library/Main/Strings.cs:422
+#: Library/Main/Strings.cs:426
 msgid "Verify file hashes"
 msgstr "Dosya sağlamalarını doğrula"
 
-#: Library/Main/Strings.cs:423
+#: Library/Main/Strings.cs:427
 msgid "Verifies file content using SHA-256 hashes when size and time match"
 msgstr ""
 "Boyut ve zaman eşleştiğinde dosya içeriğini SHA-256 sağlamaları kullanarak "
 "doğrular"
 
-#: Library/Main/Strings.cs:424
+#: Library/Main/Strings.cs:428
 msgid "Remote state source"
 msgstr "Uzak durum kaynağı"
 
-#: Library/Main/Strings.cs:426
+#: Library/Main/Strings.cs:430
 msgid "Enable backup of NTFS alternate data streams"
 msgstr "NTFS alternatif veri akışlarının yedeklenmesini etkinleştir"
 
-#: Library/Main/Strings.cs:427
+#: Library/Main/Strings.cs:431
 msgid ""
 "Use this option to enable backup of NTFS alternate data streams (ADS). This "
 "is a Windows-only feature that allows backing up hidden data attached to "
@@ -7978,11 +7978,11 @@ msgstr ""
 " seçeneği kullanın. Bu, dosyalara iliştirilmiş gizli verilerin "
 "yedeklenmesini sağlayan, yalnızca Windows'a özgü bir özelliktir."
 
-#: Library/Main/Strings.cs:428
+#: Library/Main/Strings.cs:432
 msgid "Disable restore of NTFS alternate data streams"
 msgstr "NTFS alternatif veri akışlarının geri yüklenmesini devre dışı bırak"
 
-#: Library/Main/Strings.cs:429
+#: Library/Main/Strings.cs:433
 msgid ""
 "Use this option to skip restoring NTFS alternate data streams (ADS) during a"
 " restore operation. The main file content will still be restored."
@@ -7991,11 +7991,11 @@ msgstr ""
 " yüklemeyi atlamak için bu seçeneği kullanın. Ana dosya içeriği yine de geri"
 " yüklenir."
 
-#: Library/Main/Strings.cs:430 Library/Modules/Builtin/Strings.cs:318
+#: Library/Main/Strings.cs:434 Library/Modules/Builtin/Strings.cs:318
 msgid "Allow paths in log messages"
 msgstr "Günlük iletilerinde yollara izin ver"
 
-#: Library/Main/Strings.cs:431
+#: Library/Main/Strings.cs:435
 msgid ""
 "Use this option to allow paths to be included in log messages sent to remote"
 " servers. By default, paths are redacted to protect sensitive information."
@@ -8004,7 +8004,7 @@ msgstr ""
 "vermek için bu seçeneği kullanın. Varsayılan olarak, hassas bilgileri "
 "korumak için yollar gizlenir."
 
-#: Library/Main/Strings.cs:436
+#: Library/Main/Strings.cs:440
 #, csharp-format
 msgid ""
 "The cryptolibrary does not support re-usable transforms for the hash "
@@ -8013,16 +8013,16 @@ msgstr ""
 "Kripto kitaplığı, {0} sağlama algoritması için yeniden kullanılabilir "
 "dönüşümleri desteklemiyor"
 
-#: Library/Main/Strings.cs:437
+#: Library/Main/Strings.cs:441
 #, csharp-format
 msgid "The cryptolibrary does not support the hash algorithm {0}"
 msgstr "Kripto kitaplığı, {0} sağlama algoritmasını desteklemiyor"
 
-#: Library/Main/Strings.cs:438
+#: Library/Main/Strings.cs:442
 msgid "The passphrase cannot be changed for an existing backup"
 msgstr "Mevcut bir yedekleme için parola değiştirilemez"
 
-#: Library/Main/Strings.cs:443
+#: Library/Main/Strings.cs:447
 #, csharp-format
 msgid ""
 "Failed to create a snapshot. The snapshot provider requires the Microsoft "
@@ -8033,7 +8033,7 @@ msgstr ""
 "görünmeyen Microsoft Visual C++ Redistributable'ı gerektiriyor. Lütfen en "
 "son Visual C++ Redistributable'ı yükleyin. Hata mesajı: {0}"
 
-#: Library/Main/Strings.cs:444
+#: Library/Main/Strings.cs:448
 #, csharp-format
 msgid ""
 "Failed to create a snapshot. The process seems to not have the necessary "
@@ -8043,7 +8043,7 @@ msgstr ""
 "Anlık görüntü oluşturulamadı. İşlem gerekli izinlere sahip görünmüyor ve "
 "Microsoft Visual C++ Redistributable yüklü değil. Hata mesajı: {0}"
 
-#: Library/Main/Strings.cs:447
+#: Library/Main/Strings.cs:451
 #, csharp-format
 msgid ""
 "Failed to create a snapshot. The process appears to have the necessary "
@@ -8052,7 +8052,7 @@ msgstr ""
 "Anlık görüntü oluşturulamadı. Süreç gerekli izinlere sahip görünüyor ancak "
 "anlık görüntü yine de başarısız oldu. Hata iletisi: {0}"
 
-#: Library/Main/Strings.cs:448
+#: Library/Main/Strings.cs:452
 #, csharp-format
 msgid ""
 "Failed to create a snapshot. This may be caused by insufficient permissions."
@@ -8062,7 +8062,7 @@ msgstr ""
 "Duplicati'yi yükseltilmiş ayrıcalıklarla çalıştırmayı deneyin. Hata iletisi:"
 " {0}"
 
-#: Library/Main/Strings.cs:450
+#: Library/Main/Strings.cs:454
 msgid ""
 "Failed to activate BackupRead as the current process does not have "
 "sufficient permissions"
@@ -8070,7 +8070,7 @@ msgstr ""
 "Geçerli süreç yeterli izinlere sahip olmadığından BackupRead "
 "etkinleştirilemedi"
 
-#: Library/Main/Strings.cs:455
+#: Library/Main/Strings.cs:459
 #, csharp-format
 msgid "The encryption module {0} was not found"
 msgstr "{0} şifreleme modülü bulunamadı"
@@ -8978,7 +8978,7 @@ msgid "HTTP report URLs for sending JSON data"
 msgstr "JSON verisi göndermek için HTTP rapor URL'leri"
 
 #: Library/Modules/Builtin/Strings.cs:276
-#: Library/Modules/Builtin/Strings.cs:311 Library/Utility/Strings.cs:83
+#: Library/Modules/Builtin/Strings.cs:311 Library/Utility/Strings.cs:84
 #, csharp-format
 msgid ""
 "Use this option to accept any server certificate, regardless of what errors "
@@ -8989,12 +8989,12 @@ msgstr ""
 "kullanın."
 
 #: Library/Modules/Builtin/Strings.cs:277
-#: Library/Modules/Builtin/Strings.cs:312 Library/Utility/Strings.cs:84
+#: Library/Modules/Builtin/Strings.cs:312 Library/Utility/Strings.cs:85
 msgid "Accept any server certificate"
 msgstr "Herhangi bir sunucu sertifikasını kabul et"
 
 #: Library/Modules/Builtin/Strings.cs:278
-#: Library/Modules/Builtin/Strings.cs:313 Library/Utility/Strings.cs:85
+#: Library/Modules/Builtin/Strings.cs:313 Library/Utility/Strings.cs:86
 msgid ""
 "If your server certificate is reported as invalid (e.g. with self-signed "
 "certificates), you can supply the certificate hash (SHA1) to approve it "
@@ -9008,12 +9008,12 @@ msgstr ""
 "girebilirsiniz."
 
 #: Library/Modules/Builtin/Strings.cs:279
-#: Library/Modules/Builtin/Strings.cs:314 Library/Utility/Strings.cs:86
+#: Library/Modules/Builtin/Strings.cs:314 Library/Utility/Strings.cs:87
 msgid "Optionally accept a known SSL certificate"
 msgstr "İsteğe bağlı olarak bilinen bir SSL sertifikasını kabul et"
 
 #: Library/Modules/Builtin/Strings.cs:280
-#: Library/Modules/Builtin/Strings.cs:315 Library/Utility/Strings.cs:89
+#: Library/Modules/Builtin/Strings.cs:315 Library/Utility/Strings.cs:90
 msgid ""
 "Use this option to ignore certificate revocation check failures, such as "
 "when the revocation server is offline or the revocation status is unknown."
@@ -9023,7 +9023,7 @@ msgstr ""
 "kullanın."
 
 #: Library/Modules/Builtin/Strings.cs:281
-#: Library/Modules/Builtin/Strings.cs:316 Library/Utility/Strings.cs:90
+#: Library/Modules/Builtin/Strings.cs:316 Library/Utility/Strings.cs:91
 msgid "Ignore certificate revocation check failures"
 msgstr "Sertifika iptali denetimi başarısızlıklarını yok say"
 
@@ -9224,41 +9224,41 @@ msgstr "Uri geçersiz: {0}"
 msgid "The Uri is missing a hostname: {0}"
 msgstr "Uri'de ana bilgisayar adı eksik: {0}"
 
-#: Library/Utility/Strings.cs:55
+#: Library/Utility/Strings.cs:56
 #, csharp-format
 msgid "{0} bytes"
 msgstr "{0} bayt"
 
-#: Library/Utility/Strings.cs:56
+#: Library/Utility/Strings.cs:57
 #, csharp-format
 msgid "{0:N} GiB"
 msgstr "{0:N} GiB"
 
-#: Library/Utility/Strings.cs:57
+#: Library/Utility/Strings.cs:58
 #, csharp-format
 msgid "{0:N} KiB"
 msgstr "{0:N} KiB"
 
-#: Library/Utility/Strings.cs:58
+#: Library/Utility/Strings.cs:59
 #, csharp-format
 msgid "{0:N} MiB"
 msgstr "{0:N} MiB"
 
-#: Library/Utility/Strings.cs:59
+#: Library/Utility/Strings.cs:60
 #, csharp-format
 msgid "{0:N} TiB"
 msgstr "{0:N} TiB"
 
-#: Library/Utility/Strings.cs:60
+#: Library/Utility/Strings.cs:61
 #, csharp-format
 msgid "The string \"{0}\" could not be parsed into a date"
 msgstr "\"{0}\" dizesi bir tarihe ayrıştırılamadı"
 
-#: Library/Utility/Strings.cs:64
+#: Library/Utility/Strings.cs:65
 msgid "Cannot read and write on the same stream"
 msgstr "Aynı akış üzerinde okuma ve yazma yapılamaz"
 
-#: Library/Utility/Strings.cs:68
+#: Library/Utility/Strings.cs:69
 #, csharp-format
 msgid ""
 "The string {0} does not represent a known filter group name. Valid values "
@@ -9267,26 +9267,26 @@ msgstr ""
 "{0} dizesi bilinen bir filtre grubu adını temsil etmiyor. Geçerli değerler: "
 "{1}"
 
-#: Library/Utility/Strings.cs:73
+#: Library/Utility/Strings.cs:74
 msgid ""
 "The timeout in seconds for short operations like delete and create folder"
 msgstr ""
 "Silme ve klasör oluşturma gibi kısa işlemler için saniye cinsinden zaman "
 "aşımı"
 
-#: Library/Utility/Strings.cs:74
+#: Library/Utility/Strings.cs:75
 msgid "Short operation timeout"
 msgstr "Kısa işlem zaman aşımı"
 
-#: Library/Utility/Strings.cs:75
+#: Library/Utility/Strings.cs:76
 msgid "The timeout in seconds for listing files and folders"
 msgstr "Dosya ve klasörleri listelemek için saniye cinsinden zaman aşımı"
 
-#: Library/Utility/Strings.cs:76
+#: Library/Utility/Strings.cs:77
 msgid "List operation timeout"
 msgstr "Listeleme işlemi zaman aşımı"
 
-#: Library/Utility/Strings.cs:77
+#: Library/Utility/Strings.cs:78
 msgid ""
 "The timeout in seconds for read and write operations. If no activity is "
 "detected in this interval, a timeout error is raised"
@@ -9294,21 +9294,21 @@ msgstr ""
 "Okuma ve yazma işlemleri için saniye cinsinden zaman aşımı. Bu aralıkta "
 "hiçbir etkinlik algılanmazsa bir zaman aşımı hatası oluşturulur"
 
-#: Library/Utility/Strings.cs:78
+#: Library/Utility/Strings.cs:79
 msgid "Read/write operation timeout"
 msgstr "Okuma/yazma işlemi zaman aşımı"
 
-#: Library/Utility/Strings.cs:99
+#: Library/Utility/Strings.cs:100
 msgid "Authentication requires both a username and a password"
 msgstr "Kimlik doğrulama hem kullanıcı adı hem de parola gerektirir"
 
-#: Library/Utility/Strings.cs:106
+#: Library/Utility/Strings.cs:107
 #, csharp-format
 msgid "You need an AuthID to use this destination. You can get it from: {0}"
 msgstr ""
 "Bu hedefi kullanmak için bir AuthID gereklidir. Şuradan edinebilirsiniz: {0}"
 
-#: Library/Utility/Strings.cs:107
+#: Library/Utility/Strings.cs:108
 msgid ""
 "Duplicati uses an external server to support the OAuth authentication flow. "
 "If you have set up your own Duplicati OAuth server, you can supply the "
@@ -9318,11 +9318,11 @@ msgstr ""
 " kullanır. Kendi Duplicati OAuth sunucunuzu kurduysanız, yenileme URL'sini "
 "sağlayabilirsiniz."
 
-#: Library/Utility/Strings.cs:108
+#: Library/Utility/Strings.cs:109
 msgid "Alternate OAuth URL"
 msgstr "Alternatif OAuth URL'si"
 
-#: Library/Utility/Strings.cs:114
+#: Library/Utility/Strings.cs:115
 #, csharp-format
 msgid ""
 "The value \"{1}\" supplied to --{0} does not parse into a valid boolean. "
@@ -9331,14 +9331,14 @@ msgstr ""
 "--{0} seçeneğine sağlanan \"{1}\" değeri geçerli bir boole değerine "
 "ayrıştırılamıyor. Bu, \"true\" olarak ayarlanmış gibi değerlendirilecek"
 
-#: Library/Utility/Strings.cs:115
+#: Library/Utility/Strings.cs:116
 #, csharp-format
 msgid ""
 "The option --{0} does not support the value \"{1}\". Supported values are: "
 "{2}"
 msgstr "--{0} seçeneği \"{1}\" değerini desteklemiyor. Desteklenen değerler: {2}"
 
-#: Library/Utility/Strings.cs:116
+#: Library/Utility/Strings.cs:117
 #, csharp-format
 msgid ""
 "The option --{0} does not support the value \"{1}\". Supported flag values "
@@ -9347,31 +9347,31 @@ msgstr ""
 "--{0} seçeneği \"{1}\" değerini desteklemiyor. Desteklenen bayrak değerleri:"
 " {2}"
 
-#: Library/Utility/Strings.cs:117
+#: Library/Utility/Strings.cs:118
 #, csharp-format
 msgid "The value \"{1}\" supplied to --{0} does not represent a valid integer"
 msgstr ""
 "--{0} seçeneğine sağlanan \"{1}\" değeri geçerli bir tamsayıyı temsil "
 "etmiyor"
 
-#: Library/Utility/Strings.cs:118
+#: Library/Utility/Strings.cs:119
 #, csharp-format
 msgid "The value \"{1}\" supplied to --{0} does not represent a valid path"
 msgstr "--{0} seçeneğine sağlanan \"{1}\" değeri geçerli bir yolu temsil etmiyor"
 
-#: Library/Utility/Strings.cs:119
+#: Library/Utility/Strings.cs:120
 #, csharp-format
 msgid "The value \"{1}\" supplied to --{0} does not represent a valid size"
 msgstr ""
 "--{0} seçeneğine sağlanan \"{1}\" değeri geçerli bir boyutu temsil etmiyor"
 
-#: Library/Utility/Strings.cs:120
+#: Library/Utility/Strings.cs:121
 #, csharp-format
 msgid "The value \"{1}\" supplied to --{0} does not represent a valid time"
 msgstr ""
 "--{0} seçeneğine sağlanan \"{1}\" değeri geçerli bir zamanı temsil etmiyor"
 
-#: Library/Utility/Strings.cs:121
+#: Library/Utility/Strings.cs:122
 #, csharp-format
 msgid ""
 "The size \"{1}\" supplied to --{0} does not have a multiplier (b, kb, mb, "
@@ -9382,46 +9382,46 @@ msgstr ""
 " Program güncellenirse beklenmedik değişiklikleri önlemek için bir çarpan "
 "önerilir."
 
-#: Library/Utility/Strings.cs:126
+#: Library/Utility/Strings.cs:127
 #, csharp-format
 msgid "Error on deleting file: {0}, error: {1}"
 msgstr "Dosya silinirken hata: {0}, hata: {1}"
 
-#: Library/Utility/Strings.cs:127
+#: Library/Utility/Strings.cs:128
 #, csharp-format
 msgid "Error reading file: {0}, error: {1}"
 msgstr "Dosya okunurken hata: {0}, hata: {1}"
 
-#: Library/Utility/Strings.cs:129
+#: Library/Utility/Strings.cs:130
 #, csharp-format
 msgid "Error listing content: {0}"
 msgstr "İçerik listelenirken hata: {0}"
 
-#: Library/Utility/FilterGroups.cs:194
+#: Library/Utility/FilterGroups.cs:184
 #, csharp-format
 msgid "{0}: Selects no filters."
 msgstr "{0}: Hiçbir filtre seçmez."
 
-#: Library/Utility/FilterGroups.cs:195
+#: Library/Utility/FilterGroups.cs:185
 #, csharp-format
 msgid "{0}: A set of default exclude filters, currently evaluates to: {1}."
 msgstr ""
 "{0}: Bir dizi varsayılan hariç tutma filtresi; şu anda şuna karşılık gelir: "
 "{1}."
 
-#: Library/Utility/FilterGroups.cs:196
+#: Library/Utility/FilterGroups.cs:186
 #, csharp-format
 msgid "{0}: A set of default include filters, currently evaluates to: {1}."
 msgstr ""
 "{0}: Bir dizi varsayılan dahil etme filtresi; şu anda şuna karşılık gelir: "
 "{1}."
 
-#: Library/Utility/FilterGroups.cs:207
+#: Library/Utility/FilterGroups.cs:197
 #, csharp-format
 msgid " Aliases: {0}"
 msgstr " Takma adlar: {0}"
 
-#: Library/Utility/FilterGroups.cs:220
+#: Library/Utility/FilterGroups.cs:210
 #, csharp-format
 msgid ""
 "{0}: Files that are owned by the system or not suited to be backed up. This "
@@ -9432,7 +9432,7 @@ msgstr ""
 "sisteminin korumalı olarak bildirdiği tüm dosyaları içerir. Çoğu kullanıcı "
 "en azından bu filtreleri uygulamalıdır."
 
-#: Library/Utility/FilterGroups.cs:222
+#: Library/Utility/FilterGroups.cs:212
 #, csharp-format
 msgid ""
 "{0}: Files that belong to the operating system. These files are restored "
@@ -9441,12 +9441,12 @@ msgstr ""
 "{0}: İşletim sistemine ait dosyalar. Bu dosyalar, işletim sistemi yeniden "
 "kurulduğunda geri yüklenir."
 
-#: Library/Utility/FilterGroups.cs:224
+#: Library/Utility/FilterGroups.cs:214
 #, csharp-format
 msgid "{0}: Files and folders that are known to be storage of temporary data."
 msgstr "{0}: Geçici veri depoladığı bilinen dosya ve klasörler."
 
-#: Library/Utility/FilterGroups.cs:226
+#: Library/Utility/FilterGroups.cs:216
 #, csharp-format
 msgid ""
 "{0}: Files and folders that are known cache locations for the operating "
@@ -9455,7 +9455,7 @@ msgstr ""
 "{0}: İşletim sistemi ve çeşitli uygulamalar için bilinen önbellek konumları "
 "olan dosya ve klasörler"
 
-#: Library/Utility/FilterGroups.cs:228
+#: Library/Utility/FilterGroups.cs:218
 #, csharp-format
 msgid "{0}: Installed programs and their libraries, but not their settings."
 msgstr "{0}: Kurulu programlar ve kitaplıkları; ancak ayarları değil."

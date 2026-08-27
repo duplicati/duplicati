@@ -105,15 +105,19 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             m_storage_class = options.GetValueOrDefault(STORAGECLASS_OPTION);
 
             m_retention_policy_mode = Utility.Utility.ParseEnumOption(options, RETENTION_POLICY_MODE_OPTION, DEFAULT_RETENTION_POLICY_MODE);
+            // Read as a service account and nothing else. Both options are documented as taking
+            // the JSON key of a service account, and the loader that takes any kind of credential
+            // would read whatever arrived -- including an external account configuration, which
+            // names the endpoint it fetches tokens from.
             if (!string.IsNullOrWhiteSpace(serviceAccountJson))
             {
-                m_oauth = new ServiceAccountHttpClient(GoogleCredential.FromJson(serviceAccountJson).CreateScoped(CREDENTIAL_SCOPE));
-                m_create_oauth_fullcontrol = () => new ServiceAccountHttpClient(GoogleCredential.FromJson(serviceAccountJson).CreateScoped(CREDENTIAL_SCOPE_FULL_CONTROL));
+                m_oauth = new ServiceAccountHttpClient(CredentialFactory.FromJson<ServiceAccountCredential>(serviceAccountJson).ToGoogleCredential().CreateScoped(CREDENTIAL_SCOPE));
+                m_create_oauth_fullcontrol = () => new ServiceAccountHttpClient(CredentialFactory.FromJson<ServiceAccountCredential>(serviceAccountJson).ToGoogleCredential().CreateScoped(CREDENTIAL_SCOPE_FULL_CONTROL));
             }
             else if (!string.IsNullOrWhiteSpace(serviceAccountFile))
             {
-                m_oauth = new ServiceAccountHttpClient(GoogleCredential.FromFile(serviceAccountFile).CreateScoped(CREDENTIAL_SCOPE));
-                m_create_oauth_fullcontrol = () => new ServiceAccountHttpClient(GoogleCredential.FromFile(serviceAccountFile).CreateScoped(CREDENTIAL_SCOPE_FULL_CONTROL));
+                m_oauth = new ServiceAccountHttpClient(CredentialFactory.FromFile<ServiceAccountCredential>(serviceAccountFile).ToGoogleCredential().CreateScoped(CREDENTIAL_SCOPE));
+                m_create_oauth_fullcontrol = () => new ServiceAccountHttpClient(CredentialFactory.FromFile<ServiceAccountCredential>(serviceAccountFile).ToGoogleCredential().CreateScoped(CREDENTIAL_SCOPE_FULL_CONTROL));
             }
             else
             {
@@ -184,7 +188,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
         /// <inheritdoc />
         public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
-            var url = WebApi.GoogleCloudStorage.ListUrl(m_bucket, Utility.UrlEncoding.UrlEncode(m_prefix));
+            var url = WebApi.GoogleCloudStorage.ListUrl(m_bucket, m_prefix);
             while (true)
             {
                 var resp = await HandleListExceptions(() =>
@@ -215,7 +219,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
                 var token = resp.nextPageToken;
                 if (string.IsNullOrWhiteSpace(token))
                     break;
-                url = WebApi.GoogleCloudStorage.ListUrl(m_bucket, Utility.UrlEncoding.UrlEncode(m_prefix), token);
+                url = WebApi.GoogleCloudStorage.ListUrl(m_bucket, m_prefix, token);
             }
         }
 

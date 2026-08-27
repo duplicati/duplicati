@@ -54,6 +54,27 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Utility")]
+        public static void PlusIsACharacterInAPath()
+        {
+            // Only a query string spells a space as a plus, so a folder named "a+b" keeps its
+            // name. Decoding a path with UrlDecode instead renames it to "a b", which is what
+            // issue #4880 was about.
+            Assert.AreEqual("a+b", Library.Utility.UrlEncoding.UrlPathDecode("a+b"));
+            Assert.AreEqual("a b", Library.Utility.UrlEncoding.UrlPathDecode("a%20b"));
+            Assert.AreEqual("a+b", Library.Utility.UrlEncoding.UrlPathDecode("a%2Bb"));
+
+            // The rest of the decoding is unchanged
+            Assert.AreEqual("Mäppe", Library.Utility.UrlEncoding.UrlPathDecode("M%C3%A4ppe"));
+            Assert.AreEqual("æ", Library.Utility.UrlEncoding.UrlPathDecode("%u00e6"));
+
+            // And what the five call sites in the WebDAV backend spell by hand is the same thing
+            Assert.AreEqual(
+                Library.Utility.UrlEncoding.UrlDecode("a+b%20c".Replace("+", "%2B")),
+                Library.Utility.UrlEncoding.UrlPathDecode("a+b%20c"));
+        }
+
+        [Test]
+        [Category("Utility")]
         public static void MultiByteSequencesAreDecoded()
         {
             // Every %XX is matched on its own, so decoding a character that takes
@@ -117,7 +138,7 @@ namespace Duplicati.UnitTest
         [Category("Utility")]
         public static void QueryStringIsParsedCaseInsensitively()
         {
-            var parsed = Library.Utility.UrlEncoding.ParseQueryString("?Key=value&other=a+b");
+            var parsed = Library.Utility.UrlEncoding.ParseQueryString("?Key=value&other=a+b", true);
 
             Assert.AreEqual("value", parsed["key"], "The keys are compared without case");
             Assert.AreEqual("a b", parsed["other"], "The values are decoded");
@@ -136,8 +157,8 @@ namespace Duplicati.UnitTest
         [Category("Utility")]
         public static void EmptyQueryStringGivesNoValues()
         {
-            Assert.AreEqual(0, Library.Utility.UrlEncoding.ParseQueryString("").Count);
-            Assert.AreEqual(0, Library.Utility.UrlEncoding.ParseQueryString("?").Count);
+            Assert.AreEqual(0, Library.Utility.UrlEncoding.ParseQueryString("", true).Count);
+            Assert.AreEqual(0, Library.Utility.UrlEncoding.ParseQueryString("?", true).Count);
         }
 
         [Test]
@@ -147,7 +168,7 @@ namespace Duplicati.UnitTest
             var query = new NameValueCollection { { "key", "value with space" } };
 
             // The caller is responsible for encoding, which the backends rely on
-            Assert.AreEqual("key=value with space", Library.Utility.UrlEncoding.BuildUriQuery(query));
+            Assert.AreEqual("key=value with space", Library.Utility.UrlEncoding.BuildUriQuery(query, true));
             Assert.AreEqual("key=value with space", Library.Utility.UrlEncoding.BuildUriQuery(query, ";"));
         }
 
@@ -157,7 +178,7 @@ namespace Duplicati.UnitTest
         {
             var query = new NameValueCollection { { "a", "b" }, { "empty", "" }, { "c", "d" } };
 
-            Assert.AreEqual("a=b&c=d", Library.Utility.UrlEncoding.BuildUriQuery(query));
+            Assert.AreEqual("a=b&c=d", Library.Utility.UrlEncoding.BuildUriQuery(query, true));
             Assert.AreEqual("a=b;c=d", Library.Utility.UrlEncoding.BuildUriQuery(query, ";"));
         }
 
@@ -166,25 +187,25 @@ namespace Duplicati.UnitTest
         public static void TestBuildUriQuery()
         {
             var query = new NameValueCollection { { "a", "b" } };
-            var queryUrl = Library.Utility.UrlEncoding.BuildUriQuery(query);
+            var queryUrl = Library.Utility.UrlEncoding.BuildUriQuery(query, true);
             Assert.AreEqual("a=b", queryUrl);
             query.Add(new NameValueCollection { { "c", "d" } });
-            queryUrl = Library.Utility.UrlEncoding.BuildUriQuery(query);
+            queryUrl = Library.Utility.UrlEncoding.BuildUriQuery(query, true);
             Assert.AreEqual("a=b&c=d", queryUrl);
 
             // Test with space in value
             query = new NameValueCollection { { "key", "value with space" } };
-            queryUrl = Library.Utility.UrlEncoding.BuildUriQuery(query);
+            queryUrl = Library.Utility.UrlEncoding.BuildUriQuery(query, true);
             Assert.AreEqual("key=value with space", queryUrl);
 
             // Test with + in value
             query = new NameValueCollection { { "key", "value+plus" } };
-            queryUrl = Library.Utility.UrlEncoding.BuildUriQuery(query);
+            queryUrl = Library.Utility.UrlEncoding.BuildUriQuery(query, true);
             Assert.AreEqual("key=value+plus", queryUrl);
 
             // Test with % in value
             query = new NameValueCollection { { "key", "value%percent" } };
-            queryUrl = Library.Utility.UrlEncoding.BuildUriQuery(query);
+            queryUrl = Library.Utility.UrlEncoding.BuildUriQuery(query, true);
             Assert.AreEqual("key=value%percent", queryUrl);
         }
     }

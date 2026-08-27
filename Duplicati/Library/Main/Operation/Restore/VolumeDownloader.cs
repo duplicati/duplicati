@@ -85,7 +85,11 @@ namespace Duplicati.Library.Main.Operation.Restore
                         {
                             f = await backend.GetDirectAsync(volume_name, hash, size, allowParityRepair: true, results.TaskControl.TransferToken).ConfigureAwait(false);
                         }
-                        catch (Exception)
+                        // An abort cancels the transfer token, so without the guard every
+                        // download the abort itself cancelled would be recorded as a defect in
+                        // the backup. The progress token is consulted as well because the
+                        // `BackendManager` gives up on a download for either of them.
+                        catch (Exception) when (!RestoreCancellation.IsShutdownRequested(results.TaskControl))
                         {
                             lock (results)
                                 results.BrokenRemoteFiles.Add(volume_name);
@@ -97,7 +101,17 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                         // Pass the download handle (which may or may not have downloaded already) to the `VolumeDecryptor` process.
                         sw_write?.Start();
-                        await self.Output.WriteAsync((volume_id, volume_name, f)).ConfigureAwait(false);
+                        try
+                        {
+                            await self.Output.WriteAsync((volume_id, volume_name, f)).ConfigureAwait(false);
+                        }
+                        catch (Exception)
+                        {
+                            // The handoff failed, so the decryptor never took ownership of the
+                            // downloaded file and nothing else will dispose it.
+                            f.Dispose();
+                            throw;
+                        }
                         sw_write?.Stop();
                         Logging.Log.WriteExplicitMessage(LOGTAG, "DownloadVolume", null, "Passed volume {0} (ID: {1}) to next stage", volume_name, volume_id);
                     }
@@ -110,6 +124,16 @@ namespace Duplicati.Library.Main.Operation.Restore
                     {
                         Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Read: {sw_read!.ElapsedMilliseconds}ms, Write: {sw_write!.ElapsedMilliseconds}ms, Wait: {sw_wait!.ElapsedMilliseconds}ms");
                     }
+                }
+                catch (Exception) when (RestoreCancellation.IsShutdownRequested(results.TaskControl))
+                {
+                    // An abort is an orderly shutdown that arrived by a different signal than
+                    // retirement, so it is reported the same way retirement is. The retirement
+                    // of the channels is still needed to tear the network down.
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "CancelledProcess", null, "Volume downloader cancelled");
+                    self.Input.Retire();
+                    self.Output.Retire();
+                    throw;
                 }
                 catch (Exception ex)
                 {

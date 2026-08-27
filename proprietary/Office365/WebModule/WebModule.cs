@@ -17,7 +17,8 @@ public class WebModule : IWebModule
     {
         ListDestination,
         ListDestinationRestoreTargets,
-        CountItems
+        CountItems,
+        CheckPermissions
     }
 
     private static readonly Operation DEFAULT_OPERATION = Operation.ListDestination;
@@ -83,7 +84,10 @@ public class WebModule : IWebModule
 
         var forwardoptions = new Dictionary<string, string?>()
         {
-            { "store-metadata-content-in-database", "true" }
+            { "store-metadata-content-in-database", "true" },
+            // Every operation here enumerates for display or reporting, never for backup, so the
+            // item classification is wanted in the metadata.
+            { OptionsHelper.ENUMERATION_MODE_OPTION, "true" }
         };
 
         var uri = new Library.Utility.RelaxedUri(url);
@@ -95,6 +99,9 @@ public class WebModule : IWebModule
 
         if (op == Operation.CountItems)
             return await CountItemsAsync(client, cancellationToken).ConfigureAwait(false);
+
+        if (op == Operation.CheckPermissions)
+            return await CheckPermissionsAsync(client, cancellationToken).ConfigureAwait(false);
 
         var targetEntry = await client.GetEntryAsync((path ?? "").TrimStart('/'), isFolder: true, cancellationToken).ConfigureAwait(false);
         if (targetEntry == null)
@@ -148,6 +155,57 @@ public class WebModule : IWebModule
     private const string COUNT_RESULT_KEY = "counts";
 
     /// <summary>
+    /// The result key under which the permission status list JSON is returned.
+    /// </summary>
+    private const string PERMISSIONS_RESULT_KEY = "permissions";
+
+    /// <summary>
+    /// Compares the application permissions granted to the app registration with the
+    /// permissions required for backup and restore operations. Granted permissions that
+    /// are not required are included in the report, flagged as not needed, so that
+    /// over-privileged app registrations can be identified.
+    /// </summary>
+    /// <param name="client">The initialized source provider.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A dictionary containing a single JSON-serialized list of <see cref="PermissionStatus"/>.</returns>
+    private static async Task<IDictionary<string, string>> CheckPermissionsAsync(SourceProvider client, CancellationToken cancellationToken)
+    {
+        var granted = await client.GetGrantedApplicationPermissionsAsync(cancellationToken).ConfigureAwait(false);
+
+        // A permission is enabled when it is granted directly, or when a granted write
+        // permission covers it (e.g. User.ReadWrite.All includes User.Read.All access)
+        var result = GraphPermissions.Required
+            .Select(p => new PermissionStatus
+            {
+                Name = p.Name,
+                Description = p.Description,
+                RequiredForBackup = p.RequiredForBackup,
+                RequiredForRestore = p.RequiredForRestore,
+                Enabled = granted.Contains(p.Name) || (p.CoveredBy != null && granted.Contains(p.CoveredBy))
+            })
+            .ToList();
+
+        // Include granted permissions that are not required for backup or restore
+        var known = new HashSet<string>(GraphPermissions.Required.Select(p => p.Name), StringComparer.OrdinalIgnoreCase);
+        foreach (var extra in granted.Where(g => !known.Contains(g)).OrderBy(g => g, StringComparer.OrdinalIgnoreCase))
+        {
+            result.Add(new PermissionStatus
+            {
+                Name = extra,
+                Description = "",
+                RequiredForBackup = false,
+                RequiredForRestore = false,
+                Enabled = true
+            });
+        }
+
+        return new Dictionary<string, string>
+        {
+            [PERMISSIONS_RESULT_KEY] = JsonSerializer.Serialize(result)
+        };
+    }
+
+    /// <summary>
     /// Counts the number of top-level items (users, groups, sites) and, within each
     /// top-level type, breaks the items down by whether they consume a Duplicati license
     /// seat and by sub-type.
@@ -167,16 +225,16 @@ public class WebModule : IWebModule
 
             switch (await client.ClassifyUserAsync(user, cancellationToken).ConfigureAwait(false))
             {
-                case SourceProvider.UserSeatCategory.Licensed:
+                case SourceProvider.UserCategory.Licensed:
                     result.Users.Licensed++;
                     break;
-                case SourceProvider.UserSeatCategory.Unlicensed:
+                case SourceProvider.UserCategory.Unlicensed:
                     result.Users.Unlicensed++;
                     break;
-                case SourceProvider.UserSeatCategory.SharedMailboxWithStorage:
+                case SourceProvider.UserCategory.SharedMailboxWithStorage:
                     result.Users.SharedMailboxWithStorage++;
                     break;
-                case SourceProvider.UserSeatCategory.SharedMailboxWithoutStorage:
+                case SourceProvider.UserCategory.SharedMailboxWithoutStorage:
                     result.Users.SharedMailboxWithoutStorage++;
                     break;
             }
@@ -200,7 +258,7 @@ public class WebModule : IWebModule
             cancellationToken.ThrowIfCancellationRequested();
             result.Sites.Total++;
 
-            switch (SourceProvider.ClassifySite(site))
+            switch (await client.ClassifySiteAsync(site, cancellationToken).ConfigureAwait(false))
             {
                 case SourceProvider.SiteCategory.Group:
                     result.Sites.Group++;
@@ -211,8 +269,11 @@ public class WebModule : IWebModule
                 case SourceProvider.SiteCategory.Communication:
                     result.Sites.Communication++;
                     break;
-                case SourceProvider.SiteCategory.Personal:
-                    result.Sites.Personal++;
+                case SourceProvider.SiteCategory.PersonalLicensedUser:
+                    result.Sites.PersonalLicensedUser++;
+                    break;
+                case SourceProvider.SiteCategory.PersonalUnlicensedUser:
+                    result.Sites.PersonalUnlicensedUser++;
                     break;
                 default:
                     result.Sites.Other++;
@@ -228,6 +289,27 @@ public class WebModule : IWebModule
 
     public IDictionary<string, IDictionary<string, string>> GetLookups()
         => new Dictionary<string, IDictionary<string, string>>();
+
+    /// <summary>
+    /// The status of a single required permission returned by <see cref="Operation.CheckPermissions"/>.
+    /// </summary>
+    private sealed class PermissionStatus
+    {
+        [System.Text.Json.Serialization.JsonPropertyName("name")]
+        public required string Name { get; init; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("description")]
+        public required string Description { get; init; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("requiredForBackup")]
+        public bool RequiredForBackup { get; init; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("requiredForRestore")]
+        public bool RequiredForRestore { get; init; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("enabled")]
+        public bool Enabled { get; init; }
+    }
 
     /// <summary>
     /// The item-count breakdown returned by <see cref="Operation.CountItems"/>.
@@ -282,7 +364,8 @@ public class WebModule : IWebModule
     }
 
     /// <summary>
-    /// The site item-count breakdown.
+    /// The site item-count breakdown. Every category requires a seat except
+    /// <see cref="PersonalUnlicensedUser"/>.
     /// </summary>
     private sealed class SiteCounts
     {
@@ -299,7 +382,13 @@ public class WebModule : IWebModule
         public int Communication { get; set; }
 
         [System.Text.Json.Serialization.JsonPropertyName("personal")]
-        public int Personal { get; set; }
+        public int Personal => PersonalLicensedUser + PersonalUnlicensedUser;
+
+        [System.Text.Json.Serialization.JsonPropertyName("personalLicensedUser")]
+        public int PersonalLicensedUser { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("personalUnlicensedUser")]
+        public int PersonalUnlicensedUser { get; set; }
 
         [System.Text.Json.Serialization.JsonPropertyName("other")]
         public int Other { get; set; }

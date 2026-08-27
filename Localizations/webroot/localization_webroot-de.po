@@ -3488,7 +3488,7 @@ msgstr "Verifizierung von Backend-Daten..."
 
 #: scripts/services/ServerStatus.js:63
 msgid "Verifying files …"
-msgstr "Dateien überprüfen... "
+msgstr "Dateien überprüfen ... "
 
 #: scripts/services/ServerStatus.js:38 scripts/services/ServerStatus.js:51
 msgid "Verifying remote data …"
@@ -3496,7 +3496,7 @@ msgstr "Remotedaten prüfen ..."
 
 #: scripts/services/ServerStatus.js:58
 msgid "Verifying restored files …"
-msgstr "Wiederhergestellte Dateien werden überprüft …"
+msgstr "Wiederhergestellte Dateien werden überprüft …"
 
 #: templates/backup-result/phases/delete.html:33
 msgid "Version ID"

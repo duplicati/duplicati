@@ -39,6 +39,14 @@ public interface ISourceProvider : IDisposable
     string MountedPath { get; }
 
     /// <summary>
+    /// Gets a value indicating whether this provider requires that metadata
+    /// content is stored in the database (the "store-metadata-content-in-database" option).
+    /// When a source uses a provider that returns <c>true</c>, the option is
+    /// automatically enabled if the user has not explicitly set it.
+    /// </summary>
+    bool NeedsStoredMetadata { get; }
+
+    /// <summary>
     /// Initializes the provider, if needed
     /// </summary>
     /// <param name="cancellationToken">The cancellation token</param>

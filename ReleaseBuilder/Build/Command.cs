@@ -97,7 +97,8 @@ public static partial class Command
         PackageType.Docker,
         PackageType.Deb,
         PackageType.RPM,
-        PackageType.AppImage
+        PackageType.AppImage,
+        PackageType.QnapQpkg
     };
 
     /// <summary>
@@ -733,6 +734,12 @@ public static partial class Command
         var builtPackages = await CreatePackage.BuildPackages(baseDir, input.BuildPath.FullName, buildTargets, input.KeepBuilds, rtcfg);
         var files = builtPackages.Select(x => x.CreatedFile).ToList();
 
+        // Include the AppImage zsync update files in the upload set
+        files.AddRange(builtPackages
+            .Where(x => x.Target.Package == PackageType.AppImage)
+            .Select(x => Path.Combine(input.BuildPath.FullName, "packages", $"latest-{x.Target.ArchString}.zsync"))
+            .Where(File.Exists));
+
 
         // Build the signed manifest to be uploaded to remote storage
         var manifestfile = Path.Combine(input.BuildPath.FullName, "packages", "autoupdate.manifest");
@@ -792,7 +799,7 @@ public static partial class Command
         // Ensure the tag is pushed before uploading, so the uploaded files
         // are associated with the release tag
         if (input.GitStashPush && !input.ResumeFromUpload)
-            await GitPush.TagAndPush(baseDir, releaseInfo);
+            await GitPush.TagAndPush(baseDir, releaseInfo, rtcfg);
 
         // Propagate the release to the next channel, if selected
         var nextChannels = new[] { ReleaseChannel.Experimental, ReleaseChannel.Beta, ReleaseChannel.Stable }

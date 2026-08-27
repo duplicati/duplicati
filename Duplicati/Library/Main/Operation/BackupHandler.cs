@@ -215,6 +215,15 @@ namespace Duplicati.Library.Main.Operation
 
                     result.Dryrun = options.Dryrun;
 
+                    // A backup that was killed before it could close leaves the query statistics
+                    // describing the database as it was when that run started, which is enough to
+                    // make the planner choose join orders that never finish. Everything below
+                    // reads tables that are affected, starting with the longest-path probe, so
+                    // this has to come before any of it.
+                    await database
+                        .RefreshQueryStatisticsAsync(result.TaskControl.ProgressToken)
+                        .ConfigureAwait(false);
+
                     // Check the database integrity
                     await Utility.UpdateOptionsFromDbAsync(database, options, result.TaskControl.ProgressToken)
                         .ConfigureAwait(false);
@@ -690,6 +699,12 @@ namespace Duplicati.Library.Main.Operation
                                 .CreateFilesetAsync(filesetvolumeid, VolumeBase.ParseFilename(filesetvolume.RemoteFilename).Time, m_taskReader.ProgressToken)
                                 .ConfigureAwait(false);
 
+                            // Record the version label, if one is set
+                            if (!string.IsNullOrWhiteSpace(m_options.VersionName))
+                                await db
+                                    .UpdateFilesetLabelAsync(filesetid, m_options.VersionName, m_taskReader.ProgressToken)
+                                    .ConfigureAwait(false);
+
                             var journalService = GetJournalService(source, filter, lastfilesetid);
 
                             // Start parallel scan, or use the database
@@ -733,6 +748,14 @@ namespace Duplicati.Library.Main.Operation
 
                     // Add the fileset file to the dlist file
                     filesetvolume.CreateFilesetFile(!m_result.PartialBackup);
+
+                    // The tables have just grown by everything this backup added, which can be
+                    // several orders of magnitude when the previous run was small. Rebuild the
+                    // statistics before the fileset is written, because that query joins six
+                    // tables and the planner needs to know how big they actually are.
+                    await db
+                        .RefreshQueryStatisticsAsync(m_taskReader.ProgressToken)
+                        .ConfigureAwait(false);
 
                     // Ensure the database is in a sane state after adding data
                     using (new Logging.Timer(LOGTAG, "VerifyConsistency", "VerifyConsistency"))

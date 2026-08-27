@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -55,10 +54,7 @@ public class WebModule : IWebModule
             return res;
         }
 
-        var prefix = SourceProvider.GetDevicePrefix();
-        List<string> parts = [.. path[prefix.Length..].Split(Path.DirectorySeparatorChar, 2)];
-        var physicalDrivePath = prefix + parts.First();
-        var subpath = parts.Last();
+        var (physicalDrivePath, subpath) = SourceProvider.SplitDeviceAndSubpath(path);
 
         using var client = new SourceProvider("diskimage://" + physicalDrivePath, "", new Dictionary<string, string?>(options));
         await client.InitializeAsync(cancellationToken);
@@ -75,7 +71,9 @@ public class WebModule : IWebModule
         var result = new Dictionary<string, string>();
         await foreach (var entry in targetEntry.Enumerate(cancellationToken))
         {
-            if (entry.Path.EndsWith("geometry.json", StringComparison.OrdinalIgnoreCase))
+            if (entry.Path.EndsWith(GeometryMetadata.FileName, StringComparison.OrdinalIgnoreCase))
+                continue;
+            if (entry.Path.EndsWith(PartitionInfoMetadata.FileName, StringComparison.OrdinalIgnoreCase))
                 continue;
             var metadata = await entry.GetMinorMetadata(cancellationToken);
             if (metadata.ContainsKey("partition:Number"))
