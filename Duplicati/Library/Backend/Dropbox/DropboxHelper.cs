@@ -35,8 +35,8 @@ namespace Duplicati.Library.Backend
 
         private readonly TimeoutOptionsHelper.Timeouts m_timeouts;
 
-        public DropboxHelper(AuthIdOptionsHelper.AuthIdOptions authId, TimeoutOptionsHelper.Timeouts timeouts)
-            : base(authId.AuthId, "dropbox", authId.OAuthUrl)
+        public DropboxHelper(AuthIdOptionsHelper.AuthIdOptions authId, TimeoutOptionsHelper.Timeouts timeouts, HttpClient? httpClient = null)
+            : base(authId.AuthId, "dropbox", authId.OAuthUrl, httpClient)
         {
             m_timeouts = timeouts;
             base.AutoAuthHeader = true;
