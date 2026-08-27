@@ -168,9 +168,14 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
 
         _authTimeout = Utility.Utility.ParseTimespanOption(options, AUTH_TIMEOUT_OPTION, DEFAULT_AUTH_TIMEOUT);
 
+        // Honor the global "machine-id" option, falling back to the AutoUpdater machine id
+        var machineId = options.GetValueOrDefault("machine-id");
+        if (string.IsNullOrWhiteSpace(machineId))
+            machineId = AutoUpdater.DataFolderManager.MachineID;
+
         _client.DefaultRequestHeaders.Add("X-Api-Key", _auth.Password);
         _client.DefaultRequestHeaders.Add("X-Organization-Id", _auth.Username);
-        _client.DefaultRequestHeaders.Add("X-Machine-Id", System.Uri.EscapeDataString(AutoUpdater.DataFolderManager.MachineID));
+        _client.DefaultRequestHeaders.Add("X-Machine-Id", System.Uri.EscapeDataString(machineId));
         _client.DefaultRequestHeaders.Add("X-Backup-Id", System.Uri.EscapeDataString(_backup_id));
 
         _timeouts = TimeoutOptionsHelper.Parse(options);
