@@ -139,11 +139,11 @@ namespace Duplicati.Server.Database
                 // We cannot use url.QueryParameters since it contains decoded parameter values, which
                 // breaks assumptions made by the decode_uri function in AppUtils.js. Since we are simply
                 // removing password parameters, we will leave the parameters as they are in the target URL.
-                filteredParameters = Library.Utility.UrlEncoding.ParseQueryString(url.Query, false);
+                filteredParameters = url.GetEncodedQueryParameters();
                 foreach (var field in Connection.PasswordFieldNames)
                     filteredParameters.Remove(field);
             }
-            url = url.SetQuery(Duplicati.Library.Utility.UrlEncoding.BuildUriQuery(filteredParameters));
+            url = url.SetQuery(Duplicati.Library.Utility.UrlEncoding.BuildUriQuery(filteredParameters, true));
             this.TargetURL = url.ToString();
         }
 
@@ -172,11 +172,11 @@ namespace Duplicati.Server.Database
 
                     if (url.Query != null)
                     {
-                        var filteredParameters = Library.Utility.UrlEncoding.ParseQueryString(url.Query, false);
+                        var filteredParameters = url.GetEncodedQueryParameters();
                         foreach (var field in Connection.PasswordFieldNames)
                             filteredParameters.Remove(field);
 
-                        url = url.SetQuery(Library.Utility.UrlEncoding.BuildUriQuery(filteredParameters));
+                        url = url.SetQuery(Library.Utility.UrlEncoding.BuildUriQuery(filteredParameters, true));
                         this.Sources[i] = SourceMasking.ReplaceUrl(this.Sources[i], url.ToString());
                     }
                 }
@@ -206,10 +206,10 @@ namespace Duplicati.Server.Database
                     continue;
 
                 var url = new Duplicati.Library.Utility.RelaxedUri(target.TargetUrl);
-                var filteredParameters = url.QueryParameters;
+                var filteredParameters = url.GetEncodedQueryParameters();
                 foreach (var field in Connection.PasswordFieldNames)
                     filteredParameters.Remove(field);
-                url = url.SetQuery(Duplicati.Library.Utility.UrlEncoding.BuildUriQuery(filteredParameters));
+                url = url.SetQuery(Duplicati.Library.Utility.UrlEncoding.BuildUriQuery(filteredParameters, true));
                 target.TargetUrl = url.ToString();
             }
         }

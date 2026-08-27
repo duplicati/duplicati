@@ -34,8 +34,8 @@ namespace Duplicati.UnitTest
             var baseUrl = "http://localhost";
             var path = "files";
             var query = new NameValueCollection { { "a", "b" }, { "c", "d" }, { "e", "+ %" } };
-            var url = Library.Utility.RelaxedUri.UriBuilder(baseUrl, path, query);
-            Assert.AreEqual(baseUrl + "/" + path + "?a=b&c=d&e=+%20%25", url);
+            var url = Library.Utility.RelaxedUri.UriBuilder(baseUrl, path, query, false);
+            Assert.AreEqual(baseUrl + "/" + path + "?a=b&c=d&e=%2B+%25", url);
         }
 
         [Test]
