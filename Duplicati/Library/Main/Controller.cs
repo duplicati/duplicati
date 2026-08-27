@@ -229,6 +229,12 @@ namespace Duplicati.Library.Main
             ).ConfigureAwait(false);
 
         /// <inheritdoc />
+        public async Task<ISetVersionLabelResults> SetVersionLabelAsync()
+            => await RunActionAsync(new SetVersionLabelResults(), null, null, false, static config =>
+                Operation.SetVersionLabelHandler.RunAsync(config.Options, config.Result)
+            ).ConfigureAwait(false);
+
+        /// <inheritdoc />
         public async Task<IListFolderResults> ListFolderAsync(string[] folders, long offset, long limit, bool extendedData)
             => await RunActionAsync(new ListFolderResults(), folders, null, new { offset, limit, extendedData }, static config =>
                 Operation.ListFolderHandler.RunAsync(config.Options, config.Result, config.Paths, config.Context.offset, config.Context.limit, config.Context.extendedData)

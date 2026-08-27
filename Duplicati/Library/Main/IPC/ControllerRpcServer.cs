@@ -101,6 +101,8 @@ public class ControllerRpcServer : IController, IDisposable
                         operation = OperationMode.ListRemote;
                     else if (results is ISetLockResults)
                         operation = OperationMode.SetLock;
+                    else if (results is ISetVersionLabelResults)
+                        operation = OperationMode.SetVersionLabel;
                     else if (results is IReadLockInfoResults)
                         operation = OperationMode.ReadLockInfo;
 
@@ -199,6 +201,10 @@ public class ControllerRpcServer : IController, IDisposable
     /// <inheritdoc />
     public Task<ISetLockResults> SetLocksAsync()
         => Controller.SetLocksAsync();
+
+    /// <inheritdoc />
+    public Task<ISetVersionLabelResults> SetVersionLabelAsync()
+        => Controller.SetVersionLabelAsync();
 
     /// <inheritdoc />
     public Task<IReadLockInfoResults> ReadLockInfoAsync()

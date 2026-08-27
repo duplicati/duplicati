@@ -416,6 +416,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("restore-path", CommandLineArgument.ArgumentType.String, Strings.Options.RestorepathShort, Strings.Options.RestorepathLong),
             new CommandLineArgument("time", CommandLineArgument.ArgumentType.DateTime, Strings.Options.TimeShort, Strings.Options.TimeLong, "now"),
             new CommandLineArgument("version", CommandLineArgument.ArgumentType.String, Strings.Options.VersionShort, Strings.Options.VersionLong, ""),
+            new CommandLineArgument("version-name", CommandLineArgument.ArgumentType.String, Strings.Options.VersionnameShort, Strings.Options.VersionnameLong, ""),
             new CommandLineArgument("all-versions", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllversionsShort, Strings.Options.AllversionsLong, "false"),
             new CommandLineArgument("list-prefix-only", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ListprefixonlyShort, Strings.Options.ListprefixonlyLong, "false"),
             new CommandLineArgument("soft-delete-prefix", CommandLineArgument.ArgumentType.String, Strings.Options.SoftdeleteprefixShort, Strings.Options.SoftdeleteprefixLong),
@@ -741,6 +742,11 @@ namespace Duplicati.Library.Main
         /// A value indicating if all versions are listed
         /// </summary>
         public bool AllVersions => GetBool("all-versions");
+
+        /// <summary>
+        /// Gets the label to assign to the backup version, or null if no label is set
+        /// </summary>
+        public string? VersionName => GetString("version-name", null);
 
         /// <summary>
         /// A value indicating if only the largest common prefix is returned

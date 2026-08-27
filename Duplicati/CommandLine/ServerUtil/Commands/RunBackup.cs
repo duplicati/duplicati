@@ -20,34 +20,55 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System.CommandLine;
-using System.CommandLine.NamingConventionBinder;
 using Duplicati.Library.Interface;
 
 namespace Duplicati.CommandLine.ServerUtil.Commands;
 
 public static class RunBackup
 {
-    public static Command Create() =>
-        new Command("run", "Runs a backup")
+    public static Command Create()
+    {
+        var backupArgument = new Argument<string>("backup")
         {
-            new Argument<string>("backup", "The backup to run, either ID or exact name (case-insensitive)") {
-                Arity = ArgumentArity.ExactlyOne
-            },
-            new Option<bool>("--wait", "Wait for the backup to finish before returning") {
-                IsRequired = false
-            },
-            new Option<bool>("--skip-queue", "Insert the backup as the first task in the queue, instead of putting it at the end") {
-                IsRequired = false
-            },
-            new Option<int>("--poll-interval", description: "The interval in seconds to poll for backup status", getDefaultValue: () => 5) {
-                IsRequired = false
-            },
-            new Option<bool>("--quiet", "Do not print progress messages") {
-                IsRequired = false
-            }
-        }
-        .WithHandler(CommandHandler.Create<Settings, OutputInterceptor, string, bool, bool, int, bool>(async (settings, output, backup, wait, skipqueue, pollinterval, quiet) =>
+            Description = "The backup to run, either ID or exact name (case-insensitive)",
+            Arity = ArgumentArity.ExactlyOne
+        };
+        var waitOption = new Option<bool>("--wait")
         {
+            Description = "Wait for the backup to finish before returning"
+        };
+        var skipQueueOption = new Option<bool>("--skip-queue")
+        {
+            Description = "Insert the backup as the first task in the queue, instead of putting it at the end"
+        };
+        var pollIntervalOption = new Option<int>("--poll-interval")
+        {
+            Description = "The interval in seconds to poll for backup status",
+            DefaultValueFactory = _ => 5
+        };
+        var quietOption = new Option<bool>("--quiet")
+        {
+            Description = "Do not print progress messages"
+        };
+
+        var cmd = new Command("run", "Runs a backup")
+        {
+            backupArgument,
+            waitOption,
+            skipQueueOption,
+            pollIntervalOption,
+            quietOption
+        };
+        cmd.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var settings = SettingsBinder.GetSettings(parseResult);
+            var output = OutputInterceptorBinder.GetConsoleInterceptor(parseResult);
+            var backup = parseResult.GetValue(backupArgument)!;
+            var wait = parseResult.GetValue(waitOption);
+            var skipqueue = parseResult.GetValue(skipQueueOption);
+            var pollinterval = parseResult.GetValue(pollIntervalOption);
+            var quiet = parseResult.GetValue(quietOption);
+
             if (pollinterval < 1)
                 throw new UserReportedException("Poll interval must be at least 1 second");
 
@@ -99,7 +120,9 @@ public static class RunBackup
                 // Without --wait the backup is only queued; its outcome is unknown here.
                 output.SetResult(true);
             }
-        }));
+        });
+        return cmd;
+    }
 
     /// <summary>
     /// Waits for a backup to finish with retries
@@ -141,6 +164,6 @@ public static class RunBackup
                     throw;
             }
 
-        } while (retry) ;
+        } while (retry);
     }
 }

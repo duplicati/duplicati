@@ -188,7 +188,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
         /// <inheritdoc />
         public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
-            var url = WebApi.GoogleCloudStorage.ListUrl(m_bucket, Utility.UrlEncoding.UrlEncode(m_prefix));
+            var url = WebApi.GoogleCloudStorage.ListUrl(m_bucket, m_prefix);
             while (true)
             {
                 var resp = await HandleListExceptions(() =>
@@ -219,7 +219,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
                 var token = resp.nextPageToken;
                 if (string.IsNullOrWhiteSpace(token))
                     break;
-                url = WebApi.GoogleCloudStorage.ListUrl(m_bucket, Utility.UrlEncoding.UrlEncode(m_prefix), token);
+                url = WebApi.GoogleCloudStorage.ListUrl(m_bucket, m_prefix, token);
             }
         }
 

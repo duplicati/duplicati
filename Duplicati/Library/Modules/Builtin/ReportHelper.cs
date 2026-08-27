@@ -249,7 +249,7 @@ namespace Duplicati.Library.Modules.Builtin
                 }
                 else
                 {
-                    var values = Utility.UrlEncoding.ParseQueryString(extraData);
+                    var values = Utility.UrlEncoding.ParseQueryString(extraData, true);
                     m_extraValues = values.AllKeys
                         .Where(x => !string.IsNullOrWhiteSpace(x))
                         .ToDictionary(key => key, key => values[key]);

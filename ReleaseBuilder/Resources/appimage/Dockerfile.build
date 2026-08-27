@@ -13,6 +13,7 @@ RUN apt-get update \
        gnupg \
        libglib2.0-0 \
        squashfs-tools \
+       zsync \
     && rm -rf /var/lib/apt/lists/*
 
 RUN case "${TARGETARCH}" in \

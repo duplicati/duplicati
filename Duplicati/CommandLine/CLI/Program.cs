@@ -103,6 +103,8 @@ namespace Duplicati.CommandLine
                         ["vacuum"] = Commands.Vacuum,
                         ["set-locks"] = Commands.SetLocks,
                         ["setlocks"] = Commands.SetLocks,
+                        ["set-version-label"] = Commands.SetVersionLabel,
+                        ["setversionlabel"] = Commands.SetVersionLabel,
                         ["read-lock-info"] = Commands.ReadLockInfo,
                         ["readlockinfo"] = Commands.ReadLockInfo,
                         ["system-info"] = Commands.SystemInfo,

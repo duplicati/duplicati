@@ -79,6 +79,8 @@ namespace Duplicati.Library.Main.Strings
         public static string TimeShort { get { return LC.L(@"The time to list/restore files"); } }
         public static string VersionLong { get { return LC.L(@"By default, Duplicati will list and restore files from the most recent backup. Use this option to select another item. You may enter multiple values separated with comma, and ranges using -, e.g. ""0,2-4,7"" ."); } }
         public static string VersionShort { get { return LC.L(@"The version to list/restore files"); } }
+        public static string VersionnameLong { get { return LC.L(@"Use this option to assign a human-readable label to a backup version. When running a backup, the label is recorded in the local database and stored with the backup. When updating a version label, the label is stored in the local database and included in the next backup."); } }
+        public static string VersionnameShort { get { return LC.L(@"A label to assign to the backup version"); } }
         public static string AllversionsLong { get { return LC.L(@"When searching for files, only the most recent backup is searched. Use this option to show all previous versions too."); } }
         public static string AllversionsShort { get { return LC.L(@"Show all versions"); } }
         public static string ListprefixonlyLong { get { return LC.L(@"When searching for files, all matching files are returned. Use this option to return only the largest common prefix path."); } }

@@ -141,17 +141,19 @@ internal class DiskSourceEntry(SourceProvider provider, IRawDisk disk, string su
             // Now yield the consolidated geometry metadata file with all geometry collected
             yield return new GeometrySourceEntry(this.Path, geometryMetadata);
 
-            // If the source pointed to a specific partition, only emit that one now
-            var subpathmarker = string.IsNullOrWhiteSpace(subpath) || subpath.StartsWith(System.IO.Path.DirectorySeparatorChar)
-                ? subpath
-                : System.IO.Path.DirectorySeparatorChar + subpath;
-
+            // If the source pointed to a specific partition, only emit that one now.
+            // The subpath has no leading or trailing separator (e.g. "part_GPT_1"),
+            // while the partition entry paths end with a separator, so the paths
+            // are normalized before comparing.
+            var subpathmarker = string.IsNullOrWhiteSpace(subpath)
+                ? string.Empty
+                : System.IO.Path.DirectorySeparatorChar + subpath.Trim(System.IO.Path.DirectorySeparatorChar);
 
             // Then yield the actual partition and filesystem entries
             foreach (var partition in partitions)
             {
                 var pse = new PartitionSourceEntry(this.Path, partition, provider.TreatFilesystemAsUnknown);
-                if (string.IsNullOrWhiteSpace(subpathmarker) || pse.Path.EndsWith(subpathmarker))
+                if (string.IsNullOrEmpty(subpathmarker) || IsPartitionPathMatch(pse.Path, subpathmarker))
                     yield return pse;
             }
         }
@@ -160,6 +162,25 @@ internal class DiskSourceEntry(SourceProvider provider, IRawDisk disk, string su
             // No partition table found, still yield the disk geometry
             yield return new GeometrySourceEntry(this.Path, geometryMetadata);
         }
+    }
+
+    /// <summary>
+    /// Checks whether a partition entry path matches the requested subpath marker.
+    /// </summary>
+    /// <param name="partitionPath">The partition entry path, which ends with a directory separator.</param>
+    /// <param name="subpathmarker">The subpath marker, prefixed with a directory separator and without a trailing one (e.g. "\part_GPT_1").</param>
+    /// <returns>True if the subpath targets this partition or an entry inside it; false otherwise.</returns>
+    private static bool IsPartitionPathMatch(string partitionPath, string subpathmarker)
+    {
+        var trimmedPath = partitionPath.TrimEnd(System.IO.Path.DirectorySeparatorChar);
+
+        // The subpath targets this partition
+        if (trimmedPath.EndsWith(subpathmarker, Library.Utility.Utility.ClientFilenameStringComparison))
+            return true;
+
+        // The subpath targets an entry inside this partition (e.g. a folder in its filesystem)
+        var partitionFolder = trimmedPath.Substring(trimmedPath.LastIndexOf(System.IO.Path.DirectorySeparatorChar));
+        return subpathmarker.StartsWith(partitionFolder + System.IO.Path.DirectorySeparatorChar, Library.Utility.Utility.ClientFilenameStringComparison);
     }
 
     /// <inheritdoc />

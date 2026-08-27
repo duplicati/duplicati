@@ -20,20 +20,24 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System.CommandLine;
-using System.CommandLine.NamingConventionBinder;
 
 namespace Duplicati.CommandLine.ServerUtil.Commands;
 
 public static class Login
 {
-    public static Command Create() =>
-        new Command("login", "Logs in to the server")
-        .WithHandler(CommandHandler.Create<Settings, OutputInterceptor>(async (settings, output) =>
-            {
-                output.AppendConsoleMessage("Logging in to the server");
-                await Connection.ConnectAsync(settings, true, output);
-                output.AppendConsoleMessage("Logged in, persistent token saved");
-                output.SetResult(true);
-            })
-        );
+    public static Command Create()
+    {
+        var cmd = new Command("login", "Logs in to the server");
+        cmd.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var settings = SettingsBinder.GetSettings(parseResult);
+            var output = OutputInterceptorBinder.GetConsoleInterceptor(parseResult);
+
+            output.AppendConsoleMessage("Logging in to the server");
+            await Connection.ConnectAsync(settings, true, output);
+            output.AppendConsoleMessage("Logged in, persistent token saved");
+            output.SetResult(true);
+        });
+        return cmd;
+    }
 }

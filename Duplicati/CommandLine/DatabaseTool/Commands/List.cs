@@ -20,7 +20,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 using System.CommandLine;
-using System.CommandLine.NamingConventionBinder;
 using System.Text.Json;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.SQLiteHelper;
@@ -36,53 +35,74 @@ public static class List
     /// Creates the list command
     /// </summary>
     /// <returns>The list command</returns>
-    public static Command Create() =>
-        new Command("list", "Executes one or more commands on the database")
+    public static Command Create()
+    {
+        var databaseArgument = new Argument<string>("database")
         {
-            new Argument<string>("database", "The database to list"),
-            new Argument<string[]>("tables") {
-                Arity = ArgumentArity.ZeroOrMore,
-                Description = "The table to list. If not specified, all tables will be listed."
-            },
-            new Option<bool>("--output-json", description: "Output as JSON", getDefaultValue: () => false),
-        }
-        .WithHandler(CommandHandler.Create<string, string[], bool>((database, tables, outputjson) =>
+            Description = "The database to list"
+        };
+        var tablesArgument = new Argument<string[]>("tables")
+        {
+            Arity = ArgumentArity.ZeroOrMore,
+            Description = "The table to list. If not specified, all tables will be listed."
+        };
+        var outputJsonOption = new Option<bool>("--output-json")
+        {
+            Description = "Output as JSON",
+            DefaultValueFactory = _ => false
+        };
+
+        var cmd = new Command("list", "Executes one or more commands on the database")
+        {
+            databaseArgument,
+            tablesArgument,
+            outputJsonOption,
+        };
+
+        cmd.SetAction(parseResult =>
+        {
+            var database = parseResult.GetValue(databaseArgument);
+            var tables = parseResult.GetValue(tablesArgument);
+            var outputjson = parseResult.GetValue(outputJsonOption);
+
+            if (!File.Exists(database))
             {
-                if (!File.Exists(database))
-                {
-                    Console.WriteLine($"Database {database} does not exist");
-                    return;
-                }
+                Console.WriteLine($"Database {database} does not exist");
+                return;
+            }
 
-                using var con = SQLiteLoader.LoadConnection(database);
-                using var cmd = con.CreateCommand();
+            using var con = SQLiteLoader.LoadConnection(database);
+            using var cmd = con.CreateCommand();
 
-                if (tables == null || tables.Length == 0)
-                {
-                    if (!outputjson)
-                        Console.WriteLine("Listing all tables in the database:");
+            if (tables == null || tables.Length == 0)
+            {
+                if (!outputjson)
+                    Console.WriteLine("Listing all tables in the database:");
 
-                    var res = new List<string?>();
-                    foreach (var rd in cmd.ExecuteReaderEnumerable("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"))
-                        if (outputjson)
-                            res.Add(rd.ConvertValueToString(0));
-                        else
-                            Console.WriteLine(rd.ConvertValueToString(0) ?? "<null>");
-
+                var res = new List<string?>();
+                foreach (var rd in cmd.ExecuteReaderEnumerable("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"))
                     if (outputjson)
-                        Console.WriteLine(JsonSerializer.Serialize(res, new JsonSerializerOptions { WriteIndented = true }));
-                }
-                else
-                {
-                    foreach (var table in tables)
-                    {
-                        var res = new List<object?[]>();
-                        using var rd = cmd.ExecuteReader($"SELECT * FROM {table}");
-                        rd.Print(outputjson);
+                        res.Add(rd.ConvertValueToString(0));
+                    else
+                        Console.WriteLine(rd.ConvertValueToString(0) ?? "<null>");
 
-                        Console.WriteLine();
-                    }
+                if (outputjson)
+                    Console.WriteLine(JsonSerializer.Serialize(res, new JsonSerializerOptions { WriteIndented = true }));
+            }
+            else
+            {
+                foreach (var table in tables)
+                {
+                    var res = new List<object?[]>();
+                    using var rd = cmd.ExecuteReader($"SELECT * FROM {table}");
+                    rd.Print(outputjson);
+
+                    Console.WriteLine();
                 }
-            }));
+            }
+        });
+
+        return cmd;
+    }
 }
 

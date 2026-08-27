@@ -24,6 +24,8 @@ using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
 using System.Runtime.CompilerServices;
 
+[assembly: InternalsVisibleTo("Duplicati.UnitTest")]
+
 namespace Duplicati.Library.Backend
 {
     // ReSharper disable once UnusedMember.Global
@@ -45,10 +47,25 @@ namespace Duplicati.Library.Backend
         // ReSharper disable once UnusedMember.Global
         // This constructor is needed by the BackendLoader.
         public Dropbox(string url, Dictionary<string, string?> options)
+            : this(url, options, null)
+        {
+        }
+
+        /// <summary>
+        /// Creates a backend that uses the supplied <see cref="HttpClient"/>,
+        /// so the Dropbox API responses can be stubbed in tests
+        /// </summary>
+        /// <param name="url">The backend url</param>
+        /// <param name="options">The options to use</param>
+        /// <param name="httpClient">The client to use, or null to create one</param>
+        internal Dropbox(string url, Dictionary<string, string?> options, HttpClient? httpClient)
         {
             var uri = new Utility.RelaxedUri(url);
 
-            m_path = Utility.UrlEncoding.UrlDecode(uri.HostAndPath);
+            // RelaxedUri decodes both the host and the path as it parses, so HostAndPath is
+            // already decoded and decoding it again loses whatever was spelled with a percent
+            // sign: a folder named "a%20b", written as "a%2520b", arrived here as "a b".
+            m_path = uri.HostAndPath;
             if (m_path.Length != 0 && !m_path.StartsWith("/", StringComparison.Ordinal))
                 m_path = "/" + m_path;
 
@@ -58,7 +75,7 @@ namespace Duplicati.Library.Backend
             var authId = AuthIdOptionsHelper.Parse(options);
             authId.RequireCredentials(TOKEN_URL);
 
-            dbx = new DropboxHelper(authId, TimeoutOptionsHelper.Parse(options));
+            dbx = new DropboxHelper(authId, TimeoutOptionsHelper.Parse(options), httpClient);
         }
 
         /// <inheritdoc/>

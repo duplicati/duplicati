@@ -1,3 +1,68 @@
+2026-08-25 - 2.3.0.110_canary_2026-08-25
+==========
+This release is a canary release intended to be used for testing.
+
+# Database update to version 20
+
+This release updates the local database schema to version 20. The update adds a label column to the fileset table and is applied automatically on first use. After the update, the database can no longer be opened by earlier versions of Duplicati. If you need to downgrade, the bundled database tool (`duplicati-database-tool`) can downgrade the database back to version 19; downgrading removes the labels, but otherwise causes no data loss.
+
+# Labels on backup versions
+
+Backup versions can now carry an optional text label. Labels have no functional purpose, but they help mark and distinguish versions, for example when backups are hand-curated instead of running on a schedule. The CLI and UI supports setting and showing labels.
+
+# Partition-level backup and restore
+
+It is now possible to select a single disk partition as the backup source, instead of selecting the full disk and filtering the unwanted partitions. Restores are likewise more flexible: in addition to disk-to-disk restores, a single partition can now be restored into a partition on another disk, creating the partition as needed.
+
+This also fixes a bug where a failing priority file would leave the restore stuck until it was cancelled, and a number of issues with enumerating and filtering disks and partitions, in particular on Windows.
+
+# Automatic metadata storage for sources that need it
+
+Backups using a source provider that relies on database metadata, such as the disk image provider, previously required the user to set `--store-metadata-content-in-database=true` manually. The setting is now applied automatically when the source needs it, and can still be overridden by setting the option explicitly.
+
+# QNAP packages
+
+This release adds native QNAP package support. Similar to the Synology package, it integrates with the QNAP OS, uses the built-in authentication, and only allows access for administrators.
+
+# Stricter Google Cloud Storage credentials
+
+Google Cloud Storage credentials are now read as service account credentials, which is what the options are documented to take. Other credential types, such as stored user credentials or external account configurations, are now refused. If you authenticate to Google Cloud Storage, or the Google Cloud secret provider, with anything other than a service account key, you need to switch to a service account key.
+
+## Detailed list of changes
+
+- Updated all localizations, thanks to all translators
+- Added labels to backup versions, with CLI, API, and UI support
+- Added partition-level backup and partition-to-partition restore
+- Fixed disk image provider not initializing when listing drives, and improved disk enumeration and filter handling on Windows
+- Automatically enabled `--store-metadata-content-in-database` when the source provider requires it
+- Added native QNAP package support
+- Added a watchdog that restarts a stale remote management connection, and fixed issues that could drop the connection
+- Google Cloud Storage credentials are now read strictly as service accounts, thanks @JamBalaya56562
+- Fixed WebDAV destinations with a `+` in the path reporting uploaded files as missing, thanks @JamBalaya56562
+- Fixed Windows `file://` target URLs with a query string being misparsed
+- Stopped reporting quota errors on read-only operations such as restore, thanks @JamBalaya56562
+- Fixed stale SQLite query statistics causing extremely slow fileset and consistency queries on growing databases, thanks @JamBalaya56562
+- Sped up cleanup after deleting a backup version by avoiding a full table scan
+- Fixed a similarly named file and folder in the source causing the folder to be omitted, and allowed explicitly including a file inside an excluded folder
+- Fixed backend statistics reporting a bogus zero timestamp in the operation log, thanks @JamBalaya56562
+- Fixed Linux desktop notifications using an unsupported signal API, thanks @JamBalaya56562
+- Fixed a restore with failing priority files getting stuck instead of failing
+- Aligned SharpAESCrypt, AWSSDK.Core, Azure.Core, and Microsoft.Extensions package versions across the solution, thanks @JamBalaya56562
+
+## Updates to ngclient
+
+- Added settings to control sorting of tree views
+- Added support for editing version labels
+- Disabled menu options that do not apply to sync jobs
+- Fixed the destination editor mixing up connection state when a destination is removed, thanks @JamBalaya56562
+- Allowed changing encryption settings for imported backups, thanks @JamBalaya56562
+- Fixed the usage statistics setting not matching the format used by the legacy UI and server settings, thanks @JamBalaya56562
+- Added a plain-language summary to the custom schedule editor, thanks @JamBalaya56562
+- Added support for browsing disks and partitions and for restoring disk images and partitions
+- Fixed Chinese locale selection, thanks @JamBalaya56562
+- Fixed absolute asset paths ignoring the path prefix when running behind a reverse proxy, thanks @scambra
+- Updated all translations, thanks to all translators
+
 2026-08-14 - 2.3.0.109_canary_2026-08-14
 ==========
 This release is a canary release intended to be used for testing.

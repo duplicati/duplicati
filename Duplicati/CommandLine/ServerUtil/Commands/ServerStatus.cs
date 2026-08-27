@@ -20,16 +20,19 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System.CommandLine;
-using System.CommandLine.NamingConventionBinder;
 
 namespace Duplicati.CommandLine.ServerUtil.Commands;
 
 public static class ServerStatus
 {
-    public static Command Create() =>
-        new Command("status", "Gets the server status")
-        .WithHandler(CommandHandler.Create<Settings, OutputInterceptor>(async (settings, output) =>
+    public static Command Create()
+    {
+        var cmd = new Command("status", "Gets the server status");
+        cmd.SetAction(async (parseResult, cancellationToken) =>
         {
+            var settings = SettingsBinder.GetSettings(parseResult);
+            var output = OutputInterceptorBinder.GetConsoleInterceptor(parseResult);
+
             var state = await (await settings.GetConnectionAsync(output)).GetServerStateAsync();
 
             output.AppendConsoleMessage($"Server state: {state.ProgramState}");
@@ -61,5 +64,7 @@ public static class ServerStatus
             }
 
             output.SetResult(true);
-        }));
+        });
+        return cmd;
+    }
 }

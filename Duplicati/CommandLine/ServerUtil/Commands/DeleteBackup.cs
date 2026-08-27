@@ -20,27 +20,53 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System.CommandLine;
-using System.CommandLine.NamingConventionBinder;
 
 namespace Duplicati.CommandLine.ServerUtil.Commands;
 
 public static class DeleteBackup
 {
-    public static Command Create() =>
-        new Command("delete", "Deletes a backup")
+    public static Command Create()
+    {
+        var backupArgument = new Argument<string>("backup")
         {
-            new Argument<string>("backup", "The backup to delete, either ID or exact name (case-insensitive)") {
-                Arity = ArgumentArity.ExactlyOne
-            },
-            new Option<bool>(name: "--delete-remote-files", description: "Delete remote files associated with the backup", getDefaultValue: () => false),
-            new Option<bool>(name: "--delete-local-db", description: "Delete local database associated with the backup", getDefaultValue: () => false),
-            new Option<bool>(name: "--force", description: "Force deletion even if the backup is running at the moment", getDefaultValue: () => false),
-            new Option<bool>("--quiet", "Do not print progress messages") {
-                IsRequired = false
-            }
-        }
-        .WithHandler(CommandHandler.Create<Settings, OutputInterceptor, string, bool, bool, bool, bool>(async (settings, output, backup, deleteRemoteFiles, deleteLocalDb, force, quiet) =>
+            Description = "The backup to delete, either ID or exact name (case-insensitive)",
+            Arity = ArgumentArity.ExactlyOne
+        };
+        var deleteRemoteFilesOption = new Option<bool>("--delete-remote-files")
         {
+            Description = "Delete remote files associated with the backup"
+        };
+        var deleteLocalDbOption = new Option<bool>("--delete-local-db")
+        {
+            Description = "Delete local database associated with the backup"
+        };
+        var forceOption = new Option<bool>("--force")
+        {
+            Description = "Force deletion even if the backup is running at the moment"
+        };
+        var quietOption = new Option<bool>("--quiet")
+        {
+            Description = "Do not print progress messages"
+        };
+
+        var cmd = new Command("delete", "Deletes a backup")
+        {
+            backupArgument,
+            deleteRemoteFilesOption,
+            deleteLocalDbOption,
+            forceOption,
+            quietOption
+        };
+        cmd.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var settings = SettingsBinder.GetSettings(parseResult);
+            var output = OutputInterceptorBinder.GetConsoleInterceptor(parseResult);
+            var backup = parseResult.GetValue(backupArgument)!;
+            var deleteRemoteFiles = parseResult.GetValue(deleteRemoteFilesOption);
+            var deleteLocalDb = parseResult.GetValue(deleteLocalDbOption);
+            var force = parseResult.GetValue(forceOption);
+            var quiet = parseResult.GetValue(quietOption);
+
             var connection = await settings.GetConnectionAsync(output);
 
             var matchingBackup = (await connection.ListBackupsAsync())
@@ -58,5 +84,7 @@ public static class DeleteBackup
                 output.AppendConsoleMessage("Delete task queued");
 
             output.SetResult(true);
-        }));
+        });
+        return cmd;
+    }
 }

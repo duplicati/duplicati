@@ -42,6 +42,8 @@ internal class PartitionSourceEntry(string parentPath, IPartition partition, boo
     /// <inheritdoc />
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        // Create a filesystem parser based on the detected filesystem type
+        // If the filesystem is unknown, fall back to raw block-level access
         IFilesystem fs = TreatFilesystemAsUnknown || partition.FilesystemType == FileSystemType.Unknown
             ? new UnknownFilesystem(partition)
             : partition.FilesystemType switch
@@ -50,7 +52,31 @@ internal class PartitionSourceEntry(string parentPath, IPartition partition, boo
                 FileSystemType.NTFS => new NtfsFilesystem(partition),
                 _ => new UnknownFilesystem(partition)
             };
-        yield return new FilesystemSourceEntry(this.Path, fs);
+
+        var filesystemEntry = new FilesystemSourceEntry(this.Path, fs);
+
+        // Emit the partition info file first, so that a restore selection containing
+        // only this partition still carries the partition size and filesystem block
+        // size (geometry.json sits at the disk level and is not part of such a selection)
+        var info = new PartitionInfoMetadata
+        {
+            Partition = new PartitionGeometry
+            {
+                Number = partition.PartitionNumber,
+                Type = partition.Type,
+                StartOffset = partition.StartOffset,
+                Size = partition.Size,
+                Name = partition.Name,
+                FilesystemType = partition.FilesystemType,
+                VolumeGuid = partition.VolumeGuid,
+                TableType = partition.PartitionTable.TableType
+            },
+            Filesystem = await filesystemEntry.GetFilesystemGeometry(cancellationToken)
+        };
+        yield return new PartitionInfoSourceEntry(this.Path, info);
+
+        // Yield filesystem-specific entries
+        yield return filesystemEntry;
     }
 
     /// <inheritdoc />

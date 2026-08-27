@@ -64,7 +64,8 @@ CREATE TABLE "Fileset" (
 	"OperationID" INTEGER NOT NULL,
 	"VolumeID" INTEGER NOT NULL,
 	"IsFullBackup" INTEGER NOT NULL,
-	"Timestamp" INTEGER NOT NULL
+	"Timestamp" INTEGER NOT NULL,
+	"Label" TEXT NULL
 );
 
 /*
@@ -297,4 +298,4 @@ CREATE TABLE "ChangeJournalData" (
     "ConfigHash" TEXT NOT NULL  
 );
 
-INSERT INTO "Version" ("Version") VALUES (19);
+INSERT INTO "Version" ("Version") VALUES (20);

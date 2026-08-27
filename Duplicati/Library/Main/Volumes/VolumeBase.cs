@@ -31,13 +31,35 @@ namespace Duplicati.Library.Main.Volumes
             [JsonProperty("IsFullBackup")]
             public bool IsFullBackup { get; set; } = true;
 
-            public static string GetFilesetInstance(bool isFullBackup = true)
+            /// <summary>
+            /// The time of the fileset, when it is not the time in the filename.
+            /// A file is never given a name that has been used before, so a replacement
+            /// dlist file gets a new name and therefore a new time. Recording the fileset
+            /// time here keeps it available after a database recreate, which otherwise
+            /// takes the time from the filename. Absent means: use the filename.
+            /// </summary>
+            [JsonProperty("Timestamp", NullValueHandling = NullValueHandling.Ignore)]
+            public string Timestamp { get; set; }
+
+            public static string GetFilesetInstance(bool isFullBackup = true, DateTime? filesetTime = null)
             {
                 return JsonConvert.SerializeObject(new FilesetData
                 {
-                    IsFullBackup = isFullBackup
+                    IsFullBackup = isFullBackup,
+                    Timestamp = filesetTime.HasValue
+                        ? Library.Utility.Utility.SerializeDateTime(filesetTime.Value)
+                        : null
                 });
             }
+
+            /// <summary>
+            /// Gets the recorded fileset time, if the dlist file carries one.
+            /// </summary>
+            /// <returns>The fileset time, or null when it is absent or unreadable.</returns>
+            public DateTime? GetFilesetTime()
+                => !string.IsNullOrWhiteSpace(Timestamp) && Library.Utility.Utility.TryDeserializeDateTime(Timestamp, out var t)
+                    ? t
+                    : null;
         }
 
         protected class ManifestData
@@ -227,6 +249,7 @@ namespace Duplicati.Library.Main.Volumes
         protected const string FILESET_FILENAME = "fileset";
         protected const string MANIFEST_FILENAME = "manifest";
         protected const string FILELIST = "filelist.json";
+        protected const string LABELS_FILENAME = "labels.json";
 
         protected const string INDEX_VOLUME_FOLDER = "vol/";
         protected const string INDEX_BLOCKLIST_FOLDER = "list/";
