@@ -29,11 +29,11 @@ public static class Command
     {
         var passwordOption = SharedOptions.passwordOption;
 
-        var keyfileArgument = new Argument<FileInfo>(
-            name: "keyfile",
-            description: "Path to keyfile to use for signing release manifests",
-            getDefaultValue: () => new FileInfo(Configuration.Create(ReleaseChannel.Debug).ConfigFiles.UpdaterKeyfile.FirstOrDefault() ?? "./signkey.key")
-        );
+        var keyfileArgument = new Argument<FileInfo>("keyfile")
+        {
+            Description = "Path to keyfile to use for signing release manifests",
+            DefaultValueFactory = _ => new FileInfo(Configuration.Create(ReleaseChannel.Debug).ConfigFiles.UpdaterKeyfile.FirstOrDefault() ?? "./signkey.key")
+        };
 
         var command = new System.CommandLine.Command("create-key", "Creates a new key for signing releases")
         {
@@ -41,13 +41,16 @@ public static class Command
             keyfileArgument
         };
 
-        command.SetHandler((password, keyfile) =>
+        command.SetAction((parseResult, cancellationToken) =>
         {
-            if (keyfile.Exists)
+            var password = parseResult.GetValue(passwordOption);
+            var keyfile = parseResult.GetValue(keyfileArgument);
+
+            if (keyfile!.Exists)
             {
                 Console.WriteLine($"Keyfile already exists at {keyfile.FullName}");
                 Program.ReturnCode = 1;
-                return;
+                return Task.FromResult(0);
             }
 
             var keyfilePassword = string.IsNullOrEmpty(password)
@@ -60,7 +63,8 @@ public static class Command
                 SharpAESCrypt.AESCrypt.Encrypt(keyfilePassword, ms, fs);
 
             Console.WriteLine($"Keyfile created at {keyfile.FullName}");
-        }, passwordOption, keyfileArgument);
+            return Task.FromResult(0);
+        });
 
         return command;
     }

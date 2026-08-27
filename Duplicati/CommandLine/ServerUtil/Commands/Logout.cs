@@ -20,20 +20,24 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System.CommandLine;
-using System.CommandLine.NamingConventionBinder;
 
 namespace Duplicati.CommandLine.ServerUtil.Commands;
 
 public static class Logout
 {
     public static Command Create()
-        => new Command("logout", "Logs out of the server")
-        .WithHandler(CommandHandler.Create<Settings, OutputInterceptor>(async (settings, output) =>
-            {
-                output.AppendConsoleMessage("Logging out of the server...");
-                await (await settings.GetConnectionAsync(output)).LogoutAsync(settings, output);
-                // If no exception we presume success
-                output.SetResult(true);
-            })
-        );
+    {
+        var cmd = new Command("logout", "Logs out of the server");
+        cmd.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var settings = SettingsBinder.GetSettings(parseResult);
+            var output = OutputInterceptorBinder.GetConsoleInterceptor(parseResult);
+
+            output.AppendConsoleMessage("Logging out of the server...");
+            await (await settings.GetConnectionAsync(output)).LogoutAsync(settings, output);
+            // If no exception we presume success
+            output.SetResult(true);
+        });
+        return cmd;
+    }
 }

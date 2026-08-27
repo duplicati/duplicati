@@ -20,7 +20,6 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System.CommandLine;
-using System.CommandLine.NamingConventionBinder;
 using Duplicati.Library.Logging;
 using Duplicati.Library.Main;
 
@@ -314,41 +313,138 @@ public class Program
     /// <returns>A process exit code: 0 on success, -1 on error.</returns>
     public static async Task<int> MainAsync(string[] args)
     {
-        var root_cmd = new RootCommand("Auto tuning of the Duplicati concurrency parameters. Warning, this program will be accessing the source, destination, and restoretarget a lot, potentially degrading them.")
+        var backendOptionsOption = new Option<List<string>>("--backend-options")
         {
-            new Option<List<string>>(aliases: ["--backend-options"], description: "Duplicati options to pass to the backend during backup. Each option is a key-value pair spearated by an equals sign, e.g. --backend-options key1=value1 key2=value2. Default is an empty list.", getDefaultValue: () => [])
-            {
-                Arity = ArgumentArity.OneOrMore,
-                AllowMultipleArgumentsPerToken = true
-            },
-            new Option<int[]>(aliases: ["--baseline-params"], description: "The step value(s) to consider the baseline for the final comparison, 1 or 4 integers. If one value is specified, the same value is used for all parameters. If four values are specified, they are applied individually for file-processors, volume-decompressors, volume-decryptors, and volume-downloaders (in that order). If not specified, the default Duplicati parameters are used.", getDefaultValue: () => [])
-            {
-                Arity = ArgumentArity.OneOrMore,
-                AllowMultipleArgumentsPerToken = true,
-            },
-            new Option<string?>(aliases: ["--destination"], description: "Destination to store the test backup. The destination should be empty (as required by Duplicati). The data will be deleted again after the tuning process. If no argument is specified, then a temporary folder (as optionally specified with the temp_folder argument) will be used.", getDefaultValue: () => null),
-            new Option<bool>(aliases: ["--dont-revisit-parameters"], description: "During tuning, once a new 'better' configuration has been found, all of the tunable parameters become candidates again. Setting this option will disable already visited candidate parameters. This will make the tuning converge faster, but may not find an optimal configuration.", getDefaultValue: () => false),
-            new Option<bool>(aliases: ["--exponential-steps"], description: "If specified, the steps taken for next candidate run is to multiply by 2 instead of plus 1. This will make the tuning converge faster, but may not find an optimal configuration.", getDefaultValue: () => false),
-            new Option<string?>(aliases: ["--restoretarget"], description: "Target folder to restore a backup to. The folder should be empty beforehand, as it needs to be emptied during measurements. If no argument is specified, then a temporary folder (as optionally specified with the temp_folder argument) will be used.", getDefaultValue: () => null),
-            new Option<bool>(aliases: ["--default-settings"], description: "Start tuning from the Duplicati default settings instead of a starting step of 1. Ignored if --starting-steps is specified.", getDefaultValue: () => false),
-            new Option<int>(aliases: ["--runs"], description: "Number of runs to measure. The mean is reported.", getDefaultValue: () => 3),
-            new Option<int[]>(aliases: ["--starting-steps"], description: "The starting step value(s) for the tunable parameters, 1 or 4 integers. If one value is specified, the same value is used for all parameters. If four values are specified, they are applied individually for file-processors, volume-decompressors, volume-decryptors, and volume-downloaders (in that order). If not specified, the starting step is 1 for all parameters. Cannot be used together with --default-settings.", getDefaultValue: () => [])
-            {
-                Arity = ArgumentArity.OneOrMore,
-                AllowMultipleArgumentsPerToken = true,
-            },
-            new Option<string?>(aliases: ["--source-folder"], description: "Source folder to make a backup of. If the folder is empty, then some test data will be generated. If no argument is specified, then a temporary folder (as optionally specified with the temp_folder argument) will be used.", getDefaultValue: () => null),
-            new Option<string?>(aliases: ["--temp-folder"], description: "Path to where the temporary files should be created. If no argument is specified, then the system default (e.g. /tmp or %TEMP%) will be used.", getDefaultValue: () => null),
-            new Option<long>(aliases: ["--testdata-max-file-size"], description: "If no source folder has been specified, this option tunes the maximum size (in bytes) a generated file may have. Default is 1 MB.", getDefaultValue: () => 1024 * 1024),
-            new Option<long>(aliases: ["--testdata-max-total-size"], description: "If no source folder has been specified, this option tunes the maximum size (in bytes) the generated files collectively may take up. Default is 512 MB.", getDefaultValue: () => 512 * 1024 * 1024),
-            new Option<long>(aliases: ["--testdata-num-files"], description: "If no source folder has been specified, this option tunes how many files are generated as test data.", getDefaultValue: () => 10000),
-            new Option<int>(aliases: ["--testdata-sparse-factor"], description: "If no source folder has been specified, this option tunes how much of the generated data that should be explicitly set to 0 to force deduplication. The number should be an integer and defines the percentage, e.g. 30 corresponds to 30% of the data.", getDefaultValue: () => 30),
-            new Option<int>(aliases: ["--verbose"], description: "Verbosity level: 0 disables output, 1 prints full progress information during tuning runs. Higher levels reserved for future debug printing.", getDefaultValue: () => 1),
-            new Option<int>(aliases: ["--warmup"], description: "Amount of warmup runs to perform before measuring.", getDefaultValue: () => 1),
+            Description = "Duplicati options to pass to the backend during backup. Each option is a key-value pair spearated by an equals sign, e.g. --backend-options key1=value1 key2=value2. Default is an empty list.",
+            DefaultValueFactory = _ => [],
+            Arity = ArgumentArity.OneOrMore,
+            AllowMultipleArgumentsPerToken = true
+        };
+        var baselineParamsOption = new Option<int[]>("--baseline-params")
+        {
+            Description = "The step value(s) to consider the baseline for the final comparison, 1 or 4 integers. If one value is specified, the same value is used for all parameters. If four values are specified, they are applied individually for file-processors, volume-decompressors, volume-decryptors, and volume-downloaders (in that order). If not specified, the default Duplicati parameters are used.",
+            DefaultValueFactory = _ => [],
+            Arity = ArgumentArity.OneOrMore,
+            AllowMultipleArgumentsPerToken = true,
+        };
+        var destinationOption = new Option<string?>("--destination")
+        {
+            Description = "Destination to store the test backup. The destination should be empty (as required by Duplicati). The data will be deleted again after the tuning process. If no argument is specified, then a temporary folder (as optionally specified with the temp_folder argument) will be used.",
+            DefaultValueFactory = _ => null
+        };
+        var dontRevisitParametersOption = new Option<bool>("--dont-revisit-parameters")
+        {
+            Description = "During tuning, once a new 'better' configuration has been found, all of the tunable parameters become candidates again. Setting this option will disable already visited candidate parameters. This will make the tuning converge faster, but may not find an optimal configuration."
+        };
+        var exponentialStepsOption = new Option<bool>("--exponential-steps")
+        {
+            Description = "If specified, the steps taken for next candidate run is to multiply by 2 instead of plus 1. This will make the tuning converge faster, but may not find an optimal configuration."
+        };
+        var restoreTargetOption = new Option<string?>("--restoretarget")
+        {
+            Description = "Target folder to restore a backup to. The folder should be empty beforehand, as it needs to be emptied during measurements. If no argument is specified, then a temporary folder (as optionally specified with the temp_folder argument) will be used.",
+            DefaultValueFactory = _ => null
+        };
+        var defaultSettingsOption = new Option<bool>("--default-settings")
+        {
+            Description = "Start tuning from the Duplicati default settings instead of a starting step of 1. Ignored if --starting-steps is specified."
+        };
+        var runsOption = new Option<int>("--runs")
+        {
+            Description = "Number of runs to measure. The mean is reported.",
+            DefaultValueFactory = _ => 3
+        };
+        var startingStepsOption = new Option<int[]>("--starting-steps")
+        {
+            Description = "The starting step value(s) for the tunable parameters, 1 or 4 integers. If one value is specified, the same value is used for all parameters. If four values are specified, they are applied individually for file-processors, volume-decompressors, volume-decryptors, and volume-downloaders (in that order). If not specified, the starting step is 1 for all parameters. Cannot be used together with --default-settings.",
+            DefaultValueFactory = _ => [],
+            Arity = ArgumentArity.OneOrMore,
+            AllowMultipleArgumentsPerToken = true,
+        };
+        var sourceFolderOption = new Option<string?>("--source-folder")
+        {
+            Description = "Source folder to make a backup of. If the folder is empty, then some test data will be generated. If no argument is specified, then a temporary folder (as optionally specified with the temp_folder argument) will be used.",
+            DefaultValueFactory = _ => null
+        };
+        var tempFolderOption = new Option<string?>("--temp-folder")
+        {
+            Description = "Path to where the temporary files should be created. If no argument is specified, then the system default (e.g. /tmp or %TEMP%) will be used.",
+            DefaultValueFactory = _ => null
+        };
+        var testdataMaxFileSizeOption = new Option<long>("--testdata-max-file-size")
+        {
+            Description = "If no source folder has been specified, this option tunes the maximum size (in bytes) a generated file may have. Default is 1 MB.",
+            DefaultValueFactory = _ => 1024 * 1024
+        };
+        var testdataMaxTotalSizeOption = new Option<long>("--testdata-max-total-size")
+        {
+            Description = "If no source folder has been specified, this option tunes the maximum size (in bytes) the generated files collectively may take up. Default is 512 MB.",
+            DefaultValueFactory = _ => 512 * 1024 * 1024
+        };
+        var testdataNumFilesOption = new Option<long>("--testdata-num-files")
+        {
+            Description = "If no source folder has been specified, this option tunes how many files are generated as test data.",
+            DefaultValueFactory = _ => 10000
+        };
+        var testdataSparseFactorOption = new Option<int>("--testdata-sparse-factor")
+        {
+            Description = "If no source folder has been specified, this option tunes how much of the generated data that should be explicitly set to 0 to force deduplication. The number should be an integer and defines the percentage, e.g. 30 corresponds to 30% of the data.",
+            DefaultValueFactory = _ => 30
+        };
+        var verboseOption = new Option<int>("--verbose")
+        {
+            Description = "Verbosity level: 0 disables output, 1 prints full progress information during tuning runs. Higher levels reserved for future debug printing.",
+            DefaultValueFactory = _ => 1
+        };
+        var warmupOption = new Option<int>("--warmup")
+        {
+            Description = "Amount of warmup runs to perform before measuring.",
+            DefaultValueFactory = _ => 1
         };
 
-        root_cmd.Handler = CommandHandler.Create(async (ConfigAutoTune cfg, CancellationToken token) =>
+        var root_cmd = new RootCommand("Auto tuning of the Duplicati concurrency parameters. Warning, this program will be accessing the source, destination, and restoretarget a lot, potentially degrading them.")
         {
+            backendOptionsOption,
+            baselineParamsOption,
+            destinationOption,
+            dontRevisitParametersOption,
+            exponentialStepsOption,
+            restoreTargetOption,
+            defaultSettingsOption,
+            runsOption,
+            startingStepsOption,
+            sourceFolderOption,
+            tempFolderOption,
+            testdataMaxFileSizeOption,
+            testdataMaxTotalSizeOption,
+            testdataNumFilesOption,
+            testdataSparseFactorOption,
+            verboseOption,
+            warmupOption,
+        };
+
+        root_cmd.SetAction(async (parseResult, token) =>
+        {
+            var cfg = new ConfigAutoTune(
+                BackendOptions: parseResult.GetValue(backendOptionsOption) ?? [],
+                BaselineParams: parseResult.GetValue(baselineParamsOption) ?? [],
+                Destination: parseResult.GetValue(destinationOption),
+                DontRevisitParameters: parseResult.GetValue(dontRevisitParametersOption),
+                ExponentialSteps: parseResult.GetValue(exponentialStepsOption),
+                RestoreTarget: parseResult.GetValue(restoreTargetOption),
+                Runs: parseResult.GetValue(runsOption),
+                SourceFolder: parseResult.GetValue(sourceFolderOption),
+                TempFolder: parseResult.GetValue(tempFolderOption),
+                TestdataMaxFileSize: parseResult.GetValue(testdataMaxFileSizeOption),
+                TestdataMaxTotalSize: parseResult.GetValue(testdataMaxTotalSizeOption),
+                TestdataNumFiles: parseResult.GetValue(testdataNumFilesOption),
+                TestdataSparseFactor: parseResult.GetValue(testdataSparseFactorOption),
+                StartingSteps: parseResult.GetValue(startingStepsOption) ?? [],
+                UseDefaultSettings: parseResult.GetValue(defaultSettingsOption),
+                Verbose: parseResult.GetValue(verboseOption),
+                Warmup: parseResult.GetValue(warmupOption)
+            );
+
             // Warn on conflicting options
             if (cfg.StartingSteps is { Length: > 0 } && cfg.UseDefaultSettings)
             {
@@ -413,7 +509,7 @@ public class Program
             return rc;
         });
 
-        return await root_cmd.InvokeAsync(args).ConfigureAwait(false);
+        return await root_cmd.Parse(args).InvokeAsync().ConfigureAwait(false);
     }
 
     /// <summary>
@@ -646,7 +742,7 @@ public class Program
         int return_code;
         if (verbose > 0)
         {
-            return_code = await cmd.InvokeAsync(args);
+            return_code = await cmd.Parse(args).InvokeAsync();
         }
         else
         {
@@ -655,7 +751,7 @@ public class Program
             Console.SetOut(TextWriter.Null);
             Console.SetError(TextWriter.Null);
 
-            return_code = await cmd.InvokeAsync(args);
+            return_code = await cmd.Parse(args).InvokeAsync();
 
             Console.SetOut(originalOut);
             Console.SetError(originalError);

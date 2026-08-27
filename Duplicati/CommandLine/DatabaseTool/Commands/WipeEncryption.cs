@@ -19,7 +19,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 using System.CommandLine;
-using System.CommandLine.NamingConventionBinder;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Encryption;
 using Duplicati.Library.Main.Database;
@@ -40,70 +39,105 @@ public static class WipeEncryption
     /// Creates the wipe-encryption command
     /// </summary>
     /// <returns>The wipe-encryption command</returns>
-    public static Command Create() =>
-        new Command("wipe-encryption", "Removes or clears any encrypted strings from the server database so it can be used without the original encryption key. A backup of the database is created first unless --no-backups is given. Only applies to the server database; other databases are skipped.")
+    public static Command Create()
+    {
+        var databasesArgument = new Argument<string[]>("databases")
         {
-            new Argument<string[]>("databases", "The databases to wipe encryption from") {
-                Arity = ArgumentArity.ZeroOrMore
-            },
-            new Option<DirectoryInfo>("--server-datafolder", description: "The folder with databases", getDefaultValue: () => new DirectoryInfo(DataFolderLocator.GetDefaultStorageFolder(DataFolderManager.SERVER_DATABASE_FILENAME, false, true))),
-            new Option<bool>("--no-backups", description: "Do not create a backup before wiping", getDefaultValue: () => false),
-            new Option<bool>("--include-untracked-databases", description: "Include untracked databases in the wipe process", getDefaultValue: () => false),
-            new Option<bool>("--dry-run", description: "Show what would be wiped without making changes", getDefaultValue: () => false),
-        }
-        .WithHandler(CommandHandler.Create<string[], DirectoryInfo, bool, bool, bool>(async (databases, serverdatafolder, nobackups, includeuntrackeddatabases, dryrun) =>
+            Arity = ArgumentArity.ZeroOrMore,
+            Description = "The databases to wipe encryption from"
+        };
+        var serverDatafolderOption = new Option<DirectoryInfo>("--server-datafolder")
+        {
+            Description = "The folder with databases",
+            DefaultValueFactory = _ => new DirectoryInfo(DataFolderLocator.GetDefaultStorageFolder(DataFolderManager.SERVER_DATABASE_FILENAME, false, true))
+        };
+        var noBackupsOption = new Option<bool>("--no-backups")
+        {
+            Description = "Do not create a backup before wiping",
+            DefaultValueFactory = _ => false
+        };
+        var includeUntrackedDatabasesOption = new Option<bool>("--include-untracked-databases")
+        {
+            Description = "Include untracked databases in the wipe process",
+            DefaultValueFactory = _ => false
+        };
+        var dryRunOption = new Option<bool>("--dry-run")
+        {
+            Description = "Show what would be wiped without making changes",
+            DefaultValueFactory = _ => false
+        };
+
+        var cmd = new Command("wipe-encryption", "Removes or clears any encrypted strings from the server database so it can be used without the original encryption key. A backup of the database is created first unless --no-backups is given. Only applies to the server database; other databases are skipped.")
+        {
+            databasesArgument,
+            serverDatafolderOption,
+            noBackupsOption,
+            includeUntrackedDatabasesOption,
+            dryRunOption,
+        };
+
+        cmd.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var databases = parseResult.GetValue(databasesArgument) ?? [];
+            var serverdatafolder = parseResult.GetValue(serverDatafolderOption)!;
+            var nobackups = parseResult.GetValue(noBackupsOption);
+            var includeuntrackeddatabases = parseResult.GetValue(includeUntrackedDatabasesOption);
+            var dryrun = parseResult.GetValue(dryRunOption);
+
+            databases = await Helper.FindAllDatabasesAsync(databases, serverdatafolder.FullName, includeuntrackeddatabases);
+            if (databases.Length == 0)
             {
-                databases = await Helper.FindAllDatabasesAsync(databases, serverdatafolder.FullName, includeuntrackeddatabases);
-                if (databases.Length == 0)
+                Console.WriteLine("No databases found to wipe encryption from");
+                return;
+            }
+
+            long totalWiped = 0;
+            foreach (var db in databases)
+            {
+                Console.WriteLine($"Examining {db} ...");
+                if (!File.Exists(db))
                 {
-                    Console.WriteLine("No databases found to wipe encryption from");
-                    return;
+                    Console.WriteLine($"Database {db} does not exist");
+                    continue;
                 }
 
-                long totalWiped = 0;
-                foreach (var db in databases)
+                int version;
+                DatabaseType type;
+                try
                 {
-                    Console.WriteLine($"Examining {db} ...");
-                    if (!File.Exists(db))
-                    {
-                        Console.WriteLine($"Database {db} does not exist");
-                        continue;
-                    }
-
-                    int version;
-                    DatabaseType type;
-                    try
-                    {
-                        (version, type) = await Helper.ExamineDatabaseAsync(db);
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Error reading database {db}: {ex.Message}");
-                        continue;
-                    }
-
-                    Console.WriteLine($"Database {db} is version {version} and is a {type} database");
-
-                    if (type != DatabaseType.Server)
-                    {
-                        Console.WriteLine($"Skipping {db}: wipe-encryption only applies to server databases, not {type} databases");
-                        continue;
-                    }
-
-                    if (!nobackups && !dryrun)
-                        Helper.CreateFileBackup(db);
-
-                    var wiped = await WipeServerDatabaseAsync(db, dryrun);
-
-                    Console.WriteLine($"Wiped {wiped} encrypted field(s) from {db}");
-                    totalWiped += wiped;
+                    (version, type) = await Helper.ExamineDatabaseAsync(db);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error reading database {db}: {ex.Message}");
+                    continue;
                 }
 
-                if (dryrun)
-                    Console.WriteLine($"Dry run complete: {totalWiped} encrypted field(s) would be wiped. No changes were made.");
-                else
-                    Console.WriteLine($"Wipe complete: {totalWiped} encrypted field(s) wiped.");
-            }));
+                Console.WriteLine($"Database {db} is version {version} and is a {type} database");
+
+                if (type != DatabaseType.Server)
+                {
+                    Console.WriteLine($"Skipping {db}: wipe-encryption only applies to server databases, not {type} databases");
+                    continue;
+                }
+
+                if (!nobackups && !dryrun)
+                    Helper.CreateFileBackup(db);
+
+                var wiped = await WipeServerDatabaseAsync(db, dryrun);
+
+                Console.WriteLine($"Wiped {wiped} encrypted field(s) from {db}");
+                totalWiped += wiped;
+            }
+
+            if (dryrun)
+                Console.WriteLine($"Dry run complete: {totalWiped} encrypted field(s) would be wiped. No changes were made.");
+            else
+                Console.WriteLine($"Wipe complete: {totalWiped} encrypted field(s) wiped.");
+        });
+
+        return cmd;
+    }
 
     /// <summary>
     /// Wipes encrypted fields from a server database. Encrypted values are identified by

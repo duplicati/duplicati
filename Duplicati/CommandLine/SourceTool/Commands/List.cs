@@ -19,7 +19,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using System.CommandLine;
-using System.CommandLine.NamingConventionBinder;
 
 namespace Duplicati.CommandLine.SourceTool.Commands;
 
@@ -32,36 +31,43 @@ public static class List
     /// Creates the list command
     /// </summary>
     /// <returns>The command</returns>
-    public static Command Create() =>
-        new Command("list", "Lists all paths on the remote")
+    public static Command Create()
+    {
+        var urlArgument = new Argument<string>("url") { Description = "The source URL", Arity = ArgumentArity.ExactlyOne };
+        var maxDepthOption = new Option<int>("--max-depth") { Description = "The maximum depth to list", DefaultValueFactory = _ => 0 };
+
+        var cmd = new Command("list", "Lists all paths on the remote")
         {
-            new Argument<string>("url", "The source URL") {
-                Arity = ArgumentArity.ExactlyOne
-            },
-            new Option<int>("--max-depth", description: "The maximum depth to list", getDefaultValue: () => 0),
-        }
-        .WithHandler(CommandHandler.Create<string, int>(async (url, maxdepth) =>
+            urlArgument,
+            maxDepthOption
+        };
+
+        cmd.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var url = parseResult.GetValue(urlArgument)!;
+            var maxdepth = parseResult.GetValue(maxDepthOption);
+
+            var folders = 0L;
+            var files = 0L;
+
+            using var source = await Common.GetProvider(url);
+            await Common.Visit(source, maxdepth, (entry, level) =>
             {
-                var token = new CancellationTokenSource().Token;
-                var folders = 0L;
-                var files = 0L;
+                if (entry.IsFolder)
+                    folders++;
+                else
+                    files++;
+                if (entry.IsFolder && level > 0)
+                    level--;
+                if (!entry.IsRootEntry)
+                    Console.WriteLine($"{new string(' ', (level + 1) * 2)}{entry.Path}");
+                return Task.FromResult(true);
+            }, cancellationToken);
 
-                using var source = await Common.GetProvider(url);
-                await Common.Visit(source, maxdepth, (entry, level) =>
-                {
-                    if (entry.IsFolder)
-                        folders++;
-                    else
-                        files++;
-                    if (entry.IsFolder && level > 0)
-                        level--;
-                    if (!entry.IsRootEntry)
-                        Console.WriteLine($"{new string(' ', (level + 1) * 2)}{entry.Path}");
-                    return Task.FromResult(true);
-                }, token);
+            Console.WriteLine($"Found {folders} folders and {files} files");
+        });
 
-                Console.WriteLine($"Found {folders} folders and {files} files");
-            })
-        );
+        return cmd;
+    }
 
 }

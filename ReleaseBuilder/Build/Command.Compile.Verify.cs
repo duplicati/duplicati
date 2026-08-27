@@ -55,7 +55,6 @@ public static partial class Command
             // Random sample of files we expect
             string[] probeFiles = [
                 "System.CommandLine.dll",
-                "System.CommandLine.NamingConventionBinder.dll",
                 "AWSSDK.S3.dll",
                 "CoCoL.dll",
                 "Duplicati.Library.Interface.dll",

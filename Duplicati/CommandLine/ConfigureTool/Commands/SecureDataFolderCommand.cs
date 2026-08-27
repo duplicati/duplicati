@@ -20,7 +20,6 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System.CommandLine;
-using System.CommandLine.NamingConventionBinder;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Logging;
@@ -37,17 +36,26 @@ public static class SecureDataFolderCommand
     /// </summary>
     public static Command CreateSecureDataFolderCommand()
     {
+        var datafolderOption = new Option<string>("--datafolder") { Description = "Path to the Duplicati data folder (defaults to standard location)" };
+        var applyOption = new Option<bool>("--apply") { Description = "Apply the restricted permissions without prompting. By default a warning is shown and the user must confirm." };
+        var forServiceOption = new Option<bool>("--for-service") { Description = "Apply the restricted permissions for use with a service" };
+        var quietOption = new Option<bool>("--quiet") { Description = "Suppress all output except for minimum messages, such as errors" };
+
         var cmd = new Command("secure-datafolder", OperatingSystem.IsWindows()
             ? "Restrict the permissions on the data folder so only the current user, SYSTEM and Administrators can access it"
             : "Restrict the permissions on the data folder so only root and the current user can access it")
         {
-            new Option<string>("--datafolder", "Path to the Duplicati data folder (defaults to standard location)"),
-            new Option<bool>("--apply", "Apply the restricted permissions without prompting. By default a warning is shown and the user must confirm."),
-            new Option<bool>("--for-service", "Apply the restricted permissions for use with a service"),
-            new Option<bool>("--quiet", "Suppress all output except for minimum messages, such as errors"),
+            datafolderOption,
+            applyOption,
+            forServiceOption,
+            quietOption,
         };
 
-        cmd.Handler = CommandHandler.Create<string?, bool, bool, bool>(HandleSecureDataFolder);
+        cmd.SetAction(parseResult => HandleSecureDataFolder(
+            parseResult.GetValue(datafolderOption),
+            parseResult.GetValue(applyOption),
+            parseResult.GetValue(forServiceOption),
+            parseResult.GetValue(quietOption)));
         return cmd;
     }
 

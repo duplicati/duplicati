@@ -111,11 +111,13 @@ class Program
     {
         try
         {
-            ReturnCode = await new RootCommand("Build tool for Duplicati")
+            var rootCommand = new RootCommand("Build tool for Duplicati")
             {
                 Build.Command.Create(),
                 CreateKey.Command.Create(),
-            }.InvokeAsync(args);
+            };
+
+            ReturnCode = await rootCommand.Parse(args).InvokeAsync();
         }
         catch (Exception ex)
         {

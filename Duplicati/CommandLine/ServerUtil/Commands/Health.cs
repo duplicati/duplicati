@@ -20,17 +20,20 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System.CommandLine;
-using System.CommandLine.NamingConventionBinder;
 using Duplicati.Library.Utility;
 
 namespace Duplicati.CommandLine.ServerUtil.Commands;
 
 public static class Health
 {
-    public static Command Create() =>
-        new Command("health", "Checks the server health endpoint")
-        .WithHandler(CommandHandler.Create<Settings, OutputInterceptor>(async (settings, output) =>
+    public static Command Create()
+    {
+        var cmd = new Command("health", "Checks the server health endpoint");
+        cmd.SetAction(async (parseResult, cancellationToken) =>
         {
+            var settings = SettingsBinder.GetSettings(parseResult);
+            var output = OutputInterceptorBinder.GetConsoleInterceptor(parseResult);
+
             // The health endpoint only needs to know if the server is reachable.
             // When the user has not requested any certificate overrides, the
             // default OS validation is used by leaving the callback unset.
@@ -51,7 +54,7 @@ public static class Health
 
             try
             {
-                var response = await client.GetAsync("health");
+                var response = await client.GetAsync("health", cancellationToken);
                 response.EnsureSuccessStatusCode();
                 output.SetResult(true);
                 output.AppendCustomObject("healthy", true);
@@ -65,6 +68,7 @@ public static class Health
                 output.SetResult(false);
                 return 1;
             }
-        })
-    );
+        });
+        return cmd;
+    }
 }

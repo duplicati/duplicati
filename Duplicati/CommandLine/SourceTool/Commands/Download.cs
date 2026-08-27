@@ -19,7 +19,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using System.CommandLine;
-using System.CommandLine.NamingConventionBinder;
 
 namespace Duplicati.CommandLine.SourceTool.Commands;
 
@@ -32,79 +31,92 @@ public static class Download
     /// Creates the download command
     /// </summary>
     /// <returns>The download command</returns>
-    public static Command Create() =>
-        new Command("download", "Downloads all files from the remote")
+    public static Command Create()
+    {
+        var urlArgument = new Argument<string>("url") { Description = "The source URL", Arity = ArgumentArity.ExactlyOne };
+        var destinationOption = new Option<DirectoryInfo>("--destination") { Description = "The destination folder", DefaultValueFactory = _ => new DirectoryInfo(Directory.GetCurrentDirectory()) };
+        var maxDepthOption = new Option<int>("--max-depth") { Description = "The maximum depth to visit", DefaultValueFactory = _ => 0 };
+        var maxSizeOption = new Option<long>("--max-size") { Description = "The maximum filesize to download", DefaultValueFactory = _ => 0 };
+        var overwriteOption = new Option<bool>("--overwrite") { Description = "Overwrite existing files", DefaultValueFactory = _ => false };
+
+        var cmd = new Command("download", "Downloads all files from the remote")
         {
-            new Argument<string>("url", "The source URL") {
-                Arity = ArgumentArity.ExactlyOne
-            },
-            new Option<DirectoryInfo>("--destination", description: "The destination folder", getDefaultValue: () => new DirectoryInfo(Directory.GetCurrentDirectory())),
-            new Option<int>("--max-depth", description: "The maximum depth to visit", getDefaultValue: () => 0),
-            new Option<long>("--max-size", description: "The maximum filesize to download", getDefaultValue: () => 0),
-            new Option<bool>("--overwrite", description: "Overwrite existing files", getDefaultValue: () => false),
-        }
-        .WithHandler(CommandHandler.Create<string, DirectoryInfo, int, long, bool>(async (url, destination, maxdepth, maxsize, overwrite) =>
+            urlArgument,
+            destinationOption,
+            maxDepthOption,
+            maxSizeOption,
+            overwriteOption
+        };
+
+        cmd.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var url = parseResult.GetValue(urlArgument)!;
+            var destination = parseResult.GetValue(destinationOption)!;
+            var maxdepth = parseResult.GetValue(maxDepthOption);
+            var maxsize = parseResult.GetValue(maxSizeOption);
+            var overwrite = parseResult.GetValue(overwriteOption);
+
+            using var source = await Common.GetProvider(url);
+
+            string localPath(string path)
             {
-                var token = new CancellationTokenSource().Token;
+                var relpath = path.Substring(source.MountedPath.Length).TrimStart(Path.DirectorySeparatorChar);
+                return Path.Combine(destination.FullName, relpath);
+            }
 
-                using var source = await Common.GetProvider(url);
+            var started = DateTime.UtcNow;
+            var fileCount = 0L;
+            var folderCount = 0L;
+            var totalSize = 0L;
+            var downloadCount = 0L;
+            var downloadSize = 0L;
 
-                string localPath(string path)
+            await Common.Visit(source, maxdepth, async (entry, level) =>
+            {
+                if (entry.IsMetaEntry)
+                    return true;
+
+                var path = localPath(entry.Path);
+                if (entry.IsFolder)
                 {
-                    var relpath = path.Substring(source.MountedPath.Length).TrimStart(Path.DirectorySeparatorChar);
-                    return Path.Combine(destination.FullName, relpath);
+                    folderCount++;
+                    if (!Directory.Exists(path))
+                        Directory.CreateDirectory(path);
                 }
-
-                var started = DateTime.UtcNow;
-                var fileCount = 0L;
-                var folderCount = 0L;
-                var totalSize = 0L;
-                var downloadCount = 0L;
-                var downloadSize = 0L;
-
-                await Common.Visit(source, maxdepth, async (entry, level) =>
+                else
                 {
-                    if (entry.IsMetaEntry)
-                        return true;
+                    fileCount++;
+                    totalSize += entry.Size;
 
-                    var path = localPath(entry.Path);
-                    if (entry.IsFolder)
+                    if (entry.Size <= maxsize || maxsize <= 0)
                     {
-                        folderCount++;
-                        if (!Directory.Exists(path))
-                            Directory.CreateDirectory(path);
-                    }
-                    else
-                    {
-                        fileCount++;
-                        totalSize += entry.Size;
+                        var folder = Path.GetDirectoryName(path);
+                        if (!string.IsNullOrWhiteSpace(folder) && !Directory.Exists(folder))
+                            Directory.CreateDirectory(folder);
 
-                        if (entry.Size <= maxsize || maxsize <= 0)
+                        if (!overwrite && File.Exists(path))
                         {
-                            var folder = Path.GetDirectoryName(path);
-                            if (!string.IsNullOrWhiteSpace(folder) && !Directory.Exists(folder))
-                                Directory.CreateDirectory(folder);
-
-                            if (!overwrite && File.Exists(path))
-                            {
-                                Console.WriteLine($"Skipping {entry.Path} as it already exists");
-                            }
-                            else
-                            {
-                                downloadCount++;
-                                downloadSize += entry.Size;
-                                Console.WriteLine($"Downloading {entry.Path} to {path} ({Library.Utility.Utility.FormatSizeString(entry.Size)})");
-                                await using var stream = await entry.OpenRead(token);
-                                await using var dest = File.OpenWrite(path);
-                                await stream.CopyToAsync(dest, token);
-                            }
+                            Console.WriteLine($"Skipping {entry.Path} as it already exists");
+                        }
+                        else
+                        {
+                            downloadCount++;
+                            downloadSize += entry.Size;
+                            Console.WriteLine($"Downloading {entry.Path} to {path} ({Library.Utility.Utility.FormatSizeString(entry.Size)})");
+                            await using var stream = await entry.OpenRead(cancellationToken);
+                            await using var dest = File.OpenWrite(path);
+                            await stream.CopyToAsync(dest, cancellationToken);
                         }
                     }
+                }
 
-                    return true;
-                }, token);
+                return true;
+            }, cancellationToken);
 
-                Console.WriteLine($"Found {fileCount} files and {folderCount} folders with a total size of {Library.Utility.Utility.FormatSizeString(totalSize)}");
-                Console.WriteLine($"Downloaded {downloadCount} files with a total size of {Library.Utility.Utility.FormatSizeString(downloadSize)} in {DateTime.UtcNow - started}");
-            }));
+            Console.WriteLine($"Found {fileCount} files and {folderCount} folders with a total size of {Library.Utility.Utility.FormatSizeString(totalSize)}");
+            Console.WriteLine($"Downloaded {downloadCount} files with a total size of {Library.Utility.Utility.FormatSizeString(downloadSize)} in {DateTime.UtcNow - started}");
+        });
+
+        return cmd;
+    }
 }

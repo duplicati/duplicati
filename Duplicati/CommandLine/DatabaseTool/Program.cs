@@ -19,8 +19,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using System.CommandLine;
-using System.CommandLine.Builder;
-using System.CommandLine.Parsing;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
@@ -54,28 +52,31 @@ public static class Program
 
         // Registered so the option is accepted and shown in help; the value is read directly
         // from the process arguments/environment by DataFolderManager/Util.
-        rootCmd.AddGlobalOption(new Option<bool>(
-            $"--{DataFolderManager.ALLOW_INSECURE_DATAFOLDER_OPTION}",
-            description: "Allow the data folder to have insecure permissions instead of rejecting it",
-            getDefaultValue: () => false));
+        rootCmd.Options.Add(new Option<bool>(
+            $"--{DataFolderManager.ALLOW_INSECURE_DATAFOLDER_OPTION}")
+        {
+            Description = "Allow the data folder to have insecure permissions instead of rejecting it",
+            DefaultValueFactory = _ => false
+        });
 
-        return new CommandLineBuilder(rootCmd)
-            .UseDefaults()
-            .UseExceptionHandler((ex, context) =>
+        rootCmd.UseAdditionalHelpAliases();
+
+        try
+        {
+            return rootCmd.Parse(args).InvokeAsync(new InvocationConfiguration
             {
-                if (ex is UserInformationException uie)
-                {
-                    Console.WriteLine(uie.Message);
-                    context.ExitCode = 2;
-                }
-                else
-                {
-                    Console.WriteLine(ex.ToString());
-                    context.ExitCode = 1;
-                }
-            })
-            .UseAdditionalHelpAliases()
-            .Build()
-            .InvokeAsync(args);
+                EnableDefaultExceptionHandler = false
+            });
+        }
+        catch (UserInformationException uie)
+        {
+            Console.WriteLine(uie.Message);
+            return Task.FromResult(2);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.ToString());
+            return Task.FromResult(1);
+        }
     }
 }

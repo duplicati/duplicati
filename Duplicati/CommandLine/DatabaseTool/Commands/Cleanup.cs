@@ -20,7 +20,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 using System.CommandLine;
-using System.CommandLine.NamingConventionBinder;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Utility;
 
@@ -35,15 +34,37 @@ public static class Cleanup
     /// Creates the cleanup command
     /// </summary>
     /// <returns>The cleanup command</returns>
-    public static Command Create() =>
-        new Command("cleanup", "Removes orphaned database files that are not referenced in dbconfig.json or the server database")
+    public static Command Create()
+    {
+        var datafolderOption = new Option<DirectoryInfo>("--datafolder")
         {
-            new Option<DirectoryInfo>("--datafolder", description: "The folder with databases", getDefaultValue: () => new DirectoryInfo(DataFolderLocator.GetDefaultStorageFolder(DataFolderManager.SERVER_DATABASE_FILENAME, false, true))),
-            new Option<bool>("--dry-run", description: "Show what would be deleted without actually deleting", getDefaultValue: () => false),
-            new Option<bool>("--force", description: "Delete without prompting for confirmation", getDefaultValue: () => false),
-        }
-        .WithHandler(CommandHandler.Create<DirectoryInfo, bool, bool>(async (datafolder, dryrun, force) =>
+            Description = "The folder with databases",
+            DefaultValueFactory = _ => new DirectoryInfo(DataFolderLocator.GetDefaultStorageFolder(DataFolderManager.SERVER_DATABASE_FILENAME, false, true))
+        };
+        var dryRunOption = new Option<bool>("--dry-run")
         {
+            Description = "Show what would be deleted without actually deleting",
+            DefaultValueFactory = _ => false
+        };
+        var forceOption = new Option<bool>("--force")
+        {
+            Description = "Delete without prompting for confirmation",
+            DefaultValueFactory = _ => false
+        };
+
+        var cmd = new Command("cleanup", "Removes orphaned database files that are not referenced in dbconfig.json or the server database")
+        {
+            datafolderOption,
+            dryRunOption,
+            forceOption,
+        };
+
+        cmd.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var datafolder = parseResult.GetValue(datafolderOption)!;
+            var dryrun = parseResult.GetValue(dryRunOption);
+            var force = parseResult.GetValue(forceOption);
+
             var datafolderPath = datafolder.FullName;
 
             // Get orphaned databases using the same logic as verify
@@ -131,5 +152,8 @@ public static class Cleanup
             Console.WriteLine($"  Deleted: {deleted} file(s)");
             Console.WriteLine($"  Failed: {failed} file(s)");
             Console.WriteLine($"  Space freed: {Utility.FormatSizeString(freedSpace)}");
-        }));
+        });
+
+        return cmd;
+    }
 }

@@ -20,7 +20,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 using System.CommandLine;
-using System.CommandLine.NamingConventionBinder;
 using System.Text.Json;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Main;
@@ -95,15 +94,37 @@ public static class Verify
     /// Creates the verify command
     /// </summary>
     /// <returns>The verify command</returns>
-    public static Command Create() =>
-        new Command("verify", "Verifies database files and shows their status (Found, Missing, Orphaned)")
+    public static Command Create()
+    {
+        var datafolderOption = new Option<DirectoryInfo>("--datafolder")
         {
-            new Option<DirectoryInfo>("--datafolder", description: "The folder with databases", getDefaultValue: () => new DirectoryInfo(DataFolderLocator.GetDefaultStorageFolder(DataFolderManager.SERVER_DATABASE_FILENAME, false, true))),
-            new Option<bool>("--output-json", description: "Output as JSON", getDefaultValue: () => false),
-            new Option<bool>("--include-server", description: "Include server database in the list", getDefaultValue: () => true),
-        }
-        .WithHandler(CommandHandler.Create<DirectoryInfo, bool, bool>(async (datafolder, outputjson, includeserver) =>
+            Description = "The folder with databases",
+            DefaultValueFactory = _ => new DirectoryInfo(DataFolderLocator.GetDefaultStorageFolder(DataFolderManager.SERVER_DATABASE_FILENAME, false, true))
+        };
+        var outputJsonOption = new Option<bool>("--output-json")
         {
+            Description = "Output as JSON",
+            DefaultValueFactory = _ => false
+        };
+        var includeServerOption = new Option<bool>("--include-server")
+        {
+            Description = "Include server database in the list",
+            DefaultValueFactory = _ => true
+        };
+
+        var cmd = new Command("verify", "Verifies database files and shows their status (Found, Missing, Orphaned)")
+        {
+            datafolderOption,
+            outputJsonOption,
+            includeServerOption,
+        };
+
+        cmd.SetAction(async (parseResult, cancellationToken) =>
+        {
+            var datafolder = parseResult.GetValue(datafolderOption)!;
+            var outputjson = parseResult.GetValue(outputJsonOption);
+            var includeserver = parseResult.GetValue(includeServerOption);
+
             var datafolderPath = datafolder.FullName;
             var results = await AnalyzeDatabasesAsync(datafolderPath, includeserver);
 
@@ -115,7 +136,10 @@ public static class Verify
             {
                 PrintResults(results, includeserver);
             }
-        }));
+        });
+
+        return cmd;
+    }
 
     /// <summary>
     /// Analyzes all databases and returns their status.
