@@ -32,8 +32,9 @@ public static partial class Command
         /// </summary>
         /// <param name="baseDir">The base git dir</param>
         /// <param name="releaseInfo">The release info</param>
+        /// <param name="rtcfg">The runtime configuration</param>
         /// <returns>A task that completes when the push is done</returns>
-        public static async Task TagAndPush(string baseDir, ReleaseInfo releaseInfo)
+        public static async Task TagAndPush(string baseDir, ReleaseInfo releaseInfo, RuntimeConfig rtcfg)
         {
             // Write the published version to a file
             File.WriteAllText(Path.Combine(baseDir, "ReleaseBuilder", "build_version.txt"), releaseInfo.Version.ToString());
@@ -45,13 +46,15 @@ public static partial class Command
                     "changelog.txt"
                 ], workingDirectory: baseDir);
 
+            var packageUrl = ReplaceVersionPlaceholders(rtcfg.Configuration.ExtraSettings.PackageUrls.First(), releaseInfo);
+
             // Make a commit
             await ProcessHelper.Execute([
                     "git", "commit",
                     "-m", $"Version bump to v{releaseInfo.Version}-{releaseInfo.ReleaseName}",
                     "-m", "You can download this build from: ",
-                    "-m", $"Binaries: https://updates.duplicati.com/{releaseInfo.Channel.ToString().ToLowerInvariant()}/?version={releaseInfo.Version}",
-                    "-m", $"Signature file: https://updates.duplicati.com/{releaseInfo.Channel.ToString().ToLowerInvariant()}/duplicati-{releaseInfo.ReleaseName}.signatures.zip"
+                    "-m", $"Binaries: {packageUrl.Replace("${FILENAME}", "")}?version={releaseInfo.Version}",
+                    "-m", $"Signature file: {packageUrl.Replace("${FILENAME}", System.Web.HttpUtility.UrlEncode($"duplicati-{releaseInfo.ReleaseName}.signatures.zip"))}"
                 ], workingDirectory: baseDir);
 
             // And tag the release

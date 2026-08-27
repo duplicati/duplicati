@@ -435,10 +435,20 @@ public static partial class Command
                 _ => throw new Exception($"Unsupported AppImage architecture: {target.Arch}")
             };
 
-            var appImageName = Path.GetFileName(appImageFile);
+            // The AppImage is created with the final package name (not the
+            // temporary name), so the generated zsync file points to the
+            // correct remote filename
+            var appImageName = $"duplicati-{rtcfg.ReleaseInfo.ReleaseName}-{target.PackageTargetString}";
             var appImageTempPath = Path.Combine(tmpRoot, appImageName);
             if (File.Exists(appImageTempPath))
                 File.Delete(appImageTempPath);
+
+            // The update information points to a fixed "latest" zsync file,
+            // so AppImageUpdate can always find the most recent version
+            var zsyncName = $"latest-{target.ArchString}.zsync";
+            var zsyncUrl = ReplaceVersionPlaceholders(rtcfg.Configuration.ExtraSettings.PackageUrls.First(), rtcfg.ReleaseInfo)
+                .Replace("${FILENAME}", System.Web.HttpUtility.UrlEncode(zsyncName));
+            var updateInfo = $"zsync|{zsyncUrl}";
 
             await ProcessHelper.Execute([
                 "docker", "run",
@@ -448,6 +458,7 @@ public static partial class Command
                 "-e", $"ARCH={appImageArch}",
                 "duplicati/appimage-build:latest",
                 "/usr/local/bin/appimagetool",
+                "-u", updateInfo,
                 "/build/AppDir",
                 $"/build/{appImageName}"
             ]);
@@ -456,6 +467,15 @@ public static partial class Command
                 File.Delete(appImageFile);
 
             File.Move(appImageTempPath, appImageFile);
+
+            // Move the generated zsync file into the packages folder
+            // with the fixed "latest" name
+            var zsyncTempPath = appImageTempPath + ".zsync";
+            if (!File.Exists(zsyncTempPath))
+                throw new Exception($"AppImage update information was embedded, but no zsync file was generated: {zsyncTempPath}");
+
+            File.Move(zsyncTempPath, Path.Combine(Path.GetDirectoryName(appImageFile)!, zsyncName), true);
+
             Directory.Delete(tmpRoot, true);
         }
 
