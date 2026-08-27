@@ -29,6 +29,8 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using SP = Microsoft.SharePoint.Client;
 
+[assembly: InternalsVisibleTo("Duplicati.UnitTest")]
+
 namespace Duplicati.Library.Backend
 {
 
@@ -113,6 +115,59 @@ namespace Duplicati.Library.Backend
 
         #region [Constructors]
 
+        /// <summary>
+        /// The parts of a sharepoint url that the backend configures itself from.
+        /// </summary>
+        /// <param name="Host">The server to connect to. An IPv6 literal keeps its brackets.</param>
+        /// <param name="Port">The port, or -1 when the url does not name one.</param>
+        /// <param name="Path">The path, decoded and without a leading separator, with the double
+        /// slash that marks the end of the web left in place.</param>
+        /// <param name="ServerRelativePath">The same path rooted, ending in a separator and with
+        /// the marker taken out, which is what the requests name folders and files with.</param>
+        /// <param name="Username">The user from the url, or null when it has none.</param>
+        /// <param name="Password">The password from the url, or null when it has none.</param>
+        /// <remarks>
+        /// Both paths are returned so the constructor only has to assign them. The url is the only
+        /// input the backend has, and a test that starts from anything else cannot see what the
+        /// parser did to it on the way in.
+        /// </remarks>
+        internal readonly record struct SharePointUrl(string Host, int Port, string Path, string ServerRelativePath, string? Username, string? Password);
+
+        /// <summary>
+        /// Splits a sharepoint url into the parts the backend needs.
+        /// </summary>
+        /// <param name="url">The url to split.</param>
+        /// <returns>The parts the backend needs.</returns>
+        internal static SharePointUrl ParseSharePointUrl(string url)
+        {
+            var uri = new System.Uri(url);
+            uri.RequireHost(url);
+            uri.RequireNoFragment(url);
+
+            // The path arrives escaped and with its leading separator, where the previous parser
+            // handed it over decoded and without one. A double slash is what the user writes to
+            // say where the web ends, and it survives both the parser and the decoding.
+            var path = System.Uri.UnescapeDataString(uri.AbsolutePath);
+            if (path.StartsWith("/", StringComparison.Ordinal))
+                path = path.Substring(1);
+
+            var serverRelPath = path;
+            if (!serverRelPath.StartsWith("/", StringComparison.Ordinal))
+                serverRelPath = "/" + serverRelPath;
+            serverRelPath = Util.AppendDirSeparator(serverRelPath, "/");
+            // remove marker for SP-Web
+            serverRelPath = serverRelPath.Replace("//", "/");
+
+            // The user info is not decoded, so it is decoded here.
+            var userinfo = uri.UserInfo.Split(new[] { ':' }, 2);
+            var username = userinfo.Length > 0 && userinfo[0].Length > 0 ? System.Uri.UnescapeDataString(userinfo[0]) : null;
+            var password = userinfo.Length > 1 ? System.Uri.UnescapeDataString(userinfo[1]) : null;
+
+            // mssp is not a scheme with a registered default port, so an url without one answers
+            // -1 here, the same way the previous parser did.
+            return new SharePointUrl(uri.Host, uri.Port, path, serverRelPath, username, password);
+        }
+
         public SharePointBackend()
         {
             m_serverRelPath = null!;
@@ -149,21 +204,17 @@ namespace Duplicati.Library.Backend
             catch { }
 
 
-            var u = new Utility.RelaxedUri(url);
-            u.RequireHost();
+            var u = ParseSharePointUrl(url);
 
-            // Create sanitized plain https-URI (note: still has double slashes for processing web)
+            // Create sanitized plain https-URI (note: still has double slashes for processing web).
+            // The builder stays as it was: FindCorrectWebPathAsync makes the candidate web urls
+            // with it and reads them back with the same parser, so the two go together.
             m_orgUrl = new Utility.RelaxedUri("https", u.Host, u.Path, null, null, null, u.Port);
 
             // Actual path to Web will be searched for on first use. Ctor should not throw.
             m_spWebUrl = null;
 
-            m_serverRelPath = u.Path;
-            if (!m_serverRelPath.StartsWith("/", StringComparison.Ordinal))
-                m_serverRelPath = "/" + m_serverRelPath;
-            m_serverRelPath = Util.AppendDirSeparator(m_serverRelPath, "/");
-            // remove marker for SP-Web
-            m_serverRelPath = m_serverRelPath.Replace("//", "/");
+            m_serverRelPath = u.ServerRelativePath;
 
             // Authentication settings processing:
             // Default: try integrated auth (will normally not work for Office365, but maybe with on-prem SharePoint...).
