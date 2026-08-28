@@ -947,7 +947,7 @@ namespace Duplicati.Library.Main
                 }
             }
 
-            ValidateOptions();
+            ValidateOptions(paths);
 
             return (paths, filter);
         }
@@ -1003,7 +1003,8 @@ namespace Duplicati.Library.Main
         /// This function will examine all options passed on the commandline, and test for unsupported or deprecated values.
         /// Any errors will be logged into the statistics module.
         /// </summary>
-        private void ValidateOptions()
+        /// <param name="paths">The source paths, used to determine the options supported by source providers; null for operations without sources.</param>
+        private void ValidateOptions(string[] paths)
         {
             // Check if only one of the retention options is set
             var selectedRetentionOptions = new List<String>();
@@ -1086,20 +1087,103 @@ namespace Duplicati.Library.Main
                     }
             }
 
+            //Figure out what options are supported by the source providers of the current sources
+            var sourceProviderOptions = new List<ICommandLineArgument>();
+            var sourceProviderSchemes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var path in paths ?? [])
+            {
+                var remoteSource = SourceProviderFactory.ParseRemoteSource(path);
+                if (remoteSource == null)
+                    continue;
+
+                try
+                {
+                    var sourceUri = new Library.Utility.RelaxedUri(remoteSource.Url);
+
+                    // Throw url-encoded options into the mix
+                    //TODO: This can hide values if both commandline and url-parameters supply the same key
+                    foreach (var k in sourceUri.QueryParameters.AllKeys)
+                        ropts[k] = sourceUri.QueryParameters[k];
+
+                    // Each source provider scheme contributes its options once,
+                    // even if multiple sources use the same scheme
+                    if (!sourceProviderSchemes.Add(sourceUri.Scheme))
+                        continue;
+
+                    var sourcecommands = DynamicLoader.SourceProviderLoader.GetSupportedCommands(remoteSource.Url);
+                    if (sourcecommands != null)
+                        sourceProviderOptions.AddRange(sourcecommands);
+                }
+                catch
+                {
+                    // Invalid source urls are reported when the source provider is loaded
+                    continue;
+                }
+            }
+
+            //Figure out what options are supported by the restore destination provider, if the restore target is remote
+            var restoreDestinationOptions = new List<ICommandLineArgument>();
+            var restorepath = m_options.Restorepath;
+            if (!string.IsNullOrEmpty(restorepath) && restorepath.StartsWith("@"))
+            {
+                try
+                {
+                    var restoreUri = new Library.Utility.RelaxedUri(restorepath.Substring(1));
+
+                    // Throw url-encoded options into the mix
+                    foreach (var k in restoreUri.QueryParameters.AllKeys)
+                        ropts[k] = restoreUri.QueryParameters[k];
+
+                    var restorecommands = DynamicLoader.RestoreDestinationProviderLoader.GetSupportedCommands(restorepath.Substring(1));
+                    if (restorecommands != null)
+                        restoreDestinationOptions.AddRange(restorecommands);
+                }
+                catch
+                {
+                    // Invalid restore destination urls are reported when the restore destination provider is loaded
+                }
+            }
+
             // Throw url-encoded options into the mix
             //TODO: This can hide values if both commandline and url-parameters supply the same key
             var ext = new Library.Utility.RelaxedUri(m_backendUrl).QueryParameters;
             foreach (var k in ext.AllKeys)
                 ropts[k] = ext[k];
 
+            var backendCommands = DynamicLoader.BackendLoader.GetSupportedCommands(m_backendUrl);
+            var encryptionCommands = m_options.NoEncryption ? [] : DynamicLoader.EncryptionLoader.GetSupportedCommands(m_options.EncryptionModule);
+            var compressionCommands = DynamicLoader.CompressionLoader.GetSupportedCommands(m_options.CompressionModule);
+            var parityCommands = string.IsNullOrEmpty(m_options.ParityModule) ? [] : DynamicLoader.ParityLoader.GetSupportedCommands(m_options.ParityModule);
+
+            // The same module can legitimately contribute its options more than once, e.g. when
+            // the target backend is also used as a source, or a provider is used as both the
+            // source and the restore destination. Silently drop such identical re-declarations,
+            // while keeping re-declarations with a differing definition, so the duplicate check
+            // below still reports those.
+            var declaredOptions = new Dictionary<string, ICommandLineArgument>(StringComparer.OrdinalIgnoreCase);
+            foreach (var l in new IEnumerable<ICommandLineArgument>[] { m_options.SupportedCommands, backendCommands, encryptionCommands, moduleOptions, compressionCommands, parityCommands })
+                if (l != null)
+                    foreach (var a in l)
+                    {
+                        declaredOptions.TryAdd(a.Name, a);
+                        if (a.Aliases != null)
+                            foreach (var s in a.Aliases)
+                                declaredOptions.TryAdd(s, a);
+                    }
+
+            sourceProviderOptions = FilterIdenticalRedeclarations(sourceProviderOptions, declaredOptions);
+            restoreDestinationOptions = FilterIdenticalRedeclarations(restoreDestinationOptions, declaredOptions);
+
             //Now run through all supported options, and look for deprecated options
             foreach (var l in new IEnumerable<ICommandLineArgument>[] {
                 m_options.SupportedCommands,
-                DynamicLoader.BackendLoader.GetSupportedCommands(m_backendUrl),
-                m_options.NoEncryption ? null : DynamicLoader.EncryptionLoader.GetSupportedCommands(m_options.EncryptionModule),
+                backendCommands,
+                encryptionCommands,
                 moduleOptions,
-                DynamicLoader.CompressionLoader.GetSupportedCommands(m_options.CompressionModule),
-                string.IsNullOrEmpty(m_options.ParityModule) ? null : DynamicLoader.ParityLoader.GetSupportedCommands(m_options.ParityModule) })
+                sourceProviderOptions,
+                restoreDestinationOptions,
+                compressionCommands,
+                parityCommands })
             {
                 if (l != null)
                     foreach (ICommandLineArgument a in l)
@@ -1162,7 +1246,7 @@ namespace Duplicati.Library.Main
             }
 
             var scheme = Library.Utility.Utility.GuessScheme(m_backendUrl);
-            if (DynamicLoader.BackendLoader.GetSupportedCommands(m_backendUrl) == null && !string.Equals(m_backendUrl, "dummy://", StringComparison.OrdinalIgnoreCase))
+            if (backendCommands == null && !string.Equals(m_backendUrl, "dummy://", StringComparison.OrdinalIgnoreCase))
             {
                 // If the backend is HTTP or HTTPS, give a custom error message
                 if (string.Equals(scheme, "http", StringComparison.OrdinalIgnoreCase) || string.Equals(scheme, "https", StringComparison.OrdinalIgnoreCase))
@@ -1180,6 +1264,34 @@ namespace Duplicati.Library.Main
                 Logging.Log.WriteWarningMessage(LOGTAG, "ExperimentalDiskImageFilesystemParsed", null, "The option 'diskimage-filesystem-parsed' is experimental and should be used with caution.");
 
             //TODO: Based on the action, see if all options are relevant
+        }
+
+        /// <summary>
+        /// Removes commands that are identical re-declarations of an already declared option,
+        /// and registers the remaining commands as declared, so that later lists are filtered
+        /// against them as well.
+        /// </summary>
+        /// <param name="commands">The commands to filter</param>
+        /// <param name="declaredOptions">The options declared so far, keyed by name and alias</param>
+        /// <returns>The commands that are not identical re-declarations</returns>
+        private static List<ICommandLineArgument> FilterIdenticalRedeclarations(List<ICommandLineArgument> commands, Dictionary<string, ICommandLineArgument> declaredOptions)
+        {
+            var result = new List<ICommandLineArgument>(commands.Count);
+            foreach (var c in commands)
+            {
+                if (declaredOptions.TryGetValue(c.Name, out var existing)
+                    && existing.Type == c.Type
+                    && existing.DefaultValue == c.DefaultValue)
+                    continue;
+
+                result.Add(c);
+                declaredOptions.TryAdd(c.Name, c);
+                if (c.Aliases != null)
+                    foreach (var s in c.Aliases)
+                        declaredOptions.TryAdd(s, c);
+            }
+
+            return result;
         }
 
         /// <summary>
