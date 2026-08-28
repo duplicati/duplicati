@@ -44,7 +44,7 @@ public static class BackendExtensions
     /// <summary>
     /// The test file name used to test access permissions
     /// </summary>
-    public const string TEST_FILE_NAME = "duplicati-access-privileges-test.tmp";
+    public const string TEST_FILE_NAME = "duplicati-access-privileges-test.txt";
 
     /// <summary>
     /// The test file content used to test access permissions
