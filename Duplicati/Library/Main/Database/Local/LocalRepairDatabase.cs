@@ -2208,9 +2208,22 @@ namespace Duplicati.Library.Main.Database.Local
             return count;
         }
 
-        public async Task FixEmptyMetadatasetsAsync(Options options, CancellationToken token)
+        /// <summary>
+        /// Counts the metadata entries that cannot be restored because their blockset has a length of 0.
+        /// </summary>
+        /// <remarks>
+        /// Repair only counts them, it does not replace them. Metadata is recorded in the <c>dlist</c> files
+        /// at the destination, so a replacement performed here would be undone by the next database recreate,
+        /// and worse, it would hide the damage from <c>purge-broken-files</c> - the only command that can fix
+        /// the destination - because the database would then look consistent. Since <c>--auto-cleanup</c>
+        /// runs repair automatically, a repair-side replacement can silently discard permissions and
+        /// timestamps while blocking the real fix.
+        /// </remarks>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task that when awaited returns the number of unrestorable metadata entries.</returns>
+        public async Task<long> CountEmptyMetadatasetsAsync(CancellationToken token)
         {
-            using var cmd = m_connection.CreateCommand(@"
+            await using var cmd = m_connection.CreateCommand(@"
                 SELECT COUNT(*)
                 FROM ""Metadataset""
                 JOIN ""Blockset""
@@ -2219,139 +2232,8 @@ namespace Duplicati.Library.Main.Database.Local
             ")
                 .SetTransaction(m_rtr);
 
-            var emptyMetaCount = await cmd.ExecuteScalarInt64Async(0, token)
+            return await cmd.ExecuteScalarInt64Async(0, token)
                 .ConfigureAwait(false);
-            if (emptyMetaCount <= 0)
-                return;
-
-            Logging.Log.WriteInformationMessage(LOGTAG, "ZeroLengthMetadata", "Found {0} zero-length metadata entries", emptyMetaCount);
-
-            // Locate replacement metadata: the canonical empty metadata blob if it happens to be stored in
-            // this backup, otherwise the smallest metadata that is actually restorable. The latter does not
-            // describe the files it gets assigned to, so they lose their permissions and timestamps.
-            var emptyMeta = Utility.WrapMetadata(new Dictionary<string, string>(), options);
-            var emptyBlocksetId = await FindExactMetadataBlocksetIdAsync(Array.Empty<long>(), emptyMeta.FileHash, emptyMeta.Blob.Length, token)
-                .ConfigureAwait(false);
-
-            if (emptyBlocksetId < 0)
-            {
-                emptyBlocksetId = await FindSmallestUsableMetadataBlocksetIdAsync(Array.Empty<long>(), token)
-                    .ConfigureAwait(false);
-
-                if (emptyBlocksetId >= 0)
-                    Logging.Log.WriteInformationMessage(LOGTAG, "ReplacementMetadataIsNotEmpty", "The empty metadata entry is not present in the backup, using the smallest available metadata as replacement. The affected files will lose their original permissions and timestamps.");
-            }
-
-            if (emptyBlocksetId < 0)
-                throw new Interface.UserInformationException(
-                    "Failed to locate an empty metadata blockset to replace missing metadata. Set the option --disable-replace-missing-metadata=true to ignore this and drop files with missing metadata.",
-                    "FailedToLocateEmptyMetadataBlockset");
-
-            // Step 1: Create temp table with Metadataset IDs referencing empty blocksets (excluding the one to keep)
-            var tablename = $"FixMetadatasets-{Library.Utility.Utility.GetHexGuid()}";
-
-            try
-            {
-                await cmd.SetCommandAndParameters(@$"
-                    CREATE TEMP TABLE ""{tablename}"" AS
-                    SELECT
-                        ""m"".""ID"" AS ""MetadataID"",
-                        ""m"".""BlocksetID""
-                    FROM ""Metadataset"" ""m""
-                    JOIN ""Blockset"" ""b""
-                        ON ""m"".""BlocksetID"" = ""b"".""ID""
-                    WHERE
-                        ""b"".""Length"" = 0
-                        AND ""m"".""BlocksetID"" != @KeepBlockset
-                ")
-                    .SetParameterValue("@KeepBlockset", emptyBlocksetId)
-                    .ExecuteNonQueryAsync(true, token)
-                    .ConfigureAwait(false);
-
-                // Step 2: Update FileLookup to use a valid metadata ID
-                await cmd.SetCommandAndParameters(@$"
-                    UPDATE ""FileLookup""
-                    SET ""MetadataID"" = (
-                        SELECT ""ID""
-                        FROM ""Metadataset""
-                        WHERE ""BlocksetID"" = @KeepBlockset
-                        LIMIT 1
-                    )
-                    WHERE ""MetadataID"" IN (
-                        SELECT ""MetadataID""
-                        FROM ""{tablename}""
-                    )
-                ")
-                    .SetParameterValue("@KeepBlockset", emptyBlocksetId)
-                    .ExecuteNonQueryAsync(true, token)
-                    .ConfigureAwait(false);
-
-                // Step 3: Delete obsolete Metadataset entries
-                await cmd.SetCommandAndParameters(@$"
-                    DELETE FROM ""Metadataset""
-                    WHERE ""ID"" IN (
-                        SELECT ""MetadataID""
-                        FROM ""{tablename}""
-                    )
-                ")
-                    .ExecuteNonQueryAsync(true, token)
-                    .ConfigureAwait(false);
-
-                // Step 4: Delete orphaned blocksets (affected only)
-                await cmd.SetCommandAndParameters(@$"
-                    DELETE FROM ""Blockset""
-                    WHERE
-                        ""ID"" IN (
-                            SELECT ""BlocksetID""
-                            FROM ""{tablename}""
-                        )
-                        AND NOT EXISTS (
-                            SELECT 1
-                            FROM ""Metadataset""
-                            WHERE ""BlocksetID"" = ""Blockset"".""ID""
-                        )
-                        AND NOT EXISTS (
-                            SELECT 1
-                            FROM ""File""
-                            WHERE ""BlocksetID"" = ""Blockset"".""ID""
-                        )
-                ")
-                    .ExecuteNonQueryAsync(true, token)
-                    .ConfigureAwait(false);
-
-                // Step 5: Confirm all broken metadata entries are resolved
-                cmd.SetCommandAndParameters(@"
-                    SELECT COUNT(*)
-                    FROM ""Metadataset""
-                    JOIN ""Blockset""
-                        ON ""Metadataset"".""BlocksetID"" = ""Blockset"".""ID""
-                    WHERE ""Blockset"".""Length"" = 0
-                ");
-
-                var remaining = await cmd.ExecuteScalarInt64Async(0, token);
-                if (remaining > 0)
-                    throw new Interface.UserInformationException(
-                        $"{remaining} zero-length metadata entries could not be repaired.",
-                        "MetadataRepairFailed");
-
-                Logging.Log.WriteInformationMessage(LOGTAG, "ZeroLengthMetadataRepaired", "Zero length metadata entries repaired successfully");
-
-                await m_rtr.CommitAsync(token: token)
-                    .ConfigureAwait(false);
-            }
-            finally
-            {
-                try
-                {
-                    await cmd.SetCommandAndParameters($@"DROP TABLE IF EXISTS ""{tablename}"" ")
-                        .ExecuteNonQueryAsync(true, token)
-                        .ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    Logging.Log.WriteVerboseMessage(LOGTAG, "ErrorDroppingTempTable", ex, "Failed to drop temporary table {0}: {1}", tablename, ex.Message);
-                }
-            }
         }
     }
 
