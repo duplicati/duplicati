@@ -50,9 +50,16 @@ public class HttpsConfigurationTests
     private string _databasePath = null!;
     private Connection _connection = null!;
 
+    /// <summary>
+    /// The time the test started, used to scope the certificate cleanup
+    /// </summary>
+    private DateTimeOffset _testStart;
+
     [SetUp]
     public async Task SetUpAsync()
     {
+        _testStart = DateTimeOffset.UtcNow;
+
         // Create a temporary folder for test data
         _tempDataFolder = Path.Combine(Path.GetTempPath(), $"duplicati-test-{Guid.NewGuid()}");
         Directory.CreateDirectory(_tempDataFolder);
@@ -71,6 +78,11 @@ public class HttpsConfigurationTests
     public void TearDown()
     {
         _connection?.Dispose();
+
+        // Remove certificates persisted to the OS certificate store by certificate
+        // generation during the test (on macOS each generated certificate is written
+        // to the login keychain)
+        TestUtils.RemovePersistedGeneratedCertificates(_testStart);
 
         // Clean up temp folder
         if (Directory.Exists(_tempDataFolder))

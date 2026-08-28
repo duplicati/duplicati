@@ -37,6 +37,44 @@ namespace Duplicati.UnitTest;
 [Category("Certificates")]
 public class CertificateTests
 {
+    /// <summary>
+    /// The time the test started, used to scope the certificate cleanup
+    /// </summary>
+    private DateTimeOffset m_testStart;
+
+    /// <summary>
+    /// Records the test start time for certificate cleanup scoping
+    /// </summary>
+    [SetUp]
+    public void SetUp() => m_testStart = DateTimeOffset.UtcNow;
+
+    /// <summary>
+    /// Removes certificates persisted to the OS certificate store by certificate
+    /// generation during the test (on macOS each generated certificate is written
+    /// to the login keychain)
+    /// </summary>
+    [TearDown]
+    public void TearDown() => TestUtils.RemovePersistedGeneratedCertificates(m_testStart);
+
+    /// <summary>
+    /// Verifies that generated certificates do not accumulate in the per-user store,
+    /// and that the cleanup mechanism actually covers certificates persisted by generation
+    /// </summary>
+    [Test]
+    public void GeneratedCertificatesDoNotPersistInStore()
+    {
+        // Certificate generation uses X509KeyStorageFlags.PersistKeySet, which persists
+        // the generated certificate to the per-user store on some platforms (macOS keychain)
+        var caPair = CertificateGenerator.GenerateCACertificate();
+
+        if (OperatingSystem.IsMacOS())
+            Assert.Greater(TestUtils.CountPersistedGeneratedCertificates(m_testStart), 0,
+                "Generated certificate was not found in the per-user store; the cleanup would not cover this platform");
+
+        TestUtils.RemovePersistedGeneratedCertificates(m_testStart);
+        Assert.AreEqual(0, TestUtils.CountPersistedGeneratedCertificates(m_testStart));
+    }
+
     #region CertificateGenerator Tests
 
     [Test]
