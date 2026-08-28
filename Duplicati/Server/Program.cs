@@ -1535,7 +1535,7 @@ namespace Duplicati.Server
         /// <summary>
         /// The options related to the secret provider
         /// </summary>
-        private static readonly IReadOnlyList<ICommandLineArgument> SECRET_PROVIDER_OPTIONS = new Options(new Dictionary<string, string>()).SupportedCommands.Where(x => x.Name.StartsWith("secret-provider")).ToList();
+        private static readonly IReadOnlyList<ICommandLineArgument> SECRET_PROVIDER_OPTIONS => new Options(new Dictionary<string, string>()).SupportedCommands.Where(x => x.Name.StartsWith("secret-provider")).ToList();
 
         /// <summary>
         /// Gets additional commandline arguments support on Windows
