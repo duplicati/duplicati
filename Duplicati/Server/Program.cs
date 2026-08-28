@@ -1535,12 +1535,17 @@ namespace Duplicati.Server
         /// <summary>
         /// The options related to the secret provider
         /// </summary>
-        private static readonly IReadOnlyList<ICommandLineArgument> SECRET_PROVIDER_OPTIONS = new Options(new Dictionary<string, string>()).SupportedCommands.Where(x => x.Name.StartsWith("secret-provider")).ToList();
+        /// <remarks>
+        /// This call will invoke the DataFolderManager and read the installid/machineid, which are not yet created.
+        /// Keeping this as a property ensures we delay-load this instead of statically initialize it.
+        /// </remarks>
+        private static IReadOnlyList<ICommandLineArgument> SECRET_PROVIDER_OPTIONS => new Options(new Dictionary<string, string>())
+            .SupportedCommands.Where(x => x.Name.StartsWith("secret-provider")).ToList();
 
         /// <summary>
         /// Gets additional commandline arguments support on Windows
         /// </summary>
-        private static readonly ICommandLineArgument[] WindowsOptions = OperatingSystem.IsWindows()
+        private static ICommandLineArgument[] WindowsOptions => OperatingSystem.IsWindows()
             ? [
                 new CommandLineArgument(WINDOWS_EVENTLOG_OPTION, CommandLineArgument.ArgumentType.String, Strings.Program.LogwindowseventlogShort, Strings.Program.LogwindowseventlogLong),
                 new CommandLineArgument(WINDOWS_EVENTLOG_LEVEL_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.Program.LogwindowseventloglevelShort, Strings.Program.LogwindowseventloglevelLong, Library.Logging.LogMessageType.Information.ToString(), null, Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType)))
@@ -1604,7 +1609,7 @@ namespace Duplicati.Server
         /// <summary>
         /// List of known duplicate option names
         /// </summary>
-        public static readonly HashSet<string> KnownDuplicateOptions = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        public static readonly HashSet<string> KnownDuplicateOptions = new(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
         /// Reads options from a file and applies them to the current commandline arguments and options
