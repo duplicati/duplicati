@@ -439,6 +439,27 @@ namespace Duplicati.Server
                 filterStrings);
         }
 
+        /// <summary>
+        /// Creates a task that purges files matching the filters from the backup.
+        /// </summary>
+        /// <param name="backup">The backup to purge files from</param>
+        /// <param name="filterStrings">The filter strings selecting the files to purge</param>
+        /// <param name="versions">The versions to purge from, or null to purge from all versions</param>
+        /// <param name="extraOptions">Optional extra options</param>
+        /// <returns>The runner task</returns>
+        public static IRunnerData CreatePurgeFilesTask(IBackup backup, string[]? filterStrings, long[]? versions, IDictionary<string, string?>? extraOptions = null)
+        {
+            var dict = extraOptions ?? new Dictionary<string, string?>();
+            if (versions != null && versions.Length > 0)
+                dict["version"] = string.Join(",", versions.Select(v => v.ToString(CultureInfo.InvariantCulture)));
+
+            return CreateTask(
+                DuplicatiOperation.PurgeFiles,
+                backup,
+                dict,
+                filterStrings);
+        }
+
 
         public static IRunnerData CreateRestoreTask(IBackup backup, string[]? filters,
                                                     DateTime time, string? restoreTarget, bool? overwrite, bool? restore_permissions,
@@ -1070,6 +1091,14 @@ namespace Duplicati.Server
                             {
                                 var filter = data.FilterStrings == null ? null : new FilterExpression(data.FilterStrings);
                                 var r = await controller.PurgeBrokenFilesAsync(filter).ConfigureAwait(false);
+                                UpdateMetadataBase(databaseConnection, eventPollNotify, notificationUpdateService, backup, r);
+                                return r;
+                            }
+
+                        case DuplicatiOperation.PurgeFiles:
+                            {
+                                var filter = data.FilterStrings == null ? null : new FilterExpression(data.FilterStrings);
+                                var r = await controller.PurgeFilesAsync(filter).ConfigureAwait(false);
                                 UpdateMetadataBase(databaseConnection, eventPollNotify, notificationUpdateService, backup, r);
                                 return r;
                             }
