@@ -27,6 +27,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database.Local;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -111,36 +112,17 @@ namespace Duplicati.Library.Main.Operation
                     }
                 }
 
+                var emptymetadata = Utility.WrapMetadata(new Dictionary<string, string>(), m_options);
+                // The volumes that are missing cannot supply blocks, so a blockset that depends on them
+                // is no more restorable than the metadata we are replacing.
+                var unavailableVolumeIds = (missing ?? []).Select(x => x.ID).ToArray();
+
                 if (replaceMetadata)
                 {
-                    var emptymetadata = Utility.WrapMetadata(new Dictionary<string, string>(), m_options);
-                    // The volumes that are missing cannot supply blocks, so a blockset that depends on them
-                    // is no more restorable than the metadata we are replacing.
-                    var unavailableVolumeIds = (missing ?? []).Select(x => x.ID).ToArray();
-
-                    replacementMetadataBlocksetId = await db
-                        .FindExactMetadataBlocksetIdAsync(
-                            unavailableVolumeIds,
-                            emptymetadata.FileHash,
-                            emptymetadata.Blob.Length,
-                            m_result.TaskControl.ProgressToken
-                        )
-                        .ConfigureAwait(false);
-
-                    if (replacementMetadataBlocksetId < 0)
-                    {
-                        // The canonical empty metadata blob is not stored in this backup, so fall back to
-                        // the smallest metadata that is actually restorable. Its contents do not describe
-                        // the files it gets assigned to, so they lose their permissions and timestamps.
-                        replacementMetadataBlocksetId = await db
-                            .FindSmallestUsableMetadataBlocksetIdAsync(unavailableVolumeIds, m_result.TaskControl.ProgressToken)
-                            .ConfigureAwait(false);
-
-                        if (replacementMetadataBlocksetId >= 0)
-                            Logging.Log.WriteInformationMessage(LOGTAG, "ReplacementMetadataIsNotEmpty", "The empty metadata entry is not present in the backup, using the smallest available metadata as replacement. The affected files will lose their original permissions and timestamps.");
-                    }
-
-                    if (replacementMetadataBlocksetId < 0)
+                    // Only ask whether a replacement can be obtained here. Obtaining it may mean uploading a
+                    // new block volume, and that must not happen until it is known that something needs
+                    // replacing, nor during a dry-run.
+                    if (!await CanProvideReplacementMetadataAsync(db, emptymetadata, unavailableVolumeIds).ConfigureAwait(false))
                         throw new UserInformationException($"Failed to locate an empty metadata blockset to replace missing metadata. Set the option --disable-replace-missing-metadata=true to ignore this and drop files with missing metadata.", "FailedToLocateEmptyMetadataBlockset");
                 }
 
@@ -160,10 +142,6 @@ namespace Duplicati.Library.Main.Operation
                         recoveredFileCounts[set.FilesetID] = set.RemoveCount - remaining;
                         brokenCounts[set.FilesetID] = remaining;
                     }
-
-                    var recovered = recoveredFileCounts.Values.Sum();
-                    if (recovered > 0)
-                        Logging.Log.WriteWarningMessage(LOGTAG, "MetadataReplacedWithEmpty", null, "Recovering {0} file(s) by replacing metadata that cannot be restored. The affected files keep their contents, but lose their original permissions and timestamps. Use {1} to remove them instead.", recovered, "--disable-replace-missing-metadata");
                 }
 
                 var compare_list = sets.Select(async x => new
@@ -182,6 +160,15 @@ namespace Duplicati.Library.Main.Operation
 
                 var fully_emptied = compare_list.Where(x => x.RemoveCount == x.SetCount).ToArray();
                 var to_purge = compare_list.Where(x => x.RemoveCount != x.SetCount).ToArray();
+
+                // Only a fileset that gets a new filelist can carry the replacement to the destination, and a
+                // fileset that is removed entirely does not need one. If none of the filesets being rewritten
+                // recovers anything, there is nothing to replace, and nothing to store.
+                var filesToRecover = to_purge.Sum(x => x.RecoverCount);
+                if (filesToRecover <= 0)
+                    replaceMetadata = false;
+                else
+                    Logging.Log.WriteWarningMessage(LOGTAG, "MetadataReplacedWithEmpty", null, "Recovering {0} file(s) by replacing metadata that cannot be restored. The affected files keep their contents, but lose their original permissions and timestamps. Use {1} to remove them instead.", filesToRecover, "--disable-replace-missing-metadata");
 
                 if (fully_emptied.Length == await db.FilesetTimesAsync(m_result.TaskControl.ProgressToken).CountAsync(cancellationToken: m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                     throw new UserInformationException("All filesets are fully broken and needs to be removed. To avoid unexpected deletions, you must manually remove the remote files and delete the database.", "AllFilesetsBroken");
@@ -216,6 +203,20 @@ namespace Duplicati.Library.Main.Operation
 
                     pgoffset += (pgspan * fully_emptied.Length);
                     m_result.OperationProgressUpdater.UpdateProgress(pgoffset);
+                }
+
+                if (replaceMetadata)
+                {
+                    // Obtain the replacement only now: the delete above removes filesets, and everything that
+                    // is no longer referenced with them, which would take a freshly created blockset with it.
+                    replacementMetadataBlocksetId = await EnsureReplacementMetadataBlocksetAsync(backendManager, db, emptymetadata, unavailableVolumeIds)
+                        .ConfigureAwait(false);
+
+                    // The probe above said a replacement could be obtained, so this means an upload failed
+                    // and there was nothing left to fall back to. Stop rather than fall back to removing the
+                    // files, which would silently do something the projected counts no longer describe.
+                    if (replacementMetadataBlocksetId < 0)
+                        throw new UserInformationException($"Failed to obtain replacement metadata for the files that cannot be restored. Set the option --disable-replace-missing-metadata=true to remove those files instead.", "FailedToLocateEmptyMetadataBlockset");
                 }
 
                 if (to_purge.Length > 0)
@@ -293,6 +294,260 @@ namespace Duplicati.Library.Main.Operation
             }
 
             m_result.OperationProgressUpdater.UpdateProgress(1.0f);
+        }
+
+        /// <summary>
+        /// Computes the block hash of the given data.
+        /// </summary>
+        /// <remarks>
+        /// A blockset records the <em>file</em> hash of its contents in <c>Blockset.FullHash</c>, while the
+        /// blocks it is made of are identified by their <em>block</em> hash. For a blob that fits in a single
+        /// block these are two different hashes of the same bytes.
+        /// </remarks>
+        /// <param name="data">The data to hash.</param>
+        /// <returns>The base64 encoded block hash.</returns>
+        private string CalculateBlockHash(byte[] data)
+        {
+            using var blockhasher = Library.Utility.HashFactory.CreateHasher(m_options.BlockHashAlgorithm);
+            if (blockhasher == null)
+                throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm), "BlockHashAlgorithmNotSupported");
+
+            return Convert.ToBase64String(blockhasher.ComputeHash(data));
+        }
+
+        /// <summary>
+        /// Answers, without changing anything, whether replacement metadata can be obtained.
+        /// </summary>
+        /// <remarks>
+        /// This must follow the same chain as <see cref="EnsureReplacementMetadataBlocksetAsync"/>, including
+        /// the dry-run rule, or a dry-run projects a recovery that the real run would not perform, and the
+        /// other way around.
+        /// </remarks>
+        /// <param name="db">The database to query.</param>
+        /// <param name="emptymetadata">The canonical empty metadata blob.</param>
+        /// <param name="unavailableVolumeIds">The ids of the volumes that cannot supply blocks.</param>
+        /// <returns>A task that when awaited is <c>true</c> if a replacement can be obtained.</returns>
+        private async Task<bool> CanProvideReplacementMetadataAsync(LocalListBrokenFilesDatabase db, IMetahash emptymetadata, long[] unavailableVolumeIds)
+        {
+            var token = m_result.TaskControl.ProgressToken;
+
+            if (await db.FindExactMetadataBlocksetIdAsync(unavailableVolumeIds, emptymetadata.FileHash, emptymetadata.Blob.Length, token).ConfigureAwait(false) >= 0)
+                return true;
+
+            if (await db.FindAvailableBlockIdAsync(CalculateBlockHash(emptymetadata.Blob), emptymetadata.Blob.Length, unavailableVolumeIds, token).ConfigureAwait(false) >= 0)
+                return true;
+
+            // We can store it ourselves, unless it would not fit in a single block, or this is a dry-run
+            if (!m_options.Dryrun && emptymetadata.Blob.Length <= m_options.Blocksize)
+                return true;
+
+            return await db.FindSmallestUsableMetadataBlocksetIdAsync(unavailableVolumeIds, token).ConfigureAwait(false) >= 0;
+        }
+
+        /// <summary>
+        /// Returns the id of a blockset holding the canonical empty metadata blob, storing it at the
+        /// destination if it is not there yet, and falling back to another file's metadata if it cannot be
+        /// stored.
+        /// </summary>
+        /// <remarks>
+        /// Storing the blob matters because the replacement is recorded in the filelists at the destination.
+        /// If nothing at the destination backs the blockset the filelists point at, a database recreate
+        /// reintroduces exactly the damage this is repairing.
+        /// </remarks>
+        /// <param name="backendManager">The backend manager to upload with.</param>
+        /// <param name="db">The database to record the blockset in.</param>
+        /// <param name="emptymetadata">The canonical empty metadata blob.</param>
+        /// <param name="unavailableVolumeIds">The ids of the volumes that cannot supply blocks.</param>
+        /// <returns>A task that when awaited contains the id of the blockset, or -1 if none could be obtained.</returns>
+        private async Task<long> EnsureReplacementMetadataBlocksetAsync(IBackendManager backendManager, LocalListBrokenFilesDatabase db, IMetahash emptymetadata, long[] unavailableVolumeIds)
+        {
+            var token = m_result.TaskControl.ProgressToken;
+
+            // 1. The blob is already stored, and a blockset already describes it
+            var blocksetId = await db
+                .FindExactMetadataBlocksetIdAsync(unavailableVolumeIds, emptymetadata.FileHash, emptymetadata.Blob.Length, token)
+                .ConfigureAwait(false);
+            if (blocksetId >= 0)
+                return blocksetId;
+
+            // 2. The block is stored, but no usable blockset points at it
+            var blockHash = CalculateBlockHash(emptymetadata.Blob);
+            var blockId = await db
+                .FindAvailableBlockIdAsync(blockHash, emptymetadata.Blob.Length, unavailableVolumeIds, token)
+                .ConfigureAwait(false);
+            if (blockId >= 0)
+            {
+                Logging.Log.WriteInformationMessage(LOGTAG, "ReusingStoredReplacementMetadata", "The empty metadata block is already stored, registering it as replacement metadata");
+                blocksetId = await db
+                    .CreateMetadataBlocksetAsync(emptymetadata.FileHash, emptymetadata.Blob.Length, [blockId], token)
+                    .ConfigureAwait(false);
+                await db.GetOrCreateMetadatasetIdAsync(blocksetId, token).ConfigureAwait(false);
+                if (!m_options.Dryrun)
+                    await db.Transaction.CommitAsync("RegisteredReplacementMetadata", true, token).ConfigureAwait(false);
+
+                return blocksetId;
+            }
+
+            // 3. Store it, so the replacement survives a database recreate
+            if (emptymetadata.Blob.Length > m_options.Blocksize)
+            {
+                Logging.Log.WriteWarningMessage(LOGTAG, "ReplacementMetadataTooLarge", null, "The empty metadata entry is {0} bytes, which does not fit in a single block of {1} bytes, so it cannot be stored as replacement metadata.", emptymetadata.Blob.Length, m_options.Blocksize);
+            }
+            else if (m_options.Dryrun)
+            {
+                Logging.Log.WriteDryrunMessage(LOGTAG, "WouldUploadReplacementMetadata", "Would upload a new block volume with the empty metadata entry to use as replacement metadata");
+            }
+            else
+            {
+                try
+                {
+                    return await UploadReplacementMetadataAsync(backendManager, db, emptymetadata, blockHash)
+                        .ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    if (ex.IsAbortOrCancelException())
+                        throw;
+
+                    Logging.Log.WriteWarningMessage(LOGTAG, "ReplacementMetadataUploadFailed", ex, "Failed to store the empty metadata entry: {0}", ex.Message);
+                }
+            }
+
+            // 4. Fall back to another file's metadata, which is restorable but describes the wrong file
+            blocksetId = await db
+                .FindSmallestUsableMetadataBlocksetIdAsync(unavailableVolumeIds, token)
+                .ConfigureAwait(false);
+
+            if (blocksetId >= 0)
+                Logging.Log.WriteInformationMessage(LOGTAG, "ReplacementMetadataIsNotEmpty", "The empty metadata entry is not stored in the backup, using the smallest available metadata as replacement. The affected files will lose their original permissions and timestamps.");
+
+            return blocksetId;
+        }
+
+        /// <summary>
+        /// Uploads a new block volume holding the empty metadata blob, and records the resulting blockset.
+        /// </summary>
+        /// <param name="backendManager">The backend manager to upload with.</param>
+        /// <param name="db">The database to record the volume, block and blockset in.</param>
+        /// <param name="emptymetadata">The canonical empty metadata blob.</param>
+        /// <param name="blockHash">The block hash of the blob.</param>
+        /// <returns>A task that when awaited contains the id of the blockset.</returns>
+        private async Task<long> UploadReplacementMetadataAsync(IBackendManager backendManager, LocalListBrokenFilesDatabase db, IMetahash emptymetadata, string blockHash)
+        {
+            var token = m_result.TaskControl.ProgressToken;
+            Volumes.BlockVolumeWriter? blockVolume = null;
+            Volumes.IndexVolumeWriter? indexVolume = null;
+            LocalListBrokenFilesDatabase.BlockRegistration? registration = null;
+
+            // Record that an upload is in progress before anything is registered. If the process is killed
+            // between the commit below and the end of the upload, the volume is left in Uploading state with
+            // the block pointing at it, and this flag is what lets the next run clean that up: without it
+            // the next operation verifies in strict mode and refuses to continue instead.
+            await db.TerminatedWithActiveUploadsAsync(token, true).ConfigureAwait(false);
+
+            try
+            {
+                blockVolume = new Volumes.BlockVolumeWriter(m_options);
+                blockVolume.VolumeID = await db
+                    .RegisterRemoteVolumeAsync(blockVolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, token)
+                    .ConfigureAwait(false);
+
+                // This has to be recorded before the upload starts, and is therefore visible before the
+                // volume exists at the destination. It is undone below if the volume never arrives.
+                registration = await db
+                    .RegisterBlockAsync(blockHash, emptymetadata.Blob.Length, blockVolume.VolumeID, token)
+                    .ConfigureAwait(false);
+
+                await blockVolume
+                    .AddBlockAsync(blockHash, emptymetadata.Blob, 0, emptymetadata.Blob.Length, CompressionHint.Compressible)
+                    .ConfigureAwait(false);
+
+                await db
+                    .UpdateRemoteVolumeAsync(blockVolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null, token)
+                    .ConfigureAwait(false);
+
+                if (m_options.IndexfilePolicy != Options.IndexFileStrategy.None)
+                {
+                    indexVolume = new Volumes.IndexVolumeWriter(m_options);
+                    indexVolume.VolumeID = await db
+                        .RegisterRemoteVolumeAsync(indexVolume.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, token)
+                        .ConfigureAwait(false);
+                    indexVolume.StartVolume(blockVolume.RemoteFilename);
+                    indexVolume.AddBlock(blockHash, emptymetadata.Blob.Length);
+                    await db.AddIndexBlockLinkAsync(indexVolume.VolumeID, blockVolume.VolumeID, token)
+                        .ConfigureAwait(false);
+
+                    // No blocklists to write, even for IndexFileStrategy.Full: the blockset is a single
+                    // block, so it has no blocklist hashes.
+                }
+
+                await backendManager.FlushPendingMessagesAsync(db, token).ConfigureAwait(false);
+                await db.Transaction.CommitAsync("PreUploadReplacementMetadata", true, token).ConfigureAwait(false);
+
+                // waitForComplete, so the volume is known to be at the destination before anything is pointed
+                // at it, and so the temp files are no longer needed once this returns or throws
+                await backendManager.PutAsync(blockVolume, indexVolume, null, true, null, token).ConfigureAwait(false);
+                await backendManager.WaitForEmptyAsync(db, token).ConfigureAwait(false);
+
+                var blocksetId = await db
+                    .CreateMetadataBlocksetAsync(emptymetadata.FileHash, emptymetadata.Blob.Length, [registration.BlockId], token)
+                    .ConfigureAwait(false);
+                await db.GetOrCreateMetadatasetIdAsync(blocksetId, token).ConfigureAwait(false);
+                await db.Transaction.CommitAsync("StoredReplacementMetadata", true, token).ConfigureAwait(false);
+
+                // Nothing is in flight any more. The flag is deliberately left set when this throws, so the
+                // next run cleans up whatever the failure left behind.
+                await db.TerminatedWithActiveUploadsAsync(token, false).ConfigureAwait(false);
+
+                Logging.Log.WriteInformationMessage(LOGTAG, "StoredReplacementMetadata", "Stored the empty metadata entry in {0} to use as replacement metadata", blockVolume.RemoteFilename);
+                return blocksetId;
+            }
+            catch
+            {
+                if (registration != null)
+                    await db.RollbackBlockRegistrationAsync(registration, token).ConfigureAwait(false);
+
+                foreach (var name in new[] { blockVolume?.RemoteFilename, indexVolume?.RemoteFilename })
+                    if (!string.IsNullOrWhiteSpace(name))
+                        try
+                        {
+                            await db.RemoveRemoteVolumeAsync(name, token).ConfigureAwait(false);
+                        }
+                        catch (Exception ex)
+                        {
+                            Logging.Log.WriteWarningMessage(LOGTAG, "ReplacementMetadataCleanupFailed", ex, "Failed to remove the registration of {0}: {1}. If the file reached the destination, run repair to clean it up.", name, ex.Message);
+                        }
+
+                await db.Transaction.CommitAsync("RolledBackReplacementMetadata", true, token).ConfigureAwait(false);
+                throw;
+            }
+            finally
+            {
+                // With waitForComplete the backend is done with the temp files by the time PutAsync returns
+                // or throws, so disposing here neither leaks a temp file when an exception is raised before
+                // ownership transfers, nor deletes a file the backend still needs.
+                DisposeVolumeWriter(indexVolume);
+                DisposeVolumeWriter(blockVolume);
+            }
+        }
+
+        /// <summary>
+        /// Disposes a volume writer without letting the disposal hide whatever went wrong before it.
+        /// </summary>
+        /// <param name="writer">The writer to dispose, if any.</param>
+        private static void DisposeVolumeWriter(Volumes.VolumeWriterBase? writer)
+        {
+            if (writer == null)
+                return;
+
+            // An index volume refuses to be disposed while a volume is still being written, which is the
+            // state it is left in when something fails between StartVolume and the upload
+            if (writer is Volumes.IndexVolumeWriter indexVolume)
+                try { indexVolume.FinishVolume(null, 0); }
+                catch (Exception ex) { Logging.Log.WriteVerboseMessage(LOGTAG, "FinishVolumeFailed", ex, "Failed to finish {0}: {1}", writer.RemoteFilename, ex.Message); }
+
+            try { writer.Dispose(); }
+            catch (Exception ex) { Logging.Log.WriteVerboseMessage(LOGTAG, "DisposeVolumeFailed", ex, "Failed to dispose a volume writer: {0}", ex.Message); }
         }
     }
 }

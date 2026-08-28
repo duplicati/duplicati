@@ -36,6 +36,11 @@ namespace Duplicati.Library.Main.Database.Local
     internal class LocalListBrokenFilesDatabase : LocalDatabase
     {
         /// <summary>
+        /// The tag used for logging.
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(LocalListBrokenFilesDatabase));
+
+        /// <summary>
         /// SQL query to get the IDs of all block volumes.
         /// </summary>
         private static readonly string BLOCK_VOLUME_IDS = $@"
@@ -622,6 +627,366 @@ namespace Duplicati.Library.Main.Database.Local
                     .ConfigureAwait(false);
             }
             catch { /* Ignore, will be deleted on close anyway. */ }
+        }
+
+        /// <summary>
+        /// Finds the id of an available block with the given hash and size.
+        /// </summary>
+        /// <remarks>
+        /// A block can be stored without any blockset pointing at it, so this is not the same question as
+        /// <see cref="FindExactMetadataBlocksetIdAsync"/>: the block may be present at the destination while
+        /// the blockset that used to reference it has been damaged or removed.
+        /// </remarks>
+        /// <param name="hash">The block hash to look for.</param>
+        /// <param name="size">The block size to look for.</param>
+        /// <param name="blockVolumeIds">The ids of the volumes to treat as unavailable.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task that when awaited contains the id of the block, or -1 if it is not available.</returns>
+        public async Task<long> FindAvailableBlockIdAsync(string hash, long size, IEnumerable<long> blockVolumeIds, CancellationToken token)
+        {
+            await using var tmptable = await TemporaryDbValueList.CreateAsync(this, blockVolumeIds, token)
+                .ConfigureAwait(false);
+
+            await using var cmd = Connection.CreateCommand(@$"
+                SELECT ""Block"".""ID""
+                FROM ""Block""
+                WHERE
+                    ""Block"".""Hash"" = @Hash
+                    AND ""Block"".""Size"" = @Size
+                    AND ""Block"".""VolumeID"" NOT IN (@BlockVolumeIds)
+                    AND ""Block"".""VolumeID"" IN ({LIVE_BLOCK_VOLUME_IDS})
+                LIMIT 1
+            ")
+                .SetTransaction(m_rtr)
+                .SetParameterValue("@Hash", hash)
+                .SetParameterValue("@Size", size);
+
+            await cmd.ExpandInClauseParameterMssqliteAsync("@BlockVolumeIds", tmptable, token)
+                .ConfigureAwait(false);
+
+            return await cmd.ExecuteScalarInt64Async(-1, token)
+                .ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Describes a <c>Block</c> row that was pointed at a volume by <see cref="RegisterBlockAsync"/>,
+        /// with what is needed to undo it again.
+        /// </summary>
+        /// <param name="BlockId">The id of the block row.</param>
+        /// <param name="Hash">The hash of the block.</param>
+        /// <param name="Size">The size of the block.</param>
+        /// <param name="VolumeId">The volume the block was pointed at.</param>
+        /// <param name="PreviousVolumeId">The volume the block was pointed at before, if that could be read.</param>
+        /// <param name="Created">Whether the row was created, as opposed to being repointed.</param>
+        public sealed record BlockRegistration(long BlockId, string Hash, long Size, long VolumeId, long? PreviousVolumeId, bool Created);
+
+        /// <summary>
+        /// Records that the block with the given hash and size is stored in the given volume, creating the
+        /// <c>Block</c> row if it does not exist yet.
+        /// </summary>
+        /// <remarks>
+        /// The registration has to be committed before the upload of the volume starts, so it can be visible
+        /// before the volume actually exists at the destination. Keep the returned value and hand it to
+        /// <see cref="RollbackBlockRegistrationAsync"/> if the volume never arrives, or a block that is
+        /// perfectly restorable from its old volume is left looking unrestorable.
+        /// </remarks>
+        /// <param name="hash">The block hash.</param>
+        /// <param name="size">The block size.</param>
+        /// <param name="volumeId">The id of the volume the block is stored in.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task that when awaited contains the registration.</returns>
+        public async Task<BlockRegistration> RegisterBlockAsync(string hash, long size, long volumeId, CancellationToken token)
+        {
+            await using var cmd = m_connection.CreateCommand()
+                .SetTransaction(m_rtr);
+
+            cmd.SetCommandAndParameters(@"
+                SELECT
+                    ""ID"",
+                    ""VolumeID""
+                FROM ""Block""
+                WHERE
+                    ""Hash"" = @Hash
+                    AND ""Size"" = @Size
+            ")
+                .SetParameterValue("@Hash", hash)
+                .SetParameterValue("@Size", size);
+
+            var existingId = -1L;
+            long? previousVolumeId = null;
+            await using (var rd = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false))
+                if (await rd.ReadAsync(token).ConfigureAwait(false))
+                {
+                    existingId = rd.ConvertValueToInt64(0, -1);
+                    // Only record a previous volume if one could actually be read. Guessing one and writing
+                    // it back on rollback would point the block at a volume that never held it.
+                    if (!await rd.IsDBNullAsync(1, token).ConfigureAwait(false))
+                        previousVolumeId = rd.ConvertValueToInt64(1);
+                }
+
+            if (existingId >= 0)
+            {
+                await cmd.SetCommandAndParameters(@"
+                    UPDATE ""Block""
+                    SET ""VolumeID"" = @VolumeId
+                    WHERE ""ID"" = @Id
+                ")
+                    .SetParameterValue("@VolumeId", volumeId)
+                    .SetParameterValue("@Id", existingId)
+                    .ExecuteNonQueryAsync(true, token)
+                    .ConfigureAwait(false);
+
+                return new BlockRegistration(existingId, hash, size, volumeId, previousVolumeId, false);
+            }
+
+            var newId = await cmd.SetCommandAndParameters(@"
+                INSERT INTO ""Block"" (
+                    ""Hash"",
+                    ""Size"",
+                    ""VolumeID""
+                )
+                VALUES (
+                    @Hash,
+                    @Size,
+                    @VolumeId
+                );
+                SELECT last_insert_rowid();
+            ")
+                .SetParameterValue("@Hash", hash)
+                .SetParameterValue("@Size", size)
+                .SetParameterValue("@VolumeId", volumeId)
+                .ExecuteScalarInt64Async(-1, token)
+                .ConfigureAwait(false);
+
+            if (newId < 0)
+                throw new InvalidOperationException($"Failed to register the block {hash} in volume {volumeId}.");
+
+            return new BlockRegistration(newId, hash, size, volumeId, null, true);
+        }
+
+        /// <summary>
+        /// Undoes a registration made by <see cref="RegisterBlockAsync"/>.
+        /// </summary>
+        /// <remarks>
+        /// The row is only touched while it still points at the volume from the registration, so a
+        /// registration made by something else in the meantime is left alone. If the row was repointed and
+        /// the previous volume is not known, the row is left as it is and a warning is written: writing a
+        /// guessed volume id would be worse than leaving the block where the failed upload put it.
+        /// </remarks>
+        /// <param name="registration">The registration to undo.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task that completes when the rollback has been attempted.</returns>
+        public async Task RollbackBlockRegistrationAsync(BlockRegistration registration, CancellationToken token)
+        {
+            await using var cmd = m_connection.CreateCommand()
+                .SetTransaction(m_rtr);
+
+            if (registration.Created)
+            {
+                await cmd.SetCommandAndParameters(@"
+                    DELETE FROM ""Block""
+                    WHERE
+                        ""ID"" = @Id
+                        AND ""VolumeID"" = @VolumeId
+                ")
+                    .SetParameterValue("@Id", registration.BlockId)
+                    .SetParameterValue("@VolumeId", registration.VolumeId)
+                    .ExecuteNonQueryAsync(true, token)
+                    .ConfigureAwait(false);
+
+                return;
+            }
+
+            if (!registration.PreviousVolumeId.HasValue)
+            {
+                Logging.Log.WriteWarningMessage(LOGTAG, "BlockRegistrationNotRolledBack", null, "The block {0} was pointed at volume {1}, but the volume it was in before is not known, so it is left as it is. Run repair to restore the block mapping.", registration.Hash, registration.VolumeId);
+                return;
+            }
+
+            await cmd.SetCommandAndParameters(@"
+                UPDATE ""Block""
+                SET ""VolumeID"" = @PreviousVolumeId
+                WHERE
+                    ""ID"" = @Id
+                    AND ""VolumeID"" = @VolumeId
+            ")
+                .SetParameterValue("@PreviousVolumeId", registration.PreviousVolumeId.Value)
+                .SetParameterValue("@Id", registration.BlockId)
+                .SetParameterValue("@VolumeId", registration.VolumeId)
+                .ExecuteNonQueryAsync(true, token)
+                .ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Creates, or repairs, the blockset with the given hash and length, made up of the given blocks.
+        /// </summary>
+        /// <remarks>
+        /// An existing <c>Blockset</c> row for the hash and length is reused - it is unique on those two
+        /// columns - but its <c>BlocksetEntry</c> and <c>BlocklistHash</c> rows are rebuilt, so a stale row
+        /// cannot keep pointing at the wrong blocks.
+        /// </remarks>
+        /// <param name="fullHash">The file hash of the metadata blob.</param>
+        /// <param name="size">The length of the metadata blob.</param>
+        /// <param name="blockIds">The ids of the blocks making up the blockset, in order.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task that when awaited contains the id of the blockset.</returns>
+        public async Task<long> CreateMetadataBlocksetAsync(string fullHash, long size, IEnumerable<long> blockIds, CancellationToken token)
+        {
+            var ids = blockIds?.ToList() ?? [];
+
+            // A zero-length metadata blockset can never be restored, and is shared with every empty file in
+            // the backup, see FindExactMetadataBlocksetIdAsync
+            if (size <= 0)
+                throw new ArgumentOutOfRangeException(nameof(size), "A metadata blockset must have contents.");
+            if (ids.Count == 0)
+                throw new ArgumentException("A metadata blockset must have at least one block.", nameof(blockIds));
+            // More than one block needs blocklist hashes, and those are blocks in their own right, which
+            // would have to be stored at the destination as well
+            if (ids.Count > 1)
+                throw new ArgumentException("A metadata blockset of more than one block is not supported here.", nameof(blockIds));
+
+            await using var cmd = m_connection.CreateCommand()
+                .SetTransaction(m_rtr);
+
+            var blocksetId = await cmd.SetCommandAndParameters(@"
+                SELECT ""ID""
+                FROM ""Blockset""
+                WHERE
+                    ""FullHash"" = @FullHash
+                    AND ""Length"" = @Length
+            ")
+                .SetParameterValue("@FullHash", fullHash)
+                .SetParameterValue("@Length", size)
+                .ExecuteScalarInt64Async(-1, token)
+                .ConfigureAwait(false);
+
+            if (blocksetId < 0)
+            {
+                blocksetId = await cmd.SetCommandAndParameters(@"
+                    INSERT INTO ""Blockset"" (
+                        ""Length"",
+                        ""FullHash""
+                    )
+                    VALUES (
+                        @Length,
+                        @FullHash
+                    );
+                    SELECT last_insert_rowid();
+                ")
+                    .SetParameterValue("@Length", size)
+                    .SetParameterValue("@FullHash", fullHash)
+                    .ExecuteScalarInt64Async(-1, token)
+                    .ConfigureAwait(false);
+
+                if (blocksetId < 0)
+                    throw new InvalidOperationException($"Failed to create a metadata blockset for {fullHash}.");
+            }
+            else
+            {
+                await cmd.SetCommandAndParameters(@"
+                    DELETE FROM ""BlocksetEntry""
+                    WHERE ""BlocksetID"" = @BlocksetId
+                ")
+                    .SetParameterValue("@BlocksetId", blocksetId)
+                    .ExecuteNonQueryAsync(true, token)
+                    .ConfigureAwait(false);
+
+                await cmd.SetCommandAndParameters(@"
+                    DELETE FROM ""BlocklistHash""
+                    WHERE ""BlocksetID"" = @BlocksetId
+                ")
+                    .SetParameterValue("@BlocksetId", blocksetId)
+                    .ExecuteNonQueryAsync(true, token)
+                    .ConfigureAwait(false);
+            }
+
+            cmd.SetCommandAndParameters(@"
+                INSERT INTO ""BlocksetEntry"" (
+                    ""BlocksetID"",
+                    ""Index"",
+                    ""BlockID""
+                )
+                VALUES (
+                    @BlocksetId,
+                    @Index,
+                    @BlockId
+                )
+            ");
+
+            for (var i = 0; i < ids.Count; i++)
+                await cmd
+                    .SetParameterValue("@BlocksetId", blocksetId)
+                    .SetParameterValue("@Index", i)
+                    .SetParameterValue("@BlockId", ids[i])
+                    .ExecuteNonQueryAsync(true, token)
+                    .ConfigureAwait(false);
+
+            // Refuse to hand out a blockset that does not add up, as that is exactly the damage this is
+            // meant to repair
+            var calculatedLength = await cmd.SetCommandAndParameters(@"
+                SELECT IFNULL(SUM(""Block"".""Size""), 0)
+                FROM ""BlocksetEntry""
+                JOIN ""Block""
+                    ON ""Block"".""ID"" = ""BlocksetEntry"".""BlockID""
+                WHERE ""BlocksetEntry"".""BlocksetID"" = @BlocksetId
+            ")
+                .SetParameterValue("@BlocksetId", blocksetId)
+                .ExecuteScalarInt64Async(-1, token)
+                .ConfigureAwait(false);
+
+            if (calculatedLength != size)
+                throw new InvalidOperationException($"The metadata blockset {blocksetId} has a recorded length of {size}, but its blocks add up to {calculatedLength}.");
+
+            return blocksetId;
+        }
+
+        /// <summary>
+        /// Returns the id of a <c>Metadataset</c> row for the given blockset, creating one if there is none.
+        /// </summary>
+        /// <remarks>
+        /// A freshly created metadata blockset is referenced by nothing until the damaged metadata is
+        /// repointed at it, and an unreferenced blockset is removed by the next cleanup. The row also makes
+        /// the blockset visible to <see cref="FindSmallestUsableMetadataBlocksetIdAsync"/>, which only
+        /// considers blocksets that are already used as metadata.
+        /// </remarks>
+        /// <param name="blocksetId">The blockset to point the metadata entry at.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task that when awaited contains the id of the metadata entry.</returns>
+        public async Task<long> GetOrCreateMetadatasetIdAsync(long blocksetId, CancellationToken token)
+        {
+            await using var cmd = m_connection.CreateCommand()
+                .SetTransaction(m_rtr);
+
+            var metadataId = await cmd.SetCommandAndParameters(@"
+                SELECT ""ID""
+                FROM ""Metadataset""
+                WHERE ""BlocksetID"" = @BlocksetId
+                LIMIT 1
+            ")
+                .SetParameterValue("@BlocksetId", blocksetId)
+                .ExecuteScalarInt64Async(-1, token)
+                .ConfigureAwait(false);
+
+            if (metadataId >= 0)
+                return metadataId;
+
+            metadataId = await cmd.SetCommandAndParameters(@"
+                INSERT INTO ""Metadataset"" (
+                    ""BlocksetID""
+                )
+                VALUES (
+                    @BlocksetId
+                );
+                SELECT last_insert_rowid();
+            ")
+                .SetParameterValue("@BlocksetId", blocksetId)
+                .ExecuteScalarInt64Async(-1, token)
+                .ConfigureAwait(false);
+
+            if (metadataId < 0)
+                throw new InvalidOperationException($"Failed to create a metadata entry for blockset {blocksetId}.");
+
+            return metadataId;
         }
 
         /// <summary>

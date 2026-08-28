@@ -3369,7 +3369,7 @@ namespace Duplicati.Library.Main.Database.Local
         /// SQL fragment listing the ids of the volumes that can currently supply blocks: volumes that are
         /// block volumes and are not on their way out of the backup.
         /// </summary>
-        private static readonly string LIVE_BLOCK_VOLUME_IDS = @$"
+        protected static readonly string LIVE_BLOCK_VOLUME_IDS = @$"
             SELECT ""ID""
             FROM ""RemoteVolume""
             WHERE
