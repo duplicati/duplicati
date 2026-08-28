@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -45,14 +46,35 @@ namespace Duplicati.UnitTest;
 public class ZeroLengthMetadataTests : BasicSetupHelper
 {
     /// <summary>
+    /// Writes a file into the data folder and gives it a distinct modification time.
+    /// </summary>
+    /// <remarks>
+    /// Metadata is deduplicated on the hash of its contents, and the contents include
+    /// <c>CoreLastWritetime</c> and <c>CoreCreatetime</c> as read from the filesystem. Two files written
+    /// back to back can therefore land on the same timestamp and end up sharing a single
+    /// <c>Metadataset</c> row, which makes "one file's metadata" belong to two files. Whether that happens
+    /// depends on the clock granularity of the platform, so leaving it to chance makes these tests pass on
+    /// macOS and fail on Linux and Windows. An explicit, distinct modification time removes the ambiguity.
+    /// </remarks>
+    /// <param name="name">The file name to write.</param>
+    /// <param name="contents">The contents to write.</param>
+    /// <param name="dayOffset">A per-file offset that keeps the modification times apart.</param>
+    private void WriteFileWithDistinctMetadata(string name, string contents, int dayOffset)
+    {
+        var path = Path.Combine(this.DATAFOLDER, name);
+        File.WriteAllText(path, contents);
+        File.SetLastWriteTimeUtc(path, new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddDays(dayOffset));
+    }
+
+    /// <summary>
     /// Creates a backup containing a regular file and an empty file, so that the shared empty-file
     /// blockset exists, and returns the options used.
     /// </summary>
     private async Task<Dictionary<string, string>> BackupWithEmptyFileAsync()
     {
         var options = new Dictionary<string, string>(this.TestOptions);
-        File.WriteAllText(Path.Combine(this.DATAFOLDER, "a.txt"), "some data");
-        File.WriteAllText(Path.Combine(this.DATAFOLDER, "empty.txt"), string.Empty);
+        WriteFileWithDistinctMetadata("a.txt", "some data", 1);
+        WriteFileWithDistinctMetadata("empty.txt", string.Empty, 2);
 
         using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
             TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
@@ -97,6 +119,15 @@ public class ZeroLengthMetadataTests : BasicSetupHelper
             .ExecuteScalarInt64(-1);
 
         Assert.That(metadataId, Is.GreaterThanOrEqualTo(0), $"No metadata found for {path}");
+
+        // Repointing a shared metadata row would break every file using it, and the counts the tests assert
+        // on would silently describe something else. See WriteFileWithDistinctMetadata.
+        var sharingFiles = cmd
+            .SetCommandAndParameters(@"SELECT COUNT(*) FROM ""FileLookup"" WHERE ""MetadataID"" = @Id")
+            .SetParameterValue("@Id", metadataId)
+            .ExecuteScalarInt64(0);
+
+        Assert.That(sharingFiles, Is.EqualTo(1), $"The metadata of {path} is shared with {sharingFiles - 1} other entrie(s), so breaking it would not affect a single file");
 
         var updated = await cmd
             .SetCommandAndParameters(@"UPDATE ""Metadataset"" SET ""BlocksetID"" = @BlocksetId WHERE ""ID"" = @Id")
@@ -475,7 +506,7 @@ public class ZeroLengthMetadataTests : BasicSetupHelper
 
         // A second version that keeps the unchanged file, and therefore shares its metadata row
         Thread.Sleep(2000);
-        File.WriteAllText(Path.Combine(this.DATAFOLDER, "b.txt"), "more data");
+        WriteFileWithDistinctMetadata("b.txt", "more data", 3);
         using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
             TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
 
@@ -595,7 +626,7 @@ public class ZeroLengthMetadataTests : BasicSetupHelper
 
         // A second version that keeps the unchanged file, and therefore shares its metadata row
         Thread.Sleep(2000);
-        File.WriteAllText(Path.Combine(this.DATAFOLDER, "b.txt"), "more data");
+        WriteFileWithDistinctMetadata("b.txt", "more data", 3);
         using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
             TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
 
