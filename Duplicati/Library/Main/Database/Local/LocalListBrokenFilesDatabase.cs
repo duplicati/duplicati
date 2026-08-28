@@ -140,23 +140,132 @@ namespace Duplicati.Library.Main.Database.Local
         ";
 
         /// <summary>
-        /// Returns the SQL query for the ids of the blocksets that cannot be restored.
+        /// The name of the temporary table holding the materialized classification, or <c>null</c> if the
+        /// classification is not materialized.
+        /// </summary>
+        private string? m_invalidBlocksetIdsTable;
+
+        /// <summary>
+        /// How many times the classification has been requested since it was last invalidated.
+        /// </summary>
+        private long m_invalidBlocksetIdsRequests;
+
+        /// <summary>
+        /// Returns the SQL query for the ids of the blocksets that cannot be restored, materializing the
+        /// classification into a temporary table from the second request onwards.
         /// </summary>
         /// <remarks>
-        /// This currently just hands out a constant, and is asynchronous only so that it can be changed into
-        /// a lookup that materializes the classification into a temporary table when it is requested more
-        /// than once. The classification aggregates over every row of <c>BlocksetEntry</c> joined to
-        /// <c>Block</c>, and the broken-file query is evaluated once per fileset, so evaluating it inline
-        /// every time is a full scan per fileset.
+        /// The classification aggregates over every row of <c>BlocksetEntry</c> joined to <c>Block</c>, and
+        /// the broken-file query is evaluated once per fileset, so evaluating it inline every time is a full
+        /// scan per fileset. Materializing it unconditionally would be worse for the recreate path, which
+        /// needs the classification exactly once and would then pay for a full scan at the end of every
+        /// recreate. Waiting for the second request gives both callers what they need.
         /// <para>
-        /// Callers must resolve it once per query they build, and pass the string down, or a single query
-        /// build will look like several requests to the caching version.
+        /// Callers must resolve this once per query they build, and pass the string down, or a single query
+        /// build counts as several requests and materializes on the very first build.
         /// </para>
         /// </remarks>
         /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>A task that when awaited contains the SQL query.</returns>
-        private Task<string> InvalidBlocksetIdsQueryAsync(CancellationToken token)
-            => Task.FromResult(INVALID_BLOCKSET_IDS);
+        private async Task<string> InvalidBlocksetIdsQueryAsync(CancellationToken token)
+        {
+            m_invalidBlocksetIdsRequests++;
+            if (m_invalidBlocksetIdsRequests <= 1)
+                return INVALID_BLOCKSET_IDS;
+
+            await using var cmd = m_connection.CreateCommand()
+                .SetTransaction(m_rtr);
+
+            // SQLite rolls back temporary table DDL, so a rollback of the transaction the table was created
+            // in drops it while this field still names it, and the next query fails with "no such table".
+            if (m_invalidBlocksetIdsTable != null)
+            {
+                var exists = await cmd.SetCommandAndParameters(@"
+                    SELECT COUNT(*)
+                    FROM ""sqlite_temp_master""
+                    WHERE
+                        ""type"" = 'table'
+                        AND ""name"" = @Name
+                ")
+                    .SetParameterValue("@Name", m_invalidBlocksetIdsTable)
+                    .ExecuteScalarInt64Async(0, token)
+                    .ConfigureAwait(false);
+
+                if (exists == 0)
+                    m_invalidBlocksetIdsTable = null;
+            }
+
+            if (m_invalidBlocksetIdsTable == null)
+            {
+                var tablename = $"InvalidBlocksets-{Library.Utility.Utility.GetHexGuid()}";
+
+                await cmd.ExecuteNonQueryAsync($@"
+                    CREATE TEMPORARY TABLE ""{tablename}"" AS
+                    {INVALID_BLOCKSET_IDS}
+                ", token)
+                    .ConfigureAwait(false);
+
+                await cmd.ExecuteNonQueryAsync($@"
+                    CREATE UNIQUE INDEX ""{tablename}-Ix""
+                    ON ""{tablename}"" (""BlocksetID"")
+                ", token)
+                    .ConfigureAwait(false);
+
+                m_invalidBlocksetIdsTable = tablename;
+            }
+
+            return $@"
+                SELECT ""BlocksetID""
+                FROM ""{m_invalidBlocksetIdsTable}""
+            ";
+        }
+
+        /// <summary>
+        /// Drops the materialized classification, so the next request recomputes it.
+        /// </summary>
+        /// <remarks>
+        /// This must be called after anything that changes blocks, blocksets or blocklist hashes, as those
+        /// are what the classification is derived from. Note that <see cref="ReplaceMetadataAsync"/> does not
+        /// need it: repointing <c>Metadataset.BlocksetID</c> changes which blockset a metadata entry uses, not
+        /// which blocksets are restorable.
+        /// </remarks>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task that completes when the classification has been dropped.</returns>
+        public async Task InvalidateBrokenFileCacheAsync(CancellationToken token)
+        {
+            if (m_invalidBlocksetIdsTable != null)
+            {
+                try
+                {
+                    await using var cmd = m_connection.CreateCommand()
+                        .SetTransaction(m_rtr);
+
+                    await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{m_invalidBlocksetIdsTable}""", token)
+                        .ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "FailedToDropInvalidBlocksetsTable", ex, "Failed to drop the temporary table {0}: {1}", m_invalidBlocksetIdsTable, ex.Message);
+                }
+
+                m_invalidBlocksetIdsTable = null;
+            }
+
+            // Clamp to 1 rather than 0: the classification has already been asked for, so the next request
+            // should get a table instead of repeating the inline scan.
+            m_invalidBlocksetIdsRequests = Math.Min(m_invalidBlocksetIdsRequests, 1);
+        }
+
+        /// <inheritdoc/>
+        public override async ValueTask DisposeAsync()
+        {
+            // The connection can outlive this wrapper, as it does when the database was created around an
+            // existing one, so the temporary table has to be dropped rather than left to the connection.
+            if (!IsDisposed)
+                await InvalidateBrokenFileCacheAsync(default).ConfigureAwait(false);
+
+            await base.DisposeAsync().ConfigureAwait(false);
+        }
 
         /// <summary>
         /// Builds the SQL query for the blocksets that can hold restorable metadata.
@@ -497,6 +606,11 @@ namespace Duplicati.Library.Main.Database.Local
         /// recovery count: the first fileset repairs rows that later filesets also use, and those would then
         /// report zero.
         /// </para>
+        /// <para>
+        /// This deliberately does not call <see cref="InvalidateBrokenFileCacheAsync"/>: repointing
+        /// <c>Metadataset.BlocksetID</c> changes which blockset a metadata entry uses, not which blocksets are
+        /// restorable, so the classification is still valid afterwards.
+        /// </para>
         /// </remarks>
         /// <param name="filesetId">The filesetId to target.</param>
         /// <param name="replacementBlocksetId">The blockset ID to point the damaged metadata at.</param>
@@ -627,6 +741,9 @@ namespace Duplicati.Library.Main.Database.Local
                     .ConfigureAwait(false);
             }
             catch { /* Ignore, will be deleted on close anyway. */ }
+
+            // Blocks, blocksets and blocklist hashes have changed, so the classification is stale
+            await InvalidateBrokenFileCacheAsync(token).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -838,6 +955,11 @@ namespace Duplicati.Library.Main.Database.Local
         /// <returns>A task that when awaited contains the registration.</returns>
         public async Task<BlockRegistration> RegisterBlockAsync(string hash, long size, long volumeId, CancellationToken token)
         {
+            // Which volume a block lives in decides whether the blocksets using it are restorable. Dropping
+            // the classification up front is enough, because it is rebuilt on the next request, which can
+            // only happen after this has run.
+            await InvalidateBrokenFileCacheAsync(token).ConfigureAwait(false);
+
             await using var cmd = m_connection.CreateCommand()
                 .SetTransaction(m_rtr);
 
@@ -919,6 +1041,9 @@ namespace Duplicati.Library.Main.Database.Local
         /// <returns>A task that completes when the rollback has been attempted.</returns>
         public async Task RollbackBlockRegistrationAsync(BlockRegistration registration, CancellationToken token)
         {
+            // See RegisterBlockAsync: this puts Block.VolumeID back, which changes the classification again
+            await InvalidateBrokenFileCacheAsync(token).ConfigureAwait(false);
+
             await using var cmd = m_connection.CreateCommand()
                 .SetTransaction(m_rtr);
 
@@ -1077,6 +1202,9 @@ namespace Duplicati.Library.Main.Database.Local
 
             if (calculatedLength != size)
                 throw new InvalidOperationException($"The metadata blockset {blocksetId} has a recorded length of {size}, but its blocks add up to {calculatedLength}.");
+
+            // A new or rebuilt blockset changes the classification
+            await InvalidateBrokenFileCacheAsync(token).ConfigureAwait(false);
 
             return blocksetId;
         }

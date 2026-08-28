@@ -255,4 +255,78 @@ public class EmptyMetadataTests : BasicSetupHelper
             Assert.That(blocks, Is.GreaterThan(0), "Replacement metadata must have blocks to restore from");
         }
     }
+
+    /// <summary>
+    /// Counts the temporary tables holding a materialized blockset classification.
+    /// </summary>
+    private static long CountMaterializedClassifications(Microsoft.Data.Sqlite.SqliteConnection con)
+    {
+        using var cmd = con.CreateCommand();
+        cmd.CommandText = @"SELECT COUNT(*) FROM ""sqlite_temp_master"" WHERE ""type"" = 'table' AND ""name"" LIKE 'InvalidBlocksets-%'";
+        return Convert.ToInt64(cmd.ExecuteScalar());
+    }
+
+    /// <summary>
+    /// The blockset classification is materialized from the second request onwards, and dropped again when
+    /// it is invalidated. The first request stays inline, so a database recreate - which needs it exactly
+    /// once - does not pay for a temporary table.
+    /// </summary>
+    [Test]
+    [Category("Targeted")]
+    public async Task BlocksetClassificationIsMaterializedOnSecondRequestAsync()
+    {
+        var testopts = TestOptions.Expand(new { no_encryption = true });
+
+        File.WriteAllText(Path.Combine(DATAFOLDER, "file.txt"), "data");
+        using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
+            TestUtils.AssertResults(await c.BackupAsync(new[] { DATAFOLDER }));
+
+        await using var localDb = await LocalListBrokenFilesDatabase.CreateAsync(DBFILE, null, CancellationToken.None).ConfigureAwait(false);
+        var con = localDb.Connection;
+
+        // Every call requests the classification exactly once
+        await localDb.GetFilesetsWithReplaceableMetadataAsync(CancellationToken.None);
+        Assert.That(CountMaterializedClassifications(con), Is.EqualTo(0), "The first request must be evaluated inline");
+
+        await localDb.GetFilesetsWithReplaceableMetadataAsync(CancellationToken.None);
+        Assert.That(CountMaterializedClassifications(con), Is.EqualTo(1), "The second request should materialize the classification");
+
+        await localDb.GetFilesetsWithReplaceableMetadataAsync(CancellationToken.None);
+        Assert.That(CountMaterializedClassifications(con), Is.EqualTo(1), "The materialized classification should be reused");
+
+        await localDb.InvalidateBrokenFileCacheAsync(CancellationToken.None);
+        Assert.That(CountMaterializedClassifications(con), Is.EqualTo(0), "Invalidating should drop the table");
+
+        // The counter is clamped rather than reset, so the recomputed classification is materialized again on
+        // the next request instead of repeating the inline scan
+        await localDb.GetFilesetsWithReplaceableMetadataAsync(CancellationToken.None);
+        Assert.That(CountMaterializedClassifications(con), Is.EqualTo(1), "The next request should materialize again");
+    }
+
+    /// <summary>
+    /// SQLite rolls back temporary table DDL, so a rollback of the transaction the table was created in
+    /// drops it. The lookup has to notice that instead of handing out a query naming a table that is gone.
+    /// </summary>
+    [Test]
+    [Category("Targeted")]
+    public async Task BlocksetClassificationSurvivesTransactionRollbackAsync()
+    {
+        var testopts = TestOptions.Expand(new { no_encryption = true });
+
+        File.WriteAllText(Path.Combine(DATAFOLDER, "file.txt"), "data");
+        using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
+            TestUtils.AssertResults(await c.BackupAsync(new[] { DATAFOLDER }));
+
+        await using var localDb = await LocalListBrokenFilesDatabase.CreateAsync(DBFILE, null, CancellationToken.None).ConfigureAwait(false);
+
+        await localDb.GetFilesetsWithReplaceableMetadataAsync(CancellationToken.None);
+        await localDb.GetFilesetsWithReplaceableMetadataAsync(CancellationToken.None);
+        Assert.That(CountMaterializedClassifications(localDb.Connection), Is.EqualTo(1), "The classification should be materialized");
+
+        await localDb.Transaction.RollBackAsync(CancellationToken.None);
+
+        // Must not fail with "no such table"
+        await localDb.GetFilesetsWithReplaceableMetadataAsync(CancellationToken.None);
+        Assert.That(CountMaterializedClassifications(localDb.Connection), Is.EqualTo(1), "The classification should have been rebuilt");
+    }
 }

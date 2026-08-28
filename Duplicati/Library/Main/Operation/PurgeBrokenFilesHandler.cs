@@ -201,6 +201,11 @@ namespace Duplicati.Library.Main.Operation
                                 .ConfigureAwait(false);
                     }
 
+                    // The delete removed files, blocksets and blocks, so the classification the broken-file
+                    // queries below rely on is stale. Easy to miss, because the first to_purge fileset is the
+                    // next thing to query it.
+                    await db.InvalidateBrokenFileCacheAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+
                     pgoffset += (pgspan * fully_emptied.Length);
                     m_result.OperationProgressUpdater.UpdateProgress(pgoffset);
                 }
@@ -267,6 +272,9 @@ namespace Duplicati.Library.Main.Operation
                                 return updatedEntries;
                             }).ConfigureAwait(false);
                         }
+
+                        // Purging a fileset removes files, and with them blocksets and blocks
+                        await db.InvalidateBrokenFileCacheAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false);
 
                         pgoffset += pgspan;
                         m_result.OperationProgressUpdater.UpdateProgress(pgoffset);
