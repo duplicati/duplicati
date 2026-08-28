@@ -32,6 +32,25 @@ using System.Timers;
 
 namespace Duplicati.UnitTest
 {
+#if DEBUG
+    /// <summary>
+    /// Assembly-wide setup that runs once before any test in this assembly.
+    /// Ensures a stable machine ID is present in the data folder, so the DEBUG guard
+    /// in <see cref="Library.AutoUpdater.DataFolderManager"/> does not trip when a test
+    /// reads the ID without going through the application startup sequence that
+    /// normally initializes the data folder.
+    /// </summary>
+    [SetUpFixture]
+    public class GlobalTestSetup
+    {
+        [OneTimeSetUp]
+        public void RunBeforeAnyTests()
+        {
+            Library.AutoUpdater.DataFolderManager.SetMachineIDForTesting("unittestid");
+        }
+    }
+#endif
+
     public abstract class BasicSetupHelper
     {
         /// <summary>

@@ -463,6 +463,21 @@ public static class DataFolderManager
 #endif
     }
 
+#if DEBUG
+    /// <summary>
+    /// DEBUG-only test hook that ensures the data folder is initialized and stores
+    /// the given machine ID in it, so tests can run with a stable machine ID without
+    /// going through the application startup sequence that normally creates the ID.
+    /// </summary>
+    /// <param name="machineID">The machine ID to use</param>
+    public static void SetMachineIDForTesting(string machineID)
+    {
+        var folder = GetDataFolder(AccessMode.ReadWritePermissionSet);
+        File.WriteAllText(Path.Combine(folder, MACHINE_FILE), machineID);
+        _machineID = machineID;
+    }
+#endif
+
     /// <summary>
     /// The machine name, lazy evaluated
     /// </summary>
