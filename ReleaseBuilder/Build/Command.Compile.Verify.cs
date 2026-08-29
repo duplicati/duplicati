@@ -46,7 +46,7 @@ public static partial class Command
 
             string[] extras = target.OS switch
             {
-                OSType.Windows => ["Vanara.PInvoke.Kernel32.dll", "Vanara.PInvoke.VssApi.dll", "Duplicati.Library.WindowsModules.dll"],
+                OSType.Windows => ["Vanara.PInvoke.Kernel32.dll", "Vanara.PInvoke.VssApi.dll", "Duplicati.Library.WindowsModules.dll", "ijwhost.dll"],
                 OSType.MacOS => [],
                 OSType.Linux => [],
                 _ => throw new Exception($"Not supported OS: {target.OS}")
