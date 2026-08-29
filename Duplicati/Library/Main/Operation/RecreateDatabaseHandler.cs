@@ -727,7 +727,7 @@ namespace Duplicati.Library.Main.Operation
                 await using (var lbfdb = await LocalListBrokenFilesDatabase.CreateAsync(restoredb, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                 {
                     var broken = await lbfdb
-                        .GetBrokenFilesetsAsync(new DateTime(0), null, m_result.TaskControl.ProgressToken)
+                        .GetBrokenFilesetsAsync(new DateTime(0), null, ignoreReplaceableMetadata: false, m_result.TaskControl.ProgressToken)
                         .CountAsync(cancellationToken: m_result.TaskControl.ProgressToken)
                         .ConfigureAwait(false);
 

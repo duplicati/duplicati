@@ -1410,6 +1410,17 @@ namespace Duplicati.Library.Main.Operation
             if (await db.RepairInProgressAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false) || await db.PartiallyRecreatedAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                 Logging.Log.WriteWarningMessage(LOGTAG, "InProgressDatabase", null, "The database is marked as \"in-progress\" and may be incomplete.");
 
+            // The shared empty-file blockset is the only blockset for which a recorded length of 0 is
+            // legitimate, and it is identified by hash as well as by length.
+            var emptyFileHash = Utility.CalculateEmptyFileHash(m_options);
+
+            await db
+                .FixOrphanBlocksetEntriesAsync(m_options.Dryrun, m_result.TaskControl.ProgressToken)
+                .ConfigureAwait(false);
+            await db
+                .FixEmptyBlocksetWithBlocksAsync(emptyFileHash, m_options.Dryrun, m_result.TaskControl.ProgressToken)
+                .ConfigureAwait(false);
+
             await db.FixDuplicateMetahashAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false);
             await db.FixDuplicateFileentriesAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false);
             await db.FixDuplicatePathsInFilesetsAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false);
@@ -1419,9 +1430,40 @@ namespace Duplicati.Library.Main.Operation
             await db
                 .FixMissingBlocklistHashesAsync(m_options.BlockHashAlgorithm, m_options.Blocksize, m_result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);
+            await ReportEmptyMetadatasetsAsync(db).ConfigureAwait(false);
+
+            // Run this last, so mismatches that the steps above have resolved are not reported.
             await db
-                .FixEmptyMetadatasetsAsync(m_options, m_result.TaskControl.ProgressToken)
+                .ReportBlocksetLengthMismatchesAsync(emptyFileHash, m_result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Reports metadata entries that cannot be restored, and points at the commands that can recover them.
+        /// </summary>
+        /// <remarks>
+        /// Repair deliberately does not replace them. Metadata is recorded in the <c>dlist</c> files at the
+        /// destination, so a replacement made here is undone by the next database recreate, and until then it
+        /// hides the damage from <c>purge-broken-files</c>, which is the only command that can repair the
+        /// destination. Detection belongs in repair, replacement belongs in <c>purge-broken-files</c>, which
+        /// already writes new filelists.
+        /// </remarks>
+        /// <param name="db">The database to query.</param>
+        /// <returns>A task that completes when the report has been written.</returns>
+        private async Task ReportEmptyMetadatasetsAsync(LocalRepairDatabase db)
+        {
+            var count = await db
+                .CountEmptyMetadatasetsAsync(m_result.TaskControl.ProgressToken)
+                .ConfigureAwait(false);
+
+            if (count <= 0)
+                return;
+
+            // The consistency check reports the same condition, but it does not run on the paths that recreate
+            // the database from the destination, and it cannot say that repair has decided not to act. Hence a
+            // separate id and a message about what repair will not do, rather than a second copy of the same
+            // warning.
+            Logging.Log.WriteWarningMessage(LOGTAG, "ZeroLengthMetadataNotRepaired", null, "Not repairing {0} metadata entrie(s) with a length of 0. The metadata is recorded at the destination, so replacing it here would be undone by the next database recreate, and would hide the damage from the command that can repair it. Use the {1} command to see the affected files, and the {2} command to recover them.", count, "list-broken-files", "purge-broken-files");
         }
 
         /// <summary>

@@ -1968,9 +1968,262 @@ namespace Duplicati.Library.Main.Database.Local
                 );
         }
 
-        public async Task FixEmptyMetadatasetsAsync(Options options, CancellationToken token)
+        /// <summary>
+        /// Removes <c>BlocksetEntry</c> and <c>BlocklistHash</c> rows that reference a blockset which no
+        /// longer exists.
+        /// </summary>
+        /// <remarks>
+        /// These rows are dangerous rather than merely untidy: blockset IDs are plain rowids, so a later
+        /// insert can reuse the ID of the deleted blockset and silently adopt the stale block mapping,
+        /// producing a blockset whose contents belong to a completely different file.
+        /// <para>
+        /// Note that this deliberately does <em>not</em> delete unreferenced <c>Blockset</c> rows. Repair
+        /// recreates missing file entries from the filelists at the destination, and those entries need
+        /// the block mapping of their blockset, which the filelists do not carry. A blockset can therefore
+        /// be temporarily unreferenced while repair is running, and deleting it leaves a blockset with a
+        /// recorded length but no blocks once the file entry is recreated.
+        /// </para>
+        /// </remarks>
+        /// <param name="dryrun">If <c>true</c>, only report what would be removed.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task that when awaited returns the number of rows removed, or the number that would be removed in a dry-run.</returns>
+        public async Task<long> FixOrphanBlocksetEntriesAsync(bool dryrun, CancellationToken token)
         {
-            using var cmd = m_connection.CreateCommand(@"
+            await using var cmd = m_connection.CreateCommand()
+                .SetTransaction(m_rtr);
+
+            // Matches rows attached to a blockset that is not in the Blockset table
+            const string orphanFilter = @"
+                WHERE ""BlocksetID"" NOT IN (
+                    SELECT ""ID""
+                    FROM ""Blockset""
+                )
+            ";
+
+            var orphanEntries = await cmd.ExecuteScalarInt64Async($@"
+                SELECT COUNT(*)
+                FROM ""BlocksetEntry""
+                {orphanFilter}
+            ", 0, token)
+                .ConfigureAwait(false);
+
+            var orphanBlocklistHashes = await cmd.ExecuteScalarInt64Async($@"
+                SELECT COUNT(*)
+                FROM ""BlocklistHash""
+                {orphanFilter}
+            ", 0, token)
+                .ConfigureAwait(false);
+
+            var total = orphanEntries + orphanBlocklistHashes;
+            if (total <= 0)
+                return 0;
+
+            if (dryrun)
+            {
+                Logging.Log.WriteDryrunMessage(LOGTAG, "OrphanBlocksetEntries", "Would remove {0} blockset entries and {1} blocklist hashes referencing non-existing blocksets", orphanEntries, orphanBlocklistHashes);
+                return total;
+            }
+
+            Logging.Log.WriteInformationMessage(LOGTAG, "OrphanBlocksetEntries", "Removing {0} blockset entries and {1} blocklist hashes referencing non-existing blocksets", orphanEntries, orphanBlocklistHashes);
+
+            await cmd.ExecuteNonQueryAsync($@"
+                DELETE FROM ""BlocksetEntry""
+                {orphanFilter}
+            ", token)
+                .ConfigureAwait(false);
+
+            await cmd.ExecuteNonQueryAsync($@"
+                DELETE FROM ""BlocklistHash""
+                {orphanFilter}
+            ", token)
+                .ConfigureAwait(false);
+
+            await m_rtr.CommitAsync("FixOrphanBlocksetEntries", true, token)
+                .ConfigureAwait(false);
+
+            return total;
+        }
+
+        /// <summary>
+        /// Strips the blocks off the shared empty-file blockset, if any have become attached to it.
+        /// </summary>
+        /// <remarks>
+        /// The blockset is identified by both a recorded length of 0 and the file hash of zero bytes, so a
+        /// corrupt blockset that merely claims to be zero-length is not mistaken for it. This is the only
+        /// blockset whose recorded length is authoritative, and therefore the only one whose blocks may be
+        /// removed: every empty file in the backup shares it, so blocks attached to it make the
+        /// consistency check fail for all of them at once. Any other length mismatch must be reported
+        /// instead of emptied - see <see cref="ReportBlocksetLengthMismatchesAsync"/> - because stripping
+        /// the blocks off a corrupt blockset would turn a broken file into one that silently restores as
+        /// empty.
+        /// </remarks>
+        /// <param name="emptyFileHash">The base64 encoded file hash of zero bytes, see <see cref="Utility.CalculateEmptyFileHash"/>.</param>
+        /// <param name="dryrun">If <c>true</c>, only report what would be removed.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task that when awaited returns the number of rows removed, or the number that would be removed in a dry-run.</returns>
+        public async Task<long> FixEmptyBlocksetWithBlocksAsync(string emptyFileHash, bool dryrun, CancellationToken token)
+        {
+            await using var cmd = m_connection.CreateCommand()
+                .SetTransaction(m_rtr);
+
+            const string emptyBlocksets = @"
+                SELECT ""ID""
+                FROM ""Blockset""
+                WHERE
+                    ""Length"" = 0
+                    AND ""FullHash"" = @EmptyFileHash
+            ";
+
+            var attachedEntries = await cmd.SetCommandAndParameters($@"
+                SELECT COUNT(*)
+                FROM ""BlocksetEntry""
+                WHERE ""BlocksetID"" IN ({emptyBlocksets})
+            ")
+                .SetParameterValue("@EmptyFileHash", emptyFileHash)
+                .ExecuteScalarInt64Async(0, token)
+                .ConfigureAwait(false);
+
+            var attachedBlocklistHashes = await cmd.SetCommandAndParameters($@"
+                SELECT COUNT(*)
+                FROM ""BlocklistHash""
+                WHERE ""BlocksetID"" IN ({emptyBlocksets})
+            ")
+                .SetParameterValue("@EmptyFileHash", emptyFileHash)
+                .ExecuteScalarInt64Async(0, token)
+                .ConfigureAwait(false);
+
+            var total = attachedEntries + attachedBlocklistHashes;
+            if (total <= 0)
+                return 0;
+
+            if (dryrun)
+            {
+                Logging.Log.WriteDryrunMessage(LOGTAG, "EmptyBlocksetWithBlocks", "Would remove {0} blocks and {1} blocklist hashes attached to the shared empty-file blockset", attachedEntries, attachedBlocklistHashes);
+                return total;
+            }
+
+            Logging.Log.WriteInformationMessage(LOGTAG, "EmptyBlocksetWithBlocks", "Removing {0} blocks and {1} blocklist hashes attached to the shared empty-file blockset", attachedEntries, attachedBlocklistHashes);
+
+            await cmd.SetCommandAndParameters($@"
+                DELETE FROM ""BlocksetEntry""
+                WHERE ""BlocksetID"" IN ({emptyBlocksets})
+            ")
+                .SetParameterValue("@EmptyFileHash", emptyFileHash)
+                .ExecuteNonQueryAsync(true, token)
+                .ConfigureAwait(false);
+
+            await cmd.SetCommandAndParameters($@"
+                DELETE FROM ""BlocklistHash""
+                WHERE ""BlocksetID"" IN ({emptyBlocksets})
+            ")
+                .SetParameterValue("@EmptyFileHash", emptyFileHash)
+                .ExecuteNonQueryAsync(true, token)
+                .ConfigureAwait(false);
+
+            await m_rtr.CommitAsync("FixEmptyBlocksetWithBlocks", true, token)
+                .ConfigureAwait(false);
+
+            return total;
+        }
+
+        /// <summary>
+        /// Reports blocksets whose recorded length does not match the summed size of the blocks they
+        /// reference. These cannot be repaired locally, since there is no way to tell whether the length
+        /// or the block mapping is the damaged part.
+        /// </summary>
+        /// <remarks>
+        /// The shared empty-file blockset is excluded, because <see cref="FixEmptyBlocksetWithBlocksAsync"/>
+        /// handles it and reports on it separately. Run this last, so mismatches that earlier repair steps
+        /// have already resolved are not reported as the user's problem.
+        /// </remarks>
+        /// <param name="emptyFileHash">The base64 encoded file hash of zero bytes, see <see cref="Utility.CalculateEmptyFileHash"/>.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task that when awaited returns the number of mismatching blocksets.</returns>
+        public async Task<long> ReportBlocksetLengthMismatchesAsync(string emptyFileHash, CancellationToken token)
+        {
+            await using var cmd = m_connection.CreateCommand()
+                .SetTransaction(m_rtr);
+
+            // Note that a blockset with no entries at all has a calculated length of 0, so a non-empty
+            // blockset with no blocks is reported here as well.
+            var mismatches = @"
+                SELECT
+                    ""A"".""ID"",
+                    ""A"".""Length"",
+                    IFNULL(""B"".""CalcLen"", 0) AS ""CalcLen""
+                FROM ""Blockset"" ""A""
+                LEFT OUTER JOIN (
+                    SELECT
+                        ""BlocksetEntry"".""BlocksetID"",
+                        SUM(""Block"".""Size"") AS ""CalcLen""
+                    FROM ""BlocksetEntry""
+                    LEFT OUTER JOIN ""Block""
+                        ON ""Block"".""ID"" = ""BlocksetEntry"".""BlockID""
+                    GROUP BY ""BlocksetEntry"".""BlocksetID""
+                ) ""B""
+                    ON ""A"".""ID"" = ""B"".""BlocksetID""
+                WHERE
+                    ""A"".""Length"" != IFNULL(""B"".""CalcLen"", 0)
+                    AND NOT (
+                        ""A"".""Length"" = 0
+                        AND ""A"".""FullHash"" = @EmptyFileHash
+                    )
+            ";
+
+            var count = await cmd.SetCommandAndParameters($@"
+                SELECT COUNT(*)
+                FROM ({mismatches})
+            ")
+                .SetParameterValue("@EmptyFileHash", emptyFileHash)
+                .ExecuteScalarInt64Async(0, token)
+                .ConfigureAwait(false);
+
+            if (count <= 0)
+                return 0;
+
+            var examples = new List<string>();
+            cmd.SetCommandAndParameters($@"
+                SELECT
+                    ""M"".""ID"",
+                    ""M"".""Length"",
+                    ""M"".""CalcLen"",
+                    (
+                        SELECT ""File"".""Path""
+                        FROM ""File""
+                        WHERE ""File"".""BlocksetID"" = ""M"".""ID""
+                        LIMIT 1
+                    ) AS ""Path""
+                FROM ({mismatches}) ""M""
+                LIMIT 5
+            ")
+                .SetParameterValue("@EmptyFileHash", emptyFileHash);
+
+            await foreach (var rd in cmd.ExecuteReaderEnumerableAsync(token).ConfigureAwait(false))
+                examples.Add($"blocksetid {rd.ConvertValueToInt64(0)}: dbsize {rd.ConvertValueToInt64(1)}, actual size {rd.ConvertValueToInt64(2)}, path {rd.ConvertValueToString(3) ?? "<metadata>"}");
+
+            Logging.Log.WriteWarningMessage(LOGTAG, "BlocksetLengthMismatch", null,
+                "Found {0} blockset(s) with a recorded length that does not match the blocks they reference. This cannot be repaired, as it is not possible to tell whether the length or the blocks are wrong. Use the list-broken-files and purge-broken-files commands to handle the affected files. Examples: {1}{2}",
+                count, Environment.NewLine, string.Join(Environment.NewLine, examples));
+
+            return count;
+        }
+
+        /// <summary>
+        /// Counts the metadata entries that cannot be restored because their blockset has a length of 0.
+        /// </summary>
+        /// <remarks>
+        /// Repair only counts them, it does not replace them. Metadata is recorded in the <c>dlist</c> files
+        /// at the destination, so a replacement performed here would be undone by the next database recreate,
+        /// and worse, it would hide the damage from <c>purge-broken-files</c> - the only command that can fix
+        /// the destination - because the database would then look consistent. Since <c>--auto-cleanup</c>
+        /// runs repair automatically, a repair-side replacement can silently discard permissions and
+        /// timestamps while blocking the real fix.
+        /// </remarks>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task that when awaited returns the number of unrestorable metadata entries.</returns>
+        public async Task<long> CountEmptyMetadatasetsAsync(CancellationToken token)
+        {
+            await using var cmd = m_connection.CreateCommand(@"
                 SELECT COUNT(*)
                 FROM ""Metadataset""
                 JOIN ""Blockset""
@@ -1979,128 +2232,8 @@ namespace Duplicati.Library.Main.Database.Local
             ")
                 .SetTransaction(m_rtr);
 
-            var emptyMetaCount = await cmd.ExecuteScalarInt64Async(0, token)
+            return await cmd.ExecuteScalarInt64Async(0, token)
                 .ConfigureAwait(false);
-            if (emptyMetaCount <= 0)
-                return;
-
-            Logging.Log.WriteInformationMessage(LOGTAG, "ZeroLengthMetadata", "Found {0} zero-length metadata entries", emptyMetaCount);
-
-            // Create replacement metadata
-            var emptyMeta = Utility.WrapMetadata(new Dictionary<string, string>(), options);
-            var emptyBlocksetId = await GetEmptyMetadataBlocksetIdAsync(Array.Empty<long>(), emptyMeta.FileHash, emptyMeta.Blob.Length, token)
-                .ConfigureAwait(false);
-
-            if (emptyBlocksetId < 0)
-                throw new Interface.UserInformationException(
-                    "Failed to locate an empty metadata blockset to replace missing metadata. Set the option --disable-replace-missing-metadata=true to ignore this and drop files with missing metadata.",
-                    "FailedToLocateEmptyMetadataBlockset");
-
-            // Step 1: Create temp table with Metadataset IDs referencing empty blocksets (excluding the one to keep)
-            var tablename = $"FixMetadatasets-{Library.Utility.Utility.GetHexGuid()}";
-
-            try
-            {
-                await cmd.SetCommandAndParameters(@$"
-                    CREATE TEMP TABLE ""{tablename}"" AS
-                    SELECT
-                        ""m"".""ID"" AS ""MetadataID"",
-                        ""m"".""BlocksetID""
-                    FROM ""Metadataset"" ""m""
-                    JOIN ""Blockset"" ""b""
-                        ON ""m"".""BlocksetID"" = ""b"".""ID""
-                    WHERE
-                        ""b"".""Length"" = 0
-                        AND ""m"".""BlocksetID"" != @KeepBlockset
-                ")
-                    .SetParameterValue("@KeepBlockset", emptyBlocksetId)
-                    .ExecuteNonQueryAsync(true, token)
-                    .ConfigureAwait(false);
-
-                // Step 2: Update FileLookup to use a valid metadata ID
-                await cmd.SetCommandAndParameters(@$"
-                    UPDATE ""FileLookup""
-                    SET ""MetadataID"" = (
-                        SELECT ""ID""
-                        FROM ""Metadataset""
-                        WHERE ""BlocksetID"" = @KeepBlockset
-                        LIMIT 1
-                    )
-                    WHERE ""MetadataID"" IN (
-                        SELECT ""MetadataID""
-                        FROM ""{tablename}""
-                    )
-                ")
-                    .SetParameterValue("@KeepBlockset", emptyBlocksetId)
-                    .ExecuteNonQueryAsync(true, token)
-                    .ConfigureAwait(false);
-
-                // Step 3: Delete obsolete Metadataset entries
-                await cmd.SetCommandAndParameters(@$"
-                    DELETE FROM ""Metadataset""
-                    WHERE ""ID"" IN (
-                        SELECT ""MetadataID""
-                        FROM ""{tablename}""
-                    )
-                ")
-                    .ExecuteNonQueryAsync(true, token)
-                    .ConfigureAwait(false);
-
-                // Step 4: Delete orphaned blocksets (affected only)
-                await cmd.SetCommandAndParameters(@$"
-                    DELETE FROM ""Blockset""
-                    WHERE
-                        ""ID"" IN (
-                            SELECT ""BlocksetID""
-                            FROM ""{tablename}""
-                        )
-                        AND NOT EXISTS (
-                            SELECT 1
-                            FROM ""Metadataset""
-                            WHERE ""BlocksetID"" = ""Blockset"".""ID""
-                        )
-                        AND NOT EXISTS (
-                            SELECT 1
-                            FROM ""File""
-                            WHERE ""BlocksetID"" = ""Blockset"".""ID""
-                        )
-                ")
-                    .ExecuteNonQueryAsync(true, token)
-                    .ConfigureAwait(false);
-
-                // Step 5: Confirm all broken metadata entries are resolved
-                cmd.SetCommandAndParameters(@"
-                    SELECT COUNT(*)
-                    FROM ""Metadataset""
-                    JOIN ""Blockset""
-                        ON ""Metadataset"".""BlocksetID"" = ""Blockset"".""ID""
-                    WHERE ""Blockset"".""Length"" = 0
-                ");
-
-                var remaining = await cmd.ExecuteScalarInt64Async(0, token);
-                if (remaining > 0)
-                    throw new Interface.UserInformationException(
-                        $"{remaining} zero-length metadata entries could not be repaired.",
-                        "MetadataRepairFailed");
-
-                Logging.Log.WriteInformationMessage(LOGTAG, "ZeroLengthMetadataRepaired", "Zero length metadata entries repaired successfully");
-
-                await m_rtr.CommitAsync(token: token)
-                    .ConfigureAwait(false);
-            }
-            finally
-            {
-                try
-                {
-                    await cmd.SetCommandAndParameters($@"DROP TABLE IF EXISTS ""{tablename}"" ")
-                        .ExecuteNonQueryAsync(true, token)
-                        .ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    Logging.Log.WriteVerboseMessage(LOGTAG, "ErrorDroppingTempTable", ex, "Failed to drop temporary table {0}: {1}", tablename, ex.Message);
-                }
-            }
         }
     }
 

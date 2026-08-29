@@ -348,7 +348,7 @@ namespace Duplicati.UnitTest
         {
         }
 
-        public static void AssertResults(IBasicResults results, string[] ignoredWarnings = null)
+        public static void AssertResults(IBasicResults results, params string[] ignoredWarnings)
         {
             var operation = "Result";
             ignoredWarnings ??= [];
