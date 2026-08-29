@@ -63,17 +63,7 @@ namespace Duplicati.UnitTest
             //   LocalDatabase.VerifyConsistencyInnerAsync, the grouped blocklist hash counts
             "G(BlocksetID)",
             //   LocalDeleteDatabase.GetWastedSpaceReportAsync, the grouped scan times
-            "B(VolumeID)",
-
-            // Temporary tables that are created, read by a single statement and dropped again.
-            // An explicit index on those costs the same as the transient one it would replace,
-            // so it is left to SQLite. All of these are in LocalTestDatabase.
-            "Blocklist(Hash)",
-            "BlocklistHashList(Hash)",
-            "CmpTable(Hash)",
-            "CmpTable(Name)",
-            "CmpTable(Path)",
-            "CmpTable(Size)"
+            "B(VolumeID)"
         };
 
         [Test]
