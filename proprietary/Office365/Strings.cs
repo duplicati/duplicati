@@ -78,7 +78,7 @@ internal static class Strings
     public static string OfficeIncludedGroupClassificationsLong => LC.L("The group classifications to include in the backup: Unified (Microsoft 365 groups), NotUnified (security groups and distribution lists). Defaults to all.");
 
     public static string OfficeIncludedSiteClassificationsShort => LC.L("Included site classifications.");
-    public static string OfficeIncludedSiteClassificationsLong => LC.L("The site classifications to include in the backup: Group, Classic, Communication, PersonalLicensedUser, PersonalUnlicensedUser, Other. Defaults to all. Personal is accepted as a shorthand for both PersonalLicensedUser and PersonalUnlicensedUser.");
+    public static string OfficeIncludedSiteClassificationsLong => LC.L("The site classifications to include in the backup: Group, PersonalLicensedUser, PersonalUnlicensedUser, Other. Defaults to all. Personal is accepted as a shorthand for both PersonalLicensedUser and PersonalUnlicensedUser.");
 
     public static string UnlicensedUserLookupFailed => LC.L("Failed to list the user accounts in the tenant. Personal sites belonging to a user without an assigned Microsoft 365 license cannot be identified and will consume a license seat. Reading this requires the User.Read.All application permission.");
 

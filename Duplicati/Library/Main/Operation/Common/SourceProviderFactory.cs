@@ -38,6 +38,13 @@ using Duplicati.Library.Utility;
 namespace Duplicati.Library.Main.Operation.Common
 {
     /// <summary>
+    /// A remote source given on the form "@mountpoint|url", split into its parts
+    /// </summary>
+    /// <param name="Mountpoint">The mountpoint where the remote source is logically mounted</param>
+    /// <param name="Url">The url of the remote source</param>
+    public sealed record RemoteSource(string Mountpoint, string Url);
+
+    /// <summary>
     /// Factory for creating source providers from a list of source paths.
     /// This logic is shared between backup and sync operations to ensure
     /// consistent source enumeration behavior.
@@ -53,6 +60,20 @@ namespace Duplicati.Library.Main.Operation.Common
         /// The option that enables storing metadata content in the database
         /// </summary>
         public const string StoreMetadataContentInDatabaseOption = "store-metadata-content-in-database";
+
+        /// <summary>
+        /// Splits a remote source on the form "@mountpoint|url" into its parts
+        /// </summary>
+        /// <param name="source">The source to split</param>
+        /// <returns>The remote source, or null if the source is not a remote source</returns>
+        public static RemoteSource? ParseRemoteSource(string source)
+        {
+            // Remote sources are given on the form "@mountpoint|url"
+            var match = Regex.Match(source, @"^@(?<mountpoint>[^|]+)\|(?<url>.+)$", RegexOptions.IgnoreCase);
+            return match.Success
+                ? new RemoteSource(match.Groups["mountpoint"].Value, match.Groups["url"].Value)
+                : null;
+        }
 
         /// <summary>
         /// Enables the "store-metadata-content-in-database" option if any of the sources
@@ -77,15 +98,14 @@ namespace Duplicati.Library.Main.Operation.Common
 
             foreach (var source in sources)
             {
-                // Remote sources are given on the form "@mountpoint|url"
-                var match = Regex.Match(source, @"^@(?<mountpoint>[^|]+)\|(?<url>.+)$", RegexOptions.IgnoreCase);
-                if (!match.Success)
+                var remoteSource = ParseRemoteSource(source);
+                if (remoteSource == null)
                     continue;
 
                 string scheme;
                 try
                 {
-                    scheme = new Duplicati.Library.Utility.RelaxedUri(match.Groups["url"].Value).Scheme;
+                    scheme = new Duplicati.Library.Utility.RelaxedUri(remoteSource.Url).Scheme;
                 }
                 catch
                 {
@@ -195,10 +215,10 @@ namespace Duplicati.Library.Main.Operation.Common
                         foreach (var url in entry)
                         {
                             var sanitizedUrl = Duplicati.Library.Utility.Utility.GetUrlWithoutCredentials(url);
-                            var m = Regex.Match(url, @"^@(?<mountpoint>[^|]+)\|(?<url>.+)$", RegexOptions.IgnoreCase);
-                            if (m.Success)
+                            var remoteSource = ParseRemoteSource(url);
+                            if (remoteSource != null)
                             {
-                                var mountpoint = m.Groups["mountpoint"].Value;
+                                var mountpoint = remoteSource.Mountpoint;
 
                                 if (mountpoint.Any(x => Path.GetInvalidPathChars().Contains(x)))
                                     throw new UserInformationException(string.Format("The mountpoint \"{0}\" contains invalid characters", mountpoint), "InvalidMountpoint");
@@ -206,7 +226,7 @@ namespace Duplicati.Library.Main.Operation.Common
                                     throw new UserInformationException(string.Format("The mountpoint \"{0}\" is not a valid rooted mountpoint", mountpoint), "InvalidMountpoint");
 
                                 var normalizedMountpoint = Duplicati.Library.Common.IO.Util.AppendDirSeparator(mountpoint);
-                                var backendurl = m.Groups["url"].Value;
+                                var backendurl = remoteSource.Url;
 
                                 ISourceProvider provider;
                                 try
