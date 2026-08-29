@@ -24,9 +24,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Database.Local;
+using Duplicati.Library.Main.Volumes;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -105,15 +109,21 @@ namespace Duplicati.Library.Main.Operation
                 {
                     var emptymetadata = Utility.WrapMetadata(new Dictionary<string, string>(), m_options);
                     replacementMetadataBlocksetId = await db
-                        .GetEmptyMetadataBlocksetIdAsync(
+                        .FindEmptyMetadataBlocksetIdAsync(
                             (missing ?? []).Select(x => x.ID),
                             emptymetadata.FileHash,
                             emptymetadata.Blob.Length,
                             m_result.TaskControl.ProgressToken
                         )
                         .ConfigureAwait(false);
+
+                    // An ordinary backup holds no empty metadata, so there is usually nothing to
+                    // find. Rather than dressing the files in whatever other metadata happens to be
+                    // smallest, the empty metadata is written now: it is a constant, so it can
+                    // always be produced.
                     if (replacementMetadataBlocksetId < 0)
-                        throw new UserInformationException($"Failed to locate an empty metadata blockset to replace missing metadata. Set the option --disable-replace-missing-metadata=true to ignore this and drop files with missing metadata.", "FailedToLocateEmptyMetadataBlockset");
+                        replacementMetadataBlocksetId = await StoreEmptyMetadataAsync(backendManager, db, emptymetadata, m_result.TaskControl.ProgressToken)
+                            .ConfigureAwait(false);
                 }
 
                 var fully_emptied = compare_list.Where(x => x.RemoveCount == x.SetCount).ToArray();
@@ -219,6 +229,71 @@ namespace Duplicati.Library.Main.Operation
             }
 
             m_result.OperationProgressUpdater.UpdateProgress(1.0f);
+        }
+
+        /// <summary>
+        /// Writes the empty metadata to the destination as a volume of its own and records it, so
+        /// a file that lost its metadata can be given metadata that says nothing rather than
+        /// metadata that belongs to something else.
+        /// </summary>
+        /// <remarks>
+        /// This deliberately does not commit or wait for the backend. It runs inside the
+        /// transaction the purge is already holding, and the rows it writes are committed with the
+        /// rest of the purge. Committing here instead leaves the later ReplaceMetadata matching
+        /// nothing, which is how the substitution went unnoticed while it was being replaced.
+        /// </remarks>
+        /// <param name="backendManager">The backend manager to upload with.</param>
+        /// <param name="db">The database to record the new blockset in.</param>
+        /// <param name="emptymetadata">The empty metadata to store.</param>
+        /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
+        /// <returns>A task that when awaited contains the ID of the new blockset.</returns>
+        private async Task<long> StoreEmptyMetadataAsync(IBackendManager backendManager, LocalListBrokenFilesDatabase db, IMetahash emptymetadata, CancellationToken cancellationToken)
+        {
+            string blockHash;
+            using (var blockhasher = HashFactory.CreateHasher(m_options.BlockHashAlgorithm))
+                blockHash = Convert.ToBase64String(blockhasher.ComputeHash(emptymetadata.Blob));
+
+            var blockVolume = new BlockVolumeWriter(m_options);
+            blockVolume.VolumeID = await db
+                .RegisterRemoteVolumeAsync(blockVolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, cancellationToken)
+                .ConfigureAwait(false);
+            await blockVolume
+                .AddBlockAsync(blockHash, emptymetadata.Blob, 0, emptymetadata.Blob.Length, CompressionHint.Default)
+                .ConfigureAwait(false);
+            blockVolume.Close();
+
+            var blocksetId = await db
+                .AddEmptyMetadataBlocksetAsync(blockVolume.VolumeID, blockHash, emptymetadata.FileHash, emptymetadata.Blob.Length, cancellationToken)
+                .ConfigureAwait(false);
+
+            IndexVolumeWriter? indexVolume = null;
+            if (m_options.IndexfilePolicy != Options.IndexFileStrategy.None)
+            {
+                indexVolume = new IndexVolumeWriter(m_options);
+                indexVolume.VolumeID = await db
+                    .RegisterRemoteVolumeAsync(indexVolume.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary, cancellationToken)
+                    .ConfigureAwait(false);
+                indexVolume.StartVolume(blockVolume.RemoteFilename);
+                indexVolume.AddBlock(blockHash, emptymetadata.Blob.Length);
+                await db
+                    .AddIndexBlockLinkAsync(indexVolume.VolumeID, blockVolume.VolumeID, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+
+            if (m_options.Dryrun)
+            {
+                Logging.Log.WriteDryrunMessage(LOGTAG, "WouldStoreEmptyMetadata", "would upload {0}, holding the empty metadata that replaces what is missing", blockVolume.RemoteFilename);
+                return blocksetId;
+            }
+
+            await db
+                .UpdateRemoteVolumeAsync(blockVolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null, cancellationToken)
+                .ConfigureAwait(false);
+            await backendManager.PutAsync(blockVolume, indexVolume, null, false, null, cancellationToken)
+                .ConfigureAwait(false);
+
+            Logging.Log.WriteInformationMessage(LOGTAG, "StoredEmptyMetadata", "Stored the empty metadata in {0}, to replace metadata that is missing", blockVolume.RemoteFilename);
+            return blocksetId;
         }
     }
 }

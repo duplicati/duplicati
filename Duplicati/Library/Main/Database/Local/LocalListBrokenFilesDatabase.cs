@@ -36,6 +36,11 @@ namespace Duplicati.Library.Main.Database.Local
     internal class LocalListBrokenFilesDatabase : LocalDatabase
     {
         /// <summary>
+        /// The tag used for logging from this class.
+        /// </summary>
+        private static readonly string LOGTAG_LISTBROKEN = Logging.Log.LogTagFromType<LocalListBrokenFilesDatabase>();
+
+        /// <summary>
         /// SQL query to get the IDs of all block volumes.
         /// </summary>
         private static readonly string BLOCK_VOLUME_IDS = $@"
@@ -445,6 +450,89 @@ namespace Duplicati.Library.Main.Database.Local
             return await cmd
                 .ExecuteScalarInt64Async(0, token)
                 .ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Records the empty metadata block that was just written to a volume, and the blockset
+        /// pointing at it, so files whose own metadata is gone can be given empty metadata rather
+        /// than metadata belonging to some other file.
+        /// </summary>
+        /// <param name="volumeId">The volume the block was written to.</param>
+        /// <param name="blockHash">The hash of the block.</param>
+        /// <param name="fullHash">The hash of the metadata as a whole.</param>
+        /// <param name="size">The size of the metadata in bytes.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task that when awaited contains the ID of the new blockset.</returns>
+        public async Task<long> AddEmptyMetadataBlocksetAsync(long volumeId, string blockHash, string fullHash, long size, CancellationToken token)
+        {
+            await using var cmd = m_connection.CreateCommand(m_rtr);
+
+            // The id is chosen rather than left to the database. Removing the missing volumes
+            // deleted Block rows but left the BlocksetEntry rows that pointed at them, and SQLite
+            // hands a deleted row id out again on the next insert. A block landing on one of those
+            // ids would silently reattach a blockset that is supposed to look broken, and the file
+            // would keep metadata that is no longer there.
+            var blockId = await cmd.SetCommandAndParameters(@"
+                INSERT INTO ""Block"" (
+                    ""ID"",
+                    ""Hash"",
+                    ""Size"",
+                    ""VolumeID""
+                )
+                SELECT
+                    MAX(""Used"") + 1,
+                    @Hash,
+                    @Size,
+                    @VolumeID
+                FROM (
+                    SELECT COALESCE(MAX(""ID""), 0) AS ""Used"" FROM ""Block""
+                    UNION ALL
+                    SELECT COALESCE(MAX(""BlockID""), 0) FROM ""BlocksetEntry""
+                    UNION ALL
+                    SELECT COALESCE(MAX(""BlockID""), 0) FROM ""DuplicateBlock""
+                );
+                SELECT last_insert_rowid();
+            ")
+                .SetParameterValue("@Hash", blockHash)
+                .SetParameterValue("@Size", size)
+                .SetParameterValue("@VolumeID", volumeId)
+                .ExecuteScalarInt64Async(-1, token)
+                .ConfigureAwait(false);
+
+            var blocksetId = await cmd.SetCommandAndParameters(@"
+                INSERT INTO ""Blockset"" (
+                    ""Length"",
+                    ""FullHash""
+                )
+                VALUES (
+                    @Length,
+                    @FullHash
+                );
+                SELECT last_insert_rowid();
+            ")
+                .SetParameterValue("@Length", size)
+                .SetParameterValue("@FullHash", fullHash)
+                .ExecuteScalarInt64Async(-1, token)
+                .ConfigureAwait(false);
+
+            await cmd.SetCommandAndParameters(@"
+                INSERT INTO ""BlocksetEntry"" (
+                    ""BlocksetID"",
+                    ""Index"",
+                    ""BlockID""
+                )
+                VALUES (
+                    @BlocksetID,
+                    0,
+                    @BlockID
+                )
+            ")
+                .SetParameterValue("@BlocksetID", blocksetId)
+                .SetParameterValue("@BlockID", blockId)
+                .ExecuteNonQueryAsync(true, token)
+                .ConfigureAwait(false);
+
+            return blocksetId;
         }
     }
 }

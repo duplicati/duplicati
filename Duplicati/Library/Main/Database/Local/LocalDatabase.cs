@@ -3349,15 +3349,20 @@ namespace Duplicati.Library.Main.Database.Local
         }
 
         /// <summary>
-        /// Returns the ID of an empty metadata blockset. If no empty blockset is found, it returns the ID of the smallest blockset that is not in the given block volume IDs.
-        /// If no such blockset is found, it returns -1.
+        /// Returns the ID of a blockset that really is empty metadata, or -1 when the database
+        /// holds none that survives the given block volumes.
         /// </summary>
+        /// <remarks>
+        /// This answers only with an empty metadata blockset or a zero-length one. It never hands
+        /// back a blockset that belongs to some other file, which is what
+        /// <see cref="GetEmptyMetadataBlocksetIdAsync"/> falls back to.
+        /// </remarks>
         /// <param name="blockVolumeIds">The volume ids to ignore when searching for a suitable metadata block.</param>
         /// <param name="emptyHash">The hash of the empty blockset.</param>
         /// <param name="emptyHashSize">The size of the empty blockset.</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
-        /// <returns>A task that when awaited contains the ID of the empty metadata blockset, or -1 if no suitable blockset is found</returns>
-        public async Task<long> GetEmptyMetadataBlocksetIdAsync(IEnumerable<long> blockVolumeIds, string emptyHash, long emptyHashSize, CancellationToken token)
+        /// <returns>A task that when awaited contains the ID of the empty metadata blockset, or -1 if there is none</returns>
+        public async Task<long> FindEmptyMetadataBlocksetIdAsync(IEnumerable<long> blockVolumeIds, string emptyHash, long emptyHashSize, CancellationToken token)
         {
             await using var tmptable = await TemporaryDbValueList.CreateAsync(this, blockVolumeIds, token)
                 .ConfigureAwait(false);
@@ -3416,36 +3421,58 @@ namespace Duplicati.Library.Main.Database.Local
                   .ConfigureAwait(false);
             }
 
-            // No empty block found, pick the smallest one
-            if (res < 0)
-            {
-                cmd.SetCommandAndParameters(@"
-                    SELECT ""Blockset"".""ID""
-                    FROM
-                        ""BlocksetEntry"",
-                        ""Blockset"",
-                        ""Metadataset"",
-                        ""Block""
-                    WHERE
-                        ""Metadataset"".""BlocksetID"" = ""Blockset"".""ID""
-                        AND ""BlocksetEntry"".""BlocksetID"" = ""Blockset"".""ID""
-                        AND ""Block"".""ID"" = ""BlocksetEntry"".""BlockID""
-                        AND ""Block"".""VolumeID"" NOT IN (@BlockVolumeIds)
-                        AND ""Blockset"".""Length"" > 0
-                    ORDER BY ""Blockset"".""Length"" ASC
-                    LIMIT 1
-                ");
-
-                await cmd
-                  .ExpandInClauseParameterMssqliteAsync("@BlockVolumeIds", tmptable, token)
-                  .ConfigureAwait(false);
-
-                res = await cmd
-                  .ExecuteScalarInt64Async(-1, token)
-                  .ConfigureAwait(false);
-            }
-
             return res;
+        }
+
+        /// <summary>
+        /// Returns the ID of an empty metadata blockset. If no empty blockset is found, it returns the ID of the smallest blockset that is not in the given block volume IDs.
+        /// If no such blockset is found, it returns -1.
+        /// </summary>
+        /// <remarks>
+        /// The last step answers with another file's metadata. A caller that puts the result on a
+        /// file should ask <see cref="FindEmptyMetadataBlocksetIdAsync"/> instead and handle the
+        /// absence itself, rather than dressing a file in metadata that belongs to something else.
+        /// </remarks>
+        /// <param name="blockVolumeIds">The volume ids to ignore when searching for a suitable metadata block.</param>
+        /// <param name="emptyHash">The hash of the empty blockset.</param>
+        /// <param name="emptyHashSize">The size of the empty blockset.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task that when awaited contains the ID of the blockset to use, or -1 if no suitable blockset is found</returns>
+        public async Task<long> GetEmptyMetadataBlocksetIdAsync(IEnumerable<long> blockVolumeIds, string emptyHash, long emptyHashSize, CancellationToken token)
+        {
+            var res = await FindEmptyMetadataBlocksetIdAsync(blockVolumeIds, emptyHash, emptyHashSize, token)
+                .ConfigureAwait(false);
+            if (res >= 0)
+                return res;
+
+            await using var tmptable = await TemporaryDbValueList.CreateAsync(this, blockVolumeIds, token)
+                .ConfigureAwait(false);
+
+            // No empty block found, pick the smallest one
+            await using var cmd = Connection.CreateCommand(@"
+                SELECT ""Blockset"".""ID""
+                FROM
+                    ""BlocksetEntry"",
+                    ""Blockset"",
+                    ""Metadataset"",
+                    ""Block""
+                WHERE
+                    ""Metadataset"".""BlocksetID"" = ""Blockset"".""ID""
+                    AND ""BlocksetEntry"".""BlocksetID"" = ""Blockset"".""ID""
+                    AND ""Block"".""ID"" = ""BlocksetEntry"".""BlockID""
+                    AND ""Block"".""VolumeID"" NOT IN (@BlockVolumeIds)
+                    AND ""Blockset"".""Length"" > 0
+                ORDER BY ""Blockset"".""Length"" ASC
+                LIMIT 1
+            ")
+                .SetTransaction(m_rtr);
+
+            await cmd.ExpandInClauseParameterMssqliteAsync("@BlockVolumeIds", tmptable, token)
+                .ConfigureAwait(false);
+
+            return await cmd
+                .ExecuteScalarInt64Async(-1, token)
+                .ConfigureAwait(false);
         }
 
         public virtual void Dispose()
