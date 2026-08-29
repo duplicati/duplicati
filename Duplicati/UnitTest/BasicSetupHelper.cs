@@ -32,7 +32,6 @@ using System.Timers;
 
 namespace Duplicati.UnitTest
 {
-#if DEBUG
     /// <summary>
     /// Assembly-wide setup that runs once before any test in this assembly.
     /// Ensures a stable machine ID is present in the data folder, so the DEBUG guard
@@ -49,7 +48,6 @@ namespace Duplicati.UnitTest
             Library.AutoUpdater.DataFolderManager.SetMachineIDForTesting("unittestid");
         }
     }
-#endif
 
     public abstract class BasicSetupHelper
     {
