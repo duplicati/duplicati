@@ -88,7 +88,7 @@ internal static class Strings
     public static string OfficeDriveDeltaMaxItemsShort => LC.L("Maximum number of changes to read from a library delta.");
     public static string OfficeDriveDeltaMaxItemsLong => LC.L("The delta changes of a document library are held in memory while the backup resolves their paths. If a library reports more changes than this, for instance after a migration, the changes are discarded and the library is walked in full instead.");
 
-    public static string OfficeIncludedSiteClassificationsLong => LC.L("The site classifications to include in the backup: Group, Classic, Communication, PersonalLicensedUser, PersonalUnlicensedUser, Other. Defaults to all. Personal is accepted as a shorthand for both PersonalLicensedUser and PersonalUnlicensedUser.");
+    public static string OfficeIncludedSiteClassificationsLong => LC.L("The site classifications to include in the backup: Group, PersonalLicensedUser, PersonalUnlicensedUser, Other. Defaults to all. Personal is accepted as a shorthand for both PersonalLicensedUser and PersonalUnlicensedUser.");
 
     public static string UnlicensedUserLookupFailed => LC.L("Failed to list the user accounts in the tenant. Personal sites belonging to a user without an assigned Microsoft 365 license cannot be identified and will consume a license seat. Reading this requires the User.Read.All application permission.");
 

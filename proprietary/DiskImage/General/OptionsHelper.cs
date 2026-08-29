@@ -24,9 +24,9 @@ internal static class OptionsHelper
     internal const string DISK_RESTORE_SKIP_PARTITION_TABLE_OPTION = "diskimage-restore-skip-partition-table";
 
     /// <summary>
-    /// Option to validate target disk size before restoring.
+    /// Option to skip validation of the target disk size before restoring.
     /// </summary>
-    internal const string DISK_RESTORE_VALIDATE_SIZE_OPTION = "diskimage-restore-validate-size";
+    internal const string DISK_RESTORE_SKIP_SIZE_VALIDATION_OPTION = "diskimage-restore-skip-size-validation";
 
     /// <summary>
     /// Option to treat filesystem as unknown (force raw block-based backup).
@@ -45,7 +45,7 @@ internal static class OptionsHelper
     [
         new CommandLineArgument(DISK_RESTORE_AUTO_UNMOUNT_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.DiskRestoreAutoUnmountShort, Strings.DiskRestoreAutoUnmountLong, "false"),
         new CommandLineArgument(DISK_RESTORE_SKIP_PARTITION_TABLE_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.DiskRestoreSkipPartitionTableShort, Strings.DiskRestoreSkipPartitionTableLong, "false"),
-        new CommandLineArgument(DISK_RESTORE_VALIDATE_SIZE_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.DiskRestoreValidateSizeShort, Strings.DiskRestoreValidateSizeLong, "true"),
+        new CommandLineArgument(DISK_RESTORE_SKIP_SIZE_VALIDATION_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.DiskRestoreSkipSizeValidationShort, Strings.DiskRestoreSkipSizeValidationLong, "false"),
         //new CommandLineArgument(DISK_IMAGE_FILESYSTEM_UNKNOWN_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.DiskImageFilesystemUnknownShort, Strings.DiskImageFilesystemUnknownLong, "false"),
         new CommandLineArgument(DISK_IMAGE_FILESYSTEM_PARSED_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.DiskImageFilesystemParsedShort, Strings.DiskImageFilesystemParsedLong, "false"),
     ];

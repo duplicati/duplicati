@@ -111,15 +111,14 @@ namespace Duplicati.Library.Main.Operation.Common
 
             foreach (var source in sources)
             {
-                // Remote sources are given on the form "@mountpoint|url"
-                var match = Regex.Match(source, @"^@(?<mountpoint>[^|]+)\|(?<url>.+)$", RegexOptions.IgnoreCase);
-                if (!match.Success)
+                var remoteSource = ParseRemoteSource(source);
+                if (remoteSource == null)
                     continue;
 
                 string scheme;
                 try
                 {
-                    scheme = new Duplicati.Library.Utility.Uri(match.Groups["url"].Value).Scheme;
+                    scheme = new Duplicati.Library.Utility.Uri(remoteSource.Url).Scheme;
                 }
                 catch
                 {
@@ -229,10 +228,10 @@ namespace Duplicati.Library.Main.Operation.Common
                         foreach (var url in entry)
                         {
                             var sanitizedUrl = Duplicati.Library.Utility.Utility.GetUrlWithoutCredentials(url);
-                            var m = Regex.Match(url, @"^@(?<mountpoint>[^|]+)\|(?<url>.+)$", RegexOptions.IgnoreCase);
-                            if (m.Success)
+                            var remoteSource = ParseRemoteSource(url);
+                            if (remoteSource != null)
                             {
-                                var mountpoint = m.Groups["mountpoint"].Value;
+                                var mountpoint = remoteSource.Mountpoint;
 
                                 if (mountpoint.Any(x => Path.GetInvalidPathChars().Contains(x)))
                                     throw new UserInformationException(string.Format("The mountpoint \"{0}\" contains invalid characters", mountpoint), "InvalidMountpoint");
@@ -240,7 +239,7 @@ namespace Duplicati.Library.Main.Operation.Common
                                     throw new UserInformationException(string.Format("The mountpoint \"{0}\" is not a valid rooted mountpoint", mountpoint), "InvalidMountpoint");
 
                                 var normalizedMountpoint = NormalizeMountpoint(mountpoint);
-                                var backendurl = m.Groups["url"].Value;
+                                var backendurl = remoteSource.Url;
 
                                 ISourceProvider provider;
                                 try

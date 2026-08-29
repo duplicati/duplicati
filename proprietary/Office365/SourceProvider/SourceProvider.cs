@@ -578,10 +578,6 @@ public sealed partial class SourceProvider : ISourceProviderModule, IChangeTrack
     {
         /// <summary>A Microsoft 365 group-connected team site.</summary>
         Group,
-        /// <summary>A classic (non-group) team site.</summary>
-        Classic,
-        /// <summary>A modern communication site.</summary>
-        Communication,
         /// <summary>
         /// A personal (OneDrive for Business) site whose owner holds a Microsoft 365 license,
         /// or could not be determined.
@@ -623,8 +619,6 @@ public sealed partial class SourceProvider : ISourceProviderModule, IChangeTrack
         => category switch
         {
             SiteCategory.Group => Office365SiteClassification.Group,
-            SiteCategory.Classic => Office365SiteClassification.Classic,
-            SiteCategory.Communication => Office365SiteClassification.Communication,
             SiteCategory.PersonalLicensedUser => Office365SiteClassification.PersonalLicensedUser,
             SiteCategory.PersonalUnlicensedUser => Office365SiteClassification.PersonalUnlicensedUser,
             _ => Office365SiteClassification.Other
@@ -813,8 +807,8 @@ public sealed partial class SourceProvider : ISourceProviderModule, IChangeTrack
     /// Classifies a SharePoint site into one of the <see cref="SiteCategory"/> buckets,
     /// on a best-effort basis using only the Microsoft Graph <c>site</c> object.
     /// Personal (OneDrive) sites are detected reliably. The Graph <c>site</c> object does
-    /// not expose the SharePoint web template, so group, classic and communication sites
-    /// cannot be reliably distinguished from Graph alone and are reported as
+    /// not expose the SharePoint web template, so group-connected team sites cannot be
+    /// reliably distinguished from other sites from Graph alone and are reported as
     /// <see cref="SiteCategory.Other"/>.
     /// </summary>
     /// <param name="site">The site to classify.</param>
@@ -843,8 +837,8 @@ public sealed partial class SourceProvider : ISourceProviderModule, IChangeTrack
                 || site.WebUrl.Contains("/personal/", StringComparison.OrdinalIgnoreCase)))
             return SiteCategory.PersonalLicensedUser;
 
-        // The Graph site object does not expose the web template, so group/classic/
-        // communication cannot be distinguished reliably from Graph alone.
+        // The Graph site object does not expose the web template, so group-connected
+        // team sites cannot be distinguished reliably from Graph alone.
         return SiteCategory.Other;
     }
 

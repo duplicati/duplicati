@@ -52,14 +52,14 @@ internal static class Strings
     public static string DiskRestoreSkipPartitionTableLong => LC.L("If set, the partition table (MBR/GPT) will not be restored, only the data within partitions.");
 
     /// <summary>
-    /// Short description for the validate size option.
+    /// Short description for the skip size validation option.
     /// </summary>
-    public static string DiskRestoreValidateSizeShort => LC.L("Validate target size.");
+    public static string DiskRestoreSkipSizeValidationShort => LC.L("Skip target size validation.");
 
     /// <summary>
-    /// Long description for the validate size option.
+    /// Long description for the skip size validation option.
     /// </summary>
-    public static string DiskRestoreValidateSizeLong => LC.L("If set, the target disk size will be validated against the source size before restoring.");
+    public static string DiskRestoreSkipSizeValidationLong => LC.L("If set, the target disk size will not be validated against the source size before restoring.");
 
     /// <summary>
     /// Error message for when platform is not supported.

@@ -181,7 +181,7 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
         (_devicePath, _subpath) = SourceProvider.SplitDeviceAndSubpath(uri.HostAndPath);
 
         _skipPartitionTable = Utility.ParseBoolOption(options, OptionsHelper.DISK_RESTORE_SKIP_PARTITION_TABLE_OPTION);
-        _validateSize = Utility.ParseBoolOption(options, OptionsHelper.DISK_RESTORE_VALIDATE_SIZE_OPTION);
+        _validateSize = !Utility.ParseBoolOption(options, OptionsHelper.DISK_RESTORE_SKIP_SIZE_VALIDATION_OPTION);
         _autoUnmount = Utility.ParseBoolOption(options, OptionsHelper.DISK_RESTORE_AUTO_UNMOUNT_OPTION);
         _hasSetOverwriteOption = Utility.ParseBoolOption(options, "overwrite");
     }
