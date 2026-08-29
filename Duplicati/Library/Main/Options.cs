@@ -445,7 +445,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("retry-delay", CommandLineArgument.ArgumentType.Timespan, Strings.Options.RetrydelayShort, Strings.Options.RetrydelayLong, DEFAULT_RETRY_DELAY),
             new CommandLineArgument("retry-with-exponential-backoff", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RetrywithexponentialbackoffShort, Strings.Options.RetrywithexponentialbackoffLong, "false"),
 
-            new CommandLineArgument("synchronous-upload", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SynchronousuploadShort, Strings.Options.SynchronousuploadLong, "false"),
+            new CommandLineArgument("synchronous-upload", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SynchronousuploadShort, Strings.Options.SynchronousuploadLong, "false", null, null, Strings.Options.SynchronousuploadDeprecated("asynchronous-upload-limit")),
             new CommandLineArgument("asynchronous-upload-limit", CommandLineArgument.ArgumentType.Integer, Strings.Options.AsynchronousconcurrentuploadlimitShort, Strings.Options.AsynchronousconcurrentuploadlimitLong, DEFAULT_ASYNCHRONOUS_UPLOAD_LIMIT.ToString(), ["asynchronous-concurrent-upload-limit"]),
             new CommandLineArgument("asynchronous-upload-folder", CommandLineArgument.ArgumentType.Path, Strings.Options.AsynchronousuploadfolderShort, Strings.Options.AsynchronousuploadfolderLong, System.IO.Path.GetTempPath()),
 
@@ -932,11 +932,6 @@ namespace Duplicati.Library.Main
         /// Gets the number of time to retry transmission if it fails
         /// </summary>
         public int NumberOfRetries => Math.Max(0, GetInt("number-of-retries", DEFAULT_NUMBER_OF_RETRIES));
-
-        /// <summary>
-        /// A value indicating if backups are transmitted on a separate thread
-        /// </summary>
-        public bool SynchronousUpload => GetBool("synchronous-upload");
 
         /// <summary>
         /// A value indicating if system is allowed to enter sleep power states during backup/restore

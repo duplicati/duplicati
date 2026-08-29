@@ -163,6 +163,7 @@ namespace Duplicati.Library.Main.Strings
         public static string ListverifyuploadsShort { get { return LC.L(@"Verify uploads by listing contents"); } }
         public static string SynchronousuploadLong { get { return LC.L(@"Disables uploading multiple files concurrently to preserve bandwith. This will have the same effect as setting --asynchronous-upload-limit=1 but additionally wait for related uploads. The volume that is being created is not counted in the upload limit."); } }
         public static string SynchronousuploadShort { get { return LC.L(@"Upload files synchronously"); } }
+        public static string SynchronousuploadDeprecated(string alternativeOptionName) { return LC.L(@"The option --{0} is no longer used and has been deprecated. To limit how many uploads run at once, set the option --{1}.", "synchronous-upload", alternativeOptionName); }
         public static string NoconnectionreuseLong { get { return LC.L(@"Duplicati will attempt to perform multiple operations on a single connection, as this avoids repeated login attempts, and thus speeds up the process. Use this option to ensure that each operation is performed on a seperate connection."); } }
         public static string NoconnectionreuseShort { get { return LC.L(@"Do not re-use connections"); } }
         public static string DebugretryerrorsLong { get { return LC.L(@"When an error occurs, Duplicati will silently retry, and only report the number of retries. Enable this option to have the error messages displayed when a retry is performed."); } }
