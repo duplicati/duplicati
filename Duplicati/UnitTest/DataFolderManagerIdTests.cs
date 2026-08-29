@@ -92,6 +92,10 @@ namespace Duplicati.UnitTest
             ResetCachedIds();
             DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ProbeOnly);
 
+            // Restore the shared test machine id that GlobalTestSetup installs, so
+            // later tests in this process do not trip the DEBUG guard in DataFolderManager
+            DataFolderManager.SetMachineIDForTesting(GlobalTestSetup.TestMachineId);
+
             try
             {
                 if (Directory.Exists(m_tempDir))
