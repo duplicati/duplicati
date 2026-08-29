@@ -1158,12 +1158,18 @@ namespace Duplicati.UnitTest
                 return false;
             };
 
+            // What each interrupted run did is what the count at the end is made of, and
+            // those runs throw, so none of it reaches the assertion on its own
+            var interruptedRuns = new List<string>();
             for (var i = 0; i < runs; i++)
             {
                 if (modifyInBetween)
                     ModifySourceFiles();
 
+                var sink = new InterruptedRunSink();
                 using (var c = new Controller(failtarget, testopts, null))
+                {
+                    await c.AppendSinkAsync(sink);
                     try
                     {
                         await c.BackupAsync(new string[] { DATAFOLDER });
@@ -1171,6 +1177,9 @@ namespace Duplicati.UnitTest
                     catch (DeterministicErrorBackend.DeterministicErrorBackendException)
                     {
                     }
+                }
+
+                interruptedRuns.Add($"#{i} {sink}");
 
                 // Prevent clashes in timestamps
                 Thread.Sleep(3000);
@@ -1189,7 +1198,8 @@ namespace Duplicati.UnitTest
                     $"The last backup reported {backupResults.AddedFiles} added and "
                     + $"{backupResults.ModifiedFiles} modified file(s), "
                     + $"{backupResults.AddedFolders} added and {backupResults.ModifiedFolders} modified folder(s). "
-                    + $"Versions present: {DescribeFilesets(listResults.Filesets)}");
+                    + $"Versions present: {DescribeFilesets(listResults.Filesets)}. "
+                    + $"Interrupted runs: {string.Join("; ", interruptedRuns)}");
             }
 
             // Verify that all is in order
@@ -1230,6 +1240,52 @@ namespace Duplicati.UnitTest
                 .OrderBy(x => x.Version)
                 .Select(x => $"#{x.Version} {(x.IsFullBackup == 1 ? "full" : "partial")}"
                     + $" at {x.Time.ToUniversalTime():HH:mm:ss}Z with {x.FileCount} file(s)"));
+
+        /// <summary>
+        /// Records what one interrupted run did. A run with an unchanged source and a
+        /// complete backup behind it has nothing to upload, so it never reaches the error
+        /// backend at all; a run that does send a filelist is the one the version count at
+        /// the end disagrees about, and whether it also uploaded a filelist for an earlier
+        /// run says which term of the decision in UploadRealFilelist made it do so.
+        /// </summary>
+        private class InterruptedRunSink : IMessageSink
+        {
+            /// <summary>
+            /// The filelists the run started sending
+            /// </summary>
+            public List<string> StartedFilelists { get; } = new List<string>();
+
+            /// <summary>
+            /// Whether the run uploaded a filelist for an earlier interrupted run
+            /// </summary>
+            public bool UploadedSyntheticFilelist { get; private set; }
+
+            public void BackendEvent(BackendActionType action, BackendEventType type, string path, long size)
+            {
+                if (action == BackendActionType.Put && type == BackendEventType.Started && path.Contains(".dlist."))
+                    this.StartedFilelists.Add(path);
+            }
+
+            public void WriteMessage(LogEntry entry)
+            {
+                if (string.Equals(entry.Id, "PreviousBackupFilelistUpload", StringComparison.Ordinal))
+                    this.UploadedSyntheticFilelist = true;
+            }
+
+            public void SetBackendProgress(IBackendProgress progress)
+            {
+            }
+
+            public void SetOperationProgress(IOperationProgress progress)
+            {
+            }
+
+            public override string ToString()
+                => this.StartedFilelists.Count == 0
+                    ? "sent nothing"
+                    : $"sent {this.StartedFilelists.Count} filelist(s)"
+                        + (this.UploadedSyntheticFilelist ? ", one of them for an earlier run" : ", none for an earlier run");
+        }
 
         private class LogSink : IMessageSink
         {

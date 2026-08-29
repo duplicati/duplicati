@@ -40,10 +40,6 @@ internal enum Office365SiteClassification
 {
     /// <summary>A Microsoft 365 group-connected team site.</summary>
     Group = 1,
-    /// <summary>A classic (non-group) team site.</summary>
-    Classic = 2,
-    /// <summary>A modern communication site.</summary>
-    Communication = 4,
     /// <summary>
     /// A personal (OneDrive for Business) site owned by a licensed user account, or one whose
     /// owner could not be determined.

@@ -65,7 +65,7 @@ namespace Duplicati.Library.Main.Operation
         {
             List<Database.RemoteVolumeEntry>? missing = null;
             var brokensets = await db
-                .GetBrokenFilesetsAsync(options.Time, options.Version, result.TaskControl.ProgressToken)
+                .GetBrokenFilesetsAsync(options.Time, options.Version, ignoreReplaceableMetadata: false, result.TaskControl.ProgressToken)
                 .ToArrayAsync(cancellationToken: result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);
 
@@ -107,7 +107,7 @@ namespace Duplicati.Library.Main.Operation
                         .ConfigureAwait(false);
 
                 brokensets = await db
-                    .GetBrokenFilesetsAsync(options.Time, options.Version, result.TaskControl.ProgressToken)
+                    .GetBrokenFilesetsAsync(options.Time, options.Version, ignoreReplaceableMetadata: false, result.TaskControl.ProgressToken)
                     .ToArrayAsync()
                     .ConfigureAwait(false);
             }
@@ -165,7 +165,7 @@ namespace Duplicati.Library.Main.Operation
                                 x.Timestamp,
                                 callbackhandler == null && !m_options.ListSetsOnly
                                     ? await db
-                                        .GetBrokenFilenamesAsync(x.FilesetID, m_result.TaskControl.ProgressToken)
+                                        .GetBrokenFilenamesAsync(x.FilesetID, ignoreReplaceableMetadata: false, m_result.TaskControl.ProgressToken)
                                         .ToArrayAsync(cancellationToken: m_result.TaskControl.ProgressToken)
                                         .ConfigureAwait(false)
                                     : new MockList<Tuple<string, long>>((int)x.BrokenCount)
@@ -175,7 +175,7 @@ namespace Duplicati.Library.Main.Operation
 
             if (callbackhandler != null)
                 foreach (var bs in brokenfilesets)
-                    await foreach (var fe in db.GetBrokenFilenamesAsync(bs.FilesetID, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
+                    await foreach (var fe in db.GetBrokenFilenamesAsync(bs.FilesetID, ignoreReplaceableMetadata: false, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                         if (!callbackhandler(bs.Version, bs.Timestamp, bs.BrokenCount, fe.Item1, fe.Item2))
                             break;
         }

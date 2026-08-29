@@ -33,11 +33,72 @@ using Duplicati.Library.Interface;
 using System.Data;
 using System.Text;
 using Duplicati.Library.Main.Database;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Duplicati.UnitTest
 {
     public static class TestUtils
     {
+        /// <summary>
+        /// Subject fragments of the certificates created by the certificate generator
+        /// </summary>
+        private static readonly string[] GeneratedCertificateSubjectFragments = ["Duplicati Local CA", "Duplicati Server"];
+
+        /// <summary>
+        /// Counts the Duplicati certificates generated during tests that were persisted to the
+        /// per-user certificate store. Certificate generation uses X509KeyStorageFlags.PersistKeySet,
+        /// which on macOS writes each generated certificate into the user's login keychain.
+        /// </summary>
+        /// <param name="createdAfter">Only certificates with a not-before timestamp after this time are counted, so pre-existing certificates are ignored</param>
+        /// <returns>The number of matching certificates in the store</returns>
+        public static int CountPersistedGeneratedCertificates(DateTimeOffset createdAfter)
+        {
+            try
+            {
+                using var store = new X509Store(StoreName.My, StoreLocation.CurrentUser, OpenFlags.ReadOnly | OpenFlags.OpenExistingOnly);
+                // The generator backdates not-before by 5 minutes for clock skew; apply a margin
+                var notBeforeAfter = createdAfter.LocalDateTime.AddMinutes(-10);
+                return store.Certificates.Count(c =>
+                    c.NotBefore >= notBeforeAfter
+                    && GeneratedCertificateSubjectFragments.Any(s => c.Subject.Contains(s, StringComparison.Ordinal)));
+            }
+            catch
+            {
+                // Best effort: the store may not exist or be accessible on all platforms
+                return 0;
+            }
+        }
+
+        /// <summary>
+        /// Removes Duplicati certificates generated during tests from the per-user certificate
+        /// store. Certificate generation uses X509KeyStorageFlags.PersistKeySet, which on macOS
+        /// writes each generated certificate into the user's login keychain; without cleanup the
+        /// keychain accumulates entries on every test run.
+        /// </summary>
+        /// <param name="createdAfter">Only certificates with a not-before timestamp after this time are removed, so pre-existing certificates are left alone</param>
+        /// <returns>The number of certificates removed</returns>
+        public static int RemovePersistedGeneratedCertificates(DateTimeOffset createdAfter)
+        {
+            try
+            {
+                using var store = new X509Store(StoreName.My, StoreLocation.CurrentUser, OpenFlags.ReadWrite | OpenFlags.OpenExistingOnly);
+                // The generator backdates not-before by 5 minutes for clock skew; apply a margin
+                var notBeforeAfter = createdAfter.LocalDateTime.AddMinutes(-10);
+                var matches = store.Certificates
+                    .Where(c => c.NotBefore >= notBeforeAfter
+                        && GeneratedCertificateSubjectFragments.Any(s => c.Subject.Contains(s, StringComparison.Ordinal)))
+                    .ToList();
+                foreach (var cert in matches)
+                    store.Remove(cert);
+                return matches.Count;
+            }
+            catch
+            {
+                // Best effort: the store may not exist or be writable on all platforms
+                return 0;
+            }
+        }
+
         public static Dictionary<string, string> DefaultOptions
         {
             get
@@ -287,7 +348,7 @@ namespace Duplicati.UnitTest
         {
         }
 
-        public static void AssertResults(IBasicResults results, string[] ignoredWarnings = null)
+        public static void AssertResults(IBasicResults results, params string[] ignoredWarnings)
         {
             var operation = "Result";
             ignoredWarnings ??= [];

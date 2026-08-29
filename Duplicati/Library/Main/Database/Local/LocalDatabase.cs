@@ -1865,7 +1865,8 @@ namespace Duplicati.Library.Main.Database.Local
                     do
                     {
                         if (c < 5)
-                            sb.AppendFormat("{0}, actual size {1}, dbsize {2}, blocksetid: {3}{4}", rd.GetValue(3), rd.GetValue(1), rd.GetValue(0), rd.GetValue(2), Environment.NewLine);
+                            // Reader columns: 0 = CalcLen (summed block sizes), 1 = Length (recorded), 2 = BlocksetID, 3 = Path
+                            sb.AppendFormat("{0}, dbsize {1}, actual size {2}, blocksetid: {3}{4}", rd.GetValue(3), rd.GetValue(1), rd.GetValue(0), rd.GetValue(2), Environment.NewLine);
                         c++;
                     } while (await rd.ReadAsync(token).ConfigureAwait(false));
 
@@ -1873,7 +1874,7 @@ namespace Duplicati.Library.Main.Database.Local
                     if (c > 0)
                         sb.AppendFormat("... and {0} more", c);
 
-                    sb.Append(". Run repair to fix it.");
+                    sb.Append(". Run repair to fix it. If repair cannot fix it, use list-broken-files and purge-broken-files to remove the affected files.");
                     throw new DatabaseInconsistencyException(sb.ToString());
                 }
 
@@ -1949,6 +1950,22 @@ namespace Duplicati.Library.Main.Database.Local
 
             if (await cmd.ExecuteScalarInt64Async(token).ConfigureAwait(false) != 0)
                 throw new DatabaseInconsistencyException("Detected non-empty blocksets with no associated blocks!");
+
+            // Metadata always has contents - the smallest possible blob is a serialized empty dictionary -
+            // so a metadata entry with a length of 0 can never be restored. This is a warning rather than an
+            // exception: it must not fail otherwise-working backups, and purge-broken-files can recover the
+            // affected files.
+            cmd.SetCommandAndParameters(@"
+                SELECT COUNT(*)
+                FROM ""Metadataset""
+                JOIN ""Blockset""
+                    ON ""Metadataset"".""BlocksetID"" = ""Blockset"".""ID""
+                WHERE ""Blockset"".""Length"" = 0
+            ");
+
+            var zeroLengthMetadata = await cmd.ExecuteScalarInt64Async(0, token).ConfigureAwait(false);
+            if (zeroLengthMetadata != 0)
+                Logging.Log.WriteWarningMessage(LOGTAG, "ZeroLengthMetadata", null, "Found {0} metadata entrie(s) with a length of 0, which cannot be restored. Use the {1} command to see the affected files, and the {2} command to recover them.", zeroLengthMetadata, "list-broken-files", "purge-broken-files");
 
             cmd.SetCommandAndParameters(@"
                 SELECT COUNT(*)
@@ -3346,106 +3363,6 @@ namespace Duplicati.Library.Main.Database.Local
                 .ConfigureAwait(false);
 
             await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
-        }
-
-        /// <summary>
-        /// Returns the ID of an empty metadata blockset. If no empty blockset is found, it returns the ID of the smallest blockset that is not in the given block volume IDs.
-        /// If no such blockset is found, it returns -1.
-        /// </summary>
-        /// <param name="blockVolumeIds">The volume ids to ignore when searching for a suitable metadata block.</param>
-        /// <param name="emptyHash">The hash of the empty blockset.</param>
-        /// <param name="emptyHashSize">The size of the empty blockset.</param>
-        /// <param name="token">A cancellation token to cancel the operation.</param>
-        /// <returns>A task that when awaited contains the ID of the empty metadata blockset, or -1 if no suitable blockset is found</returns>
-        public async Task<long> GetEmptyMetadataBlocksetIdAsync(IEnumerable<long> blockVolumeIds, string emptyHash, long emptyHashSize, CancellationToken token)
-        {
-            await using var tmptable = await TemporaryDbValueList.CreateAsync(this, blockVolumeIds, token)
-                .ConfigureAwait(false);
-
-            await using var cmd = Connection.CreateCommand(@"
-                SELECT ""ID""
-                FROM ""Blockset""
-                WHERE
-                    ""FullHash"" = @EmptyHash
-                    AND ""Length"" == @EmptyHashSize
-                    AND ""ID"" NOT IN (
-                        SELECT ""BlocksetID""
-                        FROM
-                            ""BlocksetEntry"",
-                            ""Block""
-                        WHERE
-                            ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
-                            AND ""Block"".""VolumeID"" NOT IN (@BlockVolumeIds)
-                    )
-            ")
-                .SetTransaction(m_rtr)
-                .SetParameterValue("@EmptyHash", emptyHash)
-                .SetParameterValue("@EmptyHashSize", emptyHashSize);
-
-            await cmd.ExpandInClauseParameterMssqliteAsync("@BlockVolumeIds", tmptable, token)
-                .ConfigureAwait(false);
-
-            var res = await cmd.ExecuteScalarInt64Async(-1, token)
-                .ConfigureAwait(false);
-
-            // No empty block found, try to find a zero-length block instead
-            if (res < 0 && emptyHashSize != 0)
-            {
-                cmd.SetCommandAndParameters(@"
-                    SELECT ""ID""
-                    FROM ""Blockset""
-                    WHERE
-                        ""Length"" == @EmptyHashSize
-                        AND ""ID"" NOT IN (
-                            SELECT ""BlocksetID""
-                            FROM
-                                ""BlocksetEntry"",
-                                ""Block""
-                            WHERE
-                                ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
-                                AND ""Block"".""VolumeID"" NOT IN (@BlockVolumeIds)
-                        )
-                ")
-                .SetParameterValue("@EmptyHashSize", 0);
-
-                await cmd.ExpandInClauseParameterMssqliteAsync("@BlockVolumeIds", tmptable, token)
-                         .ConfigureAwait(false);
-
-                res = await cmd
-                  .ExecuteScalarInt64Async(-1, token)
-                  .ConfigureAwait(false);
-            }
-
-            // No empty block found, pick the smallest one
-            if (res < 0)
-            {
-                cmd.SetCommandAndParameters(@"
-                    SELECT ""Blockset"".""ID""
-                    FROM
-                        ""BlocksetEntry"",
-                        ""Blockset"",
-                        ""Metadataset"",
-                        ""Block""
-                    WHERE
-                        ""Metadataset"".""BlocksetID"" = ""Blockset"".""ID""
-                        AND ""BlocksetEntry"".""BlocksetID"" = ""Blockset"".""ID""
-                        AND ""Block"".""ID"" = ""BlocksetEntry"".""BlockID""
-                        AND ""Block"".""VolumeID"" NOT IN (@BlockVolumeIds)
-                        AND ""Blockset"".""Length"" > 0
-                    ORDER BY ""Blockset"".""Length"" ASC
-                    LIMIT 1
-                ");
-
-                await cmd
-                  .ExpandInClauseParameterMssqliteAsync("@BlockVolumeIds", tmptable, token)
-                  .ConfigureAwait(false);
-
-                res = await cmd
-                  .ExecuteScalarInt64Async(-1, token)
-                  .ConfigureAwait(false);
-            }
-
-            return res;
         }
 
         public virtual void Dispose()

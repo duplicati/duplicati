@@ -4,8 +4,7 @@
 
 暗号化したバックアップを、クラウドストレージサービスで安全に保管しましょう！
 
-[![Open Collectiveでのサポーター](https://opencollective.com/duplicati/backers/badge.svg)](#backers) [![Open Collectiveでのスポンサー](https://opencollective.com/duplicati/sponsors/badge.svg)](#sponsors) [![Travis-CIでのビルドの状況](https://travis-ci.org/duplicati/duplicati.svg?branch=master)](https://travis-ci.org/duplicati/duplicati)
-[![カバレッジの状況](https://coveralls.io/repos/github/duplicati/duplicati/badge.svg?branch=HEAD)](https://coveralls.io/github/duplicati/duplicati?branch=HEAD)
+[![Open Collectiveでのサポーター](https://opencollective.com/duplicati/backers/badge.svg)](#backers) [![Open Collectiveでのスポンサー](https://opencollective.com/duplicati/sponsors/badge.svg)](#sponsors)
 [![ライセンス](https://img.shields.io/github/license/duplicati/duplicati.svg)](https://github.com/duplicati/duplicati/blob/master/LICENSE)
 [![Gurubase](https://img.shields.io/badge/Gurubase-Ask%20Duplicati%20Guru-006BFF)](https://gurubase.io/g/duplicati)
 

@@ -46,8 +46,7 @@ namespace Duplicati.UnitTest
                 ["backup-test-samples"] = "0",
                 ["number-of-retries"] = "0",
                 ["dblock-size"] = "10KB",
-                ["blocksize"] = "1KB",
-                ["synchronous-upload"] = "true"
+                ["blocksize"] = "1KB"
             };
 
             string target = "file://" + TARGETFOLDER;
@@ -103,7 +102,6 @@ namespace Duplicati.UnitTest
                 ["number-of-retries"] = "0",
                 ["dblock-size"] = "10KB",
                 ["blocksize"] = "1KB",
-                ["synchronous-upload"] = "true",
                 ["no-auto-compact"] = "true"
             };
 

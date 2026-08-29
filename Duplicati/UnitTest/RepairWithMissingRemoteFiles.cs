@@ -420,8 +420,11 @@ namespace Duplicati.UnitTest
                 // Ensure that the partial repair did not clean up fully
                 Assert.ThrowsAsync<RemoteListVerificationException>(() => c.TestAsync());
 
-                // Purge broken files should be possible
-                TestUtils.AssertResults(await c.PurgeBrokenFilesAsync(null));
+                // Purge broken files should be possible, recovering the files whose metadata was in the
+                // deleted volume by assigning replacement metadata
+                var purgeRes = await c.PurgeBrokenFilesAsync(null);
+                Assert.That(purgeRes.Warnings.Count(x => x.Contains("MetadataReplacedWithEmpty")), Is.EqualTo(1), "Purge should report the replaced metadata.");
+                TestUtils.AssertResults(purgeRes, "MetadataReplacedWithEmpty");
                 TestUtils.AssertResults(await c.TestAsync(int.MaxValue));
             }
 
@@ -474,8 +477,11 @@ namespace Duplicati.UnitTest
                 // Ensure that the partial repair did not clean up fully
                 Assert.ThrowsAsync<RemoteListVerificationException>(() => c.TestAsync());
 
-                // Purge broken files should be possible
-                TestUtils.AssertResults(await c.PurgeBrokenFilesAsync(null));
+                // Purge broken files should be possible, recovering the files whose metadata was in the
+                // deleted volume by assigning replacement metadata
+                var purgeRes = await c.PurgeBrokenFilesAsync(null);
+                Assert.That(purgeRes.Warnings.Count(x => x.Contains("MetadataReplacedWithEmpty")), Is.EqualTo(1), "Purge should report the replaced metadata.");
+                TestUtils.AssertResults(purgeRes, "MetadataReplacedWithEmpty");
                 TestUtils.AssertResults(await c.TestAsync(int.MaxValue));
 
                 var files = (await c.ListAsync("*")).Files.ToList();
@@ -570,8 +576,11 @@ namespace Duplicati.UnitTest
                     TestUtils.AssertResults(await c.TestAsync(int.MaxValue));
                 }
 
-                // Purge broken files should be possible
-                TestUtils.AssertResults(await c.PurgeBrokenFilesAsync(null));
+                // Purge broken files should be possible. Destroying the metadata leaves files that are
+                // only metadata-broken, and those are recovered with replacement metadata rather than removed
+                var purgeRes = await c.PurgeBrokenFilesAsync(null);
+                Assert.That(purgeRes.Warnings.Count(x => x.Contains("MetadataReplacedWithEmpty")), Is.EqualTo(destroyMetadata ? 1 : 0), "Purge should only report replaced metadata when the metadata was destroyed.");
+                TestUtils.AssertResults(purgeRes, "MetadataReplacedWithEmpty");
                 TestUtils.AssertResults(await c.TestAsync(int.MaxValue));
             }
 

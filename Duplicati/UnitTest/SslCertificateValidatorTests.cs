@@ -41,6 +41,25 @@ namespace Duplicati.UnitTest;
 public class SslCertificateValidatorTests
 {
     /// <summary>
+    /// The time the test started, used to scope the certificate cleanup
+    /// </summary>
+    private DateTimeOffset m_testStart;
+
+    /// <summary>
+    /// Records the test start time for certificate cleanup scoping
+    /// </summary>
+    [SetUp]
+    public void SetUp() => m_testStart = DateTimeOffset.UtcNow;
+
+    /// <summary>
+    /// Removes certificates persisted to the OS certificate store by certificate
+    /// generation during the test (on macOS each generated certificate is written
+    /// to the login keychain)
+    /// </summary>
+    [TearDown]
+    public void TearDown() => TestUtils.RemovePersistedGeneratedCertificates(m_testStart);
+
+    /// <summary>
     /// Generates an expired self-signed certificate (notAfter in the past) for testing
     /// the date-validity-first behaviour and its interaction with pinned hashes.
     /// </summary>

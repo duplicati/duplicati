@@ -65,6 +65,7 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
         "v1:backup:sync-mode",
         "v2:backup:list-broken-files",
         "v2:backup:purge-broken-files",
+        "v2:backup:purge-files",
         "v2:backup:delete-versions",
         "v2:backup:set-version-label",
 

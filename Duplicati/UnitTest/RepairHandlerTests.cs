@@ -634,40 +634,135 @@ namespace Duplicati.UnitTest
             }
         }
 
+        /// <summary>
+        /// Writes a file into the data folder and gives it a distinct modification time, so that it gets a
+        /// Metadataset row of its own instead of sharing one with a file written in the same clock tick.
+        /// </summary>
+        /// <param name="name">The file name to write.</param>
+        /// <param name="contents">The contents to write.</param>
+        /// <param name="dayOffset">A per-file offset that keeps the modification times apart.</param>
+        private void WriteFileWithDistinctMetadata(string name, string contents, int dayOffset)
+        {
+            var path = Path.Combine(this.DATAFOLDER, name);
+            File.WriteAllText(path, contents);
+            File.SetLastWriteTimeUtc(path, new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddDays(dayOffset));
+        }
+
+        /// <summary>
+        /// Points the metadata of one file at a zero-length blockset, and returns the metadata id.
+        /// </summary>
+        private static async Task<long> BreakOneMetadataEntryAsync(string dbpath, string path)
+        {
+            using var con = await SQLiteLoader.LoadConnectionAsync(dbpath);
+            using var cmd = con.CreateCommand();
+
+            var metaId = cmd.SetCommandAndParameters(@"SELECT ""MetadataID"" FROM ""File"" WHERE ""Path"" LIKE @Path")
+                .SetParameterValue("@Path", "%" + path).ExecuteScalarInt64(-1);
+            Assert.That(metaId, Is.GreaterThanOrEqualTo(0), $"No metadata found for {path}");
+
+            // Metadata is deduplicated on the hash of its contents, and those contents include the
+            // filesystem timestamps, so files written in the same clock tick share one Metadataset row.
+            // Corrupting a shared row would affect more than the one file this test is about.
+            var sharingFiles = cmd.SetCommandAndParameters(@"SELECT COUNT(*) FROM ""FileLookup"" WHERE ""MetadataID"" = @Id")
+                .SetParameterValue("@Id", metaId).ExecuteScalarInt64(0);
+            Assert.That(sharingFiles, Is.EqualTo(1), $"The metadata of {path} is shared with {sharingFiles - 1} other entrie(s)");
+
+            var blocksetId = cmd.SetCommandAndParameters(@"SELECT ""BlocksetID"" FROM ""Metadataset"" WHERE ""ID"" = @Id")
+                .SetParameterValue("@Id", metaId).ExecuteScalarInt64(-1);
+            await cmd.SetCommandAndParameters(@"UPDATE ""Blockset"" SET ""Length"" = 0 WHERE ""ID"" = @Id")
+                .SetParameterValue("@Id", blocksetId).ExecuteNonQueryAsync();
+
+            return metaId;
+        }
+
+        /// <summary>
+        /// Counts the metadata entries that cannot be restored because their blockset has a length of 0.
+        /// </summary>
+        private static async Task<long> CountZeroLengthMetadataAsync(string dbpath)
+        {
+            using var con = await SQLiteLoader.LoadConnectionAsync(dbpath);
+            using var cmd = con.CreateCommand();
+
+            return cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM Metadataset JOIN Blockset ON Metadataset.BlocksetID = Blockset.ID WHERE Blockset.Length = 0");
+        }
+
         [Test]
         [Category("RepairHandler")]
-        public async Task RepairReplacesZeroLengthMetadataAsync()
+        public async Task RepairReportsZeroLengthMetadataAsync()
         {
             var options = new Dictionary<string, string>(this.TestOptions);
-            File.WriteAllText(Path.Combine(this.DATAFOLDER, "a.txt"), "a");
-            File.WriteAllText(Path.Combine(this.DATAFOLDER, "b.txt"), "b");
+            WriteFileWithDistinctMetadata("a.txt", "a", 1);
+            WriteFileWithDistinctMetadata("b.txt", "b", 2);
             using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
                 TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
 
-            using (var con = await SQLiteLoader.LoadConnectionAsync(options["dbpath"]))
-            using (var cmd = con.CreateCommand())
+            await BreakOneMetadataEntryAsync(options["dbpath"], "a.txt");
+
+            // Repair reports the damage and changes nothing: the metadata is recorded in the filelists at
+            // the destination, so a local replacement would be undone by the next recreate, and until then
+            // it would hide the damage from purge-broken-files
+            for (var attempt = 0; attempt < 2; attempt++)
             {
-                var lookupId = cmd.ExecuteScalarInt64("SELECT ID FROM FileLookup LIMIT 1");
-                var metaId = cmd.SetCommandAndParameters("SELECT MetadataID FROM FileLookup WHERE ID = @Id")
-                    .SetParameterValue("@Id", lookupId).ExecuteScalarInt64(-1);
-                var blocksetId = cmd.SetCommandAndParameters("SELECT BlocksetID FROM Metadataset WHERE ID = @Id")
-                    .SetParameterValue("@Id", metaId).ExecuteScalarInt64(-1);
-                await cmd.SetCommandAndParameters("UPDATE Blockset SET Length = 0 WHERE ID = @Id")
-                    .SetParameterValue("@Id", blocksetId).ExecuteNonQueryAsync();
+                using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                {
+                    var res = await c.RepairAsync();
+                    Assert.AreEqual(0, res.Errors.Count());
+                    Assert.AreEqual(1, res.Warnings.Count(x => x.Contains("ZeroLengthMetadataNotRepaired")), "Repair should report that it will not fix the metadata");
+                    // The closing consistency check reports the condition itself, from the database layer
+                    Assert.AreEqual(1, res.Warnings.Count(x => x.Contains("-ZeroLengthMetadata]")), "The consistency check should report the unrestorable metadata");
+                    // The blockset was left with a length of 0 while keeping its blocks, which repair reports
+                    // but must not "fix" by stripping the blocks
+                    Assert.AreEqual(1, res.Warnings.Count(x => x.Contains("BlocksetLengthMismatch")), "Repair should report the unrepairable length mismatch");
+                    Assert.AreEqual(3, res.Warnings.Count(), "Warnings were: " + string.Join(" | ", res.Warnings));
+                }
+
+                // Repeating this must not fail and must not change anything: a repair loop that kept
+                // "fixing" the same entry forever is what users reported
+                Assert.AreEqual(1, await CountZeroLengthMetadataAsync(options["dbpath"]), "Repair must not change the metadata");
             }
 
+            // purge-broken-files is the command that can resolve it
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                var res = await c.PurgeBrokenFilesAsync(null);
+                Assert.AreEqual(0, res.Errors.Count());
+                Assert.AreEqual(1, res.Warnings.Count(x => x.Contains("MetadataReplacedWithEmpty")));
+            }
+
+            Assert.AreEqual(0, await CountZeroLengthMetadataAsync(options["dbpath"]), "purge-broken-files should have resolved it");
+
+            // After that, repair no longer reports unrestorable metadata. The corrupt blockset row itself
+            // survives, unreferenced, because repair deliberately does not delete unreferenced blocksets -
+            // it needs them to recreate file entries from the filelists - so the length mismatch is still
+            // reported, and only that.
             using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
                 var res = await c.RepairAsync();
                 Assert.AreEqual(0, res.Errors.Count());
-                Assert.AreEqual(0, res.Warnings.Count());
+                Assert.AreEqual(0, res.Warnings.Count(x => x.Contains("ZeroLengthMetadata")), "Warnings were: " + string.Join(" | ", res.Warnings));
+                TestUtils.AssertResults(await c.TestAsync(int.MaxValue));
             }
-            using (var con = await SQLiteLoader.LoadConnectionAsync(options["dbpath"]))
-            using (var cmd = con.CreateCommand())
-            {
-                var remaining = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM Metadataset JOIN Blockset ON Metadataset.BlocksetID = Blockset.ID WHERE Blockset.Length = 0");
-                Assert.AreEqual(0, remaining, "Zero-length metadata should have been replaced");
-            }
+
+            Thread.Sleep(2000);
+            File.WriteAllText(Path.Combine(this.DATAFOLDER, "c.txt"), "c");
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+        }
+
+        [Test]
+        [Category("RepairHandler")]
+        public async Task RepairIsRepeatableAsync()
+        {
+            var options = new Dictionary<string, string>(this.TestOptions);
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+
+            for (var i = 0; i < 3; i++)
+                using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                    TestUtils.AssertResults(await c.RepairAsync());
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                TestUtils.AssertResults(await c.TestAsync(int.MaxValue));
         }
     }
 }

@@ -36,6 +36,11 @@ namespace Duplicati.Library.Main.Database.Local
     internal class LocalListBrokenFilesDatabase : LocalDatabase
     {
         /// <summary>
+        /// The tag used for logging.
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(LocalListBrokenFilesDatabase));
+
+        /// <summary>
         /// SQL query to get the IDs of all block volumes.
         /// </summary>
         private static readonly string BLOCK_VOLUME_IDS = $@"
@@ -44,23 +49,280 @@ namespace Duplicati.Library.Main.Database.Local
             WHERE ""Type"" = '{Library.Utility.Utility.FormatInvariantValue(RemoteVolumeType.Blocks)}'
         ";
 
-        // Invalid blocksets include those that:
-        // - Have BlocksetEntries with unknown/invalid blocks (meaning the data to rebuild the blockset isn't available)
-        //   - Invalid blocks include those that appear to be in non-Blocks volumes (e.g., are listed as being in an Index or Files volume) or that appear in an unknown volume (-1)
-        // - Have BlocklistHash entries with unknown/invalid blocks (meaning the data which defines the list of hashes that makes up the blockset isn't available)
-        // - Are defined in the Blockset table but have no entries in the BlocksetEntries table (this can happen during recreate if Files volumes reference blocksets that are not found in any Index files)
-        // However, blocksets with a length of 0 are excluded from this check, as the corresponding blocks for these are not needed.
+        /// <summary>
+        /// SQL query returning the ids of the zero-length blocksets that are valid.
+        /// </summary>
+        /// <remarks>
+        /// Because <c>Blockset</c> is unique on <c>("FullHash", "Length")</c> there is at most one
+        /// zero-length blockset, and it is the blockset that every empty file in the backup uses as its
+        /// content. It has no blocks, and needs none, so it is the one case where a blockset without blocks
+        /// is not damage.
+        /// </remarks>
+        private static readonly string VALID_EMPTY_BLOCKSET_IDS = @"
+            SELECT ""A"".""ID""
+            FROM ""Blockset"" ""A""
+            LEFT JOIN ""BlocksetEntry"" ""B""
+                ON ""A"".""ID"" = ""B"".""BlocksetID""
+            WHERE
+                ""A"".""Length"" = 0
+                AND ""B"".""BlocksetID"" IS NULL
+        ";
 
         /// <summary>
-        /// SQL query to get the IDs of broken files.
-        /// A broken file is one that has a BlocksetID that is not in the list of valid blocksets, or that has a MetadataID that is not in the list of valid metadata blocksets.
+        /// SQL query returning the ids of the blocksets that cannot be restored.
         /// </summary>
-        private static readonly string BROKEN_FILE_IDS = $@"
+        /// <remarks>
+        /// A blockset is invalid when it:
+        /// <list type="bullet">
+        /// <item>has <c>BlocksetEntry</c> rows referencing unknown or invalid blocks, meaning the data to
+        /// rebuild the blockset is not available. Invalid blocks are those that appear to be in non-Blocks
+        /// volumes (e.g. are listed as being in an Index or Files volume) or in an unknown volume (-1);</item>
+        /// <item>has <c>BlocklistHash</c> rows referencing unknown or invalid blocks, meaning the data that
+        /// defines the list of hashes making up the blockset is not available;</item>
+        /// <item>is defined in <c>Blockset</c> but has no <c>BlocksetEntry</c> rows, which can happen during
+        /// a recreate if Files volumes reference blocksets that are not found in any Index file;</item>
+        /// <item>records a length that does not match the summed size of the blocks it references, so there
+        /// is no way to tell whether the length or the block mapping is the damaged part;</item>
+        /// <item>records a length of 0 while having blocks attached, which is the same damage seen from the
+        /// other side, and is called out separately because it is the state that caused this check to be
+        /// written.</item>
+        /// </list>
+        /// The single legitimately zero-length blockset is exempted, see <see cref="VALID_EMPTY_BLOCKSET_IDS"/>.
+        /// </remarks>
+        private static readonly string INVALID_BLOCKSET_IDS = $@"
+            SELECT DISTINCT ""BlocksetID""
+            FROM (
+                SELECT ""BlocksetID""
+                FROM ""BlocksetEntry""
+                WHERE ""BlockID"" NOT IN (
+                    SELECT ""ID""
+                    FROM ""Block""
+                    WHERE ""VolumeID"" IN ({BLOCK_VOLUME_IDS})
+                )
+                UNION
+                    SELECT ""BlocksetID""
+                    FROM ""BlocklistHash""
+                    WHERE ""Hash"" NOT IN (
+                        SELECT ""Hash""
+                        FROM ""Block""
+                        WHERE ""VolumeID"" IN ({BLOCK_VOLUME_IDS})
+                    )
+                UNION
+                    SELECT ""A"".""ID"" AS ""BlocksetID""
+                    FROM ""Blockset"" ""A""
+                    LEFT JOIN ""BlocksetEntry"" ""B""
+                        ON ""A"".""ID"" = ""B"".""BlocksetID""
+                    WHERE
+                        ""A"".""Length"" > 0
+                        AND ""B"".""BlocksetID"" IS NULL
+                UNION
+                    SELECT ""A"".""ID"" AS ""BlocksetID""
+                    FROM ""Blockset"" ""A""
+                    LEFT JOIN (
+                        SELECT
+                            ""BlocksetEntry"".""BlocksetID"",
+                            SUM(""Block"".""Size"") AS ""CalcLen""
+                        FROM ""BlocksetEntry""
+                        LEFT JOIN ""Block""
+                            ON ""Block"".""ID"" = ""BlocksetEntry"".""BlockID""
+                        GROUP BY ""BlocksetEntry"".""BlocksetID""
+                    ) ""C""
+                        ON ""A"".""ID"" = ""C"".""BlocksetID""
+                    WHERE ""A"".""Length"" != IFNULL(""C"".""CalcLen"", 0)
+                UNION
+                    SELECT ""BlocksetEntry"".""BlocksetID""
+                    FROM ""BlocksetEntry""
+                    JOIN ""Blockset""
+                        ON ""Blockset"".""ID"" = ""BlocksetEntry"".""BlocksetID""
+                    WHERE ""Blockset"".""Length"" = 0
+            )
+            WHERE ""BlocksetID"" NOT IN ({VALID_EMPTY_BLOCKSET_IDS})
+        ";
+
+        /// <summary>
+        /// The name of the temporary table holding the materialized classification, or <c>null</c> if the
+        /// classification is not materialized.
+        /// </summary>
+        private string? m_invalidBlocksetIdsTable;
+
+        /// <summary>
+        /// How many times the classification has been requested since it was last invalidated.
+        /// </summary>
+        private long m_invalidBlocksetIdsRequests;
+
+        /// <summary>
+        /// Returns the SQL query for the ids of the blocksets that cannot be restored, materializing the
+        /// classification into a temporary table from the second request onwards.
+        /// </summary>
+        /// <remarks>
+        /// The classification aggregates over every row of <c>BlocksetEntry</c> joined to <c>Block</c>, and
+        /// the broken-file query is evaluated once per fileset, so evaluating it inline every time is a full
+        /// scan per fileset. Materializing it unconditionally would be worse for the recreate path, which
+        /// needs the classification exactly once and would then pay for a full scan at the end of every
+        /// recreate. Waiting for the second request gives both callers what they need.
+        /// <para>
+        /// Callers must resolve this once per query they build, and pass the string down, or a single query
+        /// build counts as several requests and materializes on the very first build.
+        /// </para>
+        /// </remarks>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task that when awaited contains the SQL query.</returns>
+        private async Task<string> InvalidBlocksetIdsQueryAsync(CancellationToken token)
+        {
+            m_invalidBlocksetIdsRequests++;
+            if (m_invalidBlocksetIdsRequests <= 1)
+                return INVALID_BLOCKSET_IDS;
+
+            await using var cmd = m_connection.CreateCommand()
+                .SetTransaction(m_rtr);
+
+            // SQLite rolls back temporary table DDL, so a rollback of the transaction the table was created
+            // in drops it while this field still names it, and the next query fails with "no such table".
+            if (m_invalidBlocksetIdsTable != null)
+            {
+                var exists = await cmd.SetCommandAndParameters(@"
+                    SELECT COUNT(*)
+                    FROM ""sqlite_temp_master""
+                    WHERE
+                        ""type"" = 'table'
+                        AND ""name"" = @Name
+                ")
+                    .SetParameterValue("@Name", m_invalidBlocksetIdsTable)
+                    .ExecuteScalarInt64Async(0, token)
+                    .ConfigureAwait(false);
+
+                if (exists == 0)
+                    m_invalidBlocksetIdsTable = null;
+            }
+
+            if (m_invalidBlocksetIdsTable == null)
+            {
+                var tablename = $"InvalidBlocksets-{Library.Utility.Utility.GetHexGuid()}";
+
+                await cmd.ExecuteNonQueryAsync($@"
+                    CREATE TEMPORARY TABLE ""{tablename}"" AS
+                    {INVALID_BLOCKSET_IDS}
+                ", token)
+                    .ConfigureAwait(false);
+
+                await cmd.ExecuteNonQueryAsync($@"
+                    CREATE UNIQUE INDEX ""{tablename}-Ix""
+                    ON ""{tablename}"" (""BlocksetID"")
+                ", token)
+                    .ConfigureAwait(false);
+
+                m_invalidBlocksetIdsTable = tablename;
+            }
+
+            return $@"
+                SELECT ""BlocksetID""
+                FROM ""{m_invalidBlocksetIdsTable}""
+            ";
+        }
+
+        /// <summary>
+        /// Drops the materialized classification, so the next request recomputes it.
+        /// </summary>
+        /// <remarks>
+        /// This must be called after anything that changes blocks, blocksets or blocklist hashes, as those
+        /// are what the classification is derived from. Note that <see cref="ReplaceMetadataAsync"/> does not
+        /// need it: repointing <c>Metadataset.BlocksetID</c> changes which blockset a metadata entry uses, not
+        /// which blocksets are restorable.
+        /// </remarks>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task that completes when the classification has been dropped.</returns>
+        public async Task InvalidateBrokenFileCacheAsync(CancellationToken token)
+        {
+            if (m_invalidBlocksetIdsTable != null)
+            {
+                try
+                {
+                    await using var cmd = m_connection.CreateCommand()
+                        .SetTransaction(m_rtr);
+
+                    await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{m_invalidBlocksetIdsTable}""", token)
+                        .ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "FailedToDropInvalidBlocksetsTable", ex, "Failed to drop the temporary table {0}: {1}", m_invalidBlocksetIdsTable, ex.Message);
+                }
+
+                m_invalidBlocksetIdsTable = null;
+            }
+
+            // Clamp to 1 rather than 0: the classification has already been asked for, so the next request
+            // should get a table instead of repeating the inline scan.
+            m_invalidBlocksetIdsRequests = Math.Min(m_invalidBlocksetIdsRequests, 1);
+        }
+
+        /// <inheritdoc/>
+        public override async ValueTask DisposeAsync()
+        {
+            // The connection can outlive this wrapper, as it does when the database was created around an
+            // existing one, so the temporary table has to be dropped rather than left to the connection.
+            if (!IsDisposed)
+                await InvalidateBrokenFileCacheAsync(default).ConfigureAwait(false);
+
+            await base.DisposeAsync().ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Builds the SQL query for the blocksets that can hold restorable metadata.
+        /// </summary>
+        /// <remarks>
+        /// Metadata always has contents - the smallest possible blob is a serialized empty dictionary - so a
+        /// metadata entry with a length of 0 can never be restored, no matter how healthy the blockset looks
+        /// otherwise. Everything about replaceable metadata is derived from this one predicate, so the
+        /// detection cannot drift from what the replacement does.
+        /// </remarks>
+        /// <param name="invalidBlocksetIdsQuery">The query returned by <see cref="InvalidBlocksetIdsQueryAsync"/>.</param>
+        /// <returns>A SQL query returning blockset ids.</returns>
+        private static string UsableMetadataBlocksetIdsQuery(string invalidBlocksetIdsQuery) => $@"
+            SELECT ""ID""
+            FROM ""Blockset""
+            WHERE
+                ""Length"" > 0
+                AND ""ID"" NOT IN ({invalidBlocksetIdsQuery})
+        ";
+
+        /// <summary>
+        /// Builds the SQL query for the IDs of broken files.
+        /// </summary>
+        /// <remarks>
+        /// A file is broken when its content blockset is invalid, or when its metadata cannot be restored.
+        /// The metadata condition is expressed as <c>NOT IN (usable)</c> rather than <c>IN (unusable)</c>:
+        /// a <c>Metadataset</c> row can point at a blockset id that no longer exists at all, and an
+        /// <c>IN (unusable)</c> formulation misses that, since the unusable set is derived from
+        /// <c>Blockset</c> rows that are gone.
+        /// </remarks>
+        /// <param name="ignoreReplaceableMetadata">If <c>true</c>, files that are only broken because their
+        /// metadata needs replacing are not reported. This projects the state after a replacement, and is
+        /// exact by construction, since the condition is dropped rather than inverted.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task that when awaited contains the SQL query.</returns>
+        private async Task<string> BrokenFileIdsQueryAsync(bool ignoreReplaceableMetadata, CancellationToken token)
+        {
+            // Resolve once per query build, so a single build cannot count as two requests
+            var invalidBlocksetIdsQuery = await InvalidBlocksetIdsQueryAsync(token).ConfigureAwait(false);
+
+            // NULL is not covered by NOT IN, so a missing Metadataset row needs the explicit null check
+            // below. No replacement can fix that anyway, so it is reported unconditionally.
+            var metadataCondition = ignoreReplaceableMetadata
+                ? string.Empty
+                : $@"
+                OR (
+                    ""IsMetadata"" = 1
+                    AND ""BlocksetID"" NOT IN ({UsableMetadataBlocksetIdsQuery(invalidBlocksetIdsQuery)})
+                )";
+
+            return $@"
             SELECT DISTINCT ""ID""
             FROM (
                 SELECT
                     ""ID"" AS ""ID"",
-                    ""BlocksetID"" AS ""BlocksetID""
+                    ""BlocksetID"" AS ""BlocksetID"",
+                    0 AS ""IsMetadata""
                 FROM ""FileLookup""
                 WHERE
                     ""BlocksetID"" != {Library.Utility.Utility.FormatInvariantValue(FOLDER_BLOCKSET_ID)}
@@ -68,52 +330,28 @@ namespace Duplicati.Library.Main.Database.Local
                 UNION
                     SELECT
                         ""A"".""ID"" AS ""ID"",
-                        ""B"".""BlocksetID"" AS ""BlocksetID""
+                        ""B"".""BlocksetID"" AS ""BlocksetID"",
+                        1 AS ""IsMetadata""
                     FROM ""FileLookup"" ""A""
                     LEFT JOIN ""Metadataset"" ""B""
                         ON ""A"".""MetadataID"" = ""B"".""ID""
             )
             WHERE
                 ""BlocksetID"" IS NULL
-                OR ""BlocksetID"" IN (
-                    SELECT DISTINCT ""BlocksetID""
-                    FROM (
-                        SELECT ""BlocksetID""
-                        FROM ""BlocksetEntry""
-                        WHERE ""BlockID"" NOT IN (
-                            SELECT ""ID""
-                            FROM ""Block""
-                            WHERE ""VolumeID"" IN ({BLOCK_VOLUME_IDS})
-                        )
-                        UNION
-                            SELECT ""BlocksetID""
-                            FROM ""BlocklistHash""
-                            WHERE ""Hash"" NOT IN (
-                                SELECT ""Hash""
-                                FROM ""Block""
-                                WHERE ""VolumeID"" IN ({BLOCK_VOLUME_IDS})
-                            )
-                        UNION
-                            SELECT ""A"".""ID"" AS ""BlocksetID""
-                            FROM ""Blockset"" ""A""
-                            LEFT JOIN ""BlocksetEntry"" ""B""
-                                ON ""A"".""ID"" = ""B"".""BlocksetID""
-                            WHERE
-                                ""A"".""Length"" > 0
-                                AND ""B"".""BlocksetID"" IS NULL
-                    )
-                    WHERE ""BlocksetID"" NOT IN (
-                        SELECT ""ID""
-                        FROM ""Blockset""
-                        WHERE ""Length"" == 0
-                    )
-                )
-        ";
+                OR (
+                    ""IsMetadata"" = 0
+                    AND ""BlocksetID"" IN ({invalidBlocksetIdsQuery})
+                ){metadataCondition}
+            ";
+        }
 
         /// <summary>
-        /// SQL query to get the broken filesets, i.e., filesets that contain broken files.
+        /// Builds the SQL query for the broken filesets, i.e., filesets that contain broken files.
         /// </summary>
-        private static readonly string BROKEN_FILE_SETS = $@"
+        /// <param name="ignoreReplaceableMetadata">If <c>true</c>, files that are only broken because their metadata needs replacing are not counted.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task that when awaited contains the SQL query.</returns>
+        private async Task<string> BrokenFileSetsQueryAsync(bool ignoreReplaceableMetadata, CancellationToken token) => $@"
             SELECT DISTINCT
                 ""B"".""Timestamp"",
                 ""A"".""FilesetID"",
@@ -123,13 +361,16 @@ namespace Duplicati.Library.Main.Database.Local
                 ""Fileset"" ""B""
             WHERE
                 ""A"".""FilesetID"" = ""B"".""ID""
-                AND ""A"".""FileID"" IN ({BROKEN_FILE_IDS})
+                AND ""A"".""FileID"" IN ({await BrokenFileIdsQueryAsync(ignoreReplaceableMetadata, token).ConfigureAwait(false)})
         ";
 
         /// <summary>
-        /// SQL query to get the names and lengths of broken files.
+        /// Builds the SQL query for the names and lengths of broken files.
         /// </summary>
-        private static readonly string BROKEN_FILE_NAMES = $@"
+        /// <param name="ignoreReplaceableMetadata">If <c>true</c>, files that are only broken because their metadata needs replacing are not reported.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task that when awaited contains the SQL query.</returns>
+        private async Task<string> BrokenFileNamesQueryAsync(bool ignoreReplaceableMetadata, CancellationToken token) => $@"
             SELECT
                 ""A"".""Path"",
                 ""B"".""Length""
@@ -137,7 +378,7 @@ namespace Duplicati.Library.Main.Database.Local
             LEFT JOIN ""Blockset"" ""B""
                 ON (""A"".""BlocksetID"" = ""B"".""ID"")
             WHERE
-                ""A"".""ID"" IN ({BROKEN_FILE_IDS})
+                ""A"".""ID"" IN ({await BrokenFileIdsQueryAsync(ignoreReplaceableMetadata, token).ConfigureAwait(false)})
                 AND ""A"".""ID"" IN (
                     SELECT ""FileID""
                     FROM ""FilesetEntry""
@@ -146,15 +387,22 @@ namespace Duplicati.Library.Main.Database.Local
         ";
 
         /// <summary>
-        /// SQL query to insert broken file IDs into a specified table.
+        /// Builds the SQL statement that inserts broken file IDs into a specified table. This only builds the
+        /// statement, it does not execute it, see <see cref="InsertBrokenFileIDsIntoTableAsync"/>.
         /// The table must have a single column with the same name as the ID field name.
         /// </summary>
-        private static string INSERT_BROKEN_IDS(string tablename, string IDfieldname) => $@"
+        /// <param name="tablename">The name of the table to insert into.</param>
+        /// <param name="IDfieldname">The name of the ID field in the table.</param>
+        /// <param name="ignoreReplaceableMetadata">If <c>true</c>, files that are only broken because their metadata needs replacing are not inserted.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task that when awaited contains the SQL statement.</returns>
+        private async Task<string> InsertBrokenIdsStatementAsync(string tablename, string IDfieldname, bool ignoreReplaceableMetadata, CancellationToken token) => $@"
             INSERT INTO ""{tablename}"" (
                 ""{IDfieldname}""
             )
-            {BROKEN_FILE_IDS}
-            AND ""ID"" IN (
+            SELECT ""ID""
+            FROM ({await BrokenFileIdsQueryAsync(ignoreReplaceableMetadata, token).ConfigureAwait(false)})
+            WHERE ""ID"" IN (
                 SELECT ""FileID""
                 FROM ""FilesetEntry""
                 WHERE ""FilesetID"" = @FilesetId
@@ -204,11 +452,13 @@ namespace Duplicati.Library.Main.Database.Local
         /// </summary>
         /// <param name="time">The time to filter filesets by.</param>
         /// <param name="versions">Optional array of versions to filter filesets by. If null, all versions are considered.</param>
+        /// <param name="ignoreReplaceableMetadata">If <c>true</c>, files that are only broken because their metadata needs replacing are not counted, which projects the state after a replacement.</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>An asynchronous enumerable of broken file IDs.</returns>
-        public async IAsyncEnumerable<(DateTime FilesetTime, long FilesetID, long RemoveFileCount)> GetBrokenFilesetsAsync(DateTime time, long[]? versions, [EnumeratorCancellation] CancellationToken token)
+        public async IAsyncEnumerable<(DateTime FilesetTime, long FilesetID, long RemoveFileCount)> GetBrokenFilesetsAsync(DateTime time, long[]? versions, bool ignoreReplaceableMetadata, [EnumeratorCancellation] CancellationToken token)
         {
-            var query = BROKEN_FILE_SETS;
+            var query = await BrokenFileSetsQueryAsync(ignoreReplaceableMetadata, token)
+                .ConfigureAwait(false);
             var clause = await GetFilelistWhereClauseAsync(time, versions, null, false, token)
                 .ConfigureAwait(false);
 
@@ -240,12 +490,16 @@ namespace Duplicati.Library.Main.Database.Local
         /// Returns all broken file IDs, i.e., files that reference blocksets or blocks that are not available.
         /// </summary>
         /// <param name="filesetid">The fileset ID to filter by.</param>
+        /// <param name="ignoreReplaceableMetadata">If <c>true</c>, files that are only broken because their metadata needs replacing are not reported.</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>An asynchronous enumerable of broken file IDs.</returns>
-        public async IAsyncEnumerable<Tuple<string, long>> GetBrokenFilenamesAsync(long filesetid, [EnumeratorCancellation] CancellationToken token)
+        public async IAsyncEnumerable<Tuple<string, long>> GetBrokenFilenamesAsync(long filesetid, bool ignoreReplaceableMetadata, [EnumeratorCancellation] CancellationToken token)
         {
+            var query = await BrokenFileNamesQueryAsync(ignoreReplaceableMetadata, token)
+                .ConfigureAwait(false);
+
             await using var cmd = Connection.CreateCommand(m_rtr)
-                .SetCommandAndParameters(BROKEN_FILE_NAMES)
+                .SetCommandAndParameters(query)
                 .SetParameterValue("@FilesetId", filesetid);
 
             await foreach (var rd in cmd.ExecuteReaderEnumerableAsync(token).ConfigureAwait(false))
@@ -292,12 +546,16 @@ namespace Duplicati.Library.Main.Database.Local
         /// <param name="filesetid">The filset id for the current operation.</param>
         /// <param name="tablename">The name of the table to insert into.</param>
         /// <param name="IDfieldname">The name of the ID field in the table.</param>
+        /// <param name="ignoreReplaceableMetadata">If <c>true</c>, files that are only broken because their metadata needs replacing are not inserted.</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>A task that completes when the insertion is finished.</returns>
-        public async Task InsertBrokenFileIDsIntoTableAsync(long filesetid, string tablename, string IDfieldname, CancellationToken token)
+        public async Task InsertBrokenFileIDsIntoTableAsync(long filesetid, string tablename, string IDfieldname, bool ignoreReplaceableMetadata, CancellationToken token)
         {
+            var query = await InsertBrokenIdsStatementAsync(tablename, IDfieldname, ignoreReplaceableMetadata, token)
+                .ConfigureAwait(false);
+
             await using var cmd = Connection.CreateCommand(m_rtr)
-                .SetCommandAndParameters(INSERT_BROKEN_IDS(tablename, IDfieldname))
+                .SetCommandAndParameters(query)
                 .SetParameterValue("@FilesetId", filesetid);
 
             await cmd.ExecuteNonQueryAsync(true, token)
@@ -305,18 +563,84 @@ namespace Duplicati.Library.Main.Database.Local
         }
 
         /// <summary>
-        /// Replaces the metadata blockset ID in the Metadataset table with the empty blockset ID for all fileset entries that are not in any block volume.
-        /// This is used to clean up the metadata blocksets that are now missing.
+        /// Returns the ids of the filesets that reference metadata which needs replacing.
         /// </summary>
+        /// <remarks>
+        /// Only <c>Metadataset</c> rows that actually exist are considered, since a missing row is not
+        /// something a replacement can fix.
+        /// </remarks>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task that when awaited contains the fileset ids.</returns>
+        public async Task<HashSet<long>> GetFilesetsWithReplaceableMetadataAsync(CancellationToken token)
+        {
+            var invalidBlocksetIdsQuery = await InvalidBlocksetIdsQueryAsync(token).ConfigureAwait(false);
+
+            await using var cmd = Connection.CreateCommand($@"
+                SELECT DISTINCT ""FilesetEntry"".""FilesetID""
+                FROM ""FilesetEntry""
+                JOIN ""FileLookup""
+                    ON ""FileLookup"".""ID"" = ""FilesetEntry"".""FileID""
+                JOIN ""Metadataset""
+                    ON ""Metadataset"".""ID"" = ""FileLookup"".""MetadataID""
+                WHERE ""Metadataset"".""BlocksetID"" NOT IN ({UsableMetadataBlocksetIdsQuery(invalidBlocksetIdsQuery)})
+            ")
+                .SetTransaction(m_rtr);
+
+            var result = new HashSet<long>();
+            await foreach (var rd in cmd.ExecuteReaderEnumerableAsync(token).ConfigureAwait(false))
+                result.Add(rd.ConvertValueToInt64(0, -1));
+
+            return result;
+        }
+
+        /// <summary>
+        /// Repoints the metadata of the given fileset at the replacement blockset, for every metadata entry
+        /// that cannot be restored.
+        /// </summary>
+        /// <remarks>
+        /// <c>Metadataset.BlocksetID</c> is repointed rather than <c>FileLookup.MetadataID</c>, because
+        /// <c>FileLookup</c> is unique on <c>("PrefixID", "Path", "BlocksetID", "MetadataID")</c> and
+        /// repointing it can therefore collide, while <c>Metadataset.BlocksetID</c> has a non-unique index.
+        /// <para>
+        /// Metadata rows are shared between filesets, so the returned row count is not a per-fileset
+        /// recovery count: the first fileset repairs rows that later filesets also use, and those would then
+        /// report zero.
+        /// </para>
+        /// <para>
+        /// This deliberately does not call <see cref="InvalidateBrokenFileCacheAsync"/>: repointing
+        /// <c>Metadataset.BlocksetID</c> changes which blockset a metadata entry uses, not which blocksets are
+        /// restorable, so the classification is still valid afterwards.
+        /// </para>
+        /// </remarks>
         /// <param name="filesetId">The filesetId to target.</param>
-        /// <param name="emptyBlocksetId">The empty blockset ID to replace with.</param>
+        /// <param name="replacementBlocksetId">The blockset ID to point the damaged metadata at.</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>A task that when awaited contains the number of rows affected</returns>
-        public async Task<int> ReplaceMetadataAsync(long filesetId, long emptyBlocksetId, CancellationToken token)
+        public async Task<int> ReplaceMetadataAsync(long filesetId, long replacementBlocksetId, CancellationToken token)
         {
-            await using var cmd = m_connection.CreateCommand(@"
+            var invalidBlocksetIdsQuery = await InvalidBlocksetIdsQueryAsync(token).ConfigureAwait(false);
+            var usableMetadataBlocksetIdsQuery = UsableMetadataBlocksetIdsQuery(invalidBlocksetIdsQuery);
+
+            await using var cmd = m_connection.CreateCommand()
+                .SetTransaction(m_rtr);
+
+            // Refuse to hand out something that is not restorable itself, as that would silently turn one
+            // kind of unrestorable metadata into another
+            var replacementIsUsable = await cmd.SetCommandAndParameters($@"
+                SELECT COUNT(*)
+                FROM ({usableMetadataBlocksetIdsQuery})
+                WHERE ""ID"" = @ReplacementBlocksetID
+            ")
+                .SetParameterValue("@ReplacementBlocksetID", replacementBlocksetId)
+                .ExecuteScalarInt64Async(0, token)
+                .ConfigureAwait(false);
+
+            if (replacementIsUsable == 0)
+                throw new Interface.UserInformationException($"The blockset {replacementBlocksetId} cannot be used as replacement metadata, as it is not restorable itself.", "ReplacementMetadataNotUsable");
+
+            return await cmd.SetCommandAndParameters($@"
                 UPDATE ""Metadataset""
-                SET ""BlocksetID"" = @EmptyBlocksetID
+                SET ""BlocksetID"" = @ReplacementBlocksetID
                 WHERE
                     ""ID"" IN (
                         SELECT ""FileLookup"".""MetadataID""
@@ -327,19 +651,12 @@ namespace Duplicati.Library.Main.Database.Local
                             ""FilesetEntry"".""FilesetId"" = @FilesetID
                             AND ""FileLookup"".""ID"" = ""FilesetEntry"".""FileID""
                     )
-                    AND ""BlocksetID"" NOT IN (
-                        SELECT ""BlocksetID""
-                        FROM
-                            ""BlocksetEntry"",
-                            ""Block""
-                        WHERE ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
-                    )
+                    AND ""BlocksetID"" NOT IN ({usableMetadataBlocksetIdsQuery})
             ")
-                .SetTransaction(m_rtr)
-                .SetParameterValue("@EmptyBlocksetID", emptyBlocksetId)
-                .SetParameterValue("@FilesetID", filesetId);
-
-            return await cmd.ExecuteNonQueryAsync(true, token).ConfigureAwait(false);
+                .SetParameterValue("@ReplacementBlocksetID", replacementBlocksetId)
+                .SetParameterValue("@FilesetID", filesetId)
+                .ExecuteNonQueryAsync(true, token)
+                .ConfigureAwait(false);
         }
 
         /// <summary>
@@ -424,6 +741,521 @@ namespace Duplicati.Library.Main.Database.Local
                     .ConfigureAwait(false);
             }
             catch { /* Ignore, will be deleted on close anyway. */ }
+
+            // Blocks, blocksets and blocklist hashes have changed, so the classification is stale
+            await InvalidateBrokenFileCacheAsync(token).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// SQL fragment listing the ids of the volumes that can currently supply blocks: volumes that are
+        /// block volumes and are not on their way out of the backup.
+        /// </summary>
+        private static readonly string LIVE_BLOCK_VOLUME_IDS = @$"
+            SELECT ""ID""
+            FROM ""RemoteVolume""
+            WHERE
+                ""Type"" = '{RemoteVolumeType.Blocks}'
+                AND ""State"" NOT IN (
+                    '{RemoteVolumeState.Deleted}',
+                    '{RemoteVolumeState.Deleting}',
+                    '{RemoteVolumeState.Temporary}'
+                )
+        ";
+
+        /// <summary>
+        /// Builds a SQL predicate that is true when the blockset identified by
+        /// <paramref name="blocksetIdExpression"/> can actually be restored.
+        /// </summary>
+        /// <remarks>
+        /// A restorable blockset has at least one <c>BlocksetEntry</c>, and none of its entries points at a
+        /// missing <c>Block</c> row, at a volume in <c>@BlockVolumeIds</c>, or at a volume that is not a
+        /// live block volume. Testing only that a <c>Block</c> row exists is not enough: that is what made
+        /// the old lookup hand out blocksets whose blocks were in a volume that was about to be removed.
+        /// <para>
+        /// The query using this fragment must expand the <c>@BlockVolumeIds</c> parameter with the volume
+        /// ids to treat as unavailable. An empty collection expands to <c>IN ()</c>, which SQLite accepts
+        /// and evaluates as false, so nothing is excluded.
+        /// </para>
+        /// </remarks>
+        /// <param name="blocksetIdExpression">The SQL expression identifying the blockset to test.</param>
+        /// <returns>A SQL predicate.</returns>
+        private static string BLOCKSET_IS_FULLY_AVAILABLE(string blocksetIdExpression) => @$"
+            EXISTS (
+                SELECT 1
+                FROM ""BlocksetEntry""
+                WHERE ""BlocksetEntry"".""BlocksetID"" = {blocksetIdExpression}
+            )
+            AND NOT EXISTS (
+                SELECT 1
+                FROM ""BlocksetEntry""
+                LEFT JOIN ""Block""
+                    ON ""Block"".""ID"" = ""BlocksetEntry"".""BlockID""
+                WHERE
+                    ""BlocksetEntry"".""BlocksetID"" = {blocksetIdExpression}
+                    AND (
+                        ""Block"".""ID"" IS NULL
+                        OR ""Block"".""VolumeID"" IN (@BlockVolumeIds)
+                        OR ""Block"".""VolumeID"" NOT IN ({LIVE_BLOCK_VOLUME_IDS})
+                    )
+            )
+        ";
+
+        /// <summary>
+        /// Finds the blockset with the given hash and size, but only if it can be used as replacement
+        /// metadata: it must be non-empty and all of its blocks must be available.
+        /// </summary>
+        /// <remarks>
+        /// A blockset with a length of 0 is never a valid metadata blockset. Metadata always has contents -
+        /// the smallest possible blob is a serialized empty dictionary - so a metadata entry with length 0
+        /// can never be restored. Worse, <c>Blockset</c> is unique on <c>("FullHash", "Length")</c>, so
+        /// there is only one zero-length blockset and it is the one that every empty file in the backup uses
+        /// as its content. Handing it out as metadata therefore entangles the damaged metadata with every
+        /// empty file in the backup.
+        /// </remarks>
+        /// <param name="blockVolumeIds">The ids of the volumes to treat as unavailable.</param>
+        /// <param name="fullHash">The hash of the wanted blockset.</param>
+        /// <param name="size">The length of the wanted blockset.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task that when awaited contains the id of the blockset, or -1 if it is not present or not available.</returns>
+        public async Task<long> FindExactMetadataBlocksetIdAsync(IEnumerable<long> blockVolumeIds, string fullHash, long size, CancellationToken token)
+        {
+            // See the remarks above: a zero-length blockset can never hold restorable metadata.
+            if (size <= 0)
+                return -1;
+
+            await using var tmptable = await TemporaryDbValueList.CreateAsync(this, blockVolumeIds, token)
+                .ConfigureAwait(false);
+
+            await using var cmd = Connection.CreateCommand(@$"
+                SELECT ""Blockset"".""ID""
+                FROM ""Blockset""
+                WHERE
+                    ""Blockset"".""FullHash"" = @FullHash
+                    AND ""Blockset"".""Length"" = @Size
+                    AND ""Blockset"".""Length"" > 0
+                    AND {BLOCKSET_IS_FULLY_AVAILABLE(@"""Blockset"".""ID""")}
+                LIMIT 1
+            ")
+                .SetTransaction(m_rtr)
+                .SetParameterValue("@FullHash", fullHash)
+                .SetParameterValue("@Size", size);
+
+            await cmd.ExpandInClauseParameterMssqliteAsync("@BlockVolumeIds", tmptable, token)
+                .ConfigureAwait(false);
+
+            return await cmd.ExecuteScalarInt64Async(-1, token)
+                .ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Finds the smallest available blockset that is already used as metadata.
+        /// </summary>
+        /// <remarks>
+        /// This is a last resort: the returned blockset is restorable, but its contents do not describe the
+        /// files it gets assigned to, so the affected files lose their original permissions and timestamps.
+        /// As with <see cref="FindExactMetadataBlocksetIdAsync"/>, zero-length blocksets are excluded
+        /// because they can never hold restorable metadata.
+        /// </remarks>
+        /// <param name="blockVolumeIds">The ids of the volumes to treat as unavailable.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task that when awaited contains the id of the blockset, or -1 if no usable blockset exists.</returns>
+        public async Task<long> FindSmallestUsableMetadataBlocksetIdAsync(IEnumerable<long> blockVolumeIds, CancellationToken token)
+        {
+            await using var tmptable = await TemporaryDbValueList.CreateAsync(this, blockVolumeIds, token)
+                .ConfigureAwait(false);
+
+            await using var cmd = Connection.CreateCommand(@$"
+                SELECT ""Blockset"".""ID""
+                FROM ""Blockset""
+                WHERE
+                    ""Blockset"".""Length"" > 0
+                    AND EXISTS (
+                        SELECT 1
+                        FROM ""Metadataset""
+                        WHERE ""Metadataset"".""BlocksetID"" = ""Blockset"".""ID""
+                    )
+                    AND {BLOCKSET_IS_FULLY_AVAILABLE(@"""Blockset"".""ID""")}
+                ORDER BY ""Blockset"".""Length"" ASC
+                LIMIT 1
+            ")
+                .SetTransaction(m_rtr);
+
+            await cmd.ExpandInClauseParameterMssqliteAsync("@BlockVolumeIds", tmptable, token)
+                .ConfigureAwait(false);
+
+            return await cmd.ExecuteScalarInt64Async(-1, token)
+                .ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Finds the id of an available block with the given hash and size.
+        /// </summary>
+        /// <remarks>
+        /// A block can be stored without any blockset pointing at it, so this is not the same question as
+        /// <see cref="FindExactMetadataBlocksetIdAsync"/>: the block may be present at the destination while
+        /// the blockset that used to reference it has been damaged or removed.
+        /// </remarks>
+        /// <param name="hash">The block hash to look for.</param>
+        /// <param name="size">The block size to look for.</param>
+        /// <param name="blockVolumeIds">The ids of the volumes to treat as unavailable.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task that when awaited contains the id of the block, or -1 if it is not available.</returns>
+        public async Task<long> FindAvailableBlockIdAsync(string hash, long size, IEnumerable<long> blockVolumeIds, CancellationToken token)
+        {
+            await using var tmptable = await TemporaryDbValueList.CreateAsync(this, blockVolumeIds, token)
+                .ConfigureAwait(false);
+
+            await using var cmd = Connection.CreateCommand(@$"
+                SELECT ""Block"".""ID""
+                FROM ""Block""
+                WHERE
+                    ""Block"".""Hash"" = @Hash
+                    AND ""Block"".""Size"" = @Size
+                    AND ""Block"".""VolumeID"" NOT IN (@BlockVolumeIds)
+                    AND ""Block"".""VolumeID"" IN ({LIVE_BLOCK_VOLUME_IDS})
+                LIMIT 1
+            ")
+                .SetTransaction(m_rtr)
+                .SetParameterValue("@Hash", hash)
+                .SetParameterValue("@Size", size);
+
+            await cmd.ExpandInClauseParameterMssqliteAsync("@BlockVolumeIds", tmptable, token)
+                .ConfigureAwait(false);
+
+            return await cmd.ExecuteScalarInt64Async(-1, token)
+                .ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Describes a <c>Block</c> row that was pointed at a volume by <see cref="RegisterBlockAsync"/>,
+        /// with what is needed to undo it again.
+        /// </summary>
+        /// <param name="BlockId">The id of the block row.</param>
+        /// <param name="Hash">The hash of the block.</param>
+        /// <param name="Size">The size of the block.</param>
+        /// <param name="VolumeId">The volume the block was pointed at.</param>
+        /// <param name="PreviousVolumeId">The volume the block was pointed at before, if that could be read.</param>
+        /// <param name="Created">Whether the row was created, as opposed to being repointed.</param>
+        public sealed record BlockRegistration(long BlockId, string Hash, long Size, long VolumeId, long? PreviousVolumeId, bool Created);
+
+        /// <summary>
+        /// Records that the block with the given hash and size is stored in the given volume, creating the
+        /// <c>Block</c> row if it does not exist yet.
+        /// </summary>
+        /// <remarks>
+        /// The registration has to be committed before the upload of the volume starts, so it can be visible
+        /// before the volume actually exists at the destination. Keep the returned value and hand it to
+        /// <see cref="RollbackBlockRegistrationAsync"/> if the volume never arrives, or a block that is
+        /// perfectly restorable from its old volume is left looking unrestorable.
+        /// </remarks>
+        /// <param name="hash">The block hash.</param>
+        /// <param name="size">The block size.</param>
+        /// <param name="volumeId">The id of the volume the block is stored in.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task that when awaited contains the registration.</returns>
+        public async Task<BlockRegistration> RegisterBlockAsync(string hash, long size, long volumeId, CancellationToken token)
+        {
+            // Which volume a block lives in decides whether the blocksets using it are restorable. Dropping
+            // the classification up front is enough, because it is rebuilt on the next request, which can
+            // only happen after this has run.
+            await InvalidateBrokenFileCacheAsync(token).ConfigureAwait(false);
+
+            await using var cmd = m_connection.CreateCommand()
+                .SetTransaction(m_rtr);
+
+            cmd.SetCommandAndParameters(@"
+                SELECT
+                    ""ID"",
+                    ""VolumeID""
+                FROM ""Block""
+                WHERE
+                    ""Hash"" = @Hash
+                    AND ""Size"" = @Size
+            ")
+                .SetParameterValue("@Hash", hash)
+                .SetParameterValue("@Size", size);
+
+            var existingId = -1L;
+            long? previousVolumeId = null;
+            await using (var rd = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false))
+                if (await rd.ReadAsync(token).ConfigureAwait(false))
+                {
+                    existingId = rd.ConvertValueToInt64(0, -1);
+                    // Only record a previous volume if one could actually be read. Guessing one and writing
+                    // it back on rollback would point the block at a volume that never held it.
+                    if (!await rd.IsDBNullAsync(1, token).ConfigureAwait(false))
+                        previousVolumeId = rd.ConvertValueToInt64(1);
+                }
+
+            if (existingId >= 0)
+            {
+                await cmd.SetCommandAndParameters(@"
+                    UPDATE ""Block""
+                    SET ""VolumeID"" = @VolumeId
+                    WHERE ""ID"" = @Id
+                ")
+                    .SetParameterValue("@VolumeId", volumeId)
+                    .SetParameterValue("@Id", existingId)
+                    .ExecuteNonQueryAsync(true, token)
+                    .ConfigureAwait(false);
+
+                return new BlockRegistration(existingId, hash, size, volumeId, previousVolumeId, false);
+            }
+
+            var newId = await cmd.SetCommandAndParameters(@"
+                INSERT INTO ""Block"" (
+                    ""Hash"",
+                    ""Size"",
+                    ""VolumeID""
+                )
+                VALUES (
+                    @Hash,
+                    @Size,
+                    @VolumeId
+                );
+                SELECT last_insert_rowid();
+            ")
+                .SetParameterValue("@Hash", hash)
+                .SetParameterValue("@Size", size)
+                .SetParameterValue("@VolumeId", volumeId)
+                .ExecuteScalarInt64Async(-1, token)
+                .ConfigureAwait(false);
+
+            if (newId < 0)
+                throw new InvalidOperationException($"Failed to register the block {hash} in volume {volumeId}.");
+
+            return new BlockRegistration(newId, hash, size, volumeId, null, true);
+        }
+
+        /// <summary>
+        /// Undoes a registration made by <see cref="RegisterBlockAsync"/>.
+        /// </summary>
+        /// <remarks>
+        /// The row is only touched while it still points at the volume from the registration, so a
+        /// registration made by something else in the meantime is left alone. If the row was repointed and
+        /// the previous volume is not known, the row is left as it is and a warning is written: writing a
+        /// guessed volume id would be worse than leaving the block where the failed upload put it.
+        /// </remarks>
+        /// <param name="registration">The registration to undo.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task that completes when the rollback has been attempted.</returns>
+        public async Task RollbackBlockRegistrationAsync(BlockRegistration registration, CancellationToken token)
+        {
+            // See RegisterBlockAsync: this puts Block.VolumeID back, which changes the classification again
+            await InvalidateBrokenFileCacheAsync(token).ConfigureAwait(false);
+
+            await using var cmd = m_connection.CreateCommand()
+                .SetTransaction(m_rtr);
+
+            if (registration.Created)
+            {
+                await cmd.SetCommandAndParameters(@"
+                    DELETE FROM ""Block""
+                    WHERE
+                        ""ID"" = @Id
+                        AND ""VolumeID"" = @VolumeId
+                ")
+                    .SetParameterValue("@Id", registration.BlockId)
+                    .SetParameterValue("@VolumeId", registration.VolumeId)
+                    .ExecuteNonQueryAsync(true, token)
+                    .ConfigureAwait(false);
+
+                return;
+            }
+
+            if (!registration.PreviousVolumeId.HasValue)
+            {
+                Logging.Log.WriteWarningMessage(LOGTAG, "BlockRegistrationNotRolledBack", null, "The block {0} was pointed at volume {1}, but the volume it was in before is not known, so it is left as it is. Run repair to restore the block mapping.", registration.Hash, registration.VolumeId);
+                return;
+            }
+
+            await cmd.SetCommandAndParameters(@"
+                UPDATE ""Block""
+                SET ""VolumeID"" = @PreviousVolumeId
+                WHERE
+                    ""ID"" = @Id
+                    AND ""VolumeID"" = @VolumeId
+            ")
+                .SetParameterValue("@PreviousVolumeId", registration.PreviousVolumeId.Value)
+                .SetParameterValue("@Id", registration.BlockId)
+                .SetParameterValue("@VolumeId", registration.VolumeId)
+                .ExecuteNonQueryAsync(true, token)
+                .ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Creates, or repairs, the blockset with the given hash and length, made up of the given blocks.
+        /// </summary>
+        /// <remarks>
+        /// An existing <c>Blockset</c> row for the hash and length is reused - it is unique on those two
+        /// columns - but its <c>BlocksetEntry</c> and <c>BlocklistHash</c> rows are rebuilt, so a stale row
+        /// cannot keep pointing at the wrong blocks.
+        /// </remarks>
+        /// <param name="fullHash">The file hash of the metadata blob.</param>
+        /// <param name="size">The length of the metadata blob.</param>
+        /// <param name="blockIds">The ids of the blocks making up the blockset, in order.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task that when awaited contains the id of the blockset.</returns>
+        public async Task<long> CreateMetadataBlocksetAsync(string fullHash, long size, IEnumerable<long> blockIds, CancellationToken token)
+        {
+            var ids = blockIds?.ToList() ?? [];
+
+            // A zero-length metadata blockset can never be restored, and is shared with every empty file in
+            // the backup, see FindExactMetadataBlocksetIdAsync
+            if (size <= 0)
+                throw new ArgumentOutOfRangeException(nameof(size), "A metadata blockset must have contents.");
+            if (ids.Count == 0)
+                throw new ArgumentException("A metadata blockset must have at least one block.", nameof(blockIds));
+            // More than one block needs blocklist hashes, and those are blocks in their own right, which
+            // would have to be stored at the destination as well
+            if (ids.Count > 1)
+                throw new ArgumentException("A metadata blockset of more than one block is not supported here.", nameof(blockIds));
+
+            await using var cmd = m_connection.CreateCommand()
+                .SetTransaction(m_rtr);
+
+            var blocksetId = await cmd.SetCommandAndParameters(@"
+                SELECT ""ID""
+                FROM ""Blockset""
+                WHERE
+                    ""FullHash"" = @FullHash
+                    AND ""Length"" = @Length
+            ")
+                .SetParameterValue("@FullHash", fullHash)
+                .SetParameterValue("@Length", size)
+                .ExecuteScalarInt64Async(-1, token)
+                .ConfigureAwait(false);
+
+            if (blocksetId < 0)
+            {
+                blocksetId = await cmd.SetCommandAndParameters(@"
+                    INSERT INTO ""Blockset"" (
+                        ""Length"",
+                        ""FullHash""
+                    )
+                    VALUES (
+                        @Length,
+                        @FullHash
+                    );
+                    SELECT last_insert_rowid();
+                ")
+                    .SetParameterValue("@Length", size)
+                    .SetParameterValue("@FullHash", fullHash)
+                    .ExecuteScalarInt64Async(-1, token)
+                    .ConfigureAwait(false);
+
+                if (blocksetId < 0)
+                    throw new InvalidOperationException($"Failed to create a metadata blockset for {fullHash}.");
+            }
+            else
+            {
+                await cmd.SetCommandAndParameters(@"
+                    DELETE FROM ""BlocksetEntry""
+                    WHERE ""BlocksetID"" = @BlocksetId
+                ")
+                    .SetParameterValue("@BlocksetId", blocksetId)
+                    .ExecuteNonQueryAsync(true, token)
+                    .ConfigureAwait(false);
+
+                await cmd.SetCommandAndParameters(@"
+                    DELETE FROM ""BlocklistHash""
+                    WHERE ""BlocksetID"" = @BlocksetId
+                ")
+                    .SetParameterValue("@BlocksetId", blocksetId)
+                    .ExecuteNonQueryAsync(true, token)
+                    .ConfigureAwait(false);
+            }
+
+            cmd.SetCommandAndParameters(@"
+                INSERT INTO ""BlocksetEntry"" (
+                    ""BlocksetID"",
+                    ""Index"",
+                    ""BlockID""
+                )
+                VALUES (
+                    @BlocksetId,
+                    @Index,
+                    @BlockId
+                )
+            ");
+
+            for (var i = 0; i < ids.Count; i++)
+                await cmd
+                    .SetParameterValue("@BlocksetId", blocksetId)
+                    .SetParameterValue("@Index", i)
+                    .SetParameterValue("@BlockId", ids[i])
+                    .ExecuteNonQueryAsync(true, token)
+                    .ConfigureAwait(false);
+
+            // Refuse to hand out a blockset that does not add up, as that is exactly the damage this is
+            // meant to repair
+            var calculatedLength = await cmd.SetCommandAndParameters(@"
+                SELECT IFNULL(SUM(""Block"".""Size""), 0)
+                FROM ""BlocksetEntry""
+                JOIN ""Block""
+                    ON ""Block"".""ID"" = ""BlocksetEntry"".""BlockID""
+                WHERE ""BlocksetEntry"".""BlocksetID"" = @BlocksetId
+            ")
+                .SetParameterValue("@BlocksetId", blocksetId)
+                .ExecuteScalarInt64Async(-1, token)
+                .ConfigureAwait(false);
+
+            if (calculatedLength != size)
+                throw new InvalidOperationException($"The metadata blockset {blocksetId} has a recorded length of {size}, but its blocks add up to {calculatedLength}.");
+
+            // A new or rebuilt blockset changes the classification
+            await InvalidateBrokenFileCacheAsync(token).ConfigureAwait(false);
+
+            return blocksetId;
+        }
+
+        /// <summary>
+        /// Returns the id of a <c>Metadataset</c> row for the given blockset, creating one if there is none.
+        /// </summary>
+        /// <remarks>
+        /// A freshly created metadata blockset is referenced by nothing until the damaged metadata is
+        /// repointed at it, and an unreferenced blockset is removed by the next cleanup. The row also makes
+        /// the blockset visible to <see cref="FindSmallestUsableMetadataBlocksetIdAsync"/>, which only
+        /// considers blocksets that are already used as metadata.
+        /// </remarks>
+        /// <param name="blocksetId">The blockset to point the metadata entry at.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task that when awaited contains the id of the metadata entry.</returns>
+        public async Task<long> GetOrCreateMetadatasetIdAsync(long blocksetId, CancellationToken token)
+        {
+            await using var cmd = m_connection.CreateCommand()
+                .SetTransaction(m_rtr);
+
+            var metadataId = await cmd.SetCommandAndParameters(@"
+                SELECT ""ID""
+                FROM ""Metadataset""
+                WHERE ""BlocksetID"" = @BlocksetId
+                LIMIT 1
+            ")
+                .SetParameterValue("@BlocksetId", blocksetId)
+                .ExecuteScalarInt64Async(-1, token)
+                .ConfigureAwait(false);
+
+            if (metadataId >= 0)
+                return metadataId;
+
+            metadataId = await cmd.SetCommandAndParameters(@"
+                INSERT INTO ""Metadataset"" (
+                    ""BlocksetID""
+                )
+                VALUES (
+                    @BlocksetId
+                );
+                SELECT last_insert_rowid();
+            ")
+                .SetParameterValue("@BlocksetId", blocksetId)
+                .ExecuteScalarInt64Async(-1, token)
+                .ConfigureAwait(false);
+
+            if (metadataId < 0)
+                throw new InvalidOperationException($"Failed to create a metadata entry for blockset {blocksetId}.");
+
+            return metadataId;
         }
 
         /// <summary>

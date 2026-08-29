@@ -263,12 +263,6 @@ public class WebModule : IWebModule
                 case SourceProvider.SiteCategory.Group:
                     result.Sites.Group++;
                     break;
-                case SourceProvider.SiteCategory.Classic:
-                    result.Sites.Classic++;
-                    break;
-                case SourceProvider.SiteCategory.Communication:
-                    result.Sites.Communication++;
-                    break;
                 case SourceProvider.SiteCategory.PersonalLicensedUser:
                     result.Sites.PersonalLicensedUser++;
                     break;
@@ -374,12 +368,6 @@ public class WebModule : IWebModule
 
         [System.Text.Json.Serialization.JsonPropertyName("group")]
         public int Group { get; set; }
-
-        [System.Text.Json.Serialization.JsonPropertyName("classic")]
-        public int Classic { get; set; }
-
-        [System.Text.Json.Serialization.JsonPropertyName("communication")]
-        public int Communication { get; set; }
 
         [System.Text.Json.Serialization.JsonPropertyName("personal")]
         public int Personal => PersonalLicensedUser + PersonalUnlicensedUser;
