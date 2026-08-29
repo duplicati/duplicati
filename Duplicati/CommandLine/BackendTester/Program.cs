@@ -159,6 +159,10 @@ namespace Duplicati.CommandLine.BackendTester
             if (options.ContainsKey("failure-retries"))
                 retries = int.Parse(options["failure-retries"]);
 
+            var verificationRetries = 3;
+            if (options.ContainsKey("verification-retries"))
+                verificationRetries = int.Parse(options["verification-retries"]);
+
             options.TryGetValue("enable-module", out var enabledModulesValue);
             options.TryGetValue("disable-module", out var disabledModulesValue);
             var enabledModules = enabledModulesValue == null ? new string[0] : enabledModulesValue.Trim().ToLower(CultureInfo.InvariantCulture).Split(',');
@@ -199,27 +203,36 @@ namespace Duplicati.CommandLine.BackendTester
                         throw;
                 }
 
-                foreach (Library.Interface.IFileEntry fe in curlist)
-                    if (!fe.IsFolder)
-                    {
-                        if (Library.Utility.Utility.ParseBoolOption(options, "auto-clean") && first)
-                            if (Library.Utility.Utility.ParseBoolOption(options, "force"))
-                            {
-                                Console.WriteLine($"{LogTimeStamp}Auto clean, removing file: {fe.Name}");
-                                DeleteListedFileAsync(backend, fe.Name, retries).Await();
-                                continue;
-                            }
-                            else
-                                Console.WriteLine("Specify the --force flag to actually delete files");
+                var present = curlist.Where(x => !x.IsFolder).Select(x => x.Name).ToList();
 
-                        var fileCount = curlist.Where(x => !x.IsFolder).Count();
-                        var filenames = curlist.Where(x => !x.IsFolder).Select(x => x.Name).Take(10).ToList();
-                        Console.WriteLine($"{LogTimeStamp}*** Remote folder contains {fileCount} file(s), aborting");
+                if (present.Count > 0 && first && Library.Utility.Utility.ParseBoolOption(options, "auto-clean"))
+                {
+                    if (Library.Utility.Utility.ParseBoolOption(options, "force"))
+                        foreach (var name in present)
+                        {
+                            Console.WriteLine($"{LogTimeStamp}Auto clean, removing file: {name}");
+                            DeleteListedFileAsync(backend, name, retries).Await();
+                        }
+                    else
+                        Console.WriteLine("Specify the --force flag to actually delete files");
+                }
+
+                // Testing the destination writes and removes a file of its own, and the
+                // listing can lag behind that, so the folder is read again before the
+                // run is abandoned over what it reported the first time.
+                if (present.Count > 0)
+                {
+                    var leftovers = ListUntilFolderIsEmpty(backend, retries, verificationRetries);
+                    if (leftovers.Count > 0)
+                    {
+                        var filenames = leftovers.Take(10).ToList();
+                        Console.WriteLine($"{LogTimeStamp}*** Remote folder contains {leftovers.Count} file(s), aborting");
                         Console.WriteLine($"{LogTimeStamp}*** First {filenames.Count} file(s): {Environment.NewLine}{string.Join(Environment.NewLine, filenames)}");
-                        if (fileCount > filenames.Count)
-                            Console.WriteLine($"{LogTimeStamp}*** ... and {fileCount - filenames.Count} more file(s)");
+                        if (leftovers.Count > filenames.Count)
+                            Console.WriteLine($"{LogTimeStamp}*** ... and {leftovers.Count - filenames.Count} more file(s)");
                         return false;
                     }
+                }
 
 
                 var number_of_files = 10;
@@ -286,10 +299,6 @@ namespace Duplicati.CommandLine.BackendTester
                     waitAfterUpload = Timeparser.ParseTimeSpan(options["wait-after-upload"]);
                 if (options.ContainsKey("wait-after-delete"))
                     waitAfterDelete = Timeparser.ParseTimeSpan(options["wait-after-delete"]);
-
-                var verificationRetries = 3;
-                if (options.ContainsKey("verification-retries"))
-                    verificationRetries = int.Parse(options["verification-retries"]);
 
                 var rnd = new Random();
                 var sha = System.Security.Cryptography.SHA256.Create();
@@ -446,17 +455,11 @@ namespace Duplicati.CommandLine.BackendTester
 
                     Console.WriteLine($"{LogTimeStamp}Deleting files...");
 
-                    for (int i = 0; i < files.Count; i++)
-                        try
-                        {
-                            Console.WriteLine($"{LogTimeStamp}Deleting file {i}");
-                            Retry(() => backend.DeleteAsync(files[i].remotefilename, CancellationToken.None), retries).Await();
-                        }
-                        catch (Exception ex)
-                        {
-                            failAfterFinished = true;
-                            Console.WriteLine($"{LogTimeStamp}*** Failed to delete file {files[i].remotefilename}, message: {ex}");
-                        }
+                    foreach (var (name, error) in DeleteTestFiles(backend, files.Select(x => x.remotefilename), retries))
+                    {
+                        failAfterFinished = true;
+                        Console.WriteLine($"{LogTimeStamp}*** Failed to delete file {name}, message: {error}");
+                    }
 
                     if (waitAfterDelete > TimeSpan.Zero)
                     {
@@ -465,20 +468,7 @@ namespace Duplicati.CommandLine.BackendTester
                     }
 
                     // As with the upload verification, the listing can lag behind the deletes
-                    List<string> leftovers;
-                    for (var attempt = 0; ; attempt++)
-                    {
-                        curlist = Retry(() => backend.ListAsync(CancellationToken.None).ToBlockingEnumerable().ToList(), retries);
-                        leftovers = curlist.Where(x => !x.IsFolder).Select(x => x.Name).ToList();
-                        if (leftovers.Count == 0 || attempt >= verificationRetries)
-                            break;
-
-                        var delay = Utility.GetRetryDelay(TimeSpan.FromSeconds(1), attempt + 1, true);
-                        Console.WriteLine($"{LogTimeStamp}Remote folder is not empty yet ({leftovers.Count} file(s)), re-checking in {delay.TotalMilliseconds} ms");
-                        Thread.Sleep(delay);
-                    }
-
-                    foreach (var name in leftovers)
+                    foreach (var name in ListUntilFolderIsEmpty(backend, retries, verificationRetries))
                     {
                         failAfterFinished = true;
                         Console.WriteLine($"{LogTimeStamp}*** Remote folder contains {name} after cleanup");
@@ -671,6 +661,62 @@ namespace Duplicati.CommandLine.BackendTester
                     Console.WriteLine($"{LogTimeStamp}File was already gone: {remotename}");
                 }
             }, retries);
+
+        /// <summary>
+        /// Reads the remote folder until it reports no files, or the attempts run out.
+        /// A listing can lag behind the operations that were just performed, so a folder
+        /// that still looks occupied is read again before that is treated as a problem.
+        /// </summary>
+        /// <param name="backend">The backend to read</param>
+        /// <param name="retries">The number of attempts to make per listing</param>
+        /// <param name="verificationRetries">The number of times to read the folder again</param>
+        /// <returns>The names of the files the folder still holds</returns>
+        internal static List<string> ListUntilFolderIsEmpty(IBackend backend, int retries, int verificationRetries)
+        {
+            for (var attempt = 0; ; attempt++)
+            {
+                var leftovers = Retry(() => backend.ListAsync(CancellationToken.None).ToBlockingEnumerable().ToList(), retries)
+                    .Where(x => !x.IsFolder).Select(x => x.Name).ToList();
+
+                if (leftovers.Count == 0 || attempt >= verificationRetries)
+                    return leftovers;
+
+                var delay = Utility.GetRetryDelay(TimeSpan.FromSeconds(1), attempt + 1, true);
+                Console.WriteLine($"{LogTimeStamp}Remote folder is not empty yet ({leftovers.Count} file(s)), re-checking in {delay.TotalMilliseconds} ms");
+                Thread.Sleep(delay);
+            }
+        }
+
+        /// <summary>
+        /// Removes the files the run created, and reports the ones that would not go away
+        /// </summary>
+        /// <param name="backend">The backend to delete from</param>
+        /// <param name="remotenames">The names to remove, in the order they were created</param>
+        /// <param name="retries">The number of attempts to make per file</param>
+        /// <returns>The names that could not be removed, with the reason</returns>
+        internal static List<(string RemoteName, Exception Error)> DeleteTestFiles(IBackend backend, IEnumerable<string> remotenames, int retries)
+        {
+            var failures = new List<(string, Exception)>();
+            var i = 0;
+
+            foreach (var remotename in remotenames)
+            {
+                try
+                {
+                    Console.WriteLine($"{LogTimeStamp}Deleting file {i}");
+                    DeleteListedFileAsync(backend, remotename, retries).Await();
+                }
+                catch (Exception ex)
+                {
+                    // One file that will not go away does not stop the rest from being tried
+                    failures.Add((remotename, ex));
+                }
+
+                i++;
+            }
+
+            return failures;
+        }
 
         private static async Task<T> Retry<T>(Func<Task<T>> action, int retries)
         {
