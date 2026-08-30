@@ -25,6 +25,8 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Duplicati.Library.Interface;
 
+[assembly: InternalsVisibleTo("Duplicati.UnitTest")]
+
 namespace Duplicati.Library.Backend.Filen;
 
 /// <summary>
@@ -175,6 +177,23 @@ public class FilenClient : IDisposable
         _baseUrl = baseUrl;
         _validUntil = DateTime.Now + TimeSpan.FromMinutes(50);
     }
+
+    /// <summary>
+    /// Builds a client around a transport and a key, without logging in, so that the
+    /// caching can be exercised. The listing decrypts names with the account keys, so
+    /// a test has to hold the same key to write a listing the client will read.
+    /// </summary>
+    /// <param name="httpClient">The client to send requests with</param>
+    /// <param name="baseUrl">The base url to send them to</param>
+    /// <param name="masterKey">The key the listing is encrypted with</param>
+    /// <returns>A client that talks to the given transport</returns>
+    internal static FilenClient CreateForTesting(HttpClient httpClient, string baseUrl, DerivedKey masterKey)
+        => new(httpClient, new FilenAuthResult
+        {
+            ApiKey = "test-api-key",
+            AccountMasterKey = masterKey,
+            MasterKeys = [masterKey]
+        }, baseUrl);
 
     /// <summary>
     /// The time the client is valid
@@ -476,8 +495,20 @@ public class FilenClient : IDisposable
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _authResult.ApiKey);
         request.Content = JsonContent.Create(new { uuid = fileUuid });
 
-        var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
-        await ExtractDataFromResponse<string?>(response, cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
+            await ExtractDataFromResponse<string?>(response, cancellationToken).ConfigureAwait(false);
+        }
+        catch
+        {
+            // The request may have reached the server even though the answer did not
+            // reach us, and then the cache holds a uuid that no longer resolves. Which
+            // entry went stale cannot be told from here, so the table goes.
+            _cachedFiles.Clear();
+            throw;
+        }
+
         var key = _cachedFiles.FirstOrDefault(kv => kv.Value.Uuid == fileUuid).Key;
         if (string.IsNullOrWhiteSpace(key))
             _cachedFiles.Clear();
@@ -787,8 +818,18 @@ public class FilenClient : IDisposable
             metadata
         });
 
-        var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
-        await ExtractDataFromResponse<string?>(response, cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
+            await ExtractDataFromResponse<string?>(response, cancellationToken).ConfigureAwait(false);
+        }
+        catch
+        {
+            // As with the delete: the rename may have landed, and then the name the
+            // cache still answers with is the one that is gone
+            _cachedFiles.Clear();
+            throw;
+        }
 
         // Update cache
         var key = _cachedFiles.FirstOrDefault(kv => kv.Value.Uuid == fileEntry.Uuid).Key;
