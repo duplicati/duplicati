@@ -46,11 +46,15 @@ public static partial class Command
 
             string[] extras = target.OS switch
             {
-                OSType.Windows => ["Vanara.PInvoke.Kernel32.dll", "Vanara.PInvoke.VssApi.dll", "Duplicati.Library.WindowsModules.dll", "ijwhost.dll"],
+                OSType.Windows => ["Vanara.PInvoke.Kernel32.dll", "Vanara.PInvoke.VssApi.dll", "Duplicati.Library.WindowsModules.dll"],
                 OSType.MacOS => [],
                 OSType.Linux => [],
                 _ => throw new Exception($"Not supported OS: {target.OS}")
             };
+
+            // For now, Vanara is not supported on ARM
+            if (target.OS == OSType.Windows && target.Arch != ArchType.Arm64 && target.Arch != ArchType.Arm7)
+                extras = extras.Append("ijwhost.dll").ToArray();
 
             // Random sample of files we expect
             string[] probeFiles = [
