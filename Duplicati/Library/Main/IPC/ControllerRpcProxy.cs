@@ -125,6 +125,14 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
             WorkingDirectory = Path.GetDirectoryName(exePath)
         };
 
+        // Pass the data folder explicitly so the controller process uses the same
+        // folder as this process; otherwise a portable-mode default or a different
+        // entry assembly location would make it resolve (and probe the machine id
+        // from) a different folder. The option-based environment variable is used
+        // because it takes precedence over the portable-mode default.
+        var serverDatafolderEnvName = $"{Library.AutoUpdater.AutoUpdateSettings.AppName}__{Library.AutoUpdater.DataFolderManager.SERVER_DATAFOLDER_OPTION.Replace('-', '_')}".ToUpperInvariant();
+        psi.Environment[serverDatafolderEnvName] = Library.AutoUpdater.DataFolderManager.GetDataFolder(Library.AutoUpdater.DataFolderManager.AccessMode.ProbeOnly);
+
         _process = Process.Start(psi)
             ?? throw new InvalidOperationException("Failed to start controller process");
 

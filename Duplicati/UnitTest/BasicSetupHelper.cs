@@ -32,6 +32,55 @@ using System.Timers;
 
 namespace Duplicati.UnitTest
 {
+    /// <summary>
+    /// Assembly-wide setup that runs once before any test in this assembly.
+    /// Ensures a stable machine ID is present in the data folder, so the DEBUG guard
+    /// in <see cref="Library.AutoUpdater.DataFolderManager"/> does not trip when a test
+    /// reads the ID without going through the application startup sequence that
+    /// normally initializes the data folder.
+    /// </summary>
+    [SetUpFixture]
+    public class GlobalTestSetup
+    {
+        /// <summary>
+        /// The machine ID used by the test suite
+        /// </summary>
+        internal const string TestMachineId = "unittestid";
+
+        [OneTimeSetUp]
+        public void RunBeforeAnyTests()
+        {
+            Library.AutoUpdater.DataFolderManager.SetMachineIDForTesting(TestMachineId);
+
+            // Seed the machine id file in the data folder so processes spawned by tests
+            // (e.g. the IPC controller process) inherit a valid machine ID via the
+            // DUPLICATI_HOME environment; such processes cannot see the in-process
+            // SetMachineIDForTesting value.
+            try
+            {
+                var dataFolder = Library.AutoUpdater.DataFolderManager.GetDataFolder(Library.AutoUpdater.DataFolderManager.AccessMode.ProbeOnly);
+                if (!Directory.Exists(dataFolder))
+                {
+                    // Create the folder through the regular startup path so it gets the
+                    // canonical locked-down permissions and both id files; a plainly created
+                    // folder would later be rejected by the secure-folder verification.
+                    Library.AutoUpdater.DataFolderManager.GetDataFolder(Library.AutoUpdater.DataFolderManager.AccessMode.ReadWritePermissionSet);
+                }
+                else
+                {
+                    var machineIdPath = Path.Combine(dataFolder, "machineid.txt");
+                    if (!File.Exists(machineIdPath))
+                        File.WriteAllText(machineIdPath, TestMachineId);
+                }
+            }
+            catch
+            {
+                // Best-effort: if the data folder cannot be written, the in-process
+                // fallback above still protects the tests running in this process.
+            }
+        }
+    }
+
     public abstract class BasicSetupHelper
     {
         /// <summary>

@@ -440,10 +440,10 @@ namespace Duplicati.Library.Modules.Builtin
             => new ReportMetadata
             {
                 DuplicatiVersion = UpdaterManager.SelfVersion.Version,
-                MachineId = OptionOrDefault("machine-id", DataFolderManager.MachineID),
-                BackupId = OptionOrDefault("backup-id", Utility.Utility.CalculateBackupId(m_remoteUrl)),
-                BackupName = OptionOrDefault("backup-name", System.IO.Path.GetFileNameWithoutExtension(Utility.Utility.getEntryAssembly().Location)),
-                MachineName = OptionOrDefault("machine-name", DataFolderManager.MachineName),
+                MachineId = OptionOrDefault("machine-id", () => DataFolderManager.MachineID),
+                BackupId = OptionOrDefault("backup-id", () => Utility.Utility.CalculateBackupId(m_remoteUrl)),
+                BackupName = OptionOrDefault("backup-name", () => System.IO.Path.GetFileNameWithoutExtension(Utility.Utility.getEntryAssembly().Location)),
+                MachineName = OptionOrDefault("machine-name", () => DataFolderManager.MachineName),
                 DestinationType = Utility.Utility.GuessScheme(m_remoteUrl) ?? "file",
                 DestinationHostSuffix = Utility.Utility.GuessHostSuffixSafe(m_remoteUrl),
                 InstallationType = UpdaterManager.PackageTypeId,
@@ -452,18 +452,20 @@ namespace Duplicati.Library.Modules.Builtin
             };
 
         /// <summary>
-        /// Returns the configured value for the given option key, or the supplied default
-        /// when the option is absent or empty. Used to honor user-supplied overrides for
-        /// the report metadata, mirroring <see cref="ReportHelper"/>.
+        /// Returns the configured value for the given option key, or the lazily evaluated
+        /// default when the option is absent or empty. Used to honor user-supplied overrides
+        /// for the report metadata, mirroring <see cref="ReportHelper"/>. The default is only
+        /// evaluated when the option is not set, so an explicit option value never triggers
+        /// the fallback (which may read machine state such as the data folder machine ID).
         /// </summary>
         /// <param name="key">The option key to look up.</param>
-        /// <param name="defaultValue">The default value to use when the option is not set.</param>
+        /// <param name="defaultValue">A factory for the default value to use when the option is not set.</param>
         /// <returns>The option value, or the default.</returns>
-        private string OptionOrDefault(string key, string defaultValue)
+        private string OptionOrDefault(string key, Func<string> defaultValue)
         {
             if (m_options != null && m_options.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value))
                 return value;
-            return defaultValue;
+            return defaultValue();
         }
 
         /// <summary>

@@ -192,6 +192,7 @@ namespace Duplicati.UnitTest
             => RunCommandsAsync(1024 * 10, modifyOptions: opts =>
                 {
                     opts["rpc-controller"] = "1";
+                    opts["machine-id"] = "unittestid";
                 });
 
 

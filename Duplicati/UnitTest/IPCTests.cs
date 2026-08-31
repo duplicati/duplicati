@@ -90,6 +90,8 @@ public class IPCTests : BasicSetupHelper
         var options = new Dictionary<string, string>(TestOptions);
         options["rpc-controller"] = "1";
         options["console-log-level"] = nameof(Duplicati.Library.Logging.LogMessageType.Information);
+        options["machine-id"] = "unittestid";
+
 
         // Remove the flag so the controller doesn't see it
         options.Remove("rpc-controller");

@@ -360,44 +360,119 @@ public static class DataFolderManager
     }
 
     /// <summary>
-    /// The unique machine installation ID
+    /// The cached unique machine installation ID
     /// </summary>
-    public static string InstallID => _installID.Value;
+    private static string? _installID;
 
     /// <summary>
-    /// The unique machine ID, lazy evaluated
+    /// The cached unique machine ID
     /// </summary>
-    private static readonly Lazy<string> _installID = new(() =>
+    private static string? _machineID;
+
+    /// <summary>
+    /// The unique machine installation ID.
+    /// The value is read from the installation file in the data folder. If the file does not
+    /// exist yet, an empty value is returned without caching, so a later call can still pick
+    /// up the value; once the file exists, the value is stable and is cached, even if empty.
+    /// </summary>
+    public static string InstallID
     {
+        get
+        {
+            if (_installID == null)
+            {
+                var value = ProbeIdFile(INSTALL_FILE, out var fileExists);
+                if (!fileExists)
+                    return ReportMissingIdValue(INSTALL_FILE);
+
+                _installID = value ?? "";
+            }
+
+            return _installID;
+        }
+    }
+
+    /// <summary>
+    /// The unique machine ID.
+    /// The value is read from the machine id file in the data folder, falling back to the
+    /// installation ID. If the machine id file does not exist yet and no value was found,
+    /// an empty value is returned without caching, so a later call can still pick up the
+    /// value; once the file exists, the value is stable and is cached, even if empty.
+    /// </summary>
+    public static string MachineID
+    {
+        get
+        {
+            if (_machineID == null)
+            {
+                var value = ProbeIdFile(MACHINE_FILE, out var fileExists);
+                if (string.IsNullOrWhiteSpace(value))
+                    value = ProbeIdFile(INSTALL_FILE, out _);
+
+                if (!fileExists && string.IsNullOrWhiteSpace(value))
+                    return ReportMissingIdValue(MACHINE_FILE);
+
+                _machineID = value ?? "";
+            }
+
+            return _machineID;
+        }
+    }
+
+    /// <summary>
+    /// Reads the first non-empty line of an ID file in the data folder, without creating anything
+    /// </summary>
+    /// <param name="filename">The name of the ID file to read</param>
+    /// <param name="fileExists">Set to <c>true</c> if the file exists, even if it has no usable content</param>
+    /// <returns>The trimmed ID, or <c>null</c> if the file has no content or cannot be read</returns>
+    private static string? ProbeIdFile(string filename, out bool fileExists)
+    {
+        fileExists = false;
         try
         {
-            var path = Path.Combine(GetDataFolder(DataFolderManager.AccessMode.ProbeOnly), INSTALL_FILE);
-            if (File.Exists(path))
-                return File.ReadAllLines(path).FirstOrDefault(x => !string.IsNullOrWhiteSpace(x))?.Trim() ?? "";
+            var path = Path.Combine(GetDataFolder(AccessMode.ProbeOnly), filename);
+            fileExists = File.Exists(path);
+            if (fileExists)
+                return File.ReadAllLines(path)
+                    .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x))
+                    ?.Trim();
         }
-        catch { }
+        catch
+        {
+            // Treat read errors as a missing file, so a later call retries
+            fileExists = false;
+        }
 
-        return string.Empty;
-    });
+        return null;
+    }
 
     /// <summary>
-    /// The unique machine ID
+    /// Handles a request for an ID that could not be read from the data folder.
+    /// In debug builds this throws, to reveal callers that read the ID before the data
+    /// folder has been initialized; in release builds an empty string is returned.
+    /// The empty value is never cached, so a later call can still pick up the ID.
     /// </summary>
-    public static string MachineID => _machineID.Value;
-
-    /// <summary>
-    /// The unique machine ID, lazy evaluated
-    /// </summary>
-    private static readonly Lazy<string> _machineID = new(() =>
+    /// <param name="filename">The name of the ID file that had no value</param>
+    /// <returns>An empty string in release builds; never returns in debug builds</returns>
+    private static string ReportMissingIdValue(string filename)
     {
-        string? machinedId = null;
-        try { machinedId = File.ReadAllLines(Path.Combine(GetDataFolder(DataFolderManager.AccessMode.ProbeOnly), MACHINE_FILE)).FirstOrDefault(x => !string.IsNullOrWhiteSpace(x))?.Trim() ?? ""; }
-        catch { }
+#if DEBUG
+        throw new InvalidOperationException($"The ID file \"{filename}\" in the data folder does not exist or is empty; the ID was requested before the data folder was initialized");
+#else
+        return string.Empty;
+#endif
+    }
 
-        return string.IsNullOrWhiteSpace(machinedId)
-            ? InstallID
-            : machinedId;
-    });
+    /// <summary>
+    /// DEBUG-only test hook that ensures the data folder is initialized and stores
+    /// the given machine ID in it, so tests can run with a stable machine ID without
+    /// going through the application startup sequence that normally creates the ID.
+    /// </summary>
+    /// <param name="machineID">The machine ID to use</param>
+    public static void SetMachineIDForTesting(string machineID)
+    {
+        _machineID = machineID;
+    }
 
     /// <summary>
     /// The machine name, lazy evaluated

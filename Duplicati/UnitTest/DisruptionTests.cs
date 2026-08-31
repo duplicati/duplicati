@@ -679,7 +679,7 @@ namespace Duplicati.UnitTest
                     ((BackupResults)results).OperationProgressUpdater.PhaseChanged += (phase, previousPhase) =>
                     {
                         if (phase == OperationPhase.Backup_ProcessingFiles)
-                            startedTcs.SetResult(true);
+                            startedTcs.TrySetResult(true);
                     };
                 };
 
