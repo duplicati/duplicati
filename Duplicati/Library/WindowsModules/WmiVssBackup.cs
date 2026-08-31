@@ -30,20 +30,20 @@ using Duplicati.Library.Interface;
 namespace Duplicati.Library.WindowsModules;
 
 /// <summary>
-/// Snapshot provider based on WMIC
+/// Snapshot provider based on WMI shadow copies
 /// </summary>
 [SupportedOSPlatform("windows")]
-public class WmicVssBackup : ISnapshotProvider
+public class WmiVssBackup : ISnapshotProvider
 {
     /// <summary>
-    /// The manager that contains the actual interface to WMIC
+    /// The manager that contains the actual interface to the WMI shadow copy service
     /// </summary>
-    private WmicShadowCopyManager _manager = new WmicShadowCopyManager();
+    private WmiShadowCopyManager _manager = new WmiShadowCopyManager();
 
     /// <summary>
     /// Gets the VSS enabled drives
     /// </summary>
-    private Lazy<HashSet<string>> _vssEnabledDrives = new Lazy<HashSet<string>>(() => WmicShadowCopyManager.GetVssCapableDrivesViaVssadmin());
+    private Lazy<HashSet<string>> _vssEnabledDrives = new Lazy<HashSet<string>>(() => WmiShadowCopyManager.GetVssCapableDrives());
 
     /// <inheritdoc/>
     public Guid AddToSnapshotSet(string drive)

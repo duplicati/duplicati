@@ -24,7 +24,7 @@ namespace Duplicati.Library.Snapshots;
 public enum WindowsSnapshotProvider
 {
     AlphaVSS,
-    Wmic,
+    Wmi,
     Vanara,
 }
 

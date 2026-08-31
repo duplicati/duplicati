@@ -40,7 +40,7 @@ public class Hyperv : IFilesystemPlugin
 
         try
         {
-            var hypervUtility = new HyperVUtility();
+            using var hypervUtility = new HyperVUtility();
             if (!hypervUtility.IsHyperVInstalled || !new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator))
                 return [];
 

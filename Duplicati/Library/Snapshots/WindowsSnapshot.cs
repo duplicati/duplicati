@@ -48,7 +48,7 @@ namespace Duplicati.Library.Snapshots
             RuntimeInformation.ProcessArchitecture == Architecture.Arm
             || RuntimeInformation.ProcessArchitecture == Architecture.Arm64
             || RuntimeInformation.ProcessArchitecture == Architecture.Armv6
-            ? WindowsSnapshotProvider.Wmic
+            ? WindowsSnapshotProvider.Wmi
             : WindowsSnapshotProvider.Vanara;
 
         /// <summary>
