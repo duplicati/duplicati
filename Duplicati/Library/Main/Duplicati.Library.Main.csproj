@@ -20,6 +20,8 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="StreamJsonRpc" Version="2.25.29" />
     <PackageReference Include="System.CommandLine" Version="2.0.0" />
+    <!-- Important! Avalonia also depends on this package, so make sure the versions are in sync -->
+    <PackageReference Include="Tmds.DBus.Protocol" Version="0.94.1" />
   </ItemGroup>
 
   <ItemGroup>
