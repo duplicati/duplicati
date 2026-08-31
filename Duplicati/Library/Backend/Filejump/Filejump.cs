@@ -155,6 +155,27 @@ namespace Duplicati.Library.Backend
             m_client.BaseAddress = new System.Uri(DEFAULT_API_URL);
         }
 
+        /// <summary>
+        /// Constructor that takes a preconfigured message handler, used for testing
+        /// </summary>
+        /// <param name="url">The backend url</param>
+        /// <param name="options">The options to use</param>
+        /// <param name="handler">The message handler to send requests through</param>
+        internal Filejump(string url, Dictionary<string, string?> options, HttpMessageHandler handler)
+            : this(url, options)
+        {
+            m_client?.Dispose();
+            m_client = new HttpClient(handler)
+            {
+                Timeout = Timeout.InfiniteTimeSpan,
+                BaseAddress = new System.Uri(m_apiUrl)
+            };
+
+            // GetClient hands back the client it has while the token is still good, so
+            // dating the token forward keeps the login round-trip out of the tests
+            m_tokenExpiration = DateTime.UtcNow.Add(TOKEN_EXPIRATION);
+        }
+
         ///<inheritdoc/>
         public string ProtocolKey => "filejump";
         ///<inheritdoc/>
@@ -479,8 +500,23 @@ namespace Duplicati.Library.Backend
             using var request = new HttpRequestMessage(HttpMethod.Post, "file-entries/delete") { Content = json };
             request.Headers.Add("Accept", "application/json");
 
-            var response = await Utility.Utility.WithTimeout(m_timeoutOptions.ShortTimeout, token, ct => client.SendAsync(request, ct));
-            await EnsureSuccessStatusCode(response);
+            try
+            {
+                var response = await Utility.Utility.WithTimeout(m_timeoutOptions.ShortTimeout, token, ct => client.SendAsync(request, ct));
+                await EnsureSuccessStatusCode(response);
+            }
+            catch
+            {
+                // The request may have reached the server even though the answer did not
+                // reach us, which leaves the cache holding an id that no longer resolves.
+                // Drop the whole table rather than the one name, because an upload takes
+                // the table itself from GetCacheTable and would keep reading the old one.
+                m_fileEntryIdCache = null;
+                throw;
+            }
+
+            // The entry is gone, so the id must not be handed out again
+            m_fileEntryIdCache?.Remove(remotename);
         }
 
         ///<inheritdoc/>
@@ -576,13 +612,23 @@ namespace Duplicati.Library.Backend
             // The body is not always the shape this backend expects; a gateway in
             // front of the API answers with html, and some errors carry no message
             string? message = null;
+            ResponseEnvelope? envelope = null;
             try
             {
-                message = JsonSerializer.Deserialize<ResponseEnvelope>(body, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })?.Message;
+                envelope = JsonSerializer.Deserialize<ResponseEnvelope>(body, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                message = envelope?.Message;
             }
             catch (JsonException)
             {
             }
+
+            // Deleting an entry that is no longer there is reported as a validation
+            // failure on the ids rather than as a 404, and entryIds is only ever sent
+            // by DeleteAsync. BackendManager confirms this against a listing before it
+            // accepts the delete, so report the file as missing rather than deciding
+            // here that the delete succeeded.
+            if (envelope?.Errors?.ContainsKey("entryIds") == true)
+                throw new FileMissingException();
 
             if (!string.IsNullOrWhiteSpace(message))
                 throw new InvalidOperationException($"Request failed: {message}");
@@ -677,6 +723,10 @@ namespace Duplicati.Library.Backend
             /// The status of the response.
             /// </summary>
             public string? Status { get; set; }
+            /// <summary>
+            /// The validation errors, one list of messages per field.
+            /// </summary>
+            public Dictionary<string, string[]>? Errors { get; set; }
         }
 
         /// <summary>
