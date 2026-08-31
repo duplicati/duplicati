@@ -172,6 +172,23 @@ namespace Duplicati.Library.Common.IO
             return !path.EndsWith(separator, StringComparison.Ordinal) ? path + separator : path;
         }
 
+        /// <summary>
+        /// Expands a bare Windows drive specification ("C:") to the root of that drive ("C:\").
+        /// A bare drive specification is drive-relative, so Path.GetFullPath answers with the
+        /// process' current directory on that drive rather than with the root of it.
+        /// </summary>
+        /// <param name="path">The path to expand</param>
+        /// <returns>The root of the drive when the path is a bare drive specification, otherwise the path unchanged</returns>
+        public static string ExpandBareDriveRoot(string path)
+        {
+            if (!OperatingSystem.IsWindows() || string.IsNullOrEmpty(path))
+                return path;
+
+            return path.Length == 2 && path[1] == ':' && char.IsLetter(path[0])
+                ? path + DirectorySeparatorString
+                : path;
+        }
+
 
         /// <summary>
         /// Guesses the directory separator from the path
