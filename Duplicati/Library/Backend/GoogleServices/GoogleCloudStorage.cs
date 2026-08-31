@@ -241,7 +241,14 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, async ct
                 =>
             {
-                using var resp = await m_oauth.GetResponseAsync(req, HttpCompletionOption.ResponseContentRead, ct).ConfigureAwait(false);
+                try
+                {
+                    using var resp = await m_oauth.GetResponseAsync(req, HttpCompletionOption.ResponseContentRead, ct).ConfigureAwait(false);
+                }
+                catch (HttpRequestException hrex) when (hrex.StatusCode == HttpStatusCode.NotFound)
+                {
+                    throw new FileMissingException($"File '{remotename}' not found.");
+                }
             }).ConfigureAwait(false);
         }
 
