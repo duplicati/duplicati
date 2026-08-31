@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using System.Linq;
 using System.Runtime.Versioning;
 
 namespace Duplicati.Library.Utility.Power
@@ -32,16 +33,14 @@ namespace Duplicati.Library.Utility.Power
         {
             try
             {
-                var managementScope = new System.Management.ManagementScope(new System.Management.ManagementPath("root\\cimv2"));
-                var objectQuery = new System.Management.ObjectQuery("SELECT BatteryStatus FROM Win32_Battery");
-                var objectSearcher = new System.Management.ManagementObjectSearcher(managementScope, objectQuery);
-                var objectCollection = objectSearcher.Get();
+                using var session = Microsoft.Management.Infrastructure.CimSession.Create(null);
+                var batteries = session.QueryInstances(@"root\cimv2", "WQL", "SELECT BatteryStatus FROM Win32_Battery").ToList();
 
-                if (objectCollection.Count == 0)
+                if (batteries.Count == 0)
                     return PowerSupply.Source.AC;
 
-                foreach (System.Management.ManagementObject managementObject in objectCollection)
-                    if (Convert.ToUInt16(managementObject.Properties["BatteryStatus"].Value) == 2)
+                foreach (var battery in batteries)
+                    if (Convert.ToUInt16(battery.CimInstanceProperties["BatteryStatus"]?.Value) == 2)
                         return PowerSupply.Source.AC;
                     else
                         return PowerSupply.Source.Battery;
