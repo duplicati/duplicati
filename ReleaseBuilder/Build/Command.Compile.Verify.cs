@@ -52,6 +52,10 @@ public static partial class Command
                 _ => throw new Exception($"Not supported OS: {target.OS}")
             };
 
+            // For now, Vanara is not supported on ARM
+            if (target.OS == OSType.Windows && target.Arch != ArchType.Arm64 && target.Arch != ArchType.Arm7)
+                extras = extras.Append("ijwhost.dll").ToArray();
+
             // Random sample of files we expect
             string[] probeFiles = [
                 "System.CommandLine.dll",

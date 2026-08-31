@@ -26,4 +26,16 @@
   <ItemGroup>
     <ProjectReference Include="..\Interface\Duplicati.Library.Interface.csproj" />
   </ItemGroup>
+
+  <Target Name="IncludeIjwhostForVanara" BeforeTargets="AssignTargetPaths">
+    <ItemGroup>
+      <_Ijwhost Include="$(NetCoreTargetingPackRoot)\Microsoft.NETCore.App.Host.win-x64\$([System.String]::Copy('$(TargetFrameworkVersion)').TrimStart('v')).*\runtimes\win-x64\native\ijwhost.dll" />
+      <None Include="@(_Ijwhost)">
+        <Link>ijwhost.dll</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <PublishState>Included</PublishState>
+        <Visible>false</Visible>
+      </None>
+    </ItemGroup>
+  </Target>
 </Project>
