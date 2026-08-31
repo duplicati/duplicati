@@ -324,6 +324,7 @@ namespace Duplicati.Library.Main
         /// <returns>The connection holding the inhibition, or null if the inhibitor could not be taken</returns>
         private async Task<DBusConnection> TryStartPortalInhibitorAsync()
         {
+            DBusConnection connection = null;
             try
             {
                 // A dedicated connection is required because AddMatchAsync and UniqueName
@@ -332,7 +333,7 @@ namespace Duplicati.Library.Main
                 if (string.IsNullOrWhiteSpace(address))
                     return null;
 
-                var connection = new DBusConnection(address);
+                connection = new DBusConnection(address);
                 await connection.ConnectAsync().ConfigureAwait(false);
 
                 // Create a request token path that is unique to this connection
@@ -347,7 +348,7 @@ namespace Duplicati.Library.Main
                         destination: "org.freedesktop.portal.Desktop",
                         path: "/org/freedesktop/portal/desktop",
                         @interface: "org.freedesktop.portal.Inhibit",
-                        signature: "osua{sv}",
+                        signature: "sua{sv}",
                         member: "Inhibit");
                     writer.WriteString(""); // No parent window
                     // Inhibit both suspend (4) and idle (8)
@@ -361,50 +362,34 @@ namespace Duplicati.Library.Main
                     return writer.CreateMessage();
                 }
 
-                try
-                {
-                    // Listen for the Response signal before sending the request
-                    var responseReceived = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-                    using var subscription = await connection.AddMatchAsync(
-                        new MatchRule
-                        {
-                            Type = MessageType.Signal,
-                            Interface = "org.freedesktop.portal.Request",
-                            Member = "Response",
-                            Path = requestPath
-                        },
-                        (Message m, object _) => m.GetBodyReader().ReadUInt32(),
-                        (Action<Notification<uint>>)(n =>
-                        {
-                            if (n.Exception != null)
-                                responseReceived.TrySetException(n.Exception);
-                            else
-                                responseReceived.TrySetResult(n.HasValue && n.Value == 0);
-                        }),
-                        false, ObserverFlags.None, null).ConfigureAwait(false);
-
+                // Listen for the Response signal (older/interactive portal backends emit it).
+                var subscription = await connection.AddMatchAsync(
+                    new MatchRule
+                    {
+                        Type = MessageType.Signal,
+                        Interface = "org.freedesktop.portal.Request",
+                        Member = "Response",
+                        Path = requestPath
+                    },
+                    (Message m, object _) => m.GetBodyReader().ReadUInt32(),
+                    _ => { },
+                    false, ObserverFlags.None, null).ConfigureAwait(false);
+                using (subscription)
                     await connection.CallMethodAsync(BuildPortalInhibitMessage(), (Message m, object _) => m.GetBodyReader().ReadObjectPathAsString(), null).ConfigureAwait(false);
 
-                    // Wait for the response signal, but do not hang forever
-                    var completedTask = await Task.WhenAny(responseReceived.Task, Task.Delay(DBusTimeout)).ConfigureAwait(false);
-                    if (completedTask != responseReceived.Task || !await responseReceived.Task.ConfigureAwait(false))
-                        return null;
-
-                    // Keep the connection alive; disposing it ends the inhibition,
-                    // so prevent the finally block from disposing it
-                    var keepAlive = connection;
-                    connection = null;
-                    return keepAlive;
-                }
-                finally
-                {
-                    connection?.Dispose();
-                }
+                // Keep the connection alive; disposing it ends the inhibition
+                var keepAlive = connection;
+                connection = null;
+                return keepAlive;
             }
             catch (Exception ex)
             {
                 Logging.Log.WriteVerboseMessage(LOGTAG, "PortalInhibitFailed", ex, "Failed to inhibit sleep via the XDG desktop portal: {0}", ex.Message);
                 return null;
+            }
+            finally
+            {
+                connection?.Dispose();
             }
         }
 
