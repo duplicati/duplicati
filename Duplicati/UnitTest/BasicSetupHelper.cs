@@ -273,7 +273,11 @@ namespace Duplicati.UnitTest
                 opts["dbpath"] = DBFILE;
                 opts["blocksize"] = "10kb";
                 opts["backup-test-samples"] = "0";
+#if DEBUG
+                // The "unittest-mode" option only exists in DEBUG builds,
+                // passing it to a release build causes an unsupported option warning
                 opts["unittest-mode"] = "true";
+#endif
                 opts["allow-sleep"] = "true";
                 opts["snapshot-policy"] = "Off";
 
