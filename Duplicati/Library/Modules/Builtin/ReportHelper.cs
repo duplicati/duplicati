@@ -441,7 +441,10 @@ namespace Duplicati.Library.Modules.Builtin
                 case PARSEDRESULT:
                     return m_parsedresultlevel;
                 case MACHINE_ID:
-                    return DataFolderManager.GetMachineID(probeOnly: true);
+                    // Honor an explicit "machine-id" option, falling back to the machine default
+                    return (m_options != null && m_options.TryGetValue(MACHINE_ID, out var machineId) && !string.IsNullOrWhiteSpace(machineId))
+                        ? machineId
+                        : DataFolderManager.GetMachineID(probeOnly: true);
                 case BACKUP_ID:
                     return Utility.Utility.CalculateBackupId(m_remoteurl);
                 case BACKUP_NAME:
