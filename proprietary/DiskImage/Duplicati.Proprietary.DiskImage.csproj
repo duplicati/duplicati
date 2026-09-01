@@ -19,8 +19,7 @@
   <!-- Native libraries -->
   <ItemGroup>
     <!-- Windows -->
-    <PackageReference Include="Vanara.PInvoke.Kernel32" Version="5.0.0" />
-    <PackageReference Include="Vanara.PInvoke.Shared" Version="5.0.0" />
+    <PackageReference Include="Vanara.PInvoke.Kernel32" Version="5.0.7" />
     <!-- Mac -->
     <ContentWithTargetPath Include="$(ProjectDir)NativeLibraryWrappers/libSystem_wrapper.dylib">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

@@ -188,6 +188,7 @@ public static class WindowsShimLoader
             WindowsSnapshotProvider.AlphaVSS => new AlphaVssBackup(),
             WindowsSnapshotProvider.Vanara => LoadWithReflection<ISnapshotProvider>("VanaraVssBackup"),
             WindowsSnapshotProvider.Wmi => LoadWithReflection<ISnapshotProvider>("WmiVssBackup"),
+            WindowsSnapshotProvider.Native => LoadWithReflection<ISnapshotProvider>("NativeVssBackup"),
             _ => throw new ArgumentException($"Invalid provider: {provider}")
         };
 }

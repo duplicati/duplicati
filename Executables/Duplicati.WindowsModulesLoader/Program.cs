@@ -65,6 +65,17 @@ public static class Program
 
         try
         {
+            Console.WriteLine("Create native snapshot reflected");
+            using var _ = Library.Snapshots.Windows.WindowsShimLoader.GetSnapshotProvider(Library.Snapshots.WindowsSnapshotProvider.Native);
+            Console.WriteLine("Created native snapshot reflected");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to create native snapshot reflected: {ex}");
+        }
+
+        try
+        {
             Console.WriteLine("Create SE backup privilege");
             using var _ = Library.Snapshots.Windows.WindowsShimLoader.NewSeBackupPrivilegeScope();
             Console.WriteLine("Created SE backup Privilege");

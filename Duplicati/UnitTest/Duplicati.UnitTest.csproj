@@ -50,29 +50,10 @@
     <ProjectReference Include="..\GUI\Duplicati.GUI.TrayIcon\Duplicati.GUI.TrayIcon.csproj" />
   </ItemGroup>
 
-  <!-- Copy in WindowsModules for easier debug, or if we are targeting Windows -->
-  <Target Name="CopyWindowsModulesRuntime" AfterTargets="Build" Condition="'$(OS)' == 'Windows_NT'">
-    <PropertyGroup>
-      <!-- Determine the target architecture for selecting native assets -->
-      <_WinModRid Condition="'$(RuntimeIdentifier)' != ''">$(RuntimeIdentifier)</_WinModRid>
-      <_WinModRid Condition="'$(_WinModRid)' == ''">$(NETCoreSdkRuntimeIdentifier)</_WinModRid>
-      <_WinModArch Condition="$(_WinModRid.Contains('arm64'))">arm64</_WinModArch>
-      <_WinModArch Condition="'$(_WinModArch)' == '' And $(_WinModRid.Contains('x86'))">x86</_WinModArch>
-      <_WinModArch Condition="'$(_WinModArch)' == ''">x64</_WinModArch>
-    </PropertyGroup>
-    <ItemGroup>
-      <!-- Managed assemblies from the root output only, NOT the runtimes subfolders -->
-      <_WinMods Include="..\Library\WindowsModules\bin\$(Configuration)\net10.0-windows10.0.17763.0\*.dll" />
-      <!-- Native DLLs for the current architecture -->
-      <_WinModNative Include="..\Library\WindowsModules\bin\$(Configuration)\net10.0-windows10.0.17763.0\runtimes\win-$(_WinModArch)\native\*.dll" />
-      <!-- Managed and mixed-mode (C++/CLI) assemblies that only exist under runtimes/win-<arch>/lib -->
-      <_WinModRidLib Include="..\Library\WindowsModules\bin\$(Configuration)\net10.0-windows10.0.17763.0\runtimes\win-$(_WinModArch)\lib\**\*.dll" />
-    </ItemGroup>
-
-    <Copy SourceFiles="@(_WinMods)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
-    <!-- Always overwrite the RID-specific files so stale files from a wrong architecture are replaced -->
-    <Copy SourceFiles="@(_WinModNative)" DestinationFolder="$(OutDir)" />
-    <Copy SourceFiles="@(_WinModRidLib)" DestinationFolder="$(OutDir)" />
-  </Target>
+  <!-- Copy in WindowsModules on Windows so the tests can load the snapshot providers -->
+  <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
+    <_CopyWinModules>True</_CopyWinModules>
+  </PropertyGroup>
+  <Import Project="..\Library\WindowsModules\WindowsModules.Runtime.targets" />
 
 </Project>
