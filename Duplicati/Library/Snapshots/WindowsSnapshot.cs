@@ -49,7 +49,7 @@ namespace Duplicati.Library.Snapshots
             || RuntimeInformation.ProcessArchitecture == Architecture.Arm64
             || RuntimeInformation.ProcessArchitecture == Architecture.Armv6
             ? WindowsSnapshotProvider.Wmic
-            : WindowsSnapshotProvider.Vanara;
+            : WindowsSnapshotProvider.AlphaVSS;
 
         /// <summary>
         /// The default snapshot query provider
