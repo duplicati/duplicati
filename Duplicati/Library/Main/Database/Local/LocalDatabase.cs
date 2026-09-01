@@ -2142,13 +2142,15 @@ namespace Duplicati.Library.Main.Database.Local
                     ");
                     await foreach (var filesetid in cmd.ExecuteReaderEnumerableAsync(token).Select(x => x.ConvertValueToInt64(0, -1)).ConfigureAwait(false))
                     {
+                        // UNION already removes duplicates from the combined result,
+                        // so a DISTINCT on each side only pays for a pass that is redone.
                         var expandedlist = await cmd2.SetCommandAndParameters($@"
                             SELECT COUNT(*)
                             FROM (
-                                SELECT DISTINCT ""Path""
+                                SELECT ""Path""
                                 FROM ({LIST_FILESETS})
                                 UNION
-                                SELECT DISTINCT ""Path""
+                                SELECT ""Path""
                                 FROM ({LIST_FOLDERS_AND_SYMLINKS})
                             )
                         ")
