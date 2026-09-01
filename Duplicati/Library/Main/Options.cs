@@ -501,8 +501,8 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("exclude-files-attributes", CommandLineArgument.ArgumentType.Flags, Strings.Options.ExcludefilesattributesShort, Strings.Options.ExcludefilesattributesLong, null, null, Common.IO.ExtendedFileAttributes.GetNames(false).ToArray()),
             new CommandLineArgument("compression-extension-file", CommandLineArgument.ArgumentType.Path, Strings.Options.CompressionextensionfileShort, Strings.Options.CompressionextensionfileLong(DEFAULT_COMPRESSED_EXTENSION_FILE), DEFAULT_COMPRESSED_EXTENSION_FILE),
 
-            new CommandLineArgument("machine-id", CommandLineArgument.ArgumentType.String, Strings.Options.MachineidShort, Strings.Options.MachineidLong, Library.AutoUpdater.DataFolderManager.MachineID),
-            new CommandLineArgument("machine-name", CommandLineArgument.ArgumentType.String, Strings.Options.MachinenameShort, Strings.Options.MachinenameLong, Library.AutoUpdater.DataFolderManager.MachineName),
+            new CommandLineArgument("machine-id", CommandLineArgument.ArgumentType.String, Strings.Options.MachineidShort, Strings.Options.MachineidLong, ""),
+            new CommandLineArgument("machine-name", CommandLineArgument.ArgumentType.String, Strings.Options.MachinenameShort, Strings.Options.MachinenameLong, ""),
             new CommandLineArgument("backup-id", CommandLineArgument.ArgumentType.String, Strings.Options.BackupidShort, Strings.Options.BackupidLong, ""),
             new CommandLineArgument("backup-name", CommandLineArgument.ArgumentType.String, Strings.Options.BackupnameShort, Strings.Options.BackupnameLong, DefaultBackupName),
             new CommandLineArgument("next-scheduled-run", CommandLineArgument.ArgumentType.String, Strings.Options.NextscheduledrunShort, Strings.Options.NextscheduledrunLong),
