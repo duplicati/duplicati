@@ -63,11 +63,18 @@ namespace Duplicati.UnitTest
             public Func<int, Exception?> OnDelete { get; set; } = _ => null;
 
             /// <summary>
+            /// The error to raise for the given read attempt number, if any
+            /// </summary>
+            public Func<int, Exception?> OnGet { get; set; } = _ => null;
+
+            /// <summary>
             /// The error to raise when listing, if any
             /// </summary>
             public Func<Exception?> OnList { get; set; } = () => null;
 
             public int Deletes { get; private set; }
+
+            public int Reads { get; private set; }
 
             public async IAsyncEnumerable<IFileEntry> ListAsync([System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
             {
@@ -99,6 +106,11 @@ namespace Duplicati.UnitTest
 
             public Task GetAsync(string remotename, string filename, CancellationToken cancellationToken)
             {
+                Reads++;
+                var error = OnGet(Reads);
+                if (error != null)
+                    throw error;
+
                 if (!_stored.TryGetValue(remotename, out var content))
                     throw new FileMissingException();
 
@@ -179,6 +191,55 @@ namespace Duplicati.UnitTest
             };
 
             Assert.ThrowsAsync<TestAfterConnectException>(() => backend.TestReadWritePermissionsAsync(CancellationToken.None));
+        }
+
+        [Test]
+        [Category("Backend")]
+        public async Task TransientReadFailureIsRetried_Async()
+        {
+            // A file that was just written is not always immediately addressable,
+            // so a missing file on read is retried a few times
+            var originalDelay = BackendExtensions.ReadRetryDelay;
+            BackendExtensions.ReadRetryDelay = (_, _) => Task.CompletedTask;
+            try
+            {
+                using var backend = new ProbeFileBackend
+                {
+                    OnGet = attempt => attempt <= 2 ? new FileMissingException() : null
+                };
+
+                await backend.TestReadWritePermissionsAsync(CancellationToken.None);
+
+                Assert.AreEqual(3, backend.Reads, "The read should be retried until the file is visible");
+            }
+            finally
+            {
+                BackendExtensions.ReadRetryDelay = originalDelay;
+            }
+        }
+
+        [Test]
+        [Category("Backend")]
+        public void PersistentReadFailureIsStillReported_Async()
+        {
+            // When the file never becomes addressable, the read failure is reported
+            var originalDelay = BackendExtensions.ReadRetryDelay;
+            BackendExtensions.ReadRetryDelay = (_, _) => Task.CompletedTask;
+            try
+            {
+                using var backend = new ProbeFileBackend
+                {
+                    OnGet = _ => new FileMissingException()
+                };
+
+                Assert.ThrowsAsync<TestAfterConnectException>(() => backend.TestReadWritePermissionsAsync(CancellationToken.None));
+
+                Assert.AreEqual(4, backend.Reads, "The read should be attempted once plus the retries");
+            }
+            finally
+            {
+                BackendExtensions.ReadRetryDelay = originalDelay;
+            }
         }
     }
 }

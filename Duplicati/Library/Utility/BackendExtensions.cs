@@ -52,6 +52,13 @@ public static class BackendExtensions
     public const string TEST_FILE_CONTENT = "This file is used by Duplicati to test access permissions and can be safely deleted.";
 
     /// <summary>
+    /// The delay applied before retrying a read of the test file, given the retry attempt number.
+    /// Exposed internally so unit tests can skip the real delays.
+    /// </summary>
+    internal static Func<int, CancellationToken, Task> ReadRetryDelay { get; set; }
+        = (attempt, cancellationToken) => Task.Delay(TimeSpan.FromSeconds(attempt), cancellationToken);
+
+    /// <summary>
     /// Test the backend in either read-only or read-write mode.
     /// </summary>
     /// <param name="backend">The backend to test</param>
@@ -134,21 +141,36 @@ public static class BackendExtensions
         // Test read permissions
         try
         {
-            if (backend is IStreamingBackend streamingBackend && streamingBackend.SupportsStreaming)
+            var retries = 0;
+            while (true)
             {
-                using var testStream = new MemoryStream();
-                await streamingBackend.GetAsync(TEST_FILE_NAME, testStream, cancellationToken).ConfigureAwait(false);
-                var readValue = Encoding.UTF8.GetString(testStream.ToArray());
-                if (readValue != TEST_FILE_CONTENT)
-                    throw new Exception("Test file corrupted.");
-            }
-            else
-            {
-                using var tempfile = new TempFile();
-                await backend.GetAsync(TEST_FILE_NAME, tempfile, cancellationToken).ConfigureAwait(false);
-                var readValue = File.ReadAllText(tempfile);
-                if (readValue != TEST_FILE_CONTENT)
-                    throw new Exception("Test file corrupted.");
+                try
+                {
+                    if (backend is IStreamingBackend streamingBackend && streamingBackend.SupportsStreaming)
+                    {
+                        using var testStream = new MemoryStream();
+                        await streamingBackend.GetAsync(TEST_FILE_NAME, testStream, cancellationToken).ConfigureAwait(false);
+                        var readValue = Encoding.UTF8.GetString(testStream.ToArray());
+                        if (readValue != TEST_FILE_CONTENT)
+                            throw new Exception("Test file corrupted.");
+                    }
+                    else
+                    {
+                        using var tempfile = new TempFile();
+                        await backend.GetAsync(TEST_FILE_NAME, tempfile, cancellationToken).ConfigureAwait(false);
+                        var readValue = File.ReadAllText(tempfile);
+                        if (readValue != TEST_FILE_CONTENT)
+                            throw new Exception("Test file corrupted.");
+                    }
+
+                    break;
+                }
+                catch (FileMissingException) when (retries < 3)
+                {
+                    retries++;
+                    Logging.Log.WriteInformationMessage(LOGTAG, "ReadAfterUploadFailure", LC.L($"Retrying read of {TEST_FILE_NAME} after upload"));
+                    await ReadRetryDelay(retries, cancellationToken).ConfigureAwait(false);
+                }
             }
         }
         catch (Exception e)
