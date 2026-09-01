@@ -61,7 +61,7 @@ namespace Duplicati.Library.Backend.WebApi
         {
             var path = BucketObjectPath(bucketId, objectId);
 
-            return Utility.RelaxedUri.UriBuilder(Url.API, path);
+            return Utility.RelaxedUri.UriBuilderWithEncodedPath(Url.API, path, null, false);
         }
 
         public static string CreateFolderUrl(string projectId)
@@ -75,13 +75,13 @@ namespace Duplicati.Library.Backend.WebApi
         }
 
         public static string RenameUrl(string bucketId, string objectId)
-            => Utility.RelaxedUri.UriBuilder(Url.API, BucketObjectPath(bucketId, objectId));
+            => Utility.RelaxedUri.UriBuilderWithEncodedPath(Url.API, BucketObjectPath(bucketId, objectId), null, false);
 
         public static string RewriteUrl(string sourceBucket, string sourceObject, string destBucket, string destObject)
         {
-            var path = UrlPath.Create(Path.Bucket).Append(sourceBucket).Append(Path.Object).Append(sourceObject)
-                .Append("rewriteTo").Append(Path.Bucket).Append(destBucket).Append(Path.Object).Append(destObject).ToString();
-            return Utility.RelaxedUri.UriBuilder(Url.API, path);
+            var path = UrlPath.Create(Path.Bucket).Append(sourceBucket).Append(Path.Object).Append(Utility.UrlEncoding.UrlPathEncode(sourceObject))
+                .Append("rewriteTo").Append(Path.Bucket).Append(destBucket).Append(Path.Object).Append(Utility.UrlEncoding.UrlPathEncode(destObject)).ToString();
+            return Utility.RelaxedUri.UriBuilderWithEncodedPath(Url.API, path, null, false);
         }
 
         public static string ListUrl(string bucketId, string prefix)
@@ -120,13 +120,13 @@ namespace Duplicati.Library.Backend.WebApi
                 };
             var path = BucketObjectPath(bucketId, objectId);
 
-            return Utility.RelaxedUri.UriBuilder(Url.API, path, queryParams, false);
+            return Utility.RelaxedUri.UriBuilderWithEncodedPath(Url.API, path, queryParams, false);
         }
 
         public static string MetadataUrl(string bucketId, string objectId)
         {
             var path = BucketObjectPath(bucketId, objectId);
-            return Utility.RelaxedUri.UriBuilder(Url.API, path);
+            return Utility.RelaxedUri.UriBuilderWithEncodedPath(Url.API, path, null, false);
         }
 
         private static class Url
@@ -160,7 +160,7 @@ namespace Duplicati.Library.Backend.WebApi
             => UrlPath.Create(Path.Bucket)
                 .Append(bucketId)
                 .Append(Path.Object)
-                .Append(objectId).ToString();
+                .Append(objectId == null ? null : Utility.UrlEncoding.UrlPathEncode(objectId)).ToString();
     }
 
     public static class GoogleDrive

@@ -236,7 +236,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
         }
         public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
-            using var req = await m_oauth.CreateRequestAsync(WebApi.GoogleCloudStorage.DeleteUrl(m_bucket, Library.Utility.UrlEncoding.UrlPathEncode(m_prefix + remotename)), HttpMethod.Delete, cancelToken);
+            using var req = await m_oauth.CreateRequestAsync(WebApi.GoogleCloudStorage.DeleteUrl(m_bucket, m_prefix + remotename), HttpMethod.Delete, cancelToken);
 
             await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, async ct
                 =>
@@ -254,7 +254,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
 
         public async Task<DateTime?> GetObjectLockUntilAsync(string remotename, CancellationToken cancellationToken)
         {
-            var url = WebApi.GoogleCloudStorage.MetadataUrl(m_bucket, Utility.UrlEncoding.UrlPathEncode(m_prefix + remotename));
+            var url = WebApi.GoogleCloudStorage.MetadataUrl(m_bucket, m_prefix + remotename);
 
             try
             {
@@ -276,7 +276,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
 
         public async Task SetObjectLockUntilAsync(string remotename, DateTime lockUntilUtc, CancellationToken cancellationToken)
         {
-            var url = WebApi.GoogleCloudStorage.MetadataUrl(m_bucket, Utility.UrlEncoding.UrlPathEncode(m_prefix + remotename));
+            var url = WebApi.GoogleCloudStorage.MetadataUrl(m_bucket, m_prefix + remotename);
 
             var metadata = new ObjectMetadata
             {
@@ -393,7 +393,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
         {
             try
             {
-                var url = WebApi.GoogleCloudStorage.GetUrl(m_bucket, Utility.UrlEncoding.UrlPathEncode(m_prefix + remotename));
+                var url = WebApi.GoogleCloudStorage.GetUrl(m_bucket, m_prefix + remotename);
                 using var req = await m_oauth.CreateRequestAsync(url, HttpMethod.Get, cancelToken);
                 using var resp = await Library.Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => m_oauth.GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, ct)).ConfigureAwait(false);
                 using var source = await Library.Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => resp.Content.ReadAsStreamAsync(cancelToken)).ConfigureAwait(false);
@@ -411,7 +411,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
 
         public async Task RenameAsync(string oldname, string newname, CancellationToken cancellationToken)
         {
-            var url = WebApi.GoogleCloudStorage.RewriteUrl(m_bucket, Utility.UrlEncoding.UrlPathEncode(m_prefix + oldname), m_bucket, Utility.UrlEncoding.UrlPathEncode(m_prefix + newname));
+            var url = WebApi.GoogleCloudStorage.RewriteUrl(m_bucket, m_prefix + oldname, m_bucket, m_prefix + newname);
 
             // Perform rewrite (copy)
             await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancellationToken, async ct =>
