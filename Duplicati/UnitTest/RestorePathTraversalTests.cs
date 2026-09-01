@@ -54,7 +54,12 @@ namespace Duplicati.UnitTest
             restoreOptions["restore-path"] = restoreTarget;
             restoreOptions["overwrite"] = "true";
             restoreOptions["restore-legacy"] = legacyRestore.ToString();
+#if DEBUG
+            // The restore must not run in unittest mode, as that rethrows
+            // the patch failure instead of reporting it as an error.
+            // The option only exists in DEBUG builds.
             restoreOptions["unittest-mode"] = "false";
+#endif
 
             using (var c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
             {
