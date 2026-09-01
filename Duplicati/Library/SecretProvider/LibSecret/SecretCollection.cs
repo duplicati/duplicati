@@ -55,9 +55,9 @@ public class SecretCollection : IDisposable
     /// </summary>
     private static readonly string LogTag = Log.LogTagFromType<SecretCollection>();
     /// <summary>
-    /// The secrets service
+    /// The D-Bus service
     /// </summary>
-    private readonly secretsService _secretsService;
+    private readonly DBusService _dbusService;
     /// <summary>
     /// The service instance
     /// </summary>
@@ -77,14 +77,14 @@ public class SecretCollection : IDisposable
     /// <summary>
     /// Creates a new secret collection
     /// </summary>
-    /// <param name="secretsService">The secrets service</param>
+    /// <param name="dbusService">The D-Bus service</param>
     /// <param name="service">The service instance</param>
     /// <param name="session">The session instance</param>
     /// <param name="collection">The collection instance</param>
     /// <param name="locked">Whether the collection is locked</param>
-    private SecretCollection(secretsService secretsService, Service service, Session session, Collection collection, bool locked)
+    private SecretCollection(DBusService dbusService, Service service, Session session, Collection collection, bool locked)
     {
-        _secretsService = secretsService;
+        _dbusService = dbusService;
         _service = service;
         _session = session;
         _collection = collection;
@@ -102,8 +102,8 @@ public class SecretCollection : IDisposable
     public static async Task<SecretCollection> CreateAsync(string collectionName, bool autoCreateCollection, string serviceName, CancellationToken cancellationToken)
     {
         var connection = DBusConnection.Session;
-        var secretsService = new secretsService(connection, serviceName);
-        var service = secretsService.CreateService("/org/freedesktop/secrets");
+        var dbusService = new DBusService(connection, serviceName);
+        var service = dbusService.CreateService(new ObjectPath("/org/freedesktop/secrets"));
         var (_, sessionPath) = await service.OpenSessionAsync("plain", "").ConfigureAwait(false);
         collectionName ??= string.Empty;
 
@@ -129,7 +129,7 @@ public class SecretCollection : IDisposable
 
             if (promptPath != null && promptPath != "/")
             {
-                var promptInstance = secretsService.CreatePrompt(promptPath);
+                var promptInstance = dbusService.CreatePrompt(promptPath);
                 var completedTask = new TaskCompletionSource<string>();
 
                 // Cancel the wait if the caller cancels
@@ -139,19 +139,19 @@ public class SecretCollection : IDisposable
                 });
 
                 // Subscribe to completion signal
-                using var _ = await promptInstance.WatchCompletedAsync((exception, result) =>
+                using var _ = await promptInstance.WatchCompletedAsync(notification =>
                 {
-                    if (exception != null)
-                        completedTask.TrySetException(exception);
-                    else if (result.Dismissed)
+                    if (notification.IsCompletion)
+                        completedTask.TrySetException(notification.Exception);
+                    else if (notification.Value.Dismissed)
                         completedTask.TrySetException(new UserInformationException("Dismissed collection create prompt", "CreateCollectionDismissed"));
                     else
                     {
                         // The result contains the path to the created collection
-                        var resultPath = result.Result.GetObjectPathAsString();
+                        var resultPath = notification.Value.Result.GetObjectPathAsString();
                         completedTask.TrySetResult(resultPath);
                     }
-                }).ConfigureAwait(false);
+                }, ObserverFlags.None).ConfigureAwait(false);
 
                 // Ask the secrets service to show the prompt
                 await promptInstance.PromptAsync(string.Empty).ConfigureAwait(false);
@@ -176,11 +176,11 @@ public class SecretCollection : IDisposable
         if (string.IsNullOrEmpty(collectionPathString) || collectionPathString == "/")
             throw new UserInformationException("The secret service returned an invalid collection path", "InvalidCollectionPath");
 
-        var session = secretsService.CreateSession(sessionPath);
-        var collection = secretsService.CreateCollection(collectionPathString);
+        var session = dbusService.CreateSession(sessionPath);
+        var collection = dbusService.CreateCollection(new ObjectPath(collectionPathString));
         var locked = await collection.GetLockedAsync().ConfigureAwait(false);
 
-        return new SecretCollection(secretsService, service, session, collection, locked);
+        return new SecretCollection(dbusService, service, session, collection, locked);
     }
 
     /// <summary>
@@ -206,8 +206,8 @@ public class SecretCollection : IDisposable
         try
         {
             var connection = DBusConnection.Session;
-            var secretsService = new secretsService(connection, serviceName);
-            var service = secretsService.CreateService("/org/freedesktop/secrets");
+            var dbusService = new DBusService(connection, serviceName);
+            var service = dbusService.CreateService(new ObjectPath("/org/freedesktop/secrets"));
             var task = service.GetCollectionsAsync();
 
             var timeoutTask = Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
@@ -248,8 +248,8 @@ public class SecretCollection : IDisposable
         try
         {
             var connection = DBusConnection.Session;
-            var secretsService = new secretsService(connection, serviceName);
-            var service = secretsService.CreateService("/org/freedesktop/secrets");
+            var dbusService = new DBusService(connection, serviceName);
+            var service = dbusService.CreateService(new ObjectPath("/org/freedesktop/secrets"));
 
             collectionName ??= string.Empty;
 
@@ -312,19 +312,19 @@ public class SecretCollection : IDisposable
         var (unlocked, prompt) = await _service.UnlockAsync([_collection.Path]);
         if (prompt != null && prompt != "/")
         {
-            var promptInstance = _secretsService.CreatePrompt(prompt);
+            var promptInstance = _dbusService.CreatePrompt(prompt);
             var completedTask = new TaskCompletionSource<bool>();
 
             // Set up callback
-            using var result = await promptInstance.WatchCompletedAsync((exception, result) =>
+            using var result = await promptInstance.WatchCompletedAsync(notification =>
             {
-                if (exception != null)
-                    completedTask.TrySetException(exception);
-                else if (result.Dismissed)
+                if (notification.IsCompletion)
+                    completedTask.TrySetException(notification.Exception);
+                else if (notification.Value.Dismissed)
                     completedTask.TrySetResult(false);
                 else
                     completedTask.TrySetResult(true);
-            }).ConfigureAwait(false);
+            }, ObserverFlags.None).ConfigureAwait(false);
 
             // Prompt
             await promptInstance.PromptAsync(string.Empty).ConfigureAwait(false);
@@ -358,7 +358,7 @@ public class SecretCollection : IDisposable
     /// <returns>The dictionary of secrets</returns>
     public async Task<Dictionary<string, string>> GetSecretsAsync(IEnumerable<string> labels, StringComparer comparer, CancellationToken cancellationToken)
     {
-        var collection = _secretsService.CreateCollection(_collection.Path);
+        var collection = _dbusService.CreateCollection(_collection.Path);
         var result = new Dictionary<string, string>(comparer);
         var requested = labels.ToHashSet(comparer);
         if (requested.Count == 0)
@@ -398,7 +398,7 @@ public class SecretCollection : IDisposable
     /// <returns>An awaitable task.</returns>
     public async Task StoreSecretAsync(string label, string value, bool overwrite, StringComparer comparer, CancellationToken cancellationToken)
     {
-        var collection = _secretsService.CreateCollection(_collection.Path);
+        var collection = _dbusService.CreateCollection(_collection.Path);
         var found = await FindItemsAsync(collection, [label], comparer, cancellationToken).ConfigureAwait(false);
         var existingItem = found.GetValueOrDefault(label);
 
@@ -457,7 +457,7 @@ public class SecretCollection : IDisposable
             if (missing.Count == 0)
                 break;
 
-            var item = _secretsService.CreateItem(entry);
+            var item = _dbusService.CreateItem(entry);
             try
             {
                 var existingLabel = await item.GetLabelAsync().ConfigureAwait(false);
