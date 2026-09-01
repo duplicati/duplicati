@@ -44,7 +44,7 @@ namespace Duplicati.Library.UsageReporter
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static void DoInitUID()
         {
-            Cached_UserID = Library.AutoUpdater.DataFolderManager.InstallID;
+            Cached_UserID = Library.AutoUpdater.DataFolderManager.GetInstallID();
         }
 
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]

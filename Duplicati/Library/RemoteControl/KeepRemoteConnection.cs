@@ -433,8 +433,8 @@ public class KeepRemoteConnection : IDisposable
                         { "client-id", ClientId },
                         { "client-uptime", (DateTime.Now - Process.GetCurrentProcess().StartTime).ToString() },
                         { "machine-name", DataFolderManager.MachineName },
-                        { "machine-id", DataFolderManager.MachineID },
-                        { "install-id", DataFolderManager.InstallID },
+                        { "machine-id", DataFolderManager.GetMachineID() },
+                        { "install-id", DataFolderManager.GetInstallID() },
                         { "machine-os", UpdaterManager.OperatingSystemName },
                         { "package-id", UpdaterManager.PackageTypeId },
                         { "update-channel", UpdaterManager.CurrentChannel.ToString() }

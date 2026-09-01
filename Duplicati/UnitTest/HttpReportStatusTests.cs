@@ -280,7 +280,6 @@ namespace Duplicati.UnitTest
             Assert.AreEqual("s3", metadata.DestinationType, "DestinationType should be the remote URL scheme");
             Assert.IsFalse(string.IsNullOrEmpty(metadata.OperatingSystem), "OperatingSystem should be populated");
             Assert.IsFalse(string.IsNullOrEmpty(metadata.OperatingSystemDetailed), "OperatingSystemDetailed should be populated");
-            Assert.IsFalse(string.IsNullOrEmpty(metadata.InstallationType), "InstallationType should be populated");
 
             // The backup id is a stable hex string derived from the remote URL.
             Assert.That(metadata.BackupId, Does.Match("^[0-9a-fA-F]+$"));

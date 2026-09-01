@@ -92,10 +92,6 @@ namespace Duplicati.UnitTest
             ResetCachedIds();
             DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ProbeOnly);
 
-            // Restore the shared test machine id that GlobalTestSetup installs, so
-            // later tests in this process do not trip the DEBUG guard in DataFolderManager
-            DataFolderManager.SetMachineIDForTesting(GlobalTestSetup.TestMachineId);
-
             try
             {
                 if (Directory.Exists(m_tempDir))
@@ -123,19 +119,19 @@ namespace Duplicati.UnitTest
             // Reading the ids before the data folder is initialized must not cache the
             // empty value; in debug builds the read throws to reveal early callers
 #if DEBUG
-            Assert.Throws<InvalidOperationException>(() => { var _ = DataFolderManager.MachineID; });
-            Assert.Throws<InvalidOperationException>(() => { var _ = DataFolderManager.InstallID; });
+            Assert.Throws<InvalidOperationException>(() => { var _ = DataFolderManager.GetMachineID(); });
+            Assert.Throws<InvalidOperationException>(() => { var _ = DataFolderManager.GetInstallID(); });
 #else
-            Assert.AreEqual("", DataFolderManager.MachineID);
-            Assert.AreEqual("", DataFolderManager.InstallID);
+            Assert.AreEqual("", DataFolderManager.GetMachineID());
+            Assert.AreEqual("", DataFolderManager.GetInstallID());
 #endif
 
             // Initialize the data folder, which creates the id files
             DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ReadWritePermissionSet);
 
             // A later read picks up the real values, proving the empty values were not cached
-            var machineId = DataFolderManager.MachineID;
-            var installId = DataFolderManager.InstallID;
+            var machineId = DataFolderManager.GetMachineID();
+            var installId = DataFolderManager.GetInstallID();
 
             Assert.IsFalse(string.IsNullOrWhiteSpace(machineId));
             Assert.IsFalse(string.IsNullOrWhiteSpace(installId));
@@ -162,16 +158,16 @@ namespace Duplicati.UnitTest
             File.WriteAllText(installIdPath, "");
 
             // The file exists, so the empty value is a stable state and does not throw
-            Assert.AreEqual("", DataFolderManager.MachineID);
-            Assert.AreEqual("", DataFolderManager.InstallID);
+            Assert.AreEqual("", DataFolderManager.GetMachineID());
+            Assert.AreEqual("", DataFolderManager.GetInstallID());
 
             // Write real ids; the cached empty values must still be returned,
             // proving the file is not re-read on every access
             File.WriteAllText(machineIdPath, "machine-id-written-later");
             File.WriteAllText(installIdPath, "install-id-written-later");
 
-            Assert.AreEqual("", DataFolderManager.MachineID);
-            Assert.AreEqual("", DataFolderManager.InstallID);
+            Assert.AreEqual("", DataFolderManager.GetMachineID());
+            Assert.AreEqual("", DataFolderManager.GetInstallID());
         }
     }
 }

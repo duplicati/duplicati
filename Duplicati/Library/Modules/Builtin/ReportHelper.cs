@@ -441,7 +441,7 @@ namespace Duplicati.Library.Modules.Builtin
                 case PARSEDRESULT:
                     return m_parsedresultlevel;
                 case MACHINE_ID:
-                    return DataFolderManager.MachineID;
+                    return DataFolderManager.GetMachineID();
                 case BACKUP_ID:
                     return Utility.Utility.CalculateBackupId(m_remoteurl);
                 case BACKUP_NAME:

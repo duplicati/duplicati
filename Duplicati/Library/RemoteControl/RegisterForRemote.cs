@@ -237,9 +237,9 @@ public class RegisterForRemote : IDisposable
         var basics = new Dictionary<string, string?>
         {
             { "instanceId", ClientInstanceId },
-            { "machineId", AutoUpdater.DataFolderManager.MachineID },
+            { "machineId", AutoUpdater.DataFolderManager.GetMachineID() },
             { "machineName", AutoUpdater.DataFolderManager.MachineName },
-            { "installId", AutoUpdater.DataFolderManager.InstallID },
+            { "installId", AutoUpdater.DataFolderManager.GetInstallID() },
             { "localTime", DateTimeOffset.Now.ToString("o", CultureInfo.InvariantCulture) },
             { "version", AutoUpdater.UpdaterManager.SelfVersion?.Version },
             { "packageTypeId", AutoUpdater.UpdaterManager.PackageTypeId },

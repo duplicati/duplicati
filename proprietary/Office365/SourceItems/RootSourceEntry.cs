@@ -35,7 +35,7 @@ internal class RootSourceEntry(SourceProvider provider, string mountPoint)
         var description = new BackupDescription(
             Version: "1.0",
             DuplicatiVersion: Library.AutoUpdater.UpdaterManager.SelfVersion.Version ?? "",
-            MachineId: Library.AutoUpdater.DataFolderManager.MachineID,
+            MachineId: Library.AutoUpdater.DataFolderManager.GetMachineID(),
             PackageTypeId: Library.AutoUpdater.UpdaterManager.PackageTypeId,
             OSType: Library.AutoUpdater.UpdaterManager.OperatingSystemName,
             OSVersion: Library.Utility.OSInfoHelper.PlatformString,
