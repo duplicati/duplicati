@@ -52,11 +52,23 @@ public static class BackendExtensions
     public const string TEST_FILE_CONTENT = "This file is used by Duplicati to test access permissions and can be safely deleted.";
 
     /// <summary>
-    /// The delay applied before retrying a read of the test file, given the retry attempt number.
-    /// Exposed internally so unit tests can skip the real delays.
+    /// The default delays between read attempts of the test file.
+    /// Keeps the test quick for backends that are immediately consistent.
     /// </summary>
-    internal static Func<int, CancellationToken, Task> ReadRetryDelay { get; set; }
-        = (attempt, cancellationToken) => Task.Delay(TimeSpan.FromSeconds(attempt), cancellationToken);
+    private static readonly TimeSpan[] DefaultReadRetryDelays =
+        [TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(3)];
+
+    /// <summary>
+    /// Test the backend in either read-only or read-write mode.
+    /// </summary>
+    /// <param name="backend">The backend to test</param>
+    /// <param name="alsoWrite">If the test is also checking the destination for write permissions</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>An awaitable tasks</returns>
+    public static Task TestBackendAsync(this IBackend backend, bool alsoWrite, TimeSpan[] readRetryDelays, CancellationToken cancellationToken)
+        => alsoWrite
+            ? TestReadWritePermissionsAsync(backend, readRetryDelays, cancellationToken)
+            : TestReadPermissionsAsync(backend, cancellationToken);
 
     /// <summary>
     /// Test the backend in either read-only or read-write mode.
@@ -66,9 +78,7 @@ public static class BackendExtensions
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>An awaitable tasks</returns>
     public static Task TestBackendAsync(this IBackend backend, bool alsoWrite, CancellationToken cancellationToken)
-        => alsoWrite
-            ? TestReadWritePermissionsAsync(backend, cancellationToken)
-            : TestReadPermissionsAsync(backend, cancellationToken);
+        => TestBackendAsync(backend, alsoWrite, DefaultReadRetryDelays, cancellationToken);
 
     /// <summary>
     /// Tests a backend by invoking the List() method, and attempting to write a small file on the destination.
@@ -76,7 +86,17 @@ public static class BackendExtensions
     /// <param name="backend">Backend to test</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>An awaitable tasks</returns>
-    public static async Task TestReadWritePermissionsAsync(this IBackend backend, CancellationToken cancellationToken)
+    public static Task TestReadWritePermissionsAsync(this IBackend backend, CancellationToken cancellationToken)
+        => TestReadWritePermissionsAsync(backend, DefaultReadRetryDelays, cancellationToken);
+
+    /// <summary>
+    /// Tests a backend by invoking the List() method, and attempting to write a small file on the destination.
+    /// </summary>
+    /// <param name="backend">Backend to test</param>
+    /// <param name="readRetryDelays">The delays between read attempts of the test file; the number of entries bounds the number of retries</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>An awaitable tasks</returns>
+    internal static async Task TestReadWritePermissionsAsync(this IBackend backend, TimeSpan[] readRetryDelays, CancellationToken cancellationToken)
     {
         // Remove the file if it exists
         var connected = false;
@@ -139,6 +159,9 @@ public static class BackendExtensions
         }
 
         // Test read permissions
+        // A just-written file is not always immediately addressable on eventually
+        // consistent backends, and a negative (404) result can be cached and served
+        // for a while, so allow retrying the read before giving up.
         try
         {
             var retries = 0;
@@ -165,11 +188,11 @@ public static class BackendExtensions
 
                     break;
                 }
-                catch (FileMissingException) when (retries < 3)
+                catch (FileMissingException) when (retries < readRetryDelays.Length)
                 {
-                    retries++;
                     Logging.Log.WriteInformationMessage(LOGTAG, "ReadAfterUploadFailure", LC.L($"Retrying read of {TEST_FILE_NAME} after upload"));
-                    await ReadRetryDelay(retries, cancellationToken).ConfigureAwait(false);
+                    await Task.Delay(readRetryDelays[retries], cancellationToken).ConfigureAwait(false);
+                    retries++;
                 }
             }
         }

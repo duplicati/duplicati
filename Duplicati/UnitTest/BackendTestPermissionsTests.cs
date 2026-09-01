@@ -199,23 +199,14 @@ namespace Duplicati.UnitTest
         {
             // A file that was just written is not always immediately addressable,
             // so a missing file on read is retried a few times
-            var originalDelay = BackendExtensions.ReadRetryDelay;
-            BackendExtensions.ReadRetryDelay = (_, _) => Task.CompletedTask;
-            try
+            using var backend = new ProbeFileBackend
             {
-                using var backend = new ProbeFileBackend
-                {
-                    OnGet = attempt => attempt <= 2 ? new FileMissingException() : null
-                };
+                OnGet = attempt => attempt <= 2 ? new FileMissingException() : null
+            };
 
-                await backend.TestReadWritePermissionsAsync(CancellationToken.None);
+            await backend.TestReadWritePermissionsAsync([TimeSpan.Zero, TimeSpan.Zero, TimeSpan.Zero], CancellationToken.None);
 
-                Assert.AreEqual(3, backend.Reads, "The read should be retried until the file is visible");
-            }
-            finally
-            {
-                BackendExtensions.ReadRetryDelay = originalDelay;
-            }
+            Assert.AreEqual(3, backend.Reads, "The read should be retried until the file is visible");
         }
 
         [Test]
@@ -223,23 +214,14 @@ namespace Duplicati.UnitTest
         public void PersistentReadFailureIsStillReported_Async()
         {
             // When the file never becomes addressable, the read failure is reported
-            var originalDelay = BackendExtensions.ReadRetryDelay;
-            BackendExtensions.ReadRetryDelay = (_, _) => Task.CompletedTask;
-            try
+            using var backend = new ProbeFileBackend
             {
-                using var backend = new ProbeFileBackend
-                {
-                    OnGet = _ => new FileMissingException()
-                };
+                OnGet = _ => new FileMissingException()
+            };
 
-                Assert.ThrowsAsync<TestAfterConnectException>(() => backend.TestReadWritePermissionsAsync(CancellationToken.None));
+            Assert.ThrowsAsync<TestAfterConnectException>(() => backend.TestReadWritePermissionsAsync([TimeSpan.Zero, TimeSpan.Zero, TimeSpan.Zero], CancellationToken.None));
 
-                Assert.AreEqual(4, backend.Reads, "The read should be attempted once plus the retries");
-            }
-            finally
-            {
-                BackendExtensions.ReadRetryDelay = originalDelay;
-            }
+            Assert.AreEqual(4, backend.Reads, "The read should be attempted once plus the retries");
         }
     }
 }

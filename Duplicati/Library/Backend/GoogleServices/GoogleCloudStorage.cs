@@ -309,8 +309,23 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             }
         }
 
+        /// <summary>
+        /// Delays between read attempts when testing the destination.
+        /// GCS can serve a cached negative (404) result for a while after a file is
+        /// written, so the read test needs a longer backoff window than the default.
+        /// </summary>
+        private static readonly TimeSpan[] ReadRetryDelays =
+        [
+            TimeSpan.FromSeconds(1),
+            TimeSpan.FromSeconds(2),
+            TimeSpan.FromSeconds(4),
+            TimeSpan.FromSeconds(8),
+            TimeSpan.FromSeconds(16),
+            TimeSpan.FromSeconds(32),
+        ];
+
         public Task TestAsync(bool alsoWrite, CancellationToken cancelToken)
-            => this.TestBackendAsync(alsoWrite, cancelToken);
+            => this.TestBackendAsync(alsoWrite, ReadRetryDelays, cancelToken);
 
         public async Task CreateFolderAsync(CancellationToken cancelToken)
         {
