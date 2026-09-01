@@ -402,7 +402,7 @@ namespace Duplicati.Library.Main.Database.Local
                 {
                     RemovedFileSize = await cmd.SetCommandAndParameters($@"
                         SELECT COALESCE(SUM(""Size""), 0) FROM (
-                            SELECT DISTINCT ""D"".""ID"", ""D"".""Size""
+                            SELECT ""D"".""ID"", ""D"".""Size""
                             FROM
                                 ""{m_tablename}"" ""A""
                                 INNER JOIN ""FileLookup"" ""B"" ON ""A"".""FileID"" = ""B"".""ID""
@@ -419,7 +419,7 @@ namespace Duplicati.Library.Main.Database.Local
 
                             UNION
 
-                            SELECT DISTINCT ""D"".""ID"", ""D"".""Size""
+                            SELECT ""D"".""ID"", ""D"".""Size""
                             FROM
                                 ""{m_tablename}"" ""A""
                                 INNER JOIN ""FileLookup"" ""B"" ON ""A"".""FileID"" = ""B"".""ID""

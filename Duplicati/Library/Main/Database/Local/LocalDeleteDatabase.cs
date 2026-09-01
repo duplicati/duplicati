@@ -207,10 +207,10 @@ namespace Duplicati.Library.Main.Database.Local
             await cmd.ExecuteNonQueryAsync(@"
                     DELETE FROM ""Blockset""
                     WHERE ""ID"" NOT IN (
-                        SELECT DISTINCT ""BlocksetID""
+                        SELECT ""BlocksetID""
                         FROM ""FileLookup""
                         UNION
-                            SELECT DISTINCT ""BlocksetID""
+                            SELECT ""BlocksetID""
                             FROM ""Metadataset""
                     )
                 ", token)
@@ -247,10 +247,10 @@ namespace Duplicati.Library.Main.Database.Local
                         ""VolumeID""
                     FROM ""Block""
                     WHERE ""ID"" NOT IN (
-                        SELECT DISTINCT ""BlockID"" AS ""BlockID""
+                        SELECT ""BlockID"" AS ""BlockID""
                         FROM ""BlocksetEntry""
                         UNION
-                            SELECT DISTINCT ""ID""
+                            SELECT ""ID""
                             FROM
                                 ""Block"",
                                 ""BlocklistHash""
@@ -262,10 +262,10 @@ namespace Duplicati.Library.Main.Database.Local
             await cmd.ExecuteNonQueryAsync(@"
                     DELETE FROM ""Block""
                     WHERE ""ID"" NOT IN (
-                        SELECT DISTINCT ""BlockID""
+                        SELECT ""BlockID""
                         FROM ""BlocksetEntry""
                         UNION
-                            SELECT DISTINCT ""ID""
+                            SELECT ""ID""
                             FROM
                                 ""Block"",
                                 ""BlocklistHash""
