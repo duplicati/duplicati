@@ -555,7 +555,7 @@ public static class Program
         if (string.IsNullOrWhiteSpace(settings.JWT))
         {
             Log.WriteMessage(LogMessageType.Information, LogTag, "ClientNoJWT", "No JWT found in settings, starting in registration mode");
-            using (var registration = new RegisterForRemote(registrationUrl, null, cancellationToken))
+            using (var registration = new RegisterForRemote(registrationUrl, null, null, cancellationToken))
             {
                 var registerClientData = await registration.RegisterAsync();
                 if (registerClientData.RegistrationData != null)
