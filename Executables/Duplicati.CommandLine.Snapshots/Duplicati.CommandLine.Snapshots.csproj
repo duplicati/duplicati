@@ -8,6 +8,9 @@
     <Copyright>Copyright © 2026 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
 
+  <!-- Copy in WindowsModules for easier debug, or if we are targeting Windows -->
+  <Import Project="..\..\Duplicati\Library\WindowsModules\WindowsModules.Runtime.targets" />
+
   <ItemGroup>
     <ProjectReference Include="..\..\Duplicati\Library\Snapshots\Duplicati.Library.Snapshots.csproj" />
     <ProjectReference Include="..\..\Duplicati\Library\Crashlog\Duplicati.Library.Crashlog.csproj" />

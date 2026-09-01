@@ -23,8 +23,21 @@ namespace Duplicati.Library.Snapshots;
 
 public enum WindowsSnapshotProvider
 {
+    /// <summary>
+    /// Legacy AlphaVSS provider, requires VCRedist, library is not maintained
+    /// </summary>
     AlphaVSS,
+    /// <summary>
+    /// Pure VMI implementation, does not flush writers, just creates the snapshot
+    /// </summary>
     Wmi,
+    /// <summary>
+    /// Experimental Vanara version based on COM mapping
+    /// </summary>
     Vanara,
+    /// <summary>
+    /// Snapshot provider using the VSS requestor COM API via pure C# interop
+    /// </summary>
+    Native,
 }
 

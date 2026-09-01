@@ -62,12 +62,12 @@ public static class PermissionHelper
     /// </summary>
     /// <returns>
     /// <c>true</c> if a matching Visual C++ Redistributable package is installed, <c>false</c> otherwise.
-    /// Always returns <c>true</c> on non-Windows platforms where the check does not apply.
+    /// Always returns <c>false</c> on non-Windows platforms where the redistributable does not exist.
     /// </returns>
     public static bool IsVisualCRedistInstalled()
     {
         if (!OperatingSystem.IsWindows())
-            return true;
+            return false;
 
         // The VC++ 2015-2022 runtime uses architecture-specific registry subkey names.
         // For older runtimes (VC++ 2010/2013) the key lives elsewhere, but the mixed-mode

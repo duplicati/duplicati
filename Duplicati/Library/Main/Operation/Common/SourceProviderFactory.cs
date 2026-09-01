@@ -149,7 +149,12 @@ namespace Duplicati.Library.Main.Operation.Common
             }
             catch (Exception ex)
             {
-                var needsVisualCRedist = !PermissionHelper.IsVisualCRedistInstalled();
+                var providerRequiresVCRedist = OperatingSystem.IsWindows()
+                    ? WindowsSnapshot.VCREDIST_PROVIDERS.Contains(options.SnapShotProvider)
+                    : false;
+
+                var needsVisualCRedist = providerRequiresVCRedist
+                    && !PermissionHelper.IsVisualCRedistInstalled();
 
                 if (options.SnapShotStrategy == Options.OptimizationStrategy.Required)
                     throw new UserInformationException(Strings.Common.SnapshotFailedError(ex.Message, PermissionHelper.HasSnapshotPrivilege(), needsVisualCRedist), "SnapshotFailed", ex);

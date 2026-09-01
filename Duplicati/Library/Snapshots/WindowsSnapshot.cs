@@ -44,18 +44,21 @@ namespace Duplicati.Library.Snapshots
         /// <summary>
         /// The default snapshot provider
         /// </summary>
-        public static readonly WindowsSnapshotProvider DEFAULT_WINDOWS_SNAPSHOT_PROVIDER =
-            RuntimeInformation.ProcessArchitecture == Architecture.Arm
-            || RuntimeInformation.ProcessArchitecture == Architecture.Arm64
-            || RuntimeInformation.ProcessArchitecture == Architecture.Armv6
-            ? WindowsSnapshotProvider.Wmi
-            : WindowsSnapshotProvider.Vanara;
+        public static readonly WindowsSnapshotProvider DEFAULT_WINDOWS_SNAPSHOT_PROVIDER = WindowsSnapshotProvider.Native;
 
         /// <summary>
         /// The default snapshot query provider
         /// </summary>
         public static readonly WindowsSnapshotProvider DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER =
             WindowsSnapshotProvider.AlphaVSS;
+
+        /// <summary>
+        /// The snapshot providers that require VC Redist to be installed
+        /// </summary>
+        public static readonly IReadOnlySet<WindowsSnapshotProvider> VCREDIST_PROVIDERS = new HashSet<WindowsSnapshotProvider>()
+        {
+            WindowsSnapshotProvider.AlphaVSS
+        };
 
         /// <summary>
         /// The tag used for logging messages
