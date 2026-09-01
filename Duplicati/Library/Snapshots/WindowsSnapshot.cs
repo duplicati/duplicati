@@ -61,6 +61,20 @@ namespace Duplicati.Library.Snapshots
         };
 
         /// <summary>
+        /// The supported snapshot providers on this platform
+        /// </summary>
+        public static IReadOnlyList<WindowsSnapshotProvider> SUPPORTED_PROVIDERS = 
+            RuntimeInformation.ProcessArchitecture == Architecture.Arm
+            || RuntimeInformation.ProcessArchitecture == Architecture.Arm64
+            || RuntimeInformation.ProcessArchitecture == Architecture.Armv6
+            ?
+            [
+                WindowsSnapshotProvider.Native,
+                WindowsSnapshotProvider.Wmi
+            ]
+            : Enum.GetValues<Snapshots.WindowsSnapshotProvider>();
+
+        /// <summary>
         /// The tag used for logging messages
         /// </summary>
         public static readonly string LOGTAG = Logging.Log.LogTagFromType<WindowsSnapshot>();
