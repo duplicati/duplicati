@@ -413,7 +413,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
 
                 foreach (var fileid in entries.Select(x => x.id).WhereNotNullOrWhiteSpace())
                 {
-                    var url = WebApi.GoogleDrive.DeleteUrl(Library.Utility.UrlEncoding.UrlPathEncode(fileid), m_teamDriveID);
+                    var url = WebApi.GoogleDrive.DeleteUrl(fileid, m_teamDriveID);
                     await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken,
                         async ct =>
                         {

@@ -20,11 +20,14 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using CoCoL;
 using Duplicati.Library.Utility;
+using Tmds.DBus.Protocol;
 
 namespace Duplicati.Library.Main
 {
@@ -43,7 +46,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// A flag used to control the stop invocation
         /// </summary>
-        private bool m_disposed = true;
+        private volatile bool m_disposed = true;
 
         /// <summary>
         /// A flag indicating if the sleep prevention has been started
@@ -59,6 +62,28 @@ namespace Duplicati.Library.Main
         /// The caffeinate process runner
         /// </summary>
         private System.Diagnostics.Process m_caffeinate;
+
+        /// <summary>
+        /// The login1 inhibitor file descriptor, must be kept open to hold the lock
+        /// </summary>
+        private SafeHandle m_login1InhibitorHandle;
+
+        /// <summary>
+        /// The session bus connection holding the XDG desktop portal inhibition,
+        /// disposing the connection ends the inhibition
+        /// </summary>
+        private DBusConnection m_portalInhibitConnection;
+
+        /// <summary>
+        /// Lock that guards the Linux sleep prevention state,
+        /// which is assigned on a background thread
+        /// </summary>
+        private readonly object m_sleepPreventionLock = new object();
+
+        /// <summary>
+        /// The maximum time to wait for a D-Bus response when setting up sleep prevention
+        /// </summary>
+        private static readonly TimeSpan DBusTimeout = TimeSpan.FromSeconds(5);
 
         /// <summary>
         /// The nice level to restore the process to
@@ -172,10 +197,199 @@ namespace Duplicati.Library.Main
                     Logging.Log.WriteWarningMessage(LOGTAG, "SleepPreventionError", ex, "Failed to set sleep prevention");
                 }
             }
-            else
+            else if (OperatingSystem.IsLinux())
             {
+                // The D-Bus calls are performed on a background thread so startup is not blocked
+                Task.Run(async () =>
+                {
+                    try
+                    {
+                        // Prefer the systemd logind inhibitor, which works both for
+                        // desktop sessions and for system services without a display
+                        var login1Handle = await TryStartLogin1InhibitorAsync().ConfigureAwait(false);
+                        if (login1Handle != null)
+                        {
+                            if (TryAdoptSleepPrevention(login1Handle, null))
+                                Logging.Log.WriteVerboseMessage(LOGTAG, "SleepPreventionStarted", "Sleep prevention activated via systemd-logind");
+                            else
+                                login1Handle.Dispose();
+                            return;
+                        }
 
+                        // Fall back to the XDG desktop portal, which requires a desktop session
+                        var portalConnection = await TryStartPortalInhibitorAsync().ConfigureAwait(false);
+                        if (portalConnection != null)
+                        {
+                            if (TryAdoptSleepPrevention(null, portalConnection))
+                                Logging.Log.WriteVerboseMessage(LOGTAG, "SleepPreventionStarted", "Sleep prevention activated via the XDG desktop portal");
+                            else
+                                portalConnection.Dispose();
+                            return;
+                        }
 
+                        Logging.Log.WriteVerboseMessage(LOGTAG, "SleepPreventionNotAvailable", "Sleep prevention is not available; neither systemd-logind nor the XDG desktop portal responded");
+                    }
+                    catch (Exception ex)
+                    {
+                        Logging.Log.WriteWarningMessage(LOGTAG, "SleepPreventionError", ex, "Failed to set sleep prevention");
+                    }
+                }).FireAndForget();
+            }
+        }
+
+        /// <summary>
+        /// Attempts to adopt the sleep prevention resources obtained on the background thread.
+        /// If the controller has already been disposed, the resources are not adopted and
+        /// the caller is responsible for disposing them.
+        /// </summary>
+        /// <param name="login1Handle">The login1 inhibitor handle, if any</param>
+        /// <param name="portalConnection">The portal inhibit connection, if any</param>
+        /// <returns>True if the resources were adopted; false if the controller is disposed</returns>
+        private bool TryAdoptSleepPrevention(SafeHandle login1Handle, DBusConnection portalConnection)
+        {
+            lock (m_sleepPreventionLock)
+            {
+                if (m_disposed)
+                    return false;
+
+                m_login1InhibitorHandle = login1Handle;
+                m_portalInhibitConnection = portalConnection;
+                m_runningSleepPrevention = true;
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Requests a sleep inhibitor lock from systemd-logind via the system bus.
+        /// The lock is held by keeping the returned file descriptor open.
+        /// </summary>
+        /// <returns>The inhibitor handle, or null if the inhibitor could not be taken</returns>
+        private async Task<SafeHandle> TryStartLogin1InhibitorAsync()
+        {
+            try
+            {
+                var connection = DBusConnection.System;
+                var callTask = connection.CallMethodAsync(
+                    BuildLogin1InhibitMessage(),
+                    (Message m, object _) => m.GetBodyReader().ReadHandle<Microsoft.Win32.SafeHandles.SafeFileHandle>(),
+                    null);
+
+                // Do not hang forever if the system bus does not respond
+                if (await Task.WhenAny(callTask, Task.Delay(DBusTimeout)).ConfigureAwait(false) != callTask)
+                {
+                    // Observe the result of the abandoned call so a late reply or
+                    // failure does not surface as an unobserved task exception;
+                    // the inhibitor handle is closed again if the call completes
+                    callTask.ContinueWith(t =>
+                    {
+                        if (t.IsFaulted)
+                            Logging.Log.WriteVerboseMessage(LOGTAG, "Login1InhibitFailed", t.Exception, "Failed to inhibit sleep via systemd-logind: {0}", t.Exception.GetBaseException().Message);
+                        else if (!t.IsCanceled)
+                            t.Result.Dispose();
+                    }, TaskContinuationOptions.ExecuteSynchronously).FireAndForget();
+
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "Login1InhibitTimeout", "Timed out waiting for systemd-logind to respond");
+                    return null;
+                }
+
+                return await callTask.ConfigureAwait(false);
+
+                MessageBuffer BuildLogin1InhibitMessage()
+                {
+                    var writer = connection.GetMessageWriter();
+                    writer.WriteMethodCallHeader(
+                        destination: "org.freedesktop.login1",
+                        path: "/org/freedesktop/login1",
+                        @interface: "org.freedesktop.login1.Manager",
+                        signature: "ssss",
+                        member: "Inhibit");
+                    writer.WriteString("sleep");
+                    writer.WriteString("Duplicati");
+                    writer.WriteString("Backup in progress");
+                    writer.WriteString("block");
+                    return writer.CreateMessage();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logging.Log.WriteVerboseMessage(LOGTAG, "Login1InhibitFailed", ex, "Failed to inhibit sleep via systemd-logind: {0}", ex.Message);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Requests session suspension inhibition via the XDG desktop portal on the session bus.
+        /// The inhibition is held as long as the connection is kept alive.
+        /// </summary>
+        /// <returns>The connection holding the inhibition, or null if the inhibitor could not be taken</returns>
+        private async Task<DBusConnection> TryStartPortalInhibitorAsync()
+        {
+            DBusConnection connection = null;
+            try
+            {
+                // A dedicated connection is required because AddMatchAsync and UniqueName
+                // are not supported on the shared auto-connect connection
+                var address = DBusAddress.Session;
+                if (string.IsNullOrWhiteSpace(address))
+                    return null;
+
+                connection = new DBusConnection(address);
+                await connection.ConnectAsync().ConfigureAwait(false);
+
+                // Create a request token path that is unique to this connection
+                var token = $"duplicati_{Guid.NewGuid():N}";
+                var senderPath = connection.UniqueName.TrimStart(':').Replace('.', '_');
+                var requestPath = $"/org/freedesktop/portal/desktop/request/{senderPath}/{token}";
+
+                MessageBuffer BuildPortalInhibitMessage()
+                {
+                    var writer = connection.GetMessageWriter();
+                    writer.WriteMethodCallHeader(
+                        destination: "org.freedesktop.portal.Desktop",
+                        path: "/org/freedesktop/portal/desktop",
+                        @interface: "org.freedesktop.portal.Inhibit",
+                        signature: "sua{sv}",
+                        member: "Inhibit");
+                    writer.WriteString(""); // No parent window
+                    // Inhibit both suspend (4) and idle (8)
+                    writer.WriteUInt32(12);
+                    var flags = new Dictionary<string, VariantValue>
+                    {
+                        ["reason"] = VariantValue.String("Backup in progress"),
+                        ["handle_token"] = VariantValue.String(token)
+                    };
+                    writer.WriteDictionary(flags);
+                    return writer.CreateMessage();
+                }
+
+                // Listen for the Response signal (older/interactive portal backends emit it).
+                var subscription = await connection.AddMatchAsync(
+                    new MatchRule
+                    {
+                        Type = MessageType.Signal,
+                        Interface = "org.freedesktop.portal.Request",
+                        Member = "Response",
+                        Path = requestPath
+                    },
+                    (Message m, object _) => m.GetBodyReader().ReadUInt32(),
+                    _ => { },
+                    false, ObserverFlags.None, null).ConfigureAwait(false);
+                using (subscription)
+                    await connection.CallMethodAsync(BuildPortalInhibitMessage(), (Message m, object _) => m.GetBodyReader().ReadObjectPathAsString(), null).ConfigureAwait(false);
+
+                // Keep the connection alive; disposing it ends the inhibition
+                var keepAlive = connection;
+                connection = null;
+                return keepAlive;
+            }
+            catch (Exception ex)
+            {
+                Logging.Log.WriteVerboseMessage(LOGTAG, "PortalInhibitFailed", ex, "Failed to inhibit sleep via the XDG desktop portal: {0}", ex.Message);
+                return null;
+            }
+            finally
+            {
+                connection?.Dispose();
             }
         }
 
@@ -360,6 +574,42 @@ namespace Duplicati.Library.Main
                                 throw new Exception("Failed to kill the caffeinate process");
                         }
                     }
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "SleepPreventionDisableError", ex, "Failed to unset sleep prevention");
+                }
+            }
+            else if (OperatingSystem.IsLinux())
+            {
+                SafeHandle login1Handle;
+                DBusConnection portalConnection;
+
+                // Swap out the resources under the lock so the background
+                // D-Bus setup cannot store new resources after this point
+                lock (m_sleepPreventionLock)
+                {
+                    m_runningSleepPrevention = false;
+                    login1Handle = m_login1InhibitorHandle;
+                    m_login1InhibitorHandle = null;
+                    portalConnection = m_portalInhibitConnection;
+                    m_portalInhibitConnection = null;
+                }
+
+                try
+                {
+                    // Closing the file descriptor releases the login1 inhibitor lock
+                    login1Handle?.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "SleepPreventionDisableError", ex, "Failed to unset sleep prevention");
+                }
+
+                try
+                {
+                    // Disposing the connection ends the portal inhibition
+                    portalConnection?.Dispose();
                 }
                 catch (Exception ex)
                 {

@@ -29,6 +29,53 @@ namespace Duplicati.UnitTest
     {
         [Test]
         [Category("UriUtility")]
+        public static void TestUrlBuilderWithEncodedPath()
+        {
+            // A pre-encoded path must be emitted verbatim by UriBuilderWithEncodedPath,
+            // so an object name whose '/' is encoded as %2F is not double-encoded into
+            // %252F (which is what broke reading back files on GCS). The GCS object url
+            // is /o/{object} where the object name is a single path parameter.
+            const string baseUrl = "https://www.googleapis.com/storage/v1";
+
+            // The object name "test-tool/duplicati-access-privileges-test.txt" encodes
+            // its '/' once; the base path (/storage/v1) is preserved.
+            Assert.AreEqual(
+                baseUrl + "/b/bucket/o/test-tool%2Fduplicati-access-privileges-test.txt?alt=media",
+                Library.Utility.RelaxedUri.UriBuilderWithEncodedPath(
+                    baseUrl,
+                    "b/bucket/o/" + Library.Utility.UrlEncoding.UrlPathEncode("test-tool/duplicati-access-privileges-test.txt"),
+                    new NameValueCollection { { "alt", "media" } }, false));
+
+            // A name that itself contains a percent-escape sequence encodes the '%' once
+            Assert.AreEqual(
+                baseUrl + "/b/bucket/o/test-tool%2Ftest%252f%25abc.txt",
+                Library.Utility.RelaxedUri.UriBuilderWithEncodedPath(
+                    baseUrl,
+                    "b/bucket/o/" + Library.Utility.UrlEncoding.UrlPathEncode("test-tool/test%2f%abc.txt"),
+                    null, false));
+
+            // A space encodes once, not twice
+            Assert.AreEqual(
+                baseUrl + "/b/bucket/o/test-tool%2Fa%20b.txt",
+                Library.Utility.RelaxedUri.UriBuilderWithEncodedPath(
+                    baseUrl,
+                    "b/bucket/o/" + Library.Utility.UrlEncoding.UrlPathEncode("test-tool/a b.txt"),
+                    null, false));
+        }
+
+        [Test]
+        [Category("UriUtility")]
+        public static void TestSetEncodedPathEmitsVerbatim()
+        {
+            // The regular SetPath re-encodes the path, while SetEncodedPath keeps it as-is
+            var uri = new Library.Utility.RelaxedUri("https://www.googleapis.com/storage/v1");
+            Assert.AreEqual(
+                "https://www.googleapis.com/storage/v1/b/bucket/o/test-tool%2Ffile.txt",
+                uri.SetEncodedPath("storage/v1/b/bucket/o/test-tool%2Ffile.txt").ToString());
+        }
+
+        [Test]
+        [Category("UriUtility")]
         public static void TestUrlBuilder()
         {
             var baseUrl = "http://localhost";

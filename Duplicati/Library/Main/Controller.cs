@@ -1302,7 +1302,7 @@ namespace Duplicati.Library.Main
         /// <param name="filter">The filter.</param>
         /// <param name="options">The options.</param>
         /// <returns>The expanded and filtered sources.</returns>
-        private static (string[] Sources, IFilter Filter) ExpandInputSources(string[] inputsources, IFilter filter, Options options)
+        internal static (string[] Sources, IFilter Filter) ExpandInputSources(string[] inputsources, IFilter filter, Options options)
         {
             if (inputsources == null || inputsources.Length == 0)
                 throw new UserInformationException(Strings.Controller.NoSourceFoldersError, "NoSourceFolders");
@@ -1395,8 +1395,9 @@ namespace Duplicati.Library.Main
 
                     try
                     {
-                        // TODO: This expands "C:" to CWD, but not C:\
-                        source = Path.GetFullPath(expandedSource);
+                        // A bare drive is drive-relative, so GetFullPath would answer with
+                        // the current directory on that drive instead of the root of it
+                        source = Path.GetFullPath(Util.ExpandBareDriveRoot(expandedSource));
                     }
                     catch (Exception ex)
                     {

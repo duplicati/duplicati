@@ -59,7 +59,7 @@ namespace Duplicati.Library.Main.Strings
         public static string DisablefiletimecheckShort { get { return LC.L(@"Disable checks based on file time"); } }
         public static string RestorepathLong { get { return LC.L(@"By default, files will be restored in the source folders. Use this option to restore to another folder."); } }
         public static string RestorepathShort { get { return LC.L(@"Restore to another folder"); } }
-        public static string AllowsleepLong { get { return LC.L(@"Allow system to enter sleep power modes for inactivity during backup/restore operations (Windows/OSX only)"); } }
+        public static string AllowsleepLong { get { return LC.L(@"Allow system to enter sleep power modes for inactivity during backup/restore operations"); } }
         public static string AllowsleepShort { get { return LC.L(@"Toggle system sleep mode"); } }
         public static string ThrottledownloadLong { get { return LC.L(@"By setting this value you can limit how much bandwidth Duplicati consumes for downloads. Setting this limit can make the backups take longer, but will make Duplicati less intrusive."); } }
         public static string ThrottledownloadShort { get { return LC.L(@"Max number of kilobytes to download pr. second"); } }

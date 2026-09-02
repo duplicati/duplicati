@@ -159,6 +159,12 @@ namespace Duplicati.UnitTest
         [TestCase("zip-io")]
         public void TestMaskingDuplicates(string module)
         {
+#if !DEBUG
+            // The duplicate-entry warning is only emitted in unittest mode,
+            // and the "unittest-mode" option only exists in DEBUG builds,
+            // so a release build logs it as verbose instead
+            Assert.Ignore("The duplicate archive entry warning requires a DEBUG build");
+#else
             using (var stream = new MemoryStream())
             {
                 var opts = new Dictionary<string, string>();
@@ -206,6 +212,7 @@ namespace Duplicati.UnitTest
                     Assert.That(logMessages.Any(x => x.Level == LogMessageType.Warning && x.Message.Contains("duplicate", StringComparison.OrdinalIgnoreCase)));
                 }
             }
+#endif
         }
 
     }

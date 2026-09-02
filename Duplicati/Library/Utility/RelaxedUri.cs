@@ -101,6 +101,12 @@ namespace Duplicati.Library.Utility
         public readonly string? Password;
 
         /// <summary>
+        /// Whether the <see cref="Path"/> is already percent-encoded and must be
+        /// emitted verbatim rather than encoded again during serialization.
+        /// </summary>
+        public readonly bool PathIsEncoded = false;
+
+        /// <summary>
         /// The original URI.
         /// </summary>
         public readonly string OriginalUri;
@@ -294,17 +300,19 @@ namespace Duplicati.Library.Utility
         /// <param name="username">The username</param>
         /// <param name="password">The password</param>
         /// <param name="port">The port</param>
-        public RelaxedUri(string scheme, string? host, string? path = null, string? query = null, string? username = null, string? password = null, int port = -1)
+        /// <param name="pathIsEncoded">Whether the path is already percent-encoded</param>
+        public RelaxedUri(string scheme, string? host, string? path = null, string? query = null, string? username = null, string? password = null, int port = -1, bool pathIsEncoded = false)
         {
             m_queryParams = null;
             Scheme = scheme;
             Host = host;
             Path = path ?? "";
+            PathIsEncoded = pathIsEncoded;
             Query = query;
             Username = username;
             Password = password;
             Port = port;
-            OriginalUri = AsString(scheme, host, path, query, username, password, port);
+            OriginalUri = AsString(scheme, host, path, query, username, password, port, pathIsEncoded);
         }
 
         /// <summary>
@@ -313,7 +321,7 @@ namespace Duplicati.Library.Utility
         /// <returns>A <see cref="System.String"/> that represents the current <see cref="Duplicati.Library.Utility.RelaxedUri"/>.</returns>
         public override string ToString()
         {
-            return AsString(Scheme, Host, Path, Query, Username, Password, Port);
+            return AsString(Scheme, Host, Path, Query, Username, Password, Port, PathIsEncoded);
         }
 
         /// <summary>
@@ -336,7 +344,8 @@ namespace Duplicati.Library.Utility
         /// <param name="username">The username</param>
         /// <param name="password">The password</param>
         /// <param name="port">The port</param>
-        private static string AsString(string scheme, string? host, string? path, string? query, string? username, string? password, int port)
+        /// <param name="pathIsEncoded">Whether the path is already percent-encoded</param>
+        private static string AsString(string scheme, string? host, string? path, string? query, string? username, string? password, int port, bool pathIsEncoded)
         {
             var s = scheme + "://";
             if (!string.IsNullOrEmpty(username) || !string.IsNullOrEmpty(password))
@@ -365,7 +374,9 @@ namespace Duplicati.Library.Utility
                 if (!string.IsNullOrEmpty(host) || (WINDOWS_PATH.IsMatch(path) && !path.StartsWith("/")))
                     s += "/";
 
-                s += string.Join('/', path.Split('/').Select(x => UrlEncoding.UrlPathEncode(x)));
+                s += pathIsEncoded
+                    ? path
+                    : string.Join('/', path.Split('/').Select(x => UrlEncoding.UrlPathEncode(x)));
             }
             if (!string.IsNullOrEmpty(query))
                 s += "?" + query;
@@ -380,7 +391,7 @@ namespace Duplicati.Library.Utility
         /// <param name="scheme">The new scheme to use</param>
         public RelaxedUri SetScheme(string scheme)
         {
-            return new RelaxedUri(scheme, Host, Path, Query, Username, Password, Port);
+            return new RelaxedUri(scheme, Host, Path, Query, Username, Password, Port, PathIsEncoded);
         }
 
         /// <summary>
@@ -394,13 +405,24 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
+        /// Creates a new instance with another path whose segments are already
+        /// percent-encoded, so the path is emitted verbatim during serialization.
+        /// </summary>
+        /// <returns>A new instance</returns>
+        /// <param name="encodedPath">The new pre-encoded path to use</param>
+        public RelaxedUri SetEncodedPath(string? encodedPath)
+        {
+            return new RelaxedUri(Scheme, Host, encodedPath, Query, Username, Password, Port, pathIsEncoded: true);
+        }
+
+        /// <summary>
         /// Creates a new instance with another query
         /// </summary>
         /// <returns>A new instance</returns>
         /// <param name="query">The new query to use</param>
         public RelaxedUri SetQuery(string? query)
         {
-            return new RelaxedUri(Scheme, Host, Path, query, Username, Password, Port);
+            return new RelaxedUri(Scheme, Host, Path, query, Username, Password, Port, PathIsEncoded);
         }
 
         /// <summary>
@@ -411,7 +433,7 @@ namespace Duplicati.Library.Utility
         /// <param name="password">The new password to use</param>
         public RelaxedUri SetCredentials(string? username, string? password)
         {
-            return new RelaxedUri(Scheme, Host, Path, Query, username, password, Port);
+            return new RelaxedUri(Scheme, Host, Path, Query, username, password, Port, PathIsEncoded);
         }
 
         /// <summary>
@@ -437,6 +459,29 @@ namespace Duplicati.Library.Utility
             return uri
                 .SetPath(newPath)
                 .SetQuery(query != null ? EscapeUriQuery(UrlEncoding.BuildUriQuery(query, preEncoded)) : null)
+                .ToString();
+        }
+
+        /// <summary>
+        /// Builds a URL together using a base URL and a pre-encoded path.
+        /// The path segments are assumed to already be percent-encoded (e.g. an object
+        /// name whose '/' is encoded as %2F), so they are emitted verbatim rather than
+        /// encoded again. The base URL's own path is still treated as decoded.
+        /// </summary>
+        /// <returns>The built together URL.</returns>
+        /// <param name="url">Base URL, containing schema, host, port.</param>
+        /// <param name="encodedPath">The pre-encoded path to append.</param>
+        /// <param name="query">A collection of name value pairs to be translated into a query string.</param>
+        /// <param name="preEncodedQuery">A value indicating if the query contains pre-encoded values</param>
+        public static string UriBuilderWithEncodedPath(string url, string encodedPath, NameValueCollection? query, bool preEncodedQuery)
+        {
+            var uri = new RelaxedUri(url);
+            var newPath = new UrlPath(uri.Path).Append(encodedPath).ToString();
+            if (!string.IsNullOrEmpty(uri.Host) || string.IsNullOrEmpty(uri.Path))
+                newPath = newPath.TrimStart('/');
+            return uri
+                .SetEncodedPath(newPath)
+                .SetQuery(query != null ? EscapeUriQuery(UrlEncoding.BuildUriQuery(query, preEncodedQuery)) : null)
                 .ToString();
         }
 
