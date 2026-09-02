@@ -179,15 +179,17 @@ public static class WindowsShimLoader
     /// Loads the chosen snapshot provider
     /// </summary>
     /// <param name="provider">The provider to load</param>
+    /// <param name="vssTimeout">The maximum time to wait for asynchronous VSS operations</param>
     /// <returns>The snapshot provider</returns>
-    public static ISnapshotProvider GetSnapshotProvider(WindowsSnapshotProvider provider)
+    public static ISnapshotProvider GetSnapshotProvider(WindowsSnapshotProvider provider, TimeSpan vssTimeout)
         => provider switch
         {
             // To simplify things, we have AlphaVSS in the shim loader,
             // even though it is not loaded by reflection
             WindowsSnapshotProvider.AlphaVSS => new AlphaVssBackup(),
-            WindowsSnapshotProvider.Vanara => LoadWithReflection<ISnapshotProvider>("VanaraVssBackup"),
-            WindowsSnapshotProvider.Wmic => LoadWithReflection<ISnapshotProvider>("WmicVssBackup"),
+            WindowsSnapshotProvider.Vanara => LoadWithReflection<ISnapshotProvider>("VanaraVssBackup", vssTimeout),
+            WindowsSnapshotProvider.Wmi => LoadWithReflection<ISnapshotProvider>("WmiVssBackup"),
+            WindowsSnapshotProvider.Native => LoadWithReflection<ISnapshotProvider>("NativeVssBackup", vssTimeout),
             _ => throw new ArgumentException($"Invalid provider: {provider}")
         };
 }

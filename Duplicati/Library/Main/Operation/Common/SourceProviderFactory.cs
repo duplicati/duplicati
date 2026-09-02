@@ -149,7 +149,12 @@ namespace Duplicati.Library.Main.Operation.Common
             }
             catch (Exception ex)
             {
-                var needsVisualCRedist = !PermissionHelper.IsVisualCRedistInstalled();
+                var providerRequiresVCRedist = OperatingSystem.IsWindows()
+                    ? WindowsSnapshot.VCREDIST_PROVIDERS.Contains(options.SnapShotProvider)
+                    : false;
+
+                var needsVisualCRedist = providerRequiresVCRedist
+                    && !PermissionHelper.IsVisualCRedistInstalled();
 
                 if (options.SnapShotStrategy == Options.OptimizationStrategy.Required)
                     throw new UserInformationException(Strings.Common.SnapshotFailedError(ex.Message, PermissionHelper.HasSnapshotPrivilege(), needsVisualCRedist), "SnapshotFailed", ex);
@@ -202,14 +207,22 @@ namespace Duplicati.Library.Main.Operation.Common
             // To avoid leaking snapshot instances, we create all instances first and then dispose them if an exception occurs
             // The number of instances is expected to be low, so the memory overhead is acceptable
             var results = new List<ISourceProvider>();
+            var uninitializedProviders = new List<ISourceProviderModule>();
+            var snapshotAwareProviders = new List<ISnapshotAwareModule>();
+            var fileSources = new List<string>();
+
             try
             {
                 foreach (var entry in sourceTypes)
                 {
                     if ("file".Equals(entry.Key, StringComparison.OrdinalIgnoreCase))
-                        results.Add(new LocalFileSource(GetFileSnapshotService(entry, options)));
+                    {
+                        fileSources.AddRange(entry);
+                    }
                     else if ("vss".Equals(entry.Key, StringComparison.OrdinalIgnoreCase) || "lvm".Equals(entry.Key, StringComparison.OrdinalIgnoreCase))
+                    {
                         results.Add(new LocalFileSource(SnapshotUtility.CreateSnapshot(entry, options.RawOptions, options.SymlinkPolicy == Options.SymlinkStrategy.Follow)));
+                    }
                     else if ("@".Equals(entry.Key, StringComparison.OrdinalIgnoreCase))
                     {
                         foreach (var url in entry)
@@ -228,10 +241,11 @@ namespace Duplicati.Library.Main.Operation.Common
                                 var normalizedMountpoint = Duplicati.Library.Common.IO.Util.AppendDirSeparator(mountpoint);
                                 var backendurl = remoteSource.Url;
 
-                                ISourceProvider provider;
+                                ISourceProviderModule provider;
                                 try
                                 {
-                                    provider = await SourceProviderLoader.GetSourceProvider(backendurl, Path.GetFullPath(normalizedMountpoint), options.RawOptions, cancellationToken).ConfigureAwait(false);
+                                    provider = SourceProviderLoader.CreateSourceProvider(backendurl, Path.GetFullPath(normalizedMountpoint), options.RawOptions)
+                                        ?? throw new UserInformationException($"The source \"{sanitizedUrl}\" is not supported", "SourceNotSupported");
                                 }
                                 catch (Exception ex)
                                 {
@@ -246,8 +260,10 @@ namespace Duplicati.Library.Main.Operation.Common
                                     }
                                 }
 
-                                // Don't accept missing providers
-                                results.Add(provider ?? throw new UserInformationException($"The source \"{sanitizedUrl}\" is not supported", "SourceNotSupported"));
+                                uninitializedProviders.Add(provider);
+
+                                if (provider is ISnapshotAwareModule snapshotAware)
+                                    snapshotAwareProviders.Add(snapshotAware);
                             }
                             else
                                 throw new UserInformationException($"The source \"{sanitizedUrl}\" is not a supported format", "SourceFormatNotSupported");
@@ -256,10 +272,59 @@ namespace Duplicati.Library.Main.Operation.Common
                     else
                         throw new UserInformationException($"The source type \"{entry.Key}\" is not supported", "SourceTypeNotSupported");
                 }
+
+                // Collect snapshot paths from file sources and snapshot-aware providers
+                var snapshotPaths = new List<string>(fileSources);
+                foreach (var snapshotAware in snapshotAwareProviders)
+                {
+                    var paths = await snapshotAware.GetSnapshotPathsAsync(cancellationToken).ConfigureAwait(false);
+                    if (paths != null)
+                        snapshotPaths.AddRange(paths);
+                }
+
+                // Create the snapshot service if we have any paths that need it
+                ISnapshotService? fileSnapshot = null;
+                if (snapshotPaths.Count > 0)
+                {
+                    fileSnapshot = GetFileSnapshotService(snapshotPaths, options);
+
+                    // Give the snapshot to snapshot-aware providers before initializing them
+                    foreach (var snapshotAware in snapshotAwareProviders)
+                        snapshotAware.SetSnapshotService(fileSnapshot);
+                }
+
+                // Create the file source with the snapshot
+                if (fileSources.Count > 0)
+                    results.Add(new LocalFileSource(fileSnapshot ?? GetFileSnapshotService(fileSources, options)));
+
+                // Initialize the remote providers (now with snapshot available)
+                foreach (var provider in uninitializedProviders)
+                {
+                    try
+                    {
+                        await provider.InitializeAsync(cancellationToken).ConfigureAwait(false);
+                        results.Add(provider);
+                    }
+                    catch (Exception ex)
+                    {
+                        var sanitizedUrl = provider.MountedPath ?? "unknown";
+                        if (options.AbortIfSourceMissing)
+                            throw new UserInformationException($"Failed to initialize source provider for \"{sanitizedUrl}\": {ex.Message}", "SourceProviderFailed", ex);
+                        else if (options.AllowMissingSource)
+                            continue;
+                        else
+                        {
+                            Log.WriteWarningMessage(LOGTAG, "SourceProviderFailed", ex, "Failed to initialize source provider for \"{0}\"", sanitizedUrl);
+                            continue;
+                        }
+                    }
+                }
             }
             catch
             {
                 foreach (var provider in results)
+                    (provider as IDisposable)?.Dispose();
+                foreach (var provider in uninitializedProviders)
                     (provider as IDisposable)?.Dispose();
 
                 throw;

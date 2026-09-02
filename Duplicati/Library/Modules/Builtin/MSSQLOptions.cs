@@ -170,10 +170,24 @@ namespace Duplicati.Library.Modules.Builtin
         /// <param name="commandlineOptions">The command line options.</param>
         /// <returns>A dictionary of changed options.</returns>
         // Make sure the JIT does not attempt to inline this call and thus load
-        // referenced types from System.Management here
+        // referenced types from Microsoft.Management.Infrastructure here
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         [SupportedOSPlatform("windows")]
-        public Dictionary<string, string> RealParseSourcePaths(ref string[] paths, ref string filter, Dictionary<string, string> commandlineOptions, IMSSQLUtility mssqlUtility = null)
+        public Dictionary<string, string> RealParseSourcePaths(ref string[] paths, ref string filter, Dictionary<string, string> commandlineOptions)
+        {
+            return RealParseSourcePaths(ref paths, ref filter, commandlineOptions, new MSSQLUtility());
+        }
+
+        /// <summary>
+        /// Parses the source paths for Microsoft SQL Server backups (real implementation).
+        /// </summary>
+        /// <param name="paths">The source paths.</param>
+        /// <param name="filter">The filter string.</param>
+        /// <param name="commandlineOptions">The command line options.</param>
+        /// <param name="mssqlUtility">The MS SQL utility instance.</param>
+        /// <returns>A dictionary of changed options.</returns>
+        [SupportedOSPlatform("windows")]
+        internal Dictionary<string, string> RealParseSourcePaths(ref string[] paths, ref string filter, Dictionary<string, string> commandlineOptions, IMSSQLUtility mssqlUtility)
         {
             var changedOptions = new Dictionary<string, string>();
             var mssqlfilters = new List<string>();
@@ -193,8 +207,6 @@ namespace Duplicati.Library.Modules.Builtin
 
                 filter = string.Join(System.IO.Path.PathSeparator.ToString(), remainingFilters);
             }
-
-            mssqlUtility ??= new MSSQLUtility();
 
             if (paths == null || !ContainFilesForBackup(paths) || !mssqlUtility.IsMSSQLInstalled)
                 return changedOptions;
@@ -217,7 +229,14 @@ namespace Duplicati.Library.Modules.Builtin
             }
 
             Logging.Log.WriteInformationMessage(LOGTAG, "StartingMsSqlQuery", "Starting to gather Microsoft SQL Server information", Logging.LogMessageType.Information);
-            var provider = Utility.Utility.ParseEnumOption(changedOptions.AsReadOnly(), "snapshot-provider", WindowsSnapshot.DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER);
+            var provider = Utility.Utility.ParseEnumOption(commandlineOptions, "snapshot-provider", WindowsSnapshot.DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER);
+            if (provider == WindowsSnapshotProvider.Wmi)
+            {
+                provider = WindowsSnapshotProvider.Native;
+                changedOptions["snapshot-provider"] = provider.ToString();
+                Logging.Log.WriteWarningMessage(LOGTAG, "WmiNotSupportedForMSSQL", null, $"The {WindowsSnapshotProvider.Wmi} cannot be used for MSSQL backups, switching to {provider}");
+            }
+
             mssqlUtility.QueryDBsInfo(provider);
             Logging.Log.WriteInformationMessage(LOGTAG, "MsSqlDatabaseCount", "Found {0} databases on Microsoft SQL Server", mssqlUtility.DBs.Count);
 

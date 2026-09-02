@@ -14,13 +14,13 @@
     <ProjectReference Include="..\..\Duplicati\Library\Utility\Duplicati.Library.Utility.csproj" />
     <ProjectReference Include="..\..\Duplicati\Library\Localization\Duplicati.Library.Localization.csproj" />
     <ProjectReference Include="..\..\Duplicati\Library\Logging\Duplicati.Library.Logging.csproj" />
+    <ProjectReference Include="..\..\Duplicati\Library\Snapshots\Duplicati.Library.Snapshots.csproj" />
   </ItemGroup>
 
   <!-- Native libraries -->
   <ItemGroup>
     <!-- Windows -->
-    <PackageReference Include="Vanara.PInvoke.Kernel32" Version="5.0.0" />
-    <PackageReference Include="Vanara.PInvoke.Shared" Version="5.0.0" />
+    <PackageReference Include="Vanara.PInvoke.Kernel32" Version="5.0.7" />
     <!-- Mac -->
     <ContentWithTargetPath Include="$(ProjectDir)NativeLibraryWrappers/libSystem_wrapper.dylib">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

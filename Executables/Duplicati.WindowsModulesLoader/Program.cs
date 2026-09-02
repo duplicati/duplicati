@@ -33,7 +33,7 @@ public static class Program
         try
         {
             Console.WriteLine("Create AlphaVSS snapshot reflected");
-            using var _ = Library.Snapshots.Windows.WindowsShimLoader.GetSnapshotProvider(Library.Snapshots.WindowsSnapshotProvider.AlphaVSS);
+            using var _ = Library.Snapshots.Windows.WindowsShimLoader.GetSnapshotProvider(Library.Snapshots.WindowsSnapshotProvider.AlphaVSS, TimeSpan.Zero);
             Console.WriteLine("Created AlphaVSS snapshot reflected");
         }
         catch (Exception ex)
@@ -44,7 +44,7 @@ public static class Program
         try
         {
             Console.WriteLine("Create vanara snapshot reflected");
-            using var _ = Library.Snapshots.Windows.WindowsShimLoader.GetSnapshotProvider(Library.Snapshots.WindowsSnapshotProvider.Vanara);
+            using var _ = Library.Snapshots.Windows.WindowsShimLoader.GetSnapshotProvider(Library.Snapshots.WindowsSnapshotProvider.Vanara, TimeSpan.Zero);
             Console.WriteLine("Created vanara snapshot reflected");
         }
         catch (Exception ex)
@@ -54,13 +54,24 @@ public static class Program
 
         try
         {
-            Console.WriteLine("Create WMIC snapshot reflected");
-            using var _ = Library.Snapshots.Windows.WindowsShimLoader.GetSnapshotProvider(Library.Snapshots.WindowsSnapshotProvider.Wmic);
-            Console.WriteLine("Created WMIC snapshot reflected");
+            Console.WriteLine("Create WMI snapshot reflected");
+            using var _ = Library.Snapshots.Windows.WindowsShimLoader.GetSnapshotProvider(Library.Snapshots.WindowsSnapshotProvider.Wmi, TimeSpan.Zero);
+            Console.WriteLine("Created WMI snapshot reflected");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Failed to create WMIC snapshot reflected: {ex}");
+            Console.WriteLine($"Failed to create WMI snapshot reflected: {ex}");
+        }
+
+        try
+        {
+            Console.WriteLine("Create native snapshot reflected");
+            using var _ = Library.Snapshots.Windows.WindowsShimLoader.GetSnapshotProvider(Library.Snapshots.WindowsSnapshotProvider.Native, TimeSpan.Zero);
+            Console.WriteLine("Created native snapshot reflected");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to create native snapshot reflected: {ex}");
         }
 
         try

@@ -50,13 +50,10 @@
     <ProjectReference Include="..\GUI\Duplicati.GUI.TrayIcon\Duplicati.GUI.TrayIcon.csproj" />
   </ItemGroup>
 
-  <!-- Copy in WindowsModules for easier debug, or if we are targeting Windows -->
-  <Target Name="CopyWindowsModulesRuntime" AfterTargets="Build" Condition="'$(OS)' == 'Windows_NT'">
-    <ItemGroup>
-      <_WinMods Include="..\Library\WindowsModules\bin\$(Configuration)\net10.0-windows10.0.17763.0\**\*.dll" />
-    </ItemGroup>
-
-    <Copy SourceFiles="@(_WinMods)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
-  </Target>
+  <!-- Copy in WindowsModules on Windows so the tests can load the snapshot providers -->
+  <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
+    <_CopyWinModules>True</_CopyWinModules>
+  </PropertyGroup>
+  <Import Project="..\Library\WindowsModules\WindowsModules.Runtime.targets" />
 
 </Project>

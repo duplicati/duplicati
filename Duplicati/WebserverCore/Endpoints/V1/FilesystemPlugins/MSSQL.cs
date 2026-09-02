@@ -31,6 +31,11 @@ public class MSSQL : IFilesystemPlugin
     private static readonly string LOGTAG = Duplicati.Library.Logging.Log.LogTagFromType<MSSQL>();
     public string RootName => "%MSSQL%";
 
+    private readonly IReadOnlyDictionary<string, string?> _options;
+
+    public MSSQL(IReadOnlyDictionary<string, string?> options)
+        => _options = options;
+
     public IEnumerable<Dto.TreeNodeDto> GetEntries(string[] pathSegments)
     {
         if (!OperatingSystem.IsWindows())
@@ -42,7 +47,7 @@ public class MSSQL : IFilesystemPlugin
             if (!mssqlUtility.IsMSSQLInstalled || !new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator))
                 return [];
 
-            mssqlUtility.QueryDBsInfo(WindowsSnapshot.DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER);
+            mssqlUtility.QueryDBsInfo(Library.Utility.Utility.ParseEnumOption(_options, "snapshot-provider", WindowsSnapshot.DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER));
 
             // Tier 1: Root Node Selection (%MSSQL%)
             if (pathSegments.Length == 0)
@@ -145,10 +150,10 @@ public class MSSQL : IFilesystemPlugin
                 {
                     text = x,
                     id = Util.AppendDirSeparator(string.Join(Path.DirectorySeparatorChar, pathSegments.Append(x))),
-                    cls = "file",
+                    cls = "folder",
                     iconCls = "x-tree-icon-mssqldb",
                     check = false,
-                    leaf = true,
+                    leaf = false,
                     hidden = false,
                     systemFile = false,
                     temporary = false,

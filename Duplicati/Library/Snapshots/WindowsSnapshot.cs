@@ -44,18 +44,35 @@ namespace Duplicati.Library.Snapshots
         /// <summary>
         /// The default snapshot provider
         /// </summary>
-        public static readonly WindowsSnapshotProvider DEFAULT_WINDOWS_SNAPSHOT_PROVIDER =
-            RuntimeInformation.ProcessArchitecture == Architecture.Arm
-            || RuntimeInformation.ProcessArchitecture == Architecture.Arm64
-            || RuntimeInformation.ProcessArchitecture == Architecture.Armv6
-            ? WindowsSnapshotProvider.Wmic
-            : WindowsSnapshotProvider.Vanara;
+        public static readonly WindowsSnapshotProvider DEFAULT_WINDOWS_SNAPSHOT_PROVIDER = WindowsSnapshotProvider.Native;
 
         /// <summary>
         /// The default snapshot query provider
         /// </summary>
-        public static readonly WindowsSnapshotProvider DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER =
-            WindowsSnapshotProvider.AlphaVSS;
+        public static readonly WindowsSnapshotProvider DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER = WindowsSnapshotProvider.Native;
+
+        /// <summary>
+        /// The snapshot providers that require VC Redist to be installed
+        /// </summary>
+        public static readonly IReadOnlySet<WindowsSnapshotProvider> VCREDIST_PROVIDERS = new HashSet<WindowsSnapshotProvider>()
+        {
+            WindowsSnapshotProvider.AlphaVSS,
+            WindowsSnapshotProvider.Vanara
+        };
+
+        /// <summary>
+        /// The supported snapshot providers on this platform
+        /// </summary>
+        public static IReadOnlyList<WindowsSnapshotProvider> SUPPORTED_PROVIDERS =
+            RuntimeInformation.ProcessArchitecture == Architecture.Arm
+            || RuntimeInformation.ProcessArchitecture == Architecture.Arm64
+            || RuntimeInformation.ProcessArchitecture == Architecture.Armv6
+            ?
+            [
+                WindowsSnapshotProvider.Native,
+                WindowsSnapshotProvider.Wmi
+            ]
+            : Enum.GetValues<Snapshots.WindowsSnapshotProvider>();
 
         /// <summary>
         /// The tag used for logging messages
@@ -102,7 +119,8 @@ namespace Duplicati.Library.Snapshots
             try
             {
                 var provider = Utility.Utility.ParseEnumOption(options.AsReadOnly(), "snapshot-provider", DEFAULT_WINDOWS_SNAPSHOT_PROVIDER);
-                _snapshotManager = new SnapshotManager(provider);
+                var vssTimeout = Utility.Utility.ParseTimespanOption(options.AsReadOnly(), "vss-timeout", SnapshotManager.DefaultMaxWaitTime);
+                _snapshotManager = new SnapshotManager(provider, vssTimeout);
 
                 // Default to exclude the System State writer
                 var excludedWriters = new Guid[] { new Guid("{e8132975-6f93-4464-a53e-1050253ae220}") };

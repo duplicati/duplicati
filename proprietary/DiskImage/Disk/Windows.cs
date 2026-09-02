@@ -460,7 +460,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
         /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
         /// <returns>The standard output of the PowerShell script.</returns>
         /// <exception cref="IOException">Thrown if the PowerShell script fails.</exception>
-        private static async Task<string> RunPowerShellAsync(string script, CancellationToken cancellationToken)
+        internal static async Task<string> RunPowerShellAsync(string script, CancellationToken cancellationToken)
         {
             var program = "powershell.exe";
             var args = $"-NoProfile -NonInteractive -ExecutionPolicy Bypass -Command \"{script.Replace("\"", "\\\"")}\"";

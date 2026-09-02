@@ -155,7 +155,7 @@ namespace Duplicati.Library.Snapshots.Windows
 
             m_DBs.Clear();
 
-            using (var vssBackupComponents = new SnapshotManager(provider))
+            using (var vssBackupComponents = new SnapshotManager(provider, SnapshotManager.WriterMetadataQueryTimeout))
             {
                 var writerGUIDS = new[] { _MSSQLWriterGuid };
                 try

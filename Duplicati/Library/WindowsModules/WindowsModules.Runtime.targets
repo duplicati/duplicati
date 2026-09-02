@@ -1,0 +1,58 @@
+<!--
+  Shared target that copies the WindowsModules runtime binaries (managed, native,
+  and C++/CLI mixed-mode assemblies) into the output folder of a consuming project.
+
+  The WindowsModules project targets net10.0-windows and is loaded via reflection
+  at runtime, so its output cannot flow through a normal ProjectReference. Import
+  this file from any net10.0 executable/project that needs the binaries:
+
+    <Import Project="..\Library\WindowsModules\WindowsModules.Runtime.targets" />
+
+  Set _CopyWinModules to control when the copy runs; it defaults to enabling when
+  targeting Windows or when building Debug on Windows. All paths are computed from
+  the location of this file, so importers do not need to adjust relative paths.
+-->
+<Project>
+
+  <PropertyGroup>
+    <!-- If we target Windows, or running debug on Windows -->
+    <_CopyWinModules Condition="'$(_CopyWinModules)' == '' And ( (
+          '$(RuntimeIdentifier)' != '' And
+          $([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('win')) )
+        Or
+        ( '$(RuntimeIdentifier)' == '' And
+          '$(OS)' == 'Windows_NT'        And
+          '$(Configuration)' == 'Debug' ) )
+      ">True</_CopyWinModules>
+
+    <!-- Location of the WindowsModules project output, computed from this file -->
+    <_WinModulesProjectDir Condition="'$(_WinModulesProjectDir)' == ''">$(MSBuildThisFileDirectory)</_WinModulesProjectDir>
+    <_WinModulesOutDir>$(_WinModulesProjectDir)bin\$(Configuration)\net10.0-windows10.0.17763.0\</_WinModulesOutDir>
+  </PropertyGroup>
+
+  <!-- Copy in WindowsModules for easier debug, or if we are targeting Windows -->
+  <Target Name="CopyWindowsModulesRuntime" AfterTargets="Build" Condition="'$(_CopyWinModules)' == 'True'">
+    <PropertyGroup>
+      <!-- Determine the target architecture for selecting native assets -->
+      <_WinModRid Condition="'$(RuntimeIdentifier)' != ''">$(RuntimeIdentifier)</_WinModRid>
+      <_WinModRid Condition="'$(_WinModRid)' == ''">$(NETCoreSdkRuntimeIdentifier)</_WinModRid>
+      <_WinModArch Condition="$(_WinModRid.Contains('arm64'))">arm64</_WinModArch>
+      <_WinModArch Condition="'$(_WinModArch)' == '' And $(_WinModRid.Contains('x86'))">x86</_WinModArch>
+      <_WinModArch Condition="'$(_WinModArch)' == ''">x64</_WinModArch>
+    </PropertyGroup>
+    <ItemGroup>
+      <!-- Managed assemblies from the root output only, NOT the runtimes subfolders -->
+      <_WinMods Include="$(_WinModulesOutDir)*.dll" />
+      <!-- Native DLLs for the current architecture -->
+      <_WinModNative Include="$(_WinModulesOutDir)runtimes\win-$(_WinModArch)\native\*.dll" />
+      <!-- Managed and mixed-mode (C++/CLI) assemblies that only exist under runtimes/win-<arch>/lib -->
+      <_WinModRidLib Include="$(_WinModulesOutDir)runtimes\win-$(_WinModArch)\lib\**\*.dll" />
+    </ItemGroup>
+
+    <Copy SourceFiles="@(_WinMods)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+    <!-- Always overwrite the RID-specific files so stale files from a wrong architecture are replaced -->
+    <Copy SourceFiles="@(_WinModNative)" DestinationFolder="$(OutDir)" />
+    <Copy SourceFiles="@(_WinModRidLib)" DestinationFolder="$(OutDir)" />
+  </Target>
+
+</Project>

@@ -135,13 +135,27 @@ namespace Duplicati.Library.Modules.Builtin
         /// <param name="paths">The source paths.</param>
         /// <param name="filter">The filter string.</param>
         /// <param name="commandlineOptions">The command line options.</param>
-        /// <param name="hypervUtility">The Hyper-V utility instance.</param>
         /// <returns>A dictionary of changed options.</returns>
         // Make sure the JIT does not attempt to inline this call and thus load
-        // referenced types from System.Management here
+        // referenced types from Microsoft.Management.Infrastructure here
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         [SupportedOSPlatform("windows")]
-        public Dictionary<string, string> RealParseSourcePaths(ref string[] paths, ref string filter, Dictionary<string, string> commandlineOptions, IHyperVUtility hypervUtility = null)
+        public Dictionary<string, string> RealParseSourcePaths(ref string[] paths, ref string filter, Dictionary<string, string> commandlineOptions)
+        {
+            using var hypervUtility = new HyperVUtility();
+            return RealParseSourcePaths(ref paths, ref filter, commandlineOptions, hypervUtility);
+        }
+
+        /// <summary>
+        /// Parses the source paths for Hyper-V backups (real implementation).
+        /// </summary>
+        /// <param name="paths">The source paths.</param>
+        /// <param name="filter">The filter string.</param>
+        /// <param name="commandlineOptions">The command line options.</param>
+        /// <param name="hypervUtility">The Hyper-V utility instance.</param>
+        /// <returns>A dictionary of changed options.</returns>
+        [SupportedOSPlatform("windows")]
+        internal Dictionary<string, string> RealParseSourcePaths(ref string[] paths, ref string filter, Dictionary<string, string> commandlineOptions, IHyperVUtility hypervUtility)
         {
             var changedOptions = new Dictionary<string, string>();
             var hypervFilters = new List<string>();
@@ -154,8 +168,6 @@ namespace Duplicati.Library.Modules.Builtin
                 var remainingfilters = filters.Where(x => !Regex.IsMatch(x, m_HyperVPathGuidRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)).ToArray();
                 filter = string.Join(System.IO.Path.PathSeparator.ToString(), remainingfilters);
             }
-
-            hypervUtility ??= new HyperVUtility();
 
             if (paths == null || !ContainFilesForBackup(paths) || !hypervUtility.IsHyperVInstalled)
                 return changedOptions;
@@ -181,7 +193,14 @@ namespace Duplicati.Library.Modules.Builtin
                 Logging.Log.WriteWarningMessage(LOGTAG, "HyperVOnServerOnly", null, "This is client version of Windows. Hyper-V VSS writer is present only on Server version. Backup will continue, but will be crash consistent only in opposite to application consistent in Server version");
 
             Logging.Log.WriteInformationMessage(LOGTAG, "StartingHyperVQuery", "Starting to gather Hyper-V information");
-            var provider = Utility.Utility.ParseEnumOption(changedOptions.AsReadOnly(), "snapshot-provider", WindowsSnapshot.DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER);
+            var provider = Utility.Utility.ParseEnumOption(commandlineOptions, "snapshot-provider", WindowsSnapshot.DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER);
+            if (provider == WindowsSnapshotProvider.Wmi)
+            {
+                provider = WindowsSnapshotProvider.Native;
+                changedOptions["snapshot-provider"] = provider.ToString();
+                Logging.Log.WriteWarningMessage(LOGTAG, "WmiNotSupportedForHyperV", null, $"The {WindowsSnapshotProvider.Wmi} cannot be used for HyperV backups, switching to {provider}");
+            }
+
             hypervUtility.QueryHyperVGuestsInfo(provider, true);
 
             if (hypervUtility.Guests == null || hypervUtility.Guests.Count == 0)
