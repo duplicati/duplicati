@@ -118,7 +118,8 @@ internal static class OptionsHelper
         Office365UserClassification IncludedUserClassifications,
         Office365GroupClassification IncludedGroupClassifications,
         Office365SiteClassification IncludedSiteClassifications,
-        bool EnumerationMode
+        bool EnumerationMode,
+        string MachineId
     );
 
     internal static ParsedOptions ParseAndValidateOptions(string url, Dictionary<string, string?> options)
@@ -152,6 +153,11 @@ internal static class OptionsHelper
 
         var enumerationMode = Library.Utility.Utility.ParseBoolOption(options, ENUMERATION_MODE_OPTION);
 
+        // Honor the global "machine-id" option, falling back to the AutoUpdater machine id
+        var machineId = options.GetValueOrDefault("machine-id");
+        if (string.IsNullOrWhiteSpace(machineId))
+            machineId = Library.AutoUpdater.DataFolderManager.GetMachineID();
+
         return new ParsedOptions(
             TenantId: _tenantId,
             AuthOptions: _authOptions,
@@ -165,7 +171,8 @@ internal static class OptionsHelper
             IncludedUserClassifications: includedUserClassifications,
             IncludedGroupClassifications: includedGroupClassifications,
             IncludedSiteClassifications: includedSiteClassifications,
-            EnumerationMode: enumerationMode
+            EnumerationMode: enumerationMode,
+            MachineId: machineId
         );
     }
 

@@ -85,6 +85,11 @@ namespace Duplicati.Library.Snapshots
         private static readonly ISystemIO IO_WIN = SystemIO.IO_OS;
 
         /// <summary>
+        /// The name of the special system folder that is excluded from backups
+        /// </summary>
+        private const string SYSTEM_VOLUME_INFORMATION_FOLDER = "System Volume Information";
+
+        /// <summary>
         /// The main reference to the backup controller
         /// </summary>
         private readonly SnapshotManager _snapshotManager;
@@ -156,6 +161,37 @@ namespace Duplicati.Library.Snapshots
 
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Checks if a given path is a "System Volume Information" folder.
+        /// The folder is identified by being located at the root of a volume,
+        /// having the expected name, and having the hidden and system attributes set.
+        /// </summary>
+        /// <param name="path">The path to check</param>
+        /// <param name="attributes">The attributes of the path</param>
+        /// <returns>True if the path is a "System Volume Information" folder, false otherwise</returns>
+        public static bool IsSystemVolumeInformationFolder(string path, FileAttributes attributes)
+        {
+            // The folder must be marked as both hidden and system,
+            // which is the case for the real "System Volume Information" folder,
+            // but unlikely for a user-created folder
+            if (!attributes.HasFlag(FileAttributes.Directory)
+                || !attributes.HasFlag(FileAttributes.Hidden)
+                || !attributes.HasFlag(FileAttributes.System))
+                return false;
+
+            // The folder must be located at the root of a volume
+            var root = Path.GetPathRoot(path.TrimEnd(Path.DirectorySeparatorChar));
+            if (string.IsNullOrEmpty(root))
+                return false;
+
+            // The name of the folder must be exactly "System Volume Information"
+            // and the only component after the root.
+            // Note that the root does not always end with a separator,
+            // such as for UNC paths, so we trim any leading separators
+            var relative = path.TrimEnd(Path.DirectorySeparatorChar).Substring(root.Length).TrimStart(Path.DirectorySeparatorChar);
+            return string.Equals(relative, SYSTEM_VOLUME_INFORMATION_FOLDER, StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>
