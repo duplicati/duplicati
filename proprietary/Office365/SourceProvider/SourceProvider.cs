@@ -66,6 +66,16 @@ public sealed partial class SourceProvider : ISourceProviderModule, IChangeTrack
     }
 
     /// <summary>
+    /// The machine id recorded in the backup description, honoring the global <c>machine-id</c> override.
+    /// </summary>
+    private readonly string _machineId;
+
+    /// <summary>
+    /// The machine id to record in the backup description, honoring the global <c>machine-id</c> override.
+    /// </summary>
+    internal string MachineId => _machineId;
+
+    /// <summary>
     /// The timeout options for the backend
     /// </summary>
     private readonly TimeoutOptionsHelper.Timeouts _timeouts;
@@ -245,6 +255,7 @@ public sealed partial class SourceProvider : ISourceProviderModule, IChangeTrack
         _apiHelper = null!;
         _mountPoint = null!;
         _timeouts = null!;
+        _machineId = null!;
         _includedRootTypes = null!;
         _includedUserTypes = null!;
         _includedGroupTypes = null!;
@@ -295,6 +306,7 @@ public sealed partial class SourceProvider : ISourceProviderModule, IChangeTrack
         _includedGroupClassifications = parsedOptions.IncludedGroupClassifications;
         _includedSiteClassifications = parsedOptions.IncludedSiteClassifications;
         EnumerationMode = parsedOptions.EnumerationMode;
+        _machineId = parsedOptions.MachineId;
         ExcludeSystemLibraries = parsedOptions.ExcludeSystemLibraries;
         MailDeltaEnabled = parsedOptions.MailDelta;
         DriveDeltaEnabled = parsedOptions.DriveDelta;

@@ -140,7 +140,8 @@ internal static class OptionsHelper
         bool ExcludeSystemLibraries,
         bool MailDelta,
         bool DriveDelta,
-        int DriveDeltaMaxItems
+        int DriveDeltaMaxItems,
+        string MachineId
     );
 
     internal static ParsedOptions ParseAndValidateOptions(string url, Dictionary<string, string?> options)
@@ -179,6 +180,11 @@ internal static class OptionsHelper
         if (driveDeltaMaxItems <= 0)
             throw new UserInformationException($"The option --{OFFICE_DRIVE_DELTA_MAX_ITEMS_OPTION} must be a positive number", "InvalidDriveDeltaMaxItems");
 
+        // Honor the global "machine-id" option, falling back to the AutoUpdater machine id
+        var machineId = options.GetValueOrDefault("machine-id");
+        if (string.IsNullOrWhiteSpace(machineId))
+            machineId = Library.AutoUpdater.DataFolderManager.MachineID;
+
         return new ParsedOptions(
             TenantId: _tenantId,
             AuthOptions: _authOptions,
@@ -196,7 +202,8 @@ internal static class OptionsHelper
             ExcludeSystemLibraries: excludeSystemLibraries,
             MailDelta: mailDelta,
             DriveDelta: driveDelta,
-            DriveDeltaMaxItems: driveDeltaMaxItems
+            DriveDeltaMaxItems: driveDeltaMaxItems,
+            MachineId: machineId
         );
     }
 
