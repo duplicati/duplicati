@@ -40,6 +40,18 @@ namespace Duplicati.Library.Snapshots.Windows
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<SnapshotManager>();
 
         /// <summary>
+        /// The VSS operation timeout used for short-lived writer metadata queries,
+        /// such as enumerating MSSQL databases or Hyper-V guests, where waiting
+        /// for the full provider default would stall the caller for too long
+        /// </summary>
+        public static readonly TimeSpan WriterMetadataQueryTimeout = TimeSpan.FromSeconds(30);
+
+        /// <summary>
+        /// The default time to wait as a time string
+        /// </summary>
+        public const string DefaultMaxWaitTime = "10m";
+
+        /// <summary>
         /// The snapshot implementation
         /// </summary>
         private ISnapshotProvider _snapshotProvider;
@@ -70,9 +82,10 @@ namespace Duplicati.Library.Snapshots.Windows
         /// Creates a new snapshot manager
         /// </summary>
         /// <param name="provider">The provider to use</param>
-        public SnapshotManager(WindowsSnapshotProvider provider)
+        /// <param name="vssTimeout">The maximum time to wait for asynchronous VSS operations</param>
+        public SnapshotManager(WindowsSnapshotProvider provider, TimeSpan vssTimeout)
         {
-            _snapshotProvider = WindowsShimLoader.GetSnapshotProvider(provider);
+            _snapshotProvider = WindowsShimLoader.GetSnapshotProvider(provider, vssTimeout);
         }
 
         /// <summary>

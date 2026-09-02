@@ -276,7 +276,7 @@ namespace Duplicati.Library.Snapshots.Windows
         /// <returns>A collection of VMs and paths</returns>
         private static IEnumerable<WriterMetaData> GetAllVMsPathsVSS(WindowsSnapshotProvider provider)
         {
-            using (var vssBackupComponents = new SnapshotManager(provider))
+            using (var vssBackupComponents = new SnapshotManager(provider, SnapshotManager.WriterMetadataQueryTimeout))
             {
                 var writerGUIDS = new[] { _HyperVWriterGuid };
 

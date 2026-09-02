@@ -186,6 +186,8 @@ namespace Duplicati.Library.Main.Strings
         public static string ExcludenonlocalfilesLong { get { return LC.L(@"Use this option to exclude files that are not stored locally, such as those from synchroniztion tools like Dropbox, OneDrive, etc."); } }
         public static string VssusemappingLong { get { return LC.L(@"Activate this option to map VSS snapshots to a drive (similar to SUBST, using Win32 DefineDosDevice). This will create temporary drives that are then used to access the contents of a snapshot. This workaround can speed up file access on Windows XP."); } }
         public static string VssusemappingShort { get { return LC.L(@"Map snapshots to a drive (Windows only)"); } }
+        public static string VsstimeoutLong { get { return LC.L(@"The maximum time to wait for each asynchronous VSS operation, such as gathering writer metadata, preparing writers, and creating the snapshot. Systems with slow or busy VSS writers, such as database servers with many databases, may need a longer timeout than the default. This option is used by the Native and Vanara snapshot providers."); } }
+        public static string VsstimeoutShort { get { return LC.L(@"The maximum time to wait for VSS operations (Windows only)"); } }
         public static string BackupnameLong { get { return LC.L(@"A display name that is attached to this backup. This can be used to identify the backup when sending mail or running scripts."); } }
         public static string BackupnameShort { get { return LC.L(@"Name of the backup"); } }
         public static string BackupidLong { get { return LC.L(@"A unique identification for this backup. This can be used to identify the backup when sending mail or running scripts."); } }

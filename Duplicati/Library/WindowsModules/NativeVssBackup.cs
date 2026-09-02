@@ -42,14 +42,14 @@ namespace Duplicati.Library.WindowsModules;
 public class NativeVssBackup : ISnapshotProvider
 {
     /// <summary>
-    /// The maximum time to wait for asynchronous VSS operations
-    /// </summary>
-    private static readonly TimeSpan MaxWaitTime = TimeSpan.FromMinutes(1);
-
-    /// <summary>
     /// The tag used for logging messages
     /// </summary>
     private static readonly string LogTag = Log.LogTagFromType<NativeVssBackup>();
+
+    /// <summary>
+    /// The maximum time to wait for asynchronous VSS operations
+    /// </summary>
+    private readonly TimeSpan _maxWaitTime;
 
     /// <summary>
     /// The backup components interface
@@ -91,8 +91,10 @@ public class NativeVssBackup : ISnapshotProvider
     /// <summary>
     /// Creates a new instance of the provider
     /// </summary>
-    public NativeVssBackup()
+    /// <param name="maxWaitTime">The maximum time to wait for asynchronous VSS operations</param>
+    public NativeVssBackup(TimeSpan maxWaitTime)
     {
+        _maxWaitTime = maxWaitTime;
         _components = GetVssBackupComponents();
     }
 
@@ -125,7 +127,7 @@ public class NativeVssBackup : ISnapshotProvider
             return;
         _hasAllocatedMetadata = true;
         VssInteropUtility.ThrowIfFailed(_components.GatherWriterMetadata(out var async), nameof(GatherWriterMetadata));
-        VssInteropUtility.WaitAndCheck(async, (uint)MaxWaitTime.TotalMilliseconds, nameof(GatherWriterMetadata));
+        VssInteropUtility.WaitAndCheck(async, (uint)_maxWaitTime.TotalMilliseconds, nameof(GatherWriterMetadata));
 
         // Cache the writer identities so VerifyWriters can be called
         // after the metadata has been freed with FreeWriterMetadata
@@ -217,14 +219,14 @@ public class NativeVssBackup : ISnapshotProvider
     public void PrepareForBackup()
     {
         VssInteropUtility.ThrowIfFailed(_components.PrepareForBackup(out var async), nameof(PrepareForBackup));
-        VssInteropUtility.WaitAndCheck(async, (uint)MaxWaitTime.TotalMilliseconds, nameof(PrepareForBackup));
+        VssInteropUtility.WaitAndCheck(async, (uint)_maxWaitTime.TotalMilliseconds, nameof(PrepareForBackup));
     }
 
     /// <inheritdoc/>
     public void DoSnapshotSet()
     {
         VssInteropUtility.ThrowIfFailed(_components.DoSnapshotSet(out var async), nameof(DoSnapshotSet));
-        VssInteropUtility.WaitAndCheck(async, (uint)MaxWaitTime.TotalMilliseconds, nameof(DoSnapshotSet));
+        VssInteropUtility.WaitAndCheck(async, (uint)_maxWaitTime.TotalMilliseconds, nameof(DoSnapshotSet));
         Log.WriteVerboseMessage(LogTag, "VssDoSnapshotSet", "Completed snapshot set");
     }
 
@@ -262,7 +264,7 @@ public class NativeVssBackup : ISnapshotProvider
             Log.WriteVerboseMessage(LogTag, "VssBackupCompleteFailed", "BackupComplete returned HRESULT 0x{0:X8}", hr);
             return;
         }
-        VssInteropUtility.WaitAndCheck(async, (uint)MaxWaitTime.TotalMilliseconds, nameof(BackupComplete));
+        VssInteropUtility.WaitAndCheck(async, (uint)_maxWaitTime.TotalMilliseconds, nameof(BackupComplete));
     }
 
     /// <inheritdoc/>

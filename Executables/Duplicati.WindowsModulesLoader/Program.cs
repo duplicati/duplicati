@@ -33,7 +33,7 @@ public static class Program
         try
         {
             Console.WriteLine("Create AlphaVSS snapshot reflected");
-            using var _ = Library.Snapshots.Windows.WindowsShimLoader.GetSnapshotProvider(Library.Snapshots.WindowsSnapshotProvider.AlphaVSS);
+            using var _ = Library.Snapshots.Windows.WindowsShimLoader.GetSnapshotProvider(Library.Snapshots.WindowsSnapshotProvider.AlphaVSS, TimeSpan.Zero);
             Console.WriteLine("Created AlphaVSS snapshot reflected");
         }
         catch (Exception ex)
@@ -44,7 +44,7 @@ public static class Program
         try
         {
             Console.WriteLine("Create vanara snapshot reflected");
-            using var _ = Library.Snapshots.Windows.WindowsShimLoader.GetSnapshotProvider(Library.Snapshots.WindowsSnapshotProvider.Vanara);
+            using var _ = Library.Snapshots.Windows.WindowsShimLoader.GetSnapshotProvider(Library.Snapshots.WindowsSnapshotProvider.Vanara, TimeSpan.Zero);
             Console.WriteLine("Created vanara snapshot reflected");
         }
         catch (Exception ex)
@@ -55,7 +55,7 @@ public static class Program
         try
         {
             Console.WriteLine("Create WMI snapshot reflected");
-            using var _ = Library.Snapshots.Windows.WindowsShimLoader.GetSnapshotProvider(Library.Snapshots.WindowsSnapshotProvider.Wmi);
+            using var _ = Library.Snapshots.Windows.WindowsShimLoader.GetSnapshotProvider(Library.Snapshots.WindowsSnapshotProvider.Wmi, TimeSpan.Zero);
             Console.WriteLine("Created WMI snapshot reflected");
         }
         catch (Exception ex)
@@ -66,7 +66,7 @@ public static class Program
         try
         {
             Console.WriteLine("Create native snapshot reflected");
-            using var _ = Library.Snapshots.Windows.WindowsShimLoader.GetSnapshotProvider(Library.Snapshots.WindowsSnapshotProvider.Native);
+            using var _ = Library.Snapshots.Windows.WindowsShimLoader.GetSnapshotProvider(Library.Snapshots.WindowsSnapshotProvider.Native, TimeSpan.Zero);
             Console.WriteLine("Created native snapshot reflected");
         }
         catch (Exception ex)

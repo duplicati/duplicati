@@ -39,8 +39,12 @@ namespace Duplicati.Library.WindowsModules;
 [SupportedOSPlatform("windows")]
 public class VanaraVssBackup : ISnapshotProvider
 {
-    private static readonly TimeSpan MaxWaitTime = TimeSpan.FromMinutes(1);
     private static readonly string LogTag = Log.LogTagFromType<VanaraVssBackup>();
+
+    /// <summary>
+    /// The maximum time to wait for asynchronous VSS operations
+    /// </summary>
+    private readonly TimeSpan _maxWaitTime;
     private IVssBackupComponents _components;
     private bool _hasAllocatedMetadata;
     private bool _hasStartedSnapshotSet;
@@ -57,8 +61,14 @@ public class VanaraVssBackup : ISnapshotProvider
     /// deleted individually if the set is torn down without an explicit delete
     /// </summary>
     private readonly List<Guid> _addedSnapshots = new List<Guid>();
-    public VanaraVssBackup()
+
+    /// <summary>
+    /// Creates a new instance of the provider
+    /// </summary>
+    /// <param name="maxWaitTime">The maximum time to wait for asynchronous VSS operations</param>
+    public VanaraVssBackup(TimeSpan maxWaitTime)
     {
+        _maxWaitTime = maxWaitTime;
         _components = GetVssBackupComponents();
     }
 
@@ -73,7 +83,7 @@ public class VanaraVssBackup : ISnapshotProvider
         if (_hasAllocatedMetadata)
             return;
         _hasAllocatedMetadata = true;
-        _components.GatherWriterMetadata().Wait((uint)MaxWaitTime.TotalMilliseconds).ThrowIfFailed();
+        _components.GatherWriterMetadata().Wait((uint)_maxWaitTime.TotalMilliseconds).ThrowIfFailed();
 
         // Cache the writer identities so VerifyWriters can be called
         // after the metadata has been freed with FreeWriterMetadata
@@ -125,11 +135,11 @@ public class VanaraVssBackup : ISnapshotProvider
     }
 
     public void PrepareForBackup()
-        => _components.PrepareForBackup().Wait((uint)MaxWaitTime.TotalMilliseconds).ThrowIfFailed();
+        => _components.PrepareForBackup().Wait((uint)_maxWaitTime.TotalMilliseconds).ThrowIfFailed();
 
     public void DoSnapshotSet()
     {
-        _components.DoSnapshotSet().Wait((uint)MaxWaitTime.TotalMilliseconds).ThrowIfFailed();
+        _components.DoSnapshotSet().Wait((uint)_maxWaitTime.TotalMilliseconds).ThrowIfFailed();
         Log.WriteVerboseMessage(LogTag, "VssDoSnapshotSet", "Completed snapshot set");
     }
 

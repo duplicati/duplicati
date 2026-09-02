@@ -56,7 +56,8 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         public static readonly IReadOnlySet<WindowsSnapshotProvider> VCREDIST_PROVIDERS = new HashSet<WindowsSnapshotProvider>()
         {
-            WindowsSnapshotProvider.AlphaVSS
+            WindowsSnapshotProvider.AlphaVSS,
+            WindowsSnapshotProvider.Vanara
         };
 
         /// <summary>
@@ -113,7 +114,8 @@ namespace Duplicati.Library.Snapshots
             try
             {
                 var provider = Utility.Utility.ParseEnumOption(options.AsReadOnly(), "snapshot-provider", DEFAULT_WINDOWS_SNAPSHOT_PROVIDER);
-                _snapshotManager = new SnapshotManager(provider);
+                var vssTimeout = Utility.Utility.ParseTimespanOption(options.AsReadOnly(), "vss-timeout", SnapshotManager.DefaultMaxWaitTime);
+                _snapshotManager = new SnapshotManager(provider, vssTimeout);
 
                 // Default to exclude the System State writer
                 var excludedWriters = new Guid[] { new Guid("{e8132975-6f93-4464-a53e-1050253ae220}") };
