@@ -49,8 +49,7 @@ namespace Duplicati.Library.Snapshots
         /// <summary>
         /// The default snapshot query provider
         /// </summary>
-        public static readonly WindowsSnapshotProvider DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER =
-            WindowsSnapshotProvider.AlphaVSS;
+        public static readonly WindowsSnapshotProvider DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER = WindowsSnapshotProvider.Native;
 
         /// <summary>
         /// The snapshot providers that require VC Redist to be installed

@@ -88,14 +88,7 @@ namespace Duplicati.Library.Snapshots.Windows
             if (excludedWriters != null && excludedWriters.Length > 0)
                 _snapshotProvider.DisableWriterClasses(excludedWriters);
 
-            try
-            {
-                _snapshotProvider.GatherWriterMetadata();
-            }
-            finally
-            {
-                _snapshotProvider.FreeWriterMetadata();
-            }
+            _snapshotProvider.GatherWriterMetadata();
 
             if (includedWriters == null)
             {
@@ -166,6 +159,11 @@ namespace Duplicati.Library.Snapshots.Windows
         /// <param name="sources">The soruces to include</param>
         public void InitShadowVolumes(IEnumerable<string> sources)
         {
+            // The writer metadata is no longer needed once writers have been
+            // verified, and GatherWriterMetadata can only be called once per
+            // backup components object, so free it before creating snapshots
+            _snapshotProvider.FreeWriterMetadata();
+
             _snapshotProvider.StartSnapshotSet();
 
             CheckAndAddSupportedVolumes(sources);
@@ -229,6 +227,15 @@ namespace Duplicati.Library.Snapshots.Windows
             catch (Exception ex)
             {
                 Logging.Log.WriteVerboseMessage(LOGTAG, "MappedDriveCleanupError", ex, "Failed during VSS mapped drive unmapping");
+            }
+
+            try
+            {
+                _snapshotProvider?.FreeWriterMetadata();
+            }
+            catch (Exception ex)
+            {
+                Logging.Log.WriteVerboseMessage(LOGTAG, "VSSFreeMetadataError", ex, "Failed to free VSS writer metadata");
             }
 
             try

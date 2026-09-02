@@ -193,7 +193,14 @@ namespace Duplicati.Library.Modules.Builtin
                 Logging.Log.WriteWarningMessage(LOGTAG, "HyperVOnServerOnly", null, "This is client version of Windows. Hyper-V VSS writer is present only on Server version. Backup will continue, but will be crash consistent only in opposite to application consistent in Server version");
 
             Logging.Log.WriteInformationMessage(LOGTAG, "StartingHyperVQuery", "Starting to gather Hyper-V information");
-            var provider = Utility.Utility.ParseEnumOption(changedOptions.AsReadOnly(), "snapshot-provider", WindowsSnapshot.DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER);
+            var provider = Utility.Utility.ParseEnumOption(commandlineOptions, "snapshot-provider", WindowsSnapshot.DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER);
+            if (provider == WindowsSnapshotProvider.Wmi)
+            {
+                provider = WindowsSnapshotProvider.Native;
+                changedOptions["snapshot-provider"] = provider.ToString();
+                Logging.Log.WriteWarningMessage(LOGTAG, "WmiNotSupportedForHyperV", null, $"The {WindowsSnapshotProvider.Wmi} cannot be used for HyperV backups, switching to {provider}");
+            }
+
             hypervUtility.QueryHyperVGuestsInfo(provider, true);
 
             if (hypervUtility.Guests == null || hypervUtility.Guests.Count == 0)

@@ -229,7 +229,14 @@ namespace Duplicati.Library.Modules.Builtin
             }
 
             Logging.Log.WriteInformationMessage(LOGTAG, "StartingMsSqlQuery", "Starting to gather Microsoft SQL Server information", Logging.LogMessageType.Information);
-            var provider = Utility.Utility.ParseEnumOption(changedOptions.AsReadOnly(), "snapshot-provider", WindowsSnapshot.DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER);
+            var provider = Utility.Utility.ParseEnumOption(commandlineOptions, "snapshot-provider", WindowsSnapshot.DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER);
+            if (provider == WindowsSnapshotProvider.Wmi)
+            {
+                provider = WindowsSnapshotProvider.Native;
+                changedOptions["snapshot-provider"] = provider.ToString();
+                Logging.Log.WriteWarningMessage(LOGTAG, "WmiNotSupportedForMSSQL", null, $"The {WindowsSnapshotProvider.Wmi} cannot be used for MSSQL backups, switching to {provider}");
+            }
+
             mssqlUtility.QueryDBsInfo(provider);
             Logging.Log.WriteInformationMessage(LOGTAG, "MsSqlDatabaseCount", "Found {0} databases on Microsoft SQL Server", mssqlUtility.DBs.Count);
 

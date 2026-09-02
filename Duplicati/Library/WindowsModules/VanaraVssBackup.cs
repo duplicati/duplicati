@@ -240,7 +240,7 @@ public class VanaraVssBackup : ISnapshotProvider
                     yield return new WriterMetaData
                     {
                         Guid = writerId,
-                        Name = writerName ?? string.Empty,
+                        Name = ci.bstrComponentName ?? string.Empty,
                         LogicalPath = ci.bstrLogicalPath ?? string.Empty,
                         Paths = GetPathsFromComponent(comp)
                     };

@@ -360,11 +360,12 @@ public class NativeVssBackup : ISnapshotProvider
                         VssInteropUtility.ThrowIfFailed(component.GetComponentInfo(out infoPtr), nameof(VssWMComponentWrapper.GetComponentInfo));
                         var info = Marshal.PtrToStructure<VSS_COMPONENTINFO>(infoPtr);
                         var logicalPath = info.bstrLogicalPath == IntPtr.Zero ? string.Empty : Marshal.PtrToStringBSTR(info.bstrLogicalPath) ?? string.Empty;
+                        var componentName = info.bstrComponentName == IntPtr.Zero ? string.Empty : Marshal.PtrToStringBSTR(info.bstrComponentName) ?? string.Empty;
 
                         results.Add(new WriterMetaData
                         {
                             Guid = writerId,
-                            Name = writerName ?? string.Empty,
+                            Name = componentName,
                             LogicalPath = logicalPath,
                             Paths = GetPathsFromComponent(component, info.cFileCount)
                         });
