@@ -20,7 +20,7 @@ namespace Duplicati.Proprietary.DiskImage;
 /// Source provider for disk images. Provides access to disk, partition, and filesystem structures
 /// as a virtual folder hierarchy for backup operations.
 /// </summary>
-public sealed class SourceProvider : ISourceProviderModule, IDisposable
+public sealed class SourceProvider : ISourceProviderModule, ISnapshotAwareModule, IDisposable
 {
     /// <summary>
     /// The path to the disk device.
@@ -54,6 +54,11 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
     /// Indicates whether to treat filesystems as unknown (force raw block-based backup).
     /// </summary>
     private readonly bool _treatFilesystemAsUnknown;
+
+    /// <summary>
+    /// The snapshot service to use for VSS-enabled backups.
+    /// </summary>
+    private ISnapshotService? _snapshotService;
 
     /// <summary>
     /// The subpath within the disk hierarchy that the device URL points to
@@ -112,6 +117,23 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
     internal bool TreatFilesystemAsUnknown => _treatFilesystemAsUnknown;
 
     /// <inheritdoc />
+    public async Task<IEnumerable<string>> GetSnapshotPathsAsync(CancellationToken cancellationToken)
+    {
+        if (!OperatingSystem.IsWindows() || string.IsNullOrEmpty(_devicePath))
+            return Enumerable.Empty<string>();
+
+        // Query volumes on the disk to include them in the snapshot
+        var (physicalDrivePath, _) = SplitDeviceAndSubpath(_devicePath);
+        var volumes = await VssDiskWrapper.GetVolumesOnDiskAsync(physicalDrivePath, cancellationToken).ConfigureAwait(false);
+        return volumes.Select(v => OperatingSystem.IsWindows() ? $"{v.DriveLetter}:\\" : throw new InvalidOperationException("Should not get here"));
+    }
+    /// <inheritdoc />
+    public void SetSnapshotService(ISnapshotService? snapshotService)
+    {
+        _snapshotService = snapshotService;
+    }
+
+    /// <inheritdoc />
     public async Task InitializeAsync(CancellationToken cancellationToken)
     {
         // TODO: Should we redesign this? 
@@ -122,6 +144,9 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
         _disk = (IRawDisk)await GetDiskAsync(_devicePath, cancellationToken).ConfigureAwait(false);
     }
 
+    // Note: The return type is object instead of IRawDisk because IRawDisk contains
+    // static abstract members, which prevents it from being used as a generic type
+    // argument (e.g., Task<IRawDisk>), triggering CS8920.
     private async Task<object> GetDiskAsync(string path, CancellationToken cancellationToken)
     {
         var (physicalDrivePath, subpath) = SplitDeviceAndSubpath(path);
@@ -130,6 +155,15 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
         if (OperatingSystem.IsWindows())
         {
             var disk = new Windows(physicalDrivePath.TrimEnd(Path.DirectorySeparatorChar));
+
+            // Wrap with VSS if a snapshot service is available
+            if (_snapshotService != null)
+            {
+                var vssDisk = await VssDiskWrapper.CreateAsync(disk, _snapshotService, cancellationToken).ConfigureAwait(false);
+                if (vssDisk != null)
+                    return vssDisk;
+            }
+
             var msg = await disk.InitializeAsync(cancellationToken);
             if (!string.IsNullOrWhiteSpace(msg))
                 throw new UserInformationException($"Failed to initialize disk: {physicalDrivePath}, {msg}", "DiskInitializeFailed");
