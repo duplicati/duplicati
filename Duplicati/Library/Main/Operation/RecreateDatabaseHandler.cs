@@ -231,14 +231,30 @@ namespace Duplicati.Library.Main.Operation
                 orderby n.Time descending
                 select n;
 
+            // A filelist is only written once a backup finishes, so a first backup that was
+            // interrupted leaves blocks and index files behind and no filelist at all. Refusing
+            // to recreate from that made such a backup unrecoverable: the backup asked for a
+            // repair, and the repair had nothing it would accept to repair from.
+            //
+            // The blocks are still described by the index files, so the recreate has everything
+            // it needs to register them and let the next backup carry on from where it stopped.
+            // Asking for a particular filelist is a different matter: that was asked for
+            // explicitly, and not finding it is not something to carry on past.
             if (!filelists.Any())
-                throw new UserInformationException("No filelists found on the remote destination", "EmptyRemoteLocation");
+            {
+                if (filelistfilter != null)
+                    throw new UserInformationException("No filelists found on the remote destination", "EmptyRemoteLocation");
+
+                Logging.Log.WriteWarningMessage(LOGTAG, "EmptyRemoteLocation", null, "No filelists found on the remote destination. This is expected if a first backup was interrupted before it finished, and the recreated database will let it resume. If this destination did hold filelists, they have been lost, and the backup can no longer be restored from.");
+            }
 
             if (filelistfilter != null)
+            {
                 filelists = filelistfilter(filelists).Select(x => x.Value).ToArray();
 
-            if (!filelists.Any())
-                throw new UserInformationException("No filelists", "NoMatchingRemoteFilelists");
+                if (!filelists.Any())
+                    throw new UserInformationException("No filelists", "NoMatchingRemoteFilelists");
+            }
 
             // If we are updating, all files should be accounted for
             foreach (var fl in remotefiles)
@@ -254,9 +270,10 @@ namespace Duplicati.Library.Main.Operation
             var filelistWork = (from n in filelists orderby n.Time select new RemoteVolume(n.File) as IRemoteVolume).ToList();
             Logging.Log.WriteInformationMessage(LOGTAG, "RebuildStarted", "Rebuild database started, downloading {0} filelists", filelistWork.Count);
 
-            // The newest filelist is the authority for version labels,
-            // even if it does not contain a labels.json file
-            var newestFilelistName = filelists.First().File.Name;
+            // The newest filelist is the authority for version labels, even if it does not
+            // contain a labels.json file. A first backup that was interrupted has no filelist
+            // at all, and then there is no name to match and no labels to apply either.
+            var newestFilelistName = filelists.FirstOrDefault()?.File.Name;
             IReadOnlyDictionary<DateTime, string> remoteLabels = null;
 
             var progress = 0;
