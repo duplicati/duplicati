@@ -130,7 +130,7 @@ namespace Duplicati.Library.Main.Database.Local
                 SELECT COUNT(*)
                 FROM ""FileLookup""
                 WHERE ""ID"" NOT IN (
-                    SELECT DISTINCT ""FileID""
+                    SELECT ""FileID""
                     FROM ""FilesetEntry""
                 )
             ");

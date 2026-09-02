@@ -73,6 +73,7 @@ public static class OptionsHelper
         public string? RefreshToken { get; set; }
         public string? ServiceAccountJson { get; set; }
         public string? AdminEmail { get; set; }
+        public string MachineId { get; set; } = "";
         public GoogleRootType[] IncludedRootTypes { get; set; } = Enum.GetValues<GoogleRootType>().ToArray();
         public GoogleUserType[] IncludedUserTypes { get; set; } = Enum.GetValues<GoogleUserType>().ToArray();
     }
@@ -102,6 +103,11 @@ public static class OptionsHelper
 
         if (options.ContainsKey(GOOGLE_ADMIN_EMAIL_OPTION))
             result.AdminEmail = options[GOOGLE_ADMIN_EMAIL_OPTION];
+
+        // Honor the global "machine-id" option, falling back to the AutoUpdater machine id
+        result.MachineId = options.TryGetValue("machine-id", out var machineId) && !string.IsNullOrWhiteSpace(machineId)
+            ? machineId
+            : Library.AutoUpdater.DataFolderManager.GetMachineID();
 
         var includedRootTypes = Library.Utility.Utility.ParseFlagsOption(options, GOOGLE_INCLUDED_ROOT_TYPES_OPTION, (GoogleRootType)Enum.GetValues<GoogleRootType>().Cast<int>().Aggregate(0, (acc, type) => acc | type));
         var includedUserTypes = Library.Utility.Utility.ParseFlagsOption(options, GOOGLE_INCLUDED_USER_TYPES_OPTION, (GoogleUserType)Enum.GetValues<GoogleUserType>().Cast<int>().Aggregate(0, (acc, type) => acc | type));

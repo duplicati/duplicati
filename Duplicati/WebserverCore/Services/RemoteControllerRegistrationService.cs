@@ -110,7 +110,7 @@ public class RemoteControllerRegistrationService(Connection connection, IHttpCli
         {
             try
             {
-                _registerForRemote = new RegisterForRemote(registrationUrl, httpClientFactory.CreateClient(), _operationCancellation.Token);
+                _registerForRemote = new RegisterForRemote(registrationUrl, httpClientFactory.CreateClient(), GetMachineIdOverride(), _operationCancellation.Token);
                 var data = await _registerForRemote.RegisterAsync(maxRetries: 3, retryInterval: TimeSpan.FromSeconds(5));
 
                 // Make the link visible to outside
@@ -166,5 +166,22 @@ public class RemoteControllerRegistrationService(Connection connection, IHttpCli
         _operationCancellation = null;
         RegistrationUrl = null;
         eventPollNotify.SignalRemoteControlUpdate();
+    }
+
+    /// <summary>
+    /// Gets the machine ID override from the application settings (ANY_BACKUP_ID), if set.
+    /// </summary>
+    /// <returns>The configured machine ID override, or null if not set</returns>
+    private string? GetMachineIdOverride()
+    {
+        if (connection.Settings == null)
+            return null;
+
+        var lookup = connection.Settings
+            .GroupBy(k => k.Name.StartsWith("--", StringComparison.Ordinal) ? k.Name.Substring(2) : k.Name, k => k.Value)
+            .ToDictionary(x => x.Key, x => x.FirstOrDefault(), StringComparer.OrdinalIgnoreCase);
+
+        var machineId = lookup.GetValueOrDefault("machine-id");
+        return string.IsNullOrWhiteSpace(machineId) ? null : machineId;
     }
 }

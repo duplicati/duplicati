@@ -172,17 +172,24 @@ public class RegisterForRemote : IDisposable
     private ClaimedClientData? _claimedClientData;
 
     /// <summary>
+    /// The machine ID override to report, or null to use the machine default
+    /// </summary>
+    private readonly string? _machineId;
+
+    /// <summary>
     /// Creates a new instance of the registration process
     /// </summary>
     /// <param name="registrationUrl">The URL to register the machine with</param>
     /// <param name="httpClient">The HTTP client to use for requests</param>
+    /// <param name="machineId">An optional machine ID override; if null or empty the machine default is used</param>
     /// <param name="cancellationToken">The cancellation token to use for the process</param>
-    public RegisterForRemote(string registrationUrl, HttpClient? httpClient, CancellationToken cancellationToken)
+    public RegisterForRemote(string registrationUrl, HttpClient? httpClient, string? machineId, CancellationToken cancellationToken)
     {
         _state = States.NotStarted;
         _registrationUrl = registrationUrl;
         _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         _httpClient = httpClient ?? HttpClientHelper.CreateClient();
+        _machineId = string.IsNullOrWhiteSpace(machineId) ? null : machineId;
         // Timeout for _httpClient will be kept at default 100s (Which is already a long one for registration)
     }
 
@@ -237,9 +244,9 @@ public class RegisterForRemote : IDisposable
         var basics = new Dictionary<string, string?>
         {
             { "instanceId", ClientInstanceId },
-            { "machineId", AutoUpdater.DataFolderManager.MachineID },
+            { "machineId", _machineId ?? AutoUpdater.DataFolderManager.GetMachineID() },
             { "machineName", AutoUpdater.DataFolderManager.MachineName },
-            { "installId", AutoUpdater.DataFolderManager.InstallID },
+            { "installId", AutoUpdater.DataFolderManager.GetInstallID() },
             { "localTime", DateTimeOffset.Now.ToString("o", CultureInfo.InvariantCulture) },
             { "version", AutoUpdater.UpdaterManager.SelfVersion?.Version },
             { "packageTypeId", AutoUpdater.UpdaterManager.PackageTypeId },
