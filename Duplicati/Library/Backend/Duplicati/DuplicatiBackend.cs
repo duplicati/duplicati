@@ -171,7 +171,7 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
         // Honor the global "machine-id" option, falling back to the AutoUpdater machine id
         var machineId = options.GetValueOrDefault("machine-id");
         if (string.IsNullOrWhiteSpace(machineId))
-            machineId = AutoUpdater.DataFolderManager.MachineID;
+            machineId = AutoUpdater.DataFolderManager.GetMachineID();
 
         _client.DefaultRequestHeaders.Add("X-Api-Key", _auth.Password);
         _client.DefaultRequestHeaders.Add("X-Organization-Id", _auth.Username);
