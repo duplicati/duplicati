@@ -440,7 +440,7 @@ namespace Duplicati.Library.Modules.Builtin
             => new ReportMetadata
             {
                 DuplicatiVersion = UpdaterManager.SelfVersion.Version,
-                MachineId = OptionOrDefault("machine-id", () => DataFolderManager.MachineID),
+                MachineId = OptionOrDefault("machine-id", () => DataFolderManager.GetMachineID(probeOnly: true)),
                 BackupId = OptionOrDefault("backup-id", () => Utility.Utility.CalculateBackupId(m_remoteUrl)),
                 BackupName = OptionOrDefault("backup-name", () => System.IO.Path.GetFileNameWithoutExtension(Utility.Utility.getEntryAssembly().Location)),
                 MachineName = OptionOrDefault("machine-name", () => DataFolderManager.MachineName),
