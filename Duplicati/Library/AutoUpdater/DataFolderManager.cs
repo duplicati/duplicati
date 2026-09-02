@@ -154,7 +154,7 @@ public static class DataFolderManager
         }
 
         if (mode == AccessMode.ReadWritePermissionSet && !File.Exists(Path.Combine(dataFolder, MACHINE_FILE)))
-            File.WriteAllText(Path.Combine(dataFolder, MACHINE_FILE), AutoUpdateSettings.UpdateMachineFileText(InstallID));
+            File.WriteAllText(Path.Combine(dataFolder, MACHINE_FILE), AutoUpdateSettings.UpdateMachineFileText(GetInstallID()));
 
         return dataFolder;
     }
@@ -375,21 +375,20 @@ public static class DataFolderManager
     /// exist yet, an empty value is returned without caching, so a later call can still pick
     /// up the value; once the file exists, the value is stable and is cached, even if empty.
     /// </summary>
-    public static string InstallID
+    /// <param name="probeOnly">A flag indicating the caller is only probing; a missing ID returns empty without throwing (debug) or logging</param>
+    /// <returns>The ID or an empty string</returns>
+    public static string GetInstallID(bool probeOnly = false)
     {
-        get
+        if (_installID == null)
         {
-            if (_installID == null)
-            {
-                var value = ProbeIdFile(INSTALL_FILE, out var fileExists);
-                if (!fileExists)
-                    return ReportMissingIdValue(INSTALL_FILE);
+            var value = ProbeIdFile(INSTALL_FILE, out var fileExists);
+            if (!fileExists)
+                return ReportMissingIdValue(INSTALL_FILE, probeOnly);
 
-                _installID = value ?? "";
-            }
-
-            return _installID;
+            _installID = value ?? "";
         }
+
+        return _installID;
     }
 
     /// <summary>
@@ -399,24 +398,23 @@ public static class DataFolderManager
     /// an empty value is returned without caching, so a later call can still pick up the
     /// value; once the file exists, the value is stable and is cached, even if empty.
     /// </summary>
-    public static string MachineID
+    /// <param name="probeOnly">A flag indicating the caller is only probing; a missing ID returns empty without throwing (debug) or logging</param>
+    /// <returns>The ID or an empty string</returns>
+    public static string GetMachineID(bool probeOnly = false)
     {
-        get
+        if (_machineID == null)
         {
-            if (_machineID == null)
-            {
-                var value = ProbeIdFile(MACHINE_FILE, out var fileExists);
-                if (string.IsNullOrWhiteSpace(value))
-                    value = ProbeIdFile(INSTALL_FILE, out _);
+            var value = ProbeIdFile(MACHINE_FILE, out var fileExists);
+            if (string.IsNullOrWhiteSpace(value))
+                value = GetInstallID(probeOnly: true);
 
-                if (!fileExists && string.IsNullOrWhiteSpace(value))
-                    return ReportMissingIdValue(MACHINE_FILE);
+            if (!fileExists && string.IsNullOrWhiteSpace(value))
+                return ReportMissingIdValue(MACHINE_FILE, probeOnly);
 
-                _machineID = value ?? "";
-            }
-
-            return _machineID;
+            _machineID = value ?? "";
         }
+
+        return _machineID;
     }
 
     /// <summary>
@@ -454,24 +452,16 @@ public static class DataFolderManager
     /// </summary>
     /// <param name="filename">The name of the ID file that had no value</param>
     /// <returns>An empty string in release builds; never returns in debug builds</returns>
-    private static string ReportMissingIdValue(string filename)
+    private static string ReportMissingIdValue(string filename, bool probeOnly)
     {
+        if (probeOnly)
+            return string.Empty;
+
 #if DEBUG
         throw new InvalidOperationException($"The ID file \"{filename}\" in the data folder does not exist or is empty; the ID was requested before the data folder was initialized");
 #else
         return string.Empty;
 #endif
-    }
-
-    /// <summary>
-    /// DEBUG-only test hook that ensures the data folder is initialized and stores
-    /// the given machine ID in it, so tests can run with a stable machine ID without
-    /// going through the application startup sequence that normally creates the ID.
-    /// </summary>
-    /// <param name="machineID">The machine ID to use</param>
-    public static void SetMachineIDForTesting(string machineID)
-    {
-        _machineID = machineID;
     }
 
     /// <summary>

@@ -487,6 +487,15 @@ namespace Duplicati.Library.Main.Operation.Backup
                 return false;
             }
 
+            // Exclude the "System Volume Information" folder,
+            // which contains system internal data that should not be backed up,
+            // even if the process holds the backup privilege that allows reading it
+            if (OperatingSystem.IsWindows() && entry.IsFolder && IsSystemVolumeInformationFolder(entry))
+            {
+                Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingSystemVolumeInformationFolder", "Excluding System Volume Information folder: {0}", entry.Path);
+                return false;
+            }
+
             // Exclude block devices
             try
             {
@@ -518,6 +527,32 @@ namespace Duplicati.Library.Main.Operation.Backup
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Checks if the given entry is a "System Volume Information" folder,
+        /// based on the name, location, and attributes of the folder.
+        /// This method is not inlined to prevent loading the snapshot types on non-Windows platforms.
+        /// </summary>
+        /// <param name="entry">The entry to evaluate.</param>
+        /// <returns>True if the entry is a "System Volume Information" folder, false otherwise.</returns>
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        [System.Runtime.Versioning.SupportedOSPlatform("windows")]
+        private static bool IsSystemVolumeInformationFolder(ISourceProviderEntry entry)
+        {
+            // If we cannot read the attributes, we cannot verify the folder
+            FileAttributes attributes;
+            try
+            {
+                attributes = entry.Attributes;
+            }
+            catch (Exception ex)
+            {
+                LogExceptionHelper.LogCommonWarning(ex, FILTER_LOGTAG, "PathProcessingErrorAttributes", entry.Path);
+                return false;
+            }
+
+            return Duplicati.Library.Snapshots.WindowsSnapshot.IsSystemVolumeInformationFolder(entry.Path, attributes);
         }
 
         /// <summary>
