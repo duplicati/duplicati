@@ -329,7 +329,7 @@ internal sealed class VssDiskWrapper : IRawDisk
 
         var script = $@"
 Get-Partition -DiskNumber {diskNumber} -ErrorAction SilentlyContinue |
-Where-Object {{ $_.DriveLetter -ne $null }} |
+Where-Object {{ $_.DriveLetter -ne $null -and $_.DriveLetter -ne [char]0 -and $_.DriveLetter -ne '' }} |
 ForEach-Object {{
     [pscustomobject]@{{
         DriveLetter = $_.DriveLetter.ToString()

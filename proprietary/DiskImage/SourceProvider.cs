@@ -155,6 +155,9 @@ public sealed class SourceProvider : ISourceProviderModule, ISnapshotAwareModule
         if (OperatingSystem.IsWindows())
         {
             var disk = new Windows(physicalDrivePath.TrimEnd(Path.DirectorySeparatorChar));
+            var msg = await disk.InitializeAsync(cancellationToken);
+            if (!string.IsNullOrWhiteSpace(msg))
+                throw new UserInformationException($"Failed to initialize disk: {physicalDrivePath}, {msg}", "DiskInitializeFailed");
 
             // Wrap with VSS if a snapshot service is available
             if (_snapshotService != null)
@@ -163,10 +166,6 @@ public sealed class SourceProvider : ISourceProviderModule, ISnapshotAwareModule
                 if (vssDisk != null)
                     return vssDisk;
             }
-
-            var msg = await disk.InitializeAsync(cancellationToken);
-            if (!string.IsNullOrWhiteSpace(msg))
-                throw new UserInformationException($"Failed to initialize disk: {physicalDrivePath}, {msg}", "DiskInitializeFailed");
 
             return disk;
         }
