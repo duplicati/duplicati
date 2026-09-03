@@ -1,3 +1,182 @@
+2026-09-03 - 2.4.0.0_stable_2026-09-03
+==========
+This release is a stable release that supersedes the 2.3.0.4 stable release. It contains all changes from the 2.3.1.0 and 2.3.1.1 beta releases.
+
+# Breaking change: Locked-down data folder permissions
+
+This release hardens security around the data folder and is a **breaking change** for some setups.
+
+_For most users, this should not be a problem as the folders should already have the correct permissions._
+
+Duplicati now **requires** that the data folder has the exact expected permissions, or it will refuse to use it. Previously, Duplicati would silently lock down the folder if it was not already locked.
+
+To opt out of the permission check, you need to either pass `--allow-insecure-datafolder`, set the environment variable `DUPLICATI__ALLOW_INSECURE_DATAFOLDER=true`, or place a file named `insecure-permissions.txt` in the installation folder.
+
+Note that the previous method of placing `insecure-permissions.txt` in the data folder is no longer supported.
+
+This change also applies to `preload.json`, such that it will only be loaded if the folder is trusted, or one of the opt-out methods are activated. Additionally, the previous trusted paths `/usr/local/share/Duplicati/preload.json` and `C:\ProgramData\Duplicati\preload.json` are no longer supported as they cannot be guaranteed to be locked down.
+
+A `preload.json` inside the data folder is still supported, provided the folder passes the permission check.
+
+The `ConfigureTool` has a new `secure-datafolder` command that can be used to force the correct permissions on the data folder.
+
+For most users this should not cause any problems, as Duplicati has been locking down the folder already, but if you rely on lax folder permissions the setup needs to change. Some Docker setups may not be able to set the permissions and will need to apply `DUPLICATI__ALLOW_INSECURE_DATAFOLDER=true` in the image to run without the protections.
+
+# Sync copy mode
+
+This release adds an often requested feature that enables simple copying of files from source to destination.
+Where the regular backups are deduplicated, compressed, encrypted and versioned, the new sync mode will instead simply copy from source to destination.
+
+The copy is currently a one-way sync, where the source is replicated on the destination. Files can be deleted on the destination during sync (use `--sync-then-delete`), but destination folders will not be deleted.
+
+The option `--sync-remote-state` is by default set to `UseRemoteState` which will list the destination and figure out what to upload. The setting `UseLocalState` uses a local database, similar to how backups work, to keep track of known remote files, and reduce the amount of remote listings done. Finally, the `BlindlyUpload` setting will just copy everything as-is to the remote.
+
+The sync jobs support remote sources, snapshots, and multiple destinations. If snapshots are enabled, the copy is done from the snapshot, ensuring reliable reads.
+
+Configuration of such a sync job is done the same way as with backup, but using a toggle option in the first step of the UI. Note that backup and sync jobs are not compatible as they use very different storage logic, so it is not possible to change the job mode after creating a job.
+
+CLI mode also supports sync.
+
+# Improved Windows installer
+
+This change brings a major update to the Windows installers, which now integrates the ability to run as a service, as well as generate and use TLS (https). The service feature has been present for a while in the `WindowsService.exe` tool and the TLS certificates were added as part of the `Duplicati.CommandLine.ConfigureTool.exe`. With this update these things are now integrated into the installer, and exposed as simple checkboxes to toggle the features. Installing the service from a regular user account, will also auto-generate a secure password and configure the TrayIcon to connect to the service (only for the current user).
+
+If you have installed the service manually, do not activate the new checkbox as it only works if there is no pre-existing service. The installer-driven service does not support commandline arguments directly, but instead prefers `preload.json` files to configure it. The MSI supports the property `INSTALL_PRELOAD=true` which will cause it to pick up a `preload.json` file from the same folder the MSI is located in.
+
+The Windows service is now also configured as delay-start service to avoid startup issues on boot.
+
+# Live reporting module
+
+This release adds a new live-reporting module that sends the current progress of backups to a user-specified URL. The intention is that this can be used for dashboards that want to show the current progress for backups. By default, the module is not configured and has no impact.
+
+The module supports multiple activity targets and includes metadata in the activity report, as well as a console-provided activity URL.
+
+# PAR2 parity / error-correction for remote volumes
+
+This release adds a pluggable parity module that produces error-correction data for remote data volumes, so they can be repaired after bit-rot or corruption on the backend, thanks @JamBalaya56562.
+
+To enable this, ensure that `par2` is installed on the machine and set `--parity-module=par2`. Setting this will cause additional `.par2` files to be uploaded.
+
+# Store configuration with backup
+
+This release revives the `store-task-config` option and makes it enabled by default for encrypted backups. The backup configuration is stored with the backup data, making it easier to restore a configuration later.
+
+For unencrypted backups, no secrets are stored by default. The behavior can be customized with options to store none, self, or all configurations, with or without secrets. The UI has been updated to allow restoring from the destination config. If multiple configurations are found, the user can select one or more backup configurations to restore.
+
+# MS365 subsites and shared mailboxes
+
+This release improves the Microsoft 365 backup support with two additions.
+Support for backing up SharePoint subsites has been added, making it possible to include sub-sites beneath a site collection in a backup.
+
+The handling of shared mailboxes has also been improved, with better detection and enumeration of shared mailboxes within a tenant.
+
+The license counting has been simplified. A Duplicati license is now required if an MS365 license is assigned, without needing per-user lookups. The same logic applies to both users and sites, and personal sites of users without a license are not counted. Filtering based on classification is still supported.
+
+# Full disk backup support (Windows, Linux, MacOS)
+
+This release extends the full disk backup feature to support Linux and MacOS, in addition to Windows.
+
+The Linux support allows backup and restore of entire disks on Linux, including partition tables. The MacOS support adds basic backup and restore of entire disks, including partition tables.
+
+Partition-level backup and restore is now supported, making it possible to select individual partitions as backup sources, or restore a single partition from a full disk backup to a different partition.
+
+Like the Office 365 / Google Workspace backup features, this is a proprietary module (source available).
+
+Full disk backup requires administrative privileges to access the disk directly.
+Full disk restore requires administrative privileges and requires that the disk is unmounted and not write-protected.
+
+# Desktop notifications on all platforms
+
+Desktop notifications are now supported on all platforms. Windows toast notifications have been implemented with click-to-open support, and native notification support has been added for macOS and Linux (via DBus), thanks @JamBalaya56562 for the Windows implementation.
+
+# Restore reliability improvements
+
+Several issues with the restore process have been fixed. Restores now properly respond to stop/abort requests, file reads and writes can be interrupted, and a critical bug with wrong seek offsets for partial blocks has been fixed, which could cause restores to fail, thanks @JamBalaya56562.
+
+An index has been added on the restore file table join columns for better restore performance, thanks @JamBalaya56562.
+
+# Misconfigured filter detection
+
+A new warning system detects when filters are configured to unconditionally exclude everything. A post-backup check also warns if no files were examined during backup, which helps catch misconfigurations that would otherwise silently produce empty backups.
+
+# New backends
+
+Added support for Drime Cloud as a new storage backend.
+
+Added a new backend for the Spanish provider Movistar, thanks @redmars27. The backend is marked as "untested" as it can only be used (and tested) by Movistar customers.
+
+# Deprecated backends
+
+The previous "SharePoint" and "OneDrive for Business" backends have been marked as deprecated, as Microsoft shut down the API they were calling. The migration step is to use the "SharePoint v2" backend (renamed to just "SharePoint" in this version) which uses the Microsoft Graph API.
+
+# Duplicati Storage
+
+This release includes Duplicati Storage which is integrated with the Duplicati console. Once a machine is connected to the console it can use the account's storage allocations with zero configuration required.
+
+# SharpAESCrypt v3
+
+Updated the SharpAESCrypt encryption library to support "AES Crypt Stream Format v3", which has a number of improvements over the v2 format.
+For this release, the default written format remains v2, but we encourage you to set the environment variable `DUPLICATI__AES_VERSION=3` to test the new format.
+**Note:** if you set this version to 3, the new remote volumes cannot be read by Duplicati versions older than 2.3.0.101.
+
+# Support for MacOS ACLs
+
+This release adds support for reading MacOS attributes and ACL strings during backup, and restoring them when permission restores are selected.
+
+# Support for Windows Alternate Data Streams
+
+This release implements support for reading and writing alternate data streams (ADS) on Windows. This feature is disabled by default and can be enabled with the advanced option `--enable-ads-backup`. If ADS content is found in the source, this is restored by default but can be disabled with `--disable-ads-restore`.
+
+# Fixed MSSQL backups
+
+Since 2.1 the MSSQL backups would produce errors if attempting to back up an MSSQL server that was running as the default instance, but would work with a named instance. This release fixes the issue and now handles both default- and named instances.
+
+# Improved missing source handling
+
+The default behavior when sources are missing has changed. Previously, a missing source would abort the backup. Now, a missing source will only trigger a warning unless the option `--abort-if-source-missing` is set. The option `--allow-missing-source` can still be used to suppress warnings entirely. If no sources are found at all, the backup will still abort.
+
+# Relative database paths
+
+Database paths are now stored relative to the data folder by default. This makes it simpler to move the data folder as the paths are not stored in full. Existing backups retain their full paths, but manually updating a database path will make it relative if it is within the data folder.
+
+# Improved TLS certificate validation
+
+The TLS certificate validation has been improved, and Duplicati now falls back to using the OS-default certificate validator. This should resolve issues with custom certificate chains and improve compatibility with various TLS setups.
+
+# Improved source tree and filter accuracy
+
+The source tree now shows the content of remote sources, including Microsoft 365 tenants, Google Workspace subscriptions and full-disk content. Filter evaluation is performed server-side for non-trivial filters, ensuring the same code is used for display and actual backup operations.
+
+Helper entries like "My Documents" are now shown in all picker situations and resolve to the full path. The destination configuration supports browsing the remote file system.
+
+# New welcome page and start
+
+The UI will now show a welcome page showing how to connect to the console with an option to continue without.
+This can be suppressed with the option `--webservice-suppress-welcome-page=true` or environment variable `DUPLICATI__WEBSERVICE_SUPPRESS_WELCOME_PAGE=true`.
+
+If the connection is made from the TrayIcon, the initial dialog asking to set a password is no longer shown, as the intention is to use the TrayIcon to connect.
+It is still possible to change the password from the Settings page if needed.
+
+# Other notable changes
+
+- **AutoTune tool**: A new `Duplicati.CommandLine.AutoTuneTool` / `duplicati-autotune` tool to help evaluate and optimize performance-related settings.
+- **Read-only backend testing**: Backends now support read-only context-aware testing, safe for testing restore destinations without risking unintended changes.
+- **Remote synchronization improvements**: Integrated remote synchronization (3-2-1 backups) into the Main library with quota checks and improved error handling.
+- **Multi-version restore**: New `--restore-all-files` option to restore files matching a filter from multiple versions.
+- **Performance improvements**: ArrayPool-based allocations reduce memory pressure during backups. Faster delete queries for large backups.
+- **Post-backup scripts**: The RunScript module now supports running scripts when a backup has finished, but before checks and compaction.
+- **Database tool commands**: Added `verify` and `cleanup` commands to the database tool. Added `wipe-encryption` command for recovering encrypted databases.
+- **Slow query monitor**: Added tracking of long-running database queries to help diagnose performance issues.
+- **Crash dialog**: Added a crash dialog window that appears when the application encounters an unhandled exception.
+- **Updated LibSecret support** for KDE Plasma 5+6, fixing issues with the default collection.
+- **More robust server connection**: The remote server connection has been hardened with a watchdog that restarts unresponsive connections.
+- **Auto-configure database metadata**: The `--store-metadata-content-in-database` option is automatically applied when needed by the source provider.
+- **MS365/Google permission testing**: Added ability to verify that granted permissions match what is required for backup or restore.
+
+# Thanks to contributors
+
+This release is a collaboration effort from the Duplicati community. Thanks to the many contributors who report issues, test new releases, request features, write documentation, maintain translations, and contribute to the codebase.
+
 2026-08-26 - 2.3.1.1_beta_2026-08-26
 ==========
 # 2026-08-26 - 2.3.1.1_beta_2026-08-26
