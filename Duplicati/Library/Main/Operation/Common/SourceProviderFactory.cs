@@ -87,6 +87,18 @@ namespace Duplicati.Library.Main.Operation.Common
             if (sources == null || options.ContainsKey(StoreMetadataContentInDatabaseOption))
                 return false;
 
+            var sourcesList = sources as IReadOnlyList<string> ?? sources.ToList();
+
+            // Check if any prefix-based source providers that require metadata match the sources
+            if (SourceProviders.SourceProviderModules.BuiltInPrefixSourceProviderModules
+                .Where(x => x.NeedsStoredMetadata)
+                .Any(m => sourcesList.Any(m.MatchesSource)))
+            {
+                Log.WriteInformationMessage(LOGTAG, "AutoEnableMetadataStorage", "A prefix-based source provider requires metadata to be stored in the database, automatically enabling the option --{0}", StoreMetadataContentInDatabaseOption);
+                options[StoreMetadataContentInDatabaseOption] = "true";
+                return true;
+            }
+
             // Find the keys of the source providers that require metadata to be stored in the database
             var providersRequiringMetadata = SourceProviderLoader.Modules
                 .Where(x => x.NeedsStoredMetadata)
@@ -96,7 +108,7 @@ namespace Duplicati.Library.Main.Operation.Common
             if (providersRequiringMetadata.Count == 0)
                 return false;
 
-            foreach (var source in sources)
+            foreach (var source in sourcesList)
             {
                 var remoteSource = ParseRemoteSource(source);
                 if (remoteSource == null)
@@ -201,6 +213,18 @@ namespace Duplicati.Library.Main.Operation.Common
         /// <returns>The source providers</returns>
         public static async Task<List<ISourceProvider>> GetSourceProvidersAsync(IEnumerable<string> sources, Options options, CancellationToken cancellationToken)
         {
+            // Split off the sources that are handled by prefix-based source providers
+            var prefixProviderMatches = SourceProviders.SourceProviderModules.BuiltInPrefixSourceProviderModules
+                .Select(m => (Module: m, Sources: sources.Where(m.MatchesSource).ToList()))
+                .Where(x => x.Sources.Count > 0)
+                .ToList();
+
+            if (prefixProviderMatches.Count > 0)
+            {
+                var matchedSources = prefixProviderMatches.SelectMany(x => x.Sources).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                sources = sources.Where(x => !matchedSources.Contains(x)).ToList();
+            }
+
             // Group the sources by their type, so we can combine all snapshot paths into a single snapshot
             var sourceTypes = sources.GroupBy(x => x.StartsWith("@") ? "@" : Duplicati.Library.Utility.Utility.GuessScheme(x) ?? "file", StringComparer.OrdinalIgnoreCase);
 
@@ -271,6 +295,25 @@ namespace Duplicati.Library.Main.Operation.Common
                     }
                     else
                         throw new UserInformationException($"The source type \"{entry.Key}\" is not supported", "SourceTypeNotSupported");
+                }
+
+                // Create the prefix-based source providers (e.g. Hyper-V, MSSQL)
+                foreach (var (module, matchedSources) in prefixProviderMatches)
+                {
+                    if (!module.IsSupported)
+                    {
+                        Log.WriteWarningMessage(LOGTAG, "PrefixProviderNotSupported", null, "The source provider \"{0}\" is not supported on this platform, skipping {1} source(s)", module.Key, matchedSources.Count);
+                        continue;
+                    }
+
+                    // Let the provider adjust the options (e.g. force snapshot-policy)
+                    // before the snapshot is created
+                    module.PrepareOptions(matchedSources, options.RawOptions);
+
+                    var provider = module.CreateForSources(matchedSources, options.RawOptions);
+                    uninitializedProviders.Add(provider);
+                    if (provider is ISnapshotAwareModule snapshotAware)
+                        snapshotAwareProviders.Add(snapshotAware);
                 }
 
                 // Collect snapshot paths from file sources and snapshot-aware providers
