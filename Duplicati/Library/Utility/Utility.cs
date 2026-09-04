@@ -1474,7 +1474,7 @@ namespace Duplicati.Library.Utility
 
         /// <summary>
         /// Gets the drive letter from the given volume guid.
-        /// This method cannot be inlined since the System.Management types are not implemented in Mono
+        /// This method cannot be inlined since the Microsoft.Management.Infrastructure types are not implemented in Mono
         /// </summary>
         /// <param name="volumeGuid">Volume guid</param>
         /// <returns>Drive letter, as a single character, or null if the volume wasn't found</returns>
@@ -1484,56 +1484,44 @@ namespace Duplicati.Library.Utility
         {
             // Based on this answer:
             // https://stackoverflow.com/questions/10186277/how-to-get-drive-information-by-volume-id
-            using (var searcher = new System.Management.ManagementObjectSearcher("Select * from Win32_Volume"))
+            using var session = Microsoft.Management.Infrastructure.CimSession.Create(null);
+            string targetId = string.Format(@"\\?\Volume{{{0}}}\", volumeGuid);
+            foreach (var obj in session.QueryInstances(@"root\cimv2", "WQL", "Select DeviceID, DriveLetter from Win32_Volume"))
             {
-                string targetId = string.Format(@"\\?\Volume{{{0}}}\", volumeGuid);
-                foreach (var obj in searcher.Get())
+                var deviceId = obj.CimInstanceProperties["DeviceID"]?.Value?.ToString();
+                if (string.Equals(deviceId, targetId, StringComparison.OrdinalIgnoreCase))
                 {
-                    if (string.Equals(obj["DeviceID"].ToString(), targetId, StringComparison.OrdinalIgnoreCase))
-                    {
-                        object driveLetter = obj["DriveLetter"];
-                        if (driveLetter != null)
-                        {
-                            return obj["DriveLetter"].ToString();
-                        }
-                        else
-                        {
-                            // The volume was found, but doesn't have a drive letter associated with it.
-                            break;
-                        }
-                    }
-                }
+                    var driveLetter = obj.CimInstanceProperties["DriveLetter"]?.Value?.ToString();
+                    if (!string.IsNullOrEmpty(driveLetter))
+                        return driveLetter;
 
-                return null;
+                    // The volume was found, but doesn't have a drive letter associated with it.
+                    break;
+                }
             }
+
+            return null;
         }
 
         /// <summary>
         /// Gets all volume guids and their associated drive letters.
-        /// This method cannot be inlined since the System.Management types are not implemented in Mono
+        /// This method cannot be inlined since the Microsoft.Management.Infrastructure types are not implemented in Mono
         /// </summary>
         /// <returns>Pairs of drive letter to volume guids</returns>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         [SupportedOSPlatform("windows")]
         public static IEnumerable<KeyValuePair<string, string>> GetVolumeGuidsAndDriveLetters()
         {
-            using (var searcher = new System.Management.ManagementObjectSearcher("Select * from Win32_Volume"))
+            using var session = Microsoft.Management.Infrastructure.CimSession.Create(null);
+            var results = new List<KeyValuePair<string, string>>();
+            foreach (var obj in session.QueryInstances(@"root\cimv2", "WQL", "Select DeviceID, DriveLetter from Win32_Volume"))
             {
-                foreach (var obj in searcher.Get())
-                {
-                    var deviceIdObj = obj["DeviceID"];
-                    var driveLetterObj = obj["DriveLetter"];
-                    if (deviceIdObj != null && driveLetterObj != null)
-                    {
-                        var deviceId = deviceIdObj.ToString();
-                        var driveLetter = driveLetterObj.ToString();
-                        if (!string.IsNullOrEmpty(deviceId) && !string.IsNullOrEmpty(driveLetter))
-                        {
-                            yield return new KeyValuePair<string, string>(driveLetter + @"\", deviceId);
-                        }
-                    }
-                }
+                var deviceId = obj.CimInstanceProperties["DeviceID"]?.Value?.ToString();
+                var driveLetter = obj.CimInstanceProperties["DriveLetter"]?.Value?.ToString();
+                if (!string.IsNullOrEmpty(deviceId) && !string.IsNullOrEmpty(driveLetter))
+                    results.Add(new KeyValuePair<string, string>(driveLetter + @"\", deviceId));
             }
+            return results;
         }
 
         /// <summary>

@@ -31,6 +31,8 @@ using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
 using Exception = System.Exception;
 
+[assembly: InternalsVisibleTo("Duplicati.UnitTest")]
+
 namespace Duplicati.Library.Backend.OpenStack;
 
 public class OpenStackStorage : IStreamingBackend, IRenameEnabledBackend
@@ -161,6 +163,20 @@ public class OpenStackStorage : IStreamingBackend, IRenameEnabledBackend
 
         m_httpClient = HttpClientHelper.CreateClient();
         m_httpClient.Timeout = Timeout.InfiniteTimeSpan;
+        m_helper = new OpenStackWebHelper(this, m_httpClient);
+    }
+
+    /// <summary>
+    /// Builds a backend that talks to the given transport, so the responses of the
+    /// object store can be decided by a test.
+    /// </summary>
+    /// <param name="url">The backend url</param>
+    /// <param name="options">The options to use</param>
+    /// <param name="handler">The transport to send requests through</param>
+    internal OpenStackStorage(string url, Dictionary<string, string?> options, HttpMessageHandler handler)
+        : this(url, options)
+    {
+        m_httpClient = new HttpClient(handler) { Timeout = Timeout.InfiniteTimeSpan };
         m_helper = new OpenStackWebHelper(this, m_httpClient);
     }
 
@@ -439,9 +455,22 @@ public class OpenStackStorage : IStreamingBackend, IRenameEnabledBackend
     public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
     {
         var url = JoinUrls(await GetSimpleStorageEndPoint(cancelToken).ConfigureAwait(false), m_container, UrlEncoding.UrlPathEncode(m_prefix + remotename));
-        using var req = m_helper.CreateRequest(url, "DELETE");
-        using var response = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, ct => m_helper.GetResponseAsync(req, HttpCompletionOption.ResponseContentRead, ct)).ConfigureAwait(false);
-        response.EnsureSuccessStatusCode();
+
+        try
+        {
+            using var req = m_helper.CreateRequest(url, "DELETE");
+            using var response = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, ct => m_helper.GetResponseAsync(req, HttpCompletionOption.ResponseContentRead, ct)).ConfigureAwait(false);
+            response.EnsureSuccessStatusCode();
+        }
+        catch (HttpRequestException wex)
+        {
+            // The API answers the delete of an object that is not there with 404,
+            // and the callers look for FileMissingException to tell that apart from
+            // a destination that does not work. GetAsync already reports it that way.
+            if (wex.StatusCode == HttpStatusCode.NotFound)
+                throw new FileMissingException();
+            throw;
+        }
     }
 
     /// <inheritdoc />

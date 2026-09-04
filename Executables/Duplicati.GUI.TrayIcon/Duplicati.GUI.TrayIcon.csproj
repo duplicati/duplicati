@@ -8,26 +8,8 @@
     <Copyright>Copyright © 2026 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <!-- If we target Windows, or running debug on Windows -->
-    <_CopyWinModules Condition="
-        ( '$(RuntimeIdentifier)' != '' And
-          $([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('win')) )
-        Or
-        ( '$(RuntimeIdentifier)' == '' And
-          '$(OS)' == 'Windows_NT'        And
-          '$(Configuration)' == 'Debug' )
-      ">True</_CopyWinModules>
-  </PropertyGroup>
-
   <!-- Copy in WindowsModules for easier debug, or if we are targeting Windows -->
-  <Target Name="CopyWindowsModulesRuntime" AfterTargets="Build" Condition="'$(_CopyWinModules)' == 'True'">
-    <ItemGroup>
-      <_WinMods Include="..\..\Duplicati\Library\WindowsModules\bin\$(Configuration)\net10.0-windows10.0.17763.0\**\*.dll" />
-    </ItemGroup>
-
-    <Copy SourceFiles="@(_WinMods)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
-  </Target>
+  <Import Project="..\..\Duplicati\Library\WindowsModules\WindowsModules.Runtime.targets" />
 
   <ItemGroup>
     <ProjectReference Include="..\..\Duplicati\GUI\Duplicati.GUI.TrayIcon\Duplicati.GUI.TrayIcon.csproj" />

@@ -46,9 +46,9 @@ public static class KnownPlugins
     /// Gets all filesystem plugins.
     /// </summary>
     /// <returns>An enumerable of <see cref="IFilesystemPlugin"/> instances.</returns>
-    public static IEnumerable<IFilesystemPlugin> GetPlugins()
+    public static IEnumerable<IFilesystemPlugin> GetPlugins(IReadOnlyDictionary<string, string?> options)
     {
-        yield return new Hyperv();
-        yield return new MSSQL();
+        yield return new Hyperv(options);
+        yield return new MSSQL(options);
     }
 }

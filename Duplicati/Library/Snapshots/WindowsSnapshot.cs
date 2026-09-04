@@ -44,18 +44,35 @@ namespace Duplicati.Library.Snapshots
         /// <summary>
         /// The default snapshot provider
         /// </summary>
-        public static readonly WindowsSnapshotProvider DEFAULT_WINDOWS_SNAPSHOT_PROVIDER =
-            RuntimeInformation.ProcessArchitecture == Architecture.Arm
-            || RuntimeInformation.ProcessArchitecture == Architecture.Arm64
-            || RuntimeInformation.ProcessArchitecture == Architecture.Armv6
-            ? WindowsSnapshotProvider.Wmic
-            : WindowsSnapshotProvider.Vanara;
+        public static readonly WindowsSnapshotProvider DEFAULT_WINDOWS_SNAPSHOT_PROVIDER = WindowsSnapshotProvider.Native;
 
         /// <summary>
         /// The default snapshot query provider
         /// </summary>
-        public static readonly WindowsSnapshotProvider DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER =
-            WindowsSnapshotProvider.AlphaVSS;
+        public static readonly WindowsSnapshotProvider DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER = WindowsSnapshotProvider.Native;
+
+        /// <summary>
+        /// The snapshot providers that require VC Redist to be installed
+        /// </summary>
+        public static readonly IReadOnlySet<WindowsSnapshotProvider> VCREDIST_PROVIDERS = new HashSet<WindowsSnapshotProvider>()
+        {
+            WindowsSnapshotProvider.AlphaVSS,
+            WindowsSnapshotProvider.Vanara
+        };
+
+        /// <summary>
+        /// The supported snapshot providers on this platform
+        /// </summary>
+        public static IReadOnlyList<WindowsSnapshotProvider> SUPPORTED_PROVIDERS =
+            RuntimeInformation.ProcessArchitecture == Architecture.Arm
+            || RuntimeInformation.ProcessArchitecture == Architecture.Arm64
+            || RuntimeInformation.ProcessArchitecture == Architecture.Armv6
+            ?
+            [
+                WindowsSnapshotProvider.Native,
+                WindowsSnapshotProvider.Wmi
+            ]
+            : Enum.GetValues<Snapshots.WindowsSnapshotProvider>();
 
         /// <summary>
         /// The tag used for logging messages
@@ -66,6 +83,11 @@ namespace Duplicati.Library.Snapshots
         /// The system IO for the current platform
         /// </summary>
         private static readonly ISystemIO IO_WIN = SystemIO.IO_OS;
+
+        /// <summary>
+        /// The name of the special system folder that is excluded from backups
+        /// </summary>
+        private const string SYSTEM_VOLUME_INFORMATION_FOLDER = "System Volume Information";
 
         /// <summary>
         /// The main reference to the backup controller
@@ -97,7 +119,8 @@ namespace Duplicati.Library.Snapshots
             try
             {
                 var provider = Utility.Utility.ParseEnumOption(options.AsReadOnly(), "snapshot-provider", DEFAULT_WINDOWS_SNAPSHOT_PROVIDER);
-                _snapshotManager = new SnapshotManager(provider);
+                var vssTimeout = Utility.Utility.ParseTimespanOption(options.AsReadOnly(), "vss-timeout", SnapshotManager.DefaultMaxWaitTime);
+                _snapshotManager = new SnapshotManager(provider, vssTimeout);
 
                 // Default to exclude the System State writer
                 var excludedWriters = new Guid[] { new Guid("{e8132975-6f93-4464-a53e-1050253ae220}") };
@@ -138,6 +161,37 @@ namespace Duplicati.Library.Snapshots
 
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Checks if a given path is a "System Volume Information" folder.
+        /// The folder is identified by being located at the root of a volume,
+        /// having the expected name, and having the hidden and system attributes set.
+        /// </summary>
+        /// <param name="path">The path to check</param>
+        /// <param name="attributes">The attributes of the path</param>
+        /// <returns>True if the path is a "System Volume Information" folder, false otherwise</returns>
+        public static bool IsSystemVolumeInformationFolder(string path, FileAttributes attributes)
+        {
+            // The folder must be marked as both hidden and system,
+            // which is the case for the real "System Volume Information" folder,
+            // but unlikely for a user-created folder
+            if (!attributes.HasFlag(FileAttributes.Directory)
+                || !attributes.HasFlag(FileAttributes.Hidden)
+                || !attributes.HasFlag(FileAttributes.System))
+                return false;
+
+            // The folder must be located at the root of a volume
+            var root = Path.GetPathRoot(path.TrimEnd(Path.DirectorySeparatorChar));
+            if (string.IsNullOrEmpty(root))
+                return false;
+
+            // The name of the folder must be exactly "System Volume Information"
+            // and the only component after the root.
+            // Note that the root does not always end with a separator,
+            // such as for UNC paths, so we trim any leading separators
+            var relative = path.TrimEnd(Path.DirectorySeparatorChar).Substring(root.Length).TrimStart(Path.DirectorySeparatorChar);
+            return string.Equals(relative, SYSTEM_VOLUME_INFORMATION_FOLDER, StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>

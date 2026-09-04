@@ -34,8 +34,8 @@ public class Filesystem : IEndpointV1
     private record FilesystemInput(string path);
     public static void Map(RouteGroupBuilder group)
     {
-        group.MapPost("/filesystem", ([FromQuery] bool? onlyFolders, [FromQuery] bool? showHidden, [FromBody] FilesystemInput input)
-            => Execute(input.path, onlyFolders ?? false, showHidden ?? false))
+        group.MapPost("/filesystem", ([FromServices] Server.Database.Connection connection, [FromQuery] bool? onlyFolders, [FromQuery] bool? showHidden, [FromBody] FilesystemInput input)
+            => Execute(connection, input.path, onlyFolders ?? false, showHidden ?? false))
             .RequireAuthorization();
 
         group.MapPost("/filesystem/validate", ([FromBody] FilesystemInput input)
@@ -72,7 +72,10 @@ public class Filesystem : IEndpointV1
         throw new NotFoundException("The path does not exist");
     }
 
-    private static IEnumerable<Dto.TreeNodeDto> Execute(string path, bool onlyFolders, bool showHidden)
+    private static IReadOnlyDictionary<string, string?> GetApplicationSettings(Server.Database.Connection connection)
+        => connection.Settings.GroupBy(x => x.Name.StartsWith("--") ? x.Name.Substring(2) : x.Name, x => x.Value).ToDictionary(x => x.Key, x=> x.FirstOrDefault());
+
+    private static IEnumerable<Dto.TreeNodeDto> Execute(Server.Database.Connection connection, string path, bool onlyFolders, bool showHidden)
     {
         if (string.IsNullOrEmpty(path))
             throw new BadRequestException("No path was found");
@@ -121,7 +124,7 @@ public class Filesystem : IEndpointV1
             }
             else if (pluginkey != null)
             {
-                var plugin = FilesystemPlugins.KnownPlugins.GetPlugins().FirstOrDefault(x => x.RootName == pluginkey);
+                var plugin = FilesystemPlugins.KnownPlugins.GetPlugins(GetApplicationSettings(connection)).FirstOrDefault(x => x.RootName == pluginkey);
                 if (plugin == null)
                 {
                     Library.Logging.Log.WriteWarningMessage(LOGTAG, "NonExistingPlugin", null, $"Requested plugin key {pluginkey} which is not supported");
@@ -158,7 +161,7 @@ public class Filesystem : IEndpointV1
 
                     })
                     // Add plugins for Hyper-V and MSSQL
-                    .Concat(FilesystemPlugins.KnownPlugins.GetPlugins()
+                    .Concat(FilesystemPlugins.KnownPlugins.GetPlugins(GetApplicationSettings(connection))
                         .SelectMany(plugin => plugin.GetEntries(Array.Empty<string>())))
                     .Concat(res);
             }

@@ -169,14 +169,13 @@ namespace Duplicati.Library.DynamicLoader
         }
 
         /// <summary>
-        /// Instanciates a specific SourceProvider, given the url and options
+        /// Creates a specific SourceProvider without initializing it, given the url and options
         /// </summary>
         /// <param name="url">The url to create the instance for</param>
         /// <param name="mountPoint">The mount point to use</param>
         /// <param name="options">The options to pass to the instance constructor</param>
-        /// <param name="cancellationToken">The cancellation token</param>
-        /// <returns>The instanciated SourceProvider or null if the url is not supported</returns>
-        public static async Task<ISourceProviderModule> GetSourceProvider(string url, string mountPoint, Dictionary<string, string> options, CancellationToken cancellationToken)
+        /// <returns>The created SourceProvider or null if the url is not supported</returns>
+        public static ISourceProviderModule CreateSourceProvider(string url, string mountPoint, Dictionary<string, string> options)
         {
             // Source providers are preferred over backends
             var provider = _SourceProviderLoader.GetSourceProvider(url, mountPoint, options);
@@ -189,6 +188,21 @@ namespace Duplicati.Library.DynamicLoader
                 else
                     backend?.Dispose();
             }
+
+            return provider;
+        }
+
+        /// <summary>
+        /// Instanciates a specific SourceProvider, given the url and options
+        /// </summary>
+        /// <param name="url">The url to create the instance for</param>
+        /// <param name="mountPoint">The mount point to use</param>
+        /// <param name="options">The options to pass to the instance constructor</param>
+        /// <param name="cancellationToken">The cancellation token</param>
+        /// <returns>The instanciated SourceProvider or null if the url is not supported</returns>
+        public static async Task<ISourceProviderModule> GetSourceProvider(string url, string mountPoint, Dictionary<string, string> options, CancellationToken cancellationToken)
+        {
+            var provider = CreateSourceProvider(url, mountPoint, options);
 
             if (provider == null)
                 return null;

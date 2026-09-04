@@ -39,14 +39,36 @@ namespace Duplicati.Library.WindowsModules;
 [SupportedOSPlatform("windows")]
 public class VanaraVssBackup : ISnapshotProvider
 {
-    private static readonly TimeSpan MaxWaitTime = TimeSpan.FromMinutes(1);
     private static readonly string LogTag = Log.LogTagFromType<VanaraVssBackup>();
+
+    /// <summary>
+    /// The maximum time to wait for asynchronous VSS operations
+    /// </summary>
+    private readonly TimeSpan _maxWaitTime;
     private IVssBackupComponents _components;
     private bool _hasAllocatedMetadata;
     private bool _hasStartedSnapshotSet;
     private bool _isBackupComplete;
-    public VanaraVssBackup()
+
+    /// <summary>
+    /// Writer identities cached when the metadata was last gathered,
+    /// so writers can be verified after the metadata has been freed
+    /// </summary>
+    private List<(Guid WriteId, string WriterName)>? _knownWriters;
+
+    /// <summary>
+    /// The snapshot ids added to the snapshot set, so they can be
+    /// deleted individually if the set is torn down without an explicit delete
+    /// </summary>
+    private readonly List<Guid> _addedSnapshots = new List<Guid>();
+
+    /// <summary>
+    /// Creates a new instance of the provider
+    /// </summary>
+    /// <param name="maxWaitTime">The maximum time to wait for asynchronous VSS operations</param>
+    public VanaraVssBackup(TimeSpan maxWaitTime)
     {
+        _maxWaitTime = maxWaitTime;
         _components = GetVssBackupComponents();
     }
 
@@ -61,7 +83,11 @@ public class VanaraVssBackup : ISnapshotProvider
         if (_hasAllocatedMetadata)
             return;
         _hasAllocatedMetadata = true;
-        _components.GatherWriterMetadata().Wait((uint)MaxWaitTime.TotalMilliseconds).ThrowIfFailed();
+        _components.GatherWriterMetadata().Wait((uint)_maxWaitTime.TotalMilliseconds).ThrowIfFailed();
+
+        // Cache the writer identities so VerifyWriters can be called
+        // after the metadata has been freed with FreeWriterMetadata
+        _knownWriters = _components.WriterMetadata.Select(GetWriterIdentity).ToList();
     }
 
     public void FreeWriterMetadata()
@@ -77,15 +103,14 @@ public class VanaraVssBackup : ISnapshotProvider
         if (guids == null || guids.Length == 0)
             return;                     // nothing to verify
 
+        // Use the identities cached during GatherWriterMetadata, as the
+        // metadata may have been freed before this method is called
+        var knownWriters = _knownWriters
+            ?? throw new InvalidOperationException("Writer metadata has not been gathered; call GatherWriterMetadata first.");
+
         foreach (var wanted in guids)
         {
-            // Scan all metadata objects and compare their writer GUID
-            bool found = _components
-                .WriterMetadata
-                .Select(GetWriterIdentity)   // (WriteId, WriterName)
-                .Any(id => id.WriteId == wanted);
-
-            if (!found)
+            if (!knownWriters.Any(w => w.WriteId == wanted))
                 throw new Exception(
                     $"Writer with GUID {wanted} was not added to the VSS writer set.");
         }
@@ -104,21 +129,30 @@ public class VanaraVssBackup : ISnapshotProvider
     {
         if (_hasStartedSnapshotSet)
             throw new InvalidOperationException("Snapshot set has already been started.");
-        _components.StartSnapshotSet();
+        var snapshotSetId = _components.StartSnapshotSet();
         _hasStartedSnapshotSet = true;
+        Log.WriteVerboseMessage(LogTag, "VssStartSnapshotSet", "Started snapshot set {0}", snapshotSetId);
     }
 
     public void PrepareForBackup()
-        => _components.PrepareForBackup().Wait((uint)MaxWaitTime.TotalMilliseconds).ThrowIfFailed();
+        => _components.PrepareForBackup().Wait((uint)_maxWaitTime.TotalMilliseconds).ThrowIfFailed();
 
     public void DoSnapshotSet()
-        => _components.DoSnapshotSet().Wait((uint)MaxWaitTime.TotalMilliseconds).ThrowIfFailed();
+    {
+        _components.DoSnapshotSet().Wait((uint)_maxWaitTime.TotalMilliseconds).ThrowIfFailed();
+        Log.WriteVerboseMessage(LogTag, "VssDoSnapshotSet", "Completed snapshot set");
+    }
 
     public bool IsVolumeSupported(string drive)
         => _components.IsVolumeSupported(Guid.Empty, drive);
 
     public Guid AddToSnapshotSet(string drive)
-        => _components.AddToSnapshotSet(drive);
+    {
+        var snapshotId = _components.AddToSnapshotSet(drive);
+        _addedSnapshots.Add(snapshotId);
+        Log.WriteVerboseMessage(LogTag, "VssAddToSnapshotSet", "Added {0} to snapshot set as {1}", drive, snapshotId);
+        return snapshotId;
+    }
 
     public void BackupComplete()
     {
@@ -130,7 +164,30 @@ public class VanaraVssBackup : ISnapshotProvider
     {
         if (!_hasStartedSnapshotSet)
             return;
-        _hasStartedSnapshotSet = false;
+
+        // VSS requires a valid snapshot id when deleting a single snapshot;
+        // Guid.Empty is used as a request to delete all snapshots in the set
+        if (shadowId == Guid.Empty)
+        {
+            foreach (var id in _addedSnapshots)
+                DeleteSingleSnapshot(id, forceDelete);
+            _addedSnapshots.Clear();
+            return;
+        }
+
+        DeleteSingleSnapshot(shadowId, forceDelete);
+        _addedSnapshots.Remove(shadowId);
+    }
+
+    /// <summary>
+    /// Deletes a single snapshot, keeping the snapshot set flag set
+    /// as other volumes in the set may still need to be deleted
+    /// </summary>
+    /// <param name="shadowId">The snapshot id to delete</param>
+    /// <param name="forceDelete">Flag to choose force deletion</param>
+    private void DeleteSingleSnapshot(Guid shadowId, bool forceDelete)
+    {
+        Log.WriteVerboseMessage(LogTag, "VssDeleteSnapshot", "Deleting snapshot {0}", shadowId);
         _components.DeleteSnapshots(shadowId, VSS_OBJECT_TYPE.VSS_OBJECT_SNAPSHOT, forceDelete, out _, out _).ThrowIfFailed();
     }
 
@@ -164,29 +221,46 @@ public class VanaraVssBackup : ISnapshotProvider
 
     public IEnumerable<WriterMetaData> ParseWriterMetaData(Guid[] writers)
     {
-        // Enumerate all writer metadata objects returned by PrepareForBackup / GatherWriterMetadata
-        foreach (var wm in _components.WriterMetadata)
+        // The metadata may have been released by an earlier FreeWriterMetadata
+        // call; re-gather it for the duration of the parse if needed
+        var gatheredHere = false;
+        if (!_hasAllocatedMetadata)
         {
-            // Get the writer identity (GUID and name)
-            var (writerId, writerName) = GetWriterIdentity(wm);
+            GatherWriterMetadata();
+            gatheredHere = true;
+        }
 
-            // Skip writers the caller didn't ask for (if a filter list was supplied)
-            if (writers != null && writers.Length > 0 && !writers.Contains(writerId))
-                continue;
-
-            // Emit one WriterMetaData per component the writer exposes
-            foreach (var comp in wm.Components)
+        try
+        {
+            // Enumerate all writer metadata objects returned by PrepareForBackup / GatherWriterMetadata
+            foreach (var wm in _components.WriterMetadata)
             {
-                var ci = comp.GetComponentInfo();
+                // Get the writer identity (GUID and name)
+                var (writerId, writerName) = GetWriterIdentity(wm);
 
-                yield return new WriterMetaData
+                // Skip writers the caller didn't ask for (if a filter list was supplied)
+                if (writers != null && writers.Length > 0 && !writers.Contains(writerId))
+                    continue;
+
+                // Emit one WriterMetaData per component the writer exposes
+                foreach (var comp in wm.Components)
                 {
-                    Guid = writerId,
-                    Name = writerName ?? string.Empty,
-                    LogicalPath = ci.bstrLogicalPath ?? string.Empty,
-                    Paths = GetPathsFromComponent(comp)
-                };
+                    var ci = comp.GetComponentInfo();
+
+                    yield return new WriterMetaData
+                    {
+                        Guid = writerId,
+                        Name = ci.bstrComponentName ?? string.Empty,
+                        LogicalPath = ci.bstrLogicalPath ?? string.Empty,
+                        Paths = GetPathsFromComponent(comp)
+                    };
+                }
             }
+        }
+        finally
+        {
+            if (gatheredHere)
+                FreeWriterMetadata();
         }
     }
 
@@ -215,8 +289,16 @@ public class VanaraVssBackup : ISnapshotProvider
     {
         if (_hasAllocatedMetadata)
             FreeWriterMetadata();
-        if (_hasStartedSnapshotSet)
-            DeleteSnapshot(Guid.Empty, true); // Delete all snapshots if any were created
+
+        try
+        {
+            if (_hasStartedSnapshotSet)
+                DeleteSnapshot(Guid.Empty, true); // Delete all snapshots if any were created
+        }
+        catch (Exception ex)
+        {
+            Log.WriteVerboseMessage(LogTag, "VssDeleteSnapshotFailed", ex, "Failed to delete VSS snapshots");
+        }
 
         try
         {
