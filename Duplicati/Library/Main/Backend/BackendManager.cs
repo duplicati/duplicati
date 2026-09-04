@@ -218,6 +218,11 @@ internal partial class BackendManager : IBackendManager
     /// Applies path translation to a file-oriented operation (put/get/delete) for
     /// backends that do not support folder operations.
     ///
+    /// This is only invoked for operations where the caller explicitly passes a
+    /// relative path that may contain sub-folders (the sync operation). Regular
+    /// backup volume uploads pass an opaque volume name (which may legitimately
+    /// contain '/' from a --prefix value) and must not be split.
+    ///
     /// Backends that implement <see cref="IFolderEnabledBackend"/> accept a relative
     /// path (including sub-folders) directly in their put/get/delete calls, so no
     /// translation is applied and the operation runs against the base backend URL with
@@ -272,6 +277,24 @@ internal partial class BackendManager : IBackendManager
     public async Task DeleteAsync(string remotename, long size, bool waitForComplete, CancellationToken cancelToken)
     {
         var op = new DeleteOperation(remotename, size, context, waitForComplete, cancelToken);
+        await QueueTaskAsync(op).ConfigureAwait(false);
+        await op.GetResultAsync().ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Deletes a remote file, treating the remote name as a relative path that may
+    /// contain sub-folders. For backends without folder support the path is split
+    /// so the delete targets the sub-folder; folder-enabled backends receive the
+    /// path unchanged.
+    /// </summary>
+    /// <param name="remotename">The relative path of the remote file, which may contain sub-folders</param>
+    /// <param name="size">The size of the remote file, for statistics</param>
+    /// <param name="waitForComplete">True if the operation should wait for the file to actually be deleted. If this argument is false, the task will complete once the operation is queued</param>
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <returns>An awaitable task</returns>
+    public async Task DeleteWithPathAsync(string remotename, long size, bool waitForComplete, CancellationToken cancelToken)
+    {
+        var op = new DeleteOperation(remotename, size, context, waitForComplete, cancelToken);
         ApplyPathTranslation(op);
         await QueueTaskAsync(op).ConfigureAwait(false);
         await op.GetResultAsync().ConfigureAwait(false);
@@ -321,7 +344,6 @@ internal partial class BackendManager : IBackendManager
             Decrypt = true,
             AllowParityRepair = allowParityRepair
         };
-        ApplyPathTranslation(op);
         await QueueTaskAsync(op).ConfigureAwait(false);
         (var file, var _, var _) = await op.GetResultAsync().ConfigureAwait(false);
         return file;
@@ -344,7 +366,6 @@ internal partial class BackendManager : IBackendManager
             Decrypt = false,
             AllowParityRepair = allowParityRepair
         };
-        ApplyPathTranslation(op);
         await QueueTaskAsync(op).ConfigureAwait(false);
         (var file, var _, var _) = await op.GetResultAsync().ConfigureAwait(false);
         return file;
@@ -379,7 +400,6 @@ internal partial class BackendManager : IBackendManager
             Decrypt = true,
             AllowParityRepair = allowParityRepair
         };
-        ApplyPathTranslation(op);
         await QueueTaskAsync(op).ConfigureAwait(false);
         (var file, var downloadHash, var downloadSize) = await op.GetResultAsync().ConfigureAwait(false);
         return (file, downloadHash, downloadSize);
@@ -464,7 +484,6 @@ internal partial class BackendManager : IBackendManager
 
         // Prepare encryption
         op.StartEncryptionAndHashing();
-        ApplyPathTranslation(op);
         await QueueTaskAsync(op).ConfigureAwait(false);
         await op.GetResultAsync().ConfigureAwait(false);
     }
@@ -478,6 +497,38 @@ internal partial class BackendManager : IBackendManager
     /// <returns>An awaitable task</returns>
     public async Task PutFileUnencryptedAsync(string remotename, TempFile tempFile, CancellationToken cancelToken)
     {
+        var op = CreateUnencryptedPutOperation(remotename, tempFile, cancelToken);
+        await QueueTaskAsync(op).ConfigureAwait(false);
+        await op.GetResultAsync().ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Uploads a file to the remote location without encryption, treating the
+    /// remote name as a relative path that may contain sub-folders. For backends
+    /// without folder support the path is split so the upload targets the
+    /// sub-folder; folder-enabled backends receive the path unchanged.
+    /// </summary>
+    /// <param name="remotename">The relative path of the remote file, which may contain sub-folders</param>
+    /// <param name="tempFile">The temporary file to upload</param>
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <returns>An awaitable task</returns>
+    public async Task PutFileUnencryptedWithPathAsync(string remotename, TempFile tempFile, CancellationToken cancelToken)
+    {
+        var op = CreateUnencryptedPutOperation(remotename, tempFile, cancelToken);
+        ApplyPathTranslation(op);
+        await QueueTaskAsync(op).ConfigureAwait(false);
+        await op.GetResultAsync().ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Creates a prepared operation for uploading a file without encryption
+    /// </summary>
+    /// <param name="remotename">The name of the remote file</param>
+    /// <param name="tempFile">The temporary file to upload</param>
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <returns>The prepared put operation, ready to be queued</returns>
+    private PutOperation CreateUnencryptedPutOperation(string remotename, TempFile tempFile, CancellationToken cancelToken)
+    {
         var op = new PutOperation(remotename, context, true, cancelToken)
         {
             LocalTempfile = tempFile,
@@ -490,9 +541,7 @@ internal partial class BackendManager : IBackendManager
 
         // Sets the task as already completed
         op.StartEncryptionAndHashing();
-        ApplyPathTranslation(op);
-        await QueueTaskAsync(op).ConfigureAwait(false);
-        await op.GetResultAsync().ConfigureAwait(false);
+        return op;
     }
 
     /// <summary>
