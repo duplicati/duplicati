@@ -802,7 +802,7 @@ internal class SyncHandler
                 // next run if this one crashes before the commit) at the start of the
                 // next run if leftover.
                 await db.UpsertPendingOperationAsync(relPath, SyncOperation.Delete, null, null, ct).ConfigureAwait(false);
-                await backendManager.DeleteAsync(relPath, 0, true, ct).ConfigureAwait(false);
+                await backendManager.DeleteWithPathAsync(relPath, 0, true, ct).ConfigureAwait(false);
                 deletedPaths.Add(relPath);
                 planSummary.Delete++;
                 planSummary.SizeOfDeletedFiles += Math.Max(rc.Size, 0);
@@ -917,7 +917,7 @@ internal class SyncHandler
 
         // The caller has already ensured the destination folder exists, so we put the
         // file directly. No EnsureFolderAsync call here.
-        await backendManager.PutFileUnencryptedAsync(relPath, temp, cancellationToken);
+        await backendManager.PutFileUnencryptedWithPathAsync(relPath, temp, cancellationToken);
 
         // Commit the inventory update and intent clearance atomically so a crash
         // between them cannot leave the inventory and intent journal inconsistent.
