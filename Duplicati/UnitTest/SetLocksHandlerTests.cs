@@ -91,10 +91,12 @@ namespace Duplicati.UnitTest
             #region Unused interface members
             public Task PutAsync(VolumeWriterBase blockVolume, IndexVolumeWriter? indexVolume, Func<Task>? indexVolumeFinished, bool waitForComplete, Func<Task>? onDbUpdate, CancellationToken cancelToken) => throw new NotImplementedException();
             public Task PutFileUnencryptedAsync(string remotename, TempFile tempFile, CancellationToken cancelToken) => throw new NotImplementedException();
+            public Task PutFileUnencryptedWithPathAsync(string remotename, TempFile tempFile, CancellationToken cancelToken) => throw new NotImplementedException();
             public Task<IEnumerable<InterfaceFileEntry>> ListAsync(string? path, CancellationToken cancelToken) => throw new NotImplementedException();
             public Task EnsureFolderAsync(string? path, CancellationToken cancelToken) => throw new NotImplementedException();
             public TempFile DecryptFile(TempFile volume, string volume_name, Options options, bool dispose) => throw new NotImplementedException();
             public Task DeleteAsync(string remotename, long size, bool waitForComplete, CancellationToken cancelToken) => throw new NotImplementedException();
+            public Task DeleteWithPathAsync(string remotename, long size, bool waitForComplete, CancellationToken cancelToken) => throw new NotImplementedException();
             public Task<IQuotaInfo?> GetQuotaInfoAsync(CancellationToken cancelToken) => throw new NotImplementedException();
             public Task<(TempFile File, string Hash, long Size)> GetWithInfoAsync(string remotename, string hash, long size, bool allowParityRepair, CancellationToken cancelToken) => throw new NotImplementedException();
             public Task<TempFile> GetAsync(string remotename, string hash, long size, bool allowParityRepair, CancellationToken cancelToken) => throw new NotImplementedException();
