@@ -1576,18 +1576,14 @@ namespace Duplicati.Library.Utility
             }
             else
             {
-                // Windows needs " replaced with "", but is prone to %var%
-                // expansion when used in immediate mode (i.e. from command prompt)
+                // Windows is prone to %var% expansion when used in immediate
+                // mode (i.e. from command prompt)
                 // Fortunately it does not expand when processes
                 // are started from within .Net
                 if (!allowEnvExpansion)
                     arg = arg.Replace("%", "%%");
 
-                arg = arg.Replace(@"""", @"""""");
-
-                // Also fix the case where the argument ends with a slash
-                if (arg[arg.Length - 1] == '\\')
-                    arg += @"\";
+                arg = EscapeWindowsCommandLineElement(arg);
             }
 
             // Check that all characters are in the safe set
@@ -1595,6 +1591,52 @@ namespace Duplicati.Library.Utility
                 return @"""" + arg + @"""";
             else
                 return arg;
+        }
+
+        /// <summary>
+        /// Escapes an argument the way Windows reads it back: a quote is written
+        /// as \", and a run of backslashes that meets a quote is doubled. A
+        /// backslash that does not meet a quote is an ordinary character.
+        /// The run at the end meets the closing quote, so it is doubled as well;
+        /// that is correct because an argument that needed escaping is always
+        /// quoted, a backslash and a quote both being outside
+        /// <see cref="COMMANDLINE_SAFE" />.
+        /// </summary>
+        /// <returns>The escaped argument, without the surrounding quotes.</returns>
+        /// <param name="arg">The argument to escape.</param>
+        private static string EscapeWindowsCommandLineElement(string arg)
+        {
+            var sb = new StringBuilder(arg.Length);
+            var backslashes = 0;
+
+            foreach (var c in arg)
+            {
+                if (c == '\\')
+                {
+                    backslashes++;
+                }
+                else if (c == '"')
+                {
+                    // Two backslashes for each one that is to survive, and one
+                    // more to make the quote itself a literal one
+                    sb.Append('\\', backslashes * 2 + 1);
+                    sb.Append('"');
+                    backslashes = 0;
+                }
+                else
+                {
+                    sb.Append('\\', backslashes);
+                    sb.Append(c);
+                    backslashes = 0;
+                }
+            }
+
+            // An odd number in front of the closing quote would make that quote
+            // a literal one, and the argument would then swallow the rest of the
+            // commandline
+            sb.Append('\\', backslashes * 2);
+
+            return sb.ToString();
         }
 
         /// <summary>
