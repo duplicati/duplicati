@@ -1,3 +1,130 @@
+2026-09-04 - 2.4.0.100_canary_2026-09-04
+==========
+This release is a canary release intended to be used for testing.
+
+# New Native VSS snapshot provider
+
+This release introduces a new native VSS snapshot provider on Windows that replaces the previous providers. Hyper-V and MSSQL enumeration work with the native provider which is now default.
+
+The new native VSS snapshot provider does not require VCRedist to be installed and works on x86, x64, and Arm64 systems.
+The existing AlphaVSS and Vanara-based VSS snapshot providers can still be selected (but not on Arm64).
+They will be removed in a future version as AlphaVSS is no longer maintained and the new native library has fewer dependencies than Vanara.
+
+# New WMI VSS snapshot provider
+
+The previously supported WMIC provider has been removed as Windows updates will remove the executable it relies on.
+Instead a new WMI snapshot provider is added which works similar to WMIC.
+
+The WMI (and WMIC) provider gives a more light-weight VSS functionality, where it does not flush the writers (MSSQL, HyperV, etc) but just ensures a crash-consistent disk snapshot.
+
+If you rely on systems that integrate with VSS, use the Native provider, if you just want to back up locked files, use the WMI provider.
+
+# Full-disk backup and VSS snapshots
+
+With this release VSS is now also used for full-disk backups. This is fully transparent and works such that an active snapshot is detected and the full-disk reader will use the snapshot to access the disk contents.
+
+# Recovering from an interrupted first backup
+
+Interrupting a first backup previously left the destination in an unrecoverable state: blocks and index files were uploaded, but no filelist was written, so neither backup nor repair could proceed. The recreate logic can now reconstruct a database from the index files alone, so an interrupted first backup can be resumed instead of requiring the destination to be discarded, thanks @JamBalaya56562.
+
+# Repair no longer removes metadata
+
+The repair handler previously attempted to fix defective metadata with various reassignment strategies that could silently remove metadata. It now reports the problem and asks the user to run `list-broken-files` and `purge-broken-files`, which rewire the metadata while keeping the file content. Detection of zero-length and otherwise defective blocksets has also been improved.
+
+# Azure Blob Storage path support
+
+The Azure Blob Storage backend previously ignored the path part of the destination URL and always stored data in the root of the container. The path is now treated as a prefix, so backups can be placed in a subfolder of a container. If you previously used a path in an Azure Blob Storage destination URL, the data was stored in the root; after upgrading, new backups will use the path as a prefix and will not see the previously uploaded files.
+
+# Prevent empty machine ID
+
+A startup sequence issue could cause a clean install to report and connect to the console without a machine ID, which could cause various unwanted behaviors.
+
+# Linux sleep prevention
+
+Duplicati can now prevent the system from sleeping during backup operations on Linux, similar to the existing support on Windows and macOS.
+
+# AppImage `.zsync` support
+
+This release now has the `.zsync` file and relevant metadata such that future updates can be done efficiently and automatically by AppImage managers that support it.
+
+# `--synchronous-upload` deprecated
+
+The `--synchronous-upload` option no longer has any effect and is now marked as deprecated. Existing configurations that set it will continue to load, but a warning is now logged. Use `--asynchronous-upload-limit` instead.
+
+# Default exclude volume information
+
+The `System Volume Information` folder is now automatically excluded from backups as it cannot be reliably read and cannot be used in a restore process.
+
+# Performance and stability updates
+
+Several performance fixes are applied to the local database queries, affecting most operations, mostly by @JamBalaya56562.
+Many edge cases around unexpected server responses and url encoding issues have also been adressed, thanks @JamBalaya56562.
+
+## Detailed list of changes
+
+- Updated all localizations, thanks to all translators
+- Added a native VSS snapshot provider, replacing the WMI-based approach
+- Fixed Hyper-V and MSSQL enumeration with the native VSS provider
+- Added `--vss-writer-flush-timeout` to control how long to wait for VSS writers
+- Used VSS for full-disk backups and automatically excluded `System Volume Information`
+- Hid unsupported VSS options on Arm64
+- Added support for recreating a database from an interrupted first backup, thanks @JamBalaya56562
+- Changed repair to report defective metadata instead of silently reassigning it
+- Improved detection and notification of zero-length and defective blocksets
+- Sped up `purge-broken-files` by reusing the invalid-blocks query
+- Added an API endpoint for purging files across backup versions
+- Added permission checks for MS365 and Google Workspace so users can verify granted permissions
+- Fixed MS365 group classifications and added validation of source and destination provider options
+- Added support for a path prefix in Azure Blob Storage destinations
+- Fixed `--prefix` combined with path separators in sync operations
+- Fixed a clean install potentially starting with an empty machine ID
+- Added sleep prevention support on Linux
+- Fixed the destination self-test incorrectly failing on OpenStack when a probe file was already gone, thanks @JamBalaya56562
+- Fixed Google Cloud Storage not detecting a delete of a missing file
+- Fixed Google Cloud Storage URL encoding that broke authentication
+- Fixed OneDrive browsing failing on the drive root and not returning folders
+- Fixed OneDrive folder names with percent signs or hashes not being reachable, thanks @JamBalaya56562
+- Fixed Dropbox folder names with percent signs being decoded twice, thanks @JamBalaya56562
+- Fixed SharePoint destination paths containing `+` being misread, thanks @JamBalaya56562
+- Fixed WebDAV destination paths containing `+` being misread, thanks @JamBalaya56562
+- Fixed hostless backend URLs such as `dropbox://?authid=...` failing to enumerate from the root
+- Fixed a Windows source given as a bare drive letter (e.g., `C:`) resolving to the process working directory instead of the drive root, thanks @JamBalaya56562
+- Preserved the fileset timestamp when replacing a missing dlist file during repair, thanks @JamBalaya56562
+- Recorded the fileset timestamp in the dlist file so a database recreate keeps it, thanks @JamBalaya56562
+- Fixed URL query string values not always being preserved when modifying URLs
+- Indexed the verification tables on the compared columns, significantly speeding up remote volume verification, thanks @JamBalaya56562
+- Removed a redundant `DISTINCT` that blocked index lookups in fileset queries, thanks @JamBalaya56562
+- Stopped deduplicating twice in the fileset consistency check, thanks @JamBalaya56562
+- Made BackendTester re-read the remote folder before abandoning a test run, and accept an already-deleted file during cleanup, thanks @JamBalaya56562
+- Cleared the Filen file cache when a write did not come back, preventing stale lookups, thanks @JamBalaya56562
+- Re-read the Filejump file list when a delete got no answer, thanks @JamBalaya56562
+- Re-read the Drime file list when a delete got no answer, thanks @JamBalaya56562
+- Deprecated `--synchronous-upload` which no longer has any effect, thanks @JamBalaya56562
+- Added `.zsync` files for `.appimage` releases, enabling delta updates
+- Updated System.CommandLine from pre-release to the stable 2.0 release
+- Regenerated the libsecret DBus bindings with the latest tooling
+
+## Updates to ngclient
+
+- Changed the order for navigation on new backups: source before destination
+- Added support for purging files from the UI
+- Added support for checking permissions with MS365 and Google Workspace
+- Fixed Windows search results having a leading `\` prefix, causing empty restores
+- Fixed WebDAV destination path normalization, thanks @JamBalaya56562
+- Fixed folder filters losing their type while editing, thanks @JamBalaya56562
+- Fixed folder exclusions not propagating through the file tree, thanks @JamBalaya56562
+- Fixed file attribute exclusions not being preserved when editing, thanks @JamBalaya56562
+- Fixed local schedule dates being reset when editing, thanks @JamBalaya56562
+- Fixed custom form validator behavior, thanks @JamBalaya56562
+- Fixed commandline result polling, thanks @JamBalaya56562
+- Hardened HTTP interceptor request handling, thanks @JamBalaya56562
+- Fixed the file browser height on the restore page
+- Fixed flicker in the Duplicati Storage backup picker
+- Fixed connection state being set incorrectly with socket relay
+- Migrated to hey-api's modern Angular client, thanks @sp90
+- Fixed termination display
+- Updated all translations, thanks to all translators
+
 2026-08-25 - 2.3.0.110_canary_2026-08-25
 ==========
 This release is a canary release intended to be used for testing.
