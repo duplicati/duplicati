@@ -897,17 +897,6 @@ namespace Duplicati.Library.Main
                     else
                         mx.Configure(m_options.RawOptions);
 
-                    if (mx is IGenericSourceModule sourcemodule)
-                    {
-                        if (sourcemodule.ContainFilesForBackup(paths))
-                        {
-                            var sourceoptions = sourcemodule.ParseSourcePaths(ref paths, ref pristinefilter, m_options.RawOptions);
-
-                            foreach (var sourceoption in sourceoptions)
-                                m_options.RawOptions[sourceoption.Key] = sourceoption.Value;
-                        }
-                    }
-
                     if (mx is IGenericCallbackModule module)
                         RunScriptCallbackWithStatus(result, mx, () => module.OnStart(result.MainOperation.ToString(), ref m_backendUrl, ref paths));
                 }
@@ -1388,6 +1377,15 @@ namespace Duplicati.Library.Main
 
                         // TODO: We do not honor the PreventEmptySource option here,
                         // as we do not know if the source is empty or not
+                        foundAnyPaths = true;
+                        sources.Add(expandedSource);
+                        continue;
+                    }
+
+                    // Prefix-based source providers (e.g. %HYPERV%, %MSSQL%) are virtual paths
+                    // handled by a source provider, so they should not be checked against the filesystem
+                    if (Library.SourceProviders.SourceProviderModules.BuiltInPrefixSourceProviderModules.Any(m => m.MatchesSource(expandedSource)))
+                    {
                         foundAnyPaths = true;
                         sources.Add(expandedSource);
                         continue;
