@@ -25,7 +25,7 @@ namespace Duplicati.Library.Backend.AzureBlob.Strings;
 
 internal static class AzureBlobBackend
 {
-    public static string DescriptionV2 => LC.L(@"This backend can read and write data to Azure blob storage. Allowed format is ""azure://bucketname"".");
+    public static string DescriptionV2 => LC.L(@"This backend can read and write data to Azure blob storage. Allowed format is ""azure://bucketname/folder"".");
     public static string DisplayName => LC.L(@"Azure blob");
     public static string ContainerNameDescriptionLong => LC.L(@"All files will be written to the container specified.");
     public static string ContainerNameDescriptionShort => LC.L(@"The name of the storage container");
