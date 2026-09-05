@@ -1823,37 +1823,38 @@ namespace Duplicati.Library.Main.Database.Local
         {
             await using var cmd = m_connection.CreateCommand()
                 .SetTransaction(m_rtr);
-            // Calculate the lengths for each blockset
-            var combinedLengths = @"
+            // Calculate the lengths for each blockset, keeping only the ones that do not
+            // match the recorded length. The sum is taken by joining out from "Blockset"
+            // rather than against a grouped subquery: a grouped subquery is materialized
+            // without an index, so SQLite has to build one of its own before it can join
+            // it back. "File" is joined after the aggregate, because joining it before
+            // would repeat every block once per file that shares the blockset.
+            var mismatchedLengths = @"
                 SELECT
-                    ""A"".""ID"" AS ""BlocksetID"",
-                    IFNULL(""B"".""CalcLen"", 0) AS ""CalcLen"",
-                    ""A"".""Length""
-                FROM ""Blockset"" ""A""
-                LEFT OUTER JOIN (
-                    SELECT
-                        ""BlocksetEntry"".""BlocksetID"",
-                        SUM(""Block"".""Size"") AS ""CalcLen""
-                    FROM ""BlocksetEntry""
-                    LEFT OUTER JOIN ""Block""
+                    ""Blockset"".""ID"" AS ""BlocksetID"",
+                    IFNULL(SUM(""Block"".""Size""), 0) AS ""CalcLen"",
+                    ""Blockset"".""Length"" AS ""Length""
+                FROM ""Blockset""
+                LEFT OUTER JOIN ""BlocksetEntry""
+                    ON ""BlocksetEntry"".""BlocksetID"" = ""Blockset"".""ID""
+                LEFT OUTER JOIN ""Block""
                     ON ""Block"".""ID"" = ""BlocksetEntry"".""BlockID""
-                    GROUP BY ""BlocksetEntry"".""BlocksetID""
-                ) ""B""
-                    ON ""A"".""ID"" = ""B"".""BlocksetID""
+                GROUP BY ""Blockset"".""ID""
+                HAVING IFNULL(SUM(""Block"".""Size""), 0) != ""Blockset"".""Length""
             ";
 
-            // For each blockset with wrong lengths, fetch the file path
+            // For each blockset with wrong lengths, fetch the file path. CROSS JOIN pins
+            // the order: on a healthy database the left side is empty, so it has to be the
+            // one that drives the join.
             var reportDetails = @$"
                 SELECT
-                    ""CalcLen"",
-                    ""Length"", ""A"".""BlocksetID"",
+                    ""A"".""CalcLen"",
+                    ""A"".""Length"",
+                    ""A"".""BlocksetID"",
                     ""File"".""Path""
-                FROM
-                    ({combinedLengths}) ""A"",
-                    ""File""
-                WHERE
-                    ""A"".""BlocksetID"" = ""File"".""BlocksetID""
-                    AND ""A"".""CalcLen"" != ""A"".""Length""
+                FROM ({mismatchedLengths}) ""A""
+                CROSS JOIN ""File""
+                    ON ""File"".""BlocksetID"" = ""A"".""BlocksetID""
             ";
 
             await using (var rd = await cmd.ExecuteReaderAsync(reportDetails, token).ConfigureAwait(false))
@@ -1899,6 +1900,12 @@ namespace Duplicati.Library.Main.Database.Local
                 throw new DatabaseInconsistencyException($"Found {real_count} blocklist hashes, but there should be {unique_count}. Run repair to fix it.");
 
             var blocksize_per_hashsize = Library.Utility.Utility.FormatInvariantValue(blocksize / hashsize);
+
+            // The actual count is read one blockset at a time rather than from a second
+            // grouped subquery: the unique index on ("BlocksetID", "Index") answers each of
+            // them, and only the blocksets with more than one block are asked. Grouping the
+            // whole of "BlocklistHash" and joining it back would materialize it without an
+            // index, leaving SQLite to build one of its own.
             var itemswithnoblocklisthash = await cmd.ExecuteScalarInt64Async($@"
                 SELECT COUNT(*)
                 FROM (
@@ -1907,11 +1914,11 @@ namespace Duplicati.Library.Main.Database.Local
                         SELECT
                             ""N"".""BlocksetID"",
                             ((""N"".""BlockCount"" + {blocksize_per_hashsize} - 1) / {blocksize_per_hashsize}) AS ""BlocklistHashCountExpected"",
-                            CASE
-                                WHEN ""G"".""BlocklistHashCount"" IS NULL
-                                THEN 0
-                                ELSE ""G"".""BlocklistHashCount""
-                            END AS ""BlocklistHashCountActual""
+                            (
+                                SELECT COUNT(*)
+                                FROM ""BlocklistHash""
+                                WHERE ""BlocklistHash"".""BlocksetID"" = ""N"".""BlocksetID""
+                            ) AS ""BlocklistHashCountActual""
                         FROM (
                             SELECT
                                 ""BlocksetID"",
@@ -1919,14 +1926,6 @@ namespace Duplicati.Library.Main.Database.Local
                             FROM ""BlocksetEntry""
                             GROUP BY ""BlocksetID""
                         ) ""N""
-                        LEFT OUTER JOIN (
-                            SELECT
-                                ""BlocksetID"",
-                                COUNT(*) AS ""BlocklistHashCount""
-                            FROM ""BlocklistHash""
-                            GROUP BY ""BlocksetID""
-                        ) ""G""
-                            ON ""N"".""BlocksetID"" = ""G"".""BlocksetID""
                         WHERE ""N"".""BlockCount"" > 1
                     )
                     WHERE ""BlocklistHashCountExpected"" != ""BlocklistHashCountActual""
