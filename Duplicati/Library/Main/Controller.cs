@@ -1489,6 +1489,19 @@ namespace Duplicati.Library.Main
                             // If there are no excludes, there is no need to keep the folder as a filter
                             if (excludes)
                             {
+                                // An include filter cannot bring it back when a folder on the way
+                                // to it is excluded: the walk of the containing source stops at
+                                // that folder, so the filter is never reached. Keeping it as a
+                                // source is what works, because a source is walked from its own
+                                // root, and the containing source still stops where it is told to.
+                                // Carry on looking: another source may still be able to reach it,
+                                // and keeping one that is reachable would walk the same tree twice.
+                                if (IsCutOffByFilter(sources[i], sources[j], filter))
+                                {
+                                    Logging.Log.WriteVerboseMessage(LOGTAG, "KeepingSubfolderSource", "Keeping source \"{0}\" although it is inside \"{1}\", because a folder between them is excluded", sources[i], sources[j]);
+                                    continue;
+                                }
+
                                 Logging.Log.WriteVerboseMessage(LOGTAG, "RemovingSubfolderSource", "Removing source \"{0}\" because it is a folder or file inside \"{1}\", and using it as an include filter", sources[i], sources[j]);
                                 filter = JoinedFilterExpression.Join(new FilterExpression(sources[i]), filter);
                             }
@@ -1508,6 +1521,47 @@ namespace Duplicati.Library.Main
                 throw new UserInformationException(Strings.Controller.NoSourcesError, "NoSources");
 
             return (sources.ToArray(), filter);
+        }
+
+        /// <summary>
+        /// Reports whether the walk of <paramref name="container"/> stops before it reaches
+        /// <paramref name="source"/>, because a folder on the way is excluded by the filter.
+        /// A folder that the filter excludes is never descended into, so nothing below it is
+        /// reached, no matter what the filter says about the things below it.
+        /// </summary>
+        /// <returns><c>true</c> if a folder between the two is excluded.</returns>
+        /// <param name="source">The source that sits inside the other one.</param>
+        /// <param name="container">The source that contains it, ending with a separator.</param>
+        /// <param name="filter">The filter to ask.</param>
+        internal static bool IsCutOffByFilter(string source, string container, IFilter filter)
+        {
+            if (filter == null || filter.Empty)
+                return false;
+
+            // A mounted source is not a path on this machine, so there are no folders
+            // between the two to ask about
+            if (source.StartsWith("@", StringComparison.Ordinal) || container.StartsWith("@", StringComparison.Ordinal))
+                return false;
+
+            // Every folder between the two, asked for in the form the enumeration uses,
+            // which is with a trailing separator. The source itself is not one of them:
+            // it is the thing being looked for, not a step on the way.
+            var relative = source.Substring(container.Length);
+            for (var at = relative.IndexOf(Util.DirectorySeparatorString, StringComparison.Ordinal);
+                 at >= 0;
+                 at = relative.IndexOf(Util.DirectorySeparatorString, at + 1, StringComparison.Ordinal))
+            {
+                var folder = container + relative.Substring(0, at + 1);
+                if (folder.Length >= source.Length)
+                    break;
+
+                // A path the filter does not mention is not excluded, it only falls to the
+                // default, so what matters is whether an entry matched and said to exclude it
+                if (filter.Matches(folder, out var include, out _) && !include)
+                    return true;
+            }
+
+            return false;
         }
 
         /// <inheritdoc />
