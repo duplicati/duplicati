@@ -28,6 +28,19 @@
     <ProjectReference Include="..\Interface\Duplicati.Library.Interface.csproj" />
   </ItemGroup>
 
+  <!--
+    Vanara.PInvoke.VssApi ships the native ijwhost.dll inside its "lib" folder, so NuGet
+    offers it as a managed reference and the assembly resolver reports that it holds no
+    metadata (MSB3246). The copy that belongs in the output is the one from the targeting
+    pack, which the target below takes.
+  -->
+  <Target Name="DropVanaraIjwhostReference" BeforeTargets="ResolveAssemblyReferences">
+    <ItemGroup>
+      <_VanaraIjwhost Include="@(Reference)" Condition="'%(Filename)' == 'Ijwhost'" />
+      <Reference Remove="@(_VanaraIjwhost)" />
+    </ItemGroup>
+  </Target>
+
   <Target Name="IncludeIjwhostForVanara" BeforeTargets="AssignTargetPaths">
     <ItemGroup>
       <_Ijwhost Include="$(NetCoreTargetingPackRoot)\Microsoft.NETCore.App.Host.win-x64\$([System.String]::Copy('$(TargetFrameworkVersion)').TrimStart('v')).*\runtimes\win-x64\native\ijwhost.dll" />
