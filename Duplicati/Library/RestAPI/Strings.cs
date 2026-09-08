@@ -29,6 +29,7 @@ namespace Duplicati.Server.Strings
         public static string AnotherInstanceDetected { get { return LC.L(@"Another instance is running, and was notified"); } }
         public static string DatabaseOpenError(string message) { return LC.L(@"Failed to create, open or upgrade the database.
 Error message: {0}", message); }
+        public static string DatabaseMissingAndAutocreateDisabled(string databasepath, string optionname) { return LC.L(@"The database file does not exist: {0}. Automatic database creation is disabled with the option --{1}.", databasepath, optionname); }
         public static string HelpCommandDescription { get { return LC.L(@"Display this help"); } }
         public static string HelpDisplayDialog { get { return LC.L(@"Supported commandline arguments:
 
@@ -76,6 +77,7 @@ Error message: {0}", error); }
         public static string WebserverResetJwtConfigDescription { get { return LC.L(@"Reset the JWT configuration, invalidating any issued login tokens"); } }
         public static string WebserverEnableForeverTokenDescription { get { return LC.L(@"Enable the use of long-lived access tokens"); } }
         public static string WebserverApiOnlyDescription { get { return LC.L(@"Disable the web interface and only allow API access"); } }
+        public static string WebserverDontAutocreateDatabaseDescription { get { return LC.L(@"Do not automatically create the server database if it does not exist. If the database is missing, the server will not start."); } }
         public static string WebserverDisableSigninTokensDescription { get { return LC.L(@"Disable the use of signin tokens"); } }
         public static string WebserverSpaPathsDescription { get { return LC.L(@"The relative paths that should be served as single page applications, separated with semicolons."); } }
         public static string WebserverCorsOriginsDescription { get { return LC.L(@"A list of CORS origins to allow, separated with semicolons. Each origin must be a valid URL."); } }
