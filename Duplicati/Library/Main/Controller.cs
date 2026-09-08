@@ -160,7 +160,7 @@ namespace Duplicati.Library.Main
         /// <inheritdoc />
         public async Task<IRestoreResults> RestoreAsync(string[] paths, IFilter inputFilter = null)
         {
-            return await RunActionAsync(new RestoreResults(), paths, inputFilter, false, static async config =>
+            return await RunActionAsync(new RestoreResults(), null, inputFilter, new { paths }, static async config =>
             {
                 using var restoreDestination =
                     (config.Options.Restorepath ?? "").StartsWith("@")
@@ -179,7 +179,7 @@ namespace Duplicati.Library.Main
                     throw new UserInformationException($"Could not find restore destination for path: {config.Options.Restorepath}", "InvalidRestoreDestination");
 
                 await new Operation.RestoreHandler(config.Options, config.Result)
-                    .RunAsync(config.Paths, config.BackendManager, config.Filter, restoreDestination)
+                    .RunAsync(config.Context.paths, config.BackendManager, config.Filter, restoreDestination)
                     .ConfigureAwait(false);
 
                 await restoreDestination.Finalize((pg) =>
@@ -198,9 +198,9 @@ namespace Duplicati.Library.Main
         /// <inheritdoc />
         public async Task<IRestoreControlFilesResults> RestoreControlFilesAsync(IEnumerable<string> files = null, IFilter inputFilter = null)
         {
-            return await RunActionAsync(new RestoreControlFilesResults(), files?.ToArray(), inputFilter, false, static config =>
+            return await RunActionAsync(new RestoreControlFilesResults(), null, inputFilter, new { files }, static config =>
                 new Operation.RestoreControlFilesHandler(config.Options, config.Result)
-                    .RunAsync(config.Paths, config.BackendManager, config.Filter)
+                    .RunAsync(config.Context.files?.ToArray(), config.BackendManager, config.Filter)
             ).ConfigureAwait(false);
         }
 
@@ -236,20 +236,20 @@ namespace Duplicati.Library.Main
 
         /// <inheritdoc />
         public async Task<IListFolderResults> ListFolderAsync(string[] folders, long offset, long limit, bool extendedData)
-            => await RunActionAsync(new ListFolderResults(), folders, null, new { offset, limit, extendedData }, static config =>
-                Operation.ListFolderHandler.RunAsync(config.Options, config.Result, config.Paths, config.Context.offset, config.Context.limit, config.Context.extendedData)
+            => await RunActionAsync(new ListFolderResults(), null, null, new { folders, offset, limit, extendedData }, static config =>
+                Operation.ListFolderHandler.RunAsync(config.Options, config.Result, config.Context.folders, config.Context.offset, config.Context.limit, config.Context.extendedData)
             ).ConfigureAwait(false);
 
         /// <inheritdoc />
         public async Task<IListFileVersionsResults> ListFileVersionsAsync(string[] files, long offset, long limit)
-            => await RunActionAsync(new ListFileVersionsResults(), files, null, new { offset, limit }, static config =>
-                Operation.ListFileVersionsHandler.RunAsync(config.Options, config.Result, config.Paths, config.Context.offset, config.Context.limit)
+            => await RunActionAsync(new ListFileVersionsResults(), null, null, new { files, offset, limit }, static config =>
+                Operation.ListFileVersionsHandler.RunAsync(config.Options, config.Result, config.Context.files, config.Context.offset, config.Context.limit)
             ).ConfigureAwait(false);
 
         /// <inheritdoc />
         public async Task<ISearchFilesResults> SearchEntriesAsync(string[] pathprefixes, IFilter inputFilter, bool caseSensitive, long offset, long limit, bool returnExtendedData, bool searchMetadata)
-            => await RunActionAsync(new SearchFilesResults(), pathprefixes, inputFilter, new { caseSensitive, offset, limit, returnExtendedData, searchMetadata }, static config =>
-                Operation.SearchEntriesHandler.RunAsync(config.Options, config.Result, config.Paths, config.Filter, config.Context.caseSensitive, config.Context.offset, config.Context.limit, config.Context.returnExtendedData, config.Context.searchMetadata)
+            => await RunActionAsync(new SearchFilesResults(), null, inputFilter, new { pathprefixes, caseSensitive, offset, limit, returnExtendedData, searchMetadata }, static config =>
+                Operation.SearchEntriesHandler.RunAsync(config.Options, config.Result, config.Context.pathprefixes, config.Filter, config.Context.caseSensitive, config.Context.offset, config.Context.limit, config.Context.returnExtendedData, config.Context.searchMetadata)
             ).ConfigureAwait(false);
 
         /// <inheritdoc />
@@ -263,18 +263,18 @@ namespace Duplicati.Library.Main
         /// <inheritdoc />
         public async Task<IListResults> ListAsync(IEnumerable<string> filterstrings, IFilter inputFilter)
         {
-            return await RunActionAsync(new ListResults(), filterstrings?.ToArray(), inputFilter, false, static config =>
+            return await RunActionAsync(new ListResults(), null, inputFilter, new { filterstrings }, static config =>
                 new Operation.ListFilesHandler(config.Options, config.Result)
-                    .RunAsync(config.BackendManager, config.Paths, config.Filter)
+                    .RunAsync(config.BackendManager, config.Context.filterstrings?.ToArray(), config.Filter)
             ).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
         public async Task<IListResults> ListControlFilesAsync(IEnumerable<string> filterstrings, IFilter inputFilter)
         {
-            return await RunActionAsync(new ListResults(), filterstrings?.ToArray(), inputFilter, false, static config =>
+            return await RunActionAsync(new ListResults(), null, inputFilter, new { filterstrings }, static config =>
                 new Operation.ListControlFilesHandler(config.Options, config.Result)
-                    .RunAsync(config.BackendManager, config.Paths, config.Filter)
+                    .RunAsync(config.BackendManager, config.Context.filterstrings?.ToArray(), config.Filter)
             ).ConfigureAwait(false);
         }
 
@@ -390,8 +390,8 @@ namespace Duplicati.Library.Main
         /// <inheritdoc />
         public async Task<ICreateLogDatabaseResults> CreateLogDatabaseAsync(string targetpath)
         {
-            return await RunActionAsync(new CreateLogDatabaseResults(), [targetpath], null, false, static async config =>
-                await new Operation.CreateBugReportHandler(config.Paths[0], config.Options, config.Result).RunAsync()
+            return await RunActionAsync(new CreateLogDatabaseResults(), null, null, new { targetpath }, static async config =>
+                await new Operation.CreateBugReportHandler(config.Context.targetpath, config.Options, config.Result).RunAsync()
             ).ConfigureAwait(false);
         }
 
@@ -399,18 +399,18 @@ namespace Duplicati.Library.Main
         public async Task<IListChangesResults> ListChangesAsync(string baseVersion, string targetVersion, IEnumerable<string> filterstrings = null, IFilter inputFilter = null, Action<IListChangesResults, IEnumerable<Tuple<ListChangesChangeType, ListChangesElementType, string>>> callback = null)
         {
 
-            return await RunActionAsync(new ListChangesResults(), [baseVersion, targetVersion], inputFilter, new { filterstrings, callback }, async static config =>
+            return await RunActionAsync(new ListChangesResults(), null, inputFilter, new { baseVersion, targetVersion, filterstrings, callback }, async static config =>
                 await new Operation.ListChangesHandler(config.Options, config.Result)
-                    .RunAsync(config.Paths[0], config.Paths[1], config.BackendManager, config.Context.filterstrings, config.Filter, config.Context.callback)
+                    .RunAsync(config.Context.baseVersion, config.Context.targetVersion, config.BackendManager, config.Context.filterstrings, config.Filter, config.Context.callback)
             ).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
         public async Task<IListAffectedResults> ListAffectedAsync(List<string> args, Action<IListAffectedResults> callback = null)
         {
-            return await RunActionAsync(new ListAffectedResults(), args?.ToArray(), null, new { callback }, static config =>
+            return await RunActionAsync(new ListAffectedResults(), null, null, new { args, callback }, static config =>
                 new Operation.ListAffected(config.Options, config.Result)
-                    .RunAsync(config.Paths, config.Context.callback)
+                    .RunAsync(config.Context.args?.ToArray(), config.Context.callback)
             ).ConfigureAwait(false);
         }
 
@@ -516,6 +516,8 @@ namespace Duplicati.Library.Main
 
         public async Task<ISyncResults> SyncAsync(string[] sourcePaths, IFilter filter)
         {
+            SourceProviderFactory.EnableMetadataStorageIfRequiredBySources(sourcePaths, m_options.RawOptions);
+
             return await RunActionAsync(new SyncResults(), sourcePaths, filter, false, config =>
                 new Operation.Sync.SyncHandler(config.Paths, config.Options, config.Result, config.BackendUrl)
                     .RunAsync(config.BackendManager, config.Filter)
