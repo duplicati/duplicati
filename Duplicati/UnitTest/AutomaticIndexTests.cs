@@ -55,14 +55,12 @@ namespace Duplicati.UnitTest
         /// </summary>
         private static readonly HashSet<string> Accepted = new HashSet<string>(StringComparer.Ordinal)
         {
-            // Aliases of subqueries, not of tables: the subquery is materialized without any
-            // index, so an index on the tables it reads does not remove these. Removing them
-            // means rewriting the queries.
-            //   LocalDatabase.VerifyConsistencyInnerAsync, the grouped blockset lengths
-            "B(BlocksetID)",
-            //   LocalDatabase.VerifyConsistencyInnerAsync, the grouped blocklist hash counts
-            "G(BlocksetID)",
-            //   LocalDeleteDatabase.GetWastedSpaceReportAsync, the grouped scan times
+            // LocalDeleteDatabase.GetWastedSpaceReportAsync, the grouped scan times.
+            // An alias of a subquery, not of a table, so an index on the tables it reads does
+            // not remove it. Both sides of that join are grouped by "VolumeID", so the index
+            // is built over one row per block volume, which is nothing next to the join that
+            // produces those rows. Rewriting it to read the scan times one volume at a time
+            // was measured and is slower, and it does not remove the index either.
             "B(VolumeID)"
         };
 
