@@ -52,11 +52,14 @@ public static class Program
 
         // Registered so the option is accepted and shown in help; the value is read directly
         // from the process arguments/environment by DataFolderManager/Util.
+        // The option is marked recursive so it applies to all subcommands,
+        // matching the behavior of the previous AddGlobalOption API.
         rootCmd.Options.Add(new Option<bool>(
             $"--{DataFolderManager.ALLOW_INSECURE_DATAFOLDER_OPTION}")
         {
             Description = "Allow the data folder to have insecure permissions instead of rejecting it",
-            DefaultValueFactory = _ => false
+            DefaultValueFactory = _ => false,
+            Recursive = true
         });
 
         rootCmd.UseAdditionalHelpAliases();

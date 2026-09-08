@@ -46,7 +46,21 @@ public static class SettingsBinder
     public static readonly Option<Uri> hostUrlOption = new Option<Uri>("--hosturl")
     {
         Description = "The host URL to use",
-        DefaultValueFactory = _ => new Uri($"http://{Utility.IpVersionCompatibleLoopback}:8200")
+        DefaultValueFactory = _ => new Uri($"http://{Utility.IpVersionCompatibleLoopback}:8200"),
+        // System.CommandLine does not have a built-in string-to-Uri converter,
+        // so supply a custom parser to keep accepting URLs from the command line
+        CustomParser = result =>
+        {
+            var value = result.Tokens.SingleOrDefault()?.Value;
+            if (string.IsNullOrWhiteSpace(value))
+                return new Uri($"http://{Utility.IpVersionCompatibleLoopback}:8200");
+
+            if (Uri.TryCreate(value, UriKind.Absolute, out var uri))
+                return uri;
+
+            result.AddError($"The value '{value}' is not a valid URL");
+            return null!;
+        }
     };
     /// <summary>
     /// The server datafolder option.
@@ -153,25 +167,37 @@ public static class SettingsBinder
 
     /// <summary>
     /// Adds global options to the root command.
+    /// The options are marked recursive so they apply to all subcommands,
+    /// matching the behavior of the previous AddGlobalOption API.
     /// </summary>
     /// <param name="rootCommand">The root command to add the options to.</param>
     /// <returns>The root command with the options added.</returns>
     public static RootCommand AddGlobalOptions(RootCommand rootCommand)
     {
-        rootCommand.Options.Add(passwordOption);
-        rootCommand.Options.Add(hostUrlOption);
-        rootCommand.Options.Add(serverDatafolderOption);
-        rootCommand.Options.Add(portableModeOption);
-        rootCommand.Options.Add(allowInsecureDatafolderOption);
-        rootCommand.Options.Add(settingsFileOption);
-        rootCommand.Options.Add(insecureOption);
-        rootCommand.Options.Add(settingsEncryptionKeyOption);
-        rootCommand.Options.Add(secretProviderOption);
-        rootCommand.Options.Add(secretProviderCacheOption);
-        rootCommand.Options.Add(secretProviderPatternOption);
-        rootCommand.Options.Add(acceptedHostCertificateOption);
-        rootCommand.Options.Add(ignoreRevocationFailureOption);
-        rootCommand.Options.Add(jsonOutputOption);
+        Option[] globalOptions =
+        [
+            passwordOption,
+            hostUrlOption,
+            serverDatafolderOption,
+            portableModeOption,
+            allowInsecureDatafolderOption,
+            settingsFileOption,
+            insecureOption,
+            settingsEncryptionKeyOption,
+            secretProviderOption,
+            secretProviderCacheOption,
+            secretProviderPatternOption,
+            acceptedHostCertificateOption,
+            ignoreRevocationFailureOption,
+            jsonOutputOption
+        ];
+
+        foreach (var option in globalOptions)
+        {
+            option.Recursive = true;
+            rootCommand.Options.Add(option);
+        }
+
         return rootCommand;
     }
 
