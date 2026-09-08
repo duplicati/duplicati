@@ -57,6 +57,39 @@ namespace Duplicati.UnitTest
         }
 
         /// <summary>
+        /// The --allow-insecure-datafolder option is registered on the root command
+        /// but must be accepted after a subcommand, like the global option it
+        /// replaced during the System.CommandLine 2.0 migration.
+        /// </summary>
+        [Test]
+        [Category("DatabaseTool")]
+        public async Task GlobalOptionIsAcceptedAfterSubcommandAsync()
+        {
+            using var dbfile = new TempFile();
+
+            var output = new StringWriter();
+            var originalOut = Console.Out;
+            int exitCode;
+            try
+            {
+                Console.SetOut(output);
+                // The database is empty, so "list" fails with a message about the
+                // database not existing. A parse error would instead complain about
+                // an unrecognized option.
+                exitCode = await Program.MainAsync(["list", dbfile, "--allow-insecure-datafolder"]);
+            }
+            finally
+            {
+                Console.SetOut(originalOut);
+            }
+
+            var consoleOutput = output.ToString();
+            Assert.IsFalse(consoleOutput.Contains("Unrecognized"),
+                $"The global option was not accepted after the subcommand: {consoleOutput}");
+            Assert.AreEqual(0, exitCode, $"Unexpected exit code, output was: {consoleOutput}");
+        }
+
+        /// <summary>
         /// The backup taken before an upgrade must carry an unambiguous timestamp.
         /// The format string used to specify <c>hh</c> (12-hour clock) without an
         /// AM/PM designator, so a backup taken at 13:30 was named as if it had been
