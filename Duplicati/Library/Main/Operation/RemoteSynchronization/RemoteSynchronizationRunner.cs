@@ -237,8 +237,10 @@ public static class RemoteSynchronizationRunner
         var disableQuota = Library.Utility.Utility.ParseBoolOption(dst_opts, "quota-disable");
 
         // Check if we have enough free space in the destination to perform the synchronization.
+        // A negative free space means the backend did not return the quota info, so there is
+        // nothing to compare the required size against.
         var dst_quota = disableQuota ? null : await b2m.GetQuotaInfoAsync(token).ConfigureAwait(false);
-        if (dst_quota is not null)
+        if (dst_quota is not null && dst_quota.FreeQuotaSpace >= 0)
         {
             var total_delete_size = to_delete.Sum(x => Math.Max(x.Size, 0));
             var total_copy_size = to_copy.Sum(x => Math.Max(x.Size, 0));

@@ -662,6 +662,25 @@ namespace Duplicati.UnitTest
         }
 
         /// <summary>
+        /// A test backend that does not know what the destination has room for, which is what a
+        /// negative quota means. A Google Drive account whose "about" answer carries no quota
+        /// fields reports exactly this.
+        /// </summary>
+        public class FileBackendWithUnknownQuota : Library.Backend.File
+        {
+            public FileBackendWithUnknownQuota() { }
+
+            public FileBackendWithUnknownQuota(string url, Dictionary<string, string?> options) : base(url.Replace("unknownquotatest://", "file://"), options) { }
+
+            public override string ProtocolKey => "unknownquotatest";
+
+            public override Task<IQuotaInfo?> GetQuotaInfoAsync(CancellationToken token)
+            {
+                return Task.FromResult<IQuotaInfo?>(new QuotaInfo(-1, -1));
+            }
+        }
+
+        /// <summary>
         /// A test backend that simulates a quota of 1KB for testing quota checks in the remote synchronization tool.
         /// </summary>
         public class FileBackendWith1Kb : Library.Backend.File
@@ -732,6 +751,37 @@ namespace Duplicati.UnitTest
             var return_code = await async_call.ConfigureAwait(false);
 
             Assert.AreEqual(0, return_code, "Remote synchronization should succeed with sufficient quota.");
+            Assert.IsTrue(DirectoriesAndContentsAreEqual(l1, l2), "Directories should be synchronized.");
+        }
+
+        /// <summary>
+        /// Tests that a destination which does not report a quota is not read as a full one. A
+        /// negative free space is how a backend says it does not know, which is not the same as
+        /// saying there is no room, and the tool has nothing to compare against.
+        /// </summary>
+        [Test]
+        [Category("Tools/RemoteSynchronization")]
+        public async Task TestRemoteSynchronizationUnknownQuotaIsNotTreatedAsFullAsync()
+        {
+            var l1 = Path.Combine(TARGETFOLDER, "quota_src3");
+            var l2 = Path.Combine(TARGETFOLDER, "quota_dst3");
+
+            Directory.CreateDirectory(l1);
+            Directory.CreateDirectory(l2);
+
+            // Enough data that the required size is comfortably positive, so an unknown quota
+            // read as a number would lose the comparison
+            await GenerateTestDataAsync(l1, 5, 0, 0, 2048).ConfigureAwait(false);
+
+            // Register the test backend
+            Library.DynamicLoader.BackendLoader.AddBackend(new FileBackendWithUnknownQuota());
+
+            var args = new string[] { $"file://{l1}", $"unknownquotatest://{l2}", "--confirm" };
+
+            var async_call = RemoteSynchronization.Program.MainAsync(args);
+            var return_code = await async_call.ConfigureAwait(false);
+
+            Assert.AreEqual(0, return_code, "Remote synchronization should not stop for a destination that reports no quota.");
             Assert.IsTrue(DirectoriesAndContentsAreEqual(l1, l2), "Directories should be synchronized.");
         }
 
