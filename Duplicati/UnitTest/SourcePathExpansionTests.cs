@@ -79,6 +79,76 @@ public class SourcePathExpansionTests
         }
     }
 
+    /// <summary>
+    /// A source that sits inside another source is normally taken out of the list and
+    /// replaced by an include filter. That cannot work when a folder on the way to it is
+    /// excluded, because the walk of the outer source stops there and never reaches the
+    /// filter, so such a source is kept instead. Issue #3220.
+    /// </summary>
+    /// <param name="excludeNested">Whether the filter excludes the nested source or the folder above it</param>
+    /// <param name="expectKept">Whether the nested source is expected to survive</param>
+    [Test]
+    [Category("Controller")]
+    [TestCase(false, true, TestName = "ASourceUnderAnExcludedFolderIsKept")]
+    [TestCase(true, false, TestName = "ASourceThatIsItselfExcludedIsStillReplacedByAFilter")]
+    public void ANestedSourceIsOnlyKeptWhenNothingElseCanReachIt(bool excludeNested, bool expectKept)
+    {
+        var root = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var middle = Path.Combine(root, "middle");
+        var nested = Path.Combine(middle, "nested");
+        Directory.CreateDirectory(nested);
+
+        try
+        {
+            var filter = new Library.Utility.FilterExpression(
+                Util.AppendDirSeparator(excludeNested ? nested : middle), false);
+
+            var (sources, resulting) = Controller.ExpandInputSources(
+                [root, nested], filter, new Options(new Dictionary<string, string?>()));
+
+            var kept = sources.Contains(Util.AppendDirSeparator(nested), Library.Utility.Utility.ClientFilenameStringComparer);
+            Assert.AreEqual(expectKept, kept,
+                $"sources: {string.Join(", ", sources)}");
+
+            if (expectKept)
+                // Nothing is added to the filter, so an argument that only excludes stays
+                // that way and the outer walk still stops where it was told to
+                Assert.AreSame(filter, resulting, "the filter should be left alone when the source is kept");
+            else
+                Assert.AreNotSame(filter, resulting, "the source should have become an include filter");
+        }
+        finally
+        {
+            Directory.Delete(root, true);
+        }
+    }
+
+    /// <summary>
+    /// Green before and after: with nothing excluded there is nothing that can hide the
+    /// nested source, so it is taken out as it always was
+    /// </summary>
+    [Test]
+    [Category("Controller")]
+    public void ANestedSourceWithNoFilterIsStillRemoved()
+    {
+        var root = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        var nested = Path.Combine(root, "middle", "nested");
+        Directory.CreateDirectory(nested);
+
+        try
+        {
+            var sources = Controller.ExpandInputSources(
+                [root, nested], null, new Options(new Dictionary<string, string?>())).Sources;
+
+            Assert.AreEqual(1, sources.Length, $"sources: {string.Join(", ", sources)}");
+            Assert.AreEqual(Util.AppendDirSeparator(root), sources[0]);
+        }
+        finally
+        {
+            Directory.Delete(root, true);
+        }
+    }
+
     [Test]
     [Category("Controller")]
     public void ABareDriveMeansTheRootOfIt()
