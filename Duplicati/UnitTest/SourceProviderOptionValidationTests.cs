@@ -441,4 +441,78 @@ public class SourceProviderOptionValidationTests : BasicSetupHelper
         Assert.That(logSink.Entries.Any(x => x.Id == "OptionValidationError"), Is.False,
             "Valid option values should not produce validation warnings");
     }
+
+    /// <summary>
+    /// Regression test for the compare command crashing with an ArgumentNullException
+    /// when no versions are given. The versions were passed to the option validation
+    /// in place of source paths, which are null when no versions are supplied.
+    /// </summary>
+    [Test]
+    public async Task ListChanges_WithoutVersions_DoesNotThrow()
+    {
+        File.WriteAllText(Path.Combine(this.DATAFOLDER, "file.txt"), "data");
+
+        var options = new Dictionary<string, string>(this.TestOptions)
+        {
+            ["no-encryption"] = "true"
+        };
+
+        // Create two versions so the latest two can be compared
+        using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+        {
+            var results = await c.BackupAsync([this.DATAFOLDER]);
+            Assert.That(results.Errors.Count(), Is.EqualTo(0), "First backup should succeed");
+        }
+
+        File.WriteAllText(Path.Combine(this.DATAFOLDER, "file.txt"), "modified");
+
+        using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+        {
+            var results = await c.BackupAsync([this.DATAFOLDER]);
+            Assert.That(results.Errors.Count(), Is.EqualTo(0), "Second backup should succeed");
+        }
+
+        using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+        {
+            var results = await c.ListChangesAsync(null, null);
+            Assert.That(results.Errors.Count(), Is.EqualTo(0), "Listing changes without versions should not throw");
+        }
+    }
+
+    /// <summary>
+    /// Regression test ensuring the compare command also works when only a single
+    /// version is given, leaving the other version argument null.
+    /// </summary>
+    [Test]
+    public async Task ListChanges_WithSingleVersion_DoesNotThrow()
+    {
+        File.WriteAllText(Path.Combine(this.DATAFOLDER, "file.txt"), "data");
+
+        var options = new Dictionary<string, string>(this.TestOptions)
+        {
+            ["no-encryption"] = "true"
+        };
+
+        // Create two versions so the latest two can be compared
+        using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+        {
+            var results = await c.BackupAsync([this.DATAFOLDER]);
+            Assert.That(results.Errors.Count(), Is.EqualTo(0), "First backup should succeed");
+        }
+
+        File.WriteAllText(Path.Combine(this.DATAFOLDER, "file.txt"), "modified");
+
+        using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+        {
+            var results = await c.BackupAsync([this.DATAFOLDER]);
+            Assert.That(results.Errors.Count(), Is.EqualTo(0), "Second backup should succeed");
+        }
+
+        using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+        {
+            var results = await c.ListChangesAsync(null, "0");
+            Assert.That(results.Errors.Count(), Is.EqualTo(0), "Listing changes with a single version should not throw");
+            Assert.That(results.ModifiedFiles, Is.EqualTo(1), "The modified file should be reported");
+        }
+    }
 }
