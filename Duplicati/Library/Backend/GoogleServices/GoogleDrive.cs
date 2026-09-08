@@ -28,6 +28,8 @@ using System.Net.Http.Json;
 using System.Runtime.CompilerServices;
 using System.Text;
 
+[assembly: InternalsVisibleTo("Duplicati.UnitTest")]
+
 namespace Duplicati.Library.Backend.GoogleDrive
 {
     // ReSharper disable once UnusedMember.Global
@@ -68,6 +70,22 @@ namespace Duplicati.Library.Backend.GoogleDrive
             m_teamDriveID = options.GetValueOrDefault(TEAMDRIVE_ID);
             m_oauth = new OAuthHelperHttpClient(auth.AuthId!, this.ProtocolKey, auth.OAuthUrl) { AutoAuthHeader = true };
             m_filecache = new Dictionary<string, GoogleDriveFolderItem[]>();
+        }
+
+        /// <summary>
+        /// Creates a backend that talks through the supplied <see cref="HttpClient"/>,
+        /// so the Drive API responses can be decided by a test
+        /// </summary>
+        /// <param name="url">The backend url</param>
+        /// <param name="options">The options to use</param>
+        /// <param name="httpClient">The client to send the requests through</param>
+        internal GoogleDrive(string url, Dictionary<string, string?> options, HttpClient httpClient)
+            : this(url, options)
+        {
+            var auth = AuthIdOptionsHelper.Parse(options)
+                .RequireCredentials(TOKEN_URL);
+
+            m_oauth = new OAuthHelperHttpClient(auth.AuthId!, this.ProtocolKey, auth.OAuthUrl, httpClient) { AutoAuthHeader = true };
         }
 
         private async Task<string> GetFolderIdAsync(string path, bool autocreate, CancellationToken cancelToken)
@@ -362,21 +380,29 @@ namespace Duplicati.Library.Backend.GoogleDrive
                 {
                     var fe = ParseEntry(n);
 
-                    if (!fe.IsFolder)
+                    // A folder is addressed by its name and is rejected outright when
+                    // the name is ambiguous, so it goes straight out
+                    if (fe.IsFolder)
                     {
-                        if (!m_filecache.TryGetValue(fe.Name, out var lst))
-                        {
-                            m_filecache[fe.Name] = [n];
-                        }
-                        else
-                        {
-                            Array.Resize(ref lst, lst.Length + 1);
-                            lst[lst.Length - 1] = n;
-                        }
+                        yield return fe;
+                        continue;
                     }
 
-                    yield return fe;
+                    // Every copy has to be kept: a delete takes the name away, which
+                    // means all of the files wearing it. Assigning back to the
+                    // dictionary is what makes the second copy survive.
+                    m_filecache[fe.Name] = m_filecache.TryGetValue(fe.Name, out var lst)
+                        ? [.. lst, n]
+                        : [n];
                 }
+
+                // Drive keeps a permanent id for a file and treats the name as a label,
+                // so more than one file can wear the same one. The rest of Duplicati
+                // addresses a remote file by name and stops every operation when a
+                // listing reports one twice, so one entry is reported per name: the
+                // newest, which is the copy a read fetches.
+                foreach (var entries in m_filecache.Values)
+                    yield return ParseEntry(entries.OrderByDescending(x => x.createdDate).First());
 
                 success = true;
             }
