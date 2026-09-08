@@ -41,11 +41,17 @@ namespace Duplicati.UnitTest
         /// </summary>
         private const string FullTarget = "nofreespace://destination";
 
+        /// <summary>
+        /// The destination that stores files but cannot say what it has room for.
+        /// </summary>
+        private const string UnknownQuotaTarget = "unknownquota://destination";
+
         [SetUp]
         public void RegisterBackend()
         {
             NoFreeSpaceBackend.Folder = TARGETFOLDER;
             BackendLoader.AddBackend(new NoFreeSpaceBackend());
+            BackendLoader.AddBackend(new UnknownQuotaBackend());
         }
 
         private void CreateSourceData()
@@ -99,6 +105,32 @@ namespace Duplicati.UnitTest
 
                 Assert.That(results.Errors.Any(x => x.Contains("quota")), Is.True,
                     "A backup to a destination with no room left reported no quota error");
+            }
+        }
+
+        /// <summary>
+        /// A destination that cannot say what it has room for is not a destination with no room:
+        /// there is no quota to be close to exceeding, so nothing is reported. A Google shared
+        /// drive is exactly this, and reporting the signed-in user's own drive instead is what
+        /// issue #4230 was about.
+        /// </summary>
+        [Test]
+        [Category("Quota")]
+        public async Task ABackupToADestinationWithNoQuotaSaysNothingAboutQuotaAsync()
+        {
+            // The most sensitive setting there is: any free space the destination claimed would
+            // have to exceed the whole backup to pass without a warning
+            var testopts = TestOptions.Expand(new { no_encryption = true, quota_warning_threshold = 100 });
+            CreateSourceData();
+
+            using (var c = new Controller(UnknownQuotaTarget, testopts, null))
+            {
+                var results = await c.BackupAsync([DATAFOLDER]);
+                var quotaMessages = results.Errors.Concat(results.Warnings).Where(x => x.Contains("quota")).ToList();
+
+                Assert.That(quotaMessages, Is.Empty,
+                    "A destination that reported no quota was treated as one with no room left: "
+                        + string.Join(System.Environment.NewLine, quotaMessages));
             }
         }
     }

@@ -62,7 +62,7 @@ namespace Duplicati.UnitTest
                 Directory.CreateDirectory(m_folder);
         }
 
-        public Task<IQuotaInfo?> GetQuotaInfoAsync(CancellationToken cancelToken)
+        public virtual Task<IQuotaInfo?> GetQuotaInfoAsync(CancellationToken cancelToken)
             => Task.FromResult<IQuotaInfo?>(new QuotaInfo(TotalSpace, 0));
 
         public Task TestAsync(bool alsoWrite, CancellationToken cancellationToken)
@@ -108,7 +108,7 @@ namespace Duplicati.UnitTest
             => Task.FromResult(Array.Empty<string>());
 
         public string DisplayName => "No Free Space Backend";
-        public string ProtocolKey => "nofreespace";
+        public virtual string ProtocolKey => "nofreespace";
         public string Description => "A testing backend that stores files locally but reports no free space";
         public IList<ICommandLineArgument> SupportedCommands => new List<ICommandLineArgument>();
 
