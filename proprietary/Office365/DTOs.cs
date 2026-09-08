@@ -203,6 +203,67 @@ internal sealed class GraphBody
     public string? Content { get; set; }
 }
 
+/// <summary>
+/// The payload for creating a new draft message (POST /users/{id}/messages).
+/// Only contains writable properties, and must be serialized with null values omitted:
+/// the Graph OData deserializer rejects explicit JSON nulls for its non-nullable
+/// properties (dates, recipients, collections) with "UnableToDeserializePostBody",
+/// and read-only properties such as id and receivedDateTime must not be sent.
+/// </summary>
+internal sealed class GraphCreateMessageRequest
+{
+    [JsonPropertyName("subject")]
+    public string? Subject { get; set; }
+
+    [JsonPropertyName("body")]
+    public GraphBody? Body { get; set; }
+
+    [JsonPropertyName("from")]
+    public GraphRecipient? From { get; set; }
+
+    [JsonPropertyName("sender")]
+    public GraphRecipient? Sender { get; set; }
+
+    [JsonPropertyName("toRecipients")]
+    public List<GraphRecipient>? ToRecipients { get; set; }
+
+    [JsonPropertyName("ccRecipients")]
+    public List<GraphRecipient>? CcRecipients { get; set; }
+
+    [JsonPropertyName("bccRecipients")]
+    public List<GraphRecipient>? BccRecipients { get; set; }
+}
+
+/// <summary>
+/// The payload for adding a file attachment to a draft message
+/// (POST /users/{id}/messages/{id}/attachments).
+/// Like <see cref="GraphCreateMessageRequest"/>, this only contains writable
+/// properties and must be serialized with null values omitted.
+/// </summary>
+internal sealed class GraphCreateAttachmentRequest
+{
+    [JsonPropertyName("@odata.type")]
+    public string? ODataType { get; set; } // "#microsoft.graph.fileAttachment"
+
+    [JsonPropertyName("name")]
+    public string? Name { get; set; }
+
+    [JsonPropertyName("contentType")]
+    public string? ContentType { get; set; }
+
+    [JsonPropertyName("size")]
+    public int? Size { get; set; }
+
+    [JsonPropertyName("isInline")]
+    public bool? IsInline { get; set; }
+
+    [JsonPropertyName("contentId")]
+    public string? ContentId { get; set; }
+
+    [JsonPropertyName("contentBytes")]
+    public string? ContentBytes { get; set; } // Base64
+}
+
 internal sealed class GraphAttachment
 {
     [JsonPropertyName("id")]
