@@ -19,16 +19,6 @@ partial class RestoreProvider
         /// </summary>
         private const long MAX_SIZE_FOR_SIMPLE_EMAIL_RESTORE = (long)((4 * 1024 * 1024) * (1 - 0.33)) - 1024; // 4MB - 33% base64 overhead - 1KB margin
 
-        /// <summary>
-        /// Serializer options that omit null values. The Graph OData deserializer rejects
-        /// explicit JSON nulls for non-nullable properties with "UnableToDeserializePostBody",
-        /// so create payloads must only include properties that have a value.
-        /// </summary>
-        private static readonly JsonSerializerOptions IgnoreNullJsonOptions = new()
-        {
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-        };
-
         public async Task<string> RestoreEmailToFolderAsync(
             string userId,
             string targetFolderId,
@@ -202,7 +192,7 @@ partial class RestoreProvider
             {
                 var req = new HttpRequestMessage(HttpMethod.Post, url);
                 req.Headers.Authorization = await provider.GetAuthenticationHeaderAsync(false, rct).ConfigureAwait(false);
-                req.Content = JsonContent.Create(message, options: IgnoreNullJsonOptions);
+                req.Content = JsonContent.Create(message, options: APIHelper.IgnoreNullJsonOptions);
                 return req;
             }
 
@@ -284,7 +274,7 @@ partial class RestoreProvider
             {
                 var req = new HttpRequestMessage(HttpMethod.Post, url);
                 req.Headers.Authorization = await provider.GetAuthenticationHeaderAsync(false, rct).ConfigureAwait(false);
-                req.Content = JsonContent.Create(attach, options: IgnoreNullJsonOptions);
+                req.Content = JsonContent.Create(attach, options: APIHelper.IgnoreNullJsonOptions);
                 return req;
             }
 

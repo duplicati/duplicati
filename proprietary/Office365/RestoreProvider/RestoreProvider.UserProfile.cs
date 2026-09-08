@@ -72,11 +72,16 @@ partial class RestoreProvider
 
             if (updateDict.Count == 0) return;
 
+            // Note: null values (e.g. a cleared jobTitle in the backup) are omitted from the
+            // payload rather than sent as explicit nulls; the Graph OData deserializer
+            // rejects explicit JSON nulls for non-nullable properties with
+            // "UnableToDeserializePostBody". This also means a null in the backup leaves
+            // the target property unchanged instead of clearing it.
             async Task<HttpRequestMessage> requestFactory(CancellationToken rct)
             {
                 var req = new HttpRequestMessage(HttpMethod.Patch, new Uri(url));
                 req.Headers.Authorization = await provider.GetAuthenticationHeaderAsync(false, rct).ConfigureAwait(false);
-                req.Content = JsonContent.Create(updateDict);
+                req.Content = JsonContent.Create(updateDict, options: APIHelper.IgnoreNullJsonOptions);
                 return req;
             }
 

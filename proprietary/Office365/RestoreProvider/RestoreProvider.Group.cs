@@ -43,7 +43,7 @@ public partial class RestoreProvider
                 ["displayName"] = graphGroup.DisplayName
             };
 
-            var json = JsonSerializer.Serialize(payload);
+            var json = JsonSerializer.Serialize(payload, APIHelper.IgnoreNullJsonOptions);
             using var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             await provider.PatchGraphItemAsync(url, content, ct);
@@ -103,6 +103,9 @@ public partial class RestoreProvider
             var group = Uri.EscapeDataString(groupId);
             var url = $"{baseUrl}/v1.0/groups/{group}/events";
 
+            // Null values are omitted: the Graph OData deserializer rejects explicit JSON
+            // nulls for non-nullable properties with "UnableToDeserializePostBody", and
+            // callers clear read-only properties by setting them to null.
             async Task<HttpRequestMessage> requestFactory(CancellationToken rct)
                 => new HttpRequestMessage(HttpMethod.Post, new Uri(url))
                 {
@@ -110,7 +113,7 @@ public partial class RestoreProvider
                     {
                         Authorization = await provider.GetAuthenticationHeaderAsync(false, rct).ConfigureAwait(false)
                     },
-                    Content = JsonContent.Create(eventItem)
+                    Content = JsonContent.Create(eventItem, options: APIHelper.IgnoreNullJsonOptions)
                 };
 
             using var resp = await provider.SendWithRetryShortAsync(
@@ -143,7 +146,7 @@ public partial class RestoreProvider
                 }
             };
 
-            var json = JsonSerializer.Serialize(payload);
+            var json = JsonSerializer.Serialize(payload, APIHelper.IgnoreNullJsonOptions);
             using var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             return await provider.PostGraphItemAsync<GraphConversationThread>(url, content, ct);
@@ -165,7 +168,7 @@ public partial class RestoreProvider
                 }
             };
 
-            var json = JsonSerializer.Serialize(payload);
+            var json = JsonSerializer.Serialize(payload, APIHelper.IgnoreNullJsonOptions);
             using var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             await provider.PostGraphItemNoResponseAsync(url, content, ct);
@@ -251,7 +254,7 @@ public partial class RestoreProvider
                 ["membershipType"] = membershipType ?? "standard"
             };
 
-            var json = JsonSerializer.Serialize(payload);
+            var json = JsonSerializer.Serialize(payload, APIHelper.IgnoreNullJsonOptions);
             using var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             return await provider.PostGraphItemAsync<GraphChannel>(url, content, ct).ConfigureAwait(false);
@@ -284,7 +287,7 @@ public partial class RestoreProvider
             if (createdDateTimeUtc.HasValue)
                 payload["createdDateTime"] = createdDateTimeUtc.Value.UtcDateTime.ToGraphTimeString();
 
-            var json = JsonSerializer.Serialize(payload);
+            var json = JsonSerializer.Serialize(payload, APIHelper.IgnoreNullJsonOptions);
             using var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             return await provider.PostGraphItemAsync<GraphChannel>(url, content, ct).ConfigureAwait(false);
@@ -403,7 +406,7 @@ public partial class RestoreProvider
                 payload["teamsApp@odata.bind"] = $"https://graph.microsoft.com/v1.0/appCatalogs/teamsApps/{teamsAppId}";
             }
 
-            var json = JsonSerializer.Serialize(payload);
+            var json = JsonSerializer.Serialize(payload, APIHelper.IgnoreNullJsonOptions);
             using var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             return await provider.PostGraphItemAsync<GraphTeamsTab>(url, content, ct);
@@ -921,7 +924,7 @@ public partial class RestoreProvider
                 }
 
                 // Clean up properties that shouldn't be sent on creation
-                graphEvent.Id = "";
+                graphEvent.Id = null!;
                 graphEvent.CreatedDateTime = null;
                 graphEvent.LastModifiedDateTime = null;
                 // Group events don't support all properties that user events do, but Graph API should handle it or ignore extra fields.

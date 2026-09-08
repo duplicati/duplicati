@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Logging;
 using Duplicati.Library.Utility;
@@ -32,6 +33,17 @@ internal class APIHelper : IDisposable
     internal static readonly JsonSerializerOptions GraphJsonOptions = new()
     {
         PropertyNameCaseInsensitive = true
+    };
+
+    /// <summary>
+    /// The options used when serializing Microsoft Graph create/update payloads. Null values
+    /// are omitted because the Graph OData deserializer rejects explicit JSON nulls for its
+    /// non-nullable properties (dates, enums, complex types, collections) with a
+    /// "UnableToDeserializePostBody" 400 error.
+    /// </summary>
+    internal static readonly JsonSerializerOptions IgnoreNullJsonOptions = new()
+    {
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
     /// <summary>
