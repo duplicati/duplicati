@@ -493,8 +493,20 @@ namespace Duplicati.Library.Backend.GoogleDrive
         #endregion
 
         #region IQuotaEnabledBackend implementation
+        /// <inheritdoc/>
+        /// <remarks>
+        /// A shared drive has no quota of its own: its files are owned by the drive, and the
+        /// Drive API reports capacity for the signed-in user only. Reporting that user's own
+        /// figures measured a backup against a different pool of storage, which is what issue
+        /// #4230 reported, so a shared drive answers with no quota at all.
+        /// </remarks>
         public async Task<IQuotaInfo?> GetQuotaInfoAsync(CancellationToken cancelToken)
         {
+            // The "about" resource describes the user's own drive, so it cannot answer for a
+            // shared drive, and there is no other place to ask
+            if (!string.IsNullOrWhiteSpace(m_teamDriveID))
+                return null;
+
             try
             {
                 var about = await this.GetAboutInfoAsync(cancelToken).ConfigureAwait(false);
