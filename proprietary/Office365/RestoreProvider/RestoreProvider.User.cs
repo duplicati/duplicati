@@ -18,6 +18,7 @@ partial class RestoreProvider
         /// Limit for ensuring we stay under the 4MB limit for simple email restore.
         /// </summary>
         private const long MAX_SIZE_FOR_SIMPLE_EMAIL_RESTORE = (long)((4 * 1024 * 1024) * (1 - 0.33)) - 1024; // 4MB - 33% base64 overhead - 1KB margin
+
         public async Task<string> RestoreEmailToFolderAsync(
             string userId,
             string targetFolderId,
@@ -121,7 +122,7 @@ partial class RestoreProvider
             var message = await MimeMessage.LoadAsync(contentStream, ct);
 
             // 2. Create Draft Message (without attachments)
-            var draft = new GraphMessage
+            var draft = new GraphCreateMessageRequest
             {
                 Subject = message.Subject,
                 Body = new GraphBody
@@ -133,8 +134,7 @@ partial class RestoreProvider
                 Sender = ConvertToGraphRecipient(message.Sender),
                 ToRecipients = ConvertToGraphRecipients(message.To),
                 CcRecipients = ConvertToGraphRecipients(message.Cc),
-                BccRecipients = ConvertToGraphRecipients(message.Bcc),
-                HasAttachments = message.Attachments.Any()
+                BccRecipients = ConvertToGraphRecipients(message.Bcc)
             };
 
             var createdDraft = await CreateMessageAsync(userId, draft, ct);
@@ -182,7 +182,7 @@ partial class RestoreProvider
             return movedId;
         }
 
-        private async Task<GraphCreatedMessage> CreateMessageAsync(string userId, GraphMessage message, CancellationToken ct)
+        private async Task<GraphCreatedMessage> CreateMessageAsync(string userId, GraphCreateMessageRequest message, CancellationToken ct)
         {
             var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
             var user = Uri.EscapeDataString(userId);
@@ -192,7 +192,7 @@ partial class RestoreProvider
             {
                 var req = new HttpRequestMessage(HttpMethod.Post, url);
                 req.Headers.Authorization = await provider.GetAuthenticationHeaderAsync(false, rct).ConfigureAwait(false);
-                req.Content = JsonContent.Create(message);
+                req.Content = JsonContent.Create(message, options: APIHelper.IgnoreNullJsonOptions);
                 return req;
             }
 
@@ -259,7 +259,7 @@ partial class RestoreProvider
             await part.Content.DecodeToAsync(ms, ct);
             var bytes = ms.ToArray();
 
-            var attach = new GraphAttachment
+            var attach = new GraphCreateAttachmentRequest
             {
                 ODataType = "#microsoft.graph.fileAttachment",
                 Name = part.FileName ?? "attachment",
@@ -274,7 +274,7 @@ partial class RestoreProvider
             {
                 var req = new HttpRequestMessage(HttpMethod.Post, url);
                 req.Headers.Authorization = await provider.GetAuthenticationHeaderAsync(false, rct).ConfigureAwait(false);
-                req.Content = JsonContent.Create(attach);
+                req.Content = JsonContent.Create(attach, options: APIHelper.IgnoreNullJsonOptions);
                 return req;
             }
 

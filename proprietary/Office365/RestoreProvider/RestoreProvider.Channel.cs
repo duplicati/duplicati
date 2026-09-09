@@ -45,7 +45,9 @@ public partial class RestoreProvider
             {
                 var req = new HttpRequestMessage(HttpMethod.Post, new Uri(url));
                 req.Headers.Authorization = await provider.GetAuthenticationHeaderAsync(false, rct).ConfigureAwait(false);
-                req.Content = JsonContent.Create(payload);
+                // Null values (e.g. description) are omitted: the Graph OData deserializer
+                // rejects explicit JSON nulls with "UnableToDeserializePostBody".
+                req.Content = JsonContent.Create(payload, options: APIHelper.IgnoreNullJsonOptions);
                 return req;
             }
 

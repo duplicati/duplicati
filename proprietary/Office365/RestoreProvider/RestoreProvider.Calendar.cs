@@ -127,6 +127,10 @@ partial class RestoreProvider
             var calendar = Uri.EscapeDataString(calendarId);
             var url = $"{baseUrl}/v1.0/users/{user}/calendars/{calendar}/events";
 
+            // Note: the payload is serialized with null values omitted. Callers clear
+            // read-only and unwanted properties (id, dates, seriesMasterId, type, ...) by
+            // setting them to null, and the Graph OData deserializer rejects explicit
+            // JSON nulls with "UnableToDeserializePostBody".
             async Task<HttpRequestMessage> requestFactory(CancellationToken rct)
                 => new HttpRequestMessage(HttpMethod.Post, new System.Uri(url))
                 {
@@ -134,7 +138,7 @@ partial class RestoreProvider
                     {
                         Authorization = await provider.GetAuthenticationHeaderAsync(false, rct).ConfigureAwait(false)
                     },
-                    Content = JsonContent.Create(eventItem)
+                    Content = JsonContent.Create(eventItem, options: APIHelper.IgnoreNullJsonOptions)
                 };
 
             using var resp = await provider.SendWithRetryShortAsync(
@@ -165,7 +169,7 @@ partial class RestoreProvider
                     {
                         Authorization = await provider.GetAuthenticationHeaderAsync(false, rct).ConfigureAwait(false)
                     },
-                    Content = JsonContent.Create(eventUpdate)
+                    Content = JsonContent.Create(eventUpdate, options: APIHelper.IgnoreNullJsonOptions)
                 };
 
             using var resp = await provider.SendWithRetryShortAsync(

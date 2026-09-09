@@ -316,7 +316,10 @@ partial class RestoreProvider
             {
                 var req = new HttpRequestMessage(HttpMethod.Patch, new Uri(url));
                 req.Headers.Authorization = await provider.GetAuthenticationHeaderAsync(false, ct).ConfigureAwait(false);
-                req.Content = JsonContent.Create(body);
+                // Null values are omitted (only one of created/modified may be known): the
+                // Graph OData deserializer rejects explicit JSON nulls for non-nullable
+                // properties with "UnableToDeserializePostBody".
+                req.Content = JsonContent.Create(body, options: APIHelper.IgnoreNullJsonOptions);
                 return req;
             }
 
