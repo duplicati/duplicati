@@ -122,6 +122,11 @@ public static class WebServerLoader
     public const string OPTION_SUPPRESS_WELCOME_PAGE = "webservice-suppress-welcome-page";
 
     /// <summary>
+    /// Option for disabling automatic creation of the server database
+    /// </summary>
+    public const string OPTION_WEBSERVICE_DONT_AUTOCREATE_DATABASE = "webservice-dont-autocreate-database";
+
+    /// <summary>
     /// The default path to the web root
     /// </summary>
     public const string DEFAULT_OPTION_WEBROOT = "webroot";
