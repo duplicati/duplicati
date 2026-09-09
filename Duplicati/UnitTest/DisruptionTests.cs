@@ -151,25 +151,37 @@ namespace Duplicati.UnitTest
                 return (map, filelistFiles);
             }
 
+            // The assertions below are about which dlist file describes which backup, and the file
+            // times are what order them, so a failure can only be read with both in front of it.
+            static string Explain(Dictionary<DateTime, int> map, string versions)
+                => "dlist files: "
+                    + (map.Count == 0
+                        ? "none"
+                        : string.Join(", ", map.OrderByDescending(x => x.Key).Select(x => $"{x.Key:u} {(x.Value == BackupType.FULL_BACKUP ? "full" : "partial")}")))
+                    + $"; database versions: {versions}";
+
             // Purge a file and verify that the fileset file exists in the new dlist files.
             List<string> dlistFiles;
             Dictionary<DateTime, int> backupTypeMap;
+            string versionsAfterPurge;
             using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
                 TestUtils.AssertResults(await c.PurgeFilesAsync(new Library.Utility.FilterExpression($"{this.DATAFOLDER}/*{this.fileSizes[0]}*")));
 
                 var filesets = (await c.ListAsync()).Filesets.ToList();
-                Assert.AreEqual(2, filesets.Count);
-                Assert.AreEqual(BackupType.FULL_BACKUP, filesets.Single(x => x.Version == 1).IsFullBackup);
-                Assert.AreEqual(BackupType.PARTIAL_BACKUP, filesets.Single(x => x.Version == 0).IsFullBackup);
+                versionsAfterPurge = string.Join(", ", filesets.OrderBy(x => x.Version).Select(x => $"#{x.Version} at {x.Time:u} {(x.IsFullBackup == BackupType.FULL_BACKUP ? "full" : "partial")}"));
+                Assert.AreEqual(2, filesets.Count, versionsAfterPurge);
+                Assert.AreEqual(BackupType.FULL_BACKUP, filesets.Single(x => x.Version == 1).IsFullBackup, versionsAfterPurge);
+                Assert.AreEqual(BackupType.PARTIAL_BACKUP, filesets.Single(x => x.Version == 0).IsFullBackup, versionsAfterPurge);
 
                 (backupTypeMap, dlistFiles) = await GetBackupTypesFromRemoteFilesAsync(c);
             }
 
             var backupTypes = backupTypeMap.OrderByDescending(x => x.Key).Select(x => x.Value).ToArray();
-            Assert.AreEqual(2, backupTypes.Length);
-            Assert.AreEqual(BackupType.FULL_BACKUP, backupTypes[1]);
-            Assert.AreEqual(BackupType.PARTIAL_BACKUP, backupTypes[0]);
+            var explainedAfterPurge = Explain(backupTypeMap, versionsAfterPurge);
+            Assert.AreEqual(2, backupTypes.Length, "after the purge, " + explainedAfterPurge);
+            Assert.AreEqual(BackupType.FULL_BACKUP, backupTypes[1], "after the purge the older dlist file is not the full backup: " + explainedAfterPurge);
+            Assert.AreEqual(BackupType.PARTIAL_BACKUP, backupTypes[0], "after the purge the newer dlist file is not the partial backup: " + explainedAfterPurge);
 
             // Remove the dlist files.
             foreach (string dlistFile in dlistFiles)
@@ -178,22 +190,27 @@ namespace Duplicati.UnitTest
             }
 
             // Run a repair and verify that the fileset file exists in the new dlist files.
+            string versionsAfterRepair;
             using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
                 TestUtils.AssertResults(await c.RepairAsync());
 
                 var filesets = (await c.ListAsync()).Filesets.ToList();
-                Assert.AreEqual(2, filesets.Count);
-                Assert.AreEqual(BackupType.FULL_BACKUP, filesets.Single(x => x.Version == 1).IsFullBackup);
-                Assert.AreEqual(BackupType.PARTIAL_BACKUP, filesets.Single(x => x.Version == 0).IsFullBackup);
+                versionsAfterRepair = string.Join(", ", filesets.OrderBy(x => x.Version).Select(x => $"#{x.Version} at {x.Time:u} {(x.IsFullBackup == BackupType.FULL_BACKUP ? "full" : "partial")}"));
+                Assert.AreEqual(2, filesets.Count, versionsAfterRepair);
+                Assert.AreEqual(BackupType.FULL_BACKUP, filesets.Single(x => x.Version == 1).IsFullBackup, versionsAfterRepair);
+                Assert.AreEqual(BackupType.PARTIAL_BACKUP, filesets.Single(x => x.Version == 0).IsFullBackup, versionsAfterRepair);
 
                 (backupTypeMap, _) = await GetBackupTypesFromRemoteFilesAsync(c);
             }
 
             backupTypes = backupTypeMap.OrderByDescending(x => x.Key).Select(x => x.Value).ToArray();
-            Assert.AreEqual(2, backupTypes.Length);
-            Assert.AreEqual(BackupType.FULL_BACKUP, backupTypes[1]);
-            Assert.AreEqual(BackupType.PARTIAL_BACKUP, backupTypes[0]);
+
+            // The repair writes each replacement under a name that is free, so these say what the
+            // repair produced. Before it, they said only that a number was not the one expected.
+            Assert.AreEqual(2, backupTypes.Length, "after the repair, " + Explain(backupTypeMap, versionsAfterRepair) + "; before the repair, " + explainedAfterPurge);
+            Assert.AreEqual(BackupType.FULL_BACKUP, backupTypes[1], "after the repair the older dlist file is not the full backup: " + Explain(backupTypeMap, versionsAfterRepair));
+            Assert.AreEqual(BackupType.PARTIAL_BACKUP, backupTypes[0], "after the repair the newer dlist file is not the partial backup: " + Explain(backupTypeMap, versionsAfterRepair));
         }
 
         [Test]
