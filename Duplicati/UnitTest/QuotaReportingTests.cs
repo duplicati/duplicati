@@ -109,6 +109,97 @@ namespace Duplicati.UnitTest
         }
 
         /// <summary>
+        /// There are two quotas, and --quota-disable only turns off one of them. Its own help text
+        /// says so: "Disable the quota reported by the backend. The option --quota-size can still be
+        /// used to set a manual quota".
+        /// </summary>
+        [Test]
+        [Category("Quota")]
+        public async Task AManualQuotaAppliesEvenWhenTheBackendQuotaIsDisabledAsync()
+        {
+            // One byte, so the backup is over the manual quota whatever it ends up weighing
+            var testopts = TestOptions.Expand(new { no_encryption = true, quota_disable = true, quota_size = "1b" });
+            CreateSourceData();
+
+            using (var c = new Controller(FullTarget, testopts, null))
+            {
+                var results = await c.BackupAsync([DATAFOLDER]);
+
+                Assert.That(results.Errors.Any(x => x.Contains("Assigned quota")), Is.True,
+                    "The manual quota was not applied: "
+                        + string.Join(System.Environment.NewLine, results.Errors.Concat(results.Warnings)));
+
+                Assert.That(results.Errors.Concat(results.Warnings).Any(x => x.Contains("Backend quota")), Is.False,
+                    "The backend quota was reported although it was disabled");
+            }
+        }
+
+        /// <summary>
+        /// The other half of the option, and the guard on the change above: a destination with no
+        /// room left says nothing when its quota is disabled.
+        /// </summary>
+        [Test]
+        [Category("Quota")]
+        public async Task ADisabledBackendQuotaStaysSilentAsync()
+        {
+            var testopts = TestOptions.Expand(new { no_encryption = true, quota_disable = true });
+            CreateSourceData();
+
+            using (var c = new Controller(FullTarget, testopts, null))
+            {
+                var results = await c.BackupAsync([DATAFOLDER]);
+                var quotaMessages = results.Errors.Concat(results.Warnings).Where(x => x.Contains("quota")).ToList();
+
+                Assert.That(quotaMessages, Is.Empty,
+                    "A disabled backend quota was still reported: "
+                        + string.Join(System.Environment.NewLine, quotaMessages));
+            }
+        }
+
+        /// <summary>
+        /// A manual quota that is nowhere near being reached says nothing either, so the check is
+        /// applied rather than merely being loud.
+        /// </summary>
+        [Test]
+        [Category("Quota")]
+        public async Task AManualQuotaThatIsNotReachedSaysNothingAsync()
+        {
+            var testopts = TestOptions.Expand(new { no_encryption = true, quota_disable = true, quota_size = "100mb" });
+            CreateSourceData();
+
+            using (var c = new Controller(FullTarget, testopts, null))
+            {
+                var results = await c.BackupAsync([DATAFOLDER]);
+                var quotaMessages = results.Errors.Concat(results.Warnings).Where(x => x.Contains("quota")).ToList();
+
+                Assert.That(quotaMessages, Is.Empty,
+                    "A backup well inside its manual quota reported one anyway: "
+                        + string.Join(System.Environment.NewLine, quotaMessages));
+            }
+        }
+
+        /// <summary>
+        /// The manual quota is also what the run reports it used, which is what reaches the command
+        /// line summary and the JSON result. Skipping the check left this at its default of zero.
+        /// </summary>
+        [Test]
+        [Category("Quota")]
+        public async Task TheManualQuotaIsReportedWhenTheBackendQuotaIsDisabledAsync()
+        {
+            var testopts = TestOptions.Expand(new { no_encryption = true, quota_disable = true, quota_size = "100mb" });
+            CreateSourceData();
+
+            using (var c = new Controller(FullTarget, testopts, null))
+            {
+                var results = await c.BackupAsync([DATAFOLDER]);
+                var stats = (Library.Interface.IParsedBackendStatistics)results.BackendStatistics;
+
+                Assert.That(stats.AssignedQuotaSpace, Is.EqualTo(100 * 1024 * 1024L),
+                    "The manual quota was not recorded on the result");
+            }
+        }
+
+        /// <summary>
         /// A destination that cannot say what it has room for is not a destination with no room:
         /// there is no quota to be close to exceeding, so nothing is reported. A Google shared
         /// drive is exactly this, and reporting the signed-in user's own drive instead is what

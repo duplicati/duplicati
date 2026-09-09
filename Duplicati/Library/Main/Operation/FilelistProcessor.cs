@@ -563,14 +563,23 @@ namespace Duplicati.Library.Main.Operation
         private static bool OnlyReadsFromBackend(OperationMode operation)
             => operation is OperationMode.Restore or OperationMode.ListBrokenFiles;
 
+        /// <summary>
+        /// Reports on the two quotas a backup can run into: the one the destination reports, and the
+        /// one the user set with --quota-size.
+        /// </summary>
+        /// <remarks>
+        /// --quota-disable turns off the first of those only. Its help text says as much - "Disable
+        /// the quota reported by the backend. The option --quota-size can still be used to set a
+        /// manual quota" - and it exists because some destinations report a quota that is wrong or
+        /// meaningless, which says nothing about the limit the user set for themselves.
+        /// </remarks>
         private static async Task CheckQuotaAsync(IBackendManager backendManager, Options options, IBackendWriter log, long knownFileSize)
         {
-            if (options.QuotaDisable)
-                return;
-
             var reportShortage = !OnlyReadsFromBackend(log.MainOperation);
 
-            var quota = await backendManager.GetQuotaInfoAsync(CancellationToken.None).ConfigureAwait(false);
+            var quota = options.QuotaDisable
+                ? null
+                : await backendManager.GetQuotaInfoAsync(CancellationToken.None).ConfigureAwait(false);
             if (quota != null)
             {
                 log.TotalQuotaSpace = quota.TotalQuotaSpace;
