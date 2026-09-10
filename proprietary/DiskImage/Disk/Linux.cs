@@ -475,13 +475,13 @@ namespace Duplicati.Proprietary.DiskImage.Disk
         // P/Invoke to the native wrapper library for ioctls
         // The .NET runtime will automatically load the correct architecture-specific version
         // from runtimes/linux-{arch}/native/libc_wrapper.so based on the current RID
-        [LibraryImport("libc_wrapper.so", SetLastError = true)]
+        [LibraryImport("libc_wrapper", SetLastError = true)]
         internal static partial int ioctl_uint32(int fd, uint request, ref uint value);
 
-        [LibraryImport("libc_wrapper.so", SetLastError = true)]
+        [LibraryImport("libc_wrapper", SetLastError = true)]
         internal static partial int ioctl_uint64(int fd, ulong request, ref ulong value);
 
-        [LibraryImport("libc_wrapper.so", SetLastError = true)]
+        [LibraryImport("libc_wrapper", SetLastError = true)]
         internal static partial int ioctl_no_arg(int fd, uint request);
 
         // Standard libc functions
