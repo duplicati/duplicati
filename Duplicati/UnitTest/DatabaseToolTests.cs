@@ -1103,5 +1103,56 @@ INSERT INTO ""Version"" (""Version"") VALUES (12);
                 Assert.AreEqual("True", (string)cmd.ExecuteScalar());
             }
         }
+
+        /// <summary>
+        /// A Linux installation with no home folder used to resolve its data folder to the relative
+        /// path "var/lib/Duplicati" and stored the database paths joined onto it, so the server
+        /// database holds a path that names the file from the root without saying so. Resolving that
+        /// against the data folder a second time points at a file that is not there, and the real
+        /// database is then reported as orphaned - which is what "cleanup" offers to delete.
+        /// </summary>
+        [Test]
+        [Category("DatabaseTool")]
+        public async Task TestVerifyCommandWithLegacyRootlessDbPathAsync()
+        {
+            using var tempFolder = new Library.Utility.TempFolder();
+            string tempDir = tempFolder;
+
+            var serverTargetPath = Path.Combine(tempDir, "Duplicati-server.sqlite");
+            var localDb = Path.Combine(tempDir, "local1.sqlite");
+
+            // The data folder's own path without its root, which is the shape that was stored
+            var fullDataFolder = Duplicati.Library.Common.IO.Util.AppendDirSeparator(Path.GetFullPath(tempDir));
+            var legacyDbPath = fullDataFolder.Substring((Path.GetPathRoot(fullDataFolder) ?? "").Length) + "local1.sqlite";
+
+            using (var db = await SQLiteLoader.LoadConnectionAsync(serverTargetPath))
+            using (var cmd = db.CreateCommand())
+            {
+                cmd.CommandText = ServerSchemaV6;
+                await cmd.ExecuteNonQueryAsync();
+
+                cmd.CommandText = $@"
+                    INSERT INTO ""Backup"" (""Name"", ""Tags"", ""TargetURL"", ""DBPath"")
+                    VALUES ('Test Backup', '', 'file:///test', '{legacyDbPath.Replace("'", "''")}');
+                ";
+                await cmd.ExecuteNonQueryAsync();
+            }
+
+            using (var db = await SQLiteLoader.LoadConnectionAsync(localDb))
+            using (var cmd = db.CreateCommand())
+            {
+                cmd.CommandText = LocalSchemaV12;
+                await cmd.ExecuteNonQueryAsync();
+            }
+
+            var results = await Duplicati.CommandLine.DatabaseTool.Commands.Verify
+                .AnalyzeDatabasesAsync(tempDir, includeServer: true);
+
+            var byPath = results.ToDictionary(r => r.Path, StringComparer.OrdinalIgnoreCase);
+
+            Assert.IsTrue(byPath.ContainsKey(localDb), "the database the backup uses should be reported");
+            Assert.AreEqual("Found", byPath[localDb].Status,
+                "the database the backup uses was reported as orphaned, which is what cleanup deletes");
+        }
     }
 }

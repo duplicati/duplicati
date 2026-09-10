@@ -764,12 +764,7 @@ namespace Duplicati.Server.Database
         /// <param name="dbPath">The DB path to resolve.</param>
         /// <returns>The absolute DB path.</returns>
         private string ResolveDbPath(string? dbPath)
-        {
-            if (string.IsNullOrWhiteSpace(dbPath) || Path.IsPathRooted(dbPath))
-                return dbPath ?? "";
-
-            return Path.GetFullPath(Path.Combine(m_dataFolder, dbPath));
-        }
+            => DataFolderManager.ResolveDataFolderRelativePath(m_dataFolder, dbPath);
 
         /// <summary>
         /// Converts an absolute DB path to a relative path if it is under the data folder.
@@ -785,7 +780,15 @@ namespace Duplicati.Server.Database
             var fullDbPath = Path.GetFullPath(dbPath);
 
             if (fullDbPath.StartsWith(fullDataFolder, Library.Utility.Utility.ClientFilenameStringComparison))
-                return fullDbPath.Substring(fullDataFolder.Length);
+            {
+                var relative = fullDbPath.Substring(fullDataFolder.Length);
+
+                // Only store the relative form if it reads back as the same path. ResolveDbPath
+                // reinterprets a relative path that begins with the data folder's own path minus
+                // its root, so a database placed in a folder of that shape has to stay absolute
+                if (string.Equals(ResolveDbPath(relative), fullDbPath, Library.Utility.Utility.ClientFilenameStringComparison))
+                    return relative;
+            }
 
             return dbPath;
         }

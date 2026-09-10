@@ -217,11 +217,7 @@ public static class Verify
                 {
                     var path = rd.ConvertValueToString(0);
                     if (!string.IsNullOrEmpty(path))
-                    {
-                        if (!Path.IsPathRooted(path))
-                            path = Path.Combine(datafolder, path);
-                        serverDbPaths.Add(Path.GetFullPath(path));
-                    }
+                        serverDbPaths.Add(Path.GetFullPath(DataFolderManager.ResolveDataFolderRelativePath(datafolder, path)));
                 }
             }
             catch (Exception ex)
