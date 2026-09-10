@@ -484,7 +484,10 @@ namespace Duplicati.Library.Main.Backend
             {
                 await Task.Delay(_currentRetryDelay, token).ConfigureAwait(false);
 
-                if (_retryWithExponentialBackoff)
+                // The doubling is capped at the same 1024x the main backend manager uses
+                // (Utility.GetRetryDelay), so a large retry count cannot grow the delay without
+                // bound or overflow the int
+                if (_retryWithExponentialBackoff && (long)_currentRetryDelay < (long)_retryDelay * 1024)
                     _currentRetryDelay <<= 1; // Double the delay for exponential backoff
             }
         }

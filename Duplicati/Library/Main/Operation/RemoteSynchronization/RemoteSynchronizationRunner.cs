@@ -229,8 +229,21 @@ public static class RemoteSynchronizationRunner
             return 0;
         }
 
-        using var b1m = new LightWeightBackendManager(config.Src, src_opts, config.BackendRetries, config.BackendRetryDelay, config.BackendRetryWithExponentialBackoff, progressUpdater: progressUpdater, backendProgressUpdater: backendProgressUpdater);
-        using var b2m = new LightWeightBackendManager(config.Dst, dst_opts, config.BackendRetries, config.BackendRetryDelay, config.BackendRetryWithExponentialBackoff, progressUpdater: progressUpdater, backendProgressUpdater: backendProgressUpdater);
+        using var b1m = new LightWeightBackendManager(config.Src, src_opts,
+            maxRetries: config.BackendRetries,
+            retryDelay: config.BackendRetryDelay,
+            // The source is only ever read from. Creating a missing source folder would turn "the
+            // source is gone" into "the source is empty", and an empty source deletes every file in
+            // the destination
+            autoCreateFolders: false,
+            retryWithExponentialBackoff: config.BackendRetryWithExponentialBackoff,
+            progressUpdater: progressUpdater, backendProgressUpdater: backendProgressUpdater);
+        using var b2m = new LightWeightBackendManager(config.Dst, dst_opts,
+            maxRetries: config.BackendRetries,
+            retryDelay: config.BackendRetryDelay,
+            autoCreateFolders: config.AutoCreateFolders,
+            retryWithExponentialBackoff: config.BackendRetryWithExponentialBackoff,
+            progressUpdater: progressUpdater, backendProgressUpdater: backendProgressUpdater);
 
         // Prepare the operations
         var (to_copy, to_delete, to_verify) = await PrepareFileListsAsync(b1m, b2m, config, token).ConfigureAwait(false);
