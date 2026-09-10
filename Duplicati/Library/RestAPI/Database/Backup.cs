@@ -227,9 +227,10 @@ namespace Duplicati.Server.Database
                     if (target != null)
                         target.TargetUrl = QuerystringMasking.Mask(target.TargetUrl, protectedNames);
 
-            foreach (var setting in this.Settings)
-                if (protectedNames.Contains(setting.Name))
-                    setting.Value = Connection.PASSWORD_PLACEHOLDER;
+            if (Settings != null)
+                foreach (var setting in Settings)
+                    if (protectedNames.Contains(setting.Name))
+                        setting.Value = Connection.PASSWORD_PLACEHOLDER;
         }
 
         /// <inheritdoc/>

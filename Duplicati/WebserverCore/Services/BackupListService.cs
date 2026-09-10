@@ -311,11 +311,16 @@ public class BackupListService(Connection connection) : IBackupListService
             return backups;
         }
 
-        var all = backups.Select(n => new
+        var all = backups.Select(n =>
         {
-            IsUnencryptedOrPassphraseStored = connection.IsUnencryptedOrPassphraseStored(long.Parse(n.ID)),
-            Backup = n,
-            Schedule = schedules.FirstOrDefault(x => x.Tags != null && x.Tags.Contains("ID=" + n.ID))
+            // Mask passwords in target URLs, sources and settings, same as the single-backup GET
+            n.MaskSensitiveInformation();
+            return new
+            {
+                IsUnencryptedOrPassphraseStored = connection.IsUnencryptedOrPassphraseStored(long.Parse(n.ID)),
+                Backup = n,
+                Schedule = schedules.FirstOrDefault(x => x.Tags != null && x.Tags.Contains("ID=" + n.ID))
+            };
         });
 
         var res = all.Select(x => new Dto.BackupAndScheduleOutputDto()
@@ -329,7 +334,7 @@ public class BackupListService(Connection connection) : IBackupListService
                 IsTemporary = x.Backup.IsTemporary,
                 IsUnencryptedOrPassphraseStored = x.IsUnencryptedOrPassphraseStored,
                 Metadata = x.Backup.Metadata,
-                Sources = Server.SourceMasking.MaskSources(x.Backup.Sources, Connection.PasswordFieldNames),
+                Sources = x.Backup.Sources,
                 Settings = x.Backup.Settings?.Select(y => new Dto.SettingDto()
                 {
                     Name = y.Name,
