@@ -222,6 +222,15 @@ public static class RemoteSynchronizationRunner
                 dst_opts[x.Key] = x.Value;
         }
 
+        // The two listings are matched against each other, so one comparer has to answer for both
+        // sides, and it is applied if either side asks for it. This mirrors what the backup path
+        // does with the same question in FilelistProcessor. The option defaults to false, which is
+        // the ordinal comparison the lookups below have always used.
+        var name_comparer = Library.Utility.Utility.ParseBoolOption(src_opts, "case-insensitive-remote")
+            || Library.Utility.Utility.ParseBoolOption(dst_opts, "case-insensitive-remote")
+                ? StringComparer.OrdinalIgnoreCase
+                : StringComparer.Ordinal;
+
         // Check if we only had to parse the arguments
         if (config.ParseArgumentsOnly)
         {
@@ -233,7 +242,7 @@ public static class RemoteSynchronizationRunner
         using var b2m = new LightWeightBackendManager(config.Dst, dst_opts, config.BackendRetries, config.BackendRetryDelay, config.BackendRetryWithExponentialBackoff, progressUpdater: progressUpdater, backendProgressUpdater: backendProgressUpdater);
 
         // Prepare the operations
-        var (to_copy, to_delete, to_verify) = await PrepareFileListsAsync(b1m, b2m, config, token).ConfigureAwait(false);
+        var (to_copy, to_delete, to_verify) = await PrepareFileListsAsync(b1m, b2m, config, name_comparer, token).ConfigureAwait(false);
         var disableQuota = Library.Utility.Utility.ParseBoolOption(dst_opts, "quota-disable");
 
         // Check if we have enough free space in the destination to perform the synchronization.
@@ -723,17 +732,24 @@ public static class RemoteSynchronizationRunner
     /// <param name="b_src">The source lightweight backend manager.</param>
     /// <param name="b_dst">The destination lightweight backend manager.</param>
     /// <param name="config">The parsed configuration for the tool.</param>
+    /// <param name="name_comparer">The comparer to use for the remote filenames.</param>
     /// <param name="token">The cancellation token to use for the asynchronous operations.</param>
     /// <returns>A tuple of Lists each holding the files to copy, delete and verify.</returns>
-    private static async Task<(IEnumerable<IFileEntry>, IEnumerable<IFileEntry>, IEnumerable<IFileEntry>)> PrepareFileListsAsync(LightWeightBackendManager b_src, LightWeightBackendManager b_dst, RemoteSynchronizationConfig config, CancellationToken token)
+    private static async Task<(IEnumerable<IFileEntry>, IEnumerable<IFileEntry>, IEnumerable<IFileEntry>)> PrepareFileListsAsync(LightWeightBackendManager b_src, LightWeightBackendManager b_dst, RemoteSynchronizationConfig config, IEqualityComparer<string> name_comparer, CancellationToken token)
     {
         IEnumerable<IFileEntry> files_src, files_dst;
 
         using (new Duplicati.Library.Logging.Timer(LOGTAG, "ListSource", "Prepare | List source"))
             files_src = await b_src.ListAsync(token).ConfigureAwait(false);
 
+        // Checked before the shortcuts below, because neither of them makes two entries that share
+        // a name any easier to tell apart
+        VerifyNoDuplicateNames(files_src, "source", config.Src, name_comparer);
+
         using (new Duplicati.Library.Logging.Timer(LOGTAG, "ListDestination", "Prepare | List destination"))
             files_dst = await b_dst.ListAsync(token).ConfigureAwait(false);
+
+        VerifyNoDuplicateNames(files_dst, "destination", config.Dst, name_comparer);
 
         // Shortcut for force
         if (config.Force)
@@ -750,12 +766,12 @@ public static class RemoteSynchronizationRunner
         Dictionary<string, IFileEntry> lookup_src, lookup_dst;
         using (new Duplicati.Library.Logging.Timer(LOGTAG, "BuildLookup", "Prepare | Build lookup for source and destination"))
         {
-            lookup_src = files_src.ToDictionary(x => x.Name);
-            lookup_dst = files_dst.ToDictionary(x => x.Name);
+            lookup_src = files_src.ToDictionary(x => x.Name, name_comparer);
+            lookup_dst = files_dst.ToDictionary(x => x.Name, name_comparer);
         }
 
         var to_copy = new List<IFileEntry>();
-        var to_delete = new HashSet<string>();
+        var to_delete = new HashSet<string>(name_comparer);
         var to_verify = new List<IFileEntry>();
 
         // Find all of the files in src that are not in dst, where the dst has a different size than src or src a more recent modification date than dst
@@ -801,6 +817,34 @@ public static class RemoteSynchronizationRunner
             to_delete_lookedup = [.. to_delete.Select(x => lookup_dst[x])];
 
         return (to_copy, to_delete_lookedup, to_verify);
+    }
+
+    /// <summary>
+    /// Verifies that a remote listing does not report the same name more than once.
+    /// Every operation in this tool addresses a remote file by its name alone, so two entries that
+    /// share a name cannot be copied, deleted, renamed or verified apart. This reports the same
+    /// thing the backup path reports for the same condition, instead of failing with the exception
+    /// that building a lookup out of the listing throws.
+    /// </summary>
+    /// <param name="files">The listing to check.</param>
+    /// <param name="side">The side the listing was read from, for the error message.</param>
+    /// <param name="url">The url the listing was read from, for the error message.</param>
+    /// <param name="name_comparer">The comparer to use for the remote filenames.</param>
+    /// <exception cref="RemoteListVerificationException">If a name is reported more than once.</exception>
+    private static void VerifyNoDuplicateNames(IEnumerable<IFileEntry> files, string side, string url, IEqualityComparer<string> name_comparer)
+    {
+        Library.Utility.Utility.GetUniqueItems(files.Select(x => x.Name), name_comparer, out var doubles);
+        if (doubles.Count == 0)
+            return;
+
+        var message = string.Format(
+            "Found remote files reported as duplicates in the {0} ({1}), either the backend module is broken or you need to manually remove the extra copies.\nThe following files were found multiple times: {2}",
+            side,
+            Library.Utility.Utility.GetUrlWithoutCredentials(url),
+            string.Join(", ", doubles));
+
+        Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "DuplicateRemoteFiles", null, message);
+        throw new RemoteListVerificationException(message, "DuplicateRemoteFiles");
     }
 
     /// <summary>
