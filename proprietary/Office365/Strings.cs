@@ -66,10 +66,10 @@ internal static class Strings
     public static string OfficeIncludedRootTypesLong => LC.L("The root types to include in the backup (e.g. Users, Groups, Sites).");
 
     public static string OfficeIncludedUserTypesShort => LC.L("Included user types.");
-    public static string OfficeIncludedUserTypesLong => LC.L("The user types to include in the backup (e.g. Mailbox, OneDrive, Calendar).");
+    public static string OfficeIncludedUserTypesLong => LC.L("The user types to include in the backup (e.g. Mailbox, Calendar, Contacts).");
 
     public static string OfficeIncludedGroupTypesShort => LC.L("Included group types.");
-    public static string OfficeIncludedGroupTypesLong => LC.L("The group types to include in the backup (e.g. Mailbox, OneDrive, Calendar).");
+    public static string OfficeIncludedGroupTypesLong => LC.L("The group types to include in the backup (e.g. Mailbox, Files, Teams). Group calendars are not supported with application permissions.");
 
     public static string OfficeIncludedUserClassificationsShort => LC.L("Included user classifications.");
     public static string OfficeIncludedUserClassificationsLong => LC.L("The user classifications to include in the backup: Licensed, Unlicensed, SharedMailboxWithStorage, SharedMailboxWithoutStorage. Defaults to all.");

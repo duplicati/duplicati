@@ -33,18 +33,24 @@ internal static class OptionsHelper
     internal const string ENUMERATION_MODE_OPTION = "enumeration-mode";
 
     /// <summary>
-    /// User types that require delegated permissions, default disabled.
+    /// User types that are excluded by default.
+    /// To Do and OneNote are supported with application permissions,
+    /// but are opt-in as they are not commonly backed up.
     /// </summary>
-    private static readonly Office365UserType[] DELEGATED_USER_TYPES =
+    private static readonly Office365UserType[] DEFAULT_EXCLUDED_USER_TYPES =
     [
         Office365UserType.Tasks,
         Office365UserType.Notes
     ];
 
     /// <summary>
-    /// Group types that require delegated permissions, default disabled.
+    /// Group types that are excluded by default.
+    /// Group calendars are not supported: the Graph API only allows access to
+    /// group calendar events with delegated permissions, and this provider
+    /// only uses application permissions. Group OneNote is supported with
+    /// application permissions, but is opt-in as it is not commonly backed up.
     /// </summary>
-    private static readonly Office365GroupType[] DELEGATED_GROUP_TYPES =
+    private static readonly Office365GroupType[] DEFAULT_EXCLUDED_GROUP_TYPES =
     [
         Office365GroupType.Calendar,
         Office365GroupType.Notes
@@ -62,7 +68,7 @@ internal static class OptionsHelper
     /// </summary>
     private static readonly Office365GroupType[] DEFAULT_INCLUDED_GROUP_TYPES =
         Enum.GetValues<Office365GroupType>()
-            .Except(DELEGATED_GROUP_TYPES)
+            .Except(DEFAULT_EXCLUDED_GROUP_TYPES)
             .ToArray();
 
     /// <summary>
@@ -70,7 +76,7 @@ internal static class OptionsHelper
     /// </summary>
     private static readonly Office365UserType[] DEFAULT_INCLUDED_USER_TYPES =
         Enum.GetValues<Office365UserType>()
-            .Except(DELEGATED_USER_TYPES)
+            .Except(DEFAULT_EXCLUDED_USER_TYPES)
             .ToArray();
 
     /// <summary>
