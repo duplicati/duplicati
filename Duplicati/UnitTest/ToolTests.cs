@@ -785,5 +785,217 @@ namespace Duplicati.UnitTest
             Assert.IsTrue(DirectoriesAndContentsAreEqual(l1, l2), "Directories should be synchronized.");
         }
 
+        /// <summary>
+        /// A test backend that reports the same remote name more than once, which is what a broken
+        /// backend module - or a remote holding two objects under one name - looks like to the
+        /// synchronization tool. The mode is read from a backend option rather than a static, so a
+        /// single run can have a broken source and an intact destination, or the other way round.
+        /// </summary>
+        public class DuplicateListingBackend : IBackend, IStreamingBackend
+        {
+            /// <summary>
+            /// The protocol key this backend is registered under.
+            /// </summary>
+            public const string Key = "duplistingtest";
+
+            /// <summary>
+            /// The option that selects how the listing repeats itself: "exact" repeats the name as
+            /// it is, "case" repeats it in upper case.
+            /// </summary>
+            public const string ModeOption = "duplicate-listing";
+
+            /// <summary>
+            /// The backend the listing is taken from.
+            /// </summary>
+            private readonly IStreamingBackend? m_backend;
+
+            /// <summary>
+            /// The mode read from <see cref="ModeOption"/>.
+            /// </summary>
+            private readonly string m_mode = "none";
+
+            public DuplicateListingBackend() { }
+
+            public DuplicateListingBackend(string url, Dictionary<string, string> options)
+            {
+                m_backend = (IStreamingBackend)Library.DynamicLoader.BackendLoader.GetBackend(url.Replace($"{Key}://", "file://"), options);
+                if (options.TryGetValue(ModeOption, out var mode) && !string.IsNullOrWhiteSpace(mode))
+                    m_mode = mode;
+            }
+
+            public string DisplayName => "Duplicate listing test backend";
+
+            public string ProtocolKey => Key;
+
+            public string Description => "A testing backend that reports the same remote name twice";
+
+            public bool SupportsStreaming => m_backend?.SupportsStreaming ?? false;
+
+            public IList<ICommandLineArgument> SupportedCommands
+                => m_backend?.SupportedCommands ?? Library.DynamicLoader.BackendLoader.GetSupportedCommands("file://").ToList();
+
+            public async IAsyncEnumerable<IFileEntry> ListAsync([System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancelToken)
+            {
+                await foreach (var entry in m_backend!.ListAsync(cancelToken).ConfigureAwait(false))
+                {
+                    yield return entry;
+
+                    // The repeat is made up instead of read back from the filesystem, so a case
+                    // difference shows up where filenames are not case sensitive as well
+                    if (m_mode == "exact")
+                        yield return entry;
+                    else if (m_mode == "case")
+                        yield return new FileEntry(entry.Name.ToUpperInvariant(), entry.Size, entry.LastAccess, entry.LastModification, entry.IsFolder, entry.IsArchived);
+                }
+            }
+
+            public Task CreateFolderAsync(CancellationToken cancelToken) => m_backend!.CreateFolderAsync(cancelToken);
+            public Task DeleteAsync(string remotename, CancellationToken cancelToken) => m_backend!.DeleteAsync(remotename, cancelToken);
+            public Task GetAsync(string remotename, Stream stream, CancellationToken cancelToken) => m_backend!.GetAsync(remotename, stream, cancelToken);
+            public Task GetAsync(string remotename, string filename, CancellationToken cancelToken) => m_backend!.GetAsync(remotename, filename, cancelToken);
+            public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => m_backend!.GetDNSNamesAsync(cancelToken);
+            public Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken) => m_backend!.PutAsync(remotename, stream, cancelToken);
+            public Task PutAsync(string remotename, string filename, CancellationToken cancelToken) => m_backend!.PutAsync(remotename, filename, cancelToken);
+            public Task TestAsync(bool alsoWrite, CancellationToken cancelToken) => m_backend!.TestAsync(alsoWrite, cancelToken);
+            public void Dispose() => m_backend?.Dispose();
+        }
+
+        /// <summary>
+        /// Builds a configuration for the synchronization runner with the defaults the commandline
+        /// parser applies, so a test only has to state what it cares about. The runs are dry, as
+        /// the listings are read before anything is transferred.
+        /// </summary>
+        private static Library.Main.Operation.RemoteSynchronization.RemoteSynchronizationConfig SyncConfig(string src, string dst, List<string>? srcOptions = null, List<string>? dstOptions = null, bool force = false)
+            => new Library.Main.Operation.RemoteSynchronization.RemoteSynchronizationConfig(
+                Src: src,
+                Dst: dst,
+                AutoCreateFolders: true,
+                BackendRetries: 3,
+                BackendRetryDelay: 1000,
+                BackendRetryWithExponentialBackoff: true,
+                Confirm: true,
+                DryRun: true,
+                DstOptions: dstOptions ?? [],
+                Force: force,
+                GlobalOptions: [],
+                LogFile: "",
+                LogLevel: "Information",
+                ParseArgumentsOnly: false,
+                Progress: false,
+                Retention: false,
+                Retry: 3,
+                SrcOptions: srcOptions ?? [],
+                VerifyContents: false,
+                VerifyGetAfterPut: false);
+
+        /// <summary>
+        /// Runs the synchronization the way the server does, rather than through the commandline
+        /// entry point, which turns every exception into an exit code.
+        /// </summary>
+        private static Task<int> RunSyncAsync(Library.Main.Operation.RemoteSynchronization.RemoteSynchronizationConfig config)
+            => Library.Main.Operation.RemoteSynchronization.RemoteSynchronizationRunner.RunAsync(config, CancellationToken.None);
+
+        /// <summary>
+        /// A destination that reports the same name twice cannot be told apart by name, and a name
+        /// is all this tool has to work with. It has to say so the way the backup path does, rather
+        /// than fail with the dictionary exception that reached the user in issue #7285.
+        /// </summary>
+        [TestCase(false)]
+        [TestCase(true)]
+        [Category("Tools/RemoteSynchronization")]
+        public async Task TestRemoteSynchronizationDuplicateDestinationListingIsReportedAsync(bool force)
+        {
+            var l1 = Path.Combine(TARGETFOLDER, "dupdst_src");
+            var l2 = Path.Combine(TARGETFOLDER, "dupdst_dst");
+
+            Directory.CreateDirectory(l1);
+            Directory.CreateDirectory(l2);
+
+            await GenerateTestDataAsync(l1, 3, 0, 0, 1024).ConfigureAwait(false);
+
+            // The destination needs a file of its own, so there is something to report twice
+            await GenerateTestDataAsync(l2, 1, 0, 0, 1024).ConfigureAwait(false);
+
+            Library.DynamicLoader.BackendLoader.AddBackend(new DuplicateListingBackend());
+
+            var config = SyncConfig($"file://{l1}", $"{DuplicateListingBackend.Key}://{l2}",
+                dstOptions: [$"{DuplicateListingBackend.ModeOption}=exact"], force: force);
+
+            var error = Assert.ThrowsAsync<RemoteListVerificationException>(async () => await RunSyncAsync(config).ConfigureAwait(false));
+
+            Assert.AreEqual("DuplicateRemoteFiles", error!.HelpID);
+            Assert.IsTrue(error.Message.Contains("destination"), $"The error did not say which side reported the duplicates: {error.Message}");
+        }
+
+        /// <summary>
+        /// The same for the source, with an empty destination. That takes the shortcut which never
+        /// builds the lookups, so the duplicates are only found if the listing itself is checked.
+        /// </summary>
+        [Test]
+        [Category("Tools/RemoteSynchronization")]
+        public async Task TestRemoteSynchronizationDuplicateSourceListingIsReportedAsync()
+        {
+            var l1 = Path.Combine(TARGETFOLDER, "dupsrc_src");
+            var l2 = Path.Combine(TARGETFOLDER, "dupsrc_dst");
+
+            Directory.CreateDirectory(l1);
+            Directory.CreateDirectory(l2);
+
+            await GenerateTestDataAsync(l1, 3, 0, 0, 1024).ConfigureAwait(false);
+
+            Library.DynamicLoader.BackendLoader.AddBackend(new DuplicateListingBackend());
+
+            var config = SyncConfig($"{DuplicateListingBackend.Key}://{l1}", $"file://{l2}",
+                srcOptions: [$"{DuplicateListingBackend.ModeOption}=exact"]);
+
+            var error = Assert.ThrowsAsync<RemoteListVerificationException>(async () => await RunSyncAsync(config).ConfigureAwait(false));
+
+            Assert.AreEqual("DuplicateRemoteFiles", error!.HelpID);
+            Assert.IsTrue(error.Message.Contains("source"), $"The error did not say which side reported the duplicates: {error.Message}");
+        }
+
+        /// <summary>
+        /// Two names that differ only in case are duplicates on a remote that does not tell them
+        /// apart, and two separate files anywhere else. The answer follows --case-insensitive-remote,
+        /// which is what the backup path does with the same question, and the default is unchanged.
+        /// </summary>
+        [TestCase("src", true)]
+        [TestCase("dst", true)]
+        [TestCase("none", false)]
+        [Category("Tools/RemoteSynchronization")]
+        public async Task TestRemoteSynchronizationCaseOnlyDuplicatesFollowCaseInsensitiveRemoteAsync(string optionSide, bool expectFailure)
+        {
+            var l1 = Path.Combine(TARGETFOLDER, $"dupcase_src_{optionSide}");
+            var l2 = Path.Combine(TARGETFOLDER, $"dupcase_dst_{optionSide}");
+
+            Directory.CreateDirectory(l1);
+            Directory.CreateDirectory(l2);
+
+            // The source is left empty, so the run does not depend on any transfer
+            await GenerateTestDataAsync(l2, 3, 0, 0, 1024).ConfigureAwait(false);
+
+            Library.DynamicLoader.BackendLoader.AddBackend(new DuplicateListingBackend());
+
+            var srcOptions = new List<string>();
+            var dstOptions = new List<string> { $"{DuplicateListingBackend.ModeOption}=case" };
+            if (optionSide == "src")
+                srcOptions.Add("case-insensitive-remote=true");
+            else if (optionSide == "dst")
+                dstOptions.Add("case-insensitive-remote=true");
+
+            var config = SyncConfig($"file://{l1}", $"{DuplicateListingBackend.Key}://{l2}", srcOptions, dstOptions);
+
+            if (expectFailure)
+            {
+                var error = Assert.ThrowsAsync<RemoteListVerificationException>(async () => await RunSyncAsync(config).ConfigureAwait(false));
+                Assert.AreEqual("DuplicateRemoteFiles", error!.HelpID);
+            }
+            else
+            {
+                Assert.AreEqual(0, await RunSyncAsync(config).ConfigureAwait(false),
+                    "Names that differ in case are two files unless the remote is said to be case insensitive.");
+            }
+        }
+
     }
 }
