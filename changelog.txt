@@ -1,3 +1,85 @@
+2026-09-11 - 2.4.0.101_canary_2026-09-11
+==========
+This release is a canary release intended to be used for testing.
+
+# Fixed Linux data folder for services without a home folder
+
+When running as a Linux service under an account with no home folder, the data folder was stored as the relative path `var/lib/Duplicati` instead of `/var/lib/Duplicati`. Relative paths are now resolved correctly, thanks @JamBalaya56562.
+
+# Fixed sync failing on backends that cannot report quota
+
+A backend that cannot report free space returns a negative value. The synchronization tool compared this against the required size and incorrectly concluded the destination was full, stopping the sync. The quota check now only runs when the destination actually reported a free space, thanks @JamBalaya56562.
+
+# Fixed sync crash on duplicate remote file names
+
+A remote listing that reported the same name twice made the synchronization tool fail with an unhelpful `ArgumentException`. It now reports which side has the duplicates and what to do about it, matching the message the backup path already produced, thanks @JamBalaya56562.
+
+# Fixed source lost inside an excluded folder
+
+A source folder nested inside another source, with a folder on the path between them excluded, was silently dropped from the backup. The nested source was converted to an include filter, but the containing source's enumeration never descended into the excluded folder, so the filter was never reached. Such sources are now kept as sources instead of being converted to filters, thanks @JamBalaya56562.
+
+# Faster consistency checks
+
+The database consistency check queries were rewritten to avoid SQLite building automatic indexes. Depending on database size and shape, the checks are now 25-40% faster, thanks @JamBalaya56562.
+
+# New option to prevent automatic database creation
+
+The new `--webservice-dont-autocreate-database` option prevents the server from creating an empty database on startup. Useful when the database already exists and you want the server to fail rather than start with an empty configuration due to a misconfigured data folder.
+
+# Fixed MS365 large email restore
+
+Restoring large emails to an MS365 tenant previously failed because the restore path attempted to set read-only or non-nullable properties on the email creation request. Only writable properties are now sent, and null values are omitted.
+
+# Fixed full-disk backup on Linux and macOS
+
+The native wrapper libraries (`libc_wrapper.so`, `libSystem_wrapper.dylib`) were placed in a `runtimes` subfolder by the build but the P/Invoke loader only looked in the application folder, causing full-disk backup to fail on packaged installs. A resolver now probes both locations.
+
+# ServerUtil command-line parsing fixes
+
+Fixed several issues from the switch to the stable System.CommandLine package, including the `--hosturl` option not accepting URLs from the command line.
+
+## Detailed list of changes
+
+- Updated ngclient to version 0.0.236
+- Fixed the Linux data folder being relative when the service account has no home folder, causing database paths to resolve incorrectly, thanks @JamBalaya56562
+- Fixed `--quota-disable` incorrectly disabling the manual `--quota-size` quota check, thanks @JamBalaya56562
+- Fixed the sync tool treating a backend that cannot report quota as having no free space, thanks @JamBalaya56562
+- Fixed Google Drive shared drive backups being checked against the user's personal quota, thanks @JamBalaya56562
+- Fixed Google Drive not tracking all copies of a file with a duplicate name, causing incomplete deletes and stale reads, thanks @JamBalaya56562
+- Fixed the sync tool crashing with an unhelpful error on duplicate remote file names, thanks @JamBalaya56562
+- Fixed a source folder being silently dropped when nested inside another source with an excluded folder between them, thanks @JamBalaya56562
+- Fixed Windows command-line argument escaping for arguments ending with backslashes, thanks @JamBalaya56562
+- Fixed four server code paths accessing the database without the serialization lock, causing intermittent errors, thanks @JamBalaya56562
+- Rewrote consistency check queries to avoid SQLite automatic indexes, improving performance, thanks @JamBalaya56562
+- Added `--webservice-dont-autocreate-database` option to prevent starting with an empty database
+- Masked sensitive information in the backup list API endpoint
+- Fixed MS365 large email restore failing due to read-only properties being sent
+- Fixed native wrapper library loading for full-disk backup on Linux and macOS packaged installs
+- Added path argument and `--output-json` support to SourceTool `list` command
+- Fixed ServerUtil `--hosturl` option not accepting URLs from the command line
+- Fixed a disk with no partitions causing the Windows disk enumeration to fail, thanks @JamBalaya56562
+- Fixed the `ijwhost.dll` native library being resolved as a managed reference, causing build warnings, thanks @JamBalaya56562
+- Added fileset diagnostics to disruption tests to aid debugging, thanks @JamBalaya56562
+- Added test for PAR2 file deletion
+- Added clean database startup tests
+- Added consistency check query equivalence tests, thanks @JamBalaya56562
+- Added data folder locator tests, thanks @JamBalaya56562
+- Added Google Drive duplicate name tests, thanks @JamBalaya56562
+- Added Google Drive shared drive quota tests, thanks @JamBalaya56562
+- Added nested source exclusion tests, thanks @JamBalaya56562
+- Added no-free-space backend quota tests, thanks @JamBalaya56562
+- Added command-line wrapping tests, thanks @JamBalaya56562
+- Added VSS disk volume lookup tests, thanks @JamBalaya56562
+- Improved `libc_wrapper` import name for clearer error messages
+- Updated MS365 permission documentation strings
+- Updated Office365 included user and group type descriptions
+
+## Updates to ngclient
+
+- Added a small loader on the start page to assist with slow loading
+- Fixed the destination test dialog not preserving context when retrying, thanks @JamBalaya56562
+- Fixed V1 destination tests not completing after error handling, thanks @JamBalaya56562
+
 2026-09-04 - 2.4.0.100_canary_2026-09-04
 ==========
 This release is a canary release intended to be used for testing.
