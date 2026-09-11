@@ -849,7 +849,8 @@ public static class RemoteSynchronizationRunner
 
     /// <summary>
     /// Renames the files in a backend.
-    /// The renaming is done by deleting the file and re-uploading it with a new name.
+    /// The renaming is delegated to the backend manager, which uses the backend's own rename when it has one and
+    /// falls back to downloading, uploading under the new name and deleting the old one otherwise.
     /// </summary>
     /// <param name="bm">The lightweight backend manager to issue rename operations to.</param>
     /// <param name="files">The files to rename.</param>
@@ -864,7 +865,6 @@ public static class RemoteSynchronizationRunner
     {
         long successful_renames = 0;
         string prefix = $"{System.DateTime.UtcNow:yyyyMMddHHmmss}.old";
-        using var downloaded = new MemoryStream();
         long i = 0, n = files.Count();
 
         var sw = new System.Diagnostics.Stopwatch();
@@ -933,7 +933,8 @@ public static class RemoteSynchronizationRunner
 
     /// <summary>
     /// Verifies the files in the destination backend.
-    /// The verification is done by downloading the files from the destination backend and comparing them to the source files.
+    /// The verification is done by downloading both copies to temporary files and comparing them in chunks, so a
+    /// volume is never held in memory.
     /// </summary>
     /// <param name="b_src">The source lightweight backend manager.</param>
     /// <param name="b_dst">The destination lightweight backend manager.</param>
@@ -944,8 +945,9 @@ public static class RemoteSynchronizationRunner
     private static async Task<IEnumerable<IFileEntry>> VerifyAsync(LightWeightBackendManager b_src, LightWeightBackendManager b_dst, IEnumerable<IFileEntry> files, RemoteSynchronizationConfig config, CancellationToken token)
     {
         var errors = new List<IFileEntry>();
-        using var s_src = new MemoryStream();
-        using var s_dst = new MemoryStream();
+        // Temporary files instead of memory: a volume can be gigabytes, and two of them are compared at a time
+        using var s_src = Duplicati.Library.Utility.TempFileStream.Create();
+        using var s_dst = Duplicati.Library.Utility.TempFileStream.Create();
         long i = 0, n = files.Count();
         var sw_get = new System.Diagnostics.Stopwatch();
         var sw_cmp = new System.Diagnostics.Stopwatch();
@@ -958,7 +960,7 @@ public static class RemoteSynchronizationRunner
             Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "VerifyingFile",
                 "Verifying {0} by downloading and comparing {1} bytes from {2} and {3}",
                 f.Name,
-                Duplicati.Library.Utility.Utility.FormatSizeString(s_src.Length),
+                Duplicati.Library.Utility.Utility.FormatSizeString(Math.Max(f.Size, 0)),
                 b_dst.DisplayName, b_src.DisplayName);
 
             try
@@ -970,9 +972,11 @@ public static class RemoteSynchronizationRunner
                 await Task.WhenAll(fs, ds).ConfigureAwait(false);
                 sw_get.Stop();
 
-                // Compare the contents
+                // Compare the contents in chunks; neither file is held in memory
                 sw_cmp.Start();
-                if (s_src.Length != s_dst.Length || !s_src.ToArray().SequenceEqual(s_dst.ToArray()))
+                s_src.Position = 0;
+                s_dst.Position = 0;
+                if (!Duplicati.Library.Utility.Utility.CompareStreams(s_src, s_dst, true))
                 {
                     errors.Add(f);
                 }

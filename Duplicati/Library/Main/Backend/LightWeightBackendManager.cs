@@ -296,8 +296,11 @@ namespace Duplicati.Library.Main.Backend
 
         /// <summary>
         /// Renames a file in the remote backend.
-        /// If the backend supports renaming, it uses the RenameAsync method.
-        /// If the backend does not support renaming, it downloads the file, renames it, and deletes the old one.
+        /// If the backend implements <see cref="IRenameEnabledBackend"/> its own rename is used, so no
+        /// data passes through this machine; the option prevent-backend-rename=true forces the fallback,
+        /// as it does in the backup path. Otherwise the file is downloaded to a temporary file, uploaded
+        /// under the new name and deleted under the old one. The backend is read inside the retry lambda,
+        /// because every retry disposes and re-instantiates it.
         /// </summary>
         /// <param name="oldname">The current name of the remote file.</param>
         /// <param name="newname">The new name for the remote file.</param>
@@ -305,43 +308,33 @@ namespace Duplicati.Library.Main.Backend
         /// <returns>A task representing the asynchronous rename operation.</returns>
         public Task RenameAsync(string oldname, string newname, CancellationToken token)
         {
-            Instantiate();
+            var preventRename = Duplicati.Library.Utility.Utility.ParseBoolOption(_options, "prevent-backend-rename");
 
-            return _backend switch
-            {
-                IStreamingBackend sb =>
-                    RetryWithDelayAsync(
-                        $"Rename {oldname} to {newname}",
-                        async () =>
-                        {
-                            // Download the file, rename it, and delete the old one
-                            using var downloaded = new MemoryStream();
-                            await sb.GetAsync(oldname, downloaded, token).ConfigureAwait(false);
-                            downloaded.Seek(0, SeekOrigin.Begin);
-                            await sb.PutAsync(newname, downloaded, token).ConfigureAwait(false);
-                            await sb.DeleteAsync(oldname, token).ConfigureAwait(false);
-                            _anyUploaded = true;
-                            _anyDownloaded = true;
-                        },
-                        null,
-                        false,
-                        token
-                    ),
-                IRenameEnabledBackend ireb =>
-                    RetryWithDelayAsync(
-                        $"Rename {oldname} to {newname}",
-                        async () =>
-                        {
-                            await ireb.RenameAsync(oldname, newname, token).ConfigureAwait(false);
-                            _anyUploaded = true;
-                            _anyDownloaded = true;
-                        },
-                        null,
-                        false,
-                        token
-                    ),
-                _ => throw new InvalidOperationException("Backend does not support renaming."),
-            };
+            return RetryWithDelayAsync(
+                $"Rename {oldname} to {newname}",
+                async () =>
+                {
+                    if (!preventRename && _backend is IRenameEnabledBackend renameBackend)
+                    {
+                        await renameBackend.RenameAsync(oldname, newname, token).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        // A fresh temporary file per attempt, so a half-written download is never re-uploaded
+                        using var downloaded = TempFileStream.Create();
+                        await _streamingBackend!.GetAsync(oldname, downloaded, token).ConfigureAwait(false);
+                        downloaded.Position = 0;
+                        await _streamingBackend!.PutAsync(newname, downloaded, token).ConfigureAwait(false);
+                        await _streamingBackend!.DeleteAsync(oldname, token).ConfigureAwait(false);
+                    }
+
+                    _anyUploaded = true;
+                    _anyDownloaded = true;
+                },
+                null,
+                false,
+                token
+            );
         }
 
         /// <summary>
