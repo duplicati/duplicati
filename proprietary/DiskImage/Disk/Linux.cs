@@ -73,6 +73,14 @@ namespace Duplicati.Proprietary.DiskImage.Disk
         public bool IsWriteable => m_writeable;
 
         /// <summary>
+        /// Registers the resolver that locates the native wrapper library
+        /// </summary>
+        static Linux()
+        {
+            NativeWrapperResolver.EnsureRegistered();
+        }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="Linux"/> class.
         /// </summary>
         /// <param name="devicePath">The Linux device path (e.g., "/dev/sda", "/dev/nvme0n1", "/dev/loop0").</param>
@@ -472,16 +480,16 @@ namespace Duplicati.Proprietary.DiskImage.Disk
 
         #region P/Invoke Declarations
 
-        // P/Invoke to the native wrapper library for ioctls
-        // The .NET runtime will automatically load the correct architecture-specific version
-        // from runtimes/linux-{arch}/native/libc_wrapper.so based on the current RID
-        [LibraryImport("libc_wrapper", SetLastError = true)]
+        // P/Invoke to the native wrapper library for ioctls.
+        // The library is located by NativeWrapperResolver, either next to the
+        // assemblies (packaged installs) or under runtimes/linux-{arch}/native/ (source builds).
+        [LibraryImport(NativeWrapperResolver.LinuxLibraryName, SetLastError = true)]
         internal static partial int ioctl_uint32(int fd, uint request, ref uint value);
 
-        [LibraryImport("libc_wrapper", SetLastError = true)]
+        [LibraryImport(NativeWrapperResolver.LinuxLibraryName, SetLastError = true)]
         internal static partial int ioctl_uint64(int fd, ulong request, ref ulong value);
 
-        [LibraryImport("libc_wrapper", SetLastError = true)]
+        [LibraryImport(NativeWrapperResolver.LinuxLibraryName, SetLastError = true)]
         internal static partial int ioctl_no_arg(int fd, uint request);
 
         // Standard libc functions
