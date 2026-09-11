@@ -78,12 +78,16 @@ public static class DataFolderLocator
     /// </summary>
     /// <param name="targetfilename">The filename to look for</param>
     /// <param name="appName">The name of the application</param>
+    /// <param name="applicationDataFolder">The application data folder to build the path from;
+    /// defaults to the folder reported by the operating system. This is a seam for the tests,
+    /// because the no-home-folder case cannot be provoked through the environment: clearing HOME
+    /// still yields a folder through the password database.</param>
     /// <returns>The default storage folder</returns>
-    internal static string GetDefaultStorageFolderInternal(string targetfilename, string appName)
+    internal static string GetDefaultStorageFolderInternal(string targetfilename, string appName, string? applicationDataFolder = null)
     {
         //Normal mode uses the systems "(Local) Application Data" folder
         // %LOCALAPPDATA% on Windows, ~/.config on Linux
-        var folder = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), appName);
+        var folder = System.IO.Path.Combine(applicationDataFolder ?? Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), appName);
 
         if (OperatingSystem.IsWindows())
         {
@@ -134,15 +138,23 @@ public static class DataFolderLocator
             // Special handling for Linux with no home folder:
             //   - Older versions use /
             //   - but new versions use /var/lib/
-            var libfolder = System.IO.Path.Combine("var", "lib", appName);
+            // Both candidates are rooted explicitly. The application data folder is reported as an
+            // empty string when the process runs under an account with no home folder, which leaves
+            // this folder relative, and a relative data folder is resolved against the working
+            // directory of whichever process reads it. The server database also stores it verbatim
+            // as the database path of a backup, which is then joined onto the data folder a second
+            // time, producing /var/lib/Duplicati/var/lib/Duplicati/<name>.sqlite (issue #7284).
+            var rootfolder = System.IO.Path.Combine("/", appName);
+            var libfolder = System.IO.Path.Combine("/", "var", "lib", appName);
 
             var curfile = System.IO.Path.Combine(libfolder, targetfilename);
-            var prevfile = System.IO.Path.Combine(folder, targetfilename);
+            var prevfile = System.IO.Path.Combine(rootfolder, targetfilename);
 
             // If the old file exists, and not the new file, we use the old
             // Otherwise we use the new location
-            if (System.IO.File.Exists(curfile) || !System.IO.File.Exists(prevfile))
-                folder = libfolder;
+            folder = System.IO.File.Exists(curfile) || !System.IO.File.Exists(prevfile)
+                ? libfolder
+                : rootfolder;
         }
 
         return folder;

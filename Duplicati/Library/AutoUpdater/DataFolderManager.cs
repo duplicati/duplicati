@@ -160,6 +160,45 @@ public static class DataFolderManager
     }
 
     /// <summary>
+    /// Resolves a path that is stored relative to the data folder.
+    ///
+    /// Database paths have been stored relative to the data folder since 2.4.0.0. Installs made
+    /// before the data folder itself was rooted stored something else: a Linux service with no home
+    /// folder resolved its data folder to the relative path "var/lib/Duplicati", and the paths
+    /// written into the server database were joined onto that, so they name the file from the root
+    /// without saying so, as in "var/lib/Duplicati/XXXX.sqlite". Joining such a value onto the data
+    /// folder again doubles it (issue #7284), so a relative path that begins with the data folder's
+    /// own path minus its root is resolved against that root instead.
+    ///
+    /// The rule is textual: the filesystem is never consulted, so the answer does not depend on
+    /// which files happen to exist.
+    /// </summary>
+    /// <param name="dataFolder">The data folder that a relative path is relative to.</param>
+    /// <param name="path">The stored path.</param>
+    /// <returns>The resolved path. An empty or already rooted path is returned unchanged.</returns>
+    public static string ResolveDataFolderRelativePath(string dataFolder, string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path) || Path.IsPathRooted(path))
+            return path ?? "";
+
+        if (string.IsNullOrWhiteSpace(dataFolder))
+            return Path.GetFullPath(path);
+
+        // The separator is appended before the root is removed, so the prefix always ends on a
+        // directory boundary and a sibling folder with a longer name does not match
+        var fullDataFolder = Util.AppendDirSeparator(Path.GetFullPath(dataFolder));
+        var root = Path.GetPathRoot(fullDataFolder) ?? "";
+        var rootless = fullDataFolder.Substring(root.Length);
+
+        // An empty remainder means the data folder is the root itself; there is then no prefix to
+        // look for, and an empty prefix would match every path
+        if (rootless.Length > 0 && path.StartsWith(rootless, Library.Utility.Utility.ClientFilenameStringComparison))
+            return Path.GetFullPath(Path.Combine(root, path));
+
+        return Path.GetFullPath(Path.Combine(fullDataFolder, path));
+    }
+
+    /// <summary>
     /// Prepares a data folder for secure use.
     ///
     /// The rules are:

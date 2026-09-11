@@ -79,7 +79,7 @@ public static class Helper
                     var rawPath = rd.ConvertValueToString(0) ?? "";
                     if (!string.IsNullOrEmpty(rawPath))
                     {
-                        var resolvedPath = Path.IsPathRooted(rawPath) ? rawPath : Path.Combine(datafolder, rawPath);
+                        var resolvedPath = DataFolderManager.ResolveDataFolderRelativePath(datafolder, rawPath);
                         dbpaths.Add(Path.GetFullPath(resolvedPath));
                     }
                 }
