@@ -60,6 +60,14 @@ namespace Duplicati.Proprietary.DiskImage.Disk
         public bool IsWriteable => m_writeable;
 
         /// <summary>
+        /// Registers the resolver that locates the native wrapper library
+        /// </summary>
+        static Mac()
+        {
+            NativeWrapperResolver.EnsureRegistered();
+        }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="Mac"/> class.
         /// </summary>
         /// <param name="devicePath">The macOS device path (e.g., "/dev/rdisk0").</param>
@@ -444,16 +452,19 @@ namespace Duplicati.Proprietary.DiskImage.Disk
 
         #region P/Invoke Declarations
 
-        [LibraryImport("runtimes/osx/native/libSystem_wrapper.dylib", SetLastError = true)]
+        // P/Invoke to the native wrapper library for ioctls.
+        // The library is located by NativeWrapperResolver, either next to the
+        // assemblies (packaged installs) or under runtimes/osx/native/ (source builds).
+        [LibraryImport(NativeWrapperResolver.MacLibraryName, SetLastError = true)]
         internal static partial int ioctl_uint32(int fd, ulong request, ref uint value);
 
-        [LibraryImport("runtimes/osx/native/libSystem_wrapper.dylib", SetLastError = true)]
+        [LibraryImport(NativeWrapperResolver.MacLibraryName, SetLastError = true)]
         internal static partial int ioctl_uint64(int fd, ulong request, ref ulong value);
 
-        [LibraryImport("runtimes/osx/native/libSystem_wrapper.dylib", SetLastError = true)]
+        [LibraryImport(NativeWrapperResolver.MacLibraryName, SetLastError = true)]
         internal static partial int ioctl_no_arg(int fd, ulong request);
 
-        [LibraryImport("runtimes/osx/native/libSystem_wrapper.dylib", SetLastError = true)]
+        [LibraryImport(NativeWrapperResolver.MacLibraryName, SetLastError = true)]
         internal static partial int fcntl_nocache(int fd);
 
         [LibraryImport("libSystem", SetLastError = true)]
