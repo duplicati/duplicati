@@ -742,6 +742,10 @@ public static class RemoteSynchronizationRunner
         using (new Duplicati.Library.Logging.Timer(LOGTAG, "ListSource", "Prepare | List source"))
             files_src = await b_src.ListAsync(token).ConfigureAwait(false);
 
+        // Folders are dropped before anything looks at the listing: the shortcuts below return the
+        // listings as they are, and the duplicate check has no use for names that are never addressed
+        files_src = WithoutFolders(files_src, "source");
+
         // Checked before the shortcuts below, because neither of them makes two entries that share
         // a name any easier to tell apart
         VerifyNoDuplicateNames(files_src, "source", config.Src, name_comparer);
@@ -749,6 +753,7 @@ public static class RemoteSynchronizationRunner
         using (new Duplicati.Library.Logging.Timer(LOGTAG, "ListDestination", "Prepare | List destination"))
             files_dst = await b_dst.ListAsync(token).ConfigureAwait(false);
 
+        files_dst = WithoutFolders(files_dst, "destination");
         VerifyNoDuplicateNames(files_dst, "destination", config.Dst, name_comparer);
 
         // Shortcut for force
@@ -817,6 +822,29 @@ public static class RemoteSynchronizationRunner
             to_delete_lookedup = [.. to_delete.Select(x => lookup_dst[x])];
 
         return (to_copy, to_delete_lookedup, to_verify);
+    }
+
+    /// <summary>
+    /// Drops the folder entries from a remote listing.
+    /// Every operation in this tool addresses a remote file by its name, and none of them applies
+    /// to a folder: it cannot be downloaded, uploaded, deleted as a file or compared byte for byte.
+    /// A Duplicati destination is flat, so a folder the backend reports is never part of the backup;
+    /// a destination at the root of a mount or a drive lists lost+found, $RECYCLE.BIN or
+    /// System Volume Information next to the volumes, and the file backend lists any subfolder.
+    /// The backup path never trips over them, because their names do not parse as volume names.
+    /// </summary>
+    /// <param name="files">The listing to filter.</param>
+    /// <param name="side">The side the listing was read from, for the log message.</param>
+    /// <returns>The entries of the listing that are not folders.</returns>
+    private static List<IFileEntry> WithoutFolders(IEnumerable<IFileEntry> files, string side)
+    {
+        var folders = files.Where(x => x.IsFolder).Select(x => x.Name).ToList();
+        if (folders.Count > 0)
+            Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "IgnoredFolders",
+                "Ignoring {0} folder entries in the {1} listing: {2}",
+                folders.Count, side, string.Join(", ", folders));
+
+        return files.Where(x => !x.IsFolder).ToList();
     }
 
     /// <summary>
