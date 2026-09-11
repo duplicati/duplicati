@@ -239,7 +239,7 @@ internal class RemoteSynchronizationHandler : IDisposable
                                 Progress: destination.Progress,
                                 Retention: destination.Retention,
                                 Retry: destination.Retry,
-                                SrcOptions: [.. options.RawOptions.Select((k, v) => $"{k}={v}")],
+                                SrcOptions: [.. options.RawOptions.Select(x => $"{x.Key}={x.Value}")],
                                 VerifyContents: destination.VerifyContents,
                                 VerifyGetAfterPut: destination.VerifyGetAfterPut
                             ),
