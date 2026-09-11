@@ -217,5 +217,159 @@ namespace Duplicati.UnitTest
                 Directory.Delete(outsideFolder, true);
             }
         }
+
+        /// <summary>
+        /// Writes a value straight into the DBPath column, so a test can plant the shape an older
+        /// version stored rather than the shape <see cref="Connection.UpdateBackupDBPath"/> writes.
+        /// </summary>
+        private void SetRawDbPath(string backupId, string rawValue)
+        {
+            _connection.ExecuteWithCommand(cmd =>
+            {
+                cmd.CommandText = @"UPDATE ""Backup"" SET ""DBPath"" = @path WHERE ""ID"" = @id";
+
+                var path = cmd.CreateParameter();
+                path.ParameterName = "@path";
+                path.Value = rawValue;
+                cmd.Parameters.Add(path);
+
+                var id = cmd.CreateParameter();
+                id.ParameterName = "@id";
+                id.Value = long.Parse(backupId);
+                cmd.Parameters.Add(id);
+
+                cmd.ExecuteNonQuery();
+            });
+        }
+
+        /// <summary>
+        /// The data folder without its root, ending in a directory separator. A Linux install with
+        /// no home folder resolved its data folder to the relative path "var/lib/Duplicati", and
+        /// the database paths it stored were joined onto that, so they look like this.
+        /// </summary>
+        private string RootlessDataFolder()
+        {
+            var full = Library.Common.IO.Util.AppendDirSeparator(Path.GetFullPath(_tempDataFolder));
+            return full.Substring((Path.GetPathRoot(full) ?? "").Length);
+        }
+
+        /// <summary>
+        /// A path stored before the data folder was rooted names the file from the root, so joining
+        /// it onto the data folder again doubles it (issue #7284).
+        /// </summary>
+        [Test]
+        public void LegacyRootlessDbPath_GetBackup_ResolvesInsideDataFolder()
+        {
+            var backup = CreateTestBackup();
+            _connection.AddOrUpdateBackupAndSchedule(backup, null);
+            SetRawDbPath(backup.ID!, RootlessDataFolder() + "legacy.sqlite");
+
+            var loadedBackup = _connection.GetBackup(backup.ID);
+            Assert.IsNotNull(loadedBackup);
+            Assert.AreEqual(Path.GetFullPath(Path.Combine(_tempDataFolder, "legacy.sqlite")), loadedBackup!.DBPath,
+                "A path stored by an install whose data folder was itself relative was joined onto the data folder again");
+        }
+
+        /// <summary>
+        /// The backup list reads the same column through its own query, so it has to agree.
+        /// </summary>
+        [Test]
+        public void LegacyRootlessDbPath_BackupsProperty_ResolvesInsideDataFolder()
+        {
+            var backup = CreateTestBackup();
+            _connection.AddOrUpdateBackupAndSchedule(backup, null);
+            SetRawDbPath(backup.ID!, RootlessDataFolder() + "legacy.sqlite");
+
+            var listed = _connection.Backups.Single();
+            Assert.AreEqual(Path.GetFullPath(Path.Combine(_tempDataFolder, "legacy.sqlite")), listed.DBPath);
+        }
+
+        /// <summary>
+        /// An ordinary relative path with a folder in it is still relative to the data folder, so
+        /// the rule above must not swallow it.
+        /// </summary>
+        [Test]
+        public void RelativeDbPath_WithSubfolder_ResolvesUnderDataFolder()
+        {
+            var backup = CreateTestBackup();
+            _connection.AddOrUpdateBackupAndSchedule(backup, null);
+            SetRawDbPath(backup.ID!, Path.Combine("sub", "guard.sqlite"));
+
+            var loadedBackup = _connection.GetBackup(backup.ID);
+            Assert.IsNotNull(loadedBackup);
+            Assert.AreEqual(Path.GetFullPath(Path.Combine(_tempDataFolder, "sub", "guard.sqlite")), loadedBackup!.DBPath);
+        }
+
+        /// <summary>
+        /// The match has to be on a whole directory component: a sibling folder whose name merely
+        /// starts with the data folder's name is not the data folder.
+        /// </summary>
+        [Test]
+        public void RelativeDbPath_SiblingOfDataFolderPrefix_IsNotTreatedAsLegacy()
+        {
+            var backup = CreateTestBackup();
+            _connection.AddOrUpdateBackupAndSchedule(backup, null);
+
+            var sibling = RootlessDataFolder().TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + "-sibling";
+            SetRawDbPath(backup.ID!, Path.Combine(sibling, "guard.sqlite"));
+
+            var loadedBackup = _connection.GetBackup(backup.ID);
+            Assert.IsNotNull(loadedBackup);
+            Assert.AreEqual(Path.GetFullPath(Path.Combine(_tempDataFolder, sibling, "guard.sqlite")), loadedBackup!.DBPath);
+        }
+
+        /// <summary>
+        /// A path that is already absolute is never joined onto anything, including one that points
+        /// inside the data folder.
+        /// </summary>
+        [Test]
+        public void AbsoluteDbPathInsideDataFolder_IsReturnedUnchanged()
+        {
+            var backup = CreateTestBackup();
+            _connection.AddOrUpdateBackupAndSchedule(backup, null);
+
+            var absolute = Path.Combine(_tempDataFolder, "abs.sqlite");
+            SetRawDbPath(backup.ID!, absolute);
+
+            var loadedBackup = _connection.GetBackup(backup.ID);
+            Assert.IsNotNull(loadedBackup);
+            Assert.AreEqual(absolute, loadedBackup!.DBPath);
+        }
+
+        /// <summary>
+        /// A data folder that is the root itself has no path to recognise, and an empty prefix would
+        /// match every path.
+        /// </summary>
+        [Test]
+        public void LegacyRule_DataFolderIsRoot_DoesNotRewrite()
+        {
+            var root = Path.GetPathRoot(Path.GetFullPath(_tempDataFolder)) ?? "";
+            Assert.IsNotEmpty(root);
+
+            Assert.AreEqual(Path.GetFullPath(Path.Combine(root, "X.sqlite")),
+                DataFolderManager.ResolveDataFolderRelativePath(root, "X.sqlite"));
+        }
+
+        /// <summary>
+        /// The one path the rule above would misread if it were stored relative: a database that
+        /// really does live in a folder inside the data folder named after the data folder itself.
+        /// It has to survive a write and a read.
+        /// </summary>
+        [Test]
+        public void UpdateBackupDbPath_MirroredNestedPath_RoundTrips()
+        {
+            var backup = CreateTestBackup();
+            _connection.AddOrUpdateBackupAndSchedule(backup, null);
+
+            var newPath = Path.Combine(_tempDataFolder, RootlessDataFolder(), "mirrored.sqlite");
+            Directory.CreateDirectory(Path.GetDirectoryName(newPath)!);
+            File.WriteAllText(newPath, "");
+
+            _connection.UpdateBackupDBPath(backup, newPath);
+
+            var loadedBackup = _connection.GetBackup(backup.ID);
+            Assert.IsNotNull(loadedBackup);
+            Assert.AreEqual(Path.GetFullPath(newPath), loadedBackup!.DBPath);
+        }
     }
 }
