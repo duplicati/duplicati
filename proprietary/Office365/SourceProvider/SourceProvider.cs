@@ -201,6 +201,8 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
         _includedRootTypes = parsedOptions.IncludedRootTypes;
         _includedUserTypes = parsedOptions.IncludedUserTypes;
         _includedGroupTypes = parsedOptions.IncludedGroupTypes;
+        if (_includedGroupTypes.Contains(Office365GroupType.Calendar))
+            Library.Logging.Log.WriteWarningMessage(LOGTAG, "GroupCalendarNotSupported", null, "The Calendar group type is included, but the Graph API only allows access to group calendars with delegated permissions, which are not supported. Group calendar backup will most likely fail.");
         _includedUserClassifications = parsedOptions.IncludedUserClassifications;
         _includedGroupClassifications = parsedOptions.IncludedGroupClassifications;
         _includedSiteClassifications = parsedOptions.IncludedSiteClassifications;

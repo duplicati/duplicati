@@ -42,7 +42,7 @@ internal static class GraphPermissions
         new("Mail.ReadWrite", "Read, create, and update mailbox folders, messages, attachments, and inbox rules.", false, true),
         new("MailboxSettings.Read", "Read user mailbox settings.", true, false, "MailboxSettings.ReadWrite"),
         new("MailboxSettings.ReadWrite", "Read and update user mailbox settings.", false, true),
-        new("Calendars.Read", "Read user and group calendars and events.", true, false, "Calendars.ReadWrite"),
+        new("Calendars.Read", "Read user calendars and events.", true, false, "Calendars.ReadWrite"),
         new("Calendars.ReadWrite", "Read, create, and update calendars, events, and event attachments.", false, true),
         new("Contacts.Read", "Read contact folders and contacts.", true, false, "Contacts.ReadWrite"),
         new("Contacts.ReadWrite", "Read, create, and update contact folders, contacts, and contact photos.", false, true),
