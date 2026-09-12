@@ -1343,6 +1343,57 @@ namespace Duplicati.UnitTest
             await AssertRestoreWorksAsync([TARGETFOLDER, syncDest1, syncDest3]);
         }
 
+        /// <summary>
+        /// The handler records a sync as done when the runner returns 0, and an Interval or Counting
+        /// destination is not tried again until its next trigger. A run in which every delete failed
+        /// has not synchronized anything, so it must not be recorded as done.
+        /// </summary>
+        [Test]
+        [Category("RemoteSync")]
+        public async Task TestRunAsync_FailedDeletes_DoNotRecordASyncAsync()
+        {
+            // An empty source, so every destination file is due for a delete
+            Directory.CreateDirectory(Path.Combine(TARGETFOLDER, "source"));
+            await ToolTests.GenerateTestDataAsync(Path.Combine(TARGETFOLDER, "dest1"), 3, 0, 0, 1024);
+
+            Library.DynamicLoader.BackendLoader.AddBackend(new DeterministicErrorBackend());
+            DeterministicErrorBackend.ErrorGenerator = (action, _) => action == DeterministicErrorBackend.BackendAction.DeleteBefore;
+            try
+            {
+                var options = new Dictionary<string, string>
+                {
+                    ["remote-sync-json-config"] = @$"{{""destinations"": [
+                        {{""url"": ""deterror://{dest1}"", ""backend-retries"": 1, ""backend-retry-delay"": 0}}
+                    ]}}",
+                    ["dbpath"] = DBFILE
+                };
+
+                var remoteurl = $"file://{source}";
+                var result = new BasicBackupResults(ParsedResultType.Success);
+                var handler = new RemoteSynchronizationHandler(remoteurl, new Options(options), result);
+
+                using var db = await SQLiteLoader.LoadConnectionAsync(DBFILE);
+                using var cmd = db.CreateCommand();
+                EnsureOperationTableCreated(cmd);
+
+                await handler.RunAsync();
+
+                cmd.CommandText = @"
+                    SELECT COUNT(*)
+                    FROM ""Operation""
+                    WHERE ""Description"" LIKE 'Rsync %'
+                ";
+                var count = (long)await cmd.ExecuteScalarAsync();
+
+                Assert.AreEqual(0, count, "A sync that could not delete anything was recorded as done.");
+                Assert.AreEqual(3, Directory.EnumerateFiles(Path.Combine(TARGETFOLDER, "dest1")).Count(), "A file went missing although its delete failed.");
+            }
+            finally
+            {
+                DeterministicErrorBackend.ErrorGenerator = null;
+            }
+        }
+
     }
 
     /// <summary>
