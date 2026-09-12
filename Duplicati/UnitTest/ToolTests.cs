@@ -997,5 +997,93 @@ namespace Duplicati.UnitTest
             }
         }
 
+        /// <summary>
+        /// Makes every delete on a deterror:// destination fail. The generator is static, so a test that
+        /// sets it has to clear it in a finally, or the failure leaks into the next test that uses the
+        /// backend.
+        /// </summary>
+        private static void FailEveryDelete()
+        {
+            Library.DynamicLoader.BackendLoader.AddBackend(new DeterministicErrorBackend());
+            DeterministicErrorBackend.ErrorGenerator = (action, _) => action == DeterministicErrorBackend.BackendAction.DeleteBefore;
+        }
+
+        /// <summary>
+        /// A delete or rename that fails is an error the tool has already logged, and the contract at
+        /// the top of the runner says the return code is the number of errors. A run that could not
+        /// delete anything must not return 0, and must not say it completed successfully, because the
+        /// server records a sync as done on a 0 and will not try again until the next trigger.
+        /// </summary>
+        [TestCase(false)]
+        [TestCase(true)]
+        [Category("Tools/RemoteSynchronization")]
+        public async Task TestFailedDeletesAreReportedInTheExitCodeAsync(bool retention)
+        {
+            var l1 = Path.Combine(TARGETFOLDER, $"faildel_src_{retention}");
+            var l2 = Path.Combine(TARGETFOLDER, $"faildel_dst_{retention}");
+            var logfile = Path.Combine(TARGETFOLDER, $"faildel_{retention}.log");
+            Directory.CreateDirectory(l1);
+            Directory.CreateDirectory(l2);
+
+            // The source is left empty, so every destination file is due for a delete or a rename
+            await GenerateTestDataAsync(l2, 3, 0, 0, 1024).ConfigureAwait(false);
+            var before = Directory.EnumerateFiles(l2).Select(x => Path.GetFileName(x)!).OrderBy(x => x, StringComparer.Ordinal).ToList();
+
+            FailEveryDelete();
+            try
+            {
+                var args = new List<string> { $"file://{l1}", $"deterror://{l2}", "--confirm", "--backend-retries", "1", "--backend-retry-delay", "0", "--log-file", logfile, "--log-level", "Information" };
+                if (retention)
+                    args.Add("--retention");
+
+                var return_code = await RemoteSynchronization.Program.MainAsync([.. args]).ConfigureAwait(false);
+
+                Assert.AreEqual(3, return_code, "The return code should be the number of files the tool could not delete or rename.");
+
+                // deterror:// cannot rename, so --retention goes through download, upload and delete, and the upload may
+                // have left the new name behind; what matters is that every old name is still there
+                var remaining = Directory.EnumerateFiles(l2).Select(x => Path.GetFileName(x)!).OrderBy(x => x, StringComparer.Ordinal).ToList();
+                Assert.IsTrue(before.All(remaining.Contains), $"A file went missing although its delete failed: {string.Join(", ", remaining)}");
+
+                var log = File.ReadAllText(logfile);
+                Assert.IsFalse(log.Contains("-SynchronizationComplete]"), "The run claimed to have completed successfully.");
+                Assert.IsTrue(log.Contains(retention ? "-RenameFailed]" : "-DeleteFailed]"), $"The failures were not summarized in the log:{Environment.NewLine}{log}");
+            }
+            finally
+            {
+                DeterministicErrorBackend.ErrorGenerator = null;
+            }
+        }
+
+        /// <summary>
+        /// A dry run never calls the backend's delete, so a destination that cannot delete is not an
+        /// error there: the files it would delete are counted as if they had been.
+        /// </summary>
+        [Test]
+        [Category("Tools/RemoteSynchronization")]
+        public async Task TestADryRunWithAFailingDeleteStillSucceedsAsync()
+        {
+            var l1 = Path.Combine(TARGETFOLDER, "faildel_dry_src");
+            var l2 = Path.Combine(TARGETFOLDER, "faildel_dry_dst");
+            Directory.CreateDirectory(l1);
+            Directory.CreateDirectory(l2);
+
+            await GenerateTestDataAsync(l2, 3, 0, 0, 1024).ConfigureAwait(false);
+
+            FailEveryDelete();
+            try
+            {
+                var args = new string[] { $"file://{l1}", $"deterror://{l2}", "--confirm", "--dry-run", "--backend-retries", "1", "--backend-retry-delay", "0" };
+                var return_code = await RemoteSynchronization.Program.MainAsync(args).ConfigureAwait(false);
+
+                Assert.AreEqual(0, return_code, "A dry run does not delete, so it has nothing to fail on.");
+                Assert.AreEqual(3, Directory.EnumerateFiles(l2).Count(), "A dry run must not touch the destination.");
+            }
+            finally
+            {
+                DeterministicErrorBackend.ErrorGenerator = null;
+            }
+        }
+
     }
 }

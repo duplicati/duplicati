@@ -137,7 +137,7 @@ public static class RemoteSynchronizationRunner
     /// <param name="token">The cancellation token to use for the asynchronous operations.</param>
     /// <param name="progressUpdater">Optional progress updater for reporting file count and transfer progress to the UI.</param>
     /// <param name="backendProgressUpdater">Optional backend progress updater for reporting transfer speed to the UI.</param>
-    /// <returns>The return code (0 on success).</returns>
+    /// <returns>The return code: 0 on success, -1 on abort, and the number of errors encountered otherwise.</returns>
     internal static async Task<int> RunAsync(RemoteSynchronizationConfig config, CancellationToken token, IOperationProgressUpdater? progressUpdater = null, IBackendProgressUpdater? backendProgressUpdater = null, IBasicResults? results = null)
     {
         // Parse the log level
@@ -204,7 +204,7 @@ public static class RemoteSynchronizationRunner
     /// <param name="token">The cancellation token to use for the asynchronous operations.</param>
     /// <param name="progressUpdater">Optional progress updater for reporting file count and transfer progress to the UI.</param>
     /// <param name="backendProgressUpdater">Optional backend progress updater for reporting transfer speed to the UI.</param>
-    /// <returns>The return code (0 on success).</returns>
+    /// <returns>The return code: 0 on success, -1 on abort, and the number of errors encountered otherwise.</returns>
     private static async Task<int> RunCoreAsync(RemoteSynchronizationConfig config, CancellationToken token, IOperationProgressUpdater? progressUpdater = null, IBackendProgressUpdater? backendProgressUpdater = null, RemoteSynchronizationResults? results = null)
     {
         // Unpack and parse the multi token options
@@ -344,6 +344,12 @@ public static class RemoteSynchronizationRunner
         // The delete/rename phase now reports progress incrementally, so we don't need a separate update here
         var deletedOrRenamed = Math.Max(deleted, renamed);
 
+        // Every file that was neither deleted nor renamed was logged by the phase above, and counts as an error
+        var cleanupErrors = (int)(deleteCount - deletedOrRenamed);
+        if (cleanupErrors > 0)
+            Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, config.Retention ? "RenameFailed" : "DeleteFailed", null,
+                "Could not {0} {1} of {2} files in {3}.", config.Retention ? "rename" : "delete", cleanupErrors, deleteCount, b2m.DisplayName);
+
         // Copy the files
         var (copied, copy_errors) = await CopyAsync(b1m, b2m, to_copy, config, deletedOrRenamed, totalFileCount, token, progressUpdater, backendProgressUpdater).ConfigureAwait(false);
         Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "CopyComplete",
@@ -380,7 +386,7 @@ public static class RemoteSynchronizationRunner
                 results?.VerifiedFileCount = verified;
                 results?.FailedVerificationCount = failed_verify;
                 results?.CopiedFileSize = totalFileSize;
-                return copy_errors.Count();
+                return copy_errors.Count() + cleanupErrors;
             }
         }
 
@@ -406,8 +412,9 @@ public static class RemoteSynchronizationRunner
                     "Renamed {0} files in {1}", renamed, b2m.DisplayName);
         }
 
-        Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "SynchronizationComplete",
-            "Remote synchronization completed successfully");
+        if (cleanupErrors == 0)
+            Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "SynchronizationComplete",
+                "Remote synchronization completed successfully");
 
         results?.DeletedFileCount = deleted;
         results?.RenamedFileCount = renamed;
@@ -416,7 +423,7 @@ public static class RemoteSynchronizationRunner
         results?.FailedVerificationCount = failed_verify;
         results?.CopiedFileSize = totalFileSize;
 
-        return 0;
+        return cleanupErrors;
     }
 
     // TODO have concurrency parameters: uploaders, downloaders
