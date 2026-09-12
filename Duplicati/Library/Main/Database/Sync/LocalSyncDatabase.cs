@@ -243,16 +243,19 @@ public class LocalSyncDatabase : IDisposable, IBackendManagerDatabase
         // nested folder a direct child's path is exactly "{folder}/{name}" with no
         // further '/'.
         //
-        // The nested-folder branch uses a sargable prefix scan so SQLite can use the
-        // UNIQUE index on "RelativePath" for a range scan instead of a full table
-        // scan: it matches "RelativePath LIKE @prefix || '%'" with the LIKE
-        // meta-characters in the prefix escaped and ESCAPE '\' set. The "no further
-        // '/'" check (which excludes sub-folder rows) is applied as a filter over the
-        // candidate range rather than as a substr()-based left-prefix comparison,
-        // which would have defeated the index. This is called once per folder in the
-        // hot sync loop, so keeping it index-backed is important for large trees.
-        // The root branch is inherently a scan (it wants all rows without a '/'), but
-        // the UNIQUE index is still used for an index-only scan.
+        // The nested-folder branch asks for the prefix as a range: every path under
+        // the folder starts with "{folder}/", and under the BINARY collation of the
+        // column those are exactly the paths between "{folder}/" (inclusive) and
+        // "{folder}0" (exclusive), '0' being the byte after '/'. SQLite answers a
+        // range with a search on the UNIQUE index, and the comparison is byte-wise, so
+        // "Docs" and "docs" are two folders and '%' or '_' in a folder name are just
+        // characters. (A LIKE with a bound prefix is neither: it is case-insensitive
+        // for ASCII by default and, with a computed pattern, a full table scan.) The
+        // "no further '/'" check, which excludes sub-folder rows, is a filter over the
+        // candidate range. This is called once per folder in the hot sync loop, so
+        // keeping it index-backed matters for large trees. The root branch is
+        // inherently a scan (it wants all rows without a '/'), but the UNIQUE index is
+        // still used for an index-only scan.
         using var cmd = m_connection.CreateCommand();
         if (string.IsNullOrEmpty(folder))
         {
@@ -262,17 +265,17 @@ public class LocalSyncDatabase : IDisposable, IBackendManagerDatabase
         else
         {
             // Nested: path starts with "{folder}/" and has no further '/' after the
-            // prefix. Escape LIKE meta-characters in the prefix so a relative path
-            // containing '%', '_', or '\' is matched literally.
-            var prefix = folder + "/";
-            var escapedPrefix = EscapeLikePattern(prefix);
+            // prefix.
+            var lower = folder + "/";
+            var upper = folder + "0";
             cmd.CommandText = @"
                 SELECT ""RelativePath"", ""Size"", ""LastModified"", ""ContentHash""
                 FROM ""RemoteInventory""
-                WHERE ""RelativePath"" LIKE @prefix || '%' ESCAPE '\'
+                WHERE ""RelativePath"" >= @lower AND ""RelativePath"" < @upper
                   AND instr(substr(""RelativePath"", @prefixlen + 1), '/') = 0;";
-            cmd.Parameters.AddWithValue("@prefix", escapedPrefix);
-            cmd.Parameters.AddWithValue("@prefixlen", prefix.Length);
+            cmd.Parameters.AddWithValue("@lower", lower);
+            cmd.Parameters.AddWithValue("@upper", upper);
+            cmd.Parameters.AddWithValue("@prefixlen", lower.Length);
         }
 
         await using var reader = await cmd.ExecuteReaderAsync(writeLog: false, cancellationToken).ConfigureAwait(false);
@@ -286,22 +289,6 @@ public class LocalSyncDatabase : IDisposable, IBackendManagerDatabase
                 ContentHash = await reader.IsDBNullAsync(3, cancellationToken).ConfigureAwait(false) ? null : reader.GetString(3)
             };
         }
-    }
-
-    /// <summary>
-    /// Escapes the LIKE meta-characters (<c>%</c>, <c>_</c>) and the escape
-    /// character (<c>\</c>) in a pattern so it is matched literally when used with
-    /// <c>ESCAPE '\'</c>. This lets a caller-supplied relative path (which may
-    /// contain those characters) be used safely as the fixed prefix of a sargable
-    /// <c>LIKE @prefix || '%'</c> range scan without becoming a wildcard.
-    /// </summary>
-    /// <param name="pattern">The pattern to escape.</param>
-    /// <returns>The escaped pattern, suitable for use with <c>ESCAPE '\'</c>.</returns>
-    private static string EscapeLikePattern(string pattern)
-    {
-        // Order matters: escape the escape character first so escaping the
-        // meta-characters does not itself introduce new escapes.
-        return pattern.Replace(@"\", @"\\").Replace("%", @"\%").Replace("_", @"\_");
     }
 
     /// <summary>
