@@ -50,6 +50,13 @@ internal class SyncHandler
         var verifyHash = m_options.SyncVerifyHash;
         var configuredStateMode = m_options.SyncRemoteState;
 
+        // The handler cannot tell whether a destination distinguishes letter case, so
+        // it follows the same declaration the backup path does. On a destination that
+        // does not (NTFS, APFS), a name that differs only in case IS the remote file:
+        // uploading the new casing overwrites it in place, and deleting the old casing
+        // afterwards would delete what was just written.
+        var nameComparer = m_options.CaseInsensitiveRemote ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+
         // --sync-recheck forces a fresh remote listing per folder for this run. Under
         // UseLocalState that also means the local inventory cache is treated as stale:
         // the run effectively behaves as UseRemoteState, and (because we keep the
@@ -199,6 +206,7 @@ internal class SyncHandler
                     excludeEmptyFolders,
                     ignoreNames,
                     blacklistPaths,
+                    nameComparer,
                     isDryRun,
                     isDelete,
                     verifyHash,
@@ -365,6 +373,7 @@ internal class SyncHandler
         bool excludeEmptyFolders,
         string[]? ignoreNames,
         HashSet<string> blacklistPaths,
+        StringComparer nameComparer,
         bool isDryRun,
         bool isDelete,
         bool verifyHash,
@@ -374,6 +383,7 @@ internal class SyncHandler
     {
         var folderRelPath = current.RelativePath;
         var folderEntry = current.Entry;
+        var caseInsensitive = ReferenceEquals(nameComparer, StringComparer.OrdinalIgnoreCase);
 
         // 1. Enumerate the local folder's direct children (non-recursive) ONCE and
         // split them into sub-folders (to enqueue) and files (to upload this pass).
@@ -383,7 +393,8 @@ internal class SyncHandler
         // the same captured children feed every backend so the source is read a single
         // time for the whole run.
         var localSubfolders = new List<(ISourceProviderEntry Entry, string RelativePath)>();
-        var localFiles = new Dictionary<string, (ISourceProviderEntry Entry, long Size, DateTime ModifiedUtc)>(StringComparer.Ordinal);
+        var localSubfolderNames = new HashSet<string>(nameComparer);
+        var localFiles = new Dictionary<string, (ISourceProviderEntry Entry, long Size, DateTime ModifiedUtc)>(nameComparer);
 
         await foreach (var child in FileEnumerationProcess.EnumerateFolderAsync(
             folderEntry,
@@ -411,6 +422,15 @@ internal class SyncHandler
 
             if (child.IsFolder)
             {
+                // On a case-insensitive destination two sub-folders that differ only in
+                // case are one remote folder; processing both would make the second pass
+                // delete what the first uploaded. Keep the first and say so.
+                if (!localSubfolderNames.Add(childName))
+                {
+                    if (caseInsensitive)
+                        Logging.Log.WriteWarningMessage(LOGTAG, "CaseCollision", null, "The source has more than one folder whose names differ only in case, and the destination does not distinguish case; only the first one is synchronized, skipping: {0}", child.Path);
+                    continue;
+                }
                 localSubfolders.Add((child, childRelPath));
             }
             else
@@ -425,9 +445,12 @@ internal class SyncHandler
 
                 // INSERT OR IGNORE semantics: the first entry seen for a path wins, so a
                 // later duplicate in the same folder is ignored (paths are unique within
-                // a single folder in practice).
+                // a single folder in practice). With a case-insensitive destination the
+                // duplicate is a real file that cannot be mirrored, so it is reported.
                 if (!localFiles.ContainsKey(childRelPath))
                     localFiles[childRelPath] = (child, child.Size, child.LastModificationUtc);
+                else if (caseInsensitive)
+                    Logging.Log.WriteWarningMessage(LOGTAG, "CaseCollision", null, "The source has more than one file whose names differ only in case, and the destination does not distinguish case; only the first one is synchronized, skipping: {0}", child.Path);
             }
         }
 
@@ -482,6 +505,7 @@ internal class SyncHandler
                 enqueuedSubfolders,
                 bs,
                 results,
+                nameComparer,
                 isDryRun,
                 isDelete,
                 verifyHash,
@@ -504,6 +528,7 @@ internal class SyncHandler
         List<(ISourceProviderEntry Entry, string RelativePath)> enqueuedSubfolders,
         BackendRunState bs,
         SyncResults results,
+        StringComparer nameComparer,
         bool isDryRun,
         bool isDelete,
         bool verifyHash,
@@ -517,9 +542,10 @@ internal class SyncHandler
         // BlindlyUpload we have no remote state. The remote state is keyed by the
         // child's name (not relative path) for easy lookup against the local files,
         // and a parallel set of remote sub-folder names drives the
-        // "create missing folders" step.
-        var remoteFileState = new Dictionary<string, RemoteChild>(StringComparer.Ordinal);
-        var remoteFolderNames = new HashSet<string>(StringComparer.Ordinal);
+        // "create missing folders" step. The comparer is the one the destination is
+        // declared to use (see nameComparer in RunAsync).
+        var remoteFileState = new Dictionary<string, RemoteChild>(nameComparer);
+        var remoteFolderNames = new HashSet<string>(nameComparer);
 
         if (stateMode == SyncRemoteState.UseRemoteState)
         {
@@ -569,7 +595,7 @@ internal class SyncHandler
             {
                 // Build a name->inventory-row lookup for this folder once, so the
                 // per-file enrichment and upsert below share the same view.
-                var invByName = new Dictionary<string, LocalSyncDatabase.InventoryItem>(StringComparer.Ordinal);
+                var invByName = new Dictionary<string, LocalSyncDatabase.InventoryItem>(nameComparer);
                 await foreach (var inv in db.GetInventoryItemsInFolderAsync(folderRelPath, ct).ConfigureAwait(false))
                 {
                     var invName = GetEntryName(inv.RelativePath);
@@ -744,9 +770,19 @@ internal class SyncHandler
             var operation = remoteFound ? SyncOperation.Update : SyncOperation.Upload;
             var label = remoteFound ? "Updating" : "Uploading";
 
+            // On a case-insensitive destination a remote file whose name differs only in
+            // case from the local one is the file being updated, so the update is
+            // addressed by the destination's own name. This keeps the log, the intent
+            // journal and the inventory on the one name the destination reports, rather
+            // than adding a second inventory row that differs only in case.
+            var targetRelPath = relPath;
+            if (remoteFound && remoteEntry != null && !string.Equals(remoteEntry.Name, name, StringComparison.Ordinal)
+                && TryBuildSafeRelativePath(folderRelPath, remoteEntry.Name, out var remoteRelPath))
+                targetRelPath = remoteRelPath;
+
             try
             {
-                await UploadOrUpdateAsync(db, backendManager, results, relPath, entry, operation, label, verifyHash, maintainInventory, isDryRun, planSummary, ct).ConfigureAwait(false);
+                await UploadOrUpdateAsync(db, backendManager, results, targetRelPath, entry, operation, label, verifyHash, maintainInventory, isDryRun, planSummary, ct).ConfigureAwait(false);
             }
             catch (Exception ex)
             {

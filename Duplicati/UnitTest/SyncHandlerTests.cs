@@ -1623,3 +1623,155 @@ public class LocalSyncDatabaseTests
         Assert.IsEmpty(empty);
     }
 }
+
+/// <summary>
+/// Tests sync against a destination that does not distinguish letter case, the way
+/// NTFS and APFS do. The destination is the <see cref="CaseInsensitiveFileBackend"/>
+/// test backend, so the behaviour is the same on every CI operating system. The
+/// handler cannot tell whether a destination distinguishes case, so the tests state
+/// it the way the backup path does, with <c>--case-insensitive-remote</c>.
+/// </summary>
+[TestFixture]
+[Category("Sync")]
+public class CaseInsensitiveDestinationSyncTests : BasicSetupHelper
+{
+    private string targetDir;
+    private string backendUrl;
+    private string syncDbPath;
+
+    [SetUp]
+    public void Setup()
+    {
+        targetDir = Path.Combine(BASEFOLDER, "cifile_target");
+        if (Directory.Exists(targetDir))
+            Directory.Delete(targetDir, true);
+        Directory.CreateDirectory(targetDir);
+
+        // The handler does not dispose the primary sync database, so the file stays
+        // open after the run on Windows; a per-test name keeps the runs apart without
+        // asking the base fixture to delete a file that is still in use.
+        syncDbPath = Path.Combine(BASEFOLDER, $"cifile-sync-{Guid.NewGuid():N}.sqlite");
+
+        Library.DynamicLoader.BackendLoader.AddBackend(new CaseInsensitiveFileBackend());
+        backendUrl = CaseInsensitiveFileBackend.Key + "://" + targetDir.Replace("\\", "/");
+    }
+
+    [TearDown]
+    public void TearDown()
+    {
+        if (Directory.Exists(targetDir))
+        {
+            try { Directory.Delete(targetDir, true); } catch { }
+        }
+        try { File.Delete(syncDbPath); } catch { }
+    }
+
+    /// <summary>
+    /// The names in the destination, compared ordinally: File.Exists would answer yes
+    /// for either casing on Windows, which is the very thing these tests are about.
+    /// </summary>
+    private List<string> RemoteNames()
+        => Directory.EnumerateFiles(targetDir).Select(x => Path.GetFileName(x)).OrderBy(x => x, StringComparer.Ordinal).ToList();
+
+    private Dictionary<string, string> Options(string stateMode = null)
+    {
+        var opts = new Dictionary<string, string>
+        {
+            ["no-encryption"] = "true",
+            ["snapshot-policy"] = "off",
+            ["sync-then-delete"] = "true",
+            ["case-insensitive-remote"] = "true",
+            ["dbpath"] = syncDbPath,
+        };
+        if (stateMode != null)
+            opts["sync-remote-state"] = stateMode;
+        return opts;
+    }
+
+    private async Task<Library.Interface.ISyncResults> SyncAsync(Dictionary<string, string> opts, string dataFolder)
+    {
+        using var c = new Controller(backendUrl, opts, null);
+        return await c.SyncAsync(new[] { dataFolder }, null);
+    }
+
+    /// <summary>
+    /// A file renamed only in case is the same file on a destination that does not
+    /// distinguish case. Without the option the handler uploads the new name, which
+    /// overwrites the old one in place, and then deletes the old name - the file it has
+    /// just written. With the option the two names are the same entry: nothing to
+    /// upload, nothing to delete, and a later content change is an update of the name
+    /// the destination already has.
+    /// </summary>
+    [TestCase(null)]
+    [TestCase("UseLocalState")]
+    public async Task TestSyncCaseOnlyRenameKeepsTheFileOnACaseInsensitiveDestinationAsync(string stateMode)
+    {
+        var dataFolder = Path.Combine(BASEFOLDER, "cifile_data_rename");
+        if (Directory.Exists(dataFolder)) Directory.Delete(dataFolder, true);
+        Directory.CreateDirectory(dataFolder);
+
+        var lower = Path.Combine(dataFolder, "a.txt");
+        var upper = Path.Combine(dataFolder, "A.txt");
+        File.WriteAllText(lower, "Hello");
+        // Pin the local time before the first sync, so the destination's copy is newer
+        File.SetLastWriteTimeUtc(lower, DateTime.UtcNow.AddMinutes(-5));
+
+        var opts = Options(stateMode);
+
+        var first = await SyncAsync(opts, dataFolder);
+        CollectionAssert.AreEqual(new[] { "a.txt" }, RemoteNames());
+        Assert.AreEqual(1, first.FilesUploaded);
+
+        // A case-only rename keeps the contents and the modification time
+        File.Move(lower, upper);
+
+        var second = await SyncAsync(opts, dataFolder);
+        CollectionAssert.AreEqual(new[] { "a.txt" }, RemoteNames(), "The destination should still hold the file under the name it was stored with.");
+        Assert.AreEqual("Hello", File.ReadAllText(Path.Combine(targetDir, "a.txt")));
+        Assert.AreEqual(0, second.FilesDeleted, "The renamed file was deleted from the destination.");
+        Assert.AreEqual(0, second.FilesUploaded, "The renamed file was uploaded again.");
+        Assert.AreEqual(1, second.UnchangedFiles);
+
+        // A content change is an update of the entry the destination already has
+        File.WriteAllText(upper, "Hello, again");
+
+        var third = await SyncAsync(opts, dataFolder);
+        CollectionAssert.AreEqual(new[] { "a.txt" }, RemoteNames());
+        Assert.AreEqual("Hello, again", File.ReadAllText(Path.Combine(targetDir, "a.txt")));
+        Assert.AreEqual(1, third.FilesUploaded);
+        Assert.AreEqual(0, third.FilesDeleted);
+
+        if (stateMode != null)
+        {
+            // The inventory follows the destination's name, so the update did not add a second row
+            using var db = new Duplicati.Library.Main.Database.Sync.LocalSyncDatabase(syncDbPath);
+            var rows = new List<string>();
+            await foreach (var item in db.GetInventoryAsync(CancellationToken.None))
+                rows.Add(item.RelativePath);
+            CollectionAssert.AreEqual(new[] { "a.txt" }, rows, "The inventory should hold one row, under the destination's name.");
+        }
+    }
+
+    /// <summary>
+    /// Two source files that differ only in case cannot both exist on a destination
+    /// that does not distinguish case. The handler syncs the first one it sees and has
+    /// to say so, rather than silently leaving the other out of the mirror.
+    /// </summary>
+    [Test]
+    public async Task TestSyncWarnsWhenTheSourceHasCaseCollidingNamesAsync()
+    {
+        var dataFolder = Path.Combine(BASEFOLDER, "cifile_data_collision");
+        if (Directory.Exists(dataFolder)) Directory.Delete(dataFolder, true);
+        Directory.CreateDirectory(dataFolder);
+
+        File.WriteAllText(Path.Combine(dataFolder, "a.txt"), "lower");
+        File.WriteAllText(Path.Combine(dataFolder, "A.txt"), "upper");
+        if (Directory.EnumerateFiles(dataFolder).Count() != 2)
+            Assert.Ignore("The source file system does not distinguish case, so the two names cannot coexist here.");
+
+        var result = await SyncAsync(Options(), dataFolder);
+
+        Assert.AreEqual(1, RemoteNames().Count, $"The destination should hold one file: {string.Join(", ", RemoteNames())}");
+        Assert.AreEqual(1, result.Warnings.Count(x => x.Contains("CaseCollision")), $"Expected one CaseCollision warning, got: {string.Join(" | ", result.Warnings)}");
+    }
+}
