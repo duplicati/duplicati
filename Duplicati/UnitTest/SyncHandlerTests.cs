@@ -1047,6 +1047,67 @@ public class SyncHandlerTests : BasicSetupHelper
                 $"Targets {targetA} and {targetB} differ in content for {rel}.");
         }
     }
+
+    /// <summary>
+    /// On a destination that distinguishes case, "Docs" and "docs" are two folders. Under
+    /// UseLocalState the handler decides from the inventory whether a sub-folder already
+    /// exists, and a listing of "docs" that also returned the rows of "Docs" would make
+    /// it skip creating "docs" - so the upload into it fails on a backend that does not
+    /// create parent folders. Only a case-sensitive source can hold both names, so the
+    /// test is ignored on Windows and macOS.
+    /// </summary>
+    [Test]
+    [Category("Sync")]
+    public async Task TestSyncUseLocalStateCreatesAFolderThatDiffersOnlyInCaseAsync()
+    {
+        var dataFolder = Path.Combine(BASEFOLDER, "sync_data_foldercase");
+        if (Directory.Exists(dataFolder)) Directory.Delete(dataFolder, true);
+        Directory.CreateDirectory(dataFolder);
+        Directory.CreateDirectory(Path.Combine(dataFolder, "Docs"));
+        Directory.CreateDirectory(Path.Combine(dataFolder, "docs"));
+        if (Directory.EnumerateDirectories(dataFolder).Count() != 2)
+            Assert.Ignore("The source file system does not distinguish case, so the two folders cannot coexist here.");
+        // Only "Docs" takes part in the first run; "docs" must be new to the second one,
+        // or the first run would already have created it on the destination.
+        Directory.Delete(Path.Combine(dataFolder, "docs"));
+        File.WriteAllText(Path.Combine(dataFolder, "Docs", "a.txt"), "upper");
+
+        // The fixture's destination and sync database are shared by every test and kept
+        // between runs; this test reads the inventory, so it gets its own.
+        var localTarget = Path.Combine(BASEFOLDER, "sync_target_foldercase");
+        if (Directory.Exists(localTarget)) Directory.Delete(localTarget, true);
+        Directory.CreateDirectory(localTarget);
+        var localBackendUrl = "file://" + localTarget.Replace("\\", "/");
+
+        var opts = new Dictionary<string, string>
+        {
+            ["no-encryption"] = "true",
+            ["snapshot-policy"] = "off",
+            ["sync-remote-state"] = "UseLocalState",
+            ["dbpath"] = Path.Combine(BASEFOLDER, $"sync-foldercase-{Guid.NewGuid():N}.sqlite"),
+        };
+
+        // Sync 1: the inventory is empty, so the run lists and seeds it with Docs/a.txt
+        using (var c = new Controller(localBackendUrl, opts, null))
+        {
+            await c.SyncAsync(new[] { dataFolder }, null);
+        }
+        Assert.IsTrue(File.Exists(Path.Combine(localTarget, "Docs", "a.txt")));
+
+        // A new folder that differs from the existing one only in case
+        Directory.CreateDirectory(Path.Combine(dataFolder, "docs"));
+        File.WriteAllText(Path.Combine(dataFolder, "docs", "b.txt"), "lower");
+
+        Library.Interface.ISyncResults second;
+        using (var c = new Controller(localBackendUrl, opts, null))
+        {
+            second = await c.SyncAsync(new[] { dataFolder }, null);
+        }
+        Assert.IsEmpty(second.Warnings.Where(x => x.Contains("UploadFailed")), $"The upload into the new folder failed: {string.Join(" | ", second.Warnings)}");
+        Assert.IsTrue(File.Exists(Path.Combine(localTarget, "docs", "b.txt")), "The new folder was not created on the destination.");
+        Assert.AreEqual(1, second.FilesUploaded);
+        Assert.AreEqual("upper", File.ReadAllText(Path.Combine(localTarget, "Docs", "a.txt")));
+    }
 }
 
 /// <summary>
@@ -1621,5 +1682,37 @@ public class LocalSyncDatabaseTests
         // An empty folder yields nothing.
         var empty = await db.GetInventoryItemsInFolderAsync("nonexistent", CancellationToken.None).Select(x => x.RelativePath).ToListAsync(CancellationToken.None);
         Assert.IsEmpty(empty);
+    }
+
+    /// <summary>
+    /// The inventory keeps relative paths with their case, and the folder listing must
+    /// too: on a destination that distinguishes case, "Docs" and "docs" are two folders,
+    /// and a file that belongs to one must not be reported as a child of the other. The
+    /// folder name may also contain the characters LIKE treats as wildcards.
+    /// </summary>
+    [Test]
+    public async Task GetInventoryItemsInFolderDistinguishesCaseAndLikeCharactersAsync()
+    {
+        using var db = new Duplicati.Library.Main.Database.Sync.LocalSyncDatabase(m_dbPath);
+        var baseTime = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+        await db.UpsertInventoryAsync("Docs/a.txt", 1, baseTime, null, CancellationToken.None);
+        await db.UpsertInventoryAsync("docs/b.txt", 2, baseTime, null, CancellationToken.None);
+        await db.UpsertInventoryAsync("Docs/sub/c.txt", 3, baseTime, null, CancellationToken.None);
+        await db.UpsertInventoryAsync("50%/x.txt", 4, baseTime, null, CancellationToken.None);
+        await db.UpsertInventoryAsync("50_/y.txt", 5, baseTime, null, CancellationToken.None);
+        await db.UpsertInventoryAsync("50a/z.txt", 6, baseTime, null, CancellationToken.None);
+
+        var upper = await db.GetInventoryItemsInFolderAsync("Docs", CancellationToken.None).Select(x => x.RelativePath).ToListAsync(CancellationToken.None);
+        CollectionAssert.AreEquivalent(new[] { "Docs/a.txt" }, upper, "\"Docs\" must not list the children of \"docs\".");
+
+        var lower = await db.GetInventoryItemsInFolderAsync("docs", CancellationToken.None).Select(x => x.RelativePath).ToListAsync(CancellationToken.None);
+        CollectionAssert.AreEquivalent(new[] { "docs/b.txt" }, lower, "\"docs\" must not list the children of \"Docs\".");
+
+        var percent = await db.GetInventoryItemsInFolderAsync("50%", CancellationToken.None).Select(x => x.RelativePath).ToListAsync(CancellationToken.None);
+        CollectionAssert.AreEquivalent(new[] { "50%/x.txt" }, percent, "A '%' in the folder name is a character, not a wildcard.");
+
+        var underscore = await db.GetInventoryItemsInFolderAsync("50_", CancellationToken.None).Select(x => x.RelativePath).ToListAsync(CancellationToken.None);
+        CollectionAssert.AreEquivalent(new[] { "50_/y.txt" }, underscore, "A '_' in the folder name is a character, not a wildcard.");
     }
 }
