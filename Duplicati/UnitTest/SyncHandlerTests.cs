@@ -319,6 +319,39 @@ public class SyncHandlerTests : BasicSetupHelper
         Assert.IsTrue(File.Exists(Path.Combine(targetDir, "file2.txt")), "File2 should NOT be deleted on remote");
     }
 
+    /// <summary>
+    /// The handler owns the sync database of the primary destination and has to close it
+    /// when the run is over. Windows refuses to delete a SQLite file that is still open,
+    /// so this is where a connection that is never disposed shows; Linux and macOS
+    /// unlink an open file without complaint, so there the test passes either way.
+    /// </summary>
+    [Test]
+    [Category("Sync")]
+    public async Task TestSyncReleasesItsDatabaseFileAsync()
+    {
+        var dataFolder = Path.Combine(BASEFOLDER, "sync_data_release");
+        if (Directory.Exists(dataFolder)) Directory.Delete(dataFolder, true);
+        Directory.CreateDirectory(dataFolder);
+        File.WriteAllText(Path.Combine(dataFolder, "file1.txt"), "Hello");
+
+        var dbPath = Path.Combine(BASEFOLDER, $"sync-release-{Guid.NewGuid():N}.sqlite");
+        var opts = new Dictionary<string, string>
+        {
+            ["no-encryption"] = "true",
+            ["snapshot-policy"] = "off",
+            ["dbpath"] = dbPath
+        };
+
+        using (var c = new Controller(backendUrl, opts, null))
+        {
+            await c.SyncAsync(new[] { dataFolder }, null);
+        }
+
+        Assert.IsTrue(File.Exists(dbPath), "The sync did not create its database.");
+        File.Delete(dbPath);
+        Assert.IsFalse(File.Exists(dbPath), "The sync database is still there after the delete.");
+    }
+
     [Test]
     [Category("Sync")]
     public async Task TestSyncHashVerificationAsync()
