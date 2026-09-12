@@ -358,11 +358,12 @@ public class SyncHandlerTests : BasicSetupHelper
     }
 
     /// <summary>
-    /// sync-remote-state=use-local-state must produce the same end state as the default
-    /// (use-remote-state): files uploaded, sub-folders created, and a second run performs
-    /// no extra work by diffing against the local inventory cache (no per-folder listing
-    /// would be needed, but the observable contract - correct end state and updates
-    /// propagating - is what we assert here).
+    /// sync-remote-state=UseLocalState must produce the same end state as the default
+    /// (UseRemoteState) - files uploaded, sub-folders created, updates propagating - and
+    /// it must do so from the local inventory rather than from a listing. The end state
+    /// alone cannot tell the two modes apart, so the test also removes a file from the
+    /// destination behind the handler's back: UseLocalState trusts its inventory and does
+    /// not notice, and --sync-recheck is what makes it list again and repair the copy.
     /// </summary>
     [Test]
     [Category("Sync")]
@@ -376,39 +377,78 @@ public class SyncHandlerTests : BasicSetupHelper
         File.WriteAllText(Path.Combine(dataFolder, "file1.txt"), "Hello");
         File.WriteAllText(Path.Combine(dataFolder, "sub", "file2.txt"), "World");
 
+        // The fixture's destination and sync database are shared by every test and kept
+        // between runs. This test reads the inventory, so it needs a destination and a
+        // database that no other test has written to.
+        var localTarget = Path.Combine(BASEFOLDER, "sync_target_localstate");
+        if (Directory.Exists(localTarget)) Directory.Delete(localTarget, true);
+        Directory.CreateDirectory(localTarget);
+        var localBackendUrl = "file://" + localTarget.Replace("\\", "/");
+
         var opts = new Dictionary<string, string>
         {
             ["no-encryption"] = "true",
             ["snapshot-policy"] = "off",
-            ["sync-remote-state"] = "use-local-state",
+            ["sync-remote-state"] = "UseLocalState",
+            ["dbpath"] = Path.Combine(BASEFOLDER, $"sync-localstate-{Guid.NewGuid():N}.sqlite"),
         };
 
         // Sync 1: inventory is empty, so the handler falls back to listing fresh and
         // seeds the inventory. End state must match a normal sync.
-        using (var c = new Controller(backendUrl, opts, null))
+        Library.Interface.ISyncResults first;
+        using (var c = new Controller(localBackendUrl, opts, null))
         {
-            await c.SyncAsync(new[] { dataFolder }, null);
+            first = await c.SyncAsync(new[] { dataFolder }, null);
         }
-        Assert.IsTrue(File.Exists(Path.Combine(targetDir, "file1.txt")));
-        Assert.IsTrue(File.Exists(Path.Combine(targetDir, "sub", "file2.txt")));
+        Assert.IsTrue(File.Exists(Path.Combine(localTarget, "file1.txt")));
+        Assert.IsTrue(File.Exists(Path.Combine(localTarget, "sub", "file2.txt")));
+        Assert.AreEqual(2, first.FilesUploaded);
 
         // Modify both files; the second run uses the local inventory as the baseline.
         File.WriteAllText(Path.Combine(dataFolder, "file1.txt"), "Hello updated");
         File.WriteAllText(Path.Combine(dataFolder, "sub", "file2.txt"), "World updated");
 
-        using (var c = new Controller(backendUrl, opts, null))
+        Library.Interface.ISyncResults second;
+        using (var c = new Controller(localBackendUrl, opts, null))
         {
-            await c.SyncAsync(new[] { dataFolder }, null);
+            second = await c.SyncAsync(new[] { dataFolder }, null);
         }
-        Assert.AreEqual("Hello updated", File.ReadAllText(Path.Combine(targetDir, "file1.txt")));
-        Assert.AreEqual("World updated", File.ReadAllText(Path.Combine(targetDir, "sub", "file2.txt")));
+        Assert.AreEqual("Hello updated", File.ReadAllText(Path.Combine(localTarget, "file1.txt")));
+        Assert.AreEqual("World updated", File.ReadAllText(Path.Combine(localTarget, "sub", "file2.txt")));
+        Assert.AreEqual(2, second.FilesUploaded);
+
+        // Remove a destination file behind the handler's back. The inventory still lists
+        // it, and UseLocalState trusts the inventory, so the third run must not notice;
+        // a listing (UseRemoteState) would.
+        File.Delete(Path.Combine(localTarget, "file1.txt"));
+
+        Library.Interface.ISyncResults third;
+        using (var c = new Controller(localBackendUrl, opts, null))
+        {
+            third = await c.SyncAsync(new[] { dataFolder }, null);
+        }
+        Assert.AreEqual(0, third.FilesUploaded, "UseLocalState must not list the destination, so it cannot see the missing file.");
+        Assert.AreEqual(2, third.UnchangedFiles);
+        Assert.IsFalse(File.Exists(Path.Combine(localTarget, "file1.txt")), "The file was re-uploaded, so the run listed the destination.");
+
+        // --sync-recheck is the documented way out: list again, repair, refresh the inventory.
+        opts["sync-recheck"] = "true";
+        Library.Interface.ISyncResults recheck;
+        using (var c = new Controller(localBackendUrl, opts, null))
+        {
+            recheck = await c.SyncAsync(new[] { dataFolder }, null);
+        }
+        Assert.AreEqual(1, recheck.FilesUploaded);
+        Assert.AreEqual("Hello updated", File.ReadAllText(Path.Combine(localTarget, "file1.txt")));
     }
 
     /// <summary>
-    /// sync-remote-state=blindly-upload must upload every local file unconditionally on
+    /// sync-remote-state=BlindlyUpload must upload every local file unconditionally on
     /// every run (no remote state check), create sub-folders as needed, and ignore
-    /// --sync-then-delete (deletes are not meaningful without remote state). A second
-    /// run re-uploads the unchanged files; the end state is still correct.
+    /// --sync-then-delete (deletes are not meaningful without remote state). The end
+    /// state alone cannot tell it from the default, so the second run also drops a local
+    /// file: a blind run re-uploads the unchanged file and leaves the removed one on the
+    /// destination, where the default would skip the one and delete the other.
     /// </summary>
     [Test]
     [Category("Sync")]
@@ -426,25 +466,36 @@ public class SyncHandlerTests : BasicSetupHelper
         {
             ["no-encryption"] = "true",
             ["snapshot-policy"] = "off",
-            ["sync-remote-state"] = "blindly-upload",
+            ["sync-remote-state"] = "BlindlyUpload",
             // Deletes must be ignored under blind upload.
             ["sync-then-delete"] = "true",
         };
 
+        Library.Interface.ISyncResults first;
         using (var c = new Controller(backendUrl, opts, null))
         {
-            await c.SyncAsync(new[] { dataFolder }, null);
+            first = await c.SyncAsync(new[] { dataFolder }, null);
         }
         Assert.IsTrue(File.Exists(Path.Combine(targetDir, "file1.txt")));
         Assert.IsTrue(File.Exists(Path.Combine(targetDir, "sub", "file2.txt")));
         Assert.AreEqual("Hello", File.ReadAllText(Path.Combine(targetDir, "file1.txt")));
+        Assert.AreEqual(2, first.FilesUploaded);
+        Assert.AreEqual(1, first.Warnings.Count(x => x.Contains("BlindlyUploadIgnoresDelete")),
+            $"Expected the warning that --sync-then-delete is ignored, got: {string.Join(" | ", first.Warnings)}");
 
-        // A second blind run re-uploads everything; content is unchanged on disk but
-        // the operation must still succeed and leave the correct end state.
+        // A second blind run re-uploads everything it finds, unchanged or not, and does
+        // not delete what is gone locally. The end state is still correct for what exists.
+        File.Delete(Path.Combine(dataFolder, "file1.txt"));
+
+        Library.Interface.ISyncResults second;
         using (var c = new Controller(backendUrl, opts, null))
         {
-            await c.SyncAsync(new[] { dataFolder }, null);
+            second = await c.SyncAsync(new[] { dataFolder }, null);
         }
+        Assert.AreEqual(1, second.FilesUploaded, "A blind run uploads the unchanged file again.");
+        Assert.AreEqual(0, second.UnchangedFiles);
+        Assert.AreEqual(0, second.FilesDeleted);
+        Assert.IsTrue(File.Exists(Path.Combine(targetDir, "file1.txt")), "A blind run has no remote state, so it must not delete.");
         Assert.AreEqual("Hello", File.ReadAllText(Path.Combine(targetDir, "file1.txt")));
         Assert.AreEqual("World", File.ReadAllText(Path.Combine(targetDir, "sub", "file2.txt")));
     }
