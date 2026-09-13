@@ -265,6 +265,43 @@ namespace Duplicati.UnitTest
             }
         }
 
+        /// <summary>
+        /// A search limited to folders covers those folders and everything below them,
+        /// and nothing beside them: "f10" is not below "f1".
+        /// </summary>
+        [Test]
+        public async Task SearchEntries_FolderScopeIncludesSubfoldersAsync()
+        {
+            var options = new Dictionary<string, string>(this.TestOptions);
+            var f1 = Path.Combine(this.DATAFOLDER, "f1");
+            var sub = Path.Combine(f1, "sub");
+            var f10 = Path.Combine(this.DATAFOLDER, "f10");
+            Directory.CreateDirectory(sub);
+            Directory.CreateDirectory(f10);
+            var top = Path.Combine(this.DATAFOLDER, "c.txt");
+            var inF1 = Path.Combine(f1, "a.txt");
+            var inSub = Path.Combine(sub, "b.txt");
+            var inF10 = Path.Combine(f10, "d.txt");
+            foreach (var file in new[] { top, inF1, inSub, inF10 })
+                File.WriteAllText(file, file);
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+
+            var filter = new FilterExpression("*.txt", true);
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                var inFolder = await c.SearchEntriesAsync(new[] { f1 }, filter, false, 0, 0, false, false);
+                Assert.That(inFolder.FileVersions.Items.Select(x => x.Path), Is.EquivalentTo(new[] { inF1, inSub }), "A folder scope should cover the folder and its sub-folders, and not its neighbours");
+
+                var inSubFolder = await c.SearchEntriesAsync(new[] { sub }, filter, false, 0, 0, false, false);
+                Assert.That(inSubFolder.FileVersions.Items.Select(x => x.Path), Is.EqualTo(new[] { inSub }));
+
+                var everywhere = await c.SearchEntriesAsync(null, filter, false, 0, 0, false, false);
+                Assert.That(everywhere.FileVersions.Items.Select(x => x.Path), Is.EquivalentTo(new[] { top, inF1, inSub, inF10 }));
+            }
+        }
+
         [Test]
         public async Task SearchFilesTestAsync()
         {
