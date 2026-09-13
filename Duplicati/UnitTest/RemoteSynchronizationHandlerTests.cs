@@ -113,7 +113,7 @@ namespace Duplicati.UnitTest
             {
                 ["remote-sync-json-config"] = @$"{{""destinations"": [
                     {{""url"": ""file://{dest1}"", ""mode"": ""inline""}},
-                    {{""url"": ""file://{dest2}"", ""mode"": ""interval""}}
+                    {{""url"": ""file://{dest2}"", ""mode"": ""interval"", ""interval"": ""1h""}}
                 ]}}"
             };
 
@@ -266,6 +266,82 @@ namespace Duplicati.UnitTest
             var shouldTrigger = (bool)handler.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(handler, [0, destinations[0]]);
 
             Assert.IsTrue(shouldTrigger);
+        }
+
+        /// <summary>
+        /// Collects the log entries written while a handler is constructed, so a test can
+        /// see the warning the configuration parsing writes.
+        /// </summary>
+        private sealed class LogSink : Duplicati.Library.Logging.ILogDestination
+        {
+            public List<Duplicati.Library.Logging.LogEntry> Entries { get; } = [];
+
+            public void WriteMessage(Duplicati.Library.Logging.LogEntry entry)
+            {
+                Entries.Add(entry);
+            }
+        }
+
+        /// <summary>
+        /// An explicit mode without its parameter cannot be triggered a second time: the check
+        /// compares against a null interval or count, which is always false. The parser has to
+        /// say so and run the destination inline, the way it already does for an interval it
+        /// cannot parse.
+        /// </summary>
+        [TestCase("interval", "RemoteSyncMissingInterval")]
+        [TestCase("counting", "RemoteSyncMissingCount")]
+        [Category("RemoteSync")]
+        public void TestConfigure_ModeWithoutItsParameter_WarnsAndDefaultsToInline(string mode, string warningId)
+        {
+            var options = new Dictionary<string, string>
+            {
+                ["remote-sync-json-config"] = $@"{{""destinations"": [
+                    {{""url"": ""file://{dest1}"", ""mode"": ""{mode}""}}
+                ]}}",
+                ["dbpath"] = DBFILE
+            };
+
+            var sink = new LogSink();
+            RemoteSynchronizationHandler handler;
+            using (Duplicati.Library.Logging.Log.StartScope(sink, Duplicati.Library.Logging.LogMessageType.Warning))
+                handler = new RemoteSynchronizationHandler($"file://{source}", new Options(options), new BackupResults());
+
+            var destinations = handler.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(handler) as List<RemoteSyncDestinationConfig>;
+            Assert.AreEqual(1, destinations.Count);
+            Assert.AreEqual(RemoteSyncTriggerMode.Inline, destinations[0].Mode, $"A {mode} destination without its parameter should run inline.");
+            Assert.AreEqual(1, sink.Entries.Count(x => x.Id == warningId), $"Expected one {warningId} warning, got: {string.Join(" | ", sink.Entries.Select(x => x.Id + ": " + x.FormattedMessage))}");
+        }
+
+        /// <summary>
+        /// Without the fallback the destination syncs exactly once: the first check passes
+        /// because nothing was recorded yet, and every later one fails against the null
+        /// parameter. After one recorded sync the destination must still be triggered.
+        /// </summary>
+        [TestCase("interval")]
+        [TestCase("counting")]
+        [Category("RemoteSync")]
+        public void TestShouldTriggerSync_ModeWithoutItsParameter_StillTriggersAfterAFirstSync(string mode)
+        {
+            var options = new Dictionary<string, string>
+            {
+                ["remote-sync-json-config"] = $@"{{""destinations"": [
+                    {{""url"": ""file://{dest1}"", ""mode"": ""{mode}""}}
+                ]}}",
+                ["dbpath"] = DBFILE
+            };
+
+            var handler = new RemoteSynchronizationHandler($"file://{source}", new Options(options), new BackupResults());
+
+            // Create Operation table as we're now calling outside of the Controller, and record one sync
+            using var db = SQLiteLoader.LoadConnection(DBFILE);
+            using var cmd = db.CreateCommand();
+            EnsureOperationTableCreated(cmd);
+            handler.GetType().GetMethod("RecordSyncOperation", BINDING_FLAGS).Invoke(handler, [0]);
+
+            var destinations = handler.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(handler) as List<RemoteSyncDestinationConfig>;
+            var shouldTrigger = (bool)handler.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(handler, [0, destinations[0]]);
+
+            Assert.IsTrue(shouldTrigger, $"A {mode} destination without its parameter was not triggered again after its first sync.");
         }
 
         [Test]
@@ -785,7 +861,7 @@ namespace Duplicati.UnitTest
             {
                 ["remote-sync-json-config"] = $@"{{""destinations"": [
                     {{""url"": ""file://{dest1}""}},
-                    {{""url"": ""file://{dest2}"", ""mode"": ""interval""}}
+                    {{""url"": ""file://{dest2}"", ""mode"": ""interval"", ""interval"": ""1h""}}
                 ]}}"
             };
 
