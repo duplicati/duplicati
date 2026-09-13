@@ -65,7 +65,13 @@ internal static class ListFileVersionsHandler
         if (paths == null || paths.Length == 0)
             throw new UserInformationException("No path specified", "NoPathSpecified");
 
-        paths = paths.Select(path => Util.AppendDirSeparator(path)).ToArray();
+        // A file is stored by its path as given, a folder with a trailing directory separator.
+        // Ask for both forms, so a folder is found whether or not the caller added the separator.
+        paths = paths
+            .Where(path => !string.IsNullOrEmpty(path))
+            .SelectMany(path => new[] { path, Util.AppendDirSeparator(path) })
+            .Distinct()
+            .ToArray();
         result.FileVersions = await db
             .ListFileVersionsAsync(paths, filesetIds, offset, limit, result.TaskControl.ProgressToken)
             .ConfigureAwait(false);
