@@ -192,6 +192,45 @@ namespace Duplicati.UnitTest
         }
 
         /// <summary>
+        /// The handler resolves each supplied version time exactly and skips the ones that
+        /// match nothing. A time that matches no fileset must therefore lock nothing - not
+        /// the volumes of the newest fileset.
+        /// </summary>
+        [Test]
+        [Category("LockHandler")]
+        public async Task DoesNotLockAnythingForAVersionThatMatchesNoFilesetAsync()
+        {
+            var options = new Dictionary<string, string>(TestOptions);
+            using (var controller = new Controller("file://" + TARGETFOLDER, options, null))
+            {
+                await controller.BackupAsync([DATAFOLDER]);
+            }
+
+            var lockDbPath = Path.Combine(BASEFOLDER, $"locktest-{Guid.NewGuid():N}.sqlite");
+            File.Copy(options["dbpath"], lockDbPath, true);
+
+            await using var db = await LocalLockDatabase.CreateAsync(lockDbPath, null, CancellationToken.None).ConfigureAwait(false);
+
+            var filesets = new List<KeyValuePair<long, DateTime>>();
+            await foreach (var entry in db.FilesetTimesAsync(CancellationToken.None).ConfigureAwait(false))
+                filesets.Add(entry);
+
+            var lockingOptions = new Options(new Dictionary<string, string?>(options.ToDictionary(kvp => kvp.Key, kvp => (string?)kvp.Value))
+            {
+                ["dbpath"] = lockDbPath,
+                ["remote-file-lock-duration"] = "1D",
+            });
+
+            var backend = new FakeLockingBackendManager();
+            // A day before the only fileset there is no version to lock
+            var handler = new SetLocksHandler(lockingOptions, new SetLockResults(), new[] { filesets.Last().Value.AddDays(-1) });
+
+            var error = Assert.ThrowsAsync<UserInformationException>(() => handler.RunAsync(backend, db));
+            Assert.That(error!.HelpID, Is.EqualTo("NoVersionForLockOperation"));
+            Assert.That(backend.LockedVolumes, Is.Empty, "A version time that matches no fileset must not lock the newest fileset's volumes.");
+        }
+
+        /// <summary>
         /// Tests that GetRemoteVolumesDependingOnFilesets works correctly with a large number of fileset IDs
         /// that triggers the temporary table code path (when count > CHUNK_SIZE = 128).
         /// </summary>

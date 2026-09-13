@@ -1548,7 +1548,8 @@ namespace Duplicati.Library.Main.Database.Local
 
         /// <summary>
         /// Retrieves the IDs of filesets that match a specific restore time and optional versions.
-        /// If no filesets match the criteria, it returns the newest fileset ID.
+        /// If no filesets match the criteria, every fileset is returned, newest first, unless an exact time match
+        /// was requested with <paramref name="singleTimeMatch"/>, in which case nothing is returned.
         /// </summary>
         /// <param name="restoretime">The time to restore from.</param>
         /// <param name="versions">Optional array of versions to match against the filesets.</param>
@@ -1592,8 +1593,13 @@ namespace Duplicati.Library.Main.Database.Local
 
                 if (res.Count == 0)
                     throw new Duplicati.Library.Interface.UserInformationException("No backup at the specified date", "NoBackupAtDate");
-                else
-                    Logging.Log.WriteWarningMessage(LOGTAG, "RestoreTimeNoMatch", null, "Restore time or version did not match any existing backups, selecting newest backup");
+
+                // The caller asked for the fileset at exactly this time and there is none; the
+                // other filesets are not an answer to that, the way they are for a restore time
+                if (singleTimeMatch)
+                    yield break;
+
+                Logging.Log.WriteWarningMessage(LOGTAG, "RestoreTimeNoMatch", null, "Restore time or version did not match any existing backups, selecting newest backup");
             }
 
             foreach (var el in res)
