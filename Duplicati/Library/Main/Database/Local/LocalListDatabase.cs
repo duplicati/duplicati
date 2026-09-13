@@ -1256,7 +1256,7 @@ namespace Duplicati.Library.Main.Database.Local
         /// <summary>
         /// Lists all versions of specific file paths, optionally filtered by fileset IDs.
         /// </summary>
-        /// <param name="paths">Paths to match exactly.</param>
+        /// <param name="paths">Full paths to match exactly; a folder is stored with a trailing directory separator.</param>
         /// <param name="filesetIds">Optional fileset IDs to restrict the search to.</param>
         /// <param name="offset">Pagination offset.</param>
         /// <param name="limit">Pagination limit.</param>
@@ -1264,7 +1264,8 @@ namespace Duplicati.Library.Main.Database.Local
         /// <returns>A task that when awaited returns all matching file versions ordered by path and then version time.</returns>
         public async Task<IPaginatedResults<IListFileVersion>> ListFileVersionsAsync(IEnumerable<string> paths, long[]? filesetIds, long offset, long limit, CancellationToken token)
         {
-            if (paths == null || !paths.Any())
+            var pathList = (paths ?? []).Where(x => !string.IsNullOrEmpty(x)).Distinct().ToList();
+            if (pathList.Count == 0)
                 return new PaginatedResults<IListFileVersion>(0, (int)(limit > 0 ? limit : long.MaxValue), 0, 0, Enumerable.Empty<IListFileVersion>());
 
             if (offset != 0 && limit <= 0)
@@ -1272,11 +1273,19 @@ namespace Duplicati.Library.Main.Database.Local
             if (limit <= 0)
                 limit = long.MaxValue;
 
+            // A path is stored split into a prefix and a name (PathPrefix.Prefix || FileLookup.Path),
+            // so match on the joined value. The prefix ids narrow the lookup to the index on FileLookup.
+            var prefixIds = await GetPrefixIdsAsync(pathList.Select(x => SplitIntoPrefixAndName(x).Key).Distinct(), token)
+                .ToListAsync(token)
+                .ConfigureAwait(false);
+            if (prefixIds.Count == 0)
+                return new PaginatedResults<IListFileVersion>(0, limit > int.MaxValue ? int.MaxValue : (int)limit, 0, 0, Enumerable.Empty<IListFileVersion>());
+
             await using var cmd = m_connection.CreateCommand();
 
-            var countWhere = "WHERE fl.\"Path\" IN (@Paths)";
+            var countWhere = @"WHERE ""fl"".""PrefixID"" IN (@PrefixIds) AND (""pp"".""Prefix"" || ""fl"".""Path"") IN (@Paths)";
             if (filesetIds != null && filesetIds.Length > 0)
-                countWhere += " AND fe.\"FilesetID\" IN (@FilesetIds)";
+                countWhere += @" AND ""fe"".""FilesetID"" IN (@FilesetIds)";
 
             cmd.SetCommandAndParameters(@"
                 SELECT ""ID""
@@ -1293,7 +1302,9 @@ namespace Duplicati.Library.Main.Database.Local
             await using var filesetIdTable = filesetIds != null && filesetIds.Length > 0
                 ? await TemporaryDbValueList.CreateAsync(this, filesetIds, token).ConfigureAwait(false)
                 : null;
-            await using var pathsTable = await TemporaryDbValueList.CreateAsync(this, paths, token)
+            await using var pathsTable = await TemporaryDbValueList.CreateAsync(this, pathList, token)
+                .ConfigureAwait(false);
+            await using var prefixIdsTable = await TemporaryDbValueList.CreateAsync(this, prefixIds, token)
                 .ConfigureAwait(false);
 
             // Then fetch the actual data
@@ -1301,7 +1312,7 @@ namespace Duplicati.Library.Main.Database.Local
                 SELECT
                     ""fe"".""FilesetID"",
                     ""f"".""Timestamp"",
-                    ""fl"".""Path"",
+                    ""pp"".""Prefix"" || ""fl"".""Path"" AS ""FullPath"",
                     COALESCE(""b"".""Length"", 0) AS ""Size"",
                     CASE
                         WHEN ""fl"".""BlocksetID"" = @FolderBlocksetId
@@ -1317,12 +1328,15 @@ namespace Duplicati.Library.Main.Database.Local
                 FROM ""FilesetEntry"" ""fe""
                 INNER JOIN ""FileLookup"" ""fl""
                     ON ""fe"".""FileID"" = ""fl"".""ID""
+                INNER JOIN ""PathPrefix"" ""pp""
+                    ON ""fl"".""PrefixID"" = ""pp"".""ID""
                 INNER JOIN ""Fileset"" ""f""
                     ON ""fe"".""FilesetID"" = ""f"".""ID""
                 LEFT JOIN ""Blockset"" ""b""
                     ON ""fl"".""BlocksetID"" = ""b"".""ID""
                 {countWhere}
                 ORDER BY
+                    ""pp"".""Prefix"" ASC,
                     ""fl"".""Path"" ASC,
                     ""f"".""Timestamp"" ASC
                 LIMIT @limit
@@ -1335,7 +1349,8 @@ namespace Duplicati.Library.Main.Database.Local
                 .SetParameterValue("@limit", limit)
                 .SetParameterValue("@offset", offset);
 
-
+            await cmd.ExpandInClauseParameterMssqliteAsync("@PrefixIds", prefixIdsTable, token)
+                .ConfigureAwait(false);
             await cmd.ExpandInClauseParameterMssqliteAsync("@Paths", pathsTable, token)
                 .ConfigureAwait(false);
 
@@ -1347,7 +1362,7 @@ namespace Duplicati.Library.Main.Database.Local
             await foreach (var rd in cmd.ExecuteReaderEnumerableAsync(token).ConfigureAwait(false))
             {
                 var version = versionMap[rd.ConvertValueToInt64(0, -1)];
-                var time = new DateTime(rd.ConvertValueToInt64(1, 0), DateTimeKind.Utc);
+                var time = ParseFromEpochSeconds(rd.ConvertValueToInt64(1, 0));
                 var path = rd.ConvertValueToString(2) ?? string.Empty;
                 var size = rd.ConvertValueToInt64(3, 0);
                 var isDirectory = rd.GetInt32(4) != 0;
@@ -1384,10 +1399,14 @@ namespace Duplicati.Library.Main.Database.Local
                     FROM ""FilesetEntry"" ""fe""
                     INNER JOIN ""FileLookup"" ""fl""
                         ON ""fe"".""FileID"" = ""fl"".""ID""
+                    INNER JOIN ""PathPrefix"" ""pp""
+                        ON ""fl"".""PrefixID"" = ""pp"".""ID""
                 ";
 
                 cmd.SetCommandAndParameters(countSql + "\n" + countWhere);
 
+                await cmd.ExpandInClauseParameterMssqliteAsync("@PrefixIds", prefixIdsTable, token)
+                    .ConfigureAwait(false);
                 await cmd.ExpandInClauseParameterMssqliteAsync("@Paths", pathsTable, token)
                     .ConfigureAwait(false);
 
