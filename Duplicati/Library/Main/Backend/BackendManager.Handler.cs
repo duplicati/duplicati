@@ -601,7 +601,7 @@ partial class BackendManager
                 {
                     // Operation is accepted into queue, so we can signal completion
                     op.SetComplete((TResult)(object)true);
-                    await task.ConfigureAwait(false);
+                    await UntilCancelledAsync(task, token.Token).ConfigureAwait(false);
                 }
                 else
                 {
@@ -609,7 +609,7 @@ partial class BackendManager
                         throw new NotImplementedException($"WaitForComplete is required for operations returning a value: {op.GetType().FullName}");
 
                     // Wait for the operation to complete
-                    op.SetComplete(await task.ConfigureAwait(false));
+                    op.SetComplete(await UntilCancelledAsync(task, token.Token).ConfigureAwait(false));
                 }
             }
             catch
@@ -618,6 +618,35 @@ partial class BackendManager
                 backend.PreventReuse();
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Awaits a backend call, but stops waiting when the token is cancelled. The token is
+        /// passed to the backend, and a backend that observes it ends the call itself; one that
+        /// does not - a transfer stuck in a socket write, a stream copy without a token - would
+        /// otherwise hold this handler, the queue behind it and the whole operation until the
+        /// destination gives up. A stop is a request to let go now, so the call is left to end
+        /// on its own; the caller prevents reuse of the backend instance and disposes it, which
+        /// closes the connection the call is stuck on where the backend implements that.
+        /// </summary>
+        /// <param name="task">The backend call</param>
+        /// <param name="token">The token the call was given</param>
+        /// <returns>The result of the call</returns>
+        private static async Task<TResult> UntilCancelledAsync<TResult>(Task<TResult> task, CancellationToken token)
+        {
+            if (task.IsCompleted || !token.CanBeCanceled)
+                return await task.ConfigureAwait(false);
+
+            var cancelled = new TaskCompletionSource();
+            using (token.Register(() => cancelled.TrySetResult()))
+            {
+                if (await Task.WhenAny(task, cancelled.Task).ConfigureAwait(false) == task)
+                    return await task.ConfigureAwait(false);
+            }
+
+            // Observe whatever the abandoned call ends with, so it does not surface as an unobserved exception
+            _ = task.ContinueWith(t => _ = t.Exception, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously);
+            throw new OperationCanceledException(token);
         }
 
         public void Dispose()
