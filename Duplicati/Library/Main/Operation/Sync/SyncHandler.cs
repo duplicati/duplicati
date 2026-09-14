@@ -130,7 +130,7 @@ internal class SyncHandler
                 // the journal is never consulted, so leftover rows are just noise; clear them.
                 if (await mgr.Database.HasAnyPendingOperationsAsync(ct).ConfigureAwait(false))
                 {
-                    Logging.Log.WriteWarningMessage(LOGTAG, "InflightDetected", null, "Detected incomplete operations from a previous run. Clearing the intent journal; {0}.", stateMode == SyncRemoteState.UseLocalState ? "run with --sync-recheck (or sync-remote-state=use-remote-state) to reconcile against a fresh remote listing" : "the current run will re-establish remote state per folder");
+                    Logging.Log.WriteWarningMessage(LOGTAG, "InflightDetected", null, "Detected incomplete operations from a previous run. Clearing the intent journal; {0}.", stateMode == SyncRemoteState.UseLocalState ? $"run with --sync-recheck (or sync-remote-state={SyncRemoteState.UseRemoteState}) to reconcile against a fresh remote listing" : "the current run will re-establish remote state per folder");
                     await mgr.Database.ClearPendingOperationsAsync(ct).ConfigureAwait(false);
                 }
 
