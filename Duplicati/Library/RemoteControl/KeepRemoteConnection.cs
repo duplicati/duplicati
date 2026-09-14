@@ -78,9 +78,19 @@ public class KeepRemoteConnection : IDisposable
     private static readonly RSA ClientKey = RSA.Create(2048);
 
     /// <summary>
+    /// The default identity, shared by all agent connections in the process
+    /// </summary>
+    private static readonly RemoteClientIdentity DefaultIdentity = RemoteClientIdentity.CreateAgent();
+
+    /// <summary>
+    /// The identity used for this connection
+    /// </summary>
+    private readonly RemoteClientIdentity _identity;
+
+    /// <summary>
     /// The client ID to use for identifying the client
     /// </summary>
-    private static readonly string ClientId = Guid.NewGuid().ToString();
+    private string ClientId => _identity.ClientId;
 
     /// <summary>
     /// The JSON options to use for deserialization
@@ -213,6 +223,7 @@ public class KeepRemoteConnection : IDisposable
     /// <param name="onReKey">The callback to call when rekeying</param>
     /// <param name="onControl">The callback to call when a control message is received</param>
     /// <param name="onMessage">The callback to call when a command message is received</param>
+    /// <param name="identity">The identity to present to the server</param>
     private KeepRemoteConnection(
         string serverUrl,
         string JWT,
@@ -224,8 +235,10 @@ public class KeepRemoteConnection : IDisposable
         Func<Dictionary<string, string?>, Task<Dictionary<string, string?>>> onConnect,
         Func<ClaimedClientData, Task> onReKey,
         Func<ControlMessage, Task> onControl,
-        Func<CommandMessage, Task> onMessage)
+        Func<CommandMessage, Task> onMessage,
+        RemoteClientIdentity identity)
     {
+        _identity = identity;
         _serverUrl = serverUrl;
         _certificateUrl = certificateUrl;
         _token = JWT;
@@ -449,7 +462,7 @@ public class KeepRemoteConnection : IDisposable
                             PROTOCOL_VERSION,
                             metadata
                         ),
-                        "auth"
+                        _identity.AuthMessageType
                     ),
                     force: true);
                 return;
@@ -560,9 +573,40 @@ public class KeepRemoteConnection : IDisposable
         Func<ClaimedClientData, Task> onReKey,
         Func<ControlMessage, Task> onControl,
         Func<CommandMessage, Task> onMessage)
+        => StartAsync(serverUrl, JWT, certificateUrl, serverKeys, refreshSettingsBy, forceConnect, cancellationToken, onConnect, onReKey, onControl, onMessage, DefaultIdentity);
+
+    /// <summary>
+    /// Creates a new connection to the remote server with a specific identity
+    /// </summary>
+    /// <param name="serverUrl">The url to use</param>
+    /// <param name="JWT">The JWT to use</param>
+    /// <param name="certificateUrl">The certificate url to use</param>
+    /// <param name="serverKeys">The server keys to use</param>
+    /// <param name="refreshSettingsBy">The time to refresh settings by</param>
+    /// <param name="forceConnect">If the connection should be force enabled, ignoring re-connect delays</param>
+    /// <param name="cancellationToken">The token to cancel the connection</param>
+    /// <param name="onConnect">The callback to call when connecting</param>
+    /// <param name="onReKey">The callback to call when rekeying</param>
+    /// <param name="onControl">The callback to call when a control message is received</param>
+    /// <param name="onMessage">The callback to call when a command message is received</param>
+    /// <param name="identity">The identity to present to the server</param>
+    /// <returns>The task representing the connection</returns>
+    public static Task StartAsync(
+        string serverUrl,
+        string JWT,
+        string certificateUrl,
+        IEnumerable<MiniServerCertificate> serverKeys,
+        DateTimeOffset? refreshSettingsBy,
+        bool forceConnect,
+        CancellationToken cancellationToken,
+        Func<Dictionary<string, string?>, Task<Dictionary<string, string?>>> onConnect,
+        Func<ClaimedClientData, Task> onReKey,
+        Func<ControlMessage, Task> onControl,
+        Func<CommandMessage, Task> onMessage,
+        RemoteClientIdentity identity)
         => Task.Run(async () =>
         {
-            using var connection = new KeepRemoteConnection(serverUrl, JWT, certificateUrl, serverKeys, refreshSettingsBy, forceConnect, cancellationToken, onConnect, onReKey, onControl, onMessage);
+            using var connection = new KeepRemoteConnection(serverUrl, JWT, certificateUrl, serverKeys, refreshSettingsBy, forceConnect, cancellationToken, onConnect, onReKey, onControl, onMessage, identity);
             await connection._runnerTask;
         });
 
@@ -659,7 +703,38 @@ public class KeepRemoteConnection : IDisposable
         Func<ClaimedClientData, Task> onReKey,
         Func<ControlMessage, Task> onControl,
         Func<CommandMessage, Task> onMessage)
-        => new KeepRemoteConnection(serverUrl, JWT, certificateUrl, serverKeys, refreshSettingsBy, forceConnect, cancellationToken, onConnect, onReKey, onControl, onMessage);
+        => CreateRemoteListener(serverUrl, JWT, certificateUrl, serverKeys, refreshSettingsBy, forceConnect, cancellationToken, onConnect, onReKey, onControl, onMessage, DefaultIdentity);
+
+    /// <summary>
+    /// Creates a new connection to the remote server with a specific identity
+    /// </summary>
+    /// <param name="serverUrl">The url to use</param>
+    /// <param name="JWT">The JWT token to use</param>
+    /// <param name="certificateUrl">The certificate url to use</param>
+    /// <param name="serverKeys">The server keys to use</param>
+    /// <param name="refreshSettingsBy">The timestamp to disable automatic reconnect</param>
+    /// <param name="forceConnect">If the connection should be force enabled, ignoring re-connect delays</param>
+    /// <param name="cancellationToken">The cancellation token to use</param>
+    /// <param name="onConnect">The callback to call when connecting</param>
+    /// <param name="onReKey">The callback to call when rekeying</param>
+    /// <param name="onControl">The callback to call when a control message is received</param>
+    /// <param name="onMessage">The callback to call when a message is received</param>
+    /// <param name="identity">The identity to present to the server</param>
+    /// <returns>The connection object</returns>
+    public static KeepRemoteConnection CreateRemoteListener(
+        string serverUrl,
+        string JWT,
+        string certificateUrl,
+        IEnumerable<MiniServerCertificate> serverKeys,
+        DateTimeOffset? refreshSettingsBy,
+        bool forceConnect,
+        CancellationToken cancellationToken,
+        Func<Dictionary<string, string?>, Task<Dictionary<string, string?>>> onConnect,
+        Func<ClaimedClientData, Task> onReKey,
+        Func<ControlMessage, Task> onControl,
+        Func<CommandMessage, Task> onMessage,
+        RemoteClientIdentity identity)
+        => new KeepRemoteConnection(serverUrl, JWT, certificateUrl, serverKeys, refreshSettingsBy, forceConnect, cancellationToken, onConnect, onReKey, onControl, onMessage, identity);
 
     /// <summary>
     /// Requests a certificate refresh
