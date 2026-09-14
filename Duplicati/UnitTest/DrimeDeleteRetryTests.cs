@@ -117,7 +117,7 @@ public class DrimeDeleteRetryTests
                 var entries = Listed.Select((x, i) =>
                     $"{{\"id\":{EntryId + i},\"name\":\"{x}\",\"type\":\"file\",\"hash\":\"h{EntryId + i}\",\"file_size\":17}}");
                 return Json(HttpStatusCode.OK,
-                    $"{{\"data\":[{string.Join(",", entries)}],\"current_page\":1,\"last_page\":1,\"per_page\":100}}");
+                    $"{{\"data\":[{string.Join(",", entries)}],\"current_page\":1,\"last_page\":1,\"per_page\":100,\"total\":{Listed.Count}}}");
             }
 
             if (path.EndsWith("/uploads", StringComparison.Ordinal))
