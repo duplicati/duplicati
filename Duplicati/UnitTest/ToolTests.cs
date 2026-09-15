@@ -185,6 +185,8 @@ namespace Duplicati.UnitTest
                 ["source", "destination", "--parse-arguments-only", "--backend-retries", "5"],
                 ["source", "destination", "--parse-arguments-only", "--backend-retry-delay", "1000"],
                 ["source", "destination", "--parse-arguments-only", "--backend-retry-with-exponential-backoff"],
+                ["source", "destination", "--parse-arguments-only", "--auto-create-folders=false"],
+                ["source", "destination", "--parse-arguments-only", "--backend-retry-with-exponential-backoff=false"],
                 ["source", "destination", "--parse-arguments-only", "--dry-run"],
                 ["source", "destination", "--parse-arguments-only", "--force"],
                 ["source", "destination", "--parse-arguments-only", "--dry-run", "--force"],
@@ -995,6 +997,99 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(0, await RunSyncAsync(config).ConfigureAwait(false),
                     "Names that differ in case are two files unless the remote is said to be case insensitive.");
             }
+        }
+
+        /// <summary>
+        /// Tests that a missing destination folder is created when the tool is asked to. The
+        /// exponential backoff flag is deliberately set to the opposite value: if the two are ever
+        /// bound to the wrong constructor parameters again, this test fails.
+        /// </summary>
+        [Test]
+        [Category("Tools/RemoteSynchronization")]
+        public async Task TestAutoCreateFoldersCreatesMissingDestinationAsync()
+        {
+            var l1 = Path.Combine(TARGETFOLDER, "autocreate_src");
+            var l2 = Path.Combine(TARGETFOLDER, "autocreate_dst");
+
+            Directory.CreateDirectory(l1);
+            await GenerateTestDataAsync(l1, 5, 0, 0, 1024).ConfigureAwait(false);
+
+            Assert.IsFalse(Directory.Exists(l2), "The destination folder must not exist before the run.");
+
+            // A retry delay of zero keeps the run instant if the folder is not created after all
+            var args = new string[] {
+                $"file://{l1}", $"file://{l2}", "--confirm",
+                "--auto-create-folders=true",
+                "--backend-retry-with-exponential-backoff=false",
+                "--backend-retry-delay", "0"
+            };
+
+            var async_call = RemoteSynchronization.Program.MainAsync(args);
+            var return_code = await async_call.ConfigureAwait(false);
+
+            Assert.AreEqual(0, return_code, "Remote synchronization tool did not return 0.");
+            Assert.IsTrue(Directory.Exists(l2), "The destination folder was not created.");
+            Assert.IsTrue(DirectoriesAndContentsAreEqual(l1, l2), "Synchronized directories are not equal");
+        }
+
+        /// <summary>
+        /// The other half: a missing destination folder is left alone when the tool is told not to
+        /// create it, whatever the exponential backoff flag says.
+        /// </summary>
+        [Test]
+        [Category("Tools/RemoteSynchronization")]
+        public async Task TestAutoCreateFoldersDisabledLeavesMissingDestinationAsync()
+        {
+            var l1 = Path.Combine(TARGETFOLDER, "noautocreate_src");
+            var l2 = Path.Combine(TARGETFOLDER, "noautocreate_dst");
+
+            Directory.CreateDirectory(l1);
+            await GenerateTestDataAsync(l1, 5, 0, 0, 1024).ConfigureAwait(false);
+
+            Assert.IsFalse(Directory.Exists(l2), "The destination folder must not exist before the run.");
+
+            var args = new string[] {
+                $"file://{l1}", $"file://{l2}", "--confirm",
+                "--auto-create-folders=false",
+                "--backend-retry-with-exponential-backoff=true",
+                "--backend-retry-delay", "0"
+            };
+
+            var async_call = RemoteSynchronization.Program.MainAsync(args);
+            var return_code = await async_call.ConfigureAwait(false);
+
+            Assert.AreNotEqual(0, return_code, "Remote synchronization should fail when the destination folder is missing and it is not allowed to create it.");
+            Assert.IsFalse(Directory.Exists(l2), "The destination folder was created although it was not allowed.");
+        }
+
+        /// <summary>
+        /// A missing source is not the same as an empty source. Creating it would make the listing
+        /// come back empty, and an empty source means every file in the destination is deleted.
+        /// </summary>
+        [Test]
+        [Category("Tools/RemoteSynchronization")]
+        public async Task TestMissingSourceIsNotCreatedAndDestinationSurvivesAsync()
+        {
+            var l1 = Path.Combine(TARGETFOLDER, "missingsrc_src");
+            var l2 = Path.Combine(TARGETFOLDER, "missingsrc_dst");
+
+            Directory.CreateDirectory(l2);
+            await GenerateTestDataAsync(l2, 5, 0, 0, 1024).ConfigureAwait(false);
+            var before = Directory.GetFiles(l2).Length;
+
+            Assert.IsFalse(Directory.Exists(l1), "The source folder must not exist before the run.");
+
+            var args = new string[] {
+                $"file://{l1}", $"file://{l2}", "--confirm",
+                "--backend-retry-delay", "0"
+            };
+
+            var async_call = RemoteSynchronization.Program.MainAsync(args);
+            var return_code = await async_call.ConfigureAwait(false);
+
+            Assert.AreEqual(before, Directory.GetFiles(l2).Length, "The destination was emptied because a created source folder was read as an empty source.");
+            Assert.IsFalse(Directory.Exists(l1), "The source folder was created, which turns a missing source into an empty one.");
+            Assert.AreNotEqual(0, return_code, "Remote synchronization should fail when the source folder is missing.");
         }
 
     }
