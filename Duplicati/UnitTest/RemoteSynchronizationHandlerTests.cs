@@ -821,6 +821,10 @@ namespace Duplicati.UnitTest
             using var cmd = db.CreateCommand();
             EnsureOperationTableCreated(cmd);
 
+            // The source of a synchronization is a backend that exists: the inline path reads
+            // the backup's own destination
+            Directory.CreateDirectory(Path.Combine(TARGETFOLDER, "source"));
+
             await handler.RunAsync();
 
             // Check that two syncs were recorded (skipping the empty one)
@@ -891,6 +895,10 @@ namespace Duplicati.UnitTest
             cmd.AddNamedParameter("@ts", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow));
             await cmd.ExecuteNonQueryAsync();
 
+            // The source of a synchronization is a backend that exists: the inline path reads
+            // the backup's own destination
+            Directory.CreateDirectory(Path.Combine(TARGETFOLDER, "source"));
+
             await handler.RunAsync();
 
             // Check that one additional sync was recorded (dest1 inline, dest2 interval not due)
@@ -924,6 +932,10 @@ namespace Duplicati.UnitTest
             using var db = await SQLiteLoader.LoadConnectionAsync(DBFILE);
             using var cmd = db.CreateCommand();
             EnsureOperationTableCreated(cmd);
+
+            // The source of a synchronization is a backend that exists: the inline path reads
+            // the backup's own destination
+            Directory.CreateDirectory(Path.Combine(TARGETFOLDER, "source"));
 
             await handler.RunAsync();
 
@@ -1341,6 +1353,48 @@ namespace Duplicati.UnitTest
             DestinationsAreEqual(true, TARGETFOLDER, syncDest1, syncDest3);
             Assert.IsFalse(DestinationsAreEqual(false, TARGETFOLDER, syncDest2)); // syncDest2 should be out of date
             await AssertRestoreWorksAsync([TARGETFOLDER, syncDest1, syncDest3]);
+        }
+
+        /// <summary>
+        /// The source of an inline synchronization is the backup's own destination, so the backup's
+        /// options have to reach it: FTP, WebDAV and SSH read their credentials from the options,
+        /// not only from the url.
+        /// </summary>
+        [Test]
+        [Category("RemoteSync")]
+        public async Task TestConfigure_ForwardsBackupOptionsAsSourceOptionsAsync()
+        {
+            var options = new Dictionary<string, string>
+            {
+                ["remote-sync-json-config"] = @$"{{""destinations"": [
+                    {{""url"": ""file://{dest1}""}}
+                ]}}",
+                ["auth-username"] = "someuser",
+                ["auth-password"] = "some=password=with=equals",
+                ["no-encryption"] = "true"
+            };
+
+            var handler = new RemoteSynchronizationHandler($"file://{source}", new Options(options), new BackupResults());
+
+            var destinations = handler.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(handler) as List<RemoteSyncDestinationConfig>;
+            Assert.AreEqual(1, destinations.Count);
+
+            var srcOptions = destinations[0].Config.SrcOptions;
+
+            Assert.IsTrue(srcOptions.Contains("auth-username=someuser"),
+                $"The username was not forwarded: {string.Join(", ", srcOptions)}");
+            Assert.IsTrue(srcOptions.Contains("auth-password=some=password=with=equals"),
+                $"The password was not forwarded verbatim: {string.Join(", ", srcOptions)}");
+            Assert.IsTrue(srcOptions.Contains("no-encryption=true"),
+                $"An option was not forwarded: {string.Join(", ", srcOptions)}");
+            Assert.AreEqual(options.Count, srcOptions.Count, "Not every option was forwarded.");
+
+            // And the forwarded list is what the runner's own parser reads. This does not catch the
+            // shape above - a wrong string round-trips just as well - but it does show that a value
+            // containing an equals sign survives
+            var parseOnly = destinations[0].Config with { Src = $"file://{source}", ParseArgumentsOnly = true };
+            Assert.AreEqual(0, await Duplicati.Library.Main.Operation.RemoteSynchronization.RemoteSynchronizationRunner.RunAsync(parseOnly, System.Threading.CancellationToken.None).ConfigureAwait(false),
+                "The forwarded options were rejected by the option parser.");
         }
 
     }
