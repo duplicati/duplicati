@@ -185,6 +185,8 @@ namespace Duplicati.UnitTest
                 ["source", "destination", "--parse-arguments-only", "--backend-retries", "5"],
                 ["source", "destination", "--parse-arguments-only", "--backend-retry-delay", "1000"],
                 ["source", "destination", "--parse-arguments-only", "--backend-retry-with-exponential-backoff"],
+                ["source", "destination", "--parse-arguments-only", "--auto-create-folders=false"],
+                ["source", "destination", "--parse-arguments-only", "--backend-retry-with-exponential-backoff=false"],
                 ["source", "destination", "--parse-arguments-only", "--dry-run"],
                 ["source", "destination", "--parse-arguments-only", "--force"],
                 ["source", "destination", "--parse-arguments-only", "--dry-run", "--force"],
@@ -1083,6 +1085,420 @@ namespace Duplicati.UnitTest
             {
                 DeterministicErrorBackend.ErrorGenerator = null;
             }
+        }
+
+        /// <summary>
+        /// A file backend that counts how the synchronization tool reaches it, so a test can tell the
+        /// backend's own rename from the download, upload and delete fallback.
+        /// </summary>
+        public class RenameCountingBackend : IBackend, IStreamingBackend, IRenameEnabledBackend
+        {
+            /// <summary>
+            /// The protocol key this backend is registered under.
+            /// </summary>
+            public const string Key = "renamecounttest";
+
+            public static int Renames, Gets, Puts, Deletes;
+
+            public static void ResetCounters() => Renames = Gets = Puts = Deletes = 0;
+
+            private readonly Library.Backend.File? m_backend;
+
+            public RenameCountingBackend() { }
+
+            public RenameCountingBackend(string url, Dictionary<string, string> options)
+            {
+                m_backend = (Library.Backend.File)Library.DynamicLoader.BackendLoader.GetBackend(url.Replace($"{Key}://", "file://"), options);
+            }
+
+            public string DisplayName => "Rename counting test backend";
+            public string ProtocolKey => Key;
+            public string Description => "A testing backend that counts renames, gets, puts and deletes";
+            public bool SupportsStreaming => m_backend?.SupportsStreaming ?? false;
+            public IList<ICommandLineArgument> SupportedCommands
+                => m_backend?.SupportedCommands ?? Library.DynamicLoader.BackendLoader.GetSupportedCommands("file://").ToList();
+
+            public IAsyncEnumerable<IFileEntry> ListAsync(CancellationToken cancelToken) => m_backend!.ListAsync(cancelToken);
+            public Task CreateFolderAsync(CancellationToken cancelToken) => m_backend!.CreateFolderAsync(cancelToken);
+            public Task TestAsync(bool alsoWrite, CancellationToken cancelToken) => m_backend!.TestAsync(alsoWrite, cancelToken);
+            public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => m_backend!.GetDNSNamesAsync(cancelToken);
+
+            public Task RenameAsync(string oldname, string newname, CancellationToken cancelToken)
+            {
+                Interlocked.Increment(ref Renames);
+                return m_backend!.RenameAsync(oldname, newname, cancelToken);
+            }
+
+            public Task GetAsync(string remotename, Stream stream, CancellationToken cancelToken)
+            {
+                Interlocked.Increment(ref Gets);
+                return m_backend!.GetAsync(remotename, stream, cancelToken);
+            }
+
+            public Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
+            {
+                Interlocked.Increment(ref Gets);
+                return m_backend!.GetAsync(remotename, filename, cancelToken);
+            }
+
+            public Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
+            {
+                Interlocked.Increment(ref Puts);
+                return m_backend!.PutAsync(remotename, stream, cancelToken);
+            }
+
+            public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
+            {
+                Interlocked.Increment(ref Puts);
+                return m_backend!.PutAsync(remotename, filename, cancelToken);
+            }
+
+            public Task DeleteAsync(string remotename, CancellationToken cancelToken)
+            {
+                Interlocked.Increment(ref Deletes);
+                return m_backend!.DeleteAsync(remotename, cancelToken);
+            }
+
+            public void Dispose() => m_backend?.Dispose();
+        }
+
+        /// <summary>
+        /// Checks that every file in <paramref name="before"/> now sits under a name that carries the
+        /// retention prefix and the original name, with the same contents, and that the original name
+        /// is gone.
+        /// </summary>
+        private static void AssertRenamedIntact(string dir, Dictionary<string, byte[]> before)
+        {
+            var after = Directory.EnumerateFiles(dir).Select(x => Path.GetFileName(x)!).ToList();
+            Assert.AreEqual(before.Count, after.Count, $"Unexpected files after the rename: {string.Join(", ", after)}");
+            foreach (var (name, contents) in before)
+            {
+                var renamed = after.SingleOrDefault(x => x.EndsWith($".old.{name}", StringComparison.Ordinal));
+                Assert.IsNotNull(renamed, $"{name} was not renamed with the retention prefix: {string.Join(", ", after)}");
+                Assert.IsFalse(File.Exists(Path.Combine(dir, name)), $"{name} is still present under its original name.");
+                Assert.IsTrue(contents.SequenceEqual(File.ReadAllBytes(Path.Combine(dir, renamed!))), $"{renamed} does not hold the contents of {name}.");
+            }
+        }
+
+        /// <summary>
+        /// A destination that can rename must be asked to rename. Downloading, re-uploading and deleting
+        /// moves every byte of every retained volume through this machine for nothing. The option
+        /// prevent-backend-rename forces the fallback, as it does in the backup path.
+        /// </summary>
+        [TestCase(false)]
+        [TestCase(true)]
+        [Category("Tools/RemoteSynchronization")]
+        public async Task TestRetentionUsesTheBackendsOwnRenameAsync(bool preventRename)
+        {
+            var l1 = Path.Combine(TARGETFOLDER, $"rename_src_{preventRename}");
+            var l2 = Path.Combine(TARGETFOLDER, $"rename_dst_{preventRename}");
+            Directory.CreateDirectory(l1);
+            Directory.CreateDirectory(l2);
+
+            await GenerateTestDataAsync(l2, 3, 0, 0, 1024).ConfigureAwait(false);
+            var before = Directory.EnumerateFiles(l2).ToDictionary(x => Path.GetFileName(x)!, x => File.ReadAllBytes(x));
+
+            Library.DynamicLoader.BackendLoader.AddBackend(new RenameCountingBackend());
+            RenameCountingBackend.ResetCounters();
+
+            var args = new List<string> { $"file://{l1}", $"{RenameCountingBackend.Key}://{l2}", "--confirm", "--retention", "--backend-retry-delay", "0" };
+            if (preventRename)
+                args.AddRange(["--dst-options", "prevent-backend-rename=true"]);
+
+            var return_code = await RemoteSynchronization.Program.MainAsync([.. args]).ConfigureAwait(false);
+
+            Assert.AreEqual(0, return_code, "Remote synchronization tool did not return 0.");
+            if (preventRename)
+            {
+                Assert.AreEqual(0, RenameCountingBackend.Renames, "The backend's own rename was used although it was turned off.");
+                Assert.AreEqual(3, RenameCountingBackend.Gets, "Every retained file should be downloaded once.");
+                Assert.AreEqual(3, RenameCountingBackend.Puts, "Every retained file should be uploaded once.");
+                Assert.AreEqual(3, RenameCountingBackend.Deletes, "Every retained file should be deleted once under its old name.");
+            }
+            else
+            {
+                Assert.AreEqual(3, RenameCountingBackend.Renames, "Every retained file should be renamed by the backend itself.");
+                Assert.AreEqual(0, RenameCountingBackend.Gets, "No file should be downloaded to rename it.");
+                Assert.AreEqual(0, RenameCountingBackend.Puts, "No file should be uploaded to rename it.");
+                Assert.AreEqual(0, RenameCountingBackend.Deletes, "No file should be deleted to rename it.");
+            }
+            AssertRenamedIntact(l2, before);
+        }
+
+        /// <summary>
+        /// A destination that cannot rename still gets its files renamed: downloaded to a temporary
+        /// file, uploaded under the new name and deleted under the old one.
+        /// </summary>
+        [Test]
+        [Category("Tools/RemoteSynchronization")]
+        public async Task TestRetentionFallsBackToCopyingForAStreamingOnlyBackendAsync()
+        {
+            var l1 = Path.Combine(TARGETFOLDER, "renamefb_src");
+            var l2 = Path.Combine(TARGETFOLDER, "renamefb_dst");
+            Directory.CreateDirectory(l1);
+            Directory.CreateDirectory(l2);
+
+            await GenerateTestDataAsync(l2, 3, 0, 0, 1024).ConfigureAwait(false);
+            var before = Directory.EnumerateFiles(l2).ToDictionary(x => Path.GetFileName(x)!, x => File.ReadAllBytes(x));
+
+            Library.DynamicLoader.BackendLoader.AddBackend(new DeterministicErrorBackend());
+            // The generator is static, and another test may have left one behind
+            DeterministicErrorBackend.ErrorGenerator = (_, _) => false;
+
+            var args = new string[] { $"file://{l1}", $"deterror://{l2}", "--confirm", "--retention", "--backend-retry-delay", "0" };
+            var return_code = await RemoteSynchronization.Program.MainAsync(args).ConfigureAwait(false);
+
+            Assert.AreEqual(0, return_code, "Remote synchronization tool did not return 0.");
+            AssertRenamedIntact(l2, before);
+        }
+
+        /// <summary>
+        /// A rename that fails once is retried on the backend instance the manager creates for the
+        /// retry, not on the one it has already disposed.
+        /// </summary>
+        [Test]
+        [Category("Tools/RemoteSynchronization")]
+        public async Task TestRetentionRetriesARenameThatFailedOnceAsync()
+        {
+            var l1 = Path.Combine(TARGETFOLDER, "renameretry_src");
+            var l2 = Path.Combine(TARGETFOLDER, "renameretry_dst");
+            Directory.CreateDirectory(l1);
+            Directory.CreateDirectory(l2);
+
+            await GenerateTestDataAsync(l2, 3, 0, 0, 1024).ConfigureAwait(false);
+            var before = Directory.EnumerateFiles(l2).ToDictionary(x => Path.GetFileName(x)!, x => File.ReadAllBytes(x));
+
+            Library.DynamicLoader.BackendLoader.AddBackend(new DeterministicErrorBackend());
+            var failed = 0;
+            DeterministicErrorBackend.ErrorGenerator = (action, _) =>
+                action == DeterministicErrorBackend.BackendAction.GetBefore && Interlocked.Exchange(ref failed, 1) == 0;
+
+            var args = new string[] { $"file://{l1}", $"deterror://{l2}", "--confirm", "--retention", "--backend-retries", "3", "--backend-retry-delay", "0", "--retry", "0" };
+            var return_code = await RemoteSynchronization.Program.MainAsync(args).ConfigureAwait(false);
+
+            Assert.AreEqual(1, failed, "The injected failure did not fire.");
+            Assert.AreEqual(0, return_code, "Remote synchronization tool did not return 0.");
+            // The exit code does not report rename failures, so the directory is what tells a retried rename from a dropped one
+            AssertRenamedIntact(l2, before);
+        }
+
+        /// <summary>
+        /// A file whose name, size and timestamp match on both sides can still differ, and
+        /// --verify-contents is what finds it. The timestamps are pinned, so only the byte comparison
+        /// can tell the file apart.
+        /// </summary>
+        [Test]
+        [Category("Tools/RemoteSynchronization")]
+        public async Task TestVerifyContentsFindsASameSizeSameTimestampChangeAsync()
+        {
+            var l1 = Path.Combine(TARGETFOLDER, "verify_src");
+            var l2 = Path.Combine(TARGETFOLDER, "verify_dst");
+            Directory.CreateDirectory(l1);
+            Directory.CreateDirectory(l2);
+
+            await GenerateTestDataAsync(l1, 4, 0, 0, 1024).ConfigureAwait(false);
+            foreach (var f in Directory.EnumerateFiles(l1))
+            {
+                var copy = Path.Combine(l2, Path.GetFileName(f));
+                File.Copy(f, copy);
+                File.SetLastWriteTimeUtc(copy, File.GetLastWriteTimeUtc(f));
+            }
+
+            // Flip one byte of one destination file and give it back its timestamp, so the listing cannot tell
+            var changed = Directory.EnumerateFiles(l2).First();
+            var stamp = File.GetLastWriteTimeUtc(changed);
+            var bytes = File.ReadAllBytes(changed);
+            bytes[0] ^= 0xFF;
+            File.WriteAllBytes(changed, bytes);
+            File.SetLastWriteTimeUtc(changed, stamp);
+
+            var results = new RemoteSynchronizationResults();
+            var config = SyncConfig($"file://{l1}", $"file://{l2}") with { DryRun = false, VerifyContents = true, BackendRetryDelay = 0 };
+            var return_code = await Library.Main.Operation.RemoteSynchronization.RemoteSynchronizationRunner
+                .RunAsync(config, CancellationToken.None, results: results).ConfigureAwait(false);
+
+            Assert.AreEqual(0, return_code, "Remote synchronization tool did not return 0.");
+            Assert.AreEqual(1, results.FailedVerificationCount, "The changed file was not caught by the verification.");
+            Assert.AreEqual(3, results.VerifiedFileCount, "The unchanged files did not pass the verification.");
+            Assert.IsTrue(DirectoriesAndContentsAreEqual(l1, l2), "The changed file was not copied again.");
+        }
+
+        /// <summary>
+        /// A folder in the source is not a file the tool can copy. The file backend lists subfolders
+        /// next to the files, and a flat Duplicati destination has no use for them, so they are
+        /// skipped instead of failing the whole run with a copy error.
+        /// </summary>
+        [Test]
+        [Category("Tools/RemoteSynchronization")]
+        public async Task TestFoldersInTheSourceAreIgnoredAsync()
+        {
+            var l1 = Path.Combine(TARGETFOLDER, "srcfolder_src");
+            var l2 = Path.Combine(TARGETFOLDER, "srcfolder_dst");
+
+            Directory.CreateDirectory(l1);
+            Directory.CreateDirectory(l2);
+
+            // Three files and one subfolder holding files of its own
+            await GenerateTestDataAsync(l1, 3, 1, 1, 1024).ConfigureAwait(false);
+            Assert.IsTrue(Directory.Exists(Path.Combine(l1, "dir_0")), "The test data has no subfolder to trip over.");
+
+            // No copy retries, so the failure this guards against is reported at once instead of after the retry delays
+            var args = new string[] {
+                $"file://{l1}", $"file://{l2}", "--confirm",
+                "--backend-retry-delay", "0", "--retry", "0"
+            };
+
+            var return_code = await RemoteSynchronization.Program.MainAsync(args).ConfigureAwait(false);
+
+            Assert.AreEqual(0, return_code, "Remote synchronization tool did not return 0.");
+
+            // Only the top level is compared: DirectoriesAndContentsAreEqual recurses, and the subfolder is meant to stay behind
+            var expected = Directory.EnumerateFiles(l1).Select(Path.GetFileName).OrderBy(x => x).ToList();
+            var actual = Directory.EnumerateFileSystemEntries(l2).Select(Path.GetFileName).OrderBy(x => x).ToList();
+            Assert.IsTrue(expected.SequenceEqual(actual), $"The destination does not hold exactly the top level files of the source: {string.Join(", ", actual)}");
+            foreach (var name in expected)
+                Assert.IsTrue(File.ReadAllBytes(Path.Combine(l1, name!)).SequenceEqual(File.ReadAllBytes(Path.Combine(l2, name!))), $"{name} did not arrive intact.");
+            Assert.IsFalse(Directory.Exists(Path.Combine(l2, "dir_0")), "The source subfolder was created in the destination.");
+        }
+
+        /// <summary>
+        /// A folder in the destination is not a file the tool can delete or rename, so it is left
+        /// alone rather than reported as a failed delete or rename. A destination at the root of a
+        /// mount or a drive has lost+found or System Volume Information next to the backup.
+        /// </summary>
+        [TestCase(false)]
+        [TestCase(true)]
+        [Category("Tools/RemoteSynchronization")]
+        public async Task TestFoldersInTheDestinationAreLeftAloneAsync(bool retention)
+        {
+            var l1 = Path.Combine(TARGETFOLDER, $"dstfolder_src_{retention}");
+            var l2 = Path.Combine(TARGETFOLDER, $"dstfolder_dst_{retention}");
+            var log = Path.Combine(TARGETFOLDER, $"dstfolder_{retention}.log");
+
+            Directory.CreateDirectory(l1);
+            Directory.CreateDirectory(l2);
+
+            await GenerateTestDataAsync(l1, 3, 0, 0, 1024).ConfigureAwait(false);
+
+            // The destination holds nothing but a folder with a file in it, so it is not empty and
+            // the folder is what would end up in the delete list
+            var nested = Path.Combine(l2, "sub", "nested.txt");
+            Directory.CreateDirectory(Path.Combine(l2, "sub"));
+            await File.WriteAllTextAsync(nested, "nested").ConfigureAwait(false);
+
+            var args = new List<string> {
+                $"file://{l1}", $"file://{l2}", "--confirm",
+                "--log-file", log, "--log-level", "Warning",
+                "--backend-retry-delay", "0"
+            };
+            if (retention)
+                args.Add("--retention");
+
+            var return_code = await RemoteSynchronization.Program.MainAsync([.. args]).ConfigureAwait(false);
+
+            Assert.AreEqual(0, return_code, "Remote synchronization tool did not return 0.");
+            foreach (var f in Directory.EnumerateFiles(l1))
+                Assert.IsTrue(File.ReadAllBytes(f).SequenceEqual(File.ReadAllBytes(Path.Combine(l2, Path.GetFileName(f)))), $"{Path.GetFileName(f)} did not arrive intact.");
+            Assert.IsTrue(File.Exists(nested), "The file in the destination folder was removed.");
+            Assert.AreEqual("nested", await File.ReadAllTextAsync(nested).ConfigureAwait(false), "The file in the destination folder was changed.");
+
+            // The log sink flushes every line and is closed before the run returns
+            var logged = await File.ReadAllLinesAsync(log).ConfigureAwait(false);
+            Assert.IsFalse(logged.Any(x => x.Contains("-DeleteError]") || x.Contains("-RenameError]")),
+                $"The folder was reported as a failed delete or rename:{Environment.NewLine}{string.Join(Environment.NewLine, logged)}");
+        }
+
+        /// <summary>
+        /// Tests that a missing destination folder is created when the tool is asked to. The
+        /// exponential backoff flag is deliberately set to the opposite value: if the two are ever
+        /// bound to the wrong constructor parameters again, this test fails.
+        /// </summary>
+        [Test]
+        [Category("Tools/RemoteSynchronization")]
+        public async Task TestAutoCreateFoldersCreatesMissingDestinationAsync()
+        {
+            var l1 = Path.Combine(TARGETFOLDER, "autocreate_src");
+            var l2 = Path.Combine(TARGETFOLDER, "autocreate_dst");
+
+            Directory.CreateDirectory(l1);
+            await GenerateTestDataAsync(l1, 5, 0, 0, 1024).ConfigureAwait(false);
+
+            Assert.IsFalse(Directory.Exists(l2), "The destination folder must not exist before the run.");
+
+            // A retry delay of zero keeps the run instant if the folder is not created after all
+            var args = new string[] {
+                $"file://{l1}", $"file://{l2}", "--confirm",
+                "--auto-create-folders=true",
+                "--backend-retry-with-exponential-backoff=false",
+                "--backend-retry-delay", "0"
+            };
+
+            var async_call = RemoteSynchronization.Program.MainAsync(args);
+            var return_code = await async_call.ConfigureAwait(false);
+
+            Assert.AreEqual(0, return_code, "Remote synchronization tool did not return 0.");
+            Assert.IsTrue(Directory.Exists(l2), "The destination folder was not created.");
+            Assert.IsTrue(DirectoriesAndContentsAreEqual(l1, l2), "Synchronized directories are not equal");
+        }
+
+        /// <summary>
+        /// The other half: a missing destination folder is left alone when the tool is told not to
+        /// create it, whatever the exponential backoff flag says.
+        /// </summary>
+        [Test]
+        [Category("Tools/RemoteSynchronization")]
+        public async Task TestAutoCreateFoldersDisabledLeavesMissingDestinationAsync()
+        {
+            var l1 = Path.Combine(TARGETFOLDER, "noautocreate_src");
+            var l2 = Path.Combine(TARGETFOLDER, "noautocreate_dst");
+
+            Directory.CreateDirectory(l1);
+            await GenerateTestDataAsync(l1, 5, 0, 0, 1024).ConfigureAwait(false);
+
+            Assert.IsFalse(Directory.Exists(l2), "The destination folder must not exist before the run.");
+
+            var args = new string[] {
+                $"file://{l1}", $"file://{l2}", "--confirm",
+                "--auto-create-folders=false",
+                "--backend-retry-with-exponential-backoff=true",
+                "--backend-retry-delay", "0"
+            };
+
+            var async_call = RemoteSynchronization.Program.MainAsync(args);
+            var return_code = await async_call.ConfigureAwait(false);
+
+            Assert.AreNotEqual(0, return_code, "Remote synchronization should fail when the destination folder is missing and it is not allowed to create it.");
+            Assert.IsFalse(Directory.Exists(l2), "The destination folder was created although it was not allowed.");
+        }
+
+        /// <summary>
+        /// A missing source is not the same as an empty source. Creating it would make the listing
+        /// come back empty, and an empty source means every file in the destination is deleted.
+        /// </summary>
+        [Test]
+        [Category("Tools/RemoteSynchronization")]
+        public async Task TestMissingSourceIsNotCreatedAndDestinationSurvivesAsync()
+        {
+            var l1 = Path.Combine(TARGETFOLDER, "missingsrc_src");
+            var l2 = Path.Combine(TARGETFOLDER, "missingsrc_dst");
+
+            Directory.CreateDirectory(l2);
+            await GenerateTestDataAsync(l2, 5, 0, 0, 1024).ConfigureAwait(false);
+            var before = Directory.GetFiles(l2).Length;
+
+            Assert.IsFalse(Directory.Exists(l1), "The source folder must not exist before the run.");
+
+            var args = new string[] {
+                $"file://{l1}", $"file://{l2}", "--confirm",
+                "--backend-retry-delay", "0"
+            };
+
+            var async_call = RemoteSynchronization.Program.MainAsync(args);
+            var return_code = await async_call.ConfigureAwait(false);
+
+            Assert.AreEqual(before, Directory.GetFiles(l2).Length, "The destination was emptied because a created source folder was read as an empty source.");
+            Assert.IsFalse(Directory.Exists(l1), "The source folder was created, which turns a missing source into an empty one.");
+            Assert.AreNotEqual(0, return_code, "Remote synchronization should fail when the source folder is missing.");
         }
 
     }
