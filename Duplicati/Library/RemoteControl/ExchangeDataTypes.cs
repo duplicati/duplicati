@@ -250,6 +250,8 @@ internal sealed record EnvelopedMessage
         {
             "welcome" => MessageType.Welcome,
             "auth" => MessageType.Auth,
+            // Runners authenticate with their own message type, but the response has the same shape
+            "authrunner" => MessageType.Auth,
             "pong" => MessageType.Pong,
             "command" => MessageType.Command,
             "control" => MessageType.Control,

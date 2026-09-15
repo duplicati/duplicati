@@ -79,3 +79,37 @@ public sealed record MiniServerCertificate(
     /// <returns><c>true</c> if the certificate has expired; otherwise, <c>false</c></returns>
     public bool HasExpired() => DateTimeOffset.UtcNow > Expiry;
 }
+
+/// <summary>
+/// The identity a client presents to the remote server. The server assigns the client type from the route
+/// it is connected on and from the authentication message type, so the two must match.
+/// </summary>
+/// <param name="ClientId">The client id to use in envelopes</param>
+/// <param name="AuthMessageType">The message type used to authenticate</param>
+public sealed record RemoteClientIdentity(string ClientId, string AuthMessageType)
+{
+    /// <summary>
+    /// The message type used by agents
+    /// </summary>
+    public const string AgentAuthMessageType = "auth";
+    /// <summary>
+    /// The message type used by managed runners
+    /// </summary>
+    public const string RunnerAuthMessageType = "authrunner";
+
+    /// <summary>
+    /// Creates the identity of a regular agent, with a random client id
+    /// </summary>
+    /// <returns>The identity</returns>
+    public static RemoteClientIdentity CreateAgent()
+        => new(Guid.NewGuid().ToString(), AgentAuthMessageType);
+
+    /// <summary>
+    /// Creates the identity of a managed runner. The client id is assigned by the backend, and the server
+    /// only accepts it from the holder of the matching token.
+    /// </summary>
+    /// <param name="clientId">The client id assigned by the backend</param>
+    /// <returns>The identity</returns>
+    public static RemoteClientIdentity CreateRunner(string clientId)
+        => new(clientId, RunnerAuthMessageType);
+}
