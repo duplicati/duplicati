@@ -100,8 +100,12 @@ internal class SyncHandler
 
         var planSummary = new PlanSummary();
         var additionalManagers = CreateAdditionalBackendManagers();
+        // The primary backend manager belongs to the caller, but the primary sync
+        // database is created here and has to be closed here, after the folder loop
+        // and the additional targets; the additional targets are disposed in the finally.
+        using var primaryDatabase = new LocalSyncDatabase(primaryDbPath);
         var allManagers = new List<ManagerInstance>([
-            new ManagerInstance(backendManager, new LocalSyncDatabase(primaryDbPath)),
+            new ManagerInstance(backendManager, primaryDatabase),
             .. additionalManagers
             ]);
 
