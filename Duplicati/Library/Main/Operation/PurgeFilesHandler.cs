@@ -75,8 +75,9 @@ namespace Duplicati.Library.Main.Operation
             if (await db.RepairInProgressAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false) && filtercommand == null)
                 throw new UserInformationException(string.Format("The purge command does not work on an incomplete database, try the {0} operation.", "purge-broken-files"), "PurgeNotAllowedOnIncompleteDatabase");
 
+            // A selection that matches no fileset must stop the purge, not widen it to every fileset
             var versions = await db
-                .GetFilesetIDsAsync(m_options.Time, m_options.Version, false, m_result.TaskControl.ProgressToken)
+                .GetSelectedFilesetIDsAsync(m_options.Time, m_options.Version, m_result.TaskControl.ProgressToken)
                 .OrderByDescending(x => x)
                 .ToArrayAsync(cancellationToken: m_result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);

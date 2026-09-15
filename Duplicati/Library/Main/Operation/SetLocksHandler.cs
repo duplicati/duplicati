@@ -77,7 +77,7 @@ namespace Duplicati.Library.Main.Operation
             var filesetIds = await ResolveFilesetIdsAsync(database, effectiveVersionTimestamps).ConfigureAwait(false);
 
             if (filesetIds.Count == 0)
-                throw new UserInformationException("No version specified", "NoVersionForLockOperation");
+                throw new UserInformationException("No fileset matched the given version or time", "NoVersionForLockOperation");
 
             var lockUntilUtc = DateTime.UtcNow + m_options.RemoteFileLockDuration.Value;
 
@@ -162,8 +162,9 @@ namespace Duplicati.Library.Main.Operation
             }
             else
             {
+                // A selection that matches no fileset must lock nothing, not every fileset
                 var matched = await db
-                    .GetFilesetIDsAsync(m_options.Time, m_options.Version, false, token)
+                    .GetSelectedFilesetIDsAsync(m_options.Time, m_options.Version, token)
                     .ToArrayAsync(cancellationToken: token)
                     .ConfigureAwait(false);
 
