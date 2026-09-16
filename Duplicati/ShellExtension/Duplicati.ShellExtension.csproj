@@ -10,4 +10,9 @@
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- The overlay handlers load the icons from an Icons folder next to the assembly -->
+    <None Update="Icons\*.ico" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

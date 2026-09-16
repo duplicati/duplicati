@@ -287,6 +287,9 @@ namespace Duplicati.Server
                 if (adjustres.HasValue)
                     return adjustres.Value;
 
+                // Make the access key available to the shell extension if the folder status service is enabled
+                connection.ApplicationSettings.SyncFolderStatusAccessKeyFile();
+
                 UpdaterManager.OnError += obj =>
                 {
                     connection.LogError(null, "Error in updater", obj);
