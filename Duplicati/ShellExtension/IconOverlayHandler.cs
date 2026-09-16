@@ -198,14 +198,8 @@ public abstract class IconOverlayHandlerBase : IShellIconOverlayIdentifier
             if (IsSystemFolder(pwszPath))
                 return S_FALSE;
 
-            // Get the folder status from Duplicati
-            var statusTask = Client.Value.GetFolderStatusAsync(pwszPath);
-
-            // Use a short timeout to avoid blocking Explorer
-            if (!statusTask.Wait(TimeSpan.FromMilliseconds(100)))
-                return S_FALSE;
-
-            var statusInfo = statusTask.Result;
+            // Served from the cache, so this never blocks Explorer on the network
+            var statusInfo = Client.Value.GetFolderStatus(pwszPath);
             return ShouldShowOverlay(pwszPath, statusInfo.Status) ? S_OK : S_FALSE;
         }
         catch

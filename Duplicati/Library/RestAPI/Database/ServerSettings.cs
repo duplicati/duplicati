@@ -52,6 +52,17 @@ namespace Duplicati.Server.Database
 
     public class ServerSettings
     {
+        /// <summary>
+        /// The log tag for this class
+        /// </summary>
+        private static readonly string LOGTAG = Library.Logging.Log.LogTagFromType<ServerSettings>();
+
+        /// <summary>
+        /// The name of the file in the data folder that holds the folder status access key.
+        /// The shell extension reads this file, so the name must match the one used there.
+        /// </summary>
+        public const string FOLDER_STATUS_ACCESS_KEY_FILENAME = "folder-status-access-key.txt";
+
         public static class CONST
         {
             public const string STARTUP_DELAY = "startup-delay";
@@ -129,6 +140,8 @@ namespace Duplicati.Server.Database
             [GuardedInput, GuardedOutput, BooleanOutput]
             public const string CLIENT_LICENSE_KEY = "client-license-key";
             public const string ENABLE_FOLDER_STATUS_SERVICE = "enable-folder-status-service";
+            [GuardedInput, GuardedOutput]
+            public const string FOLDER_STATUS_ACCESS_KEY = "folder-status-access-key";
             public const string USE_OUT_OF_PROCESS_CONTROLLER = "use-out-of-process-controller";
 
             // UI support settings
@@ -204,6 +217,9 @@ namespace Duplicati.Server.Database
             }
 
             SaveSettings();
+
+            if (newsettings.ContainsKey(CONST.ENABLE_FOLDER_STATUS_SERVICE))
+                SyncFolderStatusAccessKeyFile();
         }
 
         private void SaveSettings()
@@ -953,7 +969,51 @@ namespace Duplicati.Server.Database
         public bool EnableFolderStatusService
         {
             get => Utility.ParseBool(settings[CONST.ENABLE_FOLDER_STATUS_SERVICE], false);
-            set => SetAndSaveSetting(CONST.ENABLE_FOLDER_STATUS_SERVICE, value.ToString());
+            set
+            {
+                SetAndSaveSetting(CONST.ENABLE_FOLDER_STATUS_SERVICE, value.ToString());
+                SyncFolderStatusAccessKeyFile();
+            }
+        }
+
+        /// <summary>
+        /// The key that grants access to the folder status endpoints without logging in
+        /// </summary>
+        public string? FolderStatusAccessKey => settings[CONST.FOLDER_STATUS_ACCESS_KEY];
+
+        /// <summary>
+        /// Writes the folder status access key to the data folder when the folder status
+        /// service is enabled, generating a key on first use, and removes the file when the
+        /// service is disabled. The shell extension cannot log in, so it reads the key from
+        /// this file instead. The data folder is only readable by the account running the
+        /// server, so the key exposes nothing that reading the server database would not.
+        /// </summary>
+        public void SyncFolderStatusAccessKeyFile()
+        {
+            var path = System.IO.Path.Combine(databaseConnection.DataFolder, FOLDER_STATUS_ACCESS_KEY_FILENAME);
+            try
+            {
+                if (!EnableFolderStatusService)
+                {
+                    if (System.IO.File.Exists(path))
+                        System.IO.File.Delete(path);
+                    return;
+                }
+
+                var key = FolderStatusAccessKey;
+                if (string.IsNullOrWhiteSpace(key))
+                {
+                    key = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+                    SetAndSaveSetting(CONST.FOLDER_STATUS_ACCESS_KEY, key);
+                }
+
+                if (!System.IO.File.Exists(path) || System.IO.File.ReadAllText(path) != key)
+                    System.IO.File.WriteAllText(path, key);
+            }
+            catch (Exception ex)
+            {
+                Library.Logging.Log.WriteWarningMessage(LOGTAG, "FolderStatusAccessKeyFile", ex, "Failed to update the folder status access key file {0}", path);
+            }
         }
 
         public string? BackupListSortOrder
