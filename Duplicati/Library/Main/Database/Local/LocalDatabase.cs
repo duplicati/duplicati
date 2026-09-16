@@ -1237,26 +1237,6 @@ namespace Duplicati.Library.Main.Database.Local
                 .ConfigureAwait(false);
 
             await deletecmd.ExecuteNonQueryAsync($@"
-                DELETE FROM ""ChangeJournalData""
-                WHERE ""FilesetID"" IN (
-                    SELECT ""ID""
-                    FROM ""Fileset""
-                    WHERE ""VolumeID"" IN ({volIdsSubQuery})
-                )
-            ", token)
-                .ConfigureAwait(false);
-
-            await deletecmd.ExecuteNonQueryAsync($@"
-                DELETE FROM ""FilesetEntry""
-                WHERE ""FilesetID"" IN (
-                    SELECT ""ID""
-                    FROM ""Fileset""
-                    WHERE ""VolumeID"" IN ({volIdsSubQuery})
-                )
-            ", token)
-                .ConfigureAwait(false);
-
-            await deletecmd.ExecuteNonQueryAsync($@"
                 CREATE TABLE ""{filesetidstable}"" (
                     ""ID"" INTEGER PRIMARY KEY
                 )
@@ -1270,6 +1250,48 @@ namespace Duplicati.Library.Main.Database.Local
                 WHERE ""VolumeID"" IN ({volIdsSubQuery})
             ", token)
                 .ConfigureAwait(false);
+
+            // Resolve the IDs of the filesets stored on the removed volumes up front,
+            // so the cascading deletes can target exactly those rows.
+            var removedFilesetIds = new List<long>();
+            await using (var idReader = await deletecmd.ExecuteReaderAsync($@"
+                SELECT ""ID""
+                FROM ""{filesetidstable}""
+            ", token)
+                .ConfigureAwait(false))
+            {
+                while (await idReader.ReadAsync(token).ConfigureAwait(false))
+                    removedFilesetIds.Add(idReader.ConvertValueToInt64(0));
+            }
+
+            // Delete the entries one fileset at a time, using an equality match on
+            // the leading primary key column. This lets SQLite delete the rows in a
+            // single pass over the index. A multi-value "IN (SELECT ...)" predicate
+            // forces a two-pass delete where every matching key is first collected
+            // in an ephemeral table; with temp_store=MEMORY that table lives in RAM
+            // and grows with the number of FilesetEntry rows being removed, which
+            // can be hundreds of millions of rows for large backups with many
+            // versions and exhaust the available memory.
+            await using (var changeJournalCmd = m_connection.CreateCommand(m_rtr).SetCommandAndParameters(@"
+                    DELETE FROM ""ChangeJournalData""
+                    WHERE ""FilesetID"" = @FilesetId
+                "))
+            await using (var filesetEntryCmd = m_connection.CreateCommand(m_rtr).SetCommandAndParameters(@"
+                    DELETE FROM ""FilesetEntry""
+                    WHERE ""FilesetID"" = @FilesetId
+                "))
+            {
+                foreach (var filesetId in removedFilesetIds)
+                {
+                    await changeJournalCmd.SetParameterValue("@FilesetId", filesetId)
+                        .ExecuteNonQueryAsync(true, token)
+                        .ConfigureAwait(false);
+
+                    await filesetEntryCmd.SetParameterValue("@FilesetId", filesetId)
+                        .ExecuteNonQueryAsync(true, token)
+                        .ConfigureAwait(false);
+                }
+            }
 
             // Delete from Fileset if FilesetEntry rows were deleted by related metadata and there are no references in FilesetEntry anymore
             await deletecmd.ExecuteNonQueryAsync($@"
