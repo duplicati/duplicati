@@ -72,8 +72,10 @@ namespace Duplicati.Library.Snapshots.Windows
         /// <summary>
         /// For all MS SQL databases it enumerate all associated paths using VSS data
         /// </summary>
+        /// <param name="provider">The snapshot provider to use</param>
+        /// <param name="providerId">The providerId or <c>Guid.Empty</c> for default</param>
         /// <returns>A collection of DBs and paths</returns>
-        void QueryDBsInfo(WindowsSnapshotProvider provider);
+        void QueryDBsInfo(WindowsSnapshotProvider provider, Guid providerId);
     }
 
     [SupportedOSPlatform("windows")]
@@ -147,15 +149,17 @@ namespace Duplicati.Library.Snapshots.Windows
         /// <summary>
         /// For all MS SQL databases it enumerate all associated paths using VSS data
         /// </summary>
+        /// <param name="provider">The snapshot provider to use</param>
+        /// <param name="providerId">The providerId or <c>Guid.Empty</c> for default</param>
         /// <returns>A collection of DBs and paths</returns>
-        public void QueryDBsInfo(WindowsSnapshotProvider provider)
+        public void QueryDBsInfo(WindowsSnapshotProvider provider, Guid providerId)
         {
             if (!IsMSSQLInstalled)
                 return;
 
             m_DBs.Clear();
 
-            using (var vssBackupComponents = new SnapshotManager(provider, SnapshotManager.WriterMetadataQueryTimeout))
+            using (var vssBackupComponents = new SnapshotManager(provider, SnapshotManager.WriterMetadataQueryTimeout, providerId))
             {
                 var writerGUIDS = new[] { _MSSQLWriterGuid };
                 try

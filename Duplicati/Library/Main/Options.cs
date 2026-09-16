@@ -372,6 +372,7 @@ namespace Duplicati.Library.Main
             if (OperatingSystem.IsWindows())
             {
                 yield return new CommandLineArgument("snapshot-provider", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SnapshotproviderShort, Strings.Options.SnapshotproviderLong, WindowsSnapshot.DEFAULT_WINDOWS_SNAPSHOT_PROVIDER.ToString(), null, WindowsSnapshot.SUPPORTED_PROVIDERS.Select(x => x.ToString()).ToArray());
+                yield return new CommandLineArgument("vss-provider-id", CommandLineArgument.ArgumentType.String, Strings.Options.VssprovideridShort, Strings.Options.VssprovideridLong, "");
                 yield return new CommandLineArgument("vss-exclude-writers", CommandLineArgument.ArgumentType.String, Strings.Options.VssexcludewritersShort, Strings.Options.VssexcludewritersLong, "{e8132975-6f93-4464-a53e-1050253ae220}");
                 yield return new CommandLineArgument("vss-use-mapping", CommandLineArgument.ArgumentType.Boolean, Strings.Options.VssusemappingShort, Strings.Options.VssusemappingLong, "false");
                 yield return new CommandLineArgument("vss-timeout", CommandLineArgument.ArgumentType.Timespan, Strings.Options.VsstimeoutShort, Strings.Options.VsstimeoutLong, Snapshots.Windows.SnapshotManager.DefaultMaxWaitTime);

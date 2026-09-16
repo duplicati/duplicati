@@ -759,6 +759,21 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
+        /// Parses a GUID option from the option set, returning the default value if the option is not found or cannot be parsed
+        /// </summary>
+        /// <param name="options">The set of options to look for the setting in</param>
+        /// <param name="value">The value to look for in the settings</param>
+        /// <param name="default">The default value to return if there are no matches.</param>
+        /// <returns>The parsed or default GUID value.</returns>
+        public static Guid ParseGuidOption(IReadOnlyDictionary<string, string?> options, string value, Guid @default)
+        {
+            if (!options.TryGetValue(value, out var opt) || string.IsNullOrWhiteSpace(opt))
+                return @default;
+
+            return Guid.TryParse(opt, out var result) ? result : @default;
+        }
+
+        /// <summary>
         /// Parses an enum found in the options dictionary
         /// </summary>
         /// <returns>The parsed or default enum value.</returns>

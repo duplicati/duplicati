@@ -45,6 +45,11 @@ public class VanaraVssBackup : ISnapshotProvider
     /// The maximum time to wait for asynchronous VSS operations
     /// </summary>
     private readonly TimeSpan _maxWaitTime;
+
+    /// <summary>
+    /// The VSS provider to use, or <see cref="Guid.Empty"/> for automatic selection
+    /// </summary>
+    private readonly Guid _providerId;
     private IVssBackupComponents _components;
     private bool _hasAllocatedMetadata;
     private bool _hasStartedSnapshotSet;
@@ -66,9 +71,11 @@ public class VanaraVssBackup : ISnapshotProvider
     /// Creates a new instance of the provider
     /// </summary>
     /// <param name="maxWaitTime">The maximum time to wait for asynchronous VSS operations</param>
-    public VanaraVssBackup(TimeSpan maxWaitTime)
+    /// <param name="providerId">The VSS provider to use, or <see cref="Guid.Empty"/> for automatic selection</param>
+    public VanaraVssBackup(TimeSpan maxWaitTime, Guid providerId)
     {
         _maxWaitTime = maxWaitTime;
+        _providerId = providerId;
         _components = GetVssBackupComponents();
     }
 
@@ -144,13 +151,15 @@ public class VanaraVssBackup : ISnapshotProvider
     }
 
     public bool IsVolumeSupported(string drive)
-        => _components.IsVolumeSupported(Guid.Empty, drive);
+        => _components.IsVolumeSupported(_providerId, drive);
 
     public Guid AddToSnapshotSet(string drive)
     {
-        var snapshotId = _components.AddToSnapshotSet(drive);
+        var snapshotId = _providerId == Guid.Empty
+            ? _components.AddToSnapshotSet(drive)
+            : _components.AddToSnapshotSet(drive, _providerId);
         _addedSnapshots.Add(snapshotId);
-        Log.WriteVerboseMessage(LogTag, "VssAddToSnapshotSet", "Added {0} to snapshot set as {1}", drive, snapshotId);
+        Log.WriteVerboseMessage(LogTag, "VssAddToSnapshotSet", "Added {0} to snapshot set as {1} using provider {2}", drive, snapshotId, _providerId == Guid.Empty ? "(auto)" : _providerId.ToString("B"));
         return snapshotId;
     }
 

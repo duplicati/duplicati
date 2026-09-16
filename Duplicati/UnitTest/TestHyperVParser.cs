@@ -46,7 +46,7 @@ namespace Duplicati.UnitTest
 
             public List<HyperVGuest> Guests { get; set; } = null;
 
-            public void QueryHyperVGuestsInfo(WindowsSnapshotProvider provider, bool bIncludePaths = false)
+            public void QueryHyperVGuestsInfo(WindowsSnapshotProvider provider, Guid providerId, bool bIncludePaths = false)
             {
                 // Mock implementation, no actual querying                
             }
