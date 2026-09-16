@@ -125,64 +125,65 @@ namespace Duplicati.Library.Main.Database.Local
             await using var cmd = m_connection.CreateCommand(m_rtr);
             var deleted = 0;
 
-            // Capture the IDs of the filesets being deleted, so the cascading deletes
-            // can target exactly those rows instead of scanning the full tables
-            // for entries that are no longer referenced
-            var deletedFilesetsTable = $"DeletedFilesets-{Library.Utility.Utility.GetHexGuid()}";
-
-            try
+            // Resolve the IDs of the filesets being deleted up front, so the
+            // cascading deletes can target exactly those rows instead of scanning
+            // the full tables for entries that are no longer referenced.
+            var filesetIds = new List<long>(toDelete.Length);
+            await using (var tempTable = await TemporaryDbValueList.CreateAsync(this, toDelete.Select(Library.Utility.Utility.NormalizeDateTimeToEpochSeconds), token).ConfigureAwait(false))
             {
-                await using (var tempTable = await TemporaryDbValueList.CreateAsync(this, toDelete.Select(Library.Utility.Utility.NormalizeDateTimeToEpochSeconds), token).ConfigureAwait(false))
+                var timestamps = await tempTable.GetInClauseAsync(token).ConfigureAwait(false);
+                cmd.SetCommandAndParameters($@"
+                        SELECT ""ID""
+                        FROM ""Fileset""
+                        WHERE ""Timestamp"" IN ({timestamps})
+                    ");
+
+                await using var idReader = await cmd.ExecuteReaderAsync(true, token).ConfigureAwait(false);
+                while (await idReader.ReadAsync(token).ConfigureAwait(false))
+                    filesetIds.Add(idReader.ConvertValueToInt64(0));
+            }
+
+            if (filesetIds.Count != toDelete.Length)
+                throw new Exception($"Unexpected number of filesets found {filesetIds.Count} vs {toDelete.Length}");
+
+            // Delete the entries one fileset at a time, using an equality match on
+            // the leading primary key column. This lets SQLite delete the rows in a
+            // single pass over the index. A multi-value "IN (SELECT ...)" predicate
+            // forces a two-pass delete where every matching key is first collected
+            // in an ephemeral table; with temp_store=MEMORY that table lives in RAM
+            // and grows with the number of FilesetEntry rows being removed, which
+            // can be hundreds of millions of rows for large backups with many
+            // versions and exhaust the available memory.
+            await using (var filesetEntryCmd = m_connection.CreateCommand(m_rtr).SetCommandAndParameters(@"
+                    DELETE FROM ""FilesetEntry""
+                    WHERE ""FilesetID"" = @FilesetId
+                "))
+            await using (var changeJournalCmd = m_connection.CreateCommand(m_rtr).SetCommandAndParameters(@"
+                    DELETE FROM ""ChangeJournalData""
+                    WHERE ""FilesetID"" = @FilesetId
+                "))
+            await using (var filesetCmd = m_connection.CreateCommand(m_rtr).SetCommandAndParameters(@"
+                    DELETE FROM ""Fileset""
+                    WHERE ""ID"" = @FilesetId
+                "))
+            {
+                foreach (var filesetId in filesetIds)
                 {
-                    var timestamps = await tempTable.GetInClauseAsync(token).ConfigureAwait(false);
-                    await cmd.ExecuteNonQueryAsync($@"
-                            CREATE {TEMPORARY} TABLE ""{deletedFilesetsTable}"" AS
-                            SELECT ""ID""
-                            FROM ""Fileset""
-                            WHERE ""Timestamp"" IN ({timestamps})
-                        ", token)
+                    await filesetEntryCmd.SetParameterValue("@FilesetId", filesetId)
+                        .ExecuteNonQueryAsync(true, token)
+                        .ConfigureAwait(false);
+
+                    await changeJournalCmd.SetParameterValue("@FilesetId", filesetId)
+                        .ExecuteNonQueryAsync(true, token)
+                        .ConfigureAwait(false);
+
+                    deleted += await filesetCmd.SetParameterValue("@FilesetId", filesetId)
+                        .ExecuteNonQueryAsync(true, token)
                         .ConfigureAwait(false);
                 }
-
-                deleted += await cmd.ExecuteNonQueryAsync($@"
-                        DELETE FROM ""Fileset""
-                        WHERE ""ID"" IN (
-                            SELECT ""ID""
-                            FROM ""{deletedFilesetsTable}""
-                        )
-                    ", token)
-                    .ConfigureAwait(false);
 
                 if (deleted != toDelete.Length)
                     throw new Exception($"Unexpected number of deleted filesets {deleted} vs {toDelete.Length}");
-
-                //Then we delete all entries belonging to the deleted filesets
-                await cmd.ExecuteNonQueryAsync($@"
-                        DELETE FROM ""FilesetEntry""
-                        WHERE ""FilesetID"" IN (
-                            SELECT ""ID""
-                            FROM ""{deletedFilesetsTable}""
-                        )
-                    ", token)
-                    .ConfigureAwait(false);
-
-                await cmd.ExecuteNonQueryAsync($@"
-                        DELETE FROM ""ChangeJournalData""
-                        WHERE ""FilesetID"" IN (
-                            SELECT ""ID""
-                            FROM ""{deletedFilesetsTable}""
-                        )
-                    ", token)
-                    .ConfigureAwait(false);
-            }
-            finally
-            {
-                try
-                {
-                    await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{deletedFilesetsTable}""", token)
-                        .ConfigureAwait(false);
-                }
-                catch { }
             }
 
             //Then we delete anything that is no longer being referenced
