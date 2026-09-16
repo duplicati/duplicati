@@ -141,11 +141,22 @@ namespace Duplicati.Library.Snapshots.Windows
             _volumeMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             foreach (var kvp in _volumes)
             {
+                var deviceObject = _snapshotProvider.GetSnapshotProperties(kvp.Value).SnapshotDeviceObject;
+
+                // If the snapshot device path is empty, translating a source path would produce
+                // a path relative to an empty root (e.g., "\Tools"), which the path helpers then
+                // interpret as a UNC path ("\\?\UNC\Tools"). Fail early with a descriptive error
+                // instead of enumerating an invalid path later.
+                if (string.IsNullOrWhiteSpace(deviceObject))
+                    throw new UserInformationException(Strings.SnapshotManager.SnapshotDeviceEmptyError(kvp.Key, _snapshotProvider.GetType().Name), "SnapshotDeviceEmpty");
+
                 // The snapshot path has the format of "\\?\GLOBALROOT\Device\HarddiskVolumeShadowCopy1"
                 // Attempting to get attributes on this path will fail, so we need to append a double backslash
                 // Strangely, the double backslash is not needed when acessing a subfolder, here a single backslash is enough,
                 // but double backslash works for both cases due to path normalization.
-                _volumeMap.Add(kvp.Key, Util.AppendDirSeparator(_snapshotProvider.GetSnapshotProperties(kvp.Value).SnapshotDeviceObject) + "\\");
+                var snapshotPath = Util.AppendDirSeparator(deviceObject) + "\\";
+                Logging.Log.WriteVerboseMessage(LOGTAG, "VssSnapshotDeviceMap", "Mapped volume {0} (snapshot {1}) to snapshot device {2}", kvp.Key, kvp.Value, snapshotPath);
+                _volumeMap.Add(kvp.Key, snapshotPath);
             }
 
             _volumeReverseMap = _volumeMap.ToDictionary(x => x.Value, x => x.Key);
