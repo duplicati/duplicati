@@ -19,8 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System.Security.Cryptography;
-using System.Text;
+using System.Net;
 using Duplicati.Server.Database;
 using Duplicati.WebserverCore.Exceptions;
 
@@ -28,31 +27,23 @@ namespace Duplicati.WebserverCore.Middlewares;
 
 /// <summary>
 /// Endpoint filter guarding the folder status endpoints.
-/// The Windows shell extension runs inside Explorer and cannot log in, so it
-/// presents the access key that the server writes to its data folder when the
-/// folder status service is enabled (see <see cref="ServerSettings.SyncFolderStatusAccessKeyFile"/>).
-/// Reading that file requires the same access as reading the server database,
-/// so the key does not grant anything the caller could not already obtain.
+/// The Windows shell extension runs inside Explorer and cannot log in, so
+/// requests from the local machine are served without authentication once the
+/// folder status service has been explicitly enabled. The endpoints only expose
+/// backup metadata (source paths, backup names and status), never credentials.
 /// Authenticated callers are always allowed.
 /// </summary>
 /// <param name="connection">The database connection used to read the application settings</param>
 public class FolderStatusAccessFilter(Connection connection) : IEndpointFilter
 {
-    /// <summary>
-    /// The header the shell extension sends the access key in
-    /// </summary>
-    public const string HeaderName = "X-Duplicati-FolderStatus-Key";
-
     /// <inheritdoc />
     public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
     {
         var httpContext = context.HttpContext;
         var isAuthenticated = httpContext.User.Identity?.IsAuthenticated == true;
-        var presentedKey = httpContext.Request.Headers.TryGetValue(HeaderName, out var header) ? header.ToString() : null;
-        var settings = connection.ApplicationSettings;
 
-        if (!IsAllowed(isAuthenticated, presentedKey, settings.FolderStatusAccessKey, settings.EnableFolderStatusService))
-            throw new UnauthorizedException("Folder status requires authentication or a valid folder status access key");
+        if (!IsAllowed(isAuthenticated, httpContext.Connection.RemoteIpAddress, connection.ApplicationSettings.EnableFolderStatusService))
+            throw new UnauthorizedException("Folder status requires authentication, or a local connection with the folder status service enabled");
 
         return await next(context);
     }
@@ -61,20 +52,20 @@ public class FolderStatusAccessFilter(Connection connection) : IEndpointFilter
     /// Decides if a folder status request is allowed
     /// </summary>
     /// <param name="isAuthenticated">True if the caller presented valid credentials</param>
-    /// <param name="presentedKey">The access key sent by the caller, or null if none</param>
-    /// <param name="expectedKey">The access key stored in the settings, or null if none has been generated</param>
+    /// <param name="remoteAddress">The address the request originated from, or null if unknown</param>
     /// <param name="serviceEnabled">True if the folder status service is enabled in the settings</param>
     /// <returns>True if the request should be served</returns>
-    public static bool IsAllowed(bool isAuthenticated, string? presentedKey, string? expectedKey, bool serviceEnabled)
+    public static bool IsAllowed(bool isAuthenticated, IPAddress? remoteAddress, bool serviceEnabled)
     {
         if (isAuthenticated)
             return true;
 
-        if (!serviceEnabled || string.IsNullOrWhiteSpace(presentedKey) || string.IsNullOrWhiteSpace(expectedKey))
+        if (!serviceEnabled || remoteAddress == null)
             return false;
 
-        return CryptographicOperations.FixedTimeEquals(
-            Encoding.UTF8.GetBytes(presentedKey.Trim()),
-            Encoding.UTF8.GetBytes(expectedKey.Trim()));
+        if (remoteAddress.IsIPv4MappedToIPv6)
+            remoteAddress = remoteAddress.MapToIPv4();
+
+        return IPAddress.IsLoopback(remoteAddress);
     }
 }

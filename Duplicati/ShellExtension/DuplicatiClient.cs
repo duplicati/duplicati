@@ -32,17 +32,7 @@ namespace Duplicati.ShellExtension;
 public sealed class DuplicatiClient : IDisposable
 {
     /// <summary>
-    /// The header carrying the folder status access key.
-    /// Must match the name expected by the server (FolderStatusAccessFilter).
-    /// </summary>
-    private const string AccessKeyHeaderName = "X-Duplicati-FolderStatus-Key";
-    /// <summary>
-    /// The file in the server data folder holding the access key.
-    /// Must match the name written by the server (ServerSettings).
-    /// </summary>
-    private const string AccessKeyFileName = "folder-status-access-key.txt";
-    /// <summary>
-    /// The registry key holding optional overrides for the server url and access key
+    /// The registry key holding an optional override for the server url
     /// </summary>
     private const string RegistryKeyPath = @"Software\Duplicati\ShellExtension";
     /// <summary>
@@ -111,44 +101,6 @@ public sealed class DuplicatiClient : IDisposable
     {
         var url = ReadRegistryValue("ServerUrl");
         return string.IsNullOrWhiteSpace(url) ? "http://localhost:8200" : url;
-    }
-
-    /// <summary>
-    /// Reads the access key, preferring a registry override and otherwise
-    /// looking in the locations the server may use as its data folder
-    /// </summary>
-    private static string? ReadAccessKey()
-    {
-        var fromRegistry = ReadRegistryValue("AccessKey");
-        if (!string.IsNullOrWhiteSpace(fromRegistry))
-            return fromRegistry.Trim();
-
-        var candidates = new[]
-        {
-            Environment.SpecialFolder.LocalApplicationData,
-            Environment.SpecialFolder.ApplicationData,
-            Environment.SpecialFolder.CommonApplicationData
-        };
-
-        foreach (var folder in candidates)
-        {
-            try
-            {
-                var path = Path.Combine(Environment.GetFolderPath(folder), "Duplicati", AccessKeyFileName);
-                if (!File.Exists(path))
-                    continue;
-
-                var key = File.ReadAllText(path).Trim();
-                if (key.Length > 0)
-                    return key;
-            }
-            catch
-            {
-                // Try the next location
-            }
-        }
-
-        return null;
     }
 
     /// <summary>
@@ -224,12 +176,8 @@ public sealed class DuplicatiClient : IDisposable
     {
         try
         {
-            using var request = new HttpRequestMessage(HttpMethod.Get, $"{_baseUrl}/api/v1/folderstatus");
-            var accessKey = ReadAccessKey();
-            if (accessKey != null)
-                request.Headers.TryAddWithoutValidation(AccessKeyHeaderName, accessKey);
-
-            using var response = await _httpClient.SendAsync(request).ConfigureAwait(false);
+            // The server accepts local requests without a login when the folder status service is enabled
+            using var response = await _httpClient.GetAsync($"{_baseUrl}/api/v1/folderstatus").ConfigureAwait(false);
             if (!response.IsSuccessStatusCode)
                 return null;
 

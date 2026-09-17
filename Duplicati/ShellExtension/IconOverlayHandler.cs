@@ -34,9 +34,9 @@ namespace Duplicati.ShellExtension;
 public class DuplicatiBackedUpOverlay : IconOverlayHandlerBase
 {
     /// <summary>
-    /// The icon file name for successfully backed up folders
+    /// The index of the embedded icon for successfully backed up folders
     /// </summary>
-    protected override string IconFileName => "overlay_backed_up.ico";
+    protected override int IconIndex => 0;
 
     /// <summary>
     /// Priority determines the order of overlay handlers (lower = higher priority)
@@ -61,9 +61,9 @@ public class DuplicatiBackedUpOverlay : IconOverlayHandlerBase
 public class DuplicatiWarningOverlay : IconOverlayHandlerBase
 {
     /// <summary>
-    /// The icon file name for folders with backup warnings
+    /// The index of the embedded icon for folders with backup warnings
     /// </summary>
-    protected override string IconFileName => "overlay_warning.ico";
+    protected override int IconIndex => 1;
 
     /// <summary>
     /// Priority for warning overlay
@@ -88,9 +88,9 @@ public class DuplicatiWarningOverlay : IconOverlayHandlerBase
 public class DuplicatiErrorOverlay : IconOverlayHandlerBase
 {
     /// <summary>
-    /// The icon file name for folders with backup errors
+    /// The index of the embedded icon for folders with backup errors
     /// </summary>
-    protected override string IconFileName => "overlay_error.ico";
+    protected override int IconIndex => 2;
 
     /// <summary>
     /// Priority for error overlay
@@ -115,9 +115,9 @@ public class DuplicatiErrorOverlay : IconOverlayHandlerBase
 public class DuplicatiSyncingOverlay : IconOverlayHandlerBase
 {
     /// <summary>
-    /// The icon file name for folders with backup in progress
+    /// The index of the embedded icon for folders with backup in progress
     /// </summary>
-    protected override string IconFileName => "overlay_syncing.ico";
+    protected override int IconIndex => 3;
 
     /// <summary>
     /// Priority for syncing overlay
@@ -141,9 +141,10 @@ public abstract class IconOverlayHandlerBase : IShellIconOverlayIdentifier
     private static readonly Lazy<DuplicatiClient> Client = new(() => new DuplicatiClient());
 
     /// <summary>
-    /// The icon file name to use for this overlay
+    /// The index of this overlay's icon among the icon groups embedded in the
+    /// assembly (see Icons/make-res.py for the order)
     /// </summary>
-    protected abstract string IconFileName { get; }
+    protected abstract int IconIndex { get; }
 
     /// <summary>
     /// Priority of this overlay handler
@@ -156,14 +157,16 @@ public abstract class IconOverlayHandlerBase : IShellIconOverlayIdentifier
     protected abstract bool ShouldShowOverlay(string path, FolderBackupStatus status);
 
     /// <summary>
-    /// Gets the overlay icon information
+    /// Gets the overlay icon information.
+    /// The icons are embedded in this assembly as Win32 icon resources, so
+    /// Explorer is pointed at the assembly file and given the icon index.
     /// </summary>
     public int GetOverlayInfo(IntPtr pwszIconFile, int cchMax, out int pIndex, out uint pdwFlags)
     {
-        pIndex = 0;
-        pdwFlags = ISIOI_ICONFILE;
+        pIndex = IconIndex;
+        pdwFlags = ISIOI_ICONFILE | ISIOI_ICONINDEX;
 
-        var iconPath = GetIconPath();
+        var iconPath = typeof(IconOverlayHandlerBase).Assembly.Location;
         if (iconPath.Length < cchMax)
         {
             Marshal.Copy(iconPath.ToCharArray(), 0, pwszIconFile, iconPath.Length);
@@ -209,15 +212,6 @@ public abstract class IconOverlayHandlerBase : IShellIconOverlayIdentifier
     }
 
     /// <summary>
-    /// Gets the full path to the overlay icon
-    /// </summary>
-    private string GetIconPath()
-    {
-        var assemblyPath = Path.GetDirectoryName(typeof(IconOverlayHandlerBase).Assembly.Location);
-        return Path.Combine(assemblyPath ?? "", "Icons", IconFileName);
-    }
-
-    /// <summary>
     /// Checks if the path is a system folder that shouldn't show overlays
     /// </summary>
     private static bool IsSystemFolder(string path)
@@ -253,6 +247,7 @@ public abstract class IconOverlayHandlerBase : IShellIconOverlayIdentifier
     private const int S_OK = 0;
     private const int S_FALSE = 1;
     private const uint ISIOI_ICONFILE = 0x00000001;
+    private const uint ISIOI_ICONINDEX = 0x00000002;
     private const uint FILE_ATTRIBUTE_DIRECTORY = 0x10;
 }
 

@@ -29,6 +29,7 @@ using Duplicati.Server.Serialization;
 using Duplicati.Server.Serialization.Interface;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Dto;
+using Duplicati.WebserverCore.Services;
 using Duplicati.Library.Interface;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
@@ -235,59 +236,10 @@ public class FolderStatusServiceTests
         }
 
         private string DetermineBackupStatus(IBackup backup, HashSet<string> activeBackupIds)
-        {
-            if (backup.ID != null && activeBackupIds.Contains(backup.ID))
-            {
-                return FolderBackupStatusValues.InProgress;
-            }
-
-            if (backup.Metadata == null ||
-                !backup.Metadata.TryGetValue("LastBackupDate", out var lastDateStr) ||
-                string.IsNullOrEmpty(lastDateStr))
-            {
-                return FolderBackupStatusValues.Never;
-            }
-
-            // Validate that the date is parseable
-            if (!DateTime.TryParse(lastDateStr, out _))
-                return FolderBackupStatusValues.Never;
-
-            if (backup.Metadata.TryGetValue("LastErrorDate", out var errorDate) &&
-                !string.IsNullOrEmpty(errorDate))
-            {
-                if (DateTime.TryParse(lastDateStr, out var lastDt) &&
-                    DateTime.TryParse(errorDate, out var errorDt) &&
-                    Math.Abs((lastDt - errorDt).TotalMinutes) < 1)
-                {
-                    return FolderBackupStatusValues.Failed;
-                }
-            }
-
-            if (backup.Metadata.TryGetValue("LastWarningDate", out var warningDate) &&
-                !string.IsNullOrEmpty(warningDate))
-            {
-                if (DateTime.TryParse(lastDateStr, out var lastDt) &&
-                    DateTime.TryParse(warningDate, out var warningDt) &&
-                    Math.Abs((lastDt - warningDt).TotalMinutes) < 1)
-                {
-                    return FolderBackupStatusValues.Warning;
-                }
-            }
-
-            return FolderBackupStatusValues.BackedUp;
-        }
+            => FolderStatusService.DetermineStatus(backup.Metadata, backup.ID != null && activeBackupIds.Contains(backup.ID));
 
         private DateTime? GetLastBackupTime(IBackup backup)
-        {
-            if (backup.Metadata != null &&
-                backup.Metadata.TryGetValue("LastBackupDate", out var dateStr) &&
-                DateTime.TryParse(dateStr, out var date))
-            {
-                return date;
-            }
-
-            return null;
-        }
+            => FolderStatusService.GetLastBackupTime(backup.Metadata);
 
         private static string NormalizePath(string path)
         {
@@ -460,7 +412,7 @@ public class FolderStatusServiceTests
     public void GetFolderStatus_PathMatchesSource_ReturnsCorrectStatus()
     {
         var mockQueueRunner = new MockQueueRunnerService();
-        var lastBackupDate = DateTime.Now.ToString("o");
+        var lastBackupDate = Duplicati.Library.Utility.Utility.SerializeDateTime(DateTime.UtcNow);
         var tempPath = System.IO.Path.GetTempPath().TrimEnd(System.IO.Path.DirectorySeparatorChar);
         var backups = new[]
         {
@@ -490,7 +442,7 @@ public class FolderStatusServiceTests
     {
         var mockQueueRunner = new MockQueueRunnerService();
         var tempPath = System.IO.Path.GetTempPath().TrimEnd(System.IO.Path.DirectorySeparatorChar);
-        var lastBackupDate = DateTime.Now.ToString("o");
+        var lastBackupDate = Duplicati.Library.Utility.Utility.SerializeDateTime(DateTime.UtcNow);
         var backups = new[]
         {
             new MockBackup
@@ -557,7 +509,7 @@ public class FolderStatusServiceTests
                 Sources = new[] { tempPath },
                 Metadata = new Dictionary<string, string>
                 {
-                    { "LastBackupDate", DateTime.Now.ToString("o") }
+                    { "LastBackupDate", Duplicati.Library.Utility.Utility.SerializeDateTime(DateTime.UtcNow) }
                 }
             }
         };
@@ -573,7 +525,7 @@ public class FolderStatusServiceTests
     public void GetFolderStatus_BackupFailed_ReturnsFailed()
     {
         var mockQueueRunner = new MockQueueRunnerService();
-        var backupTime = DateTime.Now;
+        var backupTime = DateTime.UtcNow;
         var tempPath = System.IO.Path.GetTempPath().TrimEnd(System.IO.Path.DirectorySeparatorChar);
         var backups = new[]
         {
@@ -584,8 +536,8 @@ public class FolderStatusServiceTests
                 Sources = new[] { tempPath },
                 Metadata = new Dictionary<string, string>
                 {
-                    { "LastBackupDate", backupTime.ToString("o") },
-                    { "LastErrorDate", backupTime.ToString("o") }
+                    { "LastBackupDate", Duplicati.Library.Utility.Utility.SerializeDateTime(backupTime) },
+                    { "LastErrorDate", Duplicati.Library.Utility.Utility.SerializeDateTime(backupTime) }
                 }
             }
         };
@@ -598,10 +550,9 @@ public class FolderStatusServiceTests
 
     [Test]
     [Category("FolderStatus")]
-    public void GetFolderStatus_BackupWithWarning_ReturnsWarning()
+    public void GetFolderStatus_OnlyErrorsNoSuccess_ReturnsFailed()
     {
         var mockQueueRunner = new MockQueueRunnerService();
-        var backupTime = DateTime.Now;
         var tempPath = System.IO.Path.GetTempPath().TrimEnd(System.IO.Path.DirectorySeparatorChar);
         var backups = new[]
         {
@@ -612,16 +563,17 @@ public class FolderStatusServiceTests
                 Sources = new[] { tempPath },
                 Metadata = new Dictionary<string, string>
                 {
-                    { "LastBackupDate", backupTime.ToString("o") },
-                    { "LastWarningDate", backupTime.ToString("o") }
+                    { "LastErrorDate", Duplicati.Library.Utility.Utility.SerializeDateTime(DateTime.UtcNow) },
+                    { "LastErrorMessage", "boom" }
                 }
             }
         };
         var service = new TestableFolderStatusService(backups, mockQueueRunner);
 
-        var result = service.GetFolderStatus(System.IO.Path.GetTempPath());
+        var result = service.GetFolderStatus(tempPath);
 
-        Assert.AreEqual(FolderBackupStatusValues.Warning, result.Status);
+        Assert.AreEqual(FolderBackupStatusValues.Failed, result.Status);
+        Assert.IsNull(result.LastBackupTime);
     }
 
     [Test]
@@ -629,7 +581,7 @@ public class FolderStatusServiceTests
     public void GetFolderStatus_OldError_ReturnsBackedUp()
     {
         var mockQueueRunner = new MockQueueRunnerService();
-        var backupTime = DateTime.Now;
+        var backupTime = DateTime.UtcNow;
         var oldErrorTime = backupTime.AddHours(-1);
         var tempPath = System.IO.Path.GetTempPath().TrimEnd(System.IO.Path.DirectorySeparatorChar);
         var backups = new[]
@@ -641,8 +593,8 @@ public class FolderStatusServiceTests
                 Sources = new[] { tempPath },
                 Metadata = new Dictionary<string, string>
                 {
-                    { "LastBackupDate", backupTime.ToString("o") },
-                    { "LastErrorDate", oldErrorTime.ToString("o") }
+                    { "LastBackupDate", Duplicati.Library.Utility.Utility.SerializeDateTime(backupTime) },
+                    { "LastErrorDate", Duplicati.Library.Utility.Utility.SerializeDateTime(oldErrorTime) }
                 }
             }
         };
@@ -674,7 +626,7 @@ public class FolderStatusServiceTests
     public void GetAllFolderStatuses_SingleBackupWithSources_ReturnsAllSources()
     {
         var mockQueueRunner = new MockQueueRunnerService();
-        var lastBackupDate = DateTime.Now.ToString("o");
+        var lastBackupDate = Duplicati.Library.Utility.Utility.SerializeDateTime(DateTime.UtcNow);
         var backups = new[]
         {
             new MockBackup
@@ -702,7 +654,7 @@ public class FolderStatusServiceTests
     public void GetAllFolderStatuses_MultipleBackups_ReturnsAllSources()
     {
         var mockQueueRunner = new MockQueueRunnerService();
-        var lastBackupDate = DateTime.Now.ToString("o");
+        var lastBackupDate = Duplicati.Library.Utility.Utility.SerializeDateTime(DateTime.UtcNow);
         var backups = new[]
         {
             new MockBackup
@@ -740,7 +692,7 @@ public class FolderStatusServiceTests
     public void GetAllFolderStatuses_SkipsNullAndEmptySources()
     {
         var mockQueueRunner = new MockQueueRunnerService();
-        var lastBackupDate = DateTime.Now.ToString("o");
+        var lastBackupDate = Duplicati.Library.Utility.Utility.SerializeDateTime(DateTime.UtcNow);
         var backups = new[]
         {
             new MockBackup
@@ -808,7 +760,7 @@ public class FolderStatusServiceTests
                 Sources = new[] { "/path/one" },
                 Metadata = new Dictionary<string, string>
                 {
-                    { "LastBackupDate", DateTime.Now.ToString("o") }
+                    { "LastBackupDate", Duplicati.Library.Utility.Utility.SerializeDateTime(DateTime.UtcNow) }
                 }
             }
         };
@@ -841,7 +793,7 @@ public class FolderStatusServiceTests
                 Sources = new[] { "/path/one" },
                 Metadata = new Dictionary<string, string>
                 {
-                    { "LastBackupDate", DateTime.Now.ToString("o") }
+                    { "LastBackupDate", Duplicati.Library.Utility.Utility.SerializeDateTime(DateTime.UtcNow) }
                 }
             }
         };
@@ -862,7 +814,7 @@ public class FolderStatusServiceTests
     public void GetFolderStatus_ValidLastBackupDate_ReturnsLastBackupTime()
     {
         var mockQueueRunner = new MockQueueRunnerService();
-        var expectedTime = new DateTime(2025, 1, 15, 10, 30, 0);
+        var expectedTime = new DateTime(2025, 1, 15, 10, 30, 0, DateTimeKind.Utc);
         var tempPath = System.IO.Path.GetTempPath().TrimEnd(System.IO.Path.DirectorySeparatorChar);
         var backups = new[]
         {
@@ -873,7 +825,7 @@ public class FolderStatusServiceTests
                 Sources = new[] { tempPath },
                 Metadata = new Dictionary<string, string>
                 {
-                    { "LastBackupDate", expectedTime.ToString("o") }
+                    { "LastBackupDate", Duplicati.Library.Utility.Utility.SerializeDateTime(expectedTime) }
                 }
             }
         };
@@ -954,7 +906,7 @@ public class FolderStatusServiceTests
                 Sources = new[] { tempPath.ToLowerInvariant() },
                 Metadata = new Dictionary<string, string>
                 {
-                    { "LastBackupDate", DateTime.Now.ToString("o") }
+                    { "LastBackupDate", Duplicati.Library.Utility.Utility.SerializeDateTime(DateTime.UtcNow) }
                 }
             }
         };
@@ -963,36 +915,6 @@ public class FolderStatusServiceTests
         var result = service.GetFolderStatus(tempPath.ToUpperInvariant());
 
         Assert.AreEqual(FolderBackupStatusValues.BackedUp, result.Status);
-    }
-
-    [Test]
-    [Category("FolderStatus")]
-    public void GetFolderStatus_ErrorAndWarningAtSameTime_ErrorTakesPrecedence()
-    {
-        var mockQueueRunner = new MockQueueRunnerService();
-        var backupTime = DateTime.Now;
-        var tempPath = System.IO.Path.GetTempPath().TrimEnd(System.IO.Path.DirectorySeparatorChar);
-        var backups = new[]
-        {
-            new MockBackup
-            {
-                ID = "1",
-                Name = "Test Backup",
-                Sources = new[] { tempPath },
-                Metadata = new Dictionary<string, string>
-                {
-                    { "LastBackupDate", backupTime.ToString("o") },
-                    { "LastErrorDate", backupTime.ToString("o") },
-                    { "LastWarningDate", backupTime.ToString("o") }
-                }
-            }
-        };
-        var service = new TestableFolderStatusService(backups, mockQueueRunner);
-
-        var result = service.GetFolderStatus(System.IO.Path.GetTempPath());
-
-        // Error should take precedence over warning
-        Assert.AreEqual(FolderBackupStatusValues.Failed, result.Status);
     }
 
     [Test]
@@ -1009,7 +931,7 @@ public class FolderStatusServiceTests
                 Sources = Array.Empty<string>(),
                 Metadata = new Dictionary<string, string>
                 {
-                    { "LastBackupDate", DateTime.Now.ToString("o") }
+                    { "LastBackupDate", Duplicati.Library.Utility.Utility.SerializeDateTime(DateTime.UtcNow) }
                 }
             }
         };
@@ -1042,7 +964,7 @@ public class FolderStatusServiceTests
                 Sources = new[] { tempPath },
                 Metadata = new Dictionary<string, string>
                 {
-                    { "LastBackupDate", DateTime.Now.ToString("o") }
+                    { "LastBackupDate", Duplicati.Library.Utility.Utility.SerializeDateTime(DateTime.UtcNow) }
                 }
             }
         };

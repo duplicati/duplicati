@@ -8,6 +8,8 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <!-- Overlay icons are embedded as Win32 icon resources, see Icons/make-res.py -->
+    <Win32Resource>Icons\overlays.res</Win32Resource>
   </PropertyGroup>
 
   <ItemGroup>
