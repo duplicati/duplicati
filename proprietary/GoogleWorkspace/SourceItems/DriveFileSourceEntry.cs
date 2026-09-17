@@ -8,7 +8,7 @@ using File = Google.Apis.Drive.v3.Data.File;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class DriveFileSourceEntry(string parentPath, File file, DriveService driveService)
+internal class DriveFileSourceEntry(string parentPath, File file, bool userIsInactive, DriveService driveService)
     : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, file.Id)), file.CreatedTimeDateTimeOffset.HasValue ? file.CreatedTimeDateTimeOffset.Value.UtcDateTime : DateTime.UnixEpoch, file.ModifiedTimeDateTimeOffset.HasValue ? file.ModifiedTimeDateTimeOffset.Value.UtcDateTime : DateTime.UnixEpoch)
 {
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
@@ -22,8 +22,13 @@ internal class DriveFileSourceEntry(string parentPath, File file, DriveService d
         if (cancellationToken.IsCancellationRequested) yield break;
         yield return new DriveFileContentSourceEntry(this.Path, file, driveService);
 
-        if (cancellationToken.IsCancellationRequested) yield break;
-        yield return new DriveFileCommentsSourceEntry(this.Path, file, driveService);
+        // A shortcut is a pointer to another file and has no comments of its own; the
+        // comments endpoint answers 404 for it. The target file carries the comments.
+        if (!GoogleMimeTypes.IsShortcut(file.MimeType))
+        {
+            if (cancellationToken.IsCancellationRequested) yield break;
+            yield return new DriveFileCommentsSourceEntry(this.Path, file, userIsInactive, driveService);
+        }
 
         // Skip revisions for Google Workspace files (Docs, Sheets, Slides, Sites, Shortcuts) as they cannot be exported
         if (!GoogleMimeTypes.IsGoogleSite(file.MimeType) && !GoogleMimeTypes.IsShortcut(file.MimeType) && !GoogleMimeTypes.IsGoogleDoc(file.MimeType))

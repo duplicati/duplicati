@@ -984,13 +984,16 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
         if (_enumerationCounter.ContainsKey(targetpath))
             return true;
 
+        // The seat warning is written on whichever call first sees the limit. The listing-time
+        // check does not increment and, once it returns false, the entry is never enumerated,
+        // so waiting for the incrementing call would mean never warning at all.
         if (type.HasFlag(Office365MetaType.Users))
         {
             var approved = LicenseChecker.LicenseHelper.AvailableOffice365UserSeats;
             var current = _userCount;
             if (current >= approved)
             {
-                if (increment && Interlocked.Exchange(ref _userLicenseWarningIssued, 1) == 0)
+                if (Interlocked.Exchange(ref _userLicenseWarningIssued, 1) == 0)
                     Library.Logging.Log.WriteWarningMessage(LOGTAG, "LicenseWarning", null, Strings.LicenseWarning(type, approved));
                 return false;
             }
@@ -1001,7 +1004,7 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
             var current = _groupCount;
             if (current >= approved)
             {
-                if (increment && Interlocked.Exchange(ref _groupLicenseWarningIssued, 1) == 0)
+                if (Interlocked.Exchange(ref _groupLicenseWarningIssued, 1) == 0)
                     Library.Logging.Log.WriteWarningMessage(LOGTAG, "LicenseWarning", null, Strings.LicenseWarning(type, approved));
                 return false;
             }
@@ -1012,7 +1015,7 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
             var current = _siteCount;
             if (current >= approved)
             {
-                if (increment && Interlocked.Exchange(ref _siteLicenseWarningIssued, 1) == 0)
+                if (Interlocked.Exchange(ref _siteLicenseWarningIssued, 1) == 0)
                     Library.Logging.Log.WriteWarningMessage(LOGTAG, "LicenseWarning", null, Strings.LicenseWarning(type, approved));
                 return false;
             }

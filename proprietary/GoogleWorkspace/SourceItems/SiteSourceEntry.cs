@@ -13,7 +13,7 @@ internal class SiteSourceEntry(SourceProvider provider, string parentPath, File 
 
     public override Task<Stream> OpenRead(CancellationToken cancellationToken)
     {
-        if (!provider.LicenseApprovedForEntry(parentPath, GoogleRootType.Sites, file.Id, true))
+        if (!provider.LicenseApprovedForEntry(parentPath, GoogleRootType.Sites, file.Id, increment: true, countsAsSeat: true))
             return null!;
 
         // Google Sites cannot be exported via Drive API.

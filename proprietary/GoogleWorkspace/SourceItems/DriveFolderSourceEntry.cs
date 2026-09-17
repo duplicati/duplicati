@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class DriveFolderSourceEntry(string parentPath, string userId, string name, string folderId, DriveService driveService)
+internal class DriveFolderSourceEntry(string parentPath, string userId, bool userIsInactive, string name, string folderId, DriveService driveService)
     : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, folderId)), null, null)
 {
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
@@ -33,11 +33,11 @@ internal class DriveFolderSourceEntry(string parentPath, string userId, string n
 
                     if (GoogleMimeTypes.IsFolder(file.MimeType))
                     {
-                        yield return new DriveFolderSourceEntry(this.Path, userId, file.Name, file.Id, driveService);
+                        yield return new DriveFolderSourceEntry(this.Path, userId, userIsInactive, file.Name, file.Id, driveService);
                     }
                     else
                     {
-                        yield return new DriveFileSourceEntry(this.Path, file, driveService);
+                        yield return new DriveFileSourceEntry(this.Path, file, userIsInactive, driveService);
                     }
                 }
             }
