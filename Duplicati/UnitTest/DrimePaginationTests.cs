@@ -25,6 +25,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Backend.DrimeCloud;
@@ -46,6 +47,7 @@ public class DrimePaginationTests
     {
         public List<int> UnfilteredPages { get; } = new();
         public List<int> FilteredPages { get; } = new();
+        public List<string> DecodedFilters { get; } = new();
         public int CountRequests { get; private set; }
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
@@ -70,6 +72,8 @@ public class DrimePaginationTests
                     "\"current_page\":1,\"last_page\":1,\"per_page\":1,\"total\":1}"));
 
             var filtered = query.ContainsKey("filters");
+            if (filtered)
+                DecodedFilters.Add(DecodeFilters(query["filters"]));
             (filtered ? FilteredPages : UnfilteredPages).Add(page);
             var id = filtered ? 19 + page : page;
             var timestamp = $"2026-09-{id:00}T00:00:00.000000Z";
@@ -84,6 +88,15 @@ public class DrimePaginationTests
                 .Split('&', StringSplitOptions.RemoveEmptyEntries)
                 .Select(part => part.Split('=', 2))
                 .ToDictionary(part => WebUtility.UrlDecode(part[0]), part => WebUtility.UrlDecode(part[1]));
+
+        /// <summary>
+        /// The backend encodes filters as JSON, then Base64, then URI-escapes
+        /// the result, and finally URI-escapes the whole query value again.
+        /// ParseQuery has undone the outer escaping; undo the remaining layers
+        /// the way the Drime server would.
+        /// </summary>
+        private static string DecodeFilters(string value)
+            => Encoding.UTF8.GetString(Convert.FromBase64String(Uri.UnescapeDataString(value)));
 
         private static HttpResponseMessage Json(string body, HttpStatusCode status = HttpStatusCode.OK)
             => new(status) { Content = new StringContent(body, Encoding.UTF8, "application/json") };
@@ -108,5 +121,34 @@ public class DrimePaginationTests
         CollectionAssert.AreEqual(Enumerable.Range(1, 20), handler.UnfilteredPages);
         CollectionAssert.AreEqual(new[] { 1, 2 }, handler.FilteredPages);
         Assert.AreEqual(2, handler.CountRequests);
+    }
+
+    [Test]
+    [Category("Backend")]
+    public async Task FolderListingSendsDecodableCreatedAtWindowFilter()
+    {
+        using var handler = new StubHandler();
+        using var backend = new DrimeBackend(
+            "drimecloud://backup",
+            new Dictionary<string, string?> { ["api-token"] = "test-token", ["page-size"] = "1" },
+            handler);
+
+        var entries = new List<string>();
+        await foreach (var entry in backend.ListAsync(CancellationToken.None))
+            entries.Add(entry.Name);
+
+        Assert.AreEqual(21, entries.Count);
+
+        // The first window ends with the entry created 2026-09-20, so every
+        // filtered request must carry that timestamp as the inclusive bound.
+        Assert.AreEqual(2, handler.DecodedFilters.Count);
+        foreach (var json in handler.DecodedFilters)
+        {
+            using var document = JsonDocument.Parse(json);
+            var filter = document.RootElement.EnumerateArray().Single();
+            Assert.AreEqual("created_at", filter.GetProperty("key").GetString());
+            Assert.AreEqual(">=", filter.GetProperty("operator").GetString());
+            Assert.AreEqual("2026-09-20T00:00:00.000000Z", filter.GetProperty("value").GetString());
+        }
     }
 }

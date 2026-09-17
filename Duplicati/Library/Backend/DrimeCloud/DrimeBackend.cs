@@ -89,7 +89,20 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
     /// </summary>
     private const int PAGE_VALIDATION_ATTEMPTS = 3;
 
+    /// <summary>
+    /// Pages fetched per timestamp window before restarting at page 1 with an
+    /// inclusive created_at lower bound. WINDOW_RESTART_PAGE pages of at most
+    /// WINDOW_PAGE_SIZE entries stay below Drime's observed pagination ceiling.
+    /// </summary>
     private const int WINDOW_RESTART_PAGE = 20;
+
+    /// <summary>
+    /// Per-page cap for timestamp-window listings. Drime was observed to return
+    /// at most 100 entries per page for folder-hash listings, and the window
+    /// restart interval is sized against this cap.
+    /// </summary>
+    private const int WINDOW_PAGE_SIZE = 100;
+
     private static readonly string LOGTAG = Duplicati.Library.Logging.Log.LogTagFromType<DrimeBackend>();
     private readonly Dictionary<long, string> _folderHashes = new();
 
@@ -295,9 +308,8 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
         _fileCache = null;
         var cache = new ConcurrentDictionary<string, CachedFileEntry>();
 
-        // Buffer and validate the complete remote listing before yielding it.
-        // This allows an alternate Drime folder filter to be tried without
-        // leaking a partial or duplicate listing to Duplicati.
+        // Buffer and validate the complete remote listing before yielding it,
+        // so a partial or duplicate listing is never exposed to Duplicati.
         var entries = await ListEntriesAsync(folderId, foldersOnly: false, cancelToken).ConfigureAwait(false);
 
         foreach (var entry in entries)
@@ -655,7 +667,7 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
     private async Task<List<Model.FileEntry>> ListEntriesAsync(long? parentId, bool foldersOnly, CancellationToken cancelToken)
     {
         if (!parentId.HasValue)
-            return await ListEntriesUsingFilterAsync(parentId, foldersOnly, useFolderId: true, cancelToken).ConfigureAwait(false);
+            return await ListEntriesUsingFilterAsync(parentId, foldersOnly, cancelToken).ConfigureAwait(false);
 
         if (!_folderHashes.TryGetValue(parentId.Value, out var hash) || string.IsNullOrWhiteSpace(hash))
             throw new DrimePaginationException("The resolved folder did not supply a hash for folder-scoped listing.");
@@ -668,7 +680,7 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
     private async Task<long> GetFolderCountAsync(long folderId, CancellationToken cancelToken)
     {
         var client = await GetClientAsync(cancelToken).ConfigureAwait(false);
-        using var request = new HttpRequestMessage(HttpMethod.Get, $"folders/{folderId}/count?workspaceId={_workspaceId}");
+        using var request = new HttpRequestMessage(HttpMethod.Get, FormattableString.Invariant($"folders/{folderId}/count?workspaceId={_workspaceId}"));
         request.Headers.Add("Accept", "application/json");
         using var response = await Utility.Utility.WithTimeout(_timeouts.ListTimeout, cancelToken,
             ct => client.SendAsync(request, ct)).ConfigureAwait(false);
@@ -782,7 +794,7 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
             ["folderId"] = folderHash,
             ["workspaceId"] = _workspaceId.ToString(CultureInfo.InvariantCulture),
             ["page"] = page.ToString(CultureInfo.InvariantCulture),
-            ["perPage"] = Math.Min(_pageSize, 100).ToString(CultureInfo.InvariantCulture),
+            ["perPage"] = Math.Min(_pageSize, WINDOW_PAGE_SIZE).ToString(CultureInfo.InvariantCulture),
             ["orderBy"] = "created_at",
             ["orderDir"] = "asc"
         };
@@ -827,7 +839,6 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
     private async Task<List<Model.FileEntry>> ListEntriesUsingFilterAsync(
         long? parentId,
         bool foldersOnly,
-        bool useFolderId,
         CancellationToken cancelToken)
     {
         var requestedPage = 1;
@@ -840,7 +851,6 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
             var entries = await GetValidatedListingPageAsync(
                 parentId,
                 foldersOnly,
-                useFolderId,
                 requestedPage,
                 cancelToken).ConfigureAwait(false);
 
@@ -850,6 +860,9 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
             if (entries.Last_Page == null || entries.Last_Page.Value < entries.Current_Page)
                 throw new DrimePaginationException(
                     $"Page {requestedPage} returned an invalid last_page value ({entries.Last_Page?.ToString() ?? "null"}).");
+
+            if (entries.Data == null)
+                throw new DrimePaginationException($"Page {requestedPage} did not contain a data array.");
 
             if (entries.Data.Count == 0)
             {
@@ -905,7 +918,6 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
     private async Task<PaginatedResponse<Model.FileEntry>> GetValidatedListingPageAsync(
         long? parentId,
         bool foldersOnly,
-        bool useFolderId,
         int requestedPage,
         CancellationToken cancelToken)
     {
@@ -916,7 +928,6 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
             lastResponse = await GetListingPageAsync(
                 parentId,
                 foldersOnly,
-                useFolderId,
                 requestedPage,
                 cancelToken).ConfigureAwait(false);
 
@@ -938,16 +949,15 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
     private async Task<PaginatedResponse<Model.FileEntry>> GetListingPageAsync(
         long? parentId,
         bool foldersOnly,
-        bool useFolderId,
         int page,
         CancellationToken cancelToken)
     {
         var client = await GetClientAsync(cancelToken).ConfigureAwait(false);
         var queryParams = new Dictionary<string, string>
         {
-            ["page"] = page.ToString(),
-            ["perPage"] = Math.Min(_pageSize, MAX_PAGE_SIZE).ToString(),
-            ["workspaceId"] = _workspaceId.ToString(),
+            ["page"] = page.ToString(CultureInfo.InvariantCulture),
+            ["perPage"] = Math.Min(_pageSize, MAX_PAGE_SIZE).ToString(CultureInfo.InvariantCulture),
+            ["workspaceId"] = _workspaceId.ToString(CultureInfo.InvariantCulture),
             ["orderBy"] = "name",
             ["orderDir"] = "asc"
         };
@@ -956,7 +966,7 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
             queryParams["type"] = FOLDER_TYPE;
 
         if (parentId.HasValue)
-            queryParams[useFolderId ? "folderId" : "parentIds"] = parentId.Value.ToString();
+            queryParams["folderId"] = parentId.Value.ToString(CultureInfo.InvariantCulture);
 
         var queryString = string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={System.Uri.EscapeDataString(kvp.Value)}"));
 
@@ -1271,11 +1281,6 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
     {
         public DrimePaginationException(string message)
             : base(message)
-        {
-        }
-
-        public DrimePaginationException(string message, Exception innerException)
-            : base(message, innerException)
         {
         }
     }
