@@ -140,7 +140,7 @@ namespace Duplicati.Library.Main
             CheckAutoVacuumInterval();
             SourceProviderFactory.EnableMetadataStorageIfRequiredBySources(inputsources, m_options.RawOptions);
 
-            return await RunActionAsync(new BackupResults(), inputsources, inputFilter, false, static async config =>
+            return await RunActionAsync(new BackupResults(), inputsources, inputFilter, new { lastRestoreTest = m_lastRestoreTest }, static async config =>
             {
                 var (expandedSources, filter) = ExpandInputSources(config.Paths, config.Filter, config.Options);
                 using (var h = new Operation.BackupHandler(config.Options, config.Result))
@@ -151,10 +151,73 @@ namespace Duplicati.Library.Main
                 UsageReporter.Reporter.Report("BACKUP_FILESIZE", config.Result.SizeOfExaminedFiles);
                 UsageReporter.Reporter.Report("BACKUP_DURATION", (long)config.Result.Duration.TotalSeconds);
 
+                // The backup handler has released the database at this point, so the restore test can open it
+                await RunPostBackupRestoreTestAsync(config.Options, config.Result, config.BackendManager, config.Context.lastRestoreTest).ConfigureAwait(false);
+
                 using (var h = new Operation.RemoteSynchronizationHandler(config.BackendUrl, config.Options, config.Result))
                     await h.RunAsync()
                         .ConfigureAwait(false);
             }).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Runs a restore test as the last step of a backup, when the interval given by
+        /// <c>--perform-restore-test-after</c> has passed since the previous restore test.
+        /// The time of the previous restore test is supplied by the server when available,
+        /// and is otherwise read from the operation log in the local database.
+        /// </summary>
+        /// <param name="options">The options</param>
+        /// <param name="result">The backup results to attach the restore test results to</param>
+        /// <param name="backendManager">The backend manager</param>
+        /// <param name="lastRestoreTest">The time of the previous restore test as supplied by the caller, or <see cref="DateTime.MinValue"/> if unknown</param>
+        private static async Task RunPostBackupRestoreTestAsync(Options options, BackupResults result, IBackendManager backendManager, DateTime lastRestoreTest)
+        {
+            var interval = options.PerformRestoreTestAfter;
+            if (interval <= TimeSpan.Zero || options.Dryrun)
+                return;
+
+            var token = result.TaskControl.ProgressToken;
+            if (result.TaskControl.StopToken.IsCancellationRequested || token.IsCancellationRequested)
+                return;
+
+            if (lastRestoreTest <= DateTime.MinValue && !options.NoLocalDb && !string.IsNullOrWhiteSpace(options.Dbpath) && File.Exists(options.Dbpath))
+            {
+                try
+                {
+                    await using var db = await LocalDatabase.CreateLocalDatabaseAsync(options.Dbpath, null, true, null, token).ConfigureAwait(false);
+                    lastRestoreTest = await db.GetLastOperationTimeAsync(OperationMode.RestoreTest.ToString(), token).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "LastRestoreTestLookupFailed", ex, "Failed to look up the time of the last restore test: {0}", ex.Message);
+                }
+            }
+
+            if (lastRestoreTest > DateTime.MinValue && lastRestoreTest.ToUniversalTime().Add(interval) > DateTime.UtcNow)
+            {
+                Logging.Log.WriteInformationMessage(LOGTAG, "RestoreTestSkipped", "Skipping restore test until {0}", lastRestoreTest.ToLocalTime().Add(interval));
+                return;
+            }
+
+            result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PostBackupRestoreTest);
+            var restoreTestResults = new RestoreTestResults(result);
+            result.RestoreTestResults = restoreTestResults;
+            try
+            {
+                await new Operation.RestoreTestHandler(options, restoreTestResults)
+                    .RunAsync(backendManager, null)
+                    .ConfigureAwait(false);
+            }
+            catch (Exception ex) when (!ex.IsAbortOrCancelException())
+            {
+                // The backup itself completed, so a restore test that cannot run is an error on the backup, not a failure of it
+                Logging.Log.WriteErrorMessage(LOGTAG, "RestoreTestFailed", ex, "The restore test after the backup failed: {0}", ex.Message);
+            }
+            finally
+            {
+                if (restoreTestResults.EndTime.Ticks == 0)
+                    restoreTestResults.EndTime = DateTime.UtcNow;
+            }
         }
 
         /// <inheritdoc />
@@ -423,6 +486,15 @@ namespace Duplicati.Library.Main
             return await RunActionAsync(new TestResults(), null, null, new { samples }, static config =>
                 new Operation.TestHandler(config.Options, config.Result)
                     .RunAsync(config.Context.samples, config.BackendManager)
+            ).ConfigureAwait(false);
+        }
+
+        /// <inheritdoc />
+        public async Task<IRestoreTestResults> RestoreTestAsync(IFilter inputFilter = null)
+        {
+            return await RunActionAsync(new RestoreTestResults(), null, inputFilter, false, static config =>
+                new Operation.RestoreTestHandler(config.Options, config.Result)
+                    .RunAsync(config.BackendManager, config.Filter)
             ).ConfigureAwait(false);
         }
 
@@ -1623,6 +1695,11 @@ namespace Duplicati.Library.Main
         /// </summary>
         private DateTime m_lastVacuum;
 
+        /// <summary>
+        /// The time of the last restore test
+        /// </summary>
+        private DateTime m_lastRestoreTest;
+
         /// <inheritdoc />
         public Task SetLastCompactAsync(DateTime lastCompact)
         {
@@ -1634,6 +1711,13 @@ namespace Duplicati.Library.Main
         public Task SetLastVacuumAsync(DateTime lastVacuum)
         {
             m_lastVacuum = lastVacuum;
+            return Task.CompletedTask;
+        }
+
+        /// <inheritdoc />
+        public Task SetLastRestoreTestAsync(DateTime lastRestoreTest)
+        {
+            m_lastRestoreTest = lastRestoreTest;
             return Task.CompletedTask;
         }
 

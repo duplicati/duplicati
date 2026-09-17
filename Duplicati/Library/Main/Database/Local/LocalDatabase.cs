@@ -714,6 +714,27 @@ namespace Duplicati.Library.Main.Database.Local
         }
 
         /// <summary>
+        /// Gets the time of the most recent recorded operation with the given description.
+        /// </summary>
+        /// <param name="description">The operation description, e.g. the name of an <see cref="OperationMode"/>.</param>
+        /// <param name="token">Cancellation token to monitor for cancellation requests.</param>
+        /// <returns>A task that, when awaited, returns the time of the operation (UTC), or <see cref="DateTime.MinValue"/> if none was recorded.</returns>
+        public async Task<DateTime> GetLastOperationTimeAsync(string description, CancellationToken token)
+        {
+            await using var cmd = m_connection.CreateCommand(m_rtr);
+            var seconds = await cmd.SetCommandAndParameters(@"
+                SELECT MAX(""Timestamp"")
+                FROM ""Operation""
+                WHERE ""Description"" = @Description
+            ")
+                .SetParameterValue("@Description", description)
+                .ExecuteScalarInt64Async(-1, token)
+                .ConfigureAwait(false);
+
+            return seconds < 0 ? DateTime.MinValue : ParseFromEpochSeconds(seconds);
+        }
+
+        /// <summary>
         /// Gets the ID and timestamp of all filesets in the database, ordered by timestamp in descending order.
         /// </summary>
         /// <param name="token">Cancellation token to monitor for cancellation requests.</param>

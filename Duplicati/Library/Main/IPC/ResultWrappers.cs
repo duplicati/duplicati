@@ -89,6 +89,7 @@ public class BackupResultsWrapper : BasicResultsWrapper, IBackupResults
         set => throw new InvalidOperationException("Cannot set property on wrapper");
     }
     public IBackendStatstics BackendStatistics => _dto.BackendStatistics == null ? null : new BackendStatisticsWrapper(_dto.BackendStatistics);
+    public IRestoreTestResults RestoreTestResults => _dto.RestoreTestResults == null ? null : new RestoreTestResultsWrapper(_dto.RestoreTestResults);
     public IRemoteSynchronizationResults[] RemoteSynchronizationResults =>
         _dto.RemoteSynchronizationResults?.Select(r => new RemoteSynchronizationResultsWrapper(r)).ToArray();
 }
@@ -540,6 +541,74 @@ public class TestResultsWrapper : BasicResultsWrapper, ITestResults
             v.Key,
             v.Value.Select(x => new KeyValuePair<TestEntryStatus, string>(x.Key, x.Value))
         ));
+}
+
+/// <summary>
+/// Wrapper for a restore test failure
+/// </summary>
+public class RestoreTestFailureWrapper : IRestoreTestFailure
+{
+    private readonly RestoreTestFailureDto _dto;
+    public RestoreTestFailureWrapper(RestoreTestFailureDto dto) { _dto = dto ?? throw new ArgumentNullException(nameof(dto)); }
+    public string Path => _dto.Path;
+    public RestoreTestFailureReason Reason => _dto.Reason;
+    public string Expected => _dto.Expected;
+    public string Actual => _dto.Actual;
+}
+
+/// <summary>
+/// Wrapper for a restore test source difference
+/// </summary>
+public class RestoreTestSourceDifferenceWrapper : IRestoreTestSourceDifference
+{
+    private readonly RestoreTestSourceDifferenceDto _dto;
+    public RestoreTestSourceDifferenceWrapper(RestoreTestSourceDifferenceDto dto) { _dto = dto ?? throw new ArgumentNullException(nameof(dto)); }
+    public string Path => _dto.Path;
+    public string Reason => _dto.Reason;
+    public string Expected => _dto.Expected;
+    public string Actual => _dto.Actual;
+}
+
+/// <summary>
+/// Wrapper for the restore test budget state
+/// </summary>
+public class RestoreTestBudgetWrapper : IRestoreTestBudget
+{
+    private readonly RestoreTestBudgetDto _dto;
+    public RestoreTestBudgetWrapper(RestoreTestBudgetDto dto) { _dto = dto ?? new RestoreTestBudgetDto(); }
+    public bool Exceeded => _dto.Exceeded;
+    public RestoreTestBudgetReason Reason => _dto.Reason;
+}
+
+/// <summary>
+/// Wrapper for restore test results
+/// </summary>
+public class RestoreTestResultsWrapper : BasicResultsWrapper, IRestoreTestResults
+{
+    public RestoreTestResultsWrapper(RestoreTestResultsDto dto) : base(dto) { }
+
+    protected new RestoreTestResultsDto _dto => (RestoreTestResultsDto)base._dto;
+
+    public RestoreTestMode Mode => _dto.Mode;
+    public long Version => _dto.Version;
+    public int Seed => _dto.Seed;
+    public long FilesTested => _dto.FilesTested;
+    public long FilesPassed => _dto.FilesPassed;
+    public long FilesFailed => _dto.FilesFailed;
+    public long FilesSkipped => _dto.FilesSkipped;
+    public long BytesRestored => _dto.BytesRestored;
+    public long BytesDownloaded => _dto.BytesDownloaded;
+    public long RemoteVolumesDownloaded => _dto.RemoteVolumesDownloaded;
+    public bool DatabaseRecreated => _dto.DatabaseRecreated;
+    public IRecreateDatabaseResults RecreateDatabaseResults =>
+        _dto.RecreateDatabaseResults == null ? null : new RecreateDatabaseResultsWrapper(_dto.RecreateDatabaseResults);
+    public IRestoreResults RestoreResults =>
+        _dto.RestoreResults == null ? null : new RestoreResultsWrapper(_dto.RestoreResults);
+    public IEnumerable<IRestoreTestFailure> Failures =>
+        _dto.Failures?.Select(x => new RestoreTestFailureWrapper(x)) ?? Enumerable.Empty<IRestoreTestFailure>();
+    public IEnumerable<IRestoreTestSourceDifference> SourceDifferences =>
+        _dto.SourceDifferences?.Select(x => new RestoreTestSourceDifferenceWrapper(x)) ?? Enumerable.Empty<IRestoreTestSourceDifference>();
+    public IRestoreTestBudget Budget => new RestoreTestBudgetWrapper(_dto.Budget);
 }
 
 /// <summary>

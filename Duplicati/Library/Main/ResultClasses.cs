@@ -371,6 +371,21 @@ namespace Duplicati.Library.Main
 
         protected readonly TaskControl m_taskController;
         public ITaskControl TaskControl => m_parent?.TaskControl ?? m_taskController;
+
+        /// <summary>
+        /// Gets the outermost result of the operation. Nested results forward their
+        /// messages to it, so it is the one that holds the message, warning and error lists.
+        /// </summary>
+        internal BasicResults RootResults
+        {
+            get
+            {
+                var result = this;
+                while (result.m_parent != null)
+                    result = result.m_parent;
+                return result;
+            }
+        }
         protected BasicResults()
         {
             this.BeginTime = DateTime.UtcNow;
@@ -482,6 +497,7 @@ namespace Duplicati.Library.Main
         public IRepairResults RepairResults { get; internal set; }
         public ITestResults TestResults { get; internal set; }
         public ISetLockResults LockResults { get; internal set; }
+        public IRestoreTestResults RestoreTestResults { get; internal set; }
         public IRemoteSynchronizationResults[] RemoteSynchronizationResults { get; internal set; } = [];
 
         public override ParsedResultType ParsedResult
@@ -494,6 +510,7 @@ namespace Duplicati.Library.Main
                     (DeleteResults != null && DeleteResults.ParsedResult == ParsedResultType.Fatal) ||
                     (RepairResults != null && RepairResults.ParsedResult == ParsedResultType.Fatal) ||
                     (TestResults != null && TestResults.ParsedResult == ParsedResultType.Fatal) ||
+                    (RestoreTestResults != null && RestoreTestResults.ParsedResult == ParsedResultType.Fatal) ||
                     Fatal)
                 {
                     return ParsedResultType.Fatal;
@@ -504,6 +521,7 @@ namespace Duplicati.Library.Main
                     (DeleteResults != null && DeleteResults.ParsedResult == ParsedResultType.Error) ||
                     (RepairResults != null && RepairResults.ParsedResult == ParsedResultType.Error) ||
                     (TestResults != null && TestResults.ParsedResult == ParsedResultType.Error) ||
+                    (RestoreTestResults != null && RestoreTestResults.ParsedResult == ParsedResultType.Error) ||
                     (Errors != null && Errors.Any()) || FilesWithError > 0)
                 {
                     return ParsedResultType.Error;
@@ -514,6 +532,7 @@ namespace Duplicati.Library.Main
                          (DeleteResults != null && DeleteResults.ParsedResult == ParsedResultType.Warning) ||
                          (RepairResults != null && RepairResults.ParsedResult == ParsedResultType.Warning) ||
                          (TestResults != null && TestResults.ParsedResult == ParsedResultType.Warning) ||
+                         (RestoreTestResults != null && RestoreTestResults.ParsedResult == ParsedResultType.Warning) ||
                          (Warnings != null && Warnings.Any()) || PartialBackup)
                 {
                     return ParsedResultType.Warning;
@@ -569,6 +588,9 @@ namespace Duplicati.Library.Main
         public bool ShouldSerializeTotalVolumesAccessed() => TotalVolumesAccessed > 0;
 
         public override OperationMode MainOperation { get { return OperationMode.Restore; } }
+
+        public RestoreResults() : base() { }
+        public RestoreResults(BasicResults p) : base(p) { }
 
         public IRecreateDatabaseResults RecreateDatabaseResults { get; internal set; }
 
@@ -1010,6 +1032,124 @@ namespace Duplicati.Library.Main
             var item = m_verifications.FirstOrDefault(x => x.Key == volume);
             if (item.Key == volume)
                 m_verifications.Remove(item);
+        }
+    }
+
+    /// <summary>
+    /// A file that failed verification during a restore test.
+    /// </summary>
+    internal sealed record RestoreTestFailure(string Path, RestoreTestFailureReason Reason, string Expected, string Actual) : IRestoreTestFailure;
+
+    /// <summary>
+    /// A difference between the backup and the live source found during a restore test.
+    /// </summary>
+    internal sealed record RestoreTestSourceDifference(string Path, string Reason, string Expected, string Actual) : IRestoreTestSourceDifference;
+
+    /// <summary>
+    /// The budget state of a restore test.
+    /// </summary>
+    internal sealed class RestoreTestBudget : IRestoreTestBudget
+    {
+        public bool Exceeded { get; internal set; }
+        public RestoreTestBudgetReason Reason { get; internal set; } = RestoreTestBudgetReason.None;
+    }
+
+    internal class RestoreTestResults : BasicResults, IRestoreTestResults
+    {
+        public RestoreTestResults() : base() { }
+        public RestoreTestResults(BasicResults p) : base(p) { }
+
+        public override OperationMode MainOperation { get { return OperationMode.RestoreTest; } }
+
+        public RestoreTestMode Mode { get; internal set; }
+        /// <summary>
+        /// The backup version that was tested. This hides the software version
+        /// reported by the base class, as the backup version is what matters here.
+        /// </summary>
+        public new long Version { get; internal set; }
+        public int Seed { get; internal set; }
+        public long FilesTested { get; internal set; }
+        public long FilesPassed { get; internal set; }
+        public long FilesFailed { get; internal set; }
+        public long FilesSkipped { get; internal set; }
+        public long BytesRestored { get; internal set; }
+        public long BytesDownloaded { get; internal set; }
+        public long RemoteVolumesDownloaded { get; internal set; }
+        public bool DatabaseRecreated { get; internal set; }
+        public IRecreateDatabaseResults RecreateDatabaseResults { get; internal set; }
+        public IRestoreResults RestoreResults { get; internal set; }
+
+        private readonly List<IRestoreTestFailure> m_failures = new List<IRestoreTestFailure>();
+        private readonly List<IRestoreTestSourceDifference> m_sourceDifferences = new List<IRestoreTestSourceDifference>();
+
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
+        public IEnumerable<IRestoreTestFailure> Failures { get { return m_failures; } }
+
+        // ReSharper disable once UnusedMember.Global
+        // This is referenced in the logs.
+        public int FailuresActualLength { get { return m_failures.Count; } }
+
+        [JsonProperty(PropertyName = "Failures")]
+        [JsonPropertyName("Failures")]
+        public IEnumerable<IRestoreTestFailure> LimitedFailures { get { return m_failures.Take(SERIALIZATION_LIMIT); } }
+
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
+        public IEnumerable<IRestoreTestSourceDifference> SourceDifferences { get { return m_sourceDifferences; } }
+
+        // ReSharper disable once UnusedMember.Global
+        // This is referenced in the logs.
+        public int SourceDifferencesActualLength { get { return m_sourceDifferences.Count; } }
+
+        [JsonProperty(PropertyName = "SourceDifferences")]
+        [JsonPropertyName("SourceDifferences")]
+        public IEnumerable<IRestoreTestSourceDifference> LimitedSourceDifferences { get { return m_sourceDifferences.Take(SERIALIZATION_LIMIT); } }
+
+        public IRestoreTestBudget Budget { get; } = new RestoreTestBudget();
+
+        internal void AddFailure(string path, RestoreTestFailureReason reason, string expected, string actual)
+            => m_failures.Add(new RestoreTestFailure(path, reason, expected, actual));
+
+        internal void AddSourceDifference(string path, string reason, string expected, string actual)
+            => m_sourceDifferences.Add(new RestoreTestSourceDifference(path, reason, expected, actual));
+
+        internal void SetBudgetExceeded(RestoreTestBudgetReason reason)
+        {
+            var budget = (RestoreTestBudget)Budget;
+            budget.Exceeded = true;
+            budget.Reason = reason;
+        }
+
+        public override ParsedResultType ParsedResult
+        {
+            get
+            {
+                if ((RecreateDatabaseResults != null && RecreateDatabaseResults.ParsedResult == ParsedResultType.Fatal) ||
+                    (RestoreResults != null && RestoreResults.ParsedResult == ParsedResultType.Fatal) ||
+                    Fatal)
+                {
+                    return ParsedResultType.Fatal;
+                }
+                else if ((RecreateDatabaseResults != null && RecreateDatabaseResults.ParsedResult == ParsedResultType.Error) ||
+                    (RestoreResults != null && RestoreResults.ParsedResult == ParsedResultType.Error) ||
+                    FilesFailed > 0 || Budget.Exceeded ||
+                    (Errors != null && Errors.Any()))
+                {
+                    return ParsedResultType.Error;
+                }
+                else if ((RecreateDatabaseResults != null && RecreateDatabaseResults.ParsedResult == ParsedResultType.Warning) ||
+                         (RestoreResults != null && RestoreResults.ParsedResult == ParsedResultType.Warning) ||
+                         FilesSkipped > 0 || m_sourceDifferences.Count > 0 ||
+                         (Warnings != null && Warnings.Any()))
+                {
+                    return ParsedResultType.Warning;
+                }
+                else
+                {
+                    return ParsedResultType.Success;
+                }
+            }
         }
     }
 

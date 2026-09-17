@@ -95,6 +95,8 @@ public class ControllerRpcServer : IController, IDisposable
                         operation = OperationMode.Sync;
                     else if (results is ITestResults)
                         operation = OperationMode.Test;
+                    else if (results is IRestoreTestResults)
+                        operation = OperationMode.RestoreTest;
                     else if (results is ICreateLogDatabaseResults)
                         operation = OperationMode.CreateLogDb;
                     else if (results is IListRemoteResults)
@@ -169,6 +171,10 @@ public class ControllerRpcServer : IController, IDisposable
     /// <inheritdoc />
     public Task<ITestResults> TestAsync(long samples = 1)
         => Controller.TestAsync(samples);
+
+    /// <inheritdoc />
+    public Task<IRestoreTestResults> RestoreTestAsync(IFilter? filter = null)
+        => Controller.RestoreTestAsync(filter);
 
     /// <inheritdoc />
     public Task<IListFilesetResults> ListFilesetsAsync()
@@ -308,6 +314,13 @@ public class ControllerRpcServer : IController, IDisposable
     {
         if (_controller != null)
             await _controller.SetLastVacuumAsync(value).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task SetLastRestoreTestAsync(DateTime value)
+    {
+        if (_controller != null)
+            await _controller.SetLastRestoreTestAsync(value).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
