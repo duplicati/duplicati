@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class ContactsFolderSourceEntry(string parentPath, PeopleServiceService peopleService)
+internal class ContactsFolderSourceEntry(string parentPath, bool userIsInactive, PeopleServiceService peopleService)
     : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, "Entries")), null, null)
 {
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
@@ -27,7 +27,7 @@ internal class ContactsFolderSourceEntry(string parentPath, PeopleServiceService
                 foreach (var person in connections.Connections)
                 {
                     if (cancellationToken.IsCancellationRequested) yield break;
-                    yield return new ContactSourceEntry(this.Path, person);
+                    yield return new ContactSourceEntry(this.Path, person, userIsInactive, peopleService);
                 }
             }
             nextPageToken = connections.NextPageToken;

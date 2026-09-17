@@ -41,6 +41,8 @@ public static class OptionsHelper
     public const string GOOGLE_INCLUDED_USER_TYPES_OPTION = "google-included-user-types";
     public const string GOOGLE_IGNORE_EXISTING_OPTION = "google-ignore-existing";
     public const string GOOGLE_AVOID_CALENDAR_ACL_OPTION = "google-ignore-calendar-acl";
+    public const string GOOGLE_EXCLUDE_ARCHIVED_USERS_OPTION = "google-exclude-archived-users";
+    public const string GOOGLE_EXCLUDE_SUSPENDED_USERS_OPTION = "google-exclude-suspended-users";
 
     private static readonly ICommandLineArgument[] SupportedCommands =
     [
@@ -64,6 +66,8 @@ public static class OptionsHelper
         new CommandLineArgument(GOOGLE_INCLUDED_ROOT_TYPES_OPTION, CommandLineArgument.ArgumentType.Flags, Strings.Options.GoogleIncludedRootTypesShort, Strings.Options.GoogleIncludedRootTypesLong, string.Join(",", Enum.GetValues<GoogleRootType>().Select(n => n.ToString())), null, Enum.GetNames(typeof(GoogleRootType))),
         new CommandLineArgument(GOOGLE_INCLUDED_USER_TYPES_OPTION, CommandLineArgument.ArgumentType.Flags, Strings.Options.GoogleIncludedUserTypesShort, Strings.Options.GoogleIncludedUserTypesLong, string.Join(",", Enum.GetValues<GoogleUserType>().Select(n => n.ToString())), null, Enum.GetNames(typeof(GoogleUserType))),
         new CommandLineArgument(GOOGLE_AVOID_CALENDAR_ACL_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Options.GoogleAvoidCalendarAclOptionShort, Strings.Options.GoogleAvoidCalendarAclOptionLong),
+        new CommandLineArgument(GOOGLE_EXCLUDE_ARCHIVED_USERS_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Options.GoogleExcludeArchivedUsersShort, Strings.Options.GoogleExcludeArchivedUsersLong, "false"),
+        new CommandLineArgument(GOOGLE_EXCLUDE_SUSPENDED_USERS_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Options.GoogleExcludeSuspendedUsersShort, Strings.Options.GoogleExcludeSuspendedUsersLong, "false"),
     ];
 
     public class GoogleWorkspaceOptions
@@ -76,6 +80,16 @@ public static class OptionsHelper
         public string MachineId { get; set; } = "";
         public GoogleRootType[] IncludedRootTypes { get; set; } = Enum.GetValues<GoogleRootType>().ToArray();
         public GoogleUserType[] IncludedUserTypes { get; set; } = Enum.GetValues<GoogleUserType>().ToArray();
+        /// <summary>
+        /// Whether archived user accounts are left out of the backup. Off by default: their
+        /// Gmail and Drive data remain readable and they do not consume a seat.
+        /// </summary>
+        public bool ExcludeArchivedUsers { get; set; }
+        /// <summary>
+        /// Whether suspended user accounts are left out of the backup. Off by default: they
+        /// do not consume a seat.
+        /// </summary>
+        public bool ExcludeSuspendedUsers { get; set; }
     }
 
     public static GoogleWorkspaceOptions ParseOptions(Dictionary<string, string?> options)
@@ -114,6 +128,8 @@ public static class OptionsHelper
 
         result.IncludedRootTypes = Enum.GetValues<GoogleRootType>().Where(n => includedRootTypes.HasFlag(n)).ToArray();
         result.IncludedUserTypes = Enum.GetValues<GoogleUserType>().Where(n => includedUserTypes.HasFlag(n)).ToArray();
+        result.ExcludeArchivedUsers = Library.Utility.Utility.ParseBoolOption(options, GOOGLE_EXCLUDE_ARCHIVED_USERS_OPTION);
+        result.ExcludeSuspendedUsers = Library.Utility.Utility.ParseBoolOption(options, GOOGLE_EXCLUDE_SUSPENDED_USERS_OPTION);
 
         return result;
     }

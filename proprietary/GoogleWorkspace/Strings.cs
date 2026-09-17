@@ -28,6 +28,10 @@ internal static class Strings
         public static string GoogleIgnoreExistingOptionLong => LC.L("If set, existing items in the destination will not be overwritten.");
         public static string GoogleAvoidCalendarAclOptionShort => LC.L("Avoid reading calendar ACLs");
         public static string GoogleAvoidCalendarAclOptionLong => LC.L("Calendar ACLs require write permissions to be able to read them. If the account does not have write permissions, this option can be used to avoid reading them.");
+        public static string GoogleExcludeArchivedUsersShort => LC.L("Exclude archived users");
+        public static string GoogleExcludeArchivedUsersLong => LC.L("Archived user accounts are backed up by default, as their Gmail and Drive data remain readable and they do not consume a license seat. Enable this option to leave archived users out of the backup.");
+        public static string GoogleExcludeSuspendedUsersShort => LC.L("Exclude suspended users");
+        public static string GoogleExcludeSuspendedUsersLong => LC.L("Suspended user accounts are backed up by default and do not consume a license seat. Enable this option to leave suspended users out of the backup.");
     }
 
     internal static class Common
@@ -56,5 +60,11 @@ internal static class Strings
 
     public static string InvalidRestoreTargetType(string? type) => LC.L($"Invalid restore target type: {type}");
     public static string RestoreTargetNotFound(string path) => LC.L($"Restore target path not found: {path}");
-    public static string LicenseWarning(GoogleRootType type, int approved) => LC.L($"Licensed Microsoft 365 feature seats exceeded for {type} ({approved}). Some items will not be backed up, and some folders may be empty.");
+    public static string SkippingExcludedUser(string email, string state, string optionname) => LC.L($"Skipping {state} user {email} as requested by the option --{optionname}");
+    public static string SkippedExcludedUsers(int count, string state, string optionname) => LC.L($"Skipped {count} {state} user(s) as requested by the option --{optionname}");
+    public static string ContactPhotosSkippedForInactiveUser(string contactId) => LC.L($"The photos of contact {contactId} are not available through the suspended or archived account, skipping them");
+    public static string CommentsNotReadableForInactiveUser(string fileId) => LC.L($"The comments of file {fileId} are not readable through the suspended or archived account, recording an empty comment list");
+    public static string CalendarNotAvailableForUser(string calendarId, string userId) => LC.L($"The calendar {calendarId} in the calendar list of user {userId} cannot be read because its owner has no Google Calendar service, skipping it");
+    public static string ServiceNotAvailableForUser(string service, string userId) => LC.L($"The service {service} is not available for user {userId}, skipping it");
+    public static string LicenseWarning(GoogleRootType type, int approved) => LC.L($"Licensed Google Workspace feature seats exceeded for {type} ({approved}). Some items will not be backed up, and some folders may be empty.");
 }
