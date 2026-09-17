@@ -20,7 +20,6 @@
 // DEALINGS IN THE SOFTWARE.
 
 using Duplicati.WebserverCore.Abstractions;
-using Duplicati.WebserverCore.Dto;
 using Duplicati.WebserverCore.Middlewares;
 using Microsoft.AspNetCore.Mvc;
 
@@ -32,7 +31,7 @@ namespace Duplicati.WebserverCore.Endpoints.V1;
 /// The shell extension runs inside Explorer and cannot log in, so instead of the
 /// regular authorization requirement these endpoints are guarded by
 /// <see cref="FolderStatusAccessFilter"/>, which accepts either a logged in
-/// caller or the access key the server writes to its data folder.
+/// caller or an unauthenticated request from the local machine.
 /// </summary>
 public class FolderStatus : IEndpointV1
 {

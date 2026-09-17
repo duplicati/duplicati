@@ -1,17 +1,24 @@
 Duplicati Shell Extension Overlay Icons
 =======================================
 
-This folder should contain the following icon files:
+This folder holds the icons for the folder status overlays. They reuse the
+tray icon designs so the states read the same in Explorer and in the tray:
 
-1. overlay_backed_up.ico - Green checkmark overlay for successfully backed up folders
-2. overlay_warning.ico - Yellow/orange warning overlay for folders with backup warnings
-3. overlay_error.ico - Red X overlay for folders with backup failures
-4. overlay_syncing.ico - Blue/circular arrows overlay for folders with backup in progress
+1. overlay_backed_up.ico - Black tray icon (inactive) for successfully backed up folders
+2. overlay_warning.ico - Orange tray icon with exclamation mark for folders with backup warnings
+3. overlay_error.ico - Red tray icon with cross for folders with backup failures
+4. overlay_syncing.ico - Green tray icon with play symbol for folders with backup in progress
 
-Icon Requirements:
-- Format: ICO file with multiple resolutions (16x16, 32x32, 48x48, 256x256)
-- Should have transparent background
-- Should be visually similar to Windows cloud sync overlays (OneDrive, Dropbox, etc.)
+The .ico files are generated from the tray icon SVGs in Assets/tray icons by
+make-icons.py (needs rsvg-convert), so every size is rendered from the vector
+source. The icons are not shipped as files. They are compiled into overlays.res by
+make-res.py and embedded into Duplicati.ShellExtension.dll as Win32 icon
+resources, so the overlay handlers point Explorer at the DLL itself.
 
-The icons should be placed in this directory for the shell extension to work properly.
-These icons are loaded at runtime by the COM shell extension handlers.
+After changing a tray icon SVG, run:
+
+    python3 make-icons.py
+    python3 make-res.py
+
+and commit the updated overlays.res. The order of the icons in make-res.py
+defines the icon index used by each handler in IconOverlayHandler.cs.

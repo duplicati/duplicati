@@ -63,11 +63,6 @@ namespace Duplicati.Server.Database
         private EventPollNotify? m_eventPollNotifyer;
         private readonly string m_dataFolder;
 
-        /// <summary>
-        /// The folder holding the server database and related files
-        /// </summary>
-        public string DataFolder => m_dataFolder;
-
         private static readonly HashSet<string> _encryptedFields =
             BackendLoader.Backends.SelectMany(x => x.SupportedCommands ?? [])
                 .Concat(EncryptionLoader.Modules.SelectMany(x => x.SupportedCommands ?? []))
@@ -89,8 +84,7 @@ namespace Duplicati.Server.Database
                     ServerSettings.CONST.SERVER_CA_CERTIFICATE_KEY,
                     ServerSettings.CONST.SERVER_CA_CERTIFICATE_PASSWORD,
                     ServerSettings.CONST.REMOTE_CONTROL_STORAGE_API_KEY,
-                    ServerSettings.CONST.CLIENT_LICENSE_KEY,
-                    ServerSettings.CONST.FOLDER_STATUS_ACCESS_KEY
+                    ServerSettings.CONST.CLIENT_LICENSE_KEY
                 ])
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 

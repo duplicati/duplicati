@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
+using Duplicati.Server;
 using Duplicati.Server.Database;
 using Duplicati.Server.Serialization.Interface;
 using Duplicati.WebserverCore.Abstractions;
@@ -58,21 +59,14 @@ public class FolderStatusService : IFolderStatusService
         var results = new List<FolderStatusDto>();
 
         var activeBackupIds = GetActiveBackupIds();
-        var backups = _connection.Backups;
 
-        foreach (var backup in backups)
+        foreach (var (backup, sources) in GetBackupsWithSources())
         {
-            if (backup.Sources == null)
-                continue;
-
             var status = DetermineBackupStatus(backup, activeBackupIds);
             var lastBackupTime = GetLastBackupTime(backup);
 
-            foreach (var source in backup.Sources)
+            foreach (var source in sources)
             {
-                if (string.IsNullOrEmpty(source))
-                    continue;
-
                 results.Add(new FolderStatusDto
                 {
                     Path = source,
@@ -107,18 +101,11 @@ public class FolderStatusService : IFolderStatusService
         // Normalize the path for comparison
         var normalizedPath = NormalizePath(path);
         var activeBackupIds = GetActiveBackupIds();
-        var backups = _connection.Backups;
 
-        foreach (var backup in backups)
+        foreach (var (backup, sources) in GetBackupsWithSources())
         {
-            if (backup.Sources == null)
-                continue;
-
-            foreach (var source in backup.Sources)
+            foreach (var source in sources)
             {
-                if (string.IsNullOrEmpty(source))
-                    continue;
-
                 var normalizedSource = NormalizePath(source);
 
                 // Check if the path matches or is a subdirectory
@@ -145,6 +132,40 @@ public class FolderStatusService : IFolderStatusService
             Path = path,
             Status = FolderBackupStatusValues.NotInBackup
         };
+    }
+
+    /// <summary>
+    /// Loads each backup together with its folder sources.
+    /// The backup list only carries the base row and metadata, so the full
+    /// backup is loaded to get the sources. The full backup carries the target
+    /// url and settings, so it is masked right away; only the name, id, metadata
+    /// and folder sources are used. Special sources (such as source providers)
+    /// are skipped, and placeholders like %MY_DOCUMENTS% are expanded to the
+    /// paths Explorer will ask about.
+    /// </summary>
+    private IEnumerable<(IBackup Backup, string[] Sources)> GetBackupsWithSources()
+    {
+        foreach (var summary in _connection.Backups)
+        {
+            if (string.IsNullOrEmpty(summary.ID))
+                continue;
+
+            var backup = _connection.GetBackup(summary.ID);
+            if (backup == null)
+                continue;
+
+            backup.MaskSensitiveInformation();
+            if (backup.Sources == null)
+                continue;
+
+            var sources = backup.Sources
+                .Where(x => !string.IsNullOrWhiteSpace(x) && !SourceMasking.IsSpecialSource(x))
+                .Select(SpecialFolders.ExpandEnvironmentVariables)
+                .ToArray();
+
+            if (sources.Length > 0)
+                yield return (backup, sources);
+        }
     }
 
     /// <summary>
@@ -180,65 +201,63 @@ public class FolderStatusService : IFolderStatusService
     /// Determines the backup status for a backup configuration
     /// </summary>
     private string DetermineBackupStatus(IBackup backup, HashSet<string> activeBackupIds)
+        => DetermineStatus(backup.Metadata, backup.ID != null && activeBackupIds.Contains(backup.ID));
+
+    /// <summary>
+    /// Determines the folder status from the metadata the runner records for a backup.
+    /// The dates are written with <see cref="Library.Utility.Utility.SerializeDateTime"/>,
+    /// so they must be read with the matching deserializer. A completed run records
+    /// LastBackupFinished and a failed run records LastErrorDate, so the newer of the
+    /// two tells whether the latest attempt succeeded. LastBackupDate is the time of
+    /// the newest version on the destination, which does not move when a run finds no
+    /// changes, so it is only used for metadata written before LastBackupFinished
+    /// existed. Warnings are not recorded in the metadata, so the warning status is
+    /// currently never produced here.
+    /// </summary>
+    /// <param name="metadata">The backup metadata, or null if none</param>
+    /// <param name="isActive">True if the backup is running or queued</param>
+    /// <returns>One of the <see cref="FolderBackupStatusValues"/></returns>
+    public static string DetermineStatus(IDictionary<string, string>? metadata, bool isActive)
     {
-        // Check if backup is currently running
-        if (backup.ID != null && activeBackupIds.Contains(backup.ID))
-        {
+        if (isActive)
             return FolderBackupStatusValues.InProgress;
-        }
 
-        // Check metadata for last backup result
-        if (backup.Metadata == null ||
-            !backup.Metadata.TryGetValue("LastBackupDate", out var lastDateStr) ||
-            string.IsNullOrEmpty(lastDateStr))
-        {
-            return FolderBackupStatusValues.Never;
-        }
+        var lastBackup = GetLastBackupTime(metadata);
+        var lastError = ReadDate(metadata, "LastErrorDate");
 
-        // Validate that the date is parseable
-        if (!DateTime.TryParse(lastDateStr, out _))
-            return FolderBackupStatusValues.Never;
+        if (lastError != null && (lastBackup == null || lastError >= lastBackup))
+            return FolderBackupStatusValues.Failed;
 
-        // Check for errors
-        if (backup.Metadata.TryGetValue("LastErrorDate", out var errorDate) &&
-            !string.IsNullOrEmpty(errorDate))
-        {
-            // Check if error date is the same as last backup date
-            if (DateTime.TryParse(lastDateStr, out var lastDt) &&
-                DateTime.TryParse(errorDate, out var errorDt) &&
-                Math.Abs((lastDt - errorDt).TotalMinutes) < 1)
-            {
-                return FolderBackupStatusValues.Failed;
-            }
-        }
-
-        // Check for warnings
-        if (backup.Metadata.TryGetValue("LastWarningDate", out var warningDate) &&
-            !string.IsNullOrEmpty(warningDate))
-        {
-            // Check if warning date is the same as last backup date
-            if (DateTime.TryParse(lastDateStr, out var lastDt) &&
-                DateTime.TryParse(warningDate, out var warningDt) &&
-                Math.Abs((lastDt - warningDt).TotalMinutes) < 1)
-            {
-                return FolderBackupStatusValues.Warning;
-            }
-        }
-
-        return FolderBackupStatusValues.BackedUp;
+        return lastBackup == null
+            ? FolderBackupStatusValues.Never
+            : FolderBackupStatusValues.BackedUp;
     }
 
     /// <summary>
     /// Gets the last backup time from backup metadata
     /// </summary>
-    private DateTime? GetLastBackupTime(IBackup backup)
+    private static DateTime? GetLastBackupTime(IBackup backup)
+        => GetLastBackupTime(backup.Metadata);
+
+    /// <summary>
+    /// Gets the time the last backup run completed, in UTC.
+    /// Falls back to the newest version time for metadata from older versions.
+    /// </summary>
+    /// <param name="metadata">The backup metadata, or null if none</param>
+    /// <returns>The last backup time, or null if the backup never completed</returns>
+    public static DateTime? GetLastBackupTime(IDictionary<string, string>? metadata)
+        => ReadDate(metadata, "LastBackupFinished") ?? ReadDate(metadata, "LastBackupDate");
+
+    /// <summary>
+    /// Reads a serialized date from the metadata
+    /// </summary>
+    private static DateTime? ReadDate(IDictionary<string, string>? metadata, string key)
     {
-        if (backup.Metadata != null &&
-            backup.Metadata.TryGetValue("LastBackupDate", out var dateStr) &&
-            DateTime.TryParse(dateStr, out var date))
-        {
-            return date;
-        }
+        if (metadata != null
+            && metadata.TryGetValue(key, out var value)
+            && !string.IsNullOrWhiteSpace(value)
+            && Library.Utility.Utility.TryDeserializeDateTime(value, out var date))
+            return date.ToUniversalTime();
 
         return null;
     }

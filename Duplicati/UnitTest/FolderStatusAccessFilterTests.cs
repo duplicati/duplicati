@@ -21,6 +21,7 @@
 
 #nullable enable
 
+using System.Net;
 using Duplicati.WebserverCore.Middlewares;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
@@ -33,49 +34,48 @@ namespace Duplicati.UnitTest;
 [TestFixture]
 public class FolderStatusAccessFilterTests
 {
-    private const string Key = "kzq1yJm3F0nUv2t5w8XbA6cDeGhIjLoP9rSsTuVwXyZ=";
+    private static readonly IPAddress Remote = IPAddress.Parse("192.168.1.20");
 
     [Test]
     [Category("FolderStatus")]
-    public void AuthenticatedCallerIsAllowedWithoutKey()
+    public void AuthenticatedCallerIsAllowedFromAnywhere()
     {
-        Assert.IsTrue(FolderStatusAccessFilter.IsAllowed(true, null, Key, true));
-        Assert.IsTrue(FolderStatusAccessFilter.IsAllowed(true, null, null, false));
-        Assert.IsTrue(FolderStatusAccessFilter.IsAllowed(true, "wrong", Key, true));
+        Assert.IsTrue(FolderStatusAccessFilter.IsAllowed(true, Remote, true));
+        Assert.IsTrue(FolderStatusAccessFilter.IsAllowed(true, Remote, false));
+        Assert.IsTrue(FolderStatusAccessFilter.IsAllowed(true, null, false));
     }
 
     [Test]
     [Category("FolderStatus")]
-    public void MatchingKeyIsAllowedWhenServiceEnabled()
+    public void LoopbackCallerIsAllowedWhenServiceEnabled()
     {
-        Assert.IsTrue(FolderStatusAccessFilter.IsAllowed(false, Key, Key, true));
-        Assert.IsTrue(FolderStatusAccessFilter.IsAllowed(false, " " + Key + "\n", Key, true));
+        Assert.IsTrue(FolderStatusAccessFilter.IsAllowed(false, IPAddress.Loopback, true));
+        Assert.IsTrue(FolderStatusAccessFilter.IsAllowed(false, IPAddress.IPv6Loopback, true));
+        Assert.IsTrue(FolderStatusAccessFilter.IsAllowed(false, IPAddress.Parse("127.0.0.5"), true));
+        Assert.IsTrue(FolderStatusAccessFilter.IsAllowed(false, IPAddress.Loopback.MapToIPv6(), true));
     }
 
     [Test]
     [Category("FolderStatus")]
-    public void MatchingKeyIsDeniedWhenServiceDisabled()
+    public void LoopbackCallerIsDeniedWhenServiceDisabled()
     {
-        Assert.IsFalse(FolderStatusAccessFilter.IsAllowed(false, Key, Key, false));
+        Assert.IsFalse(FolderStatusAccessFilter.IsAllowed(false, IPAddress.Loopback, false));
+        Assert.IsFalse(FolderStatusAccessFilter.IsAllowed(false, IPAddress.IPv6Loopback, false));
     }
 
     [Test]
     [Category("FolderStatus")]
-    public void WrongOrMissingKeyIsDenied()
+    public void RemoteCallerIsDeniedWithoutAuthentication()
     {
-        Assert.IsFalse(FolderStatusAccessFilter.IsAllowed(false, null, Key, true));
-        Assert.IsFalse(FolderStatusAccessFilter.IsAllowed(false, "", Key, true));
-        Assert.IsFalse(FolderStatusAccessFilter.IsAllowed(false, "other", Key, true));
-        Assert.IsFalse(FolderStatusAccessFilter.IsAllowed(false, Key + "x", Key, true));
-        Assert.IsFalse(FolderStatusAccessFilter.IsAllowed(false, Key.Substring(1), Key, true));
+        Assert.IsFalse(FolderStatusAccessFilter.IsAllowed(false, Remote, true));
+        Assert.IsFalse(FolderStatusAccessFilter.IsAllowed(false, Remote.MapToIPv6(), true));
+        Assert.IsFalse(FolderStatusAccessFilter.IsAllowed(false, IPAddress.Parse("2001:db8::1"), true));
     }
 
     [Test]
     [Category("FolderStatus")]
-    public void MissingStoredKeyDeniesUnauthenticatedCallers()
+    public void UnknownAddressIsDeniedWithoutAuthentication()
     {
-        Assert.IsFalse(FolderStatusAccessFilter.IsAllowed(false, Key, null, true));
-        Assert.IsFalse(FolderStatusAccessFilter.IsAllowed(false, "", "", true));
-        Assert.IsFalse(FolderStatusAccessFilter.IsAllowed(false, " ", " ", true));
+        Assert.IsFalse(FolderStatusAccessFilter.IsAllowed(false, null, true));
     }
 }
