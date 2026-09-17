@@ -12,7 +12,7 @@ internal class GroupSourceEntry(SourceProvider provider, string parentPath, Grou
 {
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        if (!provider.LicenseApprovedForEntry(parentPath, GoogleRootType.Groups, group.Id, true))
+        if (!provider.LicenseApprovedForEntry(parentPath, GoogleRootType.Groups, group.Id, increment: true, countsAsSeat: true))
             yield break;
 
         if (cancellationToken.IsCancellationRequested) yield break;

@@ -3,12 +3,26 @@
 using System.Runtime.CompilerServices;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Logging;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class UserTypeSourceEntry(SourceProvider provider, string parentPath, string userId, string name, SourceItemType type)
+internal class UserTypeSourceEntry(SourceProvider provider, string parentPath, string userId, bool userIsInactive, string name, SourceItemType type)
     : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, type.ToString())), null, null)
 {
+    /// <summary>
+    /// The log tag for this class.
+    /// </summary>
+    private static readonly string LOGTAG = Log.LogTagFromType<UserTypeSourceEntry>();
+
+    /// <summary>
+    /// Reports that the service is switched off for the user. That is an administrative
+    /// choice or a consequence of the account being archived or suspended, not an error, so
+    /// it is logged as information and the service is skipped for the user.
+    /// </summary>
+    private void LogServiceNotAvailable()
+        => Log.WriteInformationMessage(LOGTAG, "ServiceNotAvailableForUser", Strings.ServiceNotAvailableForUser(name, userId));
+
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
         if (cancellationToken.IsCancellationRequested)
@@ -39,6 +53,11 @@ internal class UserTypeSourceEntry(SourceProvider provider, string parentPath, s
         try
         {
             response = await request.ExecuteAsync(cancellationToken);
+        }
+        catch (Exception ex) when (GoogleServiceErrors.IsServiceNotAvailableForUser(ex, type))
+        {
+            LogServiceNotAvailable();
+            yield break;
         }
         catch (Exception ex)
         {
@@ -75,7 +94,17 @@ internal class UserTypeSourceEntry(SourceProvider provider, string parentPath, s
         {
             if (cancellationToken.IsCancellationRequested) yield break;
             request.PageToken = nextPageToken;
-            var calendars = await request.ExecuteAsync(cancellationToken);
+
+            Google.Apis.Calendar.v3.Data.CalendarList calendars;
+            try
+            {
+                calendars = await request.ExecuteAsync(cancellationToken);
+            }
+            catch (Exception ex) when (GoogleServiceErrors.IsServiceNotAvailableForUser(ex, type))
+            {
+                LogServiceNotAvailable();
+                yield break;
+            }
 
             if (calendars.Items != null)
             {
@@ -94,7 +123,7 @@ internal class UserTypeSourceEntry(SourceProvider provider, string parentPath, s
         var peopleService = provider.ApiHelper.GetPeopleService(userId);
 
         if (cancellationToken.IsCancellationRequested) yield break;
-        yield return new ContactsFolderSourceEntry(this.Path, peopleService);
+        yield return new ContactsFolderSourceEntry(this.Path, userIsInactive, peopleService);
 
         if (cancellationToken.IsCancellationRequested) yield break;
         yield return new ContactGroupsFolderSourceEntry(this.Path, peopleService);
@@ -105,10 +134,10 @@ internal class UserTypeSourceEntry(SourceProvider provider, string parentPath, s
         var driveService = provider.ApiHelper.GetDriveService(userId);
 
         if (cancellationToken.IsCancellationRequested) yield break;
-        yield return new DriveFolderSourceEntry(this.Path, userId, "My Drive", "root", driveService);
+        yield return new DriveFolderSourceEntry(this.Path, userId, userIsInactive, "My Drive", "root", driveService);
 
         if (cancellationToken.IsCancellationRequested) yield break;
-        yield return new SharedDrivesSourceEntry(provider, this.Path, userId, driveService);
+        yield return new SharedDrivesSourceEntry(provider, this.Path, userId, userIsInactive, driveService);
     }
 
     private async IAsyncEnumerable<ISourceProviderEntry> EnumerateTasks([EnumeratorCancellation] CancellationToken cancellationToken)
@@ -121,7 +150,17 @@ internal class UserTypeSourceEntry(SourceProvider provider, string parentPath, s
         {
             if (cancellationToken.IsCancellationRequested) yield break;
             request.PageToken = nextPageToken;
-            var taskLists = await request.ExecuteAsync(cancellationToken);
+
+            Google.Apis.Tasks.v1.Data.TaskLists taskLists;
+            try
+            {
+                taskLists = await request.ExecuteAsync(cancellationToken);
+            }
+            catch (Exception ex) when (GoogleServiceErrors.IsServiceNotAvailableForUser(ex, type))
+            {
+                LogServiceNotAvailable();
+                yield break;
+            }
 
             if (taskLists.Items != null)
             {

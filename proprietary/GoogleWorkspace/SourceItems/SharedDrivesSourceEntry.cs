@@ -7,35 +7,21 @@ using System.Runtime.CompilerServices;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class SharedDrivesSourceEntry(SourceProvider provider, string parentPath, string? userId, DriveService driveService)
+internal class SharedDrivesSourceEntry(SourceProvider provider, string parentPath, string? userId, bool userIsInactive, DriveService driveService)
     : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, "Shared Drives")), null, null)
 {
     public override IAsyncEnumerable<ISourceProviderEntry> Enumerate(CancellationToken cancellationToken)
-        => EnumerateSharedDrives(provider, this.Path, userId, driveService, cancellationToken);
+        => EnumerateSharedDrives(provider, this.Path, userId, userIsInactive, driveService, cancellationToken);
 
-    public static async IAsyncEnumerable<ISourceProviderEntry> EnumerateSharedDrives(SourceProvider provider, string path, string? userId, DriveService driveService, [EnumeratorCancellation] CancellationToken cancellationToken)
+    public static async IAsyncEnumerable<ISourceProviderEntry> EnumerateSharedDrives(SourceProvider provider, string path, string? userId, bool userIsInactive, DriveService driveService, [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var request = driveService.Drives.List();
-
-        string? nextPageToken = null;
-        do
+        await foreach (var drive in SourceProvider.ListAllSharedDrivesAsync(driveService, cancellationToken).ConfigureAwait(false))
         {
             if (cancellationToken.IsCancellationRequested) yield break;
-            request.PageToken = nextPageToken;
-            var drives = await request.ExecuteAsync(cancellationToken);
 
-            if (drives.Drives != null)
-            {
-                foreach (var drive in drives.Drives)
-                {
-                    if (cancellationToken.IsCancellationRequested) yield break;
-
-                    if (provider.LicenseApprovedForEntry(path, GoogleRootType.SharedDrives, drive.Id, false))
-                        yield return new SharedDriveSourceEntry(provider, path, userId!, drive, driveService);
-                }
-            }
-            nextPageToken = drives.NextPageToken;
-        } while (!string.IsNullOrEmpty(nextPageToken));
+            if (provider.LicenseApprovedForEntry(path, GoogleRootType.SharedDrives, drive.Id, increment: false, countsAsSeat: true))
+                yield return new SharedDriveSourceEntry(provider, path, userId!, userIsInactive, drive, driveService);
+        }
     }
 
     public override Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)
