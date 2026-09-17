@@ -47,7 +47,10 @@ public class MSSQL : IFilesystemPlugin
             if (!mssqlUtility.IsMSSQLInstalled || !new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator))
                 return [];
 
-            mssqlUtility.QueryDBsInfo(Library.Utility.Utility.ParseEnumOption(_options, "snapshot-provider", WindowsSnapshot.DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER));
+            mssqlUtility.QueryDBsInfo(
+                Library.Utility.Utility.ParseEnumOption(_options, "snapshot-provider", WindowsSnapshot.DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER),
+                Library.Utility.Utility.ParseGuidOption(_options, "vss-provider-id", Guid.Empty)
+            );
 
             // Tier 1: Root Node Selection (%MSSQL%)
             if (pathSegments.Length == 0)

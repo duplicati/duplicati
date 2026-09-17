@@ -201,7 +201,9 @@ namespace Duplicati.Library.Modules.Builtin
                 Logging.Log.WriteWarningMessage(LOGTAG, "WmiNotSupportedForHyperV", null, $"The {WindowsSnapshotProvider.Wmi} cannot be used for HyperV backups, switching to {provider}");
             }
 
-            hypervUtility.QueryHyperVGuestsInfo(provider, true);
+            var providerId = Library.Utility.Utility.ParseGuidOption(commandlineOptions, "vss-provider-id", Guid.Empty);
+
+            hypervUtility.QueryHyperVGuestsInfo(provider, providerId, true);
 
             if (hypervUtility.Guests == null || hypervUtility.Guests.Count == 0)
             {

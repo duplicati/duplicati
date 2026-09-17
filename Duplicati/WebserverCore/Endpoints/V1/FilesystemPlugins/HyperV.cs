@@ -47,9 +47,12 @@ public class Hyperv : IFilesystemPlugin
             if (!hypervUtility.IsHyperVInstalled || !new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator))
                 return [];
 
+            var provider = Library.Utility.Utility.ParseEnumOption(_options, "snapshot-provider", WindowsSnapshot.DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER);
+            var providerId = Library.Utility.Utility.ParseGuidOption(_options, "vss-provider-id", Guid.Empty);
+            hypervUtility.QueryHyperVGuestsInfo(provider, providerId);
+
             if (pathSegments.Length == 0)
             {
-                hypervUtility.QueryHyperVGuestsInfo(Library.Utility.Utility.ParseEnumOption(_options, "snapshot-provider", WindowsSnapshot.DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER));
                 if (!hypervUtility.Guests.Any())
                     return [];
                 return
@@ -74,7 +77,6 @@ public class Hyperv : IFilesystemPlugin
 
             if (pathSegments.Length == 1)
             {
-                hypervUtility.QueryHyperVGuestsInfo(WindowsSnapshot.DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER);
                 return hypervUtility.Guests.Select(x => new Dto.TreeNodeDto
                 {
                     id = string.Join(Path.DirectorySeparatorChar, pathSegments.Append(x.ID.ToString())),
@@ -94,7 +96,6 @@ public class Hyperv : IFilesystemPlugin
 
             if (pathSegments.Length == 2)
             {
-                hypervUtility.QueryHyperVGuestsInfo(WindowsSnapshot.DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER);
                 var selectedVm = hypervUtility.Guests.FirstOrDefault(x => x.ID.ToString() == pathSegments[1]);
                 if (selectedVm is null)
                 {

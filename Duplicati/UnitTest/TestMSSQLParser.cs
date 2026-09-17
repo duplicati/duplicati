@@ -46,7 +46,7 @@ namespace Duplicati.UnitTest
             public bool IsMSSQLInstalled { get; set; } = true;
             public List<MSSQLDB> DBs { get; set; } = new();
 
-            public void QueryDBsInfo(WindowsSnapshotProvider provider)
+            public void QueryDBsInfo(WindowsSnapshotProvider provider, Guid providerId)
             {
                 // No-op; DBs are injected directly by the test
             }

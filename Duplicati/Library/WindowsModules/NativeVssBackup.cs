@@ -52,6 +52,11 @@ public class NativeVssBackup : ISnapshotProvider
     private readonly TimeSpan _maxWaitTime;
 
     /// <summary>
+    /// The VSS provider to use, or <see cref="Guid.Empty"/> for automatic selection
+    /// </summary>
+    private readonly Guid _providerId;
+
+    /// <summary>
     /// The backup components interface
     /// </summary>
     private readonly IVssBackupComponents _components;
@@ -92,9 +97,11 @@ public class NativeVssBackup : ISnapshotProvider
     /// Creates a new instance of the provider
     /// </summary>
     /// <param name="maxWaitTime">The maximum time to wait for asynchronous VSS operations</param>
-    public NativeVssBackup(TimeSpan maxWaitTime)
+    /// <param name="providerId">The VSS provider to use, or <see cref="Guid.Empty"/> for automatic selection</param>
+    public NativeVssBackup(TimeSpan maxWaitTime, Guid providerId)
     {
         _maxWaitTime = maxWaitTime;
+        _providerId = providerId;
         _components = GetVssBackupComponents();
     }
 
@@ -236,16 +243,16 @@ public class NativeVssBackup : ISnapshotProvider
         if (string.IsNullOrWhiteSpace(drive))
             return false;
 
-        VssInteropUtility.ThrowIfFailed(_components.IsVolumeSupported(Guid.Empty, drive, out var supported), nameof(IsVolumeSupported));
+        VssInteropUtility.ThrowIfFailed(_components.IsVolumeSupported(_providerId, drive, out var supported), nameof(IsVolumeSupported));
         return supported;
     }
 
     /// <inheritdoc/>
     public Guid AddToSnapshotSet(string drive)
     {
-        VssInteropUtility.ThrowIfFailed(_components.AddToSnapshotSet(drive, Guid.Empty, out var snapshotId), nameof(AddToSnapshotSet));
+        VssInteropUtility.ThrowIfFailed(_components.AddToSnapshotSet(drive, _providerId, out var snapshotId), nameof(AddToSnapshotSet));
         _addedSnapshots.Add(snapshotId);
-        Log.WriteVerboseMessage(LogTag, "VssAddToSnapshotSet", "Added {0} to snapshot set as {1}", drive, snapshotId);
+        Log.WriteVerboseMessage(LogTag, "VssAddToSnapshotSet", "Added {0} to snapshot set as {1} using provider {2}", drive, snapshotId, _providerId == Guid.Empty ? "(auto)" : _providerId.ToString("B"));
         return snapshotId;
     }
 

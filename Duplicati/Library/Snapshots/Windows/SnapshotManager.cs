@@ -83,9 +83,10 @@ namespace Duplicati.Library.Snapshots.Windows
         /// </summary>
         /// <param name="provider">The provider to use</param>
         /// <param name="vssTimeout">The maximum time to wait for asynchronous VSS operations</param>
-        public SnapshotManager(WindowsSnapshotProvider provider, TimeSpan vssTimeout)
+        /// <param name="providerId">The VSS provider to use, or <see cref="Guid.Empty"/> for automatic selection</param>
+        public SnapshotManager(WindowsSnapshotProvider provider, TimeSpan vssTimeout, Guid providerId)
         {
-            _snapshotProvider = WindowsShimLoader.GetSnapshotProvider(provider, vssTimeout);
+            _snapshotProvider = WindowsShimLoader.GetSnapshotProvider(provider, vssTimeout, providerId);
         }
 
         /// <summary>
@@ -273,7 +274,7 @@ namespace Duplicati.Library.Snapshots.Windows
 
             try
             {
-                if (_snapshotProvider != null)
+                if (_snapshotProvider != null && _volumes != null)
                 {
                     foreach (var g in _volumes.Values)
                     {
@@ -291,6 +292,10 @@ namespace Duplicati.Library.Snapshots.Windows
             catch (Exception ex)
             {
                 Logging.Log.WriteVerboseMessage(LOGTAG, "VSSSnapShotDeleteCleanError", ex, "Failed during VSS snapshot closing");
+            }
+            finally
+            {
+                _volumes = null;
             }
 
             if (_snapshotProvider != null)
