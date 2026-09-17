@@ -2,6 +2,7 @@
 
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Logging;
 using System.Runtime.CompilerServices;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
@@ -9,6 +10,11 @@ namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 internal class MetaRootSourceEntry(SourceProvider provider, string parentPath, string name, SourceItemType type)
     : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, name)), null, null)
 {
+    /// <summary>
+    /// The log tag for this class.
+    /// </summary>
+    private static readonly string LOGTAG = Log.LogTagFromType<MetaRootSourceEntry>();
+
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
         if (cancellationToken.IsCancellationRequested)
@@ -16,63 +22,56 @@ internal class MetaRootSourceEntry(SourceProvider provider, string parentPath, s
 
         if (type == SourceItemType.MetaRootUsers)
         {
-            var service = provider.ApiHelper.GetDirectoryServiceForUsers();
-            var request = service.Users.List();
-            request.Customer = "my_customer";
+            var skippedArchivedUsers = 0;
+            var skippedSuspendedUsers = 0;
 
-            string? nextPageToken = null;
-
-            do
+            await foreach (var user in provider.ListAllUsersAsync(cancellationToken).ConfigureAwait(false))
             {
                 if (cancellationToken.IsCancellationRequested) yield break;
 
-                request.PageToken = nextPageToken;
-                var users = await request.ExecuteAsync(cancellationToken);
-
-                if (users != null && users.UsersValue != null)
+                // Archived and suspended accounts are backed up by default, as their data
+                // remains readable and they do not consume a seat, but can be opted out.
+                var category = SourceProvider.ClassifyUser(user);
+                if (category == SourceProvider.UserCategory.Archived && provider.Options.ExcludeArchivedUsers)
                 {
-                    foreach (var user in users.UsersValue)
-                    {
-                        if (cancellationToken.IsCancellationRequested) yield break;
-
-                        if (provider.LicenseApprovedForEntry(Path, GoogleRootType.Users, user.Id, false))
-                            yield return new UserSourceEntry(provider, this.Path, user.PrimaryEmail);
-                    }
+                    skippedArchivedUsers++;
+                    Log.WriteVerboseMessage(LOGTAG, "SkippingExcludedUser", Strings.SkippingExcludedUser(user.PrimaryEmail, category.ToString().ToLowerInvariant(), OptionsHelper.GOOGLE_EXCLUDE_ARCHIVED_USERS_OPTION));
+                    continue;
+                }
+                if (category == SourceProvider.UserCategory.Suspended && provider.Options.ExcludeSuspendedUsers)
+                {
+                    skippedSuspendedUsers++;
+                    Log.WriteVerboseMessage(LOGTAG, "SkippingExcludedUser", Strings.SkippingExcludedUser(user.PrimaryEmail, category.ToString().ToLowerInvariant(), OptionsHelper.GOOGLE_EXCLUDE_SUSPENDED_USERS_OPTION));
+                    continue;
                 }
 
-                nextPageToken = users?.NextPageToken;
-            } while (!string.IsNullOrEmpty(nextPageToken));
+                // Only active accounts consume a seat, which the directory object already
+                // answers without any further request.
+                var countsAsSeat = category == SourceProvider.UserCategory.Active;
+
+                if (provider.LicenseApprovedForEntry(Path, GoogleRootType.Users, user.Id, increment: false, countsAsSeat: countsAsSeat))
+                    yield return new UserSourceEntry(provider, this.Path, user);
+            }
+
+            if (skippedArchivedUsers > 0)
+                Log.WriteInformationMessage(LOGTAG, "SkippedExcludedUsers", Strings.SkippedExcludedUsers(skippedArchivedUsers, "archived", OptionsHelper.GOOGLE_EXCLUDE_ARCHIVED_USERS_OPTION));
+            if (skippedSuspendedUsers > 0)
+                Log.WriteInformationMessage(LOGTAG, "SkippedExcludedUsers", Strings.SkippedExcludedUsers(skippedSuspendedUsers, "suspended", OptionsHelper.GOOGLE_EXCLUDE_SUSPENDED_USERS_OPTION));
         }
         else if (type == SourceItemType.MetaRootGroups)
         {
-            var service = provider.ApiHelper.GetDirectoryServiceForGroups();
-            var request = service.Groups.List();
-            request.Customer = "my_customer";
-
-            string? nextPageToken = null;
-            do
+            await foreach (var group in provider.ListAllGroupsAsync(cancellationToken).ConfigureAwait(false))
             {
                 if (cancellationToken.IsCancellationRequested) yield break;
-                request.PageToken = nextPageToken;
-                var groups = await request.ExecuteAsync(cancellationToken);
 
-                if (groups.GroupsValue != null)
-                {
-                    foreach (var group in groups.GroupsValue)
-                    {
-                        if (cancellationToken.IsCancellationRequested) yield break;
-
-                        if (provider.LicenseApprovedForEntry(Path, GoogleRootType.Groups, group.Id, false))
-                            yield return new GroupSourceEntry(provider, this.Path, group);
-                    }
-                }
-                nextPageToken = groups.NextPageToken;
-            } while (!string.IsNullOrEmpty(nextPageToken));
+                if (provider.LicenseApprovedForEntry(Path, GoogleRootType.Groups, group.Id, increment: false, countsAsSeat: true))
+                    yield return new GroupSourceEntry(provider, this.Path, group);
+            }
         }
         else if (type == SourceItemType.MetaRootSharedDrives)
         {
             var driveService = provider.ApiHelper.GetDriveService();
-            await foreach (var n in SharedDrivesSourceEntry.EnumerateSharedDrives(provider, this.Path, null, driveService, cancellationToken))
+            await foreach (var n in SharedDrivesSourceEntry.EnumerateSharedDrives(provider, this.Path, null, userIsInactive: false, driveService, cancellationToken))
                 yield return n;
         }
         else if (type == SourceItemType.MetaRootSites)
@@ -108,7 +107,7 @@ internal class MetaRootSourceEntry(SourceProvider provider, string parentPath, s
                     {
                         if (cancellationToken.IsCancellationRequested) yield break;
 
-                        if (provider.LicenseApprovedForEntry(Path, GoogleRootType.Sites, file.Id, false))
+                        if (provider.LicenseApprovedForEntry(Path, GoogleRootType.Sites, file.Id, increment: false, countsAsSeat: true))
                             yield return new SiteSourceEntry(provider, this.Path, file);
                     }
                 }

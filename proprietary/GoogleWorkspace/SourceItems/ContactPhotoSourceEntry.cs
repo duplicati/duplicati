@@ -1,11 +1,12 @@
 // Copyright (c) 2026 Duplicati Inc. All rights reserved.
 
 using Duplicati.Library.Common.IO;
+using Google.Apis.PeopleService.v1;
 using Google.Apis.PeopleService.v1.Data;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class ContactPhotoSourceEntry(string parentPath, Photo photo, int index)
+internal class ContactPhotoSourceEntry(string parentPath, Photo photo, int index, PeopleServiceService peopleService)
     : StreamResourceEntryBase(SystemIO.IO_OS.PathCombine(parentPath, $"photo-{index}.jpg"), DateTime.UnixEpoch, DateTime.UnixEpoch)
 {
     public override long Size => -1;
@@ -14,8 +15,9 @@ internal class ContactPhotoSourceEntry(string parentPath, Photo photo, int index
     {
         if (!string.IsNullOrEmpty(photo.Url))
         {
-            using var client = new HttpClient();
-            var response = await client.GetAsync(photo.Url, cancellationToken);
+            // The photo URLs are not public, so the download goes through the People service's
+            // client, whose credential interceptor attaches the impersonated user's token.
+            var response = await peopleService.HttpClient.GetAsync(photo.Url, cancellationToken);
             if (response.IsSuccessStatusCode)
             {
                 var stream = new MemoryStream();

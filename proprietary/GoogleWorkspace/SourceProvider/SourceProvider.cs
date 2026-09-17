@@ -4,10 +4,11 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Logging;
 using Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 using System.Collections.Concurrent;
+using User = Google.Apis.Admin.Directory.directory_v1.Data.User;
 
 namespace Duplicati.Proprietary.GoogleWorkspace;
 
-public sealed class SourceProvider : ISourceProviderModule, IDisposable
+public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
 {
     /// <summary>
     /// The log tag for this class.
@@ -197,17 +198,73 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
     }
 
     /// <summary>
+    /// Determines whether the given user consumes a Duplicati user seat. The intent is that a
+    /// seat is consumed where Google charges the tenant for the account, mirroring the rule the
+    /// Microsoft 365 provider applies to assigned licenses.
+    /// </summary>
+    /// <param name="user">The user to test, as returned by the Directory API.</param>
+    /// <returns><c>true</c> if the user should count as a seat; otherwise <c>false</c>.</returns>
+    /// <remarks>
+    /// The Directory API does not expose license assignments, so the decision is made from the
+    /// account state alone: suspended accounts and archived accounts do not consume a seat, every
+    /// other account does. Both flags are core properties of the <c>users.list</c> response, so no
+    /// request is made per user and the cost is a single listing of the tenant. When a flag is
+    /// missing from the object, the account is counted rather than given away.
+    /// </remarks>
+    internal static bool UserCountsAsSeat(User user)
+        => ClassifyUser(user) == UserCategory.Active;
+
+    /// <summary>
+    /// The classification of a user account, used for item metadata and for reporting item
+    /// counts. Only <see cref="Active"/> accounts consume a seat; see <see cref="UserCountsAsSeat"/>.
+    /// </summary>
+    internal enum UserCategory
+    {
+        /// <summary>A regular, usable account, which consumes a seat.</summary>
+        Active,
+        /// <summary>An account that has been suspended by an administrator or by Google.</summary>
+        Suspended,
+        /// <summary>An account that has been archived.</summary>
+        Archived
+    }
+
+    /// <summary>
+    /// Classifies a user account from the Directory object alone. An account that is both
+    /// suspended and archived is reported as archived, so that each account lands in exactly
+    /// one bucket.
+    /// </summary>
+    /// <param name="user">The user to classify.</param>
+    /// <returns>The user category.</returns>
+    internal static UserCategory ClassifyUser(User user)
+    {
+        if (user.Archived == true)
+            return UserCategory.Archived;
+        if (user.Suspended == true)
+            return UserCategory.Suspended;
+        return UserCategory.Active;
+    }
+
+    /// <summary>
     /// Determines whether the license is approved for the given entry.
     /// </summary>
     /// <param name="path">The path to verify.</param>
     /// <param name="type">The type of entry.</param>
     /// <param name="id">The ID of the entry.</param>
     /// <param name="increment">Whether to increment the count if the license is approved.</param>
+    /// <param name="countsAsSeat">
+    /// Whether this entry consumes a licensed seat. When <c>false</c>, the entry is always
+    /// approved and never counted against the seat limit (used for suspended and archived users).
+    /// </param>
     /// <returns><c>true</c> if the license is approved; otherwise, <c>false</c>.</returns>
-    internal bool LicenseApprovedForEntry(string path, GoogleRootType type, string id, bool increment)
+    internal bool LicenseApprovedForEntry(string path, GoogleRootType type, string id, bool increment, bool countsAsSeat)
     {
         // We do not limit restores
         if (UsedForRestoreOperation)
+            return true;
+
+        // Entries that do not consume a seat (e.g. suspended or archived users) are always
+        // approved and never counted against the seat limit.
+        if (!countsAsSeat)
             return true;
 
         // Make a unique target path for the type and id, just for counting purposes, not matching actual paths
@@ -216,13 +273,16 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
         if (_enumerationCounter.ContainsKey(targetpath))
             return true;
 
+        // The seat warning is written on whichever call first sees the limit. The listing-time
+        // check does not increment and, once it returns false, the entry is never enumerated,
+        // so waiting for the incrementing call would mean never warning at all.
         if (type == GoogleRootType.Users)
         {
             var approved = LicenseChecker.LicenseHelper.AvailableGoogleWorkspaceUserSeats;
             var current = _userCount;
             if (current >= approved)
             {
-                if (increment && Interlocked.Exchange(ref _userLicenseWarningIssued, 1) == 0)
+                if (Interlocked.Exchange(ref _userLicenseWarningIssued, 1) == 0)
                     Log.WriteWarningMessage(LOGTAG, "LicenseWarning", null, Strings.LicenseWarning(type, approved));
                 return false;
             }
@@ -233,7 +293,7 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
             var current = _groupCount;
             if (current >= approved)
             {
-                if (increment && Interlocked.Exchange(ref _groupLicenseWarningIssued, 1) == 0)
+                if (Interlocked.Exchange(ref _groupLicenseWarningIssued, 1) == 0)
                     Log.WriteWarningMessage(LOGTAG, "LicenseWarning", null, Strings.LicenseWarning(type, approved));
                 return false;
             }
@@ -244,7 +304,7 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
             var current = _sharedDriveCount;
             if (current >= approved)
             {
-                if (increment && Interlocked.Exchange(ref _sharedDriveLicenseWarningIssued, 1) == 0)
+                if (Interlocked.Exchange(ref _sharedDriveLicenseWarningIssued, 1) == 0)
                     Log.WriteWarningMessage(LOGTAG, "LicenseWarning", null, Strings.LicenseWarning(type, approved));
                 return false;
             }
@@ -255,7 +315,7 @@ public sealed class SourceProvider : ISourceProviderModule, IDisposable
             var current = _siteCount;
             if (current >= approved)
             {
-                if (increment && Interlocked.Exchange(ref _siteLicenseWarningIssued, 1) == 0)
+                if (Interlocked.Exchange(ref _siteLicenseWarningIssued, 1) == 0)
                     Log.WriteWarningMessage(LOGTAG, "LicenseWarning", null, Strings.LicenseWarning(type, approved));
                 return false;
             }

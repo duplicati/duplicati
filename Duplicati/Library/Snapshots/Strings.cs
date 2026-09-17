@@ -31,6 +31,9 @@ Command: {1} {2}", message, executable, arguments); }
         public static string ScriptExitCodeError(int actualcode, int expectedcode, string message) { return LC.L(@"The script returned exit code {0}, but {1} was expected: {2}", actualcode, expectedcode, message); }
         public static string ScriptOutputError(string parameter, string message) { return LC.L(@"Script returned successfully, but the output was missing the {0} parameter: {1}", parameter, message); }
     }
+    internal static class SnapshotManager {
+        public static string SnapshotDeviceEmptyError(string volume, string providername) { return LC.L(@"The snapshot provider ""{1}"" did not return a snapshot device path for volume {0}. The snapshot was created, but it cannot be accessed as a filesystem path. This can happen if a third-party snapshot provider (such as the QEMU Guest Agent VSS Provider) handles the volume but does not expose a browsable shadow copy. Try selecting a different snapshot provider (for example the ""Native"" or ""Wmi"" provider), or uninstall/disable the conflicting snapshot provider.", volume, providername); }
+    }
     internal static class USNHelper {
         public static string PathResolveError { get { return LC.L(@"Unable to determine full file path for USN entry"); } }
         public static string JournalEntriesDeleted { get { return LC.L(@"USN journal entries were purged since last scan"); } }

@@ -20,7 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using Duplicati.WebserverCore.Abstractions;
-using Duplicati.WebserverCore.Dto;
+using Duplicati.WebserverCore.Middlewares;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Duplicati.WebserverCore.Endpoints.V1;
@@ -28,6 +28,10 @@ namespace Duplicati.WebserverCore.Endpoints.V1;
 /// <summary>
 /// Endpoint for querying folder backup status.
 /// Used by the Windows Shell Extension to show overlay icons on backed up folders.
+/// The shell extension runs inside Explorer and cannot log in, so instead of the
+/// regular authorization requirement these endpoints are guarded by
+/// <see cref="FolderStatusAccessFilter"/>, which accepts either a logged in
+/// caller or an unauthenticated request from the local machine.
 /// </summary>
 public class FolderStatus : IEndpointV1
 {
@@ -39,12 +43,14 @@ public class FolderStatus : IEndpointV1
         group.MapGet("/folderstatus", (
             [FromServices] IFolderStatusService folderStatusService) =>
                 folderStatusService.GetAllFolderStatuses())
-            .RequireAuthorization();
+            .AllowAnonymous()
+            .AddEndpointFilter<FolderStatusAccessFilter>();
 
         group.MapGet("/folderstatus/{*path}", (
             [FromRoute] string path,
             [FromServices] IFolderStatusService folderStatusService) =>
                 folderStatusService.GetFolderStatus(path))
-            .RequireAuthorization();
+            .AllowAnonymous()
+            .AddEndpointFilter<FolderStatusAccessFilter>();
     }
 }
