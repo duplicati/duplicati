@@ -672,8 +672,8 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
         if (!_folderHashes.TryGetValue(parentId.Value, out var hash) || string.IsNullOrWhiteSpace(hash))
             throw new DrimePaginationException("The resolved folder did not supply a hash for folder-scoped listing.");
 
-        // Count all children, including folders; filtering before this check
-        // would compare unlike counts and could hide missing entries.
+        // Count all visible children, including folders. Soft-deleted children
+        // are excluded below to match a normal (non-trash) folder count.
         return await ListFolderWindowsAsync(parentId.Value, hash, cancelToken).ConfigureAwait(false);
     }
 
@@ -743,6 +743,13 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
                 if ((lower.HasValue && date < lower.Value) || (lastDate.HasValue && date < lastDate.Value))
                     throw new DrimePaginationException("Drime ignored the date boundary or returned timestamps out of order.");
                 lastDate = date;
+
+                // Normal folder counts exclude trashed children. The request
+                // also asks Drime to exclude them, but keep this guard in case
+                // the API still returns a soft-deleted entry.
+                if (!string.IsNullOrWhiteSpace(entry.Deleted_At))
+                    continue;
+
                 if (seen.TryGetValue(entry.Id, out var prior))
                 {
                     if (prior.Name != entry.Name || prior.File_Size != entry.File_Size || prior.Type != entry.Type
@@ -757,10 +764,10 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
                 }
             }
             if (seen.Count > expected)
-                throw new DrimePaginationException("The listing contains more unique IDs than the separate folder count.");
+                throw new DrimePaginationException("The listing contains more unique active IDs than the separate folder count.");
 
             Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "DrimeListingProgress",
-                "Drime folder {0}: {1}/{2} unique IDs, window {3}, page {4}", folderId, seen.Count, expected, window, page);
+                "Drime folder {0}: {1}/{2} unique active IDs, window {3}, page {4}", folderId, seen.Count, expected, window, page);
 
             if (page >= WINDOW_RESTART_PAGE && (!lower.HasValue || lastDate > lower))
             {
@@ -795,6 +802,7 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
             ["workspaceId"] = _workspaceId.ToString(CultureInfo.InvariantCulture),
             ["page"] = page.ToString(CultureInfo.InvariantCulture),
             ["perPage"] = Math.Min(_pageSize, WINDOW_PAGE_SIZE).ToString(CultureInfo.InvariantCulture),
+            ["deletedOnly"] = "false",
             ["orderBy"] = "created_at",
             ["orderDir"] = "asc"
         };

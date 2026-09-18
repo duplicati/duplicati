@@ -45,10 +45,16 @@ public class DrimePaginationTests
 
     private sealed class StubHandler : HttpMessageHandler
     {
+        private readonly bool _includeSoftDeleted;
+
         public List<int> UnfilteredPages { get; } = new();
         public List<int> FilteredPages { get; } = new();
         public List<string> DecodedFilters { get; } = new();
+        public List<string> WindowDeletedOnlyValues { get; } = new();
         public int CountRequests { get; private set; }
+
+        public StubHandler(bool includeSoftDeleted = false)
+            => _includeSoftDeleted = includeSoftDeleted;
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
@@ -74,12 +80,18 @@ public class DrimePaginationTests
             var filtered = query.ContainsKey("filters");
             if (filtered)
                 DecodedFilters.Add(DecodeFilters(query["filters"]));
+            WindowDeletedOnlyValues.Add(query.GetValueOrDefault("deletedOnly", string.Empty));
             (filtered ? FilteredPages : UnfilteredPages).Add(page);
             var id = filtered ? 19 + page : page;
             var timestamp = $"2026-09-{id:00}T00:00:00.000000Z";
+            var softDeleted = _includeSoftDeleted && !filtered && page == 1
+                ? $",{{\"id\":9001,\"name\":\"trashed-file\",\"type\":\"file\",\"hash\":\"hash-9001\"," +
+                    $"\"file_size\":1,\"parent_id\":{FolderId},\"created_at\":\"{timestamp}\",\"updated_at\":\"{timestamp}\"," +
+                    "\"deleted_at\":\"2026-09-30T00:00:00.000000Z\"}"
+                : string.Empty;
             return Task.FromResult(Json(
                 $"{{\"data\":[{{\"id\":{id},\"name\":\"file-{id}\",\"type\":\"file\",\"hash\":\"hash-{id}\"," +
-                $"\"file_size\":{id},\"parent_id\":{FolderId},\"created_at\":\"{timestamp}\",\"updated_at\":\"{timestamp}\"}}]," +
+                $"\"file_size\":{id},\"parent_id\":{FolderId},\"created_at\":\"{timestamp}\",\"updated_at\":\"{timestamp}\"}}{softDeleted}]," +
                 $"\"current_page\":{page},\"last_page\":21,\"per_page\":1,\"total\":21}}"));
         }
 
@@ -150,5 +162,25 @@ public class DrimePaginationTests
             Assert.AreEqual(">=", filter.GetProperty("operator").GetString());
             Assert.AreEqual("2026-09-20T00:00:00.000000Z", filter.GetProperty("value").GetString());
         }
+    }
+
+    [Test]
+    [Category("Backend")]
+    public async Task FolderListingExcludesSoftDeletedEntriesFromCompletenessCount()
+    {
+        using var handler = new StubHandler(includeSoftDeleted: true);
+        using var backend = new DrimeBackend(
+            "drimecloud://backup",
+            new Dictionary<string, string?> { ["api-token"] = "test-token", ["page-size"] = "1" },
+            handler);
+
+        var entries = new List<string>();
+        await foreach (var entry in backend.ListAsync(CancellationToken.None))
+            entries.Add(entry.Name);
+
+        Assert.AreEqual(21, entries.Count);
+        CollectionAssert.DoesNotContain(entries, "trashed-file");
+        Assert.IsTrue(handler.WindowDeletedOnlyValues.All(value => value == "false"));
+        Assert.AreEqual(2, handler.CountRequests);
     }
 }
