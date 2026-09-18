@@ -672,8 +672,9 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
         if (!_folderHashes.TryGetValue(parentId.Value, out var hash) || string.IsNullOrWhiteSpace(hash))
             throw new DrimePaginationException("The resolved folder did not supply a hash for folder-scoped listing.");
 
-        // Count all visible children, including folders. Soft-deleted children
-        // are excluded below to match a normal (non-trash) folder count.
+        // Do not restrict the separate count by entry type. The windowed
+        // listing tracks all observed IDs separately from active IDs so trash
+        // cannot occupy an active completeness slot.
         return await ListFolderWindowsAsync(parentId.Value, hash, cancelToken).ConfigureAwait(false);
     }
 
@@ -708,32 +709,46 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
     private async Task<List<Model.FileEntry>> ListFolderWindowsAsync(long folderId, string folderHash, CancellationToken cancelToken)
     {
         var expected = await GetFolderCountAsync(folderId, cancelToken).ConfigureAwait(false);
-        var seen = new Dictionary<long, Model.FileEntry>();
+        var observed = new Dictionary<long, Model.FileEntry>();
+        var active = new HashSet<long>();
         var ordered = new List<Model.FileEntry>();
         var fingerprints = new HashSet<string>(StringComparer.Ordinal);
+        var windowIds = new HashSet<long>();
         DateTimeOffset? lower = null;
         DateTimeOffset? lastDate = null;
         var page = 1;
         var window = 1;
         var requests = 0L;
-        // Allows small configured pages and large timestamp ties, while
-        // preventing unlimited work on a non-progressing remote listing.
-        var requestLimit = Math.Max(1000L, expected > long.MaxValue / 4 ? long.MaxValue : expected * 4);
         Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "DrimeListingStart",
             "Drime folder {0}: expecting {1} entries", folderId, expected);
 
-        while (seen.Count < expected)
+        while (true)
         {
             cancelToken.ThrowIfCancellationRequested();
-            if (++requests > requestLimit)
-                throw new DrimePaginationException($"Listing request limit reached with {seen.Count}/{expected} IDs.");
-            var result = await GetWindowPageAsync(folderHash, page, lower, cancelToken).ConfigureAwait(false);
-            if (result.Data == null || result.Data.Count == 0)
-                throw new DrimePaginationException($"Empty page before completeness: {seen.Count}/{expected} IDs.");
 
-            var fingerprint = string.Join(",", result.Data.Select(e => e.Id).OrderBy(id => id));
-            if (!fingerprints.Add(fingerprint))
-                throw new DrimePaginationException($"Repeated page in window {window}; {seen.Count}/{expected} IDs.");
+            // Permit progress through trash rows even when the separate count
+            // only covers active entries. The limit still remains bounded when
+            // a remote listing cycles without revealing new IDs.
+            var population = Math.Max(expected, observed.Count);
+            var requestLimit = Math.Max(1000L, population > long.MaxValue / 4 ? long.MaxValue : population * 4);
+            if (++requests > requestLimit)
+                throw new DrimePaginationException(
+                    $"Listing request limit reached with {active.Count} active and {observed.Count} observed IDs; count={expected}.");
+
+            var result = await GetWindowPageAsync(folderHash, page, lower, cancelToken).ConfigureAwait(false);
+            if (result.Data == null)
+                throw new DrimePaginationException("A listing page did not contain a data array.");
+            if (result.Last_Page.HasValue && result.Last_Page.Value < result.Current_Page)
+                throw new DrimePaginationException(
+                    $"Page {page} returned invalid last_page={result.Last_Page.Value}.");
+
+            if (result.Data.Count > 0)
+            {
+                var fingerprint = string.Join(",", result.Data.Select(e => e.Id).OrderBy(id => id));
+                if (!fingerprints.Add(fingerprint))
+                    throw new DrimePaginationException(
+                        $"Repeated page in window {window}; {active.Count} active and {observed.Count} observed IDs.");
+            }
 
             foreach (var entry in result.Data)
             {
@@ -743,14 +758,9 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
                 if ((lower.HasValue && date < lower.Value) || (lastDate.HasValue && date < lastDate.Value))
                     throw new DrimePaginationException("Drime ignored the date boundary or returned timestamps out of order.");
                 lastDate = date;
+                windowIds.Add(entry.Id);
 
-                // Normal folder counts exclude trashed children. The request
-                // also asks Drime to exclude them, but keep this guard in case
-                // the API still returns a soft-deleted entry.
-                if (!string.IsNullOrWhiteSpace(entry.Deleted_At))
-                    continue;
-
-                if (seen.TryGetValue(entry.Id, out var prior))
+                if (observed.TryGetValue(entry.Id, out var prior))
                 {
                     if (prior.Name != entry.Name || prior.File_Size != entry.File_Size || prior.Type != entry.Type
                         || prior.Hash != entry.Hash || prior.Deleted_At != entry.Deleted_At
@@ -758,16 +768,42 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
                         throw new DrimePaginationException("Metadata changed for a repeated entry ID while listing.");
                 }
                 else
-                {
-                    seen.Add(entry.Id, entry);
+                    observed.Add(entry.Id, entry);
+
+                if (string.IsNullOrWhiteSpace(entry.Deleted_At) && active.Add(entry.Id))
                     ordered.Add(entry);
-                }
             }
-            if (seen.Count > expected)
-                throw new DrimePaginationException("The listing contains more unique active IDs than the separate folder count.");
+
+            if (active.Count > expected)
+                throw new DrimePaginationException(
+                    "The listing contains more unique active IDs than the separate folder count.");
 
             Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "DrimeListingProgress",
-                "Drime folder {0}: {1}/{2} unique active IDs, window {3}, page {4}", folderId, seen.Count, expected, window, page);
+                "Drime folder {0}: {1} active and {2} observed IDs; count={3}, window {4}, page {5}",
+                folderId, active.Count, observed.Count, expected, window, page);
+
+            var terminal = result.Last_Page.HasValue && result.Current_Page == result.Last_Page.Value;
+            if (terminal)
+            {
+                if (!result.Total.HasValue || result.Total.Value < 0 || windowIds.Count != result.Total.Value)
+                    throw new DrimePaginationException(
+                        $"Terminal page {page} reported total={result.Total?.ToString() ?? "null"}, " +
+                        $"but window {window} contained {windowIds.Count} unique IDs.");
+
+                if (active.Count != expected)
+                    throw new DrimePaginationException(
+                        $"The terminal listing contained {active.Count} active and {observed.Count} observed IDs, " +
+                        $"but the separate folder count was {expected}. Trash semantics cannot be reconciled safely.");
+
+                break;
+            }
+
+            if (active.Count == expected)
+                break;
+
+            if (result.Data.Count == 0)
+                throw new DrimePaginationException(
+                    $"Empty page before completeness: {active.Count} active and {observed.Count} observed IDs; count={expected}.");
 
             if (page >= WINDOW_RESTART_PAGE && (!lower.HasValue || lastDate > lower))
             {
@@ -777,6 +813,7 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
                 page = 1;
                 window++;
                 fingerprints.Clear();
+                windowIds.Clear();
             }
             else
                 page = checked(page + 1);
@@ -786,7 +823,8 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
         if (after != expected)
             throw new DrimePaginationException($"Folder count changed during listing: {expected} -> {after}.");
         Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "DrimeListingComplete",
-            "Drime folder {0}: validated {1} unique IDs against both folder counts", folderId, seen.Count);
+            "Drime folder {0}: validated {1} active IDs ({2} observed) against stable count {3}",
+            folderId, active.Count, observed.Count, expected);
         // No partial listing is exposed to Duplicati. Different IDs with the
         // same name deliberately survive so real duplicates remain visible.
         return ordered;
@@ -802,7 +840,6 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
             ["workspaceId"] = _workspaceId.ToString(CultureInfo.InvariantCulture),
             ["page"] = page.ToString(CultureInfo.InvariantCulture),
             ["perPage"] = Math.Min(_pageSize, WINDOW_PAGE_SIZE).ToString(CultureInfo.InvariantCulture),
-            ["deletedOnly"] = "false",
             ["orderBy"] = "created_at",
             ["orderDir"] = "asc"
         };
