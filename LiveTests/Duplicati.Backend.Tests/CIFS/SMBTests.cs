@@ -82,10 +82,16 @@ smbd --foreground --no-process-group --debug-stdout";
             .WithPortBinding(139, 139)
             .WithPortBinding(445, 445)
             .WithOutputConsumer(outputConsumer)
-            .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(139))
+            // Wait until something accepts connections on the port the test uses.
+            // UntilPortIsAvailable(139) greps /proc/net/tcp for ':0*8B', which also
+            // matches the ephemeral ports 0x8B00-0x8BFF that apt-get may use while it
+            // installs Samba, so it could report the port ready before smbd was even
+            // installed. Connecting to the port cannot be fooled that way.
+            .WithWaitStrategy(Wait.ForUnixContainer()
+                .UntilCommandIsCompleted("/bin/bash", "-c", "</dev/tcp/127.0.0.1/445"))
             .Build();
 
-        Console.WriteLine("Starting container with wait strategy for port 139");
+        Console.WriteLine("Starting container with wait strategy for port 445");
         await container.StartAsync();
         Console.WriteLine("Samba has started and its ready to accept connections");
 
