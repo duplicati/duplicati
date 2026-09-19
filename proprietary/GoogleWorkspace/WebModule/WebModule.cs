@@ -96,7 +96,12 @@ public class WebModule : IWebModule
         foreach (var key in uri.QueryParameters.AllKeys)
             forwardoptions[key!] = uri.QueryParameters[key];
 
-        using var client = new SourceProvider(url, "", forwardoptions, false);
+        // Listing where to restore to runs with the restore scopes, which are the ones restore credentials are
+        // delegated. Domain-wide delegation grants exactly the scopes listed, so asking a restore-only service
+        // account for the read-only backup scopes fails with unauthorized_client, even though the write scopes it
+        // holds cover the same access. It also lifts the seat limit, which does not apply to a restore.
+        var usedForRestoreOperation = op == Operation.ListDestinationRestoreTargets;
+        using var client = new SourceProvider(url, "", forwardoptions, usedForRestoreOperation);
         await client.InitializeAsync(cancellationToken);
 
         if (op == Operation.CheckPermissions)
