@@ -402,6 +402,76 @@ namespace Duplicati.UnitTest
             Assert.AreEqual(epochSeconds + 1, Utility.NormalizeDateTimeToEpochSeconds(baseDateTime.AddSeconds(1.9)));
         }
 
+        [Flags]
+        private enum TestFlags
+        {
+            None = 0,
+            Alpha = 1,
+            Beta = 2,
+            Gamma = 4
+        }
+
+        private enum TestLongFlags : long
+        {
+            Low = 1,
+            High = 1L << 40
+        }
+
+        [Test]
+        [Category("Utility")]
+        public void TryParseEnumMatchesNamesOnly()
+        {
+            Assert.IsTrue(Utility.TryParseEnum<TestFlags>(" beta ", out var parsed));
+            Assert.AreEqual(TestFlags.Beta, parsed);
+
+            Assert.IsFalse(Utility.TryParseEnum<TestFlags>("2", out _), "Numeric values are not names");
+            Assert.IsFalse(Utility.TryParseEnum<TestFlags>("Alpha,Beta", out _));
+            Assert.IsFalse(Utility.TryParseEnum<TestFlags>("Delta", out _));
+            Assert.IsFalse(Utility.TryParseEnum<TestFlags>(null, out _));
+            Assert.IsFalse(Utility.TryParseEnum<TestFlags>("  ", out _));
+
+            Assert.AreEqual(TestFlags.Gamma, Utility.ParseEnum("GAMMA", TestFlags.Alpha));
+            Assert.AreEqual(TestFlags.Alpha, Utility.ParseEnum("Delta", TestFlags.Alpha));
+            Assert.AreEqual(TestFlags.Alpha, Utility.ParseEnum<TestFlags>(null, TestFlags.Alpha));
+        }
+
+        [Test]
+        [Category("Utility")]
+        public void ParseEnums()
+        {
+            CollectionAssert.AreEqual(
+                new[] { TestFlags.Gamma, TestFlags.Alpha },
+                Utility.ParseEnums<TestFlags>(" gamma , ALPHA , ,Gamma,Delta,4,", []),
+                "Values should be distinct, in listed order, with unknown and numeric names ignored");
+
+            var @default = new[] { TestFlags.Beta };
+            CollectionAssert.AreEqual(@default, Utility.ParseEnums(null, @default));
+            CollectionAssert.AreEqual(@default, Utility.ParseEnums("  ", @default));
+            CollectionAssert.AreEqual(@default, Utility.ParseEnums("Delta,Epsilon", @default));
+            CollectionAssert.AreEqual(@default, Utility.ParseEnums("Alpha;Gamma", @default), "Only commas separate values");
+
+            var options = new Dictionary<string, string> { ["test"] = "alpha,beta" };
+            CollectionAssert.AreEqual(new[] { TestFlags.Alpha, TestFlags.Beta }, Utility.ParseEnumsOption(options, "test", @default));
+            CollectionAssert.AreEqual(@default, Utility.ParseEnumsOption(options, "missing", @default));
+        }
+
+        [Test]
+        [Category("Utility")]
+        public void ParseFlags()
+        {
+            Assert.AreEqual(TestFlags.Alpha | TestFlags.Gamma, Utility.ParseFlags(" alpha , GAMMA ", TestFlags.Beta));
+            Assert.AreEqual(TestFlags.Beta, Utility.ParseFlags<TestFlags>(null, TestFlags.Beta));
+            Assert.AreEqual(TestFlags.Beta, Utility.ParseFlags("  ", TestFlags.Beta));
+            Assert.AreEqual(TestFlags.None, Utility.ParseFlags("Delta", TestFlags.Beta), "A value without matches gives no flags, not the default");
+            Assert.AreEqual(TestFlags.Alpha, Utility.ParseFlags("Alpha,Delta", TestFlags.Beta));
+
+            Assert.AreEqual(TestLongFlags.Low | TestLongFlags.High, Utility.ParseFlags("low,high", TestLongFlags.Low), "Enums that are not backed by an int should work");
+
+            var options = new Dictionary<string, string> { ["test"] = "beta,gamma" };
+            Assert.AreEqual(TestFlags.Beta | TestFlags.Gamma, Utility.ParseFlagsOption(options, "test", TestFlags.Alpha));
+            Assert.AreEqual(TestFlags.Alpha, Utility.ParseFlagsOption(options, "missing", TestFlags.Alpha));
+        }
+
         [Test]
         [Category("Utility")]
         public void ParseBool()
