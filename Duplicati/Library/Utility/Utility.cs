@@ -785,6 +785,44 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
+        /// Parses a list of enums found in the options dictionary
+        /// </summary>
+        /// <returns>The distinct parsed enum values, or the default values.</returns>
+        /// <param name="options">The set of options to look for the setting in</param>
+        /// <param name="value">The value to look for in the settings</param>
+        /// <param name="default">The default values to return if there are no matches.</param>
+        /// <typeparam name="T">The enum type parameter.</typeparam>
+        public static T[] ParseEnumsOption<T>(IReadOnlyDictionary<string, string?> options, string value, IEnumerable<T> @default) where T : struct, Enum
+        {
+            return options.TryGetValue(value, out var opt) ? ParseEnums(opt, @default) : @default.ToArray();
+        }
+
+        /// <summary>
+        /// Attempts to parse an enum by its name with case-insensitive lookup.
+        /// Only the names of the enum are matched, numeric values are not accepted.
+        /// </summary>
+        /// <returns><c>true</c> if the value is the name of an enum member, <c>false</c> otherwise.</returns>
+        /// <param name="value">The string to parse.</param>
+        /// <param name="result">The parsed enum value.</param>
+        /// <typeparam name="T">The enum type parameter.</typeparam>
+        public static bool TryParseEnum<T>(string? value, out T result) where T : struct, Enum
+        {
+            result = default;
+            if (string.IsNullOrWhiteSpace(value))
+                return false;
+
+            value = value.Trim();
+            foreach (var s in Enum.GetNames(typeof(T)))
+                if (s.Equals(value, StringComparison.OrdinalIgnoreCase))
+                {
+                    result = (T)Enum.Parse(typeof(T), s);
+                    return true;
+                }
+
+            return false;
+        }
+
+        /// <summary>
         /// Attempts to parse an enum with case-insensitive lookup, returning the default value if there was no match
         /// </summary>
         /// <returns>The parsed or default enum value.</returns>
@@ -792,14 +830,24 @@ namespace Duplicati.Library.Utility
         /// <param name="default">The default value to return if there are no matches.</param>
         /// <typeparam name="T">The enum type parameter.</typeparam>
         public static T ParseEnum<T>(string? value, T @default) where T : struct, Enum
-        {
-            if (string.IsNullOrWhiteSpace(value))
-                return @default;
-            foreach (var s in Enum.GetNames(typeof(T)))
-                if (s.Equals(value, StringComparison.OrdinalIgnoreCase))
-                    return (T)Enum.Parse(typeof(T), s);
+            => TryParseEnum<T>(value, out var result) ? result : @default;
 
-            return @default;
+        /// <summary>
+        /// Parses a comma-separated list of enum names with case-insensitive lookup.
+        /// Names that do not match an enum member are ignored.
+        /// </summary>
+        /// <returns>The distinct parsed enum values, in the order they are listed, or the default values.</returns>
+        /// <param name="value">The string to parse.</param>
+        /// <param name="default">The default values to return if there are no matches.</param>
+        /// <typeparam name="T">The enum type parameter.</typeparam>
+        public static T[] ParseEnums<T>(string? value, IEnumerable<T> @default) where T : struct, Enum
+        {
+            var result = new List<T>();
+            foreach (var s in (value ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                if (TryParseEnum<T>(s, out var item) && !result.Contains(item))
+                    result.Add(item);
+
+            return result.Count == 0 ? @default.ToArray() : result.ToArray();
         }
 
         /// <summary>
@@ -807,21 +855,18 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <typeparam name="T">The enum type to parse.</typeparam>
         /// <param name="value">The value to parse.</param>
-        /// <param name="default">The default value to return if there are no matches.</param>
-        /// <returns></returns>
+        /// <param name="default">The default value to return if the value is empty.</param>
+        /// <returns>The combined flags, or the default value</returns>
         public static T ParseFlags<T>(string? value, T @default) where T : struct, Enum
         {
             if (string.IsNullOrWhiteSpace(value))
                 return @default;
 
-            var flags = 0;
-            foreach (var s in value.Split([','], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-            {
-                if (Enum.TryParse(s, true, out T flag))
-                    flags = flags | (int)(object)flag;
-            }
+            var flags = 0L;
+            foreach (var flag in ParseEnums<T>(value, []))
+                flags |= Convert.ToInt64(flag);
 
-            return (T)(object)flags;
+            return (T)Enum.ToObject(typeof(T), flags);
         }
 
         /// <summary>
