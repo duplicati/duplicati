@@ -55,6 +55,16 @@ namespace Duplicati.Library.SourceProvider.Builtin.HyperV
         public const string HYPERV_PATH_PREFIX = @"%HYPERV%";
 
         /// <summary>
+        /// The separator in a Hyper-V source path, such as <c>%HYPERV%\&lt;guid&gt;</c>.
+        /// The source syntax is Windows-style and is parsed the same way on every
+        /// platform, so a non-Windows machine recognizes the source and can report
+        /// that it is not supported instead of treating it as a relative file path.
+        /// The entries the provider produces use the platform separator, as they
+        /// are only produced on Windows.
+        /// </summary>
+        public const char SOURCE_PATH_SEPARATOR = '\\';
+
+        /// <summary>
         /// The metadata key prefix used by this provider
         /// </summary>
         public const string METADATA_PREFIX = "hyperv:";
@@ -63,6 +73,11 @@ namespace Duplicati.Library.SourceProvider.Builtin.HyperV
         /// The module key
         /// </summary>
         public const string MODULE_KEY = "hyperv";
+
+        /// <summary>
+        /// The option that suppresses the warning about running on a client version of Windows
+        /// </summary>
+        public const string IGNORE_CLIENT_WARNING_OPTION = "hyperv-ignore-client-warning";
 
         /// <summary>
         /// The options used to create this provider
@@ -116,7 +131,10 @@ namespace Duplicati.Library.SourceProvider.Builtin.HyperV
         public string Description => "Exposes Hyper-V virtual machines as a virtual folder structure for backup";
 
         /// <inheritdoc />
-        public IList<ICommandLineArgument> SupportedCommands => [];
+        public IList<ICommandLineArgument> SupportedCommands =>
+        [
+            new CommandLineArgument(IGNORE_CLIENT_WARNING_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.HyperVSourceProvider.IgnoreConsistencyWarningShort, Strings.HyperVSourceProvider.IgnoreConsistencyWarningLong),
+        ];
 
         /// <inheritdoc />
         public string MountedPath => Util.AppendDirSeparator(HYPERV_PATH_PREFIX);
@@ -132,7 +150,7 @@ namespace Duplicati.Library.SourceProvider.Builtin.HyperV
         public static bool IsHyperVSource(string source)
             => !string.IsNullOrWhiteSpace(source)
                 && (source.Equals(HYPERV_PATH_PREFIX, StringComparison.OrdinalIgnoreCase)
-                    || source.StartsWith(HYPERV_PATH_PREFIX + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase));
+                    || source.StartsWith(HYPERV_PATH_PREFIX + SOURCE_PATH_SEPARATOR, StringComparison.OrdinalIgnoreCase));
 
         /// <inheritdoc />
         public bool MatchesSource(string source)
@@ -195,7 +213,9 @@ namespace Duplicati.Library.SourceProvider.Builtin.HyperV
                 options["snapshot-policy"] = "required";
             }
 
-            if (!hypervUtility.IsVSSWriterSupported)
+            var ignoreClientWarning = options.TryGetValue(IGNORE_CLIENT_WARNING_OPTION, out var ignoreClientWarningOption)
+                && Library.Utility.Utility.ParseBool(ignoreClientWarningOption, false);
+            if (!hypervUtility.IsVSSWriterSupported && !ignoreClientWarning)
                 Logging.Log.WriteWarningMessage(LOGTAG, "HyperVOnServerOnly", null, "This is client version of Windows. Hyper-V VSS writer is present only on Server version. Backup will continue, but will be crash consistent only in opposite to application consistent in Server version");
 
             var providerName = options.TryGetValue("snapshot-provider", out var sp) ? sp : null;
@@ -270,11 +290,11 @@ namespace Duplicati.Library.SourceProvider.Builtin.HyperV
             // Pick only the requested guests, with optional subpath restrictions
             var requested = requestedSources
                 .Where(IsHyperVSource)
-                .Select(x => x.Substring(HYPERV_PATH_PREFIX.Length).Trim(Path.DirectorySeparatorChar))
+                .Select(x => x.Substring(HYPERV_PATH_PREFIX.Length).Trim(SOURCE_PATH_SEPARATOR))
                 .Where(x => !string.IsNullOrWhiteSpace(x))
                 .Select(x =>
                 {
-                    var parts = x.Split(Path.DirectorySeparatorChar, 2);
+                    var parts = x.Split(SOURCE_PATH_SEPARATOR, 2);
                     return (Id: parts[0], SubPath: parts.Length > 1 ? parts[1] : null);
                 })
                 .ToList();
@@ -392,6 +412,11 @@ namespace Duplicati.Library.SourceProvider.Builtin.HyperV
         }
 
         /// <inheritdoc />
+        /// <remarks>
+        /// Resolves the virtual levels down to a virtual machine. The entries below
+        /// that carry the full local path of the file, so a lookup of one of them
+        /// is not resolved by walking one segment at a time and answers null.
+        /// </remarks>
         public async Task<ISourceProviderEntry?> GetEntryAsync(string path, bool isFolder, CancellationToken cancellationToken)
         {
             if (!OperatingSystem.IsWindows() || !IsHyperVSource(path))
@@ -440,7 +465,9 @@ namespace Duplicati.Library.SourceProvider.Builtin.HyperV
         /// <inheritdoc />
         public void Dispose()
         {
-            // The snapshot service is shared with other providers and disposed by the caller
+            // The snapshot service is shared with other providers and is released by
+            // the file source, or by the wrapper the source provider factory puts around
+            // the first snapshot-aware provider when there is no file source
         }
     }
 }

@@ -1184,6 +1184,12 @@ namespace Duplicati.Library.Main
                 }
             }
 
+            // The prefix-based source providers (e.g. %HYPERV%) contribute their options
+            // when one of the sources is theirs
+            foreach (var module in Library.SourceProviders.SourceProviderModules.BuiltInPrefixSourceProviderModules)
+                if (module.SupportedCommands != null && (paths ?? []).Any(module.MatchesSource))
+                    sourceProviderOptions.AddRange(module.SupportedCommands);
+
             //Figure out what options are supported by the restore destination provider, if the restore target is remote
             var restoreDestinationOptions = new List<ICommandLineArgument>();
             var restorepath = m_options.Restorepath;

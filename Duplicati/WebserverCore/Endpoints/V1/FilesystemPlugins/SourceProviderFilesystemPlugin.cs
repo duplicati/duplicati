@@ -73,7 +73,9 @@ public class SourceProviderFilesystemPlugin : IFilesystemPlugin
     /// <inheritdoc />
     public IEnumerable<Dto.TreeNodeDto> GetEntries(string[] pathSegments)
     {
-        if (!_module.IsSupported)
+        // The providers query VSS and WMI, which needs an elevated process;
+        // without one there is nothing to show, and nothing to warn about
+        if (!_module.IsSupported || !PermissionHelper.IsRunningAsAdministratorOrLocalSystem())
             return [];
 
         try
@@ -94,6 +96,18 @@ public class SourceProviderFilesystemPlugin : IFilesystemPlugin
     {
         // Browse with a catch-all source so all top-level items are visible
         using var provider = _module.CreateForSources([RootName], _options);
+
+        // The tree root is browsed with every plugin, so a machine without the
+        // application installed must not get a warning each time it is opened
+        try
+        {
+            provider.TestAsync(CancellationToken.None).Await();
+        }
+        catch (UserInformationException)
+        {
+            return [];
+        }
+
         provider.InitializeAsync(CancellationToken.None).Await();
 
         // Get the root entry

@@ -64,10 +64,12 @@ namespace Duplicati.UnitTest
         private static string MakeHyperVSource(Guid id) => $"%HYPERV%{DS}{id}";
 
         [SupportedOSPlatform("windows")]
-        private static void RunPrepareOptions(Dictionary<string, string?> options, MockHyperVUtility utility)
+        private static LogSink RunPrepareOptions(Dictionary<string, string?> options, MockHyperVUtility utility)
         {
-            using var _ = Log.StartScope(new LogSink());
+            var sink = new LogSink();
+            using var _ = Log.StartScope(sink);
             new HyperVSourceProvider().PrepareOptions(options, utility);
+            return sink;
         }
 
         [SupportedOSPlatform("windows")]
@@ -95,9 +97,70 @@ namespace Duplicati.UnitTest
             });
         }
 
+        [Test]
+        public void MatchesSource_uses_backslash_on_every_platform()
+        {
+            // The source syntax is Windows-style and must be recognized on every
+            // platform, so that a non-Windows machine can report that the source is
+            // not supported instead of treating it as a relative file path
+            var provider = new HyperVSourceProvider();
+            var id = Guid.NewGuid();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(provider.MatchesSource($"%HYPERV%\\{id}"), Is.True);
+                Assert.That(provider.MatchesSource($"%hyperv%\\{id}"), Is.True);
+                Assert.That(provider.MatchesSource($"%HYPERV%/{id}"), Is.False);
+                Assert.That(provider.MatchesSource("%HYPERV%x"), Is.False);
+            });
+        }
+
+        #endregion
+
+        #region SupportedCommands
+
+        [Test]
+        public void SupportedCommands_declares_ignore_client_warning()
+        {
+            var provider = new HyperVSourceProvider();
+
+            Assert.That(provider.SupportedCommands.Select(x => x.Name), Does.Contain(HyperVSourceProvider.IGNORE_CLIENT_WARNING_OPTION));
+        }
+
         #endregion
 
         #region PrepareOptions
+
+        [Test]
+        public void PrepareOptions_warns_on_client_windows()
+        {
+            if (!OperatingSystem.IsWindows())
+                return; // Hyper-V is only available on Windows
+
+            var options = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+            var utility = new MockHyperVUtility { IsVSSWriterSupported = false };
+
+            var sink = RunPrepareOptions(options, utility);
+
+            Assert.That(sink.Entries.Select(x => x.Id), Does.Contain("HyperVOnServerOnly"));
+        }
+
+        [Test]
+        public void PrepareOptions_ignore_client_warning_suppresses_warning()
+        {
+            if (!OperatingSystem.IsWindows())
+                return; // Hyper-V is only available on Windows
+
+            var options = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase)
+            {
+                [HyperVSourceProvider.IGNORE_CLIENT_WARNING_OPTION] = "true",
+            };
+            var utility = new MockHyperVUtility { IsVSSWriterSupported = false };
+
+            var sink = RunPrepareOptions(options, utility);
+
+            Assert.That(sink.Entries.Select(x => x.Id), Does.Not.Contain("HyperVOnServerOnly"));
+        }
 
         [Test]
         public void PrepareOptions_does_nothing_when_not_installed()

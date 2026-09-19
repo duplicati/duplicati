@@ -101,6 +101,23 @@ namespace Duplicati.UnitTest
             });
         }
 
+        [Test]
+        public void MatchesSource_uses_backslash_on_every_platform()
+        {
+            // The source syntax is Windows-style and must be recognized on every
+            // platform, so that a non-Windows machine can report that the source is
+            // not supported instead of treating it as a relative file path
+            var provider = new MSSQLSourceProvider();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(provider.MatchesSource("%MSSQL%\\SERVER"), Is.True);
+                Assert.That(provider.MatchesSource("%mssql%\\SERVER"), Is.True);
+                Assert.That(provider.MatchesSource("%MSSQL%/SERVER"), Is.False);
+                Assert.That(provider.MatchesSource("%MSSQL%x"), Is.False);
+            });
+        }
+
         #endregion
 
         #region PrepareOptions

@@ -56,6 +56,16 @@ namespace Duplicati.Library.SourceProvider.Builtin.MSSQL
         public const string MSSQL_PATH_PREFIX = @"%MSSQL%";
 
         /// <summary>
+        /// The separator in a MSSQL source path, such as <c>%MSSQL%\&lt;server&gt;\&lt;database&gt;</c>.
+        /// The source syntax is Windows-style and is parsed the same way on every
+        /// platform, so a non-Windows machine recognizes the source and can report
+        /// that it is not supported instead of treating it as a relative file path.
+        /// The entries the provider produces use the platform separator, as they
+        /// are only produced on Windows.
+        /// </summary>
+        public const char SOURCE_PATH_SEPARATOR = '\\';
+
+        /// <summary>
         /// The module key
         /// </summary>
         public const string MODULE_KEY = "mssql";
@@ -152,7 +162,7 @@ namespace Duplicati.Library.SourceProvider.Builtin.MSSQL
         public static bool IsMSSQLSource(string source)
             => !string.IsNullOrWhiteSpace(source)
                 && (source.Equals(MSSQL_PATH_PREFIX, StringComparison.OrdinalIgnoreCase)
-                    || source.StartsWith(MSSQL_PATH_PREFIX + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase));
+                    || source.StartsWith(MSSQL_PATH_PREFIX + SOURCE_PATH_SEPARATOR, StringComparison.OrdinalIgnoreCase));
 
         /// <inheritdoc />
         public bool MatchesSource(string source)
@@ -240,7 +250,7 @@ namespace Duplicati.Library.SourceProvider.Builtin.MSSQL
             if (!IsMSSQLSource(path))
                 return null;
 
-            var parts = path.Split(['\\'], StringSplitOptions.RemoveEmptyEntries);
+            var parts = path.Split(SOURCE_PATH_SEPARATOR, StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length < 1 || !parts[0].Equals(MSSQL_PATH_PREFIX, StringComparison.OrdinalIgnoreCase))
                 return null;
 
@@ -453,6 +463,11 @@ namespace Duplicati.Library.SourceProvider.Builtin.MSSQL
         }
 
         /// <inheritdoc />
+        /// <remarks>
+        /// Resolves the virtual levels down to a database. The entries below
+        /// that carry the full local path of the file, so a lookup of one of them
+        /// is not resolved by walking one segment at a time and answers null.
+        /// </remarks>
         public async Task<ISourceProviderEntry?> GetEntryAsync(string path, bool isFolder, CancellationToken cancellationToken)
         {
             if (!OperatingSystem.IsWindows() || !IsMSSQLSource(path))
@@ -501,7 +516,9 @@ namespace Duplicati.Library.SourceProvider.Builtin.MSSQL
         /// <inheritdoc />
         public void Dispose()
         {
-            // The snapshot service is shared with other providers and disposed by the caller
+            // The snapshot service is shared with other providers and is released by
+            // the file source, or by the wrapper the source provider factory puts around
+            // the first snapshot-aware provider when there is no file source
         }
     }
 }
