@@ -4,6 +4,7 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Logging;
 using Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 using User = Google.Apis.Admin.Directory.directory_v1.Data.User;
 
 namespace Duplicati.Proprietary.GoogleWorkspace;
@@ -118,9 +119,16 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
     {
     }
 
-    public IAsyncEnumerable<ISourceProviderEntry> EnumerateAsync(CancellationToken cancellationToken)
+    /// <inheritdoc />
+    /// <remarks>
+    /// The root folder itself is emitted, not what is in it, as the other providers do. The backup recurses into
+    /// it, so the same items are backed up, and a caller that browses the source, such as the managed runner, is
+    /// handed the folder to start from.
+    /// </remarks>
+    public async IAsyncEnumerable<ISourceProviderEntry> EnumerateAsync([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        return new RootSourceEntry(this).Enumerate(cancellationToken);
+        await Task.CompletedTask.ConfigureAwait(false);
+        yield return new RootSourceEntry(this);
     }
 
     public async Task<ISourceProviderEntry?> GetEntryAsync(string path, bool isFolder, CancellationToken cancellationToken)
