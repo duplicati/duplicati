@@ -920,6 +920,9 @@ namespace Duplicati.Server
                     if (backup.Metadata.ContainsKey("LastVacuumFinished"))
                         await controller.SetLastVacuumAsync(Utility.DeserializeDateTime(backup.Metadata["LastVacuumFinished"])).ConfigureAwait(false);
 
+                    if (backup.Metadata.ContainsKey("LastRestoreTestFinished"))
+                        await controller.SetLastRestoreTestAsync(Utility.DeserializeDateTime(backup.Metadata["LastRestoreTestFinished"])).ConfigureAwait(false);
+
                     switch (data.Operation)
                     {
                         case DuplicatiOperation.BackupOrSync:
@@ -1231,6 +1234,16 @@ namespace Duplicati.Server
             }
         }
 
+        private static void UpdateMetadataLastRestoreTest(IBackup backup, IRestoreTestResults r)
+        {
+            if (r != null)
+            {
+                backup.Metadata["LastRestoreTestDuration"] = r.Duration.ToString();
+                backup.Metadata["LastRestoreTestStarted"] = Utility.SerializeDateTime(r.BeginTime.ToUniversalTime());
+                backup.Metadata["LastRestoreTestFinished"] = Utility.SerializeDateTime(r.EndTime.ToUniversalTime());
+            }
+        }
+
         private static void UpdateMetadataLastSync(IBackup backup, ISyncResults r)
         {
             if (r != null)
@@ -1322,6 +1335,9 @@ namespace Duplicati.Server
 
                     if (r.VacuumResults != null)
                         UpdateMetadataLastVacuum(backup, r.VacuumResults);
+
+                    if (r.RestoreTestResults != null)
+                        UpdateMetadataLastRestoreTest(backup, r.RestoreTestResults);
                 }
 
                 if (r.FilesWithError > 0 || r.Warnings.Any() || r.Errors.Any())

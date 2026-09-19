@@ -64,6 +64,10 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
     public Task SetLastVacuumAsync(DateTime lastVacuum)
         => Rpc.InvokeAsync(nameof(IController.SetLastVacuumAsync), lastVacuum).WaitAsync(TimeSpan.FromSeconds(5));
 
+    /// <inheritdoc />
+    public Task SetLastRestoreTestAsync(DateTime lastRestoreTest)
+        => Rpc.InvokeAsync(nameof(IController.SetLastRestoreTestAsync), lastRestoreTest).WaitAsync(TimeSpan.FromSeconds(5));
+
     /// <summary>
     /// Creates a new controller proxy
     /// </summary>
@@ -401,6 +405,10 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
     /// <inheritdoc />
     public async Task<ITestResults> TestAsync(long samples = 1)
         => await Rpc.InvokeAsync<ITestResults>(nameof(IController.TestAsync), samples).ConfigureAwait(false);
+
+    /// <inheritdoc />
+    public async Task<IRestoreTestResults> RestoreTestAsync(IFilter? filter = null)
+        => await Rpc.InvokeAsync<IRestoreTestResults>(nameof(IController.RestoreTestAsync), filter).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<IListFilesetResults> ListFilesetsAsync()
