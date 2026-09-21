@@ -459,51 +459,67 @@ namespace Duplicati.Library.Main.Database.Local
                     GROUP BY ""Block"".""VolumeID""
             ";
 
+            // The scantime is the timestamp of the oldest fileset that references a block in the volume.
+            // The aggregation is done in stages (file -> blockset -> volume), so each blockset
+            // is only expanded to blocks once, instead of once for every fileset the file is in.
+            var filetime = @"
+                SELECT
+                    ""FilesetEntry"".""FileID"" AS ""FileID"",
+                    MIN(""Fileset"".""Timestamp"") AS ""Sorttime""
+                FROM
+                    ""FilesetEntry"",
+                    ""Fileset""
+                WHERE ""Fileset"".""ID"" = ""FilesetEntry"".""FilesetID""
+                GROUP BY ""FilesetEntry"".""FileID""
+            ";
+
             var lastmodifiedFile = @"
                 SELECT
-                    ""Block"".""VolumeID"" AS ""VolumeID"",
-                    ""Fileset"".""Timestamp"" AS ""Sorttime""
+                    ""FileLookup"".""BlocksetID"" AS ""BlocksetID"",
+                    ""FileTime"".""Sorttime"" AS ""Sorttime""
                 FROM
-                    ""Fileset"",
-                    ""FilesetEntry"",
                     ""FileLookup"",
-                    ""BlocksetEntry"",
-                    ""Block""
-                WHERE
-                    ""FilesetEntry"".""FileID"" = ""FileLookup"".""ID""
-                    AND ""FileLookup"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID""
-                    AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
-                    AND ""Fileset"".""ID"" = ""FilesetEntry"".""FilesetID""
+                    ""FileTime""
+                WHERE ""FileTime"".""FileID"" = ""FileLookup"".""ID""
             ";
 
             var lastmodifiedMetadata = @"
                 SELECT
-                    ""Block"".""VolumeID"" AS ""VolumeID"",
-                    ""Fileset"".""Timestamp"" AS ""Sorttime""
+                    ""Metadataset"".""BlocksetID"" AS ""BlocksetID"",
+                    ""FileTime"".""Sorttime"" AS ""Sorttime""
                 FROM
-                    ""Fileset"",
-                    ""FilesetEntry"",
                     ""FileLookup"",
-                    ""BlocksetEntry"",
-                    ""Block"",
-                    ""Metadataset""
+                    ""Metadataset"",
+                    ""FileTime""
                 WHERE
-                    ""FilesetEntry"".""FileID"" = ""FileLookup"".""ID""
+                    ""FileTime"".""FileID"" = ""FileLookup"".""ID""
                     AND ""FileLookup"".""MetadataID"" = ""Metadataset"".""ID""
-                    AND ""Metadataset"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID""
-                    AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
-                    AND ""Fileset"".""ID"" = ""FilesetEntry"".""FilesetID""
             ";
 
-            var scantime = @$"
+            var blocksettime = @$"
                 SELECT
-                    ""VolumeID"" AS ""VolumeID"",
+                    ""BlocksetID"" AS ""BlocksetID"",
                     MIN(""Sorttime"") AS ""Sorttime""
                 FROM (
                     {lastmodifiedFile}
-                    UNION {lastmodifiedMetadata}
+                    UNION ALL {lastmodifiedMetadata}
                 )
-                GROUP BY ""VolumeID""
+                GROUP BY ""BlocksetID""
+            ";
+
+            var scantime = @$"
+                WITH ""FileTime"" AS ({filetime})
+                SELECT
+                    ""Block"".""VolumeID"" AS ""VolumeID"",
+                    MIN(""BlocksetTime"".""Sorttime"") AS ""Sorttime""
+                FROM
+                    ({blocksettime}) ""BlocksetTime"",
+                    ""BlocksetEntry"",
+                    ""Block""
+                WHERE
+                    ""BlocksetEntry"".""BlocksetID"" = ""BlocksetTime"".""BlocksetID""
+                    AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
+                GROUP BY ""Block"".""VolumeID""
             ";
 
             var active = @$"
