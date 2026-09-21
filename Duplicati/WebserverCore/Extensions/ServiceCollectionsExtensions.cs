@@ -62,6 +62,7 @@ public static class ServiceCollectionsExtensions
             .AddTransient<IJWTTokenProvider, JWTTokenProvider>()
             .AddTransient<ITokenFamilyStore, TokenFamilyStore>()
             .AddTransient<ILoginProvider, LoginProvider>()
+            .AddSingleton<ILoginAttemptThrottle>(_ => new LoginAttemptThrottle())
             .AddSingleton<IRemoteController, RemoteControllerService>()
             .AddSingleton<IRemoteControllerHandler, RemoteControllerHandler>()
             .AddSingleton<IRemoteControllerRegistration, RemoteControllerRegistrationService>()
