@@ -20,35 +20,24 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System.CommandLine;
+using System.CommandLine.NamingConventionBinder;
 
 namespace Duplicati.CommandLine.ServerUtil.Commands;
 
 public static class RestoreTest
 {
-    public static Command Create()
-    {
-        var backupArgument = new Argument<string>("backup")
+    public static Command Create() =>
+        new Command("restore-test", "Queues a restore test for a backup")
         {
-            Description = "The backup to run a restore test for, either ID or exact name (case-insensitive)",
-            Arity = ArgumentArity.ExactlyOne
-        };
-        var quietOption = new Option<bool>("--quiet")
+            new Argument<string>("backup", "The backup to run a restore test for, either ID or exact name (case-insensitive)") {
+                Arity = ArgumentArity.ExactlyOne
+            },
+            new Option<bool>("--quiet", "Do not print progress messages") {
+                IsRequired = false
+            }
+        }
+        .WithHandler(CommandHandler.Create<Settings, OutputInterceptor, string, bool>(async (settings, output, backup, quiet) =>
         {
-            Description = "Do not print progress messages"
-        };
-
-        var cmd = new Command("restore-test", "Queues a restore test for a backup")
-        {
-            backupArgument,
-            quietOption
-        };
-        cmd.SetAction(async (parseResult, cancellationToken) =>
-        {
-            var settings = SettingsBinder.GetSettings(parseResult);
-            var output = OutputInterceptorBinder.GetConsoleInterceptor(parseResult);
-            var backup = parseResult.GetValue(backupArgument)!;
-            var quiet = parseResult.GetValue(quietOption);
-
             var connection = await settings.GetConnectionAsync(output);
 
             var matchingBackup = (await connection.ListBackupsAsync())
@@ -64,7 +53,5 @@ public static class RestoreTest
 
             // The test is only queued; its outcome arrives through the backup's reports
             output.SetResult(true);
-        });
-        return cmd;
-    }
+        }));
 }

@@ -81,6 +81,10 @@ namespace Duplicati.Library.Modules.Builtin
         /// </summary>
         private const string OPTION_SENDALL = "send-mail-any-operation";
         /// <summary>
+        /// Option used to specify the list of operations that send reports
+        /// </summary>
+        private const string OPTION_SEND_OPERATIONS = "send-mail-operations";
+        /// <summary>
         /// Option used to specify what format the result is sent in.
         /// </summary>
         private const string OPTION_RESULT_FORMAT = "send-mail-result-output-format";
@@ -171,6 +175,7 @@ namespace Duplicati.Library.Modules.Builtin
             new CommandLineArgument(OPTION_PASSWORD, CommandLineArgument.ArgumentType.Password, Strings.SendMail.OptionPasswordShort, Strings.SendMail.OptionPasswordLong),
             new CommandLineArgument(OPTION_SENDLEVEL, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionSendlevelShort, Strings.SendMail.OptionSendlevelLong(ParsedResultType.Success.ToString(), ParsedResultType.Warning.ToString(), ParsedResultType.Error.ToString(), ParsedResultType.Fatal.ToString(), "All"), DEFAULT_LEVEL, null, Enum.GetNames(typeof(ParsedResultType)).Union(new string [] { "All" }).ToArray()),
             new CommandLineArgument(OPTION_SENDALL, CommandLineArgument.ArgumentType.Boolean, Strings.SendHttpMessage.SendhttpanyoperationShort, Strings.SendHttpMessage.SendhttpanyoperationLong),
+            new CommandLineArgument(OPTION_SEND_OPERATIONS, CommandLineArgument.ArgumentType.Flags, Strings.ReportHelper.OptionOperationsShort, Strings.ReportHelper.OptionOperationsLong, DEFAULT_OPERATIONS, null, ValidOperationNames),
             new CommandLineArgument(OPTION_EXTRA_PARAMETERS, CommandLineArgument.ArgumentType.String, Strings.SendMail.SendmailextraparametersShort, Strings.SendMail.SendmailextraparametersLong),
 
             new CommandLineArgument(OPTION_LOG_LEVEL, CommandLineArgument.ArgumentType.Enumeration, Strings.ReportHelper.OptionLoglevelShort, Strings.ReportHelper.OptionLoglevelLong, DEFAULT_LOG_LEVEL.ToString(), null, Enum.GetNames(typeof(Logging.LogMessageType))),
@@ -184,6 +189,7 @@ namespace Duplicati.Library.Modules.Builtin
         protected override string BodyOptionName => OPTION_BODY;
         protected override string ActionLevelOptionName => OPTION_SENDLEVEL;
         protected override string ActionOnAnyOperationOptionName => OPTION_SENDALL;
+        protected override string ActionOnOperationsOptionName => OPTION_SEND_OPERATIONS;
         protected override string LogLevelOptionName => OPTION_LOG_LEVEL;
         protected override string LogFilterOptionName => OPTION_LOG_FILTER;
         protected override string LogLinesOptionName => OPTION_MAX_LOG_LINES;
