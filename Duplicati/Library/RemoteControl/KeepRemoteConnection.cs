@@ -813,6 +813,68 @@ public class KeepRemoteConnection : IDisposable
             => _respondCommand(response);
 
         /// <summary>
+        /// The remote-supplied headers that are forwarded to the local server.
+        /// Anything not listed is dropped, so the remote cannot override the credentials set on the client,
+        /// or spoof headers the server uses for access decisions, such as Host, X-Real-IP or X-Forwarded-*.
+        /// </summary>
+        private static readonly HashSet<string> AllowedRequestHeaders = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "Accept",
+            "Accept-Language",
+            "Cache-Control",
+            "Content-Type",
+            "If-Match",
+            "If-Modified-Since",
+            "If-None-Match",
+            "If-Unmodified-Since",
+            "Pragma",
+            "User-Agent",
+            "X-UI-Language"
+        };
+
+        /// <summary>
+        /// Checks if a remote-supplied header is allowed to be forwarded to the local server
+        /// </summary>
+        /// <param name="name">The header name</param>
+        /// <returns><c>true</c> if the header is forwarded; <c>false</c> if it is dropped</returns>
+        public static bool IsAllowedRequestHeader(string? name)
+            => !string.IsNullOrWhiteSpace(name) && AllowedRequestHeaders.Contains(name);
+
+        /// <summary>
+        /// Resolves the requested path against the base address, and ensures the result still targets the base address.
+        /// This prevents a remote-supplied path, such as an absolute or scheme-relative url, from redirecting
+        /// the request, to a different host.
+        /// </summary>
+        /// <param name="baseAddress">The base address of the local server</param>
+        /// <param name="path">The remote-supplied path</param>
+        /// <param name="target">The resolved target url</param>
+        /// <returns><c>true</c> if the path targets the base address; <c>false</c> otherwise</returns>
+        public static bool TryGetLocalTarget(Uri? baseAddress, string? path, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out Uri? target)
+        {
+            target = null;
+            if (baseAddress == null || !baseAddress.IsAbsoluteUri || string.IsNullOrWhiteSpace(path))
+                return false;
+
+            // Only rooted paths are allowed, rejecting absolute urls,
+            // and scheme-relative urls, including the backslash variants that Uri treats as slashes
+            if (path[0] != '/' || path.Length > 1 && (path[1] == '/' || path[1] == '\\'))
+                return false;
+
+            if (!Uri.TryCreate(path, UriKind.Relative, out var relative))
+                return false;
+
+            if (!Uri.TryCreate(baseAddress, relative, out var resolved))
+                return false;
+
+            // Verify the resolved url, in case the parser interprets the path differently than expected
+            if (Uri.Compare(baseAddress, resolved, UriComponents.SchemeAndServer | UriComponents.UserInfo, UriFormat.Unescaped, StringComparison.OrdinalIgnoreCase) != 0)
+                return false;
+
+            target = resolved;
+            return true;
+        }
+
+        /// <summary>
         /// Handles the command message with a configured http client.
         /// The client must be configured with the correct base address and authorization headers.
         /// </summary>
@@ -824,17 +886,30 @@ public class KeepRemoteConnection : IDisposable
             {
                 SafeLog.Write(LogMessageType.Verbose, LogTag, "WebsocketCommand", null, "Handling command {0} {1}", CommandRequestMessage.Method, CommandRequestMessage.Path);
 
-                var request = new HttpRequestMessage(new HttpMethod(CommandRequestMessage.Method), CommandRequestMessage.Path);
+                if (!TryGetLocalTarget(client.BaseAddress, CommandRequestMessage.Path, out var target))
+                {
+                    SafeLog.Write(LogMessageType.Warning, LogTag, "WebsocketCommandInvalidPath", null, "Rejecting command with a path that does not target the local server: {0}", CommandRequestMessage.Path);
+                    Respond(new CommandResponseMessage(400, "Invalid path", null));
+                    return;
+                }
+
+                var request = new HttpRequestMessage(new HttpMethod(CommandRequestMessage.Method), target);
                 if (!string.IsNullOrWhiteSpace(CommandRequestMessage.Body))
                     request.Content = new ByteArrayContent(Convert.FromBase64String(CommandRequestMessage.Body));
                 if (CommandRequestMessage.Headers != null)
                 {
                     foreach (var header in CommandRequestMessage.Headers)
                     {
-                        if (header.Key == "Content-Type")
+                        if (!IsAllowedRequestHeader(header.Key))
+                        {
+                            SafeLog.Write(LogMessageType.Verbose, LogTag, "WebsocketCommandHeaderDropped", null, "Dropping header that is not allowed to be forwarded: {0}", header.Key);
+                            continue;
+                        }
+
+                        if (string.Equals(header.Key, "Content-Type", StringComparison.OrdinalIgnoreCase))
                         {
                             if (request.Content != null)
-                                request.Content.Headers.ContentType = new MediaTypeHeaderValue(header.Value);
+                                request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse(header.Value);
                         }
                         else
                             request.Headers.Add(header.Key, header.Value);
