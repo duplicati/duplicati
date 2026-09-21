@@ -97,6 +97,11 @@ public partial class Auth : IEndpointV1
                     AddCookie(httpContextAccessor.HttpContext!, cookieName, result.RefreshToken, DateTimeOffset.UtcNow.AddMinutes(jWTConfig.RefreshTokenDurationInMinutes));
                 return new Dto.AccessTokenOutputDto(result.AccessToken, result.Nonce);
             }
+            catch (TooManyRequestsException)
+            {
+                // Let the client know it is being throttled
+                throw;
+            }
             catch (Exception ex)
             {
                 Log.WriteErrorMessage(LOGTAG, "PasswordLoginError", ex, "Failed to log in");
@@ -105,12 +110,12 @@ public partial class Auth : IEndpointV1
             }
         });
 
-        group.MapPost("auth/issuesignintoken", ([FromServices] Connection connection, [FromServices] IJWTTokenProvider tokenProvider, [FromBody] Dto.IssueSigninTokenInputDto input) =>
+        group.MapPost("auth/issuesignintoken", async ([FromServices] Connection connection, [FromServices] IJWTTokenProvider tokenProvider, [FromServices] ILoginAttemptThrottle loginThrottle, [FromBody] Dto.IssueSigninTokenInputDto input, CancellationToken ct) =>
         {
             if (connection.ApplicationSettings.DisableSigninTokens)
                 throw new UnauthorizedException("Signin tokens are disabled");
 
-            if (!connection.ApplicationSettings.VerifyWebserverPassword(input.Password))
+            if (!await loginThrottle.VerifyAsync(() => connection.ApplicationSettings.VerifyWebserverPassword(input.Password), ct))
                 throw new UnauthorizedException("Incorrect password");
 
             var signinToken = tokenProvider.CreateSigninToken("web-api");
