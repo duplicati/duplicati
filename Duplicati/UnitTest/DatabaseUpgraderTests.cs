@@ -50,14 +50,14 @@ namespace Duplicati.UnitTest
         /// last line of <c>Duplicati/Library/Main/Database/Local/Database schema/Schema.sql</c>
         /// and must be kept in sync if the schema is bumped.
         /// </summary>
-        private const int EXPECTED_LATEST_SCHEMA_VERSION = 20;
+        private const int EXPECTED_LATEST_SCHEMA_VERSION = 21;
 
         /// <summary>
         /// The most recent numbered upgrade script in the LocalDatabase schema
-        /// resources, e.g. <c>20. Add label to fileset table.sql</c>. This is the
+        /// resources, e.g. <c>21. Add restore test history table.sql</c>. This is the
         /// last upgrade the upgrader should be able to discover and apply.
         /// </summary>
-        private const int EXPECTED_HIGHEST_UPGRADE_SCRIPT = 20;
+        private const int EXPECTED_HIGHEST_UPGRADE_SCRIPT = 21;
 
         /// <summary>
         /// Calling <c>UpgradeDatabase</c> on a fresh (empty) database should load the
@@ -108,14 +108,11 @@ namespace Duplicati.UnitTest
                 // version: drop the column the most recent upgrade script introduces.
                 DatabaseUpgrader.UpgradeDatabase(db, dbfile, typeof(DatabaseSchemaMarker));
 
-                // The final upgrade script ("20. Add label to fileset table.sql") does:
-                //   ALTER TABLE "Fileset" ADD COLUMN "Label" TEXT NULL;
-                // Remove that column to simulate the pre-upgrade (version 19) state so the
-                // upgrader has an outstanding upgrade to apply. ALTER TABLE DROP COLUMN
-                // requires SQLite >= 3.35.0, which the bundled Microsoft.Data.Sqlite
-                // runtime ships (3.46.x). If older SQLite versions ever need supporting,
-                // fall back to recreating the table without the column.
-                cmd.CommandText = @"ALTER TABLE ""Fileset"" DROP COLUMN ""Label""";
+                // The final upgrade script ("21. Add restore test history table.sql") creates
+                // the "RestoreTestHistory" table. Remove that table to simulate the
+                // pre-upgrade (version 20) state so the upgrader has an outstanding upgrade
+                // to apply.
+                cmd.CommandText = @"DROP TABLE ""RestoreTestHistory""";
                 await cmd.ExecuteNonQueryAsync();
 
                 // Pin the recorded version one below the latest so the upgrader has work to do.
@@ -134,10 +131,10 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(EXPECTED_LATEST_SCHEMA_VERSION, version,
                     "Upgrader should apply the outstanding upgrade script and reach the latest version.");
 
-                // The column added by the final upgrade script must now exist again,
+                // The table added by the final upgrade script must now exist again,
                 // proving the upgrade script was actually executed and not just skipped.
-                Assert.IsTrue(await ColumnExistsAsync(db, "Fileset", "Label"),
-                    "The Fileset.Label column (added by the final upgrade script) should exist after the upgrade.");
+                Assert.IsTrue(await TableExistsAsync(db, "RestoreTestHistory"),
+                    "The RestoreTestHistory table (added by the final upgrade script) should exist after the upgrade.");
             }
         }
 
@@ -202,9 +199,9 @@ namespace Duplicati.UnitTest
 
             DatabaseUpgrader.UpgradeDatabase(db, dbfile, typeof(DatabaseSchemaMarker));
 
-            // Drop the column the most recent upgrade script introduces, so that
+            // Drop the table the most recent upgrade script introduces, so that
             // re-applying that script is valid.
-            cmd.CommandText = @"ALTER TABLE ""Fileset"" DROP COLUMN ""Label""";
+            cmd.CommandText = @"DROP TABLE ""RestoreTestHistory""";
             await cmd.ExecuteNonQueryAsync();
 
             cmd.CommandText = @"UPDATE ""Version"" SET ""Version"" = @ver";

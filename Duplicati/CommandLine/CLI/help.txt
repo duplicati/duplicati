@@ -12,7 +12,7 @@
 
 See %CLI_EXE% help <topic> for more information.
   General: example, changelog
-  Commands: backup, sync, find, restore, delete, compact, test, compare, purge, vacuum
+  Commands: backup, sync, find, restore, restore-test, delete, compact, test, compare, purge, vacuum
   Searching: list-filesets, list-folder-contents, list-file-versions, search-files
   Repair: repair, affected, list-broken-files, purge-broken-files
   Locking: set-locks, read-lock-info
@@ -357,6 +357,48 @@ Usage: %CLI_EXE% test <storage-URL> <samples> [<options>]
 
 
 # =============================================================================
+> duplicati.commandline.exe help restore-test
+> duplicati.commandline.exe help restoretest
+
+Usage: %CLI_EXE% restore-test <storage-URL> [<options>]
+
+  Proves that a backup can be restored without relying on anything local. A sample of files from the chosen version is restored into a scratch folder using only remote data, and every restored file is verified against the size and hash recorded in the backup. The same test can run as the last step of a backup by setting --perform-restore-test-after on the backup. With --restore-test-recreate-database the local database is first rebuilt from the remote destination into a temporary file, so nothing local is trusted. The scratch folder and the temporary database are always removed afterwards. The real local database is never replaced; it only records when each file was last verified, so the "rolling" mode can pick files that have not been tested recently. Options such as --no-local-db, --dbpath, --passphrase, throttling and retry options apply as for a restore.
+
+  --restore-test-mode=<RandomFiles|RandomSize|Full|Rolling>
+    How the sample is chosen. "RandomFiles" picks --restore-test-sample-count random files. "RandomSize" picks random files until --restore-test-sample-percent of the backup size is reached. "Full" tests every file in the version. "Rolling" prefers files that have not been verified recently, so every file is tested at least once per --restore-test-rolling-window. The default is "RandomFiles".
+  --restore-test-sample-count=<int>
+    The number of files to test in "RandomFiles" and "Rolling" mode. The default is 10.
+  --restore-test-sample-percent=<decimal>
+    The percentage (0-100) of the backup size to test in "RandomSize" mode. The default is 5.
+  --restore-test-rolling-window=<timespan>
+    The period within which every file should be tested in "Rolling" mode. The default is 30D.
+  --restore-test-version=<int>
+    The backup version to test, where 0 is the newest. The default is 0. If not set, the first value of --version is used when present.
+  --restore-test-recreate-database=<boolean>
+    Rebuild the database from the remote destination into a temporary file before restoring, so the test does not rely on the existing local database. If not set, the existing local database is used, and a temporary database is only rebuilt when no usable local database exists.
+  --restore-test-compare-source=<boolean>
+    Also compare the restored files with the live source files, if they still exist unchanged. Differences are reported as warnings. The default is false.
+  --restore-test-verify-metadata=<boolean>
+    Also verify the modification time of the restored files where the platform allows it. The default is false.
+  --restore-test-max-download-size=<size>
+    Stop with a "budget exceeded" result if the remote downloads would exceed this size. The size is estimated before the restore starts. Unlimited if not set.
+  --restore-test-max-runtime=<timespan>
+    Stop with a "budget exceeded" result if the run exceeds this duration. Unlimited if not set.
+  --restore-test-temp-path=<path>
+    The scratch folder for the restored files and the temporary database. It is checked to be writable with enough free space before starting. The default is the temporary folder.
+  --restore-test-seed=<int>
+    The seed used for the random sample, so a run can be reproduced. The seed used is reported in the result.
+  --restore-test-include=<filter>
+    Limit the files that can be picked to those matching the filter. Multiple filters are separated with %PATH_SEPARATOR%.
+  --restore-test-exclude=<filter>
+    Exclude files matching the filter from the test. Multiple filters are separated with %PATH_SEPARATOR%.
+  --full-result
+    Print the complete result instead of the summary.
+
+  The seed used for the random sample is reported in the result. The return code is 0 when all files pass, 2 when files were skipped or differ from the source, 3 when a file fails verification or a budget is exceeded, and 100 when the test could not run.
+
+
+# =============================================================================
 > duplicati.commandline.exe help test-filters
 > duplicati.commandline.exe help test-filter
 
@@ -692,7 +734,7 @@ Duplicati reports the following return/exit codes:
   0 - Success
   1 - Successful operation, but no files were changed
   2 - Successful operation, but with warning(s)
-  3 - For backup: finished with error(s), for test: error(s) found on the backend
+  3 - For backup: finished with error(s), for test: error(s) found on the backend, for restore-test: verification failure(s) or budget exceeded
   50 - Backup uploaded some files, but did not finish
   100 - An error occurred
   200 - Invalid commandline arguments found

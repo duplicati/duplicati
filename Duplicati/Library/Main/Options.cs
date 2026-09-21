@@ -319,6 +319,19 @@ namespace Duplicati.Library.Main
         private static readonly string DEFAULT_COMPRESSED_EXTENSION_FILE = System.IO.Path.Combine(Duplicati.Library.AutoUpdater.UpdaterManager.INSTALLATIONDIR, "default_compressed_extensions.txt");
 
         /// <summary>
+        /// The default number of files to sample in a restore test
+        /// </summary>
+        private const int DEFAULT_RESTORE_TEST_SAMPLE_COUNT = 10;
+        /// <summary>
+        /// The default percentage of the backup size to sample in a restore test
+        /// </summary>
+        private const string DEFAULT_RESTORE_TEST_SAMPLE_PERCENT = "5";
+        /// <summary>
+        /// The default rolling window for a restore test
+        /// </summary>
+        private const string DEFAULT_RESTORE_TEST_ROLLING_WINDOW = "30D";
+
+        /// <summary>
         /// Lock that protects the options collection
         /// </summary>
         protected readonly object m_lock = new object();
@@ -589,6 +602,7 @@ namespace Duplicati.Library.Main
 
             new CommandLineArgument("auto-compact-interval", CommandLineArgument.ArgumentType.Timespan, Strings.Options.AutoCompactIntervalShort, Strings.Options.AutoCompactIntervalLong, "0m"),
             new CommandLineArgument("auto-vacuum-interval", CommandLineArgument.ArgumentType.Timespan, Strings.Options.AutoVacuumIntervalShort, Strings.Options.AutoVacuumIntervalLong, "0m"),
+            new CommandLineArgument("perform-restore-test-after", CommandLineArgument.ArgumentType.Timespan, Strings.Options.PerformRestoreTestAfterShort, Strings.Options.PerformRestoreTestAfterLong, "0s"),
 
             new CommandLineArgument("secret-provider", CommandLineArgument.ArgumentType.Password, Strings.Options.SecretProviderShort, Strings.Options.SecretProviderLong(Library.AutoUpdater.PackageHelper.GetExecutableName(AutoUpdater.PackageHelper.NamedExecutable.SecretTool))),
             new CommandLineArgument("secret-provider-pattern", CommandLineArgument.ArgumentType.String, Strings.Options.SecretProviderPatternShort, Strings.Options.SecretProviderPatternLong, SecretProviderHelper.DEFAULT_PATTERN),
@@ -618,6 +632,21 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("sync-then-delete", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SyncThenDeleteShort, Strings.Options.SyncThenDeleteLong, "false"),
             new CommandLineArgument("sync-verify-hash", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SyncVerifyHashShort, Strings.Options.SyncVerifyHashLong, "false"),
             new CommandLineArgument("sync-remote-state", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SyncRemoteStateShort, Strings.Options.SyncRemoteStateLong, Enum.GetName(typeof(SyncRemoteState), SyncRemoteState.UseRemoteState), null, Enum.GetNames(typeof(SyncRemoteState))),
+
+            new CommandLineArgument("restore-test-mode", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.RestoreTestModeShort, Strings.Options.RestoreTestModeLong("restore-test-sample-count", "restore-test-sample-percent", "restore-test-rolling-window"), Enum.GetName(typeof(RestoreTestMode), RestoreTestMode.RandomFiles), null, Enum.GetNames(typeof(RestoreTestMode))),
+            new CommandLineArgument("restore-test-sample-count", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreTestSampleCountShort, Strings.Options.RestoreTestSampleCountLong, DEFAULT_RESTORE_TEST_SAMPLE_COUNT.ToString()),
+            new CommandLineArgument("restore-test-sample-percent", CommandLineArgument.ArgumentType.Decimal, Strings.Options.RestoreTestSamplePercentShort, Strings.Options.RestoreTestSamplePercentLong, DEFAULT_RESTORE_TEST_SAMPLE_PERCENT),
+            new CommandLineArgument("restore-test-rolling-window", CommandLineArgument.ArgumentType.Timespan, Strings.Options.RestoreTestRollingWindowShort, Strings.Options.RestoreTestRollingWindowLong, DEFAULT_RESTORE_TEST_ROLLING_WINDOW),
+            new CommandLineArgument("restore-test-version", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreTestVersionShort, Strings.Options.RestoreTestVersionLong("version"), "0"),
+            new CommandLineArgument("restore-test-recreate-database", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestoreTestRecreateDatabaseShort, Strings.Options.RestoreTestRecreateDatabaseLong, "false"),
+            new CommandLineArgument("restore-test-compare-source", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestoreTestCompareSourceShort, Strings.Options.RestoreTestCompareSourceLong, "false"),
+            new CommandLineArgument("restore-test-verify-metadata", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestoreTestVerifyMetadataShort, Strings.Options.RestoreTestVerifyMetadataLong, "false"),
+            new CommandLineArgument("restore-test-max-download-size", CommandLineArgument.ArgumentType.Size, Strings.Options.RestoreTestMaxDownloadSizeShort, Strings.Options.RestoreTestMaxDownloadSizeLong),
+            new CommandLineArgument("restore-test-max-runtime", CommandLineArgument.ArgumentType.Timespan, Strings.Options.RestoreTestMaxRuntimeShort, Strings.Options.RestoreTestMaxRuntimeLong),
+            new CommandLineArgument("restore-test-temp-path", CommandLineArgument.ArgumentType.Path, Strings.Options.RestoreTestTempPathShort, Strings.Options.RestoreTestTempPathLong("tempdir")),
+            new CommandLineArgument("restore-test-seed", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreTestSeedShort, Strings.Options.RestoreTestSeedLong),
+            new CommandLineArgument("restore-test-include", CommandLineArgument.ArgumentType.String, Strings.Options.RestoreTestIncludeShort, Strings.Options.RestoreTestIncludeLong(System.IO.Path.PathSeparator.ToString())),
+            new CommandLineArgument("restore-test-exclude", CommandLineArgument.ArgumentType.String, Strings.Options.RestoreTestExcludeShort, Strings.Options.RestoreTestExcludeLong(System.IO.Path.PathSeparator.ToString())),
 
             .. GetOSConditionalCommands(),
             .. GetDebugConditionalCommands(),
@@ -1602,6 +1631,11 @@ namespace Duplicati.Library.Main
         public TimeSpan AutoVacuumInterval => Library.Utility.Utility.ParseTimespanOption(m_options, "auto-vacuum-interval", "0s");
 
         /// <summary>
+        /// Gets the minimum time between restore tests run after a backup, or zero to never run one
+        /// </summary>
+        public TimeSpan PerformRestoreTestAfter => Library.Utility.Utility.ParseTimespanOption(m_options, "perform-restore-test-after", "0s");
+
+        /// <summary>
         /// Gets a flag indicating if the local filescanner should be disabled
         /// </summary>
         /// <value><c>true</c> if the filescanner should be disabled; otherwise, <c>false</c>.</value>
@@ -1864,6 +1898,120 @@ namespace Duplicati.Library.Main
         /// Gets whether to use the legacy restore method
         /// </summary>
         public bool RestoreLegacy => GetBool("restore-legacy");
+
+        /// <summary>
+        /// Gets the sampling mode used by the restore test operation
+        /// </summary>
+        public RestoreTestMode RestoreTestMode => GetEnum("restore-test-mode", RestoreTestMode.RandomFiles);
+
+        /// <summary>
+        /// Gets the number of files to sample in the restore test
+        /// </summary>
+        public int RestoreTestSampleCount => GetInt("restore-test-sample-count", DEFAULT_RESTORE_TEST_SAMPLE_COUNT);
+
+        /// <summary>
+        /// Gets the percentage of the backup size to sample in the restore test
+        /// </summary>
+        public double RestoreTestSamplePercent
+        {
+            get
+            {
+                var value = GetString("restore-test-sample-percent", DEFAULT_RESTORE_TEST_SAMPLE_PERCENT);
+                if (!double.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var percent) || percent < 0 || percent > 100)
+                    throw new UserInformationException(Strings.Options.RestoreTestInvalidPercentError(value), "RestoreTestInvalidPercent");
+                return percent;
+            }
+        }
+
+        /// <summary>
+        /// Gets the window in which every file should be verified in rolling mode
+        /// </summary>
+        public TimeSpan RestoreTestRollingWindow => Library.Utility.Utility.ParseTimespanOption(m_options, "restore-test-rolling-window", DEFAULT_RESTORE_TEST_ROLLING_WINDOW);
+
+        /// <summary>
+        /// Gets the backup version to test, where 0 is the newest, or null if the option is not set
+        /// </summary>
+        public long? RestoreTestVersion
+        {
+            get
+            {
+                var value = GetString("restore-test-version", null);
+                if (string.IsNullOrWhiteSpace(value))
+                    return null;
+                if (!long.TryParse(value, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var version) || version < 0)
+                    throw new UserInformationException(Strings.Options.RestoreTestInvalidVersionError(value), "RestoreTestInvalidVersion");
+                return version;
+            }
+        }
+
+        /// <summary>
+        /// Gets whether the restore test recreates the database from the remote destination
+        /// </summary>
+        public bool RestoreTestRecreateDatabase => GetBool("restore-test-recreate-database");
+
+        /// <summary>
+        /// Gets whether the restore test compares restored files with the live source
+        /// </summary>
+        public bool RestoreTestCompareSource => GetBool("restore-test-compare-source");
+
+        /// <summary>
+        /// Gets whether the restore test verifies restored metadata
+        /// </summary>
+        public bool RestoreTestVerifyMetadata => GetBool("restore-test-verify-metadata");
+
+        /// <summary>
+        /// Gets the maximum number of bytes the restore test may download, or 0 for unlimited
+        /// </summary>
+        public long RestoreTestMaxDownloadSize => GetSize("restore-test-max-download-size", "mb", "0");
+
+        /// <summary>
+        /// Gets the maximum runtime of the restore test, or <see cref="TimeSpan.Zero"/> for unlimited
+        /// </summary>
+        public TimeSpan RestoreTestMaxRuntime => Library.Utility.Utility.ParseTimespanOption(m_options, "restore-test-max-runtime", "0");
+
+        /// <summary>
+        /// Gets the folder used for scratch files by the restore test, or null to use the temporary folder
+        /// </summary>
+        public string? RestoreTestTempPath => GetString("restore-test-temp-path", null);
+
+        /// <summary>
+        /// Gets the seed used for sample selection in the restore test, or null for a random seed
+        /// </summary>
+        public int? RestoreTestSeed
+        {
+            get
+            {
+                var value = GetString("restore-test-seed", null);
+                if (string.IsNullOrWhiteSpace(value))
+                    return null;
+                if (!int.TryParse(value, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var seed))
+                    throw new UserInformationException(Strings.Options.RestoreTestInvalidSeedError(value), "RestoreTestInvalidSeed");
+                return seed;
+            }
+        }
+
+        /// <summary>
+        /// Gets the include filters that limit the restore test candidates
+        /// </summary>
+        public string[] RestoreTestInclude => SplitFilterOption("restore-test-include");
+
+        /// <summary>
+        /// Gets the exclude filters that limit the restore test candidates
+        /// </summary>
+        public string[] RestoreTestExclude => SplitFilterOption("restore-test-exclude");
+
+        /// <summary>
+        /// Splits a filter option on the path separator
+        /// </summary>
+        /// <param name="name">The option name</param>
+        /// <returns>The filter entries</returns>
+        private string[] SplitFilterOption(string name)
+        {
+            var value = GetString(name, null);
+            if (string.IsNullOrWhiteSpace(value))
+                return [];
+            return value.Split(System.IO.Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries);
+        }
 
         /// <summary>
         /// Gets whether to preallocate files during restore
