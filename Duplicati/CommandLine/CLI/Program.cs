@@ -97,6 +97,8 @@ namespace Duplicati.CommandLine
                         ["compare"] = Commands.ListChanges,
                         ["test"] = Commands.Test,
                         ["verify"] = Commands.Test,
+                        ["restore-test"] = Commands.RestoreTest,
+                        ["restoretest"] = Commands.RestoreTest,
                         ["test-filters"] = Commands.TestFilters,
                         ["test-filter"] = Commands.TestFilters,
                         ["affected"] = Commands.Affected,

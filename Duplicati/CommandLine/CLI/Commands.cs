@@ -816,6 +816,9 @@ namespace Duplicati.CommandLine
                             case Duplicati.Library.Main.OperationPhase.Backup_Compact:
                                 output.MessageEvent("Compacting remote backup ...");
                                 break;
+                            case Duplicati.Library.Main.OperationPhase.Backup_PostBackupRestoreTest:
+                                output.MessageEvent(Strings.Program.BackupRestoreTestStarting);
+                                break;
                         }
                     };
 
@@ -865,6 +868,9 @@ namespace Duplicati.CommandLine
 
                 output.MessageEvent(string.Format("  Data uploaded: {0}", Library.Utility.Utility.FormatSizeString(result.BackendStatistics.BytesUploaded)));
                 output.MessageEvent(string.Format("  Data downloaded: {0}", Library.Utility.Utility.FormatSizeString(result.BackendStatistics.BytesDownloaded)));
+
+                if (result.RestoreTestResults != null)
+                    output.MessageEvent(Strings.Program.BackupRestoreTestSummary(result.RestoreTestResults.FilesTested, result.RestoreTestResults.FilesPassed, result.RestoreTestResults.FilesFailed, result.RestoreTestResults.FilesSkipped));
 
                 if (result.ExaminedFiles == 0 && (filter != null && !filter.Empty))
                     output.MessageEvent("No files were processed. If this was not intentional you may want to use the \"test-filters\" command");
@@ -974,6 +980,77 @@ namespace Duplicati.CommandLine
 
                     return 3;
                 }
+            }
+        }
+
+        public static int RestoreTest(TextWriter outwriter, Action<Duplicati.Library.Main.Controller> setup, List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
+        {
+            if (args.Count != 1)
+                return PrintWrongNumberOfArguments(outwriter, args, 1);
+
+            const int maxListed = 10;
+            Library.Interface.IRestoreTestResults result;
+            using (var console = new ConsoleOutput(outwriter, options))
+            using (var i = new Library.Main.Controller(args[0], options, console))
+            {
+                console.MessageEvent(Strings.Program.RestoreTestStarted(DateTime.Now));
+                setup(i);
+                result = i.RestoreTestAsync(filter).Await();
+
+                if (console.FullResults)
+                {
+                    Library.Utility.Utility.PrintSerializeObject(result, outwriter);
+                    outwriter.WriteLine();
+                }
+                else
+                {
+                    console.MessageEvent(Strings.Program.RestoreTestSummary(result.Mode.ToString(), result.Version, result.Seed));
+                    console.MessageEvent(Strings.Program.RestoreTestFilesSummary(result.FilesTested, result.FilesPassed, result.FilesFailed, result.FilesSkipped));
+                    console.MessageEvent(Strings.Program.RestoreTestDataSummary(Library.Utility.Utility.FormatSizeString(result.BytesRestored), Library.Utility.Utility.FormatSizeString(result.BytesDownloaded), result.RemoteVolumesDownloaded));
+                    console.MessageEvent(result.DatabaseRecreated ? Strings.Program.RestoreTestDatabaseRecreated : Strings.Program.RestoreTestDatabaseReused);
+                    console.MessageEvent(Strings.Program.RestoreTestDuration(result.Duration));
+
+                    if (result.Budget != null && result.Budget.Exceeded)
+                        console.MessageEvent(Strings.Program.RestoreTestBudgetExceeded(result.Budget.Reason.ToString()));
+
+                    var failures = result.Failures?.ToList() ?? new List<Library.Interface.IRestoreTestFailure>();
+                    if (failures.Count > 0)
+                    {
+                        console.MessageEvent(Strings.Program.RestoreTestFailuresHeader(failures.Count));
+                        foreach (var f in failures.Take(maxListed))
+                            console.MessageEvent(Strings.Program.RestoreTestFailureLine(f.Path, f.Reason.ToString(), f.Expected, f.Actual));
+                        if (failures.Count > maxListed)
+                            console.MessageEvent(Strings.Program.RestoreTestAndMore(failures.Count - maxListed, "full-result"));
+                    }
+
+                    var differences = result.SourceDifferences?.ToList() ?? new List<Library.Interface.IRestoreTestSourceDifference>();
+                    if (differences.Count > 0)
+                    {
+                        console.MessageEvent(Strings.Program.RestoreTestSourceDifferencesHeader(differences.Count));
+                        foreach (var d in differences.Take(maxListed))
+                            console.MessageEvent(Strings.Program.RestoreTestSourceDifferenceLine(d.Path, d.Reason));
+                        if (differences.Count > maxListed)
+                            console.MessageEvent(Strings.Program.RestoreTestAndMore(differences.Count - maxListed, "full-result"));
+                    }
+
+                    if (result.FilesTested == 0)
+                        console.MessageEvent(Strings.Program.RestoreTestNoFilesTested);
+                    else if (failures.Count == 0 && result.FilesSkipped == 0 && !(result.Budget?.Exceeded ?? false))
+                        console.MessageEvent(Strings.Program.RestoreTestAllPassed(result.FilesPassed));
+                }
+            }
+
+            // Follow the common convention: 0 success, 2 warnings, 3 errors, 100 fatal
+            switch (result.ParsedResult)
+            {
+                case Library.Interface.ParsedResultType.Fatal:
+                    return 100;
+                case Library.Interface.ParsedResultType.Error:
+                    return 3;
+                case Library.Interface.ParsedResultType.Warning:
+                    return 2;
+                default:
+                    return 0;
             }
         }
 

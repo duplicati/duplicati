@@ -36,6 +36,7 @@ namespace Duplicati.Library.Main
         Backup_Lock,
         Backup_VerificationUpload,
         Backup_PostBackupVerify,
+        Backup_PostBackupRestoreTest,
         Backup_Complete,
         Backup_RemoteSynchronization,
 
@@ -51,6 +52,15 @@ namespace Duplicati.Library.Main
         Restore_PostRestoreVerify,
         Restore_Finalize,
         Restore_Complete,
+
+        RestoreTest_Begin,
+        RestoreTest_RecreateDatabase,
+        RestoreTest_SelectSample,
+        RestoreTest_Restore,
+        RestoreTest_Verify,
+        RestoreTest_CompareSource,
+        RestoreTest_Cleanup,
+        RestoreTest_Complete,
 
         Recreate_Running,
         ReadLockInfo_Running,

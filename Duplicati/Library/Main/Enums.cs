@@ -77,7 +77,8 @@ namespace Duplicati.Library.Main
         SetLock,
         ReadLockInfo,
         RemoteSynchronization,
-        SetVersionLabel
+        SetVersionLabel,
+        RestoreTest
     }
 
     /// <summary>

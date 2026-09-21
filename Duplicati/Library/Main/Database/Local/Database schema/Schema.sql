@@ -298,4 +298,17 @@ CREATE TABLE "ChangeJournalData" (
     "ConfigHash" TEXT NOT NULL  
 );
 
-INSERT INTO "Version" ("Version") VALUES (20);
+/*
+Records when each file was last verified by a
+restore test, so rolling mode can prefer files
+that have not been tested recently
+*/
+CREATE TABLE "RestoreTestHistory" (
+	"ID" INTEGER PRIMARY KEY,
+	"Path" TEXT NOT NULL,
+	"LastVerified" INTEGER NOT NULL,
+	"LastResult" TEXT NOT NULL
+);
+CREATE UNIQUE INDEX "RestoreTestHistoryPath" ON "RestoreTestHistory" ("Path");
+
+INSERT INTO "Version" ("Version") VALUES (21);

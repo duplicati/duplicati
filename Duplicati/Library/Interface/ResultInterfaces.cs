@@ -372,6 +372,11 @@ namespace Duplicati.Library.Interface
         ISetLockResults LockResults { get; }
 
         /// <summary>
+        /// Results from the restore test run after the backup, or null if none was run.
+        /// </summary>
+        IRestoreTestResults RestoreTestResults { get; }
+
+        /// <summary>
         /// Results from remote synchronization operations to multiple destinations.
         /// </summary>
         IRemoteSynchronizationResults[] RemoteSynchronizationResults { get; }
@@ -564,6 +569,207 @@ namespace Duplicati.Library.Interface
     public interface ITestResults : IBasicResults
     {
         IEnumerable<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> Verifications { get; }
+    }
+
+    /// <summary>
+    /// The strategies for choosing which files a restore test verifies
+    /// </summary>
+    public enum RestoreTestMode
+    {
+        /// <summary>
+        /// Pick a fixed number of random files
+        /// </summary>
+        RandomFiles,
+        /// <summary>
+        /// Pick random files until a percentage of the backup size is reached
+        /// </summary>
+        RandomSize,
+        /// <summary>
+        /// Test every file in the version
+        /// </summary>
+        Full,
+        /// <summary>
+        /// Prefer files that have not been verified recently, so all files are covered over time
+        /// </summary>
+        Rolling
+    }
+
+    /// <summary>
+    /// The reason a restored file failed verification
+    /// </summary>
+    public enum RestoreTestFailureReason
+    {
+        /// <summary>
+        /// The restored file content hash did not match the hash recorded in the backup
+        /// </summary>
+        HashMismatch,
+        /// <summary>
+        /// The restored file size did not match the size recorded in the backup
+        /// </summary>
+        SizeMismatch,
+        /// <summary>
+        /// A remote volume required for the file could not be downloaded or was damaged
+        /// </summary>
+        MissingRemoteVolume,
+        /// <summary>
+        /// The restore engine failed to produce the file
+        /// </summary>
+        RestoreError,
+        /// <summary>
+        /// The restored metadata did not match the metadata recorded in the backup
+        /// </summary>
+        MetadataMismatch
+    }
+
+    /// <summary>
+    /// The budget that stopped a restore test
+    /// </summary>
+    public enum RestoreTestBudgetReason
+    {
+        /// <summary>
+        /// No budget was exceeded
+        /// </summary>
+        None,
+        /// <summary>
+        /// The remote download size budget was exceeded
+        /// </summary>
+        DownloadSize,
+        /// <summary>
+        /// The runtime budget was exceeded
+        /// </summary>
+        Runtime
+    }
+
+    /// <summary>
+    /// A file that failed verification during a restore test
+    /// </summary>
+    public interface IRestoreTestFailure
+    {
+        /// <summary>
+        /// The path of the file, as recorded in the backup
+        /// </summary>
+        string Path { get; }
+        /// <summary>
+        /// The reason the verification failed
+        /// </summary>
+        RestoreTestFailureReason Reason { get; }
+        /// <summary>
+        /// The expected value, such as the recorded hash, size or volume name
+        /// </summary>
+        string Expected { get; }
+        /// <summary>
+        /// The actual value observed on the restored file
+        /// </summary>
+        string Actual { get; }
+    }
+
+    /// <summary>
+    /// A difference found between the backup and the live source file
+    /// </summary>
+    public interface IRestoreTestSourceDifference
+    {
+        /// <summary>
+        /// The path of the source file
+        /// </summary>
+        string Path { get; }
+        /// <summary>
+        /// A description of the difference
+        /// </summary>
+        string Reason { get; }
+        /// <summary>
+        /// The value recorded in the backup
+        /// </summary>
+        string Expected { get; }
+        /// <summary>
+        /// The value found on the live source
+        /// </summary>
+        string Actual { get; }
+    }
+
+    /// <summary>
+    /// The budget state of a restore test
+    /// </summary>
+    public interface IRestoreTestBudget
+    {
+        /// <summary>
+        /// True if a budget was exceeded and the test stopped early
+        /// </summary>
+        bool Exceeded { get; }
+        /// <summary>
+        /// The budget that was exceeded
+        /// </summary>
+        RestoreTestBudgetReason Reason { get; }
+    }
+
+    /// <summary>
+    /// The results of a restore test operation
+    /// </summary>
+    public interface IRestoreTestResults : IBasicResults
+    {
+        /// <summary>
+        /// The sampling mode that was used
+        /// </summary>
+        RestoreTestMode Mode { get; }
+        /// <summary>
+        /// The backup version that was tested (0 is the newest)
+        /// </summary>
+        long Version { get; }
+        /// <summary>
+        /// The seed used for sample selection
+        /// </summary>
+        int Seed { get; }
+        /// <summary>
+        /// The number of files selected for testing
+        /// </summary>
+        long FilesTested { get; }
+        /// <summary>
+        /// The number of files that were restored and verified successfully
+        /// </summary>
+        long FilesPassed { get; }
+        /// <summary>
+        /// The number of files that failed verification
+        /// </summary>
+        long FilesFailed { get; }
+        /// <summary>
+        /// The number of selected files that were not verified, for instance because a budget was exceeded
+        /// </summary>
+        long FilesSkipped { get; }
+        /// <summary>
+        /// The number of bytes of verified file content
+        /// </summary>
+        long BytesRestored { get; }
+        /// <summary>
+        /// The number of bytes downloaded from the remote destination during the test
+        /// </summary>
+        long BytesDownloaded { get; }
+        /// <summary>
+        /// The number of remote volumes downloaded during the test
+        /// </summary>
+        long RemoteVolumesDownloaded { get; }
+        /// <summary>
+        /// True if the database was recreated from the remote destination
+        /// </summary>
+        bool DatabaseRecreated { get; }
+        /// <summary>
+        /// The results of the database recreation, if performed
+        /// </summary>
+        IRecreateDatabaseResults RecreateDatabaseResults { get; }
+        /// <summary>
+        /// The results of the restore of the sample
+        /// </summary>
+        IRestoreResults RestoreResults { get; }
+        /// <summary>
+        /// The files that failed verification
+        /// </summary>
+        IEnumerable<IRestoreTestFailure> Failures { get; }
+        /// <summary>
+        /// The differences found between the backup and the live source
+        /// </summary>
+        IEnumerable<IRestoreTestSourceDifference> SourceDifferences { get; }
+        /// <summary>
+        /// The budget state
+        /// </summary>
+        IRestoreTestBudget Budget { get; }
     }
 
     public interface ITestFilterResults : IBasicResults

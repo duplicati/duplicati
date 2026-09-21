@@ -57,6 +57,12 @@ public interface IController : IDisposable
     Task SetLastVacuumAsync(DateTime lastVacuum);
 
     /// <summary>
+    /// Sets the time of the last restore test, used to decide whether a backup runs a restore test
+    /// </summary>
+    /// <param name="lastRestoreTest">The time of the last restore test</param>
+    Task SetLastRestoreTestAsync(DateTime lastRestoreTest);
+
+    /// <summary>
     /// Aborts the current operation
     /// </summary>
     Task AbortAsync();
@@ -305,6 +311,14 @@ public interface IController : IDisposable
     /// <param name="samples">The number of samples to test</param>
     /// <returns>The test results</returns>
     Task<ITestResults> TestAsync(long samples = 1);
+
+    /// <summary>
+    /// Tests that the backup can be restored by restoring a sample of files
+    /// from the remote destination into a scratch folder and verifying them
+    /// </summary>
+    /// <param name="filter">An optional filter limiting the files that can be selected</param>
+    /// <returns>The restore test results</returns>
+    Task<IRestoreTestResults> RestoreTestAsync(IFilter? filter = null);
 
     /// <summary>
     /// Tests the filter against the backup

@@ -942,6 +942,9 @@ namespace Duplicati.Server
                     if (backup.Metadata.ContainsKey("LastVacuumFinished"))
                         await controller.SetLastVacuumAsync(Utility.DeserializeDateTime(backup.Metadata["LastVacuumFinished"])).ConfigureAwait(false);
 
+                    if (backup.Metadata.ContainsKey("LastRestoreTestFinished"))
+                        await controller.SetLastRestoreTestAsync(Utility.DeserializeDateTime(backup.Metadata["LastRestoreTestFinished"])).ConfigureAwait(false);
+
                     switch (data.Operation)
                     {
                         case DuplicatiOperation.BackupOrSync:
@@ -1245,6 +1248,16 @@ namespace Duplicati.Server
             }
         }
 
+        private static void UpdateMetadataLastRestoreTest(IBackup backup, IRestoreTestResults r)
+        {
+            if (r != null)
+            {
+                backup.Metadata["LastRestoreTestDuration"] = r.Duration.ToString();
+                backup.Metadata["LastRestoreTestStarted"] = Utility.SerializeDateTime(r.BeginTime.ToUniversalTime());
+                backup.Metadata["LastRestoreTestFinished"] = Utility.SerializeDateTime(r.EndTime.ToUniversalTime());
+            }
+        }
+
         internal static void UpdateMetadataLastSync(IBackup backup, ISyncResults r)
         {
             if (r != null && !r.Interrupted)
@@ -1339,6 +1352,9 @@ namespace Duplicati.Server
 
                     if (r.VacuumResults != null)
                         UpdateMetadataLastVacuum(backup, r.VacuumResults);
+
+                    if (r.RestoreTestResults != null)
+                        UpdateMetadataLastRestoreTest(backup, r.RestoreTestResults);
                 }
 
                 // Only the latest run is reported, so the notifications of the earlier runs go,

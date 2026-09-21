@@ -92,6 +92,7 @@ public class BackupResultsDto : BasicResultsDto
     public RepairResultsDto RepairResults { get; set; }
     public SetLockResultsDto LockResults { get; set; }
     public VacuumResultsDto VacuumResults { get; set; }
+    public RestoreTestResultsDto RestoreTestResults { get; set; }
     public BackendStatisticsDto BackendStatistics { get; set; }
     public RemoteSynchronizationResultsDto[] RemoteSynchronizationResults { get; set; }
 
@@ -133,6 +134,7 @@ public class BackupResultsDto : BasicResultsDto
             RepairResults = RepairResultsDto.FromResults(results.RepairResults),
             LockResults = SetLockResultsDto.FromResults(results.LockResults),
             VacuumResults = VacuumResultsDto.FromResults(results.VacuumResults),
+            RestoreTestResults = RestoreTestResultsDto.FromResults(results.RestoreTestResults),
             BackendStatistics = BackendStatisticsDto.FromResults(results.BackendStatistics),
             RemoteSynchronizationResults = results.RemoteSynchronizationResults?.Select(RemoteSynchronizationResultsDto.FromResults).ToArray()
         };
@@ -1011,6 +1013,130 @@ public class TestResultsDto : BasicResultsDto
                     v.Key,
                     v.Value?.Select(x => new KeyValuePair<TestEntryStatus, string>(x.Key, x.Value)).ToList() ?? new List<KeyValuePair<TestEntryStatus, string>>()
                 )).ToList() ?? new List<KeyValuePair<string, List<KeyValuePair<TestEntryStatus, string>>>>()
+        };
+    }
+}
+
+/// <summary>
+/// DTO for a restore test failure
+/// </summary>
+[Serializable]
+public class RestoreTestFailureDto
+{
+    public string Path { get; set; }
+    public RestoreTestFailureReason Reason { get; set; }
+    public string Expected { get; set; }
+    public string Actual { get; set; }
+
+    public static RestoreTestFailureDto FromFailure(IRestoreTestFailure failure)
+    {
+        if (failure == null) return null;
+        return new RestoreTestFailureDto
+        {
+            Path = failure.Path,
+            Reason = failure.Reason,
+            Expected = failure.Expected,
+            Actual = failure.Actual
+        };
+    }
+}
+
+/// <summary>
+/// DTO for a restore test source difference
+/// </summary>
+[Serializable]
+public class RestoreTestSourceDifferenceDto
+{
+    public string Path { get; set; }
+    public string Reason { get; set; }
+    public string Expected { get; set; }
+    public string Actual { get; set; }
+
+    public static RestoreTestSourceDifferenceDto FromDifference(IRestoreTestSourceDifference difference)
+    {
+        if (difference == null) return null;
+        return new RestoreTestSourceDifferenceDto
+        {
+            Path = difference.Path,
+            Reason = difference.Reason,
+            Expected = difference.Expected,
+            Actual = difference.Actual
+        };
+    }
+}
+
+/// <summary>
+/// DTO for the restore test budget state
+/// </summary>
+[Serializable]
+public class RestoreTestBudgetDto
+{
+    public bool Exceeded { get; set; }
+    public RestoreTestBudgetReason Reason { get; set; }
+
+    public static RestoreTestBudgetDto FromBudget(IRestoreTestBudget budget)
+    {
+        if (budget == null) return null;
+        return new RestoreTestBudgetDto
+        {
+            Exceeded = budget.Exceeded,
+            Reason = budget.Reason
+        };
+    }
+}
+
+/// <summary>
+/// DTO for restore test results
+/// </summary>
+[Serializable]
+public class RestoreTestResultsDto : BasicResultsDto
+{
+    public RestoreTestMode Mode { get; set; }
+    public long Version { get; set; }
+    public int Seed { get; set; }
+    public long FilesTested { get; set; }
+    public long FilesPassed { get; set; }
+    public long FilesFailed { get; set; }
+    public long FilesSkipped { get; set; }
+    public long BytesRestored { get; set; }
+    public long BytesDownloaded { get; set; }
+    public long RemoteVolumesDownloaded { get; set; }
+    public bool DatabaseRecreated { get; set; }
+    public RecreateDatabaseResultsDto RecreateDatabaseResults { get; set; }
+    public RestoreResultsDto RestoreResults { get; set; }
+    public List<RestoreTestFailureDto> Failures { get; set; } = new();
+    public List<RestoreTestSourceDifferenceDto> SourceDifferences { get; set; } = new();
+    public RestoreTestBudgetDto Budget { get; set; }
+
+    public static RestoreTestResultsDto FromResults(IRestoreTestResults results)
+    {
+        if (results == null) return null;
+        return new RestoreTestResultsDto
+        {
+            BeginTime = results.BeginTime,
+            EndTime = results.EndTime,
+            Duration = results.Duration,
+            Errors = results.Errors?.ToList() ?? new List<string>(),
+            Warnings = results.Warnings?.ToList() ?? new List<string>(),
+            Messages = results.Messages?.ToList() ?? new List<string>(),
+            ParsedResult = results.ParsedResult,
+            Interrupted = results.Interrupted,
+            Mode = results.Mode,
+            Version = results.Version,
+            Seed = results.Seed,
+            FilesTested = results.FilesTested,
+            FilesPassed = results.FilesPassed,
+            FilesFailed = results.FilesFailed,
+            FilesSkipped = results.FilesSkipped,
+            BytesRestored = results.BytesRestored,
+            BytesDownloaded = results.BytesDownloaded,
+            RemoteVolumesDownloaded = results.RemoteVolumesDownloaded,
+            DatabaseRecreated = results.DatabaseRecreated,
+            RecreateDatabaseResults = RecreateDatabaseResultsDto.FromResults(results.RecreateDatabaseResults),
+            RestoreResults = RestoreResultsDto.FromResults(results.RestoreResults),
+            Failures = results.Failures?.Select(RestoreTestFailureDto.FromFailure).ToList() ?? new List<RestoreTestFailureDto>(),
+            SourceDifferences = results.SourceDifferences?.Select(RestoreTestSourceDifferenceDto.FromDifference).ToList() ?? new List<RestoreTestSourceDifferenceDto>(),
+            Budget = RestoreTestBudgetDto.FromBudget(results.Budget)
         };
     }
 }
