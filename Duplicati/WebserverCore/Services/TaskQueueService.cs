@@ -38,7 +38,24 @@ public class TaskQueueService(IQueueRunnerService queueRunnerService) : ITaskQue
         var tasks = queueRunnerService.GetCurrentTasks();
 
         if (task != null && task.TaskID == taskid)
-            return new Dto.GetTaskStateDto("Running", taskid, task.TaskStarted, task.TaskFinished);
+        {
+            if (task.TaskFinished == null)
+                return new Dto.GetTaskStateDto("Running", taskid, task.TaskStarted, null);
+
+            // The runner stamps TaskFinished before it clears the current task, so a task
+            // can be current and finished at the same time. Its result is cached by then;
+            // report it the way GetTaskQueue does, so a client that stops waiting at
+            // TaskFinished sees the outcome and not "Running" without one.
+            var finished = queueRunnerService.GetCachedTaskResults(taskid);
+            return new GetTaskStateDto(
+                Status: finished?.Exception == null ? "Completed" : "Failed",
+                ID: taskid,
+                TaskStarted: task.TaskStarted,
+                TaskFinished: task.TaskFinished,
+                ErrorMessage: finished?.Exception?.Message,
+                Exception: finished?.Exception?.ToString()
+            );
+        }
 
         if (tasks.FirstOrDefault(x => x.TaskID == taskid) == null)
         {
