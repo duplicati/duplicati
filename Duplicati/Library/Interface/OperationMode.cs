@@ -19,27 +19,41 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-using System.Threading.Tasks;
-using Duplicati.Library.Interface;
-using Duplicati.Library.Main.IPC.Dto;
-
-namespace Duplicati.Library.Main.IPC;
+namespace Duplicati.Library.Interface;
 
 /// <summary>
-/// Callback interface for server to call client (events)
+/// The supported operations.
+/// The name of the operation is passed to <see cref="IGenericCallbackModule.OnStart"/>.
 /// </summary>
-public interface IControllerRpcCallbacks
+public enum OperationMode
 {
-    // Log message forwarding
-    Task OnLogMessageAsync(LogEntryDto entry);
-
-    // Progress updates
-    Task OnBackendEventAsync(BackendActionType action, BackendEventType type, string path, long size);
-    Task OnBackendProgressAsync(BackendProgressDto progress);
-    Task OnOperationProgressAsync(OperationProgressDto progress);
-    Task OnPhaseChangedAsync(OperationPhase phase, OperationPhase previousPhase);
-
-    // Operation lifecycle
-    Task OnOperationStartedAsync(OperationMode operation);
-    Task OnOperationCompletedAsync(OperationResultDto result, ExceptionDto exception);
+    Backup,
+    Restore,
+    List,
+    ListAffected,
+    ListChanges,
+    Delete,
+    RestoreControlfiles,
+    Repair,
+    CreateLogDb,
+    Compact,
+    Test,
+    TestFilters,
+    SystemInfo,
+    ListRemote,
+    ListBrokenFiles,
+    PurgeBrokenFiles,
+    PurgeFiles,
+    SendMail,
+    Vacuum,
+    Sync,
+    ListFilesets,
+    ListFolder,
+    ListFileVersions,
+    SearchFiles,
+    SetLock,
+    ReadLockInfo,
+    RemoteSynchronization,
+    SetVersionLabel,
+    RestoreTest
 }

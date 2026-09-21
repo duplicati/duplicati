@@ -354,9 +354,9 @@ namespace Duplicati.UnitTest
             ignoredWarnings ??= [];
 
             // Use dynamic property access for MainOperation, because it is only exposed in internal classes
-            var operationProperty = results.GetType().GetProperty("MainOperation", typeof(Library.Main.OperationMode));
+            var operationProperty = results.GetType().GetProperty("MainOperation", typeof(Library.Interface.OperationMode));
             if (operationProperty != null)
-                operation = ((Library.Main.OperationMode)operationProperty.GetValue(results)).ToString();
+                operation = ((Library.Interface.OperationMode)operationProperty.GetValue(results)).ToString();
 
             if (results is ITestResults testResults)
             {
