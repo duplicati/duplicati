@@ -39,6 +39,12 @@ internal static class DuplicatiBackend
     public static string AuthTimeoutOptionsShort { get { return LC.L(@"The timeout for authentication requests."); } }
     public static string AuthTimeoutOptionsLong { get { return LC.L(@"Specifies the timeout for authentication requests."); } }
     public static string ErrorMissingBackupId { get { return LC.L(@"A unique backup id must be specified"); } }
+    public static string ErrorServerResponse(int statusCode, string reason, string message) { return LC.L(@"The storage server returned {0} ({1}): {2}", statusCode, reason, message); }
+    public static string ErrorServerResponseWithoutMessage(int statusCode, string reason) { return LC.L(@"The storage server returned {0} ({1})", statusCode, reason); }
+    public static string ErrorAccountDisabled(string errorMessage) { return LC.L(@"The operation failed because the account is disabled, error message: {0}", errorMessage); }
+    public static string ErrorAccountDisabledWithDetails(string details, string errorMessage) { return LC.L(@"The operation failed because the account is disabled ({0}), error message: {1}", details, errorMessage); }
+    public static string ErrorQuotaExceeded(string errorMessage) { return LC.L(@"The upload failed because the storage quota is exceeded, error message: {0}", errorMessage); }
+    public static string ErrorUploadsDisabled(string reason, string errorMessage) { return LC.L(@"The upload failed because uploads are disabled for the account ({0}), error message: {1}", reason, errorMessage); }
 }
 
 internal static class ListFoldersModule
