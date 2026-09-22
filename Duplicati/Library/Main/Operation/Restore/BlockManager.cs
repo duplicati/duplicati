@@ -95,6 +95,10 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// </summary>
             private readonly ConcurrentDictionary<long, (int Count, TaskCompletionSource<DataBlock> Task)> m_waiters = [];
             /// <summary>
+            /// Whether the volumes have stopped arriving, so no waiter can be satisfied any more.
+            /// </summary>
+            private volatile bool m_cancelled = false;
+            /// <summary>
             /// The number of readers accessing this dictionary. Used during shutdown / cleanup.
             /// </summary>
             private int m_readers = 0;
@@ -319,6 +323,16 @@ namespace Duplicati.Library.Main.Operation.Restore
                 sw_get_wait?.Start();
                 var tcs = new TaskCompletionSource<DataBlock>(TaskCreationOptions.RunContinuationsAsynchronously);
                 var (_, new_tcs) = m_waiters.AddOrUpdate(block_request.BlockID, (1, tcs), (key, old) => (old.Count + 1, old.Task));
+
+                // The volumes can stop arriving between the cache lookup and the registration above,
+                // for instance when a volume fails to decrypt. A waiter registered after `CancelAll`
+                // would then never be answered, and the restore would wait for it forever.
+                if (m_cancelled)
+                {
+                    CancelWaiters();
+                    return await new_tcs.Task.ConfigureAwait(false);
+                }
+
                 if (tcs == new_tcs)
                 {
                     sw_get_wait?.Stop();
@@ -475,9 +489,20 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// </summary>
             public void CancelAll()
             {
-                foreach (var (_, tcs) in m_waiters.Values)
+                m_cancelled = true;
+                CancelWaiters();
+            }
+
+            /// <summary>
+            /// Fail every waiter currently registered. Safe to call more than once and
+            /// alongside <see cref="GetAsync"/>, as each waiter is removed before it is failed.
+            /// </summary>
+            private void CancelWaiters()
+            {
+                foreach (var blockID in m_waiters.Keys)
                 {
-                    tcs.SetException(new RetiredException("Request waiter"));
+                    if (m_waiters.TryRemove(blockID, out var entry))
+                        entry.Task.TrySetException(new RetiredException("Request waiter"));
                 }
             }
         }
@@ -611,13 +636,21 @@ namespace Duplicati.Library.Main.Operation.Restore
                             Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Block handler - Req: {sw_req!.ElapsedMilliseconds}ms, Resp: {sw_resp!.ElapsedMilliseconds}ms, Cache: {sw_cache!.ElapsedMilliseconds}ms, Get: {sw_get!.ElapsedMilliseconds}ms");
                         }
 
+                        // The retirement can come from the volume side (an eviction written to a
+                        // retired volume request channel) rather than from the `FileProcessor`.
+                        // The `FileProcessor` is then still waiting on these channels, so they
+                        // have to be retired here too, or it waits for a response forever. The
+                        // retirement is immediate because a plain `Retire` waits for the buffer to be
+                        // read first, and with this handler gone nothing reads it.
+                        await req.RetireAsync(true).ConfigureAwait(false);
+                        await res.RetireAsync(true).ConfigureAwait(false);
                         cache.Retire();
                     }
                     catch (Exception ex)
                     {
                         Logging.Log.WriteErrorMessage(LOGTAG, "BlockHandlerError", ex, "Error in block handler");
-                        req.Retire();
-                        res.Retire();
+                        await req.RetireAsync(true).ConfigureAwait(false);
+                        await res.RetireAsync(true).ConfigureAwait(false);
                         cache.Retire();
                     }
                 })).ToArray();
