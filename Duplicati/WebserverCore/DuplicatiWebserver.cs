@@ -319,6 +319,10 @@ public class DuplicatiWebserver
         }
 
         builder.Services.AddHttpClient();
+        // The client forwarding remote control commands must only talk to the local server,
+        // so it must not follow redirects, as that would send the request elsewhere
+        builder.Services.AddHttpClient(RemoteControllerHandler.ForwardingHttpClientName)
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
 
         var useCors = settings.CorsOrigins != null && settings.CorsOrigins.Any();
         if (useCors)

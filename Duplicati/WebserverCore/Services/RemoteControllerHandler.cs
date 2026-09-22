@@ -42,6 +42,11 @@ public class RemoteControllerHandler(Connection connection, IHttpClientFactory h
     /// </summary>
     private static readonly string LOGTAG = Log.LogTagFromType<RemoteControllerHandler>();
 
+    /// <summary>
+    /// The name of the http client used to forward remote commands to the local server.
+    /// </summary>
+    public const string ForwardingHttpClientName = "remote-control-forwarding";
+
     /// <inheritdoc/>
     public Task<Dictionary<string, string?>> OnConnectAsync(Dictionary<string, string?> metadata)
     {
@@ -216,7 +221,7 @@ public class RemoteControllerHandler(Connection connection, IHttpClientFactory h
             return;
         }
 
-        using var httpClient = httpClientFactory.CreateClient();
+        using var httpClient = httpClientFactory.CreateClient(ForwardingHttpClientName);
         var token = jwtTokenProvider.CreateAccessToken("remote-control", jwtTokenProvider.TemporaryFamilyId, TimeSpan.FromMinutes(2));
 
         httpClient.BaseAddress = new Uri($"{(connection.ApplicationSettings.UseHTTPS ? "https" : "http")}://127.0.0.1:{connection.ApplicationSettings.LastWebserverPort}");
