@@ -556,6 +556,14 @@ internal class SyncHandler
             var remoteEntries = await backendManager.ListAsync(string.IsNullOrEmpty(folderRelPath) ? null : folderRelPath, ct).ConfigureAwait(false);
             foreach (var re in remoteEntries)
             {
+                // Several backends (e.g. S3, Google Drive, Box, OneDrive, Dropbox, SMB)
+                // name folder entries with a trailing slash by convention. Strip it so
+                // the name validates and matches the local sub-folder name; without this
+                // every remote folder would be rejected below and re-created on each run.
+                var name = re.Name;
+                if (re.IsFolder && name != null && name.Length > 1 && name[^1] == '/')
+                    name = name[..^1];
+
                 // Validate the backend-supplied name before using it. A malicious or
                 // compromised backend could return a name containing "..", path
                 // separators, or a backslash; such a name would otherwise flow into
@@ -563,15 +571,15 @@ internal class SyncHandler
                 // tree on folder-enabled backends (e.g. the File backend joins the
                 // relative path onto its root). Skip the entry with a warning rather
                 // than carrying it through.
-                if (!IsValidEntryName(re.Name))
+                if (string.IsNullOrWhiteSpace(name) || !IsValidEntryName(name))
                 {
-                    Logging.Log.WriteWarningMessage(LOGTAG, "InvalidRemoteName", null, "Skipping remote entry with an unsafe name (contains path separators or parent-directory segments): {0}", re.Name);
+                    Logging.Log.WriteWarningMessage(LOGTAG, "InvalidRemoteName", null, "Skipping remote entry with an unsafe name (contains path separators or parent-directory segments): {0}", name);
                     continue;
                 }
 
                 if (re.IsFolder)
                 {
-                    remoteFolderNames.Add(re.Name);
+                    remoteFolderNames.Add(name);
                     continue;
                 }
 
@@ -582,7 +590,7 @@ internal class SyncHandler
                 // Local/Unspecified-kind and the local entry time is UTC; comparing
                 // DateTimes of mixed Kind compares raw ticks without conversion, which
                 // would treat a local noon as later than a UTC morning and skip updates.
-                remoteFileState[re.Name] = new RemoteChild(re.Name, Math.Max(re.Size, 0), re.LastModification.ToUniversalTime(), null);
+                remoteFileState[name] = new RemoteChild(name, Math.Max(re.Size, 0), re.LastModification.ToUniversalTime(), null);
             }
 
             // If we are maintaining the inventory (write-through under UseLocalState,
