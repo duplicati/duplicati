@@ -1034,12 +1034,13 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
 
         if (increment && _enumerationCounter.TryAdd(targetpath, true))
         {
+            // The consumed seats are recorded for a host that collects the usage of the backup it runs in-process
             if (type.HasFlag(Office365MetaType.Users))
-                Interlocked.Increment(ref _userCount);
+                LicenseChecker.LicenseUsageTracker.Current?.Record(LicenseChecker.DuplicatiLicenseFeatures.Office365Users, Interlocked.Increment(ref _userCount));
             else if (type.HasFlag(Office365MetaType.Groups))
-                Interlocked.Increment(ref _groupCount);
+                LicenseChecker.LicenseUsageTracker.Current?.Record(LicenseChecker.DuplicatiLicenseFeatures.Office365Groups, Interlocked.Increment(ref _groupCount));
             else if (type.HasFlag(Office365MetaType.Sites))
-                Interlocked.Increment(ref _siteCount);
+                LicenseChecker.LicenseUsageTracker.Current?.Record(LicenseChecker.DuplicatiLicenseFeatures.Office365Sites, Interlocked.Increment(ref _siteCount));
         }
 
         return true;
