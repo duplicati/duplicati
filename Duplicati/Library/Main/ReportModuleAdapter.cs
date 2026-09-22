@@ -83,13 +83,20 @@ namespace Duplicati.Library.Main
             if (entry == null)
                 return;
 
+            // The redacted variant is computed from the unformatted arguments so whole
+            // path arguments are dropped, then the formatted text is filtered as well to
+            // catch paths embedded in the message or the exception text.
+            var redacted = Library.Utility.SensitiveDataFilter.RedactPaths(
+                entry.WithArguments(Library.Utility.SensitiveDataFilter.RedactPathArguments(entry.Arguments)).AsString(true));
+
             var snapshot = new ReportLogEntry(
                 entry.AsString(true),
                 entry.Level.ToString(),
                 entry.FilterTag,
                 entry.Id,
                 entry.When,
-                entry.Exception?.ToString());
+                entry.Exception?.ToString(),
+                redacted);
 
             Forward(() => m_module.OnLogEntryAsync(snapshot, m_cancellationToken), "OnLogEntryAsync");
         }

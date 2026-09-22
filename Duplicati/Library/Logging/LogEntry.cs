@@ -161,6 +161,15 @@ namespace Duplicati.Library.Logging
         }
 
         /// <summary>
+        /// Creates a copy of this entry with the format arguments replaced.
+        /// The timestamp and all other properties are kept.
+        /// </summary>
+        /// <param name="arguments">The format arguments for the copy.</param>
+        /// <returns>A copy of this entry using the given arguments.</returns>
+        public LogEntry WithArguments(object[] arguments)
+            => new LogEntry(Message, arguments, Level, Tag, Id, Exception) { When = When };
+
+        /// <summary>
         /// Returns a <see cref="T:System.String"/> that represents the current <see cref="T:Duplicati.Library.Logging.LogEntry"/>.
         /// </summary>
         /// <returns>A <see cref="T:System.String"/> that represents the current <see cref="T:Duplicati.Library.Logging.LogEntry"/>.</returns>
