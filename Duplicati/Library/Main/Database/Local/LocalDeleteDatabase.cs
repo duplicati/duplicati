@@ -438,6 +438,7 @@ namespace Duplicati.Library.Main.Database.Local
         private async IAsyncEnumerable<VolumeUsage> GetWastedSpaceReportAsync([EnumeratorCancellation] CancellationToken token)
         {
             var tmptablename = $"UsageReport-{Library.Utility.Utility.GetHexGuid()}";
+            var blocksettimetablename = $"BlocksetTime-{Library.Utility.Utility.GetHexGuid()}";
 
             var usedBlocks = @"
                 SELECT
@@ -459,65 +460,64 @@ namespace Duplicati.Library.Main.Database.Local
                     GROUP BY ""Block"".""VolumeID""
             ";
 
-            // The scantime is the timestamp of the oldest fileset that references a block in the volume.
-            // The aggregation is done in stages (file -> blockset -> volume), so each blockset
-            // is only expanded to blocks once, instead of once for every fileset the file is in.
-            // The grouped subqueries have no index, so CROSS JOIN pins them as the outer loop
-            // and the lookups go through the primary keys of the tables they join.
-            var filetime = @"
-                SELECT
-                    ""FilesetEntry"".""FileID"" AS ""FileID"",
-                    MIN(""Fileset"".""Timestamp"") AS ""Sorttime""
-                FROM
-                    ""FilesetEntry"",
-                    ""Fileset""
-                WHERE ""Fileset"".""ID"" = ""FilesetEntry"".""FilesetID""
-                GROUP BY ""FilesetEntry"".""FileID""
-            ";
-
-            var lastmodifiedFile = @"
-                SELECT
-                    ""FileLookup"".""BlocksetID"" AS ""BlocksetID"",
-                    ""FileTime"".""Sorttime"" AS ""Sorttime""
-                FROM ""FileTime""
-                CROSS JOIN ""FileLookup""
-                WHERE ""FileTime"".""FileID"" = ""FileLookup"".""ID""
-            ";
-
-            var lastmodifiedMetadata = @"
-                SELECT
-                    ""Metadataset"".""BlocksetID"" AS ""BlocksetID"",
-                    ""FileTime"".""Sorttime"" AS ""Sorttime""
-                FROM ""FileTime""
-                CROSS JOIN ""FileLookup""
-                CROSS JOIN ""Metadataset""
-                WHERE
-                    ""FileTime"".""FileID"" = ""FileLookup"".""ID""
-                    AND ""FileLookup"".""MetadataID"" = ""Metadataset"".""ID""
-            ";
-
-            var blocksettime = @$"
-                SELECT
-                    ""BlocksetID"" AS ""BlocksetID"",
-                    MIN(""Sorttime"") AS ""Sorttime""
-                FROM (
-                    {lastmodifiedFile}
-                    UNION ALL {lastmodifiedMetadata}
+            // The scantime of a volume is the timestamp of the oldest fileset that references
+            // one of its blocks. Joining the filesets straight through to the blocks expands
+            // every block of a file once per fileset the file is in, so the time is first
+            // resolved per blockset into a temporary table, and the blocks are then only
+            // expanded once. Each step walks an index in the order it groups by, so SQLite
+            // never has to sort the rows first, and the memory used is bounded by the number
+            // of blocksets, not by the number of block references or filesets.
+            var createblocksettime = @$"
+                CREATE {TEMPORARY} TABLE ""{blocksettimetablename}"" (
+                    ""BlocksetID"" INTEGER PRIMARY KEY,
+                    ""Sorttime"" INTEGER
                 )
-                GROUP BY ""BlocksetID""
+            ";
+
+            var filetime = @"
+                SELECT MIN(""Fileset"".""Timestamp"")
+                FROM ""FilesetEntry""
+                CROSS JOIN ""Fileset""
+                WHERE
+                    ""FilesetEntry"".""FileID"" = ""FileLookup"".""ID""
+                    AND ""Fileset"".""ID"" = ""FilesetEntry"".""FilesetID""
+            ";
+
+            // A file that is in no fileset yields NULL, which MIN ignores; a blockset only
+            // referenced by such files keeps a NULL scantime and is treated as unreferenced.
+            var blocksettimeFromFiles = @$"
+                INSERT INTO ""{blocksettimetablename}"" (""BlocksetID"", ""Sorttime"")
+                SELECT
+                    ""FileLookup"".""BlocksetID"",
+                    MIN(({filetime}))
+                FROM ""FileLookup""
+                WHERE ""FileLookup"".""BlocksetID"" >= 0
+                GROUP BY ""FileLookup"".""BlocksetID""
+            ";
+
+            var blocksettimeFromMetadata = @$"
+                INSERT INTO ""{blocksettimetablename}"" (""BlocksetID"", ""Sorttime"")
+                SELECT
+                    ""Metadataset"".""BlocksetID"",
+                    MIN(({filetime}))
+                FROM ""Metadataset""
+                CROSS JOIN ""FileLookup""
+                WHERE ""FileLookup"".""MetadataID"" = ""Metadataset"".""ID""
+                GROUP BY ""Metadataset"".""BlocksetID""
+                ON CONFLICT (""BlocksetID"") DO UPDATE SET
+                    ""Sorttime"" = COALESCE(MIN(""Sorttime"", ""excluded"".""Sorttime""), ""Sorttime"", ""excluded"".""Sorttime"")
             ";
 
             var scantime = @$"
-                WITH ""FileTime"" AS ({filetime})
                 SELECT
                     ""Block"".""VolumeID"" AS ""VolumeID"",
                     MIN(""BlocksetTime"".""Sorttime"") AS ""Sorttime""
-                FROM ({blocksettime}) ""BlocksetTime""
+                FROM ""Block""
                 CROSS JOIN ""BlocksetEntry""
-                CROSS JOIN ""Block""
+                CROSS JOIN ""{blocksettimetablename}"" ""BlocksetTime""
                 WHERE
-                    ""BlocksetEntry"".""BlocksetID"" = ""BlocksetTime"".""BlocksetID""
-                    AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
+                    ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
+                    AND ""BlocksetTime"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID""
                 GROUP BY ""Block"".""VolumeID""
             ";
 
@@ -578,6 +578,10 @@ namespace Duplicati.Library.Main.Database.Local
             await using var cmd = m_connection.CreateCommand(m_rtr);
             try
             {
+                await cmd.ExecuteNonQueryAsync(createblocksettime, token).ConfigureAwait(false);
+                await cmd.ExecuteNonQueryAsync(blocksettimeFromFiles, token).ConfigureAwait(false);
+                await cmd.ExecuteNonQueryAsync(blocksettimeFromMetadata, token).ConfigureAwait(false);
+
                 await cmd
                     .SetCommandAndParameters(createtable)
                     .SetParameterValue("@Type", RemoteVolumeType.Blocks.ToString())
@@ -616,6 +620,13 @@ namespace Duplicati.Library.Main.Database.Local
                 {
                     await cmd
                         .ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{tmptablename}"" ", token)
+                        .ConfigureAwait(false);
+                }
+                catch { }
+                try
+                {
+                    await cmd
+                        .ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{blocksettimetablename}"" ", token)
                         .ConfigureAwait(false);
                 }
                 catch { }
