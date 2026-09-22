@@ -85,7 +85,7 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     /// <summary>
     /// The maximum number of characters of a server error message to report
     /// </summary>
-    private const int MAX_ERROR_MESSAGE_LENGTH = 1024;
+    internal const int MAX_ERROR_MESSAGE_LENGTH = 1024;
     /// <summary>
     /// The default minimum time between refreshing the account state after a failed upload
     /// </summary>

@@ -144,7 +144,9 @@ public class DuplicatiBackendErrorReportingTests
 
         var ex = Assert.CatchAsync<HttpRequestException>(async () => await DuplicatiBackend.EnsureSuccessAsync(response, CancellationToken.None));
 
-        Assert.Less(ex!.Message.Length, 1000);
+        // The message wraps the truncated body with the status code and reason
+        StringAssert.EndsWith("...", ex!.Message);
+        Assert.Less(ex.Message.Length, DuplicatiBackend.MAX_ERROR_MESSAGE_LENGTH + 100);
     }
 
     [Test]
