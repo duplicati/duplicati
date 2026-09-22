@@ -462,6 +462,8 @@ namespace Duplicati.Library.Main.Database.Local
             // The scantime is the timestamp of the oldest fileset that references a block in the volume.
             // The aggregation is done in stages (file -> blockset -> volume), so each blockset
             // is only expanded to blocks once, instead of once for every fileset the file is in.
+            // The grouped subqueries have no index, so CROSS JOIN pins them as the outer loop
+            // and the lookups go through the primary keys of the tables they join.
             var filetime = @"
                 SELECT
                     ""FilesetEntry"".""FileID"" AS ""FileID"",
@@ -477,9 +479,8 @@ namespace Duplicati.Library.Main.Database.Local
                 SELECT
                     ""FileLookup"".""BlocksetID"" AS ""BlocksetID"",
                     ""FileTime"".""Sorttime"" AS ""Sorttime""
-                FROM
-                    ""FileLookup"",
-                    ""FileTime""
+                FROM ""FileTime""
+                CROSS JOIN ""FileLookup""
                 WHERE ""FileTime"".""FileID"" = ""FileLookup"".""ID""
             ";
 
@@ -487,10 +488,9 @@ namespace Duplicati.Library.Main.Database.Local
                 SELECT
                     ""Metadataset"".""BlocksetID"" AS ""BlocksetID"",
                     ""FileTime"".""Sorttime"" AS ""Sorttime""
-                FROM
-                    ""FileLookup"",
-                    ""Metadataset"",
-                    ""FileTime""
+                FROM ""FileTime""
+                CROSS JOIN ""FileLookup""
+                CROSS JOIN ""Metadataset""
                 WHERE
                     ""FileTime"".""FileID"" = ""FileLookup"".""ID""
                     AND ""FileLookup"".""MetadataID"" = ""Metadataset"".""ID""
@@ -512,10 +512,9 @@ namespace Duplicati.Library.Main.Database.Local
                 SELECT
                     ""Block"".""VolumeID"" AS ""VolumeID"",
                     MIN(""BlocksetTime"".""Sorttime"") AS ""Sorttime""
-                FROM
-                    ({blocksettime}) ""BlocksetTime"",
-                    ""BlocksetEntry"",
-                    ""Block""
+                FROM ({blocksettime}) ""BlocksetTime""
+                CROSS JOIN ""BlocksetEntry""
+                CROSS JOIN ""Block""
                 WHERE
                     ""BlocksetEntry"".""BlocksetID"" = ""BlocksetTime"".""BlocksetID""
                     AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
