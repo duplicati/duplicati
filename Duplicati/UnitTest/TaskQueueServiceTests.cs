@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Server.Serialization;
@@ -142,6 +143,52 @@ public class TaskQueueServiceTests
         runner.Results[7] = new CachedTaskResult(7, "1", Started, Finished, failed ? new InvalidOperationException("The passphrase is wrong") : null);
 
         var state = new TaskQueueService(runner).GetTaskInfo(7);
+
+        Assert.That(state.Status, Is.EqualTo(failed ? "Failed" : "Completed"));
+        Assert.That(state.TaskFinished, Is.EqualTo(Finished));
+        Assert.That(state.ErrorMessage, Is.EqualTo(failed ? "The passphrase is wrong" : null));
+    }
+
+    /// <summary>
+    /// The queue listing (<c>GET /api/v1/tasks</c>) must say the same as the single-task
+    /// state: the task at the front is running, the ones behind it are waiting.
+    /// </summary>
+    [Test]
+    public void GetTaskQueue_QueuedTasksBehindTheRunningOne_ReportWaiting()
+    {
+        var runner = new MockQueueRunnerService();
+        runner.CurrentTask = new MockQueuedTask { TaskID = 7, BackupID = "1", TaskStarted = Started };
+        runner.QueuedTasks.Add(new MockQueuedTask { TaskID = 8, BackupID = "2" });
+        runner.QueuedTasks.Add(new MockQueuedTask { TaskID = 9, BackupID = "1" });
+
+        var queue = new TaskQueueService(runner).GetTaskQueue().ToList();
+
+        Assert.That(queue.Select(x => x.ID), Is.EqualTo(new long[] { 7, 8, 9 }));
+        Assert.That(queue.Select(x => x.Status), Is.EqualTo(new[] { "Running", "Waiting", "Waiting" }), "Only the task at the front is running; the rest have not started.");
+        Assert.That(queue.Skip(1).Select(x => x.TaskStarted), Is.All.Null);
+    }
+
+    [Test]
+    public void GetTaskQueue_NoCurrentTask_ReportsEveryQueuedTaskWaiting()
+    {
+        var runner = new MockQueueRunnerService();
+        runner.QueuedTasks.Add(new MockQueuedTask { TaskID = 8, BackupID = "2" });
+        runner.QueuedTasks.Add(new MockQueuedTask { TaskID = 9, BackupID = "1" });
+
+        var queue = new TaskQueueService(runner).GetTaskQueue().ToList();
+
+        Assert.That(queue.Select(x => x.Status), Is.EqualTo(new[] { "Waiting", "Waiting" }), "Nothing is running, so nothing may be reported as running.");
+    }
+
+    [TestCase(true)]
+    [TestCase(false)]
+    public void GetTaskQueue_CurrentTaskThatHasFinished_ReportsTheCachedOutcome(bool failed)
+    {
+        var runner = new MockQueueRunnerService();
+        runner.CurrentTask = new MockQueuedTask { TaskID = 7, BackupID = "1", TaskStarted = Started, TaskFinished = Finished };
+        runner.Results[7] = new CachedTaskResult(7, "1", Started, Finished, failed ? new InvalidOperationException("The passphrase is wrong") : null);
+
+        var state = new TaskQueueService(runner).GetTaskQueue().Single();
 
         Assert.That(state.Status, Is.EqualTo(failed ? "Failed" : "Completed"));
         Assert.That(state.TaskFinished, Is.EqualTo(Finished));
