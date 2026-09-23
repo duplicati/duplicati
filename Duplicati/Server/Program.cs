@@ -1165,7 +1165,6 @@ namespace Duplicati.Server
             var disableDbEncryption = Library.Utility.Utility.ParseBoolOption(commandlineOptions, DISABLE_DB_ENCRYPTION_OPTION);
             var requireDbEncryptionKey = Library.Utility.Utility.ParseBoolOption(commandlineOptions, REQUIRE_DB_ENCRYPTION_KEY_OPTION);
             var encKey = EncryptedFieldHelper.KeyInstance.CreateKeyIfValid(commandlineOptions.GetValueOrDefault(SETTINGS_ENCRYPTION_KEY_OPTION));
-            var usingBlacklistedKey = encKey?.IsBlacklisted ?? false;
             var hasValidEncryptionKey = encKey != null;
 
             // Don't encrypt the database in debug mode, unless explicitly requested
@@ -1183,14 +1182,6 @@ namespace Duplicati.Server
                     hasEncryptedFields = Library.Utility.Utility.ParseBool(cmd
                         .SetParameterValue("@Name", Database.ServerSettings.CONST.ENCRYPTED_FIELDS)
                         .SetParameterValue("@BackupId", Connection.SERVER_SETTINGS_ID).ExecuteScalar()?.ToString(), false);
-
-                if (hasEncryptedFields && !hasValidEncryptionKey)
-                {
-                    warnedAboutEncryptedDb = true;
-                    Log.WriteWarningMessage(LOGTAG, "EncryptionKeyMissing", null, Strings.Program.EncryptionKeyMissing(EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME));
-                    if (!silentConsole)
-                        Console.WriteLine(Strings.Program.EncryptionKeyMissing(EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME));
-                }
             }
             catch
             {
@@ -1251,12 +1242,18 @@ namespace Duplicati.Server
                 }
             }
 
-
             if (requireDbEncryptionKey && !(hasValidEncryptionKey || disableDbEncryption))
                 throw new UserInformationException(Strings.Program.DatabaseEncryptionKeyRequired(EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME, DISABLE_DB_ENCRYPTION_OPTION), "RequireDbEncryptionKey");
 
             applicationSettings.SettingsEncryptionKeyProvidedExternally = hasValidEncryptionKey;
 
+            if (hasEncryptedFields && !hasValidEncryptionKey)
+            {
+                warnedAboutEncryptedDb = true;
+                Log.WriteWarningMessage(LOGTAG, "EncryptionKeyMissing", null, Strings.Program.EncryptionKeyMissing(EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME));
+                if (!silentConsole)
+                    Console.WriteLine(Strings.Program.EncryptionKeyMissing(EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME));
+            }
 
             if (!hasValidEncryptionKey && !disableDbEncryption)
             {
@@ -1270,6 +1267,7 @@ namespace Duplicati.Server
                 }
             }
 
+            var usingBlacklistedKey = encKey?.IsBlacklisted ?? false;
             if (usingBlacklistedKey && !disableDbEncryption)
             {
                 disableDbEncryption = true;
