@@ -30,6 +30,11 @@ namespace Duplicati.Library.Utility
     public static class SensitiveDataFilter
     {
         /// <summary>
+        /// The replacement text used for redacted paths
+        /// </summary>
+        public const string REDACTED = "-redacted-";
+
+        /// <summary>
         /// Regex that detects file system paths in text
         /// </summary>
         private static readonly Regex PathDetectionRegex = new Regex(
@@ -41,6 +46,11 @@ namespace Duplicati.Library.Utility
                 @"|(?:file:///[^\s\n\r]*)" +                       // File URIs
             @")",
             RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline);
+
+        /// <summary>
+        /// The path separator characters used to detect path-like values
+        /// </summary>
+        private static readonly char[] PathSeparators = new[] { '/', '\\' };
 
         /// <summary>
         /// Characters that are commonly trailing delimiters and should not be part of a path
@@ -67,10 +77,51 @@ namespace Duplicati.Library.Utility
                     end--;
 
                 if (end < value.Length)
-                    return "-redacted-" + value.Substring(end);
+                    return REDACTED + value.Substring(end);
 
-                return "-redacted-";
+                return REDACTED;
             });
+        }
+
+        /// <summary>
+        /// Returns <c>true</c> if the value looks like a local path or a remote entry name,
+        /// i.e. it contains a path separator. This is a deliberately broad test that is
+        /// meant for values known to be a single argument (such as a log message
+        /// argument), where the text-based detection in <see cref="RedactPaths"/> is
+        /// too narrow: it cannot see paths that contain spaces or names that only end
+        /// with a separator.
+        /// </summary>
+        /// <param name="value">The value to test</param>
+        /// <returns><c>true</c> if the value looks like a path; <c>false</c> otherwise</returns>
+        public static bool LooksLikePath(string value)
+            => !string.IsNullOrEmpty(value) && value.IndexOfAny(PathSeparators) >= 0;
+
+        /// <summary>
+        /// Returns the format arguments with every string argument that looks like a
+        /// path (see <see cref="LooksLikePath"/>) replaced by <see cref="REDACTED"/>.
+        /// Log messages pass paths as separate format arguments, so redacting at the
+        /// argument level catches whole paths, including those with spaces, before the
+        /// message is formatted. The input array is not modified; it is returned as-is
+        /// when nothing needs redaction.
+        /// </summary>
+        /// <param name="arguments">The format arguments; may be <c>null</c></param>
+        /// <returns>The arguments with path-like strings redacted</returns>
+        public static object[] RedactPathArguments(object[] arguments)
+        {
+            if (arguments == null || arguments.Length == 0)
+                return arguments;
+
+            object[] result = null;
+            for (var i = 0; i < arguments.Length; i++)
+            {
+                if (arguments[i] is string s && LooksLikePath(s))
+                {
+                    result ??= (object[])arguments.Clone();
+                    result[i] = REDACTED;
+                }
+            }
+
+            return result ?? arguments;
         }
     }
 }

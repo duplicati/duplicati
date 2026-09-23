@@ -47,7 +47,14 @@ namespace Duplicati.Library.Interface
     /// <param name="Id">The log message id, if any.</param>
     /// <param name="Timestamp">The time the entry was created, in UTC.</param>
     /// <param name="Exception">A string representation of an associated exception, or <c>null</c>.</param>
-    public record ReportLogEntry(string Message, string Level, string Tag, string Id, DateTime Timestamp, string Exception);
+    /// <param name="RedactedMessage">
+    /// The formatted log message with file system paths redacted, or <c>null</c> if the
+    /// sender did not compute one. Modules that omit paths from what they send should
+    /// prefer this over redacting <paramref name="Message"/> themselves, as it is
+    /// computed from the unformatted message arguments and therefore also redacts paths
+    /// that cannot be reliably detected in the formatted text, such as paths with spaces.
+    /// </param>
+    public record ReportLogEntry(string Message, string Level, string Tag, string Id, DateTime Timestamp, string Exception, string RedactedMessage = null);
 
     /// <summary>
     /// A snapshot of the operation progress, passed to <see cref="IReportModule.OnProgressTickAsync"/>
