@@ -336,14 +336,15 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
 
         if (increment && _enumerationCounter.TryAdd(targetpath, true))
         {
+            // The consumed seats are recorded for a host that collects the usage of the backup it runs in-process
             if (type == GoogleRootType.Users)
-                Interlocked.Increment(ref _userCount);
+                LicenseChecker.LicenseUsageTracker.Current?.Record(LicenseChecker.DuplicatiLicenseFeatures.GoogleWorkspaceUsers, Interlocked.Increment(ref _userCount));
             else if (type == GoogleRootType.Groups)
-                Interlocked.Increment(ref _groupCount);
+                LicenseChecker.LicenseUsageTracker.Current?.Record(LicenseChecker.DuplicatiLicenseFeatures.GoogleWorkspaceGroups, Interlocked.Increment(ref _groupCount));
             else if (type == GoogleRootType.SharedDrives)
-                Interlocked.Increment(ref _sharedDriveCount);
+                LicenseChecker.LicenseUsageTracker.Current?.Record(LicenseChecker.DuplicatiLicenseFeatures.GoogleWorkspaceSharedDrives, Interlocked.Increment(ref _sharedDriveCount));
             else if (type == GoogleRootType.Sites)
-                Interlocked.Increment(ref _siteCount);
+                LicenseChecker.LicenseUsageTracker.Current?.Record(LicenseChecker.DuplicatiLicenseFeatures.GoogleWorkspaceSites, Interlocked.Increment(ref _siteCount));
         }
 
         return true;
