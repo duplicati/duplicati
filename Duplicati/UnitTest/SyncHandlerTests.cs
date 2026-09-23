@@ -1195,6 +1195,83 @@ public class SyncHandlerTests : BasicSetupHelper
 }
 
 /// <summary>
+/// Tests the sync handler against a folder-enabled backend that names folder entries
+/// with a trailing slash, as several real backends do (S3, Google Drive, Box, OneDrive,
+/// Dropbox, SMB). Such names must be accepted as folders rather than rejected as unsafe.
+/// </summary>
+[TestFixture]
+public class TrailingSlashFolderSyncHandlerTests : BasicSetupHelper
+{
+    private string targetDir;
+    private string backendUrl;
+
+    [SetUp]
+    public void Setup()
+    {
+        targetDir = Path.Combine(BASEFOLDER, "slashfolder_target");
+        if (Directory.Exists(targetDir))
+            Directory.Delete(targetDir, true);
+        Directory.CreateDirectory(targetDir);
+
+        Library.DynamicLoader.BackendLoader.AddBackend(new TrailingSlashFolderBackend());
+        backendUrl = new TrailingSlashFolderBackend().ProtocolKey + "://" + targetDir.Replace("\\", "/");
+    }
+
+    [TearDown]
+    public void TearDown()
+    {
+        if (Directory.Exists(targetDir))
+        {
+            try { Directory.Delete(targetDir, true); } catch { }
+        }
+    }
+
+    /// <summary>
+    /// A remote folder listed as "sub/" must be recognized as the existing "sub" folder:
+    /// no InvalidRemoteName warning, and the folder is not re-created on the second run.
+    /// </summary>
+    [Test]
+    [Category("Sync")]
+    public async Task TestFolderNamesWithTrailingSlashAreAcceptedAsync()
+    {
+        var dataFolder = Path.Combine(BASEFOLDER, "slashfolder_data");
+        if (Directory.Exists(dataFolder)) Directory.Delete(dataFolder, true);
+        Directory.CreateDirectory(dataFolder);
+        Directory.CreateDirectory(Path.Combine(dataFolder, "sub"));
+        File.WriteAllText(Path.Combine(dataFolder, "file1.txt"), "Hello");
+        File.WriteAllText(Path.Combine(dataFolder, "sub", "file2.txt"), "World");
+
+        var opts = new Dictionary<string, string>
+        {
+            ["no-encryption"] = "true",
+            ["snapshot-policy"] = "off",
+            ["sync-remote-state"] = "UseRemoteState",
+            ["dbpath"] = Path.Combine(BASEFOLDER, $"sync-slashfolder-{Guid.NewGuid():N}.sqlite"),
+        };
+
+        Library.Interface.ISyncResults first;
+        using (var c = new Controller(backendUrl, opts, null))
+            first = await c.SyncAsync(new[] { dataFolder }, null);
+
+        Assert.IsTrue(File.Exists(Path.Combine(targetDir, "sub", "file2.txt")));
+        Assert.AreEqual(1, first.FoldersCreated, "The sub-folder is created on the first run");
+        Assert.AreEqual(2, first.FilesUploaded);
+        Assert.IsFalse(first.Warnings.Any(w => w.Contains("InvalidRemoteName")),
+            "Trailing-slash folder names must not be reported as unsafe. Warnings: " + string.Join("; ", first.Warnings));
+
+        // The second run lists "sub/" on the remote; it must match the local "sub".
+        Library.Interface.ISyncResults second;
+        using (var c = new Controller(backendUrl, opts, null))
+            second = await c.SyncAsync(new[] { dataFolder }, null);
+
+        Assert.AreEqual(0, second.FoldersCreated, "The existing sub-folder must not be re-created");
+        Assert.AreEqual(0, second.FilesUploaded);
+        Assert.IsFalse(second.Warnings.Any(w => w.Contains("InvalidRemoteName")),
+            "Trailing-slash folder names must not be reported as unsafe. Warnings: " + string.Join("; ", second.Warnings));
+    }
+}
+
+/// <summary>
 /// Tests sync against a backend that does NOT implement
 /// <see cref="Duplicati.Library.Interface.IFolderEnabledBackend"/>. The backend manager
 /// must translate relative paths: for listings it points the backend at the sub-folder
