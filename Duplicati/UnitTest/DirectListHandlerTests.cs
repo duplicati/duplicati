@@ -1060,5 +1060,85 @@ namespace Duplicati.UnitTest
             // Assert: No files should match (path doesn't contain "MyDocument")
             Assert.That(result.Items.Count(), Is.EqualTo(0));
         }
+
+        /// <summary>
+        /// A caller that asks for an exact time match (singleTimeMatch) has to get nothing
+        /// when nothing matches. The newest fileset is the documented answer for a restore
+        /// time (the at-or-before search), not for a listing of one particular version.
+        /// </summary>
+        [Test]
+        [Category("Database")]
+        public async Task GetFilesetIDs_ExactMatchWithoutAMatch_ReturnsNothingAsync()
+        {
+            using var tempFile = new TempFile();
+            await using var db = await LocalListDatabase.CreateAsync(tempFile, null, CancellationToken.None)
+                .ConfigureAwait(false);
+
+            using (var cmd = db.Connection.CreateCommand())
+            {
+                foreach (var (id, timestamp) in new[] { (1L, 1000L), (2L, 2000L) })
+                    await cmd.SetCommandAndParameters(@"
+                        INSERT OR IGNORE INTO Fileset (ID, OperationID, VolumeID, IsFullBackup, Timestamp)
+                        VALUES (@filesetId, 1, 1, 1, @timestamp);")
+                        .SetParameterValue("@filesetId", id)
+                        .SetParameterValue("@timestamp", timestamp)
+                        .ExecuteNonQueryAsync();
+            }
+
+            async Task<long[]> Ids(long seconds, bool singleTimeMatch)
+                => await db.GetFilesetIDsAsync(Library.Utility.Utility.EPOCH.AddSeconds(seconds), null, singleTimeMatch, CancellationToken.None)
+                    .ToArrayAsync(cancellationToken: CancellationToken.None)
+                    .ConfigureAwait(false);
+
+            // Exact match: a time between the two filesets matches neither, and must not become "the newest"
+            Assert.That(await Ids(1500, true), Is.Empty, "An exact-match lookup that matches nothing must return nothing.");
+            Assert.That(await Ids(2000, true), Is.EqualTo(new[] { 2L }));
+            Assert.That(await Ids(1000, true), Is.EqualTo(new[] { 1L }));
+
+            // At-or-before (restore) semantics are unchanged, including the fallback to the newest fileset
+            Assert.That(await Ids(1500, false), Is.EqualTo(new[] { 1L }));
+            Assert.That(await Ids(500, false), Is.EqualTo(new[] { 2L, 1L }), "A restore time before every fileset still falls back to every fileset, newest first.");
+        }
+
+        /// <summary>
+        /// The folder listing asks for one version by its time. A time that matches no
+        /// version must be an error, not the newest version's listing under that time.
+        /// </summary>
+        [Test]
+        public async Task ListFolder_TimeThatMatchesNoFileset_IsAnErrorAsync()
+        {
+            var options = new Dictionary<string, string>(this.TestOptions)
+            {
+                ["upload-unchanged-backups"] = "true"
+            };
+
+            File.WriteAllText(Path.Combine(this.DATAFOLDER, "file1"), "file1");
+
+            DateTime oldest, newest;
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+
+                var sets = (await c.ListFilesetsAsync()).Filesets.OrderBy(x => x.Time).ToArray();
+                Assert.That(sets.Length, Is.EqualTo(2));
+                oldest = sets.First().Time;
+                newest = sets.Last().Time;
+            }
+
+            // A time before every backup matches no version
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options.Expand(new { time = Library.Utility.Utility.SerializeDateTime(oldest.ToUniversalTime().AddDays(-1)) }), null))
+            {
+                var error = Assert.ThrowsAsync<Duplicati.Library.Interface.UserInformationException>(async () => await c.ListFolderAsync([""], 0, 0, false));
+                Assert.That(error!.HelpID, Is.EqualTo("NoFilesetsFound"));
+            }
+
+            // The exact time of a version still lists it
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options.Expand(new { time = Library.Utility.Utility.SerializeDateTime(newest.ToUniversalTime()) }), null))
+            {
+                var files = await c.ListFolderAsync([""], 0, 0, false);
+                Assert.That(files.Entries.Items.Count(), Is.EqualTo(1));
+            }
+        }
     }
 }
