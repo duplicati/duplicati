@@ -322,7 +322,13 @@ namespace Duplicati.Library.Modules.Builtin
             var logLevel = Utility.Utility.ParseEnumOption(m_options, LogLevelOptionName, DEFAULT_LOG_LEVEL);
 
             m_logstorage = new FileBackedStringList();
-            m_logscope = Logging.Log.StartScope(m => m_logstorage.Add(m.AsString(true)), m =>
+            // Paths are redacted as the line is captured, while the unformatted arguments
+            // are still available: whole path arguments are dropped (which also covers
+            // paths with spaces), then the formatted text is filtered as a fallback.
+            m_logscope = Logging.Log.StartScope(m => m_logstorage.Add(
+                m_allowPathsInLogMessages
+                    ? m.AsString(true)
+                    : SensitiveDataFilter.RedactPaths(m.WithArguments(SensitiveDataFilter.RedactPathArguments(m.Arguments)).AsString(true))), m =>
             {
 
                 if (filter.Matches(m.FilterTag, out var result, out var match))
@@ -580,9 +586,7 @@ namespace Duplicati.Library.Modules.Builtin
                         logdata = logdata.Concat(new string[] { $"... and {m_logstorage.Count - m_maxmimumLogLines} more" });
                 }
 
-                if (!m_allowPathsInLogMessages)
-                    logdata = logdata.Select(x => SensitiveDataFilter.RedactPaths(x));
-
+                // The stored lines are already redacted (see Configure) when paths are not allowed
                 return logdata;
             }
         }

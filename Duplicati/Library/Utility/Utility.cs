@@ -1827,7 +1827,7 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <param name="url">The URL to guess the scheme for</param>
         /// <returns>The guessed scheme, or null if no scheme was found</returns>
-        public static string? GuessScheme(string url)
+        public static string? GuessScheme(string? url)
         {
             if (string.IsNullOrWhiteSpace(url))
                 return null;
