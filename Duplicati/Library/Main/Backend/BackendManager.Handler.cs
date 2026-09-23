@@ -634,19 +634,18 @@ partial class BackendManager
         /// <returns>The result of the call</returns>
         private static async Task<TResult> UntilCancelledAsync<TResult>(Task<TResult> task, CancellationToken token)
         {
-            if (task.IsCompleted || !token.CanBeCanceled)
-                return await task.ConfigureAwait(false);
-
-            var cancelled = new TaskCompletionSource();
-            using (token.Register(() => cancelled.TrySetResult()))
+            try
             {
-                if (await Task.WhenAny(task, cancelled.Task).ConfigureAwait(false) == task)
-                    return await task.ConfigureAwait(false);
+                return await task.WaitAsync(token).ConfigureAwait(false);
             }
-
-            // Observe whatever the abandoned call ends with, so it does not surface as an unobserved exception
-            _ = task.ContinueWith(t => _ = t.Exception, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously);
-            throw new OperationCanceledException(token);
+            catch (OperationCanceledException) when (token.IsCancellationRequested && !task.IsCompleted)
+            {
+                // The call was abandoned; observe whatever it ends with so it does not
+                // surface as an unobserved exception
+                _ = task.ContinueWith(static t => _ = t.Exception,
+                    TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously);
+                throw;
+            }
         }
 
         public void Dispose()
