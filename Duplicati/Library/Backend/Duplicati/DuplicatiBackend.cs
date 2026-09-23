@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
+using System.Net;
 using System.Net.Http.Json;
 using System.Runtime.CompilerServices;
 using Duplicati.Library.Common.IO;
@@ -26,6 +27,8 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Utility.Options;
 using Duplicati.Library.Utility;
 using System.Text.Json;
+
+[assembly: InternalsVisibleTo("Duplicati.UnitTest")]
 
 namespace Duplicati.Library.Backend.Duplicati;
 
@@ -66,6 +69,35 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     /// The default endpoint URL
     /// </summary>
     private const string DEFAULT_ENDPOINT = "https://storage.duplicati.com";
+
+    /// <summary>
+    /// The reason code reported by the server when uploads are disabled because the quota is exceeded
+    /// </summary>
+    internal const string UPLOADS_DISABLED_QUOTA_EXCEEDED = "quota-exceeded";
+    /// <summary>
+    /// The help id used when an operation fails because the account is disabled
+    /// </summary>
+    internal const string HELP_ID_ACCOUNT_DISABLED = "DuplicatiStorageAccountDisabled";
+    /// <summary>
+    /// The help id used when an upload fails because uploads are disabled
+    /// </summary>
+    internal const string HELP_ID_UPLOADS_DISABLED = "DuplicatiStorageUploadsDisabled";
+    /// <summary>
+    /// The maximum number of characters of a server error message to report
+    /// </summary>
+    internal const int MAX_ERROR_MESSAGE_LENGTH = 1024;
+    /// <summary>
+    /// The default minimum time between refreshing the account state after a failed upload
+    /// </summary>
+    private static readonly TimeSpan DEFAULT_ACCOUNT_STATE_REFRESH_INTERVAL = TimeSpan.FromMinutes(1);
+    /// <summary>
+    /// The maximum time to wait when refreshing the account state after a failed upload
+    /// </summary>
+    private static readonly TimeSpan ACCOUNT_STATE_REFRESH_TIMEOUT = TimeSpan.FromSeconds(30);
+    /// <summary>
+    /// The options used to read JSON responses from the server
+    /// </summary>
+    private static readonly JsonSerializerOptions JSON_OPTIONS = new() { PropertyNameCaseInsensitive = true };
 
     /// <inheritdoc />
     public string DisplayName => Strings.DuplicatiBackend.DisplayName;
@@ -114,7 +146,15 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     /// The lock used to protect the credentials
     /// </summary>
     private readonly SemaphoreSlim _credentialsLock = new(1, 1);
-
+    /// <summary>
+    /// The account state last reported by the server when authenticating
+    /// </summary>
+    private volatile AccountState _accountState = AccountState.Unknown;
+    /// <summary>
+    /// The minimum time between refreshing the account state after a failed upload,
+    /// so repeated failures do not each ask the server again
+    /// </summary>
+    internal TimeSpan AccountStateRefreshInterval { get; set; } = DEFAULT_ACCOUNT_STATE_REFRESH_INTERVAL;
 
     /// <summary>
     /// Constructor used for dynamic loading
@@ -134,6 +174,17 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     /// <param name="url">The backend URL</param>
     /// <param name="options">The backend options</param>
     public DuplicatiBackend(string url, Dictionary<string, string?> options)
+        : this(url, options, null)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DuplicatiBackend"/> class.
+    /// </summary>
+    /// <param name="url">The backend URL</param>
+    /// <param name="options">The backend options</param>
+    /// <param name="messageHandler">The message handler to send requests through, or <c>null</c> to use the default; used for testing</param>
+    internal DuplicatiBackend(string url, Dictionary<string, string?> options, HttpMessageHandler? messageHandler)
     {
         var uri = new Utility.RelaxedUri(url);
 
@@ -151,7 +202,7 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
         if (!string.IsNullOrWhiteSpace(endpoint))
             uri = new Utility.RelaxedUri(endpoint);
 
-        _client = new HttpClient
+        _client = new HttpClient(messageHandler ?? new HttpClientHandler())
         {
             BaseAddress = new System.Uri(uri.ToString()),
             DefaultRequestHeaders =
@@ -223,7 +274,7 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
             ct => _client.SendAsync(request, ct))
             .ConfigureAwait(false);
 
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessAsync(response, cancelToken).ConfigureAwait(false);
 
         var entries = await response.Content.ReadFromJsonAsync<List<string>>(cancellationToken: cancelToken).ConfigureAwait(false) ?? [];
 
@@ -262,14 +313,7 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
             if (_mode == "direct" && _s3Backend != null && DateTime.UtcNow < _credentialsExpiry.AddMinutes(-5))
                 return;
 
-            using var request = new HttpRequestMessage(HttpMethod.Get, "/credentials");
-            using var response = await Utility.Utility.WithTimeout(_authTimeout, cancelToken, ct =>
-                _client.SendAsync(request, ct)
-            ).ConfigureAwait(false);
-            response.EnsureSuccessStatusCode();
-
-            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-            var creds = await response.Content.ReadFromJsonAsync<CredentialsResponse>(options, cancellationToken: cancelToken).ConfigureAwait(false);
+            var creds = await FetchCredentialsAsync(_authTimeout, cancelToken).ConfigureAwait(false);
             if (creds != null &&
                 creds.Mode == "direct" &&
                 !string.IsNullOrEmpty(creds.Endpoint) &&
@@ -317,6 +361,347 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     }
 
     /// <summary>
+    /// Requests the credentials from the server, and records the account state it reports.
+    /// </summary>
+    /// <remarks>
+    /// The server refuses credentials for a disabled account with a 403 that carries the same
+    /// response shape as a successful request, so the state is read from both.
+    /// </remarks>
+    /// <param name="timeout">The timeout for the request</param>
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <returns>The credentials response, or <c>null</c> if the server returned no content</returns>
+    private async Task<CredentialsResponse?> FetchCredentialsAsync(TimeSpan timeout, CancellationToken cancelToken)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/credentials");
+        using var response = await Utility.Utility.WithTimeout(timeout, cancelToken, ct =>
+            _client.SendAsync(request, ct)
+        ).ConfigureAwait(false);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var creds = await response.Content.ReadFromJsonAsync<CredentialsResponse>(JSON_OPTIONS, cancellationToken: cancelToken).ConfigureAwait(false);
+            _accountState = AccountState.From(creds);
+            return creds;
+        }
+
+        var body = await ReadErrorBodyAsync(response, cancelToken).ConfigureAwait(false);
+        var refused = TryParseCredentialsResponse(body);
+        if (refused?.AccountDisabled == true)
+        {
+            var state = AccountState.From(refused);
+            _accountState = state;
+            throw new UserInformationException(
+                Strings.DuplicatiBackend.ErrorAccountDisabled(state.AccountDisabledDescription),
+                HELP_ID_ACCOUNT_DISABLED,
+                CreateHttpException(response, state.AccountDisabledDescription));
+        }
+
+        throw CreateHttpException(response, ExtractErrorMessage(response, body));
+    }
+
+    /// <summary>
+    /// Attempts to read a credentials response from the body of a failed request
+    /// </summary>
+    /// <param name="body">The response body</param>
+    /// <returns>The parsed response, or <c>null</c> if the body is not a credentials response</returns>
+    private static CredentialsResponse? TryParseCredentialsResponse(string? body)
+    {
+        if (string.IsNullOrWhiteSpace(body) || !body.TrimStart().StartsWith('{'))
+            return null;
+
+        try
+        {
+            return JsonSerializer.Deserialize<CredentialsResponse>(body, JSON_OPTIONS);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Ensures that the response was successful, and otherwise reports the error message from the server.
+    /// </summary>
+    /// <param name="response">The response to check</param>
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <param name="notFoundIsMissingFile">Whether a 404 response means that the requested file does not exist</param>
+    /// <returns>An awaitable task</returns>
+    internal static async Task EnsureSuccessAsync(HttpResponseMessage response, CancellationToken cancelToken, bool notFoundIsMissingFile = false)
+    {
+        if (response.IsSuccessStatusCode)
+            return;
+
+        var body = await ReadErrorBodyAsync(response, cancelToken).ConfigureAwait(false);
+        var ex = CreateHttpException(response, ExtractErrorMessage(response, body));
+        if (notFoundIsMissingFile && response.StatusCode == HttpStatusCode.NotFound)
+            throw new FileMissingException(ex);
+
+        throw ex;
+    }
+
+    /// <summary>
+    /// Creates the exception for a failed request, keeping the status code available to callers
+    /// </summary>
+    /// <param name="response">The failed response</param>
+    /// <param name="message">The error message from the server, if any</param>
+    /// <returns>The exception to throw</returns>
+    private static HttpRequestException CreateHttpException(HttpResponseMessage response, string? message)
+    {
+        var reason = string.IsNullOrWhiteSpace(response.ReasonPhrase) ? response.StatusCode.ToString() : response.ReasonPhrase;
+        return new HttpRequestException(
+            string.IsNullOrWhiteSpace(message)
+                ? Strings.DuplicatiBackend.ErrorServerResponseWithoutMessage((int)response.StatusCode, reason)
+                : Strings.DuplicatiBackend.ErrorServerResponse((int)response.StatusCode, reason, message),
+            null,
+            response.StatusCode);
+    }
+
+    /// <summary>
+    /// Reads the body of a failed response
+    /// </summary>
+    /// <param name="response">The failed response</param>
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <returns>The body, or <c>null</c> if it could not be read</returns>
+    private static async Task<string?> ReadErrorBodyAsync(HttpResponseMessage response, CancellationToken cancelToken)
+    {
+        try
+        {
+            return await response.Content.ReadAsStringAsync(cancelToken).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // The status code is still reported, the body only adds detail
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Extracts the error message the server reported in the body of a failed response.
+    /// </summary>
+    /// <remarks>
+    /// The server reports errors as plain text, or as JSON with a message field.
+    /// A proxy in front of the server answers with html, which is not reported.
+    /// </remarks>
+    /// <param name="response">The failed response</param>
+    /// <param name="body">The response body</param>
+    /// <returns>The error message, or <c>null</c> if the body does not carry one</returns>
+    internal static string? ExtractErrorMessage(HttpResponseMessage response, string? body)
+    {
+        if (string.IsNullOrWhiteSpace(body))
+            return null;
+
+        string? text = body.Trim();
+        var mediaType = response.Content.Headers.ContentType?.MediaType ?? string.Empty;
+        if (mediaType.Contains("html", StringComparison.OrdinalIgnoreCase) || text.StartsWith('<'))
+            return null;
+
+        if (text.StartsWith('{'))
+        {
+            try
+            {
+                using var doc = JsonDocument.Parse(text);
+                text = null;
+                if (doc.RootElement.ValueKind == JsonValueKind.Object)
+                    foreach (var name in new[] { "accountDisabledMessage", "error", "message", "detail", "title" })
+                        foreach (var prop in doc.RootElement.EnumerateObject())
+                            if (text == null && string.Equals(prop.Name, name, StringComparison.OrdinalIgnoreCase)
+                                && prop.Value.ValueKind == JsonValueKind.String
+                                && !string.IsNullOrWhiteSpace(prop.Value.GetString()))
+                                text = prop.Value.GetString()!.Trim();
+            }
+            catch (JsonException)
+            {
+                // Not JSON after all, report it as text
+            }
+
+            if (text == null)
+                return null;
+        }
+
+        // Keep the message on one line and at a reasonable length
+        text = string.Join(' ', text.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+        return text.Length > MAX_ERROR_MESSAGE_LENGTH
+            ? text[..MAX_ERROR_MESSAGE_LENGTH] + "..."
+            : text;
+    }
+
+    /// <summary>
+    /// Runs an operation, and explains a failure with the account state reported by the server.
+    /// </summary>
+    /// <param name="isUpload">Whether the operation uploads data</param>
+    /// <param name="operation">The operation to run</param>
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <returns>An awaitable task</returns>
+    private async Task RunAsync(bool isUpload, Func<Task> operation, CancellationToken cancelToken)
+    {
+        try
+        {
+            await operation().ConfigureAwait(false);
+        }
+        catch (Exception ex) when (CanExplain(ex, cancelToken))
+        {
+            var explained = await ExplainFailureAsync(ex, isUpload, cancelToken).ConfigureAwait(false);
+            if (explained == null)
+                throw;
+            throw explained;
+        }
+    }
+
+    /// <summary>
+    /// Checks if a failure is one that the account state can explain.
+    /// </summary>
+    /// <remarks>
+    /// Exceptions that already carry a message for the user, or that the caller acts on
+    /// (a missing file or folder, a cancellation, a retry request), are left untouched.
+    /// </remarks>
+    /// <param name="ex">The failure</param>
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <returns><c>true</c> if the failure can be explained; <c>false</c> otherwise</returns>
+    private static bool CanExplain(Exception ex, CancellationToken cancelToken)
+        => !cancelToken.IsCancellationRequested
+            && ex is not UserInformationException
+            && ex is not OperationCanceledException
+            && ex is not TooManyRequestException;
+
+    /// <summary>
+    /// Explains a failure with the account state reported by the server.
+    /// </summary>
+    /// <param name="ex">The failure</param>
+    /// <param name="isUpload">Whether the failed operation uploads data</param>
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <returns>The exception to report, or <c>null</c> if the account state does not explain the failure</returns>
+    private async Task<Exception?> ExplainFailureAsync(Exception ex, bool isUpload, CancellationToken cancelToken)
+    {
+        var state = _accountState;
+
+        // The account can run out of quota after the state was retrieved,
+        // so a rejected upload is worth asking the server about again
+        if (isUpload && !state.ExplainsFailure(isUpload) && IsRejection(ex)
+            && DateTime.UtcNow - state.RetrievedAt >= AccountStateRefreshInterval)
+        {
+            await TryRefreshAccountStateAsync(cancelToken).ConfigureAwait(false);
+            state = _accountState;
+        }
+
+        if (state.AccountDisabled)
+            return new UserInformationException(
+                string.IsNullOrWhiteSpace(state.AccountDisabledDescription)
+                    ? Strings.DuplicatiBackend.ErrorAccountDisabled(ex.Message)
+                    : Strings.DuplicatiBackend.ErrorAccountDisabledWithDetails(state.AccountDisabledDescription, ex.Message),
+                HELP_ID_ACCOUNT_DISABLED,
+                ex);
+
+        if (isUpload && state.UploadsDisabled)
+            return new UserInformationException(
+                state.UploadsDisabledReason == UPLOADS_DISABLED_QUOTA_EXCEEDED
+                    ? Strings.DuplicatiBackend.ErrorQuotaExceeded(ex.Message)
+                    : Strings.DuplicatiBackend.ErrorUploadsDisabled(state.UploadsDisabledReason ?? string.Empty, ex.Message),
+                HELP_ID_UPLOADS_DISABLED,
+                ex);
+
+        return null;
+    }
+
+    /// <summary>
+    /// Checks if a failure is the storage refusing the request, as opposed to e.g. a network failure
+    /// </summary>
+    /// <param name="ex">The failure</param>
+    /// <returns><c>true</c> if the storage refused the request; <c>false</c> otherwise</returns>
+    private static bool IsRejection(Exception ex)
+    {
+        for (var e = ex; e != null; e = e.InnerException)
+        {
+            var status = e switch
+            {
+                HttpRequestException hre => hre.StatusCode,
+                Amazon.Runtime.AmazonServiceException ase => ase.StatusCode,
+                _ => null
+            };
+
+            if (status is HttpStatusCode.Forbidden or HttpStatusCode.Unauthorized
+                or HttpStatusCode.RequestEntityTooLarge or HttpStatusCode.InsufficientStorage)
+                return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Refreshes the account state, leaving the current credentials in place
+    /// </summary>
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <returns>An awaitable task</returns>
+    private async Task TryRefreshAccountStateAsync(CancellationToken cancelToken)
+    {
+        try
+        {
+            var timeout = _authTimeout < ACCOUNT_STATE_REFRESH_TIMEOUT ? _authTimeout : ACCOUNT_STATE_REFRESH_TIMEOUT;
+            await FetchCredentialsAsync(timeout, cancelToken).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (!cancelToken.IsCancellationRequested)
+        {
+            // A refused request has recorded the state it reported; anything else
+            // leaves the original failure to be reported as it is
+            if (ex is not UserInformationException)
+                _accountState = _accountState with { RetrievedAt = DateTime.UtcNow };
+        }
+    }
+
+    /// <summary>
+    /// The account state reported by the server when authenticating
+    /// </summary>
+    /// <param name="UploadsDisabled">Whether uploads are disabled</param>
+    /// <param name="UploadsDisabledReason">The reason code for uploads being disabled</param>
+    /// <param name="AccountDisabled">Whether the account is disabled</param>
+    /// <param name="AccountDisabledReason">The reason code for the account being disabled</param>
+    /// <param name="AccountDisabledMessage">The message describing why the account is disabled</param>
+    /// <param name="RetrievedAt">When the state was retrieved</param>
+    private sealed record AccountState(
+        bool UploadsDisabled,
+        string? UploadsDisabledReason,
+        bool AccountDisabled,
+        string? AccountDisabledReason,
+        string? AccountDisabledMessage,
+        DateTime RetrievedAt
+    )
+    {
+        /// <summary>
+        /// The state before the server has been asked
+        /// </summary>
+        public static readonly AccountState Unknown = new(false, null, false, null, null, DateTime.MinValue);
+
+        /// <summary>
+        /// The message describing why the account is disabled, falling back to the reason code
+        /// </summary>
+        public string AccountDisabledDescription
+            => !string.IsNullOrWhiteSpace(AccountDisabledMessage)
+                ? AccountDisabledMessage
+                : AccountDisabledReason ?? string.Empty;
+
+        /// <summary>
+        /// Checks if the state explains a failed operation
+        /// </summary>
+        /// <param name="isUpload">Whether the failed operation uploads data</param>
+        /// <returns><c>true</c> if the state explains the failure; <c>false</c> otherwise</returns>
+        public bool ExplainsFailure(bool isUpload)
+            => AccountDisabled || (isUpload && UploadsDisabled);
+
+        /// <summary>
+        /// Creates the state from a credentials response
+        /// </summary>
+        /// <param name="response">The credentials response</param>
+        /// <returns>The account state</returns>
+        public static AccountState From(CredentialsResponse? response)
+            => new(
+                response?.UploadsDisabled ?? false,
+                response?.UploadsDisabledReason,
+                response?.AccountDisabled ?? false,
+                response?.AccountDisabledReason,
+                response?.AccountDisabledMessage,
+                DateTime.UtcNow);
+    }
+
+    /// <summary>
     /// A request to rename a file
     /// </summary>
     /// <param name="Source">The source file</param>
@@ -327,7 +712,15 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     );
 
     /// <inheritdoc />
-    public async Task CreateFolderAsync(CancellationToken cancelToken)
+    public Task CreateFolderAsync(CancellationToken cancelToken)
+        => RunAsync(false, () => CreateFolderCoreAsync(cancelToken), cancelToken);
+
+    /// <summary>
+    /// Creates the folder on the destination
+    /// </summary>
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <returns>An awaitable task</returns>
+    private async Task CreateFolderCoreAsync(CancellationToken cancelToken)
     {
         await EnsureCredentialsAsync(cancelToken).ConfigureAwait(false);
         if (_s3Backend != null)
@@ -340,12 +733,21 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
             using var response = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken,
                 ct => _client.SendAsync(request, ct))
                 .ConfigureAwait(false);
-            response.EnsureSuccessStatusCode();
+            await EnsureSuccessAsync(response, cancelToken).ConfigureAwait(false);
         }
     }
 
     /// <inheritdoc />
-    public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
+    public Task DeleteAsync(string remotename, CancellationToken cancelToken)
+        => RunAsync(false, () => DeleteCoreAsync(remotename, cancelToken), cancelToken);
+
+    /// <summary>
+    /// Deletes a file on the destination
+    /// </summary>
+    /// <param name="remotename">The name of the file to delete</param>
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <returns>An awaitable task</returns>
+    private async Task DeleteCoreAsync(string remotename, CancellationToken cancelToken)
     {
         await EnsureCredentialsAsync(cancelToken).ConfigureAwait(false);
         if (_s3Backend != null)
@@ -359,12 +761,22 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
             using var response = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken,
                 ct => _client.SendAsync(request, ct))
                 .ConfigureAwait(false);
-            response.EnsureSuccessStatusCode();
+            await EnsureSuccessAsync(response, cancelToken).ConfigureAwait(false);
         }
     }
 
     /// <inheritdoc />
-    public async Task GetAsync(string remotename, Stream destination, CancellationToken cancelToken)
+    public Task GetAsync(string remotename, Stream destination, CancellationToken cancelToken)
+        => RunAsync(false, () => GetCoreAsync(remotename, destination, cancelToken), cancelToken);
+
+    /// <summary>
+    /// Downloads a file from the destination
+    /// </summary>
+    /// <param name="remotename">The name of the file to download</param>
+    /// <param name="destination">The stream to write the file to</param>
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <returns>An awaitable task</returns>
+    private async Task GetCoreAsync(string remotename, Stream destination, CancellationToken cancelToken)
     {
         await EnsureCredentialsAsync(cancelToken).ConfigureAwait(false);
         if (_s3Backend != null)
@@ -377,7 +789,7 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
 
             using var response = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken,
                 ct => _client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct)).ConfigureAwait(false);
-            response.EnsureSuccessStatusCode();
+            await EnsureSuccessAsync(response, cancelToken, notFoundIsMissingFile: true).ConfigureAwait(false);
 
             await using var responseStream = await response.Content.ReadAsStreamAsync(cancelToken).ConfigureAwait(false);
 
@@ -403,7 +815,7 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
             ct => _client.SendAsync(request, ct))
             .ConfigureAwait(false);
 
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessAsync(response, cancelToken).ConfigureAwait(false);
         var quotaInfo = await response.Content.ReadFromJsonAsync<QuotaInfo>(cancellationToken: cancelToken).ConfigureAwait(false);
 
         return quotaInfo;
@@ -411,6 +823,34 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
 
     /// <inheritdoc />
     public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
+    {
+        await using var entries = ListCoreAsync(cancelToken).GetAsyncEnumerator(cancelToken);
+        while (true)
+        {
+            // A failure is explained here, as a yield is not allowed inside a try block with a catch clause
+            try
+            {
+                if (!await entries.MoveNextAsync().ConfigureAwait(false))
+                    break;
+            }
+            catch (Exception ex) when (CanExplain(ex, cancelToken))
+            {
+                var explained = await ExplainFailureAsync(ex, false, cancelToken).ConfigureAwait(false);
+                if (explained == null)
+                    throw;
+                throw explained;
+            }
+
+            yield return entries.Current;
+        }
+    }
+
+    /// <summary>
+    /// Lists the files on the destination
+    /// </summary>
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <returns>The files on the destination</returns>
+    private async IAsyncEnumerable<IFileEntry> ListCoreAsync([EnumeratorCancellation] CancellationToken cancelToken)
     {
         await EnsureCredentialsAsync(cancelToken).ConfigureAwait(false);
         if (_s3Backend != null)
@@ -427,7 +867,7 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
                 ct => _client.SendAsync(request, ct))
                 .ConfigureAwait(false);
 
-            response.EnsureSuccessStatusCode();
+            await EnsureSuccessAsync(response, cancelToken).ConfigureAwait(false);
 
             var entries = await response.Content.ReadFromJsonAsync<List<FileEntry>>(cancellationToken: cancelToken).ConfigureAwait(false) ?? [];
 
@@ -441,7 +881,17 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     }
 
     /// <inheritdoc />
-    public async Task PutAsync(string remotename, Stream source, CancellationToken cancelToken)
+    public Task PutAsync(string remotename, Stream source, CancellationToken cancelToken)
+        => RunAsync(true, () => PutCoreAsync(remotename, source, cancelToken), cancelToken);
+
+    /// <summary>
+    /// Uploads a file to the destination
+    /// </summary>
+    /// <param name="remotename">The name of the file to upload</param>
+    /// <param name="source">The stream to read the file from</param>
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <returns>An awaitable task</returns>
+    private async Task PutCoreAsync(string remotename, Stream source, CancellationToken cancelToken)
     {
         await EnsureCredentialsAsync(cancelToken).ConfigureAwait(false);
         if (_s3Backend != null)
@@ -463,7 +913,7 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
             request.Headers.Add("X-Content-SHA256", sha256 ?? string.Empty);
 
             using var response = await _client.SendAsync(request, cancelToken).ConfigureAwait(false);
-            response.EnsureSuccessStatusCode();
+            await EnsureSuccessAsync(response, cancelToken).ConfigureAwait(false);
         }
     }
 
@@ -475,7 +925,17 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     }
 
     /// <inheritdoc />
-    public async Task RenameAsync(string oldname, string newname, CancellationToken cancelToken)
+    public Task RenameAsync(string oldname, string newname, CancellationToken cancelToken)
+        => RunAsync(true, () => RenameCoreAsync(oldname, newname, cancelToken), cancelToken);
+
+    /// <summary>
+    /// Renames a file on the destination
+    /// </summary>
+    /// <param name="oldname">The current name of the file</param>
+    /// <param name="newname">The new name of the file</param>
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <returns>An awaitable task</returns>
+    private async Task RenameCoreAsync(string oldname, string newname, CancellationToken cancelToken)
     {
         await EnsureCredentialsAsync(cancelToken).ConfigureAwait(false);
         if (_s3Backend != null)
@@ -489,7 +949,7 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
             request.Content = JsonContent.Create(renameRequest);
 
             using var response = await _client.SendAsync(request, cancelToken).ConfigureAwait(false);
-            response.EnsureSuccessStatusCode();
+            await EnsureSuccessAsync(response, cancelToken).ConfigureAwait(false);
         }
     }
 
@@ -549,5 +1009,25 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
         /// The time the credentials expire
         /// </summary>
         public long? RotateAfter { get; set; }
+        /// <summary>
+        /// Whether uploads are currently disabled, e.g. because the quota is exceeded
+        /// </summary>
+        public bool? UploadsDisabled { get; set; }
+        /// <summary>
+        /// The reason code for uploads being disabled
+        /// </summary>
+        public string? UploadsDisabledReason { get; set; }
+        /// <summary>
+        /// Whether the account is disabled
+        /// </summary>
+        public bool AccountDisabled { get; set; }
+        /// <summary>
+        /// The reason code for the account being disabled
+        /// </summary>
+        public string? AccountDisabledReason { get; set; }
+        /// <summary>
+        /// The message describing why the account is disabled
+        /// </summary>
+        public string? AccountDisabledMessage { get; set; }
     }
 }
