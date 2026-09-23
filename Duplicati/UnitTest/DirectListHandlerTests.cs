@@ -201,6 +201,9 @@ namespace Duplicati.UnitTest
                 var allVersions = await c.ListFileVersionsAsync(pathsToCheck, 0, 0);
                 var grouped = allVersions.FileVersions.Items.GroupBy(x => x.Path);
 
+                // The checks below run per returned path, so an empty answer must fail here
+                Assert.That(grouped.Count(), Is.EqualTo(pathsToCheck.Length), "Every path asked for should have versions listed");
+
                 foreach (var group in grouped)
                 {
                     var path = group.Key;
@@ -720,17 +723,63 @@ namespace Duplicati.UnitTest
             }
 
             // Act: Call ListFileVersions with 150 fileset IDs
-            // This should trigger the temporary table code path
+            // This should trigger the temporary table code path.
+            // The path is the full path, as the handler passes it: prefix and name joined.
             var result = await db.ListFileVersionsAsync(
-                new[] { "file.txt" },
+                new[] { "/test/file.txt" },
                 filesetIds.ToArray(),
                 0,
                 1000,
                 CancellationToken.None)
                 .ConfigureAwait(false);
 
-            // Assert: Should return all 150 file versions
+            // Assert: Should return all 150 file versions, each with the full path
             Assert.That(result.Items.Count(), Is.EqualTo(150));
+            Assert.That(result.Items.Select(x => x.Path).Distinct(), Is.EqualTo(new[] { "/test/file.txt" }));
+        }
+
+        /// <summary>
+        /// Files are stored without a trailing directory separator and folders with one.
+        /// Listing the versions of a path must find both by their full path, and a folder
+        /// must be found whether or not the caller added the trailing separator.
+        /// </summary>
+        [Test]
+        public async Task ListFileVersions_ReturnsFullPathsForFilesAndFoldersAsync()
+        {
+            var options = new Dictionary<string, string>(this.TestOptions);
+            var sub = Path.Combine(this.DATAFOLDER, "sub");
+            Directory.CreateDirectory(sub);
+            var fileA = Path.Combine(this.DATAFOLDER, "a.txt");
+            var fileB = Path.Combine(sub, "b.txt");
+            File.WriteAllText(fileA, "aaa");
+            File.WriteAllText(fileB, "bbbbb");
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+
+            var subWithSeparator = Library.Common.IO.Util.AppendDirSeparator(sub);
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                var fileset = (await c.ListFilesetsAsync()).Filesets.Single();
+                var res = await c.ListFileVersionsAsync(new[] { fileA, sub, fileB }, 0, 0);
+                var byPath = res.FileVersions.Items.ToDictionary(x => x.Path);
+
+                Assert.That(byPath.Keys, Is.EquivalentTo(new[] { fileA, subWithSeparator, fileB }), "Each path should be listed once, by its full path");
+                Assert.That(byPath[fileA].IsDirectory, Is.False);
+                Assert.That(byPath[fileA].Size, Is.EqualTo(3));
+                Assert.That(byPath[fileB].IsDirectory, Is.False);
+                Assert.That(byPath[fileB].Size, Is.EqualTo(5));
+                Assert.That(byPath[subWithSeparator].IsDirectory, Is.True);
+                Assert.That(res.FileVersions.Items.Select(x => x.Version).Distinct(), Is.EqualTo(new[] { 0 }));
+                // The fileset timestamp is stored in epoch seconds; the version's time must be the fileset's time
+                Assert.That(res.FileVersions.Items.Select(x => x.Time).Distinct(), Is.EqualTo(new[] { fileset.Time }));
+
+                // Asking with the trailing separator finds the same folder entry
+                var folderOnly = await c.ListFileVersionsAsync(new[] { subWithSeparator }, 0, 0);
+                Assert.That(folderOnly.FileVersions.Items.Select(x => x.Path), Is.EqualTo(new[] { subWithSeparator }));
+                Assert.That(folderOnly.FileVersions.Items.Single().IsDirectory, Is.True);
+            }
         }
 
         /// <summary>
