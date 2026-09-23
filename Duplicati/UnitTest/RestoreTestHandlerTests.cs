@@ -217,6 +217,30 @@ namespace Duplicati.UnitTest
         }
 
         /// <summary>
+        /// Picks a dblock file that holds data for at least one file.
+        /// Volume names are random, and some volumes may hold only metadata, so the choice is made from the database
+        /// </summary>
+        /// <returns>The full path of the chosen dblock file</returns>
+        private async Task<string> GetDblockWithFileDataAsync(string dbpath)
+        {
+            using var connection = await SQLiteLoader.LoadConnectionAsync(dbpath);
+            using var cmd = connection.CreateCommand();
+            cmd.CommandText = @"
+                SELECT ""RV"".""Name""
+                FROM ""File"" ""F""
+                JOIN ""BlocksetEntry"" ""BE"" ON ""BE"".""BlocksetID"" = ""F"".""BlocksetID""
+                JOIN ""Block"" ""B"" ON ""B"".""ID"" = ""BE"".""BlockID""
+                JOIN ""Remotevolume"" ""RV"" ON ""RV"".""ID"" = ""B"".""VolumeID""
+                WHERE ""RV"".""Type"" = 'Blocks'
+                GROUP BY ""RV"".""Name""
+                ORDER BY COUNT(DISTINCT ""F"".""Path"") DESC, ""RV"".""Name""
+                LIMIT 1";
+            var name = await cmd.ExecuteScalarAsync() as string;
+            Assert.IsNotNull(name, "Expected a dblock volume holding file data");
+            return Path.Combine(TARGETFOLDER, name!);
+        }
+
+        /// <summary>
         /// Overwrites a stretch of bytes in the middle of the file, keeping the size
         /// </summary>
         private static void CorruptFileMiddle(string path, int count)
@@ -328,7 +352,7 @@ namespace Duplicati.UnitTest
             Assert.IsTrue(dblocks.Count > 1, "The backup should span several dblock files");
 
             // Damage one volume in place, keeping the size so the remote listing still matches the database
-            var corrupted = dblocks[0];
+            var corrupted = await GetDblockWithFileDataAsync(DBFILE);
             CorruptFileMiddle(corrupted, 2000);
 
             var corruptedName = Path.GetFileName(corrupted);
@@ -559,8 +583,7 @@ namespace Duplicati.UnitTest
             await RunBackupAsync();
 
             // Damage a volume of the first version, then back up a new file so the next backup completes on its own
-            var dblocks = Directory.GetFiles(TARGETFOLDER, "*.dblock*").OrderBy(x => x).ToList();
-            CorruptFileMiddle(dblocks[0], 2000);
+            CorruptFileMiddle(await GetDblockWithFileDataAsync(DBFILE), 2000);
             File.WriteAllBytes(Path.Combine(DATAFOLDER, "extra.bin"), new byte[] { 1, 2, 3 });
 
             var options = RestoreTestOptions("Full");
