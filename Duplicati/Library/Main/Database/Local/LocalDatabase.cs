@@ -829,6 +829,44 @@ namespace Duplicati.Library.Main.Database.Local
         }
 
         /// <summary>
+        /// Retrieves the IDs of the filesets a time or version selection points at, newest first, and nothing else.
+        /// Unlike <see cref="GetFilesetIDsAsync"/>, a selection that matches no fileset yields nothing instead of
+        /// every fileset: that fallback suits a restore or a listing, which then search the other backups, not an
+        /// operation that acts on every fileset it is given. Without a time and without versions, every fileset is selected.
+        /// </summary>
+        /// <param name="time">The time to select filesets at or before; not used if Ticks is 0.</param>
+        /// <param name="versions">The versions to select; not used if null or empty.</param>
+        /// <param name="token">Cancellation token to monitor for cancellation requests.</param>
+        /// <returns>An asynchronous enumerable of the selected fileset IDs, newest first.</returns>
+        /// <exception cref="Exception">Thrown if the provided DateTime is unspecified.</exception>
+        public async IAsyncEnumerable<long> GetSelectedFilesetIDsAsync(DateTime time, long[]? versions, [EnumeratorCancellation] CancellationToken token)
+        {
+            if (time.Kind == DateTimeKind.Unspecified)
+                throw new Exception("Invalid DateTime given, must be either local or UTC");
+
+            var (wherequery, values) =
+                await GetFilelistWhereClauseAsync(time, versions, null, false, token)
+                    .ConfigureAwait(false);
+
+            // A selection made only of versions that do not exist produces no condition at all;
+            // that is a selection of nothing, not of everything
+            if (string.IsNullOrEmpty(wherequery) && (time.Ticks > 0 || (versions != null && versions.Length > 0)))
+                yield break;
+
+            await using var cmd = m_connection.CreateCommand();
+            cmd.SetCommandAndParameters($@"
+                SELECT ""ID""
+                FROM ""Fileset""
+                {wherequery}
+                ORDER BY ""Timestamp"" DESC
+            ")
+                .SetParameterValues(values);
+
+            await foreach (var rd in cmd.ExecuteReaderEnumerableAsync(token).ConfigureAwait(false))
+                yield return rd.ConvertValueToInt64(0);
+        }
+
+        /// <summary>
         /// Gets the ID of a remote volume by its name.
         /// </summary>
         /// <param name="file">The name of the remote volume.</param>

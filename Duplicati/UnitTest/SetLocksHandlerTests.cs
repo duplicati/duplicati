@@ -153,6 +153,50 @@ namespace Duplicati.UnitTest
             ClassicAssert.True(backend.WaitedForEmpty);
         }
 
+        /// <summary>
+        /// A version or a time that matches no fileset must lock nothing, not every fileset.
+        /// </summary>
+        [Test]
+        [Category("LockHandler")]
+        public async Task DoesNotLockAnythingForASelectionThatMatchesNothingAsync()
+        {
+            var options = new Dictionary<string, string>(TestOptions);
+            using (var controller = new Controller("file://" + TARGETFOLDER, options, null))
+            {
+                await controller.BackupAsync([DATAFOLDER]);
+            }
+
+            var lockDbPath = Path.Combine(BASEFOLDER, $"locktest-{Guid.NewGuid():N}.sqlite");
+            File.Copy(options["dbpath"], lockDbPath, true);
+
+            await using var db = await LocalLockDatabase.CreateAsync(lockDbPath, null, CancellationToken.None).ConfigureAwait(false);
+
+            var filesets = new List<KeyValuePair<long, DateTime>>();
+            await foreach (var entry in db.FilesetTimesAsync(CancellationToken.None).ConfigureAwait(false))
+                filesets.Add(entry);
+
+            var baseOptions = new Dictionary<string, string?>(options.ToDictionary(kvp => kvp.Key, kvp => (string?)kvp.Value))
+            {
+                ["dbpath"] = lockDbPath,
+                ["remote-file-lock-duration"] = "1D",
+            };
+
+            // Only version 0 exists
+            var backend = new FakeLockingBackendManager();
+            var handler = new SetLocksHandler(new Options(new Dictionary<string, string?>(baseOptions) { ["version"] = "99" }), new SetLockResults());
+            var ex = Assert.ThrowsAsync<UserInformationException>(async () => await handler.RunAsync(backend, db).ConfigureAwait(false), "A version that does not exist should not lock anything");
+            ClassicAssert.AreEqual("NoVersionForLockOperation", ex?.HelpID);
+            ClassicAssert.IsEmpty(backend.LockedVolumes);
+
+            // No fileset is at or before a day before the only backup
+            var before = Library.Utility.Utility.SerializeDateTime(filesets.Min(x => x.Value).AddDays(-1).ToUniversalTime());
+            backend = new FakeLockingBackendManager();
+            handler = new SetLocksHandler(new Options(new Dictionary<string, string?>(baseOptions) { ["time"] = before }), new SetLockResults());
+            ex = Assert.ThrowsAsync<UserInformationException>(async () => await handler.RunAsync(backend, db).ConfigureAwait(false), "A time before every backup should not lock anything");
+            ClassicAssert.AreEqual("NoVersionForLockOperation", ex?.HelpID);
+            ClassicAssert.IsEmpty(backend.LockedVolumes);
+        }
+
         [Test]
         [Category("LockHandler")]
         public async Task ContinuesWhenLockingFailsAsync()
