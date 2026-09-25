@@ -134,11 +134,30 @@ public class CommandlineRunService(IQueueRunnerService queueRunnerService, ILogW
         m_activeItems[k.ID] = k;
         StartCleanupTask();
 
+        // The command waits in the queue, and a backup that runs first moves every version
+        // number by one, so the versions it names are pinned now rather than looked up when it runs
+        CommandlineVersionPinning.PinnedVersions? pinned = null;
+        Exception? pinFailure = null;
+        try
+        {
+            pinned = CommandlineVersionPinning.Pin(args);
+        }
+        catch (Exception ex)
+        {
+            pinFailure = ex;
+        }
+
         k.Task = Runner.CreateCustomTask((sink) =>
         {
             try
             {
                 k.Started = true;
+
+                // Running on other versions than the ones named is worse than not running
+                if (pinFailure != null)
+                    throw new Library.Interface.UserInformationException($"Could not read the backup versions that --version named when this command was sent, so the command was not run: {pinFailure.Message}", "CommandlineVersionPinFailed", pinFailure);
+                if (pinned != null)
+                    args = CommandlineVersionPinning.Apply(args, pinned);
 
                 // Expand sources for supporting %DOCUMENTS% and similar
                 if (args.Length > 2 && args[0].Equals("backup", StringComparison.OrdinalIgnoreCase))
