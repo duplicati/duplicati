@@ -118,6 +118,11 @@ namespace Duplicati.Library.Main.Operation.Restore
                 {
                     Logging.Log.WriteVerboseMessage(LOGTAG, "RetiredProcess", null, "Volume decompressor retired");
 
+                    // When the retirement came from downstream, the volume manager can still be waiting to hand
+                    // over its next item, and nothing will read it now. On a normal end the input is
+                    // already retired and read empty, so this does nothing.
+                    await self.Input.RetireAsync(true).ConfigureAwait(false);
+
                     if (options.InternalProfiling)
                     {
                         Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Read: {sw_read!.ElapsedMilliseconds}ms, Write: {sw_write!.ElapsedMilliseconds}ms, Decompress allocate: {sw_decompress_alloc!.ElapsedMilliseconds}ms, Decompress instantiate: {sw_decompress_instantiate!.ElapsedMilliseconds}ms, Decompress lock: {sw_decompress_locking!.ElapsedMilliseconds}ms, Decompress read: {sw_decompress_read!.ElapsedMilliseconds}ms, Verify: {sw_verify!.ElapsedMilliseconds}ms");
@@ -126,7 +131,10 @@ namespace Duplicati.Library.Main.Operation.Restore
                 catch (Exception ex)
                 {
                     Logging.Log.WriteErrorMessage(LOGTAG, "DecompressionError", ex, "Error during decompression");
-                    self.Input.Retire();
+                    // The volume manager may be waiting to hand over its next block, and a plain
+                    // `Retire` waits for the buffered blocks to be read first. When no other
+                    // decompressor is left to read them, the volume manager would wait forever.
+                    await self.Input.RetireAsync(true).ConfigureAwait(false);
                     self.Output.Retire();
                     throw;
                 }
