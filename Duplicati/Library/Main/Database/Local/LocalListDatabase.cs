@@ -1458,9 +1458,9 @@ namespace Duplicati.Library.Main.Database.Local
         }
 
         /// <summary>
-        /// Searches for file versions matching a filter in the specified path prefixes.
+        /// Searches for file versions matching a filter in the specified folders.
         /// </summary>
-        /// <param name="pathprefixes">The path prefixes to search in, or search in all if empty.</param>
+        /// <param name="pathprefixes">The folders to search in, each with a trailing directory separator; entries in these folders and below them are searched. Searches everything if empty.</param>
         /// <param name="filter">The filter to match against file paths.</param>
         /// <param name="filesetIds">Optional fileset IDs to restrict the search to.</param>
         /// <param name="searchMetadata">Whether to also search in metadata JSON values.</param>
@@ -1477,11 +1477,6 @@ namespace Duplicati.Library.Main.Database.Local
 
             await using var filesetIdTable = filesetIds != null && filesetIds.Length > 0
                 ? await TemporaryDbValueList.CreateAsync(this, filesetIds, token)
-                    .ConfigureAwait(false)
-                : null;
-
-            await using var pathsTable = pathprefixes != null && pathprefixes.Any()
-                ? await TemporaryDbValueList.CreateAsync(this, pathprefixes, token)
                     .ConfigureAwait(false)
                 : null;
 
@@ -1619,8 +1614,21 @@ namespace Duplicati.Library.Main.Database.Local
             // Build WHERE clauses
             var whereClauses = new List<string>();
 
-            if (pathsTable != null)
-                whereClauses.Add(@"pp.""Prefix"" IN (@PathPrefixes)");
+            // The prefixes at or below a folder sort in [folder, folder with its last character stepped
+            // up): "...\f1\" .. "...\f1]" and ".../f1/" .. ".../f10", so the range holds the folder and everything
+            // under it and nothing beside it ("...\f10\" sorts before "...\f1\"). The bounds reach both
+            // queries through filterProps.
+            var folderClauses = new List<string>();
+            foreach (var folder in (pathprefixes ?? []).Where(x => !string.IsNullOrEmpty(x)))
+            {
+                var lower = $"@FolderLower{Library.Utility.Utility.FormatInvariantValue(folderClauses.Count)}";
+                var upper = $"@FolderUpper{Library.Utility.Utility.FormatInvariantValue(folderClauses.Count)}";
+                filterProps[lower] = folder;
+                filterProps[upper] = folder[..^1] + (char)(folder[^1] + 1);
+                folderClauses.Add($@"(""pp"".""Prefix"" >= {lower} AND ""pp"".""Prefix"" < {upper})");
+            }
+            if (folderClauses.Count > 0)
+                whereClauses.Add("(" + string.Join(" OR ", folderClauses) + ")");
             if (filesetIdTable != null)
                 whereClauses.Add(@"fe.""FilesetID"" IN (@FilesetIds)");
 
@@ -1707,10 +1715,6 @@ namespace Duplicati.Library.Main.Database.Local
                .SetParameterValue("@limit", limit)
                .SetParameterValue("@offset", offset);
 
-            if (pathsTable != null)
-                await cmd.ExpandInClauseParameterMssqliteAsync("@PathPrefixes", pathsTable, token)
-                        .ConfigureAwait(false);
-
             if (filesetIdTable != null)
                 await cmd.ExpandInClauseParameterMssqliteAsync("@FilesetIds", filesetIdTable, token)
                     .ConfigureAwait(false);
@@ -1761,10 +1765,6 @@ namespace Duplicati.Library.Main.Database.Local
                 cmd.SetCommandAndParameters(countSql)
                    .SetParameterValues(filterProps)
                    .SetParameterValue("@DefaultBehavior", defaultBehavior);
-
-                if (pathsTable != null)
-                    await cmd.ExpandInClauseParameterMssqliteAsync("@PathPrefixes", pathsTable, token)
-                        .ConfigureAwait(false);
 
                 if (filesetIdTable != null)
                     await cmd.ExpandInClauseParameterMssqliteAsync("@FilesetIds", filesetIdTable, token)
