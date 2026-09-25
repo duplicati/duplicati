@@ -237,7 +237,9 @@ namespace Duplicati.Library.Modules.Builtin
                 Logging.Log.WriteWarningMessage(LOGTAG, "WmiNotSupportedForMSSQL", null, $"The {WindowsSnapshotProvider.Wmi} cannot be used for MSSQL backups, switching to {provider}");
             }
 
-            mssqlUtility.QueryDBsInfo(provider);
+            var providerId = Utility.Utility.ParseGuidOption(commandlineOptions, "vss-provider-id", Guid.Empty);
+
+            mssqlUtility.QueryDBsInfo(provider, providerId);
             Logging.Log.WriteInformationMessage(LOGTAG, "MsSqlDatabaseCount", "Found {0} databases on Microsoft SQL Server", mssqlUtility.DBs.Count);
 
             foreach (var db in mssqlUtility.DBs)

@@ -93,6 +93,7 @@ namespace Duplicati.Library.Snapshots
 {PackageHelper.GetExecutableName(PackageHelper.NamedExecutable.Snapshots)} [test-folder1] [test-folder2] ...
     --ignorelocking=<true|false>       : If true, the test will continue even if the file cannot be locked
     --snapshot-provider=<wmi|vanara|native|alphavss> : The VSS provider to use (Windows only, leave empty on other platforms)
+    --vss-provider-id=<guid>           : The GUID of the VSS provider to use, or empty for automatic selection (Windows only)
     --vss-exclude-writers=<guids>      : Semicolon separated list of VSS writer class GUIDs to exclude (Windows only)
     --vss-use-mapping=<true|false>     : Map VSS snapshots to temporary drives (Windows only)
     --vss-timeout=<timespan>           : The maximum time to wait for each asynchronous VSS operation,
