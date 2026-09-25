@@ -48,7 +48,7 @@ public static class KnownPlugins
     /// <returns>An enumerable of <see cref="IFilesystemPlugin"/> instances.</returns>
     public static IEnumerable<IFilesystemPlugin> GetPlugins(IReadOnlyDictionary<string, string?> options)
     {
-        yield return new Hyperv(options);
-        yield return new MSSQL(options);
+        foreach (var module in Library.SourceProviders.SourceProviderModules.BuiltInPrefixSourceProviderModules)
+            yield return new SourceProviderFilesystemPlugin(module, options);
     }
 }
