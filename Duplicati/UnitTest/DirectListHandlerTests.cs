@@ -137,6 +137,48 @@ namespace Duplicati.UnitTest
             }
         }
 
+        /// <summary>
+        /// With neither a time nor a version given, the folder listing is of the latest
+        /// fileset, as the command's help text says. An explicit version still selects that one.
+        /// </summary>
+        [Test]
+        public async Task ListFolder_NoTimeOrVersion_ListsTheLatestFilesetAsync()
+        {
+            var options = new Dictionary<string, string>(this.TestOptions)
+            {
+                ["upload-unchanged-backups"] = "true"
+            };
+            var first = Path.Combine(this.DATAFOLDER, "a.txt");
+            var second = Path.Combine(this.DATAFOLDER, "b.txt");
+
+            File.WriteAllText(first, "a");
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+
+            // Fileset timestamps have a resolution of one second
+            await Task.Delay(1500);
+            File.WriteAllText(second, "b");
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+
+            var folder = Library.Common.IO.Util.AppendDirSeparator(this.DATAFOLDER);
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                var latest = await c.ListFolderAsync(new[] { folder }, 0, 0, false);
+                Assert.That(latest.Entries.Items.Select(x => x.Path), Is.EquivalentTo(new[] { first, second }), "Without a time or a version the latest fileset should be listed");
+
+                var roots = await c.ListFolderAsync(null, 0, 0, false);
+                Assert.That(roots.Entries.Items.Select(x => x.Path), Is.EqualTo(new[] { folder }), "The root listing should also default to the latest fileset");
+            }
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options.Expand(new { version = 1 }), null))
+            {
+                var older = await c.ListFolderAsync(new[] { folder }, 0, 0, false);
+                Assert.That(older.Entries.Items.Select(x => x.Path), Is.EqualTo(new[] { first }), "An explicit version should still select that fileset");
+            }
+        }
+
         [Test]
         public async Task ListFileVersions_LifecycleTestAsync()
         {

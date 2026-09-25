@@ -50,8 +50,14 @@ internal static class ListFolderHandler
         await using var db = await Database.Local.LocalListDatabase.CreateAsync(options.Dbpath, null, result.TaskControl.ProgressToken)
             .ConfigureAwait(false);
 
+        // Neither a time nor a version means the latest fileset, as the help text says;
+        // version 0 is the newest. Without this, every fileset would match.
+        var versions = options.Version;
+        if (options.Time.Ticks == 0 && (versions == null || versions.Length == 0))
+            versions = [0];
+
         var filesetIds = await db
-            .GetFilesetIDsAsync(options.Time, options.Version, singleTimeMatch: true, result.TaskControl.ProgressToken)
+            .GetFilesetIDsAsync(options.Time, versions, singleTimeMatch: true, result.TaskControl.ProgressToken)
             .ToArrayAsync(cancellationToken: result.TaskControl.ProgressToken)
             .ConfigureAwait(false);
 
