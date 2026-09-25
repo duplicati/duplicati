@@ -131,14 +131,18 @@ namespace Duplicati.Library.Main.Operation.Restore
                     // retirement, so it is reported the same way retirement is. The retirement
                     // of the channels is still needed to tear the network down.
                     Logging.Log.WriteVerboseMessage(LOGTAG, "CancelledProcess", null, "Volume downloader cancelled");
-                    self.Input.Retire();
+                    await self.Input.RetireAsync(true).ConfigureAwait(false);
                     self.Output.Retire();
                     throw;
                 }
                 catch (Exception ex)
                 {
                     Logging.Log.WriteErrorMessage(LOGTAG, "DownloadError", ex, "Error during download");
-                    self.Input.Retire();
+                    // The volume manager may be waiting to hand over its next request, and a plain
+                    // `Retire` waits for the buffered requests to be read first. With the downloaders
+                    // gone nothing reads them, so the volume manager would wait forever and the rest
+                    // of the restore with it.
+                    await self.Input.RetireAsync(true).ConfigureAwait(false);
                     self.Output.Retire();
                     throw;
                 }

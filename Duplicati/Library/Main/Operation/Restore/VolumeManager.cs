@@ -368,6 +368,17 @@ namespace Duplicati.Library.Main.Operation.Restore
                             // currently unwinding.
                             Logging.Log.WriteWarningMessage(LOGTAG, "CacheDrainError", ex, "Failed to dispose the cached volumes");
                         }
+
+                        // This process is the only reader of the volume requests and of the decrypted
+                        // volumes, and leaving the task does not retire those channels. Without this,
+                        // a block request or a decrypted volume written after a failure elsewhere in
+                        // the network fills the buffer and then waits for a reader that is gone, so the
+                        // restore never finishes. The retirement has to be immediate: a plain `Retire`
+                        // waits for the buffer to be read first, so with no reader left it never
+                        // completes and every writer, the ones already waiting and any later one,
+                        // stays blocked.
+                        await self.VolumeRequest.RetireAsync(true).ConfigureAwait(false);
+                        await self.VolumeResponse.RetireAsync(true).ConfigureAwait(false);
                     }
                 }
             );

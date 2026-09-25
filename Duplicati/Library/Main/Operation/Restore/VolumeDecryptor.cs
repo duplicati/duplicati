@@ -121,7 +121,10 @@ namespace Duplicati.Library.Main.Operation.Restore
                 catch (Exception ex)
                 {
                     Logging.Log.WriteErrorMessage(LOGTAG, "DecryptionError", ex, "Error during decryption");
-                    self.Input.Retire();
+                    // A downloader may be waiting to hand over its next volume, and a plain `Retire`
+                    // waits for the buffered volumes to be read first. With the decryptors gone
+                    // nothing reads them, so the downloader would wait forever.
+                    await self.Input.RetireAsync(true).ConfigureAwait(false);
                     self.Output.Retire();
                     throw;
                 }
