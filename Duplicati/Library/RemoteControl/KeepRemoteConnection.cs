@@ -25,6 +25,7 @@ using System.Net.Http.Headers;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Security.Cryptography;
+using Jose;
 using System.Text.Json;
 using CoCoL;
 using Duplicati.Library.AutoUpdater;
@@ -39,9 +40,15 @@ namespace Duplicati.Library.RemoteControl;
 public class KeepRemoteConnection : IDisposable
 {
     /// <summary>
-    /// The protocol version to use
+    /// The protocol version this client speaks. Version 2 requires end-to-end encrypted command payloads,
+    /// see <see cref="CommandPayloadEncryption"/>. 
     /// </summary>
-    private const int PROTOCOL_VERSION = 1;
+    private const int PROTOCOL_VERSION = 2;
+
+    /// <summary>
+    /// The status code returned for a command whose payload is not end-to-end encrypted
+    /// </summary>
+    private const int UpgradeRequiredStatusCode = 426;
     /// <summary>
     /// The log tag for messages from this class
     /// </summary>
@@ -418,6 +425,10 @@ public class KeepRemoteConnection : IDisposable
 
                 if (string.IsNullOrWhiteSpace(welcomeMessage.PublicKeyHash))
                     throw new ProtocolViolationException("No public key hash in welcome message");
+
+                // Requiere the current version on the server
+                if (welcomeMessage.SupportedProtocolVersions == null || !welcomeMessage.SupportedProtocolVersions.Contains(PROTOCOL_VERSION))
+                    throw new ProtocolViolationException($"The server does not support protocol version {PROTOCOL_VERSION}, which this client requires");
                 _serverCertificate = _serverKeys.FirstOrDefault(x => x.PublicKeyHash == welcomeMessage.PublicKeyHash && x.Expiry.ToUniversalTime() > DateTimeOffset.UtcNow);
 
                 if (_serverCertificate == null)
@@ -501,10 +512,7 @@ public class KeepRemoteConnection : IDisposable
                         break;
 
                     case MessageType.Command:
-                        await _onMessage(new CommandMessage(
-                            envelope.GetPayload<CommandRequestMessage>(),
-                            response => SendEnvelope(envelope.RespondWith(response))
-                        ));
+                        await HandleCommandAsync(envelope);
                         break;
 
                     case MessageType.Control:
@@ -537,6 +545,37 @@ public class KeepRemoteConnection : IDisposable
             reconnectHelper.Signal();
         }
 
+    }
+
+    /// <summary>
+    /// Unwraps an end-to-end encrypted command and hands it to the command handler, with the response
+    /// encrypted to the portal's reply key. A command that is not encrypted is refused with an error response
+    /// the portal can read, so an outdated portal shows the reason instead of timing out.
+    /// </summary>
+    /// <param name="envelope">The command envelope</param>
+    private async Task HandleCommandAsync(EnvelopedMessage envelope)
+    {
+        CommandRequestMessage request;
+        Jwk replyKey;
+        try
+        {
+            request = CommandPayloadEncryption.DecryptRequest(envelope.Payload, ClientKey, envelope.MessageId, out replyKey);
+        }
+        catch (CommandPayloadException ex)
+        {
+            // The payload is not logged, it may be plain text with data that should not be logged
+            SafeLog.Write(LogMessageType.Warning, LogTag, "WebsocketCommandRefused", null, "Refusing command {0} from {1}: {2}", envelope.MessageId, envelope.From, ex.Message);
+            SendEnvelope(envelope.RespondWith(new CommandResponseMessage(
+                UpgradeRequiredStatusCode,
+                Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes($"This client requires end-to-end encrypted commands (protocol version {PROTOCOL_VERSION}): {ex.Message}")),
+                new Dictionary<string, string> { { "Content-Type", "text/plain; charset=utf-8" } })));
+            return;
+        }
+
+        await _onMessage(new CommandMessage(
+            request,
+            response => SendEnvelope(envelope.RespondWith(CommandPayloadEncryption.EncryptResponse(envelope.MessageId, response, replyKey)))
+        ));
     }
 
     /// <summary>
