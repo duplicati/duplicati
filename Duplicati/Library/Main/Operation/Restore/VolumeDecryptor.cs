@@ -113,6 +113,11 @@ namespace Duplicati.Library.Main.Operation.Restore
                 {
                     Logging.Log.WriteVerboseMessage(LOGTAG, "RetiredProcess", null, "Volume decryptor retired");
 
+                    // When the retirement came from downstream, a downloader can still be waiting to hand
+                    // over its next item, and nothing will read it now. On a normal end the input is
+                    // already retired and read empty, so this does nothing.
+                    await self.Input.RetireAsync(true).ConfigureAwait(false);
+
                     if (options.InternalProfiling)
                     {
                         Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Read: {sw_read!.ElapsedMilliseconds}ms, Decrypt: {sw_decrypt!.ElapsedMilliseconds}ms, BlockVolumeReader: {sw_bvr!.ElapsedMilliseconds}ms, VolumeWrapper: {sw_vw!.ElapsedMilliseconds}ms, Write: {sw_write!.ElapsedMilliseconds}ms");
