@@ -179,6 +179,36 @@ namespace Duplicati.UnitTest
             }
         }
 
+        /// <summary>
+        /// A folder is stored with a trailing directory separator. Listing its contents must
+        /// work whether or not the caller added the separator, as a shell user typically does not.
+        /// </summary>
+        [Test]
+        public async Task ListFolder_FolderWithoutTrailingSeparator_ListsItsEntriesAsync()
+        {
+            var options = new Dictionary<string, string>(this.TestOptions);
+            var folder = Path.Combine(this.DATAFOLDER, "f1");
+            var sub = Path.Combine(folder, "sub");
+            Directory.CreateDirectory(sub);
+            var file = Path.Combine(folder, "a.txt");
+            File.WriteAllText(file, "a");
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+
+            var expected = new[] { file, Library.Common.IO.Util.AppendDirSeparator(sub) };
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                var withoutSeparator = await c.ListFolderAsync(new[] { folder }, 0, 0, false);
+                Assert.That(withoutSeparator.Entries.Items.Select(x => x.Path), Is.EquivalentTo(expected), "The folder given without a trailing separator should list its entries");
+                Assert.That(withoutSeparator.Entries.Items.Where(x => x.IsDirectory).Select(x => x.Path), Is.EqualTo(new[] { Library.Common.IO.Util.AppendDirSeparator(sub) }));
+
+                var withSeparator = await c.ListFolderAsync(new[] { Library.Common.IO.Util.AppendDirSeparator(folder) }, 0, 0, false);
+                Assert.That(withSeparator.Entries.Items.Select(x => x.Path), Is.EquivalentTo(expected), "The folder given with a trailing separator should list the same entries");
+            }
+        }
+
         [Test]
         public async Task ListFileVersions_LifecycleTestAsync()
         {

@@ -23,6 +23,7 @@
 
 using System.Linq;
 using System.Threading.Tasks;
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Main.Operation;
@@ -78,9 +79,12 @@ internal static class ListFolderHandler
         }
         else
         {
+            // A folder is stored as a prefix with a trailing directory separator; add it so a
+            // folder given without one, as a shell user would type it, is found as well
+            var prefixes = folders.Select(Util.AppendDirSeparator);
             var entries = await db
                 .ListFolderAsync(
-                    db.GetPrefixIdsAsync(folders, result.TaskControl.ProgressToken).ToBlockingEnumerable(),
+                    db.GetPrefixIdsAsync(prefixes, result.TaskControl.ProgressToken).ToBlockingEnumerable(),
                     filesetIds[0],
                     offset,
                     limit,
