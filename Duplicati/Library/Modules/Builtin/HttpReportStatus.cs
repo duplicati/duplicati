@@ -18,6 +18,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
+#nullable enable
 
 using System;
 using System.Collections.Generic;
@@ -148,19 +149,19 @@ namespace Duplicati.Library.Modules.Builtin
         /// <summary>
         /// The remote URLs to post status reports to.
         /// </summary>
-        private string[] m_urls;
+        private string[]? m_urls;
 
         /// <summary>
         /// The HTTP handler created during <see cref="Configure"/>, owned by
         /// <see cref="m_httpClient"/> and disposed with it when the module is disposed.
         /// </summary>
-        private HttpClientHandler m_httpHandler;
+        private HttpClientHandler? m_httpHandler;
 
         /// <summary>
         /// The HTTP client created during <see cref="Configure"/>, reused for every post
         /// and disposed when the module is disposed.
         /// </summary>
-        private HttpClient m_httpClient;
+        private HttpClient? m_httpClient;
 
         /// <summary>
         /// The interval between status reports.
@@ -182,18 +183,18 @@ namespace Duplicati.Library.Modules.Builtin
         /// for the report metadata (e.g. <c>machine-id</c>, <c>backup-id</c>), mirroring
         /// <see cref="ReportHelper"/>.
         /// </summary>
-        private IReadOnlyDictionary<string, string> m_options;
+        private IReadOnlyDictionary<string, string?>? m_options;
 
         /// <summary>
         /// The operation name reported in <see cref="OnOperationStartedAsync"/>.
         /// </summary>
-        private string m_operationName;
+        private string? m_operationName;
 
         /// <summary>
         /// The remote backend URL, captured in <see cref="OnStart"/> and used to compute
         /// the backup id and destination type, mirroring <see cref="ReportHelper"/>.
         /// </summary>
-        private string m_remoteUrl;
+        private string? m_remoteUrl;
 
         /// <summary>
         /// The time the operation started, in UTC.
@@ -213,7 +214,7 @@ namespace Duplicati.Library.Modules.Builtin
         /// <summary>
         /// The most recent progress snapshot observed.
         /// </summary>
-        private ReportProgressSnapshot m_latestSnapshot;
+        private ReportProgressSnapshot? m_latestSnapshot;
 
         /// <summary>
         /// A ring buffer of the most recent log lines observed.
@@ -230,7 +231,7 @@ namespace Duplicati.Library.Modules.Builtin
         /// options and the remote URL (both fixed before an operation starts), so it is
         /// computed once per operation and reused across every report.
         /// </summary>
-        private Lazy<ReportMetadata> m_metadata;
+        private Lazy<ReportMetadata>? m_metadata;
 
         /// <summary>
         /// Lock protecting the mutable counters and buffers.
@@ -251,7 +252,7 @@ namespace Duplicati.Library.Modules.Builtin
         /// active when <c>--http-report-status-url</c> is set.
         /// </summary>
         /// <param name="commandlineOptions">A set of commandline options passed to Duplicati.</param>
-        public void Configure(IDictionary<string, string> commandlineOptions)
+        public void Configure(IDictionary<string, string?> commandlineOptions)
         {
             commandlineOptions.TryGetValue(OPTION_URL, out var url);
             if (string.IsNullOrWhiteSpace(url))
@@ -274,19 +275,20 @@ namespace Duplicati.Library.Modules.Builtin
             // overrides (machine-id, backup-id, backup-name, machine-name) like ReportHelper.
             m_options = commandlineOptions.AsReadOnly();
 
-            m_interval = Utility.Utility.ParseTimespanOption(commandlineOptions.AsReadOnly(), OPTION_INTERVAL, DEFAULT_INTERVAL);
+            m_interval = Utility.Utility.ParseTimespanOption(m_options, OPTION_INTERVAL, DEFAULT_INTERVAL);
             if (m_interval <= TimeSpan.Zero)
                 m_interval = TimeSpan.FromSeconds(30);
 
-            m_maxLogLines = Utility.Utility.ParseIntOption(commandlineOptions.AsReadOnly(), OPTION_MAX_LOG_LINES, DEFAULT_MAX_LOG_LINES);
+            m_maxLogLines = Utility.Utility.ParseIntOption(m_options, OPTION_MAX_LOG_LINES, DEFAULT_MAX_LOG_LINES);
             if (m_maxLogLines < 0)
                 m_maxLogLines = DEFAULT_MAX_LOG_LINES;
 
-            var acceptAnyCertificate = Utility.Utility.ParseBoolOption(commandlineOptions.AsReadOnly(), OPTION_ACCEPT_ANY_CERTIFICATE);
-            var acceptSpecificCertificates = commandlineOptions.ContainsKey(OPTION_ACCEPT_SPECIFIED_CERTIFICATE)
-                ? commandlineOptions[OPTION_ACCEPT_SPECIFIED_CERTIFICATE].Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
-                : null;
-            var ignoreRevocationFailure = Utility.Utility.ParseBoolOption(commandlineOptions.AsReadOnly(), OPTION_IGNORE_REVOCATION_FAILURE);
+            var acceptAnyCertificate = Utility.Utility.ParseBoolOption(m_options, OPTION_ACCEPT_ANY_CERTIFICATE);
+            var acceptSpecificCertificatesString = m_options.GetValueOrDefault(OPTION_ACCEPT_SPECIFIED_CERTIFICATE);
+            var acceptSpecificCertificates = string.IsNullOrWhiteSpace(acceptSpecificCertificatesString)
+                ? null
+                : acceptSpecificCertificatesString.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
+            var ignoreRevocationFailure = Utility.Utility.ParseBoolOption(m_options, OPTION_IGNORE_REVOCATION_FAILURE);
 
             m_httpHandler = new HttpClientHandler();
             HttpClientHelper.ConfigureHandlerCertificateValidator(m_httpHandler, acceptAnyCertificate, acceptSpecificCertificates, ignoreRevocationFailure);
@@ -295,10 +297,10 @@ namespace Duplicati.Library.Modules.Builtin
             // Paths in log lines are redacted by default. The module-specific option takes
             // precedence and falls back to the global allow-paths-in-log-messages setting,
             // mirroring the behavior of the other reporting modules (see ReportHelper).
-            if (commandlineOptions.TryGetValue(OPTION_ALLOW_PATHS_IN_LOG_MESSAGES, out var allowPathsModule) && bool.TryParse(allowPathsModule, out var parsedModule))
-                m_allowPathsInLogMessages = parsedModule;
+            if (m_options.ContainsKey(OPTION_ALLOW_PATHS_IN_LOG_MESSAGES))
+                m_allowPathsInLogMessages = Utility.Utility.ParseBoolOption(m_options, OPTION_ALLOW_PATHS_IN_LOG_MESSAGES);
             else
-                m_allowPathsInLogMessages = Utility.Utility.ParseBoolOption(commandlineOptions.AsReadOnly(), OPTION_GLOBAL_ALLOW_PATHS_IN_LOG_MESSAGES);
+                m_allowPathsInLogMessages = Utility.Utility.ParseBoolOption(m_options, OPTION_GLOBAL_ALLOW_PATHS_IN_LOG_MESSAGES);
         }
 
         /// <summary>
@@ -320,7 +322,7 @@ namespace Duplicati.Library.Modules.Builtin
         /// </summary>
         /// <param name="result">The result object.</param>
         /// <param name="exception">The exception that stopped the operation, or null.</param>
-        public void OnFinish(IBasicResults result, Exception exception)
+        public void OnFinish(IBasicResults result, Exception? exception)
         {
             // Completion is handled by the IReportModule lifecycle; nothing to do here.
         }
@@ -347,7 +349,7 @@ namespace Duplicati.Library.Modules.Builtin
         }
 
         /// <inheritdoc />
-        public async Task OnOperationCompletedAsync(IBasicResults result, Exception exception, CancellationToken cancellationToken)
+        public async Task OnOperationCompletedAsync(IBasicResults result, Exception? exception, CancellationToken cancellationToken)
         {
             if (!IsActive)
                 return;
@@ -390,7 +392,9 @@ namespace Duplicati.Library.Modules.Builtin
                 m_logEntries++;
                 // Redact paths in the buffered log line unless the user has explicitly
                 // allowed paths in log messages, mirroring the reporting helpers.
-                var line = m_allowPathsInLogMessages ? entry.Message : SensitiveDataFilter.RedactPaths(entry.Message);
+                var line = m_allowPathsInLogMessages
+                    ? entry.Message
+                    : (entry.RedactedMessage ?? SensitiveDataFilter.RedactPaths(entry.Message));
                 m_recentLogLines.AddLast(line);
                 while (m_recentLogLines.Count > m_maxLogLines)
                     m_recentLogLines.RemoveFirst();
@@ -474,7 +478,7 @@ namespace Duplicati.Library.Modules.Builtin
         /// <param name="status">The status label for this report (e.g. <c>Started</c>, <c>Progress</c>, <c>Completed</c>).</param>
         /// <param name="errorMessage">An error message to include, or <c>null</c>.</param>
         /// <returns>A status report ready to be serialized and posted.</returns>
-        private StatusReport BuildReport(string status, string errorMessage)
+        private StatusReport BuildReport(string status, string? errorMessage)
         {
             lock (m_lock)
             {
@@ -488,7 +492,7 @@ namespace Duplicati.Library.Modules.Builtin
                     IsCompleted = status is "Completed" or "Failed",
                     BackendEvents = m_backendEvents,
                     LogEntries = m_logEntries,
-                    Progress = m_latestSnapshot == null ? null : new ProgressSnapshot(m_latestSnapshot),
+                    Progress = m_latestSnapshot == null ? null : new ProgressSnapshot(m_latestSnapshot, m_allowPathsInLogMessages),
                     RecentLogLines = [.. m_recentLogLines],
                     // Metadata is lazily computed once per operation (see OnOperationStartedAsync)
                     // since it only depends on the options and remote URL.
@@ -512,12 +516,12 @@ namespace Duplicati.Library.Modules.Builtin
             try
             {
                 var json = JsonSerializer.Serialize(report, typeof(StatusReport), SerializerOptions);
-                foreach (var url in m_urls)
+                foreach (var url in m_urls ?? [])
                     await SendAsync(url, json, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
-                Logging.Log.WriteWarningMessage(LOGTAG, "HttpReportStatusSendError", ex, "Failed to post status report to {0}: {1}", string.Join(", ", m_urls), ex.Message);
+                Logging.Log.WriteWarningMessage(LOGTAG, "HttpReportStatusSendError", ex, "Failed to post status report to {0}: {1}", string.Join(", ", m_urls ?? []), ex.Message);
             }
         }
 
@@ -531,6 +535,12 @@ namespace Duplicati.Library.Modules.Builtin
         /// <returns>A task that represents the asynchronous operation.</returns>
         protected virtual async Task SendAsync(string url, string json, CancellationToken cancellationToken)
         {
+            if (m_httpClient == null)
+            {
+                Library.Logging.Log.WriteWarningMessage(LOGTAG, "MissingHttpClient", null, "HttpClient was not initialized?");
+                return;
+            }
+
             using var content = new StringContent(json, Encoding.UTF8, "application/json");
             using var response = await m_httpClient.PostAsync(new Uri(url), content, cancellationToken).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
@@ -566,10 +576,10 @@ namespace Duplicati.Library.Modules.Builtin
         public sealed class StatusReport
         {
             /// <summary>The operation name.</summary>
-            public string Operation { get; set; }
+            public string? Operation { get; set; }
 
             /// <summary>The status label for this report.</summary>
-            public string Status { get; set; }
+            public string? Status { get; set; }
 
             /// <summary>The time the operation started, in UTC.</summary>
             public DateTime StartedUtc { get; set; }
@@ -578,7 +588,7 @@ namespace Duplicati.Library.Modules.Builtin
             public DateTime ReportedUtc { get; set; }
 
             /// <summary>An error message, if the operation failed.</summary>
-            public string ErrorMessage { get; set; }
+            public string? ErrorMessage { get; set; }
 
             /// <summary><c>true</c> once the operation has finished running (Completed/Failed).</summary>
             public bool IsCompleted { get; set; }
@@ -590,13 +600,13 @@ namespace Duplicati.Library.Modules.Builtin
             public int LogEntries { get; set; }
 
             /// <summary>The latest progress snapshot, or <c>null</c>.</summary>
-            public ProgressSnapshot Progress { get; set; }
+            public ProgressSnapshot? Progress { get; set; }
 
             /// <summary>The most recent log lines observed.</summary>
-            public List<string> RecentLogLines { get; set; }
+            public List<string>? RecentLogLines { get; set; }
 
             /// <summary>Environment metadata included in every report.</summary>
-            public ReportMetadata Metadata { get; set; }
+            public ReportMetadata? Metadata { get; set; }
         }
 
         /// <summary>
@@ -606,34 +616,34 @@ namespace Duplicati.Library.Modules.Builtin
         public sealed class ReportMetadata
         {
             /// <summary>The running Duplicati version.</summary>
-            public string DuplicatiVersion { get; set; }
+            public string? DuplicatiVersion { get; set; }
 
             /// <summary>The stable machine id.</summary>
-            public string MachineId { get; set; }
+            public string? MachineId { get; set; }
 
             /// <summary>A stable id derived from the backup's remote URL.</summary>
-            public string BackupId { get; set; }
+            public string? BackupId { get; set; }
 
             /// <summary>The backup name (entry assembly name).</summary>
-            public string BackupName { get; set; }
+            public string? BackupName { get; set; }
 
             /// <summary>The machine name.</summary>
-            public string MachineName { get; set; }
+            public string? MachineName { get; set; }
 
             /// <summary>The destination type (the remote URL scheme).</summary>
-            public string DestinationType { get; set; }
+            public string? DestinationType { get; set; }
 
             /// <summary>A safe destination host suffix (known public cloud only), or null.</summary>
-            public string DestinationHostSuffix { get; set; }
+            public string? DestinationHostSuffix { get; set; }
 
             /// <summary>The installation type (e.g. package type id).</summary>
-            public string InstallationType { get; set; }
+            public string? InstallationType { get; set; }
 
             /// <summary>The operating system name (e.g. <c>Windows</c>, <c>Linux</c>, <c>MacOS</c>).</summary>
-            public string OperatingSystem { get; set; }
+            public string? OperatingSystem { get; set; }
 
             /// <summary>A detailed operating system platform string.</summary>
-            public string OperatingSystemDetailed { get; set; }
+            public string? OperatingSystemDetailed { get; set; }
         }
 
         /// <summary>
@@ -645,7 +655,12 @@ namespace Duplicati.Library.Modules.Builtin
             public ProgressSnapshot() { }
 
             /// <summary>Creates a progress snapshot from the interface record.</summary>
-            public ProgressSnapshot(ReportProgressSnapshot snapshot)
+            /// <param name="snapshot">The progress snapshot to copy.</param>
+            /// <param name="allowPathsInLogMessages">
+            /// If <c>true</c>, the current filename is included in the report;
+            /// otherwise it is omitted because it is a local path.
+            /// </param>
+            public ProgressSnapshot(ReportProgressSnapshot snapshot, bool allowPathsInLogMessages)
             {
                 Phase = snapshot.Phase;
                 Progress = snapshot.Progress;
@@ -654,13 +669,13 @@ namespace Duplicati.Library.Modules.Builtin
                 FileCount = snapshot.FileCount;
                 FileSize = snapshot.FileSize;
                 CountingFiles = snapshot.CountingFiles;
-                CurrentFilename = snapshot.CurrentFilename;
+                CurrentFilename = allowPathsInLogMessages ? snapshot.CurrentFilename : null;
                 CurrentFileOffset = snapshot.CurrentFileOffset;
                 ActiveTransfers = snapshot.ActiveTransfers?.Length ?? 0;
             }
 
             /// <summary>The current operation phase name.</summary>
-            public string Phase { get; set; }
+            public string? Phase { get; set; }
 
             /// <summary>The overall progress, in the range [0, 1].</summary>
             public float Progress { get; set; }
@@ -680,8 +695,12 @@ namespace Duplicati.Library.Modules.Builtin
             /// <summary>True if the file count and size are not yet final.</summary>
             public bool CountingFiles { get; set; }
 
-            /// <summary>The file currently being processed, or null.</summary>
-            public string CurrentFilename { get; set; }
+            /// <summary>
+            /// The file currently being processed. This is <c>null</c> when no file is being
+            /// processed, or when paths are not allowed in log messages (the default), since
+            /// the filename is a local path.
+            /// </summary>
+            public string? CurrentFilename { get; set; }
 
             /// <summary>The byte offset reached in the file currently being processed.</summary>
             public long CurrentFileOffset { get; set; }

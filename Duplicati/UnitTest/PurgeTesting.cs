@@ -28,6 +28,7 @@ using Duplicati.Library.Common.IO;
 using Duplicati.Library.Main;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using CollectionAssert = NUnit.Framework.Legacy.CollectionAssert;
 
 namespace Duplicati.UnitTest
 {
@@ -187,6 +188,77 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(4, filesets.Length, "Incorrect number of filesets after final backup");
                 Assert.AreEqual(filenames.Count + 1, filecount, "Incorrect number of files after final backup");
             }
+        }
+
+        /// <summary>
+        /// A purge limited to a version or a time that matches no fileset must stop, not
+        /// fall back to purging every version.
+        /// </summary>
+        [Test]
+        [Category("Purge")]
+        public async Task PurgeWithASelectionThatMatchesNothingPurgesNothingAsync()
+        {
+            var testopts = new Dictionary<string, string>(TestOptions)
+            {
+                ["upload-unchanged-backups"] = "true"
+            };
+            var keep = Path.Combine(DATAFOLDER, "b.txt");
+            var target = Path.Combine(DATAFOLDER, "a.txt");
+            File.WriteAllText(target, "a");
+            File.WriteAllText(keep, "b");
+
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+                TestUtils.AssertResults(await c.BackupAsync(new[] { DATAFOLDER }));
+
+            // Purging a version rewrites it one second after its original timestamp, and that has to
+            // stay before the next version, so the second backup must be at least two seconds later
+            // than the first (fileset timestamps have a resolution of one second)
+            DateTime first;
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+                first = (await c.ListFilesetsAsync()).Filesets.Single().Time;
+            while (DateTime.UtcNow < first.ToUniversalTime().AddSeconds(2))
+                await Task.Delay(100);
+            File.WriteAllText(target, "a, changed");
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+                TestUtils.AssertResults(await c.BackupAsync(new[] { DATAFOLDER }));
+
+            var filter = new Library.Utility.FilterExpression("*" + Path.DirectorySeparatorChar + "a.txt", true);
+            var folder = Util.AppendDirSeparator(DATAFOLDER);
+
+            async Task<string[]> NamesInVersionAsync(int version)
+            {
+                using var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version }), null);
+                var entries = await c.ListFolderAsync(new[] { folder }, 0, 0, false);
+                return entries.Entries.Items.Select(x => Path.GetFileName(x.Path)).OrderBy(x => x).ToArray();
+            }
+
+            DateTime oldest;
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+                oldest = (await c.ListFilesetsAsync()).Filesets.Min(x => x.Time);
+
+            // Only versions 0 and 1 exist
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 5 }), null))
+            {
+                var ex = Assert.ThrowsAsync<Library.Interface.UserInformationException>(async () => await c.PurgeFilesAsync(filter), "A version that does not exist should not purge anything");
+                Assert.AreEqual("NoFilesetFoundForTimeOrVersion", ex.HelpID);
+            }
+            CollectionAssert.AreEqual(new[] { "a.txt", "b.txt" }, await NamesInVersionAsync(0), "Version 0 should be untouched after a purge of a version that does not exist");
+            CollectionAssert.AreEqual(new[] { "a.txt", "b.txt" }, await NamesInVersionAsync(1), "Version 1 should be untouched after a purge of a version that does not exist");
+
+            // No fileset is at or before a day before the first backup
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { time = Library.Utility.Utility.SerializeDateTime(oldest.AddDays(-1).ToUniversalTime()) }), null))
+            {
+                var ex = Assert.ThrowsAsync<Library.Interface.UserInformationException>(async () => await c.PurgeFilesAsync(filter), "A time before every backup should not purge anything");
+                Assert.AreEqual("NoFilesetFoundForTimeOrVersion", ex.HelpID);
+            }
+            CollectionAssert.AreEqual(new[] { "a.txt", "b.txt" }, await NamesInVersionAsync(0), "Version 0 should be untouched after a purge at a time before every backup");
+            CollectionAssert.AreEqual(new[] { "a.txt", "b.txt" }, await NamesInVersionAsync(1), "Version 1 should be untouched after a purge at a time before every backup");
+
+            // A version that exists is purged, and only that one
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 1 }), null))
+                TestUtils.AssertResults(await c.PurgeFilesAsync(filter));
+            CollectionAssert.AreEqual(new[] { "a.txt", "b.txt" }, await NamesInVersionAsync(0), "Version 0 should keep the file when only version 1 is purged");
+            CollectionAssert.AreEqual(new[] { "b.txt" }, await NamesInVersionAsync(1), "Version 1 should have lost the purged file");
         }
 
         [Test]

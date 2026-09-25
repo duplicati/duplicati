@@ -1132,10 +1132,16 @@ namespace Duplicati.Server
             //Create the connection instance
             var con = Library.SQLiteHelper.SQLiteLoader.LoadConnection();
 
+            var databasePath = System.IO.Path.Combine(applicationSettings.DataFolder, DataFolderManager.SERVER_DATABASE_FILENAME);
+
+            // If the user has requested that the database is not automatically created,
+            // verify that it exists before attempting to open it
+            if (Library.Utility.Utility.ParseBoolOption(commandlineOptions, WebServerLoader.OPTION_WEBSERVICE_DONT_AUTOCREATE_DATABASE)
+                && !System.IO.File.Exists(databasePath))
+                throw new UserInformationException(Strings.Program.DatabaseMissingAndAutocreateDisabled(databasePath, WebServerLoader.OPTION_WEBSERVICE_DONT_AUTOCREATE_DATABASE), "DatabaseMissingAutocreateDisabled");
+
             try
             {
-                var databasePath = System.IO.Path.Combine(applicationSettings.DataFolder, DataFolderManager.SERVER_DATABASE_FILENAME);
-
                 // Ensure the directory holding the database exists and has secure permissions.
                 // This creates and locks down a missing folder, and verifies (rejecting an
                 // insecure, non-canonical folder unless the user has opted out) an existing one,
@@ -1159,7 +1165,6 @@ namespace Duplicati.Server
             var disableDbEncryption = Library.Utility.Utility.ParseBoolOption(commandlineOptions, DISABLE_DB_ENCRYPTION_OPTION);
             var requireDbEncryptionKey = Library.Utility.Utility.ParseBoolOption(commandlineOptions, REQUIRE_DB_ENCRYPTION_KEY_OPTION);
             var encKey = EncryptedFieldHelper.KeyInstance.CreateKeyIfValid(commandlineOptions.GetValueOrDefault(SETTINGS_ENCRYPTION_KEY_OPTION));
-            var usingBlacklistedKey = encKey?.IsBlacklisted ?? false;
             var hasValidEncryptionKey = encKey != null;
 
             // Don't encrypt the database in debug mode, unless explicitly requested
@@ -1177,14 +1182,6 @@ namespace Duplicati.Server
                     hasEncryptedFields = Library.Utility.Utility.ParseBool(cmd
                         .SetParameterValue("@Name", Database.ServerSettings.CONST.ENCRYPTED_FIELDS)
                         .SetParameterValue("@BackupId", Connection.SERVER_SETTINGS_ID).ExecuteScalar()?.ToString(), false);
-
-                if (hasEncryptedFields && !hasValidEncryptionKey)
-                {
-                    warnedAboutEncryptedDb = true;
-                    Log.WriteWarningMessage(LOGTAG, "EncryptionKeyMissing", null, Strings.Program.EncryptionKeyMissing(EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME));
-                    if (!silentConsole)
-                        Console.WriteLine(Strings.Program.EncryptionKeyMissing(EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME));
-                }
             }
             catch
             {
@@ -1245,12 +1242,18 @@ namespace Duplicati.Server
                 }
             }
 
-
             if (requireDbEncryptionKey && !(hasValidEncryptionKey || disableDbEncryption))
                 throw new UserInformationException(Strings.Program.DatabaseEncryptionKeyRequired(EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME, DISABLE_DB_ENCRYPTION_OPTION), "RequireDbEncryptionKey");
 
             applicationSettings.SettingsEncryptionKeyProvidedExternally = hasValidEncryptionKey;
 
+            if (hasEncryptedFields && !hasValidEncryptionKey)
+            {
+                warnedAboutEncryptedDb = true;
+                Log.WriteWarningMessage(LOGTAG, "EncryptionKeyMissing", null, Strings.Program.EncryptionKeyMissing(EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME));
+                if (!silentConsole)
+                    Console.WriteLine(Strings.Program.EncryptionKeyMissing(EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME));
+            }
 
             if (!hasValidEncryptionKey && !disableDbEncryption)
             {
@@ -1264,6 +1267,7 @@ namespace Duplicati.Server
                 }
             }
 
+            var usingBlacklistedKey = encKey?.IsBlacklisted ?? false;
             if (usingBlacklistedKey && !disableDbEncryption)
             {
                 disableDbEncryption = true;
@@ -1579,6 +1583,7 @@ namespace Duplicati.Server
             new CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_ENABLE_FOREVER_TOKEN, CommandLineArgument.ArgumentType.Boolean, Strings.Program.WebserverEnableForeverTokenDescription, Strings.Program.WebserverEnableForeverTokenDescription),
             new CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_DISABLEAPIEXTENSIONS, CommandLineArgument.ArgumentType.String, Strings.Program.WebserverDisableApiExtensionsDescription, Strings.Program.WebserverDisableApiExtensionsDescription),
             new CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_API_ONLY, CommandLineArgument.ArgumentType.Boolean, Strings.Program.WebserverApiOnlyDescription, Strings.Program.WebserverApiOnlyDescription),
+            new CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_DONT_AUTOCREATE_DATABASE, CommandLineArgument.ArgumentType.Boolean, Strings.Program.WebserverDontAutocreateDatabaseDescription, Strings.Program.WebserverDontAutocreateDatabaseDescription),
             new CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_DISABLE_SIGNIN_TOKENS, CommandLineArgument.ArgumentType.Boolean, Strings.Program.WebserverDisableSigninTokensDescription, Strings.Program.WebserverDisableSigninTokensDescription),
             new CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_SPAPATHS, CommandLineArgument.ArgumentType.Path, Strings.Program.WebserverSpaPathsDescription, Strings.Program.WebserverSpaPathsDescription, WebServerLoader.DEFAULT_OPTION_SPAPATHS),
             new CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_TIMEZONE, CommandLineArgument.ArgumentType.String, Strings.Program.WebserverTimezoneDescription, Strings.Program.WebserverTimezoneDescription, TimeZoneHelper.GetLocalTimeZone(), null, TimeZoneHelper.GetTimeZones().Select(x => x.Id).ToArray()),

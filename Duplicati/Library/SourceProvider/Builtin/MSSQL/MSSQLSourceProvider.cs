@@ -286,7 +286,8 @@ namespace Duplicati.Library.SourceProvider.Builtin.MSSQL
             }
 
             var provider = Library.Utility.Utility.ParseEnumOption(_options, "snapshot-provider", WindowsSnapshot.DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER);
-            mssqlUtility.QueryDBsInfo(provider);
+            var providerId = Library.Utility.Utility.ParseGuidOption(_options, "vss-provider-id", Guid.Empty);
+            mssqlUtility.QueryDBsInfo(provider, providerId);
 
             return SelectDatabases(mssqlUtility, _requestedSources);
         }

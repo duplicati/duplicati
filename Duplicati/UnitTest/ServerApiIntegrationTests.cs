@@ -227,6 +227,49 @@ public class ServerApiIntegrationTests : BasicSetupHelper
 
     [Test]
     [Category("Integration")]
+    public async Task ServerBackupListMasksTargetUrl_Async()
+    {
+        var secret = $"secret-{Guid.NewGuid():N}";
+        var backupName = $"API masking backup {Guid.NewGuid():N}";
+        Directory.CreateDirectory(this.TARGETFOLDER);
+        var targetUrl = BuildFileBackendUrl(this.TARGETFOLDER) + "?auth-username=user&auth-password=" + secret;
+
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            var request = new BackupAndScheduleInputDto
+            {
+                Backup = new BackupAndScheduleInputDto.BackupInputDto
+                {
+                    Name = backupName,
+                    Description = "Masking test backup",
+                    TargetURL = targetUrl,
+                    Sources = new[] { this.DATAFOLDER },
+                    Settings = new[] { new BackupAndScheduleInputDto.SettingInputDto { Name = "passphrase", Value = "integration-passphrase" } },
+                    Filters = Array.Empty<BackupAndScheduleInputDto.FilterInputDto>(),
+                    Metadata = new Dictionary<string, string>()
+                }
+            };
+
+            var response = await httpClient.PostAsJsonAsync("/api/v1/backups", request, JsonOptions).ConfigureAwait(false);
+            response.EnsureSuccessStatusCode();
+            var created = await response.Content.ReadFromJsonAsync<CreateBackupDto>(JsonOptions).ConfigureAwait(false)
+                          ?? throw new InvalidOperationException("Backup creation response was empty");
+
+            var listedBackup = await AssertBackupListedAsync(httpClient, created.ID!, backupName).ConfigureAwait(false);
+            Assert.That(listedBackup.TargetURL, Does.Not.Contain(secret), "Backup list should not expose the target URL password");
+            Assert.That(listedBackup.TargetURL, Does.Contain(Duplicati.Server.Database.Connection.PASSWORD_PLACEHOLDER), "Backup list should mask the target URL password");
+            Assert.That(listedBackup.TargetURL, Does.Contain("auth-username=user"), "Backup list should keep non-secret query parameters");
+
+            var getResponse = await httpClient.GetAsync($"/api/v1/backup/{created.ID}").ConfigureAwait(false);
+            getResponse.EnsureSuccessStatusCode();
+            var single = await getResponse.Content.ReadFromJsonAsync<BackupGet.GetBackupResultDto>(JsonOptions).ConfigureAwait(false)
+                         ?? throw new InvalidOperationException("Backup get response was empty");
+            Assert.That(single.Backup.TargetURL, Is.EqualTo(listedBackup.TargetURL), "List and single-backup GET should mask the target URL the same way");
+        }).ConfigureAwait(false);
+    }
+
+    [Test]
+    [Category("Integration")]
     public async Task ServerRepairUpdateListsRootPaths_Async()
     {
         var backupPassphrase = "repair-update-passphrase";

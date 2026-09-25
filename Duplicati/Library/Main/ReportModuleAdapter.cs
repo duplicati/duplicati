@@ -83,13 +83,20 @@ namespace Duplicati.Library.Main
             if (entry == null)
                 return;
 
+            // The redacted variant is computed from the unformatted arguments so whole
+            // path arguments are dropped, then the formatted text is filtered as well to
+            // catch paths embedded in the message or the exception text.
+            var redacted = Library.Utility.SensitiveDataFilter.RedactPaths(
+                entry.WithArguments(Library.Utility.SensitiveDataFilter.RedactPathArguments(entry.Arguments)).AsString(true));
+
             var snapshot = new ReportLogEntry(
                 entry.AsString(true),
                 entry.Level.ToString(),
                 entry.FilterTag,
                 entry.Id,
                 entry.When,
-                entry.Exception?.ToString());
+                entry.Exception?.ToString(),
+                redacted);
 
             Forward(() => m_module.OnLogEntryAsync(snapshot, m_cancellationToken), "OnLogEntryAsync");
         }
@@ -122,12 +129,18 @@ namespace Duplicati.Library.Main
             string currentFilename = null;
             long currentFileSize = 0;
             long currentFileOffset = 0;
+            bool currentFileComplete;
 
             if (m_operationProgress != null)
             {
                 m_operationProgress.UpdateOverall(out phase, out progress, out filesProcessed,
                     out fileSizeProcessed, out fileCount, out fileSize, out countingFiles);
-                m_operationProgress.UpdateFile(out currentFilename, out currentFileSize, out currentFileOffset, out _);
+                m_operationProgress.UpdateFile(out currentFilename, out currentFileSize, out currentFileOffset, out currentFileComplete);
+
+                // The engine only reports an explicit overall progress for a few operations,
+                // so derive a value from the counters for the phases that do not set it.
+                progress = OverallProgressEstimator.Estimate(phase, progress, filesProcessed,
+                    fileSizeProcessed, fileSize, countingFiles, currentFileOffset, currentFileComplete);
             }
 
             ReportBackendEvent[] activeTransfers = System.Array.Empty<ReportBackendEvent>();

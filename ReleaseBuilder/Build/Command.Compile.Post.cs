@@ -42,6 +42,7 @@ public static partial class Command
         public static async Task PrepareTargetDirectory(string baseDir, string buildDir, PackageTarget target, RuntimeConfig rtcfg, bool keepBuilds)
         {
             await RemoveUnwantedFiles(target.OS, buildDir);
+            await FlattenNativeWrapperLibraries(buildDir, target);
 
             switch (target.OS)
             {
@@ -259,6 +260,70 @@ public static partial class Command
 
             Directory.Move(tmpApp, appDir);
             Directory.Delete(Path.GetDirectoryName(tmpApp) ?? throw new Exception("Unexpected empty path"), true);
+        }
+
+        /// <summary>
+        /// The folders under "runtimes" holding the native wrapper libraries shipped by the DiskImage project
+        /// </summary>
+        static readonly IReadOnlyList<string> NativeWrapperRuntimeFolders = ["osx", "linux-x86", "linux-x64", "linux-arm", "linux-arm64"];
+
+        /// <summary>
+        /// Gets the folder under "runtimes" holding the native wrapper libraries for the target
+        /// </summary>
+        /// <param name="target">The target to get the folder for</param>
+        /// <returns>The folder name, or null if the target has no native wrapper libraries</returns>
+        static string? NativeWrapperRuntimeFolder(PackageTarget target)
+            => target.OS switch
+            {
+                OSType.MacOS => "osx",
+                OSType.Linux => target.Arch switch
+                {
+                    ArchType.x64 => "linux-x64",
+                    ArchType.x86 => "linux-x86",
+                    ArchType.Arm64 => "linux-arm64",
+                    ArchType.Arm7 => "linux-arm",
+                    _ => throw new Exception($"Not supported arch: {target.Arch}")
+                },
+                _ => null
+            };
+
+        /// <summary>
+        /// Moves the native wrapper libraries for the target next to the assemblies
+        /// and removes the "runtimes" folder holding the builds for all other platforms.
+        /// The build output contains all platforms because the libraries are shipped
+        /// as content files by the DiskImage project, and the RID is not known there
+        /// when it is built as a project reference.
+        /// </summary>
+        /// <param name="buildDir">The build directory</param>
+        /// <param name="target">The target being built</param>
+        /// <returns>An awaitable task</returns>
+        static Task FlattenNativeWrapperLibraries(string buildDir, PackageTarget target)
+        {
+            var runtimesDir = Path.Combine(buildDir, "runtimes");
+            if (!Directory.Exists(runtimesDir))
+                throw new Exception($"Expected folder \"{runtimesDir}\" not found, has build changed?");
+
+            var folder = NativeWrapperRuntimeFolder(target);
+            if (folder != null)
+            {
+                var nativeDir = Path.Combine(runtimesDir, folder, "native");
+                if (!Directory.Exists(nativeDir))
+                    throw new Exception($"Expected native wrapper folder \"{nativeDir}\" not found, has build changed?");
+
+                EnvHelper.CopyDirectory(nativeDir, buildDir, recursive: false);
+            }
+
+            foreach (var f in NativeWrapperRuntimeFolders.Select(x => Path.Combine(runtimesDir, x)))
+                if (Directory.Exists(f))
+                    Directory.Delete(f, true);
+
+            var leftovers = Directory.EnumerateFileSystemEntries(runtimesDir).ToList();
+            if (leftovers.Count == 0)
+                Directory.Delete(runtimesDir);
+            else
+                Console.WriteLine($"Warning: unexpected content left in \"{runtimesDir}\": {string.Join(", ", leftovers.Select(Path.GetFileName))}");
+
+            return Task.CompletedTask;
         }
 
         /// <summary>

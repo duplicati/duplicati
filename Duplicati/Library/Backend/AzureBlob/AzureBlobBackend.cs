@@ -113,6 +113,12 @@ namespace Duplicati.Library.Backend.AzureBlob
 
             var containerName = (uri.Host ?? "").ToLowerInvariant();
 
+            // The URL path is used as a blob name prefix, so that
+            // azure://container/some/folder stores all blobs under "some/folder/".
+            var prefix = (uri.Path ?? "").Trim('/');
+            if (prefix.Length != 0)
+                prefix = prefix + "/";
+
             var auth = AuthOptionsHelper.ParseWithAlias(options, uri.Username, uri.Password, AZURE_ACCOUNT_NAME_OPTION, AZURE_ACCESS_KEY_OPTION);
             var timeouts = TimeoutOptionsHelper.Parse(options);
 
@@ -133,7 +139,7 @@ namespace Duplicati.Library.Backend.AzureBlob
 
             _immutabilityPolicyMode = Utility.Utility.ParseEnumOption(options, AZURE_BLOB_IMMUTABILITY_POLICY_MODE_OPTION, DEFAULT_IMMUTABILITY_MODE);
 
-            _azureBlob = new AzureBlobWrapper(auth.Username!, auth.Password, sasToken, containerName, accessTier, archiveClasses, timeouts, internalRetries);
+            _azureBlob = new AzureBlobWrapper(auth.Username!, auth.Password, sasToken, containerName, prefix, accessTier, archiveClasses, timeouts, internalRetries);
         }
 
         /// <summary>

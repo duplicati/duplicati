@@ -242,7 +242,8 @@ namespace Duplicati.Library.SourceProvider.Builtin.HyperV
             }
 
             var provider = Library.Utility.Utility.ParseEnumOption(_options, "snapshot-provider", Snapshots.WindowsSnapshot.DEFAULT_WINDOWS_SNAPSHOT_QUERY_PROVIDER);
-            hypervUtility.QueryHyperVGuestsInfo(provider, true);
+            var providerId = Library.Utility.Utility.ParseGuidOption(_options, "vss-provider-id", Guid.Empty);
+            hypervUtility.QueryHyperVGuestsInfo(provider, providerId, true);
 
             return SelectGuests(hypervUtility, _requestedSources);
         }

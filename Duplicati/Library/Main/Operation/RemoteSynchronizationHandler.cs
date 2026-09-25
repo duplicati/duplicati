@@ -219,6 +219,21 @@ internal class RemoteSynchronizationHandler : IDisposable
                             }
                         }
 
+                        // An explicit mode needs its parameter, or the destination syncs once and is
+                        // then never triggered again: the trigger check compares against a null
+                        // interval or count, which is always false. Treat it the way an interval
+                        // that cannot be parsed is treated: say so and run the destination inline.
+                        if (mode == RemoteSyncTriggerMode.Interval && !interval_parsed.HasValue)
+                        {
+                            Logging.Log.WriteWarningMessage(LOGTAG, "RemoteSyncMissingInterval", null, "Remote synchronization destination uses interval mode but has no interval; defaulting to inline mode");
+                            mode = RemoteSyncTriggerMode.Inline;
+                        }
+                        else if (mode == RemoteSyncTriggerMode.Counting && !destination.Count.HasValue)
+                        {
+                            Logging.Log.WriteWarningMessage(LOGTAG, "RemoteSyncMissingCount", null, "Remote synchronization destination uses counting mode but has no count; defaulting to inline mode");
+                            mode = RemoteSyncTriggerMode.Inline;
+                        }
+
                         m_destinations.Add(new(
                             Config: new(
                                 Src: "",
@@ -239,7 +254,7 @@ internal class RemoteSynchronizationHandler : IDisposable
                                 Progress: destination.Progress,
                                 Retention: destination.Retention,
                                 Retry: destination.Retry,
-                                SrcOptions: [.. options.RawOptions.Select((k, v) => $"{k}={v}")],
+                                SrcOptions: [.. options.RawOptions.Select(x => $"{x.Key}={x.Value}")],
                                 VerifyContents: destination.VerifyContents,
                                 VerifyGetAfterPut: destination.VerifyGetAfterPut
                             ),

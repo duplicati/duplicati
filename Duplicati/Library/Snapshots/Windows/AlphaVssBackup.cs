@@ -40,11 +40,19 @@ internal class AlphaVssBackup : ISnapshotProvider
     /// The implementation that is being wrapped
     /// </summary>
     private IVssBackupComponents _components;
+
+    /// <summary>
+    /// The VSS provider to use, or <see cref="Guid.Empty"/> for automatic selection
+    /// </summary>
+    private readonly Guid _providerId;
+
     /// <summary>
     /// Creates a new snapshot implementation
     /// </summary>
-    public AlphaVssBackup()
+    /// <param name="providerId">The VSS provider to use, or <see cref="Guid.Empty"/> for automatic selection</param>
+    public AlphaVssBackup(Guid providerId)
     {
+        _providerId = providerId;
         _components = GetVssBackupComponents();
     }
 
@@ -103,7 +111,9 @@ internal class AlphaVssBackup : ISnapshotProvider
 
     /// <inheritdoc/>
     public Guid AddToSnapshotSet(string drive)
-        => _components.AddToSnapshotSet(drive);
+        => _providerId == Guid.Empty
+            ? _components.AddToSnapshotSet(drive)
+            : _components.AddToSnapshotSet(drive, _providerId);
 
     /// <inheritdoc/>
     public void BackupComplete()

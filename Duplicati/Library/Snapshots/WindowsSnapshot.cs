@@ -75,6 +75,12 @@ namespace Duplicati.Library.Snapshots
             : Enum.GetValues<Snapshots.WindowsSnapshotProvider>();
 
         /// <summary>
+        /// The provider ID of the Microsoft Software Shadow Copy provider,
+        /// used as a fallback when a third-party provider does not expose the snapshot
+        /// </summary>
+        public static readonly Guid MS_SOFTWARE_PROVIDER_ID = new Guid("{b5946137-7b9f-4925-af80-51abd60b20d5}");
+
+        /// <summary>
         /// The tag used for logging messages
         /// </summary>
         public static readonly string LOGTAG = Logging.Log.LogTagFromType<WindowsSnapshot>();
@@ -116,37 +122,29 @@ namespace Duplicati.Library.Snapshots
             _enableAdsBackup = Utility.Utility.ParseBoolOption(options.AsReadOnly(), "enable-ads-backup");
             // For Windows, ensure we don't store paths with extended device path prefixes (i.e., @"\\?\" or @"\\?\UNC\")
             _sourceEntries = sources.Select(SystemIOWindows.RemoveExtendedDevicePathPrefix).ToList();
+
+            var provider = Utility.Utility.ParseEnumOption(options.AsReadOnly(), "snapshot-provider", DEFAULT_WINDOWS_SNAPSHOT_PROVIDER);
+            var vssTimeout = Utility.Utility.ParseTimespanOption(options.AsReadOnly(), "vss-timeout", SnapshotManager.DefaultMaxWaitTime);
+            var useMapping = Utility.Utility.ParseBoolOption(options.AsReadOnly(), "vss-use-mapping");
+            var providerId = Utility.Utility.ParseGuidOption(options.AsReadOnly(), "vss-provider-id", Guid.Empty);
+
+            // Default to exclude the System State writer
+            var excludedWriters = new Guid[] { new Guid("{e8132975-6f93-4464-a53e-1050253ae220}") };
+            if (options.TryGetValue("vss-exclude-writers", out var excludedWritersString))
+            {
+                excludedWriters = excludedWritersString
+                    .Split(';')
+                    .Where(x => !string.IsNullOrWhiteSpace(x) && x.Trim().Length > 0)
+                    .Select(x => new Guid(x))
+                    .ToArray();
+            }
+
             try
             {
-                var provider = Utility.Utility.ParseEnumOption(options.AsReadOnly(), "snapshot-provider", DEFAULT_WINDOWS_SNAPSHOT_PROVIDER);
-                var vssTimeout = Utility.Utility.ParseTimespanOption(options.AsReadOnly(), "vss-timeout", SnapshotManager.DefaultMaxWaitTime);
-                _snapshotManager = new SnapshotManager(provider, vssTimeout);
-
-                // Default to exclude the System State writer
-                var excludedWriters = new Guid[] { new Guid("{e8132975-6f93-4464-a53e-1050253ae220}") };
-                if (options.ContainsKey("vss-exclude-writers"))
-                {
-                    excludedWriters = options["vss-exclude-writers"]
-                        .Split(';')
-                        .Where(x => !string.IsNullOrWhiteSpace(x) && x.Trim().Length > 0)
-                        .Select(x => new Guid(x))
-                        .ToArray();
-                }
-                _snapshotManager.SetupWriters(null, excludedWriters);
-
-                _snapshotManager.InitShadowVolumes(_sourceEntries);
-
-                _snapshotManager.MapVolumesToSnapShots();
-
-                //If we should map the drives, we do that now and update the volumeMap
-                if (Utility.Utility.ParseBoolOption(options.AsReadOnly(), "vss-use-mapping"))
-                {
-                    _snapshotManager.MapDrives();
-                }
+                _snapshotManager = CreateSnapshotManager(provider, vssTimeout, providerId, useMapping, excludedWriters);
             }
             catch (Exception ex1)
             {
-
                 Logging.Log.WriteVerboseMessage(LOGTAG, "WindowsSnapshotCreation", ex1, "Failed to initialize windows snapshot instance");
 
                 //In case we fail in the constructor, we do not want a snapshot to be active
@@ -161,6 +159,72 @@ namespace Duplicati.Library.Snapshots
 
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Creates a snapshot manager and creates the snapshot.
+        /// If the snapshot device path cannot be resolved (a provider created the snapshot
+        /// but did not expose a browsable shadow copy) and no provider was explicitly
+        /// requested, the snapshot is retried once using the Microsoft Software Shadow
+        /// Copy provider, which always exposes a device path.
+        /// </summary>
+        /// <param name="provider">The snapshot provider implementation</param>
+        /// <param name="vssTimeout">The maximum time to wait for asynchronous VSS operations</param>
+        /// <param name="providerId">The VSS provider to use, or an empty GUID for automatic selection</param>
+        /// <param name="useMapping">Whether to map snapshot volumes to drive letters</param>
+        /// <param name="excludedWriters">The VSS writers to exclude</param>
+        /// <returns>The snapshot manager with an active snapshot</returns>
+        private SnapshotManager CreateSnapshotManager(WindowsSnapshotProvider provider, TimeSpan vssTimeout, Guid providerId, bool useMapping, Guid[] excludedWriters)
+        {
+            SnapshotManager manager = null;
+            try
+            {
+                manager = CreateSnapshotManagerCore(provider, vssTimeout, providerId, useMapping, excludedWriters);
+                return manager;
+            }
+            catch (UserInformationException ex) when (ex.HelpID == "SnapshotDeviceEmpty" && providerId == Guid.Empty)
+            {
+                // A third-party provider (such as the QEMU Guest Agent VSS provider) created the
+                // snapshot but did not expose a usable device path. Retry once with the Microsoft
+                // Software Shadow Copy provider, which always exposes a device path.
+                Logging.Log.WriteWarningMessage(LOGTAG, "VssRetryWithSystemProvider", null,
+                    "The snapshot provider did not expose a usable snapshot device path; retrying with the Microsoft Software Shadow Copy provider. Set --vss-provider-id={0} to avoid this retry.", MS_SOFTWARE_PROVIDER_ID);
+
+                manager?.Dispose();
+                manager = CreateSnapshotManagerCore(provider, vssTimeout, MS_SOFTWARE_PROVIDER_ID, useMapping, excludedWriters);
+                return manager;
+            }
+            catch
+            {
+                manager?.Dispose();
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Creates a snapshot manager and creates the snapshot
+        /// </summary>
+        /// <param name="provider">The snapshot provider implementation</param>
+        /// <param name="vssTimeout">The maximum time to wait for asynchronous VSS operations</param>
+        /// <param name="providerId">The VSS provider to use, or an empty GUID for automatic selection</param>
+        /// <param name="useMapping">Whether to map snapshot volumes to drive letters</param>
+        /// <param name="excludedWriters">The VSS writers to exclude</param>
+        /// <returns>The snapshot manager with an active snapshot</returns>
+        private SnapshotManager CreateSnapshotManagerCore(WindowsSnapshotProvider provider, TimeSpan vssTimeout, Guid providerId, bool useMapping, Guid[] excludedWriters)
+        {
+            var manager = new SnapshotManager(provider, vssTimeout, providerId);
+
+            manager.SetupWriters(null, excludedWriters);
+
+            manager.InitShadowVolumes(_sourceEntries);
+
+            manager.MapVolumesToSnapShots();
+
+            //If we should map the drives, we do that now and update the volumeMap
+            if (useMapping)
+                manager.MapDrives();
+
+            return manager;
         }
 
         /// <summary>

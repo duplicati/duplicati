@@ -60,6 +60,18 @@ internal interface IBackendManager : IDisposable
     Task PutFileUnencryptedAsync(string remotename, TempFile tempFile, CancellationToken cancelToken);
 
     /// <summary>
+    /// Uploads a file to the backend without encryption, treating the remote name
+    /// as a relative path that may contain sub-folders. For backends without folder
+    /// support the path is split so the upload targets the sub-folder; folder-enabled
+    /// backends receive the path unchanged.
+    /// </summary>
+    /// <param name="remotename">The relative path of the file to upload to, which may contain sub-folders</param>
+    /// <param name="tempFile">The file to upload</param>
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <returns>An awaitable task</returns>
+    Task PutFileUnencryptedWithPathAsync(string remotename, TempFile tempFile, CancellationToken cancelToken);
+
+    /// <summary>
     /// Waits for the backend queue to be empty
     /// </summary>
     /// <param name="cancellationToken">The cancellation token</param>
@@ -114,6 +126,19 @@ internal interface IBackendManager : IDisposable
     /// <param name="cancelToken">The cancellation token</param>
     /// <returns>An awaitable task</returns>
     Task DeleteAsync(string remotename, long size, bool waitForComplete, CancellationToken cancelToken);
+
+    /// <summary>
+    /// Deletes a file on the backend, treating the remote name as a relative path
+    /// that may contain sub-folders. For backends without folder support the path
+    /// is split so the delete targets the sub-folder; folder-enabled backends
+    /// receive the path unchanged.
+    /// </summary>
+    /// <param name="remotename">The relative path of the file to delete, which may contain sub-folders</param>
+    /// <param name="size">The size of the file to delete, or -1 if not known</param>
+    /// <param name="waitForComplete">Whether to wait for the delete to complete</param>
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <returns>An awaitable task</returns>
+    Task DeleteWithPathAsync(string remotename, long size, bool waitForComplete, CancellationToken cancelToken);
 
     /// <summary>
     /// Applies or updates an object lock on a remote volume.

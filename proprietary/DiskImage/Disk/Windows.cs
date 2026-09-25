@@ -469,7 +469,7 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             if (result.ExitCode != 0)
             {
                 Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "RunPowerShellAsync", null, $"PowerShell script failed with exit code {result.ExitCode}. Output: {result.Output}. Error: {result.Error}");
-                throw new IOException($"PowerShell script failed with exit code {result.ExitCode}. Error: {result.Error}");
+                throw new IOException($"PowerShell script failed with exit code {result.ExitCode}. Output: {result.Output}. Error: {result.Error}");
             }
 
             return result.Output;

@@ -23,6 +23,7 @@
 
 using System.Linq;
 using System.Threading.Tasks;
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Main.Operation;
@@ -50,8 +51,14 @@ internal static class ListFolderHandler
         await using var db = await Database.Local.LocalListDatabase.CreateAsync(options.Dbpath, null, result.TaskControl.ProgressToken)
             .ConfigureAwait(false);
 
+        // Neither a time nor a version means the latest fileset, as the help text says;
+        // version 0 is the newest. Without this, every fileset would match.
+        var versions = options.Version;
+        if (options.Time.Ticks == 0 && (versions == null || versions.Length == 0))
+            versions = [0];
+
         var filesetIds = await db
-            .GetFilesetIDsAsync(options.Time, options.Version, singleTimeMatch: true, result.TaskControl.ProgressToken)
+            .GetFilesetIDsAsync(options.Time, versions, singleTimeMatch: true, result.TaskControl.ProgressToken)
             .ToArrayAsync(cancellationToken: result.TaskControl.ProgressToken)
             .ConfigureAwait(false);
 
@@ -72,9 +79,12 @@ internal static class ListFolderHandler
         }
         else
         {
+            // A folder is stored as a prefix with a trailing directory separator; add it so a
+            // folder given without one, as a shell user would type it, is found as well
+            var prefixes = folders.Select(Util.AppendDirSeparator);
             var entries = await db
                 .ListFolderAsync(
-                    db.GetPrefixIdsAsync(folders, result.TaskControl.ProgressToken).ToBlockingEnumerable(),
+                    db.GetPrefixIdsAsync(prefixes, result.TaskControl.ProgressToken).ToBlockingEnumerable(),
                     filesetIds[0],
                     offset,
                     limit,

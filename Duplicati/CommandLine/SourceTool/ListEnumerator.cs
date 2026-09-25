@@ -35,10 +35,43 @@ public static partial class Common
     /// <param name="visitor">The visitor function</param>
     /// <param name="token">The cancellation token</param>
     /// <returns>An awaitable task</returns>
-    public static async Task Visit(ISourceProvider source, int maxdepth, Func<ISourceProviderEntry, int, Task<bool>> visitor, CancellationToken token)
+    public static Task Visit(ISourceProvider source, int maxdepth, Func<ISourceProviderEntry, int, Task<bool>> visitor, CancellationToken token)
+        => Visit(source.EnumerateAsync(token), maxdepth, visitor, token);
+
+    /// <summary>
+    /// Visits all entries from a starting entry
+    /// </summary>
+    /// <param name="entry">The entry to start visiting from</param>
+    /// <param name="maxdepth">The maximum depth to visit</param>
+    /// <param name="visitor">The visitor function</param>
+    /// <param name="token">The cancellation token</param>
+    /// <returns>An awaitable task</returns>
+    public static Task Visit(ISourceProviderEntry entry, int maxdepth, Func<ISourceProviderEntry, int, Task<bool>> visitor, CancellationToken token)
+        => Visit(EnumerateSingle(entry), maxdepth, visitor, token);
+
+    /// <summary>
+    /// Wraps a single entry in an async enumerable
+    /// </summary>
+    /// <param name="entry">The entry to wrap</param>
+    /// <returns>The async enumerable with the single entry</returns>
+    private static async IAsyncEnumerable<ISourceProviderEntry> EnumerateSingle(ISourceProviderEntry entry)
+    {
+        await Task.CompletedTask;
+        yield return entry;
+    }
+
+    /// <summary>
+    /// Visits all entries from the given entries
+    /// </summary>
+    /// <param name="entries">The entries to visit</param>
+    /// <param name="maxdepth">The maximum depth to visit</param>
+    /// <param name="visitor">The visitor function</param>
+    /// <param name="token">The cancellation token</param>
+    /// <returns>An awaitable task</returns>
+    private static async Task Visit(IAsyncEnumerable<ISourceProviderEntry> entries, int maxdepth, Func<ISourceProviderEntry, int, Task<bool>> visitor, CancellationToken token)
     {
         var visit = new Stack<(ISourceProviderEntry Entry, int Level)>();
-        await foreach (var item in source.EnumerateAsync(token))
+        await foreach (var item in entries.WithCancellation(token))
             visit.Push((item, 0));
 
         while (visit.Count() != 0)

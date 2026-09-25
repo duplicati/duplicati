@@ -17,4 +17,17 @@
     <ProjectReference Include="..\..\Duplicati\Library\Snapshots\Duplicati.Library.Snapshots.csproj" />
   </ItemGroup>
 
+  <!--
+    Vanara.PInvoke.VssApi ships the native ijwhost.dll inside its "lib" folder, so NuGet
+    offers it as a managed reference and the assembly resolver reports that it holds no
+    metadata (MSB3246). It reaches this project through Duplicati.Library.WindowsModules,
+    which drops it the same way and takes the copy from the targeting pack instead.
+  -->
+  <Target Name="DropVanaraIjwhostReference" BeforeTargets="ResolveAssemblyReferences">
+    <ItemGroup>
+      <_VanaraIjwhost Include="@(Reference)" Condition="'%(Filename)' == 'Ijwhost'" />
+      <Reference Remove="@(_VanaraIjwhost)" />
+    </ItemGroup>
+  </Target>
+
 </Project>

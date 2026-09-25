@@ -19,6 +19,11 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
+using System.Runtime.CompilerServices;
+
+// OperationMode has moved to Duplicati.Library.Interface; keep binary compatibility for compiled callers
+[assembly: TypeForwardedTo(typeof(Duplicati.Library.Interface.OperationMode))]
+
 namespace Duplicati.Library.Main
 {
 
@@ -43,41 +48,6 @@ namespace Duplicati.Library.Main
         Retrying,
         Failed,
         Rename
-    }
-
-    /// <summary>
-    /// The supported operations
-    /// </summary>
-    public enum OperationMode
-    {
-        Backup,
-        Restore,
-        List,
-        ListAffected,
-        ListChanges,
-        Delete,
-        RestoreControlfiles,
-        Repair,
-        CreateLogDb,
-        Compact,
-        Test,
-        TestFilters,
-        SystemInfo,
-        ListRemote,
-        ListBrokenFiles,
-        PurgeBrokenFiles,
-        PurgeFiles,
-        SendMail,
-        Vacuum,
-        Sync,
-        ListFilesets,
-        ListFolder,
-        ListFileVersions,
-        SearchFiles,
-        SetLock,
-        ReadLockInfo,
-        RemoteSynchronization,
-        SetVersionLabel
     }
 
     /// <summary>

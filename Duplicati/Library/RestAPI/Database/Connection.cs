@@ -764,12 +764,7 @@ namespace Duplicati.Server.Database
         /// <param name="dbPath">The DB path to resolve.</param>
         /// <returns>The absolute DB path.</returns>
         private string ResolveDbPath(string? dbPath)
-        {
-            if (string.IsNullOrWhiteSpace(dbPath) || Path.IsPathRooted(dbPath))
-                return dbPath ?? "";
-
-            return Path.GetFullPath(Path.Combine(m_dataFolder, dbPath));
-        }
+            => DataFolderManager.ResolveDataFolderRelativePath(m_dataFolder, dbPath);
 
         /// <summary>
         /// Converts an absolute DB path to a relative path if it is under the data folder.
@@ -785,7 +780,15 @@ namespace Duplicati.Server.Database
             var fullDbPath = Path.GetFullPath(dbPath);
 
             if (fullDbPath.StartsWith(fullDataFolder, Library.Utility.Utility.ClientFilenameStringComparison))
-                return fullDbPath.Substring(fullDataFolder.Length);
+            {
+                var relative = fullDbPath.Substring(fullDataFolder.Length);
+
+                // Only store the relative form if it reads back as the same path. ResolveDbPath
+                // reinterprets a relative path that begins with the data folder's own path minus
+                // its root, so a database placed in a folder of that shape has to stay absolute
+                if (string.Equals(ResolveDbPath(relative), fullDbPath, Library.Utility.Utility.ClientFilenameStringComparison))
+                    return relative;
+            }
 
             return dbPath;
         }
@@ -1180,28 +1183,30 @@ namespace Duplicati.Server.Database
         //Workaround to clean up the database after invalid settings update
         public void FixInvalidBackupId()
         {
-            using (var tr = m_connection.BeginTransaction())
-            using (var cmd = m_connection.CreateCommand(tr))
-            {
-                cmd.SetCommandAndParameters(@"DELETE FROM ""Option"" WHERE ""BackupID"" = @BackupId")
-                    .SetParameterValue("@BackupId", -1)
-                    .ExecuteNonQuery();
-                cmd.SetCommandAndParameters(@"DELETE FROM ""Metadata"" WHERE ""BackupID"" = @BackupId")
-                    .SetParameterValue("@BackupId", -1)
-                    .ExecuteNonQuery();
-                cmd.SetCommandAndParameters(@"DELETE FROM ""Filter"" WHERE ""BackupID"" = @BackupId")
-                    .SetParameterValue("@BackupId", -1)
-                    .ExecuteNonQuery();
-                cmd.SetCommandAndParameters(@"DELETE FROM ""Source"" WHERE ""BackupID"" = @BackupId")
-                    .SetParameterValue("@BackupId", -1)
-                    .ExecuteNonQuery();
+            lock (m_lock)
+                using (var tr = m_connection.BeginTransaction())
+                using (var cmd = m_connection.CreateCommand(tr))
+                {
+                    cmd.SetCommandAndParameters(@"DELETE FROM ""Option"" WHERE ""BackupID"" = @BackupId")
+                        .SetParameterValue("@BackupId", -1)
+                        .ExecuteNonQuery();
+                    cmd.SetCommandAndParameters(@"DELETE FROM ""Metadata"" WHERE ""BackupID"" = @BackupId")
+                        .SetParameterValue("@BackupId", -1)
+                        .ExecuteNonQuery();
+                    cmd.SetCommandAndParameters(@"DELETE FROM ""Filter"" WHERE ""BackupID"" = @BackupId")
+                        .SetParameterValue("@BackupId", -1)
+                        .ExecuteNonQuery();
+                    cmd.SetCommandAndParameters(@"DELETE FROM ""Source"" WHERE ""BackupID"" = @BackupId")
+                        .SetParameterValue("@BackupId", -1)
+                        .ExecuteNonQuery();
 
-                cmd.SetCommandAndParameters(@"DELETE FROM ""Schedule"" WHERE ""Tags"" = @Tag")
-                    .SetParameterValue("@Tag", "ID=-1")
-                    .ExecuteNonQuery();
-                tr.Commit();
-            }
+                    cmd.SetCommandAndParameters(@"DELETE FROM ""Schedule"" WHERE ""Tags"" = @Tag")
+                        .SetParameterValue("@Tag", "ID=-1")
+                        .ExecuteNonQuery();
+                    tr.Commit();
+                }
 
+            // Left outside the lock: saving a setting signals the rest of the server
             ApplicationSettings.FixedInvalidBackupId = true;
         }
 
@@ -1299,7 +1304,10 @@ namespace Duplicati.Server.Database
                 Expires = expires
             };
 
-            OverwriteAndUpdateDb(null, null, [tempfile], false);
+            // Runs on the queue runner's worker thread, and reads the row id back in a second
+            // statement, so the write and the read of it have to stay together
+            lock (m_lock)
+                OverwriteAndUpdateDb(null, null, [tempfile], false);
 
             return tempfile.ID;
         }
@@ -1308,15 +1316,19 @@ namespace Duplicati.Server.Database
         {
             var t = Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(purgeDate);
 
-            using (var tr = m_connection.BeginTransaction())
-            using (var cmd = m_connection.CreateCommand(tr))
-            {
-                cmd.SetCommandAndParameters(@"DELETE FROM ""ErrorLog"" WHERE ""Timestamp"" < @Time")
-                    .SetParameterValue("@Time", t)
-                    .ExecuteNonQuery();
+            // This runs from a timer, so it is concurrent with everything the server does. While
+            // the transaction below is open, no command that does not carry it can run on the
+            // connection, and the reads carry none.
+            lock (m_lock)
+                using (var tr = m_connection.BeginTransaction())
+                using (var cmd = m_connection.CreateCommand(tr))
+                {
+                    cmd.SetCommandAndParameters(@"DELETE FROM ""ErrorLog"" WHERE ""Timestamp"" < @Time")
+                        .SetParameterValue("@Time", t)
+                        .ExecuteNonQuery();
 
-                tr.Commit();
-            }
+                    tr.Commit();
+                }
         }
 
         private static DateTime ConvertToDateTime(IDataReader rd, int index)
@@ -1387,12 +1399,15 @@ namespace Duplicati.Server.Database
         {
             if (transaction == null)
             {
-                using (var tr = m_connection.BeginTransaction())
-                {
-                    var r = DeleteFromDb(tablename, id, tr);
-                    tr.Commit();
-                    return r;
-                }
+                // Every caller that lands here holds the lock already, but the transaction below
+                // is on the shared connection, so it cannot be reached without it
+                lock (m_lock)
+                    using (var tr = m_connection.BeginTransaction())
+                    {
+                        var r = DeleteFromDb(tablename, id, tr);
+                        tr.Commit();
+                        return r;
+                    }
             }
             else
             {

@@ -25,6 +25,7 @@ using System.Net.Http.Headers;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Security.Cryptography;
+using Jose;
 using System.Text.Json;
 using CoCoL;
 using Duplicati.Library.AutoUpdater;
@@ -39,9 +40,15 @@ namespace Duplicati.Library.RemoteControl;
 public class KeepRemoteConnection : IDisposable
 {
     /// <summary>
-    /// The protocol version to use
+    /// The protocol version this client speaks. Version 2 requires end-to-end encrypted command payloads,
+    /// see <see cref="CommandPayloadEncryption"/>. 
     /// </summary>
-    private const int PROTOCOL_VERSION = 1;
+    private const int PROTOCOL_VERSION = 2;
+
+    /// <summary>
+    /// The status code returned for a command whose payload is not end-to-end encrypted
+    /// </summary>
+    private const int UpgradeRequiredStatusCode = 426;
     /// <summary>
     /// The log tag for messages from this class
     /// </summary>
@@ -78,9 +85,19 @@ public class KeepRemoteConnection : IDisposable
     private static readonly RSA ClientKey = RSA.Create(2048);
 
     /// <summary>
+    /// The default identity, shared by all agent connections in the process
+    /// </summary>
+    private static readonly RemoteClientIdentity DefaultIdentity = RemoteClientIdentity.CreateAgent();
+
+    /// <summary>
+    /// The identity used for this connection
+    /// </summary>
+    private readonly RemoteClientIdentity _identity;
+
+    /// <summary>
     /// The client ID to use for identifying the client
     /// </summary>
-    private static readonly string ClientId = Guid.NewGuid().ToString();
+    private string ClientId => _identity.ClientId;
 
     /// <summary>
     /// The JSON options to use for deserialization
@@ -213,6 +230,7 @@ public class KeepRemoteConnection : IDisposable
     /// <param name="onReKey">The callback to call when rekeying</param>
     /// <param name="onControl">The callback to call when a control message is received</param>
     /// <param name="onMessage">The callback to call when a command message is received</param>
+    /// <param name="identity">The identity to present to the server</param>
     private KeepRemoteConnection(
         string serverUrl,
         string JWT,
@@ -224,8 +242,10 @@ public class KeepRemoteConnection : IDisposable
         Func<Dictionary<string, string?>, Task<Dictionary<string, string?>>> onConnect,
         Func<ClaimedClientData, Task> onReKey,
         Func<ControlMessage, Task> onControl,
-        Func<CommandMessage, Task> onMessage)
+        Func<CommandMessage, Task> onMessage,
+        RemoteClientIdentity identity)
     {
+        _identity = identity;
         _serverUrl = serverUrl;
         _certificateUrl = certificateUrl;
         _token = JWT;
@@ -405,6 +425,10 @@ public class KeepRemoteConnection : IDisposable
 
                 if (string.IsNullOrWhiteSpace(welcomeMessage.PublicKeyHash))
                     throw new ProtocolViolationException("No public key hash in welcome message");
+
+                // Requiere the current version on the server
+                if (welcomeMessage.SupportedProtocolVersions == null || !welcomeMessage.SupportedProtocolVersions.Contains(PROTOCOL_VERSION))
+                    throw new ProtocolViolationException($"The server does not support protocol version {PROTOCOL_VERSION}, which this client requires");
                 _serverCertificate = _serverKeys.FirstOrDefault(x => x.PublicKeyHash == welcomeMessage.PublicKeyHash && x.Expiry.ToUniversalTime() > DateTimeOffset.UtcNow);
 
                 if (_serverCertificate == null)
@@ -449,7 +473,7 @@ public class KeepRemoteConnection : IDisposable
                             PROTOCOL_VERSION,
                             metadata
                         ),
-                        "auth"
+                        _identity.AuthMessageType
                     ),
                     force: true);
                 return;
@@ -488,10 +512,7 @@ public class KeepRemoteConnection : IDisposable
                         break;
 
                     case MessageType.Command:
-                        await _onMessage(new CommandMessage(
-                            envelope.GetPayload<CommandRequestMessage>(),
-                            response => SendEnvelope(envelope.RespondWith(response))
-                        ));
+                        await HandleCommandAsync(envelope);
                         break;
 
                     case MessageType.Control:
@@ -524,6 +545,37 @@ public class KeepRemoteConnection : IDisposable
             reconnectHelper.Signal();
         }
 
+    }
+
+    /// <summary>
+    /// Unwraps an end-to-end encrypted command and hands it to the command handler, with the response
+    /// encrypted to the portal's reply key. A command that is not encrypted is refused with an error response
+    /// the portal can read, so an outdated portal shows the reason instead of timing out.
+    /// </summary>
+    /// <param name="envelope">The command envelope</param>
+    private async Task HandleCommandAsync(EnvelopedMessage envelope)
+    {
+        CommandRequestMessage request;
+        Jwk replyKey;
+        try
+        {
+            request = CommandPayloadEncryption.DecryptRequest(envelope.Payload, ClientKey, envelope.MessageId, out replyKey);
+        }
+        catch (CommandPayloadException ex)
+        {
+            // The payload is not logged, it may be plain text with data that should not be logged
+            SafeLog.Write(LogMessageType.Warning, LogTag, "WebsocketCommandRefused", null, "Refusing command {0} from {1}: {2}", envelope.MessageId, envelope.From, ex.Message);
+            SendEnvelope(envelope.RespondWith(new CommandResponseMessage(
+                UpgradeRequiredStatusCode,
+                Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes($"This client requires end-to-end encrypted commands (protocol version {PROTOCOL_VERSION}): {ex.Message}")),
+                new Dictionary<string, string> { { "Content-Type", "text/plain; charset=utf-8" } })));
+            return;
+        }
+
+        await _onMessage(new CommandMessage(
+            request,
+            response => SendEnvelope(envelope.RespondWith(CommandPayloadEncryption.EncryptResponse(envelope.MessageId, response, replyKey)))
+        ));
     }
 
     /// <summary>
@@ -560,9 +612,40 @@ public class KeepRemoteConnection : IDisposable
         Func<ClaimedClientData, Task> onReKey,
         Func<ControlMessage, Task> onControl,
         Func<CommandMessage, Task> onMessage)
+        => StartAsync(serverUrl, JWT, certificateUrl, serverKeys, refreshSettingsBy, forceConnect, cancellationToken, onConnect, onReKey, onControl, onMessage, DefaultIdentity);
+
+    /// <summary>
+    /// Creates a new connection to the remote server with a specific identity
+    /// </summary>
+    /// <param name="serverUrl">The url to use</param>
+    /// <param name="JWT">The JWT to use</param>
+    /// <param name="certificateUrl">The certificate url to use</param>
+    /// <param name="serverKeys">The server keys to use</param>
+    /// <param name="refreshSettingsBy">The time to refresh settings by</param>
+    /// <param name="forceConnect">If the connection should be force enabled, ignoring re-connect delays</param>
+    /// <param name="cancellationToken">The token to cancel the connection</param>
+    /// <param name="onConnect">The callback to call when connecting</param>
+    /// <param name="onReKey">The callback to call when rekeying</param>
+    /// <param name="onControl">The callback to call when a control message is received</param>
+    /// <param name="onMessage">The callback to call when a command message is received</param>
+    /// <param name="identity">The identity to present to the server</param>
+    /// <returns>The task representing the connection</returns>
+    public static Task StartAsync(
+        string serverUrl,
+        string JWT,
+        string certificateUrl,
+        IEnumerable<MiniServerCertificate> serverKeys,
+        DateTimeOffset? refreshSettingsBy,
+        bool forceConnect,
+        CancellationToken cancellationToken,
+        Func<Dictionary<string, string?>, Task<Dictionary<string, string?>>> onConnect,
+        Func<ClaimedClientData, Task> onReKey,
+        Func<ControlMessage, Task> onControl,
+        Func<CommandMessage, Task> onMessage,
+        RemoteClientIdentity identity)
         => Task.Run(async () =>
         {
-            using var connection = new KeepRemoteConnection(serverUrl, JWT, certificateUrl, serverKeys, refreshSettingsBy, forceConnect, cancellationToken, onConnect, onReKey, onControl, onMessage);
+            using var connection = new KeepRemoteConnection(serverUrl, JWT, certificateUrl, serverKeys, refreshSettingsBy, forceConnect, cancellationToken, onConnect, onReKey, onControl, onMessage, identity);
             await connection._runnerTask;
         });
 
@@ -659,7 +742,38 @@ public class KeepRemoteConnection : IDisposable
         Func<ClaimedClientData, Task> onReKey,
         Func<ControlMessage, Task> onControl,
         Func<CommandMessage, Task> onMessage)
-        => new KeepRemoteConnection(serverUrl, JWT, certificateUrl, serverKeys, refreshSettingsBy, forceConnect, cancellationToken, onConnect, onReKey, onControl, onMessage);
+        => CreateRemoteListener(serverUrl, JWT, certificateUrl, serverKeys, refreshSettingsBy, forceConnect, cancellationToken, onConnect, onReKey, onControl, onMessage, DefaultIdentity);
+
+    /// <summary>
+    /// Creates a new connection to the remote server with a specific identity
+    /// </summary>
+    /// <param name="serverUrl">The url to use</param>
+    /// <param name="JWT">The JWT token to use</param>
+    /// <param name="certificateUrl">The certificate url to use</param>
+    /// <param name="serverKeys">The server keys to use</param>
+    /// <param name="refreshSettingsBy">The timestamp to disable automatic reconnect</param>
+    /// <param name="forceConnect">If the connection should be force enabled, ignoring re-connect delays</param>
+    /// <param name="cancellationToken">The cancellation token to use</param>
+    /// <param name="onConnect">The callback to call when connecting</param>
+    /// <param name="onReKey">The callback to call when rekeying</param>
+    /// <param name="onControl">The callback to call when a control message is received</param>
+    /// <param name="onMessage">The callback to call when a message is received</param>
+    /// <param name="identity">The identity to present to the server</param>
+    /// <returns>The connection object</returns>
+    public static KeepRemoteConnection CreateRemoteListener(
+        string serverUrl,
+        string JWT,
+        string certificateUrl,
+        IEnumerable<MiniServerCertificate> serverKeys,
+        DateTimeOffset? refreshSettingsBy,
+        bool forceConnect,
+        CancellationToken cancellationToken,
+        Func<Dictionary<string, string?>, Task<Dictionary<string, string?>>> onConnect,
+        Func<ClaimedClientData, Task> onReKey,
+        Func<ControlMessage, Task> onControl,
+        Func<CommandMessage, Task> onMessage,
+        RemoteClientIdentity identity)
+        => new KeepRemoteConnection(serverUrl, JWT, certificateUrl, serverKeys, refreshSettingsBy, forceConnect, cancellationToken, onConnect, onReKey, onControl, onMessage, identity);
 
     /// <summary>
     /// Requests a certificate refresh
@@ -738,6 +852,68 @@ public class KeepRemoteConnection : IDisposable
             => _respondCommand(response);
 
         /// <summary>
+        /// The remote-supplied headers that are forwarded to the local server.
+        /// Anything not listed is dropped, so the remote cannot override the credentials set on the client,
+        /// or spoof headers the server uses for access decisions, such as Host, X-Real-IP or X-Forwarded-*.
+        /// </summary>
+        private static readonly HashSet<string> AllowedRequestHeaders = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "Accept",
+            "Accept-Language",
+            "Cache-Control",
+            "Content-Type",
+            "If-Match",
+            "If-Modified-Since",
+            "If-None-Match",
+            "If-Unmodified-Since",
+            "Pragma",
+            "User-Agent",
+            "X-UI-Language"
+        };
+
+        /// <summary>
+        /// Checks if a remote-supplied header is allowed to be forwarded to the local server
+        /// </summary>
+        /// <param name="name">The header name</param>
+        /// <returns><c>true</c> if the header is forwarded; <c>false</c> if it is dropped</returns>
+        public static bool IsAllowedRequestHeader(string? name)
+            => !string.IsNullOrWhiteSpace(name) && AllowedRequestHeaders.Contains(name);
+
+        /// <summary>
+        /// Resolves the requested path against the base address, and ensures the result still targets the base address.
+        /// This prevents a remote-supplied path, such as an absolute or scheme-relative url, from redirecting
+        /// the request, to a different host.
+        /// </summary>
+        /// <param name="baseAddress">The base address of the local server</param>
+        /// <param name="path">The remote-supplied path</param>
+        /// <param name="target">The resolved target url</param>
+        /// <returns><c>true</c> if the path targets the base address; <c>false</c> otherwise</returns>
+        public static bool TryGetLocalTarget(Uri? baseAddress, string? path, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out Uri? target)
+        {
+            target = null;
+            if (baseAddress == null || !baseAddress.IsAbsoluteUri || string.IsNullOrWhiteSpace(path))
+                return false;
+
+            // Only rooted paths are allowed, rejecting absolute urls,
+            // and scheme-relative urls, including the backslash variants that Uri treats as slashes
+            if (path[0] != '/' || path.Length > 1 && (path[1] == '/' || path[1] == '\\'))
+                return false;
+
+            if (!Uri.TryCreate(path, UriKind.Relative, out var relative))
+                return false;
+
+            if (!Uri.TryCreate(baseAddress, relative, out var resolved))
+                return false;
+
+            // Verify the resolved url, in case the parser interprets the path differently than expected
+            if (Uri.Compare(baseAddress, resolved, UriComponents.SchemeAndServer | UriComponents.UserInfo, UriFormat.Unescaped, StringComparison.OrdinalIgnoreCase) != 0)
+                return false;
+
+            target = resolved;
+            return true;
+        }
+
+        /// <summary>
         /// Handles the command message with a configured http client.
         /// The client must be configured with the correct base address and authorization headers.
         /// </summary>
@@ -749,17 +925,30 @@ public class KeepRemoteConnection : IDisposable
             {
                 SafeLog.Write(LogMessageType.Verbose, LogTag, "WebsocketCommand", null, "Handling command {0} {1}", CommandRequestMessage.Method, CommandRequestMessage.Path);
 
-                var request = new HttpRequestMessage(new HttpMethod(CommandRequestMessage.Method), CommandRequestMessage.Path);
+                if (!TryGetLocalTarget(client.BaseAddress, CommandRequestMessage.Path, out var target))
+                {
+                    SafeLog.Write(LogMessageType.Warning, LogTag, "WebsocketCommandInvalidPath", null, "Rejecting command with a path that does not target the local server: {0}", CommandRequestMessage.Path);
+                    Respond(new CommandResponseMessage(400, "Invalid path", null));
+                    return;
+                }
+
+                var request = new HttpRequestMessage(new HttpMethod(CommandRequestMessage.Method), target);
                 if (!string.IsNullOrWhiteSpace(CommandRequestMessage.Body))
                     request.Content = new ByteArrayContent(Convert.FromBase64String(CommandRequestMessage.Body));
                 if (CommandRequestMessage.Headers != null)
                 {
                     foreach (var header in CommandRequestMessage.Headers)
                     {
-                        if (header.Key == "Content-Type")
+                        if (!IsAllowedRequestHeader(header.Key))
+                        {
+                            SafeLog.Write(LogMessageType.Verbose, LogTag, "WebsocketCommandHeaderDropped", null, "Dropping header that is not allowed to be forwarded: {0}", header.Key);
+                            continue;
+                        }
+
+                        if (string.Equals(header.Key, "Content-Type", StringComparison.OrdinalIgnoreCase))
                         {
                             if (request.Content != null)
-                                request.Content.Headers.ContentType = new MediaTypeHeaderValue(header.Value);
+                                request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse(header.Value);
                         }
                         else
                             request.Headers.Add(header.Key, header.Value);

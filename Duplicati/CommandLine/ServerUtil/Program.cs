@@ -20,9 +20,12 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System.CommandLine;
+using System.Runtime.CompilerServices;
 using Duplicati.CommandLine.ServerUtil.Commands;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Utility;
+
+[assembly: InternalsVisibleTo("Duplicati.UnitTest")]
 
 namespace Duplicati.CommandLine.ServerUtil;
 
@@ -32,14 +35,11 @@ namespace Duplicati.CommandLine.ServerUtil;
 public static class Program
 {
     /// <summary>
-    /// Invokes the builder
+    /// Creates the root command with all subcommands and global options.
     /// </summary>
-    /// <param name="args"></param>
-    /// <returns>The return code</returns>
-    public static async Task<int> MainAsync(string[] args)
+    /// <returns>The configured root command</returns>
+    internal static RootCommand CreateRootCommand()
     {
-        PreloadSettingsLoader.ConfigurePreloadSettings(ref args, PackageHelper.NamedExecutable.ServerUtil);
-
         var rootCmd = new RootCommand("Server CLI tool for Duplicati")
             {
                 Pause.Create(),
@@ -59,10 +59,32 @@ public static class Program
 
         rootCmd = SettingsBinder.AddGlobalOptions(rootCmd);
         rootCmd.UseAdditionalHelpAliases();
+        return rootCmd;
+    }
+
+    /// <summary>
+    /// Invokes the builder
+    /// </summary>
+    /// <param name="args"></param>
+    /// <returns>The return code</returns>
+    public static async Task<int> MainAsync(string[] args)
+    {
+        PreloadSettingsLoader.ConfigurePreloadSettings(ref args, PackageHelper.NamedExecutable.ServerUtil);
+
+        var rootCmd = CreateRootCommand();
+        var parseResult = rootCmd.Parse(args);
+
+        // Create the output interceptor up-front, mirroring the middleware that
+        // ran before the command handlers in the previous System.CommandLine version.
+        // If a command handler throws before it creates the interceptor itself
+        // (e.g. while loading the settings), the catch block below can still
+        // report the failure to the console instead of exiting silently.
+        if (parseResult.Errors.Count == 0)
+            OutputInterceptorBinder.GetConsoleInterceptor(parseResult);
 
         try
         {
-            var exitCode = await rootCmd.Parse(args).InvokeAsync(new InvocationConfiguration
+            var exitCode = await parseResult.InvokeAsync(new InvocationConfiguration
             {
                 EnableDefaultExceptionHandler = false
             });

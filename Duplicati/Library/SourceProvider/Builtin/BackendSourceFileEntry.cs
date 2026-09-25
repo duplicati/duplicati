@@ -329,15 +329,5 @@ public class BackendSourceFileEntry(BackendSourceProvider parent, string path, b
             .Replace('/', separator)
             .Replace('\\', separator);
     }
-
-    /// <summary>
-    /// Creates a new backend source entry from a file entry
-    /// </summary>
-    /// <param name="parent">The parent backend</param>
-    /// <param name="entry">The file entry</param>
-    /// <param name="prefix">The prefix to add to the path</param>
-    /// <returns>The new backend source entry</returns>
-    public static BackendSourceFileEntry FromFileEntry(BackendSourceProvider parent, string prefix, IFileEntry entry)
-        => new BackendSourceFileEntry(parent, SystemIO.IO_OS.PathCombine(prefix, entry.Name), entry.IsFolder, false, entry.Created, entry.LastModification, entry.Size);
 }
 

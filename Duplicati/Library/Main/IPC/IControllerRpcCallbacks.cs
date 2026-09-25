@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System.Threading.Tasks;
+using Duplicati.Library.Interface;
 using Duplicati.Library.Main.IPC.Dto;
 
 namespace Duplicati.Library.Main.IPC;

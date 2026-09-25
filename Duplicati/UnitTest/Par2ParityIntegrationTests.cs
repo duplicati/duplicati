@@ -158,5 +158,75 @@ namespace Duplicati.UnitTest
             Assert.IsTrue(File.Exists(restoredFile), "Restored file should exist");
             CollectionAssert.AreEqual(originalBytes, File.ReadAllBytes(restoredFile), "Restored content should match the original after parity recovery");
         }
+
+        /// <summary>
+        /// Returns the data volume (dblock and dlist) files on the backend, excluding parity companions.
+        /// </summary>
+        private string[] DataVolumeFiles()
+            => Directory.GetFiles(TARGETFOLDER)
+                .Where(f => (f.Contains(".dblock.") || f.Contains(".dlist.")) && !f.EndsWith(".par2", StringComparison.OrdinalIgnoreCase))
+                .ToArray();
+
+        /// <summary>
+        /// Returns the parity companion files on the backend.
+        /// </summary>
+        private string[] ParityFiles()
+            => Directory.GetFiles(TARGETFOLDER)
+                .Where(f => f.EndsWith(".par2", StringComparison.OrdinalIgnoreCase))
+                .ToArray();
+
+        [Test]
+        [Category("Parity")]
+        public async Task DeletingVolumesRemovesParityCompanions()
+        {
+            var programPath = RequirePar2();
+            var opts = ParityTestOptions(programPath);
+            // Make sure unused volumes are compacted away as soon as they become fully deletable.
+            opts["threshold"] = "1";
+
+            // First backup: one large file so it gets its own dblock.
+            var buffer = new byte[2 * 1024 * 1024];
+            new Random(1).NextBytes(buffer);
+            var firstFile = Path.Combine(DATAFOLDER, "first.bin");
+            File.WriteAllBytes(firstFile, buffer);
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, opts, null))
+                TestUtils.AssertResults(await c.BackupAsync(new[] { DATAFOLDER }));
+
+            // Second backup: replace the file with different content, so the first dblock
+            // becomes fully unused once the first version is deleted.
+            File.Delete(firstFile);
+            new Random(2).NextBytes(buffer);
+            File.WriteAllBytes(Path.Combine(DATAFOLDER, "second.bin"), buffer);
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, opts, null))
+                TestUtils.AssertResults(await c.BackupAsync(new[] { DATAFOLDER }));
+
+            // Every data volume should have a parity companion, and there should be no orphans.
+            var volumesBefore = DataVolumeFiles();
+            Assert.GreaterOrEqual(volumesBefore.Count(f => f.Contains(".dlist.")), 2, "Expected two dlist volumes");
+            Assert.GreaterOrEqual(volumesBefore.Count(f => f.Contains(".dblock.")), 2, "Expected two dblock volumes");
+            foreach (var v in volumesBefore)
+                Assert.IsTrue(File.Exists(v + ".par2"), $"Missing parity file for {Path.GetFileName(v)}");
+            CollectionAssert.AreEquivalent(volumesBefore.Select(v => v + ".par2"), ParityFiles(), "Parity files should match data volumes exactly before deletion");
+
+            // Delete the oldest version. This removes its dlist and, through compact, the
+            // dblock that only it referenced.
+            var deleteOpts = new Dictionary<string, string>(opts) { ["version"] = "1" };
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, deleteOpts, null))
+                TestUtils.AssertResults(await c.DeleteAsync());
+
+            var volumesAfter = DataVolumeFiles();
+            var removed = volumesBefore.Except(volumesAfter).ToArray();
+            Assert.IsTrue(removed.Any(f => f.Contains(".dlist.")), "Deleting a version should remove a dlist volume");
+            Assert.IsTrue(removed.Any(f => f.Contains(".dblock.")), "Deleting the only version referencing a dblock should remove that dblock");
+
+            // The parity companion of every removed volume must be gone as well.
+            foreach (var v in removed)
+                Assert.IsFalse(File.Exists(v + ".par2"), $"Parity file for deleted volume {Path.GetFileName(v)} should have been deleted");
+
+            // The remaining volumes keep their parity companions, and no orphans are left behind.
+            foreach (var v in volumesAfter)
+                Assert.IsTrue(File.Exists(v + ".par2"), $"Parity file for remaining volume {Path.GetFileName(v)} should still exist");
+            CollectionAssert.AreEquivalent(volumesAfter.Select(v => v + ".par2"), ParityFiles(), "Parity files should match data volumes exactly after deletion");
+        }
     }
 }

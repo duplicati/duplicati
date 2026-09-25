@@ -137,7 +137,7 @@ public static class RemoteSynchronizationRunner
     /// <param name="token">The cancellation token to use for the asynchronous operations.</param>
     /// <param name="progressUpdater">Optional progress updater for reporting file count and transfer progress to the UI.</param>
     /// <param name="backendProgressUpdater">Optional backend progress updater for reporting transfer speed to the UI.</param>
-    /// <returns>The return code (0 on success).</returns>
+    /// <returns>The return code: 0 on success, -1 on abort, and the number of errors encountered otherwise.</returns>
     internal static async Task<int> RunAsync(RemoteSynchronizationConfig config, CancellationToken token, IOperationProgressUpdater? progressUpdater = null, IBackendProgressUpdater? backendProgressUpdater = null, IBasicResults? results = null)
     {
         // Parse the log level
@@ -204,7 +204,7 @@ public static class RemoteSynchronizationRunner
     /// <param name="token">The cancellation token to use for the asynchronous operations.</param>
     /// <param name="progressUpdater">Optional progress updater for reporting file count and transfer progress to the UI.</param>
     /// <param name="backendProgressUpdater">Optional backend progress updater for reporting transfer speed to the UI.</param>
-    /// <returns>The return code (0 on success).</returns>
+    /// <returns>The return code: 0 on success, -1 on abort, and the number of errors encountered otherwise.</returns>
     private static async Task<int> RunCoreAsync(RemoteSynchronizationConfig config, CancellationToken token, IOperationProgressUpdater? progressUpdater = null, IBackendProgressUpdater? backendProgressUpdater = null, RemoteSynchronizationResults? results = null)
     {
         // Unpack and parse the multi token options
@@ -222,6 +222,15 @@ public static class RemoteSynchronizationRunner
                 dst_opts[x.Key] = x.Value;
         }
 
+        // The two listings are matched against each other, so one comparer has to answer for both
+        // sides, and it is applied if either side asks for it. This mirrors what the backup path
+        // does with the same question in FilelistProcessor. The option defaults to false, which is
+        // the ordinal comparison the lookups below have always used.
+        var name_comparer = Library.Utility.Utility.ParseBoolOption(src_opts, "case-insensitive-remote")
+            || Library.Utility.Utility.ParseBoolOption(dst_opts, "case-insensitive-remote")
+                ? StringComparer.OrdinalIgnoreCase
+                : StringComparer.Ordinal;
+
         // Check if we only had to parse the arguments
         if (config.ParseArgumentsOnly)
         {
@@ -229,16 +238,31 @@ public static class RemoteSynchronizationRunner
             return 0;
         }
 
-        using var b1m = new LightWeightBackendManager(config.Src, src_opts, config.BackendRetries, config.BackendRetryDelay, config.BackendRetryWithExponentialBackoff, progressUpdater: progressUpdater, backendProgressUpdater: backendProgressUpdater);
-        using var b2m = new LightWeightBackendManager(config.Dst, dst_opts, config.BackendRetries, config.BackendRetryDelay, config.BackendRetryWithExponentialBackoff, progressUpdater: progressUpdater, backendProgressUpdater: backendProgressUpdater);
+        using var b1m = new LightWeightBackendManager(config.Src, src_opts,
+            maxRetries: config.BackendRetries,
+            retryDelay: config.BackendRetryDelay,
+            // The source is only ever read from. Creating a missing source folder would turn "the
+            // source is gone" into "the source is empty", and an empty source deletes every file in
+            // the destination
+            autoCreateFolders: false,
+            retryWithExponentialBackoff: config.BackendRetryWithExponentialBackoff,
+            progressUpdater: progressUpdater, backendProgressUpdater: backendProgressUpdater);
+        using var b2m = new LightWeightBackendManager(config.Dst, dst_opts,
+            maxRetries: config.BackendRetries,
+            retryDelay: config.BackendRetryDelay,
+            autoCreateFolders: config.AutoCreateFolders,
+            retryWithExponentialBackoff: config.BackendRetryWithExponentialBackoff,
+            progressUpdater: progressUpdater, backendProgressUpdater: backendProgressUpdater);
 
         // Prepare the operations
-        var (to_copy, to_delete, to_verify) = await PrepareFileListsAsync(b1m, b2m, config, token).ConfigureAwait(false);
+        var (to_copy, to_delete, to_verify) = await PrepareFileListsAsync(b1m, b2m, config, name_comparer, token).ConfigureAwait(false);
         var disableQuota = Library.Utility.Utility.ParseBoolOption(dst_opts, "quota-disable");
 
         // Check if we have enough free space in the destination to perform the synchronization.
+        // A negative free space means the backend did not return the quota info, so there is
+        // nothing to compare the required size against.
         var dst_quota = disableQuota ? null : await b2m.GetQuotaInfoAsync(token).ConfigureAwait(false);
-        if (dst_quota is not null)
+        if (dst_quota is not null && dst_quota.FreeQuotaSpace >= 0)
         {
             var total_delete_size = to_delete.Sum(x => Math.Max(x.Size, 0));
             var total_copy_size = to_copy.Sum(x => Math.Max(x.Size, 0));
@@ -333,6 +357,12 @@ public static class RemoteSynchronizationRunner
         // The delete/rename phase now reports progress incrementally, so we don't need a separate update here
         var deletedOrRenamed = Math.Max(deleted, renamed);
 
+        // Every file that was neither deleted nor renamed was logged by the phase above, and counts as an error
+        var cleanupErrors = (int)(deleteCount - deletedOrRenamed);
+        if (cleanupErrors > 0)
+            Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, config.Retention ? "RenameFailed" : "DeleteFailed", null,
+                "Could not {0} {1} of {2} files in {3}.", config.Retention ? "rename" : "delete", cleanupErrors, deleteCount, b2m.DisplayName);
+
         // Copy the files
         var (copied, copy_errors) = await CopyAsync(b1m, b2m, to_copy, config, deletedOrRenamed, totalFileCount, token, progressUpdater, backendProgressUpdater).ConfigureAwait(false);
         Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "CopyComplete",
@@ -369,7 +399,7 @@ public static class RemoteSynchronizationRunner
                 results?.VerifiedFileCount = verified;
                 results?.FailedVerificationCount = failed_verify;
                 results?.CopiedFileSize = totalFileSize;
-                return copy_errors.Count();
+                return copy_errors.Count() + cleanupErrors;
             }
         }
 
@@ -395,8 +425,9 @@ public static class RemoteSynchronizationRunner
                     "Renamed {0} files in {1}", renamed, b2m.DisplayName);
         }
 
-        Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "SynchronizationComplete",
-            "Remote synchronization completed successfully");
+        if (cleanupErrors == 0)
+            Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "SynchronizationComplete",
+                "Remote synchronization completed successfully");
 
         results?.DeletedFileCount = deleted;
         results?.RenamedFileCount = renamed;
@@ -405,7 +436,7 @@ public static class RemoteSynchronizationRunner
         results?.FailedVerificationCount = failed_verify;
         results?.CopiedFileSize = totalFileSize;
 
-        return 0;
+        return cleanupErrors;
     }
 
     // TODO have concurrency parameters: uploaders, downloaders
@@ -721,17 +752,29 @@ public static class RemoteSynchronizationRunner
     /// <param name="b_src">The source lightweight backend manager.</param>
     /// <param name="b_dst">The destination lightweight backend manager.</param>
     /// <param name="config">The parsed configuration for the tool.</param>
+    /// <param name="name_comparer">The comparer to use for the remote filenames.</param>
     /// <param name="token">The cancellation token to use for the asynchronous operations.</param>
     /// <returns>A tuple of Lists each holding the files to copy, delete and verify.</returns>
-    private static async Task<(IEnumerable<IFileEntry>, IEnumerable<IFileEntry>, IEnumerable<IFileEntry>)> PrepareFileListsAsync(LightWeightBackendManager b_src, LightWeightBackendManager b_dst, RemoteSynchronizationConfig config, CancellationToken token)
+    private static async Task<(IEnumerable<IFileEntry>, IEnumerable<IFileEntry>, IEnumerable<IFileEntry>)> PrepareFileListsAsync(LightWeightBackendManager b_src, LightWeightBackendManager b_dst, RemoteSynchronizationConfig config, IEqualityComparer<string> name_comparer, CancellationToken token)
     {
         IEnumerable<IFileEntry> files_src, files_dst;
 
         using (new Duplicati.Library.Logging.Timer(LOGTAG, "ListSource", "Prepare | List source"))
             files_src = await b_src.ListAsync(token).ConfigureAwait(false);
 
+        // Folders are dropped before anything looks at the listing: the shortcuts below return the
+        // listings as they are, and the duplicate check has no use for names that are never addressed
+        files_src = WithoutFolders(files_src, "source");
+
+        // Checked before the shortcuts below, because neither of them makes two entries that share
+        // a name any easier to tell apart
+        VerifyNoDuplicateNames(files_src, "source", config.Src, name_comparer);
+
         using (new Duplicati.Library.Logging.Timer(LOGTAG, "ListDestination", "Prepare | List destination"))
             files_dst = await b_dst.ListAsync(token).ConfigureAwait(false);
+
+        files_dst = WithoutFolders(files_dst, "destination");
+        VerifyNoDuplicateNames(files_dst, "destination", config.Dst, name_comparer);
 
         // Shortcut for force
         if (config.Force)
@@ -748,12 +791,12 @@ public static class RemoteSynchronizationRunner
         Dictionary<string, IFileEntry> lookup_src, lookup_dst;
         using (new Duplicati.Library.Logging.Timer(LOGTAG, "BuildLookup", "Prepare | Build lookup for source and destination"))
         {
-            lookup_src = files_src.ToDictionary(x => x.Name);
-            lookup_dst = files_dst.ToDictionary(x => x.Name);
+            lookup_src = files_src.ToDictionary(x => x.Name, name_comparer);
+            lookup_dst = files_dst.ToDictionary(x => x.Name, name_comparer);
         }
 
         var to_copy = new List<IFileEntry>();
-        var to_delete = new HashSet<string>();
+        var to_delete = new HashSet<string>(name_comparer);
         var to_verify = new List<IFileEntry>();
 
         // Find all of the files in src that are not in dst, where the dst has a different size than src or src a more recent modification date than dst
@@ -802,8 +845,60 @@ public static class RemoteSynchronizationRunner
     }
 
     /// <summary>
+    /// Drops the folder entries from a remote listing.
+    /// Every operation in this tool addresses a remote file by its name, and none of them applies
+    /// to a folder: it cannot be downloaded, uploaded, deleted as a file or compared byte for byte.
+    /// A Duplicati destination is flat, so a folder the backend reports is never part of the backup;
+    /// a destination at the root of a mount or a drive lists lost+found, $RECYCLE.BIN or
+    /// System Volume Information next to the volumes, and the file backend lists any subfolder.
+    /// The backup path never trips over them, because their names do not parse as volume names.
+    /// </summary>
+    /// <param name="files">The listing to filter.</param>
+    /// <param name="side">The side the listing was read from, for the log message.</param>
+    /// <returns>The entries of the listing that are not folders.</returns>
+    private static List<IFileEntry> WithoutFolders(IEnumerable<IFileEntry> files, string side)
+    {
+        var folders = files.Where(x => x.IsFolder).Select(x => x.Name).ToList();
+        if (folders.Count > 0)
+            Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "IgnoredFolders",
+                "Ignoring {0} folder entries in the {1} listing: {2}",
+                folders.Count, side, string.Join(", ", folders));
+
+        return files.Where(x => !x.IsFolder).ToList();
+    }
+
+    /// <summary>
+    /// Verifies that a remote listing does not report the same name more than once.
+    /// Every operation in this tool addresses a remote file by its name alone, so two entries that
+    /// share a name cannot be copied, deleted, renamed or verified apart. This reports the same
+    /// thing the backup path reports for the same condition, instead of failing with the exception
+    /// that building a lookup out of the listing throws.
+    /// </summary>
+    /// <param name="files">The listing to check.</param>
+    /// <param name="side">The side the listing was read from, for the error message.</param>
+    /// <param name="url">The url the listing was read from, for the error message.</param>
+    /// <param name="name_comparer">The comparer to use for the remote filenames.</param>
+    /// <exception cref="RemoteListVerificationException">If a name is reported more than once.</exception>
+    private static void VerifyNoDuplicateNames(IEnumerable<IFileEntry> files, string side, string url, IEqualityComparer<string> name_comparer)
+    {
+        Library.Utility.Utility.GetUniqueItems(files.Select(x => x.Name), name_comparer, out var doubles);
+        if (doubles.Count == 0)
+            return;
+
+        var message = string.Format(
+            "Found remote files reported as duplicates in the {0} ({1}), either the backend module is broken or you need to manually remove the extra copies.\nThe following files were found multiple times: {2}",
+            side,
+            Library.Utility.Utility.GetUrlWithoutCredentials(url),
+            string.Join(", ", doubles));
+
+        Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "DuplicateRemoteFiles", null, message);
+        throw new RemoteListVerificationException(message, "DuplicateRemoteFiles");
+    }
+
+    /// <summary>
     /// Renames the files in a backend.
-    /// The renaming is done by deleting the file and re-uploading it with a new name.
+    /// The renaming is delegated to the backend manager, which uses the backend's own rename when it has one and
+    /// falls back to downloading, uploading under the new name and deleting the old one otherwise.
     /// </summary>
     /// <param name="bm">The lightweight backend manager to issue rename operations to.</param>
     /// <param name="files">The files to rename.</param>
@@ -818,7 +913,6 @@ public static class RemoteSynchronizationRunner
     {
         long successful_renames = 0;
         string prefix = $"{System.DateTime.UtcNow:yyyyMMddHHmmss}.old";
-        using var downloaded = new MemoryStream();
         long i = 0, n = files.Count();
 
         var sw = new System.Diagnostics.Stopwatch();
@@ -887,7 +981,8 @@ public static class RemoteSynchronizationRunner
 
     /// <summary>
     /// Verifies the files in the destination backend.
-    /// The verification is done by downloading the files from the destination backend and comparing them to the source files.
+    /// The verification is done by downloading both copies to temporary files and comparing them in chunks, so a
+    /// volume is never held in memory.
     /// </summary>
     /// <param name="b_src">The source lightweight backend manager.</param>
     /// <param name="b_dst">The destination lightweight backend manager.</param>
@@ -898,8 +993,9 @@ public static class RemoteSynchronizationRunner
     private static async Task<IEnumerable<IFileEntry>> VerifyAsync(LightWeightBackendManager b_src, LightWeightBackendManager b_dst, IEnumerable<IFileEntry> files, RemoteSynchronizationConfig config, CancellationToken token)
     {
         var errors = new List<IFileEntry>();
-        using var s_src = new MemoryStream();
-        using var s_dst = new MemoryStream();
+        // Temporary files instead of memory: a volume can be gigabytes, and two of them are compared at a time
+        using var s_src = Duplicati.Library.Utility.TempFileStream.Create();
+        using var s_dst = Duplicati.Library.Utility.TempFileStream.Create();
         long i = 0, n = files.Count();
         var sw_get = new System.Diagnostics.Stopwatch();
         var sw_cmp = new System.Diagnostics.Stopwatch();
@@ -912,7 +1008,7 @@ public static class RemoteSynchronizationRunner
             Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "VerifyingFile",
                 "Verifying {0} by downloading and comparing {1} bytes from {2} and {3}",
                 f.Name,
-                Duplicati.Library.Utility.Utility.FormatSizeString(s_src.Length),
+                Duplicati.Library.Utility.Utility.FormatSizeString(Math.Max(f.Size, 0)),
                 b_dst.DisplayName, b_src.DisplayName);
 
             try
@@ -924,9 +1020,11 @@ public static class RemoteSynchronizationRunner
                 await Task.WhenAll(fs, ds).ConfigureAwait(false);
                 sw_get.Stop();
 
-                // Compare the contents
+                // Compare the contents in chunks; neither file is held in memory
                 sw_cmp.Start();
-                if (s_src.Length != s_dst.Length || !s_src.ToArray().SequenceEqual(s_dst.ToArray()))
+                s_src.Position = 0;
+                s_dst.Position = 0;
+                if (!Duplicati.Library.Utility.Utility.CompareStreams(s_src, s_dst, true))
                 {
                     errors.Add(f);
                 }

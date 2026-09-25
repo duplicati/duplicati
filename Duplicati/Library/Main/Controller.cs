@@ -140,7 +140,7 @@ namespace Duplicati.Library.Main
             CheckAutoVacuumInterval();
             SourceProviderFactory.EnableMetadataStorageIfRequiredBySources(inputsources, m_options.RawOptions);
 
-            return await RunActionAsync(new BackupResults(), inputsources, inputFilter, false, static async config =>
+            return await RunActionAsync(new BackupResults(), inputsources, inputFilter, new { lastRestoreTest = m_lastRestoreTest }, static async config =>
             {
                 var (expandedSources, filter) = ExpandInputSources(config.Paths, config.Filter, config.Options);
                 using (var h = new Operation.BackupHandler(config.Options, config.Result))
@@ -151,16 +151,79 @@ namespace Duplicati.Library.Main
                 UsageReporter.Reporter.Report("BACKUP_FILESIZE", config.Result.SizeOfExaminedFiles);
                 UsageReporter.Reporter.Report("BACKUP_DURATION", (long)config.Result.Duration.TotalSeconds);
 
+                // The backup handler has released the database at this point, so the restore test can open it
+                await RunPostBackupRestoreTestAsync(config.Options, config.Result, config.BackendManager, config.Context.lastRestoreTest).ConfigureAwait(false);
+
                 using (var h = new Operation.RemoteSynchronizationHandler(config.BackendUrl, config.Options, config.Result))
                     await h.RunAsync()
                         .ConfigureAwait(false);
             }).ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Runs a restore test as the last step of a backup, when the interval given by
+        /// <c>--perform-restore-test-after</c> has passed since the previous restore test.
+        /// The time of the previous restore test is supplied by the server when available,
+        /// and is otherwise read from the operation log in the local database.
+        /// </summary>
+        /// <param name="options">The options</param>
+        /// <param name="result">The backup results to attach the restore test results to</param>
+        /// <param name="backendManager">The backend manager</param>
+        /// <param name="lastRestoreTest">The time of the previous restore test as supplied by the caller, or <see cref="DateTime.MinValue"/> if unknown</param>
+        private static async Task RunPostBackupRestoreTestAsync(Options options, BackupResults result, IBackendManager backendManager, DateTime lastRestoreTest)
+        {
+            var interval = options.PerformRestoreTestAfter;
+            if (interval <= TimeSpan.Zero || options.Dryrun)
+                return;
+
+            var token = result.TaskControl.ProgressToken;
+            if (result.TaskControl.StopToken.IsCancellationRequested || token.IsCancellationRequested)
+                return;
+
+            if (lastRestoreTest <= DateTime.MinValue && !options.NoLocalDb && !string.IsNullOrWhiteSpace(options.Dbpath) && File.Exists(options.Dbpath))
+            {
+                try
+                {
+                    await using var db = await LocalDatabase.CreateLocalDatabaseAsync(options.Dbpath, null, true, null, token).ConfigureAwait(false);
+                    lastRestoreTest = await db.GetLastOperationTimeAsync(OperationMode.RestoreTest.ToString(), token).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "LastRestoreTestLookupFailed", ex, "Failed to look up the time of the last restore test: {0}", ex.Message);
+                }
+            }
+
+            if (lastRestoreTest > DateTime.MinValue && lastRestoreTest.ToUniversalTime().Add(interval) > DateTime.UtcNow)
+            {
+                Logging.Log.WriteInformationMessage(LOGTAG, "RestoreTestSkipped", "Skipping restore test until {0}", lastRestoreTest.ToLocalTime().Add(interval));
+                return;
+            }
+
+            result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PostBackupRestoreTest);
+            var restoreTestResults = new RestoreTestResults(result);
+            result.RestoreTestResults = restoreTestResults;
+            try
+            {
+                await new Operation.RestoreTestHandler(options, restoreTestResults)
+                    .RunAsync(backendManager, null)
+                    .ConfigureAwait(false);
+            }
+            catch (Exception ex) when (!ex.IsAbortOrCancelException())
+            {
+                // The backup itself completed, so a restore test that cannot run is an error on the backup, not a failure of it
+                Logging.Log.WriteErrorMessage(LOGTAG, "RestoreTestFailed", ex, "The restore test after the backup failed: {0}", ex.Message);
+            }
+            finally
+            {
+                if (restoreTestResults.EndTime.Ticks == 0)
+                    restoreTestResults.EndTime = DateTime.UtcNow;
+            }
+        }
+
         /// <inheritdoc />
         public async Task<IRestoreResults> RestoreAsync(string[] paths, IFilter inputFilter = null)
         {
-            return await RunActionAsync(new RestoreResults(), paths, inputFilter, false, static async config =>
+            return await RunActionAsync(new RestoreResults(), null, inputFilter, new { paths }, static async config =>
             {
                 using var restoreDestination =
                     (config.Options.Restorepath ?? "").StartsWith("@")
@@ -179,7 +242,7 @@ namespace Duplicati.Library.Main
                     throw new UserInformationException($"Could not find restore destination for path: {config.Options.Restorepath}", "InvalidRestoreDestination");
 
                 await new Operation.RestoreHandler(config.Options, config.Result)
-                    .RunAsync(config.Paths, config.BackendManager, config.Filter, restoreDestination)
+                    .RunAsync(config.Context.paths, config.BackendManager, config.Filter, restoreDestination)
                     .ConfigureAwait(false);
 
                 await restoreDestination.Finalize((pg) =>
@@ -198,9 +261,9 @@ namespace Duplicati.Library.Main
         /// <inheritdoc />
         public async Task<IRestoreControlFilesResults> RestoreControlFilesAsync(IEnumerable<string> files = null, IFilter inputFilter = null)
         {
-            return await RunActionAsync(new RestoreControlFilesResults(), files?.ToArray(), inputFilter, false, static config =>
+            return await RunActionAsync(new RestoreControlFilesResults(), null, inputFilter, new { files }, static config =>
                 new Operation.RestoreControlFilesHandler(config.Options, config.Result)
-                    .RunAsync(config.Paths, config.BackendManager, config.Filter)
+                    .RunAsync(config.Context.files?.ToArray(), config.BackendManager, config.Filter)
             ).ConfigureAwait(false);
         }
 
@@ -236,20 +299,20 @@ namespace Duplicati.Library.Main
 
         /// <inheritdoc />
         public async Task<IListFolderResults> ListFolderAsync(string[] folders, long offset, long limit, bool extendedData)
-            => await RunActionAsync(new ListFolderResults(), folders, null, new { offset, limit, extendedData }, static config =>
-                Operation.ListFolderHandler.RunAsync(config.Options, config.Result, config.Paths, config.Context.offset, config.Context.limit, config.Context.extendedData)
+            => await RunActionAsync(new ListFolderResults(), null, null, new { folders, offset, limit, extendedData }, static config =>
+                Operation.ListFolderHandler.RunAsync(config.Options, config.Result, config.Context.folders, config.Context.offset, config.Context.limit, config.Context.extendedData)
             ).ConfigureAwait(false);
 
         /// <inheritdoc />
         public async Task<IListFileVersionsResults> ListFileVersionsAsync(string[] files, long offset, long limit)
-            => await RunActionAsync(new ListFileVersionsResults(), files, null, new { offset, limit }, static config =>
-                Operation.ListFileVersionsHandler.RunAsync(config.Options, config.Result, config.Paths, config.Context.offset, config.Context.limit)
+            => await RunActionAsync(new ListFileVersionsResults(), null, null, new { files, offset, limit }, static config =>
+                Operation.ListFileVersionsHandler.RunAsync(config.Options, config.Result, config.Context.files, config.Context.offset, config.Context.limit)
             ).ConfigureAwait(false);
 
         /// <inheritdoc />
         public async Task<ISearchFilesResults> SearchEntriesAsync(string[] pathprefixes, IFilter inputFilter, bool caseSensitive, long offset, long limit, bool returnExtendedData, bool searchMetadata)
-            => await RunActionAsync(new SearchFilesResults(), pathprefixes, inputFilter, new { caseSensitive, offset, limit, returnExtendedData, searchMetadata }, static config =>
-                Operation.SearchEntriesHandler.RunAsync(config.Options, config.Result, config.Paths, config.Filter, config.Context.caseSensitive, config.Context.offset, config.Context.limit, config.Context.returnExtendedData, config.Context.searchMetadata)
+            => await RunActionAsync(new SearchFilesResults(), null, inputFilter, new { pathprefixes, caseSensitive, offset, limit, returnExtendedData, searchMetadata }, static config =>
+                Operation.SearchEntriesHandler.RunAsync(config.Options, config.Result, config.Context.pathprefixes, config.Filter, config.Context.caseSensitive, config.Context.offset, config.Context.limit, config.Context.returnExtendedData, config.Context.searchMetadata)
             ).ConfigureAwait(false);
 
         /// <inheritdoc />
@@ -263,18 +326,18 @@ namespace Duplicati.Library.Main
         /// <inheritdoc />
         public async Task<IListResults> ListAsync(IEnumerable<string> filterstrings, IFilter inputFilter)
         {
-            return await RunActionAsync(new ListResults(), filterstrings?.ToArray(), inputFilter, false, static config =>
+            return await RunActionAsync(new ListResults(), null, inputFilter, new { filterstrings }, static config =>
                 new Operation.ListFilesHandler(config.Options, config.Result)
-                    .RunAsync(config.BackendManager, config.Paths, config.Filter)
+                    .RunAsync(config.BackendManager, config.Context.filterstrings?.ToArray(), config.Filter)
             ).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
         public async Task<IListResults> ListControlFilesAsync(IEnumerable<string> filterstrings, IFilter inputFilter)
         {
-            return await RunActionAsync(new ListResults(), filterstrings?.ToArray(), inputFilter, false, static config =>
+            return await RunActionAsync(new ListResults(), null, inputFilter, new { filterstrings }, static config =>
                 new Operation.ListControlFilesHandler(config.Options, config.Result)
-                    .RunAsync(config.BackendManager, config.Paths, config.Filter)
+                    .RunAsync(config.BackendManager, config.Context.filterstrings?.ToArray(), config.Filter)
             ).ConfigureAwait(false);
         }
 
@@ -390,8 +453,8 @@ namespace Duplicati.Library.Main
         /// <inheritdoc />
         public async Task<ICreateLogDatabaseResults> CreateLogDatabaseAsync(string targetpath)
         {
-            return await RunActionAsync(new CreateLogDatabaseResults(), [targetpath], null, false, static async config =>
-                await new Operation.CreateBugReportHandler(config.Paths[0], config.Options, config.Result).RunAsync()
+            return await RunActionAsync(new CreateLogDatabaseResults(), null, null, new { targetpath }, static async config =>
+                await new Operation.CreateBugReportHandler(config.Context.targetpath, config.Options, config.Result).RunAsync()
             ).ConfigureAwait(false);
         }
 
@@ -399,18 +462,18 @@ namespace Duplicati.Library.Main
         public async Task<IListChangesResults> ListChangesAsync(string baseVersion, string targetVersion, IEnumerable<string> filterstrings = null, IFilter inputFilter = null, Action<IListChangesResults, IEnumerable<Tuple<ListChangesChangeType, ListChangesElementType, string>>> callback = null)
         {
 
-            return await RunActionAsync(new ListChangesResults(), [baseVersion, targetVersion], inputFilter, new { filterstrings, callback }, async static config =>
+            return await RunActionAsync(new ListChangesResults(), null, inputFilter, new { baseVersion, targetVersion, filterstrings, callback }, async static config =>
                 await new Operation.ListChangesHandler(config.Options, config.Result)
-                    .RunAsync(config.Paths[0], config.Paths[1], config.BackendManager, config.Context.filterstrings, config.Filter, config.Context.callback)
+                    .RunAsync(config.Context.baseVersion, config.Context.targetVersion, config.BackendManager, config.Context.filterstrings, config.Filter, config.Context.callback)
             ).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
         public async Task<IListAffectedResults> ListAffectedAsync(List<string> args, Action<IListAffectedResults> callback = null)
         {
-            return await RunActionAsync(new ListAffectedResults(), args?.ToArray(), null, new { callback }, static config =>
+            return await RunActionAsync(new ListAffectedResults(), null, null, new { args, callback }, static config =>
                 new Operation.ListAffected(config.Options, config.Result)
-                    .RunAsync(config.Paths, config.Context.callback)
+                    .RunAsync(config.Context.args?.ToArray(), config.Context.callback)
             ).ConfigureAwait(false);
         }
 
@@ -423,6 +486,15 @@ namespace Duplicati.Library.Main
             return await RunActionAsync(new TestResults(), null, null, new { samples }, static config =>
                 new Operation.TestHandler(config.Options, config.Result)
                     .RunAsync(config.Context.samples, config.BackendManager)
+            ).ConfigureAwait(false);
+        }
+
+        /// <inheritdoc />
+        public async Task<IRestoreTestResults> RestoreTestAsync(IFilter inputFilter = null)
+        {
+            return await RunActionAsync(new RestoreTestResults(), null, inputFilter, false, static config =>
+                new Operation.RestoreTestHandler(config.Options, config.Result)
+                    .RunAsync(config.BackendManager, config.Filter)
             ).ConfigureAwait(false);
         }
 
@@ -516,6 +588,8 @@ namespace Duplicati.Library.Main
 
         public async Task<ISyncResults> SyncAsync(string[] sourcePaths, IFilter filter)
         {
+            SourceProviderFactory.EnableMetadataStorageIfRequiredBySources(sourcePaths, m_options.RawOptions);
+
             return await RunActionAsync(new SyncResults(), sourcePaths, filter, false, config =>
                 new Operation.Sync.SyncHandler(config.Paths, config.Options, config.Result, config.BackendUrl)
                     .RunAsync(config.BackendManager, config.Filter)
@@ -1487,6 +1561,19 @@ namespace Duplicati.Library.Main
                             // If there are no excludes, there is no need to keep the folder as a filter
                             if (excludes)
                             {
+                                // An include filter cannot bring it back when a folder on the way
+                                // to it is excluded: the walk of the containing source stops at
+                                // that folder, so the filter is never reached. Keeping it as a
+                                // source is what works, because a source is walked from its own
+                                // root, and the containing source still stops where it is told to.
+                                // Carry on looking: another source may still be able to reach it,
+                                // and keeping one that is reachable would walk the same tree twice.
+                                if (IsCutOffByFilter(sources[i], sources[j], filter))
+                                {
+                                    Logging.Log.WriteVerboseMessage(LOGTAG, "KeepingSubfolderSource", "Keeping source \"{0}\" although it is inside \"{1}\", because a folder between them is excluded", sources[i], sources[j]);
+                                    continue;
+                                }
+
                                 Logging.Log.WriteVerboseMessage(LOGTAG, "RemovingSubfolderSource", "Removing source \"{0}\" because it is a folder or file inside \"{1}\", and using it as an include filter", sources[i], sources[j]);
                                 filter = JoinedFilterExpression.Join(new FilterExpression(sources[i]), filter);
                             }
@@ -1506,6 +1593,47 @@ namespace Duplicati.Library.Main
                 throw new UserInformationException(Strings.Controller.NoSourcesError, "NoSources");
 
             return (sources.ToArray(), filter);
+        }
+
+        /// <summary>
+        /// Reports whether the walk of <paramref name="container"/> stops before it reaches
+        /// <paramref name="source"/>, because a folder on the way is excluded by the filter.
+        /// A folder that the filter excludes is never descended into, so nothing below it is
+        /// reached, no matter what the filter says about the things below it.
+        /// </summary>
+        /// <returns><c>true</c> if a folder between the two is excluded.</returns>
+        /// <param name="source">The source that sits inside the other one.</param>
+        /// <param name="container">The source that contains it, ending with a separator.</param>
+        /// <param name="filter">The filter to ask.</param>
+        internal static bool IsCutOffByFilter(string source, string container, IFilter filter)
+        {
+            if (filter == null || filter.Empty)
+                return false;
+
+            // A mounted source is not a path on this machine, so there are no folders
+            // between the two to ask about
+            if (source.StartsWith("@", StringComparison.Ordinal) || container.StartsWith("@", StringComparison.Ordinal))
+                return false;
+
+            // Every folder between the two, asked for in the form the enumeration uses,
+            // which is with a trailing separator. The source itself is not one of them:
+            // it is the thing being looked for, not a step on the way.
+            var relative = source.Substring(container.Length);
+            for (var at = relative.IndexOf(Util.DirectorySeparatorString, StringComparison.Ordinal);
+                 at >= 0;
+                 at = relative.IndexOf(Util.DirectorySeparatorString, at + 1, StringComparison.Ordinal))
+            {
+                var folder = container + relative.Substring(0, at + 1);
+                if (folder.Length >= source.Length)
+                    break;
+
+                // A path the filter does not mention is not excluded, it only falls to the
+                // default, so what matters is whether an entry matched and said to exclude it
+                if (filter.Matches(folder, out var include, out _) && !include)
+                    return true;
+            }
+
+            return false;
         }
 
         /// <inheritdoc />
@@ -1565,6 +1693,11 @@ namespace Duplicati.Library.Main
         /// </summary>
         private DateTime m_lastVacuum;
 
+        /// <summary>
+        /// The time of the last restore test
+        /// </summary>
+        private DateTime m_lastRestoreTest;
+
         /// <inheritdoc />
         public Task SetLastCompactAsync(DateTime lastCompact)
         {
@@ -1576,6 +1709,13 @@ namespace Duplicati.Library.Main
         public Task SetLastVacuumAsync(DateTime lastVacuum)
         {
             m_lastVacuum = lastVacuum;
+            return Task.CompletedTask;
+        }
+
+        /// <inheritdoc />
+        public Task SetLastRestoreTestAsync(DateTime lastRestoreTest)
+        {
+            m_lastRestoreTest = lastRestoreTest;
             return Task.CompletedTask;
         }
 

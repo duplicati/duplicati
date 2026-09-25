@@ -26,7 +26,7 @@ using Duplicati.WebserverCore.Middlewares;
 
 namespace Duplicati.WebserverCore.Services;
 
-public class LoginProvider(ITokenFamilyStore repo, IJWTTokenProvider tokenProvider, JWTConfig jwtConfig, Connection connection) : ILoginProvider
+public class LoginProvider(ITokenFamilyStore repo, IJWTTokenProvider tokenProvider, JWTConfig jwtConfig, Connection connection, ILoginAttemptThrottle loginThrottle) : ILoginProvider
 {
     private static readonly string LOGTAG = Log.LogTagFromType<LoginProvider>();
 
@@ -77,7 +77,7 @@ public class LoginProvider(ITokenFamilyStore repo, IJWTTokenProvider tokenProvid
 
     public async Task<(string AccessToken, string RefreshToken, string? Nonce)> PerformLoginWithPasswordAsync(string password, bool shortLived, CancellationToken ct)
     {
-        if (!connection.ApplicationSettings.VerifyWebserverPassword(password))
+        if (!await loginThrottle.VerifyAsync(() => connection.ApplicationSettings.VerifyWebserverPassword(password), ct))
             throw new UnauthorizedException("Invalid password");
 
         var userId = "webserver";

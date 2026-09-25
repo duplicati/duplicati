@@ -195,7 +195,8 @@ namespace Duplicati.UnitTest
             Assert.AreEqual("Backup_ProcessingFiles", progressReport.Progress!.Phase);
             Assert.AreEqual(0.25f, progressReport.Progress.Progress);
             Assert.AreEqual(3, progressReport.Progress.FilesProcessed);
-            Assert.AreEqual("/some/file.txt", progressReport.Progress.CurrentFilename);
+            Assert.IsNull(progressReport.Progress.CurrentFilename,
+                "The current filename is a local path and must be omitted unless paths are allowed in log messages");
         }
 
         [Test]
@@ -352,6 +353,45 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
+        public async Task PreRedactedMessageIsUsedWhenPathsAreNotAllowedAsync()
+        {
+            using var module = CreateConfigured();
+            await module.OnOperationStartedAsync("Backup", null!, CancellationToken.None);
+            // The text-based filter alone would leak "Volume Information\6{...}" since it
+            // stops at whitespace; the engine supplies an argument-level redacted variant.
+            var raw = "Excluding path due to permission denied: C:\\System Volume Information\\6{3808876b}";
+            await module.OnLogEntryAsync(
+                new ReportLogEntry(raw, "Warning", "t", "i", DateTime.UtcNow, null, "Excluding path due to permission denied: -redacted-"),
+                CancellationToken.None);
+            await module.OnProgressTickAsync(SampleSnapshot(), CancellationToken.None);
+
+            var progressReport = module.Reports.Find(r => r.Status == "Progress")!;
+            Assert.AreEqual(1, progressReport.RecentLogLines.Count);
+            Assert.AreEqual("Excluding path due to permission denied: -redacted-", progressReport.RecentLogLines[0]);
+        }
+
+        [Test]
+        public async Task PreRedactedMessageIsIgnoredWhenPathsAreAllowedAsync()
+        {
+            using var module = new CapturingHttpReportStatus();
+            module.Configure(new Dictionary<string, string>
+            {
+                ["http-report-status-url"] = "http://localhost/example",
+                ["http-report-status-interval"] = "1s",
+                ["allow-paths-in-log-messages"] = "true",
+            });
+            await module.OnOperationStartedAsync("Backup", null!, CancellationToken.None);
+            var raw = "Opening /Users/me/secret/file.txt";
+            await module.OnLogEntryAsync(
+                new ReportLogEntry(raw, "Information", "t", "i", DateTime.UtcNow, null, "Opening -redacted-"),
+                CancellationToken.None);
+            await module.OnProgressTickAsync(SampleSnapshot(), CancellationToken.None);
+
+            var progressReport = module.Reports.Find(r => r.Status == "Progress")!;
+            Assert.AreEqual(raw, progressReport.RecentLogLines[0]);
+        }
+
+        [Test]
         public async Task PathsInLogLinesKeptWhenAllowedByModuleOptionAsync()
         {
             using var module = new CapturingHttpReportStatus();
@@ -372,6 +412,8 @@ namespace Duplicati.UnitTest
             Assert.AreEqual(1, progressReport.RecentLogLines.Count);
             Assert.That(progressReport.RecentLogLines[0], Does.Contain(path),
                 "The original path should be kept when the module option is enabled");
+            Assert.AreEqual("/some/file.txt", progressReport.Progress!.CurrentFilename,
+                "The current filename should be included when the module option is enabled");
         }
 
         [Test]
@@ -395,6 +437,8 @@ namespace Duplicati.UnitTest
             Assert.AreEqual(1, progressReport.RecentLogLines.Count);
             Assert.That(progressReport.RecentLogLines[0], Does.Contain(path),
                 "The original path should be kept when the global option is enabled and the module option is not set");
+            Assert.AreEqual("/some/file.txt", progressReport.Progress!.CurrentFilename,
+                "The current filename should be included when the global option is enabled");
         }
     }
 }

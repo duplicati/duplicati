@@ -98,6 +98,20 @@ async function createBackup(page: Page) {
   await page.fill("[formcontrolname='password']", PASSWORD);
   await page.fill("[formcontrolname='repeatPassword']", PASSWORD);
   await page.locator("button").filter({ hasText: "Continue" }).click();
+
+  // Source data page (comes before Destination)
+  await page
+    .getByPlaceholder("Add a direct path")
+    .fill(SOURCE_FOLDER + path.sep);
+  await page
+    .locator("app-toggle-card")
+    .filter({ has: page.locator("h3").filter({ hasText: "Paths" }) })
+    .locator("button")
+    .filter({ has: page.locator("sh-icon").filter({ hasText: "plus" }) })
+    .click();
+  await page.locator("button").filter({ hasText: "Continue" }).click();
+
+  // Destination page
   await page
     .locator(
       'app-destination-list-item:has-text("File system") button:has-text("Choose")',
@@ -120,18 +134,8 @@ async function createBackup(page: Page) {
     .click();
 
   await page.locator("button").filter({ hasText: "Continue" }).click();
-  await page
-    .getByPlaceholder("Add a direct path")
-    .fill(SOURCE_FOLDER + path.sep);
-  await page
-    .locator("app-toggle-card")
-    .filter({ has: page.locator("h3").filter({ hasText: "Paths" }) })
-    .locator("button")
-    .filter({ has: page.locator("sh-icon").filter({ hasText: "plus" }) })
-    .click();
-  await page.locator("button").filter({ hasText: "Continue" }).click();
 
-  // Select "Don't run automatically" from schedule
+  // Schedule page
   await page.locator("sh-select").click();
   await page
     .locator("li.option")

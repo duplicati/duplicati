@@ -18,29 +18,20 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-using BoDi;
-using Duplicati.Browser.Test.Drivers;
-using TechTalk.SpecFlow;
+namespace Duplicati.WebserverCore.Abstractions;
 
-namespace Duplicati.Browser.Test.Hooks
+/// <summary>
+/// Throttles password verification attempts to slow down brute-force attacks.
+/// </summary>
+public interface ILoginAttemptThrottle
 {
     /// <summary>
-    /// Share the same browser window for all scenarios
+    /// Runs a password verification, after waiting for any delay imposed by previous failed attempts.
+    /// Verifications are serialized, so parallel requests cannot bypass the delay.
     /// </summary>
-    /// <remarks>
-    /// This makes the sequential execution of scenarios faster (opening a new browser window each time would take more time)
-    /// As a tradeoff:
-    ///  - we cannot run the tests in parallel
-    ///  - we have to "reset" the state of the browser before each scenario
-    /// </remarks>
-    [Binding]
-    public class SharedBrowserHooks
-    {
-        [BeforeTestRun]
-        public static void BeforeTestRun(ObjectContainer testThreadContainer)
-        {
-            //Initialize a shared BrowserDriver in the global container
-            testThreadContainer.BaseContainer.Resolve<BrowserDriver>();
-        }
-    }
+    /// <param name="verify">The verification callback, returning <c>true</c> if the password was accepted.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>The result of the verification callback.</returns>
+    /// <exception cref="Exceptions.TooManyRequestsException">Thrown if too many attempts are already waiting.</exception>
+    Task<bool> VerifyAsync(Func<bool> verify, CancellationToken ct);
 }

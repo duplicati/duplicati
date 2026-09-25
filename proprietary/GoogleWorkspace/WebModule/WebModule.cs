@@ -19,7 +19,8 @@ public class WebModule : IWebModule
     {
         ListDestination,
         ListDestinationRestoreTargets,
-        CheckPermissions
+        CheckPermissions,
+        CountItems
     }
 
     private static readonly Operation DEFAULT_OPERATION = Operation.ListDestination;
@@ -95,11 +96,19 @@ public class WebModule : IWebModule
         foreach (var key in uri.QueryParameters.AllKeys)
             forwardoptions[key!] = uri.QueryParameters[key];
 
-        using var client = new SourceProvider(url, "", forwardoptions, false);
+        // Listing where to restore to runs with the restore scopes, which are the ones restore credentials are
+        // delegated. Domain-wide delegation grants exactly the scopes listed, so asking a restore-only service
+        // account for the read-only backup scopes fails with unauthorized_client, even though the write scopes it
+        // holds cover the same access. It also lifts the seat limit, which does not apply to a restore.
+        var usedForRestoreOperation = op == Operation.ListDestinationRestoreTargets;
+        using var client = new SourceProvider(url, "", forwardoptions, usedForRestoreOperation);
         await client.InitializeAsync(cancellationToken);
 
         if (op == Operation.CheckPermissions)
             return await CheckPermissionsAsync(client, cancellationToken).ConfigureAwait(false);
+
+        if (op == Operation.CountItems)
+            return await CountItemsAsync(client, cancellationToken).ConfigureAwait(false);
 
         var targetEntry = await client.GetEntryAsync((path ?? "").TrimStart('/'), isFolder: true, cancellationToken).ConfigureAwait(false);
         if (targetEntry == null)
@@ -200,8 +209,122 @@ public class WebModule : IWebModule
         };
     }
 
+    /// <summary>
+    /// The result key under which the item count JSON is returned.
+    /// </summary>
+    private const string COUNT_RESULT_KEY = "counts";
+
+    /// <summary>
+    /// Counts the number of top-level items (users, groups, shared drives, sites) and, for
+    /// users, breaks the accounts down by whether they consume a Duplicati license seat.
+    /// </summary>
+    /// <remarks>
+    /// Every classification is decided from the listing itself, so the cost is one paged listing
+    /// per top-level type and no request is made per item. That keeps the count usable on
+    /// tenants with tens of thousands of accounts.
+    /// </remarks>
+    /// <param name="client">The initialized source provider.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A dictionary containing a single JSON-serialized <see cref="CountResult"/>.</returns>
+    private static async Task<IDictionary<string, string>> CountItemsAsync(SourceProvider client, CancellationToken cancellationToken)
+    {
+        var result = new CountResult();
+
+        // Users
+        await foreach (var user in client.ListAllUsersAsync(cancellationToken).ConfigureAwait(false))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            result.Users.Total++;
+
+            switch (SourceProvider.ClassifyUser(user))
+            {
+                case SourceProvider.UserCategory.Active:
+                    result.Users.Active++;
+                    break;
+                case SourceProvider.UserCategory.Suspended:
+                    result.Users.Suspended++;
+                    break;
+                case SourceProvider.UserCategory.Archived:
+                    result.Users.Archived++;
+                    break;
+            }
+        }
+
+        // Groups
+        await foreach (var _ in client.ListAllGroupsAsync(cancellationToken).ConfigureAwait(false))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            result.Groups.Total++;
+        }
+
+        // Shared drives
+        await foreach (var _ in SourceProvider.ListAllSharedDrivesAsync(client.ApiHelper.GetDriveService(), cancellationToken).ConfigureAwait(false))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            result.SharedDrives.Total++;
+        }
+
+        // Sites
+        await foreach (var _ in client.ListAllSitesAsync(cancellationToken).ConfigureAwait(false))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            result.Sites.Total++;
+        }
+
+        return new Dictionary<string, string>
+        {
+            [COUNT_RESULT_KEY] = JsonSerializer.Serialize(result)
+        };
+    }
+
     public IDictionary<string, IDictionary<string, string>> GetLookups()
         => new Dictionary<string, IDictionary<string, string>>();
+
+    /// <summary>
+    /// The item-count breakdown returned by <see cref="Operation.CountItems"/>.
+    /// </summary>
+    private sealed class CountResult
+    {
+        [System.Text.Json.Serialization.JsonPropertyName("users")]
+        public UserCounts Users { get; } = new();
+
+        [System.Text.Json.Serialization.JsonPropertyName("groups")]
+        public TotalCounts Groups { get; } = new();
+
+        [System.Text.Json.Serialization.JsonPropertyName("sharedDrives")]
+        public TotalCounts SharedDrives { get; } = new();
+
+        [System.Text.Json.Serialization.JsonPropertyName("sites")]
+        public TotalCounts Sites { get; } = new();
+    }
+
+    /// <summary>
+    /// The user item-count breakdown. Only <see cref="Active"/> accounts require a license
+    /// seat; <see cref="Suspended"/> and <see cref="Archived"/> accounts are backed up for free.
+    /// </summary>
+    private sealed class UserCounts
+    {
+        [System.Text.Json.Serialization.JsonPropertyName("total")]
+        public int Total { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("active")]
+        public int Active { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("suspended")]
+        public int Suspended { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("archived")]
+        public int Archived { get; set; }
+    }
+
+    /// <summary>
+    /// The item count for a top-level type where every item requires a seat.
+    /// </summary>
+    private sealed class TotalCounts
+    {
+        [System.Text.Json.Serialization.JsonPropertyName("total")]
+        public int Total { get; set; }
+    }
 
     /// <summary>
     /// The status of a single required scope returned by <see cref="Operation.CheckPermissions"/>.

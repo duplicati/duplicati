@@ -18,26 +18,10 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-using Duplicati.Browser.Test.Drivers;
-using Duplicati.Browser.Test.PageObjects;
-using TechTalk.SpecFlow;
-
-namespace Duplicati.Browser.Test.Hooks
+namespace Duplicati.WebserverCore.Exceptions
 {
-    /// <summary>
-    /// Calculator related hooks
-    /// </summary>
-    [Binding]
-    public class DuplicatiHooks
+    public class TooManyRequestsException(string Message) : UserReportedHttpException(Message)
     {
-        ///<summary>
-        ///  Reset the calculator before each scenario tagged with "Calculator"
-        /// </summary>
-        [BeforeScenario("Duplicati")]
-        public static void BeforeScenario(BrowserDriver browserDriver)
-        {
-            var calculatorPageObject = new DuplicatiPageObject(browserDriver.Current);
-            calculatorPageObject.Open();
-        }
+        public override int StatusCode => 429;
     }
 }

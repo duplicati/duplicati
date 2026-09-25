@@ -319,6 +319,39 @@ public class SyncHandlerTests : BasicSetupHelper
         Assert.IsTrue(File.Exists(Path.Combine(targetDir, "file2.txt")), "File2 should NOT be deleted on remote");
     }
 
+    /// <summary>
+    /// The handler owns the sync database of the primary destination and has to close it
+    /// when the run is over. Windows refuses to delete a SQLite file that is still open,
+    /// so this is where a connection that is never disposed shows; Linux and macOS
+    /// unlink an open file without complaint, so there the test passes either way.
+    /// </summary>
+    [Test]
+    [Category("Sync")]
+    public async Task TestSyncReleasesItsDatabaseFileAsync()
+    {
+        var dataFolder = Path.Combine(BASEFOLDER, "sync_data_release");
+        if (Directory.Exists(dataFolder)) Directory.Delete(dataFolder, true);
+        Directory.CreateDirectory(dataFolder);
+        File.WriteAllText(Path.Combine(dataFolder, "file1.txt"), "Hello");
+
+        var dbPath = Path.Combine(BASEFOLDER, $"sync-release-{Guid.NewGuid():N}.sqlite");
+        var opts = new Dictionary<string, string>
+        {
+            ["no-encryption"] = "true",
+            ["snapshot-policy"] = "off",
+            ["dbpath"] = dbPath
+        };
+
+        using (var c = new Controller(backendUrl, opts, null))
+        {
+            await c.SyncAsync(new[] { dataFolder }, null);
+        }
+
+        Assert.IsTrue(File.Exists(dbPath), "The sync did not create its database.");
+        File.Delete(dbPath);
+        Assert.IsFalse(File.Exists(dbPath), "The sync database is still there after the delete.");
+    }
+
     [Test]
     [Category("Sync")]
     public async Task TestSyncHashVerificationAsync()
@@ -358,11 +391,12 @@ public class SyncHandlerTests : BasicSetupHelper
     }
 
     /// <summary>
-    /// sync-remote-state=use-local-state must produce the same end state as the default
-    /// (use-remote-state): files uploaded, sub-folders created, and a second run performs
-    /// no extra work by diffing against the local inventory cache (no per-folder listing
-    /// would be needed, but the observable contract - correct end state and updates
-    /// propagating - is what we assert here).
+    /// sync-remote-state=UseLocalState must produce the same end state as the default
+    /// (UseRemoteState) - files uploaded, sub-folders created, updates propagating - and
+    /// it must do so from the local inventory rather than from a listing. The end state
+    /// alone cannot tell the two modes apart, so the test also removes a file from the
+    /// destination behind the handler's back: UseLocalState trusts its inventory and does
+    /// not notice, and --sync-recheck is what makes it list again and repair the copy.
     /// </summary>
     [Test]
     [Category("Sync")]
@@ -376,39 +410,78 @@ public class SyncHandlerTests : BasicSetupHelper
         File.WriteAllText(Path.Combine(dataFolder, "file1.txt"), "Hello");
         File.WriteAllText(Path.Combine(dataFolder, "sub", "file2.txt"), "World");
 
+        // The fixture's destination and sync database are shared by every test and kept
+        // between runs. This test reads the inventory, so it needs a destination and a
+        // database that no other test has written to.
+        var localTarget = Path.Combine(BASEFOLDER, "sync_target_localstate");
+        if (Directory.Exists(localTarget)) Directory.Delete(localTarget, true);
+        Directory.CreateDirectory(localTarget);
+        var localBackendUrl = "file://" + localTarget.Replace("\\", "/");
+
         var opts = new Dictionary<string, string>
         {
             ["no-encryption"] = "true",
             ["snapshot-policy"] = "off",
-            ["sync-remote-state"] = "use-local-state",
+            ["sync-remote-state"] = "UseLocalState",
+            ["dbpath"] = Path.Combine(BASEFOLDER, $"sync-localstate-{Guid.NewGuid():N}.sqlite"),
         };
 
         // Sync 1: inventory is empty, so the handler falls back to listing fresh and
         // seeds the inventory. End state must match a normal sync.
-        using (var c = new Controller(backendUrl, opts, null))
+        Library.Interface.ISyncResults first;
+        using (var c = new Controller(localBackendUrl, opts, null))
         {
-            await c.SyncAsync(new[] { dataFolder }, null);
+            first = await c.SyncAsync(new[] { dataFolder }, null);
         }
-        Assert.IsTrue(File.Exists(Path.Combine(targetDir, "file1.txt")));
-        Assert.IsTrue(File.Exists(Path.Combine(targetDir, "sub", "file2.txt")));
+        Assert.IsTrue(File.Exists(Path.Combine(localTarget, "file1.txt")));
+        Assert.IsTrue(File.Exists(Path.Combine(localTarget, "sub", "file2.txt")));
+        Assert.AreEqual(2, first.FilesUploaded);
 
         // Modify both files; the second run uses the local inventory as the baseline.
         File.WriteAllText(Path.Combine(dataFolder, "file1.txt"), "Hello updated");
         File.WriteAllText(Path.Combine(dataFolder, "sub", "file2.txt"), "World updated");
 
-        using (var c = new Controller(backendUrl, opts, null))
+        Library.Interface.ISyncResults second;
+        using (var c = new Controller(localBackendUrl, opts, null))
         {
-            await c.SyncAsync(new[] { dataFolder }, null);
+            second = await c.SyncAsync(new[] { dataFolder }, null);
         }
-        Assert.AreEqual("Hello updated", File.ReadAllText(Path.Combine(targetDir, "file1.txt")));
-        Assert.AreEqual("World updated", File.ReadAllText(Path.Combine(targetDir, "sub", "file2.txt")));
+        Assert.AreEqual("Hello updated", File.ReadAllText(Path.Combine(localTarget, "file1.txt")));
+        Assert.AreEqual("World updated", File.ReadAllText(Path.Combine(localTarget, "sub", "file2.txt")));
+        Assert.AreEqual(2, second.FilesUploaded);
+
+        // Remove a destination file behind the handler's back. The inventory still lists
+        // it, and UseLocalState trusts the inventory, so the third run must not notice;
+        // a listing (UseRemoteState) would.
+        File.Delete(Path.Combine(localTarget, "file1.txt"));
+
+        Library.Interface.ISyncResults third;
+        using (var c = new Controller(localBackendUrl, opts, null))
+        {
+            third = await c.SyncAsync(new[] { dataFolder }, null);
+        }
+        Assert.AreEqual(0, third.FilesUploaded, "UseLocalState must not list the destination, so it cannot see the missing file.");
+        Assert.AreEqual(2, third.UnchangedFiles);
+        Assert.IsFalse(File.Exists(Path.Combine(localTarget, "file1.txt")), "The file was re-uploaded, so the run listed the destination.");
+
+        // --sync-recheck is the documented way out: list again, repair, refresh the inventory.
+        opts["sync-recheck"] = "true";
+        Library.Interface.ISyncResults recheck;
+        using (var c = new Controller(localBackendUrl, opts, null))
+        {
+            recheck = await c.SyncAsync(new[] { dataFolder }, null);
+        }
+        Assert.AreEqual(1, recheck.FilesUploaded);
+        Assert.AreEqual("Hello updated", File.ReadAllText(Path.Combine(localTarget, "file1.txt")));
     }
 
     /// <summary>
-    /// sync-remote-state=blindly-upload must upload every local file unconditionally on
+    /// sync-remote-state=BlindlyUpload must upload every local file unconditionally on
     /// every run (no remote state check), create sub-folders as needed, and ignore
-    /// --sync-then-delete (deletes are not meaningful without remote state). A second
-    /// run re-uploads the unchanged files; the end state is still correct.
+    /// --sync-then-delete (deletes are not meaningful without remote state). The end
+    /// state alone cannot tell it from the default, so the second run also drops a local
+    /// file: a blind run re-uploads the unchanged file and leaves the removed one on the
+    /// destination, where the default would skip the one and delete the other.
     /// </summary>
     [Test]
     [Category("Sync")]
@@ -426,25 +499,36 @@ public class SyncHandlerTests : BasicSetupHelper
         {
             ["no-encryption"] = "true",
             ["snapshot-policy"] = "off",
-            ["sync-remote-state"] = "blindly-upload",
+            ["sync-remote-state"] = "BlindlyUpload",
             // Deletes must be ignored under blind upload.
             ["sync-then-delete"] = "true",
         };
 
+        Library.Interface.ISyncResults first;
         using (var c = new Controller(backendUrl, opts, null))
         {
-            await c.SyncAsync(new[] { dataFolder }, null);
+            first = await c.SyncAsync(new[] { dataFolder }, null);
         }
         Assert.IsTrue(File.Exists(Path.Combine(targetDir, "file1.txt")));
         Assert.IsTrue(File.Exists(Path.Combine(targetDir, "sub", "file2.txt")));
         Assert.AreEqual("Hello", File.ReadAllText(Path.Combine(targetDir, "file1.txt")));
+        Assert.AreEqual(2, first.FilesUploaded);
+        Assert.AreEqual(1, first.Warnings.Count(x => x.Contains("BlindlyUploadIgnoresDelete")),
+            $"Expected the warning that --sync-then-delete is ignored, got: {string.Join(" | ", first.Warnings)}");
 
-        // A second blind run re-uploads everything; content is unchanged on disk but
-        // the operation must still succeed and leave the correct end state.
+        // A second blind run re-uploads everything it finds, unchanged or not, and does
+        // not delete what is gone locally. The end state is still correct for what exists.
+        File.Delete(Path.Combine(dataFolder, "file1.txt"));
+
+        Library.Interface.ISyncResults second;
         using (var c = new Controller(backendUrl, opts, null))
         {
-            await c.SyncAsync(new[] { dataFolder }, null);
+            second = await c.SyncAsync(new[] { dataFolder }, null);
         }
+        Assert.AreEqual(1, second.FilesUploaded, "A blind run uploads the unchanged file again.");
+        Assert.AreEqual(0, second.UnchangedFiles);
+        Assert.AreEqual(0, second.FilesDeleted);
+        Assert.IsTrue(File.Exists(Path.Combine(targetDir, "file1.txt")), "A blind run has no remote state, so it must not delete.");
         Assert.AreEqual("Hello", File.ReadAllText(Path.Combine(targetDir, "file1.txt")));
         Assert.AreEqual("World", File.ReadAllText(Path.Combine(targetDir, "sub", "file2.txt")));
     }
@@ -1047,6 +1131,144 @@ public class SyncHandlerTests : BasicSetupHelper
                 $"Targets {targetA} and {targetB} differ in content for {rel}.");
         }
     }
+
+    /// <summary>
+    /// On a destination that distinguishes case, "Docs" and "docs" are two folders. Under
+    /// UseLocalState the handler decides from the inventory whether a sub-folder already
+    /// exists, and a listing of "docs" that also returned the rows of "Docs" would make
+    /// it skip creating "docs" - so the upload into it fails on a backend that does not
+    /// create parent folders. Only a case-sensitive source can hold both names, so the
+    /// test is ignored on Windows and macOS.
+    /// </summary>
+    [Test]
+    [Category("Sync")]
+    public async Task TestSyncUseLocalStateCreatesAFolderThatDiffersOnlyInCaseAsync()
+    {
+        var dataFolder = Path.Combine(BASEFOLDER, "sync_data_foldercase");
+        if (Directory.Exists(dataFolder)) Directory.Delete(dataFolder, true);
+        Directory.CreateDirectory(dataFolder);
+        Directory.CreateDirectory(Path.Combine(dataFolder, "Docs"));
+        Directory.CreateDirectory(Path.Combine(dataFolder, "docs"));
+        if (Directory.EnumerateDirectories(dataFolder).Count() != 2)
+            Assert.Ignore("The source file system does not distinguish case, so the two folders cannot coexist here.");
+        // Only "Docs" takes part in the first run; "docs" must be new to the second one,
+        // or the first run would already have created it on the destination.
+        Directory.Delete(Path.Combine(dataFolder, "docs"));
+        File.WriteAllText(Path.Combine(dataFolder, "Docs", "a.txt"), "upper");
+
+        // The fixture's destination and sync database are shared by every test and kept
+        // between runs; this test reads the inventory, so it gets its own.
+        var localTarget = Path.Combine(BASEFOLDER, "sync_target_foldercase");
+        if (Directory.Exists(localTarget)) Directory.Delete(localTarget, true);
+        Directory.CreateDirectory(localTarget);
+        var localBackendUrl = "file://" + localTarget.Replace("\\", "/");
+
+        var opts = new Dictionary<string, string>
+        {
+            ["no-encryption"] = "true",
+            ["snapshot-policy"] = "off",
+            ["sync-remote-state"] = "UseLocalState",
+            ["dbpath"] = Path.Combine(BASEFOLDER, $"sync-foldercase-{Guid.NewGuid():N}.sqlite"),
+        };
+
+        // Sync 1: the inventory is empty, so the run lists and seeds it with Docs/a.txt
+        using (var c = new Controller(localBackendUrl, opts, null))
+        {
+            await c.SyncAsync(new[] { dataFolder }, null);
+        }
+        Assert.IsTrue(File.Exists(Path.Combine(localTarget, "Docs", "a.txt")));
+
+        // A new folder that differs from the existing one only in case
+        Directory.CreateDirectory(Path.Combine(dataFolder, "docs"));
+        File.WriteAllText(Path.Combine(dataFolder, "docs", "b.txt"), "lower");
+
+        Library.Interface.ISyncResults second;
+        using (var c = new Controller(localBackendUrl, opts, null))
+        {
+            second = await c.SyncAsync(new[] { dataFolder }, null);
+        }
+        Assert.IsEmpty(second.Warnings.Where(x => x.Contains("UploadFailed")), $"The upload into the new folder failed: {string.Join(" | ", second.Warnings)}");
+        Assert.IsTrue(File.Exists(Path.Combine(localTarget, "docs", "b.txt")), "The new folder was not created on the destination.");
+        Assert.AreEqual(1, second.FilesUploaded);
+        Assert.AreEqual("upper", File.ReadAllText(Path.Combine(localTarget, "Docs", "a.txt")));
+    }
+}
+
+/// <summary>
+/// Tests the sync handler against a folder-enabled backend that names folder entries
+/// with a trailing slash, as several real backends do (S3, Google Drive, Box, OneDrive,
+/// Dropbox, SMB). Such names must be accepted as folders rather than rejected as unsafe.
+/// </summary>
+[TestFixture]
+public class TrailingSlashFolderSyncHandlerTests : BasicSetupHelper
+{
+    private string targetDir;
+    private string backendUrl;
+
+    [SetUp]
+    public void Setup()
+    {
+        targetDir = Path.Combine(BASEFOLDER, "slashfolder_target");
+        if (Directory.Exists(targetDir))
+            Directory.Delete(targetDir, true);
+        Directory.CreateDirectory(targetDir);
+
+        Library.DynamicLoader.BackendLoader.AddBackend(new TrailingSlashFolderBackend());
+        backendUrl = new TrailingSlashFolderBackend().ProtocolKey + "://" + targetDir.Replace("\\", "/");
+    }
+
+    [TearDown]
+    public void TearDown()
+    {
+        if (Directory.Exists(targetDir))
+        {
+            try { Directory.Delete(targetDir, true); } catch { }
+        }
+    }
+
+    /// <summary>
+    /// A remote folder listed as "sub/" must be recognized as the existing "sub" folder:
+    /// no InvalidRemoteName warning, and the folder is not re-created on the second run.
+    /// </summary>
+    [Test]
+    [Category("Sync")]
+    public async Task TestFolderNamesWithTrailingSlashAreAcceptedAsync()
+    {
+        var dataFolder = Path.Combine(BASEFOLDER, "slashfolder_data");
+        if (Directory.Exists(dataFolder)) Directory.Delete(dataFolder, true);
+        Directory.CreateDirectory(dataFolder);
+        Directory.CreateDirectory(Path.Combine(dataFolder, "sub"));
+        File.WriteAllText(Path.Combine(dataFolder, "file1.txt"), "Hello");
+        File.WriteAllText(Path.Combine(dataFolder, "sub", "file2.txt"), "World");
+
+        var opts = new Dictionary<string, string>
+        {
+            ["no-encryption"] = "true",
+            ["snapshot-policy"] = "off",
+            ["sync-remote-state"] = "UseRemoteState",
+            ["dbpath"] = Path.Combine(BASEFOLDER, $"sync-slashfolder-{Guid.NewGuid():N}.sqlite"),
+        };
+
+        Library.Interface.ISyncResults first;
+        using (var c = new Controller(backendUrl, opts, null))
+            first = await c.SyncAsync(new[] { dataFolder }, null);
+
+        Assert.IsTrue(File.Exists(Path.Combine(targetDir, "sub", "file2.txt")));
+        Assert.AreEqual(1, first.FoldersCreated, "The sub-folder is created on the first run");
+        Assert.AreEqual(2, first.FilesUploaded);
+        Assert.IsFalse(first.Warnings.Any(w => w.Contains("InvalidRemoteName")),
+            "Trailing-slash folder names must not be reported as unsafe. Warnings: " + string.Join("; ", first.Warnings));
+
+        // The second run lists "sub/" on the remote; it must match the local "sub".
+        Library.Interface.ISyncResults second;
+        using (var c = new Controller(backendUrl, opts, null))
+            second = await c.SyncAsync(new[] { dataFolder }, null);
+
+        Assert.AreEqual(0, second.FoldersCreated, "The existing sub-folder must not be re-created");
+        Assert.AreEqual(0, second.FilesUploaded);
+        Assert.IsFalse(second.Warnings.Any(w => w.Contains("InvalidRemoteName")),
+            "Trailing-slash folder names must not be reported as unsafe. Warnings: " + string.Join("; ", second.Warnings));
+    }
 }
 
 /// <summary>
@@ -1621,5 +1843,189 @@ public class LocalSyncDatabaseTests
         // An empty folder yields nothing.
         var empty = await db.GetInventoryItemsInFolderAsync("nonexistent", CancellationToken.None).Select(x => x.RelativePath).ToListAsync(CancellationToken.None);
         Assert.IsEmpty(empty);
+    }
+
+    /// <summary>
+    /// The inventory keeps relative paths with their case, and the folder listing must
+    /// too: on a destination that distinguishes case, "Docs" and "docs" are two folders,
+    /// and a file that belongs to one must not be reported as a child of the other. The
+    /// folder name may also contain the characters LIKE treats as wildcards.
+    /// </summary>
+    [Test]
+    public async Task GetInventoryItemsInFolderDistinguishesCaseAndLikeCharactersAsync()
+    {
+        using var db = new Duplicati.Library.Main.Database.Sync.LocalSyncDatabase(m_dbPath);
+        var baseTime = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+        await db.UpsertInventoryAsync("Docs/a.txt", 1, baseTime, null, CancellationToken.None);
+        await db.UpsertInventoryAsync("docs/b.txt", 2, baseTime, null, CancellationToken.None);
+        await db.UpsertInventoryAsync("Docs/sub/c.txt", 3, baseTime, null, CancellationToken.None);
+        await db.UpsertInventoryAsync("50%/x.txt", 4, baseTime, null, CancellationToken.None);
+        await db.UpsertInventoryAsync("50_/y.txt", 5, baseTime, null, CancellationToken.None);
+        await db.UpsertInventoryAsync("50a/z.txt", 6, baseTime, null, CancellationToken.None);
+
+        var upper = await db.GetInventoryItemsInFolderAsync("Docs", CancellationToken.None).Select(x => x.RelativePath).ToListAsync(CancellationToken.None);
+        CollectionAssert.AreEquivalent(new[] { "Docs/a.txt" }, upper, "\"Docs\" must not list the children of \"docs\".");
+
+        var lower = await db.GetInventoryItemsInFolderAsync("docs", CancellationToken.None).Select(x => x.RelativePath).ToListAsync(CancellationToken.None);
+        CollectionAssert.AreEquivalent(new[] { "docs/b.txt" }, lower, "\"docs\" must not list the children of \"Docs\".");
+
+        var percent = await db.GetInventoryItemsInFolderAsync("50%", CancellationToken.None).Select(x => x.RelativePath).ToListAsync(CancellationToken.None);
+        CollectionAssert.AreEquivalent(new[] { "50%/x.txt" }, percent, "A '%' in the folder name is a character, not a wildcard.");
+
+        var underscore = await db.GetInventoryItemsInFolderAsync("50_", CancellationToken.None).Select(x => x.RelativePath).ToListAsync(CancellationToken.None);
+        CollectionAssert.AreEquivalent(new[] { "50_/y.txt" }, underscore, "A '_' in the folder name is a character, not a wildcard.");
+    }
+}
+
+/// <summary>
+/// Tests sync against a destination that does not distinguish letter case, the way
+/// NTFS and APFS do. The destination is the <see cref="CaseInsensitiveFileBackend"/>
+/// test backend, so the behaviour is the same on every CI operating system. The
+/// handler cannot tell whether a destination distinguishes case, so the tests state
+/// it the way the backup path does, with <c>--case-insensitive-remote</c>.
+/// </summary>
+[TestFixture]
+[Category("Sync")]
+public class CaseInsensitiveDestinationSyncTests : BasicSetupHelper
+{
+    private string targetDir;
+    private string backendUrl;
+    private string syncDbPath;
+
+    [SetUp]
+    public void Setup()
+    {
+        targetDir = Path.Combine(BASEFOLDER, "cifile_target");
+        if (Directory.Exists(targetDir))
+            Directory.Delete(targetDir, true);
+        Directory.CreateDirectory(targetDir);
+
+        // The handler does not dispose the primary sync database, so the file stays
+        // open after the run on Windows; a per-test name keeps the runs apart without
+        // asking the base fixture to delete a file that is still in use.
+        syncDbPath = Path.Combine(BASEFOLDER, $"cifile-sync-{Guid.NewGuid():N}.sqlite");
+
+        Library.DynamicLoader.BackendLoader.AddBackend(new CaseInsensitiveFileBackend());
+        backendUrl = CaseInsensitiveFileBackend.Key + "://" + targetDir.Replace("\\", "/");
+    }
+
+    [TearDown]
+    public void TearDown()
+    {
+        if (Directory.Exists(targetDir))
+        {
+            try { Directory.Delete(targetDir, true); } catch { }
+        }
+        try { File.Delete(syncDbPath); } catch { }
+    }
+
+    /// <summary>
+    /// The names in the destination, compared ordinally: File.Exists would answer yes
+    /// for either casing on Windows, which is the very thing these tests are about.
+    /// </summary>
+    private List<string> RemoteNames()
+        => Directory.EnumerateFiles(targetDir).Select(x => Path.GetFileName(x)).OrderBy(x => x, StringComparer.Ordinal).ToList();
+
+    private Dictionary<string, string> Options(string stateMode = null)
+    {
+        var opts = new Dictionary<string, string>
+        {
+            ["no-encryption"] = "true",
+            ["snapshot-policy"] = "off",
+            ["sync-then-delete"] = "true",
+            ["case-insensitive-remote"] = "true",
+            ["dbpath"] = syncDbPath,
+        };
+        if (stateMode != null)
+            opts["sync-remote-state"] = stateMode;
+        return opts;
+    }
+
+    private async Task<Library.Interface.ISyncResults> SyncAsync(Dictionary<string, string> opts, string dataFolder)
+    {
+        using var c = new Controller(backendUrl, opts, null);
+        return await c.SyncAsync(new[] { dataFolder }, null);
+    }
+
+    /// <summary>
+    /// A file renamed only in case is the same file on a destination that does not
+    /// distinguish case. Without the option the handler uploads the new name, which
+    /// overwrites the old one in place, and then deletes the old name - the file it has
+    /// just written. With the option the two names are the same entry: nothing to
+    /// upload, nothing to delete, and a later content change is an update of the name
+    /// the destination already has.
+    /// </summary>
+    [TestCase(null)]
+    [TestCase("UseLocalState")]
+    public async Task TestSyncCaseOnlyRenameKeepsTheFileOnACaseInsensitiveDestinationAsync(string stateMode)
+    {
+        var dataFolder = Path.Combine(BASEFOLDER, "cifile_data_rename");
+        if (Directory.Exists(dataFolder)) Directory.Delete(dataFolder, true);
+        Directory.CreateDirectory(dataFolder);
+
+        var lower = Path.Combine(dataFolder, "a.txt");
+        var upper = Path.Combine(dataFolder, "A.txt");
+        File.WriteAllText(lower, "Hello");
+        // Pin the local time before the first sync, so the destination's copy is newer
+        File.SetLastWriteTimeUtc(lower, DateTime.UtcNow.AddMinutes(-5));
+
+        var opts = Options(stateMode);
+
+        var first = await SyncAsync(opts, dataFolder);
+        CollectionAssert.AreEqual(new[] { "a.txt" }, RemoteNames());
+        Assert.AreEqual(1, first.FilesUploaded);
+
+        // A case-only rename keeps the contents and the modification time
+        File.Move(lower, upper);
+
+        var second = await SyncAsync(opts, dataFolder);
+        CollectionAssert.AreEqual(new[] { "a.txt" }, RemoteNames(), "The destination should still hold the file under the name it was stored with.");
+        Assert.AreEqual("Hello", File.ReadAllText(Path.Combine(targetDir, "a.txt")));
+        Assert.AreEqual(0, second.FilesDeleted, "The renamed file was deleted from the destination.");
+        Assert.AreEqual(0, second.FilesUploaded, "The renamed file was uploaded again.");
+        Assert.AreEqual(1, second.UnchangedFiles);
+
+        // A content change is an update of the entry the destination already has
+        File.WriteAllText(upper, "Hello, again");
+
+        var third = await SyncAsync(opts, dataFolder);
+        CollectionAssert.AreEqual(new[] { "a.txt" }, RemoteNames());
+        Assert.AreEqual("Hello, again", File.ReadAllText(Path.Combine(targetDir, "a.txt")));
+        Assert.AreEqual(1, third.FilesUploaded);
+        Assert.AreEqual(0, third.FilesDeleted);
+
+        if (stateMode != null)
+        {
+            // The inventory follows the destination's name, so the update did not add a second row
+            using var db = new Duplicati.Library.Main.Database.Sync.LocalSyncDatabase(syncDbPath);
+            var rows = new List<string>();
+            await foreach (var item in db.GetInventoryAsync(CancellationToken.None))
+                rows.Add(item.RelativePath);
+            CollectionAssert.AreEqual(new[] { "a.txt" }, rows, "The inventory should hold one row, under the destination's name.");
+        }
+    }
+
+    /// <summary>
+    /// Two source files that differ only in case cannot both exist on a destination
+    /// that does not distinguish case. The handler syncs the first one it sees and has
+    /// to say so, rather than silently leaving the other out of the mirror.
+    /// </summary>
+    [Test]
+    public async Task TestSyncWarnsWhenTheSourceHasCaseCollidingNamesAsync()
+    {
+        var dataFolder = Path.Combine(BASEFOLDER, "cifile_data_collision");
+        if (Directory.Exists(dataFolder)) Directory.Delete(dataFolder, true);
+        Directory.CreateDirectory(dataFolder);
+
+        File.WriteAllText(Path.Combine(dataFolder, "a.txt"), "lower");
+        File.WriteAllText(Path.Combine(dataFolder, "A.txt"), "upper");
+        if (Directory.EnumerateFiles(dataFolder).Count() != 2)
+            Assert.Ignore("The source file system does not distinguish case, so the two names cannot coexist here.");
+
+        var result = await SyncAsync(Options(), dataFolder);
+
+        Assert.AreEqual(1, RemoteNames().Count, $"The destination should hold one file: {string.Join(", ", RemoteNames())}");
+        Assert.AreEqual(1, result.Warnings.Count(x => x.Contains("CaseCollision")), $"Expected one CaseCollision warning, got: {string.Join(" | ", result.Warnings)}");
     }
 }

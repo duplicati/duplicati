@@ -29,12 +29,28 @@ partial class RestoreProvider
             // POST /users/{id}/contactFolders/{id}/contacts
             var url = $"{baseUrl}/v1.0/users/{user}/contactFolders/{folder}/contacts";
 
+            // The backup stores the full GraphContact JSON, including read-only properties
+            // (id, createdDateTime, lastModifiedDateTime, parentFolderId) and explicit nulls.
+            // Round-trip through the DTO so read-only properties can be dropped and nulls
+            // omitted; the Graph OData deserializer rejects explicit JSON nulls for
+            // non-nullable properties with "UnableToDeserializePostBody".
+            if (contactJsonStream.CanSeek)
+                contactJsonStream.Position = 0;
+            var contact = await JsonSerializer.DeserializeAsync<GraphContact>(contactJsonStream, cancellationToken: cancellationToken).ConfigureAwait(false)
+                ?? throw new InvalidOperationException("Failed to deserialize backed-up contact.");
+
+            contact.Id = null!;
+            contact.CreatedDateTime = null;
+            contact.LastModifiedDateTime = null;
+            contact.ParentFolderId = null;
+
+            var sanitizedBody = JsonSerializer.SerializeToUtf8Bytes(contact, APIHelper.IgnoreNullJsonOptions);
+
             async Task<HttpRequestMessage> requestFactory(CancellationToken ct)
             {
                 var req = new HttpRequestMessage(HttpMethod.Post, new Uri(url));
                 req.Headers.Authorization = await provider.GetAuthenticationHeaderAsync(false, ct).ConfigureAwait(false);
-                contactJsonStream.Position = 0;
-                req.Content = new StreamContent(contactJsonStream);
+                req.Content = new ByteArrayContent(sanitizedBody);
                 req.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                 return req;
             }
@@ -345,7 +361,7 @@ partial class RestoreProvider
             {
                 var req = new HttpRequestMessage(HttpMethod.Patch, new Uri(url));
                 req.Headers.Authorization = await provider.GetAuthenticationHeaderAsync(false, rct).ConfigureAwait(false);
-                req.Content = JsonContent.Create(body);
+                req.Content = JsonContent.Create(body, options: APIHelper.IgnoreNullJsonOptions);
                 return req;
             }
 

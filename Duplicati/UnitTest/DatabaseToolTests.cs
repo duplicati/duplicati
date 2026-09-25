@@ -36,6 +36,89 @@ namespace Duplicati.UnitTest
     [TestFixture]
     public class DatabaseToolTests
     {
+        /// <summary>
+        /// Reads the schema version recorded in the database
+        /// </summary>
+        /// <param name="dbfile">The database file</param>
+        /// <returns>The schema version</returns>
+        private static async Task<int> ReadVersionAsync(string dbfile)
+        {
+            using var db = await SQLiteLoader.LoadConnectionAsync(dbfile);
+            using var cmd = db.CreateCommand();
+            cmd.CommandText = @"SELECT MAX(""Version"") FROM ""Version""";
+            return Convert.ToInt32(await cmd.ExecuteScalarAsync());
+        }
+
+        /// <summary>
+        /// Lists the version numbers of the numbered scripts among the embedded resources
+        /// with the given prefix, e.g. the <c>21</c> in <c>...Database_schema.21. Add table.sql</c>.
+        /// </summary>
+        /// <param name="assembly">The assembly holding the resources</param>
+        /// <param name="prefix">The resource name prefix of the script folder</param>
+        /// <returns>The version numbers found</returns>
+        private static List<int> GetNumberedScriptVersions(System.Reflection.Assembly assembly, string prefix)
+            => assembly.GetManifestResourceNames()
+                .Where(x => x.StartsWith(prefix, StringComparison.Ordinal))
+                .Select(x => x.Substring(prefix.Length))
+                .Select(x => int.TryParse(x.Split('.').First(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var v) ? v : -1)
+                .Where(x => x > 0)
+                .OrderBy(x => x)
+                .ToList();
+
+        /// <summary>
+        /// Checks that the downgrade scripts reach the newest upgrade script without gaps.
+        /// The oldest downgrade script marks the floor the tool can take a database back to,
+        /// so the scripts below that floor are not required, but every version from the
+        /// floor up to the newest upgrade script must have one.
+        /// </summary>
+        /// <param name="kind">The database kind, used in the assertion messages</param>
+        /// <param name="upgrades">The upgrade script versions</param>
+        /// <param name="downgrades">The downgrade script versions</param>
+        /// <param name="folder">The folder the downgrade scripts live in</param>
+        private static void AssertDowngradeScriptsCoverUpgrades(string kind, List<int> upgrades, List<int> downgrades, string folder)
+        {
+            if (upgrades.Count == 0)
+            {
+                Assert.IsEmpty(downgrades, $"There are no {kind} upgrade scripts, so no downgrade scripts are expected in {folder}");
+                return;
+            }
+
+            Assert.IsNotEmpty(downgrades, $"No {kind} downgrade scripts were found in {folder}");
+
+            var expected = Enumerable.Range(downgrades.Min(), upgrades.Max() - downgrades.Min() + 1).ToList();
+            var missing = expected.Except(downgrades).ToList();
+            Assert.IsEmpty(missing, $"Missing {kind} downgrade script(s) in {folder} for version(s): {string.Join(", ", missing)}. Every upgrade script needs a downgrade script of the same number.");
+        }
+
+        /// <summary>
+        /// Every numbered upgrade script must have a downgrade script of the same number in
+        /// the database tool, so a database can always be taken back to a prior version. The
+        /// downgrade command treats a missing script as informational and exits with success,
+        /// so nothing else catches a migration that was added without its downgrade.
+        /// </summary>
+        [Test]
+        [Category("DatabaseTool")]
+        public void EveryUpgradeScriptHasADowngradeScript()
+        {
+            var toolAssembly = typeof(Program).Assembly;
+            var toolNamespace = typeof(Program).Namespace;
+
+            AssertDowngradeScriptsCoverUpgrades("local",
+                GetNumberedScriptVersions(typeof(Library.Main.Database.Local.DatabaseSchemaMarker).Assembly, typeof(Library.Main.Database.Local.DatabaseSchemaMarker).Namespace + ".Database_schema."),
+                GetNumberedScriptVersions(toolAssembly, toolNamespace + ".Scripts.Local."),
+                "Duplicati.CommandLine.DatabaseTool/Scripts/Local");
+
+            AssertDowngradeScriptsCoverUpgrades("server",
+                GetNumberedScriptVersions(typeof(Library.RestAPI.Database.DatabaseSchemaMarker).Assembly, typeof(Library.RestAPI.Database.DatabaseSchemaMarker).Namespace + ".Database_schema."),
+                GetNumberedScriptVersions(toolAssembly, toolNamespace + ".Scripts.Server."),
+                "Duplicati.CommandLine.DatabaseTool/Scripts/Server");
+
+            AssertDowngradeScriptsCoverUpgrades("sync",
+                GetNumberedScriptVersions(typeof(DatabaseSchemaMarker).Assembly, typeof(DatabaseSchemaMarker).Namespace + ".Database_schema."),
+                GetNumberedScriptVersions(toolAssembly, toolNamespace + ".Scripts.Sync."),
+                "Duplicati.CommandLine.DatabaseTool/Scripts/Sync");
+        }
+
         [Test]
         [Category("DatabaseTool")]
         public async Task TestLocalDbMethodsAsync()
@@ -47,13 +130,53 @@ namespace Duplicati.UnitTest
             await cmd.ExecuteNonQueryAsync();
 
             Assert.AreEqual(0, await Program.MainAsync(["upgrade", dbfile, "--no-backups"]));
+            var latest = await ReadVersionAsync(dbfile);
+            Assert.IsTrue(latest > 12, "The upgrade should move the database past version 12");
+
+            // A missing downgrade script makes the tool report and exit with success without
+            // touching the database, so the version reached is what proves the downgrade ran.
             Assert.AreEqual(0, await Program.MainAsync(["downgrade", dbfile, "--server-version=6", "--local-version=12", "--no-backups"]));
+            Assert.AreEqual(12, await ReadVersionAsync(dbfile), "The downgrade should reach version 12; a missing downgrade script leaves the database untouched");
             Assert.AreEqual(0, await Program.MainAsync(["upgrade", dbfile, "--no-backups"]));
+            Assert.AreEqual(latest, await ReadVersionAsync(dbfile), "The upgrade should reach the latest version again");
 
             Assert.AreEqual(0, await Program.MainAsync(["list", dbfile]));
             Assert.AreEqual(0, await Program.MainAsync(["list", dbfile, "RemoteVolume"]));
             Assert.AreEqual(0, await Program.MainAsync(["list", dbfile, "RemoteVolume", "--output-json"]));
             Assert.AreEqual(0, await Program.MainAsync(["execute", dbfile, "SELECT * FROM RemoteVolume", "--output-json"]));
+        }
+
+        /// <summary>
+        /// The --allow-insecure-datafolder option is registered on the root command
+        /// but must be accepted after a subcommand, like the global option it
+        /// replaced during the System.CommandLine 2.0 migration.
+        /// </summary>
+        [Test]
+        [Category("DatabaseTool")]
+        public async Task GlobalOptionIsAcceptedAfterSubcommandAsync()
+        {
+            using var dbfile = new TempFile();
+
+            var output = new StringWriter();
+            var originalOut = Console.Out;
+            int exitCode;
+            try
+            {
+                Console.SetOut(output);
+                // The database is empty, so "list" fails with a message about the
+                // database not existing. A parse error would instead complain about
+                // an unrecognized option.
+                exitCode = await Program.MainAsync(["list", dbfile, "--allow-insecure-datafolder"]);
+            }
+            finally
+            {
+                Console.SetOut(originalOut);
+            }
+
+            var consoleOutput = output.ToString();
+            Assert.IsFalse(consoleOutput.Contains("Unrecognized"),
+                $"The global option was not accepted after the subcommand: {consoleOutput}");
+            Assert.AreEqual(0, exitCode, $"Unexpected exit code, output was: {consoleOutput}");
         }
 
         /// <summary>
@@ -116,8 +239,14 @@ namespace Duplicati.UnitTest
             await cmd.ExecuteNonQueryAsync();
 
             Assert.AreEqual(0, await Program.MainAsync(["upgrade", dbfile, "--no-backups"]));
+            var latest = await ReadVersionAsync(dbfile);
+            Assert.IsTrue(latest > 6, "The upgrade should move the database past version 6");
+
+            // See TestLocalDbMethodsAsync: only the version reached proves the downgrade ran.
             Assert.AreEqual(0, await Program.MainAsync(["downgrade", dbfile, "--server-version=6", "--local-version=12", "--no-backups"]));
+            Assert.AreEqual(6, await ReadVersionAsync(dbfile), "The downgrade should reach version 6; a missing downgrade script leaves the database untouched");
             Assert.AreEqual(0, await Program.MainAsync(["upgrade", dbfile, "--no-backups"]));
+            Assert.AreEqual(latest, await ReadVersionAsync(dbfile), "The upgrade should reach the latest version again");
 
             Assert.AreEqual(0, await Program.MainAsync(["list", dbfile]));
             Assert.AreEqual(0, await Program.MainAsync(["list", dbfile, "Source"]));
@@ -1069,6 +1198,57 @@ INSERT INTO ""Version"" (""Version"") VALUES (12);
                 cmd.CommandText = @"SELECT ""Value"" FROM ""Option"" WHERE ""BackupID"" = -2 AND ""Name"" = 'encrypted-fields'";
                 Assert.AreEqual("True", (string)cmd.ExecuteScalar());
             }
+        }
+
+        /// <summary>
+        /// A Linux installation with no home folder used to resolve its data folder to the relative
+        /// path "var/lib/Duplicati" and stored the database paths joined onto it, so the server
+        /// database holds a path that names the file from the root without saying so. Resolving that
+        /// against the data folder a second time points at a file that is not there, and the real
+        /// database is then reported as orphaned - which is what "cleanup" offers to delete.
+        /// </summary>
+        [Test]
+        [Category("DatabaseTool")]
+        public async Task TestVerifyCommandWithLegacyRootlessDbPathAsync()
+        {
+            using var tempFolder = new Library.Utility.TempFolder();
+            string tempDir = tempFolder;
+
+            var serverTargetPath = Path.Combine(tempDir, "Duplicati-server.sqlite");
+            var localDb = Path.Combine(tempDir, "local1.sqlite");
+
+            // The data folder's own path without its root, which is the shape that was stored
+            var fullDataFolder = Duplicati.Library.Common.IO.Util.AppendDirSeparator(Path.GetFullPath(tempDir));
+            var legacyDbPath = fullDataFolder.Substring((Path.GetPathRoot(fullDataFolder) ?? "").Length) + "local1.sqlite";
+
+            using (var db = await SQLiteLoader.LoadConnectionAsync(serverTargetPath))
+            using (var cmd = db.CreateCommand())
+            {
+                cmd.CommandText = ServerSchemaV6;
+                await cmd.ExecuteNonQueryAsync();
+
+                cmd.CommandText = $@"
+                    INSERT INTO ""Backup"" (""Name"", ""Tags"", ""TargetURL"", ""DBPath"")
+                    VALUES ('Test Backup', '', 'file:///test', '{legacyDbPath.Replace("'", "''")}');
+                ";
+                await cmd.ExecuteNonQueryAsync();
+            }
+
+            using (var db = await SQLiteLoader.LoadConnectionAsync(localDb))
+            using (var cmd = db.CreateCommand())
+            {
+                cmd.CommandText = LocalSchemaV12;
+                await cmd.ExecuteNonQueryAsync();
+            }
+
+            var results = await Duplicati.CommandLine.DatabaseTool.Commands.Verify
+                .AnalyzeDatabasesAsync(tempDir, includeServer: true);
+
+            var byPath = results.ToDictionary(r => r.Path, StringComparer.OrdinalIgnoreCase);
+
+            Assert.IsTrue(byPath.ContainsKey(localDb), "the database the backup uses should be reported");
+            Assert.AreEqual("Found", byPath[localDb].Status,
+                "the database the backup uses was reported as orphaned, which is what cleanup deletes");
         }
     }
 }

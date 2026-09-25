@@ -91,10 +91,12 @@ namespace Duplicati.UnitTest
             #region Unused interface members
             public Task PutAsync(VolumeWriterBase blockVolume, IndexVolumeWriter? indexVolume, Func<Task>? indexVolumeFinished, bool waitForComplete, Func<Task>? onDbUpdate, CancellationToken cancelToken) => throw new NotImplementedException();
             public Task PutFileUnencryptedAsync(string remotename, TempFile tempFile, CancellationToken cancelToken) => throw new NotImplementedException();
+            public Task PutFileUnencryptedWithPathAsync(string remotename, TempFile tempFile, CancellationToken cancelToken) => throw new NotImplementedException();
             public Task<IEnumerable<InterfaceFileEntry>> ListAsync(string? path, CancellationToken cancelToken) => throw new NotImplementedException();
             public Task EnsureFolderAsync(string? path, CancellationToken cancelToken) => throw new NotImplementedException();
             public TempFile DecryptFile(TempFile volume, string volume_name, Options options, bool dispose) => throw new NotImplementedException();
             public Task DeleteAsync(string remotename, long size, bool waitForComplete, CancellationToken cancelToken) => throw new NotImplementedException();
+            public Task DeleteWithPathAsync(string remotename, long size, bool waitForComplete, CancellationToken cancelToken) => throw new NotImplementedException();
             public Task<IQuotaInfo?> GetQuotaInfoAsync(CancellationToken cancelToken) => throw new NotImplementedException();
             public Task<(TempFile File, string Hash, long Size)> GetWithInfoAsync(string remotename, string hash, long size, bool allowParityRepair, CancellationToken cancelToken) => throw new NotImplementedException();
             public Task<TempFile> GetAsync(string remotename, string hash, long size, bool allowParityRepair, CancellationToken cancelToken) => throw new NotImplementedException();
@@ -151,6 +153,50 @@ namespace Duplicati.UnitTest
             ClassicAssert.True(backend.WaitedForEmpty);
         }
 
+        /// <summary>
+        /// A version or a time that matches no fileset must lock nothing, not every fileset.
+        /// </summary>
+        [Test]
+        [Category("LockHandler")]
+        public async Task DoesNotLockAnythingForASelectionThatMatchesNothingAsync()
+        {
+            var options = new Dictionary<string, string>(TestOptions);
+            using (var controller = new Controller("file://" + TARGETFOLDER, options, null))
+            {
+                await controller.BackupAsync([DATAFOLDER]);
+            }
+
+            var lockDbPath = Path.Combine(BASEFOLDER, $"locktest-{Guid.NewGuid():N}.sqlite");
+            File.Copy(options["dbpath"], lockDbPath, true);
+
+            await using var db = await LocalLockDatabase.CreateAsync(lockDbPath, null, CancellationToken.None).ConfigureAwait(false);
+
+            var filesets = new List<KeyValuePair<long, DateTime>>();
+            await foreach (var entry in db.FilesetTimesAsync(CancellationToken.None).ConfigureAwait(false))
+                filesets.Add(entry);
+
+            var baseOptions = new Dictionary<string, string?>(options.ToDictionary(kvp => kvp.Key, kvp => (string?)kvp.Value))
+            {
+                ["dbpath"] = lockDbPath,
+                ["remote-file-lock-duration"] = "1D",
+            };
+
+            // Only version 0 exists
+            var backend = new FakeLockingBackendManager();
+            var handler = new SetLocksHandler(new Options(new Dictionary<string, string?>(baseOptions) { ["version"] = "99" }), new SetLockResults());
+            var ex = Assert.ThrowsAsync<UserInformationException>(async () => await handler.RunAsync(backend, db).ConfigureAwait(false), "A version that does not exist should not lock anything");
+            ClassicAssert.AreEqual("NoVersionForLockOperation", ex?.HelpID);
+            ClassicAssert.IsEmpty(backend.LockedVolumes);
+
+            // No fileset is at or before a day before the only backup
+            var before = Library.Utility.Utility.SerializeDateTime(filesets.Min(x => x.Value).AddDays(-1).ToUniversalTime());
+            backend = new FakeLockingBackendManager();
+            handler = new SetLocksHandler(new Options(new Dictionary<string, string?>(baseOptions) { ["time"] = before }), new SetLockResults());
+            ex = Assert.ThrowsAsync<UserInformationException>(async () => await handler.RunAsync(backend, db).ConfigureAwait(false), "A time before every backup should not lock anything");
+            ClassicAssert.AreEqual("NoVersionForLockOperation", ex?.HelpID);
+            ClassicAssert.IsEmpty(backend.LockedVolumes);
+        }
+
         [Test]
         [Category("LockHandler")]
         public async Task ContinuesWhenLockingFailsAsync()
@@ -187,6 +233,45 @@ namespace Duplicati.UnitTest
             Assert.DoesNotThrowAsync(() => handler.RunAsync(backend, db));
             CollectionAssert.AreEquivalent(expectedVolumes, backend.LockedVolumes.Select(x => x.Name));
             ClassicAssert.True(backend.WaitedForEmpty);
+        }
+
+        /// <summary>
+        /// The handler resolves each supplied version time exactly and skips the ones that
+        /// match nothing. A time that matches no fileset must therefore lock nothing - not
+        /// the volumes of the newest fileset.
+        /// </summary>
+        [Test]
+        [Category("LockHandler")]
+        public async Task DoesNotLockAnythingForAVersionThatMatchesNoFilesetAsync()
+        {
+            var options = new Dictionary<string, string>(TestOptions);
+            using (var controller = new Controller("file://" + TARGETFOLDER, options, null))
+            {
+                await controller.BackupAsync([DATAFOLDER]);
+            }
+
+            var lockDbPath = Path.Combine(BASEFOLDER, $"locktest-{Guid.NewGuid():N}.sqlite");
+            File.Copy(options["dbpath"], lockDbPath, true);
+
+            await using var db = await LocalLockDatabase.CreateAsync(lockDbPath, null, CancellationToken.None).ConfigureAwait(false);
+
+            var filesets = new List<KeyValuePair<long, DateTime>>();
+            await foreach (var entry in db.FilesetTimesAsync(CancellationToken.None).ConfigureAwait(false))
+                filesets.Add(entry);
+
+            var lockingOptions = new Options(new Dictionary<string, string?>(options.ToDictionary(kvp => kvp.Key, kvp => (string?)kvp.Value))
+            {
+                ["dbpath"] = lockDbPath,
+                ["remote-file-lock-duration"] = "1D",
+            });
+
+            var backend = new FakeLockingBackendManager();
+            // A day before the only fileset there is no version to lock
+            var handler = new SetLocksHandler(lockingOptions, new SetLockResults(), new[] { filesets.Last().Value.AddDays(-1) });
+
+            var error = Assert.ThrowsAsync<UserInformationException>(() => handler.RunAsync(backend, db));
+            Assert.That(error!.HelpID, Is.EqualTo("NoVersionForLockOperation"));
+            Assert.That(backend.LockedVolumes, Is.Empty, "A version time that matches no fileset must not lock the newest fileset's volumes.");
         }
 
         /// <summary>

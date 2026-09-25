@@ -61,6 +61,12 @@ namespace Duplicati.Library.Modules.Builtin
         protected abstract string ActionOnAnyOperationOptionName { get; }
 
         /// <summary>
+        /// Name of the option used to specify the list of operation names that send reports.
+        /// This is the companion to <see cref="ActionOnAnyOperationOptionName"/>; the list is ignored if all operations send reports.
+        /// </summary>
+        protected abstract string ActionOnOperationsOptionName { get; }
+
+        /// <summary>
         /// Name of the option used to specify the log level
         /// </summary>
         protected abstract string LogLevelOptionName { get; }
@@ -97,6 +103,15 @@ namespace Duplicati.Library.Modules.Builtin
         /// The default report level
         /// </summary>
         protected virtual string DEFAULT_LEVEL { get; } = "all";
+        /// <summary>
+        /// The default list of operation names that send reports
+        /// </summary>
+        protected virtual string DEFAULT_OPERATIONS { get; } = nameof(OperationMode.Backup);
+
+        /// <summary>
+        /// The names of the operations that can be used in the option named by <see cref="ActionOnOperationsOptionName"/>
+        /// </summary>
+        protected static string[] ValidOperationNames => Enum.GetNames(typeof(OperationMode));
         /// <summary>
         /// The default report body
         /// </summary>
@@ -189,6 +204,10 @@ namespace Duplicati.Library.Modules.Builtin
         /// </summary>
         private bool m_sendAll;
         /// <summary>
+        /// The set of operations that send reports, used when not sending all operations
+        /// </summary>
+        private HashSet<OperationMode> m_sendOperations;
+        /// <summary>
         /// The extra values to include in the report
         /// </summary>
         private Dictionary<string, string> m_extraValues;
@@ -275,6 +294,11 @@ namespace Duplicati.Library.Modules.Builtin
                     .ToArray();
 
             m_sendAll = Utility.Utility.ParseBoolOption(m_options, ActionOnAnyOperationOptionName);
+            m_sendOperations = Utility.Utility.ParseEnumsOption(
+                m_options,
+                ActionOnOperationsOptionName,
+                Utility.Utility.ParseEnums(DEFAULT_OPERATIONS, [OperationMode.Backup])
+            ).ToHashSet();
 
             ResultExportFormat resultFormat;
             if (!m_options.TryGetValue(ResultFormatOptionName, out var tmpResultFormat))
@@ -298,7 +322,13 @@ namespace Duplicati.Library.Modules.Builtin
             var logLevel = Utility.Utility.ParseEnumOption(m_options, LogLevelOptionName, DEFAULT_LOG_LEVEL);
 
             m_logstorage = new FileBackedStringList();
-            m_logscope = Logging.Log.StartScope(m => m_logstorage.Add(m.AsString(true)), m =>
+            // Paths are redacted as the line is captured, while the unformatted arguments
+            // are still available: whole path arguments are dropped (which also covers
+            // paths with spaces), then the formatted text is filtered as a fallback.
+            m_logscope = Logging.Log.StartScope(m => m_logstorage.Add(
+                m_allowPathsInLogMessages
+                    ? m.AsString(true)
+                    : SensitiveDataFilter.RedactPaths(m.WithArguments(SensitiveDataFilter.RedactPathArguments(m.Arguments)).AsString(true))), m =>
             {
 
                 if (filter.Matches(m.FilterTag, out var result, out var match))
@@ -556,9 +586,7 @@ namespace Duplicati.Library.Modules.Builtin
                         logdata = logdata.Concat(new string[] { $"... and {m_logstorage.Count - m_maxmimumLogLines} more" });
                 }
 
-                if (!m_allowPathsInLogMessages)
-                    logdata = logdata.Select(x => SensitiveDataFilter.RedactPaths(x));
-
+                // The stored lines are already redacted (see Configure) when paths are not allowed
                 return logdata;
             }
         }
@@ -577,7 +605,8 @@ namespace Duplicati.Library.Modules.Builtin
                 return;
 
             //If we do not report this action, then skip
-            if (!m_sendAll && !string.Equals(m_operationname, "Backup", StringComparison.OrdinalIgnoreCase))
+            var isKnownOperation = Utility.Utility.TryParseEnum<OperationMode>(m_operationname, out var operation);
+            if (!m_sendAll && !(isKnownOperation && m_sendOperations.Contains(operation)))
                 return;
 
             ParsedResultType level;
@@ -590,7 +619,7 @@ namespace Duplicati.Library.Modules.Builtin
 
             m_parsedresultlevel = level.ToString();
 
-            if (string.Equals(m_operationname, "Backup", StringComparison.OrdinalIgnoreCase))
+            if (isKnownOperation && operation == OperationMode.Backup)
             {
                 if (!m_levels.Any(x => string.Equals(x, "all", StringComparison.OrdinalIgnoreCase)))
                 {

@@ -113,7 +113,7 @@ namespace Duplicati.UnitTest
             {
                 ["remote-sync-json-config"] = @$"{{""destinations"": [
                     {{""url"": ""file://{dest1}"", ""mode"": ""inline""}},
-                    {{""url"": ""file://{dest2}"", ""mode"": ""interval""}}
+                    {{""url"": ""file://{dest2}"", ""mode"": ""interval"", ""interval"": ""1h""}}
                 ]}}"
             };
 
@@ -266,6 +266,82 @@ namespace Duplicati.UnitTest
             var shouldTrigger = (bool)handler.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(handler, [0, destinations[0]]);
 
             Assert.IsTrue(shouldTrigger);
+        }
+
+        /// <summary>
+        /// Collects the log entries written while a handler is constructed, so a test can
+        /// see the warning the configuration parsing writes.
+        /// </summary>
+        private sealed class LogSink : Duplicati.Library.Logging.ILogDestination
+        {
+            public List<Duplicati.Library.Logging.LogEntry> Entries { get; } = [];
+
+            public void WriteMessage(Duplicati.Library.Logging.LogEntry entry)
+            {
+                Entries.Add(entry);
+            }
+        }
+
+        /// <summary>
+        /// An explicit mode without its parameter cannot be triggered a second time: the check
+        /// compares against a null interval or count, which is always false. The parser has to
+        /// say so and run the destination inline, the way it already does for an interval it
+        /// cannot parse.
+        /// </summary>
+        [TestCase("interval", "RemoteSyncMissingInterval")]
+        [TestCase("counting", "RemoteSyncMissingCount")]
+        [Category("RemoteSync")]
+        public void TestConfigure_ModeWithoutItsParameter_WarnsAndDefaultsToInline(string mode, string warningId)
+        {
+            var options = new Dictionary<string, string>
+            {
+                ["remote-sync-json-config"] = $@"{{""destinations"": [
+                    {{""url"": ""file://{dest1}"", ""mode"": ""{mode}""}}
+                ]}}",
+                ["dbpath"] = DBFILE
+            };
+
+            var sink = new LogSink();
+            RemoteSynchronizationHandler handler;
+            using (Duplicati.Library.Logging.Log.StartScope(sink, Duplicati.Library.Logging.LogMessageType.Warning))
+                handler = new RemoteSynchronizationHandler($"file://{source}", new Options(options), new BackupResults());
+
+            var destinations = handler.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(handler) as List<RemoteSyncDestinationConfig>;
+            Assert.AreEqual(1, destinations.Count);
+            Assert.AreEqual(RemoteSyncTriggerMode.Inline, destinations[0].Mode, $"A {mode} destination without its parameter should run inline.");
+            Assert.AreEqual(1, sink.Entries.Count(x => x.Id == warningId), $"Expected one {warningId} warning, got: {string.Join(" | ", sink.Entries.Select(x => x.Id + ": " + x.FormattedMessage))}");
+        }
+
+        /// <summary>
+        /// Without the fallback the destination syncs exactly once: the first check passes
+        /// because nothing was recorded yet, and every later one fails against the null
+        /// parameter. After one recorded sync the destination must still be triggered.
+        /// </summary>
+        [TestCase("interval")]
+        [TestCase("counting")]
+        [Category("RemoteSync")]
+        public void TestShouldTriggerSync_ModeWithoutItsParameter_StillTriggersAfterAFirstSync(string mode)
+        {
+            var options = new Dictionary<string, string>
+            {
+                ["remote-sync-json-config"] = $@"{{""destinations"": [
+                    {{""url"": ""file://{dest1}"", ""mode"": ""{mode}""}}
+                ]}}",
+                ["dbpath"] = DBFILE
+            };
+
+            var handler = new RemoteSynchronizationHandler($"file://{source}", new Options(options), new BackupResults());
+
+            // Create Operation table as we're now calling outside of the Controller, and record one sync
+            using var db = SQLiteLoader.LoadConnection(DBFILE);
+            using var cmd = db.CreateCommand();
+            EnsureOperationTableCreated(cmd);
+            handler.GetType().GetMethod("RecordSyncOperation", BINDING_FLAGS).Invoke(handler, [0]);
+
+            var destinations = handler.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(handler) as List<RemoteSyncDestinationConfig>;
+            var shouldTrigger = (bool)handler.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(handler, [0, destinations[0]]);
+
+            Assert.IsTrue(shouldTrigger, $"A {mode} destination without its parameter was not triggered again after its first sync.");
         }
 
         [Test]
@@ -785,7 +861,7 @@ namespace Duplicati.UnitTest
             {
                 ["remote-sync-json-config"] = $@"{{""destinations"": [
                     {{""url"": ""file://{dest1}""}},
-                    {{""url"": ""file://{dest2}"", ""mode"": ""interval""}}
+                    {{""url"": ""file://{dest2}"", ""mode"": ""interval"", ""interval"": ""1h""}}
                 ]}}"
             };
 
@@ -820,6 +896,10 @@ namespace Duplicati.UnitTest
             using var db = await SQLiteLoader.LoadConnectionAsync(DBFILE);
             using var cmd = db.CreateCommand();
             EnsureOperationTableCreated(cmd);
+
+            // The source of a synchronization is a backend that exists: the inline path reads
+            // the backup's own destination
+            Directory.CreateDirectory(Path.Combine(TARGETFOLDER, "source"));
 
             await handler.RunAsync();
 
@@ -891,6 +971,10 @@ namespace Duplicati.UnitTest
             cmd.AddNamedParameter("@ts", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow));
             await cmd.ExecuteNonQueryAsync();
 
+            // The source of a synchronization is a backend that exists: the inline path reads
+            // the backup's own destination
+            Directory.CreateDirectory(Path.Combine(TARGETFOLDER, "source"));
+
             await handler.RunAsync();
 
             // Check that one additional sync was recorded (dest1 inline, dest2 interval not due)
@@ -924,6 +1008,10 @@ namespace Duplicati.UnitTest
             using var db = await SQLiteLoader.LoadConnectionAsync(DBFILE);
             using var cmd = db.CreateCommand();
             EnsureOperationTableCreated(cmd);
+
+            // The source of a synchronization is a backend that exists: the inline path reads
+            // the backup's own destination
+            Directory.CreateDirectory(Path.Combine(TARGETFOLDER, "source"));
 
             await handler.RunAsync();
 
@@ -1341,6 +1429,99 @@ namespace Duplicati.UnitTest
             DestinationsAreEqual(true, TARGETFOLDER, syncDest1, syncDest3);
             Assert.IsFalse(DestinationsAreEqual(false, TARGETFOLDER, syncDest2)); // syncDest2 should be out of date
             await AssertRestoreWorksAsync([TARGETFOLDER, syncDest1, syncDest3]);
+        }
+
+        /// <summary>
+        /// The handler records a sync as done when the runner returns 0, and an Interval or Counting
+        /// destination is not tried again until its next trigger. A run in which every delete failed
+        /// has not synchronized anything, so it must not be recorded as done.
+        /// </summary>
+        [Test]
+        [Category("RemoteSync")]
+        public async Task TestRunAsync_FailedDeletes_DoNotRecordASyncAsync()
+        {
+            // An empty source, so every destination file is due for a delete
+            Directory.CreateDirectory(Path.Combine(TARGETFOLDER, "source"));
+            await ToolTests.GenerateTestDataAsync(Path.Combine(TARGETFOLDER, "dest1"), 3, 0, 0, 1024);
+
+            Library.DynamicLoader.BackendLoader.AddBackend(new DeterministicErrorBackend());
+            DeterministicErrorBackend.ErrorGenerator = (action, _) => action == DeterministicErrorBackend.BackendAction.DeleteBefore;
+            try
+            {
+                var options = new Dictionary<string, string>
+                {
+                    ["remote-sync-json-config"] = @$"{{""destinations"": [
+                        {{""url"": ""deterror://{dest1}"", ""backend-retries"": 1, ""backend-retry-delay"": 0}}
+                    ]}}",
+                    ["dbpath"] = DBFILE
+                };
+
+                var remoteurl = $"file://{source}";
+                var result = new BasicBackupResults(ParsedResultType.Success);
+                var handler = new RemoteSynchronizationHandler(remoteurl, new Options(options), result);
+
+                using var db = await SQLiteLoader.LoadConnectionAsync(DBFILE);
+                using var cmd = db.CreateCommand();
+                EnsureOperationTableCreated(cmd);
+
+                await handler.RunAsync();
+
+                cmd.CommandText = @"
+                    SELECT COUNT(*)
+                    FROM ""Operation""
+                    WHERE ""Description"" LIKE 'Rsync %'
+                ";
+                var count = (long)await cmd.ExecuteScalarAsync();
+
+                Assert.AreEqual(0, count, "A sync that could not delete anything was recorded as done.");
+                Assert.AreEqual(3, Directory.EnumerateFiles(Path.Combine(TARGETFOLDER, "dest1")).Count(), "A file went missing although its delete failed.");
+            }
+            finally
+            {
+                DeterministicErrorBackend.ErrorGenerator = null;
+            }
+        }
+
+        /// <summary>
+        /// The source of an inline synchronization is the backup's own destination, so the backup's
+        /// options have to reach it: FTP, WebDAV and SSH read their credentials from the options,
+        /// not only from the url.
+        /// </summary>
+        [Test]
+        [Category("RemoteSync")]
+        public async Task TestConfigure_ForwardsBackupOptionsAsSourceOptionsAsync()
+        {
+            var options = new Dictionary<string, string>
+            {
+                ["remote-sync-json-config"] = @$"{{""destinations"": [
+                    {{""url"": ""file://{dest1}""}}
+                ]}}",
+                ["auth-username"] = "someuser",
+                ["auth-password"] = "some=password=with=equals",
+                ["no-encryption"] = "true"
+            };
+
+            var handler = new RemoteSynchronizationHandler($"file://{source}", new Options(options), new BackupResults());
+
+            var destinations = handler.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(handler) as List<RemoteSyncDestinationConfig>;
+            Assert.AreEqual(1, destinations.Count);
+
+            var srcOptions = destinations[0].Config.SrcOptions;
+
+            Assert.IsTrue(srcOptions.Contains("auth-username=someuser"),
+                $"The username was not forwarded: {string.Join(", ", srcOptions)}");
+            Assert.IsTrue(srcOptions.Contains("auth-password=some=password=with=equals"),
+                $"The password was not forwarded verbatim: {string.Join(", ", srcOptions)}");
+            Assert.IsTrue(srcOptions.Contains("no-encryption=true"),
+                $"An option was not forwarded: {string.Join(", ", srcOptions)}");
+            Assert.AreEqual(options.Count, srcOptions.Count, "Not every option was forwarded.");
+
+            // And the forwarded list is what the runner's own parser reads. This does not catch the
+            // shape above - a wrong string round-trips just as well - but it does show that a value
+            // containing an equals sign survives
+            var parseOnly = destinations[0].Config with { Src = $"file://{source}", ParseArgumentsOnly = true };
+            Assert.AreEqual(0, await Duplicati.Library.Main.Operation.RemoteSynchronization.RemoteSynchronizationRunner.RunAsync(parseOnly, System.Threading.CancellationToken.None).ConfigureAwait(false),
+                "The forwarded options were rejected by the option parser.");
         }
 
     }

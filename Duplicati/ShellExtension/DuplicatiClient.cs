@@ -1,42 +1,57 @@
 // Copyright (C) 2026, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-//
-// Permission is hereby granted, free of charge, to any person obtaining a
-// copy of this software and associated documentation files (the "Software"),
-// to deal in the Software without restriction, including without limitation
-// the rights to use, copy, modify, merge, publish, distribute, sublicense,
-// and/or sell copies of the Software, and to permit persons to whom the
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
 // Software is furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
+// 
+// The above copyright notice and this permission notice shall be included in 
 // all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System.Net.Http.Headers;
 using System.Text.Json;
 
 namespace Duplicati.ShellExtension;
 
 /// <summary>
-/// Simple client for communicating with the Duplicati server to check folder backup status
+/// Client for querying the Duplicati server for folder backup status.
+/// Lookups are always served from an in-memory cache so Explorer is never
+/// blocked on the network. The cache is refreshed in the background, and
+/// Explorer is asked to redraw the folders whose status changed.
 /// </summary>
 public sealed class DuplicatiClient : IDisposable
 {
+    /// <summary>
+    /// The registry key holding an optional override for the server url
+    /// </summary>
+    private const string RegistryKeyPath = @"Software\Duplicati\ShellExtension";
+    /// <summary>
+    /// How long a successfully fetched status list is used before refreshing
+    /// </summary>
+    private static readonly TimeSpan CacheExpiration = TimeSpan.FromSeconds(30);
+    /// <summary>
+    /// How long to wait before retrying after a failed fetch
+    /// </summary>
+    private static readonly TimeSpan RetryInterval = TimeSpan.FromSeconds(10);
+
     private readonly HttpClient _httpClient;
     private readonly string _baseUrl;
     private readonly JsonSerializerOptions _jsonOptions;
-    private bool _disposed;
-    private DateTime _lastCacheTime = DateTime.MinValue;
+    private readonly object _lock = new();
     private Dictionary<string, FolderStatusInfo> _folderStatusCache = new(StringComparer.OrdinalIgnoreCase);
-    private static readonly TimeSpan CacheExpiration = TimeSpan.FromSeconds(30);
-    private readonly SemaphoreSlim _cacheLock = new(1, 1);
+    private DateTime _nextRefreshTime = DateTime.MinValue;
+    private Task? _refreshTask;
+    private bool _disposed;
 
     /// <summary>
     /// Information about a folder's backup status
@@ -64,208 +79,160 @@ public sealed class DuplicatiClient : IDisposable
     }
 
     /// <summary>
-    /// Gets the Duplicati server URL from settings or returns default
+    /// Reads a string value from the shell extension registry key
+    /// </summary>
+    private static string? ReadRegistryValue(string name)
+    {
+        try
+        {
+            using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(RegistryKeyPath);
+            return key?.GetValue(name) as string;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Gets the Duplicati server URL from the registry or returns the default
     /// </summary>
     private static string GetServerUrl()
     {
-        // Try to read from registry or config file
-        try
-        {
-            using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(
-                @"Software\Duplicati\ShellExtension");
-            if (key != null)
-            {
-                var url = key.GetValue("ServerUrl") as string;
-                if (!string.IsNullOrEmpty(url))
-                    return url;
-            }
-        }
-        catch
-        {
-            // Ignore registry errors
-        }
-
-        return "http://localhost:8200";
+        var url = ReadRegistryValue("ServerUrl");
+        return string.IsNullOrWhiteSpace(url) ? "http://localhost:8200" : url;
     }
 
     /// <summary>
-    /// Sets the authentication token for API requests
-    /// </summary>
-    /// <param name="token">The bearer token</param>
-    public void SetAuthToken(string token)
-    {
-        _httpClient.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", token);
-    }
-
-    /// <summary>
-    /// Gets the backup status for a specific folder path
+    /// Gets the backup status for a folder from the cache.
+    /// Never blocks on the network; a stale cache is refreshed in the background.
     /// </summary>
     /// <param name="folderPath">The full path to the folder</param>
-    /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>The folder's backup status information</returns>
-    public async Task<FolderStatusInfo> GetFolderStatusAsync(
-        string folderPath,
-        CancellationToken cancellationToken = default)
+    public FolderStatusInfo GetFolderStatus(string folderPath)
     {
-        // Normalize the path
-        folderPath = Path.GetFullPath(folderPath).TrimEnd(Path.DirectorySeparatorChar);
+        folderPath = NormalizePath(folderPath);
+        EnsureCacheIsFresh();
 
-        await _cacheLock.WaitAsync(cancellationToken);
-        try
+        Dictionary<string, FolderStatusInfo> cache;
+        lock (_lock)
+            cache = _folderStatusCache;
+
+        if (cache.TryGetValue(folderPath, out var status))
+            return status;
+
+        // A folder inside a backed up folder inherits its status
+        foreach (var kvp in cache)
+            if (folderPath.StartsWith(kvp.Key + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+                return kvp.Value;
+
+        return new FolderStatusInfo(FolderBackupStatus.NotInBackup, null, null, null);
+    }
+
+    /// <summary>
+    /// Starts a background refresh if the cache is stale and no refresh is running
+    /// </summary>
+    private void EnsureCacheIsFresh()
+    {
+        lock (_lock)
         {
-            // Check if cache is still valid
-            if (DateTime.UtcNow - _lastCacheTime > CacheExpiration)
-            {
-                await RefreshCacheAsync(cancellationToken);
-            }
+            if (_disposed)
+                return;
+            if (_refreshTask != null && !_refreshTask.IsCompleted)
+                return;
+            if (DateTime.UtcNow < _nextRefreshTime)
+                return;
 
-            // Look up the folder in the cache
-            if (_folderStatusCache.TryGetValue(folderPath, out var status))
-                return status;
-
-            // Check if any cached folder is a parent of this folder
-            foreach (var kvp in _folderStatusCache)
-            {
-                if (folderPath.StartsWith(kvp.Key + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
-                {
-                    return kvp.Value;
-                }
-            }
-
-            return new FolderStatusInfo(FolderBackupStatus.NotInBackup, null, null, null);
-        }
-        finally
-        {
-            _cacheLock.Release();
+            _nextRefreshTime = DateTime.UtcNow + RetryInterval;
+            _refreshTask = Task.Run(RefreshCacheAsync);
         }
     }
 
     /// <summary>
-    /// Refreshes the folder status cache from the server
+    /// Fetches the status list, swaps the cache, and asks Explorer to redraw changed folders
     /// </summary>
-    private async Task RefreshCacheAsync(CancellationToken cancellationToken)
+    private async Task RefreshCacheAsync()
+    {
+        var updated = await FetchStatusesAsync().ConfigureAwait(false);
+
+        Dictionary<string, FolderStatusInfo> previous;
+        lock (_lock)
+        {
+            previous = _folderStatusCache;
+            if (updated != null)
+                _folderStatusCache = updated;
+            _nextRefreshTime = DateTime.UtcNow + (updated != null ? CacheExpiration : RetryInterval);
+        }
+
+        if (updated != null)
+            NotifyChangedFolders(previous, updated);
+    }
+
+    /// <summary>
+    /// Fetches the folder status list from the server
+    /// </summary>
+    /// <returns>The statuses keyed by normalized path, or null if the server could not be queried</returns>
+    private async Task<Dictionary<string, FolderStatusInfo>?> FetchStatusesAsync()
     {
         try
         {
-            // Get folder status from the dedicated API endpoint
-            var response = await _httpClient.GetAsync(
-                $"{_baseUrl}/api/v1/folderstatus",
-                cancellationToken);
-
+            // The server accepts local requests without a login when the folder status service is enabled
+            using var response = await _httpClient.GetAsync($"{_baseUrl}/api/v1/folderstatus").ConfigureAwait(false);
             if (!response.IsSuccessStatusCode)
-            {
-                // If API not available, fall back to backup listing
-                await RefreshCacheFromBackupsAsync(cancellationToken);
-                return;
-            }
+                return null;
 
-            var content = await response.Content.ReadAsStringAsync(cancellationToken);
+            var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
             var statusList = JsonSerializer.Deserialize<FolderStatusResponse[]>(content, _jsonOptions);
 
-            _folderStatusCache.Clear();
-            if (statusList != null)
+            var result = new Dictionary<string, FolderStatusInfo>(StringComparer.OrdinalIgnoreCase);
+            foreach (var item in statusList ?? [])
             {
-                foreach (var item in statusList)
+                if (string.IsNullOrEmpty(item.Path))
+                    continue;
+
+                try
                 {
-                    if (!string.IsNullOrEmpty(item.Path))
-                    {
-                        var normalizedPath = Path.GetFullPath(item.Path).TrimEnd(Path.DirectorySeparatorChar);
-                        _folderStatusCache[normalizedPath] = new FolderStatusInfo(
-                            ParseStatus(item.Status),
-                            item.BackupName,
-                            item.LastBackupTime,
-                            item.BackupId
-                        );
-                    }
+                    result[NormalizePath(item.Path)] = new FolderStatusInfo(
+                        ParseStatus(item.Status),
+                        item.BackupName,
+                        item.LastBackupTime,
+                        item.BackupId
+                    );
+                }
+                catch
+                {
+                    // Skip sources that are not plain paths
                 }
             }
 
-            _lastCacheTime = DateTime.UtcNow;
+            return result;
         }
         catch
         {
-            // If we can't reach the server, keep the old cache
-            if (_folderStatusCache.Count == 0)
-            {
-                _lastCacheTime = DateTime.UtcNow;
-            }
+            // Server not running or not reachable; keep the current cache and retry later
+            return null;
         }
     }
 
     /// <summary>
-    /// Fallback method to refresh cache from backup listings
+    /// Asks Explorer to redraw folders whose status differs between the two cache versions
     /// </summary>
-    private async Task RefreshCacheFromBackupsAsync(CancellationToken cancellationToken)
+    private static void NotifyChangedFolders(Dictionary<string, FolderStatusInfo> previous, Dictionary<string, FolderStatusInfo> updated)
     {
-        try
-        {
-            var response = await _httpClient.GetAsync(
-                $"{_baseUrl}/api/v1/backups",
-                cancellationToken);
+        foreach (var kvp in updated)
+            if (!previous.TryGetValue(kvp.Key, out var old) || old.Status != kvp.Value.Status)
+                ShellNotify.UpdateFolder(kvp.Key);
 
-            if (!response.IsSuccessStatusCode)
-                return;
-
-            var content = await response.Content.ReadAsStringAsync(cancellationToken);
-            var backups = JsonSerializer.Deserialize<BackupInfo[]>(content, _jsonOptions);
-
-            _folderStatusCache.Clear();
-            if (backups != null)
-            {
-                foreach (var backup in backups)
-                {
-                    if (backup.Backup?.Sources != null)
-                    {
-                        var status = DetermineBackupStatus(backup);
-                        foreach (var source in backup.Backup.Sources)
-                        {
-                            if (!string.IsNullOrEmpty(source))
-                            {
-                                var normalizedPath = Path.GetFullPath(source).TrimEnd(Path.DirectorySeparatorChar);
-                                _folderStatusCache[normalizedPath] = new FolderStatusInfo(
-                                    status,
-                                    backup.Backup.Name,
-                                    backup.Backup.Metadata?.TryGetValue("LastBackupDate", out var dateStr) == true
-                                        ? DateTime.TryParse(dateStr, out var date) ? date : null
-                                        : null,
-                                    backup.Backup.ID
-                                );
-                            }
-                        }
-                    }
-                }
-            }
-
-            _lastCacheTime = DateTime.UtcNow;
-        }
-        catch
-        {
-            // Silently fail - server might not be running
-        }
+        foreach (var path in previous.Keys)
+            if (!updated.ContainsKey(path))
+                ShellNotify.UpdateFolder(path);
     }
 
-    private static FolderBackupStatus DetermineBackupStatus(BackupInfo backup)
-    {
-        // Check if backup has metadata about last run
-        if (backup.Backup?.Metadata == null)
-            return FolderBackupStatus.NeverBackedUp;
-
-        if (!backup.Backup.Metadata.TryGetValue("LastBackupDate", out var lastDateStr) ||
-            string.IsNullOrEmpty(lastDateStr))
-            return FolderBackupStatus.NeverBackedUp;
-
-        // Check for error/warning status
-        if (backup.Backup.Metadata.TryGetValue("LastBackupError", out var error) &&
-            !string.IsNullOrEmpty(error))
-            return FolderBackupStatus.BackupFailed;
-
-        if (backup.Backup.Metadata.TryGetValue("LastBackupWarning", out var warning) &&
-            !string.IsNullOrEmpty(warning))
-            return FolderBackupStatus.BackedUpWithWarning;
-
-        return FolderBackupStatus.BackedUp;
-    }
+    /// <summary>
+    /// Normalizes a path for comparison
+    /// </summary>
+    private static string NormalizePath(string path)
+        => Path.GetFullPath(path).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
 
     private static FolderBackupStatus ParseStatus(string? status)
     {
@@ -285,29 +252,24 @@ public sealed class DuplicatiClient : IDisposable
     /// </summary>
     public void Dispose()
     {
-        if (!_disposed)
+        lock (_lock)
         {
-            _httpClient.Dispose();
-            _cacheLock.Dispose();
+            if (_disposed)
+                return;
             _disposed = true;
         }
+
+        _httpClient.Dispose();
     }
 
-    // Response DTOs for JSON deserialization
+    /// <summary>
+    /// Response DTO for JSON deserialization
+    /// </summary>
     private record FolderStatusResponse(
         string? Path,
         string? Status,
         string? BackupName,
         DateTime? LastBackupTime,
         string? BackupId
-    );
-
-    private record BackupInfo(BackupData? Backup);
-
-    private record BackupData(
-        string? ID,
-        string? Name,
-        string[]? Sources,
-        Dictionary<string, string>? Metadata
     );
 }

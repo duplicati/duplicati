@@ -68,6 +68,23 @@ namespace Duplicati.CommandLine.Strings
         public static string AllowedEncryptionModulesLong { get { return LC.L(@"Comma-separated list of encryption module file extensions that are allowed to be used. If this option is not specified, all available encryption modules are allowed. Use this option to restrict the encryption modules that can be used, for example in a managed environment. Example: --allowed-encryption-modules=aes,gpg"); } }
         public static string AllowedCompressionModulesShort { get { return LC.L(@"Allowed compression modules"); } }
         public static string AllowedCompressionModulesLong { get { return LC.L(@"Comma-separated list of compression module file extensions that are allowed to be used. If this option is not specified, all available compression modules are allowed. Use this option to restrict the compression modules that can be used, for example in a managed environment. Example: --allowed-compression-modules=zip"); } }
+        public static string RestoreTestStarted(System.DateTime time) { return LC.L(@"Restore test started at {0}", time); }
+        public static string BackupRestoreTestStarting { get { return LC.L(@"Testing restore of a sample from the backup ..."); } }
+        public static string BackupRestoreTestSummary(long tested, long passed, long failed, long skipped) { return LC.L(@"  Restore test: {0} file(s) tested, {1} passed, {2} failed, {3} skipped", tested, passed, failed, skipped); }
+        public static string RestoreTestSummary(string mode, long version, int seed) { return LC.L(@"Restore test completed for version {0} in {1} mode (seed {2})", version, mode, seed); }
+        public static string RestoreTestFilesSummary(long tested, long passed, long failed, long skipped) { return LC.L(@"  Files tested: {0}, passed: {1}, failed: {2}, skipped: {3}", tested, passed, failed, skipped); }
+        public static string RestoreTestDataSummary(string restored, string downloaded, long volumes) { return LC.L(@"  Data verified: {0}, downloaded: {1} in {2} remote volume(s)", restored, downloaded, volumes); }
+        public static string RestoreTestDatabaseRecreated { get { return LC.L(@"  Database: recreated from the remote destination"); } }
+        public static string RestoreTestDatabaseReused { get { return LC.L(@"  Database: existing local database used"); } }
+        public static string RestoreTestDuration(System.TimeSpan duration) { return LC.L(@"  Duration: {0:hh\:mm\:ss}", duration); }
+        public static string RestoreTestBudgetExceeded(string reason) { return LC.L(@"  Budget exceeded: {0}", reason); }
+        public static string RestoreTestFailuresHeader(long count) { return LC.L(@"  {0} file(s) failed verification:", count); }
+        public static string RestoreTestFailureLine(string path, string reason, string expected, string actual) { return LC.L(@"    {0}: {1} (expected: {2}, actual: {3})", path, reason, expected, actual); }
+        public static string RestoreTestSourceDifferencesHeader(long count) { return LC.L(@"  {0} file(s) differ from the source:", count); }
+        public static string RestoreTestSourceDifferenceLine(string path, string reason) { return LC.L(@"    {0}: {1}", path, reason); }
+        public static string RestoreTestAndMore(long count, string optionname) { return LC.L(@"    ... and {0} more (use --{1} to see all)", count, optionname); }
+        public static string RestoreTestNoFilesTested { get { return LC.L(@"No files were tested, is the backup empty or excluded by the filters?"); } }
+        public static string RestoreTestAllPassed(long count) { return LC.L(@"All {0} tested file(s) were restored and verified successfully", count); }
 
         // ReSharper disable once UnusedMember.Global
         // This is a placeholder message that is intended to be used with the code

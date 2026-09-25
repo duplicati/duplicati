@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 using System;
+using Duplicati.Library.Interface;
 using Duplicati.Library.Localization.Short;
 
 namespace Duplicati.Library.Main.Strings
@@ -128,6 +129,8 @@ namespace Duplicati.Library.Main.Strings
         public static string SnapshotpolicyShort { get { return LC.L(@"Control the use of disk snapshots"); } }
         public static string SnapshotproviderLong { get { return LC.L(@"The snapshot provider implementation for Windows. The Vanara version is the default and supports all features and integrates directly with Windows on all versions and architectures. The WMI based snapshot is slightly more portable but has less features. The AlphaVSS is the legacy provider and requires VC++ Redist installed."); } }
         public static string SnapshotproviderShort { get { return LC.L(@"The snapshot provider implementation to use"); } }
+        public static string VssprovideridLong { get { return LC.L(@"The GUID of the VSS provider to use for creating snapshots. By default Windows chooses a provider automatically, preferring hardware and third-party software providers over the Microsoft system provider. If a registered third-party provider (such as the QEMU Guest Agent VSS Provider) claims the volume but does not expose a usable snapshot, set this to the Microsoft Software Shadow Copy provider GUID {b5946137-7b9f-4925-af80-51abd60b20d5} to force the system provider. Use ""vssadmin list providers"" to see the registered providers."); } }
+        public static string VssprovideridShort { get { return LC.L(@"The VSS provider to use (Windows only)"); } }
         public static string AsynchronousuploadfolderLong { get { return LC.L(@"The pre-generated volumes will be placed into the temporary folder by default. This option can set a different folder for placing the temporary volumes. Despite the name, this also works for synchronous runs."); } }
         public static string AsynchronousuploadfolderShort { get { return LC.L(@"The path where ready volumes are placed until uploaded"); } }
         public static string AsynchronousconcurrentuploadlimitLong { get { return LC.L(@"When performing asynchronous uploads, the maximum number of concurrent uploads allowed. Set to zero to disable the limit."); } }
@@ -213,7 +216,7 @@ namespace Duplicati.Library.Main.Strings
         public static string DisablefilepathcacheDeprecated { get { return LC.L(@"The option --{0} is no longer used and has been deprecated.", "disable-filepath-cache"); } }
         public static string NobackendverificationLong { get { return LC.L(@"If this option is set, the local database is not compared to the remote filelist on startup. The intended usage for this option is to work correctly in cases where the filelisting is broken or unavailable."); } }
         public static string NobackendverificationShort { get { return LC.L(@"Do not query backend at startup"); } }
-        public static string CaseinsensitiveremoteLong { get { return LC.L(@"Use case-insensitive comparisons when matching remote filenames against the local database. Enable this only for backends that change the letter casing of filenames when listing files."); } }
+        public static string CaseinsensitiveremoteLong { get { return LC.L(@"Use case-insensitive comparisons when matching remote filenames against the local database. Enable this only for backends that change the letter casing of filenames when listing files. The sync command also uses it to treat destination names that differ only in case as the same file."); } }
         public static string CaseinsensitiveremoteShort { get { return LC.L(@"Use case-insensitive remote filename comparisons"); } }
         public static string IndexfilepolicyLong { get { return LC.L(@"The index files are used to limit the need for downloading dblock files when there is no local database present. The more information is recorded in the index files, the faster operations can proceed without the database. The tradeoff is that larger index files take up more remote space and which may never be used."); } }
         public static string IndexfilepolicyShort { get { return LC.L(@"Determine usage of index files"); } }
@@ -371,6 +374,8 @@ namespace Duplicati.Library.Main.Strings
         public static string AutoCompactIntervalShort { get { return LC.L("Minimum time between auto compactions"); } }
         public static string AutoVacuumIntervalLong { get { return LC.L("The minimum amount of time that must elapse after the last vacuum before another will be automatically triggered at the end of a backup job. Automatic vacuum can be a long-running process and may not be desirable to run after every single backup."); } }
         public static string AutoVacuumIntervalShort { get { return LC.L("Minimum time between auto vacuums"); } }
+        public static string PerformRestoreTestAfterShort { get { return LC.L("Run a restore test after backups"); } }
+        public static string PerformRestoreTestAfterLong { get { return LC.L("Runs a restore test as the last step of a backup when the previous restore test finished longer ago than this interval, so a sample of the backup is regularly restored from the remote destination and verified. The restore test is configured with the restore-test options. If not set, no restore test is run after backups."); } }
         public static string SecretProviderShort { get { return LC.L("Secret provider to use for reading credentials"); } }
         public static string SecretProviderLong(string toolname) { return LC.L("Configures a secret provider to use for reading credentials. Use the commandline tool {0} to test the provider and see supported options. This value is interpreted as an environment variable if it starts with '$' or begins and ends with '%'.", toolname); }
         public static string SecretProviderPatternShort { get { return LC.L("Pattern for secrets"); } }
@@ -436,6 +441,38 @@ namespace Duplicati.Library.Main.Strings
         public static string DisableAdsRestoreLong { get { return LC.L("Use this option to skip restoring NTFS alternate data streams (ADS) during a restore operation. The main file content will still be restored."); } }
         public static string AllowPathsInLogMessagesShort { get { return LC.L("Allow paths in log messages"); } }
         public static string AllowPathsInLogMessagesLong { get { return LC.L("Use this option to allow paths to be included in log messages sent to remote servers. By default, paths are redacted to protect sensitive information."); } }
+
+        public static string RestoreTestModeShort { get { return LC.L(@"How the restore test sample is chosen"); } }
+        public static string RestoreTestModeLong(string countoption, string percentoption, string windowoption) => LC.L(@$"Selects which files the restore test restores and verifies. ""{RestoreTestMode.RandomFiles}"" picks the number of random files given by --{countoption}. ""{RestoreTestMode.RandomSize}"" picks random files until the percentage of the backup size given by --{percentoption} is reached. ""{RestoreTestMode.Full}"" tests every file in the version. ""{RestoreTestMode.Rolling}"" prefers files that have not been verified recently, so every file is tested at least once per --{windowoption}.");
+        public static string RestoreTestSampleCountShort { get { return LC.L(@"Number of files to test"); } }
+        public static string RestoreTestSampleCountLong => LC.L(@$"The number of files to restore and verify when the restore test mode is ""{RestoreTestMode.RandomFiles}"" or ""{RestoreTestMode.Rolling}"".");
+        public static string RestoreTestSamplePercentShort { get { return LC.L(@"Percentage of the backup size to test"); } }
+        public static string RestoreTestSamplePercentLong => LC.L(@$"The percentage (0-100) of the total backup size to restore and verify when the restore test mode is ""{RestoreTestMode.RandomSize}"".");
+        public static string RestoreTestRollingWindowShort { get { return LC.L(@"Window for the rolling restore test"); } }
+        public static string RestoreTestRollingWindowLong => LC.L(@$"The period within which every file should be verified when the restore test mode is ""{RestoreTestMode.Rolling}"". Files verified longer ago than this are picked first.");
+        public static string RestoreTestVersionShort { get { return LC.L(@"Backup version to test"); } }
+        public static string RestoreTestVersionLong(string versionoption) { return LC.L(@"The backup version to restore from, where 0 is the newest version. If not set, the first value of --{0} is used when present, otherwise the newest version is tested.", versionoption); }
+        public static string RestoreTestRecreateDatabaseShort { get { return LC.L(@"Recreate the database from the remote destination"); } }
+        public static string RestoreTestRecreateDatabaseLong { get { return LC.L(@"Rebuilds the local database into a temporary file from the remote destination before restoring, so the test does not rely on the existing local database. If not set, the existing local database is used, and a temporary database is only rebuilt when no usable local database exists. The real local database is never replaced."); } }
+        public static string RestoreTestCompareSourceShort { get { return LC.L(@"Compare restored files with the source"); } }
+        public static string RestoreTestCompareSourceLong { get { return LC.L(@"After verifying the restored files, also compare them with the live source files. A source file is only compared if it still exists and has the same size and modification time as when it was backed up. Differences are reported as warnings."); } }
+        public static string RestoreTestVerifyMetadataShort { get { return LC.L(@"Verify restored metadata"); } }
+        public static string RestoreTestVerifyMetadataLong { get { return LC.L(@"Also verify that the modification time of each restored file matches the time recorded in the backup, where the platform supports it."); } }
+        public static string RestoreTestMaxDownloadSizeShort { get { return LC.L(@"Maximum amount of data to download"); } }
+        public static string RestoreTestMaxDownloadSizeLong { get { return LC.L(@"The maximum amount of data the restore test may download from the remote destination. The download size is estimated before the restore starts, and the test stops with a budget exceeded result if the estimate or the actual download exceeds this limit. Unlimited if not set."); } }
+        public static string RestoreTestMaxRuntimeShort { get { return LC.L(@"Maximum runtime"); } }
+        public static string RestoreTestMaxRuntimeLong { get { return LC.L(@"The maximum time the restore test may run. The test stops with a budget exceeded result if the limit is exceeded. Unlimited if not set."); } }
+        public static string RestoreTestTempPathShort { get { return LC.L(@"Scratch folder for the restore test"); } }
+        public static string RestoreTestTempPathLong(string tempdiroption) { return LC.L(@"The folder where the restore test places the restored files and the temporary database. The folder must be writable and have enough free space for the sample. If not set, the folder given by --{0} or the system temporary folder is used.", tempdiroption); }
+        public static string RestoreTestSeedShort { get { return LC.L(@"Seed for sample selection"); } }
+        public static string RestoreTestSeedLong { get { return LC.L(@"The seed used when picking the random sample, so a run can be reproduced. A random seed is used if not set, and the seed used is reported in the result."); } }
+        public static string RestoreTestIncludeShort { get { return LC.L(@"Include files in the restore test"); } }
+        public static string RestoreTestIncludeLong(string separator) { return LC.L(@"Limits the files the restore test can pick to those matching the filter. Uses the standard filter syntax; multiple filters can be separated with ""{0}"".", separator); }
+        public static string RestoreTestExcludeShort { get { return LC.L(@"Exclude files from the restore test"); } }
+        public static string RestoreTestExcludeLong(string separator) { return LC.L(@"Excludes files matching the filter from the restore test. Uses the standard filter syntax; multiple filters can be separated with ""{0}"".", separator); }
+        public static string RestoreTestInvalidPercentError(string value) { return LC.L(@"The restore test sample percentage must be a number between 0 and 100, got: {0}", value); }
+        public static string RestoreTestInvalidVersionError(string value) { return LC.L(@"The restore test version must be a non-negative number, got: {0}", value); }
+        public static string RestoreTestInvalidSeedError(string value) { return LC.L(@"The restore test seed must be an integer, got: {0}", value); }
     }
 
     internal static class Common

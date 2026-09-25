@@ -201,6 +201,8 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
         _includedRootTypes = parsedOptions.IncludedRootTypes;
         _includedUserTypes = parsedOptions.IncludedUserTypes;
         _includedGroupTypes = parsedOptions.IncludedGroupTypes;
+        if (_includedGroupTypes.Contains(Office365GroupType.Calendar))
+            Library.Logging.Log.WriteWarningMessage(LOGTAG, "GroupCalendarNotSupported", null, "The Calendar group type is included, but the Graph API only allows access to group calendars with delegated permissions, which are not supported. Group calendar backup will most likely fail.");
         _includedUserClassifications = parsedOptions.IncludedUserClassifications;
         _includedGroupClassifications = parsedOptions.IncludedGroupClassifications;
         _includedSiteClassifications = parsedOptions.IncludedSiteClassifications;
@@ -988,13 +990,16 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
         if (_enumerationCounter.ContainsKey(targetpath))
             return true;
 
+        // The seat warning is written on whichever call first sees the limit. The listing-time
+        // check does not increment and, once it returns false, the entry is never enumerated,
+        // so waiting for the incrementing call would mean never warning at all.
         if (type.HasFlag(Office365MetaType.Users))
         {
             var approved = LicenseChecker.LicenseHelper.AvailableOffice365UserSeats;
             var current = _userCount;
             if (current >= approved)
             {
-                if (increment && Interlocked.Exchange(ref _userLicenseWarningIssued, 1) == 0)
+                if (Interlocked.Exchange(ref _userLicenseWarningIssued, 1) == 0)
                     Library.Logging.Log.WriteWarningMessage(LOGTAG, "LicenseWarning", null, Strings.LicenseWarning(type, approved));
                 return false;
             }
@@ -1005,7 +1010,7 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
             var current = _groupCount;
             if (current >= approved)
             {
-                if (increment && Interlocked.Exchange(ref _groupLicenseWarningIssued, 1) == 0)
+                if (Interlocked.Exchange(ref _groupLicenseWarningIssued, 1) == 0)
                     Library.Logging.Log.WriteWarningMessage(LOGTAG, "LicenseWarning", null, Strings.LicenseWarning(type, approved));
                 return false;
             }
@@ -1016,7 +1021,7 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
             var current = _siteCount;
             if (current >= approved)
             {
-                if (increment && Interlocked.Exchange(ref _siteLicenseWarningIssued, 1) == 0)
+                if (Interlocked.Exchange(ref _siteLicenseWarningIssued, 1) == 0)
                     Library.Logging.Log.WriteWarningMessage(LOGTAG, "LicenseWarning", null, Strings.LicenseWarning(type, approved));
                 return false;
             }
@@ -1029,12 +1034,13 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
 
         if (increment && _enumerationCounter.TryAdd(targetpath, true))
         {
+            // The consumed seats are recorded for a host that collects the usage of the backup it runs in-process
             if (type.HasFlag(Office365MetaType.Users))
-                Interlocked.Increment(ref _userCount);
+                LicenseChecker.LicenseUsageTracker.Current?.Record(LicenseChecker.DuplicatiLicenseFeatures.Office365Users, Interlocked.Increment(ref _userCount));
             else if (type.HasFlag(Office365MetaType.Groups))
-                Interlocked.Increment(ref _groupCount);
+                LicenseChecker.LicenseUsageTracker.Current?.Record(LicenseChecker.DuplicatiLicenseFeatures.Office365Groups, Interlocked.Increment(ref _groupCount));
             else if (type.HasFlag(Office365MetaType.Sites))
-                Interlocked.Increment(ref _siteCount);
+                LicenseChecker.LicenseUsageTracker.Current?.Record(LicenseChecker.DuplicatiLicenseFeatures.Office365Sites, Interlocked.Increment(ref _siteCount));
         }
 
         return true;

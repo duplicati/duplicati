@@ -45,7 +45,7 @@ namespace Duplicati.UnitTest
             public bool IsVSSWriterSupported { get; set; } = true;
             public List<HyperVGuest> Guests { get; set; } = [];
 
-            public void QueryHyperVGuestsInfo(WindowsSnapshotProvider provider, bool bIncludePaths = false)
+            public void QueryHyperVGuestsInfo(WindowsSnapshotProvider provider, Guid providerId, bool bIncludePaths = false)
             {
                 // Mock implementation, no actual querying
             }

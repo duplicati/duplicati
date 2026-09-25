@@ -66,8 +66,11 @@ namespace Duplicati.Library.Main.Operation.Common
         /// </summary>
         /// <param name="source">The source to split</param>
         /// <returns>The remote source, or null if the source is not a remote source</returns>
-        public static RemoteSource? ParseRemoteSource(string source)
+        public static RemoteSource? ParseRemoteSource(string? source)
         {
+            if (string.IsNullOrWhiteSpace(source))
+                return null;
+
             // Remote sources are given on the form "@mountpoint|url"
             var match = Regex.Match(source, @"^@(?<mountpoint>[^|]+)\|(?<url>.+)$", RegexOptions.IgnoreCase);
             return match.Success

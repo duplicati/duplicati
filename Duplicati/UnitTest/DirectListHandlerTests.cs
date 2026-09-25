@@ -137,6 +137,78 @@ namespace Duplicati.UnitTest
             }
         }
 
+        /// <summary>
+        /// With neither a time nor a version given, the folder listing is of the latest
+        /// fileset, as the command's help text says. An explicit version still selects that one.
+        /// </summary>
+        [Test]
+        public async Task ListFolder_NoTimeOrVersion_ListsTheLatestFilesetAsync()
+        {
+            var options = new Dictionary<string, string>(this.TestOptions)
+            {
+                ["upload-unchanged-backups"] = "true"
+            };
+            var first = Path.Combine(this.DATAFOLDER, "a.txt");
+            var second = Path.Combine(this.DATAFOLDER, "b.txt");
+
+            File.WriteAllText(first, "a");
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+
+            // Fileset timestamps have a resolution of one second
+            await Task.Delay(1500);
+            File.WriteAllText(second, "b");
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+
+            var folder = Library.Common.IO.Util.AppendDirSeparator(this.DATAFOLDER);
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                var latest = await c.ListFolderAsync(new[] { folder }, 0, 0, false);
+                Assert.That(latest.Entries.Items.Select(x => x.Path), Is.EquivalentTo(new[] { first, second }), "Without a time or a version the latest fileset should be listed");
+
+                var roots = await c.ListFolderAsync(null, 0, 0, false);
+                Assert.That(roots.Entries.Items.Select(x => x.Path), Is.EqualTo(new[] { folder }), "The root listing should also default to the latest fileset");
+            }
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options.Expand(new { version = 1 }), null))
+            {
+                var older = await c.ListFolderAsync(new[] { folder }, 0, 0, false);
+                Assert.That(older.Entries.Items.Select(x => x.Path), Is.EqualTo(new[] { first }), "An explicit version should still select that fileset");
+            }
+        }
+
+        /// <summary>
+        /// A folder is stored with a trailing directory separator. Listing its contents must
+        /// work whether or not the caller added the separator, as a shell user typically does not.
+        /// </summary>
+        [Test]
+        public async Task ListFolder_FolderWithoutTrailingSeparator_ListsItsEntriesAsync()
+        {
+            var options = new Dictionary<string, string>(this.TestOptions);
+            var folder = Path.Combine(this.DATAFOLDER, "f1");
+            var sub = Path.Combine(folder, "sub");
+            Directory.CreateDirectory(sub);
+            var file = Path.Combine(folder, "a.txt");
+            File.WriteAllText(file, "a");
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+
+            var expected = new[] { file, Library.Common.IO.Util.AppendDirSeparator(sub) };
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                var withoutSeparator = await c.ListFolderAsync(new[] { folder }, 0, 0, false);
+                Assert.That(withoutSeparator.Entries.Items.Select(x => x.Path), Is.EquivalentTo(expected), "The folder given without a trailing separator should list its entries");
+                Assert.That(withoutSeparator.Entries.Items.Where(x => x.IsDirectory).Select(x => x.Path), Is.EqualTo(new[] { Library.Common.IO.Util.AppendDirSeparator(sub) }));
+
+                var withSeparator = await c.ListFolderAsync(new[] { Library.Common.IO.Util.AppendDirSeparator(folder) }, 0, 0, false);
+                Assert.That(withSeparator.Entries.Items.Select(x => x.Path), Is.EquivalentTo(expected), "The folder given with a trailing separator should list the same entries");
+            }
+        }
+
         [Test]
         public async Task ListFileVersions_LifecycleTestAsync()
         {
@@ -201,6 +273,9 @@ namespace Duplicati.UnitTest
                 var allVersions = await c.ListFileVersionsAsync(pathsToCheck, 0, 0);
                 var grouped = allVersions.FileVersions.Items.GroupBy(x => x.Path);
 
+                // The checks below run per returned path, so an empty answer must fail here
+                Assert.That(grouped.Count(), Is.EqualTo(pathsToCheck.Length), "Every path asked for should have versions listed");
+
                 foreach (var group in grouped)
                 {
                     var path = group.Key;
@@ -217,6 +292,43 @@ namespace Duplicati.UnitTest
                     else
                         Assert.Fail($"Unexpected file {path} in file versions list.");
                 }
+            }
+        }
+
+        /// <summary>
+        /// A search limited to folders covers those folders and everything below them,
+        /// and nothing beside them: "f10" is not below "f1".
+        /// </summary>
+        [Test]
+        public async Task SearchEntries_FolderScopeIncludesSubfoldersAsync()
+        {
+            var options = new Dictionary<string, string>(this.TestOptions);
+            var f1 = Path.Combine(this.DATAFOLDER, "f1");
+            var sub = Path.Combine(f1, "sub");
+            var f10 = Path.Combine(this.DATAFOLDER, "f10");
+            Directory.CreateDirectory(sub);
+            Directory.CreateDirectory(f10);
+            var top = Path.Combine(this.DATAFOLDER, "c.txt");
+            var inF1 = Path.Combine(f1, "a.txt");
+            var inSub = Path.Combine(sub, "b.txt");
+            var inF10 = Path.Combine(f10, "d.txt");
+            foreach (var file in new[] { top, inF1, inSub, inF10 })
+                File.WriteAllText(file, file);
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+
+            var filter = new FilterExpression("*.txt", true);
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                var inFolder = await c.SearchEntriesAsync(new[] { f1 }, filter, false, 0, 0, false, false);
+                Assert.That(inFolder.FileVersions.Items.Select(x => x.Path), Is.EquivalentTo(new[] { inF1, inSub }), "A folder scope should cover the folder and its sub-folders, and not its neighbours");
+
+                var inSubFolder = await c.SearchEntriesAsync(new[] { sub }, filter, false, 0, 0, false, false);
+                Assert.That(inSubFolder.FileVersions.Items.Select(x => x.Path), Is.EqualTo(new[] { inSub }));
+
+                var everywhere = await c.SearchEntriesAsync(null, filter, false, 0, 0, false, false);
+                Assert.That(everywhere.FileVersions.Items.Select(x => x.Path), Is.EquivalentTo(new[] { top, inF1, inSub, inF10 }));
             }
         }
 
@@ -720,17 +832,63 @@ namespace Duplicati.UnitTest
             }
 
             // Act: Call ListFileVersions with 150 fileset IDs
-            // This should trigger the temporary table code path
+            // This should trigger the temporary table code path.
+            // The path is the full path, as the handler passes it: prefix and name joined.
             var result = await db.ListFileVersionsAsync(
-                new[] { "file.txt" },
+                new[] { "/test/file.txt" },
                 filesetIds.ToArray(),
                 0,
                 1000,
                 CancellationToken.None)
                 .ConfigureAwait(false);
 
-            // Assert: Should return all 150 file versions
+            // Assert: Should return all 150 file versions, each with the full path
             Assert.That(result.Items.Count(), Is.EqualTo(150));
+            Assert.That(result.Items.Select(x => x.Path).Distinct(), Is.EqualTo(new[] { "/test/file.txt" }));
+        }
+
+        /// <summary>
+        /// Files are stored without a trailing directory separator and folders with one.
+        /// Listing the versions of a path must find both by their full path, and a folder
+        /// must be found whether or not the caller added the trailing separator.
+        /// </summary>
+        [Test]
+        public async Task ListFileVersions_ReturnsFullPathsForFilesAndFoldersAsync()
+        {
+            var options = new Dictionary<string, string>(this.TestOptions);
+            var sub = Path.Combine(this.DATAFOLDER, "sub");
+            Directory.CreateDirectory(sub);
+            var fileA = Path.Combine(this.DATAFOLDER, "a.txt");
+            var fileB = Path.Combine(sub, "b.txt");
+            File.WriteAllText(fileA, "aaa");
+            File.WriteAllText(fileB, "bbbbb");
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+
+            var subWithSeparator = Library.Common.IO.Util.AppendDirSeparator(sub);
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                var fileset = (await c.ListFilesetsAsync()).Filesets.Single();
+                var res = await c.ListFileVersionsAsync(new[] { fileA, sub, fileB }, 0, 0);
+                var byPath = res.FileVersions.Items.ToDictionary(x => x.Path);
+
+                Assert.That(byPath.Keys, Is.EquivalentTo(new[] { fileA, subWithSeparator, fileB }), "Each path should be listed once, by its full path");
+                Assert.That(byPath[fileA].IsDirectory, Is.False);
+                Assert.That(byPath[fileA].Size, Is.EqualTo(3));
+                Assert.That(byPath[fileB].IsDirectory, Is.False);
+                Assert.That(byPath[fileB].Size, Is.EqualTo(5));
+                Assert.That(byPath[subWithSeparator].IsDirectory, Is.True);
+                Assert.That(res.FileVersions.Items.Select(x => x.Version).Distinct(), Is.EqualTo(new[] { 0 }));
+                // The fileset timestamp is stored in epoch seconds; the version's time must be the fileset's time
+                Assert.That(res.FileVersions.Items.Select(x => x.Time).Distinct(), Is.EqualTo(new[] { fileset.Time }));
+
+                // Asking with the trailing separator finds the same folder entry
+                var folderOnly = await c.ListFileVersionsAsync(new[] { subWithSeparator }, 0, 0);
+                Assert.That(folderOnly.FileVersions.Items.Select(x => x.Path), Is.EqualTo(new[] { subWithSeparator }));
+                Assert.That(folderOnly.FileVersions.Items.Single().IsDirectory, Is.True);
+            }
         }
 
         /// <summary>
@@ -1010,6 +1168,86 @@ namespace Duplicati.UnitTest
 
             // Assert: No files should match (path doesn't contain "MyDocument")
             Assert.That(result.Items.Count(), Is.EqualTo(0));
+        }
+
+        /// <summary>
+        /// A caller that asks for an exact time match (singleTimeMatch) has to get nothing
+        /// when nothing matches. The newest fileset is the documented answer for a restore
+        /// time (the at-or-before search), not for a listing of one particular version.
+        /// </summary>
+        [Test]
+        [Category("Database")]
+        public async Task GetFilesetIDs_ExactMatchWithoutAMatch_ReturnsNothingAsync()
+        {
+            using var tempFile = new TempFile();
+            await using var db = await LocalListDatabase.CreateAsync(tempFile, null, CancellationToken.None)
+                .ConfigureAwait(false);
+
+            using (var cmd = db.Connection.CreateCommand())
+            {
+                foreach (var (id, timestamp) in new[] { (1L, 1000L), (2L, 2000L) })
+                    await cmd.SetCommandAndParameters(@"
+                        INSERT OR IGNORE INTO Fileset (ID, OperationID, VolumeID, IsFullBackup, Timestamp)
+                        VALUES (@filesetId, 1, 1, 1, @timestamp);")
+                        .SetParameterValue("@filesetId", id)
+                        .SetParameterValue("@timestamp", timestamp)
+                        .ExecuteNonQueryAsync();
+            }
+
+            async Task<long[]> Ids(long seconds, bool singleTimeMatch)
+                => await db.GetFilesetIDsAsync(Library.Utility.Utility.EPOCH.AddSeconds(seconds), null, singleTimeMatch, CancellationToken.None)
+                    .ToArrayAsync(cancellationToken: CancellationToken.None)
+                    .ConfigureAwait(false);
+
+            // Exact match: a time between the two filesets matches neither, and must not become "the newest"
+            Assert.That(await Ids(1500, true), Is.Empty, "An exact-match lookup that matches nothing must return nothing.");
+            Assert.That(await Ids(2000, true), Is.EqualTo(new[] { 2L }));
+            Assert.That(await Ids(1000, true), Is.EqualTo(new[] { 1L }));
+
+            // At-or-before (restore) semantics are unchanged, including the fallback to the newest fileset
+            Assert.That(await Ids(1500, false), Is.EqualTo(new[] { 1L }));
+            Assert.That(await Ids(500, false), Is.EqualTo(new[] { 2L, 1L }), "A restore time before every fileset still falls back to every fileset, newest first.");
+        }
+
+        /// <summary>
+        /// The folder listing asks for one version by its time. A time that matches no
+        /// version must be an error, not the newest version's listing under that time.
+        /// </summary>
+        [Test]
+        public async Task ListFolder_TimeThatMatchesNoFileset_IsAnErrorAsync()
+        {
+            var options = new Dictionary<string, string>(this.TestOptions)
+            {
+                ["upload-unchanged-backups"] = "true"
+            };
+
+            File.WriteAllText(Path.Combine(this.DATAFOLDER, "file1"), "file1");
+
+            DateTime oldest, newest;
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+
+                var sets = (await c.ListFilesetsAsync()).Filesets.OrderBy(x => x.Time).ToArray();
+                Assert.That(sets.Length, Is.EqualTo(2));
+                oldest = sets.First().Time;
+                newest = sets.Last().Time;
+            }
+
+            // A time before every backup matches no version
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options.Expand(new { time = Library.Utility.Utility.SerializeDateTime(oldest.ToUniversalTime().AddDays(-1)) }), null))
+            {
+                var error = Assert.ThrowsAsync<Duplicati.Library.Interface.UserInformationException>(async () => await c.ListFolderAsync([""], 0, 0, false));
+                Assert.That(error!.HelpID, Is.EqualTo("NoFilesetsFound"));
+            }
+
+            // The exact time of a version still lists it
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options.Expand(new { time = Library.Utility.Utility.SerializeDateTime(newest.ToUniversalTime()) }), null))
+            {
+                var files = await c.ListFolderAsync([""], 0, 0, false);
+                Assert.That(files.Entries.Items.Count(), Is.EqualTo(1));
+            }
         }
     }
 }

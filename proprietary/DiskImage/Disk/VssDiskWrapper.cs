@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.Versioning;
 using System.Text.Json;
 using System.Threading;
@@ -13,6 +14,8 @@ using Duplicati.Proprietary.DiskImage.Disk;
 using Duplicati.Proprietary.DiskImage.General;
 using Vanara.PInvoke;
 using static Vanara.PInvoke.Kernel32;
+
+[assembly: InternalsVisibleTo("Duplicati.UnitTest")]
 
 namespace Duplicati.Proprietary.DiskImage.Disk;
 
@@ -315,6 +318,23 @@ internal sealed class VssDiskWrapper : IRawDisk
         => Windows.ListPhysicalDrivesAsync(cancellationToken);
 
     /// <summary>
+    /// Reads the disk number off a device path, e.g. "\\.\PhysicalDrive0" gives 0.
+    /// </summary>
+    /// <param name="devicePath">The disk device path.</param>
+    /// <param name="diskNumber">The disk number, when the path carries one.</param>
+    /// <returns>True when the path ends in a disk number.</returns>
+    internal static bool TryGetDiskNumber(string devicePath, out int diskNumber)
+    {
+        var trimmed = (devicePath ?? string.Empty).TrimEnd('\\', '/');
+        var start = trimmed.Length;
+        while (start > 0 && char.IsAsciiDigit(trimmed[start - 1]))
+            start--;
+
+        diskNumber = 0;
+        return start < trimmed.Length && int.TryParse(trimmed.AsSpan(start), out diskNumber);
+    }
+
+    /// <summary>
     /// Gets the volumes on the specified disk.
     /// </summary>
     /// <param name="devicePath">The disk device path (e.g., "\\.\PhysicalDrive0").</param>
@@ -322,13 +342,11 @@ internal sealed class VssDiskWrapper : IRawDisk
     /// <returns>A list of volumes on the disk with their offsets and sizes.</returns>
     internal static async Task<List<VolumeInfo>> GetVolumesOnDiskAsync(string devicePath, CancellationToken cancellationToken)
     {
-        // Extract disk number from device path (e.g., "\\.\PhysicalDrive0" -> 0)
-        var trimmed = devicePath.TrimEnd('\\', '/');
-        if (!int.TryParse(trimmed[^1..], out var diskNumber))
+        if (!TryGetDiskNumber(devicePath, out var diskNumber))
             return [];
 
         var script = $@"
-Get-Partition -DiskNumber {diskNumber} -ErrorAction SilentlyContinue |
+Get-CimInstance -ClassName MSFT_Partition -Namespace Root/Microsoft/Windows/Storage -Filter 'DiskNumber={diskNumber}' |
 Where-Object {{ $_.DriveLetter -ne $null -and $_.DriveLetter -ne [char]0 -and $_.DriveLetter -ne '' }} |
 ForEach-Object {{
     [pscustomobject]@{{

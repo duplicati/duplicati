@@ -282,6 +282,8 @@ You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The sp
         public static string OptionLogfilterShort { get { return LC.L("Log message filter"); } }
         public static string OptionmaxloglinesLong { get { return LC.L("Use this option to set the maximum number of log lines to include in the report. Zero or negative values means unlimited."); } }
         public static string OptionmaxloglinesShort { get { return LC.L("Limit log lines"); } }
+        public static string OptionOperationsLong { get { return LC.L(@"Use this option to select the operations that send a report. Multiple operations can be selected by separating them with a comma, for example ""Backup,RestoreTest"". This option is ignored if reports are sent for all operations."); } }
+        public static string OptionOperationsShort { get { return LC.L(@"Send messages for the listed operations"); } }
         public static string ResultFormatLong(IEnumerable<string> options) { return LC.L(@"Use this option to select the output format for results. Available formats: {0}", string.Join(", ", options)); }
         public static string ResultFormatShort { get { return LC.L(@"Select the output format for results"); } }
     }
