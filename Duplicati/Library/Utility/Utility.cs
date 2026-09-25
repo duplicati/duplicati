@@ -1613,8 +1613,15 @@ namespace Duplicati.Library.Utility
         [return: NotNullIfNotNull("arg")]
         internal static string? WrapCommandLineElement(string? arg, bool allowEnvExpansion, bool isWindows)
         {
-            if (string.IsNullOrWhiteSpace(arg))
-                return arg;
+            if (arg == null)
+                return null;
+
+            // An empty argument adds nothing to the commandline unless it is written as a
+            // pair of quotes. One that is only whitespace needs no special case: whitespace
+            // is outside the safe set, so it is quoted below instead of being read as the
+            // separator between arguments.
+            if (arg.Length == 0)
+                return @"""""";
 
             if (!isWindows)
             {
