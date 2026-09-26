@@ -365,9 +365,46 @@ namespace Duplicati.Library.Modules.Builtin
                     Array.Empty<ReportBackendEvent>());
             }
 
-            var report = BuildReport(exception == null ? "Completed" : "Failed", exception?.Message);
+            // The error of a failed operation often names a path, such as a destination folder
+            // that does not exist, so it is redacted like the log lines
+            var errorMessage = exception == null
+                ? GetResultErrorMessage(result)
+                : RedactPathsUnlessAllowed(exception.Message);
+
+            var report = BuildReport(exception == null ? "Completed" : "Failed", errorMessage);
             await PostAsync(report, cancellationToken).ConfigureAwait(false);
         }
+
+        /// <summary>
+        /// Describes the errors of an operation that finished without throwing. Such an operation
+        /// can still have failed: a restore that could not restore a file reports it as an error
+        /// in its results and returns normally, and would otherwise be reported as completed with
+        /// nothing wrong. The paths in the error are redacted like the log lines.
+        /// </summary>
+        /// <param name="result">The results of the operation, or <c>null</c> if there are none.</param>
+        /// <returns>The error message, or <c>null</c> if the operation reported no errors.</returns>
+        private string? GetResultErrorMessage(IBasicResults? result)
+        {
+            if (result == null || result.ParsedResult is not (ParsedResultType.Error or ParsedResultType.Fatal))
+                return null;
+
+            var errors = result.Errors.ToList();
+            if (errors.Count != 1)
+                return $"Got {errors.Count} error(s)";
+
+            return RedactPathsUnlessAllowed(errors[0]);
+        }
+
+        /// <summary>
+        /// Redacts the paths in a text sent in the report, unless the user has allowed paths in
+        /// log messages, following the same rule as the buffered log lines.
+        /// </summary>
+        /// <param name="text">The text to redact.</param>
+        /// <returns>The text, with its paths redacted unless paths are allowed.</returns>
+        private string RedactPathsUnlessAllowed(string text)
+            => m_allowPathsInLogMessages
+                ? text
+                : SensitiveDataFilter.RedactPaths(text);
 
         /// <inheritdoc />
         public Task OnBackendEventAsync(ReportBackendEvent evt, CancellationToken cancellationToken)
