@@ -337,7 +337,13 @@ namespace Duplicati.Library.Main.Operation.Restore
                                         catch (Exception ex) when (!RestoreCancellation.IsShutdownRequested(results.TaskControl))
                                         {
                                             Logging.Log.WriteErrorMessage(LOGTAG, "CopyOldTargetToNew", ex, "Error when trying to copy {0} to {1}", file, new_file);
-                                            results.BrokenLocalFiles.Add(file.TargetPath);
+                                            // The list is shared by the file processors and is not
+                                            // safe for concurrent use, so it takes the same lock as
+                                            // the other places that add to it.
+                                            lock (results)
+                                            {
+                                                results.BrokenLocalFiles.Add(file.TargetPath);
+                                            }
                                         }
                                     }
                                 }
