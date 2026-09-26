@@ -161,6 +161,97 @@ namespace Duplicati.UnitTest
             Assert.AreEqual("boom", module.Reports[1].ErrorMessage);
         }
 
+        /// <summary>
+        /// Creates the results of an operation that finished without throwing, with the given
+        /// errors logged to it the way the engine logs them.
+        /// </summary>
+        private static IBasicResults ResultsWithErrors(params string[] errors)
+        {
+            var results = new Duplicati.Library.Main.RestoreResults();
+            foreach (var error in errors)
+                results.WriteMessage(new Duplicati.Library.Logging.LogEntry(error, [], Duplicati.Library.Logging.LogMessageType.Error, "Test", "TestError", null));
+            return results;
+        }
+
+        [Test]
+        public async Task CompletedWithAnErrorCarriesItAsync()
+        {
+            using var module = CreateConfigured();
+            var results = ResultsWithErrors("Failed to restore file /home/user/secret.txt");
+            Assert.AreEqual(ParsedResultType.Error, results.ParsedResult);
+
+            await module.OnOperationStartedAsync("Restore", null!, CancellationToken.None);
+            await module.OnOperationCompletedAsync(results, null, CancellationToken.None);
+
+            // The operation ran to the end, so it is still reported as completed, but not as if
+            // nothing went wrong
+            Assert.AreEqual("Completed", module.Reports[1].Status);
+            Assert.IsTrue(module.Reports[1].IsCompleted);
+            Assert.IsNotNull(module.Reports[1].ErrorMessage, "A completed operation with an error was reported without one");
+            // Paths are redacted, as in the log lines
+            Assert.That(module.Reports[1].ErrorMessage, Does.Contain("Failed to restore file"));
+            Assert.That(module.Reports[1].ErrorMessage, Does.Not.Contain("/home/user/secret.txt"));
+        }
+
+        [Test]
+        public async Task CompletedWithSeveralErrorsCountsThemAsync()
+        {
+            using var module = CreateConfigured();
+            await module.OnOperationStartedAsync("Restore", null!, CancellationToken.None);
+            await module.OnOperationCompletedAsync(ResultsWithErrors("first", "second", "third"), null, CancellationToken.None);
+
+            Assert.AreEqual("Completed", module.Reports[1].Status);
+            Assert.AreEqual("Got 3 error(s)", module.Reports[1].ErrorMessage);
+        }
+
+        [Test]
+        public async Task CompletedWithOnlyWarningsCarriesNoErrorAsync()
+        {
+            using var module = CreateConfigured();
+            var results = new Duplicati.Library.Main.RestoreResults();
+            results.WriteMessage(new Duplicati.Library.Logging.LogEntry("careful", [], Duplicati.Library.Logging.LogMessageType.Warning, "Test", "TestWarning", null));
+
+            await module.OnOperationStartedAsync("Restore", null!, CancellationToken.None);
+            await module.OnOperationCompletedAsync(results, null, CancellationToken.None);
+
+            Assert.AreEqual("Completed", module.Reports[1].Status);
+            Assert.IsNull(module.Reports[1].ErrorMessage);
+        }
+
+        [Test]
+        public async Task FailedReportRedactsPathsInTheErrorAsync()
+        {
+            using var module = CreateConfigured();
+            var path = OperatingSystem.IsWindows() ? @"C:\Users\me\backups\missing" : "/Users/me/backups/missing";
+
+            await module.OnOperationStartedAsync("Backup", null!, CancellationToken.None);
+            await module.OnOperationCompletedAsync(null!, new FolderMissingException($"The folder {path} does not exist"), CancellationToken.None);
+
+            // The error of a failed operation is redacted like the log lines, as the other
+            // reporting modules redact the whole report
+            Assert.AreEqual("Failed", module.Reports[1].Status);
+            Assert.That(module.Reports[1].ErrorMessage, Does.Contain("does not exist"));
+            Assert.That(module.Reports[1].ErrorMessage, Does.Not.Contain(path));
+        }
+
+        [Test]
+        public async Task FailedReportKeepsPathsWhenAllowedAsync()
+        {
+            using var module = new CapturingHttpReportStatus();
+            module.Configure(new Dictionary<string, string>
+            {
+                ["http-report-status-url"] = "http://localhost/example",
+                ["http-report-status-interval"] = "1s",
+                ["http-report-status-allow-paths-in-log-messages"] = "true",
+            });
+            var path = OperatingSystem.IsWindows() ? @"C:\Users\me\backups\missing" : "/Users/me/backups/missing";
+
+            await module.OnOperationStartedAsync("Backup", null!, CancellationToken.None);
+            await module.OnOperationCompletedAsync(null!, new FolderMissingException($"The folder {path} does not exist"), CancellationToken.None);
+
+            Assert.AreEqual($"The folder {path} does not exist", module.Reports[1].ErrorMessage);
+        }
+
         [Test]
         public async Task BackendEventsAndLogEntriesAreCountedAsync()
         {
