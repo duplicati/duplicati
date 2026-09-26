@@ -29,7 +29,6 @@ using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
-using Newtonsoft.Json;
 using System.Runtime.CompilerServices;
 
 namespace Duplicati.Library.Backend.TencentCOS
@@ -245,7 +244,7 @@ namespace Duplicati.Library.Backend.TencentCOS
 
         public async Task TestAsync(bool alsoWrite, CancellationToken cancelToken)
         {
-            var json = JsonConvert.SerializeObject(_cosOptions);
+            // Note: do not serialize _cosOptions here, it contains the SecretId/SecretKey
             try
             {
                 var cosXml = GetCosXml();
@@ -258,16 +257,16 @@ namespace Duplicati.Library.Backend.TencentCOS
                     return cosXml.HeadBucket(request);
                 }).ConfigureAwait(false);
 
-                Logging.Log.WriteInformationMessage(LOGTAG, "Test", "Request complete {0}: {1}, {2}", result.httpCode, json, result.GetResultInfo());
+                Logging.Log.WriteInformationMessage(LOGTAG, "Test", "Request complete {0}: {1}", result.httpCode, result.GetResultInfo());
             }
             catch (COSXML.CosException.CosClientException clientEx)
             {
-                Logging.Log.WriteErrorMessage(LOGTAG, "Test", clientEx, "Request failed: {0}", json);
+                Logging.Log.WriteErrorMessage(LOGTAG, "Test", clientEx, "Request failed");
                 throw;
             }
             catch (COSXML.CosException.CosServerException serverEx)
             {
-                Logging.Log.WriteErrorMessage(LOGTAG, "Test", serverEx, "Request failed: {0}, {1}", json, serverEx.GetInfo());
+                Logging.Log.WriteErrorMessage(LOGTAG, "Test", serverEx, "Request failed: {0}", serverEx.GetInfo());
                 throw;
             }
 
