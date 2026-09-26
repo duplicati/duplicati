@@ -152,11 +152,11 @@ public class QueueRunnerService(
 
             dbLock = await AcquireDatabaseLockAsync(task, lockCts.Token).ConfigureAwait(false);
 
-            await Runner.RunAsync(connection, eventPollNotify, notificationUpdateService, progressStateProviderService, applicationSettings, task, true).ConfigureAwait(false);
+            var result = await Runner.RunAsync(connection, eventPollNotify, notificationUpdateService, progressStateProviderService, applicationSettings, task, true).ConfigureAwait(false);
 
             // If the task is completed, don't call OnFinished again
             completed = true;
-            AddTaskResult(new CachedTaskResult(task.TaskID, task.BackupID, task.TaskStarted, task.TaskFinished ?? DateTime.Now, null));
+            AddTaskResult(new CachedTaskResult(task.TaskID, task.BackupID, task.TaskStarted, task.TaskFinished ?? DateTime.Now, null, GetResultErrorMessage(result)));
             if (task.OnFinished != null)
                 await task.OnFinished(null).ConfigureAwait(false);
         }
@@ -203,6 +203,24 @@ public class QueueRunnerService(
             _taskCache.TryGetValue(taskID, out var result);
             return result;
         }
+    }
+
+    /// <summary>
+    /// Describes the errors of a task that finished without throwing. Such a task can still have
+    /// failed: a restore that could not restore a file reports it as an error in its results and
+    /// returns normally. The text follows the notification the runner registers for the result.
+    /// </summary>
+    /// <param name="result">The results of the task, or <c>null</c> if it has none.</param>
+    /// <returns>The error message, or <c>null</c> if the task reported no errors.</returns>
+    private static string? GetResultErrorMessage(IBasicResults? result)
+    {
+        if (result == null || result.ParsedResult is not (ParsedResultType.Error or ParsedResultType.Fatal))
+            return null;
+
+        var errors = result.Errors.ToList();
+        return errors.Count == 1
+            ? errors[0]
+            : $"Got {errors.Count} error(s)";
     }
 
     private void AddTaskResult(CachedTaskResult taskResult)
