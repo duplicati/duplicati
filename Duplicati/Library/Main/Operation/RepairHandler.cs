@@ -79,6 +79,13 @@ namespace Duplicati.Library.Main.Operation
                     .CountAsync(cancellationToken: m_result.TaskControl.ProgressToken)
                     .ConfigureAwait(false);
             }
+            // An abort cancels the read, which says nothing about the database. Treating it as
+            // unreadable would set a healthy database aside and start recreating it, so the
+            // repair stops instead.
+            catch (Exception) when (m_result.TaskControl.ProgressToken.IsCancellationRequested)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 Logging.Log.WriteWarningMessage(LOGTAG, "FailedToReadLocalDatabase", ex, "Failed to read local db {0}, error: {1}", m_options.Dbpath, ex.Message);
