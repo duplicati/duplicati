@@ -179,16 +179,16 @@ namespace Duplicati.Server
                     return [];
 
                 var buffer = m_buffer.FlatArray((x) => x.ID > id && x.Type >= level);
-                // Return the <page_size> newest entries
-                if (buffer.Length > pagesize)
-                {
-                    var index = buffer.Length - pagesize;
-                    return buffer.Skip(index).Take(pagesize).ToArray();
-                }
-                else
-                {
+                if (buffer.Length <= pagesize)
                     return buffer;
-                }
+
+                // A client that has seen nothing yet starts from the newest entries. A client
+                // that continues from an entry it has seen gets the oldest entries after it, so
+                // that its next polls pick up the rest. It carries on from the highest ID it
+                // was given, so returning the newest page would skip everything before it.
+                return id <= 0
+                    ? buffer.Skip(buffer.Length - pagesize).ToArray()
+                    : buffer.Take(pagesize).ToArray();
             }
         }
 
