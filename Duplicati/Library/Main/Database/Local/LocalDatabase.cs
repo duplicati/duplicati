@@ -231,8 +231,31 @@ namespace Duplicati.Library.Main.Database.Local
 
             var connection = await CreateConnectionAsync(path)
                 .ConfigureAwait(false);
-            db = await CreateLocalDatabaseAsync(connection, operation, db, token)
-                .ConfigureAwait(false);
+            try
+            {
+                db = await CreateLocalDatabaseAsync(connection, operation, db, token)
+                    .ConfigureAwait(false);
+            }
+            catch
+            {
+                // The caller never gets the database, so nothing else closes the connection
+                // opened for it here, and the file would stay open until the process exits.
+                // For instance, the results of a failed first backup are written against the
+                // previous operation, which a new database does not have. Only what was set up
+                // here is released, as the rest of the instance may not be initialized.
+                DisposeAllFields<SqliteCommand>(db, false);
+                try
+                {
+                    if (db.m_rtr != null)
+                        await db.m_rtr.DisposeAsync().ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "FailedToDisposeTransaction", ex, "Failed to dispose the transaction of a database that failed to open");
+                }
+                await connection.DisposeAsync().ConfigureAwait(false);
+                throw;
+            }
 
             db.ShouldCloseConnection = shouldclose;
 
