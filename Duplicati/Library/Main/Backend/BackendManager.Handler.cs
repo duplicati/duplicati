@@ -490,7 +490,17 @@ partial class BackendManager
                         }
                     }
 
-                    context.Statwriter.SendEvent(op.Operation, retries <= maxRetries ? BackendEventType.Retrying : BackendEventType.Failed, op.RemoteFilename, op.Size);
+                    // Only a backup creates a missing destination folder, and waiting does not make
+                    // it appear for the other operations, which would otherwise report it only
+                    // after every retry. A backup keeps retrying, as a network share that is
+                    // briefly unreachable is reported the same way.
+                    var giveUp = context.Options.MainAction != OperationMode.Backup
+                        && Library.Utility.ExceptionExtensions.FlattenException(ex).Any(x => x is FolderMissingException);
+
+                    context.Statwriter.SendEvent(op.Operation, retries <= maxRetries && !giveUp ? BackendEventType.Retrying : BackendEventType.Failed, op.RemoteFilename, op.Size);
+
+                    if (giveUp)
+                        break;
 
                     // Check if we can recover from the error
                     var recovered = false;
