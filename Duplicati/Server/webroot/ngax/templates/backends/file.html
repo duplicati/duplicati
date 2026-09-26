@@ -1,14 +1,14 @@
 <script>$(function() { $( ".resizable" ).resizable(); });</script>
 
-<div ng-init="HideFolderBrowser = ($parent.Path || '') != ''"></div>
+<div ng-init="$parent.HideFolderBrowser = ($parent.Path || '') != ''"></div>
 
-<div ng-show="HideFolderBrowser" class="input text overlayButton multiple" style="max-width: none">
+<div ng-show="$parent.HideFolderBrowser" class="input text overlayButton multiple" style="max-width: none">
     <label for="file_path" translate>Folder path</label>
     <input type="text" name="file_path" id="file_path" ng-model="$parent.Path" placeholder="{{'Destination path' | translate}}" />
-    <a href id="file_targetFolderPathAdd" class="button" ng-click="HideFolderBrowser = false" translate>Browse</a>
+    <a href id="file_targetFolderPathAdd" class="button" ng-click="$parent.HideFolderBrowser = false" translate>Browse</a>
 </div>
 
-<div class="input text" ng-hide="HideFolderBrowser">
+<div class="input text" ng-hide="$parent.HideFolderBrowser">
 
     <div class="input" style="padding-bottom: 0px">
         <a href ng-click="ShowHiddenFolders = !ShowHiddenFolders" style="float: right; margin-right: 10px;">
@@ -16,7 +16,7 @@
             <span ng-hide="ShowHiddenFolders" translate>Show hidden items</span>
         </a>
 
-        <a href ng-click="HideFolderBrowser = true" style="float: right; margin-right: 10px;" translate>Manually type path</a>
+        <a href ng-click="$parent.HideFolderBrowser = true" style="float: right; margin-right: 10px;" translate>Manually type path</a>
     </div>
     
     <label for="folder_path_picker" translate>Folder path</label>

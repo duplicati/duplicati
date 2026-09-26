@@ -388,6 +388,9 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             }
             scope.Path = newScopePath;
         }
+
+        // The template decides this when it loads, which can be before the destination has been read
+        scope.HideFolderBrowser = (scope.Path || '') != '';
     };
 
     var s3_client_options = [{
