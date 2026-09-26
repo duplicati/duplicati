@@ -344,13 +344,30 @@ public static class WebServerLoader
 
                 return server;
             }
-            catch (Exception ex) when
-                (ex is System.Net.Sockets.SocketException { SocketErrorCode: System.Net.Sockets.SocketError.AddressAlreadyInUse }
-                 || ex is System.Net.Sockets.SocketException { SocketErrorCode: System.Net.Sockets.SocketError.AccessDenied }
-                || ex is System.IO.IOException { InnerException: AddressInUseException })
+            catch (Exception ex) when (IsPortUnavailable(ex))
             { }
 
 
         throw new Exception(Strings.Server.ServerStartFailure(ports));
     }
+
+    /// <summary>
+    /// Tells whether the server failed to start because the port cannot be used, so the next
+    /// port is tried. The port can be in use, or refused, as Windows does for the ranges it
+    /// excludes for Hyper-V, WSL and Docker.
+    /// </summary>
+    /// <param name="ex">The error the server failed to start with.</param>
+    /// <returns><c>true</c> if the port cannot be used; <c>false</c> otherwise.</returns>
+    private static bool IsPortUnavailable(Exception ex)
+        => ex switch
+        {
+            System.Net.Sockets.SocketException { SocketErrorCode: System.Net.Sockets.SocketError.AddressAlreadyInUse or System.Net.Sockets.SocketError.AccessDenied } => true,
+            System.IO.IOException { InnerException: AddressInUseException } => true,
+            // Binding localhost tries both IPv4 and IPv6, and reports the two failures together
+            // when neither can be used
+            System.IO.IOException { InnerException: AggregateException aggregate } =>
+                aggregate.InnerExceptions.Count > 0
+                && aggregate.InnerExceptions.All(x => x is AddressInUseException || IsPortUnavailable(x)),
+            _ => false
+        };
 }

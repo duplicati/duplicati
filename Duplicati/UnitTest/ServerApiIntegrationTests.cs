@@ -446,6 +446,86 @@ public class ServerApiIntegrationTests : BasicSetupHelper
     }
 
     /// <summary>
+    /// The server tries the ports it is given in turn when one cannot be used. A port that the
+    /// system refuses (Windows reserves ranges of ports for Hyper-V, WSL and Docker) made the
+    /// default localhost binding fail with an error that was not recognized, so the server
+    /// stopped instead of trying the next port (#7330).
+    /// </summary>
+    [Test]
+    [Category("Integration")]
+    public async Task ServerMovesOnFromAPortItIsNotAllowedToUse_Async()
+    {
+        int refused;
+        if (OperatingSystem.IsWindows())
+        {
+            // A port in a range Windows has excluded, as in the issue. Listing the ranges does not
+            // need administrator rights, but adding one does, so the test uses one that is there.
+            var reserved = GetExcludedPort();
+            if (reserved == null)
+                Assert.Ignore("Windows has no excluded port range for both IPv4 and IPv6 here");
+            refused = reserved!.Value;
+        }
+        else
+        {
+            // A privileged port is refused to a user that is not root
+            refused = 1;
+            try
+            {
+                using var probe = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                probe.Bind(new IPEndPoint(IPAddress.Loopback, refused));
+                Assert.Ignore("Port 1 can be used here (running as root?), so it is not refused");
+            }
+            catch (SocketException)
+            {
+            }
+        }
+
+        var next = GetFreeTcpPort();
+
+        // The default interface binds localhost on both IPv4 and IPv6, as the tray icon does
+        await WithAuthenticatedServerAsync(httpClient =>
+        {
+            Assert.That(ServerProgram.DuplicatiWebserver.Port, Is.EqualTo(next), "The server did not move on to the next port");
+            return Task.CompletedTask;
+        }, ports: $"{refused},{next}", listenInterface: "loopback").ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Finds a TCP port that Windows has excluded for both IPv4 and IPv6, as listed by
+    /// <c>netsh interface ipvN show excludedportrange</c>.
+    /// </summary>
+    /// <returns>The port, or <c>null</c> if there is none.</returns>
+    private static int? GetExcludedPort()
+    {
+        static List<(int Start, int End)> Ranges(string family)
+        {
+            using var process = Process.Start(new ProcessStartInfo("netsh", $"interface {family} show excludedportrange protocol=tcp")
+            {
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+            })!;
+            var output = process.StandardOutput.ReadToEnd();
+            process.WaitForExit();
+
+            // The headers are localized, the rows are two numbers
+            return output
+                .Split('\n')
+                .Select(line => line.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                .Where(parts => parts.Length >= 2 && int.TryParse(parts[0], out _) && int.TryParse(parts[1], out _))
+                .Select(parts => (int.Parse(parts[0]), int.Parse(parts[1])))
+                .ToList();
+        }
+
+        var v6 = Ranges("ipv6");
+        return Ranges("ipv4")
+            .SelectMany(r => Enumerable.Range(r.Start, r.End - r.Start + 1))
+            .Where(port => port > 1024 && v6.Any(r => port >= r.Start && port <= r.End))
+            .Select(port => (int?)port)
+            .FirstOrDefault();
+    }
+
+    /// <summary>
     /// A destination folder that is already there is the desired outcome of an
     /// automatic creation, the way the backend manager treats it. These tests use a
     /// backend that reports the folder as missing and then reports it as already
@@ -593,7 +673,7 @@ public class ServerApiIntegrationTests : BasicSetupHelper
         }).ConfigureAwait(false);
     }
 
-    private async Task WithAuthenticatedServerAsync(Func<HttpClient, Task> testBody)
+    private async Task WithAuthenticatedServerAsync(Func<HttpClient, Task> testBody, string? ports = null, string listenInterface = "127.0.0.1")
     {
         var serverPassword = "integration-test-password";
         var serverDataFolder = Path.Combine(BASEFOLDER, $"server-data-{Guid.NewGuid():N}");
@@ -610,8 +690,8 @@ public class ServerApiIntegrationTests : BasicSetupHelper
             applicationSettings = new ApplicationSettings();
             var serverArgs = new[]
             {
-                $"--{WebServerLoader.OPTION_PORT}={GetFreeTcpPort()}",
-                $"--{WebServerLoader.OPTION_INTERFACE}=127.0.0.1",
+                $"--{WebServerLoader.OPTION_PORT}={ports ?? GetFreeTcpPort().ToString()}",
+                $"--{WebServerLoader.OPTION_INTERFACE}={listenInterface}",
                 $"--{WebServerLoader.OPTION_WEBSERVICE_PASSWORD}={serverPassword}",
                 $"--{DataFolderManager.SERVER_DATAFOLDER_OPTION}={serverDataFolder}",
                 "--webservice-api-only=true"
