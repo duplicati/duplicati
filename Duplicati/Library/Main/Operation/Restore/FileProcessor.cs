@@ -372,6 +372,11 @@ namespace Duplicati.Library.Main.Operation.Restore
                             sw_work_hash?.Stop();
 
                             Stream? fs = null;
+                            // How far the file got through its missing blocks: the download
+                            // requests sent, the responses read and the blocks released. A file
+                            // that fails part way uses these to leave the channels as the next
+                            // file expects them.
+                            int requested = 0, received = 0, released = 0;
                             try
                             {
                                 // Open the target file
@@ -419,6 +424,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                             BlockRequestType.Download
                                         )
                                     ).ConfigureAwait(false);
+                                    requested++;
                                 }
                                 sw_req?.Stop();
 
@@ -435,7 +441,9 @@ namespace Duplicati.Library.Main.Operation.Restore
                                     {
                                         // Read the block from the response and issue a new request, if more blocks are missing
                                         sw_resp?.Start();
-                                        using var datablock = await (await block_response.ReadAsync().ConfigureAwait(false)).ConfigureAwait(false);
+                                        var response = await block_response.ReadAsync().ConfigureAwait(false);
+                                        received++;
+                                        using var datablock = await response.ConfigureAwait(false);
                                         if (datablock.Data == null)
                                             throw new Exception($"Received null data block from request {missing_blocks[j].BlockID} for file {file.TargetPath}");
 
@@ -454,6 +462,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                                     BlockRequestType.Download
                                                 )
                                             ).ConfigureAwait(false);
+                                            requested++;
                                         }
                                         sw_req?.Stop();
 
@@ -488,6 +497,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                                 BlockRequestType.CacheEvict
                                             )
                                         ).ConfigureAwait(false);
+                                        released++;
                                         sw_req?.Stop();
                                     }
                                     else
@@ -547,6 +557,35 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 block_response.Retire();
                                 throw;
                             }
+                            // Only this file failed, for instance because it could not be created or
+                            // written. It is reported and the processor carries on with the next
+                            // file, as it does when checking the target file fails. A retirement is
+                            // a failure of the restore itself and ends the processor below.
+                            catch (Exception ex) when (ex is not RetiredException)
+                            {
+                                lock (results)
+                                {
+                                    results.BrokenLocalFiles.Add(file.TargetPath);
+                                }
+                                Logging.Log.WriteErrorMessage(LOGTAG, "FailedToRestoreFile", ex, "Failed to restore file {0}: {1}", file.TargetPath, ex.Message);
+                                FaultPriorityBarrierIfPriorityFile(file, ex);
+
+                                // Closed here rather than in the finally, so that a file that also
+                                // fails to close, as it can when flushing to a full disk, does not
+                                // end the processor either.
+                                try
+                                {
+                                    await (fs?.DisposeAsync().AsTask() ?? Task.CompletedTask).ConfigureAwait(false);
+                                }
+                                catch (Exception dex) when (!RestoreCancellation.IsShutdownRequested(results.TaskControl))
+                                {
+                                    Logging.Log.WriteWarningMessage(LOGTAG, "FailedToCloseFile", dex, "Failed to close file {0}: {1}", file.TargetPath, dex.Message);
+                                }
+                                fs = null;
+
+                                await ReleaseUnusedBlocksAsync(db, file, missing_blocks, requested - received, released, block_request, block_response, options, results.TaskControl.ProgressToken).ConfigureAwait(false);
+                                continue;
+                            }
                             catch (Exception)
                             {
                                 lock (results)
@@ -574,7 +613,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         // Mark the file's data as verified in the prepared restore file list.
                         // The --restore-all-files=unique feature harvests only DataVerified=1
                         // files for cross-version de-duplication, so files that failed to
-                        // restore (which throw above and never reach here) are not recorded and
+                        // restore (which leave above and never reach here) are not recorded and
                         // remain eligible for restore in subsequent versions. A failure to mark
                         // is non-fatal: it only affects de-dup, not the restore itself.
                         try
@@ -856,6 +895,61 @@ namespace Duplicati.Library.Main.Operation.Restore
             }
         
             return true;
+        }
+
+        /// <summary>
+        /// Leaves the block channels as the next file expects them, after a file failed part way
+        /// through its missing blocks.
+        /// </summary>
+        /// <param name="db">The restore database, which is queried for the metadata blocks.</param>
+        /// <param name="file">The file that failed.</param>
+        /// <param name="missing_blocks">The blocks the file was restoring, in the order they were requested.</param>
+        /// <param name="outstanding">The number of download requests sent whose responses have not been read.</param>
+        /// <param name="released">The number of blocks, from the start of <paramref name="missing_blocks"/>, already released.</param>
+        /// <param name="block_request">The channel to request blocks from the block manager.</param>
+        /// <param name="block_response">The channel to receive blocks from the block manager.</param>
+        /// <param name="options">The restore options.</param>
+        /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
+        /// <returns>An awaitable `Task`.</returns>
+        private static async Task ReleaseUnusedBlocksAsync(LocalRestoreDatabase db, FileRequest file, List<BlockRequest> missing_blocks, int outstanding, int released, IChannel<BlockRequest> block_request, IChannel<Task<DataBlock>> block_response, Options options, CancellationToken cancellationToken)
+        {
+            // The responses to the requests sent ahead are read and dropped, or the next file
+            // would take them for its own blocks.
+            for (var i = 0; i < outstanding; i++)
+            {
+                using var datablock = await (await block_response.ReadAsync().ConfigureAwait(false)).ConfigureAwait(false);
+            }
+
+            // The block manager counts every block a file needs, its metadata included, and keeps
+            // a block and its volume until the count reaches zero. The blocks this file will not
+            // use are released so that they are not held until the end of the restore and then
+            // reported as never used.
+            foreach (var block in missing_blocks.Skip(released))
+                await block_request.WriteAsync(
+                    new BlockRequest(
+                        block.BlockID,
+                        block.BlockOffset,
+                        block.BlockHash,
+                        block.BlockSize,
+                        block.VolumeID,
+                        BlockRequestType.CacheEvict
+                    )
+                ).ConfigureAwait(false);
+
+            if (options.SkipMetadata)
+                return;
+
+            await foreach (var block in db.GetMetadataBlocksFromFileAsync(file.ID, cancellationToken).ConfigureAwait(false))
+                await block_request.WriteAsync(
+                    new BlockRequest(
+                        block.BlockID,
+                        block.BlockOffset,
+                        block.BlockHash,
+                        block.BlockSize,
+                        block.VolumeID,
+                        BlockRequestType.CacheEvict
+                    )
+                ).ConfigureAwait(false);
         }
 
         /// <summary>
