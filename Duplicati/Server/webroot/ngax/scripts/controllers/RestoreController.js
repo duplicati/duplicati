@@ -27,8 +27,10 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
         var today     = dateStamp(now);
         var yesterday = dateStamp(new Date(new Date().setDate(now.getDate()   - 1)));
         var week      = dateStamp(new Date(new Date().setDate(now.getDate()   - 7)));
-        var thismonth = dateStamp(new Date(new Date().setMonth(now.getMonth() - 1)));
-        var lastmonth = dateStamp(new Date(new Date().setMonth(now.getMonth() - 2)));
+        // The months are calendar months, as the headings say. Counting a month back from
+        // the day instead would also land in the same month from the 29th to the 31st.
+        var thismonth = dateStamp(new Date(now.getFullYear(), now.getMonth(), 1));
+        var lastmonth = dateStamp(new Date(now.getFullYear(), now.getMonth() - 1, 1));
 
         var dateBuckets = [
             {text: gettextCatalog.getString('Today'), stamp: today},
