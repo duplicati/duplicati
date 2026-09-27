@@ -143,7 +143,7 @@ namespace Duplicati.Library.Main.Operation
                         .ToArray();
 
                     foreach (var locked in candidates.Where(x => HasActiveLock(x.LockExpirationTime)))
-                        Logging.Log.WriteInformationMessage(LOGTAG, "SkipDeleteLockedRemoteVolume", null,
+                        Logging.Log.WriteInformationMessage(LOGTAG, "SkipDeleteLockedRemoteVolume",
                             "Skipping deletion of remote volume {0} because it has an active lock until {1:u}",
                             locked.Name,
                             locked.LockExpirationTime!.Value);
@@ -180,7 +180,7 @@ namespace Duplicati.Library.Main.Operation
                             .ToArray();
 
                         foreach (var locked in candidates.Where(x => HasActiveLock(x.LockExpirationTime)))
-                            Logging.Log.WriteInformationMessage(LOGTAG, "SkipCompactLockedRemoteVolume", null,
+                            Logging.Log.WriteInformationMessage(LOGTAG, "SkipCompactLockedRemoteVolume",
                                 "Remote volume {0} was selected for compaction but has an active lock until {1:u}",
                                 locked.Name,
                                 locked.LockExpirationTime!.Value);
