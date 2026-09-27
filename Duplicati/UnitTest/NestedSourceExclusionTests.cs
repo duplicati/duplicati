@@ -72,10 +72,14 @@ public class NestedSourceExclusionTests : BasicSetupHelper
     /// </summary>
     /// <param name="sources">The sources to back up</param>
     /// <param name="filter">The filter to apply</param>
+    /// <param name="extraOptions">Options to set on top of the test options, if any</param>
     /// <returns>The file names, without their folders.</returns>
-    private async Task<string[]> BackupAndListAsync(string[] sources, IFilter filter)
+    private async Task<string[]> BackupAndListAsync(string[] sources, IFilter filter, Dictionary<string, string> extraOptions = null)
     {
         var options = new Dictionary<string, string>(this.TestOptions);
+        if (extraOptions != null)
+            foreach (var kv in extraOptions)
+                options[kv.Key] = kv.Value;
 
         using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
             TestUtils.AssertResults(await c.BackupAsync(sources, filter));
@@ -218,5 +222,123 @@ public class NestedSourceExclusionTests : BasicSetupHelper
         Assert.That(files, Does.Contain("kept.txt"));
         Assert.That(files, Does.Not.Contain("dropped.txt"));
         Assert.That(files, Does.Not.Contain("wanted.txt"), "everything below the excluded folder should be gone");
+    }
+
+    /// <summary>The option that excludes hidden files and folders</summary>
+    private static Dictionary<string, string> ExcludeHidden
+        => new() { ["exclude-files-attributes"] = "hidden" };
+
+    /// <summary>
+    /// Makes a folder below the data folder hidden. The name starts with a dot, which is
+    /// what hidden means outside Windows, and on Windows the attribute is set as well.
+    /// </summary>
+    /// <param name="name">The name of the folder, which must start with a dot</param>
+    private void HideFolder(string name)
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            var folder = new DirectoryInfo(Path.Combine(this.DATAFOLDER, name));
+            folder.Attributes |= FileAttributes.Hidden;
+        }
+    }
+
+    /// <summary>
+    /// The walk also stops at a folder holding an ignore marker, which the filter knows
+    /// nothing about. CACHEDIR.TAG is the default marker, so this needs no options at all.
+    /// </summary>
+    [Test]
+    [Category("Controller")]
+    public async Task ASourceInsideAFolderWithAnIgnoreMarkerIsStillBackedUp()
+    {
+        WriteFile("kept.txt");
+        WriteFile("cache", "CACHEDIR.TAG");
+        WriteFile("cache", "dropped.txt");
+        WriteFile("cache", "wanted", "wanted.txt");
+
+        var files = await BackupAndListAsync([this.DATAFOLDER, Folder("cache", "wanted")], null);
+
+        Assert.That(files, Does.Contain("wanted.txt"), $"got: {string.Join(", ", files)}");
+        Assert.That(files, Does.Contain("kept.txt"));
+        Assert.That(files, Does.Not.Contain("dropped.txt"), "the marked folder itself should stay excluded");
+    }
+
+    /// <summary>
+    /// The same with an exclude that has nothing to do with it, which takes the other
+    /// branch: the nested source would be turned into an include filter, and that cannot
+    /// bring it back either
+    /// </summary>
+    [Test]
+    [Category("Controller")]
+    public async Task ASourceInsideAFolderWithAnIgnoreMarkerIsStillBackedUpWithAnUnrelatedExclude()
+    {
+        WriteFile("kept.txt");
+        WriteFile("other", "other.txt");
+        WriteFile("cache", "CACHEDIR.TAG");
+        WriteFile("cache", "dropped.txt");
+        WriteFile("cache", "wanted", "wanted.txt");
+
+        var files = await BackupAndListAsync(
+            [this.DATAFOLDER, Folder("cache", "wanted")],
+            new FilterExpression(Folder("other"), false));
+
+        Assert.That(files, Does.Contain("wanted.txt"), $"got: {string.Join(", ", files)}");
+        Assert.That(files, Does.Contain("kept.txt"));
+        Assert.That(files, Does.Not.Contain("dropped.txt"));
+        Assert.That(files, Does.Not.Contain("other.txt"));
+    }
+
+    /// <summary>
+    /// The walk also stops at a folder whose attributes are excluded
+    /// </summary>
+    [Test]
+    [Category("Controller")]
+    public async Task ASourceInsideAFolderWithExcludedAttributesIsStillBackedUp()
+    {
+        WriteFile("kept.txt");
+        WriteFile(".hidden", "dropped.txt");
+        WriteFile(".hidden", "wanted", "wanted.txt");
+        HideFolder(".hidden");
+
+        var files = await BackupAndListAsync([this.DATAFOLDER, Folder(".hidden", "wanted")], null, ExcludeHidden);
+
+        Assert.That(files, Does.Contain("wanted.txt"), $"got: {string.Join(", ", files)}");
+        Assert.That(files, Does.Contain("kept.txt"));
+        Assert.That(files, Does.Not.Contain("dropped.txt"), "the hidden folder itself should stay excluded");
+    }
+
+    /// <summary>
+    /// Unlike an exclude filter, an excluded attribute on the nested source itself is not
+    /// overruled by the include filter that replaces it, so the walk stops at the source
+    /// itself. Named on its own it is a root, and a root is never excluded.
+    /// </summary>
+    [Test]
+    [Category("Controller")]
+    public async Task ANestedSourceWithExcludedAttributesIsStillBackedUp()
+    {
+        WriteFile("kept.txt");
+        WriteFile(".hidden", "wanted.txt");
+        HideFolder(".hidden");
+
+        var files = await BackupAndListAsync([this.DATAFOLDER, Folder(".hidden")], null, ExcludeHidden);
+
+        Assert.That(files, Does.Contain("wanted.txt"), $"got: {string.Join(", ", files)}");
+        Assert.That(files, Does.Contain("kept.txt"));
+    }
+
+    /// <summary>
+    /// Green before and after: a hidden folder that no source sits inside is still left out
+    /// </summary>
+    [Test]
+    [Category("Controller")]
+    public async Task AFolderWithExcludedAttributesAndNoSourceInsideStaysExcluded()
+    {
+        WriteFile("kept.txt");
+        WriteFile(".hidden", "dropped.txt");
+        HideFolder(".hidden");
+
+        var files = await BackupAndListAsync([this.DATAFOLDER], null, ExcludeHidden);
+
+        Assert.That(files, Does.Contain("kept.txt"));
+        Assert.That(files, Does.Not.Contain("dropped.txt"));
     }
 }
