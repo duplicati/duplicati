@@ -202,4 +202,69 @@ public class RestoreSymlinkOverExistingDataTests : BasicSetupHelper
         Assert.That(File.ReadAllText(Path.Combine(LinkTarget, "target.txt")), Is.EqualTo("target"), "what the links point to should be left alone");
         Assert.That(warnings, Has.None.Contains("SymlinkPlaceTaken"), $"got: {string.Join(" | ", warnings)}");
     }
+
+    /// <summary>
+    /// Makes a link to a folder outside the data folder, holding <c>a.txt</c> and
+    /// <c>sub/b.txt</c>, and backs up the link itself as the source. A source is followed,
+    /// so its files are in the backup, below the link.
+    /// </summary>
+    private async Task MakeLinkSourceAndBackupAsync()
+    {
+        if (Directory.Exists(LinkTarget))
+            Directory.Delete(LinkTarget, true);
+        Directory.CreateDirectory(Path.Combine(LinkTarget, "sub"));
+        File.WriteAllText(Path.Combine(LinkTarget, "a.txt"), "a");
+        File.WriteAllText(Path.Combine(LinkTarget, "sub", "b.txt"), "b");
+
+        try
+        {
+            Directory.CreateSymbolicLink(FolderLink, LinkTarget);
+        }
+        catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+        {
+            Assert.Ignore($"Symbolic links cannot be made here: {ex.Message}");
+        }
+
+        using var c = new Controller("file://" + this.TARGETFOLDER, new Dictionary<string, string>(this.TestOptions), null);
+        TestUtils.AssertResults(await c.BackupAsync([FolderLink + Path.DirectorySeparatorChar]));
+    }
+
+    /// <summary>
+    /// Restoring to a new machine: neither the link nor what it pointed to is there. The
+    /// files were restored into a folder at the path of the link, and making the link then
+    /// removed that folder with them, leaving a link to nothing.
+    /// </summary>
+    [Test]
+    [Category("RestoreHandler")]
+    public async Task TheFilesOfASourceThatIsALinkAreKeptWhenRestoredToANewMachine([Values] bool overwrite)
+    {
+        await MakeLinkSourceAndBackupAsync();
+        new DirectoryInfo(FolderLink).Delete();
+        Directory.Delete(LinkTarget, true);
+
+        var warnings = await RestoreAsync(overwrite);
+
+        Assert.That(File.ReadAllText(Path.Combine(FolderLink, "a.txt")), Is.EqualTo("a"), "the restored files should be kept");
+        Assert.That(File.ReadAllText(Path.Combine(FolderLink, "sub", "b.txt")), Is.EqualTo("b"));
+        Assert.That(warnings, Has.Some.Contains("SymlinkPlaceTakenByFolder"), $"got: {string.Join(" | ", warnings)}");
+    }
+
+    /// <summary>
+    /// Restoring in place with everything still there: the files are restored through the
+    /// link. The link was made again at the same time, and the files restored below it
+    /// while it was gone failed to get their metadata, with a warning for each.
+    /// </summary>
+    [Test]
+    [Category("RestoreHandler")]
+    public async Task ASourceThatIsALinkIsRestoredInPlaceWithoutWarnings()
+    {
+        await MakeLinkSourceAndBackupAsync();
+        File.WriteAllText(Path.Combine(LinkTarget, "a.txt"), "changed");
+
+        var warnings = await RestoreAsync(overwrite: true);
+
+        Assert.That(warnings, Is.Empty, $"got: {string.Join(" | ", warnings)}");
+        Assert.That(new DirectoryInfo(FolderLink).LinkTarget, Is.Not.Null, "the link should still be a link");
+        Assert.That(File.ReadAllText(Path.Combine(LinkTarget, "a.txt")), Is.EqualTo("a"), "the file should be restored through the link");
+    }
 }
