@@ -60,6 +60,14 @@ namespace Duplicati.Library.Main.Operation.Restore
         public static TaskCompletionSource file_processor_continue = new();
 
         /// <summary>
+        /// The number of file processors that have not yet reached the symbolic links to folders,
+        /// which are sent last. It is set by the <see cref="RestoreHandler"/>.
+        /// </summary>
+        public static int file_processors_before_folder_links;
+        public static object folder_links_continue_lock = new object();
+        public static TaskCompletionSource folder_links_continue = new();
+
+        /// <summary>
         /// Synchronization for priority files processing.
         /// FileProcessors wait until all priority files have been processed.
         /// </summary>
@@ -126,6 +134,8 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                 // Indicates whether this FileProcessor is still restoring files
                 var decremented = false;
+                // Indicates whether this FileProcessor has reached the symbolic links to folders
+                var reached_folder_links = false;
                 // ID for this file processor, used for debugging.
                 var my_id = Interlocked.Increment(ref processor_id);
 
@@ -170,10 +180,10 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                         Logging.Log.WriteExplicitMessage(LOGTAG, "FileRestored", null, "{0} Restoring file {1}", my_id, file.TargetPath);
 
-                        // Alternate data streams and folder metadata are restored only after all
-                        // main file content has been restored.
+                        // Alternate data streams, folder metadata and symbolic links to folders
+                        // are restored only after all main file content has been restored.
                         // We rendezvous with all other processors to guarantee the main content is complete.
-                        if ((file.BlocksetID == LocalDatabase.FOLDER_BLOCKSET_ID && !options.SkipMetadata) || file.IsAlternateDataStream)
+                        if ((file.BlocksetID == LocalDatabase.FOLDER_BLOCKSET_ID && !options.SkipMetadata) || file.IsAlternateDataStream || IsFolderLink(file))
                         {
                             // Check if there are other FileProcessor's still restoring files
                             if (!decremented)
@@ -186,6 +196,20 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 decremented = true;
                             }
 
+                            // A symbolic link to a folder also waits for the folder metadata and
+                            // the alternate data streams, which may be restored below it
+                            if (IsFolderLink(file) && !reached_folder_links)
+                            {
+                                await RendezvousBeforeFolderLinksAsync().ConfigureAwait(false);
+                                reached_folder_links = true;
+
+                                if (results.TaskControl.StopToken.IsCancellationRequested)
+                                {
+                                    Logging.Log.WriteVerboseMessage(LOGTAG, "StoppedProcess", null, "{0} File processor stopped while waiting to make the links to folders", my_id);
+                                    return;
+                                }
+                            }
+
                             if (file.BlocksetID == LocalDatabase.FOLDER_BLOCKSET_ID)
                             {
                                 if (!options.SkipMetadata)
@@ -195,7 +219,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 continue;
                             }
 
-                            // ADS stream: fall through to normal file restoration now that the host is restored.
+                            // ADS stream or link to a folder: fall through to normal file restoration now
+                            // that the host, or what is restored below the link, is restored.
                         }
 
                         // Get information about the blocks for the file
@@ -692,6 +717,9 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 file_processor_continue.SetResult();
                         }
 
+                    if (!reached_folder_links)
+                        ArriveAtFolderLinks();
+
                     block_request.Retire();
                     // The block handler can still be writing responses to the requests sent ahead of
                     // this one, and with this processor gone nothing reads them. A plain `Retire` waits
@@ -793,6 +821,17 @@ namespace Duplicati.Library.Main.Operation.Restore
         }
 
         /// <summary>
+        /// Reports whether the request is a symbolic link to a folder. Such a link is made
+        /// only after everything else is restored, as the files of a source that is itself a
+        /// link are restored below it.
+        /// </summary>
+        /// <param name="file">The request to check.</param>
+        /// <returns><c>true</c> if the request is a symbolic link to a folder.</returns>
+        internal static bool IsFolderLink(FileRequest file)
+            => file.BlocksetID == LocalDatabase.SYMLINK_BLOCKSET_ID
+                && file.TargetPath.EndsWith(System.IO.Path.DirectorySeparatorChar);
+
+        /// <summary>
         /// Rendezvous with the other FileProcessor's before processing folder metadata.
         /// </summary>
         /// <returns>An awaitable task that completes once all of the FileProcessor's have rendezvoused.</returns>
@@ -811,6 +850,34 @@ namespace Duplicati.Library.Main.Operation.Restore
             {
                 await file_processor_continue.Task.ConfigureAwait(false);
             }
+        }
+
+        /// <summary>
+        /// Counts this FileProcessor as having reached the symbolic links to folders, or as done.
+        /// </summary>
+        /// <returns><c>true</c> if other FileProcessor's have not reached them yet.</returns>
+        private static bool ArriveAtFolderLinks()
+        {
+            lock (folder_links_continue_lock)
+            {
+                file_processors_before_folder_links--;
+                if (file_processors_before_folder_links <= 0 && !folder_links_continue.Task.IsCompleted)
+                    folder_links_continue.SetResult();
+                return file_processors_before_folder_links > 0;
+            }
+        }
+
+        /// <summary>
+        /// Rendezvous with the other FileProcessor's before making a symbolic link to a folder.
+        /// The links are sent last, so once every FileProcessor has taken one or is done, nothing
+        /// else is being restored. Making a link that replaces another removes its path for a
+        /// moment, and anything restored below it at that moment would fail.
+        /// </summary>
+        /// <returns>An awaitable task that completes once all of the FileProcessor's have rendezvoused.</returns>
+        private static async Task RendezvousBeforeFolderLinksAsync()
+        {
+            if (ArriveAtFolderLinks())
+                await folder_links_continue.Task.ConfigureAwait(false);
         }
 
         /// <summary>

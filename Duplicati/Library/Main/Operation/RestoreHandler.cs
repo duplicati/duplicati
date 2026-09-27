@@ -882,6 +882,7 @@ namespace Duplicati.Library.Main.Operation
             volsize = volsize > 0 ? volsize : m_options.VolumeSize;
             Restore.DeadlockTimer.initial_threshold = (int)TimeSpan.FromMinutes(1).TotalMilliseconds * Math.Max(1, (int)(volsize / (10L * 1024L * 1024L)));
             Restore.FileProcessor.file_processors_restoring_files = m_options.RestoreFileProcessors;
+            Restore.FileProcessor.file_processors_before_folder_links = m_options.RestoreFileProcessors;
             // Reset the restore synchronization barriers for this operation. These are process-wide
             // static fields: the counters are reset per run, but the TaskCompletionSources were only
             // created once at field initialization and were never reset. Without resetting them here
@@ -892,6 +893,7 @@ namespace Duplicati.Library.Main.Operation
             // (including Windows ACLs) can be applied before all file content is restored. That lost
             // ordering guarantee causes intermittent metadata/permission restore failures.
             Restore.FileProcessor.file_processor_continue = new();
+            Restore.FileProcessor.folder_links_continue = new();
             Restore.FileProcessor.priority_files_completed = new();
 
             // Initialize priority files synchronization.
