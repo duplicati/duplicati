@@ -341,4 +341,233 @@ public class NestedSourceExclusionTests : BasicSetupHelper
         Assert.That(files, Does.Contain("kept.txt"));
         Assert.That(files, Does.Not.Contain("dropped.txt"));
     }
+
+    /// <summary>
+    /// Marks a folder below the data folder as excluded from backups with an extended
+    /// attribute, which is only tried on Linux here
+    /// </summary>
+    /// <param name="name">The name of the folder</param>
+    private void MarkFolderExcludedByXattr(string name)
+    {
+        if (!OperatingSystem.IsLinux())
+            Assert.Ignore("The extended attribute is set with the Linux call");
+
+        var path = Path.Combine(this.DATAFOLDER, name);
+        if (Mono.Unix.Native.Syscall.setxattr(path, "user.duplicati.exclude", [1]) != 0)
+            Assert.Ignore($"The file system does not take extended attributes: {Mono.Unix.Native.Stdlib.GetLastError()}");
+    }
+
+    /// <summary>
+    /// The walk also stops at a folder that an extended attribute marks as excluded from
+    /// backups, and it checks that after the filter, so the include filter cannot help
+    /// </summary>
+    [Test]
+    [Category("Controller")]
+    public async Task ASourceInsideAFolderExcludedByAnExtendedAttributeIsStillBackedUp()
+    {
+        WriteFile("kept.txt");
+        WriteFile("x", "dropped.txt");
+        WriteFile("x", "wanted", "wanted.txt");
+        MarkFolderExcludedByXattr("x");
+
+        var files = await BackupAndListAsync([this.DATAFOLDER, Folder("x", "wanted")], null);
+
+        Assert.That(files, Does.Contain("wanted.txt"), $"got: {string.Join(", ", files)}");
+        Assert.That(files, Does.Contain("kept.txt"));
+        Assert.That(files, Does.Not.Contain("dropped.txt"), "the marked folder itself should stay excluded");
+    }
+
+    /// <summary>
+    /// The same when the nested source itself is marked
+    /// </summary>
+    [Test]
+    [Category("Controller")]
+    public async Task ANestedSourceExcludedByAnExtendedAttributeIsStillBackedUp()
+    {
+        WriteFile("kept.txt");
+        WriteFile("x", "wanted.txt");
+        MarkFolderExcludedByXattr("x");
+
+        var files = await BackupAndListAsync([this.DATAFOLDER, Folder("x")], null);
+
+        Assert.That(files, Does.Contain("wanted.txt"), $"got: {string.Join(", ", files)}");
+        Assert.That(files, Does.Contain("kept.txt"));
+    }
+
+    /// <summary>
+    /// Green before and after: when the extended attribute is not honoured, the walk of the
+    /// outer source reaches the nested one, so it is still taken out and nothing is walked twice
+    /// </summary>
+    [Test]
+    [Category("Controller")]
+    public async Task ANestedSourceIsStillCoveredWhenTheExtendedAttributeIsNotHonoured()
+    {
+        WriteFile("kept.txt");
+        WriteFile("x", "other.txt");
+        WriteFile("x", "wanted", "wanted.txt");
+        MarkFolderExcludedByXattr("x");
+
+        var files = await BackupAndListAsync(
+            [this.DATAFOLDER, Folder("x", "wanted")], null,
+            new() { ["disable-backup-exclusion-xattr"] = "true" });
+
+        Assert.That(files, Does.Contain("wanted.txt"));
+        Assert.That(files, Does.Contain("other.txt"));
+        Assert.That(files, Does.Contain("kept.txt"));
+    }
+
+    /// <summary>The folder outside the data folder that the link points to</summary>
+    private string LinkTarget => this.DATAFOLDER.TrimEnd(Path.DirectorySeparatorChar) + "-outside";
+
+    /// <summary>
+    /// Makes <c>link</c> in the data folder a symbolic link to a folder outside it, which
+    /// holds <c>other.txt</c> and <c>wanted/wanted.txt</c>
+    /// </summary>
+    private void MakeLink()
+    {
+        if (Directory.Exists(LinkTarget))
+            Directory.Delete(LinkTarget, true);
+        Directory.CreateDirectory(Path.Combine(LinkTarget, "wanted"));
+        File.WriteAllText(Path.Combine(LinkTarget, "other.txt"), Contents);
+        File.WriteAllText(Path.Combine(LinkTarget, "wanted", "wanted.txt"), Contents);
+
+        try
+        {
+            Directory.CreateSymbolicLink(Path.Combine(this.DATAFOLDER, "link"), LinkTarget);
+        }
+        catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+        {
+            Assert.Ignore($"Symbolic links cannot be made here: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// A link the walk ignores is left out with everything behind it, and the include filter
+    /// cannot help, so a source behind it has to be kept
+    /// </summary>
+    [Test]
+    [Category("Controller")]
+    public async Task ASourceBehindAnIgnoredSymlinkIsStillBackedUp()
+    {
+        WriteFile("kept.txt");
+        MakeLink();
+
+        var files = await BackupAndListAsync(
+            [this.DATAFOLDER, Folder("link", "wanted")], null,
+            new() { ["symlink-policy"] = "ignore" });
+
+        Assert.That(files, Does.Contain("wanted.txt"), $"got: {string.Join(", ", files)}");
+        Assert.That(files, Does.Contain("kept.txt"));
+        Assert.That(files, Does.Not.Contain("other.txt"), "the ignored link itself should stay ignored");
+    }
+
+    /// <summary>
+    /// The same when the nested source is the ignored link itself. Named on its own, a
+    /// link is a root, and a root is followed.
+    /// </summary>
+    [Test]
+    [Category("Controller")]
+    public async Task AnIgnoredSymlinkNamedAsANestedSourceIsStillBackedUp()
+    {
+        WriteFile("kept.txt");
+        MakeLink();
+
+        var files = await BackupAndListAsync(
+            [this.DATAFOLDER, Folder("link")], null,
+            new() { ["symlink-policy"] = "ignore" });
+
+        Assert.That(files, Does.Contain("wanted.txt"), $"got: {string.Join(", ", files)}");
+        Assert.That(files, Does.Contain("other.txt"));
+        Assert.That(files, Does.Contain("kept.txt"));
+    }
+
+    /// <summary>
+    /// Runs a backup that is expected to warn, and reports the warnings and the names of
+    /// the files it recorded
+    /// </summary>
+    /// <param name="sources">The sources to back up</param>
+    /// <returns>The warnings, and the file names without their folders.</returns>
+    private async Task<(string[] Warnings, string[] Files)> BackupWithWarningsAndListAsync(string[] sources)
+    {
+        var options = new Dictionary<string, string>(this.TestOptions);
+        string[] warnings;
+
+        using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+        {
+            var r = await c.BackupAsync(sources);
+            Assert.That(r.Errors, Is.Empty, "the backup should not fail");
+            warnings = r.Warnings.ToArray();
+        }
+
+        using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+        {
+            var r = await c.ListAsync("*");
+            TestUtils.AssertResults(r);
+            return (warnings, r.Files
+                .Select(x => x.Path)
+                .Where(x => !x.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal))
+                .Select(Path.GetFileName)
+                .ToArray()!);
+        }
+    }
+
+    /// <summary>
+    /// A link the walk stores as a link is not followed, so a source behind it is not
+    /// reached. It cannot be kept either, as the backup would then hold the link and a
+    /// folder below the same path, which a restore to the original location does not put
+    /// back. So it is left out as before, but with a warning.
+    /// </summary>
+    [Test]
+    [Category("Controller")]
+    public async Task ASourceBehindAStoredSymlinkIsLeftOutWithAWarning()
+    {
+        WriteFile("kept.txt");
+        MakeLink();
+
+        var (warnings, files) = await BackupWithWarningsAndListAsync([this.DATAFOLDER, Folder("link", "wanted")]);
+
+        Assert.That(warnings, Has.Some.Contains("NestedSourceBehindStoredSymlink"),
+            $"got: {string.Join(" | ", warnings)}");
+        Assert.That(files, Does.Contain("kept.txt"));
+        Assert.That(files, Does.Not.Contain("wanted.txt"), "the link should still be stored as a link");
+    }
+
+    /// <summary>
+    /// The same when the nested source is the stored link itself. Keeping it would record
+    /// the link and the folder under the same path, which fails the backup.
+    /// </summary>
+    [Test]
+    [Category("Controller")]
+    public async Task AStoredSymlinkNamedAsANestedSourceIsLeftOutWithAWarning()
+    {
+        WriteFile("kept.txt");
+        MakeLink();
+
+        var (warnings, files) = await BackupWithWarningsAndListAsync([this.DATAFOLDER, Folder("link")]);
+
+        Assert.That(warnings, Has.Some.Contains("NestedSourceBehindStoredSymlink"),
+            $"got: {string.Join(" | ", warnings)}");
+        Assert.That(files, Does.Contain("kept.txt"));
+        Assert.That(files, Does.Not.Contain("wanted.txt"), "the link should still be stored as a link");
+    }
+
+    /// <summary>
+    /// Green before and after: a link the walk follows reaches the nested source, which is
+    /// still taken out, so nothing is walked twice and nothing is warned about
+    /// </summary>
+    [Test]
+    [Category("Controller")]
+    public async Task ASourceBehindAFollowedSymlinkIsStillCovered()
+    {
+        WriteFile("kept.txt");
+        MakeLink();
+
+        var files = await BackupAndListAsync(
+            [this.DATAFOLDER, Folder("link", "wanted")], null,
+            new() { ["symlink-policy"] = "follow" });
+
+        Assert.That(files, Does.Contain("wanted.txt"));
+        Assert.That(files, Does.Contain("other.txt"));
+        Assert.That(files, Does.Contain("kept.txt"));
+    }
 }
