@@ -87,6 +87,10 @@ namespace Duplicati.GUI.TrayIcon
         private record BackgroundRequest(string Method, string Endpoint, string? Body, TimeSpan? Timeout = null);
 
         private string? m_accesstoken;
+        /// <summary>
+        /// Lets one request at a time get an access token
+        /// </summary>
+        private readonly SemaphoreSlim m_accessTokenLock = new SemaphoreSlim(1, 1);
         private bool m_isTryingWithPassword;
         private string ApiUri => BaseUri + "api/v1";
         private string BaseUri => Util.AppendDirSeparator(_passwordStorageHelper.HostUrl ?? "", "/");
@@ -385,12 +389,13 @@ namespace Duplicati.GUI.TrayIcon
         private async Task<T> PerformRequestAsync<T>(string method, string urlfragment, string? body, TimeSpan? timeout)
         {
             if (string.IsNullOrWhiteSpace(m_accesstoken) && !urlfragment.StartsWith("/auth/"))
-                await ObtainAccessTokenAsync().ConfigureAwait(false);
+                await ObtainAccessTokenOnceAsync(null).ConfigureAwait(false);
 
             var hasTriedPassword = m_isTryingWithPassword;
 
             while (true)
             {
+                var usedToken = m_accesstoken;
                 try
                 {
                     return await PerformRequestInternalAsync<T>(method, urlfragment, body, timeout)
@@ -410,19 +415,41 @@ namespace Duplicati.GUI.TrayIcon
                     // TODO: This error handling is error prone and can end up in infinite recursion
                     // Should rewrite the entire class and use websockets instead
 
-                    // Only try once, and clear the token for the next try
+                    // Only try once, and get a new token for the next try
                     hasTriedPassword = true;
-                    m_accesstoken = null;
                     try
                     {
                         m_isTryingWithPassword = true;
-                        await ObtainAccessTokenAsync().ConfigureAwait(false);
+                        await ObtainAccessTokenOnceAsync(usedToken).ConfigureAwait(false);
                     }
                     finally
                     {
                         m_isTryingWithPassword = false;
                     }
                 }
+            }
+        }
+
+        /// <summary>
+        /// Gets an access token, one request at a time. Requests running at the same time, such
+        /// as the long poll and a status request at start, each logged in otherwise.
+        /// </summary>
+        /// <param name="refusedToken">The token a request was refused with, or <c>null</c> if it had none</param>
+        private async Task ObtainAccessTokenOnceAsync(string? refusedToken)
+        {
+            await m_accessTokenLock.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                // Another request got a token while this one waited, so that is the one to use
+                if (!string.IsNullOrWhiteSpace(m_accesstoken) && m_accesstoken != refusedToken)
+                    return;
+
+                m_accesstoken = null;
+                await ObtainAccessTokenAsync().ConfigureAwait(false);
+            }
+            finally
+            {
+                m_accessTokenLock.Release();
             }
         }
 
