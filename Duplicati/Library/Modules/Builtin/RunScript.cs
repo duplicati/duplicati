@@ -324,6 +324,56 @@ namespace Duplicati.Library.Modules.Builtin
         #endregion
 
         /// <summary>
+        /// Builds the environment variables passed to the script.
+        /// With reduced reporting the script gets the event, the operation, the parsed result, the
+        /// result file and the environment metadata options only: the source paths, the remote url
+        /// and every other option value are left out, as the script is the operator's egress of choice.
+        /// </summary>
+        /// <param name="eventname">The event name.</param>
+        /// <param name="operationname">The operation name.</param>
+        /// <param name="remoteurl">The remote URL.</param>
+        /// <param name="localpath">The local paths.</param>
+        /// <param name="options">The options dictionary.</param>
+        /// <param name="datafile">The data file.</param>
+        /// <param name="level">The parsed result level.</param>
+        /// <returns>The environment variables to set for the script.</returns>
+        internal static Dictionary<string, string> BuildEnvironment(string eventname, string operationname, string remoteurl, string[] localpath, IDictionary<string, string> options, string datafile, ParsedResultType? level)
+        {
+            var reducedReporting = Utility.Utility.ParseBoolOption(options.AsReadOnly(), Logging.ReducedReportFormat.OPTION_REDUCED_REPORTING);
+            var env = new Dictionary<string, string>();
+
+            foreach (KeyValuePair<string, string> kv in options)
+            {
+                if (reducedReporting
+                    && !ReportHelper.EXTRA_TEMPLATE_KEYS.Contains(kv.Key)
+                    && !string.Equals(kv.Key, Logging.ReducedReportFormat.OPTION_REDUCED_REPORTING, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                env["DUPLICATI__" + kv.Key.Replace('-', '_')] = kv.Value;
+            }
+
+            if (!options.ContainsKey("backup-name"))
+                env["DUPLICATI__backup_name"] = System.IO.Path.GetFileNameWithoutExtension(Duplicati.Library.Utility.Utility.getEntryAssembly().Location);
+
+            env["DUPLICATI__EVENTNAME"] = eventname;
+            env["DUPLICATI__OPERATIONNAME"] = operationname;
+            if (level != null)
+                env["DUPLICATI__PARSED_RESULT"] = level.Value.ToString();
+
+            if (!reducedReporting)
+            {
+                env["DUPLICATI__REMOTEURL"] = remoteurl;
+                if (localpath != null)
+                    env["DUPLICATI__LOCALPATH"] = string.Join(System.IO.Path.PathSeparator.ToString(), localpath);
+            }
+
+            if (!string.IsNullOrEmpty(datafile))
+                env["DUPLICATI__RESULTFILE"] = datafile;
+
+            return env;
+        }
+
+        /// <summary>
         /// Executes the script.
         /// </summary>
         /// <param name="scriptpath">The path to the script.</param>
@@ -363,26 +413,11 @@ namespace Duplicati.Library.Modules.Builtin
                     RedirectStandardInput = false
                 };
 
-                foreach (KeyValuePair<string, string> kv in options)
-                    psi.EnvironmentVariables["DUPLICATI__" + kv.Key.Replace('-', '_')] = kv.Value;
-
-                if (!options.ContainsKey("backup-name"))
-                    psi.EnvironmentVariables["DUPLICATI__backup_name"] = System.IO.Path.GetFileNameWithoutExtension(Duplicati.Library.Utility.Utility.getEntryAssembly().Location);
-
-                psi.EnvironmentVariables["DUPLICATI__EVENTNAME"] = eventname;
-                psi.EnvironmentVariables["DUPLICATI__OPERATIONNAME"] = operationname;
-                psi.EnvironmentVariables["DUPLICATI__REMOTEURL"] = remoteurl;
-                if (level != null)
-                    psi.EnvironmentVariables["DUPLICATI__PARSED_RESULT"] = level.Value.ToString();
-
-                if (localpath != null)
-                    psi.EnvironmentVariables["DUPLICATI__LOCALPATH"] = string.Join(System.IO.Path.PathSeparator.ToString(), localpath);
+                foreach (var kv in BuildEnvironment(eventname, operationname, remoteurl, localpath, options, datafile, level))
+                    psi.EnvironmentVariables[kv.Key] = kv.Value;
 
                 string stderr = null;
                 string stdout = null;
-
-                if (!string.IsNullOrEmpty(datafile))
-                    psi.EnvironmentVariables["DUPLICATI__RESULTFILE"] = datafile;
 
                 using (System.Diagnostics.Process p = System.Diagnostics.Process.Start(psi))
                 {

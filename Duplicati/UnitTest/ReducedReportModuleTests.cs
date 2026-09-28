@@ -239,6 +239,84 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
+        public async Task StatusReportModuleOptionCannotSwitchOffGlobalReducedReportingAsync()
+        {
+            using var module = new CapturingHttpReportStatus();
+            module.Configure(new Dictionary<string, string>
+            {
+                ["http-report-status-url"] = "http://localhost/example",
+                ["reduced-reporting"] = "true",
+                ["http-report-status-reduced-reporting"] = "false",
+                ["http-report-status-allow-paths-in-log-messages"] = "true"
+            });
+
+            Assert.That(module.RequestedLogContent, Is.EqualTo(ReportLogContent.ReducedMessage));
+
+            await module.OnOperationStartedAsync("Backup", null!, CancellationToken.None);
+            await module.OnLogEntryAsync(new ReportLogEntry($"Excluding {SecretPath}", "Warning", "Warning-Duplicati.Tag-PermissionDenied", "PermissionDenied", DateTime.UtcNow, null), CancellationToken.None);
+            await module.OnProgressTickAsync(new ReportProgressSnapshot("Backup_ProcessingFiles", 0.5f, 3, 100, 10, 1000, false, SecretPath, 100, 50, Array.Empty<ReportBackendEvent>()), CancellationToken.None);
+            await module.OnOperationCompletedAsync(null!, new System.IO.IOException($"Could not find file '{SecretPath}'"), CancellationToken.None);
+
+            var completed = module.Reports.Last();
+            Assert.That(completed.ErrorMessage, Is.EqualTo("System.IO.IOException"));
+            Assert.That(completed.Progress?.CurrentFilename, Is.Null);
+            Assert.That(JsonSerializer.Serialize(module.Reports), Does.Not.Contain("John Doe"));
+        }
+
+        [Test]
+        public void StatusReportModuleOptionSwitchesReducedReportingOn()
+        {
+            using var module = new CapturingHttpReportStatus();
+            module.Configure(new Dictionary<string, string>
+            {
+                ["http-report-status-url"] = "http://localhost/example",
+                ["http-report-status-reduced-reporting"] = "true"
+            });
+
+            Assert.That(module.RequestedLogContent, Is.EqualTo(ReportLogContent.ReducedMessage));
+        }
+
+        [Test]
+        public void RunScriptEnvironmentIsReduced()
+        {
+            var options = new Dictionary<string, string>
+            {
+                ["reduced-reporting"] = "true",
+                ["backup-name"] = "Nightly",
+                ["machine-id"] = "abc",
+                ["passphrase"] = "hunter2",
+                ["dbpath"] = SecretPath,
+                ["auth-password"] = "secret"
+            };
+
+            var env = RunScript.BuildEnvironment("AFTER", "Backup", "s3://user:pass@bucket/folder", new[] { SecretPath }, options, "/tmp/result.txt", Library.Interface.ParsedResultType.Warning);
+
+            Assert.That(env.Keys, Is.EquivalentTo(new[]
+            {
+                "DUPLICATI__reduced_reporting",
+                "DUPLICATI__backup_name",
+                "DUPLICATI__machine_id",
+                "DUPLICATI__EVENTNAME",
+                "DUPLICATI__OPERATIONNAME",
+                "DUPLICATI__PARSED_RESULT",
+                "DUPLICATI__RESULTFILE"
+            }));
+            Assert.That(string.Join("\n", env.Values), Does.Not.Contain("John Doe").And.Not.Contain("hunter2").And.Not.Contain("user:pass"));
+        }
+
+        [Test]
+        public void RunScriptEnvironmentIsFullWhenNotReduced()
+        {
+            var options = new Dictionary<string, string> { ["passphrase"] = "hunter2" };
+            var env = RunScript.BuildEnvironment("BEFORE", "Backup", "file:///target", new[] { SecretPath }, options, null, null);
+
+            Assert.That(env["DUPLICATI__REMOTEURL"], Is.EqualTo("file:///target"));
+            Assert.That(env["DUPLICATI__LOCALPATH"], Is.EqualTo(SecretPath));
+            Assert.That(env["DUPLICATI__passphrase"], Is.EqualTo("hunter2"));
+            Assert.That(env.ContainsKey("DUPLICATI__RESULTFILE"), Is.False);
+        }
+
+        [Test]
         public async Task StatusReportUsesTheReducedLineComputedByTheSenderAsync()
         {
             using var module = CreateStatusModule(reduced: true);

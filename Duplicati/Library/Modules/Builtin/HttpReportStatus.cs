@@ -98,7 +98,8 @@ namespace Duplicati.Library.Modules.Builtin
 
         /// <summary>
         /// The module-specific option that reduces status reports to log message ids, mirroring
-        /// the global <c>reduced-reporting</c> option. The module-specific option takes precedence.
+        /// the global <c>reduced-reporting</c> option. The module-specific option can only switch
+        /// reduced reporting on; it cannot switch off a global setting that is on.
         /// </summary>
         private const string OPTION_REDUCED_REPORTING = "http-report-status-reduced-reporting";
 
@@ -314,12 +315,11 @@ namespace Duplicati.Library.Modules.Builtin
             else
                 m_allowPathsInLogMessages = Utility.Utility.ParseBoolOption(m_options, OPTION_GLOBAL_ALLOW_PATHS_IN_LOG_MESSAGES);
 
-            // Reduced reports carry log message ids only; the module-specific option takes
-            // precedence and falls back to the global reduced-reporting setting
-            if (m_options.ContainsKey(OPTION_REDUCED_REPORTING))
-                m_reducedReporting = Utility.Utility.ParseBoolOption(m_options, OPTION_REDUCED_REPORTING);
-            else
-                m_reducedReporting = Utility.Utility.ParseBoolOption(m_options, Logging.ReducedReportFormat.OPTION_REDUCED_REPORTING);
+            // Reduced reports carry log message ids only. Either option switches it on; the
+            // module-specific option cannot switch off the global setting, which the server
+            // enforces and a per-backup option must not be able to override
+            m_reducedReporting = Utility.Utility.ParseBoolOption(m_options, Logging.ReducedReportFormat.OPTION_REDUCED_REPORTING)
+                || Utility.Utility.ParseBoolOption(m_options, OPTION_REDUCED_REPORTING);
 
             // A reduced report never carries a filename
             if (m_reducedReporting)

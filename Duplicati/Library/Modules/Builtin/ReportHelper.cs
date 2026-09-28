@@ -473,7 +473,7 @@ namespace Duplicati.Library.Modules.Builtin
         /// <summary>
         /// The list of extra template keys
         /// </summary>
-        private static readonly IReadOnlySet<string> EXTRA_TEMPLATE_KEYS = new HashSet<string>([
+        internal static readonly IReadOnlySet<string> EXTRA_TEMPLATE_KEYS = new HashSet<string>([
             MACHINE_ID, BACKUP_ID, BACKUP_NAME, MACHINE_NAME,
             OPERATING_SYSTEM, INSTALLATION_TYPE, DESTINATION_TYPE, NEXT_SCHEDULED_RUN,
             UPDATE_CHANNEL, OPERATING_SYSTEM_DETAILED, DESTINATION_HOST_SUFFIX
