@@ -221,6 +221,12 @@ namespace Duplicati.Library.Main.Operation.Backup
                         if (!metadata.ContainsKey("CoreSymlinkTarget"))
                             metadata["CoreSymlinkTarget"] = symlinkTarget;
 
+                        // A junction and a symbolic link to a folder both have a target, but
+                        // they are different kinds of link, so the kind is kept to make the
+                        // same kind again on restore
+                        if (OperatingSystem.IsWindows() && !metadata.ContainsKey("CoreSymlinkType") && new Duplicati.Library.Common.IO.SystemIOWindows().IsJunction(entry.Path))
+                            metadata["CoreSymlinkType"] = "junction";
+
                         var metahash = Utility.WrapMetadata(metadata, options);
                         await AddSymlinkToOutputAsync(entry.Path, DateTime.UtcNow, metahash, database, streamblockchannel, cancellationToken).ConfigureAwait(false);
 

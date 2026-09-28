@@ -178,11 +178,18 @@ public class FileRestoreDestinationProvider(string mountedPath, bool allowRestor
             var isFolder = !isFile && SystemIO.IO_OS.DirectoryExists(targetpath);
             var isLink = (isFile || isFolder) && SystemIO.IO_OS.IsSymlink(targetpath);
 
+            // A junction is made as a junction, not as a symbolic link. Elsewhere there are
+            // no junctions, so it is made as a symbolic link, as before.
+            var makeJunction = OperatingSystem.IsWindows() && isDirTarget
+                && metadata.TryGetValue("CoreSymlinkType", out var kind) && kind == "junction";
+            var isRightKind = !OperatingSystem.IsWindows() || !isLink
+                || new SystemIOWindows().IsJunction(targetpath) == makeJunction;
+
             // A link that is there already and points where it should is left as it is.
             // Making it again would leave its path missing for a moment, and anything that is
             // restored below it at that moment, such as the files of a source that is itself
             // a link, would fail.
-            if (isLink && string.Equals(SystemIO.IO_OS.GetSymlinkTarget(targetpath), k, StringComparison.Ordinal))
+            if (isLink && isRightKind && string.Equals(SystemIO.IO_OS.GetSymlinkTarget(targetpath), k, StringComparison.Ordinal))
             {
                 Logging.Log.WriteVerboseMessage(LOGTAG, "SymlinkAlreadyInPlace", "The symbolic link {0} -> {1} is already in place", path, k);
             }
@@ -207,7 +214,10 @@ public class FileRestoreDestinationProvider(string mountedPath, bool allowRestor
                     else
                         SystemIO.IO_OS.DirectoryDelete(targetpath, true);
                 }
-                SystemIO.IO_OS.CreateSymlink(targetpath, k, isDirTarget);
+                if (makeJunction && OperatingSystem.IsWindows())
+                    new SystemIOWindows().CreateJunction(targetpath, k);
+                else
+                    SystemIO.IO_OS.CreateSymlink(targetpath, k, isDirTarget);
                 wrote_something = true;
             }
         }
