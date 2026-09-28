@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -62,11 +63,15 @@ namespace Duplicati.UnitTest
             public static int LogEntryCalls;
             public static int ProgressTickCalls;
             public static ReportProgressSnapshot? LastSnapshot;
+            public static ReportLogContent RequestedContent;
+            public static readonly List<ReportLogEntry> LogEntries = new();
 
             public static void Reset()
             {
                 lock (RecordLock)
                 {
+                    RequestedContent = ReportLogContent.Message | ReportLogContent.RedactedMessage | ReportLogContent.ExceptionText | ReportLogContent.ReducedMessage;
+                    LogEntries.Clear();
                     StartCalls = 0;
                     LastOperationName = null;
                     CompleteCalls = 0;
@@ -83,6 +88,7 @@ namespace Duplicati.UnitTest
             public string Description => "Records report module invocations for tests";
             public bool LoadAsDefault => false;
             public bool IsActive => true;
+            public ReportLogContent RequestedLogContent => RequestedContent;
             public IList<ICommandLineArgument> SupportedCommands => new List<ICommandLineArgument>();
 
             public void Configure(IDictionary<string, string> commandlineOptions) { }
@@ -117,7 +123,10 @@ namespace Duplicati.UnitTest
             public Task OnLogEntryAsync(ReportLogEntry entry, CancellationToken cancellationToken)
             {
                 lock (RecordLock)
+                {
                     LogEntryCalls++;
+                    LogEntries.Add(entry);
+                }
                 return Task.CompletedTask;
             }
 
@@ -161,6 +170,7 @@ namespace Duplicati.UnitTest
             public string Description => "Records nothing because it reports IsActive=false";
             public bool LoadAsDefault => false;
             public bool IsActive => false;
+            public ReportLogContent RequestedLogContent => ReportLogContent.None;
             public IList<ICommandLineArgument> SupportedCommands => new List<ICommandLineArgument>();
 
             public void Configure(IDictionary<string, string> commandlineOptions) { }
@@ -270,6 +280,57 @@ namespace Duplicati.UnitTest
             // tick interval, and the operation runs longer than that).
             Assert.That(RecordingReportModule.ProgressTickCalls, Is.GreaterThanOrEqualTo(0),
                 "OnProgressTickAsync should not throw");
+        }
+
+        private async Task<List<ReportLogEntry>> BackupAndCollectLogEntriesAsync(ReportLogContent requested)
+        {
+            RecordingReportModule.RequestedContent = requested;
+            File.WriteAllText(Path.Combine(this.DATAFOLDER, "report-test.txt"), "report-module-content");
+
+            var backupOptions = new Dictionary<string, string>(this.TestOptions)
+            {
+                ["enable-module"] = RecordingReportModule.KEY,
+                ["console-log-level"] = nameof(Duplicati.Library.Logging.LogMessageType.Information),
+            };
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, backupOptions, null))
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+
+            lock (RecordingReportModule.RecordLock)
+                return RecordingReportModule.LogEntries.ToList();
+        }
+
+        [Test]
+        [Category("ReportModule")]
+        public async Task ModuleThatAsksForReducedLinesGetsNoMessageTextAsync()
+        {
+            var entries = await BackupAndCollectLogEntriesAsync(ReportLogContent.ReducedMessage);
+
+            Assert.That(entries, Is.Not.Empty);
+            foreach (var entry in entries)
+            {
+                Assert.That(entry.Message, Is.Null);
+                Assert.That(entry.RedactedMessage, Is.Null);
+                Assert.That(entry.Exception, Is.Null);
+                Assert.That(entry.ReducedMessage, Does.Match(@"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{2} - \[[^\]\s:]+\]"));
+                // The level, tag and id are always passed, as they hold no message text
+                Assert.That(entry.Tag, Is.Not.Empty);
+                Assert.That(entry.Level, Is.Not.Empty);
+            }
+        }
+
+        [Test]
+        [Category("ReportModule")]
+        public async Task ModuleGetsOnlyTheFormItAsksForAsync()
+        {
+            var redacted = await BackupAndCollectLogEntriesAsync(ReportLogContent.RedactedMessage);
+            Assert.That(redacted, Is.Not.Empty);
+            Assert.That(redacted, Has.All.Matches<ReportLogEntry>(e => e.RedactedMessage != null && e.Message == null && e.ReducedMessage == null));
+
+            RecordingReportModule.Reset();
+            var none = await BackupAndCollectLogEntriesAsync(ReportLogContent.None);
+            Assert.That(none, Is.Not.Empty);
+            Assert.That(none, Has.All.Matches<ReportLogEntry>(e => e.RedactedMessage == null && e.Message == null && e.ReducedMessage == null && e.Exception == null));
         }
 
         [Test]

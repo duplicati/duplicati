@@ -137,8 +137,14 @@ namespace Duplicati.Library.Modules.Builtin
             var filter = FilterExpression.ParseLogFilter(logfilterstring);
             var logLevel = Utility.Utility.ParseEnumOption(m_options.AsReadOnly(), OPTION_LOG_LEVEL, DEFAULT_LOG_LEVEL);
 
+            // The result file is the script's input and the script is the operator's egress of choice,
+            // so with reduced reporting the captured lines and the result carry log message ids only
+            var reducedReporting = Utility.Utility.ParseBoolOption(m_options.AsReadOnly(), Logging.ReducedReportFormat.OPTION_REDUCED_REPORTING);
+            if (reducedReporting)
+                resultFormatSerializer = new ReducedResultFormatSerializer(resultFormatSerializer);
+
             m_logstorage = new FileBackedStringList();
-            m_logscope = Logging.Log.StartScope(m => m_logstorage.Add(m.AsString(true)), m =>
+            m_logscope = Logging.Log.StartScope(m => m_logstorage.Add(reducedReporting ? Logging.ReducedReportFormat.FormatLogLine(m) : m.AsString(true)), m =>
             {
 
                 if (filter.Matches(m.FilterTag, out var result, out var match))

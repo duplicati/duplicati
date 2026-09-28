@@ -52,6 +52,11 @@ public class RemoteControllerHandler(Connection connection, IHttpClientFactory h
     {
         metadata["feature:additional-report-url"] = connection.ApplicationSettings.AdditionalReportUrl;
         metadata["feature:additional-activity-url"] = connection.ApplicationSettings.AdditionalActivityUrl;
+        // The console can tell that this client honours the confidential or protected information setting, and what the effective state is
+        metadata["feature:reduced-reporting-handled"] = "true";
+        metadata["feature:reduced-reporting-source"] = connection.ApplicationSettings.ReducedReportingSetByConsole
+            ? "console"
+            : connection.ApplicationSettings.ReducedReporting ? "local" : "off";
         if (connection.Settings != null)
         {
             var lookup = connection.Settings
@@ -118,6 +123,11 @@ public class RemoteControllerHandler(Connection connection, IHttpClientFactory h
                 connection.ApplicationSettings.RemoteControlStorageApiId = message.ControlRequestMessage.Parameters.GetValueOrDefault(ControlRequestMessage.StorageApiIdKey);
                 connection.ApplicationSettings.RemoteControlStorageApiKey = message.ControlRequestMessage.Parameters.GetValueOrDefault(ControlRequestMessage.StorageApiKeyKey);
                 connection.ApplicationSettings.RemoteControlStorageEndpointUrl = message.ControlRequestMessage.Parameters.GetValueOrDefault(ControlRequestMessage.StorageEndpointUrlKey);
+
+                // Full-replace semantics like the other keys: a missing key means the console does not enforce confidential or protected information.
+                // The operator's own setting is never touched from here.
+                connection.ApplicationSettings.ReducedReportingSetByConsole = Library.Utility.Utility.ParseBool(
+                    message.ControlRequestMessage.Parameters.GetValueOrDefault(ControlRequestMessage.ReducedReportingKey), false);
 
                 var newLicenseKey = message.ControlRequestMessage.Parameters.GetValueOrDefault(ControlRequestMessage.ClientLicenseKeyKey);
                 var currentLicenseKey = connection.ApplicationSettings.ClientLicenseKey;

@@ -80,8 +80,41 @@ namespace Duplicati.Library.UsageReporter
         public static void Report(Exception ex, ReportType type = ReportType.Warning)
         {
             if (_eventChannel != null && type >= MaxReportLevel)
-                try { _eventChannel.WriteNoWait(new ReportItem(type, null, "EXCEPTION", SensitiveDataFilter.RedactPaths(ex.ToString()))); }
+                try { _eventChannel.WriteNoWait(new ReportItem(type, null, "EXCEPTION", DescribeException(ex))); }
                 catch { }
+        }
+
+        /// <summary>
+        /// Describes an exception for the usage report: the exception type chain and stack frames only.
+        /// Messages are left out on purpose, since they can carry paths, names and other data from the
+        /// user's machine that the path filter cannot reliably remove.
+        /// The frames are built from the method metadata rather than read from the exception's own
+        /// stack trace text, which an exception can override, and without file information, so they
+        /// carry type and method names only and no file paths.
+        /// </summary>
+        /// <param name="ex">The exception</param>
+        /// <returns>The description</returns>
+        public static string DescribeException(Exception ex)
+        {
+            if (ex == null)
+                return string.Empty;
+
+            var sb = new System.Text.StringBuilder();
+            var current = ex;
+            var depth = 0;
+            while (current != null && depth < 10)
+            {
+                if (depth > 0)
+                    sb.AppendLine(" ---> ");
+                sb.AppendLine(current.GetType().FullName);
+                var frames = new System.Diagnostics.StackTrace(current, fNeedFileInfo: false).ToString();
+                if (!string.IsNullOrWhiteSpace(frames))
+                    sb.AppendLine(frames.TrimEnd());
+                current = current.InnerException;
+                depth++;
+            }
+
+            return sb.ToString();
         }
 
         /// <summary>
