@@ -75,7 +75,8 @@ public interface ISourceProviderEntry
     /// </summary>
     FileAttributes Attributes { get; }
     /// <summary>
-    /// True if the file is a block device, false otherwise
+    /// True if the file is a block device, false otherwise. Entries from the Linux and macOS
+    /// snapshots are also true for any other special file: character devices, FIFOs and sockets.
     /// </summary>
     bool IsBlockDevice { get; }
     /// <summary>

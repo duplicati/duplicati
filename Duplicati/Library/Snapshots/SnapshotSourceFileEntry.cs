@@ -88,7 +88,8 @@ public class SnapshotSourceFileEntry(ISnapshotService service, string path, bool
     }
 
     /// <summary>
-    /// Gets a value indicating if the entry is a block device
+    /// Gets a value indicating if the entry is a block device; on Linux and macOS, if it is any
+    /// special file: a block or character device, a FIFO or a socket
     /// </summary>
     public bool IsBlockDevice => service.IsBlockDevice(path);
 
