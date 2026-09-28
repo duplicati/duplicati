@@ -184,5 +184,46 @@ namespace Duplicati.UnitTest
                     await Task.Delay(50);
             }
         }
+
+        /// <summary>
+        /// "Stop now" while blocks are being stored. The block splitter hands each block to a
+        /// block processor and waits for its answer. A processor that was stopped between taking
+        /// a block and answering for it left the splitter waiting for an answer that never came,
+        /// so the backup never returned. A low CPU intensity makes the processors pause while
+        /// holding a block, which is where the stop lands.
+        /// </summary>
+        [Test]
+        [Category("Targeted")]
+        public async Task AbortedBackupWhileBlocksAreStoredReturnsAsync()
+        {
+            var rng = new Random(42);
+            var data = new byte[256 * 1024];
+            for (var i = 0; i < 200; i++)
+            {
+                rng.NextBytes(data);
+                File.WriteAllBytes(Path.Combine(this.DATAFOLDER, $"file{i}"), data);
+            }
+
+            var options = new Dictionary<string, string>(this.TestOptions)
+            {
+                ["blocksize"] = "4kb",
+                ["dblock-size"] = "1mb",
+                ["cpu-intensity"] = "1",
+                ["snapshot-policy"] = "off",
+            };
+
+            using var c = new Controller("file://" + this.TARGETFOLDER, options, null);
+            var backupTask = Task.Run(async () => await c.BackupAsync(new[] { this.DATAFOLDER }));
+
+            // Give the processors time to take blocks and start pausing
+            await Task.Delay(3000);
+            Assert.IsFalse(backupTask.IsCompleted, "The backup finished before it could be stopped");
+
+            await c.AbortAsync();
+
+            var stopped = await Task.WhenAny(backupTask, Task.Delay(TimeSpan.FromSeconds(30))) == backupTask;
+            Assert.IsTrue(stopped, "The abort did not make the backup return within 30 seconds");
+            Assert.ThrowsAsync<TaskCanceledException>(async () => await backupTask, "An aborted backup should end with the cancellation, not with a result");
+        }
     }
 }
