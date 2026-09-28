@@ -496,18 +496,20 @@ namespace Duplicati.Library.Main.Operation.Backup
                 return false;
             }
 
-            // Exclude block devices
+            // Exclude special files. On Linux and macOS, IsBlockDevice is true for every entry
+            // that is not a regular file, a folder or a symlink: block and character devices,
+            // FIFOs and sockets.
             try
             {
                 if (entry.IsBlockDevice)
                 {
-                    Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingBlockDevice", "Excluding block device: {0}", entry.Path);
+                    Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingSpecialFile", "Excluding special file (device, FIFO or socket): {0}", entry.Path);
                     return false;
                 }
             }
             catch (Exception ex)
             {
-                LogExceptionHelper.LogCommonWarning(ex, FILTER_LOGTAG, "PathProcessingErrorBlockDevice", entry.Path);
+                LogExceptionHelper.LogCommonWarning(ex, FILTER_LOGTAG, "PathProcessingErrorSpecialFile", entry.Path);
                 return false;
             }
 

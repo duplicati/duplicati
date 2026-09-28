@@ -53,7 +53,7 @@ public static class List
     /// <param name="IsSymlink">True if the entry is a symlink</param>
     /// <param name="SymlinkTarget">The target of the symlink, if the entry is a symlink</param>
     /// <param name="Attributes">The entry attributes</param>
-    /// <param name="IsBlockDevice">True if the entry is a block device</param>
+    /// <param name="IsBlockDevice">True if the entry is a block device; on Linux and macOS, true for any special file: a block or character device, a FIFO or a socket</param>
     /// <param name="IsCharacterDevice">True if the entry is a character device</param>
     /// <param name="IsAlternateStream">True if the entry is an alternate stream</param>
     /// <param name="HardlinkTargetId">The hardlink target id, if the entry is a hardlink</param>
