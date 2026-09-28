@@ -260,7 +260,7 @@ namespace Duplicati.Library.SourceProvider.Builtin.MSSQL
         public FileAttributes Attributes => FileAttributes.Directory;
 
         /// <inheritdoc />
-        public bool IsBlockDevice => false;
+        public bool IsSpecialFile => false;
 
         /// <inheritdoc />
         public bool IsCharacterDevice => false;

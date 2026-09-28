@@ -25,7 +25,7 @@ internal abstract class StreamResourceEntryBase(string path) : ISourceProviderEn
 
     public virtual FileAttributes Attributes => FileAttributes.Normal;
 
-    public bool IsBlockDevice => false;
+    public bool IsSpecialFile => false;
 
     public bool IsCharacterDevice => false;
 

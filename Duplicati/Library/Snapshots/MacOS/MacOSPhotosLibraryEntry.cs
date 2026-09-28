@@ -71,7 +71,7 @@ internal sealed class MacOSPhotosLibraryEntry : ISourceProviderEntry
 
     public FileAttributes Attributes => inner.Attributes;
 
-    public bool IsBlockDevice => inner.IsBlockDevice;
+    public bool IsSpecialFile => inner.IsSpecialFile;
 
     public bool IsCharacterDevice => inner.IsCharacterDevice;
 

@@ -31,7 +31,7 @@ public class PhysicalDriveSourceEntry(PhysicalDriveInfo driveInfo) : ISourceProv
 
     public FileAttributes Attributes => FileAttributes.None;
 
-    public bool IsBlockDevice => true;
+    public bool IsSpecialFile => true;
 
     public bool IsCharacterDevice => false;
 

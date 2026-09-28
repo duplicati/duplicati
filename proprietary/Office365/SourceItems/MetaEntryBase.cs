@@ -26,7 +26,7 @@ internal abstract class MetaEntryBase(string path, DateTime? createdUtc, DateTim
 
     public FileAttributes Attributes => FileAttributes.Directory;
 
-    public bool IsBlockDevice => false;
+    public bool IsSpecialFile => false;
 
     public bool IsCharacterDevice => false;
 

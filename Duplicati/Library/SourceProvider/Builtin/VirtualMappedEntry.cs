@@ -127,7 +127,7 @@ internal sealed class VirtualMappedEntry : ISourceProviderEntry
     public FileAttributes Attributes => _inner.Attributes;
 
     /// <inheritdoc />
-    public bool IsBlockDevice => _inner.IsBlockDevice;
+    public bool IsSpecialFile => _inner.IsSpecialFile;
 
     /// <inheritdoc />
     public bool IsCharacterDevice => _inner.IsCharacterDevice;

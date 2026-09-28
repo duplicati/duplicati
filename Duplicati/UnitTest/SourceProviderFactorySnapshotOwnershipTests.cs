@@ -126,7 +126,7 @@ public class SourceProviderFactorySnapshotOwnershipTests : BasicSetupHelper
         public string GetSymlinkTarget(string localPath) => throw new NotImplementedException();
         public FileAttributes GetAttributes(string localPath) => throw new NotImplementedException();
         public Dictionary<string, string?> GetMetadata(string localPath, bool isSymlink) => throw new NotImplementedException();
-        public bool IsBlockDevice(string localPath) => throw new NotImplementedException();
+        public bool IsSpecialFile(string localPath) => throw new NotImplementedException();
         public string? HardlinkTargetID(string localPath) => throw new NotImplementedException();
         public string ConvertToLocalPath(string snapshotPath) => throw new NotImplementedException();
         public string ConvertToSnapshotPath(string localPath) => throw new NotImplementedException();

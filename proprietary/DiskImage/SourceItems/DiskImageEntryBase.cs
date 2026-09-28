@@ -46,7 +46,7 @@ internal abstract class DiskImageEntryBase(string path) : ISourceProviderEntry
     public virtual FileAttributes Attributes => IsFolder ? FileAttributes.Directory : FileAttributes.Normal;
 
     /// <inheritdoc />
-    public bool IsBlockDevice => false;
+    public bool IsSpecialFile => false;
 
     /// <inheritdoc />
     public bool IsCharacterDevice => false;

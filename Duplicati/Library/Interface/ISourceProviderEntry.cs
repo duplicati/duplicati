@@ -75,10 +75,11 @@ public interface ISourceProviderEntry
     /// </summary>
     FileAttributes Attributes { get; }
     /// <summary>
-    /// True if the file is a block device, false otherwise. Entries from the Linux and macOS
-    /// snapshots are also true for any other special file: character devices, FIFOs and sockets.
+    /// True if the entry is a special file, false otherwise: a block device, and for entries from
+    /// the Linux and macOS snapshots also a character device, a FIFO or a socket. A backup leaves
+    /// such an entry out, unless it is a meta entry.
     /// </summary>
-    bool IsBlockDevice { get; }
+    bool IsSpecialFile { get; }
     /// <summary>
     /// True if the file is a character device, false otherwise
     /// </summary>

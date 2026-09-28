@@ -517,7 +517,7 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         /// <returns><c>true</c> if the path is a special file; otherwise, <c>false</c>.</returns>
         /// <param name="localPath">The file or folder to examine</param>
-        public override bool IsBlockDevice(string localPath)
+        public override bool IsSpecialFile(string localPath)
         {
             try
             {

@@ -80,7 +80,7 @@ internal sealed class MacOSPhotoAssetEntry : ISourceProviderEntry
 
     public FileAttributes Attributes => FileAttributes.Normal;
 
-    public bool IsBlockDevice => false;
+    public bool IsSpecialFile => false;
 
     public bool IsCharacterDevice => false;
 

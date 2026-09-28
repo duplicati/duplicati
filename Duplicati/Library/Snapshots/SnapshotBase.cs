@@ -175,13 +175,13 @@ namespace Duplicati.Library.Snapshots
         public abstract Dictionary<string, string?> GetMetadata(string localPath, bool isSymlink);
 
         /// <summary>
-        /// Gets a value indicating if the path points to a block device. The Linux and macOS
-        /// snapshots override this to return <c>true</c> for any special file: block and
-        /// character devices, FIFOs and sockets.
+        /// Gets a value indicating if the path points to a special file. No path is one here; the
+        /// Linux and macOS snapshots override this for block and character devices, FIFOs and
+        /// sockets.
         /// </summary>
-        /// <returns><c>true</c> if the path is a block device; otherwise, <c>false</c>.</returns>
+        /// <returns><c>true</c> if the path is a special file; otherwise, <c>false</c>.</returns>
         /// <param name="localPath">The file or folder to examine</param>
-        public virtual bool IsBlockDevice(string localPath)
+        public virtual bool IsSpecialFile(string localPath)
             => false;
 
         /// <summary>
