@@ -108,7 +108,9 @@ namespace Duplicati.Library.Backend
             { "Selectel S3 ru-7", "s3.ru-7.storage.selcloud.ru" },
             { "Selectel S3 gis-1", "s3.gis-1.storage.selcloud.ru" },
             { "Selectel S3 uz-2", "s3.uz-2.srvstorage.uz" },
-            { "Selectel S3 kz-1", "s3.kz-1.srvstorage.kz" }
+            { "Selectel S3 kz-1", "s3.kz-1.srvstorage.kz" },
+            { "RelAix Aachen-1 (Germany)", "s3-gw1.relaix.net" },
+            { "RelAix Aachen-2 (Germany)", "s3-gw2.relaix.net" }
         };
 
         //Updated list: http://docs.amazonwebservices.com/general/latest/gr/rande.html#s3_region
