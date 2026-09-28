@@ -132,6 +132,54 @@ namespace Duplicati.Library.Common.IO
 
             [DllImport("kernel32.dll", SetLastError = true)]
             public static extern bool FindClose(IntPtr hFindFile);
+
+            /// <summary>
+            /// The access mode for CreateFile to write
+            /// </summary>
+            public const uint GENERIC_WRITE = 0x40000000;
+            /// <summary>
+            /// Needed by CreateFile to open a folder
+            /// </summary>
+            public const uint FILE_FLAG_BACKUP_SEMANTICS = 0x02000000;
+            /// <summary>
+            /// Makes CreateFile open a reparse point itself, not what it points to
+            /// </summary>
+            public const uint FILE_FLAG_OPEN_REPARSE_POINT = 0x00200000;
+            /// <summary>
+            /// The control code that sets the reparse data of a file or folder
+            /// </summary>
+            public const uint FSCTL_SET_REPARSE_POINT = 0x000900A4;
+            /// <summary>
+            /// The reparse tag of a junction, which is also that of a mounted volume
+            /// </summary>
+            public const uint IO_REPARSE_TAG_MOUNT_POINT = 0xA0000003;
+
+            /// <summary>
+            /// The WIN32_FIND_DATA structure, which carries the reparse tag in dwReserved0
+            /// </summary>
+            [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+            public struct WIN32_FIND_DATA
+            {
+                public uint dwFileAttributes;
+                public System.Runtime.InteropServices.ComTypes.FILETIME ftCreationTime;
+                public System.Runtime.InteropServices.ComTypes.FILETIME ftLastAccessTime;
+                public System.Runtime.InteropServices.ComTypes.FILETIME ftLastWriteTime;
+                public uint nFileSizeHigh;
+                public uint nFileSizeLow;
+                public uint dwReserved0;
+                public uint dwReserved1;
+                [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
+                public string cFileName;
+                [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 14)]
+                public string cAlternateFileName;
+            }
+
+            [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+            public static extern IntPtr FindFirstFileW(string lpFileName, out WIN32_FIND_DATA lpFindFileData);
+
+            [DllImport("kernel32.dll", SetLastError = true)]
+            [return: MarshalAs(UnmanagedType.Bool)]
+            public static extern bool DeviceIoControl(SafeFileHandle hDevice, uint dwIoControlCode, byte[] lpInBuffer, int nInBufferSize, IntPtr lpOutBuffer, int nOutBufferSize, out int lpBytesReturned, IntPtr lpOverlapped);
         }
 
         /// <summary>
@@ -719,6 +767,81 @@ namespace Duplicati.Library.Common.IO
                 throw new Win32Exception(Marshal.GetLastWin32Error(), "Failed to retrieve alternate data stream size.");
 
             return streamSize;
+        }
+
+        /// <summary>
+        /// Reports whether the path is a directory junction, as opposed to a symbolic link.
+        /// Both are reparse points with a target, but of different kinds.
+        /// </summary>
+        /// <param name="path">The path to check, with or without a trailing separator</param>
+        /// <returns><c>true</c> if the path is a junction; <c>false</c> if it is not, or cannot be read.</returns>
+        public bool IsJunction(string path)
+        {
+            var handle = Win32API.FindFirstFileW(AddExtendedDevicePathPrefix(path.TrimEnd(Path.DirectorySeparatorChar)), out var data);
+            if (handle == new IntPtr(-1))
+                return false;
+            Win32API.FindClose(handle);
+
+            return (data.dwFileAttributes & (uint)FileAttributes.ReparsePoint) != 0
+                && data.dwReserved0 == Win32API.IO_REPARSE_TAG_MOUNT_POINT;
+        }
+
+        /// <summary>
+        /// Makes a directory junction. Unlike a symbolic link, a junction needs no privilege
+        /// to make. .NET has no call for it, so the reparse data is set directly.
+        /// </summary>
+        /// <param name="junction">The path of the junction to make</param>
+        /// <param name="target">The folder it points to; a relative path is taken from the folder that holds the junction</param>
+        public void CreateJunction(string junction, string target)
+        {
+            if (FileExists(junction) || DirectoryExists(junction))
+                throw new IOException(string.Format("File already exists: {0}", junction));
+
+            // The name the file system follows is in the NT form, and must be absolute
+            var fullTarget = target.StartsWith(ExtendedDevicePathPrefix, StringComparison.Ordinal)
+                ? target.Substring(ExtendedDevicePathPrefix.Length)
+                : Path.GetFullPath(target, Path.GetDirectoryName(junction.TrimEnd(Path.DirectorySeparatorChar)) ?? "");
+            var substituteName = System.Text.Encoding.Unicode.GetBytes(@"\??\" + fullTarget);
+            var printName = System.Text.Encoding.Unicode.GetBytes(fullTarget);
+
+            // REPARSE_DATA_BUFFER with a MountPointReparseBuffer: the two names follow each
+            // other in the path buffer, each ending with a null character
+            using var ms = new MemoryStream();
+            using (var w = new BinaryWriter(ms, System.Text.Encoding.Unicode, true))
+            {
+                w.Write(Win32API.IO_REPARSE_TAG_MOUNT_POINT);
+                w.Write((ushort)(8 + substituteName.Length + 2 + printName.Length + 2));
+                w.Write((ushort)0);
+                w.Write((ushort)0);
+                w.Write((ushort)substituteName.Length);
+                w.Write((ushort)(substituteName.Length + 2));
+                w.Write((ushort)printName.Length);
+                w.Write(substituteName);
+                w.Write((ushort)0);
+                w.Write(printName);
+                w.Write((ushort)0);
+            }
+            var buffer = ms.ToArray();
+
+            var path = AddExtendedDevicePathPrefix(junction.TrimEnd(Path.DirectorySeparatorChar));
+            Directory.CreateDirectory(path);
+            try
+            {
+                using var handle = Win32API.CreateFileW(path, Win32API.GENERIC_WRITE, 0, IntPtr.Zero, Win32API.OPEN_EXISTING,
+                    Win32API.FILE_FLAG_BACKUP_SEMANTICS | Win32API.FILE_FLAG_OPEN_REPARSE_POINT, IntPtr.Zero);
+                if (handle.IsInvalid)
+                    throw new Win32Exception(Marshal.GetLastWin32Error(), $"Unable to open the folder for the junction: {junction}");
+
+                if (!Win32API.DeviceIoControl(handle, Win32API.FSCTL_SET_REPARSE_POINT, buffer, buffer.Length, IntPtr.Zero, 0, out _, IntPtr.Zero))
+                    throw new Win32Exception(Marshal.GetLastWin32Error(), $"Unable to create junction: {junction}");
+            }
+            catch
+            {
+                // Do not leave the empty folder behind in place of the junction
+                try { Directory.Delete(path); }
+                catch { }
+                throw;
+            }
         }
 
         public void CreateSymlink(string symlinkfile, string target, bool asDir)
