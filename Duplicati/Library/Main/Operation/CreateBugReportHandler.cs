@@ -47,6 +47,11 @@ namespace Duplicati.Library.Main.Operation
 
         public async Task RunAsync()
         {
+            // The bug report archive carries remote operation logs, restore test paths, metadata content and
+            // the machine name, which the scrubbing does not cover, so it is not produced under reduced reporting
+            if (m_options.ReducedReporting)
+                throw new UserInformationException("Bug reports cannot be created while reduced reporting is active", "BugReportDisabledByReducedReporting");
+
             var ext = Path.GetExtension(m_targetpath);
             var module = m_options.CompressionModule;
 

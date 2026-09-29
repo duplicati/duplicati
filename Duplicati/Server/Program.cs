@@ -661,6 +661,15 @@ namespace Duplicati.Server
             if (commandlineOptions.ContainsKey(WebServerLoader.OPTION_WEBSERVICE_DISABLE_SIGNIN_TOKENS))
                 connection.ApplicationSettings.DisableSigninTokens = Library.Utility.Utility.ParseBoolOption(commandlineOptions, WebServerLoader.OPTION_WEBSERVICE_DISABLE_SIGNIN_TOKENS);
 
+            if (commandlineOptions.ContainsKey(WebServerLoader.OPTION_REDUCED_REPORTING))
+            {
+                var reducedReporting = Library.Utility.Utility.ParseBoolOption(commandlineOptions, WebServerLoader.OPTION_REDUCED_REPORTING);
+                // The operator setting is stored either way; a console-enforced value keeps reduced reporting active regardless
+                connection.ApplicationSettings.ReducedReporting = reducedReporting;
+                if (!reducedReporting && connection.ApplicationSettings.ReducedReportingSetByConsole)
+                    Library.Logging.Log.WriteWarningMessage(LOGTAG, "ReducedReportingEnforcedByConsole", null, "reduced reporting is enforced by the console and stays active although --{0}=false was given", WebServerLoader.OPTION_REDUCED_REPORTING);
+            }
+
             if (commandlineOptions.ContainsKey(WebServerLoader.OPTION_WEBSERVICE_DISABLEAPIEXTENSIONS))
                 connection.ApplicationSettings.DisabledAPIExtensions = commandlineOptions.GetValueOrDefault(WebServerLoader.OPTION_WEBSERVICE_DISABLEAPIEXTENSIONS)?
                     .Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
@@ -1585,6 +1594,7 @@ namespace Duplicati.Server
             new CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_API_ONLY, CommandLineArgument.ArgumentType.Boolean, Strings.Program.WebserverApiOnlyDescription, Strings.Program.WebserverApiOnlyDescription),
             new CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_DONT_AUTOCREATE_DATABASE, CommandLineArgument.ArgumentType.Boolean, Strings.Program.WebserverDontAutocreateDatabaseDescription, Strings.Program.WebserverDontAutocreateDatabaseDescription),
             new CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_DISABLE_SIGNIN_TOKENS, CommandLineArgument.ArgumentType.Boolean, Strings.Program.WebserverDisableSigninTokensDescription, Strings.Program.WebserverDisableSigninTokensDescription),
+            new CommandLineArgument(WebServerLoader.OPTION_REDUCED_REPORTING, CommandLineArgument.ArgumentType.Boolean, Strings.Program.ReducedReportingShort, Strings.Program.ReducedReportingLong),
             new CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_SPAPATHS, CommandLineArgument.ArgumentType.Path, Strings.Program.WebserverSpaPathsDescription, Strings.Program.WebserverSpaPathsDescription, WebServerLoader.DEFAULT_OPTION_SPAPATHS),
             new CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_TIMEZONE, CommandLineArgument.ArgumentType.String, Strings.Program.WebserverTimezoneDescription, Strings.Program.WebserverTimezoneDescription, TimeZoneHelper.GetLocalTimeZone(), null, TimeZoneHelper.GetTimeZones().Select(x => x.Id).ToArray()),
             new CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_CORS_ORIGINS, CommandLineArgument.ArgumentType.Path, Strings.Program.WebserverCorsOriginsDescription, Strings.Program.WebserverCorsOriginsDescription, WebServerLoader.DEFAULT_OPTION_SPAPATHS),
