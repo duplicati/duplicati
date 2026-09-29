@@ -21,7 +21,9 @@
 
 using System;
 using CoCoL;
+using System.Threading;
 using System.Threading.Tasks;
+using Duplicati.Library.Utility;
 using Duplicati.Library.Interface;
 using System.Collections.Generic;
 using Duplicati.Library.Main.Operation.Common;
@@ -73,7 +75,14 @@ namespace Duplicati.Library.Main.Operation.Backup
                     long filestatsize = -1;
                     try
                     {
-                        filestatsize = e.Entry.Size;
+                        // Reading the size is a synchronous call that can get stuck on a source that
+                        // stopped answering, so it is read on its own and not waited for once the
+                        // operation is aborted
+                        filestatsize = await Task.Run(() => e.Entry.Size, CancellationToken.None).UntilCancelledAsync(taskreader.ProgressToken).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException) when (taskreader.ProgressToken.IsCancellationRequested)
+                    {
+                        throw;
                     }
                     catch (Exception ex)
                     {
@@ -130,7 +139,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     }
 
                     // Compute current metadata
-                    e.MetaHashAndSize = SKIPMETADATA ? EMPTY_METADATA : Utility.WrapMetadata(await MetadataGenerator.GenerateMetadataAsync(e.Entry, e.Attributes, options, taskreader.ProgressToken), options);
+                    e.MetaHashAndSize = SKIPMETADATA ? EMPTY_METADATA : Utility.WrapMetadata(await MetadataGenerator.GenerateMetadataUnlessAbortedAsync(e.Entry, e.Attributes, options, taskreader.ProgressToken), options);
                     e.MetadataChanged = !SKIPMETADATA && (e.MetaHashAndSize.Blob.Length != e.OldMetaSize || e.MetaHashAndSize.FileHash != e.OldMetaHash);
 
                     // Check if the file is new, or something indicates a change
