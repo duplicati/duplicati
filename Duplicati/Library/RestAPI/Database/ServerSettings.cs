@@ -128,6 +128,15 @@ namespace Duplicati.Server.Database
             public const string REMOTE_CONTROL_STORAGE_ENDPOINT_URL = "remote-control-storage-endpoint-url";
             [GuardedInput, GuardedOutput, BooleanOutput]
             public const string CLIENT_LICENSE_KEY = "client-license-key";
+            /// <summary>
+            /// reduced reporting switched on by the operator; every report leaving the machine is reduced to message ids
+            /// </summary>
+            public const string REDUCED_REPORTING = "reduced-reporting";
+            /// <summary>
+            /// reduced reporting enforced by the console; cannot be changed locally and cannot be overridden by the operator setting
+            /// </summary>
+            [GuardedInput]
+            public const string REDUCED_REPORTING_CONSOLE = "reduced-reporting-console";
             public const string ENABLE_FOLDER_STATUS_SERVICE = "enable-folder-status-service";
             public const string USE_OUT_OF_PROCESS_CONTROLLER = "use-out-of-process-controller";
 
@@ -936,6 +945,30 @@ namespace Duplicati.Server.Database
             get => settings[CONST.CLIENT_LICENSE_KEY];
             set => SetAndSaveSetting(CONST.CLIENT_LICENSE_KEY, value);
         }
+
+        /// <summary>
+        /// reduced reporting switched on by the operator
+        /// </summary>
+        public bool ReducedReporting
+        {
+            get => Utility.ParseBool(settings[CONST.REDUCED_REPORTING], false);
+            set => SetAndSaveSetting(CONST.REDUCED_REPORTING, value.ToString());
+        }
+
+        /// <summary>
+        /// reduced reporting enforced by the console
+        /// </summary>
+        public bool ReducedReportingSetByConsole
+        {
+            get => Utility.ParseBool(settings[CONST.REDUCED_REPORTING_CONSOLE], false);
+            set => SetAndSaveSetting(CONST.REDUCED_REPORTING_CONSOLE, value.ToString());
+        }
+
+        /// <summary>
+        /// Whether reduced reporting is active: switched on by the operator, by the console, or both.
+        /// A console-enforced value cannot be switched off locally.
+        /// </summary>
+        public bool IsReducedReportingActive => ReducedReporting || ReducedReportingSetByConsole;
 
         public bool EnableFolderStatusService
         {

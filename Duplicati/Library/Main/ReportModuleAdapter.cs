@@ -42,6 +42,10 @@ namespace Duplicati.Library.Main
         private static readonly string LOGTAG = Log.LogTagFromType<ReportModuleAdapter>();
 
         private readonly IReportModule m_module;
+        /// <summary>
+        /// The forms of a log entry the module uses; nothing else is built
+        /// </summary>
+        private readonly ReportLogContent m_logContent;
         private readonly CancellationToken m_cancellationToken;
         private IBackendProgress m_backendProgress;
         private IOperationProgress m_operationProgress;
@@ -59,6 +63,7 @@ namespace Duplicati.Library.Main
         public ReportModuleAdapter(IReportModule module, CancellationToken cancellationToken)
         {
             m_module = module;
+            m_logContent = module.RequestedLogContent;
             m_cancellationToken = cancellationToken;
         }
 
@@ -83,20 +88,37 @@ namespace Duplicati.Library.Main
             if (entry == null)
                 return;
 
+            // Only the forms the module asked for are built: each costs a format of the message or a
+            // walk of the exception, and a module that sends reduced reports has no use for the text
+            string message = null;
+            if (m_logContent.HasFlag(ReportLogContent.Message))
+                message = entry.AsString(true);
+
             // The redacted variant is computed from the unformatted arguments so whole
             // path arguments are dropped, then the formatted text is filtered as well to
             // catch paths embedded in the message or the exception text.
-            var redacted = Library.Utility.SensitiveDataFilter.RedactPaths(
-                entry.WithArguments(Library.Utility.SensitiveDataFilter.RedactPathArguments(entry.Arguments)).AsString(true));
+            string redacted = null;
+            if (m_logContent.HasFlag(ReportLogContent.RedactedMessage))
+                redacted = Library.Utility.SensitiveDataFilter.RedactPaths(
+                    entry.WithArguments(Library.Utility.SensitiveDataFilter.RedactPathArguments(entry.Arguments)).AsString(true));
+
+            string exceptionText = null;
+            if (m_logContent.HasFlag(ReportLogContent.ExceptionText))
+                exceptionText = entry.Exception?.ToString();
+
+            string reduced = null;
+            if (m_logContent.HasFlag(ReportLogContent.ReducedMessage))
+                reduced = ReducedReportFormat.FormatLogLine(entry);
 
             var snapshot = new ReportLogEntry(
-                entry.AsString(true),
+                message,
                 entry.Level.ToString(),
                 entry.FilterTag,
                 entry.Id,
                 entry.When,
-                entry.Exception?.ToString(),
-                redacted);
+                exceptionText,
+                redacted,
+                reduced);
 
             Forward(() => m_module.OnLogEntryAsync(snapshot, m_cancellationToken), "OnLogEntryAsync");
         }

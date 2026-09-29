@@ -243,7 +243,8 @@ public class RegisterForRemote : IDisposable
             { "localTime", DateTimeOffset.Now.ToString("o", CultureInfo.InvariantCulture) },
             { "version", AutoUpdater.UpdaterManager.SelfVersion?.Version },
             { "packageTypeId", AutoUpdater.UpdaterManager.PackageTypeId },
-            { "operatingSystem", AutoUpdater.UpdaterManager.OperatingSystemName }
+            { "operatingSystem", AutoUpdater.UpdaterManager.OperatingSystemName },
+            { "reducedreporting", "true" },
         };
 
         // Pass any query parameters from the registration URL into the JSON body

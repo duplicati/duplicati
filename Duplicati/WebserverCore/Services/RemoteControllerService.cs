@@ -284,6 +284,8 @@ public class RemoteControllerService(Connection connection, IRemoteControllerHan
         connection.ApplicationSettings.RemoteControlStorageEndpointUrl = string.Empty;
         connection.ApplicationSettings.ClientLicenseKey = string.Empty;
         Duplicati.Proprietary.LicenseChecker.LicenseHelper.SetRemoteClientLicenseKey(null);
+        // Only the console-enforced confidential or protected information flag is cleared; the operator's own setting survives unregistering
+        connection.ApplicationSettings.ReducedReportingSetByConsole = false;
 
         // Remove remotely configured backups
         var remoteBackupIds = connection.Backups.Where(x => !string.IsNullOrWhiteSpace(x.ExternalID) && x.ExternalID.StartsWith(ControlRequestMessage.BackupConfigKeyPrefix, StringComparison.OrdinalIgnoreCase))

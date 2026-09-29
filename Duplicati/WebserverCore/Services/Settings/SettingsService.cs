@@ -110,6 +110,9 @@ public class SettingsService(Connection connection) : ISettingsService
         foreach (var key in GUARDED_INPUT.Concat(BOOLEAN_MAPPED_OUTPUT))
             values.Remove(key);
 
+        if (values.TryGetValue(Server.Database.ServerSettings.CONST.REDUCED_REPORTING, out var reducedReportingValue))
+            EnsureReducedReportingCanBeSet(reducedReportingValue?.ToString());
+
         // Split into server settings and global settings
         var serversettings = values.Where(x => !string.IsNullOrWhiteSpace(x.Key) && !x.Key.StartsWith("--", StringComparison.Ordinal))
             .ToDictionary(x => x.Key, x => x.Value?.ToString());
@@ -169,6 +172,9 @@ public class SettingsService(Connection connection) : ISettingsService
         if (GUARDED_INPUT.Contains(key) || BOOLEAN_MAPPED_OUTPUT.Contains(key))
             throw new BadRequestException($"Cannot update {key} setting");
 
+        if (string.Equals(key, Server.Database.ServerSettings.CONST.REDUCED_REPORTING, StringComparison.OrdinalIgnoreCase))
+            EnsureReducedReportingCanBeSet(value);
+
         if (key.StartsWith("--", StringComparison.Ordinal))
         {
             var settings = connection.Settings.ToList();
@@ -189,5 +195,17 @@ public class SettingsService(Connection connection) : ISettingsService
             };
             connection.ApplicationSettings.UpdateSettings(dict, false);
         }
+    }
+
+    /// <summary>
+    /// reduced reporting enforced by the console cannot be switched off locally. Switching it on
+    /// locally is always allowed, and so is any change while the console does not enforce it.
+    /// </summary>
+    /// <param name="value">The value the operator setting is about to take</param>
+    private void EnsureReducedReportingCanBeSet(string? value)
+    {
+        var enable = Library.Utility.Utility.ParseBool(value, false);
+        if (!enable && connection.ApplicationSettings.ReducedReportingSetByConsole)
+            throw new BadRequestException("reduced reporting is enforced by the console and cannot be disabled locally");
     }
 }

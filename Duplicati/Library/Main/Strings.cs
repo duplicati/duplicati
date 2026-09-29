@@ -431,6 +431,8 @@ namespace Duplicati.Library.Main.Strings
         public static string DisableAdsRestoreLong { get { return LC.L("Use this option to skip restoring NTFS alternate data streams (ADS) during a restore operation. The main file content will still be restored."); } }
         public static string AllowPathsInLogMessagesShort { get { return LC.L("Allow paths in log messages"); } }
         public static string AllowPathsInLogMessagesLong { get { return LC.L("Use this option to allow paths to be included in log messages sent to remote servers. By default, paths are redacted to protect sensitive information."); } }
+        public static string ReducedReportingShort { get { return LC.L("Reduce reports to log message ids"); } }
+        public static string ReducedReportingLong { get { return LC.L("Use this option when the machine processes confidential or protected information. Every report leaving the machine (HTTP, email, XMPP, Telegram, the run-script result file, live status reports and the usage reporter) then carries log message ids, counters and dates only: no message text, arguments, exception messages, paths or file names. Bug reports cannot be created while the option is set."); } }
     }
 
     internal static class Common

@@ -611,6 +611,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("ignore-update-if-version-exists", CommandLineArgument.ArgumentType.Boolean, Strings.Options.IgnoreUpdateIfVersionExistsShort, Strings.Options.IgnoreUpdateIfVersionExistsLong, "false"),
 
             new CommandLineArgument("allow-paths-in-log-messages", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowPathsInLogMessagesShort, Strings.Options.AllowPathsInLogMessagesLong, "false"),
+            new CommandLineArgument(Logging.ReducedReportFormat.OPTION_REDUCED_REPORTING, CommandLineArgument.ArgumentType.Boolean, Strings.Options.ReducedReportingShort, Strings.Options.ReducedReportingLong, "false"),
 
             new CommandLineArgument("sync-recheck", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SyncRecheckShort, Strings.Options.SyncRecheckLong, "false"),
             new CommandLineArgument("sync-then-delete", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SyncThenDeleteShort, Strings.Options.SyncThenDeleteLong, "false"),
@@ -1603,6 +1604,11 @@ namespace Duplicati.Library.Main
         /// Gets a flag indicating whether the VACUUM operation should ever be run automatically.
         /// </summary>
         public bool AutoVacuum => GetBool("auto-vacuum");
+
+        /// <summary>
+        /// Gets a value indicating whether reports leaving the machine are reduced to log message ids (reduced reporting)
+        /// </summary>
+        public bool ReducedReporting => GetBool(Logging.ReducedReportFormat.OPTION_REDUCED_REPORTING);
 
         /// <summary>
         /// Gets the minimum time that must elapse after last vacuum before running next automatic vacuum
