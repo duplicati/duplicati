@@ -200,7 +200,9 @@ namespace Duplicati.Library.Main.Operation
                         .ConfigureAwait(false);
 
                     var currentStamp = Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(database.OperationTimestamp);
-                    if (lastFilestTime > currentStamp)
+                    // Fileset timestamps have one-second resolution, so a backup starting in the same second
+                    // as the last fileset must also wait, otherwise the previous fileset lookup does not find it
+                    if (lastFilestTime >= currentStamp)
                     {
                         if (lastFilestTime - currentStamp > 5)
                             throw new UserInformationException(string.Format("The database has a timestamp of {0}, but the last fileset has a timestamp of {1}. Something is wrong with the clock.", database.OperationTimestamp.ToLocalTime(), Library.Utility.Utility.EPOCH.AddSeconds(lastFilestTime).ToLocalTime()), "DatabaseTimestampError");
