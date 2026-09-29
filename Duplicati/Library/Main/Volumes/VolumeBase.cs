@@ -136,7 +136,9 @@ namespace Duplicati.Library.Main.Volumes
 
                 REMOTE_TYPENAME_MAP = dict;
                 REVERSE_REMOTE_TYPENAME_MAP = reversedict;
-                var pattern = @"(?<prefix>[^\-]+)\-(([i|b|I|B](?<guid>[0-9A-Fa-f]+))|((?<time>\d{8}T\d{6}Z))).(?<filetype>(" + string.Join(")|(", dict.Values) + @"))\.(?<compression>[^\.]+)(\.(?<encryption>.+))?";
+                // The encryption module is a single extension, so a volume that has been
+                // renamed by appending to the name ("*.aes.bak", "*.aes (1)") is not a volume
+                var pattern = @"(?<prefix>[^\-]+)\-(([i|b|I|B](?<guid>[0-9A-Fa-f]+))|((?<time>\d{8}T\d{6}Z))).(?<filetype>(" + string.Join(")|(", dict.Values) + @"))\.(?<compression>[^\.]+)(\.(?<encryption>[\w\-]+))?";
                 FILENAME_REGEXP = new System.Text.RegularExpressions.Regex(pattern);
                 FILENAME_REGEXP_IGNORE_CASE = new System.Text.RegularExpressions.Regex(pattern, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
             }
