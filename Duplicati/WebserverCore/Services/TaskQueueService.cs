@@ -52,7 +52,7 @@ public class TaskQueueService(IQueueRunnerService queueRunnerService) : ITaskQue
                 ID: taskid,
                 TaskStarted: task.TaskStarted,
                 TaskFinished: task.TaskFinished,
-                ErrorMessage: finished?.Exception?.Message,
+                ErrorMessage: finished?.Exception?.Message ?? finished?.ErrorMessage,
                 Exception: finished?.Exception?.ToString()
             );
         }
@@ -68,7 +68,7 @@ public class TaskQueueService(IQueueRunnerService queueRunnerService) : ITaskQue
                 ID: taskid,
                 TaskStarted: res?.TaskStarted,
                 TaskFinished: res?.TaskFinished,
-                ErrorMessage: res?.Exception?.Message,
+                ErrorMessage: res?.Exception?.Message ?? res?.ErrorMessage,
                 Exception: res?.Exception?.ToString()
             );
         }
@@ -101,7 +101,7 @@ public class TaskQueueService(IQueueRunnerService queueRunnerService) : ITaskQue
                 ID: x.TaskID,
                 TaskStarted: x.TaskStarted,
                 TaskFinished: x.TaskFinished,
-                ErrorMessage: res?.Exception?.Message,
+                ErrorMessage: res?.Exception?.Message ?? res?.ErrorMessage,
                 Exception: res?.Exception?.ToString()
             );
         });
