@@ -120,6 +120,11 @@ namespace Duplicati.Library.Main.Operation.Restore
                 {
                     Logging.Log.WriteVerboseMessage(LOGTAG, "RetiredProcess", null, "Volume downloader retired");
 
+                    // When the retirement came from downstream, the volume manager can still be waiting to hand
+                    // over its next item, and nothing will read it now. On a normal end the input is
+                    // already retired and read empty, so this does nothing.
+                    await self.Input.RetireAsync(true).ConfigureAwait(false);
+
                     if (options.InternalProfiling)
                     {
                         Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Read: {sw_read!.ElapsedMilliseconds}ms, Write: {sw_write!.ElapsedMilliseconds}ms, Wait: {sw_wait!.ElapsedMilliseconds}ms");
