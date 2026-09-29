@@ -585,6 +585,71 @@ namespace Duplicati.UnitTest
             Assert.That(result.Count, Is.EqualTo(5), "Expected 5 unique prefixes");
         }
 
+        /// <summary>
+        /// A root that is a file has nothing below it. An entry whose path merely continues
+        /// the file's name (notes.txt.old after notes.txt, report-2026/ after report) is a
+        /// root of its own, not a child.
+        /// </summary>
+        [Test]
+        public async Task GetMinimalUniquePrefixEntries_FileRootsDoNotAbsorbLongerNamesAsync()
+        {
+            using var tempFile = new TempFile();
+            await using var db = await LocalListDatabase.CreateAsync(tempFile, null, CancellationToken.None)
+                .ConfigureAwait(false);
+            SeedTestData(db, [
+                "/data/f1/",
+                "/data/f1/a.txt",
+                "/data/notes.txt",
+                "/data/notes.txt.old",
+                "/data/report",
+                "/data/report-2026/",
+                "/data/report-2026/x.txt"
+            ]);
+
+            var result = await db
+                .GetMinimalUniquePrefixEntriesAsync(1, CancellationToken.None)
+                .Select(e => e.Path)
+                .ToListAsync()
+                .ConfigureAwait(false);
+
+            Assert.That(result, Is.EquivalentTo(new[] {
+                "/data/f1/",
+                "/data/notes.txt",
+                "/data/notes.txt.old",
+                "/data/report",
+                "/data/report-2026/"
+            }));
+        }
+
+        /// <summary>
+        /// The restore tree asks for the roots with no folder given. A file source whose name
+        /// is extended by another source must still be one of the roots.
+        /// </summary>
+        [Test]
+        public async Task ListFolder_RootsIncludeASourceThatExtendsAnotherSourcesNameAsync()
+        {
+            var options = new Dictionary<string, string>(this.TestOptions);
+            var notes = Path.Combine(this.DATAFOLDER, "notes.txt");
+            var notesOld = Path.Combine(this.DATAFOLDER, "notes.txt.old");
+            var folder = Path.Combine(this.DATAFOLDER, "f1");
+            Directory.CreateDirectory(folder);
+            File.WriteAllText(notes, "n");
+            File.WriteAllText(notesOld, "o");
+            File.WriteAllText(Path.Combine(folder, "a.txt"), "a");
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                TestUtils.AssertResults(await c.BackupAsync(new[] { notes, notesOld, folder }));
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                var roots = await c.ListFolderAsync(null, 0, 0, false);
+                var byPath = roots.Entries.Items.ToDictionary(x => x.Path);
+
+                Assert.That(byPath.Keys, Is.EquivalentTo(new[] { notes, notesOld, Library.Common.IO.Util.AppendDirSeparator(folder) }));
+                Assert.That(byPath.Values.Where(x => x.IsDirectory).Select(x => x.Path), Is.EqualTo(new[] { Library.Common.IO.Util.AppendDirSeparator(folder) }));
+            }
+        }
+
         private void SeedTestData(LocalListDatabase db, IEnumerable<string> fullPaths)
         {
             const long filesetId = 1;
