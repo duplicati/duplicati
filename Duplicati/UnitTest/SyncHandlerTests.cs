@@ -89,6 +89,46 @@ public class SyncHandlerTests : BasicSetupHelper
     }
 
     /// <summary>
+    /// Verifies that a zero-byte source file is created on the destination,
+    /// and that a following run has nothing left to do for it.
+    /// </summary>
+    [Test]
+    [Category("Sync")]
+    public async Task TestSyncZeroByteFileAsync()
+    {
+        var dataFolder = Path.Combine(BASEFOLDER, "sync_data_empty");
+        if (Directory.Exists(dataFolder)) Directory.Delete(dataFolder, true);
+        Directory.CreateDirectory(dataFolder);
+
+        File.WriteAllBytes(Path.Combine(dataFolder, "empty.md"), Array.Empty<byte>());
+        File.WriteAllText(Path.Combine(dataFolder, "file1.txt"), "Hello World");
+
+        var opts = new Dictionary<string, string>
+        {
+            ["no-encryption"] = "true",
+            ["snapshot-policy"] = "off"
+        };
+
+        using (var c = new Controller(backendUrl, opts, null))
+        {
+            var res = await c.SyncAsync(new[] { dataFolder }, null);
+            Assert.IsEmpty(res.Warnings, string.Join(Environment.NewLine, res.Warnings));
+            Assert.IsEmpty(res.Errors, string.Join(Environment.NewLine, res.Errors));
+            Assert.AreEqual(2, res.FilesUploaded);
+        }
+
+        Assert.IsTrue(File.Exists(Path.Combine(targetDir, "empty.md")), "The empty file was not uploaded");
+        Assert.AreEqual(0, new FileInfo(Path.Combine(targetDir, "empty.md")).Length);
+
+        using (var c = new Controller(backendUrl, opts, null))
+        {
+            var res = await c.SyncAsync(new[] { dataFolder }, null);
+            Assert.IsEmpty(res.Warnings, string.Join(Environment.NewLine, res.Warnings));
+            Assert.AreEqual(0, res.FilesUploaded, "The empty file should not be uploaded again");
+        }
+    }
+
+    /// <summary>
     /// Verifies that the sync handler reports its progress via
     /// <see cref="SyncResults.OperationProgressUpdater"/>: the phase transitions through
     /// the new <c>Sync_*</c> phases (<c>Sync_Begin</c> -> <c>Sync_CountingFiles</c> ->

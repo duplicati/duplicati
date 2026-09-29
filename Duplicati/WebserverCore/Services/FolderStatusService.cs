@@ -21,6 +21,7 @@
 
 using Duplicati.Server;
 using Duplicati.Server.Database;
+using Duplicati.Server.Serialization;
 using Duplicati.Server.Serialization.Interface;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Dto;
@@ -201,7 +202,7 @@ public class FolderStatusService : IFolderStatusService
     /// Determines the backup status for a backup configuration
     /// </summary>
     private string DetermineBackupStatus(IBackup backup, HashSet<string> activeBackupIds)
-        => DetermineStatus(backup.Metadata, backup.ID != null && activeBackupIds.Contains(backup.ID));
+        => DetermineStatus(backup.Metadata, backup.ID != null && activeBackupIds.Contains(backup.ID), backup.OperationType);
 
     /// <summary>
     /// Determines the folder status from the metadata the runner records for a backup.
@@ -212,17 +213,19 @@ public class FolderStatusService : IFolderStatusService
     /// the newest version on the destination, which does not move when a run finds no
     /// changes, so it is only used for metadata written before LastBackupFinished
     /// existed. Warnings are not recorded in the metadata, so the warning status is
-    /// currently never produced here.
+    /// currently never produced here. A sync job records its runs under its own keys,
+    /// so the operation type decides which keys are read.
     /// </summary>
     /// <param name="metadata">The backup metadata, or null if none</param>
     /// <param name="isActive">True if the backup is running or queued</param>
+    /// <param name="operationType">The operation type of the backup configuration</param>
     /// <returns>One of the <see cref="FolderBackupStatusValues"/></returns>
-    public static string DetermineStatus(IDictionary<string, string>? metadata, bool isActive)
+    public static string DetermineStatus(IDictionary<string, string>? metadata, bool isActive, OperationType operationType)
     {
         if (isActive)
             return FolderBackupStatusValues.InProgress;
 
-        var lastBackup = GetLastBackupTime(metadata);
+        var lastBackup = GetLastBackupTime(metadata, operationType);
         var lastError = ReadDate(metadata, "LastErrorDate");
 
         if (lastError != null && (lastBackup == null || lastError >= lastBackup))
@@ -237,16 +240,18 @@ public class FolderStatusService : IFolderStatusService
     /// Gets the last backup time from backup metadata
     /// </summary>
     private static DateTime? GetLastBackupTime(IBackup backup)
-        => GetLastBackupTime(backup.Metadata);
+        => GetLastBackupTime(backup.Metadata, backup.OperationType);
 
     /// <summary>
     /// Gets the time the last backup run completed, in UTC.
     /// Falls back to the newest version time for metadata from older versions.
     /// </summary>
     /// <param name="metadata">The backup metadata, or null if none</param>
+    /// <param name="operationType">The operation type of the backup configuration</param>
     /// <returns>The last backup time, or null if the backup never completed</returns>
-    public static DateTime? GetLastBackupTime(IDictionary<string, string>? metadata)
-        => ReadDate(metadata, "LastBackupFinished") ?? ReadDate(metadata, "LastBackupDate");
+    public static DateTime? GetLastBackupTime(IDictionary<string, string>? metadata, OperationType operationType)
+        => ReadDate(metadata, LastRunMetadata.FinishedKey(operationType))
+            ?? (operationType == OperationType.Backup ? ReadDate(metadata, "LastBackupDate") : null);
 
     /// <summary>
     /// Reads a serialized date from the metadata

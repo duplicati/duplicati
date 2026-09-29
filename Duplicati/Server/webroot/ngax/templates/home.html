@@ -77,14 +77,22 @@
                 </dl>
 
                 <dl>
-                    <dt translate>Last successful backup:</dt>
-                    <dd ng-hide="item.Backup.Metadata == null || item.Backup.Metadata.LastBackupFinished == null"
+                    <dt ng-if="item.Backup.OperationType != 'Sync'" translate>Last successful backup:</dt>
+                    <dt ng-if="item.Backup.OperationType == 'Sync'" translate>Last successful sync:</dt>
+                    <dd ng-if="item.Backup.OperationType != 'Sync'"
+                        ng-hide="item.Backup.Metadata == null || item.Backup.Metadata.LastBackupFinished == null"
                         title="{{item.Backup.Metadata.LastBackupFinished | parsetimestamp }}"
                         translate translate-params-time="item.Backup.Metadata.LastBackupFinished | parseDate:forceActualDate"
                         translate-params-duration="formatDuration(item.Backup.Metadata.LastBackupDuration || item.Backup.Metadata.LastDuration)">{{time}} (took {{duration}})
                     </dd>
+                    <dd ng-if="item.Backup.OperationType == 'Sync'"
+                        ng-hide="item.Backup.Metadata == null || item.Backup.Metadata.LastSyncFinished == null"
+                        title="{{item.Backup.Metadata.LastSyncFinished | parsetimestamp }}"
+                        translate translate-params-time="item.Backup.Metadata.LastSyncFinished | parseDate:forceActualDate"
+                        translate-params-duration="formatDuration(item.Backup.Metadata.LastSyncDuration)">{{time}} (took {{duration}})
+                    </dd>
                     <dd>
-                        <span ng-show="item.Backup.Metadata == null || item.Backup.Metadata.LastBackupFinished == null">{{'Never' | translate}} - </span><a href class="action-link" ng-click="doRun(item.Backup.ID)" translate>Run now</a>
+                        <span ng-show="item.Backup.Metadata == null || (item.Backup.OperationType == 'Sync' ? item.Backup.Metadata.LastSyncFinished : item.Backup.Metadata.LastBackupFinished) == null">{{'Never' | translate}} - </span><a href class="action-link" ng-click="doRun(item.Backup.ID)" translate>Run now</a>
                     </dd>
 
                     <div ng-hide="item.Backup.Metadata == null || item.Backup.Metadata.NextScheduledRun == null">

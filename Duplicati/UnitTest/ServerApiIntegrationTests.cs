@@ -522,6 +522,77 @@ public class ServerApiIntegrationTests : BasicSetupHelper
         }).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// A sync job has its own database schema and result type, but is shown in the same
+    /// places as a backup. The last run must be reported through the sync metadata keys,
+    /// and asking for the logs must not fail on the tables the sync database does not have.
+    /// </summary>
+    [Test]
+    [Category("Integration")]
+    public async Task SyncJobReportsLastRunAndLogs_Async()
+    {
+        File.WriteAllText(Path.Combine(this.DATAFOLDER, "sample.txt"), "Sync sample");
+        File.WriteAllBytes(Path.Combine(this.DATAFOLDER, "empty.md"), Array.Empty<byte>());
+        Directory.CreateDirectory(this.TARGETFOLDER);
+
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            var request = new BackupAndScheduleInputDto
+            {
+                Backup = new BackupAndScheduleInputDto.BackupInputDto
+                {
+                    Name = $"API integration sync {Guid.NewGuid():N}",
+                    Description = "Integration test sync",
+                    OperationType = Duplicati.Server.Serialization.OperationType.Sync,
+                    TargetURL = BuildFileBackendUrl(this.TARGETFOLDER),
+                    Sources = new[] { this.DATAFOLDER },
+                    Settings = new[]
+                    {
+                        // The server validation looks for the setting with the leading dashes
+                        new BackupAndScheduleInputDto.SettingInputDto { Name = "--no-encryption", Value = "true" },
+                        new BackupAndScheduleInputDto.SettingInputDto { Name = "snapshot-policy", Value = "Off" }
+                    },
+                    Filters = Array.Empty<BackupAndScheduleInputDto.FilterInputDto>(),
+                    Metadata = new Dictionary<string, string>()
+                }
+            };
+
+            var createResponse = await httpClient.PostAsJsonAsync("/api/v1/backups", request, JsonOptions).ConfigureAwait(false);
+            createResponse.EnsureSuccessStatusCode();
+            var backupId = (await createResponse.Content.ReadFromJsonAsync<CreateBackupDto>(JsonOptions).ConfigureAwait(false))?.ID
+                ?? throw new InvalidOperationException("Sync job creation did not return an ID");
+
+            await RunTaskAndWaitAsync(httpClient, $"/api/v1/backup/{backupId}/run").ConfigureAwait(false);
+
+            Assert.That(File.Exists(Path.Combine(this.TARGETFOLDER, "sample.txt")), Is.True, "The sync should have copied the file");
+            Assert.That(File.Exists(Path.Combine(this.TARGETFOLDER, "empty.md")), Is.True, "The sync should have copied the empty file");
+
+            var backupResponse = await httpClient.GetAsync($"/api/v1/backup/{backupId}").ConfigureAwait(false);
+            backupResponse.EnsureSuccessStatusCode();
+            var backup = await backupResponse.Content.ReadFromJsonAsync<BackupGet.GetBackupResultDto>(JsonOptions).ConfigureAwait(false)
+                         ?? throw new InvalidOperationException("Backup retrieval response was empty");
+
+            var metadata = backup.Backup.Metadata ?? new Dictionary<string, string>();
+            foreach (var key in new[] { "LastSyncStarted", "LastSyncFinished", "LastSyncDuration", "SourceFilesCount", "SourceFilesSize", "SourceSizeString" })
+                Assert.That(metadata.ContainsKey(key), Is.True, $"The key {key} should be written for a sync job");
+            foreach (var key in new[] { "LastBackupStarted", "LastBackupFinished", "LastBackupDuration" })
+                Assert.That(metadata.ContainsKey(key), Is.False, $"The backup key {key} should not be written for a sync job");
+            Assert.That(metadata["SourceFilesCount"], Is.EqualTo("2"));
+
+            var logResponse = await httpClient.GetAsync($"/api/v1/backup/{backupId}/log?pagesize=25").ConfigureAwait(false);
+            Assert.That(logResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), "The log of a sync job should be readable");
+            var log = await logResponse.Content.ReadFromJsonAsync<List<Dictionary<string, JsonElement>>>(JsonOptions).ConfigureAwait(false);
+            Assert.That(log, Is.Not.Null.And.Empty, "A sync job has no general log entries");
+
+            var remoteLogResponse = await httpClient.GetAsync($"/api/v1/backup/{backupId}/remotelog?pagesize=25").ConfigureAwait(false);
+            Assert.That(remoteLogResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), "The remote log of a sync job should be readable");
+            var remoteLog = await remoteLogResponse.Content.ReadFromJsonAsync<List<Dictionary<string, JsonElement>>>(JsonOptions).ConfigureAwait(false);
+            // The sync handler does not currently record its remote operations in the
+            // database, so only the request succeeding is verified, not the contents
+            Assert.That(remoteLog, Is.Not.Null, "The remote log of a sync job should be a list");
+        }).ConfigureAwait(false);
+    }
+
     private async Task WithAuthenticatedServerAsync(Func<HttpClient, Task> testBody)
     {
         var serverPassword = "integration-test-password";

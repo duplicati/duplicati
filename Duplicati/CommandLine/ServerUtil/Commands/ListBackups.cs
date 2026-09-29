@@ -70,7 +70,11 @@ public static class ListBackups
                             output.AppendConsoleMessage($"  {label}: {value}");
                         }
 
-                        WriteDetail("Last backup", "LastBackupDate", s => Library.Utility.Utility.TryDeserializeDateTime(s, out var dt) ? dt.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture) : s);
+                        // A sync job has no versions on the destination, so the time
+                        // of its last completed run is shown instead
+                        var isSync = bk.OperationType == Server.Serialization.OperationType.Sync;
+                        var lastRunKey = isSync ? Server.Serialization.LastRunMetadata.FinishedKey(bk.OperationType) : "LastBackupDate";
+                        WriteDetail(isSync ? "Last sync" : "Last backup", lastRunKey, s => Library.Utility.Utility.TryDeserializeDateTime(s, out var dt) ? dt.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture) : s);
                         if (!string.IsNullOrWhiteSpace(bk.Schedule?.Time))
                         {
                             var timestring = DateTime.TryParseExact(bk.Schedule.Time, "yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var scheduleDt)
@@ -79,13 +83,13 @@ public static class ListBackups
                             output.AppendConsoleMessage($"  Schedule: {bk.Schedule.Repeat} at {timestring}");
                         }
 
-                        WriteDetail("Last duration", "LastBackupDuration", s => TimeSpan.TryParse(s, CultureInfo.InvariantCulture, out var ts) ? ts.ToString() : s);
+                        WriteDetail("Last duration", Server.Serialization.LastRunMetadata.DurationKey(bk.OperationType), s => TimeSpan.TryParse(s, CultureInfo.InvariantCulture, out var ts) ? ts.ToString() : s);
                         WriteDetail("Source files size", "SourceFilesSize", s => Library.Utility.Utility.FormatSizeString(long.Parse(s)));
                         WriteDetail("Target files size", "TargetFilesSize", s => Library.Utility.Utility.FormatSizeString(long.Parse(s)));
                         WriteDetail("Versions", "BackupListCount");
 
                         Library.Utility.Utility.TryDeserializeDateTime(bk.Metadata?.GetValueOrDefault("LastErrorDate") ?? "", out var lastErrorDt);
-                        Library.Utility.Utility.TryDeserializeDateTime(bk.Metadata?.GetValueOrDefault("LastBackupDate") ?? "", out var lastBackupDt);
+                        Library.Utility.Utility.TryDeserializeDateTime(bk.Metadata?.GetValueOrDefault(lastRunKey) ?? "", out var lastBackupDt);
                         var lastErrorMessage = bk.Metadata?.GetValueOrDefault("LastErrorMessage") ?? "";
                         if (lastErrorDt > lastBackupDt && !string.IsNullOrWhiteSpace(lastErrorMessage))
                             output.AppendConsoleMessage($"  Last error: {lastErrorDt.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)} - {lastErrorMessage}");
@@ -97,6 +101,7 @@ public static class ListBackups
                 {
                     Id = id.ID,
                     Name = id.Name,
+                    OperationType = id.OperationType.ToString(),
                     Metadata = id.Metadata,
                     Schedule = id.Schedule
                 }).ToArray());

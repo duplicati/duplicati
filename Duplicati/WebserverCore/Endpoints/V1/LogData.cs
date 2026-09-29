@@ -64,6 +64,27 @@ public class LogData : IEndpointV1
     private static CrashLogOutputDto ExecuteGetCrashLog()
         => new CrashLogOutputDto(CrashlogHelper.GetLastCrashLog());
 
+    /// <summary>
+    /// Checks if a table exists in the database the command is connected to
+    /// </summary>
+    /// <param name="cmd">The command to use</param>
+    /// <param name="tablename">The name of the table to look for</param>
+    /// <returns><c>true</c> if the table exists, <c>false</c> otherwise</returns>
+    public static bool TableExists(System.Data.IDbCommand cmd, string tablename)
+    {
+        cmd.Parameters.Clear();
+        cmd.CommandText = "SELECT COUNT(*) FROM \"sqlite_master\" WHERE \"type\" = 'table' AND \"name\" = @TableName";
+        cmd.AddNamedParameter("TableName", tablename);
+        try
+        {
+            return Convert.ToInt64(cmd.ExecuteScalar()) > 0;
+        }
+        finally
+        {
+            cmd.Parameters.Clear();
+        }
+    }
+
     public static List<Dictionary<string, object>> DumpTable(System.Data.IDbCommand cmd, string tablename, string pagingfield, long? offset, long pagesize)
     {
         var result = new List<Dictionary<string, object>>();
