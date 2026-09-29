@@ -544,7 +544,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                             catch (Exception) when (RestoreCancellation.IsShutdownRequested(results.TaskControl))
                             {
                                 block_request.Retire();
-                                block_response.Retire();
+                                await block_response.RetireAsync(true).ConfigureAwait(false);
                                 throw;
                             }
                             catch (Exception)
@@ -554,7 +554,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                     results.BrokenLocalFiles.Add(file.TargetPath);
                                 }
                                 block_request.Retire();
-                                block_response.Retire();
+                                await block_response.RetireAsync(true).ConfigureAwait(false);
                                 throw;
                             }
                             finally
@@ -654,7 +654,10 @@ namespace Duplicati.Library.Main.Operation.Restore
                         }
 
                     block_request.Retire();
-                    block_response.Retire();
+                    // The block handler can still be writing responses to the requests sent ahead of
+                    // this one, and with this processor gone nothing reads them. A plain `Retire` waits
+                    // for the buffer to be read first, so the handler would wait forever.
+                    await block_response.RetireAsync(true).ConfigureAwait(false);
                 }
             });
         }

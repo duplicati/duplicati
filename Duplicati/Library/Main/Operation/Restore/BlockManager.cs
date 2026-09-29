@@ -578,7 +578,10 @@ namespace Duplicati.Library.Main.Operation.Restore
                     catch (Exception ex)
                     {
                         Logging.Log.WriteErrorMessage(LOGTAG, "VolumeConsumerError", ex, "Error in volume consumer");
-                        self.Input.Retire();
+                        // This is the only reader of the decompressed blocks, so a decompressor can
+                        // be waiting to hand over its next one. A plain `Retire` waits for the buffer
+                        // to be read first, which with this reader gone never happens.
+                        await self.Input.RetireAsync(true).ConfigureAwait(false);
 
                         // Cancel any remaining readers - although there shouldn't be any.
                         cache.CancelAll();
