@@ -1904,7 +1904,8 @@ namespace Duplicati.Library.Utility
             ".cloudflarestorage.com",
             ".storage.selcloud.ru",
             ".srvstorage.uz",
-            ".srvstorage.kz"
+            ".srvstorage.kz",
+            ".relaix.net",
         ], StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
