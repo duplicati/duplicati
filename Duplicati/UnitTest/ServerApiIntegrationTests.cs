@@ -336,6 +336,116 @@ public class ServerApiIntegrationTests : BasicSetupHelper
     }
 
     /// <summary>
+    /// A restore that could not restore a file finishes without throwing and reports the
+    /// failure as an error in its results. The task state has to carry an error message then,
+    /// as that is what the web UI uses to tell a failed restore from a successful one
+    /// (#4644). The status stays "Completed", which clients use to see that the task is done.
+    /// </summary>
+    [Test]
+    [Category("Integration")]
+    public async Task RestoreWithErrorsReportsAnErrorMessage_Async()
+    {
+        var backupPassphrase = "integration-passphrase";
+        File.WriteAllText(Path.Combine(this.DATAFOLDER, "sample.txt"), "Sample content");
+
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            var backupId = await CreateBackupAsync(httpClient, backupPassphrase).ConfigureAwait(false);
+            await RunTaskAndWaitAsync(httpClient, $"/api/v1/backup/{backupId}/run").ConfigureAwait(false);
+
+            // A file in the way that the restore cannot read, so checking it fails
+            await DirectoryDeleteSafeAsync(this.RESTOREFOLDER).ConfigureAwait(false);
+            Directory.CreateDirectory(this.RESTOREFOLDER);
+            var blocked = Path.Combine(this.RESTOREFOLDER, "sample.txt");
+            File.WriteAllText(blocked, "Other content");
+
+            FileStream? holder = null;
+            if (OperatingSystem.IsWindows())
+                holder = new FileStream(blocked, FileMode.Open, FileAccess.Read, FileShare.None);
+            else
+                File.SetUnixFileMode(blocked, UnixFileMode.None);
+
+            try
+            {
+                if (!OperatingSystem.IsWindows())
+                {
+                    try
+                    {
+                        using (File.OpenRead(blocked)) { }
+                        Assert.Ignore("The file can still be read (running as root?), so the restore would not fail");
+                    }
+                    catch (UnauthorizedAccessException)
+                    {
+                    }
+                }
+
+                var restoreResponse = await httpClient.PostAsJsonAsync(
+                    $"/api/v1/backup/{backupId}/restore",
+                    new RestoreInputDto(null, backupPassphrase, "now", this.RESTOREFOLDER, true, false, false, null, null),
+                    JsonOptions).ConfigureAwait(false);
+                restoreResponse.EnsureSuccessStatusCode();
+                var task = await restoreResponse.Content.ReadFromJsonAsync<TaskStartedDto>(JsonOptions).ConfigureAwait(false)
+                           ?? throw new InvalidOperationException("Restore start response was empty");
+
+                var state = await WaitForTaskToFinishAsync(httpClient, task.ID).ConfigureAwait(false);
+                Assert.That(state.Status, Is.EqualTo("Completed").IgnoreCase, "The restore ran to the end");
+                Assert.That(state.ErrorMessage, Is.Not.Null.And.Not.Empty, "The restore that could not restore the file was reported without an error");
+            }
+            finally
+            {
+                holder?.Dispose();
+                if (!OperatingSystem.IsWindows())
+                    File.SetUnixFileMode(blocked, UnixFileMode.UserRead | UnixFileMode.UserWrite);
+            }
+        }).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// The restore described in #4644 and #4051: the destination is not there, for instance
+    /// because the drive holding it is not connected. The restore fails, and the task is
+    /// reported as "Failed" with the reason rather than as a success.
+    /// </summary>
+    [Test]
+    [Category("Integration")]
+    public async Task RestoreFromAMissingDestinationReportsFailure_Async()
+    {
+        var backupPassphrase = "integration-passphrase";
+        File.WriteAllText(Path.Combine(this.DATAFOLDER, "sample.txt"), "Sample content");
+
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            // No retries, so the missing destination is reported without waiting for them
+            var backupId = await CreateBackupAsync(httpClient, backupPassphrase,
+                extraSettings: [new BackupAndScheduleInputDto.SettingInputDto { Name = "number-of-retries", Value = "0" }]).ConfigureAwait(false);
+            await RunTaskAndWaitAsync(httpClient, $"/api/v1/backup/{backupId}/run").ConfigureAwait(false);
+
+            await DirectoryDeleteSafeAsync(this.RESTOREFOLDER).ConfigureAwait(false);
+            Directory.CreateDirectory(this.RESTOREFOLDER);
+
+            var moved = this.TARGETFOLDER.TrimEnd(Path.DirectorySeparatorChar) + "-moved";
+            Directory.Move(this.TARGETFOLDER, moved);
+            try
+            {
+                var restoreResponse = await httpClient.PostAsJsonAsync(
+                    $"/api/v1/backup/{backupId}/restore",
+                    new RestoreInputDto(null, backupPassphrase, "now", this.RESTOREFOLDER, true, false, false, null, null),
+                    JsonOptions).ConfigureAwait(false);
+                restoreResponse.EnsureSuccessStatusCode();
+                var task = await restoreResponse.Content.ReadFromJsonAsync<TaskStartedDto>(JsonOptions).ConfigureAwait(false)
+                           ?? throw new InvalidOperationException("Restore start response was empty");
+
+                var state = await WaitForTaskToFinishAsync(httpClient, task.ID).ConfigureAwait(false);
+                Assert.That(state.Status, Is.EqualTo("Failed").IgnoreCase, "The restore from a missing destination was not reported as failed");
+                Assert.That(state.ErrorMessage, Is.Not.Null.And.Not.Empty, "The failed restore was reported without a reason");
+            }
+            finally
+            {
+                Directory.Move(moved, this.TARGETFOLDER);
+            }
+        }).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// A destination folder that is already there is the desired outcome of an
     /// automatic creation, the way the backend manager treats it. These tests use a
     /// backend that reports the folder as missing and then reports it as already
@@ -490,7 +600,7 @@ public class ServerApiIntegrationTests : BasicSetupHelper
         return new Uri(normalized).AbsoluteUri;
     }
 
-    private async Task<string> CreateBackupAsync(HttpClient httpClient, string passphrase, string? backupName = null, string? targetFolder = null)
+    private async Task<string> CreateBackupAsync(HttpClient httpClient, string passphrase, string? backupName = null, string? targetFolder = null, IEnumerable<BackupAndScheduleInputDto.SettingInputDto>? extraSettings = null)
     {
         var backupTarget = targetFolder ?? this.TARGETFOLDER;
         Directory.CreateDirectory(backupTarget);
@@ -502,7 +612,9 @@ public class ServerApiIntegrationTests : BasicSetupHelper
             new BackupAndScheduleInputDto.SettingInputDto { Name = "blocksize", Value = "50kb" },
             new BackupAndScheduleInputDto.SettingInputDto { Name = "compression-module", Value = "zip" },
             new BackupAndScheduleInputDto.SettingInputDto { Name = "snapshot-policy", Value = "Off" }
-        };
+        }
+        .Concat(extraSettings ?? [])
+        .ToArray();
 
         var request = new BackupAndScheduleInputDto
         {
@@ -572,6 +684,27 @@ public class ServerApiIntegrationTests : BasicSetupHelper
 
             if (stopwatch.Elapsed > TimeSpan.FromMinutes(2))
                 throw new TimeoutException($"Task {taskId} did not complete in the allotted time");
+
+            await Task.Delay(250).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// Waits for a task to finish, whether it completed or failed, and returns its final state.
+    /// </summary>
+    private static async Task<GetTaskStateDto> WaitForTaskToFinishAsync(HttpClient httpClient, long taskId)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        while (true)
+        {
+            var state = await GetTaskStateAsync(httpClient, taskId).ConfigureAwait(false);
+
+            if (string.Equals(state.Status, "Completed", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(state.Status, "Failed", StringComparison.OrdinalIgnoreCase))
+                return state;
+
+            if (stopwatch.Elapsed > TimeSpan.FromMinutes(2))
+                throw new TimeoutException($"Task {taskId} did not finish in the allotted time");
 
             await Task.Delay(250).ConfigureAwait(false);
         }
