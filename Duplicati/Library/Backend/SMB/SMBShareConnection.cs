@@ -470,19 +470,34 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
                 var buffer = new byte[Math.Min(_connectionParameters.WriteBufferSize ?? (int)_smb2Client.MaxWriteSize, _smb2Client.MaxWriteSize)];
                 int bytesRead;
                 int numberOfBytesWritten;
-                int offset = 0;
-                using var timeoutStream = sourceStream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false);
-                while (!cancellationToken.IsCancellationRequested && timeoutStream.Position < timeoutStream.Length)
+                long offset = 0;
+                try
                 {
-                    bytesRead = await timeoutStream.ReadAsync(buffer, cancellationToken);
-                    if (bytesRead == 0)
-                        break;
-                    status = _smbFileStore.WriteFile(out numberOfBytesWritten, fileHandle, offset, buffer.Take(bytesRead).ToArray());
-                    offset += numberOfBytesWritten;
-                    if (numberOfBytesWritten != bytesRead)
-                        throw new UserInformationException(LC.L("Failed to write to file, difference between bytes read and bytes written"), "HandleWriteError");
-                    if (status != NTStatus.STATUS_SUCCESS)
-                        throw new UserInformationException($"{LC.L("Failed to write file on Putasync")} {filename} with status {status.ToString()}", "HandleWriteError");
+                    using var timeoutStream = sourceStream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false);
+                    while (!cancellationToken.IsCancellationRequested && timeoutStream.Position < timeoutStream.Length)
+                    {
+                        bytesRead = await timeoutStream.ReadAsync(buffer, cancellationToken);
+                        if (bytesRead == 0)
+                            break;
+                        status = _smbFileStore.WriteFile(out numberOfBytesWritten, fileHandle, offset, buffer.Take(bytesRead).ToArray());
+                        // The status must be checked first, as the number of bytes written is zero on failure
+                        if (status != NTStatus.STATUS_SUCCESS)
+                            throw new UserInformationException($"{LC.L("Failed to write file on Putasync")} {filename} with status {status}", "HandleWriteError");
+                        if (numberOfBytesWritten != bytesRead)
+                            throw new UserInformationException($"{LC.L("Failed to write to file, difference between bytes read and bytes written")} {filename}: {numberOfBytesWritten} of {bytesRead} at offset {offset}", "HandleWriteError");
+                        offset += numberOfBytesWritten;
+                    }
+
+                    // Do not report a partial upload as completed
+                    cancellationToken.ThrowIfCancellationRequested();
+                }
+                catch
+                {
+                    // Release the handle so a retry is not blocked by the exclusive share access
+                    if (fileHandle != null)
+                        try { _smbFileStore.CloseFile(fileHandle); }
+                        catch { }
+                    throw;
                 }
                 if (fileHandle != null)
                 {

@@ -72,6 +72,7 @@ public static class Program
     /// <param name="SecretProviderCache">The secret provider cache level</param>
     /// <param name="SecretProviderPattern">The secret provider pattern</param>
     /// <param name="AllowInsecureDatafolder">Allow the data folder to be in a shared location without restricted permissions</param>
+    /// <param name="ReducedReporting">Switch reduced reporting on or off for this machine; null leaves the stored setting unchanged</param>
     private sealed record CommandLineArguments(
         string AgentRegistrationUrl,
         FileInfo AgentSettingsFile,
@@ -94,7 +95,8 @@ public static class Program
         string? SecretProvider,
         SecretProviderHelper.CachingLevel SecretProviderCache,
         string SecretProviderPattern,
-        bool AllowInsecureDatafolder
+        bool AllowInsecureDatafolder,
+        bool? ReducedReporting
     );
 
     private static string GetDefaultRegistrationUrl()
@@ -136,6 +138,7 @@ public static class Program
         var runSecretProviderPatternOption = new Option<string>("--secret-provider-pattern") { Description = "The secret provider pattern", DefaultValueFactory = _ => SecretProviderHelper.DEFAULT_PATTERN };
         var runPortableModeOption = new Option<bool>($"--{DataFolderManager.PORTABLE_MODE_OPTION}") { Description = "Use portable mode for locating the database and storing configuration", DefaultValueFactory = _ => DataFolderManager.PORTABLE_MODE };
         var runServerDatafolderOption = new Option<DirectoryInfo?>($"--{DataFolderManager.SERVER_DATAFOLDER_OPTION}") { Description = "The datafolder to use for locating the database and storing configuration", DefaultValueFactory = _ => new DirectoryInfo(DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ProbeOnly)) };
+        var runReducedReportingOption = new Option<bool?>("--reduced-reporting") { Description = "Switch reduced reporting on or off for this machine, so every report leaving it carries log message ids only. A value enforced by the console cannot be switched off. Not given: the stored setting is kept.", DefaultValueFactory = _ => null };
         var runAllowInsecureDatafolderOption = new Option<bool>($"--{DataFolderManager.ALLOW_INSECURE_DATAFOLDER_OPTION}") { Description = "Allow the data folder to be in a shared location (e.g. C:\\ProgramData) without restricted permissions", DefaultValueFactory = _ => false };
 
         var runcmd = new Command("run", "Runs the agent")
@@ -164,6 +167,7 @@ public static class Program
             runPortableModeOption,
             runServerDatafolderOption,
             runAllowInsecureDatafolderOption,
+            runReducedReportingOption,
         };
         runcmd.SetAction((parseResult, cancellationToken) => RunAgentAsync(new CommandLineArguments(
             AgentRegistrationUrl: parseResult.GetValue(runAgentRegistrationUrlOption)!,
@@ -187,7 +191,8 @@ public static class Program
             SecretProvider: parseResult.GetValue(runSecretProviderOption),
             SecretProviderCache: parseResult.GetValue(runSecretProviderCacheOption),
             SecretProviderPattern: parseResult.GetValue(runSecretProviderPatternOption)!,
-            AllowInsecureDatafolder: parseResult.GetValue(runAllowInsecureDatafolderOption)
+            AllowInsecureDatafolder: parseResult.GetValue(runAllowInsecureDatafolderOption),
+            ReducedReporting: parseResult.GetValue(runReducedReportingOption)
         )));
 
         var clearAgentSettingsFileOption = new Option<FileInfo>("--agent-settings-file") { Description = "The file to use for the agent settings", DefaultValueFactory = _ => new FileInfo(Settings.DefaultSettingsFile) };
@@ -301,7 +306,8 @@ public static class Program
             SecretProvider: secretProvider,
             SecretProviderCache: SecretProviderHelper.CachingLevel.None,
             SecretProviderPattern: secretProviderPattern,
-            AllowInsecureDatafolder: false
+            AllowInsecureDatafolder: false,
+            ReducedReporting: null
         ));
 
     /// <summary>
@@ -642,7 +648,8 @@ public static class Program
             EncodeOption("--disable-default-secret-provider", agentConfig.DisableDefaultSecretProvider.ToString()),
             EncodeOption("--settings-encryption-key", settingsEncryptionKey),
             EncodeOption("--webservice-disable-api-extensions", string.Join(",", disabledExtensions)),
-            EncodeOption($"--{DataFolderManager.ALLOW_INSECURE_DATAFOLDER_OPTION}", agentConfig.AllowInsecureDatafolder.ToString())
+            EncodeOption($"--{DataFolderManager.ALLOW_INSECURE_DATAFOLDER_OPTION}", agentConfig.AllowInsecureDatafolder.ToString()),
+            EncodeOption("--reduced-reporting", agentConfig.ReducedReporting?.ToString())
             }
             .WhereNotNullOrWhiteSpace()
             .ToArray();

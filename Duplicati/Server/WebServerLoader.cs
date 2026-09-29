@@ -95,6 +95,10 @@ public static class WebServerLoader
     /// </summary>
     public const string OPTION_WEBSERVICE_DISABLE_SIGNIN_TOKENS = "webservice-disable-signin-tokens";
     /// <summary>
+    /// Option for switching reduced reporting on for this machine, stored as the operator setting
+    /// </summary>
+    public const string OPTION_REDUCED_REPORTING = "reduced-reporting";
+    /// <summary>
     /// Option for setting the webservice SPA paths
     /// </summary>
     public const string OPTION_WEBSERVICE_SPAPATHS = "webservice-spa-paths";

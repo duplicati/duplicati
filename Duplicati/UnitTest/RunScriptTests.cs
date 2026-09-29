@@ -536,6 +536,70 @@ namespace Duplicati.UnitTest
             Assert.IsTrue(linesPostBackup[0].Contains(expectedFilter, StringComparison.OrdinalIgnoreCase));
         }
 
+        /// <summary>
+        /// Runs a backup with a script that copies the result file it is handed, and returns the copy's contents
+        /// </summary>
+        /// <param name="scriptOption">The option that registers the script</param>
+        /// <param name="format">The result output format</param>
+        /// <param name="reduced">Whether reduced reporting is on</param>
+        /// <returns>The contents of the result file the script received</returns>
+        private async Task<string> CaptureResultFileAsync(string scriptOption, string format, bool reduced)
+        {
+            var captured = Path.Combine(RESTOREFOLDER, $"result-{Guid.NewGuid():N}.txt");
+            var copyCommand = OperatingSystem.IsWindows()
+                ? $"copy \"%DUPLICATI__RESULTFILE%\" \"{captured}\""
+                : $"cp \"$DUPLICATI__RESULTFILE\" \"{captured}\"";
+
+            File.WriteAllText(Path.Combine(DATAFOLDER, "patient John Doe.txt"), "data");
+
+            var options = new Dictionary<string, string>(TestOptions)
+            {
+                [scriptOption] = CreateScript(0, null, null, 0, new List<string> { copyCommand }),
+                ["run-script-result-output-format"] = format,
+                // Verbose lines name every file that is included, so the full result file is known to hold paths
+                ["run-script-log-level"] = "Verbose"
+            };
+            if (reduced)
+                options["reduced-reporting"] = "true";
+
+            using (var c = new Controller("file://" + TARGETFOLDER, options, null))
+            {
+                var res = await c.BackupAsync(new[] { DATAFOLDER });
+                Assert.AreEqual(0, res.Errors.Count());
+            }
+
+            Assert.IsTrue(File.Exists(captured), "The script did not receive a result file");
+            return File.ReadAllText(captured);
+        }
+
+        [Test]
+        [Category("Border")]
+        [TestCase("run-script-after", "Duplicati")]
+        [TestCase("run-script-after", "Json")]
+        [TestCase("run-script-post-backup", "Duplicati")]
+        [TestCase("run-script-post-backup", "Json")]
+        public async Task ResultFileIsReducedWithReducedReportingAsync(string scriptOption, string format)
+        {
+            // The full file holds the paths, so their absence below is due to the reduction
+            var full = await CaptureResultFileAsync(scriptOption, format, reduced: false);
+            Assert.IsTrue(full.Contains("John Doe"), "The full result file was expected to name the source files");
+
+            var reduced = await CaptureResultFileAsync(scriptOption, format, reduced: true);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(reduced));
+
+            // JSON escapes the path separators, so both forms of each folder are checked
+            foreach (var secret in new[] { "John Doe", DATAFOLDER, TARGETFOLDER, RESTOREFOLDER, Path.GetFileName(DATAFOLDER.TrimEnd(Path.DirectorySeparatorChar)) })
+            {
+                Assert.IsFalse(reduced.Contains(secret), $"The reduced result file contains \"{secret}\"");
+                Assert.IsFalse(reduced.Contains(secret.Replace("\\", "\\\\")), $"The reduced result file contains \"{secret}\" in escaped form");
+            }
+
+            // The counters and the reduced log lines are kept
+            Assert.IsTrue(reduced.Contains("ExaminedFiles"), "The reduced result file was expected to hold the counters");
+            Assert.IsTrue(System.Text.RegularExpressions.Regex.IsMatch(reduced, @"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{2} - \[Verbose-[^\s\]]+\]"), "The reduced result file was expected to hold reduced log lines");
+            Assert.IsFalse(reduced.Contains("Including path"), "The reduced result file holds message text");
+        }
+
         private string CreateScript(int exitcode, string stderr = null, string stdout = null, int sleeptime = 0, List<string> customCommands = null)
         {
             var id = Guid.NewGuid().ToString("N").Substring(0, 6);

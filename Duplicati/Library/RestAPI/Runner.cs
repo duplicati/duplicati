@@ -1602,6 +1602,11 @@ namespace Duplicati.Server
             // The server hangs if the module is enabled as there is no console attached
             DisableModule("console-password-input", options);
 
+            // When the machine processes confidential or protected information, every report leaving it carries message ids only.
+            // The setting is applied by the server, so a per-backup value cannot switch it off.
+            if (databaseConnection.ApplicationSettings.IsReducedReportingActive)
+                options[Library.Logging.ReducedReportFormat.OPTION_REDUCED_REPORTING] = "true";
+
             // Patch in additional report urls
             var additionalReportUrl = databaseConnection.ApplicationSettings.AdditionalReportUrl;
             if (!string.IsNullOrWhiteSpace(additionalReportUrl))

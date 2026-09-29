@@ -96,6 +96,13 @@ namespace Duplicati.Library.Modules.Builtin
         /// </summary>
         private const string OPTION_GLOBAL_ALLOW_PATHS_IN_LOG_MESSAGES = "allow-paths-in-log-messages";
 
+        /// <summary>
+        /// The module-specific option that reduces status reports to log message ids, mirroring
+        /// the global <c>reduced-reporting</c> option. The module-specific option can only switch
+        /// reduced reporting on; it cannot switch off a global setting that is on.
+        /// </summary>
+        private const string OPTION_REDUCED_REPORTING = "http-report-status-reduced-reporting";
+
         #endregion
 
         #region Defaults
@@ -144,6 +151,7 @@ namespace Duplicati.Library.Modules.Builtin
             new CommandLineArgument(OPTION_ACCEPT_SPECIFIED_CERTIFICATE, CommandLineArgument.ArgumentType.String, Strings.HttpReportStatus.AcceptSpecifiedCertificateShort, Strings.HttpReportStatus.AcceptSpecifiedCertificateLong),
             new CommandLineArgument(OPTION_IGNORE_REVOCATION_FAILURE, CommandLineArgument.ArgumentType.Boolean, Strings.HttpReportStatus.IgnoreRevocationFailureShort, Strings.HttpReportStatus.IgnoreRevocationFailureLong, "false"),
             new CommandLineArgument(OPTION_ALLOW_PATHS_IN_LOG_MESSAGES, CommandLineArgument.ArgumentType.Boolean, Strings.HttpReportStatus.AllowPathsInLogMessagesShort, Strings.HttpReportStatus.AllowPathsInLogMessagesLong, "false"),
+            new CommandLineArgument(OPTION_REDUCED_REPORTING, CommandLineArgument.ArgumentType.Boolean, Strings.HttpReportStatus.ReducedReportingShort, Strings.HttpReportStatus.ReducedReportingLong, "false"),
         ];
 
         /// <summary>
@@ -172,6 +180,11 @@ namespace Duplicati.Library.Modules.Builtin
         /// The maximum number of recent log lines to include in each report.
         /// </summary>
         private int m_maxLogLines;
+
+        /// <summary>
+        /// Whether status reports are reduced to log message ids (reduced reporting).
+        /// </summary>
+        private bool m_reducedReporting;
 
         /// <summary>
         /// True if paths are allowed in the buffered log lines (i.e. not redacted).
@@ -301,6 +314,16 @@ namespace Duplicati.Library.Modules.Builtin
                 m_allowPathsInLogMessages = Utility.Utility.ParseBoolOption(m_options, OPTION_ALLOW_PATHS_IN_LOG_MESSAGES);
             else
                 m_allowPathsInLogMessages = Utility.Utility.ParseBoolOption(m_options, OPTION_GLOBAL_ALLOW_PATHS_IN_LOG_MESSAGES);
+
+            // Reduced reports carry log message ids only. Either option switches it on; the
+            // module-specific option cannot switch off the global setting, which the server
+            // enforces and a per-backup option must not be able to override
+            m_reducedReporting = Utility.Utility.ParseBoolOption(m_options, Logging.ReducedReportFormat.OPTION_REDUCED_REPORTING)
+                || Utility.Utility.ParseBoolOption(m_options, OPTION_REDUCED_REPORTING);
+
+            // A reduced report never carries a filename
+            if (m_reducedReporting)
+                m_allowPathsInLogMessages = false;
         }
 
         /// <summary>
@@ -326,6 +349,17 @@ namespace Duplicati.Library.Modules.Builtin
         {
             // Completion is handled by the IReportModule lifecycle; nothing to do here.
         }
+
+        /// <summary>
+        /// The one form of a log entry the module sends: the reduced line, the full message when
+        /// paths are allowed, and the redacted message otherwise.
+        /// </summary>
+        public ReportLogContent RequestedLogContent
+            => m_reducedReporting
+                ? ReportLogContent.ReducedMessage
+                : m_allowPathsInLogMessages
+                    ? ReportLogContent.Message
+                    : ReportLogContent.RedactedMessage;
 
         /// <inheritdoc />
         public Task OnOperationStartedAsync(string operationName, IBasicResults result, CancellationToken cancellationToken)
@@ -365,11 +399,13 @@ namespace Duplicati.Library.Modules.Builtin
                     Array.Empty<ReportBackendEvent>());
             }
 
-            // The error of a failed operation often names a path, such as a destination folder
-            // that does not exist, so it is redacted like the log lines
+            // The error message is content: reduced reports carry the exception type and help id only,
+            // and the others get the same path redaction as the log lines
             var errorMessage = exception == null
                 ? GetResultErrorMessage(result)
-                : RedactPathsUnlessAllowed(exception.Message);
+                : m_reducedReporting
+                    ? Logging.ReducedReportFormat.FormatException(exception)
+                    : RedactPathsUnlessAllowed(exception.Message);
 
             var report = BuildReport(exception == null ? "Completed" : "Failed", errorMessage);
             await PostAsync(report, cancellationToken).ConfigureAwait(false);
@@ -379,7 +415,8 @@ namespace Duplicati.Library.Modules.Builtin
         /// Describes the errors of an operation that finished without throwing. Such an operation
         /// can still have failed: a restore that could not restore a file reports it as an error
         /// in its results and returns normally, and would otherwise be reported as completed with
-        /// nothing wrong. The paths in the error are redacted like the log lines.
+        /// nothing wrong. The paths in the error are redacted like the log lines, and a reduced
+        /// report carries the number of errors only, as the error itself is message text.
         /// </summary>
         /// <param name="result">The results of the operation, or <c>null</c> if there are none.</param>
         /// <returns>The error message, or <c>null</c> if the operation reported no errors.</returns>
@@ -389,7 +426,7 @@ namespace Duplicati.Library.Modules.Builtin
                 return null;
 
             var errors = result.Errors.ToList();
-            if (errors.Count != 1)
+            if (m_reducedReporting || errors.Count != 1)
                 return $"Got {errors.Count} error(s)";
 
             return RedactPathsUnlessAllowed(errors[0]);
@@ -427,11 +464,21 @@ namespace Duplicati.Library.Modules.Builtin
             lock (m_lock)
             {
                 m_logEntries++;
-                // Redact paths in the buffered log line unless the user has explicitly
+                // Reduced reports keep the timestamp, filter tag and exception type only.
+                // Otherwise, redact paths in the buffered log line unless the user has explicitly
                 // allowed paths in log messages, mirroring the reporting helpers.
-                var line = m_allowPathsInLogMessages
-                    ? entry.Message
-                    : (entry.RedactedMessage ?? SensitiveDataFilter.RedactPaths(entry.Message));
+                var line = m_reducedReporting
+                    // The sender computes the reduced line from the exception itself; without it only
+                    // the exception type can be recovered from the text
+                    ? (entry.ReducedMessage ?? Logging.ReducedReportFormat.FormatLogLine(entry.Timestamp, entry.Tag, Logging.ReducedReportFormat.ExceptionTypeNameFromText(entry.Exception)))
+                    : m_allowPathsInLogMessages
+                        ? entry.Message
+                        : (entry.RedactedMessage ?? (entry.Message == null ? null : SensitiveDataFilter.RedactPaths(entry.Message)));
+
+                // A sender that did not supply the requested form leaves nothing to report for the entry
+                if (line == null)
+                    return Task.CompletedTask;
+
                 m_recentLogLines.AddLast(line);
                 while (m_recentLogLines.Count > m_maxLogLines)
                     m_recentLogLines.RemoveFirst();

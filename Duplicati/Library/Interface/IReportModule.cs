@@ -37,10 +37,33 @@ namespace Duplicati.Library.Interface
     public record ReportBackendEvent(string Action, string Type, string Path, long Size);
 
     /// <summary>
+    /// The forms of a log entry a report module can ask for. Each form costs work to build and
+    /// holds text from the log entry, so the engine only builds the forms a module asks for.
+    /// </summary>
+    [Flags]
+    public enum ReportLogContent
+    {
+        /// <summary>No log content; the module only counts entries or reads their level, tag and id</summary>
+        None = 0,
+        /// <summary>The formatted message with exception details, <see cref="ReportLogEntry.Message"/></summary>
+        Message = 1,
+        /// <summary>The formatted message with paths redacted, <see cref="ReportLogEntry.RedactedMessage"/></summary>
+        RedactedMessage = 2,
+        /// <summary>The text of the exception, <see cref="ReportLogEntry.Exception"/></summary>
+        ExceptionText = 4,
+        /// <summary>The entry in the reduced report format, <see cref="ReportLogEntry.ReducedMessage"/></summary>
+        ReducedMessage = 8
+    }
+
+    /// <summary>
     /// A snapshot of a single log entry, passed to <see cref="IReportModule.OnLogEntryAsync"/>.
     /// This mirrors the data in <c>Duplicati.Library.Logging.LogEntry</c> but is declared here so
     /// the interface does not depend on <c>Duplicati.Library.Logging</c>.
     /// </summary>
+    /// <remarks>
+    /// <see cref="Message"/>, <see cref="RedactedMessage"/>, <see cref="Exception"/> and <see cref="ReducedMessage"/> are only
+    /// set when the module asked for them through <see cref="IReportModule.RequestedLogContent"/>; the others are <c>null</c>.
+    /// </remarks>
     /// <param name="Message">The formatted log message.</param>
     /// <param name="Level">The log level name (e.g. <c>Information</c>, <c>Warning</c>, <c>Error</c>).</param>
     /// <param name="Tag">The log tag associated with the entry.</param>
@@ -54,7 +77,12 @@ namespace Duplicati.Library.Interface
     /// computed from the unformatted message arguments and therefore also redacts paths
     /// that cannot be reliably detected in the formatted text, such as paths with spaces.
     /// </param>
-    public record ReportLogEntry(string Message, string Level, string Tag, string Id, DateTime Timestamp, string Exception, string RedactedMessage = null);
+    /// <param name="ReducedMessage">
+    /// The entry in the reduced report format: timestamp, filter tag and the exception chain with
+    /// stack frames, without any message text; or <c>null</c> if the sender did not compute one.
+    /// It is computed from the exception itself, which only the sender has.
+    /// </param>
+    public record ReportLogEntry(string Message, string Level, string Tag, string Id, DateTime Timestamp, string Exception, string RedactedMessage = null, string ReducedMessage = null);
 
     /// <summary>
     /// A snapshot of the operation progress, passed to <see cref="IReportModule.OnProgressTickAsync"/>
@@ -114,6 +142,15 @@ namespace Duplicati.Library.Interface
         /// nothing to report.
         /// </summary>
         bool IsActive { get; }
+
+        /// <summary>
+        /// Gets the forms of each log entry the module uses.
+        ///
+        /// This is read once after <see cref="IGenericModule.Configure"/> has been called.
+        /// The engine builds only these forms for each entry and leaves the others <c>null</c>,
+        /// so a module that sends reduced reports never causes the full message to be formatted.
+        /// </summary>
+        ReportLogContent RequestedLogContent { get; }
 
         /// <summary>
         /// Called when an operation has started, before any work is performed.

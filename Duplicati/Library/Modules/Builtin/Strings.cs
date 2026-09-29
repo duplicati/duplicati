@@ -318,5 +318,7 @@ You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The sp
         public static string IgnoreRevocationFailureShort { get { return LC.L(@"Ignore certificate revocation check failures"); } }
         public static string AllowPathsInLogMessagesLong { get { return LC.L(@"By default, file paths are redacted from the log lines included in status reports. Enable this option to include the unredacted paths. When this option is not set, the global --{0} setting is used.", "allow-paths-in-log-messages"); } }
         public static string AllowPathsInLogMessagesShort { get { return LC.L(@"Allow paths in log messages"); } }
+        public static string ReducedReportingLong { get { return LC.L(@"Reduce the status reports to log message ids, counters and dates: no message text, error message or file name. This option can only switch reduced reporting on for the status reports; when the global --{0} setting is on, the status reports are reduced regardless of this option.", "reduced-reporting"); } }
+        public static string ReducedReportingShort { get { return LC.L(@"Reduce status reports to log message ids"); } }
     }
 }
