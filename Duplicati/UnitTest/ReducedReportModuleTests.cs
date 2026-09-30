@@ -238,6 +238,26 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
+        public async Task StatusReportCarriesOnlyTheErrorCountOfTheResultsAsync()
+        {
+            using var module = CreateStatusModule(reduced: true);
+            var results = new Duplicati.Library.Main.RestoreResults();
+            results.WriteMessage(new LogEntry($"Failed to restore file {SecretPath}", [], LogMessageType.Error, "Test", "TestError", null));
+
+            await module.OnOperationStartedAsync("Restore", null!, CancellationToken.None);
+            await module.OnOperationCompletedAsync(results, null, CancellationToken.None);
+
+            // The error itself is message text, so only the number of errors is reported
+            var completed = module.Reports.Last();
+            Assert.That(completed.Status, Is.EqualTo("Completed"));
+            Assert.That(completed.ErrorMessage, Is.EqualTo("Got 1 error(s)"));
+
+            var serialized = JsonSerializer.Serialize(module.Reports);
+            Assert.That(serialized, Does.Not.Contain("Failed to restore"));
+            Assert.That(serialized, Does.Not.Contain("John Doe"));
+        }
+
+        [Test]
         public async Task StatusReportModuleOptionCannotSwitchOffGlobalReducedReportingAsync()
         {
             using var module = new CapturingHttpReportStatus();
