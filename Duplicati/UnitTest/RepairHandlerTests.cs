@@ -800,7 +800,7 @@ namespace Duplicati.UnitTest
                     lock (renames)
                         renames.Add(e.FormattedMessage);
             }))
-            using (var backend = new Library.Main.Backend.BackendManager("file://" + this.TARGETFOLDER, options, results.BackendWriter, results.TaskControl))
+            using (var backend = new Library.Main.Backend.BackendManager("file://" + this.TARGETFOLDER, options, results.BackendWriter, results.TaskControl, collectDatabaseMessages: true))
             {
                 try
                 {
