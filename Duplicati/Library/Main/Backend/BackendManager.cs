@@ -73,7 +73,8 @@ internal partial class BackendManager : IBackendManager
     /// <param name="options">The options</param>
     /// <param name="backendWriter">The backend writer</param>
     /// <param name="taskReader">The task reader</param>
-    public BackendManager(string backendUrl, Options options, IBackendWriter backendWriter, ITaskReader taskReader)
+    /// <param name="collectDatabaseMessages">Whether to collect the remote operation messages for flushing to a database; set to <c>false</c> when the caller never flushes them, so they are not kept in memory</param>
+    public BackendManager(string backendUrl, Options options, IBackendWriter backendWriter, ITaskReader taskReader, bool collectDatabaseMessages)
     {
         if (string.IsNullOrWhiteSpace(backendUrl))
             throw new ArgumentNullException(nameof(backendUrl));
@@ -86,7 +87,7 @@ internal partial class BackendManager : IBackendManager
         context = new ExecuteContext(
             new ProgressHandler(backendWriter, taskReader),
             backendWriter ?? throw new ArgumentNullException(nameof(backendWriter)),
-            new DatabaseCollector(),
+            new DatabaseCollector(collectDatabaseMessages),
             new ThrottleManager() { Limit = isThrottleDisabled ? 0 : options.MaxUploadPrSecond },
             new ThrottleManager() { Limit = isThrottleDisabled ? 0 : options.MaxDownloadPrSecond },
             taskReader ?? throw new ArgumentNullException(nameof(taskReader)),

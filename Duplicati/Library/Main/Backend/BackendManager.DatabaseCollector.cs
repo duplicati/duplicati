@@ -22,7 +22,8 @@ partial class BackendManager
     /// If the operation fails, the logged messages here should still be flushed to the database,
     /// as they have already been performed on the remote destination.
     /// </summary>
-    private class DatabaseCollector
+    /// <param name="enabled">Whether to collect messages; if <c>false</c>, all logged messages are discarded.</param>
+    private class DatabaseCollector(bool enabled)
     {
         /// <summary>
         /// The log tag for this class
@@ -36,6 +37,13 @@ partial class BackendManager
         /// The queue of database operations
         /// </summary>
         private List<IRemoteOperationEntry> m_dbqueue = [];
+
+        /// <summary>
+        /// Gets a value indicating whether messages are collected.
+        /// When <c>false</c>, no caller will flush the messages to a database,
+        /// so they are discarded instead of being kept in memory.
+        /// </summary>
+        public bool Enabled => enabled;
 
         /// <summary>
         /// Interface for database entries
@@ -75,6 +83,9 @@ partial class BackendManager
         /// <param name="result">The result of the operation</param>
         public void LogRemoteOperation(string action, string file, string? result)
         {
+            if (!enabled)
+                return;
+
             lock (m_dbqueuelock)
                 m_dbqueue.Add(new RemoteOperationLogEntry(action, file, result));
         }
@@ -88,6 +99,9 @@ partial class BackendManager
         /// <param name="hash">The new hash of the volume</param>
         public void LogRemoteVolumeUpdated(string remotename, RemoteVolumeState state, long size, string? hash)
         {
+            if (!enabled)
+                return;
+
             lock (m_dbqueuelock)
                 m_dbqueue.Add(new RemoteVolumeUpdate(remotename, state, size, hash));
         }
@@ -99,6 +113,9 @@ partial class BackendManager
         /// <param name="newname">The new name of the file</param>
         public void LogRemoteVolumeRenamed(string oldname, string newname)
         {
+            if (!enabled)
+                return;
+
             lock (m_dbqueuelock)
                 m_dbqueue.Add(new RenameRemoteVolume(oldname, newname));
         }
