@@ -195,5 +195,30 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(0, backupResults.DeletedSymlinks);
             }
         }
+
+        [Test]
+        [Category("Controller")]
+        public async Task BackupsInSameSecondReportModifiedFilesAsync()
+        {
+            var file = Path.Combine(this.DATAFOLDER, "file1");
+            File.WriteAllBytes(file, new byte[] { 0 });
+
+            // Start right after a second boundary, so both backups are likely to start within the same second
+            Thread.Sleep(1000 - DateTime.UtcNow.Millisecond);
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, TestOptions, null))
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+
+            File.WriteAllBytes(file, new byte[] { 0, 1 });
+            using (var c = new Controller("file://" + this.TARGETFOLDER, TestOptions, null))
+            {
+                var backupResults = await c.BackupAsync(new[] { this.DATAFOLDER });
+                TestUtils.AssertResults(backupResults);
+                Assert.AreEqual(0, backupResults.AddedFiles);
+                Assert.AreEqual(1, backupResults.ModifiedFiles);
+                Assert.AreEqual(0, backupResults.DeletedFiles);
+                Assert.AreEqual(0, backupResults.AddedFolders);
+            }
+        }
     }
 }
