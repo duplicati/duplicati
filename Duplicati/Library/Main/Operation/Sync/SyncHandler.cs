@@ -332,7 +332,7 @@ internal class SyncHandler
                     try
                     {
 
-                        var bm = new BackendManager(dest.Url, m_options, m_results.BackendWriter, m_results.TaskControl);
+                        var bm = new BackendManager(dest.Url, m_options, m_results.BackendWriter, m_results.TaskControl, collectDatabaseMessages: false);
                         var db = dest.SyncDatabasePath;
                         if (string.IsNullOrWhiteSpace(db))
                             db = CLIDatabaseLocator.GetDatabasePathForCLI(dest.Url, m_options, true, false, true);
