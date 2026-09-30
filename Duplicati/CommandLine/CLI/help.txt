@@ -198,7 +198,7 @@ Usage: %CLI_EXE% search <storage-URL> ["folder"] [<options>]
   --time=<time>
     Looks at all versions older than the given time. Absolute and relative times can be specified.
   --version=<int>
-    Looks at only the versions given. If no version is specified the latest backup (version=0) will be used.
+    Looks at only the versions given. If neither a version nor a time is specified, all backups are searched.
   --all-versions=<boolean>
     Searches in all backup sets (this is the default)
 
