@@ -18,6 +18,9 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
+
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -87,7 +90,7 @@ namespace Duplicati.UnitTest
             const string selectStatement = @"SELECT BlocksetID, ""Index"", Hash FROM BlocklistHash ORDER BY Hash ASC";
             var expectedBlocksetIDs = new List<int>();
             var expectedIndexes = new List<int>();
-            var expectedHashes = new List<string>();
+            var expectedHashes = new List<string?>();
             using (var connection = await SQLiteLoader.LoadConnectionAsync(options["dbpath"]))
             {
                 // Read the contents of the BlocklistHash table so that we can
@@ -120,7 +123,7 @@ namespace Duplicati.UnitTest
 
             var repairedBlocksetIDs = new List<int>();
             var repairedIndexes = new List<int>();
-            var repairedHashes = new List<string>();
+            var repairedHashes = new List<string?>();
             using (var connection = await SQLiteLoader.LoadConnectionAsync(options["dbpath"]))
             {
                 using (var command = connection.CreateCommand())
@@ -668,6 +671,56 @@ namespace Duplicati.UnitTest
                 var remaining = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM Metadataset JOIN Blockset ON Metadataset.BlocksetID = Blockset.ID WHERE Blockset.Length = 0");
                 Assert.AreEqual(0, remaining, "Zero-length metadata should have been replaced");
             }
+        }
+
+        /// <summary>
+        /// A repair that is aborted while it opens the local database must not treat the database
+        /// as unreadable. It used to set it aside and start recreating it from the remote files,
+        /// so aborting a repair right after it started could replace a healthy database.
+        /// </summary>
+        [Test]
+        [Category("RepairHandler")]
+        public async Task AbortedRepairDoesNotSetTheDatabaseAsideAsync()
+        {
+            File.WriteAllBytes(Path.Combine(this.DATAFOLDER, "file"), [1, 2, 3]);
+            using (var c = new Controller("file://" + this.TARGETFOLDER, this.TestOptions, null))
+                TestUtils.AssertResults(await c.BackupAsync([this.DATAFOLDER]));
+
+            // A database of its own, as the teardown does not delete the .backup files a repair
+            // leaves, and one left by an earlier run would be taken for one made by this run
+            var dbpath = Path.Combine(BASEFOLDER, $"aborted-repair-{Guid.NewGuid():N}.sqlite");
+            File.Copy(this.DBFILE, dbpath);
+            var options = new Options(new Dictionary<string, string?>(this.TestOptions) { ["dbpath"] = dbpath });
+
+            // The state an abort leaves the repair in: the progress token is cancelled. Aborting
+            // through the controller does the same, but only lands at this point by timing.
+            var results = new RepairResults();
+            results.TaskControl.Terminate();
+
+            var renames = new List<string>();
+            Exception? error = null;
+            using (Library.Logging.Log.StartScope(e =>
+            {
+                if (e.Id == "RenamingDatabase")
+                    lock (renames)
+                        renames.Add(e.FormattedMessage);
+            }))
+            using (var backend = new Library.Main.Backend.BackendManager("file://" + this.TARGETFOLDER, options, results.BackendWriter, results.TaskControl))
+            {
+                try
+                {
+                    await new Library.Main.Operation.RepairHandler(options, results).RunAsync(backend, null!);
+                }
+                catch (Exception ex)
+                {
+                    error = ex;
+                }
+            }
+
+            Assert.IsEmpty(renames, "The aborted repair set the database aside");
+            Assert.IsInstanceOf<OperationCanceledException>(error, $"The aborted repair ended with {error}");
+            Assert.IsTrue(File.Exists(dbpath), "The database is gone");
+            Assert.IsEmpty(Directory.GetFiles(BASEFOLDER, Path.GetFileNameWithoutExtension(dbpath) + ".backup*"), "The database was renamed");
         }
     }
 }
