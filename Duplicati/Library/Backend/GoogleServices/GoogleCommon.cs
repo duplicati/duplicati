@@ -169,7 +169,12 @@ namespace Duplicati.Library.Backend.GoogleServices
                     using var ts = ls.ObserveReadTimeout(readWriteTimeout);
                     req.Content = new StreamContent(ts);
                     req.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-                    req.Content.Headers.Add("Content-Range", $"bytes {offset}-{offset + chunkSize - 1}/{stream.Length}");
+                    // An empty chunk has no valid byte range ("bytes 0--1/0" is malformed),
+                    // which happens when uploading a zero-byte file. The unsatisfied range
+                    // form is what the protocol expects for an empty stream.
+                    req.Content.Headers.Add("Content-Range", chunkSize == 0
+                        ? $"bytes */{stream.Length}"
+                        : $"bytes {offset}-{offset + chunkSize - 1}/{stream.Length}");
                     using var resp = await oauth.GetResponseUncheckedAsync(req, HttpCompletionOption.ResponseContentRead, cancelToken).ConfigureAwait(false);
 
                     // Check the response
