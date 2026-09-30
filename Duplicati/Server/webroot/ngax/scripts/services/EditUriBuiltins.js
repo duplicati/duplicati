@@ -159,7 +159,9 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             });
         };
         
-        scope.s3_client = s3_client_options[0];
+        // The loader runs after the parser when an existing destination is opened, so keep the client it read
+        if (scope.s3_client == null)
+            scope.s3_client = s3_client_options[0];
         scope.s3_client_options = s3_client_options;
     };
 	
