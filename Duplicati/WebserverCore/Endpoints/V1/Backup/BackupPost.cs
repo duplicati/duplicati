@@ -290,6 +290,7 @@ public class BackupPost : IEndpointV1
             {
                 BackupId = assignedId,
                 Name = tempBk.Name,
+                OperationType = tempBk.OperationType,
                 DisplayNames = item.DisplayNames,
                 AdditionalTargetUrls = (tempBk.AdditionalTargetURLs ?? []).Select(x => x.TargetUrl).ToList(),
                 TargetURLDisplay = tempBk.TargetURL,
