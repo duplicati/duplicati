@@ -39,12 +39,15 @@ public class Connection
     /// <param name="Name">The name of the backup</param>
     /// <param name="Description">The description of the backup</param>
     /// <param name="Metadata">The metadata of the backup</param>
+    /// <param name="Schedule">The schedule of the backup</param>
+    /// <param name="OperationType">The operation the backup performs when it runs</param>
     public sealed record BackupEntry(
         string ID,
         string Name,
         string Description,
         Dictionary<string, string>? Metadata,
-        BackupSchedule? Schedule
+        BackupSchedule? Schedule,
+        Server.Serialization.OperationType OperationType
     );
 
     /// <summary>
@@ -78,12 +81,14 @@ public class Connection
         /// <param name="Description">The description of the backup</param>
         /// <param name="DBPath">The path to the local database</param>
         /// <param name="Metadata">The metadata of the backup</param>
+        /// <param name="OperationType">The name of the operation type; missing from older servers</param>
         public sealed record ResponseBackupDetailsEntry(
             string ID,
             string Name,
             string? Description,
             string? DBPath,
-            Dictionary<string, string>? Metadata
+            Dictionary<string, string>? Metadata,
+            string? OperationType
         );
 
         /// <summary>
@@ -91,7 +96,10 @@ public class Connection
         /// </summary>
         /// <returns>The backup entry</returns>
         public BackupEntry ToBackupEntry()
-            => new BackupEntry(Backup.ID, Backup.Name, Backup.Description ?? "", Backup.Metadata, Schedule);
+            => new BackupEntry(Backup.ID, Backup.Name, Backup.Description ?? "", Backup.Metadata, Schedule,
+                Enum.TryParse<Server.Serialization.OperationType>(Backup.OperationType, true, out var operationType)
+                    ? operationType
+                    : Server.Serialization.OperationType.Backup);
     }
 
     /// <summary>

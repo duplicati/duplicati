@@ -236,10 +236,10 @@ public class FolderStatusServiceTests
         }
 
         private string DetermineBackupStatus(IBackup backup, HashSet<string> activeBackupIds)
-            => FolderStatusService.DetermineStatus(backup.Metadata, backup.ID != null && activeBackupIds.Contains(backup.ID));
+            => FolderStatusService.DetermineStatus(backup.Metadata, backup.ID != null && activeBackupIds.Contains(backup.ID), backup.OperationType);
 
         private DateTime? GetLastBackupTime(IBackup backup)
-            => FolderStatusService.GetLastBackupTime(backup.Metadata);
+            => FolderStatusService.GetLastBackupTime(backup.Metadata, backup.OperationType);
 
         private static string NormalizePath(string path)
         {

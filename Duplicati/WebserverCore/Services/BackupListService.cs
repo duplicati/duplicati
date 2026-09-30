@@ -251,10 +251,8 @@ public class BackupListService(Connection connection) : IBackupListService
                 ,
                 "lastrun" => x =>
                 {
-                    if (x.Backup.Metadata == null)
-                        return null;
-                    x.Backup.Metadata.TryGetValue("LastBackupStarted", out var res);
-                    return res;
+                    // The serialized dates sort as text, so the types can be mixed
+                    return Server.Serialization.LastRunMetadata.GetStarted(x.Backup.Metadata, x.Backup.OperationType);
                 }
                 ,
                 "nextrun" => x => x.Schedule?.Time,
