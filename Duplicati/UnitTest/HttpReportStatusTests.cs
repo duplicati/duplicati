@@ -68,7 +68,7 @@ namespace Duplicati.UnitTest
         private static CapturingHttpReportStatus CreateConfigured(string interval = "1s", int maxLogLines = 20)
         {
             var module = new CapturingHttpReportStatus();
-            module.Configure(new Dictionary<string, string>
+            module.Configure(new Dictionary<string, string?>
             {
                 ["http-report-status-url"] = "http://localhost/example",
                 ["http-report-status-interval"] = interval,
@@ -89,7 +89,7 @@ namespace Duplicati.UnitTest
         public async Task InactiveWithoutUrlAsync()
         {
             var module = new CapturingHttpReportStatus();
-            module.Configure(new Dictionary<string, string>());
+            module.Configure(new Dictionary<string, string?>());
             // An unconfigured module reports itself as inactive, so the engine skips it.
             Assert.IsFalse(module.IsActive, "Module should be inactive without a URL");
             // All callbacks should be no-ops without a configured URL.
@@ -105,11 +105,11 @@ namespace Duplicati.UnitTest
         public void IsActiveReflectsConfiguration()
         {
             var unconfigured = new HttpReportStatus();
-            unconfigured.Configure(new Dictionary<string, string>());
+            unconfigured.Configure(new Dictionary<string, string?>());
             Assert.IsFalse(unconfigured.IsActive);
 
             using var configured = new HttpReportStatus();
-            configured.Configure(new Dictionary<string, string>
+            configured.Configure(new Dictionary<string, string?>
             {
                 ["http-report-status-url"] = "http://localhost/example",
             });
@@ -129,7 +129,7 @@ namespace Duplicati.UnitTest
             Assert.AreEqual("Completed", module.Reports[1].Status);
             // The completed report carries a final progress snapshot at 100%.
             Assert.IsNotNull(module.Reports[1].Progress);
-            Assert.AreEqual(1f, module.Reports[1].Progress!.Progress);
+            Assert.AreEqual(1f, module.Reports[1].Progress?.Progress);
             // The Started report is not completed, the Completed report is.
             Assert.IsFalse(module.Reports[0].IsCompleted, "Started report should not be completed");
             Assert.IsTrue(module.Reports[1].IsCompleted, "Completed report should be marked completed");
@@ -238,7 +238,7 @@ namespace Duplicati.UnitTest
         public async Task FailedReportKeepsPathsWhenAllowedAsync()
         {
             using var module = new CapturingHttpReportStatus();
-            module.Configure(new Dictionary<string, string>
+            module.Configure(new Dictionary<string, string?>
             {
                 ["http-report-status-url"] = "http://localhost/example",
                 ["http-report-status-interval"] = "1s",
@@ -268,9 +268,9 @@ namespace Duplicati.UnitTest
             Assert.IsNotNull(progressReport, "A progress report should be posted on the first tick");
             Assert.AreEqual(2, progressReport!.BackendEvents, "Two backend events were observed");
             Assert.AreEqual(2, progressReport.LogEntries, "Two log entries were observed");
-            Assert.AreEqual(2, progressReport.RecentLogLines.Count, "Both log lines are buffered");
-            Assert.AreEqual("line1", progressReport.RecentLogLines[0]);
-            Assert.AreEqual("line2", progressReport.RecentLogLines[1]);
+            Assert.AreEqual(2, progressReport.RecentLogLines?.Count, "Both log lines are buffered");
+            Assert.AreEqual("line1", progressReport.RecentLogLines?[0]);
+            Assert.AreEqual("line2", progressReport.RecentLogLines?[1]);
         }
 
         [Test]
@@ -314,9 +314,9 @@ namespace Duplicati.UnitTest
             await module.OnProgressTickAsync(SampleSnapshot(), CancellationToken.None);
 
             var progressReport = module.Reports.Find(r => r.Status == "Progress")!;
-            Assert.AreEqual(2, progressReport.RecentLogLines.Count, "Only the last 2 log lines are kept");
-            Assert.AreEqual("b", progressReport.RecentLogLines[0]);
-            Assert.AreEqual("c", progressReport.RecentLogLines[1]);
+            Assert.AreEqual(2, progressReport.RecentLogLines?.Count, "Only the last 2 log lines are kept");
+            Assert.AreEqual("b", progressReport.RecentLogLines?[0]);
+            Assert.AreEqual("c", progressReport.RecentLogLines?[1]);
         }
 
         [Test]
@@ -347,7 +347,7 @@ namespace Duplicati.UnitTest
         public async Task ReportIncludesEnvironmentMetadataAsync()
         {
             var module = new CapturingHttpReportStatus();
-            module.Configure(new Dictionary<string, string>
+            module.Configure(new Dictionary<string, string?>
             {
                 ["http-report-status-url"] = "http://localhost/example",
                 ["http-report-status-interval"] = "1s",
@@ -403,7 +403,7 @@ namespace Duplicati.UnitTest
             // MachineId, BackupId, BackupName and MachineName honor explicit option values
             // before falling back to the computed defaults, mirroring ReportHelper.
             var module = new CapturingHttpReportStatus();
-            module.Configure(new Dictionary<string, string>
+            module.Configure(new Dictionary<string, string?>
             {
                 ["http-report-status-url"] = "http://localhost/example",
                 ["http-report-status-interval"] = "1s",
@@ -436,10 +436,10 @@ namespace Duplicati.UnitTest
             await module.OnProgressTickAsync(SampleSnapshot(), CancellationToken.None);
 
             var progressReport = module.Reports.Find(r => r.Status == "Progress")!;
-            Assert.AreEqual(1, progressReport.RecentLogLines.Count);
-            Assert.That(progressReport.RecentLogLines[0], Does.Contain("-redacted-"),
+            Assert.AreEqual(1, progressReport.RecentLogLines?.Count);
+            Assert.That(progressReport.RecentLogLines?[0], Does.Contain("-redacted-"),
                 "Paths should be redacted from log lines by default");
-            Assert.That(progressReport.RecentLogLines[0], Does.Not.Contain("/Users/me/secret/file.txt"),
+            Assert.That(progressReport.RecentLogLines?[0], Does.Not.Contain("/Users/me/secret/file.txt"),
                 "The original path must not appear in the buffered log line");
         }
 
@@ -457,15 +457,15 @@ namespace Duplicati.UnitTest
             await module.OnProgressTickAsync(SampleSnapshot(), CancellationToken.None);
 
             var progressReport = module.Reports.Find(r => r.Status == "Progress")!;
-            Assert.AreEqual(1, progressReport.RecentLogLines.Count);
-            Assert.AreEqual("Excluding path due to permission denied: -redacted-", progressReport.RecentLogLines[0]);
+            Assert.AreEqual(1, progressReport.RecentLogLines?.Count);
+            Assert.AreEqual("Excluding path due to permission denied: -redacted-", progressReport.RecentLogLines?[0]);
         }
 
         [Test]
         public async Task PreRedactedMessageIsIgnoredWhenPathsAreAllowedAsync()
         {
             using var module = new CapturingHttpReportStatus();
-            module.Configure(new Dictionary<string, string>
+            module.Configure(new Dictionary<string, string?>
             {
                 ["http-report-status-url"] = "http://localhost/example",
                 ["http-report-status-interval"] = "1s",
@@ -479,14 +479,14 @@ namespace Duplicati.UnitTest
             await module.OnProgressTickAsync(SampleSnapshot(), CancellationToken.None);
 
             var progressReport = module.Reports.Find(r => r.Status == "Progress")!;
-            Assert.AreEqual(raw, progressReport.RecentLogLines[0]);
+            Assert.AreEqual(raw, progressReport.RecentLogLines?[0]);
         }
 
         [Test]
         public async Task PathsInLogLinesKeptWhenAllowedByModuleOptionAsync()
         {
             using var module = new CapturingHttpReportStatus();
-            module.Configure(new Dictionary<string, string>
+            module.Configure(new Dictionary<string, string?>
             {
                 ["http-report-status-url"] = "http://localhost/example",
                 ["http-report-status-interval"] = "1s",
@@ -500,8 +500,8 @@ namespace Duplicati.UnitTest
             await module.OnProgressTickAsync(SampleSnapshot(), CancellationToken.None);
 
             var progressReport = module.Reports.Find(r => r.Status == "Progress")!;
-            Assert.AreEqual(1, progressReport.RecentLogLines.Count);
-            Assert.That(progressReport.RecentLogLines[0], Does.Contain(path),
+            Assert.AreEqual(1, progressReport.RecentLogLines?.Count);
+            Assert.That(progressReport.RecentLogLines?[0], Does.Contain(path),
                 "The original path should be kept when the module option is enabled");
             Assert.AreEqual("/some/file.txt", progressReport.Progress!.CurrentFilename,
                 "The current filename should be included when the module option is enabled");
@@ -511,7 +511,7 @@ namespace Duplicati.UnitTest
         public async Task PathsInLogLinesKeptWhenAllowedByGlobalOptionAsync()
         {
             using var module = new CapturingHttpReportStatus();
-            module.Configure(new Dictionary<string, string>
+            module.Configure(new Dictionary<string, string?>
             {
                 ["http-report-status-url"] = "http://localhost/example",
                 ["http-report-status-interval"] = "1s",
@@ -525,8 +525,8 @@ namespace Duplicati.UnitTest
             await module.OnProgressTickAsync(SampleSnapshot(), CancellationToken.None);
 
             var progressReport = module.Reports.Find(r => r.Status == "Progress")!;
-            Assert.AreEqual(1, progressReport.RecentLogLines.Count);
-            Assert.That(progressReport.RecentLogLines[0], Does.Contain(path),
+            Assert.AreEqual(1, progressReport.RecentLogLines?.Count);
+            Assert.That(progressReport.RecentLogLines?[0], Does.Contain(path),
                 "The original path should be kept when the global option is enabled and the module option is not set");
             Assert.AreEqual("/some/file.txt", progressReport.Progress!.CurrentFilename,
                 "The current filename should be included when the global option is enabled");
