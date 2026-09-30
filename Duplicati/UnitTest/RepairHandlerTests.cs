@@ -18,6 +18,9 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
+
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -87,7 +90,7 @@ namespace Duplicati.UnitTest
             const string selectStatement = @"SELECT BlocksetID, ""Index"", Hash FROM BlocklistHash ORDER BY Hash ASC";
             var expectedBlocksetIDs = new List<int>();
             var expectedIndexes = new List<int>();
-            var expectedHashes = new List<string>();
+            var expectedHashes = new List<string?>();
             using (var connection = await SQLiteLoader.LoadConnectionAsync(options["dbpath"]))
             {
                 // Read the contents of the BlocklistHash table so that we can
@@ -120,7 +123,7 @@ namespace Duplicati.UnitTest
 
             var repairedBlocksetIDs = new List<int>();
             var repairedIndexes = new List<int>();
-            var repairedHashes = new List<string>();
+            var repairedHashes = new List<string?>();
             using (var connection = await SQLiteLoader.LoadConnectionAsync(options["dbpath"]))
             {
                 using (var command = connection.CreateCommand())
