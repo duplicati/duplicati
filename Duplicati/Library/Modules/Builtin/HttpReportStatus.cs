@@ -402,16 +402,46 @@ namespace Duplicati.Library.Modules.Builtin
             // The error message is content: reduced reports carry the exception type and help id only,
             // and the others get the same path redaction as the log lines
             var errorMessage = exception == null
-                ? null
+                ? GetResultErrorMessage(result)
                 : m_reducedReporting
                     ? Logging.ReducedReportFormat.FormatException(exception)
-                    : m_allowPathsInLogMessages
-                        ? exception.Message
-                        : SensitiveDataFilter.RedactPaths(exception.Message);
+                    : RedactPathsUnlessAllowed(exception.Message);
 
             var report = BuildReport(exception == null ? "Completed" : "Failed", errorMessage);
             await PostAsync(report, cancellationToken).ConfigureAwait(false);
         }
+
+        /// <summary>
+        /// Describes the errors of an operation that finished without throwing. Such an operation
+        /// can still have failed: a restore that could not restore a file reports it as an error
+        /// in its results and returns normally, and would otherwise be reported as completed with
+        /// nothing wrong. The paths in the error are redacted like the log lines, and a reduced
+        /// report carries the number of errors only, as the error itself is message text.
+        /// </summary>
+        /// <param name="result">The results of the operation, or <c>null</c> if there are none.</param>
+        /// <returns>The error message, or <c>null</c> if the operation reported no errors.</returns>
+        private string? GetResultErrorMessage(IBasicResults? result)
+        {
+            if (result == null || result.ParsedResult is not (ParsedResultType.Error or ParsedResultType.Fatal))
+                return null;
+
+            var errors = result.Errors.ToList();
+            if (m_reducedReporting || errors.Count != 1)
+                return $"Got {errors.Count} error(s)";
+
+            return RedactPathsUnlessAllowed(errors[0]);
+        }
+
+        /// <summary>
+        /// Redacts the paths in a text sent in the report, unless the user has allowed paths in
+        /// log messages, following the same rule as the buffered log lines.
+        /// </summary>
+        /// <param name="text">The text to redact.</param>
+        /// <returns>The text, with its paths redacted unless paths are allowed.</returns>
+        private string RedactPathsUnlessAllowed(string text)
+            => m_allowPathsInLogMessages
+                ? text
+                : SensitiveDataFilter.RedactPaths(text);
 
         /// <inheritdoc />
         public Task OnBackendEventAsync(ReportBackendEvent evt, CancellationToken cancellationToken)
