@@ -663,6 +663,8 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         
         if (scope.s3_storageclass != null)
             opts['s3-storage-class'] = AppUtils.contains_value(scope.s3_storageclasses, scope.s3_storageclass) ? scope.s3_storageclass : scope.s3_storageclass_custom;
+        else if (scope.s3_storageclass_custom != null)
+            opts['s3-storage-class'] = scope.s3_storageclass_custom;
 
         opts['s3-client'] = scope.s3_client.name;
         
