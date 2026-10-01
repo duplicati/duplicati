@@ -26,7 +26,8 @@
         <Control Id="FolderLabel" Type="Text" X="25" Y="53" Width="320" Height="15" NoPrefix="yes" Text="Install [ProductName] to:" />
         <Control Id="FolderEdit" Type="PathEdit" X="25" Y="68" Width="228" Height="17" Property="WIXUI_INSTALLDIR" Indirect="yes" />
         <Control Id="Browse" Type="PushButton" X="260" Y="67" Width="56" Height="17" Text="Browse...">
-          <Publish Event="SelectionBrowse" Value="BrowseDlg" />
+          <Publish Property="_BrowseProperty" Value="[WIXUI_INSTALLDIR]" Order="1" />
+          <Publish Event="SpawnDialog" Value="BrowseDlg" Order="2" />
         </Control>
 
         <Control Id="OptionsGroup" Type="GroupBox" X="20" Y="95" Width="330" Height="125" Text="Configuration Options" />
