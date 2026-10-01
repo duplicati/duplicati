@@ -174,7 +174,17 @@ namespace Duplicati.Library.Main.Database.Local
             dbnew = (LocalBackupDatabase)
                 await CreateLocalDatabaseAsync(path, "Backup", false, dbnew, token)
                 .ConfigureAwait(false);
-            dbnew = await CreateAsync(dbnew, options, null, token).ConfigureAwait(false);
+            try
+            {
+                dbnew = await CreateAsync(dbnew, options, null, token).ConfigureAwait(false);
+            }
+            catch
+            {
+                // The connection is open, but the caller never gets the database that would close
+                // it, for instance when an abort cancels the setup
+                await ReleaseAfterFailedSetupAsync(dbnew, dbnew.Connection).ConfigureAwait(false);
+                throw;
+            }
             dbnew.ShouldCloseConnection = true;
 
             return dbnew;
