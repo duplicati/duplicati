@@ -243,23 +243,37 @@ namespace Duplicati.Library.Main.Database.Local
                 // For instance, the results of a failed first backup are written against the
                 // previous operation, which a new database does not have. Only what was set up
                 // here is released, as the rest of the instance may not be initialized.
-                DisposeAllFields<SqliteCommand>(db, false);
-                try
-                {
-                    if (db.m_rtr != null)
-                        await db.m_rtr.DisposeAsync().ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    Logging.Log.WriteVerboseMessage(LOGTAG, "FailedToDisposeTransaction", ex, "Failed to dispose the transaction of a database that failed to open");
-                }
-                await connection.DisposeAsync().ConfigureAwait(false);
+                await ReleaseAfterFailedSetupAsync(db, connection).ConfigureAwait(false);
                 throw;
             }
 
             db.ShouldCloseConnection = shouldclose;
 
             return db;
+        }
+
+        /// <summary>
+        /// Releases what the setup of a database opened, when the setup fails and the caller never
+        /// gets the database: the commands, the reusable transaction and the connection. Only these
+        /// are released, as the rest of the instance may not be initialized, so its own dispose
+        /// is not called.
+        /// </summary>
+        /// <param name="db">The database whose setup failed.</param>
+        /// <param name="connection">The connection opened for it.</param>
+        /// <returns>A task that completes when everything is released.</returns>
+        protected static async Task ReleaseAfterFailedSetupAsync(LocalDatabase db, SqliteConnection connection)
+        {
+            DisposeAllFields<SqliteCommand>(db, false);
+            try
+            {
+                if (db.m_rtr != null)
+                    await db.m_rtr.DisposeAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Logging.Log.WriteVerboseMessage(LOGTAG, "FailedToDisposeTransaction", ex, "Failed to dispose the transaction of a database that failed to open");
+            }
+            await connection.DisposeAsync().ConfigureAwait(false);
         }
 
         /// <summary>

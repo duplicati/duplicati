@@ -98,5 +98,50 @@ namespace Duplicati.UnitTest
             Assert.IsTrue(File.Exists(DBFILE), "The backup did not create the database, so the test proves nothing");
             Assert.IsFalse(IsOpenInThisProcess(DBFILE), "The database is still open after the failed backup");
         }
+
+        // The database classes of the operations do more setup after opening the database, which
+        // can fail as well, for instance when an abort cancels it. A table they need is dropped
+        // here to make that setup fail every time.
+
+        /// <summary>
+        /// Backs up a file and then drops the given table from the database.
+        /// </summary>
+        private async Task BackupAndDropTableAsync(string table)
+        {
+            File.WriteAllBytes(Path.Combine(DATAFOLDER, "a"), [1, 2, 3]);
+            using (var c = new Controller("file://" + TARGETFOLDER, TestOptions, null))
+                TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
+
+            await using var con = await Library.SQLiteHelper.SQLiteLoader.LoadConnectionAsync(DBFILE);
+            await using var cmd = con.CreateCommand();
+            cmd.CommandText = $@"DROP TABLE ""{table}""";
+            await cmd.ExecuteNonQueryAsync();
+        }
+
+        [Test]
+        [Category("Targeted")]
+        public async Task ABackupWhoseDatabaseSetupFailsDoesNotLeaveTheDatabaseOpen()
+        {
+            // Only the backup's own setup uses this table
+            await BackupAndDropTableAsync("BlocklistHash");
+
+            using (var c = new Controller("file://" + TARGETFOLDER, TestOptions, null))
+                Assert.CatchAsync(async () => await c.BackupAsync([DATAFOLDER]), "The backup did not fail, so the test proves nothing");
+
+            Assert.IsFalse(IsOpenInThisProcess(DBFILE), "The database is still open after the failed backup");
+        }
+
+        [Test]
+        [Category("Targeted")]
+        public async Task ACompactWhoseDatabaseSetupFailsDoesNotLeaveTheDatabaseOpen()
+        {
+            // Only the setup of the database used by compact, delete and purge uses this table
+            await BackupAndDropTableAsync("DuplicateBlock");
+
+            using (var c = new Controller("file://" + TARGETFOLDER, TestOptions, null))
+                Assert.CatchAsync(async () => await c.CompactAsync(), "The compact did not fail, so the test proves nothing");
+
+            Assert.IsFalse(IsOpenInThisProcess(DBFILE), "The database is still open after the failed compact");
+        }
     }
 }
