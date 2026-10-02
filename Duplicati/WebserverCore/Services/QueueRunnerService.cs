@@ -103,7 +103,7 @@ public class QueueRunnerService(
     public void Terminate(bool wait)
     {
         _isTerminated = true;
-        _terminateCts.Cancel();
+        CancelTermination();
         if (wait)
         {
             var task = _current.Task;
@@ -299,6 +299,26 @@ public class QueueRunnerService(
     /// </summary>
     public void Dispose()
     {
+        // The service container disposes the queue runner when the web server stops, which the
+        // server's shutdown does before it terminates the queue runner. Disposing therefore stops
+        // the queue as terminating does, so nothing is left waiting on the disposed source.
+        _isTerminated = true;
+        CancelTermination();
         _terminateCts.Dispose();
+    }
+
+    /// <summary>
+    /// Cancels the tasks waiting on the database lock. The source may already be disposed, which
+    /// cancelled it first.
+    /// </summary>
+    private void CancelTermination()
+    {
+        try
+        {
+            _terminateCts.Cancel();
+        }
+        catch (ObjectDisposedException)
+        {
+        }
     }
 }
