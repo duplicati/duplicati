@@ -57,11 +57,16 @@ namespace Duplicati.Library.Main.Operation.Backup
                 System.Diagnostics.Stopwatch sw_workload = new();
                 long allowed_workload_ms = options.CPUIntensity * 100;
 
+                // The sender of the current block waits for its answer, so it must get one
+                // even if this process stops before answering
+                TaskCompletionSource<bool> unanswered = null;
+
                 try
                 {
                     while (true)
                     {
                         using var b = await self.Input.ReadAsync();
+                        unanswered = b.TaskCompletion;
 
                         // Check if the process has spent more than allowed workload time
                         if (options.CPUIntensity < 10 && sw_workload.ElapsedMilliseconds > allowed_workload_ms)
@@ -166,6 +171,9 @@ namespace Duplicati.Library.Main.Operation.Backup
                 }
                 catch (Exception ex)
                 {
+                    // Does nothing if the block was already answered
+                    unanswered?.TrySetException(ex);
+
                     if (ex.IsRetiredException())
                     {
                         // If we have collected data, merge all pending volumes into a single volume

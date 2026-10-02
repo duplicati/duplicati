@@ -118,6 +118,14 @@ namespace Duplicati.Server
         private readonly object m_lock = new object();
 
         /// <summary>
+        /// Handles one suspend or resume at a time. The suspend marks the pause as caused by the
+        /// suspend only after the pause has been handled, which can outlast the time the system
+        /// waits before it suspends; a resume that arrives meanwhile must wait for it, or it finds
+        /// nothing to resume and the pause remains.
+        /// </summary>
+        private readonly object m_powerEventLock = new object();
+
+        /// <summary>
         /// The timer that is activated after a pause period.
         /// </summary>
         private System.Threading.Timer m_waitTimer;
@@ -227,8 +235,10 @@ namespace Duplicati.Server
                 if (m_powerModeProvider != null)
                     System.Threading.Interlocked.Exchange(ref m_powerModeProvider, null)?.Dispose();
 
-                m_powerModeProvider = PowerModeUtility.GetPowerModeProvider(newProvider);
+                // Remember the setting before loading the provider, so a provider that cannot be
+                // loaded is not tried, and reported, again until the setting changes
                 m_currentPowerModeProvider = newProvider;
+                m_powerModeProvider = PowerModeUtility.GetPowerModeProvider(newProvider);
                 if (m_powerModeProvider != null)
                 {
                     m_powerModeProvider.OnResume = OnResume;
@@ -400,20 +410,23 @@ namespace Duplicati.Server
         /// </summary>
         private void OnSuspend()
         {
-            //If we are running, register as being paused due to suspending
-            if (this.m_state == LiveControlState.Running)
+            lock (m_powerEventLock)
             {
-                this.SetPauseMode();
-                m_pausedForSuspend = true;
-                m_suspendMinimumPause = new DateTime(0, DateTimeKind.Utc);
-            }
-            else
-            {
-                if (m_waitTimeExpiration.Ticks != 0)
+                //If we are running, register as being paused due to suspending
+                if (this.m_state == LiveControlState.Running)
                 {
+                    this.SetPauseMode();
                     m_pausedForSuspend = true;
-                    m_suspendMinimumPause = this.EstimatedPauseEnd;
-                    ResetTimer(null);
+                    m_suspendMinimumPause = new DateTime(0, DateTimeKind.Utc);
+                }
+                else
+                {
+                    if (m_waitTimeExpiration.Ticks != 0)
+                    {
+                        m_pausedForSuspend = true;
+                        m_suspendMinimumPause = this.EstimatedPauseEnd;
+                        ResetTimer(null);
+                    }
                 }
             }
         }
@@ -423,28 +436,31 @@ namespace Duplicati.Server
         /// </summary>
         private void OnResume()
         {
-            //If we have been been paused due to suspending, we un-pause now
-            if (m_pausedForSuspend)
+            lock (m_powerEventLock)
             {
-                long delayTicks = (m_suspendMinimumPause - DateTime.UtcNow).Ticks;
-
-                var appset = m_connection.ApplicationSettings;
-                if (!string.IsNullOrEmpty(appset.StartupDelayDuration) && appset.StartupDelayDuration != "0")
-                    try { delayTicks = Math.Max(delayTicks, Library.Utility.Timeparser.ParseTimeSpan(appset.StartupDelayDuration).Ticks); }
-                    catch (Exception ex) { Library.Logging.Log.WriteWarningMessage(LOGTAG, "ParseStartupDelayError", ex, "Failed to parse startup delay, continuing without it: {0}", appset.StartupDelayDuration); }
-
-                if (delayTicks > 0)
+                //If we have been been paused due to suspending, we un-pause now
+                if (m_pausedForSuspend)
                 {
-                    this.Pause(TimeSpan.FromTicks(delayTicks), true);
+                    long delayTicks = (m_suspendMinimumPause - DateTime.UtcNow).Ticks;
+
+                    var appset = m_connection.ApplicationSettings;
+                    if (!string.IsNullOrEmpty(appset.StartupDelayDuration) && appset.StartupDelayDuration != "0")
+                        try { delayTicks = Math.Max(delayTicks, Library.Utility.Timeparser.ParseTimeSpan(appset.StartupDelayDuration).Ticks); }
+                        catch (Exception ex) { Library.Logging.Log.WriteWarningMessage(LOGTAG, "ParseStartupDelayError", ex, "Failed to parse startup delay, continuing without it: {0}", appset.StartupDelayDuration); }
+
+                    if (delayTicks > 0)
+                    {
+                        this.Pause(TimeSpan.FromTicks(delayTicks), true);
+                    }
+                    else
+                    {
+                        this.Resume();
+                    }
                 }
-                else
-                {
-                    this.Resume();
-                }
+
+                m_pausedForSuspend = false;
+                m_suspendMinimumPause = new DateTime(0, DateTimeKind.Utc);
             }
-
-            m_pausedForSuspend = false;
-            m_suspendMinimumPause = new DateTime(0, DateTimeKind.Utc);
         }
 
     }

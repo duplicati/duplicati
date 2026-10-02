@@ -1,3 +1,106 @@
+2026-09-25 - 2.4.0.102_canary_2026-09-25
+==========
+This release is a canary release intended to be used for testing.
+
+# New restore-test command
+
+A new `restore-test` command restores a sample of files from a backup into a temporary folder and verifies them. The sample size, download budget, runtime and version can be controlled with the `--restore-test-*` options. For backups, the option `--perform-restore-test-after` runs the restore test automatically after a given amount of time.
+
+# Choosing a VSS provider
+
+Windows snapshots can now use a specific VSS provider with `--vss-provider-id=<guid>`. The snapshot setup also detects a provider that does not expose mapped paths and cannot be used. If no provider is selected, it falls back to the Microsoft Software Shadow Copy provider.
+
+# Lower memory usage when deleting versions
+
+Deleting, compacting, purging and repairing forced SQLite to build a large in-memory table holding all fileset entries being removed. The filesets are now removed one at a time, which bounds memory use to a single version. On a synthetic database with 100 versions and 300k files this was 16-20% faster with an 80% reduction in memory. The wasted space calculation was also rewritten and is roughly 9x faster on large databases.
+
+# Synchronization tool fixes
+
+A number of problems in the remote synchronization tool were fixed, thanks @JamBalaya56562:
+
+- The backend managers received the wrong arguments, so a missing source folder was created and the empty listing deleted every file in the destination.
+- Folder entries reported by the destination are now ignored instead of failing the run.
+- Renames now use the backend's own rename and content verification compares through temporary files, reducing peak memory from gigabytes to under 100 MB for large volumes.
+- Failed deletes and renames are now counted in the return code instead of reporting success.
+- A destination with mode interval or counting but no interval or count was only synchronized once. It now runs inline with a warning.
+- The `--case-insensitive-remote` option is now honoured, so a case-only rename no longer loses the file on case-insensitive destinations.
+- The primary sync database is now closed when the run ends, and the `--sync-remote-state` warning names values the option accepts.
+
+Additionally, the tool no longer fails to copy folders on backends that report paths with a trailing separator.
+
+# Restore and backup no longer hang on failures
+
+A restore that hit a volume it could not download, decrypt or decompress could wait forever instead of failing. All restore stages are now released when a volume cannot be produced. Similarly, stopping a backup while a backend call was stuck in a transfer that did not observe cancellation left the operation waiting; the backend manager now abandons the call and the operation returns as cancelled, thanks @JamBalaya56562.
+
+# Path redaction in reports
+
+Additional checks prevent file paths from being included in logs and reports sent outside the system. The option `--allow-paths-in-log-messages` disables the redaction for environments where paths can be reported safely.
+
+# Selecting which operations send reports
+
+The mail, HTTP, XMPP and Telegram reporting modules have a new option, such as `--send-mail-operations`, that selects which operations emit a report. The default is to report backups only, as before.
+
+# Command-line listing fixes
+
+Several listing commands did not behave as documented, thanks @JamBalaya56562:
+
+- `list-folder-contents` now accepts a folder without a trailing separator and picks the latest version when no time or version is given.
+- `search` now searches sub-folders of the given folder.
+- `list-file-versions` and the V2 `list-versions` endpoint now return results and report correct timestamps.
+- `purge` and `set-locks` now stop when the given version or time matches no fileset instead of acting on every fileset.
+
+## Detailed list of changes
+
+- Fixed `list-folder-contents` returning nothing for a folder given without a trailing separator, thanks @JamBalaya56562
+- Added `--vss-provider-id` to choose a VSS provider, with a fallback to the Microsoft Software Shadow Copy provider when the selected one cannot be used
+- Added per-message ephemeral encryption keys and payload compression for console connections
+- Fixed `search` not searching the sub-folders of the given folder, thanks @JamBalaya56562
+- Fixed `list-folder-contents` failing with "Multiple filesets found" when no time or version is given, thanks @JamBalaya56562
+- Fixed a restore hanging forever when a volume cannot be downloaded, decrypted or decompressed, thanks @JamBalaya56562
+- Fixed a wrong missing key warning when using the default secret provider
+- Fixed an aborted operation waiting forever for a backend call that does not observe cancellation, thanks @JamBalaya56562
+- Fixed an exact time lookup returning every fileset when none matched, thanks @JamBalaya56562
+- Fixed a queued task being listed as running in the task queue, thanks @JamBalaya56562
+- Rewrote the wasted space calculation to be faster and use less memory
+- Fixed `list-file-versions` and the V2 `list-versions` endpoint returning no results and wrong timestamps, thanks @JamBalaya56562
+- Fixed a remote sync destination with mode interval or counting but no interval or count only synchronizing once, thanks @JamBalaya56562
+- Added path redaction checks for logs and reports and the `--allow-paths-in-log-messages` option
+- Added support for console status and error messages in Duplicati Backend so failure messages are less generic
+- Fixed most operations reporting 0% progress
+- Added a pluggable slot for license usage collection
+- Fixed the sync tool failing to copy folders on backends that report a trailing separator
+- Fixed `purge` and `set-locks` acting on every fileset when the given version or time matched none, thanks @JamBalaya56562
+- Hardened remote control callback requests and disabled redirects
+- Added login throttling to protect against brute-force attempts
+- Fixed Drime trash pagination validation and folder counts with trashed entries, thanks @tristanXme
+- Fixed a finished task reporting no outcome while it was still the current task, thanks @JamBalaya56562
+- Fixed the sync inventory folder listing being case-insensitive and unindexed, thanks @JamBalaya56562
+- Added `--send-mail-operations`, `--send-http-operations`, `--send-xmpp-operations` and `--send-telegram-operations` to choose which operations send reports
+- Added the `restore-test` command and the `--perform-restore-test-after` backup option
+- Fixed Google Workspace restore browsing being rejected due to a read-only scope request
+- Changed Google Workspace to emit a root folder like MS365
+- Fixed the SMB live test starting before Samba accepted connections, thanks @JamBalaya56562
+- Fixed the Windows shell icon overlay returning empty results and adjusted icon sizes
+- Fixed Google Workspace warnings and a lost license seat warning for suspended and archived users
+- Fixed the sync command ignoring `--case-insensitive-remote`, thanks @JamBalaya56562
+- Added a check that the VSS provider has mapped a usable path
+- Reduced memory usage when removing filesets in delete, cleanup, repair and purge
+- Reduced memory usage when deleting filesets during backup
+- Fixed the primary sync database never being disposed, thanks @JamBalaya56562
+- Fixed the sync tool returning success when deletes or renames failed, thanks @JamBalaya56562
+- Fixed the sync tool downloading volumes into memory for renames and verification, thanks @JamBalaya56562
+- Fixed the sync tool copying, deleting and verifying folder entries reported by the destination, thanks @JamBalaya56562
+- Fixed the sync tool passing the wrong arguments to its backends, causing an empty source to delete the destination, thanks @JamBalaya56562
+- Fixed the `--sync-remote-state` warning suggesting values the option rejects, thanks @JamBalaya56562
+
+## Updates to ngclient
+
+- Added a counter dialog for Google Workspace data
+- Added support for disabling chunking on S3 providers that do not support it
+- Fixed the restore file picker not handling a failed database repair, thanks @JamBalaya56562
+- Fixed a cancelled destination test not stopping the request, thanks @JamBalaya56562
+- Added WebModules storage, HTTP and destination test component tests, thanks @JamBalaya56562
+
 2026-09-11 - 2.4.0.101_canary_2026-09-11
 ==========
 This release is a canary release intended to be used for testing.

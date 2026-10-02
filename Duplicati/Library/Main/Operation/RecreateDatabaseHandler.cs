@@ -39,6 +39,12 @@ namespace Duplicati.Library.Main.Operation
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<RecreateDatabaseHandler>();
 
+        /// <summary>
+        /// The number of filelists that can fail to decrypt, with none decrypted,
+        /// before the passphrase is taken to be wrong
+        /// </summary>
+        private const int MAX_DECRYPT_FAILURES = 3;
+
         private readonly Options m_options;
         private readonly RecreateDatabaseResults m_result;
 
@@ -289,6 +295,8 @@ namespace Duplicati.Library.Main.Operation
             }
 
             var isFirstFilelist = true;
+            var decryptFailures = 0;
+            Exception firstDecryptFailure = null;
             // At this point, we do not know the hashing used to verify the files, so we need to use direct download, and manually decrypt the files
             // so we can calculate the hash AFTER we have read the manifest content and updated the options
             await foreach (var (tmpencfile, name) in backendManager.GetFilesOverlappedDirectAsync(filelistWork, allowParityRepair: true, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
@@ -372,16 +380,6 @@ namespace Duplicati.Library.Main.Operation
                         throw;
                     }
 
-                    if (isFirstFilelist && ex is System.Security.Cryptography.CryptographicException)
-                    {
-                        m_result.EndTime = DateTime.UtcNow;
-                        // Implicit rollback
-                        await restoredb.Transaction
-                            .RollBackAsync(m_result.TaskControl.ProgressToken)
-                            .ConfigureAwait(false);
-                        throw;
-                    }
-
                     if (m_options.UnittestMode)
                     {
                         // Implicit rollback
@@ -390,6 +388,34 @@ namespace Duplicati.Library.Main.Operation
                             .ConfigureAwait(false);
                         throw;
                     }
+
+                    // When nothing has been decrypted yet, the passphrase could be wrong,
+                    // but it could also be the file that is damaged, such as the empty
+                    // filelist left by a backup that crashed. One file does not tell the
+                    // two apart, so a few more are tried before giving up.
+                    if (isFirstFilelist && ex is System.Security.Cryptography.CryptographicException)
+                    {
+                        firstDecryptFailure ??= ex;
+                        decryptFailures++;
+                        if (decryptFailures >= MAX_DECRYPT_FAILURES || decryptFailures == filelistWork.Count)
+                        {
+                            m_result.EndTime = DateTime.UtcNow;
+                            // Implicit rollback
+                            await restoredb.Transaction
+                                .RollBackAsync(m_result.TaskControl.ProgressToken)
+                                .ConfigureAwait(false);
+                            System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(firstDecryptFailure).Throw();
+                        }
+                    }
+
+                    // Without a fileset the volume would fail the consistency check and leave
+                    // the database unusable, so the recreate carries on as if the file was not there.
+                    // The remote file is left in place, as the contents could still be of use.
+                    await restoredb
+                        .RemoveUnreadableFilelistAsync(name, m_result.TaskControl.ProgressToken)
+                        .ConfigureAwait(false);
+                    volumeIds.Remove(name);
+                    Logging.Log.WriteWarningMessage(LOGTAG, "UnreadableFilelistIgnored", null, "The filelist {0} could not be read and is ignored, the version it describes cannot be restored. The file is left at the destination, where it will be reported as an unknown file. Move it out of the destination, or run repair with --repair-ignore-outdated-database to have it deleted.", name);
                 }
             }
 

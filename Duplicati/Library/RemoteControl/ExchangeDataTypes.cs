@@ -131,6 +131,10 @@ public sealed record ControlRequestMessage(string Command, Dictionary<string, st
     /// The key that contains the refresh settings by key
     /// </summary>
     public const string RefreshSettingsByKey = "refreshsettingsby";
+    /// <summary>
+    /// The key that marks the organization as processing confidential or protected information; value "true" when set, absent otherwise
+    /// </summary>
+    public const string ReducedReportingKey = "reducedreporting";
 
 }
 /// <summary>

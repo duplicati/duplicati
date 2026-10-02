@@ -66,21 +66,24 @@ partial class BackendManager
                 r = await backend.ListAsync(cancelToken).ToListAsync(cancelToken).ConfigureAwait(false);
             }
 
-            // TODO: Investigate better way to solve this so we do not use memory for large lists
-            var sb = new StringBuilder();
-            sb.AppendLine("[");
-            long count = 0;
-            foreach (var e in r)
+            if (Context.Database.Enabled)
             {
-                if (count != 0)
-                    sb.AppendLine(",");
-                count++;
-                sb.Append(System.Text.Json.JsonSerializer.Serialize(e));
-            }
+                // TODO: Investigate better way to solve this so we do not use memory for large lists
+                var sb = new StringBuilder();
+                sb.AppendLine("[");
+                long count = 0;
+                foreach (var e in r)
+                {
+                    if (count != 0)
+                        sb.AppendLine(",");
+                    count++;
+                    sb.Append(System.Text.Json.JsonSerializer.Serialize(e));
+                }
 
-            sb.AppendLine();
-            sb.Append("]");
-            Context.Database.LogRemoteOperation("list", "", sb.ToString());
+                sb.AppendLine();
+                sb.Append("]");
+                Context.Database.LogRemoteOperation("list", "", sb.ToString());
+            }
 
             Context.Statwriter.SendEvent(BackendActionType.List, BackendEventType.Completed, null, r.Count);
 

@@ -89,6 +89,46 @@ public class SyncHandlerTests : BasicSetupHelper
     }
 
     /// <summary>
+    /// Verifies that a zero-byte source file is created on the destination,
+    /// and that a following run has nothing left to do for it.
+    /// </summary>
+    [Test]
+    [Category("Sync")]
+    public async Task TestSyncZeroByteFileAsync()
+    {
+        var dataFolder = Path.Combine(BASEFOLDER, "sync_data_empty");
+        if (Directory.Exists(dataFolder)) Directory.Delete(dataFolder, true);
+        Directory.CreateDirectory(dataFolder);
+
+        File.WriteAllBytes(Path.Combine(dataFolder, "empty.md"), Array.Empty<byte>());
+        File.WriteAllText(Path.Combine(dataFolder, "file1.txt"), "Hello World");
+
+        var opts = new Dictionary<string, string>
+        {
+            ["no-encryption"] = "true",
+            ["snapshot-policy"] = "off"
+        };
+
+        using (var c = new Controller(backendUrl, opts, null))
+        {
+            var res = await c.SyncAsync(new[] { dataFolder }, null);
+            Assert.IsEmpty(res.Warnings, string.Join(Environment.NewLine, res.Warnings));
+            Assert.IsEmpty(res.Errors, string.Join(Environment.NewLine, res.Errors));
+            Assert.AreEqual(2, res.FilesUploaded);
+        }
+
+        Assert.IsTrue(File.Exists(Path.Combine(targetDir, "empty.md")), "The empty file was not uploaded");
+        Assert.AreEqual(0, new FileInfo(Path.Combine(targetDir, "empty.md")).Length);
+
+        using (var c = new Controller(backendUrl, opts, null))
+        {
+            var res = await c.SyncAsync(new[] { dataFolder }, null);
+            Assert.IsEmpty(res.Warnings, string.Join(Environment.NewLine, res.Warnings));
+            Assert.AreEqual(0, res.FilesUploaded, "The empty file should not be uploaded again");
+        }
+    }
+
+    /// <summary>
     /// Verifies that the sync handler reports its progress via
     /// <see cref="SyncResults.OperationProgressUpdater"/>: the phase transitions through
     /// the new <c>Sync_*</c> phases (<c>Sync_Begin</c> -> <c>Sync_CountingFiles</c> ->
@@ -973,6 +1013,84 @@ public class SyncHandlerTests : BasicSetupHelper
         Assert.IsTrue(File.Exists(Path.Combine(targetDir2, "file1.txt")));
         Assert.IsTrue(File.Exists(Path.Combine(targetDir2, "file2.txt")));
         Assert.IsTrue(File.Exists(Path.Combine(targetDir2, "subfolder", "file3.txt")));
+    }
+
+    /// <summary>
+    /// Sync does not record a remote operation log, and keeps its own intent journal.
+    /// The backend managers must therefore not collect the remote operation messages,
+    /// as nothing flushes them: they would pile up in memory for the whole run and
+    /// be dumped into the log as a single warning when the manager is disposed.
+    /// </summary>
+    [Test]
+    [Category("Sync")]
+    public async Task TestSyncDoesNotCollectRemoteOperationsAsync()
+    {
+        var dataFolder = Path.Combine(BASEFOLDER, "sync_data_nolog");
+        if (Directory.Exists(dataFolder)) Directory.Delete(dataFolder, true);
+        Directory.CreateDirectory(dataFolder);
+
+        File.WriteAllText(Path.Combine(dataFolder, "file1.txt"), "Hello World");
+        File.WriteAllText(Path.Combine(dataFolder, "file2.txt"), "File 2 content");
+        Directory.CreateDirectory(Path.Combine(dataFolder, "subfolder"));
+        File.WriteAllText(Path.Combine(dataFolder, "subfolder", "file3.txt"), "File 3 content");
+
+        var targetDir2 = Path.Combine(BASEFOLDER, "target_nolog2");
+        if (Directory.Exists(targetDir2)) Directory.Delete(targetDir2, true);
+        Directory.CreateDirectory(targetDir2);
+        var backendUrl2 = "file://" + targetDir2.Replace("\\", "/");
+
+        var dbPath = Path.Combine(BASEFOLDER, $"sync-nolog-{Guid.NewGuid():N}.sqlite");
+        var dbPath2 = Path.Combine(BASEFOLDER, $"sync-nolog2-{Guid.NewGuid():N}.sqlite");
+        var config = System.Text.Json.JsonSerializer.Serialize(new
+        {
+            destinations = new[] { new Dictionary<string, string> { ["url"] = backendUrl2, ["sync-database-path"] = dbPath2 } }
+        });
+
+        var opts = new Dictionary<string, string>
+        {
+            ["no-encryption"] = "true",
+            ["snapshot-policy"] = "off",
+            ["sync-then-delete"] = "true",
+            ["dbpath"] = dbPath,
+            ["remote-sync-json-config"] = config
+        };
+
+        using (var c = new Controller(backendUrl, opts, null))
+        {
+            var first = await c.SyncAsync(new[] { dataFolder }, null);
+            Assert.IsEmpty(first.Warnings.Where(x => x.Contains("FlushingMessagesToLog")), $"The remote operations were collected: {string.Join(" | ", first.Warnings)}");
+        }
+
+        // Second run performs an update and a delete
+        File.WriteAllText(Path.Combine(dataFolder, "file1.txt"), "Hello World, again");
+        File.Delete(Path.Combine(dataFolder, "file2.txt"));
+
+        using (var c = new Controller(backendUrl, opts, null))
+        {
+            var second = await c.SyncAsync(new[] { dataFolder }, null);
+            Assert.IsEmpty(second.Warnings.Where(x => x.Contains("FlushingMessagesToLog")), $"The remote operations were collected: {string.Join(" | ", second.Warnings)}");
+            Assert.IsEmpty(second.Warnings.Where(x => x.Contains("InflightDetected")), $"The first run left pending operations: {string.Join(" | ", second.Warnings)}");
+        }
+
+        foreach (var target in new[] { targetDir, targetDir2 })
+        {
+            Assert.AreEqual("Hello World, again", File.ReadAllText(Path.Combine(target, "file1.txt")));
+            Assert.IsFalse(File.Exists(Path.Combine(target, "file2.txt")));
+            Assert.IsTrue(File.Exists(Path.Combine(target, "subfolder", "file3.txt")));
+        }
+
+        foreach (var path in new[] { dbPath, dbPath2 })
+        {
+            Assert.IsTrue(File.Exists(path), $"The sync did not create its database: {path}");
+            await using var con = await Duplicati.Library.SQLiteHelper.SQLiteLoader.LoadConnectionAsync(path);
+            await using var cmd = con.CreateCommand();
+
+            cmd.CommandText = @"SELECT COUNT(*) FROM ""PendingOperation""";
+            Assert.AreEqual(0L, (long)(await cmd.ExecuteScalarAsync())!, $"Pending operations remain in {path}");
+
+            cmd.CommandText = @"SELECT COUNT(*) FROM ""RemoteOperation""";
+            Assert.AreEqual(0L, (long)(await cmd.ExecuteScalarAsync())!, $"Remote operations were logged in {path}");
+        }
     }
 
     /// <summary>

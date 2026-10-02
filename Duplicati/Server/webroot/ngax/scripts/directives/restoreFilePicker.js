@@ -205,11 +205,14 @@ backupApp.directive('restoreFilePicker', function() {
                         var map = buildSelectedMap();
                         map[c] = true;
 
-                        for (var i = p.children.length - 1; i >= 0; i--)
-                            if (!map[compareablePath(p.children[i].id)]) {
-                                all = false;
-                                break;
-                            }
+                        // A root has no parent, so p is the node itself, and its children
+                        // are only loaded once it is expanded. It is added as it is below.
+                        if (p != node)
+                            for (var i = p.children.length - 1; i >= 0; i--)
+                                if (!map[compareablePath(p.children[i].id)]) {
+                                    all = false;
+                                    break;
+                                }
 
                         if (!all  || p == node || $scope.ngSearchMode) {
                             $scope.ngSelected.push(cur.id);

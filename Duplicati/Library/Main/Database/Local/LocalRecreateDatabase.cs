@@ -1551,6 +1551,54 @@ namespace Duplicati.Library.Main.Database.Local
             }
         }
 
+        /// <summary>
+        /// Removes a filelist volume that could not be read, and the fileset that was being built from it.
+        /// The remote file is not touched.
+        /// </summary>
+        /// <param name="name">The name of the filelist volume.</param>
+        /// <param name="token">Cancellation token to monitor for cancellation requests.</param>
+        /// <returns>A task that completes when the volume has been removed.</returns>
+        public async Task RemoveUnreadableFilelistAsync(string name, CancellationToken token)
+        {
+            await using var cmd = m_connection.CreateCommand(m_rtr);
+
+            // The filelist can fail after some of it has been read,
+            // so there can be a fileset with entries in it
+            await cmd.SetCommandAndParameters(@"
+                DELETE FROM ""FilesetEntry""
+                WHERE ""FilesetID"" IN (
+                    SELECT ""Fileset"".""ID""
+                    FROM ""Fileset""
+                    INNER JOIN ""RemoteVolume""
+                        ON ""RemoteVolume"".""ID"" = ""Fileset"".""VolumeID""
+                    WHERE ""RemoteVolume"".""Name"" = @Name
+                )
+            ")
+                .SetParameterValue("@Name", name)
+                .ExecuteNonQueryAsync(true, token)
+                .ConfigureAwait(false);
+
+            await cmd.SetCommandAndParameters(@"
+                DELETE FROM ""Fileset""
+                WHERE ""VolumeID"" IN (
+                    SELECT ""ID""
+                    FROM ""RemoteVolume""
+                    WHERE ""Name"" = @Name
+                )
+            ")
+                .SetParameterValue("@Name", name)
+                .ExecuteNonQueryAsync(true, token)
+                .ConfigureAwait(false);
+
+            await cmd.SetCommandAndParameters(@"
+                DELETE FROM ""RemoteVolume""
+                WHERE ""Name"" = @Name
+            ")
+                .SetParameterValue("@Name", name)
+                .ExecuteNonQueryAsync(true, token)
+                .ConfigureAwait(false);
+        }
+
         public async Task SetMetadataContentAsync(long metadataId, string content, CancellationToken token)
         {
             await using var update = m_connection.CreateCommand(m_rtr);

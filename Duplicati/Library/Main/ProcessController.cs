@@ -106,9 +106,15 @@ namespace Duplicati.Library.Main
         private bool m_hasStartedBackgroundMode = false;
 
         /// <summary>
-        /// A timer used to prevent sleep
+        /// The thread that keeps Windows awake. The request is made per thread and holds until the
+        /// same thread withdraws it or ends, so one thread makes it and withdraws it.
         /// </summary>
-        private CancellationTokenSource m_timerCancellation;
+        private Thread m_sleepPreventionThread;
+
+        /// <summary>
+        /// Tells the thread that keeps Windows awake to withdraw the request and end
+        /// </summary>
+        private ManualResetEventSlim m_sleepPreventionStop;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="T:Duplicati.Library.Main.ProcessController"/> class.
@@ -139,36 +145,47 @@ namespace Duplicati.Library.Main
             {
                 try
                 {
-                    m_timerCancellation?.Cancel();
-                    m_timerCancellation = new CancellationTokenSource();
+                    StopWindowsSleepPrevention();
 
-                    Task.Run(async () =>
+                    // A request made from the thread pool stays with whichever pool thread made
+                    // it, which outlives the operation and keeps the system awake. A thread of its
+                    // own makes the request once (ES_CONTINUOUS keeps it) and withdraws it before
+                    // it ends.
+                    var stop = new ManualResetEventSlim(false);
+                    var thread = new Thread(() =>
                     {
                         if (!OperatingSystem.IsWindows())
                             return;
 
                         try
                         {
-                            while (true)
-                            {
-                                // Capture the cancellation token, so we don't risk it being set to null
-                                var ct = m_timerCancellation;
-                                if (ct == null || ct.Token.IsCancellationRequested)
-                                    break;
-
-                                Win32.SetThreadExecutionState(Win32.EXECUTION_STATE.ES_CONTINUOUS | Win32.EXECUTION_STATE.ES_SYSTEM_REQUIRED);
-                                await Task.Delay(TimeSpan.FromSeconds(10), ct.Token);
-                            }
-                        }
-                        catch (TaskCanceledException)
-                        {
-                            // Ignore
+                            Win32.SetThreadExecutionState(Win32.EXECUTION_STATE.ES_CONTINUOUS | Win32.EXECUTION_STATE.ES_SYSTEM_REQUIRED);
+                            stop.Wait();
                         }
                         catch (Exception ex)
                         {
                             Logging.Log.WriteWarningMessage(LOGTAG, "SleepPreventionError", ex, "Failed to set sleep prevention");
                         }
-                    }).FireAndForget();
+                        finally
+                        {
+                            try
+                            {
+                                Win32.SetThreadExecutionState(Win32.EXECUTION_STATE.ES_CONTINUOUS);
+                            }
+                            catch (Exception ex)
+                            {
+                                Logging.Log.WriteWarningMessage(LOGTAG, "SleepPreventionDisableError", ex, "Failed to unset sleep prevention");
+                            }
+                        }
+                    })
+                    {
+                        IsBackground = true,
+                        Name = "Sleep prevention"
+                    };
+
+                    m_sleepPreventionStop = stop;
+                    m_sleepPreventionThread = thread;
+                    thread.Start();
 
                     m_runningSleepPrevention = true;
                 }
@@ -532,6 +549,21 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
+        /// Tells the thread that keeps Windows awake to withdraw the request, and waits for it
+        /// </summary>
+        private void StopWindowsSleepPrevention()
+        {
+            var stop = m_sleepPreventionStop;
+            var thread = m_sleepPreventionThread;
+            m_sleepPreventionStop = null;
+            m_sleepPreventionThread = null;
+
+            stop?.Set();
+            if (thread == null || thread.Join(TimeSpan.FromSeconds(5)))
+                stop?.Dispose();
+        }
+
+        /// <summary>
         /// Stops the sleep prevention, if it was enabled
         /// </summary>
         private void StopSleepPrevention()
@@ -543,10 +575,7 @@ namespace Duplicati.Library.Main
                     if (m_runningSleepPrevention)
                     {
                         m_runningSleepPrevention = false;
-                        m_timerCancellation?.Dispose();
-                        m_timerCancellation = null;
-
-                        Win32.SetThreadExecutionState(Win32.EXECUTION_STATE.ES_CONTINUOUS);
+                        StopWindowsSleepPrevention();
                     }
                 }
                 catch (Exception ex)

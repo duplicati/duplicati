@@ -242,7 +242,7 @@ namespace Duplicati.Library.Main
                     throw new UserInformationException($"Could not find restore destination for path: {config.Options.Restorepath}", "InvalidRestoreDestination");
 
                 await new Operation.RestoreHandler(config.Options, config.Result)
-                    .RunAsync(config.Context.paths, config.BackendManager, config.Filter, restoreDestination)
+                    .RunAsync(config.Context.paths, config.BackendManager, config.Filter, restoreDestination, config.BackendUrl)
                     .ConfigureAwait(false);
 
                 await restoreDestination.Finalize((pg) =>
@@ -643,7 +643,9 @@ namespace Duplicati.Library.Main
                     using (new Logging.Timer(LOGTAG, string.Format("Run{0}", result.MainOperation), string.Format("Running {0}", result.MainOperation)))
                     using (new CoCoL.IsolatedChannelScope())
                     using (m_options.ConcurrencyMaxThreads <= 0 ? null : new CoCoL.CappedThreadedThreadPool(m_options.ConcurrencyMaxThreads))
-                    using (var backend = new Backend.BackendManager(m_backendUrl, m_options, result.BackendWriter, result.TaskControl))
+                    // Sync keeps its own intent journal and does not record a remote operation log,
+                    // so the messages are never flushed and must not be collected in memory
+                    using (var backend = new Backend.BackendManager(m_backendUrl, m_options, result.BackendWriter, result.TaskControl, collectDatabaseMessages: m_options.MainAction != OperationMode.Sync))
                     {
                         try
                         {

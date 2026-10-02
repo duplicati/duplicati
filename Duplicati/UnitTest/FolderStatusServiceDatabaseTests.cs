@@ -236,6 +236,35 @@ public class FolderStatusServiceDatabaseTests
     }
 
     [Test]
+    public void ReadsTheLastRunOfASyncJobFromTheSyncKeys()
+    {
+        var finished = new DateTime(2026, 9, 1, 10, 30, 0, DateTimeKind.Utc);
+        var syncRun = new Dictionary<string, string>
+        {
+            { "LastSyncStarted", Duplicati.Library.Utility.Utility.SerializeDateTime(finished.AddHours(-1)) },
+            { "LastSyncFinished", Duplicati.Library.Utility.Utility.SerializeDateTime(finished) },
+            { "LastSyncDuration", TimeSpan.FromHours(1).ToString() },
+        };
+
+        Assert.AreEqual(finished, FolderStatusService.GetLastBackupTime(syncRun, OperationType.Sync));
+        Assert.AreEqual(FolderBackupStatusValues.BackedUp, FolderStatusService.DetermineStatus(syncRun, false, OperationType.Sync));
+
+        // The keys of one operation type are not read for the other
+        Assert.IsNull(FolderStatusService.GetLastBackupTime(syncRun, OperationType.Backup));
+        Assert.AreEqual(FolderBackupStatusValues.Never, FolderStatusService.DetermineStatus(syncRun, false, OperationType.Backup));
+
+        var failedAfter = new Dictionary<string, string>(syncRun)
+        {
+            { "LastErrorDate", Duplicati.Library.Utility.Utility.SerializeDateTime(finished.AddDays(1)) },
+        };
+        Assert.AreEqual(FolderBackupStatusValues.Failed, FolderStatusService.DetermineStatus(failedAfter, false, OperationType.Sync));
+
+        Assert.AreEqual(syncRun["LastSyncStarted"], LastRunMetadata.GetStarted(syncRun, OperationType.Sync));
+        Assert.IsNull(LastRunMetadata.GetStarted(syncRun, OperationType.Backup));
+        Assert.IsNull(LastRunMetadata.GetStarted(null, OperationType.Sync));
+    }
+
+    [Test]
     public void DisabledServiceIsUnavailable()
     {
         SaveBackup("Some backup", MakeSourceFolder("inside"));

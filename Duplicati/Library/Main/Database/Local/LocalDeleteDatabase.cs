@@ -85,9 +85,19 @@ namespace Duplicati.Library.Main.Database.Local
                 await CreateLocalDatabaseAsync(path, operation, true, dbnew, token)
                     .ConfigureAwait(false);
 
-            dbnew.m_registerDuplicateBlockCommand =
-                await dbnew.Connection.CreateCommandAsync(REGISTER_COMMAND, token)
-                    .ConfigureAwait(false);
+            try
+            {
+                dbnew.m_registerDuplicateBlockCommand =
+                    await dbnew.Connection.CreateCommandAsync(REGISTER_COMMAND, token)
+                        .ConfigureAwait(false);
+            }
+            catch
+            {
+                // The connection is open, but the caller never gets the database that would close
+                // it, for instance when an abort cancels the setup
+                await ReleaseAfterFailedSetupAsync(dbnew, dbnew.Connection).ConfigureAwait(false);
+                throw;
+            }
 
             return dbnew;
         }

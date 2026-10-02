@@ -452,11 +452,16 @@ namespace Duplicati.Library.Main.Database.Local
                 // Special handling for Windows and multi-drive/UNC backups as they do not have a single common root
                 if (string.IsNullOrWhiteSpace(maxpath) && string.IsNullOrWhiteSpace(prefixrule))
                 {
-                    var paths = cmd.ExecuteReaderEnumerableAsync($@"
+                    // Read the paths before looking into each root: each look drops a temporary
+                    // table when it is done, and that waits for the command timeout while a
+                    // reader is still open on the connection
+                    var paths = await cmd.ExecuteReaderEnumerableAsync($@"
                             SELECT ""Path""
                             FROM ""{tmpnames.Tablename}""
                         ", token)
-                        .Select(x => x.ConvertValueToString(0) ?? "");
+                        .Select(x => x.ConvertValueToString(0) ?? "")
+                        .ToListAsync(token)
+                        .ConfigureAwait(false);
 
                     var roots = paths
                         .Select(x => x.Substring(0, 1))
@@ -471,14 +476,13 @@ namespace Duplicati.Library.Main.Database.Local
                         .Select(x => x.Value)
                         .Distinct();
 
-                    var result = roots
-                        .Concat(rootsUNC)
-                        .Select(x => GetLargestPrefixAsync(filter, x, token)
-                            .FirstAsync())
-                        .Distinct();
+                    foreach (var root in roots.Concat(rootsUNC))
+                        yield return await GetLargestPrefixAsync(filter, root, token)
+                            .FirstAsync(token)
+                            .ConfigureAwait(false);
 
-                    await foreach (var el in result.ConfigureAwait(false))
-                        yield return await el;
+                    // Each root has been returned, and there is no common prefix to add to them
+                    yield break;
                 }
 
                 yield return new FileversionFixed
@@ -1178,13 +1182,18 @@ namespace Duplicati.Library.Main.Database.Local
                 .SetParameterValue("@FilesetId", filesetId);
 
             string? lastRoot = null;
+            var lastRootIsFolder = false;
 
             await foreach (var rd in cmd.ExecuteReaderEnumerableAsync(token))
             {
                 var path = rd.ConvertValueToString(1) ?? string.Empty;
-                if (lastRoot == null || !path.StartsWith(lastRoot, StringComparison.Ordinal))
+                // A folder root ends with a directory separator, and every entry below it starts
+                // with that prefix. A file root has nothing below it, so an entry that merely
+                // continues its name (notes.txt.old after notes.txt) is a root of its own.
+                if (lastRoot == null || !lastRootIsFolder || !path.StartsWith(lastRoot, StringComparison.Ordinal))
                 {
                     lastRoot = path;
+                    lastRootIsFolder = path.EndsWith('/') || path.EndsWith('\\');
                     var id = rd.ConvertValueToInt64(0);
                     var size = rd.ConvertValueToInt64(2, -1);
                     var isDir = rd.GetInt32(3) != 0;

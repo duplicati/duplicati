@@ -114,6 +114,37 @@ namespace Duplicati.UnitTest
             Assert.AreEqual(expected, Utility.WrapCommandLineElement(argument, false, true));
         }
 
+        /// <summary>
+        /// An empty argument has to be written as a pair of quotes, and one that
+        /// is only whitespace has to be quoted, or the argument disappears from
+        /// the commandline: an empty string adds nothing, and bare whitespace is
+        /// read as the separator between arguments.
+        /// </summary>
+        /// <param name="argument">The argument to wrap</param>
+        /// <param name="expected">The expected wrapping</param>
+        /// <param name="isWindows">Whether Windows escaping is used</param>
+        [Test]
+        [Category("Utility")]
+        [TestCase("", "\"\"", true)]
+        [TestCase(" ", "\" \"", true)]
+        [TestCase("   ", "\"   \"", true)]
+        [TestCase("\t", "\"\t\"", true)]
+        [TestCase("", "\"\"", false)]
+        [TestCase(" ", "\" \"", false)]
+        [TestCase("\t", "\"\t\"", false)]
+        public static void WrapCommandLineElementQuotesAnEmptyOrWhitespaceArgument(string argument, string expected, bool isWindows)
+        {
+            Assert.AreEqual(expected, Utility.WrapCommandLineElement(argument, false, isWindows));
+        }
+
+        [Test]
+        [Category("Utility")]
+        public static void WrapCommandLineElementLeavesANullArgumentNull()
+        {
+            Assert.IsNull(Utility.WrapCommandLineElement(null, false, true));
+            Assert.IsNull(Utility.WrapCommandLineElement(null, false, false));
+        }
+
         [Test]
         [Category("Utility")]
         public static void WrapCommandLineElementRespectsUnixEnvironmentExpansionFlag()
@@ -143,6 +174,10 @@ namespace Duplicati.UnitTest
         [TestCase(@"\")]
         [TestCase(@"a\b")]
         [TestCase(@"--passphrase=p""ss")]
+        [TestCase("")]
+        [TestCase(" ")]
+        [TestCase("   ")]
+        [TestCase("\t")]
         public static void AWrappedWindowsArgumentIsReadBackAsItself(string argument)
         {
             if (!OperatingSystem.IsWindows())
@@ -158,6 +193,37 @@ namespace Duplicati.UnitTest
             // less means the argument swallowed what came after it.
             Assert.AreEqual(3, parsed.Length, $"<{wrapped}> was read as {parsed.Length} arguments");
             Assert.AreEqual(argument, parsed[1]);
+            Assert.AreEqual("--next=1", parsed[2]);
+        }
+
+        /// <summary>
+        /// The export of a backup as a commandline writes each option as
+        /// <c>--name=</c> followed by the wrapped value. The value has to come back
+        /// as itself, including one that is empty or only whitespace, and the
+        /// option after it has to survive.
+        /// </summary>
+        /// <param name="value">The option value to wrap and read back</param>
+        [Test]
+        [Category("Utility")]
+        [TestCase("")]
+        [TestCase(" ")]
+        [TestCase("  two spaces  ")]
+        [TestCase(@"C:\Temp\folder\")]
+        [TestCase(@"p""ss")]
+        public static void AnOptionValueWrappedAfterTheEqualsSignIsReadBackAsItself(string value)
+        {
+            if (!OperatingSystem.IsWindows())
+            {
+                Assert.Ignore("The Windows commandline parser is only available on Windows.");
+                return;
+            }
+
+            // The same composition as Runner.GetCommandLine
+            var option = string.Format("--{0}={1}", "passphrase", Utility.WrapCommandLineElement(value, false));
+            var parsed = ParseWindowsCommandLine(@"C:\program.exe " + option + " --next=1");
+
+            Assert.AreEqual(3, parsed.Length, $"<{option}> was read as {parsed.Length} arguments");
+            Assert.AreEqual("--passphrase=" + value, parsed[1]);
             Assert.AreEqual("--next=1", parsed[2]);
         }
 
@@ -181,6 +247,8 @@ namespace Duplicati.UnitTest
                 @"--webservice-sslcertificatefile=C:\Program Files\certs\Default Web Site-all.pfx",
                 @"--webservice-sslcertificatepassword=p""ss",
                 @"--dbpath=C:\Temp\folder\\",
+                "",
+                " ",
                 "--log-retention=3M"
             };
 

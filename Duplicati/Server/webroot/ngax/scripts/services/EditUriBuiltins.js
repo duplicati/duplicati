@@ -159,7 +159,9 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             });
         };
         
-        scope.s3_client = s3_client_options[0];
+        // The loader runs after the parser when an existing destination is opened, so keep the client it read
+        if (scope.s3_client == null)
+            scope.s3_client = s3_client_options[0];
         scope.s3_client_options = s3_client_options;
     };
 	
@@ -388,6 +390,9 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             }
             scope.Path = newScopePath;
         }
+
+        // The template decides this when it loads, which can be before the destination has been read
+        scope.HideFolderBrowser = (scope.Path || '') != '';
     };
 
     var s3_client_options = [{
@@ -663,6 +668,8 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         
         if (scope.s3_storageclass != null)
             opts['s3-storage-class'] = AppUtils.contains_value(scope.s3_storageclasses, scope.s3_storageclass) ? scope.s3_storageclass : scope.s3_storageclass_custom;
+        else if (scope.s3_storageclass_custom != null)
+            opts['s3-storage-class'] = scope.s3_storageclass_custom;
 
         opts['s3-client'] = scope.s3_client.name;
         

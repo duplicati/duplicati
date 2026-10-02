@@ -37,6 +37,9 @@ using System.Text.Json;
 using System.Globalization;
 using CoCoL;
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("Duplicati.UnitTest")]
 
 namespace Duplicati.Server
 {
@@ -1244,13 +1247,25 @@ namespace Duplicati.Server
             }
         }
 
-        private static void UpdateMetadataLastSync(IBackup backup, ISyncResults r)
+        /// <summary>
+        /// Records the outcome of a sync run in the backup metadata.
+        /// The run is recorded under the "LastSync*" keys, which readers find through
+        /// <see cref="LastRunMetadata"/>. This follows the same rule as a backup run:
+        /// an interrupted run did not cover everything it was asked to, so neither its
+        /// times nor its source numbers are recorded as the last completed run.
+        /// </summary>
+        /// <param name="backup">The backup to update the metadata for</param>
+        /// <param name="r">The sync results</param>
+        internal static void UpdateMetadataLastSync(IBackup backup, ISyncResults r)
         {
-            if (r != null)
+            if (r != null && !r.Interrupted)
             {
-                backup.Metadata["LastSyncDuration"] = r.Duration.ToString();
-                backup.Metadata["LastSyncStarted"] = Utility.SerializeDateTime(r.BeginTime.ToUniversalTime());
-                backup.Metadata["LastSyncFinished"] = Utility.SerializeDateTime(r.EndTime.ToUniversalTime());
+                backup.Metadata["SourceFilesSize"] = r.SizeOfSourceFiles.ToString();
+                backup.Metadata["SourceFilesCount"] = r.SourceFiles.ToString();
+                backup.Metadata["SourceSizeString"] = Utility.FormatSizeString(r.SizeOfSourceFiles);
+                backup.Metadata[LastRunMetadata.StartedKey(OperationType.Sync)] = Utility.SerializeDateTime(r.BeginTime.ToUniversalTime());
+                backup.Metadata[LastRunMetadata.FinishedKey(OperationType.Sync)] = Utility.SerializeDateTime(r.EndTime.ToUniversalTime());
+                backup.Metadata[LastRunMetadata.DurationKey(OperationType.Sync)] = r.Duration.ToString();
             }
         }
 
@@ -1601,6 +1616,11 @@ namespace Duplicati.Server
 
             // The server hangs if the module is enabled as there is no console attached
             DisableModule("console-password-input", options);
+
+            // When the machine processes confidential or protected information, every report leaving it carries message ids only.
+            // The setting is applied by the server, so a per-backup value cannot switch it off.
+            if (databaseConnection.ApplicationSettings.IsReducedReportingActive)
+                options[Library.Logging.ReducedReportFormat.OPTION_REDUCED_REPORTING] = "true";
 
             // Patch in additional report urls
             var additionalReportUrl = databaseConnection.ApplicationSettings.AdditionalReportUrl;

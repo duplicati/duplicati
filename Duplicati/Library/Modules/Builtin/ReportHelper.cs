@@ -230,6 +230,11 @@ namespace Duplicati.Library.Modules.Builtin
         private bool m_allowPathsInLogMessages;
 
         /// <summary>
+        /// Whether reports are reduced to log message ids (reduced reporting)
+        /// </summary>
+        private bool m_reducedReporting;
+
+        /// <summary>
         /// Configures the module
         /// </summary>
         /// <returns><c>true</c>, if module should be used, <c>false</c> otherwise.</returns>
@@ -257,6 +262,7 @@ namespace Duplicati.Library.Modules.Builtin
             m_options = commandlineOptions.AsReadOnly();
             m_isConfigured = true;
             m_allowPathsInLogMessages = Utility.Utility.ParseBoolOption(m_options, OPTION_ALLOW_PATHS_IN_LOG_MESSAGES);
+            m_reducedReporting = Utility.Utility.ParseBoolOption(m_options, Logging.ReducedReportFormat.OPTION_REDUCED_REPORTING);
             m_options.TryGetValue(SubjectOptionName, out m_subject);
             m_options.TryGetValue(BodyOptionName, out m_body);
             m_options.TryGetValue(ExtraDataOptionName, out var extraData);
@@ -306,7 +312,7 @@ namespace Duplicati.Library.Modules.Builtin
             else if (!Enum.TryParse(tmpResultFormat, true, out resultFormat))
                 resultFormat = DEFAULT_EXPORT_FORMAT;
 
-            m_resultFormatSerializer = ResultFormatSerializerProvider.GetSerializer(resultFormat);
+            m_resultFormatSerializer = GetSerializer(resultFormat);
 
             m_options.TryGetValue(LogLinesOptionName, out var loglinestr);
             if (!int.TryParse(loglinestr, out m_maxmimumLogLines))
@@ -325,10 +331,14 @@ namespace Duplicati.Library.Modules.Builtin
             // Paths are redacted as the line is captured, while the unformatted arguments
             // are still available: whole path arguments are dropped (which also covers
             // paths with spaces), then the formatted text is filtered as a fallback.
+            // In reduced mode only the timestamp, filter tag (level, tag, message id) and
+            // exception type are kept, so nothing from the message or its arguments leaves the machine
             m_logscope = Logging.Log.StartScope(m => m_logstorage.Add(
-                m_allowPathsInLogMessages
-                    ? m.AsString(true)
-                    : SensitiveDataFilter.RedactPaths(m.WithArguments(SensitiveDataFilter.RedactPathArguments(m.Arguments)).AsString(true))), m =>
+                m_reducedReporting
+                    ? Logging.ReducedReportFormat.FormatLogLine(m)
+                    : m_allowPathsInLogMessages
+                        ? m.AsString(true)
+                        : SensitiveDataFilter.RedactPaths(m.WithArguments(SensitiveDataFilter.RedactPathArguments(m.Arguments)).AsString(true))), m =>
             {
 
                 if (filter.Matches(m.FilterTag, out var result, out var match))
@@ -374,7 +384,23 @@ namespace Duplicati.Library.Modules.Builtin
         /// <param name="subjectline">If set to <c>true</c>, the result is intended for a subject or title line.</param>
         /// <param name="format">The format to use when serializing the result</param>
         protected virtual string ReplaceTemplate(string input, object result, Exception exception, bool subjectline, ResultExportFormat format)
-            => ReplaceTemplate(input, result, exception, subjectline, ResultFormatSerializerProvider.GetSerializer(format));
+            => ReplaceTemplate(input, result, exception, subjectline, GetSerializer(format));
+
+        /// <summary>
+        /// Gets the serializer for a format, wrapped so it renders the reduced view when reports are reduced
+        /// </summary>
+        /// <param name="format">The export format</param>
+        /// <returns>The serializer</returns>
+        protected IResultFormatSerializer GetSerializer(ResultExportFormat format)
+        {
+            var serializer = ResultFormatSerializerProvider.GetSerializer(format);
+            return m_reducedReporting ? new ReducedResultFormatSerializer(serializer) : serializer;
+        }
+
+        /// <summary>
+        /// Whether reports are reduced to log message ids (reduced reporting)
+        /// </summary>
+        protected bool ReducedReporting => m_reducedReporting;
 
         /// <summary>
         /// The operation name template key
@@ -447,7 +473,7 @@ namespace Duplicati.Library.Modules.Builtin
         /// <summary>
         /// The list of extra template keys
         /// </summary>
-        private static readonly IReadOnlySet<string> EXTRA_TEMPLATE_KEYS = new HashSet<string>([
+        internal static readonly IReadOnlySet<string> EXTRA_TEMPLATE_KEYS = new HashSet<string>([
             MACHINE_ID, BACKUP_ID, BACKUP_NAME, MACHINE_NAME,
             OPERATING_SYSTEM, INSTALLATION_TYPE, DESTINATION_TYPE, NEXT_SCHEDULED_RUN,
             UPDATE_CHANNEL, OPERATING_SYSTEM_DETAILED, DESTINATION_HOST_SUFFIX
@@ -516,6 +542,19 @@ namespace Duplicati.Library.Modules.Builtin
             {
                 var extra = new Dictionary<string, string>();
 
+                if (m_reducedReporting)
+                {
+                    // Only the environment metadata keys and the mode marker: no template-referenced
+                    // options, no operator extra parameters, so the receivers can validate the set of keys
+                    foreach (var key in EXTRA_TEMPLATE_KEYS)
+                        extra[key] = m_options.TryGetValue(key, out var configured) && !string.IsNullOrWhiteSpace(configured)
+                            ? configured
+                            : GetDefaultValue(key);
+                    extra[Logging.ReducedReportFormat.REPORT_MODE_KEY] = Logging.ReducedReportFormat.REDUCED_REPORT_MODE;
+
+                    return resultFormatSerializer.Serialize(result, exception, LogLines, extra);
+                }
+
                 // Add the default values, if found in the template
                 foreach (var key in OPERATION_TEMPLATE_KEYS)
                     if (input.IndexOf($"%{key}%", StringComparison.OrdinalIgnoreCase) >= 0)
@@ -541,7 +580,11 @@ namespace Duplicati.Library.Modules.Builtin
             {
 
                 foreach (var key in OPERATION_TEMPLATE_KEYS)
-                    input = Regex.Replace(input, $"%{key}%", GetDefaultValue(key) ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                {
+                    // Source paths and the remote URL are content; the reduced form leaves them out
+                    var reducedOut = m_reducedReporting && (key == LOCALPATH || key == REMOTEURL);
+                    input = Regex.Replace(input, $"%{key}%", reducedOut ? "" : GetDefaultValue(key) ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                }
 
                 if (subjectline)
                 {
@@ -554,13 +597,18 @@ namespace Duplicati.Library.Modules.Builtin
                 }
 
                 foreach (KeyValuePair<string, string> kv in m_options)
+                {
+                    // Reduced reports only expand the environment metadata keys, never arbitrary option values
+                    if (m_reducedReporting && !EXTRA_TEMPLATE_KEYS.Contains(kv.Key))
+                        continue;
                     input = Regex.Replace(input, "\\%" + kv.Key + "\\%", kv.Value ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                }
 
                 foreach (var key in EXTRA_TEMPLATE_KEYS)
                     if (!m_options.ContainsKey(key))
                         input = Regex.Replace(input, $"%{key}%", GetDefaultValue(key) ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
-                if (m_extraValues != null)
+                if (m_extraValues != null && !m_reducedReporting)
                     foreach (var v in m_extraValues)
                         input = Regex.Replace(input, $"%{v.Key}%", v.Value, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
@@ -582,7 +630,8 @@ namespace Duplicati.Library.Modules.Builtin
                 if (m_maxmimumLogLines > 0)
                 {
                     logdata = logdata.Take(m_maxmimumLogLines);
-                    if (m_logstorage.Count > m_maxmimumLogLines)
+                    // The truncation marker is free text, which a reduced report may not carry
+                    if (m_logstorage.Count > m_maxmimumLogLines && !m_reducedReporting)
                         logdata = logdata.Concat(new string[] { $"... and {m_logstorage.Count - m_maxmimumLogLines} more" });
                 }
 

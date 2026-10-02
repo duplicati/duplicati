@@ -336,6 +336,196 @@ public class ServerApiIntegrationTests : BasicSetupHelper
     }
 
     /// <summary>
+    /// A restore that could not restore a file finishes without throwing and reports the
+    /// failure as an error in its results. The task state has to carry an error message then,
+    /// as that is what the web UI uses to tell a failed restore from a successful one
+    /// (#4644). The status stays "Completed", which clients use to see that the task is done.
+    /// </summary>
+    [Test]
+    [Category("Integration")]
+    public async Task RestoreWithErrorsReportsAnErrorMessage_Async()
+    {
+        var backupPassphrase = "integration-passphrase";
+        File.WriteAllText(Path.Combine(this.DATAFOLDER, "sample.txt"), "Sample content");
+
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            var backupId = await CreateBackupAsync(httpClient, backupPassphrase).ConfigureAwait(false);
+            await RunTaskAndWaitAsync(httpClient, $"/api/v1/backup/{backupId}/run").ConfigureAwait(false);
+
+            // A file in the way that the restore cannot read, so checking it fails
+            await DirectoryDeleteSafeAsync(this.RESTOREFOLDER).ConfigureAwait(false);
+            Directory.CreateDirectory(this.RESTOREFOLDER);
+            var blocked = Path.Combine(this.RESTOREFOLDER, "sample.txt");
+            File.WriteAllText(blocked, "Other content");
+
+            FileStream? holder = null;
+            if (OperatingSystem.IsWindows())
+                holder = new FileStream(blocked, FileMode.Open, FileAccess.Read, FileShare.None);
+            else
+                File.SetUnixFileMode(blocked, UnixFileMode.None);
+
+            try
+            {
+                if (!OperatingSystem.IsWindows())
+                {
+                    try
+                    {
+                        using (File.OpenRead(blocked)) { }
+                        Assert.Ignore("The file can still be read (running as root?), so the restore would not fail");
+                    }
+                    catch (UnauthorizedAccessException)
+                    {
+                    }
+                }
+
+                var restoreResponse = await httpClient.PostAsJsonAsync(
+                    $"/api/v1/backup/{backupId}/restore",
+                    new RestoreInputDto(null, backupPassphrase, "now", this.RESTOREFOLDER, true, false, false, null, null),
+                    JsonOptions).ConfigureAwait(false);
+                restoreResponse.EnsureSuccessStatusCode();
+                var task = await restoreResponse.Content.ReadFromJsonAsync<TaskStartedDto>(JsonOptions).ConfigureAwait(false)
+                           ?? throw new InvalidOperationException("Restore start response was empty");
+
+                var state = await WaitForTaskToFinishAsync(httpClient, task.ID).ConfigureAwait(false);
+                Assert.That(state.Status, Is.EqualTo("Completed").IgnoreCase, "The restore ran to the end");
+                Assert.That(state.ErrorMessage, Is.Not.Null.And.Not.Empty, "The restore that could not restore the file was reported without an error");
+            }
+            finally
+            {
+                holder?.Dispose();
+                if (!OperatingSystem.IsWindows())
+                    File.SetUnixFileMode(blocked, UnixFileMode.UserRead | UnixFileMode.UserWrite);
+            }
+        }).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// The restore described in #4644 and #4051: the destination is not there, for instance
+    /// because the drive holding it is not connected. The restore fails, and the task is
+    /// reported as "Failed" with the reason rather than as a success.
+    /// </summary>
+    [Test]
+    [Category("Integration")]
+    public async Task RestoreFromAMissingDestinationReportsFailure_Async()
+    {
+        var backupPassphrase = "integration-passphrase";
+        File.WriteAllText(Path.Combine(this.DATAFOLDER, "sample.txt"), "Sample content");
+
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            // No retries, so the missing destination is reported without waiting for them
+            var backupId = await CreateBackupAsync(httpClient, backupPassphrase,
+                extraSettings: [new BackupAndScheduleInputDto.SettingInputDto { Name = "number-of-retries", Value = "0" }]).ConfigureAwait(false);
+            await RunTaskAndWaitAsync(httpClient, $"/api/v1/backup/{backupId}/run").ConfigureAwait(false);
+
+            await DirectoryDeleteSafeAsync(this.RESTOREFOLDER).ConfigureAwait(false);
+            Directory.CreateDirectory(this.RESTOREFOLDER);
+
+            var moved = this.TARGETFOLDER.TrimEnd(Path.DirectorySeparatorChar) + "-moved";
+            Directory.Move(this.TARGETFOLDER, moved);
+            try
+            {
+                var restoreResponse = await httpClient.PostAsJsonAsync(
+                    $"/api/v1/backup/{backupId}/restore",
+                    new RestoreInputDto(null, backupPassphrase, "now", this.RESTOREFOLDER, true, false, false, null, null),
+                    JsonOptions).ConfigureAwait(false);
+                restoreResponse.EnsureSuccessStatusCode();
+                var task = await restoreResponse.Content.ReadFromJsonAsync<TaskStartedDto>(JsonOptions).ConfigureAwait(false)
+                           ?? throw new InvalidOperationException("Restore start response was empty");
+
+                var state = await WaitForTaskToFinishAsync(httpClient, task.ID).ConfigureAwait(false);
+                Assert.That(state.Status, Is.EqualTo("Failed").IgnoreCase, "The restore from a missing destination was not reported as failed");
+                Assert.That(state.ErrorMessage, Is.Not.Null.And.Not.Empty, "The failed restore was reported without a reason");
+            }
+            finally
+            {
+                Directory.Move(moved, this.TARGETFOLDER);
+            }
+        }).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// The server tries the ports it is given in turn when one cannot be used. A port that the
+    /// system refuses (Windows reserves ranges of ports for Hyper-V, WSL and Docker) made the
+    /// default localhost binding fail with an error that was not recognized, so the server
+    /// stopped instead of trying the next port (#7330).
+    /// </summary>
+    [Test]
+    [Category("Integration")]
+    public async Task ServerMovesOnFromAPortItIsNotAllowedToUse_Async()
+    {
+        int refused;
+        if (OperatingSystem.IsWindows())
+        {
+            // A port in a range Windows has excluded, as in the issue. Listing the ranges does not
+            // need administrator rights, but adding one does, so the test uses one that is there.
+            var reserved = GetExcludedPort();
+            if (reserved == null)
+                Assert.Ignore("Windows has no excluded port range for both IPv4 and IPv6 here");
+            refused = reserved!.Value;
+        }
+        else
+        {
+            // A privileged port is refused to a user that is not root
+            refused = 1;
+            try
+            {
+                using var probe = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                probe.Bind(new IPEndPoint(IPAddress.Loopback, refused));
+                Assert.Ignore("Port 1 can be used here (running as root?), so it is not refused");
+            }
+            catch (SocketException)
+            {
+            }
+        }
+
+        var next = GetFreeTcpPort();
+
+        // The default interface binds localhost on both IPv4 and IPv6, as the tray icon does
+        await WithAuthenticatedServerAsync(httpClient =>
+        {
+            Assert.That(ServerProgram.DuplicatiWebserver.Port, Is.EqualTo(next), "The server did not move on to the next port");
+            return Task.CompletedTask;
+        }, ports: $"{refused},{next}", listenInterface: "loopback").ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Finds a TCP port that Windows has excluded for both IPv4 and IPv6, as listed by
+    /// <c>netsh interface ipvN show excludedportrange</c>.
+    /// </summary>
+    /// <returns>The port, or <c>null</c> if there is none.</returns>
+    private static int? GetExcludedPort()
+    {
+        static List<(int Start, int End)> Ranges(string family)
+        {
+            using var process = Process.Start(new ProcessStartInfo("netsh", $"interface {family} show excludedportrange protocol=tcp")
+            {
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+            })!;
+            var output = process.StandardOutput.ReadToEnd();
+            process.WaitForExit();
+
+            // The headers are localized, the rows are two numbers
+            return output
+                .Split('\n')
+                .Select(line => line.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                .Where(parts => parts.Length >= 2 && int.TryParse(parts[0], out _) && int.TryParse(parts[1], out _))
+                .Select(parts => (int.Parse(parts[0]), int.Parse(parts[1])))
+                .ToList();
+        }
+
+        var v6 = Ranges("ipv6");
+        return Ranges("ipv4")
+            .SelectMany(r => Enumerable.Range(r.Start, r.End - r.Start + 1))
+            .Where(port => port > 1024 && v6.Any(r => port >= r.Start && port <= r.End))
+            .Select(port => (int?)port)
+            .FirstOrDefault();
+    }
+
+    /// <summary>
     /// A destination folder that is already there is the desired outcome of an
     /// automatic creation, the way the backend manager treats it. These tests use a
     /// backend that reports the folder as missing and then reports it as already
@@ -412,7 +602,78 @@ public class ServerApiIntegrationTests : BasicSetupHelper
         }).ConfigureAwait(false);
     }
 
-    private async Task WithAuthenticatedServerAsync(Func<HttpClient, Task> testBody)
+    /// <summary>
+    /// A sync job has its own database schema and result type, but is shown in the same
+    /// places as a backup. The last run must be reported through the sync metadata keys,
+    /// and asking for the logs must not fail on the tables the sync database does not have.
+    /// </summary>
+    [Test]
+    [Category("Integration")]
+    public async Task SyncJobReportsLastRunAndLogs_Async()
+    {
+        File.WriteAllText(Path.Combine(this.DATAFOLDER, "sample.txt"), "Sync sample");
+        File.WriteAllBytes(Path.Combine(this.DATAFOLDER, "empty.md"), Array.Empty<byte>());
+        Directory.CreateDirectory(this.TARGETFOLDER);
+
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            var request = new BackupAndScheduleInputDto
+            {
+                Backup = new BackupAndScheduleInputDto.BackupInputDto
+                {
+                    Name = $"API integration sync {Guid.NewGuid():N}",
+                    Description = "Integration test sync",
+                    OperationType = Duplicati.Server.Serialization.OperationType.Sync,
+                    TargetURL = BuildFileBackendUrl(this.TARGETFOLDER),
+                    Sources = new[] { this.DATAFOLDER },
+                    Settings = new[]
+                    {
+                        // The server validation looks for the setting with the leading dashes
+                        new BackupAndScheduleInputDto.SettingInputDto { Name = "--no-encryption", Value = "true" },
+                        new BackupAndScheduleInputDto.SettingInputDto { Name = "snapshot-policy", Value = "Off" }
+                    },
+                    Filters = Array.Empty<BackupAndScheduleInputDto.FilterInputDto>(),
+                    Metadata = new Dictionary<string, string>()
+                }
+            };
+
+            var createResponse = await httpClient.PostAsJsonAsync("/api/v1/backups", request, JsonOptions).ConfigureAwait(false);
+            createResponse.EnsureSuccessStatusCode();
+            var backupId = (await createResponse.Content.ReadFromJsonAsync<CreateBackupDto>(JsonOptions).ConfigureAwait(false))?.ID
+                ?? throw new InvalidOperationException("Sync job creation did not return an ID");
+
+            await RunTaskAndWaitAsync(httpClient, $"/api/v1/backup/{backupId}/run").ConfigureAwait(false);
+
+            Assert.That(File.Exists(Path.Combine(this.TARGETFOLDER, "sample.txt")), Is.True, "The sync should have copied the file");
+            Assert.That(File.Exists(Path.Combine(this.TARGETFOLDER, "empty.md")), Is.True, "The sync should have copied the empty file");
+
+            var backupResponse = await httpClient.GetAsync($"/api/v1/backup/{backupId}").ConfigureAwait(false);
+            backupResponse.EnsureSuccessStatusCode();
+            var backup = await backupResponse.Content.ReadFromJsonAsync<BackupGet.GetBackupResultDto>(JsonOptions).ConfigureAwait(false)
+                         ?? throw new InvalidOperationException("Backup retrieval response was empty");
+
+            var metadata = backup.Backup.Metadata ?? new Dictionary<string, string>();
+            foreach (var key in new[] { "LastSyncStarted", "LastSyncFinished", "LastSyncDuration", "SourceFilesCount", "SourceFilesSize", "SourceSizeString" })
+                Assert.That(metadata.ContainsKey(key), Is.True, $"The key {key} should be written for a sync job");
+            foreach (var key in new[] { "LastBackupStarted", "LastBackupFinished", "LastBackupDuration" })
+                Assert.That(metadata.ContainsKey(key), Is.False, $"The backup key {key} should not be written for a sync job");
+            Assert.That(metadata["SourceFilesCount"], Is.EqualTo("2"));
+
+            var logResponse = await httpClient.GetAsync($"/api/v1/backup/{backupId}/log?pagesize=25").ConfigureAwait(false);
+            Assert.That(logResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), "The log of a sync job should be readable");
+            var log = await logResponse.Content.ReadFromJsonAsync<List<Dictionary<string, JsonElement>>>(JsonOptions).ConfigureAwait(false);
+            Assert.That(log, Is.Not.Null.And.Empty, "A sync job has no general log entries");
+
+            var remoteLogResponse = await httpClient.GetAsync($"/api/v1/backup/{backupId}/remotelog?pagesize=25").ConfigureAwait(false);
+            Assert.That(remoteLogResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), "The remote log of a sync job should be readable");
+            var remoteLog = await remoteLogResponse.Content.ReadFromJsonAsync<List<Dictionary<string, JsonElement>>>(JsonOptions).ConfigureAwait(false);
+            // The sync handler does not currently record its remote operations in the
+            // database, so only the request succeeding is verified, not the contents
+            Assert.That(remoteLog, Is.Not.Null, "The remote log of a sync job should be a list");
+        }).ConfigureAwait(false);
+    }
+
+    private async Task WithAuthenticatedServerAsync(Func<HttpClient, Task> testBody, string? ports = null, string listenInterface = "127.0.0.1")
     {
         var serverPassword = "integration-test-password";
         var serverDataFolder = Path.Combine(BASEFOLDER, $"server-data-{Guid.NewGuid():N}");
@@ -429,8 +690,8 @@ public class ServerApiIntegrationTests : BasicSetupHelper
             applicationSettings = new ApplicationSettings();
             var serverArgs = new[]
             {
-                $"--{WebServerLoader.OPTION_PORT}={GetFreeTcpPort()}",
-                $"--{WebServerLoader.OPTION_INTERFACE}=127.0.0.1",
+                $"--{WebServerLoader.OPTION_PORT}={ports ?? GetFreeTcpPort().ToString()}",
+                $"--{WebServerLoader.OPTION_INTERFACE}={listenInterface}",
                 $"--{WebServerLoader.OPTION_WEBSERVICE_PASSWORD}={serverPassword}",
                 $"--{DataFolderManager.SERVER_DATAFOLDER_OPTION}={serverDataFolder}",
                 "--webservice-api-only=true"
@@ -490,7 +751,7 @@ public class ServerApiIntegrationTests : BasicSetupHelper
         return new Uri(normalized).AbsoluteUri;
     }
 
-    private async Task<string> CreateBackupAsync(HttpClient httpClient, string passphrase, string? backupName = null, string? targetFolder = null)
+    private async Task<string> CreateBackupAsync(HttpClient httpClient, string passphrase, string? backupName = null, string? targetFolder = null, IEnumerable<BackupAndScheduleInputDto.SettingInputDto>? extraSettings = null)
     {
         var backupTarget = targetFolder ?? this.TARGETFOLDER;
         Directory.CreateDirectory(backupTarget);
@@ -502,7 +763,9 @@ public class ServerApiIntegrationTests : BasicSetupHelper
             new BackupAndScheduleInputDto.SettingInputDto { Name = "blocksize", Value = "50kb" },
             new BackupAndScheduleInputDto.SettingInputDto { Name = "compression-module", Value = "zip" },
             new BackupAndScheduleInputDto.SettingInputDto { Name = "snapshot-policy", Value = "Off" }
-        };
+        }
+        .Concat(extraSettings ?? [])
+        .ToArray();
 
         var request = new BackupAndScheduleInputDto
         {
@@ -572,6 +835,27 @@ public class ServerApiIntegrationTests : BasicSetupHelper
 
             if (stopwatch.Elapsed > TimeSpan.FromMinutes(2))
                 throw new TimeoutException($"Task {taskId} did not complete in the allotted time");
+
+            await Task.Delay(250).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// Waits for a task to finish, whether it completed or failed, and returns its final state.
+    /// </summary>
+    private static async Task<GetTaskStateDto> WaitForTaskToFinishAsync(HttpClient httpClient, long taskId)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        while (true)
+        {
+            var state = await GetTaskStateAsync(httpClient, taskId).ConfigureAwait(false);
+
+            if (string.Equals(state.Status, "Completed", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(state.Status, "Failed", StringComparison.OrdinalIgnoreCase))
+                return state;
+
+            if (stopwatch.Elapsed > TimeSpan.FromMinutes(2))
+                throw new TimeoutException($"Task {taskId} did not finish in the allotted time");
 
             await Task.Delay(250).ConfigureAwait(false);
         }
