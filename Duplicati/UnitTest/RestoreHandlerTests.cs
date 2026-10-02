@@ -476,7 +476,10 @@ namespace Duplicati.UnitTest
             using (var fs = new FileStream(file1Path, FileMode.Open, FileAccess.Read, FileShare.None))
             {
                 var res_failing = await c.RestoreAsync(["*"]);
-                Assert.AreEqual(4, res_failing.Errors.Count());
+                // The error for the file and the list of files that failed. The blocks of the
+                // skipped file are released, so no block or volume count errors follow.
+                Assert.AreEqual(2, res_failing.Errors.Count(), string.Join(Environment.NewLine, res_failing.Errors));
+                Assert.IsTrue(res_failing.Errors.Last().Contains("RestoreFailures"), res_failing.Errors.Last());
                 var first_error = res_failing.Errors.First();
                 Assert.IsTrue(
                     first_error.Contains("IOException: The process cannot access the file")
