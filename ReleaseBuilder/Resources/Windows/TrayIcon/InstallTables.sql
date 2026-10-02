@@ -57,11 +57,11 @@ INSERT INTO `RemoveFile` (`FileKey`, `Component_`, `FileName`, `DirProperty`, `I
 --   ResolveSource @ 850 - populates [SourceDir] before SetPreloadSource
 --     consumes it (SetPreloadSource itself is declared in the WXS at ~1001
 --     via <Custom Action="SetPreloadSource" After="CostFinalize">).
---   MoveFiles     @ 3700 - canonical position between RemoveFiles (3500)
+--   MoveFiles     @ 3800 - canonical position between CreateFolders (3700)
 --     and InstallFiles (4000).
 -- ---------------------------------------------------------------------------
 INSERT INTO `InstallExecuteSequence` (`Action`, `Condition`, `Sequence`) VALUES ('ResolveSource', 'INSTALL_PRELOAD="true" AND NOT Installed', 850)
-INSERT INTO `InstallExecuteSequence` (`Action`, `Condition`, `Sequence`) VALUES ('MoveFiles', 'INSTALL_PRELOAD="true"', 3700)
+INSERT INTO `InstallExecuteSequence` (`Action`, `Condition`, `Sequence`) VALUES ('MoveFiles', 'INSTALL_PRELOAD="true"', 3800)
 
 -- ---------------------------------------------------------------------------
 -- MsiServiceConfig: register the Duplicati service as Automatic (Delayed
