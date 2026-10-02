@@ -116,8 +116,13 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 var buf = ArrayPool<byte>.Shared.Rent(blocksize);
                                 var lastupdate = DateTime.Now;
 
-                                // Core processing loop, read blocks of data and hash individually
-                                while (((lastread = await stream.ForceStreamReadAsync(buf, blocksize, taskreader.ProgressToken)) != 0))
+                                // Core processing loop, read blocks of data and hash individually.
+                                // Not every stream ends a stuck read when the token is cancelled; on Linux a file
+                                // opened for synchronous reads does not. Such a read, as from a network share that
+                                // stopped answering, would hold up the backup, so stop waiting for it instead. The
+                                // buffer is not returned to the pool on that path, so a read that ends later does not
+                                // write into a reused one.
+                                while (((lastread = await stream.ForceStreamReadAsync(buf, blocksize, taskreader.ProgressToken).WaitAsync(taskreader.ProgressToken)) != 0))
                                 {
                                     // Run file hashing concurrently to squeeze a little extra concurrency out of it
                                     var pftask = Task.Run(() => filehasher.TransformBlock(buf, 0, lastread, buf, 0));
