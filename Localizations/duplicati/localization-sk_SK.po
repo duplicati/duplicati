@@ -16,7 +16,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-25 09:53+0200\n"
+"POT-Creation-Date: 2026-10-02 15:34+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
 "Last-Translator: Peter Krajcovic <krajcovic@oldfactory.sk>, 2026\n"
 "Language-Team: Slovak (Slovakia) (https://app.transifex.com/duplicati/teams/67655/sk_SK/)\n"
@@ -53,8 +53,8 @@ msgstr ""
 msgid "Set thread level utilized for crypting"
 msgstr "Nastavte úroveň vlákna používanú na šifrovanie"
 
-#: Library/Encryption/Strings.cs:33 Library/Main/Strings.cs:210
-#: Library/Main/Strings.cs:270
+#: Library/Encryption/Strings.cs:33 Library/Main/Strings.cs:216
+#: Library/Main/Strings.cs:276
 #, csharp-format
 msgid "The option --{0} is no longer used and has been deprecated."
 msgstr "Možnosť --{0} sa už nepoužíva a bola zrušená."
@@ -325,23 +325,23 @@ msgid ""
 "{1}"
 msgstr "Skript sa vrátil úspešne, ale vo výstupe chýbal parameter {0}: {1}"
 
-#: Library/Snapshots/Strings.cs:35
+#: Library/Snapshots/Strings.cs:38
 msgid "Unable to determine full file path for USN entry"
 msgstr "Nie je možné určiť úplnú cestu k súboru pre položku USN"
 
-#: Library/Snapshots/Strings.cs:36
+#: Library/Snapshots/Strings.cs:39
 msgid "USN journal entries were purged since last scan"
 msgstr "Záznamy v denníku USN boli od posledného skenovania vymazané"
 
-#: Library/Snapshots/Strings.cs:37
+#: Library/Snapshots/Strings.cs:40
 msgid "Unexpected empty response while enumerating"
 msgstr "Neočakávaná prázdna odpoveď pri vypisovaní"
 
-#: Library/Snapshots/Strings.cs:38
+#: Library/Snapshots/Strings.cs:41
 msgid "USN is not supported on Linux"
 msgstr "USN nie je podporovaný v Linux"
 
-#: Library/Snapshots/Strings.cs:39
+#: Library/Snapshots/Strings.cs:42
 msgid ""
 "The number of files returned by USN was zero. This is likely an error. To "
 "remedy this, USN has been disabled."
@@ -349,27 +349,27 @@ msgstr ""
 "Počet súborov vrátených USN bol nula. Pravdepodobne ide o chybu. Aby sa to "
 "napravilo, USN bola vypnutá."
 
-#: Library/Snapshots/Strings.cs:40
+#: Library/Snapshots/Strings.cs:43
 msgid "Unexpected path format encountered"
 msgstr "Vyskytol sa neočakávaný formát cesty"
 
-#: Library/Snapshots/Strings.cs:41
+#: Library/Snapshots/Strings.cs:44
 msgid "Unsupported USN journal version."
 msgstr "Nepodporovaná verzia časopisu USN."
 
-#: Library/Snapshots/Strings.cs:42
+#: Library/Snapshots/Strings.cs:45
 msgid "Previous backup did not record USN journal info"
 msgstr "Predchádzajúca záloha nezaznamenala informácie z denníka USN"
 
-#: Library/Snapshots/Strings.cs:43
+#: Library/Snapshots/Strings.cs:46
 msgid "USN journal ID changed"
 msgstr "Zmena ID časopisu USN"
 
-#: Library/Snapshots/Strings.cs:44
+#: Library/Snapshots/Strings.cs:47
 msgid "Next USN is zero"
 msgstr "Ďalšia USN je nula"
 
-#: Library/Snapshots/Strings.cs:45
+#: Library/Snapshots/Strings.cs:48
 msgid "Backup configuration changed"
 msgstr "Zmena konfigurácie zálohovania"
 
@@ -537,16 +537,16 @@ msgstr ""
 "Nepodarilo sa vytvoriť, otvoriť alebo aktualizovať databázu.Chybová správa: "
 "{0}"
 
-#: Library/RestAPI/Strings.cs:36
+#: Library/RestAPI/Strings.cs:37
 #, csharp-format
 msgid "--{0}: {1}"
 msgstr "--{0}: {1}"
 
-#: Library/RestAPI/Strings.cs:38 CommandLine/CLI/Strings.cs:46
+#: Library/RestAPI/Strings.cs:39 CommandLine/CLI/Strings.cs:46
 msgid "Path to a file with parameters"
 msgstr "Cesta k súboru s parametrami"
 
-#: Library/RestAPI/Strings.cs:39
+#: Library/RestAPI/Strings.cs:40
 #, csharp-format
 msgid ""
 "Filters cannot be specified on the commandline if filters are also present "
@@ -559,26 +559,26 @@ msgstr ""
 "zadanie filtrov v rámci súboru parametrov. Každý filter musí mať predponu "
 "buď a + alebo -, a viaceré filtre musia byť spojené s {3}"
 
-#: Library/RestAPI/Strings.cs:40 CommandLine/CLI/Strings.cs:42
+#: Library/RestAPI/Strings.cs:41 CommandLine/CLI/Strings.cs:42
 #, csharp-format
 msgid "Unable to read the parameters file \"{0}\", reason: {1}"
 msgstr "Nepodarilo sa prečítať súbor parametrov \"{0}\", dôvod: {1}"
 
-#: Library/RestAPI/Strings.cs:46
+#: Library/RestAPI/Strings.cs:47
 #, csharp-format
 msgid "A serious error occurred in Duplicati: {0}"
 msgstr "Vážna chyba v Duplicati: {0}"
 
-#: Library/RestAPI/Strings.cs:51
+#: Library/RestAPI/Strings.cs:52
 #, csharp-format
 msgid "Unsupported version of SQLite detected ({0}), must be {1} or higher"
 msgstr "Zistená nepodporovaná verzia SQLite ({0}), musí byť {1} alebo vyššia"
 
-#: Library/RestAPI/Strings.cs:67 Library/Main/Strings.cs:291
+#: Library/RestAPI/Strings.cs:68 Library/Main/Strings.cs:297
 msgid "Clean up old log data"
 msgstr "Vyčistiť staré záznamy"
 
-#: Library/RestAPI/Strings.cs:75 Library/Main/Strings.cs:105
+#: Library/RestAPI/Strings.cs:76 Library/Main/Strings.cs:106
 msgid "Temporary storage folder"
 msgstr "Dočasný adresár"
 
@@ -586,65 +586,65 @@ msgstr "Dočasný adresár"
 msgid "backup"
 msgstr "záloha"
 
-#: Library/Main/Strings.cs:33
+#: Library/Main/Strings.cs:34
 msgid "No source folders specified for backup"
 msgstr "Nešpecifikované zdrojové adresáre pre zálohovanie "
 
-#: Library/Main/Strings.cs:41
+#: Library/Main/Strings.cs:42
 #, csharp-format
 msgid "The operation {0} has completed"
 msgstr "Operácia {0} kompletná"
 
-#: Library/Main/Strings.cs:43
+#: Library/Main/Strings.cs:44
 #, csharp-format
 msgid "Invalid path: \"{0}\" ({1})"
 msgstr "nesprávna cesta: \"{0}\" ({1})"
 
-#: Library/Main/Strings.cs:61
+#: Library/Main/Strings.cs:62
 msgid "Restore to another folder"
 msgstr "Obnovenie do iného adresára"
 
-#: Library/Main/Strings.cs:73
+#: Library/Main/Strings.cs:74
 msgid "Disable encryption"
 msgstr "Nešifrovať"
 
-#: Library/Main/Strings.cs:77
+#: Library/Main/Strings.cs:78
 msgid "Passphrase used to encrypt backups"
 msgstr "Heslo použité pre šifrované zálohy"
 
-#: Library/Main/Strings.cs:85
+#: Library/Main/Strings.cs:86
 msgid "Show all versions"
 msgstr "Zobraziť všetky verzie"
 
-#: Library/Main/Strings.cs:93
+#: Library/Main/Strings.cs:94
 msgid "Show folder contents"
 msgstr "Zobraziť obsah adresára"
 
-#: Library/Main/Strings.cs:95
+#: Library/Main/Strings.cs:96
 msgid "Time to wait between retries"
 msgstr "Čas medzi opakovaniami"
 
-#: Library/Main/Strings.cs:140
+#: Library/Main/Strings.cs:143
 msgid "Log information level"
 msgstr "Log informačná úroveň"
 
-#: Library/Main/Strings.cs:183
+#: Library/Main/Strings.cs:187
 msgid "Exclude files by attribute"
 msgstr "Vylúčenie súborov podľa atribútov"
 
-#: Library/Main/Strings.cs:189
+#: Library/Main/Strings.cs:195
 msgid "Name of the backup"
 msgstr "Názov zálohy"
 
-#: Library/Main/Strings.cs:207
+#: Library/Main/Strings.cs:213
 msgid "List of deleted files"
 msgstr "Zoznam zmazaných súborov"
 
-#: Library/Main/Strings.cs:230
+#: Library/Main/Strings.cs:236
 msgid "Maximum number of small volumes"
 msgstr "Maximálny počet malých častí"
 
-#: Library/Main/Strings.cs:252
+#: Library/Main/Strings.cs:258
 msgid "Overwrite files when restoring"
 msgstr "Prepísanie súborov pri obnove"
 
@@ -718,7 +718,7 @@ msgid "The XMPP password"
 msgstr "XMPP heslo"
 
 #: Library/Modules/Builtin/Strings.cs:277
-#: Library/Modules/Builtin/Strings.cs:312 Library/Utility/Strings.cs:85
+#: Library/Modules/Builtin/Strings.cs:314 Library/Utility/Strings.cs:85
 msgid "Accept any server certificate"
 msgstr "Akceptovenie všetkých serverových certifikátov"
 

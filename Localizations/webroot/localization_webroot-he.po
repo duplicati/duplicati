@@ -21,18 +21,18 @@ msgstr "- נא לבחור אפשרות -"
 msgid "...loading..."
 msgstr "…בטעינה…"
 
-#: scripts/services/EditUriBuiltins.js:1314
+#: scripts/services/EditUriBuiltins.js:1321
 #: templates/backends/openstack.html:44 templates/backends/storj.html:21
 #: templates/backends/storj.html:22
 msgid "API key"
 msgstr "מפתח API"
 
-#: scripts/services/EditUriBuiltins.js:1204 templates/backends/s3.html:66
+#: scripts/services/EditUriBuiltins.js:1211 templates/backends/s3.html:66
 #: templates/backends/s3.html:68
 msgid "AWS Access ID"
 msgstr "Access ID של AWS"
 
-#: scripts/services/EditUriBuiltins.js:1205 templates/backends/s3.html:71
+#: scripts/services/EditUriBuiltins.js:1212 templates/backends/s3.html:71
 #: templates/backends/s3.html:73
 msgid "AWS Access Key"
 msgstr "Access Key של AWS"
@@ -49,7 +49,7 @@ msgstr "אודות"
 msgid "About {{appname}}"
 msgstr "אודות {{appname}}"
 
-#: scripts/services/EditUriBuiltins.js:1153
+#: scripts/services/EditUriBuiltins.js:1160
 msgid "Access Key"
 msgstr "Access Key"
 
@@ -65,7 +65,7 @@ msgstr "הענקת גישה"
 msgid "Access to user interface"
 msgstr "גישה למנשק המשתמש"
 
-#: scripts/services/EditUriBuiltins.js:1152 templates/backends/azure.html:7
+#: scripts/services/EditUriBuiltins.js:1159 templates/backends/azure.html:7
 #: templates/backends/azure.html:8
 msgid "Account name"
 msgstr "שם חשבון"
@@ -98,8 +98,8 @@ msgstr "הוספת נתיב"
 msgid "Added"
 msgstr "נוסף"
 
-#: scripts/services/EditUriBuiltins.js:1215
-#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:1222
+#: scripts/services/EditUriBuiltins.js:1238
 msgid "Adjust bucket name?"
 msgstr "לשנות את שם הדלי (bucket)?"
 
@@ -177,8 +177,8 @@ msgstr "יישומים"
 msgid "As Command-line"
 msgstr "כשורת פקודה"
 
-#: scripts/services/EditUriBuiltins.js:1110
-#: scripts/services/EditUriBuiltins.js:1120 templates/backends/gcs.html:8
+#: scripts/services/EditUriBuiltins.js:1117
+#: scripts/services/EditUriBuiltins.js:1127 templates/backends/gcs.html:8
 #: templates/backends/gcs.html:9 templates/backends/jottacloud.html:8
 #: templates/backends/jottacloud.html:9 templates/backends/msgroup.html:13
 #: templates/backends/msgroup.html:14 templates/backends/oauth.html:8
@@ -188,7 +188,7 @@ msgstr "כשורת פקודה"
 msgid "AuthID"
 msgstr "AuthID"
 
-#: scripts/services/EditUriBuiltins.js:1305 templates/backends/storj.html:2
+#: scripts/services/EditUriBuiltins.js:1312 templates/backends/storj.html:2
 msgid "Authentication method"
 msgstr "שיטת אימות"
 
@@ -220,7 +220,7 @@ msgstr "מזהה יישום B2"
 msgid "B2 Application Key"
 msgstr "מפתח יישום B2"
 
-#: scripts/services/EditUriBuiltins.js:1250
+#: scripts/services/EditUriBuiltins.js:1257
 msgid "B2 Cloud Storage Account ID"
 msgstr "מזהה חשבון אחסון ענן B2"
 
@@ -228,7 +228,7 @@ msgstr "מזהה חשבון אחסון ענן B2"
 msgid "B2 Cloud Storage Application ID"
 msgstr "מזהה יישום אחסון ענן B2"
 
-#: scripts/services/EditUriBuiltins.js:1251 templates/backends/b2.html:17
+#: scripts/services/EditUriBuiltins.js:1258 templates/backends/b2.html:17
 msgid "B2 Cloud Storage Application Key"
 msgstr "מפתח יישום אחסון ענן B2"
 
@@ -253,7 +253,7 @@ msgstr "מיקום גיבוי"
 msgid "Backup retention"
 msgstr "החזקת גיבויים"
 
-#: templates/home.html:100
+#: templates/home.html:108
 msgid "Backup:"
 msgstr "גיבוי:"
 
@@ -277,14 +277,14 @@ msgstr "בררת המחדל של הדפדפן"
 msgid "Bucket create location"
 msgstr "מיקום יצירת ה־Bucket"
 
-#: scripts/services/EditUriBuiltins.js:1163
-#: scripts/services/EditUriBuiltins.js:1203
-#: scripts/services/EditUriBuiltins.js:1249
-#: scripts/services/EditUriBuiltins.js:1263
-#: scripts/services/EditUriBuiltins.js:1310
-#: scripts/services/EditUriBuiltins.js:1316
-#: scripts/services/EditUriBuiltins.js:1372
-#: scripts/services/EditUriBuiltins.js:1384 templates/backends/b2.html:2
+#: scripts/services/EditUriBuiltins.js:1170
+#: scripts/services/EditUriBuiltins.js:1210
+#: scripts/services/EditUriBuiltins.js:1256
+#: scripts/services/EditUriBuiltins.js:1270
+#: scripts/services/EditUriBuiltins.js:1317
+#: scripts/services/EditUriBuiltins.js:1323
+#: scripts/services/EditUriBuiltins.js:1379
+#: scripts/services/EditUriBuiltins.js:1391 templates/backends/b2.html:2
 #: templates/backends/b2.html:3 templates/backends/cos.html:25
 #: templates/backends/e2.html:11 templates/backends/e2.html:12
 #: templates/backends/gcs.html:2 templates/backends/openstack.html:2
@@ -301,7 +301,7 @@ msgstr "מחלקת אחסון Bucket"
 msgid "Building list of files to restore …"
 msgstr "רשימת הקבצים לשחזור מורכבת…"
 
-#: scripts/controllers/RestoreController.js:373
+#: scripts/controllers/RestoreController.js:375
 msgid "Building partial temporary database …"
 msgstr "נבנה מסד נתונים זמני וחלקי…"
 
@@ -340,8 +340,8 @@ msgstr "קנרית"
 #: scripts/controllers/StateController.js:119
 #: scripts/controllers/StateController.js:128
 #: scripts/services/DialogService.js:50
-#: scripts/services/EditUriBuiltins.js:1215
-#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:1222
+#: scripts/services/EditUriBuiltins.js:1238
 #: scripts/services/EditUriBuiltins.js:61 templates/delete.html:54
 #: templates/export.html:34 templates/settings.html:205
 msgid "Cancel"
@@ -472,7 +472,7 @@ msgstr "החיבור אבד"
 msgid "Connection worked!"
 msgstr "החיבור הצליח!"
 
-#: scripts/services/EditUriBuiltins.js:1154 templates/backends/azure.html:2
+#: scripts/services/EditUriBuiltins.js:1161 templates/backends/azure.html:2
 #: templates/backends/azure.html:3
 msgid "Container name"
 msgstr "שם המכולה"
@@ -541,15 +541,15 @@ msgstr "נוצר משתמש חדש עם גישה מוגבלת…"
 msgid "Creating target folders …"
 msgstr "נוצרות תיקיות יעד…"
 
-#: scripts/controllers/RestoreController.js:368
+#: scripts/controllers/RestoreController.js:370
 msgid "Creating temporary backup …"
 msgstr "נוצר גיבוי זמני…"
 
-#: templates/home.html:105
+#: templates/home.html:113
 msgid "Current action:"
 msgstr "פעולה נוכחית:"
 
-#: templates/home.html:115
+#: templates/home.html:123
 msgid "Current file:"
 msgstr "קובץ נוכחי:"
 
@@ -561,7 +561,7 @@ msgstr "גרסה נוכחית {{versionname}} ({{versionnumber}})"
 msgid "Custom S3 endpoint"
 msgstr "נקודת גישה מותאמת אישית ל־S3"
 
-#: scripts/services/EditUriBuiltins.js:1320 templates/backends/storj.html:18
+#: scripts/services/EditUriBuiltins.js:1327 templates/backends/storj.html:18
 msgid "Custom Satellite"
 msgstr "לוויין מותאם אישית"
 
@@ -799,7 +799,7 @@ msgstr "הצפנה"
 msgid "Encryption changed"
 msgstr "הצפנה שונתה"
 
-#: scripts/services/EditUriBuiltins.js:1315 templates/backends/storj.html:25
+#: scripts/services/EditUriBuiltins.js:1322 templates/backends/storj.html:25
 #: templates/backends/storj.html:26
 msgid "Encryption passphrase"
 msgstr "מילת הצופן של ההצפנה"
@@ -862,14 +862,14 @@ msgstr "הכנס את נתיב היעד (שם תיקיית היעד)"
 #: scripts/controllers/ImportController.js:39
 #: scripts/controllers/ImportController.js:43
 #: scripts/controllers/ImportController.js:49
-#: scripts/controllers/RestoreController.js:114
-#: scripts/controllers/RestoreController.js:144
-#: scripts/controllers/RestoreController.js:294
-#: scripts/controllers/RestoreController.js:332
-#: scripts/controllers/RestoreController.js:390
-#: scripts/controllers/RestoreController.js:423
-#: scripts/controllers/RestoreController.js:431
-#: scripts/controllers/RestoreController.js:90
+#: scripts/controllers/RestoreController.js:116
+#: scripts/controllers/RestoreController.js:146
+#: scripts/controllers/RestoreController.js:296
+#: scripts/controllers/RestoreController.js:334
+#: scripts/controllers/RestoreController.js:392
+#: scripts/controllers/RestoreController.js:425
+#: scripts/controllers/RestoreController.js:433
+#: scripts/controllers/RestoreController.js:92
 #: scripts/controllers/RestoreDirectController.js:112
 #: scripts/controllers/RestoreDirectController.js:78
 #: scripts/directives/backupEditUri.js:144
@@ -971,7 +971,7 @@ msgstr "קישור חיצוני"
 msgid "FTP (Alternative)"
 msgstr "שרת FTP (אלטרנטיבי)"
 
-#: scripts/controllers/RestoreController.js:390
+#: scripts/controllers/RestoreController.js:392
 msgid "Failed to build temporary database: {{message}}"
 msgstr "נכשלנו בבניית מסד נתונים זמני: {{message}}"
 
@@ -985,10 +985,10 @@ msgstr "נכשלנו בהתחברות:"
 #: scripts/controllers/CommandlineController.js:80
 #: scripts/controllers/ExportController.js:40
 #: scripts/controllers/ExportController.js:57
-#: scripts/controllers/RestoreController.js:294
-#: scripts/controllers/RestoreController.js:332
-#: scripts/controllers/RestoreController.js:431
-#: scripts/controllers/RestoreController.js:90
+#: scripts/controllers/RestoreController.js:296
+#: scripts/controllers/RestoreController.js:334
+#: scripts/controllers/RestoreController.js:433
+#: scripts/controllers/RestoreController.js:92
 #: scripts/controllers/RestoreDirectController.js:112
 #: scripts/controllers/RestoreDirectController.js:78
 #: scripts/services/LogService.js:29
@@ -999,8 +999,8 @@ msgstr "נכשלנו בהתחברות: {{message}}"
 msgid "Failed to delete:"
 msgstr "נכשלנו במחיקה:"
 
-#: scripts/controllers/RestoreController.js:114
-#: scripts/controllers/RestoreController.js:144
+#: scripts/controllers/RestoreController.js:116
+#: scripts/controllers/RestoreController.js:146
 msgid "Failed to fetch path information: {{message}}"
 msgstr "נכשלנו בהבאת מידע הנתיב: {{message}}"
 
@@ -1012,7 +1012,7 @@ msgstr "נכשלנו במציאת הגיבוי:"
 msgid "Failed to read backup defaults:"
 msgstr "נכשלנו בקריאת ברירות המחדל של הגיבויים:"
 
-#: scripts/controllers/RestoreController.js:423
+#: scripts/controllers/RestoreController.js:425
 msgid "Failed to restore files: {{message}}"
 msgstr "נכשלנו בשחזור הקבצים: {{message}}"
 
@@ -1020,8 +1020,8 @@ msgstr "נכשלנו בשחזור הקבצים: {{message}}"
 msgid "Failed to save:"
 msgstr "נכשלנו בשמירה:"
 
-#: scripts/controllers/RestoreController.js:120
-#: scripts/controllers/RestoreController.js:159
+#: scripts/controllers/RestoreController.js:122
+#: scripts/controllers/RestoreController.js:161
 msgid "Fetching path information …"
 msgstr "מביא מידע נתיב ..."
 
@@ -1091,11 +1091,11 @@ msgstr "הגדרות כלליות"
 msgid "Generate"
 msgstr "תייצר"
 
-#: scripts/controllers/RestoreController.js:70
+#: scripts/controllers/RestoreController.js:72
 msgid "Getting file versions …"
 msgstr "מביא גרסאות קבצים ..."
 
-#: scripts/services/EditUriBuiltins.js:1143 templates/backends/msgroup.html:2
+#: scripts/services/EditUriBuiltins.js:1150 templates/backends/msgroup.html:2
 msgid "Group email"
 msgstr "אימייל קבוצתי"
 
@@ -1229,7 +1229,7 @@ msgstr "גרסאת API של Keystone"
 msgid "Language in user interface"
 msgstr "שפת ממשק משתמש"
 
-#: scripts/controllers/RestoreController.js:38
+#: scripts/controllers/RestoreController.js:40
 msgid "Last month"
 msgstr "חודש אחרון"
 
@@ -1241,7 +1241,7 @@ msgstr "הגיבוי המוצלח האחרון:"
 msgid "Last successful restore: {{time}} (took {{duration || '0 seconds'}})"
 msgstr "השחזןר המוצלח האחרון: {{time}} (לקח {{duration || '0 שניות'}})"
 
-#: scripts/controllers/RestoreController.js:60
+#: scripts/controllers/RestoreController.js:62
 msgid "Latest"
 msgstr "הכי עדכני"
 
@@ -1333,7 +1333,7 @@ msgstr "דקות"
 msgid "Name"
 msgstr "שם"
 
-#: templates/home.html:87
+#: templates/home.html:95
 msgid "Never"
 msgstr "אף פעם"
 
@@ -1344,7 +1344,7 @@ msgstr "אף פעם"
 msgid "Next"
 msgstr "הבא"
 
-#: templates/home.html:91
+#: templates/home.html:99
 msgid "Next scheduled run:"
 msgstr "ריצה הבאה מתוכננת:"
 
@@ -1373,8 +1373,8 @@ msgstr "פעם הבאה"
 #: scripts/directives/backupEditUri.js:174
 #: scripts/directives/backupEditUri.js:88
 #: scripts/services/EditUriBackendConfig.js:74
-#: scripts/services/EditUriBuiltins.js:1215
-#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:1222
+#: scripts/services/EditUriBuiltins.js:1238
 #: scripts/services/EditUriBuiltins.js:61
 msgid "No"
 msgstr "לא"
@@ -1383,11 +1383,11 @@ msgstr "לא"
 msgid "No encryption"
 msgstr "ללא הצפנה"
 
-#: scripts/controllers/RestoreController.js:192
+#: scripts/controllers/RestoreController.js:194
 msgid "No items selected"
 msgstr "לא נבחרו פריטים"
 
-#: scripts/controllers/RestoreController.js:192
+#: scripts/controllers/RestoreController.js:194
 msgid "No items to restore, please select one or more items"
 msgstr "אין פריטים לשחזור , נא בחר פריט אחד או יותר"
 
@@ -1446,7 +1446,7 @@ msgstr "סיסמה"
 msgid "Passphrase changed"
 msgstr "סיסמה שונתה"
 
-#: scripts/services/EditUriBuiltins.js:1295 templates/backends/file.html:33
+#: scripts/services/EditUriBuiltins.js:1302 templates/backends/file.html:33
 #: templates/backends/filejump.html:25 templates/backends/filen.html:11
 #: templates/backends/generic.html:22 templates/backends/idrive.html:11
 #: templates/backends/idrive.html:12 templates/backends/mega.html:11
@@ -1455,8 +1455,8 @@ msgstr "סיסמה שונתה"
 msgid "Password"
 msgstr "סיסמה"
 
-#: scripts/services/EditUriBuiltins.js:1279
-#: scripts/services/EditUriBuiltins.js:1400
+#: scripts/services/EditUriBuiltins.js:1286
+#: scripts/services/EditUriBuiltins.js:1407
 msgid "Path"
 msgstr "מיקום"
 
@@ -1496,7 +1496,7 @@ msgstr "שחזור"
 msgid "Run again every"
 msgstr "התחל שוב כל"
 
-#: templates/home.html:52 templates/home.html:87
+#: templates/home.html:52 templates/home.html:95
 msgid "Run now"
 msgstr "התחל עכשיו"
 
@@ -1570,7 +1570,7 @@ msgstr "הראה תצוגת עץ"
 msgid "Smart backup retention"
 msgstr "שמירת גיבויים חכמה"
 
-#: templates/home.html:96
+#: templates/home.html:104
 msgid "Source:"
 msgstr "מקור:"
 
@@ -1592,8 +1592,8 @@ msgstr "מתחיל בגיבוי ..."
 msgid "Starting restore …"
 msgstr "מתחיל בשחזור ..."
 
-#: scripts/controllers/RestoreController.js:379
-#: scripts/controllers/RestoreController.js:403
+#: scripts/controllers/RestoreController.js:381
+#: scripts/controllers/RestoreController.js:405
 msgid "Starting the restore process …"
 msgstr "מתחיל בתהליך השחזור ..."
 
@@ -1651,7 +1651,7 @@ msgstr "טרהבייט"
 msgid "TByte/s"
 msgstr "טב\"ש"
 
-#: scripts/controllers/RestoreController.js:36
+#: scripts/controllers/RestoreController.js:38
 msgid "This week"
 msgstr "השבוע"
 
@@ -1672,7 +1672,7 @@ msgstr "זמן"
 msgid "To File"
 msgstr "לקובץ"
 
-#: scripts/controllers/RestoreController.js:34
+#: scripts/controllers/RestoreController.js:36
 msgid "Today"
 msgstr "היום"
 
@@ -1716,9 +1716,9 @@ msgstr "קבצים שהועלו"
 msgid "Uploading verification file …"
 msgstr "קובץ התיקוף נשלח…"
 
-#: scripts/services/EditUriBuiltins.js:1074
-#: scripts/services/EditUriBuiltins.js:1162
-#: scripts/services/EditUriBuiltins.js:1294 templates/backends/file.html:29
+#: scripts/services/EditUriBuiltins.js:1081
+#: scripts/services/EditUriBuiltins.js:1169
+#: scripts/services/EditUriBuiltins.js:1301 templates/backends/file.html:29
 #: templates/backends/filejump.html:21 templates/backends/filen.html:7
 #: templates/backends/generic.html:18 templates/backends/idrive.html:7
 #: templates/backends/idrive.html:8 templates/backends/mega.html:7
@@ -1792,8 +1792,8 @@ msgstr "שנים"
 #: scripts/directives/backupEditUri.js:174
 #: scripts/directives/backupEditUri.js:88
 #: scripts/services/EditUriBackendConfig.js:74
-#: scripts/services/EditUriBuiltins.js:1215
-#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:1222
+#: scripts/services/EditUriBuiltins.js:1238
 #: scripts/services/EditUriBuiltins.js:61
 msgid "Yes"
 msgstr "כן"
@@ -1814,7 +1814,7 @@ msgstr "כן, יש בי אומץ רב!"
 msgid "Yes, please break my backup!"
 msgstr "כן, נא לפגום בגיבוי שלי!"
 
-#: scripts/controllers/RestoreController.js:35
+#: scripts/controllers/RestoreController.js:37
 msgid "Yesterday"
 msgstr "אתמול"
 
@@ -1822,7 +1822,7 @@ msgstr "אתמול"
 msgid "You must enter a positive number of backups to keep"
 msgstr "עליך למלא מספר חיובי של גיבויים לשמירה"
 
-#: scripts/services/EditUriBuiltins.js:1176
+#: scripts/services/EditUriBuiltins.js:1183
 msgid "You must enter a tenant (aka project) name to use v3 API"
 msgstr "עליך למלא שם דייר (נודע גם כמיזם) כדי להשתמש בגרסה 3 של ה־API"
 
@@ -1843,7 +1843,7 @@ msgstr "עליך למלא את שם המשתמש"
 msgid "You must fill in {{field}}"
 msgstr "עליך למלא {{field}}"
 
-#: scripts/services/EditUriBuiltins.js:1208
+#: scripts/services/EditUriBuiltins.js:1215
 msgid "You must select or fill in the server"
 msgstr "עליך לבחור או למלא שרת"
 
@@ -1880,6 +1880,6 @@ msgstr "{{number}} שעות"
 msgid "{{number}} Minutes"
 msgstr "{{number}} דקות"
 
-#: templates/home.html:81
+#: templates/home.html:82 templates/home.html:88
 msgid "{{time}} (took {{duration}})"
 msgstr "{{time}} (ארך {{duration}})"

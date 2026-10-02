@@ -27,7 +27,7 @@ msgstr "เกี่ยวกับ"
 msgid "About {{appname}}"
 msgstr "เกี่ยวกับ {{appname}}"
 
-#: scripts/services/EditUriBuiltins.js:1153
+#: scripts/services/EditUriBuiltins.js:1160
 msgid "Access Key"
 msgstr "กุญแจเข้าถึง"
 
@@ -39,7 +39,7 @@ msgstr "การเข้าถึงถูกปฏิเสธ"
 msgid "Access to user interface"
 msgstr "การเข้าถึงส่วนติดต่อผู้ใช้"
 
-#: scripts/services/EditUriBuiltins.js:1152 templates/backends/azure.html:7
+#: scripts/services/EditUriBuiltins.js:1159 templates/backends/azure.html:7
 #: templates/backends/azure.html:8
 msgid "Account name"
 msgstr "ชื่อบัญชี"
@@ -68,8 +68,8 @@ msgstr "เพิ่ม path"
 msgid "Added"
 msgstr "เพิ่มแล้ว"
 
-#: scripts/services/EditUriBuiltins.js:1215
-#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:1222
+#: scripts/services/EditUriBuiltins.js:1238
 msgid "Adjust bucket name?"
 msgstr "ปรับแก้ชื่อถัง?"
 
@@ -98,8 +98,8 @@ msgstr "อนุญาตการเข้าถึงจากทางไก
 msgid "Allowed days"
 msgstr "วันที่อนุญาต"
 
-#: scripts/services/EditUriBuiltins.js:1110
-#: scripts/services/EditUriBuiltins.js:1120 templates/backends/gcs.html:8
+#: scripts/services/EditUriBuiltins.js:1117
+#: scripts/services/EditUriBuiltins.js:1127 templates/backends/gcs.html:8
 #: templates/backends/gcs.html:9 templates/backends/jottacloud.html:8
 #: templates/backends/jottacloud.html:9 templates/backends/msgroup.html:13
 #: templates/backends/msgroup.html:14 templates/backends/oauth.html:8
@@ -122,7 +122,7 @@ msgstr "ปลายทางข้อมูลสำรอง"
 msgid "Backup location"
 msgstr "ตำแหน่งข้อมูลสำรอง"
 
-#: templates/home.html:100
+#: templates/home.html:108
 msgid "Backup:"
 msgstr "ข้อมูลสำรอง:"
 
@@ -160,8 +160,8 @@ msgstr "ค่ามาตรฐานของเบราว์เซอร์
 #: scripts/controllers/StateController.js:119
 #: scripts/controllers/StateController.js:128
 #: scripts/services/DialogService.js:50
-#: scripts/services/EditUriBuiltins.js:1215
-#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:1222
+#: scripts/services/EditUriBuiltins.js:1238
 #: scripts/services/EditUriBuiltins.js:61 templates/delete.html:54
 #: templates/export.html:34 templates/settings.html:205
 msgid "Cancel"
@@ -326,14 +326,14 @@ msgstr "ใส่วลีรหัสผ่านเข้ารหัสลั
 #: scripts/controllers/ImportController.js:39
 #: scripts/controllers/ImportController.js:43
 #: scripts/controllers/ImportController.js:49
-#: scripts/controllers/RestoreController.js:114
-#: scripts/controllers/RestoreController.js:144
-#: scripts/controllers/RestoreController.js:294
-#: scripts/controllers/RestoreController.js:332
-#: scripts/controllers/RestoreController.js:390
-#: scripts/controllers/RestoreController.js:423
-#: scripts/controllers/RestoreController.js:431
-#: scripts/controllers/RestoreController.js:90
+#: scripts/controllers/RestoreController.js:116
+#: scripts/controllers/RestoreController.js:146
+#: scripts/controllers/RestoreController.js:296
+#: scripts/controllers/RestoreController.js:334
+#: scripts/controllers/RestoreController.js:392
+#: scripts/controllers/RestoreController.js:425
+#: scripts/controllers/RestoreController.js:433
+#: scripts/controllers/RestoreController.js:92
 #: scripts/controllers/RestoreDirectController.js:112
 #: scripts/controllers/RestoreDirectController.js:78
 #: scripts/directives/backupEditUri.js:144
@@ -502,11 +502,11 @@ msgstr "กิโลไบต์/วิ"
 msgid "Language in user interface"
 msgstr "ภาษาในส่วนติดต่อผู้ใช้"
 
-#: scripts/controllers/RestoreController.js:38
+#: scripts/controllers/RestoreController.js:40
 msgid "Last month"
 msgstr "เดือนที่แล้ว"
 
-#: scripts/controllers/RestoreController.js:60
+#: scripts/controllers/RestoreController.js:62
 msgid "Latest"
 msgstr "ล่าสุด"
 
@@ -582,8 +582,8 @@ msgstr "ถัดไป"
 #: scripts/directives/backupEditUri.js:174
 #: scripts/directives/backupEditUri.js:88
 #: scripts/services/EditUriBackendConfig.js:74
-#: scripts/services/EditUriBuiltins.js:1215
-#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:1222
+#: scripts/services/EditUriBuiltins.js:1238
 #: scripts/services/EditUriBuiltins.js:61
 msgid "No"
 msgstr "ไม่"
@@ -648,7 +648,7 @@ msgstr "วลีรหัสผ่านไม่ตรงกัน"
 msgid "Passphrases do not match"
 msgstr "วลีรหัสผ่านไม่ตรง"
 
-#: scripts/services/EditUriBuiltins.js:1295 templates/backends/file.html:33
+#: scripts/services/EditUriBuiltins.js:1302 templates/backends/file.html:33
 #: templates/backends/filejump.html:25 templates/backends/filen.html:11
 #: templates/backends/generic.html:22 templates/backends/idrive.html:11
 #: templates/backends/idrive.html:12 templates/backends/mega.html:11
@@ -667,7 +667,7 @@ msgstr "หยุดชั่วคราว"
 msgid "Previous"
 msgstr "ก่อหน้า"
 
-#: templates/home.html:107
+#: templates/home.html:115
 msgid "Progress:"
 msgstr "คืบหน้า:"
 
@@ -679,11 +679,11 @@ msgstr "ทางไกล"
 msgid "Repair"
 msgstr "ซ่อม"
 
-#: scripts/controllers/RestoreController.js:37
+#: scripts/controllers/RestoreController.js:39
 msgid "This month"
 msgstr "เดือนนี้"
 
-#: scripts/controllers/RestoreController.js:36
+#: scripts/controllers/RestoreController.js:38
 msgid "This week"
 msgstr "สัปดาห์นี้"
 

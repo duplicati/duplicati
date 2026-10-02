@@ -81,22 +81,22 @@ msgstr ""
 "<span ng-show=\"!$parent.UsernamePasswordAuth\" translate>사용자 이름 및 비밀번호 인증 사용</span>\n"
 "        <span ng-show=\"$parent.UsernamePasswordAuth\" translate>API 토큰 인증 사용(권장)</span>"
 
-#: scripts/services/EditUriBuiltins.js:1061
+#: scripts/services/EditUriBuiltins.js:1068
 msgid "API Token"
 msgstr "API 토큰"
 
-#: scripts/services/EditUriBuiltins.js:1314
+#: scripts/services/EditUriBuiltins.js:1321
 #: templates/backends/openstack.html:44 templates/backends/storj.html:21
 #: templates/backends/storj.html:22
 msgid "API key"
 msgstr "API 키"
 
-#: scripts/services/EditUriBuiltins.js:1204 templates/backends/s3.html:66
+#: scripts/services/EditUriBuiltins.js:1211 templates/backends/s3.html:66
 #: templates/backends/s3.html:68
 msgid "AWS Access ID"
 msgstr "AWS Access ID"
 
-#: scripts/services/EditUriBuiltins.js:1205 templates/backends/s3.html:71
+#: scripts/services/EditUriBuiltins.js:1212 templates/backends/s3.html:71
 #: templates/backends/s3.html:73
 msgid "AWS Access Key"
 msgstr "AWS Access Key"
@@ -113,7 +113,7 @@ msgstr "정보"
 msgid "About {{appname}}"
 msgstr "{{appname}} 정보"
 
-#: scripts/services/EditUriBuiltins.js:1153
+#: scripts/services/EditUriBuiltins.js:1160
 msgid "Access Key"
 msgstr "액세스 키"
 
@@ -141,7 +141,7 @@ msgstr "액세스 키"
 msgid "Access to user interface"
 msgstr "사용자 인터페이스 액세스"
 
-#: scripts/services/EditUriBuiltins.js:1152 templates/backends/azure.html:7
+#: scripts/services/EditUriBuiltins.js:1159 templates/backends/azure.html:7
 #: templates/backends/azure.html:8
 msgid "Account name"
 msgstr "계정 이름"
@@ -174,8 +174,8 @@ msgstr "경로 추가"
 msgid "Added"
 msgstr "추가됨"
 
-#: scripts/services/EditUriBuiltins.js:1215
-#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:1222
+#: scripts/services/EditUriBuiltins.js:1238
 msgid "Adjust bucket name?"
 msgstr "버킷 이름을 조정하시겠습니까?"
 
@@ -272,8 +272,8 @@ msgstr "원격 제어 등록을 삭제하시겠습니까?"
 msgid "As Command-line"
 msgstr "명령줄로 보기"
 
-#: scripts/services/EditUriBuiltins.js:1110
-#: scripts/services/EditUriBuiltins.js:1120 templates/backends/gcs.html:8
+#: scripts/services/EditUriBuiltins.js:1117
+#: scripts/services/EditUriBuiltins.js:1127 templates/backends/gcs.html:8
 #: templates/backends/gcs.html:9 templates/backends/jottacloud.html:8
 #: templates/backends/jottacloud.html:9 templates/backends/msgroup.html:13
 #: templates/backends/msgroup.html:14 templates/backends/oauth.html:8
@@ -287,7 +287,7 @@ msgstr "AuthID"
 msgid "Authentication Domain"
 msgstr "인증 도메인"
 
-#: scripts/services/EditUriBuiltins.js:1305 templates/backends/storj.html:2
+#: scripts/services/EditUriBuiltins.js:1312 templates/backends/storj.html:2
 msgid "Authentication method"
 msgstr "인증 방법"
 
@@ -323,7 +323,7 @@ msgstr "B2 Application ID"
 msgid "B2 Application Key"
 msgstr "B2 Application Key"
 
-#: scripts/services/EditUriBuiltins.js:1250
+#: scripts/services/EditUriBuiltins.js:1257
 msgid "B2 Cloud Storage Account ID"
 msgstr "B2 Cloud Storage Account ID"
 
@@ -331,7 +331,7 @@ msgstr "B2 Cloud Storage Account ID"
 msgid "B2 Cloud Storage Application ID"
 msgstr "B2 Cloud Storage Application ID"
 
-#: scripts/services/EditUriBuiltins.js:1251 templates/backends/b2.html:17
+#: scripts/services/EditUriBuiltins.js:1258 templates/backends/b2.html:17
 msgid "B2 Cloud Storage Application Key"
 msgstr "B2 Cloud Storage Application Key"
 
@@ -373,7 +373,7 @@ msgstr "백업 위치"
 msgid "Backup retention"
 msgstr "백업 보존"
 
-#: templates/home.html:100
+#: templates/home.html:108
 msgid "Backup:"
 msgstr "백업:"
 
@@ -397,14 +397,14 @@ msgstr "브라우저 기본값"
 msgid "Bucket create location"
 msgstr "버킷 생성 위치"
 
-#: scripts/services/EditUriBuiltins.js:1163
-#: scripts/services/EditUriBuiltins.js:1203
-#: scripts/services/EditUriBuiltins.js:1249
-#: scripts/services/EditUriBuiltins.js:1263
-#: scripts/services/EditUriBuiltins.js:1310
-#: scripts/services/EditUriBuiltins.js:1316
-#: scripts/services/EditUriBuiltins.js:1372
-#: scripts/services/EditUriBuiltins.js:1384 templates/backends/b2.html:2
+#: scripts/services/EditUriBuiltins.js:1170
+#: scripts/services/EditUriBuiltins.js:1210
+#: scripts/services/EditUriBuiltins.js:1256
+#: scripts/services/EditUriBuiltins.js:1270
+#: scripts/services/EditUriBuiltins.js:1317
+#: scripts/services/EditUriBuiltins.js:1323
+#: scripts/services/EditUriBuiltins.js:1379
+#: scripts/services/EditUriBuiltins.js:1391 templates/backends/b2.html:2
 #: templates/backends/b2.html:3 templates/backends/cos.html:25
 #: templates/backends/e2.html:11 templates/backends/e2.html:12
 #: templates/backends/gcs.html:2 templates/backends/openstack.html:2
@@ -413,7 +413,7 @@ msgstr "버킷 생성 위치"
 msgid "Bucket name"
 msgstr "버킷 이름"
 
-#: scripts/services/EditUriBuiltins.js:1328
+#: scripts/services/EditUriBuiltins.js:1335
 msgid ""
 "Bucket name can only be between 3 and 63 characters long and contain only "
 "lower-case characters, numbers, periods and dashes"
@@ -439,7 +439,7 @@ msgstr "버킷, 형식: BucketName-APPID"
 msgid "Building list of files to restore …"
 msgstr "복원할 파일 목록 작성 중 …"
 
-#: scripts/controllers/RestoreController.js:373
+#: scripts/controllers/RestoreController.js:375
 msgid "Building partial temporary database …"
 msgstr "부분 임시 데이터베이스 작성 중 …"
 
@@ -510,8 +510,8 @@ msgstr "Canary"
 #: scripts/controllers/StateController.js:119
 #: scripts/controllers/StateController.js:128
 #: scripts/services/DialogService.js:50
-#: scripts/services/EditUriBuiltins.js:1215
-#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:1222
+#: scripts/services/EditUriBuiltins.js:1238
 #: scripts/services/EditUriBuiltins.js:61 templates/delete.html:54
 #: templates/export.html:34 templates/settings.html:205
 msgid "Cancel"
@@ -702,7 +702,7 @@ msgstr "연결이 끊어짐"
 msgid "Connection worked!"
 msgstr "연결되었습니다!"
 
-#: scripts/services/EditUriBuiltins.js:1154 templates/backends/azure.html:2
+#: scripts/services/EditUriBuiltins.js:1161 templates/backends/azure.html:2
 #: templates/backends/azure.html:3
 msgid "Container name"
 msgstr "컨테이너 이름"
@@ -788,7 +788,7 @@ msgstr "제한된 접근 권한을 가진 새 사용자 생성 중 …"
 msgid "Creating target folders …"
 msgstr "폴더 생성 중 …"
 
-#: scripts/controllers/RestoreController.js:368
+#: scripts/controllers/RestoreController.js:370
 msgid "Creating temporary backup …"
 msgstr "임시 백업 생성 중 …"
 
@@ -796,11 +796,11 @@ msgstr "임시 백업 생성 중 …"
 msgid "Creating user …"
 msgstr "사용자 생성 중 …"
 
-#: templates/home.html:105
+#: templates/home.html:113
 msgid "Current action:"
 msgstr "현재 작업:"
 
-#: templates/home.html:115
+#: templates/home.html:123
 msgid "Current file:"
 msgstr "현재 파일:"
 
@@ -812,7 +812,7 @@ msgstr "현재 버전은 {{versionname}}({{versionnumber}})입니다"
 msgid "Custom S3 endpoint"
 msgstr "사용자 지정 S3 endpoint"
 
-#: scripts/services/EditUriBuiltins.js:1320 templates/backends/storj.html:18
+#: scripts/services/EditUriBuiltins.js:1327 templates/backends/storj.html:18
 msgid "Custom Satellite"
 msgstr "사용자 지정 Satellite"
 
@@ -1162,7 +1162,7 @@ msgstr ""
 "암호화 모듈: <p style=\"display: inline\" ng-repeat=\"item in "
 "sysinfo.EncryptionModules\">{{item.Key}} </p>"
 
-#: scripts/services/EditUriBuiltins.js:1315 templates/backends/storj.html:25
+#: scripts/services/EditUriBuiltins.js:1322 templates/backends/storj.html:25
 #: templates/backends/storj.html:26
 msgid "Encryption passphrase"
 msgstr "암호화 암호 문구"
@@ -1249,14 +1249,14 @@ msgstr "저장소 경로 입력"
 #: scripts/controllers/ImportController.js:39
 #: scripts/controllers/ImportController.js:43
 #: scripts/controllers/ImportController.js:49
-#: scripts/controllers/RestoreController.js:114
-#: scripts/controllers/RestoreController.js:144
-#: scripts/controllers/RestoreController.js:294
-#: scripts/controllers/RestoreController.js:332
-#: scripts/controllers/RestoreController.js:390
-#: scripts/controllers/RestoreController.js:423
-#: scripts/controllers/RestoreController.js:431
-#: scripts/controllers/RestoreController.js:90
+#: scripts/controllers/RestoreController.js:116
+#: scripts/controllers/RestoreController.js:146
+#: scripts/controllers/RestoreController.js:296
+#: scripts/controllers/RestoreController.js:334
+#: scripts/controllers/RestoreController.js:392
+#: scripts/controllers/RestoreController.js:425
+#: scripts/controllers/RestoreController.js:433
+#: scripts/controllers/RestoreController.js:92
 #: scripts/controllers/RestoreDirectController.js:112
 #: scripts/controllers/RestoreDirectController.js:78
 #: scripts/directives/backupEditUri.js:144
@@ -1358,7 +1358,7 @@ msgstr "외부 링크"
 msgid "FTP (Alternative)"
 msgstr "FTP(대체)"
 
-#: scripts/controllers/RestoreController.js:390
+#: scripts/controllers/RestoreController.js:392
 msgid "Failed to build temporary database: {{message}}"
 msgstr "임시 데이터베이스 작성 실패: {{message}}"
 
@@ -1372,10 +1372,10 @@ msgstr "연결 실패:"
 #: scripts/controllers/CommandlineController.js:80
 #: scripts/controllers/ExportController.js:40
 #: scripts/controllers/ExportController.js:57
-#: scripts/controllers/RestoreController.js:294
-#: scripts/controllers/RestoreController.js:332
-#: scripts/controllers/RestoreController.js:431
-#: scripts/controllers/RestoreController.js:90
+#: scripts/controllers/RestoreController.js:296
+#: scripts/controllers/RestoreController.js:334
+#: scripts/controllers/RestoreController.js:433
+#: scripts/controllers/RestoreController.js:92
 #: scripts/controllers/RestoreDirectController.js:112
 #: scripts/controllers/RestoreDirectController.js:78
 #: scripts/services/LogService.js:29
@@ -1386,8 +1386,8 @@ msgstr "연결 실패: {{message}}"
 msgid "Failed to delete:"
 msgstr "삭제 실패:"
 
-#: scripts/controllers/RestoreController.js:114
-#: scripts/controllers/RestoreController.js:144
+#: scripts/controllers/RestoreController.js:116
+#: scripts/controllers/RestoreController.js:146
 msgid "Failed to fetch path information: {{message}}"
 msgstr "경로 정보 가져오기 실패: {{message}}"
 
@@ -1412,7 +1412,7 @@ msgstr "백업 기본값 읽기 실패:"
 msgid "Failed to read file: {{message}}"
 msgstr "파일 읽기 실패: {{message}}"
 
-#: scripts/controllers/RestoreController.js:423
+#: scripts/controllers/RestoreController.js:425
 msgid "Failed to restore files: {{message}}"
 msgstr "파일 복원 실패: {{message}}"
 
@@ -1424,8 +1424,8 @@ msgstr "저장 실패:"
 msgid "Fatal error, no statistics collected"
 msgstr "치명적 오류, 통계가 수집되지 않음"
 
-#: scripts/controllers/RestoreController.js:120
-#: scripts/controllers/RestoreController.js:159
+#: scripts/controllers/RestoreController.js:122
+#: scripts/controllers/RestoreController.js:161
 msgid "Fetching path information …"
 msgstr "경로 정보를 가져오는 중 …"
 
@@ -1515,11 +1515,11 @@ msgstr "생성"
 msgid "Generate IAM access policy"
 msgstr "IAM 접근 정책 생성"
 
-#: scripts/controllers/RestoreController.js:70
+#: scripts/controllers/RestoreController.js:72
 msgid "Getting file versions …"
 msgstr "파일 버전 가져오는 중 …"
 
-#: scripts/services/EditUriBuiltins.js:1143 templates/backends/msgroup.html:2
+#: scripts/services/EditUriBuiltins.js:1150 templates/backends/msgroup.html:2
 msgid "Group email"
 msgstr "그룹 이메일"
 
@@ -1585,11 +1585,11 @@ msgstr "ID:"
 msgid "IDrive Sync directory path"
 msgstr "IDrive Sync 디렉터리 경로"
 
-#: scripts/services/EditUriBuiltins.js:1370 templates/backends/e2.html:3
+#: scripts/services/EditUriBuiltins.js:1377 templates/backends/e2.html:3
 msgid "IDrive e2 Access Key ID"
 msgstr "IDrive e2 Access Key ID"
 
-#: scripts/services/EditUriBuiltins.js:1371 templates/backends/e2.html:7
+#: scripts/services/EditUriBuiltins.js:1378 templates/backends/e2.html:7
 msgid "IDrive e2 Access Key Secret"
 msgstr "IDrive e2 Access Key Secret"
 
@@ -1713,7 +1713,7 @@ msgstr "중단됨, 통계가 수집되지 않음"
 msgid "Invalid retention time"
 msgstr "잘못된 보존 기간"
 
-#: scripts/services/EditUriBuiltins.js:1079
+#: scripts/services/EditUriBuiltins.js:1086
 msgid ""
 "It is possible to connect to some FTP without a password.\n"
 "Are you sure your FTP server supports password-less logins?"
@@ -1753,7 +1753,7 @@ msgstr "마지막 실행"
 msgid "Last Run (descending)"
 msgstr "마지막 실행(내림차순)"
 
-#: scripts/controllers/RestoreController.js:38
+#: scripts/controllers/RestoreController.js:40
 msgid "Last month"
 msgstr "지난달"
 
@@ -1765,7 +1765,7 @@ msgstr "마지막으로 성공한 백업:"
 msgid "Last successful restore: {{time}} (took {{duration || '0 seconds'}})"
 msgstr "마지막으로 성공한 복원: {{time}} ({{duration || '0 seconds'}} 소요)"
 
-#: scripts/controllers/RestoreController.js:60
+#: scripts/controllers/RestoreController.js:62
 msgid "Latest"
 msgstr "최신"
 
@@ -1996,7 +1996,7 @@ msgstr "이름(내림차순)"
 msgid "Netbios over TCP"
 msgstr "Netbios over TCP"
 
-#: templates/home.html:87
+#: templates/home.html:95
 msgid "Never"
 msgstr "없음"
 
@@ -2031,7 +2031,7 @@ msgstr "다음 예약 실행"
 msgid "Next Scheduled Run (descending)"
 msgstr "다음 예약 실행(내림차순)"
 
-#: templates/home.html:91
+#: templates/home.html:99
 msgid "Next scheduled run:"
 msgstr "다음 백업 일정:"
 
@@ -2060,8 +2060,8 @@ msgstr "다음 시간"
 #: scripts/directives/backupEditUri.js:174
 #: scripts/directives/backupEditUri.js:88
 #: scripts/services/EditUriBackendConfig.js:74
-#: scripts/services/EditUriBuiltins.js:1215
-#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:1222
+#: scripts/services/EditUriBuiltins.js:1238
 #: scripts/services/EditUriBuiltins.js:61
 msgid "No"
 msgstr "아니오"
@@ -2084,11 +2084,11 @@ msgstr "&quot;{{backend}}&quot; 저장소 유형에 대한 편집기를 찾을 �
 msgid "No encryption"
 msgstr "암호화 없음"
 
-#: scripts/controllers/RestoreController.js:192
+#: scripts/controllers/RestoreController.js:194
 msgid "No items selected"
 msgstr "선택된 항목 없음"
 
-#: scripts/controllers/RestoreController.js:192
+#: scripts/controllers/RestoreController.js:194
 msgid "No items to restore, please select one or more items"
 msgstr "복원할 항목이 없습니다. 하나 이상의 항목을 선택해야 합니다."
 
@@ -2189,7 +2189,7 @@ msgstr "OpenStack Object Storage / Swift"
 msgid "Opened"
 msgstr "열림"
 
-#: scripts/services/EditUriBuiltins.js:1179
+#: scripts/services/EditUriBuiltins.js:1186
 msgid "Openstack API key are not supported in v3 keystone API"
 msgstr "OpenStack API key는 v3 Keystone API에서 지원되지 않습니다"
 
@@ -2282,7 +2282,7 @@ msgstr "암호 문구가 일치하지 않습니다"
 msgid "Passphrases do not match"
 msgstr "암호 문구가 일치하지 않습니다"
 
-#: scripts/services/EditUriBuiltins.js:1295 templates/backends/file.html:33
+#: scripts/services/EditUriBuiltins.js:1302 templates/backends/file.html:33
 #: templates/backends/filejump.html:25 templates/backends/filen.html:11
 #: templates/backends/generic.html:22 templates/backends/idrive.html:11
 #: templates/backends/idrive.html:12 templates/backends/mega.html:11
@@ -2295,8 +2295,8 @@ msgstr "비밀번호"
 msgid "Patching files with local blocks …"
 msgstr "로컬 블록으로 파일 패치 중 …"
 
-#: scripts/services/EditUriBuiltins.js:1279
-#: scripts/services/EditUriBuiltins.js:1400
+#: scripts/services/EditUriBuiltins.js:1286
+#: scripts/services/EditUriBuiltins.js:1407
 msgid "Path"
 msgstr "경로"
 
@@ -2362,7 +2362,7 @@ msgstr "이전"
 msgid "Processing files to backup …"
 msgstr "백업할 파일 처리 중 …"
 
-#: templates/home.html:107
+#: templates/home.html:115
 msgid "Progress:"
 msgstr "진행률:"
 
@@ -2446,11 +2446,11 @@ msgstr "다시 로드"
 msgid "Remote"
 msgstr "원격"
 
-#: scripts/services/EditUriBuiltins.js:1338
+#: scripts/services/EditUriBuiltins.js:1345
 msgid "Remote Path"
 msgstr "원격 경로"
 
-#: scripts/services/EditUriBuiltins.js:1337
+#: scripts/services/EditUriBuiltins.js:1344
 msgid "Remote Repository"
 msgstr "원격 저장소"
 
@@ -2575,8 +2575,8 @@ msgstr "복원된 폴더"
 msgid "Restored Symlinks"
 msgstr "복원된 심볼릭 링크"
 
-#: scripts/controllers/RestoreController.js:383
-#: scripts/controllers/RestoreController.js:405
+#: scripts/controllers/RestoreController.js:385
+#: scripts/controllers/RestoreController.js:407
 msgid "Restoring files …"
 msgstr "파일 복원 중 …"
 
@@ -2592,7 +2592,7 @@ msgstr "다시 작성된 파일 목록"
 msgid "Run again every"
 msgstr "실행 주기"
 
-#: templates/home.html:52 templates/home.html:87
+#: templates/home.html:52 templates/home.html:95
 msgid "Run now"
 msgstr "지금 실행"
 
@@ -2730,7 +2730,7 @@ msgstr "설정"
 msgid "Share Name"
 msgstr "공유 이름"
 
-#: scripts/services/EditUriBuiltins.js:1042 templates/backends/smb.html:24
+#: scripts/services/EditUriBuiltins.js:1049 templates/backends/smb.html:24
 msgid "Share name"
 msgstr "공유 이름"
 
@@ -2803,7 +2803,7 @@ msgstr "백업할 데이터 크기"
 msgid "Source size (descending)"
 msgstr "백업할 데이터 크기(내림차순)"
 
-#: templates/home.html:96
+#: templates/home.html:104
 msgid "Source:"
 msgstr "백업할 데이터:"
 
@@ -2837,8 +2837,8 @@ msgstr "백업 시작 중 …"
 msgid "Starting restore …"
 msgstr "복원 시작 중 …"
 
-#: scripts/controllers/RestoreController.js:379
-#: scripts/controllers/RestoreController.js:403
+#: scripts/controllers/RestoreController.js:381
+#: scripts/controllers/RestoreController.js:405
 msgid "Starting the restore process …"
 msgstr "복원 프로세스 시작 중 …"
 
@@ -2991,10 +2991,10 @@ msgstr "권한 검사 중 …"
 msgid "Testing …"
 msgstr "검사 중 …"
 
-#: scripts/services/EditUriBuiltins.js:1259
-#: scripts/services/EditUriBuiltins.js:1275
-#: scripts/services/EditUriBuiltins.js:1380
-#: scripts/services/EditUriBuiltins.js:1396
+#: scripts/services/EditUriBuiltins.js:1266
+#: scripts/services/EditUriBuiltins.js:1282
+#: scripts/services/EditUriBuiltins.js:1387
+#: scripts/services/EditUriBuiltins.js:1403
 msgid ""
 "The '{{fieldname}}' field contains an invalid character: {{character}} "
 "(value: {{value}}, index: {{pos}})"
@@ -3010,7 +3010,7 @@ msgid ""
 "The backup was temporary and does not exist anymore, so the log data is lost"
 msgstr "백업이 임시 백업이었고 더 이상 존재하지 않아 로그 데이터가 손실되었습니다"
 
-#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:1238
 msgid "The bucket name should be all lower-case, convert automatically?"
 msgstr "버킷 이름은 모두 소문자여야 합니다. 자동으로 변환하시겠습니까?"
 
@@ -3038,7 +3038,7 @@ msgstr "어두운 테마 (by Michal)"
 msgid "The default blue on white theme (by Alex)"
 msgstr "파란색의 밝은 테마 (by Alex)"
 
-#: scripts/services/EditUriBuiltins.js:1324
+#: scripts/services/EditUriBuiltins.js:1331
 msgid "The encryption passphrases do not match"
 msgstr "암호화 암호 문구가 일치하지 않습니다"
 
@@ -3122,7 +3122,7 @@ msgid ""
 " with only permissions to the selected path?"
 msgstr "사용자에게 권한이 너무 많습니다. 선택한 경로에 대한 권한만 가진 제한된 새 사용자를 만드시겠습니까?"
 
-#: scripts/controllers/RestoreController.js:308
+#: scripts/controllers/RestoreController.js:310
 msgid ""
 "This backup was created on another operating system. Restoring files without"
 " specifying a destination folder can cause files to be restored in "
@@ -3132,11 +3132,11 @@ msgstr ""
 "이 백업은 다른 운영 체제에서 생성되었습니다. 복원 폴더를 지정하지 않고 파일을 복원하면 예상치 못한 위치에 파일이 복원될 수 있습니다."
 " 복원 폴더를 선택하지 않고 계속하시겠습니까?"
 
-#: scripts/controllers/RestoreController.js:37
+#: scripts/controllers/RestoreController.js:39
 msgid "This month"
 msgstr "이번 달"
 
-#: scripts/controllers/RestoreController.js:36
+#: scripts/controllers/RestoreController.js:38
 msgid "This week"
 msgstr "이번 주"
 
@@ -3175,7 +3175,7 @@ msgstr ""
 msgid "To export without a passphrase, uncheck the \"Encrypt file\" box"
 msgstr "암호 문구 없이 내보내려면 \"Encrypt file\" 상자를 선택 해제합니다"
 
-#: scripts/services/EditUriBuiltins.js:1215
+#: scripts/services/EditUriBuiltins.js:1222
 msgid ""
 "To prevent bucket naming conflicts, it is recommended to prepend your "
 "account ID to the bucket name. Prepend automatically?"
@@ -3195,7 +3195,7 @@ msgstr ""
 "별표(*)이면 모든 호스트 이름이 허용되고 이 기능은 비활성화됩니다. 필드가 비어 있으면 IP 주소 및 localhost 접근만 "
 "허용됩니다."
 
-#: scripts/controllers/RestoreController.js:34
+#: scripts/controllers/RestoreController.js:36
 msgid "Today"
 msgstr "오늘"
 
@@ -3329,9 +3329,9 @@ msgstr "사용자에게 권한이 너무 많습니다"
 msgid "User interface settings"
 msgstr "인터페이스 설정"
 
-#: scripts/services/EditUriBuiltins.js:1074
-#: scripts/services/EditUriBuiltins.js:1162
-#: scripts/services/EditUriBuiltins.js:1294 templates/backends/file.html:29
+#: scripts/services/EditUriBuiltins.js:1081
+#: scripts/services/EditUriBuiltins.js:1169
+#: scripts/services/EditUriBuiltins.js:1301 templates/backends/file.html:29
 #: templates/backends/filejump.html:21 templates/backends/filen.html:7
 #: templates/backends/generic.html:18 templates/backends/idrive.html:7
 #: templates/backends/idrive.html:8 templates/backends/mega.html:7
@@ -3472,8 +3472,8 @@ msgstr "년"
 #: scripts/directives/backupEditUri.js:174
 #: scripts/directives/backupEditUri.js:88
 #: scripts/services/EditUriBackendConfig.js:74
-#: scripts/services/EditUriBuiltins.js:1215
-#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:1222
+#: scripts/services/EditUriBuiltins.js:1238
 #: scripts/services/EditUriBuiltins.js:61
 msgid "Yes"
 msgstr "예"
@@ -3494,7 +3494,7 @@ msgstr "예, 진행합니다"
 msgid "Yes, please break my backup!"
 msgstr "예, 백업이 손상될 수 있음을 이해합니다"
 
-#: scripts/controllers/RestoreController.js:35
+#: scripts/controllers/RestoreController.js:37
 msgid "Yesterday"
 msgstr "어제"
 
@@ -3545,7 +3545,7 @@ msgid ""
 " data stored on a remote server."
 msgstr "백업을 암호화하지 않도록 선택했습니다. 원격 서버에 저장되는 모든 데이터에는 암호화를 권장합니다."
 
-#: scripts/controllers/RestoreController.js:302
+#: scripts/controllers/RestoreController.js:304
 msgid "You have chosen to restore to a new location, but not entered one"
 msgstr "새 위치로 복원하도록 선택했지만 위치를 입력하지 않았습니다"
 
@@ -3560,7 +3560,7 @@ msgstr "강력한 암호 문구를 생성했습니다. 암호 문구를 잃어�
 msgid "You must choose at least one source folder"
 msgstr "하나 이상의 백업할 폴더를 선택해야 합니다"
 
-#: scripts/services/EditUriBuiltins.js:1173
+#: scripts/services/EditUriBuiltins.js:1180
 msgid "You must enter a domain name to use v3 API"
 msgstr "v3 API를 사용하려면 도메인 이름을 입력해야 합니다"
 
@@ -3572,7 +3572,7 @@ msgstr "백업 이름을 입력해야 합니다"
 msgid "You must enter a passphrase or disable encryption"
 msgstr "암호 문구를 입력하거나 암호화를 비활성화해야 합니다"
 
-#: scripts/services/EditUriBuiltins.js:1170
+#: scripts/services/EditUriBuiltins.js:1177
 msgid "You must enter a password to use v3 API"
 msgstr "v3 API를 사용하려면 비밀번호를 입력해야 합니다"
 
@@ -3580,11 +3580,11 @@ msgstr "v3 API를 사용하려면 비밀번호를 입력해야 합니다"
 msgid "You must enter a positive number of backups to keep"
 msgstr "보존할 백업 수는 양수로 입력해야 합니다"
 
-#: scripts/services/EditUriBuiltins.js:1176
+#: scripts/services/EditUriBuiltins.js:1183
 msgid "You must enter a tenant (aka project) name to use v3 API"
 msgstr "v3 API를 사용하려면 tenant(프로젝트라고도 함) 이름을 입력해야 합니다"
 
-#: scripts/services/EditUriBuiltins.js:1190
+#: scripts/services/EditUriBuiltins.js:1197
 msgid "You must enter a tenant name if you do not provide an API key"
 msgstr "API 키를 제공하지 않는 경우 tenant 이름을 입력해야 합니다"
 
@@ -3596,11 +3596,11 @@ msgstr "백업 보존 기간에 유효한 기간을 입력해야 합니다"
 msgid "You must enter a valid retention policy string"
 msgstr "유효한 보존 정책 문자열을 입력해야 합니다"
 
-#: scripts/services/EditUriBuiltins.js:1187
+#: scripts/services/EditUriBuiltins.js:1194
 msgid "You must enter either a password or an API key"
 msgstr "비밀번호 또는 API 키 중 하나를 입력해야 합니다"
 
-#: scripts/services/EditUriBuiltins.js:1194
+#: scripts/services/EditUriBuiltins.js:1201
 msgid "You must enter either a password or an API key, not both"
 msgstr "비밀번호 또는 API 키 중 하나만 입력해야 하며 둘 다 입력할 수 없습니다"
 
@@ -3621,11 +3621,11 @@ msgstr "사용자 이름을 입력해야 합니다."
 msgid "You must fill in {{field}}"
 msgstr "{{field}}을(를) 입력해야 합니다"
 
-#: scripts/services/EditUriBuiltins.js:1166
+#: scripts/services/EditUriBuiltins.js:1173
 msgid "You must select or fill in the AuthURI"
 msgstr "AuthURI를 선택하거나 입력해야 합니다"
 
-#: scripts/services/EditUriBuiltins.js:1208
+#: scripts/services/EditUriBuiltins.js:1215
 msgid "You must select or fill in the server"
 msgstr "서버를 선택하거나 입력해야 합니다"
 
@@ -3657,23 +3657,23 @@ msgstr "byte"
 msgid "byte/s"
 msgstr "byte/s"
 
-#: scripts/services/EditUriBuiltins.js:1346
+#: scripts/services/EditUriBuiltins.js:1353
 msgid "cos_app_id"
 msgstr "cos_app_id"
 
-#: scripts/services/EditUriBuiltins.js:1350
+#: scripts/services/EditUriBuiltins.js:1357
 msgid "cos_bucket"
 msgstr "cos_bucket"
 
-#: scripts/services/EditUriBuiltins.js:1349
+#: scripts/services/EditUriBuiltins.js:1356
 msgid "cos_region"
 msgstr "cos_region"
 
-#: scripts/services/EditUriBuiltins.js:1347
+#: scripts/services/EditUriBuiltins.js:1354
 msgid "cos_secret_id"
 msgstr "cos_secret_id"
 
-#: scripts/services/EditUriBuiltins.js:1348
+#: scripts/services/EditUriBuiltins.js:1355
 msgid "cos_secret_key"
 msgstr "cos_secret_key"
 
@@ -3691,23 +3691,23 @@ msgstr "실패함"
 msgid "local repository, leave empty for local"
 msgstr "로컬 저장소, 로컬이면 비워 둡니다"
 
-#: scripts/services/EditUriBuiltins.js:1359
+#: scripts/services/EditUriBuiltins.js:1366
 msgid "oss_access_key_id"
 msgstr "oss_access_key_id"
 
-#: scripts/services/EditUriBuiltins.js:1360
+#: scripts/services/EditUriBuiltins.js:1367
 msgid "oss_access_key_secret"
 msgstr "oss_access_key_secret"
 
-#: scripts/services/EditUriBuiltins.js:1362
+#: scripts/services/EditUriBuiltins.js:1369
 msgid "oss_bucket_name"
 msgstr "oss_bucket_name"
 
-#: scripts/services/EditUriBuiltins.js:1358
+#: scripts/services/EditUriBuiltins.js:1365
 msgid "oss_endpoint"
 msgstr "oss_endpoint"
 
-#: scripts/services/EditUriBuiltins.js:1361
+#: scripts/services/EditUriBuiltins.js:1368
 msgid "oss_region"
 msgstr "oss_region"
 
@@ -3731,11 +3731,11 @@ msgstr "원격 저장소, 예: remote"
 msgid "resume now"
 msgstr "지금 다시 시작"
 
-#: scripts/services/EditUriBuiltins.js:1309
+#: scripts/services/EditUriBuiltins.js:1316
 msgid "storj_shared_access"
 msgstr "storj_shared_access"
 
-#: scripts/services/EditUriBuiltins.js:1143
+#: scripts/services/EditUriBuiltins.js:1150
 msgid "unless you are explicitly specifying --group-id"
 msgstr "--group-id를 명시적으로 지정하지 않은 경우"
 
@@ -3760,7 +3760,7 @@ msgstr "{{brandingService.appName}}에서 사용하는 타사 라이브러리는
 msgid "{{files}} files ({{size}}) to go {{speed_txt}}"
 msgstr "{{files}}개 파일({{size}}) 남음 {{speed_txt}}"
 
-#: templates/home.html:101 templates/restorewizard.html:23
+#: templates/home.html:109 templates/restorewizard.html:23
 msgid "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Version"
 msgid_plural "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Versions"
 msgstr[0] "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} 버전"
@@ -3778,6 +3778,6 @@ msgstr "{{number}}시간 동안"
 msgid "{{number}} Minutes"
 msgstr "{{number}}분 동안"
 
-#: templates/home.html:81
+#: templates/home.html:82 templates/home.html:88
 msgid "{{time}} (took {{duration}})"
 msgstr "{{time}} ({{duration}} 소요)"
