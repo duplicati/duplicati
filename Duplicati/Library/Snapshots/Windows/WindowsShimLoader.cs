@@ -126,6 +126,13 @@ public static class WindowsShimLoader
                     if (_loadedAssembly == null)
                     {
                         var path = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "", AssemblyName + ".dll");
+
+                        // The packages place the modules next to the program, but the build output of
+                        // a single project may not have them. Say so, as the resolver only reports
+                        // that it cannot locate the "managed application".
+                        if (!File.Exists(path))
+                            throw new FileNotFoundException($"{AssemblyName}.dll was not found next to the program, in {Path.GetDirectoryName(path)}", path);
+
                         var alc = new ModulesLoadContext(path);
                         _loadedAssembly = alc.LoadFromAssemblyPath(path);
                     }

@@ -235,8 +235,10 @@ namespace Duplicati.Server
                 if (m_powerModeProvider != null)
                     System.Threading.Interlocked.Exchange(ref m_powerModeProvider, null)?.Dispose();
 
-                m_powerModeProvider = PowerModeUtility.GetPowerModeProvider(newProvider);
+                // Remember the setting before loading the provider, so a provider that cannot be
+                // loaded is not tried, and reported, again until the setting changes
                 m_currentPowerModeProvider = newProvider;
+                m_powerModeProvider = PowerModeUtility.GetPowerModeProvider(newProvider);
                 if (m_powerModeProvider != null)
                 {
                     m_powerModeProvider.OnResume = OnResume;
