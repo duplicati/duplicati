@@ -940,12 +940,12 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Gets the module used for encryption
         /// </summary>
-        public string? EncryptionModule => NoEncryption ? null : GetString("encryption-module", "aes");
+        public string? EncryptionModule => NoEncryption ? null : DynamicLoader.EncryptionLoader.GetCanonicalKey(GetString("encryption-module", "aes"));
 
         /// <summary>
         /// Gets the module used for compression
         /// </summary>
-        public string CompressionModule => GetString("compression-module", "zip");
+        public string CompressionModule => DynamicLoader.CompressionLoader.GetCanonicalKey(GetString("compression-module", "zip"));
 
         /// <summary>
         /// Gets the module used for parity, or null if parity is disabled.
@@ -956,7 +956,7 @@ namespace Duplicati.Library.Main
             get
             {
                 var module = GetString("parity-module", "");
-                return string.IsNullOrEmpty(module) ? null : module;
+                return string.IsNullOrEmpty(module) ? null : DynamicLoader.ParityLoader.GetCanonicalKey(module);
             }
         }
 

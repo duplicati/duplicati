@@ -71,6 +71,15 @@ namespace Duplicati.Library.Main
         ];
 
         /// <summary>
+        /// Database keys holding module names, which are compared without regard to case
+        /// </summary>
+        private static readonly string[] CaseInsensitiveOptionKeys =
+        [
+            "compression-module",
+            "encryption-module"
+        ];
+
+        /// <summary>
         /// Implementation of the IMetahash interface
         /// </summary>
         private class Metahash : IMetahash
@@ -230,6 +239,12 @@ namespace Duplicati.Library.Main
             foreach (var k in newDict)
                 if (!opts.ContainsKey(k.Key))
                     needsUpdate = true;
+                else if (CaseInsensitiveOptionKeys.Contains(k.Key) && string.Equals(opts[k.Key], k.Value, StringComparison.OrdinalIgnoreCase))
+                {
+                    // Module names are matched without regard to case, so store the name reported by the module
+                    if (opts[k.Key] != k.Value)
+                        needsUpdate = true;
+                }
                 else if (opts[k.Key] != k.Value)
                 {
                     if (k.Key == "passphrase")

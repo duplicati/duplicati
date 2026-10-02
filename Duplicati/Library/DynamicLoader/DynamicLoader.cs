@@ -220,6 +220,21 @@ namespace Duplicati.Library.DynamicLoader
         }
 
         /// <summary>
+        /// Gets the key as reported by the module, for a key that may differ in casing
+        /// </summary>
+        /// <param name="key">The key to look up</param>
+        /// <returns>The key reported by the module, or the unmodified key if no module matches</returns>
+        public string GetCanonicalKey(string key)
+        {
+            if (string.IsNullOrEmpty(key))
+                return key;
+
+            LoadInterfaces();
+            lock (m_lock)
+                return m_interfaces.TryGetValue(key, out var item) ? GetInterfaceKey(item) : key;
+        }
+
+        /// <summary>
         /// Returns the supported commands from the item, applying caching
         /// </summary>
         /// <param name="item">The item to get the supported commands for</param>
