@@ -184,7 +184,7 @@ namespace Duplicati.Library.DynamicLoader
                 // See if there is a backend that can also be a source
                 var backend = BackendLoader.GetBackend(url, options);
                 if (backend is IFolderEnabledBackend folderBackend)
-                    provider = new BackendSourceProvider(folderBackend, mountPoint);
+                    provider = new BackendSourceProvider(folderBackend, mountPoint, url);
                 else
                     backend?.Dispose();
             }
