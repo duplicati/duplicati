@@ -179,7 +179,7 @@ namespace Duplicati.Library.Main
                     throw new UserInformationException($"Could not find restore destination for path: {config.Options.Restorepath}", "InvalidRestoreDestination");
 
                 await new Operation.RestoreHandler(config.Options, config.Result)
-                    .RunAsync(config.Paths, config.BackendManager, config.Filter, restoreDestination)
+                    .RunAsync(config.Paths, config.BackendManager, config.Filter, restoreDestination, config.BackendUrl)
                     .ConfigureAwait(false);
 
                 await restoreDestination.Finalize((pg) =>

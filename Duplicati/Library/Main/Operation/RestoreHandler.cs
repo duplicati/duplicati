@@ -66,6 +66,36 @@ namespace Duplicati.Library.Main.Operation
         }
 
         /// <summary>
+        /// Lists the destination once, without retries, so that a destination folder that is not
+        /// there is reported before the restore starts. The remote operations of the restore are
+        /// retried with a delay, which would report it only after every retry. Only a missing
+        /// folder is reported here: other errors, and a folder that goes missing during the
+        /// restore, are left to those retries.
+        /// </summary>
+        /// <param name="backendUrl">The destination URL</param>
+        /// <param name="cancellationToken">The token that aborts the operation</param>
+        /// <returns>A task that completes when the destination has been checked</returns>
+        private async Task CheckDestinationFolderAsync(string backendUrl, CancellationToken cancellationToken)
+        {
+            using var backend = DynamicLoader.BackendLoader.GetBackend(backendUrl, m_options.RawOptions);
+            if (backend == null)
+                return;
+
+            try
+            {
+                await foreach (var _ in backend.ListAsync(cancellationToken).ConfigureAwait(false))
+                    break;
+            }
+            catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
+            {
+                if (ExceptionExtensions.FlattenException(ex).Any(x => x is FolderMissingException))
+                    throw;
+
+                Logging.Log.WriteVerboseMessage(LOGTAG, "DestinationCheckFailed", "Could not list the destination before the restore, continuing: {0}", ex.Message);
+            }
+        }
+
+        /// <summary>
         /// Checks if the tempdir has enough free space relative to the volume size.
         /// Logs a warning if free space is less than 4 times the volume size.
         /// </summary>
@@ -158,12 +188,15 @@ namespace Duplicati.Library.Main.Operation
                 return numbers;
         }
 
-        public async Task RunAsync(string[] paths, IBackendManager backendManager, Library.Utility.IFilter? filter, IRestoreDestinationProvider restoreDestination)
+        public async Task RunAsync(string[] paths, IBackendManager backendManager, Library.Utility.IFilter? filter, IRestoreDestinationProvider restoreDestination, string? backendUrl = null)
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_Begin);
 
             // Check tempdir free space before starting restore
             CheckTempDirFreeSpace();
+
+            if (backendUrl != null && !m_options.NoBackendverification)
+                await CheckDestinationFolderAsync(backendUrl, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
 
             // Set the restore path in the results for logging purposes
             var restorePath = restoreDestination.TargetDestination;
