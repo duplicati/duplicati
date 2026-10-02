@@ -34,6 +34,20 @@ namespace Duplicati.Library.Main.Operation.Backup
     {
         private static readonly string METALOGTAG = Logging.Log.LogTagFromType(typeof(MetadataGenerator)) + ".Metadata";
 
+        /// <summary>
+        /// Generates the metadata for an entry that is backed up. Reading the metadata is a
+        /// synchronous call that does not look at the cancellation token, and one that is stuck,
+        /// as on a network share that stopped answering, would hold up the backup; so the metadata
+        /// is read on its own, and it is no longer waited for once the operation is aborted.
+        /// </summary>
+        /// <param name="entry">The entry to read the metadata of</param>
+        /// <param name="attributes">The attributes of the entry</param>
+        /// <param name="options">The options for the operation</param>
+        /// <param name="token">The token that aborts the operation</param>
+        /// <returns>The metadata</returns>
+        public static Task<Dictionary<string, string>> GenerateMetadataUnlessAbortedAsync(ISourceProviderEntry entry, System.IO.FileAttributes attributes, Options options, CancellationToken token)
+            => Task.Run(() => GenerateMetadataAsync(entry, attributes, options, token), CancellationToken.None).WaitAsync(token);
+
         public static async Task<Dictionary<string, string>> GenerateMetadataAsync(ISourceProviderEntry entry, System.IO.FileAttributes attributes, Options options, CancellationToken token)
         {
             try
