@@ -101,9 +101,14 @@ namespace Duplicati.Library.Snapshots
         private readonly SnapshotManager _snapshotManager;
 
         /// <summary>
-        /// The source folders included in the snapshot
+        /// The source folders included in the snapshot, which are the entries that are enumerated
         /// </summary>
         private readonly IReadOnlyList<string> _sourceEntries;
+
+        /// <summary>
+        /// The paths that decide which volumes are snapshotted: the sources and the extra snapshot paths
+        /// </summary>
+        private readonly IReadOnlyList<string> _snapshotPaths;
 
         /// <summary>
         /// A flag indicating if alternate data streams should be backed up
@@ -113,15 +118,17 @@ namespace Duplicati.Library.Snapshots
         /// <summary>
         /// Constructs a new backup snapshot, using all the required disks
         /// </summary>
-        /// <param name="sources">Sources to determine which volumes to include in snapshot</param>
+        /// <param name="sources">The sources, which are enumerated and determine which volumes to include in snapshot</param>
+        /// <param name="extraSnapshotPaths">Paths that are not sources, but must be readable through the snapshot; they only determine which volumes to include</param>
         /// <param name="options">A set of commandline options</param>
         /// <param name="followSymlinks">A flag indicating if symlinks should be followed</param>
-        public WindowsSnapshot(IEnumerable<string> sources, IDictionary<string, string> options, bool followSymlinks)
+        public WindowsSnapshot(IEnumerable<string> sources, IEnumerable<string> extraSnapshotPaths, IDictionary<string, string> options, bool followSymlinks)
             : base(followSymlinks)
         {
             _enableAdsBackup = Utility.Utility.ParseBoolOption(options.AsReadOnly(), "enable-ads-backup");
             // For Windows, ensure we don't store paths with extended device path prefixes (i.e., @"\\?\" or @"\\?\UNC\")
             _sourceEntries = sources.Select(SystemIOWindows.RemoveExtendedDevicePathPrefix).ToList();
+            _snapshotPaths = _sourceEntries.Concat(extraSnapshotPaths.Select(SystemIOWindows.RemoveExtendedDevicePathPrefix)).ToList();
 
             var provider = Utility.Utility.ParseEnumOption(options.AsReadOnly(), "snapshot-provider", DEFAULT_WINDOWS_SNAPSHOT_PROVIDER);
             var vssTimeout = Utility.Utility.ParseTimespanOption(options.AsReadOnly(), "vss-timeout", SnapshotManager.DefaultMaxWaitTime);
@@ -216,7 +223,7 @@ namespace Duplicati.Library.Snapshots
 
             manager.SetupWriters(null, excludedWriters);
 
-            manager.InitShadowVolumes(_sourceEntries);
+            manager.InitShadowVolumes(_snapshotPaths);
 
             manager.MapVolumesToSnapShots();
 

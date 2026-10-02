@@ -213,15 +213,16 @@ namespace Duplicati.Library.Main.Operation.Common
         /// <summary>
         /// Gets a snapshot service for the given sources
         /// </summary>
-        /// <param name="sources">The sources to get the snapshot for</param>
+        /// <param name="sources">The sources to get the snapshot for, which are the entries the snapshot enumerates</param>
+        /// <param name="extraSnapshotPaths">Paths that are not sources, but must be readable through the snapshot (e.g. the files a snapshot-aware provider reads)</param>
         /// <param name="options">The options to use</param>
         /// <returns>The snapshot service</returns>
-        public static ISnapshotService GetFileSnapshotService(IEnumerable<string> sources, Options options)
+        public static ISnapshotService GetFileSnapshotService(IEnumerable<string> sources, IEnumerable<string> extraSnapshotPaths, Options options)
         {
             try
             {
                 if (options.SnapShotStrategy != Options.OptimizationStrategy.Off)
-                    return SnapshotUtility.CreateSnapshot(sources, options.RawOptions, options.SymlinkPolicy == Options.SymlinkStrategy.Follow);
+                    return SnapshotUtility.CreateSnapshot(sources, extraSnapshotPaths, options.RawOptions, options.SymlinkPolicy == Options.SymlinkStrategy.Follow);
             }
             catch (Exception ex)
             {
@@ -316,7 +317,7 @@ namespace Duplicati.Library.Main.Operation.Common
                     }
                     else if ("vss".Equals(entry.Key, StringComparison.OrdinalIgnoreCase) || "lvm".Equals(entry.Key, StringComparison.OrdinalIgnoreCase))
                     {
-                        results.Add(new LocalFileSource(SnapshotUtility.CreateSnapshot(entry, options.RawOptions, options.SymlinkPolicy == Options.SymlinkStrategy.Follow)));
+                        results.Add(new LocalFileSource(SnapshotUtility.CreateSnapshot(entry, [], options.RawOptions, options.SymlinkPolicy == Options.SymlinkStrategy.Follow)));
                     }
                     else if ("@".Equals(entry.Key, StringComparison.OrdinalIgnoreCase))
                     {
@@ -387,19 +388,20 @@ namespace Duplicati.Library.Main.Operation.Common
                         snapshotAwareProviders.Add(snapshotAware);
                 }
 
-                // Collect snapshot paths from file sources and snapshot-aware providers
-                var snapshotPaths = new List<string>(fileSources);
+                // Collect the paths the snapshot-aware providers read. They are part of the
+                // snapshot, but are not sources, so the file source does not enumerate them
+                var providerSnapshotPaths = new List<string>();
                 foreach (var snapshotAware in snapshotAwareProviders)
                 {
                     var paths = await snapshotAware.GetSnapshotPathsAsync(cancellationToken).ConfigureAwait(false);
                     if (paths != null)
-                        snapshotPaths.AddRange(paths);
+                        providerSnapshotPaths.AddRange(paths);
                 }
 
                 // Create the snapshot service if we have any paths that need it
-                if (snapshotPaths.Count > 0)
+                if (fileSources.Count > 0 || providerSnapshotPaths.Count > 0)
                 {
-                    fileSnapshot = GetFileSnapshotService(snapshotPaths, options);
+                    fileSnapshot = GetFileSnapshotService(fileSources, providerSnapshotPaths, options);
 
                     // Give the snapshot to snapshot-aware providers before initializing them
                     foreach (var snapshotAware in snapshotAwareProviders)
@@ -409,7 +411,7 @@ namespace Duplicati.Library.Main.Operation.Common
                 // Create the file source with the snapshot; the file source disposes the snapshot it is given
                 if (fileSources.Count > 0)
                 {
-                    results.Add(new LocalFileSource(fileSnapshot ?? GetFileSnapshotService(fileSources, options)));
+                    results.Add(new LocalFileSource(fileSnapshot ?? GetFileSnapshotService(fileSources, [], options)));
                     snapshotOwned = fileSnapshot != null;
                 }
 

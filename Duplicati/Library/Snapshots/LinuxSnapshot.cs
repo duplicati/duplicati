@@ -48,9 +48,14 @@ namespace Duplicati.Library.Snapshots
         public static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(WindowsSnapshot));
 
         /// <summary>
-        /// This is a lookup, mapping each source folder to the corresponding snapshot
+        /// This is a lookup, mapping each source folder, and each extra snapshot path, to the corresponding snapshot
         /// </summary>
         private readonly List<KeyValuePair<string, SnapShot>> m_entries;
+
+        /// <summary>
+        /// The source folders, which are the entries that are enumerated
+        /// </summary>
+        private readonly List<string> m_sourceEntries;
 
         /// <summary>
         /// This is the list of the snapshots we have created, which must be disposed
@@ -61,17 +66,19 @@ namespace Duplicati.Library.Snapshots
         /// Constructs a new snapshot module using LVM
         /// </summary>
         /// <param name="sources">The list of folders to create snapshots for</param>
+        /// <param name="extraSnapshotPaths">Paths that are not sources, but must be readable through the snapshot</param>
         /// <param name="followSymlinks">A flag indicating if symlinks should be followed</param>
-        public LinuxSnapshot(IEnumerable<string> sources, bool followSymlinks)
+        public LinuxSnapshot(IEnumerable<string> sources, IEnumerable<string> extraSnapshotPaths, bool followSymlinks)
             : base(followSymlinks)
         {
             try
             {
                 m_entries = new List<KeyValuePair<string, SnapShot>>();
+                m_sourceEntries = sources.ToList();
 
                 // Make sure we do not create more snapshots than we have to
                 var snaps = new Dictionary<string, SnapShot>();
-                foreach (var path in sources)
+                foreach (var path in m_sourceEntries.Concat(extraSnapshotPaths))
                 {
                     var tmp = new SnapShot(path);
                     if (!snaps.TryGetValue(tmp.DeviceName, out var snap))
@@ -110,7 +117,7 @@ namespace Duplicati.Library.Snapshots
         /// <summary>
         /// Gets the source folders
         /// </summary>
-        public override IEnumerable<string> SourceEntries => m_entries.Select(x => x.Key);
+        public override IEnumerable<string> SourceEntries => m_sourceEntries;
 
         /// <summary>
         /// Enumerates the root source files and folders

@@ -28,6 +28,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using Duplicati.Library.Main.Operation.Common;
@@ -204,5 +205,24 @@ public class SourceProviderFactorySnapshotOwnershipTests : BasicSetupHelper
             Assert.That(providers, Does.Contain(created), "The snapshot-aware provider is not wrapped when a file source exists");
             Assert.That(providers.OfType<SnapshotOwningSourceProvider>(), Is.Empty);
         });
+    }
+
+    [Test]
+    public async Task The_file_source_does_not_enumerate_the_paths_of_snapshot_aware_providersAsync()
+    {
+        // The shared snapshot is created from both the file sources and the paths the
+        // snapshot-aware providers read, but only the file sources are files to back up
+        var fileFolder = Util.AppendDirSeparator(Path.Combine(this.DATAFOLDER, "files"));
+        var providerFolder = Path.Combine(this.DATAFOLDER, "provider");
+        Directory.CreateDirectory(fileFolder);
+        Directory.CreateDirectory(providerFolder);
+
+        var providerSource = $"@{Path.Combine(Path.GetPathRoot(this.DATAFOLDER)!, "snapmnt")}|{SnapshotAwareProvider.SCHEME}://{providerFolder}";
+        using var provider = await SourceProviderFactory.GetSourceProviderAsync([fileFolder, providerSource], SnapshotOffOptions(), CancellationToken.None);
+
+        var fileSource = ((Combiner)provider).Providers.OfType<LocalFileSource>().Single();
+        var roots = await fileSource.EnumerateAsync(CancellationToken.None).Select(x => x.Path).ToListAsync();
+
+        Assert.That(roots, Is.EqualTo(new[] { fileFolder }));
     }
 }
