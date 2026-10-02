@@ -452,11 +452,16 @@ namespace Duplicati.Library.Main.Database.Local
                 // Special handling for Windows and multi-drive/UNC backups as they do not have a single common root
                 if (string.IsNullOrWhiteSpace(maxpath) && string.IsNullOrWhiteSpace(prefixrule))
                 {
-                    var paths = cmd.ExecuteReaderEnumerableAsync($@"
+                    // Read the paths before looking into each root: each look drops a temporary
+                    // table when it is done, and that waits for the command timeout while a
+                    // reader is still open on the connection
+                    var paths = await cmd.ExecuteReaderEnumerableAsync($@"
                             SELECT ""Path""
                             FROM ""{tmpnames.Tablename}""
                         ", token)
-                        .Select(x => x.ConvertValueToString(0) ?? "");
+                        .Select(x => x.ConvertValueToString(0) ?? "")
+                        .ToListAsync(token)
+                        .ConfigureAwait(false);
 
                     var roots = paths
                         .Select(x => x.Substring(0, 1))
@@ -471,14 +476,13 @@ namespace Duplicati.Library.Main.Database.Local
                         .Select(x => x.Value)
                         .Distinct();
 
-                    var result = roots
-                        .Concat(rootsUNC)
-                        .Select(x => GetLargestPrefixAsync(filter, x, token)
-                            .FirstAsync())
-                        .Distinct();
+                    foreach (var root in roots.Concat(rootsUNC))
+                        yield return await GetLargestPrefixAsync(filter, root, token)
+                            .FirstAsync(token)
+                            .ConfigureAwait(false);
 
-                    await foreach (var el in result.ConfigureAwait(false))
-                        yield return await el;
+                    // Each root has been returned, and there is no common prefix to add to them
+                    yield break;
                 }
 
                 yield return new FileversionFixed
