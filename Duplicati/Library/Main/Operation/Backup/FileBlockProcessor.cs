@@ -25,6 +25,7 @@ using System.Threading;
 using CoCoL;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Operation.Common;
+using Duplicati.Library.Utility;
 using System.Threading.Tasks;
 
 namespace Duplicati.Library.Main.Operation.Backup
@@ -49,19 +50,9 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <param name="entry">The entry to open</param>
         /// <param name="token">The token that aborts the operation</param>
         /// <returns>The opened stream</returns>
-        private static async Task<Stream> OpenReadAsync(ISourceProviderEntry entry, CancellationToken token)
-        {
-            var open = Task.Run(() => entry.OpenRead(token), CancellationToken.None);
-            try
-            {
-                return await open.WaitAsync(token).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException)
-            {
-                _ = open.ContinueWith(t => t.Result.Dispose(), CancellationToken.None, TaskContinuationOptions.OnlyOnRanToCompletion, TaskScheduler.Default);
-                throw;
-            }
-        }
+        private static Task<Stream> OpenReadAsync(ISourceProviderEntry entry, CancellationToken token)
+            => Task.Run(() => entry.OpenRead(token), CancellationToken.None)
+                .UntilCancelledAsync(token, static stream => stream.Dispose());
 
         public static Task RunAsync(Channels channels, Options options, BackupDatabase database, BackupStatsCollector stats, ITaskReader taskreader)
         {
@@ -169,6 +160,10 @@ namespace Duplicati.Library.Main.Operation.Backup
                     {
                         if (ex.IsRetiredException())
                             return;
+
+                        // An abort is not a problem with the file; the rendezvous above ends the process
+                        if (ex.IsAbortException() && taskreader.ProgressToken.IsCancellationRequested)
+                            continue;
 
                         LogExceptionHelper.LogCommonWarning(ex, FILELOGTAG, "FileProcessingFailed", e.Entry.Path);
                     }
