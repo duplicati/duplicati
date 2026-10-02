@@ -32,6 +32,20 @@
     <UIRef Id="DuplicatiAgentInstallUI"/>
     <Property Id="WIXUI_INSTALLDIR" Value="INSTALLLOCATION" />
 
+    <!-- Install directory of the previous version, as recorded by
+         InstallLocationComponent. SetInstallLocationFromPrevious uses it
+         to keep a custom install directory on upgrade.
+         Note: this only works when the InstallUISequence runs. In a silent
+         install AppSearch runs after the early RemoveExistingProducts has
+         removed the previous version, and with it the recorded value. -->
+    <Property Id="PREVIOUS_INSTALLLOCATION" Secure="yes">
+      <RegistrySearch Id="SearchPreviousInstallLocation"
+                      Root="HKLM"
+                      Key="$(var.SoftwareKey)\DuplicatiTeam\DuplicatiAgent\InstallState"
+                      Name="InstallLocation"
+                      Type="directory" />
+    </Property>
+
     <Property Id="FORSERVICE" Value="false" Secure="yes" />
     <Property Id="NOSCRIPT" Value="false" Secure="yes" />
 
@@ -54,6 +68,14 @@
                 <util:PermissionEx Sddl="D:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)(A;OICI;GRFX;;;BU)" xmlns:util="http://schemas.microsoft.com/wix/UtilExtension"/>
 <?endif?>
               </CreateFolder>
+          </Component>
+
+          <!-- Always-installed component that records the install directory,
+               so the next upgrade can default to the same directory. -->
+          <Component Id="InstallLocationComponent" Guid="CE7BC761-FF8B-4E63-AE8B-6624A073DE07">
+            <RegistryKey Root="HKLM" Key="$(var.SoftwareKey)\DuplicatiTeam\DuplicatiAgent\InstallState">
+              <RegistryValue Id="InstallLocationValue" Name="InstallLocation" Value="[INSTALLLOCATION]" Type="string" KeyPath="yes" />
+            </RegistryKey>
           </Component>
 
           <!--Manage the Agent service. -->
@@ -94,6 +116,7 @@
 
     <Feature Id="DuplicatiCore" Title="Duplicati Agent files" Level="1" Description="Installs the required files for the Duplicati Agent." AllowAdvertise="no" Absent="disallow" ConfigurableDirectory="INSTALLLOCATION" >
       <ComponentRef Id="SecureInstallDirComp" />
+      <ComponentRef Id="InstallLocationComponent" />
       <ComponentRef Id="DuplicatiAgentServiceComponent" />
       <ComponentGroupRef Id="DUPLICATIBIN" />
     </Feature>
@@ -110,9 +133,19 @@
       <!-- Note: This is suboptimal, but the ref counting is not working, so we use Early REP -->
       <RemoveExistingProducts After="FindRelatedProducts" />
 
+      <!-- Keep the install directory of the previous version, unless one
+           was given on the command line. -->
+      <Custom Action="SetInstallLocationFromPrevious" After="AppSearch">PREVIOUS_INSTALLLOCATION AND NOT INSTALLLOCATION AND NOT Installed</Custom>
+
       <!-- Resolves [SourceDir] into PRELOAD_SOURCE -->
       <Custom Action="SetPreloadSource" After="CostFinalize">INSTALL_PRELOAD="true" AND NOT Installed</Custom>
     </InstallExecuteSequence>
+
+    <InstallUISequence>
+      <!-- Pre-fill the install directory shown in InstallDirDlg with the
+           one used by the previous version. -->
+      <Custom Action="SetInstallLocationFromPrevious" After="AppSearch">PREVIOUS_INSTALLLOCATION AND NOT INSTALLLOCATION AND NOT Installed</Custom>
+    </InstallUISequence>
 
     <Property Id="PREVIOUSVERSIONSINSTALLED" Secure="yes" />
     <Upgrade Id="$(var.UpgradeCode)">
@@ -125,6 +158,12 @@
     <CustomAction Id="SetPreloadSource"
               Property="PRELOAD_SOURCE"
               Value="[SourceDir]"
+              Execute="immediate"
+              Return="check" />
+
+    <CustomAction Id="SetInstallLocationFromPrevious"
+              Property="INSTALLLOCATION"
+              Value="[PREVIOUS_INSTALLLOCATION]"
               Execute="immediate"
               Return="check" />
   </Product>
