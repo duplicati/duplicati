@@ -19,12 +19,12 @@ msgstr "- izvēlieties iestatījumu -"
 msgid "...loading..."
 msgstr "...notiek ielāde..."
 
-#: scripts/services/EditUriBuiltins.js:1204 templates/backends/s3.html:66
+#: scripts/services/EditUriBuiltins.js:1211 templates/backends/s3.html:66
 #: templates/backends/s3.html:68
 msgid "AWS Access ID"
 msgstr "AWS Piekļuves ID"
 
-#: scripts/services/EditUriBuiltins.js:1205 templates/backends/s3.html:71
+#: scripts/services/EditUriBuiltins.js:1212 templates/backends/s3.html:71
 #: templates/backends/s3.html:73
 msgid "AWS Access Key"
 msgstr "AWS Piekļuves atslēga"
@@ -41,7 +41,7 @@ msgstr "Par"
 msgid "About {{appname}}"
 msgstr "Par {{appname}}"
 
-#: scripts/services/EditUriBuiltins.js:1153
+#: scripts/services/EditUriBuiltins.js:1160
 msgid "Access Key"
 msgstr "Piekļuves atslēga"
 
@@ -53,7 +53,7 @@ msgstr "Piekļuve liegta"
 msgid "Access to user interface"
 msgstr "Piekļuve lietotāja saskarnei"
 
-#: scripts/services/EditUriBuiltins.js:1152 templates/backends/azure.html:7
+#: scripts/services/EditUriBuiltins.js:1159 templates/backends/azure.html:7
 #: templates/backends/azure.html:8
 msgid "Account name"
 msgstr "Konta nosaukums"
@@ -86,8 +86,8 @@ msgstr "Pievienot ceļu"
 msgid "Added"
 msgstr "Pievienots"
 
-#: scripts/services/EditUriBuiltins.js:1215
-#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:1222
+#: scripts/services/EditUriBuiltins.js:1238
 msgid "Adjust bucket name?"
 msgstr "Precizēt spaiņa iestatījumu?"
 
@@ -177,7 +177,7 @@ msgstr "Dublējumkopijas atrašanās vieta"
 msgid "Backup retention"
 msgstr "Dublējumkopiju saglabāšanas ilgums"
 
-#: templates/home.html:100
+#: templates/home.html:108
 msgid "Backup:"
 msgstr "Dublējumkopija:"
 
@@ -193,14 +193,14 @@ msgstr "Pārlūkot"
 msgid "Browser default"
 msgstr "Pārlūka noklusējums"
 
-#: scripts/services/EditUriBuiltins.js:1163
-#: scripts/services/EditUriBuiltins.js:1203
-#: scripts/services/EditUriBuiltins.js:1249
-#: scripts/services/EditUriBuiltins.js:1263
-#: scripts/services/EditUriBuiltins.js:1310
-#: scripts/services/EditUriBuiltins.js:1316
-#: scripts/services/EditUriBuiltins.js:1372
-#: scripts/services/EditUriBuiltins.js:1384 templates/backends/b2.html:2
+#: scripts/services/EditUriBuiltins.js:1170
+#: scripts/services/EditUriBuiltins.js:1210
+#: scripts/services/EditUriBuiltins.js:1256
+#: scripts/services/EditUriBuiltins.js:1270
+#: scripts/services/EditUriBuiltins.js:1317
+#: scripts/services/EditUriBuiltins.js:1323
+#: scripts/services/EditUriBuiltins.js:1379
+#: scripts/services/EditUriBuiltins.js:1391 templates/backends/b2.html:2
 #: templates/backends/b2.html:3 templates/backends/cos.html:25
 #: templates/backends/e2.html:11 templates/backends/e2.html:12
 #: templates/backends/gcs.html:2 templates/backends/openstack.html:2
@@ -235,8 +235,8 @@ msgstr "Canary"
 #: scripts/controllers/StateController.js:119
 #: scripts/controllers/StateController.js:128
 #: scripts/services/DialogService.js:50
-#: scripts/services/EditUriBuiltins.js:1215
-#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:1222
+#: scripts/services/EditUriBuiltins.js:1238
 #: scripts/services/EditUriBuiltins.js:61 templates/delete.html:54
 #: templates/export.html:34 templates/settings.html:205
 msgid "Cancel"
@@ -460,14 +460,14 @@ msgstr "Ievadiet mērķa atrašanās vietu"
 #: scripts/controllers/ImportController.js:39
 #: scripts/controllers/ImportController.js:43
 #: scripts/controllers/ImportController.js:49
-#: scripts/controllers/RestoreController.js:114
-#: scripts/controllers/RestoreController.js:144
-#: scripts/controllers/RestoreController.js:294
-#: scripts/controllers/RestoreController.js:332
-#: scripts/controllers/RestoreController.js:390
-#: scripts/controllers/RestoreController.js:423
-#: scripts/controllers/RestoreController.js:431
-#: scripts/controllers/RestoreController.js:90
+#: scripts/controllers/RestoreController.js:116
+#: scripts/controllers/RestoreController.js:146
+#: scripts/controllers/RestoreController.js:296
+#: scripts/controllers/RestoreController.js:334
+#: scripts/controllers/RestoreController.js:392
+#: scripts/controllers/RestoreController.js:425
+#: scripts/controllers/RestoreController.js:433
+#: scripts/controllers/RestoreController.js:92
 #: scripts/controllers/RestoreDirectController.js:112
 #: scripts/controllers/RestoreDirectController.js:78
 #: scripts/directives/backupEditUri.js:144
@@ -599,7 +599,7 @@ msgstr "Pievienot no faila"
 msgid "Information"
 msgstr "Informācija"
 
-#: scripts/services/EditUriBuiltins.js:1079
+#: scripts/services/EditUriBuiltins.js:1086
 msgid ""
 "It is possible to connect to some FTP without a password.\n"
 "Are you sure your FTP server supports password-less logins?"
@@ -611,11 +611,11 @@ msgstr ""
 msgid "Language in user interface"
 msgstr "Lietotāja saskarnes valoda:"
 
-#: scripts/controllers/RestoreController.js:38
+#: scripts/controllers/RestoreController.js:40
 msgid "Last month"
 msgstr "Pagājušais mēnesis"
 
-#: scripts/controllers/RestoreController.js:60
+#: scripts/controllers/RestoreController.js:62
 msgid "Latest"
 msgstr "Pēdējais"
 
@@ -707,7 +707,7 @@ msgstr "Mani fotoattēli"
 msgid "My Pictures"
 msgstr "Mani attēli"
 
-#: templates/home.html:87
+#: templates/home.html:95
 msgid "Never"
 msgstr "Nekad"
 
@@ -718,7 +718,7 @@ msgstr "Nekad"
 msgid "Next"
 msgstr "Nākamais"
 
-#: templates/home.html:91
+#: templates/home.html:99
 msgid "Next scheduled run:"
 msgstr "Nākamā plānotā norise"
 
@@ -747,8 +747,8 @@ msgstr "Nākamreiz"
 #: scripts/directives/backupEditUri.js:174
 #: scripts/directives/backupEditUri.js:88
 #: scripts/services/EditUriBackendConfig.js:74
-#: scripts/services/EditUriBuiltins.js:1215
-#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:1222
+#: scripts/services/EditUriBuiltins.js:1238
 #: scripts/services/EditUriBuiltins.js:61
 msgid "No"
 msgstr "Nē"
@@ -757,11 +757,11 @@ msgstr "Nē"
 msgid "No encryption"
 msgstr "Nav šifrešanas"
 
-#: scripts/controllers/RestoreController.js:192
+#: scripts/controllers/RestoreController.js:194
 msgid "No items selected"
 msgstr "Nav izvēlētu vienību"
 
-#: scripts/controllers/RestoreController.js:192
+#: scripts/controllers/RestoreController.js:194
 msgid "No items to restore, please select one or more items"
 msgstr ""
 "Nav vienību ko atjaunot, lūdzu izvēlieties vienu vai vairākas vienības"
@@ -838,7 +838,7 @@ msgstr "Pieejas frāze nomainīta"
 msgid "Passphrases are not matching"
 msgstr "Pieejas frāzes nesakrīt"
 
-#: scripts/services/EditUriBuiltins.js:1295 templates/backends/file.html:33
+#: scripts/services/EditUriBuiltins.js:1302 templates/backends/file.html:33
 #: templates/backends/filejump.html:25 templates/backends/filen.html:11
 #: templates/backends/generic.html:22 templates/backends/idrive.html:11
 #: templates/backends/idrive.html:12 templates/backends/mega.html:11
@@ -927,7 +927,7 @@ msgstr "Turpināt"
 msgid "Run again every"
 msgstr "Palaist atkal katru"
 
-#: templates/home.html:52 templates/home.html:87
+#: templates/home.html:52 templates/home.html:95
 msgid "Run now"
 msgstr "Palaist tagad"
 
@@ -1002,7 +1002,7 @@ msgstr "Avota dati"
 msgid "Source folders"
 msgstr "Avota mapes"
 
-#: templates/home.html:96
+#: templates/home.html:104
 msgid "Source:"
 msgstr "Avots:"
 
@@ -1062,11 +1062,11 @@ msgstr "Tumšais motīvs (veidoja Michal)"
 msgid "The default blue on white theme (by Alex)"
 msgstr "Noklusējuma zils uz balta motīvs (veidoja Alex)"
 
-#: scripts/controllers/RestoreController.js:37
+#: scripts/controllers/RestoreController.js:39
 msgid "This month"
 msgstr "Šis mēnesis"
 
-#: scripts/controllers/RestoreController.js:36
+#: scripts/controllers/RestoreController.js:38
 msgid "This week"
 msgstr "Šī diena"
 
@@ -1074,7 +1074,7 @@ msgstr "Šī diena"
 msgid "Thu"
 msgstr "Cetr"
 
-#: scripts/controllers/RestoreController.js:34
+#: scripts/controllers/RestoreController.js:36
 msgid "Today"
 msgstr "Šodien"
 
@@ -1114,9 +1114,9 @@ msgstr "Lietotāja dati"
 msgid "User interface settings"
 msgstr "Lietotāja saskarnes iestatījumi"
 
-#: scripts/services/EditUriBuiltins.js:1074
-#: scripts/services/EditUriBuiltins.js:1162
-#: scripts/services/EditUriBuiltins.js:1294 templates/backends/file.html:29
+#: scripts/services/EditUriBuiltins.js:1081
+#: scripts/services/EditUriBuiltins.js:1169
+#: scripts/services/EditUriBuiltins.js:1301 templates/backends/file.html:29
 #: templates/backends/filejump.html:21 templates/backends/filen.html:7
 #: templates/backends/generic.html:18 templates/backends/idrive.html:7
 #: templates/backends/idrive.html:8 templates/backends/mega.html:7
@@ -1180,8 +1180,8 @@ msgstr "Gadi"
 #: scripts/directives/backupEditUri.js:174
 #: scripts/directives/backupEditUri.js:88
 #: scripts/services/EditUriBackendConfig.js:74
-#: scripts/services/EditUriBuiltins.js:1215
-#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:1222
+#: scripts/services/EditUriBuiltins.js:1238
 #: scripts/services/EditUriBuiltins.js:61
 msgid "Yes"
 msgstr "Jā"
@@ -1198,7 +1198,7 @@ msgstr "Jā, esmu drosmīgs!"
 msgid "Yes, please break my backup!"
 msgstr "Jā, lūdzu salauziet manu dublējumkopiju!"
 
-#: scripts/controllers/RestoreController.js:35
+#: scripts/controllers/RestoreController.js:37
 msgid "Yesterday"
 msgstr "Vakardiena"
 

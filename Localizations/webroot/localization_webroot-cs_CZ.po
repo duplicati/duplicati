@@ -36,18 +36,18 @@ msgstr "<i class=\"fa fa-check\"></i> Upravit jako text"
 msgid "<i class=\"fa\"></i> Edit as text"
 msgstr "<i class=\"fa\"></i> Upravit jako text"
 
-#: scripts/services/EditUriBuiltins.js:1314
+#: scripts/services/EditUriBuiltins.js:1321
 #: templates/backends/openstack.html:44 templates/backends/storj.html:21
 #: templates/backends/storj.html:22
 msgid "API key"
 msgstr "Klíč k aplikačnímu programovému rozhraní (API)"
 
-#: scripts/services/EditUriBuiltins.js:1204 templates/backends/s3.html:66
+#: scripts/services/EditUriBuiltins.js:1211 templates/backends/s3.html:66
 #: templates/backends/s3.html:68
 msgid "AWS Access ID"
 msgstr "Přístupový identifikátor ke službě AWS"
 
-#: scripts/services/EditUriBuiltins.js:1205 templates/backends/s3.html:71
+#: scripts/services/EditUriBuiltins.js:1212 templates/backends/s3.html:71
 #: templates/backends/s3.html:73
 msgid "AWS Access Key"
 msgstr "Přístupový klíč ke službě AWS"
@@ -64,7 +64,7 @@ msgstr "O aplikaci"
 msgid "About {{appname}}"
 msgstr "O aplikaci {{appname}}"
 
-#: scripts/services/EditUriBuiltins.js:1153
+#: scripts/services/EditUriBuiltins.js:1160
 msgid "Access Key"
 msgstr "Přístupový klíč"
 
@@ -88,7 +88,7 @@ msgstr "Přístupový klíč"
 msgid "Access to user interface"
 msgstr "Přístup k uživatelskému rozhraní"
 
-#: scripts/services/EditUriBuiltins.js:1152 templates/backends/azure.html:7
+#: scripts/services/EditUriBuiltins.js:1159 templates/backends/azure.html:7
 #: templates/backends/azure.html:8
 msgid "Account name"
 msgstr "Název účtu"
@@ -121,8 +121,8 @@ msgstr "Přidat popis umístění"
 msgid "Added"
 msgstr "Přidáno"
 
-#: scripts/services/EditUriBuiltins.js:1215
-#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:1222
+#: scripts/services/EditUriBuiltins.js:1238
 msgid "Adjust bucket name?"
 msgstr "Přizpůsobit název „nádoby“ (bucket)?"
 
@@ -206,8 +206,8 @@ msgstr "Aplikace"
 msgid "As Command-line"
 msgstr "Jako příkazový řádek"
 
-#: scripts/services/EditUriBuiltins.js:1110
-#: scripts/services/EditUriBuiltins.js:1120 templates/backends/gcs.html:8
+#: scripts/services/EditUriBuiltins.js:1117
+#: scripts/services/EditUriBuiltins.js:1127 templates/backends/gcs.html:8
 #: templates/backends/gcs.html:9 templates/backends/jottacloud.html:8
 #: templates/backends/jottacloud.html:9 templates/backends/msgroup.html:13
 #: templates/backends/msgroup.html:14 templates/backends/oauth.html:8
@@ -217,7 +217,7 @@ msgstr "Jako příkazový řádek"
 msgid "AuthID"
 msgstr "AuthID"
 
-#: scripts/services/EditUriBuiltins.js:1305 templates/backends/storj.html:2
+#: scripts/services/EditUriBuiltins.js:1312 templates/backends/storj.html:2
 msgid "Authentication method"
 msgstr "Způsob autentizace"
 
@@ -249,7 +249,7 @@ msgstr "B2 Aplikační ID"
 msgid "B2 Application Key"
 msgstr "Aplikační klíč ke službě B2"
 
-#: scripts/services/EditUriBuiltins.js:1250
+#: scripts/services/EditUriBuiltins.js:1257
 msgid "B2 Cloud Storage Account ID"
 msgstr "Identifikátor účtu u cloudového úložiště B2"
 
@@ -257,7 +257,7 @@ msgstr "Identifikátor účtu u cloudového úložiště B2"
 msgid "B2 Cloud Storage Application ID"
 msgstr "Aplikační klíč ke cloudovému úložišti B2"
 
-#: scripts/services/EditUriBuiltins.js:1251 templates/backends/b2.html:17
+#: scripts/services/EditUriBuiltins.js:1258 templates/backends/b2.html:17
 msgid "B2 Cloud Storage Application Key"
 msgstr "Aplikační klíč ke cloudovému úložišti B2"
 
@@ -282,7 +282,7 @@ msgstr "Umístění zálohy"
 msgid "Backup retention"
 msgstr "Doba uchovávání záloh"
 
-#: templates/home.html:100
+#: templates/home.html:108
 msgid "Backup:"
 msgstr "Záloha:"
 
@@ -306,14 +306,14 @@ msgstr "Výchozí nastavení webového prohlížeče"
 msgid "Bucket create location"
 msgstr "Umístění ve kterém „nádobu“ (bucket) vytvořit"
 
-#: scripts/services/EditUriBuiltins.js:1163
-#: scripts/services/EditUriBuiltins.js:1203
-#: scripts/services/EditUriBuiltins.js:1249
-#: scripts/services/EditUriBuiltins.js:1263
-#: scripts/services/EditUriBuiltins.js:1310
-#: scripts/services/EditUriBuiltins.js:1316
-#: scripts/services/EditUriBuiltins.js:1372
-#: scripts/services/EditUriBuiltins.js:1384 templates/backends/b2.html:2
+#: scripts/services/EditUriBuiltins.js:1170
+#: scripts/services/EditUriBuiltins.js:1210
+#: scripts/services/EditUriBuiltins.js:1256
+#: scripts/services/EditUriBuiltins.js:1270
+#: scripts/services/EditUriBuiltins.js:1317
+#: scripts/services/EditUriBuiltins.js:1323
+#: scripts/services/EditUriBuiltins.js:1379
+#: scripts/services/EditUriBuiltins.js:1391 templates/backends/b2.html:2
 #: templates/backends/b2.html:3 templates/backends/cos.html:25
 #: templates/backends/e2.html:11 templates/backends/e2.html:12
 #: templates/backends/gcs.html:2 templates/backends/openstack.html:2
@@ -330,7 +330,7 @@ msgstr "Třída úložiště nesoucí „nádobu“ (bucket)"
 msgid "Building list of files to restore …"
 msgstr "Vytváření seznamu souborů k obnovení…"
 
-#: scripts/controllers/RestoreController.js:373
+#: scripts/controllers/RestoreController.js:375
 msgid "Building partial temporary database …"
 msgstr "Vytváření částečné dočasné databáze…"
 
@@ -388,8 +388,8 @@ msgstr "Kanárek"
 #: scripts/controllers/StateController.js:119
 #: scripts/controllers/StateController.js:128
 #: scripts/services/DialogService.js:50
-#: scripts/services/EditUriBuiltins.js:1215
-#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:1222
+#: scripts/services/EditUriBuiltins.js:1238
 #: scripts/services/EditUriBuiltins.js:61 templates/delete.html:54
 #: templates/export.html:34 templates/settings.html:205
 msgid "Cancel"
@@ -528,7 +528,7 @@ msgstr "Spojení ztraceno"
 msgid "Connection worked!"
 msgstr "Spojení funguje!"
 
-#: scripts/services/EditUriBuiltins.js:1154 templates/backends/azure.html:2
+#: scripts/services/EditUriBuiltins.js:1161 templates/backends/azure.html:2
 #: templates/backends/azure.html:3
 msgid "Container name"
 msgstr "Název kontejneru"
@@ -602,7 +602,7 @@ msgstr "Vytváření nového uživatele s omezeným přístupem…"
 msgid "Creating target folders …"
 msgstr "Vytváření cílových složek…"
 
-#: scripts/controllers/RestoreController.js:368
+#: scripts/controllers/RestoreController.js:370
 msgid "Creating temporary backup …"
 msgstr "Vytváření dočasné zálohy…"
 
@@ -610,11 +610,11 @@ msgstr "Vytváření dočasné zálohy…"
 msgid "Creating user …"
 msgstr "Vytváření uživatele..."
 
-#: templates/home.html:105
+#: templates/home.html:113
 msgid "Current action:"
 msgstr "Stávající akce:"
 
-#: templates/home.html:115
+#: templates/home.html:123
 msgid "Current file:"
 msgstr "Stávající soubor:"
 
@@ -626,7 +626,7 @@ msgstr "Stávající verze je {{versionname}} ({{versionnumber}})"
 msgid "Custom S3 endpoint"
 msgstr "Vlastní S3 koncový bod"
 
-#: scripts/services/EditUriBuiltins.js:1320 templates/backends/storj.html:18
+#: scripts/services/EditUriBuiltins.js:1327 templates/backends/storj.html:18
 msgid "Custom Satellite"
 msgstr "Vlastní satelit"
 
@@ -897,7 +897,7 @@ msgstr ""
 "Šifrovací moduly: <p style=\"display: inline\" ng-repeat=\"item in "
 "sysinfo.EncryptionModules\">{{item.Key}} </p>"
 
-#: scripts/services/EditUriBuiltins.js:1315 templates/backends/storj.html:25
+#: scripts/services/EditUriBuiltins.js:1322 templates/backends/storj.html:25
 #: templates/backends/storj.html:26
 msgid "Encryption passphrase"
 msgstr "Šifrovací heslová fráze"
@@ -969,14 +969,14 @@ msgstr "Zadejte popis cílového umístění "
 #: scripts/controllers/ImportController.js:39
 #: scripts/controllers/ImportController.js:43
 #: scripts/controllers/ImportController.js:49
-#: scripts/controllers/RestoreController.js:114
-#: scripts/controllers/RestoreController.js:144
-#: scripts/controllers/RestoreController.js:294
-#: scripts/controllers/RestoreController.js:332
-#: scripts/controllers/RestoreController.js:390
-#: scripts/controllers/RestoreController.js:423
-#: scripts/controllers/RestoreController.js:431
-#: scripts/controllers/RestoreController.js:90
+#: scripts/controllers/RestoreController.js:116
+#: scripts/controllers/RestoreController.js:146
+#: scripts/controllers/RestoreController.js:296
+#: scripts/controllers/RestoreController.js:334
+#: scripts/controllers/RestoreController.js:392
+#: scripts/controllers/RestoreController.js:425
+#: scripts/controllers/RestoreController.js:433
+#: scripts/controllers/RestoreController.js:92
 #: scripts/controllers/RestoreDirectController.js:112
 #: scripts/controllers/RestoreDirectController.js:78
 #: scripts/directives/backupEditUri.js:144
@@ -1078,7 +1078,7 @@ msgstr "Vnější odkaz"
 msgid "FTP (Alternative)"
 msgstr "FTP (alternativní)"
 
-#: scripts/controllers/RestoreController.js:390
+#: scripts/controllers/RestoreController.js:392
 msgid "Failed to build temporary database: {{message}}"
 msgstr "Nepodařilo se vytvořit dočasnou databázi: {{message}}"
 
@@ -1092,10 +1092,10 @@ msgstr "Nepodařilo se připojit:"
 #: scripts/controllers/CommandlineController.js:80
 #: scripts/controllers/ExportController.js:40
 #: scripts/controllers/ExportController.js:57
-#: scripts/controllers/RestoreController.js:294
-#: scripts/controllers/RestoreController.js:332
-#: scripts/controllers/RestoreController.js:431
-#: scripts/controllers/RestoreController.js:90
+#: scripts/controllers/RestoreController.js:296
+#: scripts/controllers/RestoreController.js:334
+#: scripts/controllers/RestoreController.js:433
+#: scripts/controllers/RestoreController.js:92
 #: scripts/controllers/RestoreDirectController.js:112
 #: scripts/controllers/RestoreDirectController.js:78
 #: scripts/services/LogService.js:29
@@ -1106,8 +1106,8 @@ msgstr "Nepodařilo se připojit: {{message}}"
 msgid "Failed to delete:"
 msgstr "Nepodařilo se smazat:"
 
-#: scripts/controllers/RestoreController.js:114
-#: scripts/controllers/RestoreController.js:144
+#: scripts/controllers/RestoreController.js:116
+#: scripts/controllers/RestoreController.js:146
 msgid "Failed to fetch path information: {{message}}"
 msgstr "Nepodařilo se stáhnout informaci o popisu umístění: {{message}}"
 
@@ -1132,7 +1132,7 @@ msgstr "Nepodařilo se načíst výchozí parametry zálohy:"
 msgid "Failed to read file: {{message}}"
 msgstr "Chyba čtení souboru: {{message}}"
 
-#: scripts/controllers/RestoreController.js:423
+#: scripts/controllers/RestoreController.js:425
 msgid "Failed to restore files: {{message}}"
 msgstr "Nepodařilo se obnovit soubory: {{message}}"
 
@@ -1140,8 +1140,8 @@ msgstr "Nepodařilo se obnovit soubory: {{message}}"
 msgid "Failed to save:"
 msgstr "Nepodařilo se uložit:"
 
-#: scripts/controllers/RestoreController.js:120
-#: scripts/controllers/RestoreController.js:159
+#: scripts/controllers/RestoreController.js:122
+#: scripts/controllers/RestoreController.js:161
 msgid "Fetching path information …"
 msgstr "Získávání informací o popisu umístění…"
 
@@ -1215,11 +1215,11 @@ msgstr "Vytvořit"
 msgid "Generate IAM access policy"
 msgstr "Vytvořit IAM zásady přístupu"
 
-#: scripts/controllers/RestoreController.js:70
+#: scripts/controllers/RestoreController.js:72
 msgid "Getting file versions …"
 msgstr "Získávání verzí souboru…"
 
-#: scripts/services/EditUriBuiltins.js:1143 templates/backends/msgroup.html:2
+#: scripts/services/EditUriBuiltins.js:1150 templates/backends/msgroup.html:2
 msgid "Group email"
 msgstr "E-mail skupiny"
 
@@ -1359,7 +1359,7 @@ msgstr "Přerušeno, žádné statistiky nebyly posbírány"
 msgid "Invalid retention time"
 msgstr "Neplatná doba ponechání"
 
-#: scripts/services/EditUriBuiltins.js:1079
+#: scripts/services/EditUriBuiltins.js:1086
 msgid ""
 "It is possible to connect to some FTP without a password.\n"
 "Are you sure your FTP server supports password-less logins?"
@@ -1391,7 +1391,7 @@ msgstr "Verze aplikačního program. rozhraní stavebního bloku"
 msgid "Language in user interface"
 msgstr "Jazyk textů v uživatelském rozhraní"
 
-#: scripts/controllers/RestoreController.js:38
+#: scripts/controllers/RestoreController.js:40
 msgid "Last month"
 msgstr "Minulý měsíc"
 
@@ -1403,7 +1403,7 @@ msgstr "Minulá úspěšná záloha:"
 msgid "Last successful restore: {{time}} (took {{duration || '0 seconds'}})"
 msgstr "Minulé úspěšné obnovení: {{time}} (trvalo {{duration || '0 sekund'}})"
 
-#: scripts/controllers/RestoreController.js:60
+#: scripts/controllers/RestoreController.js:62
 msgid "Latest"
 msgstr "Poslední"
 
@@ -1579,7 +1579,7 @@ msgstr "Obrázky"
 msgid "Name"
 msgstr "Název"
 
-#: templates/home.html:87
+#: templates/home.html:95
 msgid "Never"
 msgstr "Nikdy"
 
@@ -1602,7 +1602,7 @@ msgstr ""
 msgid "Next"
 msgstr "Další"
 
-#: templates/home.html:91
+#: templates/home.html:99
 msgid "Next scheduled run:"
 msgstr "Příští naplánované spuštění:"
 
@@ -1631,8 +1631,8 @@ msgstr "Příště"
 #: scripts/directives/backupEditUri.js:174
 #: scripts/directives/backupEditUri.js:88
 #: scripts/services/EditUriBackendConfig.js:74
-#: scripts/services/EditUriBuiltins.js:1215
-#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:1222
+#: scripts/services/EditUriBuiltins.js:1238
 #: scripts/services/EditUriBuiltins.js:61
 msgid "No"
 msgstr "Ne"
@@ -1655,11 +1655,11 @@ msgstr "Nebyl nalezen žádný editor pro typ úložiště „{{backend}}“"
 msgid "No encryption"
 msgstr "Nešifrovat"
 
-#: scripts/controllers/RestoreController.js:192
+#: scripts/controllers/RestoreController.js:194
 msgid "No items selected"
 msgstr "Nejsou vybrané žádné položky"
 
-#: scripts/controllers/RestoreController.js:192
+#: scripts/controllers/RestoreController.js:194
 msgid "No items to restore, please select one or more items"
 msgstr "Žádné položky pro obnovení – vyberte alespoň jednu"
 
@@ -1801,7 +1801,7 @@ msgstr "Zadání heslové fráze se neshodují"
 msgid "Passphrases do not match"
 msgstr "Zadání heslové fráze se neshodují"
 
-#: scripts/services/EditUriBuiltins.js:1295 templates/backends/file.html:33
+#: scripts/services/EditUriBuiltins.js:1302 templates/backends/file.html:33
 #: templates/backends/filejump.html:25 templates/backends/filen.html:11
 #: templates/backends/generic.html:22 templates/backends/idrive.html:11
 #: templates/backends/idrive.html:12 templates/backends/mega.html:11
@@ -1814,8 +1814,8 @@ msgstr "Heslo"
 msgid "Patching files with local blocks …"
 msgstr "Opravování souborů pomocí místních bloků…"
 
-#: scripts/services/EditUriBuiltins.js:1279
-#: scripts/services/EditUriBuiltins.js:1400
+#: scripts/services/EditUriBuiltins.js:1286
+#: scripts/services/EditUriBuiltins.js:1407
 msgid "Path"
 msgstr "Popis umístění"
 
@@ -1873,7 +1873,7 @@ msgstr "Zabránit automatickému přihlašování ikony v oznamovací oblasti"
 msgid "Previous"
 msgstr "Předchozí"
 
-#: templates/home.html:107
+#: templates/home.html:115
 msgid "Progress:"
 msgstr "Postup:"
 
@@ -1935,11 +1935,11 @@ msgstr "Načíst znovu"
 msgid "Remote"
 msgstr "Vzdálené"
 
-#: scripts/services/EditUriBuiltins.js:1338
+#: scripts/services/EditUriBuiltins.js:1345
 msgid "Remote Path"
 msgstr "Vzdálené umístění"
 
-#: scripts/services/EditUriBuiltins.js:1337
+#: scripts/services/EditUriBuiltins.js:1344
 msgid "Remote Repository"
 msgstr "Vzdálený repozitář"
 
@@ -2036,8 +2036,8 @@ msgstr "Obnovené složky"
 msgid "Restored Symlinks"
 msgstr "Obnovené symbolické odkazy"
 
-#: scripts/controllers/RestoreController.js:383
-#: scripts/controllers/RestoreController.js:405
+#: scripts/controllers/RestoreController.js:385
+#: scripts/controllers/RestoreController.js:407
 msgid "Restoring files …"
 msgstr "Obnovování souborů…"
 
@@ -2053,7 +2053,7 @@ msgstr "Seznamy přepsaných souborů"
 msgid "Run again every"
 msgstr "Spustit znovu každou"
 
-#: templates/home.html:52 templates/home.html:87
+#: templates/home.html:52 templates/home.html:95
 msgid "Run now"
 msgstr "Spustit nyní"
 
@@ -2224,7 +2224,7 @@ msgstr "Zdrojová data"
 msgid "Source folders"
 msgstr "Zdrojové složky"
 
-#: templates/home.html:96
+#: templates/home.html:104
 msgid "Source:"
 msgstr "Zdroj:"
 
@@ -2256,8 +2256,8 @@ msgstr "Spouštění zálohy…"
 msgid "Starting restore …"
 msgstr "Spouštění obnovení…"
 
-#: scripts/controllers/RestoreController.js:379
-#: scripts/controllers/RestoreController.js:403
+#: scripts/controllers/RestoreController.js:381
+#: scripts/controllers/RestoreController.js:405
 msgid "Starting the restore process …"
 msgstr "Spouštění procesu obnovení…"
 
@@ -2371,10 +2371,10 @@ msgstr "Zkoušení přístupových práv…"
 msgid "Testing …"
 msgstr "Testování…"
 
-#: scripts/services/EditUriBuiltins.js:1259
-#: scripts/services/EditUriBuiltins.js:1275
-#: scripts/services/EditUriBuiltins.js:1380
-#: scripts/services/EditUriBuiltins.js:1396
+#: scripts/services/EditUriBuiltins.js:1266
+#: scripts/services/EditUriBuiltins.js:1282
+#: scripts/services/EditUriBuiltins.js:1387
+#: scripts/services/EditUriBuiltins.js:1403
 msgid ""
 "The '{{fieldname}}' field contains an invalid character: {{character}} "
 "(value: {{value}}, index: {{pos}})"
@@ -2393,7 +2393,7 @@ msgstr ""
 "Záloha byla dočasná a už neexistuje, takže data záznamu událostí jsou "
 "ztracena"
 
-#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:1238
 msgid "The bucket name should be all lower-case, convert automatically?"
 msgstr "Název nádoby by měl být malými písmeny, převést automaticky?"
 
@@ -2491,7 +2491,7 @@ msgstr ""
 "Uživatel má příliš vysoká přístupová práva. Chcete vytvořit nového uživatele"
 " s právy omezenými pouze na vybraný popis umístění?"
 
-#: scripts/controllers/RestoreController.js:308
+#: scripts/controllers/RestoreController.js:310
 msgid ""
 "This backup was created on another operating system. Restoring files without"
 " specifying a destination folder can cause files to be restored in "
@@ -2502,11 +2502,11 @@ msgstr ""
 "zadání cílové složky může způsobit, že soubory budou obnoveny do "
 "neočekávaných míst. Opravdu chcete pokračovat bez zvolení cílové složky?"
 
-#: scripts/controllers/RestoreController.js:37
+#: scripts/controllers/RestoreController.js:39
 msgid "This month"
 msgstr "Tento měsíc"
 
-#: scripts/controllers/RestoreController.js:36
+#: scripts/controllers/RestoreController.js:38
 msgid "This week"
 msgstr "Tento týden"
 
@@ -2548,7 +2548,7 @@ msgstr ""
 "Pokud kolonka není vyplněna, je umožněn přístup pouze na IP adresu a "
 "localhost."
 
-#: scripts/controllers/RestoreController.js:34
+#: scripts/controllers/RestoreController.js:36
 msgid "Today"
 msgstr "Út"
 
@@ -2640,9 +2640,9 @@ msgstr "Uživatel má příliš mnoho oprávnění"
 msgid "User interface settings"
 msgstr "Nastavení uživatelského rozhraní"
 
-#: scripts/services/EditUriBuiltins.js:1074
-#: scripts/services/EditUriBuiltins.js:1162
-#: scripts/services/EditUriBuiltins.js:1294 templates/backends/file.html:29
+#: scripts/services/EditUriBuiltins.js:1081
+#: scripts/services/EditUriBuiltins.js:1169
+#: scripts/services/EditUriBuiltins.js:1301 templates/backends/file.html:29
 #: templates/backends/filejump.html:21 templates/backends/filen.html:7
 #: templates/backends/generic.html:18 templates/backends/idrive.html:7
 #: templates/backends/idrive.html:8 templates/backends/mega.html:7
@@ -2762,8 +2762,8 @@ msgstr "Let"
 #: scripts/directives/backupEditUri.js:174
 #: scripts/directives/backupEditUri.js:88
 #: scripts/services/EditUriBackendConfig.js:74
-#: scripts/services/EditUriBuiltins.js:1215
-#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:1222
+#: scripts/services/EditUriBuiltins.js:1238
 #: scripts/services/EditUriBuiltins.js:61
 msgid "Yes"
 msgstr "Ano"
@@ -2784,7 +2784,7 @@ msgstr "Ano, mám odvahu!"
 msgid "Yes, please break my backup!"
 msgstr "Ano, chci rozbít své zálohy!"
 
-#: scripts/controllers/RestoreController.js:35
+#: scripts/controllers/RestoreController.js:37
 msgid "Yesterday"
 msgstr "Včera"
 
@@ -2824,7 +2824,7 @@ msgstr ""
 "Zvolili jste že záloha nebude šifrována. Šifrování je doporučeno pro veškerá"
 " data ukládaná na vzdálený server."
 
-#: scripts/controllers/RestoreController.js:302
+#: scripts/controllers/RestoreController.js:304
 msgid "You have chosen to restore to a new location, but not entered one"
 msgstr "Zvolili jste obnovu do nového umístění, ale nezadali jste ho"
 
@@ -2841,7 +2841,7 @@ msgstr ""
 msgid "You must choose at least one source folder"
 msgstr "Je třeba zvolit alespoň jednu zdrojovou složku"
 
-#: scripts/services/EditUriBuiltins.js:1173
+#: scripts/services/EditUriBuiltins.js:1180
 msgid "You must enter a domain name to use v3 API"
 msgstr ""
 "Aby bylo možné použít verzi 3 aplikačního programového rozhraní, je třeba "
@@ -2855,7 +2855,7 @@ msgstr "Je třeba zadat název zálohy"
 msgid "You must enter a passphrase or disable encryption"
 msgstr "Buď je třeba zadat heslovou frázi nebo šifrování vypnout"
 
-#: scripts/services/EditUriBuiltins.js:1170
+#: scripts/services/EditUriBuiltins.js:1177
 msgid "You must enter a password to use v3 API"
 msgstr ""
 "Aby bylo možné použít verzi 3 aplikačního programového rozhraní, je třeba "
@@ -2865,7 +2865,7 @@ msgstr ""
 msgid "You must enter a positive number of backups to keep"
 msgstr "Je třeba zadat kladný počet záloh které uchovávat"
 
-#: scripts/services/EditUriBuiltins.js:1176
+#: scripts/services/EditUriBuiltins.js:1183
 msgid "You must enter a tenant (aka project) name to use v3 API"
 msgstr ""
 "Aby bylo možné použít verzi 3 aplikačního programového rozhraní, je třeba "
@@ -2896,11 +2896,11 @@ msgstr "Je třeba vyplnit uživatelské jméno"
 msgid "You must fill in {{field}}"
 msgstr "Je třeba vyplnit kolonku {{field}}"
 
-#: scripts/services/EditUriBuiltins.js:1166
+#: scripts/services/EditUriBuiltins.js:1173
 msgid "You must select or fill in the AuthURI"
 msgstr "Je třeba vybrat nebo vyplnit AuthURI"
 
-#: scripts/services/EditUriBuiltins.js:1208
+#: scripts/services/EditUriBuiltins.js:1215
 msgid "You must select or fill in the server"
 msgstr "Je třeba vybrat nebo vyplnit server"
 
@@ -2938,7 +2938,7 @@ msgstr "vlastní"
 msgid "resume now"
 msgstr "pokračovat nyní"
 
-#: scripts/services/EditUriBuiltins.js:1143
+#: scripts/services/EditUriBuiltins.js:1150
 msgid "unless you are explicitly specifying --group-id"
 msgstr "pokud výslovně neuvedete --group-id"
 
@@ -2958,7 +2958,7 @@ msgstr ""
 msgid "{{files}} files ({{size}}) to go {{speed_txt}}"
 msgstr "{{files}} souborů ({{size}}) zbývá {{speed_txt}}"
 
-#: templates/home.html:101 templates/restorewizard.html:23
+#: templates/home.html:109 templates/restorewizard.html:23
 msgid "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Version"
 msgid_plural "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Versions"
 msgstr[0] "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} verze"
@@ -2979,6 +2979,6 @@ msgstr "{{number}} hodin"
 msgid "{{number}} Minutes"
 msgstr "{{number}} minut"
 
-#: templates/home.html:81
+#: templates/home.html:82 templates/home.html:88
 msgid "{{time}} (took {{duration}})"
 msgstr "{{time}} (trvalo {{duration}})"

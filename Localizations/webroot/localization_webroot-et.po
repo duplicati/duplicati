@@ -19,18 +19,18 @@ msgstr "- tee valik -"
 msgid "...loading..."
 msgstr "...laadimine..."
 
-#: scripts/services/EditUriBuiltins.js:1314
+#: scripts/services/EditUriBuiltins.js:1321
 #: templates/backends/openstack.html:44 templates/backends/storj.html:21
 #: templates/backends/storj.html:22
 msgid "API key"
 msgstr "API võti"
 
-#: scripts/services/EditUriBuiltins.js:1204 templates/backends/s3.html:66
+#: scripts/services/EditUriBuiltins.js:1211 templates/backends/s3.html:66
 #: templates/backends/s3.html:68
 msgid "AWS Access ID"
 msgstr "AWS ligipääsu ID"
 
-#: scripts/services/EditUriBuiltins.js:1205 templates/backends/s3.html:71
+#: scripts/services/EditUriBuiltins.js:1212 templates/backends/s3.html:71
 #: templates/backends/s3.html:73
 msgid "AWS Access Key"
 msgstr "AWS ligipääsuvõti"
@@ -47,7 +47,7 @@ msgstr "Info"
 msgid "About {{appname}}"
 msgstr "{{appname}} info"
 
-#: scripts/services/EditUriBuiltins.js:1153
+#: scripts/services/EditUriBuiltins.js:1160
 msgid "Access Key"
 msgstr "Ligipääsuvõti"
 
@@ -63,7 +63,7 @@ msgstr "Ligipääs on antud"
 msgid "Access to user interface"
 msgstr "Ligipääs kasutajaliidesele"
 
-#: scripts/services/EditUriBuiltins.js:1152 templates/backends/azure.html:7
+#: scripts/services/EditUriBuiltins.js:1159 templates/backends/azure.html:7
 #: templates/backends/azure.html:8
 msgid "Account name"
 msgstr "Konto nimi"
@@ -117,8 +117,8 @@ msgstr "Rakendused"
 msgid "As Command-line"
 msgstr "Käsureana"
 
-#: scripts/services/EditUriBuiltins.js:1110
-#: scripts/services/EditUriBuiltins.js:1120 templates/backends/gcs.html:8
+#: scripts/services/EditUriBuiltins.js:1117
+#: scripts/services/EditUriBuiltins.js:1127 templates/backends/gcs.html:8
 #: templates/backends/gcs.html:9 templates/backends/jottacloud.html:8
 #: templates/backends/jottacloud.html:9 templates/backends/msgroup.html:13
 #: templates/backends/msgroup.html:14 templates/backends/oauth.html:8
@@ -128,7 +128,7 @@ msgstr "Käsureana"
 msgid "AuthID"
 msgstr "AuthID"
 
-#: scripts/services/EditUriBuiltins.js:1305 templates/backends/storj.html:2
+#: scripts/services/EditUriBuiltins.js:1312 templates/backends/storj.html:2
 msgid "Authentication method"
 msgstr "Autentimise viis"
 
@@ -173,7 +173,7 @@ msgstr "Varukoopia asukoht"
 msgid "Backup retention"
 msgstr "Varukoopia säilitamine"
 
-#: templates/home.html:100
+#: templates/home.html:108
 msgid "Backup:"
 msgstr "Varukoopia:"
 
@@ -215,8 +215,8 @@ msgstr "Eksperimentaalne"
 #: scripts/controllers/StateController.js:119
 #: scripts/controllers/StateController.js:128
 #: scripts/services/DialogService.js:50
-#: scripts/services/EditUriBuiltins.js:1215
-#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:1222
+#: scripts/services/EditUriBuiltins.js:1238
 #: scripts/services/EditUriBuiltins.js:61 templates/delete.html:54
 #: templates/export.html:34 templates/settings.html:205
 msgid "Cancel"
@@ -325,7 +325,7 @@ msgstr "Ühendus kadus"
 msgid "Connection worked!"
 msgstr "Ühendus töötas!"
 
-#: scripts/services/EditUriBuiltins.js:1154 templates/backends/azure.html:2
+#: scripts/services/EditUriBuiltins.js:1161 templates/backends/azure.html:2
 #: templates/backends/azure.html:3
 msgid "Container name"
 msgstr "Konteineri nimi"
@@ -382,15 +382,15 @@ msgstr "Vea aruande loomine ..."
 msgid "Creating target folders …"
 msgstr "Sihtkaustade loomine ..."
 
-#: scripts/controllers/RestoreController.js:368
+#: scripts/controllers/RestoreController.js:370
 msgid "Creating temporary backup …"
 msgstr "Ajutise varukoopia loomine ..."
 
-#: templates/home.html:105
+#: templates/home.html:113
 msgid "Current action:"
 msgstr "Praegune tegevus:"
 
-#: templates/home.html:115
+#: templates/home.html:123
 msgid "Current file:"
 msgstr "Praegune fail:"
 
@@ -402,7 +402,7 @@ msgstr "Praegune versioon on {{versionname}} ({{versionnumber}})"
 msgid "Custom S3 endpoint"
 msgstr "Kohandatud S3 lõpppunkt"
 
-#: scripts/services/EditUriBuiltins.js:1320 templates/backends/storj.html:18
+#: scripts/services/EditUriBuiltins.js:1327 templates/backends/storj.html:18
 msgid "Custom Satellite"
 msgstr "Kohandatud satelliit"
 
@@ -633,14 +633,14 @@ msgstr "Sisesta sihtkoht"
 #: scripts/controllers/ImportController.js:39
 #: scripts/controllers/ImportController.js:43
 #: scripts/controllers/ImportController.js:49
-#: scripts/controllers/RestoreController.js:114
-#: scripts/controllers/RestoreController.js:144
-#: scripts/controllers/RestoreController.js:294
-#: scripts/controllers/RestoreController.js:332
-#: scripts/controllers/RestoreController.js:390
-#: scripts/controllers/RestoreController.js:423
-#: scripts/controllers/RestoreController.js:431
-#: scripts/controllers/RestoreController.js:90
+#: scripts/controllers/RestoreController.js:116
+#: scripts/controllers/RestoreController.js:146
+#: scripts/controllers/RestoreController.js:296
+#: scripts/controllers/RestoreController.js:334
+#: scripts/controllers/RestoreController.js:392
+#: scripts/controllers/RestoreController.js:425
+#: scripts/controllers/RestoreController.js:433
+#: scripts/controllers/RestoreController.js:92
 #: scripts/controllers/RestoreDirectController.js:112
 #: scripts/controllers/RestoreDirectController.js:78
 #: scripts/directives/backupEditUri.js:144
@@ -736,10 +736,10 @@ msgstr "Ühendumine ebaõnnestus:"
 #: scripts/controllers/CommandlineController.js:80
 #: scripts/controllers/ExportController.js:40
 #: scripts/controllers/ExportController.js:57
-#: scripts/controllers/RestoreController.js:294
-#: scripts/controllers/RestoreController.js:332
-#: scripts/controllers/RestoreController.js:431
-#: scripts/controllers/RestoreController.js:90
+#: scripts/controllers/RestoreController.js:296
+#: scripts/controllers/RestoreController.js:334
+#: scripts/controllers/RestoreController.js:433
+#: scripts/controllers/RestoreController.js:92
 #: scripts/controllers/RestoreDirectController.js:112
 #: scripts/controllers/RestoreDirectController.js:78
 #: scripts/services/LogService.js:29
@@ -762,8 +762,8 @@ msgstr "Varukoopia vaikeväärtuste lugemine ebaõnnestus:"
 msgid "Failed to save:"
 msgstr "Salvestamine ebaõnnestus:"
 
-#: scripts/controllers/RestoreController.js:120
-#: scripts/controllers/RestoreController.js:159
+#: scripts/controllers/RestoreController.js:122
+#: scripts/controllers/RestoreController.js:161
 msgid "Fetching path information …"
 msgstr "Asukoha info hankimine ..."
 
@@ -833,11 +833,11 @@ msgstr "Üldised valikud"
 msgid "Generate"
 msgstr "Genereeri"
 
-#: scripts/controllers/RestoreController.js:70
+#: scripts/controllers/RestoreController.js:72
 msgid "Getting file versions …"
 msgstr "Failiversioonide hankimine ..."
 
-#: scripts/services/EditUriBuiltins.js:1143 templates/backends/msgroup.html:2
+#: scripts/services/EditUriBuiltins.js:1150 templates/backends/msgroup.html:2
 msgid "Group email"
 msgstr "Grupi e-post"
 
@@ -943,7 +943,7 @@ msgstr "Keystone API versioon"
 msgid "Language in user interface"
 msgstr "Kasutajaliidese keel"
 
-#: scripts/controllers/RestoreController.js:38
+#: scripts/controllers/RestoreController.js:40
 msgid "Last month"
 msgstr "Viimane kuu"
 
@@ -951,7 +951,7 @@ msgstr "Viimane kuu"
 msgid "Last successful backup:"
 msgstr "Viimane edukas varukoopia:"
 
-#: scripts/controllers/RestoreController.js:60
+#: scripts/controllers/RestoreController.js:62
 msgid "Latest"
 msgstr "Viimased"
 
@@ -1091,7 +1091,7 @@ msgstr "Minu pildid"
 msgid "Name"
 msgstr "Nimi"
 
-#: templates/home.html:87
+#: templates/home.html:95
 msgid "Never"
 msgstr "Mitte kunagi"
 
@@ -1102,7 +1102,7 @@ msgstr "Mitte kunagi"
 msgid "Next"
 msgstr "Järgmine"
 
-#: templates/home.html:91
+#: templates/home.html:99
 msgid "Next scheduled run:"
 msgstr "Järgmine planeeritud käivitus:"
 
@@ -1131,8 +1131,8 @@ msgstr "Järgmine aeg"
 #: scripts/directives/backupEditUri.js:174
 #: scripts/directives/backupEditUri.js:88
 #: scripts/services/EditUriBackendConfig.js:74
-#: scripts/services/EditUriBuiltins.js:1215
-#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:1222
+#: scripts/services/EditUriBuiltins.js:1238
 #: scripts/services/EditUriBuiltins.js:61
 msgid "No"
 msgstr "Ei"
@@ -1141,7 +1141,7 @@ msgstr "Ei"
 msgid "No encryption"
 msgstr "Krüpteerimist pole"
 
-#: scripts/controllers/RestoreController.js:192
+#: scripts/controllers/RestoreController.js:194
 msgid "No items selected"
 msgstr "Ühtegi kirjet pole valitud"
 
@@ -1233,7 +1233,7 @@ msgstr "Paroolid ei kattu"
 msgid "Passphrases do not match"
 msgstr "Paroolid ei kattu"
 
-#: scripts/services/EditUriBuiltins.js:1295 templates/backends/file.html:33
+#: scripts/services/EditUriBuiltins.js:1302 templates/backends/file.html:33
 #: templates/backends/filejump.html:25 templates/backends/filen.html:11
 #: templates/backends/generic.html:22 templates/backends/idrive.html:11
 #: templates/backends/idrive.html:12 templates/backends/mega.html:11
@@ -1242,8 +1242,8 @@ msgstr "Paroolid ei kattu"
 msgid "Password"
 msgstr "Parool"
 
-#: scripts/services/EditUriBuiltins.js:1279
-#: scripts/services/EditUriBuiltins.js:1400
+#: scripts/services/EditUriBuiltins.js:1286
+#: scripts/services/EditUriBuiltins.js:1407
 msgid "Path"
 msgstr "Kaustatee"
 
@@ -1284,7 +1284,7 @@ msgstr "Port"
 msgid "Previous"
 msgstr "Eelmine"
 
-#: templates/home.html:107
+#: templates/home.html:115
 msgid "Progress:"
 msgstr "Edenemine:"
 
@@ -1353,7 +1353,7 @@ msgstr "Taastatud kaustad"
 msgid "Resume"
 msgstr "Jätka"
 
-#: templates/home.html:52 templates/home.html:87
+#: templates/home.html:52 templates/home.html:95
 msgid "Run now"
 msgstr "Käivita kohe"
 
@@ -1432,7 +1432,7 @@ msgstr "Näita logi ..."
 msgid "Show treeview"
 msgstr "Näita puuvaadet"
 
-#: templates/home.html:96
+#: templates/home.html:104
 msgid "Source:"
 msgstr "Allikas:"
 
@@ -1513,7 +1513,7 @@ msgstr "Tume teema (autor on Michal)"
 msgid "The default blue on white theme (by Alex)"
 msgstr "Vaikimisi sinine ja valge teem (autor on Alex)"
 
-#: scripts/controllers/RestoreController.js:36
+#: scripts/controllers/RestoreController.js:38
 msgid "This week"
 msgstr "See nädal"
 
@@ -1530,7 +1530,7 @@ msgstr "Kellaaeg"
 msgid "To File"
 msgstr "Faili"
 
-#: scripts/controllers/RestoreController.js:34
+#: scripts/controllers/RestoreController.js:36
 msgid "Today"
 msgstr "Täna"
 
@@ -1582,9 +1582,9 @@ msgstr "Kasutaja domeeninimi"
 msgid "User interface settings"
 msgstr "Kasutajaliidese seaded"
 
-#: scripts/services/EditUriBuiltins.js:1074
-#: scripts/services/EditUriBuiltins.js:1162
-#: scripts/services/EditUriBuiltins.js:1294 templates/backends/file.html:29
+#: scripts/services/EditUriBuiltins.js:1081
+#: scripts/services/EditUriBuiltins.js:1169
+#: scripts/services/EditUriBuiltins.js:1301 templates/backends/file.html:29
 #: templates/backends/filejump.html:21 templates/backends/filen.html:7
 #: templates/backends/generic.html:18 templates/backends/idrive.html:7
 #: templates/backends/idrive.html:8 templates/backends/mega.html:7
@@ -1647,8 +1647,8 @@ msgstr "Aastat"
 #: scripts/directives/backupEditUri.js:174
 #: scripts/directives/backupEditUri.js:88
 #: scripts/services/EditUriBackendConfig.js:74
-#: scripts/services/EditUriBuiltins.js:1215
-#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:1222
+#: scripts/services/EditUriBuiltins.js:1238
 #: scripts/services/EditUriBuiltins.js:61
 msgid "Yes"
 msgstr "Jah"
@@ -1661,7 +1661,7 @@ msgstr "Jah, mõistan riski"
 msgid "Yes, I'm brave!"
 msgstr "Jah, mina olen julge!"
 
-#: scripts/controllers/RestoreController.js:35
+#: scripts/controllers/RestoreController.js:37
 msgid "Yesterday"
 msgstr "Eile"
 
