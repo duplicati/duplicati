@@ -34,9 +34,28 @@ namespace Duplicati.Library.Interface;
 /// <remarks>
 /// Instances registered in the module catalog are used as descriptors only;
 /// the actual provider instance is created via <see cref="CreateForSources"/>.
+/// <para>
+/// The prefix only selects the content; the entries the provider produces are
+/// placed below <see cref="ISourceProvider.MountedPath"/>, which is a rooted path.
+/// </para>
 /// </remarks>
 public interface IPrefixedSourceProviderModule : ISourceProviderModule
 {
+    /// <summary>
+    /// The prefix that selects this provider's content in a source path (e.g. <c>%HYPERV%</c>)
+    /// </summary>
+    string SourcePrefix { get; }
+
+    /// <summary>
+    /// Translates a path written with <see cref="SourcePrefix"/> (e.g. <c>%MSSQL%\server\instance\database</c>)
+    /// to the virtual path the provider stores the matching entry under, so a filter
+    /// written the same way as the sources matches the stored entries.
+    /// A path that names a virtual folder is translated with a trailing directory separator.
+    /// </summary>
+    /// <param name="sourcePath">The path, starting with <see cref="SourcePrefix"/></param>
+    /// <returns>The virtual path, or <c>null</c> if the path does not name an entry the provider stores</returns>
+    string? TranslateSourcePath(string sourcePath);
+
     /// <summary>
     /// Checks whether the given source path is handled by this provider
     /// (e.g. equals the prefix or starts with the prefix followed by a directory separator)

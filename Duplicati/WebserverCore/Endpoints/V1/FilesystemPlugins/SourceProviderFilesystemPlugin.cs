@@ -32,6 +32,9 @@ namespace Duplicati.WebserverCore.Endpoints.V1.FilesystemPlugins;
 /// The virtual hierarchy is enumerated via the provider without a snapshot
 /// service, so entries below the payload level (e.g. individual VM or database
 /// files) are not browsable and are presented as leaf nodes.
+/// The node ids are source paths built from the provider's prefix and the entry
+/// names (e.g. <c>%HYPERV%\&lt;vm-guid&gt;</c>), not the virtual paths the
+/// entries are stored with.
 /// </summary>
 public class SourceProviderFilesystemPlugin : IFilesystemPlugin
 {
@@ -68,7 +71,7 @@ public class SourceProviderFilesystemPlugin : IFilesystemPlugin
     }
 
     /// <inheritdoc />
-    public string RootName => _module.MountedPath.TrimEnd(Path.DirectorySeparatorChar);
+    public string RootName => _module.SourcePrefix;
 
     /// <inheritdoc />
     public IEnumerable<Dto.TreeNodeDto> GetEntries(string[] pathSegments)
@@ -142,19 +145,22 @@ public class SourceProviderFilesystemPlugin : IFilesystemPlugin
             if (!current.Enumerate(CancellationToken.None).ToBlockingEnumerable().Any())
                 return [];
 
-            return [CreateNode(current, isRootNode: true)];
+            return [CreateNode(current, RootName, isRootNode: true)];
         }
 
         // Enumerate children of the current entry
         return current.Enumerate(CancellationToken.None).ToBlockingEnumerable()
-            .Select(x => CreateNode(x, isRootNode: false))
+            .Select(x => CreateNode(x, string.Join(Path.DirectorySeparatorChar, pathSegments.Append(GetEntryName(x))), isRootNode: false))
             .ToList();
     }
 
     /// <summary>
     /// Creates a tree node from a source provider entry
     /// </summary>
-    private Dto.TreeNodeDto CreateNode(ISourceProviderEntry entry, bool isRootNode)
+    /// <param name="entry">The entry to create the node for</param>
+    /// <param name="sourcePath">The source path that selects the entry</param>
+    /// <param name="isRootNode">True if the entry is the provider's root</param>
+    private Dto.TreeNodeDto CreateNode(ISourceProviderEntry entry, string sourcePath, bool isRootNode)
     {
         var metadata = entry.GetMinorMetadata(CancellationToken.None).Await();
         var displayName = metadata.TryGetValue(_nameMetadataKey, out var name) && !string.IsNullOrWhiteSpace(name)
@@ -165,11 +171,9 @@ public class SourceProviderFilesystemPlugin : IFilesystemPlugin
         // that would require a snapshot service) are presented as leaf nodes
         var isLeaf = !entry.IsFolder || !CanEnumerate(entry);
 
-        var id = isRootNode
-            ? RootName
-            : isLeaf
-                ? entry.Path.TrimEnd(Path.DirectorySeparatorChar)
-                : entry.Path;
+        var id = isRootNode || isLeaf
+            ? sourcePath
+            : Util.AppendDirSeparator(sourcePath);
 
         return new Dto.TreeNodeDto
         {

@@ -27,7 +27,7 @@ using Duplicati.Library.Snapshots.Windows;
 namespace Duplicati.Library.SourceProvider.Builtin.MSSQL
 {
     /// <summary>
-    /// The root entry of the MSSQL virtual hierarchy, mounted at <c>%MSSQL%\</c>.
+    /// The root entry of the MSSQL virtual hierarchy, mounted at <c>\\duplicati\mssql\</c>.
     /// Enumerating it yields one folder per database server.
     /// </summary>
     internal class MSSQLRootEntry(string path, IReadOnlyList<MSSQLDB> databases, ISnapshotService? snapshotService)
@@ -50,7 +50,7 @@ namespace Duplicati.Library.SourceProvider.Builtin.MSSQL
         public override Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)
             => Task.FromResult(new Dictionary<string, string?>
             {
-                { "mssql:v", "1" },
+                { "mssql:v", MSSQLSourceProvider.METADATA_VERSION },
                 { "mssql:Type", "MsSqlRoot" },
                 { "mssql:Name", "Microsoft SQL Servers" },
             });
@@ -70,8 +70,8 @@ namespace Duplicati.Library.SourceProvider.Builtin.MSSQL
 
     /// <summary>
     /// A virtual folder representing a single database server.
-    /// Enumerating it yields one folder per non-default instance,
-    /// plus one folder per database on the default (unnamed) instance.
+    /// Enumerating it yields one folder per instance; the default (unnamed)
+    /// instance uses the name <see cref="MSSQLSourceProvider.DEFAULT_INSTANCE_NAME"/>.
     /// </summary>
     internal class MSSQLServerEntry(string parentPath, string server, IReadOnlyList<MSSQLDB> databases, ISnapshotService? snapshotService)
         : MSSQLEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, server)))
@@ -90,7 +90,7 @@ namespace Duplicati.Library.SourceProvider.Builtin.MSSQL
         public override Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)
             => Task.FromResult(new Dictionary<string, string?>
             {
-                { "mssql:v", "1" },
+                { "mssql:v", MSSQLSourceProvider.METADATA_VERSION },
                 { "mssql:Type", "Server" },
                 { "mssql:Name", server },
                 { "mssql:Server", server },
@@ -99,18 +99,10 @@ namespace Duplicati.Library.SourceProvider.Builtin.MSSQL
         /// <inheritdoc />
         public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
         {
-            // Instances with a name get their own folder
-            foreach (var instance in _databases.Where(x => !string.IsNullOrWhiteSpace(x.InstanceId)).Select(x => x.InstanceId).Distinct(Library.Utility.Utility.ClientFilenameStringComparer).OrderBy(x => x))
+            foreach (var instance in _databases.GroupBy(MSSQLSourceProvider.GetInstanceName, StringComparer.OrdinalIgnoreCase).OrderBy(x => x.Key))
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                yield return new MSSQLInstanceEntry(Path, server, instance, _databases.Where(x => x.InstanceId.Equals(instance, Library.Utility.Utility.ClientFilenameStringComparison)).ToList(), _snapshotService);
-            }
-
-            // Databases on the default (unnamed) instance are placed directly under the server
-            foreach (var db in _databases.Where(x => string.IsNullOrWhiteSpace(x.InstanceId)).OrderBy(x => x.Database))
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                yield return new MSSQLDatabaseEntry(Path, db, _snapshotService);
+                yield return new MSSQLInstanceEntry(Path, server, instance.Key, instance.ToList(), _snapshotService);
             }
 
             await Task.CompletedTask.ConfigureAwait(false);
@@ -118,7 +110,7 @@ namespace Duplicati.Library.SourceProvider.Builtin.MSSQL
     }
 
     /// <summary>
-    /// A virtual folder representing a named SQL Server instance on a server.
+    /// A virtual folder representing a SQL Server instance on a server.
     /// Enumerating it yields one folder per database on the instance.
     /// </summary>
     internal class MSSQLInstanceEntry(string parentPath, string server, string instanceId, IReadOnlyList<MSSQLDB> databases, ISnapshotService? snapshotService)
@@ -138,7 +130,7 @@ namespace Duplicati.Library.SourceProvider.Builtin.MSSQL
         public override Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)
             => Task.FromResult(new Dictionary<string, string?>
             {
-                { "mssql:v", "1" },
+                { "mssql:v", MSSQLSourceProvider.METADATA_VERSION },
                 { "mssql:Type", "Instance" },
                 { "mssql:Name", instanceId },
                 { "mssql:Server", server },
@@ -161,7 +153,8 @@ namespace Duplicati.Library.SourceProvider.Builtin.MSSQL
     /// <summary>
     /// A virtual folder representing a single database.
     /// Enumerating it yields the database's data paths (data files, log files)
-    /// mapped into the virtual hierarchy.
+    /// placed directly in the database folder under their own names
+    /// (<c>C:\Data\db.mdf</c> becomes <c>&lt;database&gt;\db.mdf</c>), numbered when names clash.
     /// </summary>
     internal class MSSQLDatabaseEntry(string parentPath, MSSQLDB database, ISnapshotService? snapshotService)
         : MSSQLEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, database.Database)))
@@ -180,11 +173,11 @@ namespace Duplicati.Library.SourceProvider.Builtin.MSSQL
         public override Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)
             => Task.FromResult(new Dictionary<string, string?>
             {
-                { "mssql:v", "1" },
+                { "mssql:v", MSSQLSourceProvider.METADATA_VERSION },
                 { "mssql:Type", "Database" },
                 { "mssql:Name", _database.Database },
                 { "mssql:Server", _database.Server },
-                { "mssql:Instance", _database.InstanceId },
+                { "mssql:Instance", MSSQLSourceProvider.GetInstanceName(_database) },
                 { "mssql:Database", _database.Database },
             });
 
@@ -194,7 +187,16 @@ namespace Duplicati.Library.SourceProvider.Builtin.MSSQL
             if (_snapshotService == null)
                 throw new InvalidOperationException("Cannot enumerate MSSQL database files without a snapshot service");
 
-            foreach (var dataPath in _database.DataPaths)
+            var itemMetadata = new Dictionary<string, string?>
+            {
+                { "mssql:Server", _database.Server },
+                { "mssql:Instance", MSSQLSourceProvider.GetInstanceName(_database) },
+                { "mssql:Database", _database.Database },
+            };
+
+            // A data path inside another data path would otherwise be produced twice
+            var dataPathEntries = new List<ISourceProviderEntry>();
+            foreach (var dataPath in VirtualSourcePath.RemoveNestedPaths(_database.DataPaths))
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
@@ -206,8 +208,12 @@ namespace Duplicati.Library.SourceProvider.Builtin.MSSQL
                     continue;
                 }
 
-                yield return MSSQLMappedEntry.Create(entry, this.Path);
+                dataPathEntries.Add(entry);
             }
+
+            // The data paths are named together, so clashing names can be numbered
+            foreach (var entry in VirtualMappedEntry.MapDataPaths(this.Path, dataPathEntries, MSSQLSourceProvider.METADATA_PREFIX, MSSQLSourceProvider.METADATA_VERSION, itemMetadata))
+                yield return entry;
 
             await Task.CompletedTask.ConfigureAwait(false);
         }
@@ -279,122 +285,5 @@ namespace Duplicati.Library.SourceProvider.Builtin.MSSQL
 
         /// <inheritdoc />
         public abstract IAsyncEnumerable<ISourceProviderEntry> Enumerate(CancellationToken cancellationToken);
-    }
-
-    /// <summary>
-    /// Wraps a snapshot-backed filesystem entry and exposes it under a virtual
-    /// MSSQL path (<c>%MSSQL%\&lt;server&gt;\&lt;instance&gt;\&lt;database&gt;\&lt;original path&gt;</c>).
-    /// All file operations are delegated to the wrapped entry.
-    /// </summary>
-    internal class MSSQLMappedEntry : ISourceProviderEntry
-    {
-        /// <summary>
-        /// The wrapped snapshot entry
-        /// </summary>
-        private readonly ISourceProviderEntry _inner;
-
-        /// <summary>
-        /// The virtual path prefix of the database this entry belongs to
-        /// </summary>
-        private readonly string _dbPrefix;
-
-        /// <summary>
-        /// The mapped virtual path of this entry
-        /// </summary>
-        private readonly string _mappedPath;
-
-        /// <summary>
-        /// Creates a new mapped entry
-        /// </summary>
-        /// <param name="inner">The snapshot-backed entry to wrap</param>
-        /// <param name="dbPrefix">The virtual path prefix of the database (ends with a directory separator)</param>
-        /// <param name="mappedPath">The mapped virtual path of this entry</param>
-        private MSSQLMappedEntry(ISourceProviderEntry inner, string dbPrefix, string mappedPath)
-        {
-            _inner = inner;
-            _dbPrefix = Util.AppendDirSeparator(dbPrefix);
-            _mappedPath = mappedPath;
-        }
-
-        /// <summary>
-        /// Creates a mapped entry for a snapshot entry, computing the mapped path
-        /// </summary>
-        /// <param name="inner">The snapshot-backed entry to wrap</param>
-        /// <param name="dbPrefix">The virtual path prefix of the database (ends with a directory separator)</param>
-        /// <returns>The mapped entry</returns>
-        public static MSSQLMappedEntry Create(ISourceProviderEntry inner, string dbPrefix)
-        {
-            var mapped = Util.AppendDirSeparator(dbPrefix) + inner.Path;
-            if (inner.IsFolder)
-                mapped = Util.AppendDirSeparator(mapped);
-
-            return new MSSQLMappedEntry(inner, dbPrefix, mapped);
-        }
-
-        /// <inheritdoc />
-        public bool IsFolder => _inner.IsFolder;
-
-        /// <inheritdoc />
-        public bool IsMetaEntry => _inner.IsMetaEntry;
-
-        /// <inheritdoc />
-        public bool IsRootEntry => false;
-
-        /// <inheritdoc />
-        public DateTime CreatedUtc => _inner.CreatedUtc;
-
-        /// <inheritdoc />
-        public DateTime LastModificationUtc => _inner.LastModificationUtc;
-
-        /// <inheritdoc />
-        public string Path => _mappedPath;
-
-        /// <inheritdoc />
-        public long Size => _inner.Size;
-
-        /// <inheritdoc />
-        public bool IsSymlink => _inner.IsSymlink;
-
-        /// <inheritdoc />
-        public string? SymlinkTarget => _inner.SymlinkTarget;
-
-        /// <inheritdoc />
-        public FileAttributes Attributes => _inner.Attributes;
-
-        /// <inheritdoc />
-        public bool IsBlockDevice => _inner.IsBlockDevice;
-
-        /// <inheritdoc />
-        public bool IsCharacterDevice => _inner.IsCharacterDevice;
-
-        /// <inheritdoc />
-        public bool IsAlternateStream => _inner.IsAlternateStream;
-
-        /// <inheritdoc />
-        public string? HardlinkTargetId => _inner.HardlinkTargetId;
-
-        /// <inheritdoc />
-        public Task<Stream> OpenRead(CancellationToken cancellationToken)
-            => _inner.OpenRead(cancellationToken);
-
-        /// <inheritdoc />
-        public async Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)
-        {
-            var metadata = await _inner.GetMinorMetadata(cancellationToken).ConfigureAwait(false) ?? [];
-            metadata["mssql:v"] = "1";
-            metadata["mssql:Type"] = IsFolder ? "Folder" : "File";
-            return metadata;
-        }
-
-        /// <inheritdoc />
-        public Task<bool> FileExists(string filename, CancellationToken cancellationToken)
-            => _inner.FileExists(filename, cancellationToken);
-
-        /// <inheritdoc />
-        public async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
-        {
-            await foreach (var child in _inner.Enumerate(cancellationToken).ConfigureAwait(false))
-                yield return Create(child, _dbPrefix);
-        }
     }
 }

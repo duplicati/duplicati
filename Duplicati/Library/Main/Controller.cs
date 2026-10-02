@@ -1380,6 +1380,9 @@ namespace Duplicati.Library.Main
 
             var sources = new List<string>(inputsources.Length);
 
+            // Filters may name the content of a prefix-based source provider the same way as the sources do
+            filter = SourceProviderFactory.TranslatePrefixedFilters(filter);
+
             DriveInfo[] drives = null;
 
             //Make sure they all have the same format and exist

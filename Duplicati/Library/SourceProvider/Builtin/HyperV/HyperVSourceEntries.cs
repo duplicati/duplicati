@@ -27,7 +27,7 @@ using Duplicati.Library.Snapshots.Windows;
 namespace Duplicati.Library.SourceProvider.Builtin.HyperV
 {
     /// <summary>
-    /// The root entry of the Hyper-V virtual hierarchy, mounted at <c>%HYPERV%\</c>.
+    /// The root entry of the Hyper-V virtual hierarchy, mounted at <c>\\duplicati\hyperv\</c>.
     /// Enumerating it yields one folder per virtual machine selected for backup.
     /// </summary>
     internal class HyperVRootEntry(string path, IReadOnlyList<HyperVGuest> guests, ISnapshotService? snapshotService)
@@ -40,7 +40,7 @@ namespace Duplicati.Library.SourceProvider.Builtin.HyperV
         public override Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)
             => Task.FromResult(new Dictionary<string, string?>
             {
-                { "hyperv:v", "1" },
+                { "hyperv:v", HyperVSourceProvider.METADATA_VERSION },
                 { "hyperv:Type", "HyperVRoot" },
                 { "hyperv:Name", "Hyper-V Machines" },
             });
@@ -63,7 +63,8 @@ namespace Duplicati.Library.SourceProvider.Builtin.HyperV
     /// The folder name is the VM's GUID; the friendly name is exposed via
     /// the <c>hyperv:Name</c> metadata key.
     /// Enumerating it yields the VM's data paths (configuration, disks, snapshots)
-    /// mapped into the virtual hierarchy.
+    /// placed directly in the VM folder under their own names
+    /// (<c>C:\VMs\disk.vhdx</c> becomes <c>&lt;vm-guid&gt;\disk.vhdx</c>), numbered when names clash.
     /// </summary>
     internal class HyperVGuestEntry(string parentPath, HyperVGuest guest, ISnapshotService? snapshotService)
         : HyperVEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, guest.ID.ToString())))
@@ -82,7 +83,7 @@ namespace Duplicati.Library.SourceProvider.Builtin.HyperV
         public override Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)
             => Task.FromResult(new Dictionary<string, string?>
             {
-                { "hyperv:v", "1" },
+                { "hyperv:v", HyperVSourceProvider.METADATA_VERSION },
                 { "hyperv:Type", "VirtualMachine" },
                 { "hyperv:Name", _guest.Name },
                 { "hyperv:Id", _guest.ID.ToString() },
@@ -94,7 +95,14 @@ namespace Duplicati.Library.SourceProvider.Builtin.HyperV
             if (_snapshotService == null)
                 throw new InvalidOperationException("Cannot enumerate Hyper-V guest files without a snapshot service");
 
-            foreach (var dataPath in _guest.DataPaths ?? Enumerable.Empty<string>())
+            var itemMetadata = new Dictionary<string, string?>
+            {
+                { HyperVSourceProvider.METADATA_PREFIX + "vm-id", _guest.ID.ToString() },
+            };
+
+            // A data path inside another data path would otherwise be produced twice
+            var dataPathEntries = new List<ISourceProviderEntry>();
+            foreach (var dataPath in VirtualSourcePath.RemoveNestedPaths(_guest.DataPaths ?? []))
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
@@ -106,8 +114,12 @@ namespace Duplicati.Library.SourceProvider.Builtin.HyperV
                     continue;
                 }
 
-                yield return HyperVMappedEntry.Create(entry, this.Path, _snapshotService);
+                dataPathEntries.Add(entry);
             }
+
+            // The data paths are named together, so clashing names can be numbered
+            foreach (var entry in VirtualMappedEntry.MapDataPaths(this.Path, dataPathEntries, HyperVSourceProvider.METADATA_PREFIX, HyperVSourceProvider.METADATA_VERSION, itemMetadata))
+                yield return entry;
 
             await Task.CompletedTask.ConfigureAwait(false);
         }
@@ -179,130 +191,5 @@ namespace Duplicati.Library.SourceProvider.Builtin.HyperV
 
         /// <inheritdoc />
         public abstract IAsyncEnumerable<ISourceProviderEntry> Enumerate(CancellationToken cancellationToken);
-    }
-
-    /// <summary>
-    /// Wraps a snapshot-backed filesystem entry and exposes it under a virtual
-    /// Hyper-V path (<c>%HYPERV%\&lt;guid&gt;\&lt;original path&gt;</c>).
-    /// All file operations are delegated to the wrapped entry.
-    /// </summary>
-    internal class HyperVMappedEntry : ISourceProviderEntry
-    {
-        /// <summary>
-        /// The wrapped snapshot entry
-        /// </summary>
-        private readonly ISourceProviderEntry _inner;
-
-        /// <summary>
-        /// The virtual path prefix of the VM this entry belongs to (e.g. <c>%HYPERV%\&lt;guid&gt;\</c>)
-        /// </summary>
-        private readonly string _vmPrefix;
-
-        /// <summary>
-        /// The snapshot service, used to resolve children
-        /// </summary>
-        private readonly ISnapshotService _snapshotService;
-
-        /// <summary>
-        /// The mapped virtual path of this entry
-        /// </summary>
-        private readonly string _mappedPath;
-
-        /// <summary>
-        /// Creates a new mapped entry
-        /// </summary>
-        /// <param name="inner">The snapshot-backed entry to wrap</param>
-        /// <param name="vmPrefix">The virtual path prefix of the VM (ends with a directory separator)</param>
-        /// <param name="mappedPath">The mapped virtual path of this entry</param>
-        /// <param name="snapshotService">The snapshot service</param>
-        private HyperVMappedEntry(ISourceProviderEntry inner, string vmPrefix, string mappedPath, ISnapshotService snapshotService)
-        {
-            _inner = inner;
-            _vmPrefix = Util.AppendDirSeparator(vmPrefix);
-            _mappedPath = mappedPath;
-            _snapshotService = snapshotService;
-        }
-
-        /// <summary>
-        /// Creates a mapped entry for a snapshot entry, computing the mapped path
-        /// </summary>
-        /// <param name="inner">The snapshot-backed entry to wrap</param>
-        /// <param name="vmPrefix">The virtual path prefix of the VM (ends with a directory separator)</param>
-        /// <param name="snapshotService">The snapshot service</param>
-        /// <returns>The mapped entry</returns>
-        public static HyperVMappedEntry Create(ISourceProviderEntry inner, string vmPrefix, ISnapshotService snapshotService)
-        {
-            var mapped = Util.AppendDirSeparator(vmPrefix) + inner.Path;
-            if (inner.IsFolder)
-                mapped = Util.AppendDirSeparator(mapped);
-
-            return new HyperVMappedEntry(inner, vmPrefix, mapped, snapshotService);
-        }
-
-        /// <inheritdoc />
-        public bool IsFolder => _inner.IsFolder;
-
-        /// <inheritdoc />
-        public bool IsMetaEntry => _inner.IsMetaEntry;
-
-        /// <inheritdoc />
-        public bool IsRootEntry => false;
-
-        /// <inheritdoc />
-        public DateTime CreatedUtc => _inner.CreatedUtc;
-
-        /// <inheritdoc />
-        public DateTime LastModificationUtc => _inner.LastModificationUtc;
-
-        /// <inheritdoc />
-        public string Path => _mappedPath;
-
-        /// <inheritdoc />
-        public long Size => _inner.Size;
-
-        /// <inheritdoc />
-        public bool IsSymlink => _inner.IsSymlink;
-
-        /// <inheritdoc />
-        public string? SymlinkTarget => _inner.SymlinkTarget;
-
-        /// <inheritdoc />
-        public FileAttributes Attributes => _inner.Attributes;
-
-        /// <inheritdoc />
-        public bool IsBlockDevice => _inner.IsBlockDevice;
-
-        /// <inheritdoc />
-        public bool IsCharacterDevice => _inner.IsCharacterDevice;
-
-        /// <inheritdoc />
-        public bool IsAlternateStream => _inner.IsAlternateStream;
-
-        /// <inheritdoc />
-        public string? HardlinkTargetId => _inner.HardlinkTargetId;
-
-        /// <inheritdoc />
-        public Task<Stream> OpenRead(CancellationToken cancellationToken)
-            => _inner.OpenRead(cancellationToken);
-
-        /// <inheritdoc />
-        public async Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)
-        {
-            var metadata = await _inner.GetMinorMetadata(cancellationToken).ConfigureAwait(false) ?? [];
-            metadata["hyperv:v"] = "1";
-            metadata["hyperv:Type"] = IsFolder ? "Folder" : "File";
-            return metadata;
-        }
-
-        /// <inheritdoc />
-        public Task<bool> FileExists(string filename, CancellationToken cancellationToken)
-            => _inner.FileExists(filename, cancellationToken);
-
-        /// <inheritdoc />
-        public async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
-        {
-            await foreach (var child in _inner.Enumerate(cancellationToken).ConfigureAwait(false))
-                yield return Create(child, _vmPrefix, _snapshotService);
-        }
     }
 }

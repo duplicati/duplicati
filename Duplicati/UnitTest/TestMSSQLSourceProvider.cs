@@ -403,6 +403,28 @@ namespace Duplicati.UnitTest
             });
         }
 
+        [Test]
+        public void SelectDatabases_default_instance_can_be_selected_by_name()
+        {
+            if (!OperatingSystem.IsWindows())
+                return;
+
+            // The source picker names the default instance MSSQLSERVER
+            var dbSales = MakeDb("SRV1", "", "Sales", @$"C:{DS}Data{DS}Sales.mdf");
+            var dbHr = MakeDb("SRV1", "", "HR", @$"C:{DS}Data{DS}HR.mdf");
+            var dbInst = MakeDb("SRV1", "INST", "Payroll", @$"C:{DS}Data{DS}Payroll.mdf");
+            var util = new MockMSSQLUtility { DBs = [dbSales, dbHr, dbInst] };
+
+            var instance = RunSelectDatabases(util, $"%MSSQL%{DS}SRV1{DS}MSSQLSERVER");
+            var database = RunSelectDatabases(util, $"%MSSQL%{DS}SRV1{DS}mssqlserver{DS}Sales");
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(instance.Select(x => x.Database), Is.EquivalentTo(new[] { "Sales", "HR" }));
+                Assert.That(database.Select(x => x.Database), Is.EqualTo(new[] { "Sales" }));
+            });
+        }
+
 #pragma warning restore CA1416
 
         #endregion

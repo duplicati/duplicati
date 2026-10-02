@@ -79,6 +79,65 @@ namespace Duplicati.Library.Main.Operation.Common
         }
 
         /// <summary>
+        /// Translates the filter entries that are written with the prefix of a prefix-based
+        /// source provider (e.g. <c>-%MSSQL%\server\instance\database</c>) to the virtual
+        /// paths the provider stores its entries under, so a filter can use the same syntax
+        /// as the sources. Wildcard entries get the prefix replaced, literal entries are
+        /// translated by the provider, and regular expressions and filter groups are kept as-is.
+        /// </summary>
+        /// <param name="filter">The filter to translate</param>
+        /// <returns>The translated filter, or the same instance if nothing was translated</returns>
+        public static IFilter? TranslatePrefixedFilters(IFilter? filter)
+        {
+            if (filter == null || filter.Empty)
+                return filter;
+
+            var entries = FilterExpression.Serialize(filter);
+            var translated = entries.Select(TranslatePrefixedFilterEntry).ToArray();
+
+            return entries.SequenceEqual(translated, StringComparer.Ordinal)
+                ? filter
+                : FilterExpression.Deserialize(translated);
+        }
+
+        /// <summary>
+        /// Translates a single serialized filter entry, see <see cref="TranslatePrefixedFilters"/>
+        /// </summary>
+        /// <param name="entry">The serialized entry, starting with <c>+</c> or <c>-</c></param>
+        /// <returns>The translated entry</returns>
+        private static string TranslatePrefixedFilterEntry(string entry)
+        {
+            if (entry.Length < 2)
+                return entry;
+
+            var sign = entry.Substring(0, 1);
+            var literal = entry[1] == '@';
+            var expression = literal ? entry.Substring(2) : entry.Substring(1);
+
+            var module = SourceProviders.SourceProviderModules.BuiltInPrefixSourceProviderModules
+                .FirstOrDefault(x => x.MatchesSource(expression));
+            if (module == null)
+                return entry;
+
+            var isWildcard = !literal && (expression.Contains('*') || expression.Contains('?'));
+            if (isWildcard)
+            {
+                // The source syntax uses a backslash on every platform
+                var rest = expression.Substring(module.SourcePrefix.Length).Replace('\\', Path.DirectorySeparatorChar);
+                return sign + module.MountedPath.TrimEnd(Path.DirectorySeparatorChar) + rest;
+            }
+
+            var path = module.TranslateSourcePath(expression);
+            if (path == null)
+            {
+                Log.WriteWarningMessage(LOGTAG, "PrefixedFilterNotTranslated", null, "The filter \"{0}\" does not name an item of the source provider \"{1}\" and will not match anything", entry, module.Key);
+                return entry;
+            }
+
+            return sign + "@" + path;
+        }
+
+        /// <summary>
         /// Enables the "store-metadata-content-in-database" option if any of the sources
         /// is provided by a source provider that requires it, and the option is not already set
         /// </summary>

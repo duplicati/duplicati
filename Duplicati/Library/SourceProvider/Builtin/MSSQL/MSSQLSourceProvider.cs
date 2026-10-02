@@ -30,13 +30,17 @@ namespace Duplicati.Library.SourceProvider.Builtin.MSSQL
 {
     /// <summary>
     /// A source provider that exposes Microsoft SQL Server databases as a virtual
-    /// folder hierarchy rooted at <c>%MSSQL%</c>.
+    /// folder hierarchy. The databases are selected with sources that start with
+    /// <c>%MSSQL%</c>, and the backed up entries are placed below <c>\\duplicati\mssql\</c>.
     /// <para>
     /// The hierarchy is:
-    /// <c>%MSSQL%\</c> → <c>%MSSQL%\&lt;server&gt;\</c> → <c>%MSSQL%\&lt;server&gt;\&lt;instance&gt;\</c>
-    /// → <c>%MSSQL%\&lt;server&gt;\&lt;instance&gt;\&lt;database&gt;\</c> → the database's files,
-    /// read through the snapshot service.
-    /// Databases on the default (unnamed) instance are placed directly under the server folder.
+    /// <c>\\duplicati\mssql\</c> → <c>&lt;server&gt;\</c> → <c>&lt;instance&gt;\</c>
+    /// → <c>&lt;database&gt;\</c> → the database's files, read through the snapshot service
+    /// and placed directly in the database folder under their own names
+    /// (<c>\\duplicati\mssql\&lt;server&gt;\&lt;instance&gt;\&lt;database&gt;\db.mdf</c>);
+    /// names that clash are numbered (<c>data-1.ndf</c>, <c>data-2.ndf</c>).
+    /// The default (unnamed) instance is named <see cref="DEFAULT_INSTANCE_NAME"/>.
+    /// Each of the file entries records the local path in the <c>mssql:orig-path</c> metadata.
     /// </para>
     /// <para>
     /// Each level carries metadata (<c>mssql:Name</c>, <c>mssql:Type</c>, etc.) so the
@@ -69,6 +73,26 @@ namespace Duplicati.Library.SourceProvider.Builtin.MSSQL
         /// The module key
         /// </summary>
         public const string MODULE_KEY = "mssql";
+
+        /// <summary>
+        /// The metadata key prefix used by this provider
+        /// </summary>
+        public const string METADATA_PREFIX = "mssql:";
+
+        /// <summary>
+        /// The version of the metadata written to the entries
+        /// </summary>
+        public const string METADATA_VERSION = "1";
+
+        /// <summary>
+        /// The share name of the virtual root the entries are placed in
+        /// </summary>
+        public const string VIRTUAL_SHARE = "mssql";
+
+        /// <summary>
+        /// The name SQL Server uses for the default (unnamed) instance
+        /// </summary>
+        public const string DEFAULT_INSTANCE_NAME = "MSSQLSERVER";
 
         /// <summary>
         /// The options used to create this provider
@@ -149,7 +173,19 @@ namespace Duplicati.Library.SourceProvider.Builtin.MSSQL
         public IList<ICommandLineArgument> SupportedCommands => [];
 
         /// <inheritdoc />
-        public string MountedPath => Util.AppendDirSeparator(MSSQL_PATH_PREFIX);
+        public string MountedPath => VirtualSourcePath.GetMountedPath(VIRTUAL_SHARE);
+
+        /// <inheritdoc />
+        public string SourcePrefix => MSSQL_PATH_PREFIX;
+
+        /// <summary>
+        /// Gets the name of the instance a database is on, using
+        /// <see cref="DEFAULT_INSTANCE_NAME"/> for the default instance
+        /// </summary>
+        /// <param name="db">The database</param>
+        /// <returns>The instance name</returns>
+        internal static string GetInstanceName(MSSQLDB db)
+            => string.IsNullOrWhiteSpace(db.InstanceId) ? DEFAULT_INSTANCE_NAME : db.InstanceId;
 
         /// <inheritdoc />
         public bool NeedsStoredMetadata => true;
@@ -167,6 +203,35 @@ namespace Duplicati.Library.SourceProvider.Builtin.MSSQL
         /// <inheritdoc />
         public bool MatchesSource(string source)
             => IsMSSQLSource(source);
+
+        /// <inheritdoc />
+        /// <remarks>
+        /// The paths follow the source syntax: <c>%MSSQL%\&lt;server&gt;</c>,
+        /// <c>%MSSQL%\&lt;server&gt;\&lt;instance&gt;\&lt;database&gt;</c>, and
+        /// <c>%MSSQL%\&lt;server&gt;\&lt;x&gt;</c>, where <c>x</c> is an instance when the path
+        /// ends with a separator or is <see cref="DEFAULT_INSTANCE_NAME"/>, and otherwise a
+        /// database on the default instance, as earlier versions wrote it.
+        /// </remarks>
+        public string? TranslateSourcePath(string sourcePath)
+        {
+            if (!IsMSSQLSource(sourcePath))
+                return null;
+
+            var ds = Path.DirectorySeparatorChar;
+            var parts = sourcePath.Substring(MSSQL_PATH_PREFIX.Length).Split(SOURCE_PATH_SEPARATOR, StringSplitOptions.RemoveEmptyEntries);
+            var isFolder = sourcePath.EndsWith(SOURCE_PATH_SEPARATOR);
+
+            return parts.Length switch
+            {
+                0 => MountedPath,
+                1 => MountedPath + parts[0] + ds,
+                2 when isFolder || parts[1].Equals(DEFAULT_INSTANCE_NAME, StringComparison.OrdinalIgnoreCase)
+                    => MountedPath + parts[0] + ds + parts[1] + ds,
+                2 => MountedPath + parts[0] + ds + DEFAULT_INSTANCE_NAME + ds + parts[1] + ds,
+                3 => MountedPath + parts[0] + ds + parts[1] + ds + parts[2] + ds,
+                _ => null
+            };
+        }
 
         /// <inheritdoc />
         public bool IsSupported => OperatingSystem.IsWindows();
@@ -324,8 +389,9 @@ namespace Duplicati.Library.SourceProvider.Builtin.MSSQL
             if (includedDbs.Any(x => string.IsNullOrWhiteSpace(x.Server)))
                 return mssqlUtility.DBs.ToList();
 
+            // The default instance is keyed by its name, so it can be selected like a named instance
             var serverInstanceMap = mssqlUtility.DBs
-                .GroupBy(x => x.ServerInstanceId)
+                .GroupBy(x => $"{x.Server}\\{GetInstanceName(x)}", StringComparer.OrdinalIgnoreCase)
                 .ToDictionary(x => x.Key, x => x.GroupBy(y => y.Database).ToDictionary(y => y.Key, y => y.ToList(), StringComparer.OrdinalIgnoreCase), StringComparer.OrdinalIgnoreCase);
 
             var serverMap = mssqlUtility.DBs
@@ -463,54 +529,12 @@ namespace Duplicati.Library.SourceProvider.Builtin.MSSQL
         }
 
         /// <inheritdoc />
-        /// <remarks>
-        /// Resolves the virtual levels down to a database. The entries below
-        /// that carry the full local path of the file, so a lookup of one of them
-        /// is not resolved by walking one segment at a time and answers null.
-        /// </remarks>
-        public async Task<ISourceProviderEntry?> GetEntryAsync(string path, bool isFolder, CancellationToken cancellationToken)
+        public Task<ISourceProviderEntry?> GetEntryAsync(string path, bool isFolder, CancellationToken cancellationToken)
         {
-            if (!OperatingSystem.IsWindows() || !IsMSSQLSource(path))
-                return null;
+            if (!OperatingSystem.IsWindows() || !Util.AppendDirSeparator(path).StartsWith(MountedPath, StringComparison.OrdinalIgnoreCase))
+                return Task.FromResult<ISourceProviderEntry?>(null);
 
-            var root = new MSSQLRootEntry(MountedPath, _databases.Value, _snapshotService);
-            var targetPath = Util.AppendDirSeparator(path.TrimEnd(Path.DirectorySeparatorChar));
-
-            // Root itself
-            if (string.Equals(targetPath, root.Path, StringComparison.OrdinalIgnoreCase))
-                return root;
-
-            // Walk down the virtual tree
-            ISourceProviderEntry current = root;
-            var relative = targetPath.Substring(root.Path.Length);
-            var segments = relative.Split(Path.DirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries);
-
-            for (var i = 0; i < segments.Length; i++)
-            {
-                var isLast = i == segments.Length - 1;
-                var found = false;
-                await foreach (var entry in current.Enumerate(cancellationToken).ConfigureAwait(false))
-                {
-                    var name = entry.Path.TrimEnd(Path.DirectorySeparatorChar)
-                        .Split(Path.DirectorySeparatorChar)
-                        .Last();
-
-                    if (!name.Equals(segments[i], StringComparison.OrdinalIgnoreCase))
-                        continue;
-
-                    if (isLast && entry.IsFolder != isFolder)
-                        return null;
-
-                    current = entry;
-                    found = true;
-                    break;
-                }
-
-                if (!found)
-                    return null;
-            }
-
-            return current;
+            return VirtualSourcePath.FindEntryAsync(new MSSQLRootEntry(MountedPath, _databases.Value, _snapshotService), path, isFolder, cancellationToken);
         }
 
         /// <inheritdoc />

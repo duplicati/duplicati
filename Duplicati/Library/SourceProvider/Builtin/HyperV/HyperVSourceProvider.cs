@@ -30,11 +30,16 @@ namespace Duplicati.Library.SourceProvider.Builtin.HyperV
 {
     /// <summary>
     /// A source provider that exposes Hyper-V virtual machines as a virtual
-    /// folder hierarchy rooted at <c>%HYPERV%</c>.
+    /// folder hierarchy. The machines are selected with sources that start with
+    /// <c>%HYPERV%</c>, and the backed up entries are placed below <c>\\duplicati\hyperv\</c>.
     /// <para>
     /// The hierarchy is:
-    /// <c>%HYPERV%\</c> → <c>%HYPERV%\&lt;vm-guid&gt;\</c> → the VM's files and folders
-    /// (configuration files, virtual hard disks, snapshots), read through the snapshot service.
+    /// <c>\\duplicati\hyperv\</c> → <c>\\duplicati\hyperv\&lt;vm-guid&gt;\</c> → the VM's files and folders
+    /// (configuration files, virtual hard disks, snapshots), read through the snapshot service
+    /// and placed directly in the VM folder under their own names
+    /// (<c>\\duplicati\hyperv\&lt;vm-guid&gt;\disk.vhdx</c>); names that clash are numbered
+    /// (<c>disk-1.vhdx</c>, <c>disk-2.vhdx</c>).
+    /// Each of these entries records the local path in the <c>hyperv:orig-path</c> metadata.
     /// </para>
     /// <para>
     /// The virtual VM folder carries metadata (<c>hyperv:Name</c>) with the friendly
@@ -53,6 +58,16 @@ namespace Duplicati.Library.SourceProvider.Builtin.HyperV
         /// The path prefix that identifies Hyper-V sources
         /// </summary>
         public const string HYPERV_PATH_PREFIX = @"%HYPERV%";
+
+        /// <summary>
+        /// The share name of the virtual root the entries are placed in
+        /// </summary>
+        public const string VIRTUAL_SHARE = "hyperv";
+
+        /// <summary>
+        /// The version of the metadata written to the entries
+        /// </summary>
+        public const string METADATA_VERSION = "1";
 
         /// <summary>
         /// The separator in a Hyper-V source path, such as <c>%HYPERV%\&lt;guid&gt;</c>.
@@ -137,7 +152,10 @@ namespace Duplicati.Library.SourceProvider.Builtin.HyperV
         ];
 
         /// <inheritdoc />
-        public string MountedPath => Util.AppendDirSeparator(HYPERV_PATH_PREFIX);
+        public string MountedPath => VirtualSourcePath.GetMountedPath(VIRTUAL_SHARE);
+
+        /// <inheritdoc />
+        public string SourcePrefix => HYPERV_PATH_PREFIX;
 
         /// <inheritdoc />
         public bool NeedsStoredMetadata => true;
@@ -155,6 +173,26 @@ namespace Duplicati.Library.SourceProvider.Builtin.HyperV
         /// <inheritdoc />
         public bool MatchesSource(string source)
             => IsHyperVSource(source);
+
+        /// <inheritdoc />
+        /// <remarks>
+        /// <c>%HYPERV%</c> is the root and <c>%HYPERV%\&lt;vm-guid&gt;</c> is the folder of a machine.
+        /// A path below a machine names a local file, which is stored under a name
+        /// assigned when the machine is enumerated, so it is not translated.
+        /// </remarks>
+        public string? TranslateSourcePath(string sourcePath)
+        {
+            if (!IsHyperVSource(sourcePath))
+                return null;
+
+            var parts = sourcePath.Substring(HYPERV_PATH_PREFIX.Length).Split(SOURCE_PATH_SEPARATOR, StringSplitOptions.RemoveEmptyEntries);
+            return parts.Length switch
+            {
+                0 => MountedPath,
+                1 => MountedPath + parts[0] + Path.DirectorySeparatorChar,
+                _ => null
+            };
+        }
 
         /// <inheritdoc />
         public bool IsSupported => OperatingSystem.IsWindows();
@@ -412,54 +450,12 @@ namespace Duplicati.Library.SourceProvider.Builtin.HyperV
         }
 
         /// <inheritdoc />
-        /// <remarks>
-        /// Resolves the virtual levels down to a virtual machine. The entries below
-        /// that carry the full local path of the file, so a lookup of one of them
-        /// is not resolved by walking one segment at a time and answers null.
-        /// </remarks>
-        public async Task<ISourceProviderEntry?> GetEntryAsync(string path, bool isFolder, CancellationToken cancellationToken)
+        public Task<ISourceProviderEntry?> GetEntryAsync(string path, bool isFolder, CancellationToken cancellationToken)
         {
-            if (!OperatingSystem.IsWindows() || !IsHyperVSource(path))
-                return null;
+            if (!OperatingSystem.IsWindows() || !Util.AppendDirSeparator(path).StartsWith(MountedPath, StringComparison.OrdinalIgnoreCase))
+                return Task.FromResult<ISourceProviderEntry?>(null);
 
-            var root = new HyperVRootEntry(MountedPath, _guests.Value, _snapshotService);
-            var targetPath = Util.AppendDirSeparator(path.TrimEnd(Path.DirectorySeparatorChar));
-
-            // Root itself
-            if (string.Equals(targetPath, root.Path, StringComparison.OrdinalIgnoreCase))
-                return root;
-
-            // Walk down the virtual tree
-            ISourceProviderEntry current = root;
-            var relative = targetPath.Substring(root.Path.Length);
-            var segments = relative.Split(Path.DirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries);
-
-            for (var i = 0; i < segments.Length; i++)
-            {
-                var isLast = i == segments.Length - 1;
-                var found = false;
-                await foreach (var entry in current.Enumerate(cancellationToken).ConfigureAwait(false))
-                {
-                    var name = entry.Path.TrimEnd(Path.DirectorySeparatorChar)
-                        .Split(Path.DirectorySeparatorChar)
-                        .Last();
-
-                    if (!name.Equals(segments[i], StringComparison.OrdinalIgnoreCase))
-                        continue;
-
-                    if (isLast && entry.IsFolder != isFolder)
-                        return null;
-
-                    current = entry;
-                    found = true;
-                    break;
-                }
-
-                if (!found)
-                    return null;
-            }
-
-            return current;
+            return VirtualSourcePath.FindEntryAsync(new HyperVRootEntry(MountedPath, _guests.Value, _snapshotService), path, isFolder, cancellationToken);
         }
 
         /// <inheritdoc />
