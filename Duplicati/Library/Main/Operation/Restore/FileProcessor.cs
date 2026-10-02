@@ -223,6 +223,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         {
                             Logging.Log.WriteErrorMessage(LOGTAG, "VerifyTargetBlocks", ex, "Error during checking the target file");
                             FaultPriorityBarrierIfPriorityFile(file, ex);
+                            await ReleaseUnusedBlocksAsync(db, file, [.. blocks], 0, 0, block_request, block_response, options, results.TaskControl.ProgressToken).ConfigureAwait(false);
                             continue;
                         }
                         long bytes_written = 0;
@@ -232,6 +233,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                             var error = $"Block count mismatch for {file.TargetPath} - expected: {blocks.Length}, actual: {missing_blocks.Count + verified_blocks.Count}";
                             Logging.Log.WriteErrorMessage(LOGTAG, "BlockCountMismatch", null, error);
                             FaultPriorityBarrierIfPriorityFile(file, new InvalidOperationException(error));
+                            await ReleaseUnusedBlocksAsync(db, file, [.. blocks], 0, 0, block_request, block_response, options, results.TaskControl.ProgressToken).ConfigureAwait(false);
                             continue;
                         }
 
@@ -244,6 +246,9 @@ namespace Duplicati.Library.Main.Operation.Restore
                             {
                                 // The file already exists, which it only does when it matches the target hash. So we can skip the file.
                                 Logging.Log.WriteInformationMessage(LOGTAG, "FileAlreadyExists", "File {0} already exists and matches the target hash as a copy: {1}", file.TargetPath, new_name);
+                                // The copy holds the missing blocks too, so they are released
+                                // below along with the ones found in the target file.
+                                verified_blocks.AddRange(missing_blocks);
                                 missing_blocks.Clear();
                             }
                             else
@@ -340,6 +345,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 catch (Exception ex)
                                 {
                                     Logging.Log.WriteErrorMessage(LOGTAG, "CreateEmptyFile", ex, "Error when creating empty file {0}", file.TargetPath);
+                                    await ReleaseUnusedBlocksAsync(db, file, missing_blocks, 0, 0, block_request, block_response, options, results.TaskControl.ProgressToken).ConfigureAwait(false);
                                     continue;
                                 }
 
@@ -364,6 +370,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                             if (missing_blocks.Any(x => x.VolumeID < 0))
                             {
                                 Logging.Log.WriteWarningMessage(LOGTAG, "NegativeVolumeID", null, $"{file.TargetPath} has a negative volume ID, skipping");
+                                await ReleaseUnusedBlocksAsync(db, file, missing_blocks, 0, 0, block_request, block_response, options, results.TaskControl.ProgressToken).ConfigureAwait(false);
                                 continue;
                             }
 
@@ -902,7 +909,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
         /// <summary>
         /// Leaves the block channels as the next file expects them, after a file failed part way
-        /// through its missing blocks.
+        /// through its missing blocks or was skipped before it started on them.
         /// </summary>
         /// <param name="db">The restore database, which is queried for the metadata blocks.</param>
         /// <param name="file">The file that failed.</param>

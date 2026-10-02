@@ -148,17 +148,24 @@ namespace Duplicati.UnitTest
         {
             NUnit.Framework.Assert.Multiple(() =>
             {
-                foreach (var name in OtherFiles)
-                {
-                    var restored = Path.Combine(RESTOREFOLDER, name);
-                    Assert.IsTrue(File.Exists(restored), $"{name} was not restored");
-                    if (File.Exists(restored))
-                        CollectionAssert.AreEqual(File.ReadAllBytes(Path.Combine(DATAFOLDER, name)), File.ReadAllBytes(restored), $"{name} was restored with the wrong content");
-                }
-
+                AssertTheOtherFilesAreRestored();
                 CollectionAssert.AreEqual(new[] { Path.Combine(RESTOREFOLDER, FailingFile) }, results.BrokenLocalFiles, "The files reported as not restored");
                 CollectionAssert.IsEmpty(countErrors, "The blocks of the failed file were still counted as needed at the end");
             });
+        }
+
+        /// <summary>
+        /// Checks that every other file was restored with its content.
+        /// </summary>
+        private void AssertTheOtherFilesAreRestored()
+        {
+            foreach (var name in OtherFiles)
+            {
+                var restored = Path.Combine(RESTOREFOLDER, name);
+                Assert.IsTrue(File.Exists(restored), $"{name} was not restored");
+                if (File.Exists(restored))
+                    CollectionAssert.AreEqual(File.ReadAllBytes(Path.Combine(DATAFOLDER, name)), File.ReadAllBytes(restored), $"{name} was restored with the wrong content");
+            }
         }
 
         [Test]
@@ -212,6 +219,128 @@ namespace Duplicati.UnitTest
             }
 
             AssertOnlyTheFailingFileIsMissing(results, countErrors);
+        }
+
+        // A file can also be skipped before any of its blocks are requested. The block manager
+        // counts every block of every file, so the blocks of a skipped file have to be released
+        // as well, or they are held until the end of the restore and reported as never used.
+
+        [Test]
+        [Category("RestoreHandler")]
+        public async Task AFileThatCannotBeCheckedReleasesItsBlocks()
+        {
+            await BackupAsync();
+
+            // A file in the way that cannot be read, so checking it against the backup fails
+            var failing = Path.Combine(RESTOREFOLDER, FailingFile);
+            File.WriteAllBytes(failing, [1]);
+            var options = RestoreOptions();
+            options["overwrite"] = "true";
+
+            FileStream? holder = null;
+            if (OperatingSystem.IsWindows())
+                holder = new FileStream(failing, FileMode.Open, FileAccess.Read, FileShare.None);
+            else
+                File.SetUnixFileMode(failing, UnixFileMode.None);
+
+            try
+            {
+                if (!OperatingSystem.IsWindows())
+                {
+                    try
+                    {
+                        using (File.OpenRead(failing)) { }
+                        Assert.Ignore("The file can still be read (running as root?), so checking it would not fail");
+                    }
+                    catch (UnauthorizedAccessException)
+                    {
+                    }
+                }
+
+                var (results, countErrors) = await RestoreAsync(options);
+                AssertOnlyTheFailingFileIsMissing(results, countErrors);
+            }
+            finally
+            {
+                holder?.Dispose();
+                if (!OperatingSystem.IsWindows())
+                    File.SetUnixFileMode(failing, UnixFileMode.UserRead | UnixFileMode.UserWrite);
+            }
+        }
+
+        [Test]
+        [Category("RestoreHandler")]
+        public async Task AnEmptyFileThatCannotBeCreatedReleasesItsBlocks()
+        {
+            File.WriteAllBytes(Path.Combine(DATAFOLDER, "empty"), []);
+            await BackupAsync();
+
+            // A folder where the empty file should go, so it cannot be created
+            Directory.CreateDirectory(Path.Combine(RESTOREFOLDER, "empty"));
+
+            var (_, countErrors) = await RestoreAsync(RestoreOptions());
+
+            NUnit.Framework.Assert.Multiple(() =>
+            {
+                AssertTheOtherFilesAreRestored();
+                CollectionAssert.IsEmpty(countErrors, "The blocks of the empty file were still counted as needed at the end");
+            });
+        }
+
+        [Test]
+        [Category("RestoreHandler")]
+        public async Task AFileWithANegativeVolumeIdReleasesItsBlocks()
+        {
+            await BackupAsync();
+
+            // The database places the file's blocks in no volume, so the file is skipped
+            using (var con = await SQLiteLoader.LoadConnectionAsync(DBFILE))
+            using (var cmd = con.CreateCommand())
+            {
+                var updated = await cmd
+                    .SetCommandAndParameters(@"
+                        UPDATE ""Block"" SET ""VolumeID"" = -1
+                        WHERE ""ID"" IN (
+                            SELECT ""BlockID"" FROM ""BlocksetEntry"" WHERE ""BlocksetID"" = (
+                                SELECT ""BlocksetID"" FROM ""File"" WHERE ""Path"" = @Path
+                            )
+                        )")
+                    .SetParameterValue("@Path", Path.Combine(DATAFOLDER, FailingFile))
+                    .ExecuteNonQueryAsync();
+                Assert.AreEqual(20, updated, "The file's blocks were not found");
+            }
+
+            var (_, countErrors) = await RestoreAsync(RestoreOptions());
+
+            NUnit.Framework.Assert.Multiple(() =>
+            {
+                AssertTheOtherFilesAreRestored();
+                CollectionAssert.IsEmpty(countErrors, "The blocks of the skipped file were still counted as needed at the end");
+            });
+        }
+
+        [Test]
+        [Category("RestoreHandler")]
+        public async Task AFileWhoseCopyAlreadyExistsReleasesItsBlocks()
+        {
+            await BackupAsync();
+
+            // Without overwrite, a different file in the way means the restore goes to a copy
+            // named after the date. That copy is already there with the right content, so the
+            // file is not restored at all.
+            File.WriteAllBytes(Path.Combine(RESTOREFOLDER, FailingFile), [1]);
+            var copy = Path.Combine(RESTOREFOLDER, FailingFile + "." + DateTime.Now.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture));
+            File.Copy(Path.Combine(DATAFOLDER, FailingFile), copy);
+
+            var (results, countErrors) = await RestoreAsync(RestoreOptions());
+
+            NUnit.Framework.Assert.Multiple(() =>
+            {
+                AssertTheOtherFilesAreRestored();
+                Assert.AreEqual(OtherFiles.Length, results.RestoredFiles, "The file with an existing copy was restored anyway, so the copy was not found");
+                CollectionAssert.IsEmpty(countErrors, "The blocks of the file with an existing copy were still counted as needed at the end");
+                CollectionAssert.IsEmpty(results.Errors, "A restore that had nothing wrong reported errors");
+            });
         }
     }
 }
