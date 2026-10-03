@@ -181,6 +181,15 @@ public sealed class QnapAuthMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
+        // Requests the server sends to itself (forwarded remote control commands) have no QTS session,
+        // and are authenticated by the regular Duplicati authentication instead
+        if (LocalForwardingKey.IsLocalForwardedRequest(context.Request))
+        {
+            LogDebug("QnapAuthLocalForwarded", $"Allowing locally forwarded request {context.Request.Method} {context.Request.Path}");
+            await _next(context);
+            return;
+        }
+
         // Check if this is an API call, or a static content call
         var isApiCall = IsProtectedPath(context.Request.Path);
 
