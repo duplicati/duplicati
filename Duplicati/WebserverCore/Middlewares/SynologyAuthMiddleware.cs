@@ -166,6 +166,14 @@ public sealed class SynologyDsmAuthMiddleware
             return;
         }
 
+        // Requests the server sends to itself (forwarded remote control commands) have no DSM session,
+        // and are authenticated by the regular Duplicati authentication instead
+        if (LocalForwardingKey.IsLocalForwardedRequest(context.Request))
+        {
+            await _next(context);
+            return;
+        }
+
         // Check if this is an API call, or a static content call
         var isApiCall = IsProtectedPath(context.Request.Path);
 
