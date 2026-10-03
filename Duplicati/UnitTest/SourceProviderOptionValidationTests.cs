@@ -515,4 +515,35 @@ public class SourceProviderOptionValidationTests : BasicSetupHelper
             Assert.That(results.ModifiedFiles, Is.EqualTo(1), "The modified file should be reported");
         }
     }
+
+    [Test]
+    public async Task Backup_DoesNotWarnOnHyperVIgnoreClientWarningOption()
+    {
+        // The prefix-based providers declare their options too; only the option
+        // check is under test here, as the backup itself needs Hyper-V
+        var options = new Dictionary<string, string>(this.TestOptions)
+        {
+            ["no-encryption"] = "true",
+            [Library.SourceProvider.Builtin.HyperV.HyperVSourceProvider.IGNORE_CLIENT_WARNING_OPTION] = "true"
+        };
+
+        var logSink = new LogSink();
+        using var isolatingScope = Log.StartIsolatingScope(true);
+        using var log = Log.StartScope(logSink, LogMessageType.Warning);
+
+        using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+        {
+            try
+            {
+                await c.BackupAsync([this.DATAFOLDER, "%HYPERV%"]);
+            }
+            catch (Exception)
+            {
+                // Whether the backup runs depends on Hyper-V being available
+            }
+        }
+
+        Assert.That(logSink.Entries.Any(x => x.Id == "UnsupportedOption" && (x.Message?.Contains(Library.SourceProvider.Builtin.HyperV.HyperVSourceProvider.IGNORE_CLIENT_WARNING_OPTION) ?? false)), Is.False,
+            "An option declared by a prefix-based source provider should not be reported as unsupported");
+    }
 }

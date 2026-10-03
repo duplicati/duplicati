@@ -390,11 +390,22 @@ namespace Duplicati.Library.Main.Operation
                     if (!OperatingSystem.IsWindows())
                         throw new UserInformationException("USN journal is only supported on Windows", "USNJournalNotSupported");
 
+                    // The providers other than the file source are not covered by the change journal,
+                    // so they were enumerated in full, and nothing below them comes from the previous fileset
+                    var fullyEnumeratedRoots = Backup.FileEnumerationProcess.GetNonFileProviders(source)
+                        .Select(x => x.MountedPath)
+                        .Where(x => !string.IsNullOrWhiteSpace(x))
+                        .Select(Util.AppendDirSeparator)
+                        .ToList();
+
                     // append files from previous fileset, unless part of modifiedSources, which we've just scanned
                     await database.AppendFilesFromPreviousSetWithPredicateAsync((path, fileSize) =>
                     {
                         if (!OperatingSystem.IsWindows())
                             throw new UserInformationException("USN journal is only supported on Windows", "USNJournalNotSupported");
+
+                        if (fullyEnumeratedRoots.Any(root => path.StartsWith(root, Library.Utility.Utility.ClientFilenameStringComparison)))
+                            return true;
 
                         // TODO: This is technically unsupported, but the method itself works cross-platform
                         if (journalService.IsPathEnumerated(path))
