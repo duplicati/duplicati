@@ -165,6 +165,7 @@ public class BackupListing : IEndpointV2
                 }),
                 r.FileVersions.Page,
                 r.FileVersions.PageSize,
-                r.FileVersions.TotalCount);
+                r.FileVersions.TotalCount,
+                r.ParentMetadata);
     }
 }
