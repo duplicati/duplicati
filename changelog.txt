@@ -1,3 +1,105 @@
+2026-10-02 - 2.4.0.103_canary_2026-10-02
+==========
+This release is a canary release intended to be used for testing.
+
+# Reduced reporting mode
+
+A new reduced reporting mode limits everything that is sent outside the machine to log message ids, counters, dates and stack traces. No message text, error message or file name is transmitted, and the bug report feature is disabled. The mode is enabled with `--reduced-reporting`, overrides the regular path redaction, also applies to the data handed to run-scripts, and cannot be undone by a backup configuration. Local log data is still available in full.
+
+# Recreate with defective filelists
+
+A failed transfer can leave a partially written filelist on the remote storage. The backup would then fail because of the unknown file, and recreating the database failed because the partial file could not be read. The database recreate now probes the filelists and continues without the defective ones. The next backup will then ask for a `repair`, which removes the offending files.
+
+# Restore fixes
+
+A number of problems in the restore flow were fixed, thanks @JamBalaya56562:
+
+- A file that cannot be created or written no longer stops the restore of the files after it.
+- A restore that finishes with errors is now reported as failed in the UI and in the HTTP status report, instead of showing as successful.
+- Skipped files, including files where a copy already exists, no longer cause `BlockCountError` and `VolumeCountError` messages.
+- A missing destination folder is reported before the restore starts instead of after the full retry delay.
+- More cases where a failing restore stage could leave the restore waiting forever are now released.
+- The restore tree no longer hides a source whose path extends the name of another source file, and a backup with multiple drives no longer takes 30 seconds per drive to list.
+
+# Stopping a backup no longer hangs (or at least less often)
+
+Using "Stop now" could leave the backup waiting forever if a source file read was stuck, such as on a network share that stopped answering, or if a block processor was stopped while holding a block. Both cases now return as cancelled, thanks @JamBalaya56562.
+
+# Windows sleep, resume and port fixes
+
+Three Windows related problems were fixed, thanks @JamBalaya56562:
+
+- With `--allow-sleep` disabled, Windows was kept awake after the operation had finished. The sleep prevention is now withdrawn when the operation ends.
+- If the machine was suspended before the pause was fully handled, the server could stay paused after waking up.
+- The server now tries the next port when Windows refuses the port, such as when port 8200 is in a range reserved for Hyper-V, WSL or Docker.
+
+# MSI installer remembers the install location
+
+A custom install location chosen in the MSI installer is now remembered for later upgrades. Older packages did not record the location, so this takes effect from the next upgrade. The location can also be set with `msiexec /i package.msi INSTALLLOCATION=C:\OtherLocation`, which works for silent installs. The browse button for picking the path was also fixed.
+
+# Queued commands keep their version
+
+A command sent from the command line page in the UI waits in the task queue. If a backup ran before the command, the `--version` numbers had shifted, so a delete could remove the wrong version. The versions are now resolved when the command is sent, and the command is not run if a named version no longer exists, thanks @JamBalaya56562.
+
+# Synchronization improvements
+
+Sync jobs now keep their own metadata and only update it when the operation succeeds, instead of writing the last backup values even on failures. The remote operation log is no longer kept in memory during a sync, and uploading a zero-byte file to Google Cloud Storage or Google Drive no longer fails with a 400 error.
+
+## Detailed list of changes
+
+- Fixed generated remote filenames using the casing supplied by the user for the compression and encryption module
+- Added support for remembering the install location in the MSI installer and pinned the order of the install actions
+- Fixed an aborted backup waiting forever for a stuck source file read, thanks @JamBalaya56562
+- Fixed an aborted backup waiting forever when a block processor stopped while holding a block, thanks @JamBalaya56562
+- Fixed the largest-prefix listing taking 30 seconds per drive and returning an extra empty root for multi-drive backups, thanks @JamBalaya56562
+- Fixed an `ObjectDisposedException` logged during server shutdown, thanks @JamBalaya56562
+- Fixed skipped files in a restore being reported as `BlockCountError` and `VolumeCountError`, thanks @JamBalaya56562
+- Fixed a missing destination folder only being reported after all retries when restoring, thanks @JamBalaya56562
+- Fixed the repeated and unclear warning when the Windows modules cannot be loaded, thanks @JamBalaya56562
+- Fixed the database connection staying open when the setup of a backup or delete database fails, thanks @JamBalaya56562
+- Fixed the server stopping instead of trying the next port when the system refuses the port, thanks @JamBalaya56562
+- Fixed the server staying paused after a sleep if the suspend was still being handled, thanks @JamBalaya56562
+- Fixed the path browse button in the MSI installer
+- Fixed an aborted repair setting aside a healthy local database and recreating it, thanks @JamBalaya56562
+- Fixed the HTTP status report showing an operation that finished with errors as successful, and redacted paths in the reported error, thanks @JamBalaya56562
+- Fixed Windows being kept awake after an operation has ended, thanks @JamBalaya56562
+- Fixed the help text for `search` to say that all versions are searched when none is given, thanks @JamBalaya56562
+- Fixed the live log skipping entries when more than a page arrived between two polls, thanks @JamBalaya56562
+- Fixed the old UI grouping restore versions under the wrong month, thanks @JamBalaya56562
+- Added handling of defective filelists when recreating the database
+- Changed the remote filename parsing so the encryption module name cannot contain a `.`
+- Fixed the old UI not showing the saved local folder when editing a backup, thanks @JamBalaya56562
+- Fixed the old UI not being able to select a restore root before it was expanded, thanks @JamBalaya56562
+- Fixed the old UI replacing the saved S3 client with `aws` when opening a destination, thanks @JamBalaya56562
+- Fixed the old UI not saving a custom S3 storage class, thanks @JamBalaya56562
+- Added the stored configuration type (backup or sync) to the API
+- Reduced memory usage for sync operations by not collecting remote operation log data
+- Fixed uploading zero-byte files to Google Cloud Storage and Google Drive
+- Changed sync operations to use their own metadata and only update it on success
+- Fixed a task that finished with errors being reported as successful, thanks @JamBalaya56562
+- Fixed a restore stopping when a single file fails to restore, thanks @JamBalaya56562
+- Fixed a queued command acting on the wrong version when a backup ran before it, thanks @JamBalaya56562
+- Fixed more cases where a failing restore stage could leave the restore waiting forever, thanks @JamBalaya56562
+- Fixed a source being dropped from the root listing when its path extends the name of another source file, thanks @JamBalaya56562
+- Added the reduced reporting mode and the `--reduced-reporting` option
+- Changed the SMB write error detection and logging to show the actual failure
+- Added RelAix to the list of S3 providers, thanks @mygrexit
+- Fixed empty and whitespace-only arguments being lost when wrapping a command line, thanks @JamBalaya56562
+- Fixed the database connection staying open when a local database fails to open, thanks @JamBalaya56562
+- Updated translations from Transifex, thanks to all Translators!
+
+## Updates to ngclient
+
+- Fixed the context menu being hidden for console managed backups
+- Added support for showing sync jobs when restoring configurations from remote
+- Improved the display of sync operations
+- Added RelAix to the known public hosts
+- Added support for reduced reporting
+- Fixed errors in a completed restore database repair not being handled, thanks @JamBalaya56562
+- Fixed the schedule date picker not preserving the local date, thanks @JamBalaya56562
+- Fixed stopped WebSockets and long polls reconnecting, thanks @JamBalaya56562
+- Updated localization
+
 2026-09-25 - 2.4.0.102_canary_2026-09-25
 ==========
 This release is a canary release intended to be used for testing.
