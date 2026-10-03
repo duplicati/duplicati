@@ -50,9 +50,18 @@ public static class PreloadSettingsLoader
     private const string AnyExecutableMarker = "*";
 
     /// <summary>
-    /// Cached value for toggling debug code
+    /// Cached value for toggling debug code. A value such as 0 or false turns it off;
+    /// any other value that is set turns it on.
     /// </summary>
-    private static readonly bool PreloadDebug = !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(PreloadSettingsDebugEnvVar));
+    private static readonly bool PreloadDebug = IsDebugEnabled(Environment.GetEnvironmentVariable(PreloadSettingsDebugEnvVar));
+
+    /// <summary>
+    /// Reads the value of the debug environment variable
+    /// </summary>
+    /// <param name="value">The value of the environment variable</param>
+    /// <returns><c>true</c> if the debug output is turned on</returns>
+    internal static bool IsDebugEnabled(string? value)
+        => Utility.Utility.ParseBool(value, () => !string.IsNullOrWhiteSpace(value));
 
     /// <summary>
     /// The file name for the preload settings
