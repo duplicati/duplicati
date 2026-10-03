@@ -119,6 +119,17 @@ namespace Duplicati.Library.Main.Operation.Restore
                         files = hostFiles;
                     }
 
+                    // Separate out symbolic links to folders so they are restored after
+                    // everything else. A source that is itself a link has its files restored
+                    // below the link, and making the link while they, their folder metadata or
+                    // their alternate data streams are written would pull the folder away from
+                    // under them.
+                    var folderLinks = new List<FileRequest>();
+                    var otherFiles = new List<FileRequest>();
+                    foreach (var f in files)
+                        (FileProcessor.IsFolderLink(f) ? folderLinks : otherFiles).Add(f);
+                    files = otherFiles;
+
                     sw_write_file?.Start();
 
                     // Resolve which files are priority files. A priority entry only counts
@@ -197,7 +208,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         sw_write_folder?.Stop();
                     }
 
-                    // Send the alternate data streams last, so their hosts are restored
+                    // Send the alternate data streams after the files, so their hosts are restored
                     sw_write_file?.Start();
                     foreach (var file in adsStreams)
                     {
@@ -205,6 +216,18 @@ namespace Duplicati.Library.Main.Operation.Restore
                             return;
 
                         await self.Output.WriteAsync(new FileRequest(file.ID, file.OriginalPath, file.TargetPath, file.Hash, file.Length, file.BlocksetID, IsAlternateDataStream: true, Version: version, BackupTimestamp: backupTimestamp)).ConfigureAwait(false);
+                    }
+                    sw_write_file?.Stop();
+
+                    // Send the symbolic links to folders last, after everything they may hold.
+                    // The FileProcessor holds them back until everything else is restored.
+                    sw_write_file?.Start();
+                    foreach (var link in folderLinks)
+                    {
+                        if (StopRequested())
+                            return;
+
+                        await self.Output.WriteAsync(link.WithVersion(version, backupTimestamp)).ConfigureAwait(false);
                     }
                     sw_write_file?.Stop();
                 }
