@@ -226,6 +226,10 @@ namespace Duplicati.Library.Main
         {
             return await RunActionAsync(new RestoreResults(), null, inputFilter, new { paths }, static async config =>
             {
+                // Written as "--restore-path <folder>", the option has no value and the folder is taken as a path to restore
+                if (config.Options.RawOptions.ContainsKey("restore-path") && string.IsNullOrWhiteSpace(config.Options.Restorepath))
+                    throw new UserInformationException("The option --restore-path has no value. Write it as --restore-path=<folder>, or leave it out to restore to the original location.", "RestorePathHasNoValue");
+
                 using var restoreDestination =
                     (config.Options.Restorepath ?? "").StartsWith("@")
 
