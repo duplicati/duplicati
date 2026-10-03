@@ -329,7 +329,8 @@ namespace Duplicati.UnitTest
             {
                 var restoreResults = await c.RestoreAsync([f]);
                 Assert.That(restoreResults.RestoredFiles, Is.EqualTo(1), "File should have been restored.");
-                Assert.That(restoreResults.Warnings.Count(), Is.EqualTo(compressRestorePaths ? 0 : 1), "Warning should be generated for missing folder");
+                // The folder the file needs is made without a warning, as it is not part of the restore (issue #5853)
+                Assert.That(restoreResults.Warnings.Count(), Is.EqualTo(0), "No warning should be generated for the folder the restore has to make");
             }
         }
 

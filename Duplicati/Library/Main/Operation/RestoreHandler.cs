@@ -580,7 +580,7 @@ namespace Duplicati.Library.Main.Operation
                             var folderpath = SystemIO.IO_OS.PathGetDirectoryName(targetpath);
                             if (!string.IsNullOrWhiteSpace(folderpath))
                                 if (await restoreDestination.CreateFolderIfNotExists(folderpath, cancellationToken).ConfigureAwait(false))
-                                    Logging.Log.WriteWarningMessage(LOGTAG, "CreateMissingFolder", null, "Creating missing folder {0} for  file {1}", folderpath, targetpath);
+                                    Logging.Log.WriteVerboseMessage(LOGTAG, "CreateMissingFolder", "Creating missing folder {0} for  file {1}", folderpath, targetpath);
                         }
 
                         // TODO: Much faster if we iterate the volume and checks what blocks are used,
@@ -706,7 +706,7 @@ namespace Duplicati.Library.Main.Operation
                             if (!string.IsNullOrEmpty(folderpath) && folderpath != targetpath && (string.IsNullOrWhiteSpace(restoreDestination.TargetDestination) || Util.IsPathInsideTarget(folderpath, restoreDestination.TargetDestination)))
                             {
                                 if (await restoreDestination.CreateFolderIfNotExists(folderpath, cancellationToken).ConfigureAwait(false))
-                                    Logging.Log.WriteWarningMessage(LOGTAG, "CreateMissingFolder", null, "Creating missing folder {0} for target {1}", folderpath, targetpath);
+                                    Logging.Log.WriteVerboseMessage(LOGTAG, "CreateMissingFolder", "Creating missing folder {0} for target {1}", folderpath, targetpath);
                             }
                         }
 
@@ -1407,7 +1407,7 @@ namespace Duplicati.Library.Main.Operation
                             if (!string.IsNullOrEmpty(folderpath))
                             {
                                 if (await restoreDestination.CreateFolderIfNotExists(folderpath, result.TaskControl.ProgressToken).ConfigureAwait(false))
-                                    Logging.Log.WriteWarningMessage(LOGTAG, "CreateMissingFolder", null, "Creating missing folder {0} for  file {1}", folderpath, targetpath);
+                                    Logging.Log.WriteVerboseMessage(LOGTAG, "CreateMissingFolder", "Creating missing folder {0} for  file {1}", folderpath, targetpath);
                             }
                         }
 
@@ -1517,7 +1517,7 @@ namespace Duplicati.Library.Main.Operation
                         if (!string.IsNullOrEmpty(folderpath))
                         {
                             if (await restoreDestination.CreateFolderIfNotExists(folderpath, result.TaskControl.ProgressToken).ConfigureAwait(false))
-                                Logging.Log.WriteWarningMessage(LOGTAG, "CreateMissingFolder", null, "Creating missing folder {0} for file {1}", folderpath, targetpath);
+                                Logging.Log.WriteVerboseMessage(LOGTAG, "CreateMissingFolder", "Creating missing folder {0} for file {1}", folderpath, targetpath);
                         }
                     }
 
