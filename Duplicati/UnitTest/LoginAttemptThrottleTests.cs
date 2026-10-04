@@ -152,17 +152,31 @@ public class LoginAttemptThrottleTests
     public async Task TooManyPendingAttemptsAreRejectedAsync()
     {
         var throttle = new LoginAttemptThrottle(BASE_DELAY, MAX_DELAY, RESET_PERIOD, 2);
+        using var holding = new ManualResetEventSlim(false);
         using var release = new ManualResetEventSlim(false);
 
-        var first = Task.Run(() => throttle.VerifyAsync(() => { release.Wait(); return true; }, CancellationToken.None));
-        var second = Task.Run(() => throttle.VerifyAsync(() => true, CancellationToken.None));
+        // The first attempt holds the lock until it is released. If the second attempt was also
+        // started with Task.Run, it could take the lock first and be done before the third came,
+        // and the third would then wait for the lock instead of being rejected, with nothing left
+        // to release the first: the test hung.
+        var first = Task.Run(() => throttle.VerifyAsync(() => { holding.Set(); release.Wait(); return true; }, CancellationToken.None));
+        Task<bool> second = null;
+        try
+        {
+            Assert.IsTrue(holding.Wait(TimeSpan.FromSeconds(10)), "The first attempt did not take the lock");
 
-        // Wait for both attempts to be pending
-        await Task.Delay(100);
+            // Counted as pending as soon as it is called, then waits for the lock
+            second = throttle.VerifyAsync(() => true, CancellationToken.None);
 
-        Assert.ThrowsAsync<TooManyRequestsException>(() => throttle.VerifyAsync(() => true, CancellationToken.None));
+            // Cancelled if it waits for the lock after all, so a failure does not hang the test
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            Assert.ThrowsAsync<TooManyRequestsException>(() => throttle.VerifyAsync(() => true, cts.Token));
+        }
+        finally
+        {
+            release.Set();
+        }
 
-        release.Set();
         Assert.IsTrue(await first);
         Assert.IsTrue(await second);
 
