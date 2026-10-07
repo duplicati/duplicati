@@ -302,7 +302,10 @@ public class BackendSourceFileEntry(BackendSourceProvider parent, string path, b
     }
 
     /// <inheritdoc/>
-    public Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken) => Task.FromResult(new Dictionary<string, string?>());
+    public Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)
+        => Task.FromResult(isRootEntry
+            ? parent.GetRootMetadata()
+            : new Dictionary<string, string?>());
 
     /// <summary>
     /// Normalizes the path, turning backslashes into forward slashes,
