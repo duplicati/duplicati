@@ -122,7 +122,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 // stopped answering, would hold up the backup, so stop waiting for it instead. The
                                 // buffer is not returned to the pool on that path, so a read that ends later does not
                                 // write into a reused one.
-                                while (((lastread = await stream.ForceStreamReadAsync(buf, blocksize, taskreader.ProgressToken).WaitAsync(taskreader.ProgressToken)) != 0))
+                                while ((lastread = await stream.ForceStreamReadAsync(buf, blocksize, taskreader.ProgressToken).UntilCancelledAsync(taskreader.ProgressToken)) != 0)
                                 {
                                     // Run file hashing concurrently to squeeze a little extra concurrency out of it
                                     var pftask = Task.Run(() => filehasher.TransformBlock(buf, 0, lastread, buf, 0));

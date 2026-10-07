@@ -20,8 +20,12 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using System.IO;
+using System.Threading;
 using CoCoL;
+using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Operation.Common;
+using Duplicati.Library.Utility;
 using System.Threading.Tasks;
 
 namespace Duplicati.Library.Main.Operation.Backup
@@ -35,6 +39,20 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// The tag to use for log messages
         /// </summary>
         private static readonly string FILELOGTAG = Logging.Log.LogTagFromType(typeof(FileBlockProcessor)) + ".FileEntry";
+
+        /// <summary>
+        /// Opens a source file for reading. Opening a file is a synchronous call that does not
+        /// look at the cancellation token, and one that is stuck, as on a network share that
+        /// stopped answering, would hold up the backup; so the file is opened on its own, and it
+        /// is no longer waited for once the operation is aborted. A file that opens after that is
+        /// closed again.
+        /// </summary>
+        /// <param name="entry">The entry to open</param>
+        /// <param name="token">The token that aborts the operation</param>
+        /// <returns>The opened stream</returns>
+        private static Task<Stream> OpenReadAsync(ISourceProviderEntry entry, CancellationToken token)
+            => Task.Run(() => entry.OpenRead(token), CancellationToken.None)
+                .UntilCancelledAsync(token, static stream => stream.Dispose());
 
         public static Task RunAsync(Channels channels, Options options, BackupDatabase database, BackupStatsCollector stats, ITaskReader taskreader)
         {
@@ -79,7 +97,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 return (await MetadataPreProcess.AddMetadataToOutputAsync(e.Entry.Path, e.MetaHashAndSize, database, self.StreamBlockChannel, taskreader.ProgressToken).ConfigureAwait(false)).Item2;
                             });
 
-                        using (var fs = await e.Entry.OpenRead(taskreader.ProgressToken).ConfigureAwait(false))
+                        using (var fs = await OpenReadAsync(e.Entry, taskreader.ProgressToken).ConfigureAwait(false))
                             filestreamdata = await StreamBlock.ProcessStreamAsync(self.StreamBlockChannel, e.Entry.Path, fs, false, hint).ConfigureAwait(false);
 
                         await stats.AddOpenedFileAsync(filestreamdata.Streamlength).ConfigureAwait(false);
@@ -142,6 +160,10 @@ namespace Duplicati.Library.Main.Operation.Backup
                     {
                         if (ex.IsRetiredException())
                             return;
+
+                        // An abort is not a problem with the file; the rendezvous above ends the process
+                        if (ex.IsAbortException() && taskreader.ProgressToken.IsCancellationRequested)
+                            continue;
 
                         LogExceptionHelper.LogCommonWarning(ex, FILELOGTAG, "FileProcessingFailed", e.Entry.Path);
                     }
