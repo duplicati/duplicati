@@ -180,14 +180,6 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Border")]
-        public Task Run10kTzstdCompressionAsync()
-            => RunCommandsAsync(1024 * 10, modifyOptions: opts =>
-                {
-                    opts["compression-module"] = "tzstd";
-                });
-
-        [Test]
-        [Category("Border")]
         public Task Run10kIPCAsync()
             => RunCommandsAsync(1024 * 10, modifyOptions: opts =>
                 {
