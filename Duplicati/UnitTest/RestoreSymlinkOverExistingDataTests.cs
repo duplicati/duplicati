@@ -40,6 +40,18 @@ public class RestoreSymlinkOverExistingDataTests : BasicSetupHelper
     /// <summary>The folder outside the data folder that the links point to</summary>
     private string LinkTarget => this.DATAFOLDER.TrimEnd(Path.DirectorySeparatorChar) + "-outside";
 
+    /// <summary>A second folder outside the data folder, for a link that was repointed</summary>
+    private string OtherLinkTarget => this.DATAFOLDER.TrimEnd(Path.DirectorySeparatorChar) + "-outside2";
+
+    /// <summary>Removes the folders outside the data folder, which the base class does not know about</summary>
+    [TearDown]
+    public void RemoveLinkTargets()
+    {
+        foreach (var folder in new[] { LinkTarget, OtherLinkTarget })
+            if (Directory.Exists(folder))
+                Directory.Delete(folder, true);
+    }
+
     /// <summary>The link to a folder</summary>
     private string FolderLink => Path.Combine(this.DATAFOLDER, "link");
 
@@ -78,12 +90,23 @@ public class RestoreSymlinkOverExistingDataTests : BasicSetupHelper
     /// <param name="overwrite">The value of --overwrite</param>
     /// <returns>The warnings from the restore.</returns>
     private async Task<string[]> RestoreAsync(bool overwrite)
+        => (await RestoreWithResultsAsync(overwrite, null)).Warnings.ToArray();
+
+    /// <summary>
+    /// Restores everything to the original location, or to the given folder
+    /// </summary>
+    /// <param name="overwrite">The value of --overwrite</param>
+    /// <param name="restorePath">The folder to restore into, or <c>null</c> for the original location</param>
+    /// <returns>The results of the restore.</returns>
+    private async Task<Library.Interface.IRestoreResults> RestoreWithResultsAsync(bool overwrite, string restorePath)
     {
         var options = new Dictionary<string, string>(this.TestOptions) { ["overwrite"] = overwrite ? "true" : "false" };
+        if (restorePath != null)
+            options["restore-path"] = restorePath;
         using var c = new Controller("file://" + this.TARGETFOLDER, options, null);
         var r = await c.RestoreAsync(null);
         Assert.That(r.Errors, Is.Empty, "the restore should not fail");
-        return r.Warnings.ToArray();
+        return r;
     }
 
     /// <summary>Replaces the link to a folder by a folder with data in it</summary>
@@ -133,8 +156,8 @@ public class RestoreSymlinkOverExistingDataTests : BasicSetupHelper
     }
 
     /// <summary>
-    /// A file in place of a link is left alone without --overwrite, as any other file that
-    /// differs from the backed-up one is
+    /// A file in place of a link is kept without --overwrite, with a warning. A regular file
+    /// that differs would be restored under a new name; a link has nothing to restore beside it
     /// </summary>
     [Test]
     [Category("RestoreHandler")]
@@ -232,7 +255,8 @@ public class RestoreSymlinkOverExistingDataTests : BasicSetupHelper
     /// <summary>
     /// Restoring to a new machine: neither the link nor what it pointed to is there. The
     /// files were restored into a folder at the path of the link, and making the link then
-    /// removed that folder with them, leaving a link to nothing.
+    /// removed that folder with them, leaving a link to nothing. Now the folder is kept, and
+    /// as it holds what this restore put there, that is reported as information, not a warning.
     /// </summary>
     [Test]
     [Category("RestoreHandler")]
@@ -242,11 +266,69 @@ public class RestoreSymlinkOverExistingDataTests : BasicSetupHelper
         new DirectoryInfo(FolderLink).Delete();
         Directory.Delete(LinkTarget, true);
 
-        var warnings = await RestoreAsync(overwrite);
+        var r = await RestoreWithResultsAsync(overwrite, null);
 
         Assert.That(File.ReadAllText(Path.Combine(FolderLink, "a.txt")), Is.EqualTo("a"), "the restored files should be kept");
         Assert.That(File.ReadAllText(Path.Combine(FolderLink, "sub", "b.txt")), Is.EqualTo("b"));
-        Assert.That(warnings, Has.Some.Contains("SymlinkPlaceTakenByFolder"), $"got: {string.Join(" | ", warnings)}");
+        Assert.That(r.Warnings, Is.Empty, $"got: {string.Join(" | ", r.Warnings)}");
+        Assert.That(r.Messages, Has.Some.Contains("SymlinkRestoredAsFolder"), $"got: {string.Join(" | ", r.Messages)}");
+    }
+
+    /// <summary>
+    /// The link was repointed to another folder after the backup, and below it a folder is
+    /// restored. The link is replaced last, so the folder's metadata is written while the
+    /// link is still there, and the link then points where the backup says.
+    /// </summary>
+    [Test]
+    [Category("RestoreHandler")]
+    public async Task AStaleLinkWithAFolderRestoredBelowItIsReplacedWithoutWarnings()
+    {
+        await MakeLinkSourceAndBackupAsync();
+        Directory.CreateDirectory(Path.Combine(OtherLinkTarget, "sub"));
+        File.WriteAllText(Path.Combine(OtherLinkTarget, "a.txt"), "other");
+        File.WriteAllText(Path.Combine(OtherLinkTarget, "sub", "b.txt"), "other");
+        new DirectoryInfo(FolderLink).Delete();
+        Directory.CreateSymbolicLink(FolderLink, OtherLinkTarget);
+
+        var warnings = await RestoreAsync(overwrite: true);
+
+        Assert.That(warnings, Is.Empty, $"got: {string.Join(" | ", warnings)}");
+        Assert.That(new DirectoryInfo(FolderLink).LinkTarget, Is.EqualTo(LinkTarget), "the link should point where the backup says");
+    }
+
+    /// <summary>
+    /// A link with nothing restored below it is made with the files, before the metadata of
+    /// its folder is restored. Made after it, the link would set the folder's modification
+    /// time to the time of the restore.
+    /// </summary>
+    [Test]
+    [Category("RestoreHandler")]
+    public async Task ALinkDoesNotChangeTheRestoredTimestampOfItsFolder()
+    {
+        var folder = Path.Combine(this.DATAFOLDER, "dir");
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(Path.Combine(folder, "file.txt"), "file");
+        Directory.CreateDirectory(Path.Combine(this.DATAFOLDER, "other"));
+        try
+        {
+            Directory.CreateSymbolicLink(Path.Combine(folder, "link"), Path.Combine("..", "other"));
+        }
+        catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+        {
+            Assert.Ignore($"Symbolic links cannot be made here: {ex.Message}");
+        }
+        var timestamp = new DateTime(2010, 1, 2, 3, 4, 5, DateTimeKind.Utc);
+        Directory.SetLastWriteTimeUtc(folder, timestamp);
+
+        using (var c = new Controller("file://" + this.TARGETFOLDER, new Dictionary<string, string>(this.TestOptions), null))
+            TestUtils.AssertResults(await c.BackupAsync([this.DATAFOLDER]));
+
+        var r = await RestoreWithResultsAsync(overwrite: false, restorePath: this.RESTOREFOLDER);
+
+        var restoredFolder = Path.Combine(this.RESTOREFOLDER, "dir");
+        Assert.That(r.Warnings, Is.Empty, $"got: {string.Join(" | ", r.Warnings)}");
+        Assert.That(new DirectoryInfo(Path.Combine(restoredFolder, "link")).LinkTarget, Is.Not.Null, "the link should be restored");
+        Assert.That(Directory.GetLastWriteTimeUtc(restoredFolder), Is.EqualTo(timestamp), "the folder should keep the backed-up modification time");
     }
 
     /// <summary>

@@ -25,7 +25,7 @@ using Duplicati.Library.Snapshots;
 
 namespace Duplicati.Library.SourceProvider;
 
-public class FileRestoreDestinationProvider(string mountedPath, bool allowRestoreOutsideTargetDirectory, bool overwrite = false) : IRestoreDestinationProvider
+public class FileRestoreDestinationProvider(string mountedPath, bool allowRestoreOutsideTargetDirectory, bool overwrite) : IRestoreDestinationProvider
 {
     private static readonly string LOGTAG = Logging.Log.LogTagFromType<FileRestoreDestinationProvider>();
     private static readonly string DIRSEP = Path.DirectorySeparatorChar.ToString();
@@ -143,7 +143,7 @@ public class FileRestoreDestinationProvider(string mountedPath, bool allowRestor
     }
 
     /// <inheritdoc />
-    public Task<bool> WriteMetadata(string path, Dictionary<string, string?> metadata, bool restoreSymlinkMetadata, bool restorePermissions, CancellationToken cancel)
+    public Task<bool> WriteMetadata(string path, Dictionary<string, string?> metadata, bool restoreSymlinkMetadata, bool restorePermissions, bool hasRestoredEntriesBelow, CancellationToken cancel)
     {
         VerifyPath(path);
         var wrote_something = false;
@@ -172,8 +172,8 @@ public class FileRestoreDestinationProvider(string mountedPath, bool allowRestor
 
             // Check if the target exists, and overwrite it if that loses nothing. A link
             // that is there already is replaced. Anything else is data: a file is replaced
-            // only with --overwrite, as any other file is, and a folder only when it is
-            // empty, as a restore does not remove files that are not in the backup.
+            // only with --overwrite and otherwise kept, and a folder only when it is empty,
+            // as a restore does not remove files that are not in the backup.
             var isFile = SystemIO.IO_OS.FileExists(targetpath);
             var isFolder = !isFile && SystemIO.IO_OS.DirectoryExists(targetpath);
             var isLink = (isFile || isFolder) && SystemIO.IO_OS.IsSymlink(targetpath);
@@ -192,7 +192,13 @@ public class FileRestoreDestinationProvider(string mountedPath, bool allowRestor
                 {
                     if (!isLink && isFolder && SystemIO.IO_OS.EnumerateFileSystemEntries(targetpath).Any())
                     {
-                        Logging.Log.WriteWarningMessage(LOGTAG, "SymlinkPlaceTakenByFolder", null, "Not restoring the symbolic link {0} -> {1}, because a folder with files in it is in its place", path, k);
+                        // When this restore put entries below the link, the folder holds what was
+                        // restored, as when the link's target is not on this machine. That is the
+                        // outcome of the restore rather than something in its way.
+                        if (hasRestoredEntriesBelow)
+                            Logging.Log.WriteInformationMessage(LOGTAG, "SymlinkRestoredAsFolder", "Not making the symbolic link {0} -> {1}, because the entries below it were restored into a folder in its place", path, k);
+                        else
+                            Logging.Log.WriteWarningMessage(LOGTAG, "SymlinkPlaceTakenByFolder", null, "Not restoring the symbolic link {0} -> {1}, because a folder with files in it is in its place", path, k);
                         return Task.FromResult(false);
                     }
 
