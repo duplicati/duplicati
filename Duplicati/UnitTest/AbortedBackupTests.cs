@@ -170,7 +170,7 @@ namespace Duplicati.UnitTest
 
                 var stopped = await Task.WhenAny(backupTask, Task.Delay(TimeSpan.FromMinutes(2))) == backupTask;
                 Assert.IsTrue(stopped, "The abort did not make the backup return within two minutes");
-                Assert.ThrowsAsync<TaskCanceledException>(async () => await backupTask, "An aborted backup should end with the cancellation, not with a result");
+                Assert.CatchAsync<OperationCanceledException>(async () => await backupTask, "An aborted backup should end with the cancellation, not with a result");
             }
             finally
             {
@@ -223,7 +223,7 @@ namespace Duplicati.UnitTest
 
             var stopped = await Task.WhenAny(backupTask, Task.Delay(TimeSpan.FromSeconds(30))) == backupTask;
             Assert.IsTrue(stopped, "The abort did not make the backup return within 30 seconds");
-            Assert.ThrowsAsync<TaskCanceledException>(async () => await backupTask, "An aborted backup should end with the cancellation, not with a result");
+            Assert.CatchAsync<OperationCanceledException>(async () => await backupTask, "An aborted backup should end with the cancellation, not with a result");
         }
     }
 }
