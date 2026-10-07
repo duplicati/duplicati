@@ -52,9 +52,26 @@ CREATE TABLE "RemoteOperation" (
 -- Index supporting the time-based purge of old audit-log rows.
 CREATE INDEX "RemoteOperationTimestamp" ON "RemoteOperation" ("Timestamp");
 
+/*
+The log data table holds the result of each sync run, so the
+outcome can be shown in the job log after the run. It mirrors the
+LogData table of the backup database, and is purged by the
+log-retention option.
+*/
+CREATE TABLE "LogData" (
+    "ID" INTEGER PRIMARY KEY AUTOINCREMENT,
+    "Timestamp" INTEGER NOT NULL,
+    "Type" TEXT NOT NULL,
+    "Message" TEXT NOT NULL,
+    "Exception" TEXT NULL
+);
+
+-- Index supporting the time-based purge of old log rows.
+CREATE INDEX "LogDataTimestamp" ON "LogData" ("Timestamp");
+
 CREATE TABLE "Version" (
     "ID" INTEGER PRIMARY KEY,
     "Version" INTEGER NOT NULL
 );
 
-INSERT INTO "Version" ("Version") VALUES (0);
+INSERT INTO "Version" ("Version") VALUES (1);
