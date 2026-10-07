@@ -28,7 +28,8 @@ namespace Duplicati.Library.SourceProvider;
 /// </summary>
 /// <param name="backend">The backend to wrap</param>
 /// <param name="mountedPath">The path to mount the backend</param>
-public class BackendSourceProvider(IFolderEnabledBackend backend, string mountedPath) : ISourceProvider, ISourceProviderModule
+/// <param name="url">The url the backend was created from</param>
+public class BackendSourceProvider(IFolderEnabledBackend backend, string mountedPath, string url) : ISourceProvider, ISourceProviderModule
 {
     /// <summary>
     /// The wrapped backend
@@ -53,7 +54,45 @@ public class BackendSourceProvider(IFolderEnabledBackend backend, string mounted
     public IList<ICommandLineArgument> SupportedCommands => backend.SupportedCommands;
 
     /// <inheritdoc />
-    public bool NeedsStoredMetadata => false;
+    public bool NeedsStoredMetadata => true;
+
+    /// <summary>
+    /// The metadata key prefix used by this provider
+    /// </summary>
+    public const string METADATA_PREFIX = "backend:";
+
+    /// <summary>
+    /// The version of the metadata written to the entries
+    /// </summary>
+    public const string METADATA_VERSION = "1";
+
+    /// <summary>
+    /// The type written to the metadata of the root entry
+    /// </summary>
+    public const string METADATA_ROOT_TYPE = "BackendSourceProvider";
+
+    /// <summary>
+    /// The host suffix of the backend, if it is a known public server.
+    /// Private hostnames are not kept, so they do not end up in the metadata.
+    /// </summary>
+    private readonly string? hostSuffix = Utility.Utility.GuessHostSuffixSafe(url);
+
+    /// <summary>
+    /// Gets the minor metadata for the root entry, describing the wrapped backend
+    /// </summary>
+    /// <returns>The root metadata</returns>
+    internal Dictionary<string, string?> GetRootMetadata()
+        // The caller adds to the result, so it must be a new instance on each call
+        => new Dictionary<string, string?>()
+            {
+                { METADATA_PREFIX + "v", METADATA_VERSION },
+                { METADATA_PREFIX + "Type", METADATA_ROOT_TYPE },
+                { METADATA_PREFIX + "Name", backend.DisplayName },
+                { METADATA_PREFIX + "Protocol", backend.ProtocolKey },
+                { METADATA_PREFIX + "Host", hostSuffix },
+            }
+            .Where(kv => !string.IsNullOrEmpty(kv.Value))
+            .ToDictionary(kv => kv.Key, kv => kv.Value);
 
     /// <summary>
     /// The prepared root entry, if any
