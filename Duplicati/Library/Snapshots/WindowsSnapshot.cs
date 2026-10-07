@@ -234,7 +234,17 @@ namespace Duplicati.Library.Snapshots
             }
             catch
             {
-                manager.Dispose();
+                // Do not let a cleanup failure replace the original exception,
+                // as the caller relies on it to decide whether to retry
+                try
+                {
+                    manager.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "VSSCleanupOnError", ex, "Failed during VSS error cleanup");
+                }
+
                 throw;
             }
         }
