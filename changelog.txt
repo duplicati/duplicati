@@ -1,3 +1,191 @@
+2026-10-07 - 2.4.0.1_stable_2026-10-07
+==========
+# About this release
+
+This release patches version 2.4.0.0 with fixes for a number of issues that were discovered after the release.
+The main focus of this release is stability, with many fixes to restore, abort handling and the new sync mode, along with security hardening of the server and remote control.
+
+## Usability fixes
+
+The search feature would allow you to select files, but would send incorrect paths to the restore flow.
+On Windows, this would result in no files selected in the search view being restored.
+
+## Security and Privacy
+
+The login setup has been hardened against weak passwords, the remote control requests have been locked down and require per-message keys.
+The remote control connection now works on NAS devices that use integrated authentication (Synology DSM).
+Path redaction in logs and reports has been improved, and secrets in lists now have an additional layer of protection.
+
+A new reduced reporting mode (`--reduced-reporting`) limits reports leaving the machine to log message ids, counters and dates, without message text, error messages or file names. The HTTP status report has a matching `--http-report-status-reduced-reporting` option. The setting can also be enforced from the console for users requiring it.
+
+## Restore and Abort Fixes
+
+A restore now carries on with the next file when a single file fails, instead of stopping the whole restore. Several issues that could cause a restore to hang have been fixed, including releasing blocks for skipped files, releasing all restore processes when a volume cannot be produced, and releasing the restore stages on every exit path. A missing destination folder is now reported before the restore starts.
+
+Aborting a backup or other operation no longer waits for a stuck source file read, a stuck backend call, or a block processor that has stopped. Aborting a repair while it reads the local database no longer discards the database.
+
+## Sync Mode Fixes
+
+The sync mode introduced in 2.4.0.0 has received a number of fixes: folder sync on some destinations, zero-byte uploads to Google Drive and Google Cloud, case-insensitive remotes, duplicate remote listings, sync metadata and last-run handling, and lower memory use by not storing remote operations in memory. The synchronization tool now passes the correct arguments to its backends, ignores folder entries in listings, renames through the backend, and counts failed deletes and renames in its return code.
+
+## Stability and Performance
+
+The wasted space calculation used for compacting has been improved, deleting filesets uses less memory, and SQLite memory usage has been further reduced.
+Database connections are now closed when opening or setting up a local database fails, and the server now takes the database lock in a few paths that previously skipped it.
+Resuming after sleep no longer waits for the suspend handling to finish, and Windows is allowed to sleep again when an operation ends.
+Tasks and HTTP status reports now report errors from operations that finished without throwing.
+
+## Backend and Provider Fixes
+
+- Google Drive: keep every copy of a duplicated name, and report no quota for shared drives instead of the user's own quota.
+- Google Workspace: handle inactive accounts, emit a root folder, and fix the restore scope.
+- MS365: fix restore of large emails.
+- Drime: fix incomplete listings beyond the pagination limit.
+- S3: add RelAix to the list of providers.
+- SMB: improved error detection.
+- Duplicati backend: show error messages from the console.
+- An unknown destination quota is no longer treated as a full destination, and the manual quota is kept when the backend quota is disabled.
+
+## Windows Installer and Shell Integration
+
+The MSI now remembers the install location on upgrade, and the path browse button has been fixed.
+The Windows shell overlay has been fixed. It requires the folder status service, which is disabled by default and can only be enabled from the commandline with `--webservice-enable-folder-status-service=true`.
+
+## Other Changes
+
+The command line tools have a number of fixes to listing and searching, such as listing the latest version when none is given, searching sub-folders, looking up file versions by full path, and handling folders given without a trailing separator. Purge and set-locks now stop when the given version or time matches no fileset, and a queued command keeps the versions it named when it was sent.
+The old UI has fixes for editing local folder and S3 destinations, restore version grouping and selecting a restore root.
+This release also adds an option to prevent the server from creating a new database (`--webservice-dont-autocreate-database`), support for runner identity and license usage collection, and fixes for packaging `libc_wrapper.so` and for running when the account has no home folder.
+
+## Detailed list of changes:
+
+- Don't warn on report module errors
+- Fix remote access on NAS
+- Remember install location for MSI
+- Stop waiting for a stuck source file read when the backup is aborted
+- Answer a block's sender when the block processor stops
+- List the roots of a multi-drive backup without waiting
+- Let the queue runner be disposed before it is terminated
+- Release the blocks of a file the restore skips
+- Report a missing destination folder before a restore starts
+- Say which file is missing when the Windows modules cannot load
+- Close the connection when the setup of a backup or delete database fails
+- Try the next port when the system refuses the one the server binds
+- Resume after a sleep even if the suspend is still being handled
+- Fixed the path browse button in the MSI
+- Keep the local database when a repair is aborted while reading it
+- Report the errors of an operation that finished without throwing in the HTTP status report
+- Let Windows sleep again when an operation ends
+- Say that search looks at every version when none is given
+- Return the oldest live log entries after the one a client has seen
+- Group restore versions by calendar month in the old UI
+- Show the saved local folder when the old UI edits a backup
+- Let the old UI select a restore root before it is expanded
+- Keep the saved S3 client when the old UI opens a destination
+- Save a custom S3 storage class from the old UI
+- Expose stored config type in API
+- Avoid storing sync ops in memory
+- Fix upload zero-byte file to Google Cloud/Drive
+- Update Sync metadata handling
+- Report the errors of a task that finished without throwing
+- Carry on with the next file when one file fails to restore
+- Keep a queued command's --version on the versions it named when it was sent
+- Release the restore stage before a stopped one on every exit path
+- Keep a file source in the root listing when another source extends its name
+- Add support for reduced reporting
+- Change SMB error detection
+- Add RelAix to list of S3 providers
+- Close the connection when a local database fails to open
+- List a folder's contents when the folder is given without a trailing separator
+- Add support for per-message keys
+- Search the sub-folders of a folder given to the search command
+- List the latest fileset when no time or version is given to list-folder-contents
+- Release every restore process when a volume cannot be produced
+- Prevent wrong missing key warning
+- Stop waiting for a backend call when the operation is aborted
+- Return no fileset for an exact time that matches none
+- Report a queued task as waiting in the task queue listing
+- Improve waste space calculation
+- Look up file versions by their full path
+- Run a remote sync destination inline when its mode has no interval or count
+- Improve path redaction
+- Support console error messages
+- Fix a zero-progress report
+- Add support for collecting license usage
+- Fix issue with folder sync
+- Stop purge and set-locks when the given version or time matches no fileset
+- Harden remote control requests
+- Add login throttle
+- Fix incomplete Drime listings beyond the pagination limit
+- Report a finished task's outcome while it is still the current task
+- List a sync inventory folder as an indexed, case-sensitive range
+- Fix Google Workspace restore scope
+- Make Google Workspace emit a root folder
+- Fix Windows Shell Overlay
+- Remove unused browsertest
+- Handle Google Workspace inactive accounts
+- Honour case-insensitive-remote in the sync command
+- Additional memory optimization for SQLite
+- Reduce delete memory pressure
+- Add support for runner identity
+- Dispose the primary sync database when a sync run ends
+- Count failed deletes and renames in the synchronization tool's return code
+- Let the synchronization tool rename through the backend and compare through temporary files
+- Ignore the folder entries a remote listing reports
+- Pass the right arguments to the synchronization backends
+- Spell the sync-remote-state values the way the option accepts them
+- Fix packaging `libc_wrapper.so`
+- Say which side has duplicate remote files instead of crashing
+- Root the data folder when the account has no home folder
+- Take the database lock in the server paths that skipped it
+- Update MS365 permission doc
+- Improve `libc_wrapper` import name
+- Layered defense for secrets in lists
+- Do not read an unknown destination quota as a full destination
+- Add option to disable db autocreate
+- Fix MS365 large email restore
+- Keep the manual quota when the backend quota is disabled
+- Report no quota for a Google shared drive, instead of the user's own
+- Keep every copy of a duplicated Google Drive name, and list it once
+
+## Updates to ngclient
+
+Updated ngclient from 0.0.234 to 0.0.238:
+
+- Changed the order for navigation on new backups: source before destination
+- Added support for purging files from the UI
+- Added support for checking permissions with MS365 and Google Workspace
+- Added a counter dialog for Google Workspace data
+- Added support for disabling chunking on S3 providers that do not support it
+- Added support for reduced reporting
+- Added RelAix to the known public hosts
+- Added support for showing sync jobs when restoring configurations from remote
+- Improved the display of sync operations
+- Added a small loader on the start page to assist with slow loading
+- Fixed the context menu being hidden for console managed backups
+- Fixed Windows search results having a leading `\` prefix, causing empty restores
+- Fixed the restore file picker not handling a failed database repair
+- Fixed errors in a completed restore database repair not being handled
+- Fixed the file browser height on the restore page
+- Fixed WebDAV destination path normalization
+- Fixed the destination test dialog not preserving context when retrying
+- Fixed V1 destination tests not completing after error handling
+- Fixed a cancelled destination test not stopping the request
+- Fixed folder filters losing their type while editing
+- Fixed folder exclusions not propagating through the file tree
+- Fixed file attribute exclusions not being preserved when editing
+- Fixed local schedule dates being reset when editing
+- Fixed the schedule date picker not preserving the local date
+- Fixed custom form validator behavior
+- Fixed commandline result polling
+- Fixed stopped WebSockets and long polls reconnecting
+- Fixed connection state being set incorrectly with socket relay
+- Fixed flicker in the Duplicati Storage backup picker
+- Fixed termination display
+- Hardened HTTP interceptor request handling
+- Migrated to hey-api's modern Angular client
+- Updated all translations, thanks to all translators
+
 2026-09-03 - 2.4.0.0_stable_2026-09-03
 ==========
 This release is a stable release that supersedes the 2.3.0.4 stable release. It contains all changes from the 2.3.1.0 and 2.3.1.1 beta releases.
