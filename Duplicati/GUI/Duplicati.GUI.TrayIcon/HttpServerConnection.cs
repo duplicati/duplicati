@@ -102,6 +102,14 @@ namespace Duplicati.GUI.TrayIcon
         public event NewNotificationDelegate? OnNotification;
 
         private long m_lastEventId = 0;
+        /// <summary>
+        /// The number of times a status was taken, to tell whether one came in during a request
+        /// </summary>
+        private long m_statusUpdates;
+        /// <summary>
+        /// Guards taking a status
+        /// </summary>
+        private readonly object m_statusLock = new object();
         private long m_lastDataUpdateId = -1;
         private bool m_disableTrayIconLogin;
 
@@ -214,10 +222,29 @@ namespace Duplicati.GUI.TrayIcon
         private async Task UpdateStatusAsync(bool longpoll)
         {
             var query = longpoll ? $"?longpoll=true&lastEventId={m_lastEventId}&duration={LONGPOLL_TIMEOUT}" : "";
+            var updatesBefore = Interlocked.Read(ref m_statusUpdates);
 
-            m_status = await PerformRequestAsync<ServerStatusImpl>("GET", $"/serverstate{query}", null,
+            var status = await PerformRequestAsync<ServerStatusImpl>("GET", $"/serverstate{query}", null,
                 longpoll ? Library.Utility.Timeparser.ParseTimeSpan(LONGPOLL_TIMEOUT) : null);
-            m_lastEventId = m_status.LastEventID;
+
+            lock (m_statusLock)
+            {
+                // A plain request runs next to the long poll. If the long poll has taken a state
+                // since this request was sent, that state may be newer than this answer, and
+                // taking this one would put an old state back until the next event, which can
+                // be minutes away. If this answer was the newer one, the next long poll brings
+                // the change at once, as it waits from the event it has seen.
+                if (!longpoll && m_statusUpdates != updatesBefore)
+                {
+                    Library.Logging.Log.WriteVerboseMessage(LOGTAG, "TrayIconStaleStatus", null,
+                        "Ignoring the status from event {0}, as a newer status came in meanwhile", status.LastEventID);
+                    return;
+                }
+
+                m_statusUpdates++;
+                m_status = status;
+                m_lastEventId = status.LastEventID;
+            }
 
             if (OnStatusUpdated != null)
                 await OnStatusUpdated(m_status).ConfigureAwait(false);
