@@ -206,7 +206,7 @@ namespace Duplicati.Library.Main
             }
             catch (System.Exception ex)
             {
-                Log.WriteWarningMessage(LOGTAG, $"ReportModule{label}", ex,
+                Log.WriteMessage(LogMessageType.Information, LOGTAG, $"ReportModule{label}", ex,
                     "Report module {0} callback {1} failed: {2}", m_module.Key, label, ex.Message);
             }
         }
