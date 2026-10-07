@@ -852,6 +852,7 @@ public class ListFileVersionDto
 public class SearchFilesResultsDto : BasicResultsDto
 {
     public PaginatedResultsDto<SearchFileVersionDto> FileVersions { get; set; }
+    public Dictionary<string, Dictionary<string, string>> ParentMetadata { get; set; }
 
     public static SearchFilesResultsDto FromResults(ISearchFilesResults results)
     {
@@ -873,7 +874,8 @@ public class SearchFilesResultsDto : BasicResultsDto
                 TotalPages = results.FileVersions.TotalPages,
                 TotalCount = results.FileVersions.TotalCount,
                 Items = results.FileVersions.Items?.Select(SearchFileVersionDto.FromSearchResult).ToList() ?? new List<SearchFileVersionDto>()
-            }
+            },
+            ParentMetadata = results.ParentMetadata
         };
     }
 }

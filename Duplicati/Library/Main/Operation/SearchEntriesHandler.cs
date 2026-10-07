@@ -21,6 +21,7 @@
 
 #nullable enable
 
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
@@ -86,6 +87,18 @@ internal static class SearchEntriesHandler
             }
 
             result.FileVersions = new PaginatedResults<ISearchFileVersion>(result.FileVersions.Page, result.FileVersions.PageSize, result.FileVersions.TotalPages, result.FileVersions.TotalCount, coreentries);
+
+            // The folders above a match are not part of the result, but a client showing the
+            // matches as a tree needs their metadata, e.g. to show a display name for a folder
+            var parents = new HashSet<string>();
+            foreach (var entry in coreentries)
+            {
+                var parent = Database.Local.LocalDatabase.SplitIntoPrefixAndName(entry.Path).Key;
+                while (!string.IsNullOrEmpty(parent) && parents.Add(parent))
+                    parent = Database.Local.LocalDatabase.SplitIntoPrefixAndName(parent).Key;
+            }
+
+            result.ParentMetadata = await db.GetMetadataForPathsAsync(parents, filesetIds, result.TaskControl.ProgressToken).ConfigureAwait(false);
         }
     }
 }

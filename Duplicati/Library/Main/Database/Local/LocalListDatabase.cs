@@ -1263,6 +1263,90 @@ namespace Duplicati.Library.Main.Database.Local
         }
 
         /// <summary>
+        /// Gets the metadata for specific paths, optionally restricted to some filesets.
+        /// If a path has different metadata in the filesets, the newest is returned.
+        /// </summary>
+        /// <param name="paths">Full paths to match exactly; a folder is stored with a trailing directory separator.</param>
+        /// <param name="filesetIds">Optional fileset IDs to restrict the lookup to.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task that when awaited returns the metadata for the paths that have any, keyed by path.</returns>
+        public async Task<Dictionary<string, Dictionary<string, string?>>> GetMetadataForPathsAsync(IEnumerable<string> paths, long[]? filesetIds, CancellationToken token)
+        {
+            var map = new Dictionary<string, Dictionary<string, string?>>();
+            var pathList = (paths ?? []).Where(x => !string.IsNullOrEmpty(x)).Distinct().ToList();
+            if (pathList.Count == 0)
+                return map;
+
+            // A path is stored split into a prefix and a name (PathPrefix.Prefix || FileLookup.Path),
+            // so match on the joined value. The prefix ids narrow the lookup to the index on FileLookup.
+            var prefixIds = await GetPrefixIdsAsync(pathList.Select(x => SplitIntoPrefixAndName(x).Key).Distinct(), token)
+                .ToListAsync(token)
+                .ConfigureAwait(false);
+            if (prefixIds.Count == 0)
+                return map;
+
+            await using var filesetIdTable = filesetIds != null && filesetIds.Length > 0
+                ? await TemporaryDbValueList.CreateAsync(this, filesetIds, token).ConfigureAwait(false)
+                : null;
+            await using var pathsTable = await TemporaryDbValueList.CreateAsync(this, pathList, token)
+                .ConfigureAwait(false);
+            await using var prefixIdsTable = await TemporaryDbValueList.CreateAsync(this, prefixIds, token)
+                .ConfigureAwait(false);
+
+            await using var cmd = m_connection.CreateCommand();
+            cmd.SetCommandAndParameters(@$"
+                SELECT
+                    ""pp"".""Prefix"" || ""fl"".""Path"" AS ""FullPath"",
+                    ""md"".""Content""
+                FROM ""FilesetEntry"" ""fe""
+                INNER JOIN ""FileLookup"" ""fl""
+                    ON ""fe"".""FileID"" = ""fl"".""ID""
+                INNER JOIN ""PathPrefix"" ""pp""
+                    ON ""fl"".""PrefixID"" = ""pp"".""ID""
+                INNER JOIN ""Fileset"" ""f""
+                    ON ""fe"".""FilesetID"" = ""f"".""ID""
+                INNER JOIN ""Metadataset"" ""md""
+                    ON ""fl"".""MetadataID"" = ""md"".""ID""
+                WHERE ""md"".""Content"" IS NOT NULL
+                    AND ""fl"".""PrefixID"" IN (@PrefixIds)
+                    AND (""pp"".""Prefix"" || ""fl"".""Path"") IN (@Paths)
+                    {(filesetIdTable != null ? @"AND ""fe"".""FilesetID"" IN (@FilesetIds)" : "")}
+                ORDER BY ""f"".""Timestamp"" ASC
+            ")
+                .SetTransaction(m_rtr);
+
+            await cmd.ExpandInClauseParameterMssqliteAsync("@PrefixIds", prefixIdsTable, token)
+                .ConfigureAwait(false);
+            await cmd.ExpandInClauseParameterMssqliteAsync("@Paths", pathsTable, token)
+                .ConfigureAwait(false);
+            if (filesetIdTable != null)
+                await cmd.ExpandInClauseParameterMssqliteAsync("@FilesetIds", filesetIdTable, token)
+                    .ConfigureAwait(false);
+
+            await foreach (var rd in cmd.ExecuteReaderEnumerableAsync(token).ConfigureAwait(false))
+            {
+                var path = rd.ConvertValueToString(0);
+                var metadata = rd.ConvertValueToString(1);
+                if (string.IsNullOrEmpty(path) || string.IsNullOrWhiteSpace(metadata))
+                    continue;
+
+                try
+                {
+                    var dict = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string?>>(metadata);
+                    if (dict != null)
+                        // The rows are ordered oldest first, so the newest fileset wins
+                        map[path] = dict;
+                }
+                catch (Exception ex)
+                {
+                    Log.WriteWarningMessage(LOGTAG, "InvalidMetadata", ex, $"Failed to parse metadata for path {path}");
+                }
+            }
+
+            return map;
+        }
+
+        /// <summary>
         /// Lists all versions of specific file paths, optionally filtered by fileset IDs.
         /// </summary>
         /// <param name="paths">Full paths to match exactly; a folder is stored with a trailing directory separator.</param>

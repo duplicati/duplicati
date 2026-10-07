@@ -332,6 +332,42 @@ namespace Duplicati.UnitTest
             }
         }
 
+        /// <summary>
+        /// A search with extended data returns the metadata of the folders above the matches,
+        /// so a client can show the matches as a tree with the folder display names
+        /// </summary>
+        [Test]
+        [Category("ListFolder")]
+        public async Task SearchEntries_ReturnsParentMetadataAsync()
+        {
+            var options = new Dictionary<string, string>(this.TestOptions)
+            {
+                ["store-metadata-content-in-database"] = "true"
+            };
+            var f1 = Path.Combine(this.DATAFOLDER, "f1");
+            var sub = Path.Combine(f1, "sub");
+            var f2 = Path.Combine(this.DATAFOLDER, "f2");
+            Directory.CreateDirectory(sub);
+            Directory.CreateDirectory(f2);
+            File.WriteAllText(Path.Combine(sub, "match.txt"), "a");
+            File.WriteAllText(Path.Combine(f2, "other.dat"), "b");
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+
+            var filter = new FilterExpression("*.txt", true);
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                var extended = await c.SearchEntriesAsync(null, filter, false, 0, 0, true, false);
+                Assert.That(extended.FileVersions.Items.Select(x => x.Path), Is.EqualTo(new[] { Path.Combine(sub, "match.txt") }));
+                Assert.That(extended.ParentMetadata.Keys, Is.EquivalentTo(new[] { Duplicati.Library.Common.IO.Util.AppendDirSeparator(this.DATAFOLDER), Duplicati.Library.Common.IO.Util.AppendDirSeparator(f1), Duplicati.Library.Common.IO.Util.AppendDirSeparator(sub) }), "Only the folders above a match should be returned");
+                Assert.That(extended.ParentMetadata.Values, Has.All.Not.Empty);
+
+                var plain = await c.SearchEntriesAsync(null, filter, false, 0, 0, false, false);
+                Assert.That(plain.ParentMetadata, Is.Null, "The parent metadata should only be returned with extended data");
+            }
+        }
+
         [Test]
         public async Task SearchFilesTestAsync()
         {
