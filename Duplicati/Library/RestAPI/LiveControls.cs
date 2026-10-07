@@ -310,10 +310,14 @@ namespace Duplicati.Server
                     if (StateChanged != null)
                         ev = CreateEvent();
                 }
-            }
 
-            if (ev != null)
-                StateChanged(ev);
+                // The event is sent under the lock, so that events reach the handler in the order
+                // the state changed. The handler pauses or resumes the queue by the state in the
+                // event, so a pause and a resume from two threads that were handled the other way
+                // round would leave the queue paused while the state is running.
+                if (ev != null)
+                    StateChanged(ev);
+            }
         }
 
         /// <summary>
@@ -333,10 +337,11 @@ namespace Duplicati.Server
                     ev = StateChanged == null ? null : CreateEvent();
                 else
                     SetPauseMode();
-            }
 
-            if (ev != null)
-                StateChanged(ev);
+                // Sent under the lock, as in SetPauseMode
+                if (ev != null)
+                    StateChanged(ev);
+            }
         }
 
         /// <summary>
@@ -358,10 +363,11 @@ namespace Duplicati.Server
                     if (StateChanged != null)
                         ev = CreateEvent();
                 }
-            }
 
-            if (ev != null)
-                StateChanged(ev);
+                // Sent under the lock, as in SetPauseMode
+                if (ev != null)
+                    StateChanged(ev);
+            }
         }
 
         /// <summary>
@@ -394,10 +400,11 @@ namespace Duplicati.Server
                     ev = StateChanged == null ? null : CreateEvent();
                 else
                     SetPauseMode();
-            }
 
-            if (ev != null)
-                StateChanged(ev);
+                // Sent under the lock, as in SetPauseMode
+                if (ev != null)
+                    StateChanged(ev);
+            }
         }
 
         /// <summary>
