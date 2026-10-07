@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Utility;
 using CoCoL;
@@ -73,7 +74,10 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                             try
                             {
-                                var entrySize = entry.Size;
+                                // Reading the size is a synchronous call that can get stuck on a source
+                                // that stopped answering, so it is read on its own and not waited for
+                                // once the counting is stopped
+                                var entrySize = await Task.Run(() => entry.Size, CancellationToken.None).UntilCancelledAsync(token).ConfigureAwait(false);
                                 if (entrySize >= 0)
                                     size += entrySize;
                             }
