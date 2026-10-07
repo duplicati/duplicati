@@ -85,8 +85,13 @@ namespace Duplicati.Library.Snapshots.Windows
         /// <param name="vssTimeout">The maximum time to wait for asynchronous VSS operations</param>
         /// <param name="providerId">The VSS provider to use, or <see cref="Guid.Empty"/> for automatic selection</param>
         public SnapshotManager(WindowsSnapshotProvider provider, TimeSpan vssTimeout, Guid providerId)
+            : this(WindowsShimLoader.GetSnapshotProvider(provider, vssTimeout, providerId))
         {
-            _snapshotProvider = WindowsShimLoader.GetSnapshotProvider(provider, vssTimeout, providerId);
+        }
+
+        public SnapshotManager(ISnapshotProvider snapshotProvider)
+        {
+            _snapshotProvider = snapshotProvider;
         }
 
         /// <summary>
