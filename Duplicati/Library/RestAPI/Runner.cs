@@ -1172,7 +1172,7 @@ namespace Duplicati.Server
             }
         }
 
-        private static void UpdateMetadataLastSync(IBackup backup, ISyncResults r)
+        internal static void UpdateMetadataLastSync(IBackup backup, ISyncResults r)
         {
             if (r != null && !r.Interrupted)
             {

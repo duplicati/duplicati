@@ -32,6 +32,9 @@ using System.Net.Http;
 using System.Threading;
 using Duplicati.Library.Common.IO;
 using JsonSignature;
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("Duplicati.UnitTest")]
 
 namespace Duplicati.Library.AutoUpdater
 {

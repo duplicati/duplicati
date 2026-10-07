@@ -52,7 +52,7 @@ namespace Duplicati.UnitTest
         // ReSharper disable once UnusedMember.Global
         public CaseInsensitiveFileBackend(string url, Dictionary<string, string> options)
         {
-            var wrappedUrl = new Library.Utility.RelaxedUri(url).SetScheme("file").ToString();
+            var wrappedUrl = new Library.Utility.Uri(url).SetScheme("file").ToString();
             m_backend = (IStreamingBackend)Library.DynamicLoader.BackendLoader.GetBackend(wrappedUrl, options);
         }
 

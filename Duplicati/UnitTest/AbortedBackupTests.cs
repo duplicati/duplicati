@@ -56,7 +56,7 @@ namespace Duplicati.UnitTest
 
         public StallingBackend(string url, Dictionary<string, string> options)
         {
-            var u = new Library.Utility.RelaxedUri(url).SetScheme("file").ToString();
+            var u = new Library.Utility.Uri(url).SetScheme("file").ToString();
             m_backend = (IStreamingBackend)Library.DynamicLoader.BackendLoader.GetBackend(u, options);
         }
 

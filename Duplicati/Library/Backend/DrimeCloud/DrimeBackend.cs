@@ -35,6 +35,8 @@ using Duplicati.StreamUtil;
 using FileEntry = Duplicati.Library.Common.IO.FileEntry;
 using UtilityUri = Duplicati.Library.Utility.Uri;
 
+[assembly: InternalsVisibleTo("Duplicati.UnitTest")]
+
 namespace Duplicati.Library.Backend.DrimeCloud;
 
 /// <summary>
@@ -251,6 +253,26 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
 
         // Parse soft delete option
         _softDelete = Utility.Utility.ParseBoolOption(options, SOFT_DELETE_OPTION);
+    }
+
+    /// <summary>
+    /// Constructor that takes a preconfigured message handler, used for testing
+    /// </summary>
+    /// <param name="url">Backend URL</param>
+    /// <param name="options">Options dictionary</param>
+    /// <param name="handler">The message handler to send requests through</param>
+    internal DrimeBackend(string url, Dictionary<string, string?> options, HttpMessageHandler handler)
+        : this(url, options)
+    {
+        _httpClient = new HttpClient(handler)
+        {
+            Timeout = Timeout.InfiniteTimeSpan,
+            BaseAddress = new System.Uri(_apiUrl.TrimEnd('/') + "/")
+        };
+
+        // GetClientAsync hands back a client that already carries an authorization
+        // header, so setting one here keeps the login round-trip out of the tests
+        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "test-token");
     }
 
     /// <inheritdoc/>
