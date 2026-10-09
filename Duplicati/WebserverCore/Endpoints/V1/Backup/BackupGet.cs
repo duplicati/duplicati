@@ -187,10 +187,7 @@ public class BackupGet : IEndpointV1
 
     private static async Task<List<Dictionary<string, object>>> ExecuteGetLog(Connection connection, IDatabaseLockTracker databaseLockTracker, IBackup bk, long? offset, long pagesize)
     {
-        // A sync job uses its own database schema, which has no general log table
-        if (bk.OperationType == OperationType.Sync)
-            return new List<Dictionary<string, object>>();
-
+        // Both the backup and the sync database have a LogData table with the result of each run.
         // Use the effective database path (honoring a "--dbpath" advanced option) so that the log is
         // read from the same database the backup actually uses (see issue #1698).
         var dbpath = Runner.GetEffectiveDBPath(bk);
@@ -205,8 +202,8 @@ public class BackupGet : IEndpointV1
             using (var con = Library.SQLiteHelper.SQLiteLoader.LoadConnection(dbpath))
             using (var cmd = con.CreateCommand())
             {
-                // Guard against a database that does not have the table,
-                // such as one that was only partially created
+                // Guard against a database that does not have the table, such as one that
+                // was only partially created, or a sync database from before the table was added
                 if (!LogData.TableExists(cmd, "LogData"))
                     return new List<Dictionary<string, object>>();
 

@@ -3574,6 +3574,11 @@ namespace Duplicati.Library.Main.Database.Local
         }
 
         /// <summary>
+        /// The log entry type used for the result of an operation, in both the backup and the sync database.
+        /// </summary>
+        public const string ResultLogType = "Result";
+
+        /// <summary>
         /// Writes the results of a basic operation to the log and commits the transaction.
         /// </summary>
         /// <param name="result">The results to write.</param>
@@ -3594,7 +3599,7 @@ namespace Duplicati.Library.Main.Database.Local
                 }
 
                 var serializer = new JsonFormatSerializer();
-                await LogMessageAsync("Result",
+                await LogMessageAsync(ResultLogType,
                     serializer.SerializeResults(result),
                     null,
                     token

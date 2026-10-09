@@ -32,6 +32,7 @@ using Duplicati.Library.Main.Operation.Common;
 using System.IO;
 using Duplicati.Library.Backends;
 using Duplicati.Library.Main.Database.Local;
+using Duplicati.Library.Main.Database.Sync;
 
 namespace Duplicati.Library.Main
 {
@@ -619,8 +620,8 @@ namespace Duplicati.Library.Main
 
                     // The post-operation result/log writes target the backup LocalDatabase schema
                     // (Operation, LogData, DeletedVolume tables). The sync database has its own
-                    // schema and does not store these, so skip the backup-specific cleanup for
-                    // sync operations instead of running incompatible SQL against the sync DB.
+                    // schema, so sync operations write their results through the sync database
+                    // instead of running incompatible SQL against it.
                     if (File.Exists(m_options.Dbpath) && !m_options.Dryrun && m_options.MainAction != OperationMode.Sync)
                     {
                         try
@@ -652,6 +653,17 @@ namespace Duplicati.Library.Main
                             Logging.Log.WriteWarningMessage(LOGTAG, "FailedWriteOperation", ex, "Failed to write operation results to database: {0}", ex.Message);
                         }
                     }
+                    else if (m_options.MainAction == OperationMode.Sync)
+                    {
+                        try
+                        {
+                            await WriteSyncResultsAsync(result, true).ConfigureAwait(false);
+                        }
+                        catch (Exception ex)
+                        {
+                            Logging.Log.WriteWarningMessage(LOGTAG, "FailedWriteOperation", ex, "Failed to write operation results to database: {0}", ex.Message);
+                        }
+                    }
 
                     await OperationCompleteAsync(result, null, filter).ConfigureAwait(false);
 
@@ -673,7 +685,9 @@ namespace Duplicati.Library.Main
                     {
                         // No operation was started in database, so write logs to new operation.
                         // Sync uses its own database schema
-                        if (File.Exists(m_options.Dbpath) && !m_options.Dryrun && m_options.MainAction != OperationMode.Sync)
+                        if (m_options.MainAction == OperationMode.Sync)
+                            await WriteSyncResultsAsync(result, false).ConfigureAwait(false);
+                        else if (File.Exists(m_options.Dbpath) && !m_options.Dryrun)
                             await using (var db = await LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, result.MainOperation.ToString(), true, null, CancellationToken.None).ConfigureAwait(false))
                                 await db.WriteResultsAndCommitAsync(result, CancellationToken.None).ConfigureAwait(false);
                     }
@@ -710,7 +724,9 @@ namespace Duplicati.Library.Main
                     {
                         // Write logs to previous operation if database exists.
                         // Sync uses its own database schema
-                        if (File.Exists(m_options.Dbpath) && !m_options.Dryrun && m_options.MainAction != OperationMode.Sync)
+                        if (m_options.MainAction == OperationMode.Sync)
+                            await WriteSyncResultsAsync(result, false).ConfigureAwait(false);
+                        else if (File.Exists(m_options.Dbpath) && !m_options.Dryrun)
                             await using (var db = await LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, null, true, null, CancellationToken.None).ConfigureAwait(false))
                                 await db.WriteResultsAndCommitAsync(result, CancellationToken.None).ConfigureAwait(false);
                     }
@@ -740,7 +756,9 @@ namespace Duplicati.Library.Main
                         resultSetter.Fatal = true;
                         // Write logs to previous operation if database exists.
                         // Sync uses its own database schema
-                        if (File.Exists(m_options.Dbpath) && !m_options.Dryrun && m_options.MainAction != OperationMode.Sync)
+                        if (m_options.MainAction == OperationMode.Sync)
+                            await WriteSyncResultsAsync(result, false).ConfigureAwait(false);
+                        else if (File.Exists(m_options.Dbpath) && !m_options.Dryrun)
                             await using (var db = await LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, null, true, null, CancellationToken.None).ConfigureAwait(false))
                                 await db.WriteResultsAndCommitAsync(result, CancellationToken.None).ConfigureAwait(false);
                     }
@@ -759,6 +777,25 @@ namespace Duplicati.Library.Main
                     m_currentTaskControl = null;
                 }
             }
+        }
+
+        /// <summary>
+        /// Writes the results of a sync operation to the sync database, so they can be shown in the job log.
+        /// The sync database has its own schema, so the results cannot be written with <see cref="LocalDatabase"/>.
+        /// As for a backup, nothing is written for a dry run, or if the database was never created.
+        /// </summary>
+        /// <param name="result">The results to write</param>
+        /// <param name="purgeOldResults">Whether to purge results older than the log retention period</param>
+        /// <returns>A task that completes when the results have been written</returns>
+        private async Task WriteSyncResultsAsync(IBasicResults result, bool purgeOldResults)
+        {
+            if (!File.Exists(m_options.Dbpath) || m_options.Dryrun)
+                return;
+
+            using var db = new LocalSyncDatabase(m_options.Dbpath);
+            await db.WriteResultsAsync(result, CancellationToken.None).ConfigureAwait(false);
+            if (purgeOldResults)
+                await db.PurgeResultsAsync(m_options.LogRetention, CancellationToken.None).ConfigureAwait(false);
         }
 
         /// <summary>

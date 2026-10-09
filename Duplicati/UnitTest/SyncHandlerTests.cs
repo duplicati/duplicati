@@ -1994,6 +1994,93 @@ public class LocalSyncDatabaseTests
         var underscore = await db.GetInventoryItemsInFolderAsync("50_", CancellationToken.None).Select(x => x.RelativePath).ToListAsync(CancellationToken.None);
         CollectionAssert.AreEquivalent(new[] { "50_/y.txt" }, underscore, "A '_' in the folder name is a character, not a wildcard.");
     }
+
+    /// <summary>
+    /// The result of a sync run is stored the way a backup stores it: the lists of
+    /// messages are capped, so a run with many warnings does not bloat the database,
+    /// while the counts still report every warning.
+    /// </summary>
+    [Test]
+    public async Task WriteResultsCapsWarningsAndKeepsCountAsync()
+    {
+        var results = new SyncResults { FilesUploaded = 3 };
+        using (Duplicati.Library.Logging.Log.StartScope(results, null))
+            for (var i = 0; i < 1500; i++)
+                Duplicati.Library.Logging.Log.WriteWarningMessage("SyncTest", "TestWarning", null, "Warning {0}", i);
+
+        using (var db = new Duplicati.Library.Main.Database.Sync.LocalSyncDatabase(m_dbPath))
+            await db.WriteResultsAsync(results, CancellationToken.None);
+
+        var rows = await ReadLogDataAsync();
+        Assert.AreEqual(1, rows.Count);
+        Assert.AreEqual("Result", rows[0].Type);
+
+        using var json = System.Text.Json.JsonDocument.Parse(rows[0].Message);
+        var root = json.RootElement;
+        Assert.AreEqual("Sync", root.GetProperty("MainOperation").GetString());
+        Assert.AreEqual("Warning", root.GetProperty("ParsedResult").GetString());
+        Assert.AreEqual(3, root.GetProperty("FilesUploaded").GetInt64());
+        Assert.AreEqual(1500, root.GetProperty("WarningsActualLength").GetInt32());
+        Assert.AreEqual(20, root.GetProperty("Warnings").GetArrayLength(), "The stored warnings must be capped like a backup result.");
+    }
+
+    /// <summary>
+    /// Stored results older than the retention threshold are purged, newer ones are kept.
+    /// </summary>
+    [Test]
+    public async Task PurgeResultsRemovesResultsOlderThanThresholdAsync()
+    {
+        using (var db = new Duplicati.Library.Main.Database.Sync.LocalSyncDatabase(m_dbPath))
+        {
+            await db.WriteResultsAsync(new SyncResults(), CancellationToken.None);
+
+            await db.PurgeResultsAsync(DateTime.UtcNow.AddDays(-1), CancellationToken.None);
+            Assert.AreEqual(1, (await ReadLogDataAsync()).Count, "A result within the retention period must be kept.");
+
+            await db.PurgeResultsAsync(DateTime.UtcNow.AddDays(1), CancellationToken.None);
+            Assert.AreEqual(0, (await ReadLogDataAsync()).Count, "A result older than the threshold must be purged.");
+        }
+    }
+
+    /// <summary>
+    /// A sync database created before the LogData table existed is upgraded when it is opened.
+    /// </summary>
+    [Test]
+    public async Task OpeningVersionZeroDatabaseAddsLogDataTableAsync()
+    {
+        using (new Duplicati.Library.Main.Database.Sync.LocalSyncDatabase(m_dbPath)) { }
+
+        // Turn the database back into the version 0 layout
+        using (var con = Duplicati.Library.SQLiteHelper.SQLiteLoader.LoadConnection(m_dbPath))
+        using (var cmd = con.CreateCommand())
+        {
+            cmd.CommandText = @"DROP INDEX ""LogDataTimestamp""; DROP TABLE ""LogData""; UPDATE ""Version"" SET ""Version"" = 0;";
+            await cmd.ExecuteNonQueryAsync();
+        }
+
+        using (var db = new Duplicati.Library.Main.Database.Sync.LocalSyncDatabase(m_dbPath))
+            await db.WriteResultsAsync(new SyncResults(), CancellationToken.None);
+
+        Assert.AreEqual(1, (await ReadLogDataAsync()).Count);
+        using (var con = Duplicati.Library.SQLiteHelper.SQLiteLoader.LoadConnection(m_dbPath))
+        using (var cmd = con.CreateCommand())
+        {
+            cmd.CommandText = @"SELECT MAX(""Version"") FROM ""Version""";
+            Assert.AreEqual(1, Convert.ToInt32(await cmd.ExecuteScalarAsync()));
+        }
+    }
+
+    private async Task<List<(string Type, string Message)>> ReadLogDataAsync()
+    {
+        var rows = new List<(string Type, string Message)>();
+        using var con = Duplicati.Library.SQLiteHelper.SQLiteLoader.LoadConnection(m_dbPath);
+        using var cmd = con.CreateCommand();
+        cmd.CommandText = @"SELECT ""Type"", ""Message"" FROM ""LogData"" ORDER BY ""ID""";
+        using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+            rows.Add((reader.GetString(0), reader.GetString(1)));
+        return rows;
+    }
 }
 
 /// <summary>

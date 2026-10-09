@@ -6,6 +6,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
 using Duplicati.Library.SQLiteHelper;
+using Duplicati.Library.Interface;
+using Duplicati.Library.ResultSerialization;
 using System.Runtime.CompilerServices;
 
 
@@ -31,6 +33,8 @@ namespace Duplicati.Library.Main.Database.Sync;
 /// <item><c>RemoteOperation</c> - an append-only audit log of completed backend calls,
 /// purged by time. Distinct from <c>PendingOperation</c>: this records what happened,
 /// <c>PendingOperation</c> records what is about to happen.</item>
+/// <item><c>LogData</c> - the result of each run, shown in the job log. Purged by the
+/// log-retention option, like the log of a backup database.</item>
 /// </list>
 /// </remarks>
 public class LocalSyncDatabase : IDisposable, IBackendManagerDatabase
@@ -425,6 +429,44 @@ public class LocalSyncDatabase : IDisposable, IBackendManagerDatabase
     {
         using var cmd = m_connection.CreateCommand();
         cmd.CommandText = @"DELETE FROM ""RemoteOperation"" WHERE ""Timestamp"" < @threshold;";
+        cmd.Parameters.AddWithValue("@threshold", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(threshold));
+        await cmd.ExecuteNonQueryAsync(writeLog: false, cancellationToken);
+    }
+
+    /// <summary>
+    /// Writes the result of a run to the <c>LogData</c> table, so it can be shown in the job log.
+    /// The result is stored the way the backup database stores it, so the messages, warnings
+    /// and errors are capped by the result serialization, and only their counts are complete.
+    /// </summary>
+    /// <param name="result">The result to write.</param>
+    /// <param name="cancellationToken">Cancellation token to monitor for cancellation requests.</param>
+    /// <returns>A task that completes when the result has been written.</returns>
+    public async Task WriteResultsAsync(IBasicResults result, CancellationToken cancellationToken)
+    {
+        if (result is BasicResults basicResults && basicResults.EndTime.Ticks == 0)
+            basicResults.EndTime = DateTime.UtcNow;
+
+        using var cmd = m_connection.CreateCommand();
+        cmd.CommandText = @"
+            INSERT INTO ""LogData"" (""Timestamp"", ""Type"", ""Message"", ""Exception"")
+            VALUES (@timestamp, @type, @message, NULL);
+        ";
+        cmd.Parameters.AddWithValue("@timestamp", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow));
+        cmd.Parameters.AddWithValue("@type", Local.LocalDatabase.ResultLogType);
+        cmd.Parameters.AddWithValue("@message", new JsonFormatSerializer().SerializeResults(result));
+        await cmd.ExecuteNonQueryAsync(writeLog: false, cancellationToken);
+    }
+
+    /// <summary>
+    /// Purges run results from the <c>LogData</c> table that are older than the given threshold.
+    /// </summary>
+    /// <param name="threshold">The time before which results are purged.</param>
+    /// <param name="cancellationToken">Cancellation token to monitor for cancellation requests.</param>
+    /// <returns>A task that completes when the results have been purged.</returns>
+    public async Task PurgeResultsAsync(DateTime threshold, CancellationToken cancellationToken)
+    {
+        using var cmd = m_connection.CreateCommand();
+        cmd.CommandText = @"DELETE FROM ""LogData"" WHERE ""Timestamp"" < @threshold;";
         cmd.Parameters.AddWithValue("@threshold", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(threshold));
         await cmd.ExecuteNonQueryAsync(writeLog: false, cancellationToken);
     }
