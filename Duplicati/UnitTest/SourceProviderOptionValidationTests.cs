@@ -189,7 +189,7 @@ public class SourceProviderOptionValidationTests : BasicSetupHelper
         /// Constructor used when instantiating the provider for an operation
         /// </summary>
         public FlagsOptionRestoreDestinationProvider(string url, Dictionary<string, string> options)
-            => _inner = new Library.SourceProvider.FileRestoreDestinationProvider(TargetFolder ?? string.Empty, true);
+            => _inner = new Library.SourceProvider.FileRestoreDestinationProvider(TargetFolder ?? string.Empty, true, false);
 
         public string Key => "test-restore-destination";
         public string DisplayName => "Test restore destination provider";
@@ -216,7 +216,7 @@ public class SourceProviderOptionValidationTests : BasicSetupHelper
         public Task<long> GetFileLength(string path, CancellationToken cancel) => Inner.GetFileLength(path, cancel);
         public Task<bool> HasReadOnlyAttribute(string path, CancellationToken cancel) => Inner.HasReadOnlyAttribute(path, cancel);
         public Task ClearReadOnlyAttribute(string path, CancellationToken cancel) => Inner.ClearReadOnlyAttribute(path, cancel);
-        public Task<bool> WriteMetadata(string path, Dictionary<string, string?> metadata, bool restoreSymlinkMetadata, bool restorePermissions, CancellationToken cancel) => Inner.WriteMetadata(path, metadata, restoreSymlinkMetadata, restorePermissions, cancel);
+        public Task<bool> WriteMetadata(string path, Dictionary<string, string?> metadata, bool restoreSymlinkMetadata, bool restorePermissions, bool hasRestoredEntriesBelow, CancellationToken cancel) => Inner.WriteMetadata(path, metadata, restoreSymlinkMetadata, restorePermissions, hasRestoredEntriesBelow, cancel);
         public Task DeleteFolder(string path, CancellationToken cancel) => Inner.DeleteFolder(path, cancel);
         public Task DeleteFile(string path, CancellationToken cancel) => Inner.DeleteFile(path, cancel);
         public IList<string> GetPriorityFiles() => Inner.GetPriorityFiles();

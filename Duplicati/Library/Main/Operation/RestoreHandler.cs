@@ -539,7 +539,7 @@ namespace Duplicati.Library.Main.Operation
             public Task<long> GetFileLength(string path, CancellationToken cancel) => _inner.GetFileLength(path, cancel);
             public Task<bool> HasReadOnlyAttribute(string path, CancellationToken cancel) => _inner.HasReadOnlyAttribute(path, cancel);
             public Task ClearReadOnlyAttribute(string path, CancellationToken cancel) => _inner.ClearReadOnlyAttribute(path, cancel);
-            public Task<bool> WriteMetadata(string path, Dictionary<string, string?> metadata, bool restoreSymlinkMetadata, bool restorePermissions, CancellationToken cancel) => _inner.WriteMetadata(path, metadata, restoreSymlinkMetadata, restorePermissions, cancel);
+            public Task<bool> WriteMetadata(string path, Dictionary<string, string?> metadata, bool restoreSymlinkMetadata, bool restorePermissions, bool hasRestoredEntriesBelow, CancellationToken cancel) => _inner.WriteMetadata(path, metadata, restoreSymlinkMetadata, restorePermissions, hasRestoredEntriesBelow, cancel);
             public Task DeleteFolder(string path, CancellationToken cancel) => _inner.DeleteFolder(path, cancel);
             public Task DeleteFile(string path, CancellationToken cancel) => _inner.DeleteFile(path, cancel);
             public IList<string> GetPriorityFiles() => _inner.GetPriorityFiles();
@@ -710,7 +710,7 @@ namespace Duplicati.Library.Main.Operation
                             }
                         }
 
-                        await ApplyMetadataAsync(targetpath, metainfo.Value, options, restoreDestination, cancellationToken).ConfigureAwait(false);
+                        await ApplyMetadataAsync(targetpath, metainfo.Value, options, restoreDestination, false, cancellationToken).ConfigureAwait(false);
                     }
                     catch (Exception ex)
                     {
@@ -915,6 +915,7 @@ namespace Duplicati.Library.Main.Operation
             volsize = volsize > 0 ? volsize : m_options.VolumeSize;
             Restore.DeadlockTimer.initial_threshold = (int)TimeSpan.FromMinutes(1).TotalMilliseconds * Math.Max(1, (int)(volsize / (10L * 1024L * 1024L)));
             Restore.FileProcessor.file_processors_restoring_files = m_options.RestoreFileProcessors;
+            Restore.FileProcessor.file_processors_before_folder_links = m_options.RestoreFileProcessors;
             // Reset the restore synchronization barriers for this operation. These are process-wide
             // static fields: the counters are reset per run, but the TaskCompletionSources were only
             // created once at field initialization and were never reset. Without resetting them here
@@ -925,6 +926,7 @@ namespace Duplicati.Library.Main.Operation
             // (including Windows ACLs) can be applied before all file content is restored. That lost
             // ordering guarantee causes intermittent metadata/permission restore failures.
             Restore.FileProcessor.file_processor_continue = new();
+            Restore.FileProcessor.folder_links_continue = new();
             Restore.FileProcessor.priority_files_completed = new();
 
             // Initialize priority files synchronization.
@@ -1359,7 +1361,17 @@ namespace Duplicati.Library.Main.Operation
             await backendManager.WaitForEmptyAsync(database, cancellationToken).ConfigureAwait(false);
         }
 
-        public static async Task<bool> ApplyMetadataAsync(string path, System.IO.Stream stream, Options options, IRestoreDestinationProvider restoreDestination, CancellationToken cancellationToken)
+        /// <summary>
+        /// Applies the metadata in the stream to the given path through the restore destination.
+        /// </summary>
+        /// <param name="path">The path to apply the metadata to.</param>
+        /// <param name="stream">The serialized metadata.</param>
+        /// <param name="options">The restore options.</param>
+        /// <param name="restoreDestination">The restore destination provider.</param>
+        /// <param name="hasRestoredEntriesBelow">Whether the path is a symbolic link to a folder with other entries restored below it.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns><c>true</c> if the metadata was written, <c>false</c> otherwise.</returns>
+        public static async Task<bool> ApplyMetadataAsync(string path, System.IO.Stream stream, Options options, IRestoreDestinationProvider restoreDestination, bool hasRestoredEntriesBelow, CancellationToken cancellationToken)
         {
             using (var tr = new System.IO.StreamReader(stream))
             using (var jr = new Newtonsoft.Json.JsonTextReader(tr))
@@ -1369,7 +1381,7 @@ namespace Duplicati.Library.Main.Operation
                 if (metadata == null || options.Dryrun)
                     return false;
 
-                return await restoreDestination.WriteMetadata(path, metadata, options.RestoreSymlinkMetadata, options.RestorePermissions, cancellationToken).ConfigureAwait(false);
+                return await restoreDestination.WriteMetadata(path, metadata, options.RestoreSymlinkMetadata, options.RestorePermissions, hasRestoredEntriesBelow, cancellationToken).ConfigureAwait(false);
             }
         }
 

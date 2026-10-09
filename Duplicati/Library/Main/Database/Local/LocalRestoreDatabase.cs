@@ -2438,12 +2438,17 @@ namespace Duplicati.Library.Main.Database.Local
                 await using var rd = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false);
                 while (await rd.ReadAsync(token).ConfigureAwait(false))
                     yield return new FileRequest(
-                        rd.ConvertValueToInt64(0),
-                        rd.ConvertValueToString(1) ?? throw new InvalidOperationException("OriginalPath cannot be null"),
-                        rd.ConvertValueToString(2) ?? throw new InvalidOperationException("TargetPath cannot be null"),
-                        rd.ConvertValueToString(3) ?? throw new InvalidOperationException("Hash cannot be null"),
-                        rd.ConvertValueToInt64(4),
-                        rd.ConvertValueToInt64(5)
+                        ID: rd.ConvertValueToInt64(0),
+                        OriginalPath: rd.ConvertValueToString(1) ?? throw new InvalidOperationException("OriginalPath cannot be null"),
+                        TargetPath: rd.ConvertValueToString(2) ?? throw new InvalidOperationException("TargetPath cannot be null"),
+                        Hash: rd.ConvertValueToString(3) ?? throw new InvalidOperationException("Hash cannot be null"),
+                        Length: rd.ConvertValueToInt64(4),
+                        BlocksetID: rd.ConvertValueToInt64(5),
+                        HasRestoredEntriesBelow: false,
+                        IsPriorityFile: false,
+                        IsAlternateDataStream: false,
+                        Version: 0,
+                        BackupTimestamp: default
                     );
             }
             finally
@@ -2485,12 +2490,17 @@ namespace Duplicati.Library.Main.Database.Local
 
                 while (await rd.ReadAsync(token).ConfigureAwait(false))
                     yield return new FileRequest(
-                        rd.ConvertValueToInt64(0),
-                        rd.ConvertValueToString(1) ?? throw new InvalidOperationException("OriginalPath cannot be null"),
-                        rd.ConvertValueToString(2) ?? throw new InvalidOperationException("TargetPath cannot be null"),
-                        rd.ConvertValueToString(3) ?? throw new InvalidOperationException("Hash cannot be null"),
-                        rd.ConvertValueToInt64(4),
-                        rd.ConvertValueToInt64(5)
+                        ID: rd.ConvertValueToInt64(0),
+                        OriginalPath: rd.ConvertValueToString(1) ?? throw new InvalidOperationException("OriginalPath cannot be null"),
+                        TargetPath: rd.ConvertValueToString(2) ?? throw new InvalidOperationException("TargetPath cannot be null"),
+                        Hash: rd.ConvertValueToString(3) ?? throw new InvalidOperationException("Hash cannot be null"),
+                        Length: rd.ConvertValueToInt64(4),
+                        BlocksetID: rd.ConvertValueToInt64(5),
+                        HasRestoredEntriesBelow: false,
+                        IsPriorityFile: false,
+                        IsAlternateDataStream: false,
+                        Version: 0,
+                        BackupTimestamp: default
                     );
             }
             finally
