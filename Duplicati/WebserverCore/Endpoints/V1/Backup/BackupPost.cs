@@ -146,7 +146,6 @@ public class BackupPost : IEndpointV1
             input.overwrite,
             input.permissions,
             input.skip_metadata,
-            input.register_restored_items,
             string.IsNullOrWhiteSpace(input.passphrase) ? null : input.passphrase)));
     }
 

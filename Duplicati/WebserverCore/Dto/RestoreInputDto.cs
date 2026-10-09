@@ -32,7 +32,6 @@ namespace Duplicati.WebserverCore.Dto;
 /// <param name="skip_metadata">Whether to skip metadata</param>
 /// <param name="connection_string_id">The connection string ID to use, if the destination is a masked remote source</param>
 /// <param name="source_prefix">The source prefix to use, if the destination is a masked remote source</param>
-/// <param name="register_restored_items">Whether to register restored items (e.g. Hyper-V virtual machines) with their application</param>
 public sealed record RestoreInputDto(
     string[]? paths,
     string? passphrase,
@@ -42,5 +41,4 @@ public sealed record RestoreInputDto(
     bool? permissions,
     bool? skip_metadata,
     long? connection_string_id,
-    string? source_prefix,
-    bool? register_restored_items);
+    string? source_prefix);

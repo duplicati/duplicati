@@ -47,7 +47,7 @@ namespace Duplicati.UnitTest
         public void UnspecifiedRestoreOptionsAreNotWritten()
         {
             var task = Runner.CreateRestoreTask(MakeBackup(), [], DateTime.UtcNow, null,
-                overwrite: null, restore_permissions: null, skip_metadata: null, register_restored_items: null, passphrase: null);
+                overwrite: null, restore_permissions: null, skip_metadata: null, passphrase: null);
 
             Assert.IsNotNull(task.ExtraOptions);
             Assert.IsFalse(task.ExtraOptions!.ContainsKey("overwrite"),
@@ -56,8 +56,6 @@ namespace Duplicati.UnitTest
                 "An unspecified restore-permissions must not be written, so configured defaults can apply (issue #4353)");
             Assert.IsFalse(task.ExtraOptions.ContainsKey("skip-metadata"),
                 "An unspecified skip-metadata must not be written, so configured defaults can apply");
-            Assert.IsFalse(task.ExtraOptions.ContainsKey("register-restored-items"),
-                "An unspecified register-restored-items must not be written, so configured defaults can apply");
             Assert.IsFalse(task.ExtraOptions.ContainsKey("passphrase"),
                 "An unspecified passphrase must not be written (pre-existing behavior)");
         }
@@ -66,13 +64,12 @@ namespace Duplicati.UnitTest
         public void ExplicitRestoreOptionsOverride()
         {
             var task = Runner.CreateRestoreTask(MakeBackup(), [], DateTime.UtcNow, null,
-                overwrite: true, restore_permissions: false, skip_metadata: true, register_restored_items: true, passphrase: "secret");
+                overwrite: true, restore_permissions: false, skip_metadata: true, passphrase: "secret");
 
             Assert.AreEqual(bool.TrueString, task.ExtraOptions!["overwrite"]);
             Assert.AreEqual(bool.FalseString, task.ExtraOptions["restore-permissions"],
                 "An explicit false is an override and must be written");
             Assert.AreEqual(bool.TrueString, task.ExtraOptions["skip-metadata"]);
-            Assert.AreEqual(bool.TrueString, task.ExtraOptions["register-restored-items"]);
             Assert.AreEqual("secret", task.ExtraOptions["passphrase"]);
         }
     }

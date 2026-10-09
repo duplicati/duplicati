@@ -466,7 +466,7 @@ namespace Duplicati.Server
 
         public static IRunnerData CreateRestoreTask(IBackup backup, string[]? filters,
                                                     DateTime time, string? restoreTarget, bool? overwrite, bool? restore_permissions,
-                                                    bool? skip_metadata, bool? register_restored_items, string? passphrase)
+                                                    bool? skip_metadata, string? passphrase)
         {
             var dict = new Dictionary<string, string?>
             {
@@ -482,8 +482,6 @@ namespace Duplicati.Server
                 dict["restore-permissions"] = restore_permissions.Value ? bool.TrueString : bool.FalseString;
             if (skip_metadata.HasValue)
                 dict["skip-metadata"] = skip_metadata.Value ? bool.TrueString : bool.FalseString;
-            if (register_restored_items.HasValue)
-                dict["register-restored-items"] = register_restored_items.Value ? bool.TrueString : bool.FalseString;
             if (!string.IsNullOrWhiteSpace(restoreTarget))
                 dict["restore-path"] = SpecialFolders.ExpandEnvironmentVariables(restoreTarget);
             if (!(passphrase is null))

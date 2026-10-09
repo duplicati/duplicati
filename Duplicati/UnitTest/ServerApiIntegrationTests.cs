@@ -381,7 +381,7 @@ public class ServerApiIntegrationTests : BasicSetupHelper
 
                 var restoreResponse = await httpClient.PostAsJsonAsync(
                     $"/api/v1/backup/{backupId}/restore",
-                    new RestoreInputDto(null, backupPassphrase, "now", this.RESTOREFOLDER, true, false, false, null, null, null),
+                    new RestoreInputDto(null, backupPassphrase, "now", this.RESTOREFOLDER, true, false, false, null, null),
                     JsonOptions).ConfigureAwait(false);
                 restoreResponse.EnsureSuccessStatusCode();
                 var task = await restoreResponse.Content.ReadFromJsonAsync<TaskStartedDto>(JsonOptions).ConfigureAwait(false)
@@ -428,7 +428,7 @@ public class ServerApiIntegrationTests : BasicSetupHelper
             {
                 var restoreResponse = await httpClient.PostAsJsonAsync(
                     $"/api/v1/backup/{backupId}/restore",
-                    new RestoreInputDto(null, backupPassphrase, "now", this.RESTOREFOLDER, true, false, false, null, null, null),
+                    new RestoreInputDto(null, backupPassphrase, "now", this.RESTOREFOLDER, true, false, false, null, null),
                     JsonOptions).ConfigureAwait(false);
                 restoreResponse.EnsureSuccessStatusCode();
                 var task = await restoreResponse.Content.ReadFromJsonAsync<TaskStartedDto>(JsonOptions).ConfigureAwait(false)
@@ -822,7 +822,7 @@ public class ServerApiIntegrationTests : BasicSetupHelper
     {
         var restoreResponse = await httpClient.PostAsJsonAsync(
             $"/api/v1/backup/{backupId}/restore",
-            new RestoreInputDto(null, passphrase, "now", restoreFolder, true, false, false, null, null, null),
+            new RestoreInputDto(null, passphrase, "now", restoreFolder, true, false, false, null, null),
             JsonOptions).ConfigureAwait(false);
         restoreResponse.EnsureSuccessStatusCode();
         var task = await restoreResponse.Content.ReadFromJsonAsync<TaskStartedDto>(JsonOptions).ConfigureAwait(false)
