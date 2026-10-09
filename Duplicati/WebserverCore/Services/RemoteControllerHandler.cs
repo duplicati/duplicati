@@ -241,6 +241,9 @@ public class RemoteControllerHandler(Connection connection, IHttpClientFactory h
         if (!string.IsNullOrWhiteSpace(psk))
             httpClient.DefaultRequestHeaders.Add(Middlewares.PreSharedKeyFilter.HeaderName, psk);
 
+        // Mark the request as originating from this process, so NAS integrated authentication does not reject it
+        httpClient.DefaultRequestHeaders.Add(Middlewares.LocalForwardingKey.HeaderName, Middlewares.LocalForwardingKey.Key);
+
         await commandMessage.HandleAsync(httpClient);
     }
 }

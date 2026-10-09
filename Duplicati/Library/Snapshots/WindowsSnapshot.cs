@@ -23,11 +23,14 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Snapshots.Windows;
+
+[assembly: InternalsVisibleTo("Duplicati.UnitTest")]
 
 namespace Duplicati.Library.Snapshots
 {
@@ -116,6 +119,11 @@ namespace Duplicati.Library.Snapshots
         private readonly bool _enableAdsBackup;
 
         /// <summary>
+        /// The factory used to create the snapshot provider
+        /// </summary>
+        private readonly Func<WindowsSnapshotProvider, TimeSpan, Guid, ISnapshotProvider> _providerFactory;
+
+        /// <summary>
         /// Constructs a new backup snapshot, using all the required disks
         /// </summary>
         /// <param name="sources">The sources, which are enumerated and determine which volumes to include in snapshot</param>
@@ -123,8 +131,22 @@ namespace Duplicati.Library.Snapshots
         /// <param name="options">A set of commandline options</param>
         /// <param name="followSymlinks">A flag indicating if symlinks should be followed</param>
         public WindowsSnapshot(IEnumerable<string> sources, IEnumerable<string> extraSnapshotPaths, IDictionary<string, string> options, bool followSymlinks)
+            : this(sources, extraSnapshotPaths, options, followSymlinks, WindowsShimLoader.GetSnapshotProvider)
+        {
+        }
+
+        /// <summary>
+        /// Constructs a new backup snapshot, using all the required disks and a custom provider factory
+        /// </summary>
+        /// <param name="sources">The sources, which are enumerated and determine which volumes to include in snapshot</param>
+        /// <param name="extraSnapshotPaths">Paths that are not sources, but must be readable through the snapshot; they only determine which volumes to include</param>
+        /// <param name="options">A set of commandline options</param>
+        /// <param name="followSymlinks">A flag indicating if symlinks should be followed</param>
+        /// <param name="providerFactory">The factory used to create the snapshot provider</param>
+        internal WindowsSnapshot(IEnumerable<string> sources, IEnumerable<string> extraSnapshotPaths, IDictionary<string, string> options, bool followSymlinks, Func<WindowsSnapshotProvider, TimeSpan, Guid, ISnapshotProvider> providerFactory)
             : base(followSymlinks)
         {
+            _providerFactory = providerFactory;
             _enableAdsBackup = Utility.Utility.ParseBoolOption(options.AsReadOnly(), "enable-ads-backup");
             // For Windows, ensure we don't store paths with extended device path prefixes (i.e., @"\\?\" or @"\\?\UNC\")
             _sourceEntries = sources.Select(SystemIOWindows.RemoveExtendedDevicePathPrefix).ToList();
@@ -183,11 +205,9 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The snapshot manager with an active snapshot</returns>
         private SnapshotManager CreateSnapshotManager(WindowsSnapshotProvider provider, TimeSpan vssTimeout, Guid providerId, bool useMapping, Guid[] excludedWriters)
         {
-            SnapshotManager manager = null;
             try
             {
-                manager = CreateSnapshotManagerCore(provider, vssTimeout, providerId, useMapping, excludedWriters);
-                return manager;
+                return CreateSnapshotManagerCore(provider, vssTimeout, providerId, useMapping, excludedWriters);
             }
             catch (UserInformationException ex) when (ex.HelpID == "SnapshotDeviceEmpty" && providerId == Guid.Empty)
             {
@@ -197,14 +217,7 @@ namespace Duplicati.Library.Snapshots
                 Logging.Log.WriteWarningMessage(LOGTAG, "VssRetryWithSystemProvider", null,
                     "The snapshot provider did not expose a usable snapshot device path; retrying with the Microsoft Software Shadow Copy provider. Set --vss-provider-id={0} to avoid this retry.", MS_SOFTWARE_PROVIDER_ID);
 
-                manager?.Dispose();
-                manager = CreateSnapshotManagerCore(provider, vssTimeout, MS_SOFTWARE_PROVIDER_ID, useMapping, excludedWriters);
-                return manager;
-            }
-            catch
-            {
-                manager?.Dispose();
-                throw;
+                return CreateSnapshotManagerCore(provider, vssTimeout, MS_SOFTWARE_PROVIDER_ID, useMapping, excludedWriters);
             }
         }
 
@@ -219,19 +232,36 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The snapshot manager with an active snapshot</returns>
         private SnapshotManager CreateSnapshotManagerCore(WindowsSnapshotProvider provider, TimeSpan vssTimeout, Guid providerId, bool useMapping, Guid[] excludedWriters)
         {
-            var manager = new SnapshotManager(provider, vssTimeout, providerId);
+            var manager = new SnapshotManager(_providerFactory(provider, vssTimeout, providerId));
+            try
+            {
+                manager.SetupWriters(null, excludedWriters);
 
-            manager.SetupWriters(null, excludedWriters);
+                manager.InitShadowVolumes(_snapshotPaths);
 
-            manager.InitShadowVolumes(_snapshotPaths);
+                manager.MapVolumesToSnapShots();
 
-            manager.MapVolumesToSnapShots();
+                //If we should map the drives, we do that now and update the volumeMap
+                if (useMapping)
+                    manager.MapDrives();
 
-            //If we should map the drives, we do that now and update the volumeMap
-            if (useMapping)
-                manager.MapDrives();
+                return manager;
+            }
+            catch
+            {
+                // Do not let a cleanup failure replace the original exception,
+                // as the caller relies on it to decide whether to retry
+                try
+                {
+                    manager.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "VSSCleanupOnError", ex, "Failed during VSS error cleanup");
+                }
 
-            return manager;
+                throw;
+            }
         }
 
         /// <summary>

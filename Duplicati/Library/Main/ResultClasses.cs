@@ -691,6 +691,7 @@ namespace Duplicati.Library.Main
     {
         public override OperationMode MainOperation => OperationMode.SearchFiles;
         public IPaginatedResults<ISearchFileVersion> FileVersions { get; set; }
+        public Dictionary<string, Dictionary<string, string>> ParentMetadata { get; set; }
     }
 
 

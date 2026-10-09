@@ -115,12 +115,28 @@ namespace Duplicati.GUI.TrayIcon
 
         private static int RunMain(string[] _args)
         {
-            PreloadSettingsLoader.ConfigurePreloadSettings(ref _args, PackageHelper.NamedExecutable.TrayIcon);
+            // The preload settings, which can set the option that decides whether the console is
+            // attached, are read before it is attached, so their debug output is kept and written
+            // once it is attached; otherwise it would be lost
+            var preloadOutput = new StringWriter();
+            var consoleOut = Console.Out;
+            Console.SetOut(preloadOutput);
+            try
+            {
+                PreloadSettingsLoader.ConfigurePreloadSettings(ref _args, PackageHelper.NamedExecutable.TrayIcon);
+            }
+            finally
+            {
+                Console.SetOut(consoleOut);
+            }
+
             var args = new List<string>(_args);
             var options = CommandLineParser.ExtractOptions(args);
 
             if (OperatingSystem.IsWindows() && !Utility.ParseBoolOption(options, DETACHED_PROCESS))
                 Utility.AttachWindowsConsole();
+
+            Console.Write(preloadOutput.ToString());
 
             if (HelpOptionExtensions.IsArgumentAnyHelpString(_args))
             {

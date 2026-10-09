@@ -603,8 +603,12 @@ namespace Duplicati.Library.Main.Operation
             foreach (var t in tasks)
                 if (t != null)
                 {
+                    // Give the task a moment to finish. Its failure is collected below; waiting for it
+                    // must not replace the exception that is built, whether the task fails or does
+                    // not finish in time
                     if (!t.IsCompleted && !t.IsFaulted && !t.IsCanceled)
-                        t.WaitAsync(TimeSpan.FromMilliseconds(500)).Await();
+                        try { t.WaitAsync(TimeSpan.FromMilliseconds(500)).Await(); }
+                        catch { }
 
                     if (t.IsFaulted && t.Exception != null)
                         ex.Add(t.Exception);
@@ -899,8 +903,10 @@ namespace Duplicati.Library.Main.Operation
             }
             finally
             {
+                // Give the scanner a moment to stop, without replacing the outcome of the operation
                 if (parallelScanner != null && !parallelScanner.IsCompleted)
-                    await parallelScanner.WaitAsync(TimeSpan.FromMilliseconds(500));
+                    try { await parallelScanner.WaitAsync(TimeSpan.FromMilliseconds(500)); }
+                    catch { }
             }
         }
 

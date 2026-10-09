@@ -66,6 +66,12 @@ public sealed record SearchEntriesItemDto
 public sealed record SearchEntriesResponseDto : PagedResponseEnvelope<SearchEntriesItemDto>
 {
     /// <summary>
+    /// The metadata of the folders above the result items, keyed by folder path.
+    /// Only set when extended data is requested, and only for folders that have metadata.
+    /// </summary>
+    public Dictionary<string, Dictionary<string, string?>>? ParentMetadata { get; init; }
+
+    /// <summary>
     /// Creates a new instance of the <see cref="SearchEntriesResponseDto"/> class
     /// </summary>
     /// <param name="error">The error message</param>
@@ -88,16 +94,19 @@ public sealed record SearchEntriesResponseDto : PagedResponseEnvelope<SearchEntr
     /// <param name="page">The page of the result</param>
     /// <param name="pageSize">The page size</param>
     /// <param name="totalCount">The total count of items</param>
+    /// <param name="parentMetadata">The metadata of the folders above the result items, if requested</param>
     /// <returns>A new instance of the <see cref="SearchEntriesResponseDto"/> class</returns>
     public static SearchEntriesResponseDto Create(
         IEnumerable<SearchEntriesItemDto> items,
         int page,
         int pageSize,
-        long totalCount)
+        long totalCount,
+        Dictionary<string, Dictionary<string, string?>>? parentMetadata = null)
     {
         return new SearchEntriesResponseDto
         {
             Data = items,
+            ParentMetadata = parentMetadata,
             Success = true,
             StatusCode = "OK",
             Error = null,

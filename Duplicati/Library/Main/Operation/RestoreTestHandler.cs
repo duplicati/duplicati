@@ -254,7 +254,7 @@ namespace Duplicati.Library.Main.Operation
 
                 using (var watchdog = new RuntimeWatchdog(stopwatch, maxRuntime, m_result.TaskControl))
                 {
-                    using var destination = new Library.SourceProvider.FileRestoreDestinationProvider(restoreFolder, false);
+                    using var destination = new Library.SourceProvider.FileRestoreDestinationProvider(restoreFolder, false, false);
                     try
                     {
                         using (new Logging.Timer(LOGTAG, "RestoreSample", "Restore sample for restore test"))

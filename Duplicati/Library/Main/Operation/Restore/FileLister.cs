@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using CoCoL;
@@ -119,6 +120,26 @@ namespace Duplicati.Library.Main.Operation.Restore
                         files = hostFiles;
                     }
 
+                    sw_get_folders?.Start();
+                    // The enumerables are cast to arrays to force the query to be executed and release the database lock.
+                    var folders = options.SkipMetadata
+                        ? Array.Empty<FileRequest>()
+                        : await db
+                            .GetFolderMetadataToRestoreAsync(result.TaskControl.ProgressToken)
+                            .ToArrayAsync()
+                            .ConfigureAwait(false);
+                    sw_get_folders?.Stop();
+
+                    // Separate out the symbolic links to folders that have other entries restored
+                    // below them, so they are restored after everything else. A source that is
+                    // itself a link has its files restored below the link, and making the link
+                    // while they, their folder metadata or their alternate data streams are
+                    // written would pull the folder away from under them. Other links stay with
+                    // the files, so they are in place before the metadata of their folder is restored.
+                    var folderLinks = FindLinksWithRestoredEntriesBelow(files, adsStreams, folders);
+                    if (folderLinks.Count > 0)
+                        files = files.Where(f => !folderLinks.Contains(f));
+
                     sw_write_file?.Start();
 
                     // Resolve which files are priority files. A priority entry only counts
@@ -161,7 +182,18 @@ namespace Duplicati.Library.Main.Operation.Restore
                         if (StopRequested())
                             return;
 
-                        var priorityFileRequest = new FileRequest(file.ID, file.OriginalPath, file.TargetPath, file.Hash, file.Length, file.BlocksetID, IsPriorityFile: true, Version: version, BackupTimestamp: backupTimestamp);
+                        var priorityFileRequest = new FileRequest(
+                            ID: file.ID,
+                            OriginalPath: file.OriginalPath,
+                            TargetPath: file.TargetPath,
+                            Hash: file.Hash,
+                            Length: file.Length,
+                            BlocksetID: file.BlocksetID,
+                            HasRestoredEntriesBelow: false,
+                            IsPriorityFile: true,
+                            IsAlternateDataStream: false,
+                            Version: version,
+                            BackupTimestamp: backupTimestamp);
                         await self.Output.WriteAsync(priorityFileRequest).ConfigureAwait(false);
                     }
 
@@ -176,35 +208,61 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                     sw_write_file?.Stop();
 
-                    if (!options.SkipMetadata)
+                    sw_write_folder?.Start();
+                    foreach (var folder in folders)
                     {
-                        sw_get_folders?.Start();
-                        // The enumerables are cast to arrays to force the query to be executed and release the database lock.
-                        var folders = await db
-                            .GetFolderMetadataToRestoreAsync(result.TaskControl.ProgressToken)
-                            .ToArrayAsync()
-                            .ConfigureAwait(false);
-                        sw_get_folders?.Stop();
+                        if (StopRequested())
+                            return;
 
-                        sw_write_folder?.Start();
-                        foreach (var folder in folders)
-                        {
-                            if (StopRequested())
-                                return;
-
-                            await self.Output.WriteAsync(folder.WithVersion(version, backupTimestamp)).ConfigureAwait(false);
-                        }
-                        sw_write_folder?.Stop();
+                        await self.Output.WriteAsync(folder.WithVersion(version, backupTimestamp)).ConfigureAwait(false);
                     }
+                    sw_write_folder?.Stop();
 
-                    // Send the alternate data streams last, so their hosts are restored
+                    // Send the alternate data streams after the files, so their hosts are restored
                     sw_write_file?.Start();
                     foreach (var file in adsStreams)
                     {
                         if (StopRequested())
                             return;
 
-                        await self.Output.WriteAsync(new FileRequest(file.ID, file.OriginalPath, file.TargetPath, file.Hash, file.Length, file.BlocksetID, IsAlternateDataStream: true, Version: version, BackupTimestamp: backupTimestamp)).ConfigureAwait(false);
+                        await self.Output.WriteAsync(new FileRequest(
+                            ID: file.ID,
+                            OriginalPath: file.OriginalPath,
+                            TargetPath: file.TargetPath,
+                            Hash: file.Hash,
+                            Length: file.Length,
+                            BlocksetID: file.BlocksetID,
+                            HasRestoredEntriesBelow: false,
+                            IsPriorityFile: false,
+                            IsAlternateDataStream: true,
+                            Version: version,
+                            BackupTimestamp: backupTimestamp)).ConfigureAwait(false);
+                    }
+                    sw_write_file?.Stop();
+
+                    // Send the symbolic links with entries restored below them last, after
+                    // everything they hold. The FileProcessor holds them back until everything
+                    // else is restored, and makes them one at a time. A link below another is
+                    // sent first, so that with a single processor it is made first, into the
+                    // folder that holds the restored entries, before the outer link is replaced.
+                    sw_write_file?.Start();
+                    foreach (var link in folderLinks.OrderByDescending(l => l.TargetPath.Length))
+                    {
+                        if (StopRequested())
+                            return;
+
+                        await self.Output.WriteAsync(new FileRequest(
+                            ID: link.ID,
+                            OriginalPath: link.OriginalPath,
+                            TargetPath: link.TargetPath,
+                            Hash: link.Hash,
+                            Length: link.Length,
+                            BlocksetID: link.BlocksetID,
+                            HasRestoredEntriesBelow: true,
+                            IsPriorityFile: false,
+                            IsAlternateDataStream: false,
+                            Version: version,
+                            BackupTimestamp: backupTimestamp)).ConfigureAwait(false);
                     }
                     sw_write_file?.Stop();
                 }
@@ -235,6 +293,41 @@ namespace Duplicati.Library.Main.Operation.Restore
                     }
                 }
             });
+        }
+
+        /// <summary>
+        /// Finds the symbolic links to folders that have other entries restored below them,
+        /// which is the case for a source that is itself a link, as the backup follows it.
+        /// </summary>
+        /// <param name="files">The files and symbolic links to restore.</param>
+        /// <param name="adsStreams">The alternate data streams to restore.</param>
+        /// <param name="folders">The folders whose metadata is restored.</param>
+        /// <returns>The symbolic links to folders with entries restored below them.</returns>
+        private static HashSet<FileRequest> FindLinksWithRestoredEntriesBelow(IEnumerable<FileRequest> files, IEnumerable<FileRequest> adsStreams, IEnumerable<FileRequest> folders)
+        {
+            var folderLinks = files
+                .Where(f => f.BlocksetID == LocalDatabase.SYMLINK_BLOCKSET_ID && f.TargetPath.EndsWith(Path.DirectorySeparatorChar))
+                .ToList();
+            if (folderLinks.Count == 0)
+                return [];
+
+            // With the paths sorted, the entries below a link follow its own path directly,
+            // so one lookup per link tells whether there are any.
+            var comparison = Library.Utility.Utility.ClientFilenameStringComparison;
+            var comparer = StringComparer.FromComparison(comparison);
+            var paths = files.Concat(adsStreams).Concat(folders).Select(f => f.TargetPath).ToList();
+            paths.Sort(comparer);
+
+            var result = new HashSet<FileRequest>();
+            foreach (var link in folderLinks)
+            {
+                var index = paths.BinarySearch(link.TargetPath, comparer);
+                var next = index >= 0 ? index + 1 : ~index;
+                if (next < paths.Count && paths[next].StartsWith(link.TargetPath, comparison))
+                    result.Add(link);
+            }
+
+            return result;
         }
     }
 

@@ -60,18 +60,18 @@ msgstr ""
 "<p>不正認証のためサーバーへの接続は拒否されました。</p>\n"
 "                <p>再度ログインするか、トレイのアイコンからページを再度開いてください（該当する場合）。</p>"
 
-#: scripts/services/EditUriBuiltins.js:1314
+#: scripts/services/EditUriBuiltins.js:1321
 #: templates/backends/openstack.html:44 templates/backends/storj.html:21
 #: templates/backends/storj.html:22
 msgid "API key"
 msgstr "APIキー"
 
-#: scripts/services/EditUriBuiltins.js:1204 templates/backends/s3.html:66
+#: scripts/services/EditUriBuiltins.js:1211 templates/backends/s3.html:66
 #: templates/backends/s3.html:68
 msgid "AWS Access ID"
 msgstr "AWSのアクセスID"
 
-#: scripts/services/EditUriBuiltins.js:1205 templates/backends/s3.html:71
+#: scripts/services/EditUriBuiltins.js:1212 templates/backends/s3.html:71
 #: templates/backends/s3.html:73
 msgid "AWS Access Key"
 msgstr "AWSのアクセスキー"
@@ -88,7 +88,7 @@ msgstr "概要"
 msgid "About {{appname}}"
 msgstr "{{appname}}について"
 
-#: scripts/services/EditUriBuiltins.js:1153
+#: scripts/services/EditUriBuiltins.js:1160
 msgid "Access Key"
 msgstr "アクセスキー"
 
@@ -116,7 +116,7 @@ msgstr "アクセスキー"
 msgid "Access to user interface"
 msgstr "ユーザーインターフェースへのアクセス"
 
-#: scripts/services/EditUriBuiltins.js:1152 templates/backends/azure.html:7
+#: scripts/services/EditUriBuiltins.js:1159 templates/backends/azure.html:7
 #: templates/backends/azure.html:8
 msgid "Account name"
 msgstr "アカウント名"
@@ -149,8 +149,8 @@ msgstr "パスを追加"
 msgid "Added"
 msgstr "追加済"
 
-#: scripts/services/EditUriBuiltins.js:1215
-#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:1222
+#: scripts/services/EditUriBuiltins.js:1238
 msgid "Adjust bucket name?"
 msgstr "バケットの名称を変更しますか？"
 
@@ -232,8 +232,8 @@ msgstr "アプリケーション"
 msgid "As Command-line"
 msgstr "コマンドライン"
 
-#: scripts/services/EditUriBuiltins.js:1110
-#: scripts/services/EditUriBuiltins.js:1120 templates/backends/gcs.html:8
+#: scripts/services/EditUriBuiltins.js:1117
+#: scripts/services/EditUriBuiltins.js:1127 templates/backends/gcs.html:8
 #: templates/backends/gcs.html:9 templates/backends/jottacloud.html:8
 #: templates/backends/jottacloud.html:9 templates/backends/msgroup.html:13
 #: templates/backends/msgroup.html:14 templates/backends/oauth.html:8
@@ -243,7 +243,7 @@ msgstr "コマンドライン"
 msgid "AuthID"
 msgstr "認証ID"
 
-#: scripts/services/EditUriBuiltins.js:1305 templates/backends/storj.html:2
+#: scripts/services/EditUriBuiltins.js:1312 templates/backends/storj.html:2
 msgid "Authentication method"
 msgstr "認証方法"
 
@@ -279,7 +279,7 @@ msgstr "B2 アプリケーションのID"
 msgid "B2 Application Key"
 msgstr "B2 アプリケーションのキー"
 
-#: scripts/services/EditUriBuiltins.js:1250
+#: scripts/services/EditUriBuiltins.js:1257
 msgid "B2 Cloud Storage Account ID"
 msgstr "B2 クラウドストレージのアカウントのID"
 
@@ -287,7 +287,7 @@ msgstr "B2 クラウドストレージのアカウントのID"
 msgid "B2 Cloud Storage Application ID"
 msgstr "B2 クラウドストレージのアプリケーションのID"
 
-#: scripts/services/EditUriBuiltins.js:1251 templates/backends/b2.html:17
+#: scripts/services/EditUriBuiltins.js:1258 templates/backends/b2.html:17
 msgid "B2 Cloud Storage Application Key"
 msgstr "B2 クラウドストレージのアプリケーションのキー"
 
@@ -328,7 +328,7 @@ msgstr "バックアップの場所"
 msgid "Backup retention"
 msgstr "バックアップの保持期間"
 
-#: templates/home.html:100
+#: templates/home.html:108
 msgid "Backup:"
 msgstr "バックアップ："
 
@@ -352,14 +352,14 @@ msgstr "ブラウザ設定"
 msgid "Bucket create location"
 msgstr "バケットを作成する場所"
 
-#: scripts/services/EditUriBuiltins.js:1163
-#: scripts/services/EditUriBuiltins.js:1203
-#: scripts/services/EditUriBuiltins.js:1249
-#: scripts/services/EditUriBuiltins.js:1263
-#: scripts/services/EditUriBuiltins.js:1310
-#: scripts/services/EditUriBuiltins.js:1316
-#: scripts/services/EditUriBuiltins.js:1372
-#: scripts/services/EditUriBuiltins.js:1384 templates/backends/b2.html:2
+#: scripts/services/EditUriBuiltins.js:1170
+#: scripts/services/EditUriBuiltins.js:1210
+#: scripts/services/EditUriBuiltins.js:1256
+#: scripts/services/EditUriBuiltins.js:1270
+#: scripts/services/EditUriBuiltins.js:1317
+#: scripts/services/EditUriBuiltins.js:1323
+#: scripts/services/EditUriBuiltins.js:1379
+#: scripts/services/EditUriBuiltins.js:1391 templates/backends/b2.html:2
 #: templates/backends/b2.html:3 templates/backends/cos.html:25
 #: templates/backends/e2.html:11 templates/backends/e2.html:12
 #: templates/backends/gcs.html:2 templates/backends/openstack.html:2
@@ -368,7 +368,7 @@ msgstr "バケットを作成する場所"
 msgid "Bucket name"
 msgstr "バケット名"
 
-#: scripts/services/EditUriBuiltins.js:1328
+#: scripts/services/EditUriBuiltins.js:1335
 msgid ""
 "Bucket name can only be between 3 and 63 characters long and contain only "
 "lower-case characters, numbers, periods and dashes"
@@ -395,7 +395,7 @@ msgstr "バケット名。形式：BucketName-APPID"
 msgid "Building list of files to restore …"
 msgstr "復元するファイルの一覧を作成しています…"
 
-#: scripts/controllers/RestoreController.js:373
+#: scripts/controllers/RestoreController.js:375
 msgid "Building partial temporary database …"
 msgstr "一時的なデータベースを構築しています…"
 
@@ -463,8 +463,8 @@ msgstr "実験的（カナリア）"
 #: scripts/controllers/StateController.js:119
 #: scripts/controllers/StateController.js:128
 #: scripts/services/DialogService.js:50
-#: scripts/services/EditUriBuiltins.js:1215
-#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:1222
+#: scripts/services/EditUriBuiltins.js:1238
 #: scripts/services/EditUriBuiltins.js:61 templates/delete.html:54
 #: templates/export.html:34 templates/settings.html:205
 msgid "Cancel"
@@ -647,7 +647,7 @@ msgstr "切断しました"
 msgid "Connection worked!"
 msgstr "接続できました！"
 
-#: scripts/services/EditUriBuiltins.js:1154 templates/backends/azure.html:2
+#: scripts/services/EditUriBuiltins.js:1161 templates/backends/azure.html:2
 #: templates/backends/azure.html:3
 msgid "Container name"
 msgstr "コンテナ名"
@@ -725,7 +725,7 @@ msgstr "アクセスが制限されている新規ユーザーを作成してい
 msgid "Creating target folders …"
 msgstr "バックアップ先のフォルダーを作成しています…"
 
-#: scripts/controllers/RestoreController.js:368
+#: scripts/controllers/RestoreController.js:370
 msgid "Creating temporary backup …"
 msgstr "一時的なバックアップを作成しています…"
 
@@ -733,11 +733,11 @@ msgstr "一時的なバックアップを作成しています…"
 msgid "Creating user …"
 msgstr "ユーザーを作成しています…"
 
-#: templates/home.html:105
+#: templates/home.html:113
 msgid "Current action:"
 msgstr "現在のアクション："
 
-#: templates/home.html:115
+#: templates/home.html:123
 msgid "Current file:"
 msgstr "現在のファイル："
 
@@ -749,7 +749,7 @@ msgstr "現在のバージョンは {{versionname}}（{{versionnumber}}）"
 msgid "Custom S3 endpoint"
 msgstr "ユーザー定義のS3エンドポイント"
 
-#: scripts/services/EditUriBuiltins.js:1320 templates/backends/storj.html:18
+#: scripts/services/EditUriBuiltins.js:1327 templates/backends/storj.html:18
 msgid "Custom Satellite"
 msgstr "ユーザー定義のサテライト"
 
@@ -1041,7 +1041,7 @@ msgstr ""
 "暗号化モジュール：<p style=\"display: inline\" ng-repeat=\"item in "
 "sysinfo.EncryptionModules\">{{item.Key}} </p>"
 
-#: scripts/services/EditUriBuiltins.js:1315 templates/backends/storj.html:25
+#: scripts/services/EditUriBuiltins.js:1322 templates/backends/storj.html:25
 #: templates/backends/storj.html:26
 msgid "Encryption passphrase"
 msgstr "暗号化用のパスフレーズ"
@@ -1126,14 +1126,14 @@ msgstr "バックアップ先のパスを入力してください"
 #: scripts/controllers/ImportController.js:39
 #: scripts/controllers/ImportController.js:43
 #: scripts/controllers/ImportController.js:49
-#: scripts/controllers/RestoreController.js:114
-#: scripts/controllers/RestoreController.js:144
-#: scripts/controllers/RestoreController.js:294
-#: scripts/controllers/RestoreController.js:332
-#: scripts/controllers/RestoreController.js:390
-#: scripts/controllers/RestoreController.js:423
-#: scripts/controllers/RestoreController.js:431
-#: scripts/controllers/RestoreController.js:90
+#: scripts/controllers/RestoreController.js:116
+#: scripts/controllers/RestoreController.js:146
+#: scripts/controllers/RestoreController.js:296
+#: scripts/controllers/RestoreController.js:334
+#: scripts/controllers/RestoreController.js:392
+#: scripts/controllers/RestoreController.js:425
+#: scripts/controllers/RestoreController.js:433
+#: scripts/controllers/RestoreController.js:92
 #: scripts/controllers/RestoreDirectController.js:112
 #: scripts/controllers/RestoreDirectController.js:78
 #: scripts/directives/backupEditUri.js:144
@@ -1235,7 +1235,7 @@ msgstr "外部リンク"
 msgid "FTP (Alternative)"
 msgstr "FTP（代替）"
 
-#: scripts/controllers/RestoreController.js:390
+#: scripts/controllers/RestoreController.js:392
 msgid "Failed to build temporary database: {{message}}"
 msgstr "一時的なデータベースを構築できませんでした：{{message}}"
 
@@ -1249,10 +1249,10 @@ msgstr "接続できませんでした："
 #: scripts/controllers/CommandlineController.js:80
 #: scripts/controllers/ExportController.js:40
 #: scripts/controllers/ExportController.js:57
-#: scripts/controllers/RestoreController.js:294
-#: scripts/controllers/RestoreController.js:332
-#: scripts/controllers/RestoreController.js:431
-#: scripts/controllers/RestoreController.js:90
+#: scripts/controllers/RestoreController.js:296
+#: scripts/controllers/RestoreController.js:334
+#: scripts/controllers/RestoreController.js:433
+#: scripts/controllers/RestoreController.js:92
 #: scripts/controllers/RestoreDirectController.js:112
 #: scripts/controllers/RestoreDirectController.js:78
 #: scripts/services/LogService.js:29
@@ -1263,8 +1263,8 @@ msgstr "接続できませんでした。{{message}}"
 msgid "Failed to delete:"
 msgstr "削除できませんでした："
 
-#: scripts/controllers/RestoreController.js:114
-#: scripts/controllers/RestoreController.js:144
+#: scripts/controllers/RestoreController.js:116
+#: scripts/controllers/RestoreController.js:146
 msgid "Failed to fetch path information: {{message}}"
 msgstr "パスの情報を取得できませんでした：{{message}}"
 
@@ -1289,7 +1289,7 @@ msgstr "バックアップの既定の設定を読み込めませんでした：
 msgid "Failed to read file: {{message}}"
 msgstr "ファイルを読み込めませんでした：{{message}}"
 
-#: scripts/controllers/RestoreController.js:423
+#: scripts/controllers/RestoreController.js:425
 msgid "Failed to restore files: {{message}}"
 msgstr "ファイルを復元できませんでした：{{message}}"
 
@@ -1301,8 +1301,8 @@ msgstr "保存できませんでした："
 msgid "Fatal error, no statistics collected"
 msgstr "深刻なエラーが発生しました。統計は収集されていません"
 
-#: scripts/controllers/RestoreController.js:120
-#: scripts/controllers/RestoreController.js:159
+#: scripts/controllers/RestoreController.js:122
+#: scripts/controllers/RestoreController.js:161
 msgid "Fetching path information …"
 msgstr "パスの情報を取得しています…"
 
@@ -1388,11 +1388,11 @@ msgstr "生成"
 msgid "Generate IAM access policy"
 msgstr "IAMアクセスポリシーを生成"
 
-#: scripts/controllers/RestoreController.js:70
+#: scripts/controllers/RestoreController.js:72
 msgid "Getting file versions …"
 msgstr "ファイルのバージョンを取得しています…"
 
-#: scripts/services/EditUriBuiltins.js:1143 templates/backends/msgroup.html:2
+#: scripts/services/EditUriBuiltins.js:1150 templates/backends/msgroup.html:2
 msgid "Group email"
 msgstr "グループの電子メール"
 
@@ -1438,11 +1438,11 @@ msgstr "ID："
 msgid "IDrive Sync directory path"
 msgstr "IDrive Syncのディレクトリーのパス"
 
-#: scripts/services/EditUriBuiltins.js:1370 templates/backends/e2.html:3
+#: scripts/services/EditUriBuiltins.js:1377 templates/backends/e2.html:3
 msgid "IDrive e2 Access Key ID"
 msgstr "IDrive e2のアクセスキーのID"
 
-#: scripts/services/EditUriBuiltins.js:1371 templates/backends/e2.html:7
+#: scripts/services/EditUriBuiltins.js:1378 templates/backends/e2.html:7
 msgid "IDrive e2 Access Key Secret"
 msgstr "IDrive e2のアクセスキーのシークレット"
 
@@ -1560,7 +1560,7 @@ msgstr "中断されました。統計は収集されていません"
 msgid "Invalid retention time"
 msgstr "無効な保持期間が設定されています"
 
-#: scripts/services/EditUriBuiltins.js:1079
+#: scripts/services/EditUriBuiltins.js:1086
 msgid ""
 "It is possible to connect to some FTP without a password.\n"
 "Are you sure your FTP server supports password-less logins?"
@@ -1592,7 +1592,7 @@ msgstr "Keystone APIのバージョン"
 msgid "Language in user interface"
 msgstr "言語設定"
 
-#: scripts/controllers/RestoreController.js:38
+#: scripts/controllers/RestoreController.js:40
 msgid "Last month"
 msgstr "先月"
 
@@ -1604,7 +1604,7 @@ msgstr "最後に成功したバックアップ："
 msgid "Last successful restore: {{time}} (took {{duration || '0 seconds'}})"
 msgstr "最後に成功した復元：{{time}}（完了までの時間 {{duration || '0秒'}}）"
 
-#: scripts/controllers/RestoreController.js:60
+#: scripts/controllers/RestoreController.js:62
 msgid "Latest"
 msgstr "最新"
 
@@ -1799,7 +1799,7 @@ msgstr "マイピクチャ"
 msgid "Name"
 msgstr "名前"
 
-#: templates/home.html:87
+#: templates/home.html:95
 msgid "Never"
 msgstr "未実行"
 
@@ -1827,7 +1827,7 @@ msgstr ""
 msgid "Next"
 msgstr "次へ"
 
-#: templates/home.html:91
+#: templates/home.html:99
 msgid "Next scheduled run:"
 msgstr "次の実行予定日時："
 
@@ -1856,8 +1856,8 @@ msgstr "次回"
 #: scripts/directives/backupEditUri.js:174
 #: scripts/directives/backupEditUri.js:88
 #: scripts/services/EditUriBackendConfig.js:74
-#: scripts/services/EditUriBuiltins.js:1215
-#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:1222
+#: scripts/services/EditUriBuiltins.js:1238
 #: scripts/services/EditUriBuiltins.js:61
 msgid "No"
 msgstr "いいえ"
@@ -1880,11 +1880,11 @@ msgstr "&quot;{{backend}}&quot; の保存領域の種類に関するエディタ
 msgid "No encryption"
 msgstr "暗号化なし"
 
-#: scripts/controllers/RestoreController.js:192
+#: scripts/controllers/RestoreController.js:194
 msgid "No items selected"
 msgstr "アイテムが選択されていません"
 
-#: scripts/controllers/RestoreController.js:192
+#: scripts/controllers/RestoreController.js:194
 msgid "No items to restore, please select one or more items"
 msgstr "復元するアイテムがありません。1つ以上のアイテムを選択してください"
 
@@ -1984,7 +1984,7 @@ msgstr "OpenStack オブジェクトストレージ / Swift"
 msgid "Opened"
 msgstr "展開済"
 
-#: scripts/services/EditUriBuiltins.js:1179
+#: scripts/services/EditUriBuiltins.js:1186
 msgid "Openstack API key are not supported in v3 keystone API"
 msgstr "OpenstackのAPIキーは、バージョン3のkeystone APIではサポートされていません。"
 
@@ -2072,7 +2072,7 @@ msgstr "パスフレーズが一致しません"
 msgid "Passphrases do not match"
 msgstr "パスフレーズが一致しません"
 
-#: scripts/services/EditUriBuiltins.js:1295 templates/backends/file.html:33
+#: scripts/services/EditUriBuiltins.js:1302 templates/backends/file.html:33
 #: templates/backends/filejump.html:25 templates/backends/filen.html:11
 #: templates/backends/generic.html:22 templates/backends/idrive.html:11
 #: templates/backends/idrive.html:12 templates/backends/mega.html:11
@@ -2085,8 +2085,8 @@ msgstr "パスワード"
 msgid "Patching files with local blocks …"
 msgstr "ファイルをローカルのブロックで修復しています…"
 
-#: scripts/services/EditUriBuiltins.js:1279
-#: scripts/services/EditUriBuiltins.js:1400
+#: scripts/services/EditUriBuiltins.js:1286
+#: scripts/services/EditUriBuiltins.js:1407
 msgid "Path"
 msgstr "パス"
 
@@ -2148,7 +2148,7 @@ msgstr "トレイアイコンの自動ログインを行わない"
 msgid "Previous"
 msgstr "前へ"
 
-#: templates/home.html:107
+#: templates/home.html:115
 msgid "Progress:"
 msgstr "進行度："
 
@@ -2208,11 +2208,11 @@ msgstr "更新"
 msgid "Remote"
 msgstr "リモート"
 
-#: scripts/services/EditUriBuiltins.js:1338
+#: scripts/services/EditUriBuiltins.js:1345
 msgid "Remote Path"
 msgstr "リモートのパス"
 
-#: scripts/services/EditUriBuiltins.js:1337
+#: scripts/services/EditUriBuiltins.js:1344
 msgid "Remote Repository"
 msgstr "リモートのリポジトリー"
 
@@ -2317,8 +2317,8 @@ msgstr "復元されたフォルダー"
 msgid "Restored Symlinks"
 msgstr "復元されたシンボリックリンク"
 
-#: scripts/controllers/RestoreController.js:383
-#: scripts/controllers/RestoreController.js:405
+#: scripts/controllers/RestoreController.js:385
+#: scripts/controllers/RestoreController.js:407
 msgid "Restoring files …"
 msgstr "ファイルを復元しています…"
 
@@ -2334,7 +2334,7 @@ msgstr "ファイルの一覧を書き換えました"
 msgid "Run again every"
 msgstr "実行タイミング"
 
-#: templates/home.html:52 templates/home.html:87
+#: templates/home.html:52 templates/home.html:95
 msgid "Run now"
 msgstr "すぐに実行"
 
@@ -2512,7 +2512,7 @@ msgstr "バックアップ元"
 msgid "Source folders"
 msgstr "バックアップ元のフォルダー"
 
-#: templates/home.html:96
+#: templates/home.html:104
 msgid "Source:"
 msgstr "バックアップ元："
 
@@ -2546,8 +2546,8 @@ msgstr "バックアップを開始しています…"
 msgid "Starting restore …"
 msgstr "復元を開始しています…"
 
-#: scripts/controllers/RestoreController.js:379
-#: scripts/controllers/RestoreController.js:403
+#: scripts/controllers/RestoreController.js:381
+#: scripts/controllers/RestoreController.js:405
 msgid "Starting the restore process …"
 msgstr "復元プロセスを開始しています…"
 
@@ -2681,10 +2681,10 @@ msgstr "権限をテストしています…"
 msgid "Testing …"
 msgstr "テストしています…"
 
-#: scripts/services/EditUriBuiltins.js:1259
-#: scripts/services/EditUriBuiltins.js:1275
-#: scripts/services/EditUriBuiltins.js:1380
-#: scripts/services/EditUriBuiltins.js:1396
+#: scripts/services/EditUriBuiltins.js:1266
+#: scripts/services/EditUriBuiltins.js:1282
+#: scripts/services/EditUriBuiltins.js:1387
+#: scripts/services/EditUriBuiltins.js:1403
 msgid ""
 "The '{{fieldname}}' field contains an invalid character: {{character}} "
 "(value: {{value}}, index: {{pos}})"
@@ -2700,7 +2700,7 @@ msgid ""
 "The backup was temporary and does not exist anymore, so the log data is lost"
 msgstr "バックアップは一時的で既に存在しないため、ログデータは削除されています"
 
-#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:1238
 msgid "The bucket name should be all lower-case, convert automatically?"
 msgstr "バケット名には小文字のみが使用できます。自動的に変換しますか？"
 
@@ -2722,7 +2722,7 @@ msgstr "ダークテーマ（by Michal）"
 msgid "The default blue on white theme (by Alex)"
 msgstr "既定の白地に青テーマ（by Alex）"
 
-#: scripts/services/EditUriBuiltins.js:1324
+#: scripts/services/EditUriBuiltins.js:1331
 msgid "The encryption passphrases do not match"
 msgstr "暗号化用のパスフレーズが一致しません"
 
@@ -2807,7 +2807,7 @@ msgid ""
 " with only permissions to the selected path?"
 msgstr "ユーザーに付与されている権限が多すぎます。選択したパスに関する権限のみを有する制限ユーザーを新たに作成しますか？"
 
-#: scripts/controllers/RestoreController.js:308
+#: scripts/controllers/RestoreController.js:310
 msgid ""
 "This backup was created on another operating system. Restoring files without"
 " specifying a destination folder can cause files to be restored in "
@@ -2816,11 +2816,11 @@ msgid ""
 msgstr ""
 "このバックアップは別のオペレーティングシステムで作成されました。バックアップの復元先となるフォルダーを指定せずにファイルを復元すると、予期しない場所にファイルが復元される可能性があります。復元先のフォルダーを選択せず続行してよろしいですか？"
 
-#: scripts/controllers/RestoreController.js:37
+#: scripts/controllers/RestoreController.js:39
 msgid "This month"
 msgstr "当月"
 
-#: scripts/controllers/RestoreController.js:36
+#: scripts/controllers/RestoreController.js:38
 msgid "This week"
 msgstr "この週"
 
@@ -2845,7 +2845,7 @@ msgstr "ファイルへ"
 msgid "To export without a passphrase, uncheck the \"Encrypt file\" box"
 msgstr "パスフレーズなしでエクスポートするには、「ファイルを暗号化」のチェックを外してください"
 
-#: scripts/services/EditUriBuiltins.js:1215
+#: scripts/services/EditUriBuiltins.js:1222
 msgid ""
 "To prevent bucket naming conflicts, it is recommended to prepend your "
 "account ID to the bucket name. Prepend automatically?"
@@ -2862,7 +2862,7 @@ msgid ""
 msgstr ""
 "DNSに基づく攻撃を防ぐため、Duplicatiは、ここに入力されたホスト名しか許可しません。IPアドレスまたはlocalhostによるアクセスは常に許可されます。複数のホスト名を指定する場合は、セミコロンで区切ってください。ただし、アスタリスク（*）がホスト名として入力されている場合は、どのホスト名も許可され、この機能は無効となります。また、ホスト名が入力されていない場合は、IPアドレスまたはlocalhostによるアクセスのみが許可されます。"
 
-#: scripts/controllers/RestoreController.js:34
+#: scripts/controllers/RestoreController.js:36
 msgid "Today"
 msgstr "今日"
 
@@ -2974,9 +2974,9 @@ msgstr "ユーザーに付与されている権限が多すぎます"
 msgid "User interface settings"
 msgstr "インターフェースの設定"
 
-#: scripts/services/EditUriBuiltins.js:1074
-#: scripts/services/EditUriBuiltins.js:1162
-#: scripts/services/EditUriBuiltins.js:1294 templates/backends/file.html:29
+#: scripts/services/EditUriBuiltins.js:1081
+#: scripts/services/EditUriBuiltins.js:1169
+#: scripts/services/EditUriBuiltins.js:1301 templates/backends/file.html:29
 #: templates/backends/filejump.html:21 templates/backends/filen.html:7
 #: templates/backends/generic.html:18 templates/backends/idrive.html:7
 #: templates/backends/idrive.html:8 templates/backends/mega.html:7
@@ -3109,8 +3109,8 @@ msgstr "年"
 #: scripts/directives/backupEditUri.js:174
 #: scripts/directives/backupEditUri.js:88
 #: scripts/services/EditUriBackendConfig.js:74
-#: scripts/services/EditUriBuiltins.js:1215
-#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:1222
+#: scripts/services/EditUriBuiltins.js:1238
 #: scripts/services/EditUriBuiltins.js:61
 msgid "Yes"
 msgstr "はい"
@@ -3131,7 +3131,7 @@ msgstr "はい、問題ありません！"
 msgid "Yes, please break my backup!"
 msgstr "バックアップが壊れることを了承して続行"
 
-#: scripts/controllers/RestoreController.js:35
+#: scripts/controllers/RestoreController.js:37
 msgid "Yesterday"
 msgstr "昨日"
 
@@ -3165,7 +3165,7 @@ msgid ""
 " data stored on a remote server."
 msgstr "バックアップを暗号化しない設定となっていますが、リモートサーバーに保存する全てのデータに関して、暗号化を行うことを推奨します。"
 
-#: scripts/controllers/RestoreController.js:302
+#: scripts/controllers/RestoreController.js:304
 msgid "You have chosen to restore to a new location, but not entered one"
 msgstr "新しい場所に復元するよう選択しましたが、場所が入力されていません"
 
@@ -3180,7 +3180,7 @@ msgstr "強力なパスフレーズを生成しました。パスフレーズの
 msgid "You must choose at least one source folder"
 msgstr "最低1つのバックアップ元のフォルダーを選択してください"
 
-#: scripts/services/EditUriBuiltins.js:1173
+#: scripts/services/EditUriBuiltins.js:1180
 msgid "You must enter a domain name to use v3 API"
 msgstr "バージョン3のAPIを使用するにはドメイン名を入力してください"
 
@@ -3192,7 +3192,7 @@ msgstr "バックアップの名称を入力してください"
 msgid "You must enter a passphrase or disable encryption"
 msgstr "パスフレーズを入力するか、暗号化を無効にしてください"
 
-#: scripts/services/EditUriBuiltins.js:1170
+#: scripts/services/EditUriBuiltins.js:1177
 msgid "You must enter a password to use v3 API"
 msgstr "バージョン3のAPIを使用するにはパスワードを入力してください"
 
@@ -3200,11 +3200,11 @@ msgstr "バージョン3のAPIを使用するにはパスワードを入力し�
 msgid "You must enter a positive number of backups to keep"
 msgstr "保存するバックアップの数を入力してください"
 
-#: scripts/services/EditUriBuiltins.js:1176
+#: scripts/services/EditUriBuiltins.js:1183
 msgid "You must enter a tenant (aka project) name to use v3 API"
 msgstr "バージョン3のAPIを使用するにはテナント（プロジェクト）名を入力してください"
 
-#: scripts/services/EditUriBuiltins.js:1190
+#: scripts/services/EditUriBuiltins.js:1197
 msgid "You must enter a tenant name if you do not provide an API key"
 msgstr "APIキーを指定しない場合はテナント名の入力が必要です"
 
@@ -3216,11 +3216,11 @@ msgstr "バックアップを保持する期間を正しく指定してくださ
 msgid "You must enter a valid retention policy string"
 msgstr "保持期間のポリシーを正しく入力してください"
 
-#: scripts/services/EditUriBuiltins.js:1187
+#: scripts/services/EditUriBuiltins.js:1194
 msgid "You must enter either a password or an API key"
 msgstr "パスワードかAPIキーを入力してください"
 
-#: scripts/services/EditUriBuiltins.js:1194
+#: scripts/services/EditUriBuiltins.js:1201
 msgid "You must enter either a password or an API key, not both"
 msgstr "パスワードまたはAPIキーのどちらかを入力してください"
 
@@ -3241,11 +3241,11 @@ msgstr "ユーザー名を入力してください"
 msgid "You must fill in {{field}}"
 msgstr "{{field}}を入力してください"
 
-#: scripts/services/EditUriBuiltins.js:1166
+#: scripts/services/EditUriBuiltins.js:1173
 msgid "You must select or fill in the AuthURI"
 msgstr "AuthURIを選択または入力してください"
 
-#: scripts/services/EditUriBuiltins.js:1208
+#: scripts/services/EditUriBuiltins.js:1215
 msgid "You must select or fill in the server"
 msgstr "サーバーを選択または入力してください"
 
@@ -3277,23 +3277,23 @@ msgstr "バイト"
 msgid "byte/s"
 msgstr "バイト秒"
 
-#: scripts/services/EditUriBuiltins.js:1346
+#: scripts/services/EditUriBuiltins.js:1353
 msgid "cos_app_id"
 msgstr "COS AppのID"
 
-#: scripts/services/EditUriBuiltins.js:1350
+#: scripts/services/EditUriBuiltins.js:1357
 msgid "cos_bucket"
 msgstr "バケット名"
 
-#: scripts/services/EditUriBuiltins.js:1349
+#: scripts/services/EditUriBuiltins.js:1356
 msgid "cos_region"
 msgstr "リージョン"
 
-#: scripts/services/EditUriBuiltins.js:1347
+#: scripts/services/EditUriBuiltins.js:1354
 msgid "cos_secret_id"
 msgstr "COSのシークレットのID"
 
-#: scripts/services/EditUriBuiltins.js:1348
+#: scripts/services/EditUriBuiltins.js:1355
 msgid "cos_secret_key"
 msgstr "COSの秘密鍵"
 
@@ -3307,23 +3307,23 @@ msgstr "ユーザー定義"
 msgid "failed"
 msgstr "失敗しました"
 
-#: scripts/services/EditUriBuiltins.js:1359
+#: scripts/services/EditUriBuiltins.js:1366
 msgid "oss_access_key_id"
 msgstr "OSSのアクセスキーのID"
 
-#: scripts/services/EditUriBuiltins.js:1360
+#: scripts/services/EditUriBuiltins.js:1367
 msgid "oss_access_key_secret"
 msgstr "OSSのアクセスキーのシークレット"
 
-#: scripts/services/EditUriBuiltins.js:1362
+#: scripts/services/EditUriBuiltins.js:1369
 msgid "oss_bucket_name"
 msgstr "OSSのバケット名"
 
-#: scripts/services/EditUriBuiltins.js:1358
+#: scripts/services/EditUriBuiltins.js:1365
 msgid "oss_endpoint"
 msgstr "OSSのエンドポイント"
 
-#: scripts/services/EditUriBuiltins.js:1361
+#: scripts/services/EditUriBuiltins.js:1368
 msgid "oss_region"
 msgstr "OSSのリージョン"
 
@@ -3339,11 +3339,11 @@ msgstr "リモートのリポジトリー名（例：remote）"
 msgid "resume now"
 msgstr "再開"
 
-#: scripts/services/EditUriBuiltins.js:1309
+#: scripts/services/EditUriBuiltins.js:1316
 msgid "storj_shared_access"
 msgstr "アクセス権"
 
-#: scripts/services/EditUriBuiltins.js:1143
+#: scripts/services/EditUriBuiltins.js:1150
 msgid "unless you are explicitly specifying --group-id"
 msgstr "--group-idを明示的に指定しているのでない限り、"
 
@@ -3368,7 +3368,7 @@ msgstr "{{brandingService.appName}}は以下のサードパーティー製のラ
 msgid "{{files}} files ({{size}}) to go {{speed_txt}}"
 msgstr "残り{{files}}個のファイル ({{size}})  {{speed_txt}}"
 
-#: templates/home.html:101 templates/restorewizard.html:23
+#: templates/home.html:109 templates/restorewizard.html:23
 msgid "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Version"
 msgid_plural "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Versions"
 msgstr[0] "{{item.Backup.Metadata.TargetSizeString}} / {{$count}}個のバージョン"
@@ -3386,6 +3386,6 @@ msgstr "{{number}}時間"
 msgid "{{number}} Minutes"
 msgstr "{{number}}分"
 
-#: templates/home.html:81
+#: templates/home.html:82 templates/home.html:88
 msgid "{{time}} (took {{duration}})"
 msgstr "{{time}}（完了までの時間 {{duration}}）"

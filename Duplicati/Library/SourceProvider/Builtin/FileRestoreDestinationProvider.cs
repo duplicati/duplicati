@@ -25,7 +25,7 @@ using Duplicati.Library.Snapshots;
 
 namespace Duplicati.Library.SourceProvider;
 
-public class FileRestoreDestinationProvider(string mountedPath, bool allowRestoreOutsideTargetDirectory) : IRestoreDestinationProvider
+public class FileRestoreDestinationProvider(string mountedPath, bool allowRestoreOutsideTargetDirectory, bool overwrite) : IRestoreDestinationProvider
 {
     private static readonly string LOGTAG = Logging.Log.LogTagFromType<FileRestoreDestinationProvider>();
     private static readonly string DIRSEP = Path.DirectorySeparatorChar.ToString();
@@ -143,7 +143,7 @@ public class FileRestoreDestinationProvider(string mountedPath, bool allowRestor
     }
 
     /// <inheritdoc />
-    public Task<bool> WriteMetadata(string path, Dictionary<string, string?> metadata, bool restoreSymlinkMetadata, bool restorePermissions, CancellationToken cancel)
+    public Task<bool> WriteMetadata(string path, Dictionary<string, string?> metadata, bool restoreSymlinkMetadata, bool restorePermissions, bool hasRestoredEntriesBelow, CancellationToken cancel)
     {
         VerifyPath(path);
         var wrote_something = false;
@@ -170,17 +170,52 @@ public class FileRestoreDestinationProvider(string mountedPath, bool allowRestor
                 }
             }
 
-            // Check if the target exists, and overwrite it if it does.
-            if (SystemIO.IO_OS.FileExists(targetpath))
+            // Check if the target exists, and overwrite it if that loses nothing. A link
+            // that is there already is replaced. Anything else is data: a file is replaced
+            // only with --overwrite and otherwise kept, and a folder only when it is empty,
+            // as a restore does not remove files that are not in the backup.
+            var isFile = SystemIO.IO_OS.FileExists(targetpath);
+            var isFolder = !isFile && SystemIO.IO_OS.DirectoryExists(targetpath);
+            var isLink = (isFile || isFolder) && SystemIO.IO_OS.IsSymlink(targetpath);
+
+            // A link that is there already and points where it should is left as it is.
+            // Making it again would leave its path missing for a moment, and anything that is
+            // restored below it at that moment, such as the files of a source that is itself
+            // a link, would fail.
+            if (isLink && string.Equals(SystemIO.IO_OS.GetSymlinkTarget(targetpath), k, StringComparison.Ordinal))
             {
-                SystemIO.IO_OS.FileDelete(targetpath);
+                Logging.Log.WriteVerboseMessage(LOGTAG, "SymlinkAlreadyInPlace", "The symbolic link {0} -> {1} is already in place", path, k);
             }
-            else if (SystemIO.IO_OS.DirectoryExists(targetpath))
+            else
             {
-                SystemIO.IO_OS.DirectoryDelete(targetpath, true);
+                if (isFile || isFolder)
+                {
+                    if (!isLink && isFolder && SystemIO.IO_OS.EnumerateFileSystemEntries(targetpath).Any())
+                    {
+                        // When this restore put entries below the link, the folder holds what was
+                        // restored, as when the link's target is not on this machine. That is the
+                        // outcome of the restore rather than something in its way.
+                        if (hasRestoredEntriesBelow)
+                            Logging.Log.WriteInformationMessage(LOGTAG, "SymlinkRestoredAsFolder", "Not making the symbolic link {0} -> {1}, because the entries below it were restored into a folder in its place", path, k);
+                        else
+                            Logging.Log.WriteWarningMessage(LOGTAG, "SymlinkPlaceTakenByFolder", null, "Not restoring the symbolic link {0} -> {1}, because a folder with files in it is in its place", path, k);
+                        return Task.FromResult(false);
+                    }
+
+                    if (!isLink && isFile && !overwrite)
+                    {
+                        Logging.Log.WriteWarningMessage(LOGTAG, "SymlinkPlaceTakenByFile", null, "Not restoring the symbolic link {0} -> {1}, because a file is in its place. Set --overwrite to replace the file", path, k);
+                        return Task.FromResult(false);
+                    }
+
+                    if (isFile)
+                        SystemIO.IO_OS.FileDelete(targetpath);
+                    else
+                        SystemIO.IO_OS.DirectoryDelete(targetpath, true);
+                }
+                SystemIO.IO_OS.CreateSymlink(targetpath, k, isDirTarget);
+                wrote_something = true;
             }
-            SystemIO.IO_OS.CreateSymlink(targetpath, k, isDirTarget);
-            wrote_something = true;
         }
         // If the target is a folder, make sure we create it first
         else if (isDirTarget && !SystemIO.IO_OS.DirectoryExists(targetpath))

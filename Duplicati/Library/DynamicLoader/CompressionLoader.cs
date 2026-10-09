@@ -123,6 +123,16 @@ namespace Duplicati.Library.DynamicLoader
         public static string[] Keys { get { return _compressionLoader.Keys; } }
 
         /// <summary>
+        /// Gets the key as reported by the compression module, for a key that may differ in casing
+        /// </summary>
+        /// <param name="key">The key to look up</param>
+        /// <returns>The key reported by the module, or the unmodified key if no module matches</returns>
+        public static string GetCanonicalKey(string key)
+        {
+            return _compressionLoader.GetCanonicalKey(key);
+        }
+
+        /// <summary>
         /// Gets the supported commands for a given compression module
         /// </summary>
         /// <param name="key">The compression module to find the commands for</param>

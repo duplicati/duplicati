@@ -605,7 +605,7 @@ public class ServerApiIntegrationTests : BasicSetupHelper
     /// <summary>
     /// A sync job has its own database schema and result type, but is shown in the same
     /// places as a backup. The last run must be reported through the sync metadata keys,
-    /// and asking for the logs must not fail on the tables the sync database does not have.
+    /// and the result of the run must be readable from the job log.
     /// </summary>
     [Test]
     [Category("Integration")]
@@ -662,7 +662,13 @@ public class ServerApiIntegrationTests : BasicSetupHelper
             var logResponse = await httpClient.GetAsync($"/api/v1/backup/{backupId}/log?pagesize=25").ConfigureAwait(false);
             Assert.That(logResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), "The log of a sync job should be readable");
             var log = await logResponse.Content.ReadFromJsonAsync<List<Dictionary<string, JsonElement>>>(JsonOptions).ConfigureAwait(false);
-            Assert.That(log, Is.Not.Null.And.Empty, "A sync job has no general log entries");
+            Assert.That(log, Is.Not.Null.And.Count.EqualTo(1), "A sync run should write one result entry to the log");
+            Assert.That(log![0]["Type"].GetString(), Is.EqualTo("Result"));
+            using (var resultJson = JsonDocument.Parse(log[0]["Message"].GetString()!))
+            {
+                Assert.That(resultJson.RootElement.GetProperty("MainOperation").GetString(), Is.EqualTo("Sync"));
+                Assert.That(resultJson.RootElement.GetProperty("FilesUploaded").GetInt64(), Is.EqualTo(2));
+            }
 
             var remoteLogResponse = await httpClient.GetAsync($"/api/v1/backup/{backupId}/remotelog?pagesize=25").ConfigureAwait(false);
             Assert.That(remoteLogResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), "The remote log of a sync job should be readable");
@@ -682,8 +688,17 @@ public class ServerApiIntegrationTests : BasicSetupHelper
         var previousDataFolderEnv = Environment.GetEnvironmentVariable(DataFolderManager.DATAFOLDER_ENV_NAME);
         Environment.SetEnvironmentVariable(DataFolderManager.DATAFOLDER_ENV_NAME, serverDataFolder);
 
+        // Debug builds default to portable mode, which keeps the data next to the test assembly
+        // and wins over the data folder variable. The data folder option in the server
+        // arguments does not help either, as the data folder is read from the process command
+        // line, so every test would share one server database.
+        var portableModeEnvName = $"{AutoUpdateSettings.AppName}__{DataFolderManager.PORTABLE_MODE_OPTION.Replace('-', '_')}".ToUpperInvariant();
+        var previousPortableModeEnv = Environment.GetEnvironmentVariable(portableModeEnvName);
+        Environment.SetEnvironmentVariable(portableModeEnvName, "false");
+
         ApplicationSettings? applicationSettings = null;
         Task<int>? serverTask = null;
+        Duplicati.Server.Database.Connection? serverConnection = null;
 
         try
         {
@@ -702,6 +717,14 @@ public class ServerApiIntegrationTests : BasicSetupHelper
 
             if (!ServerProgram.ServerStartedEvent.WaitOne(TimeSpan.FromSeconds(60)))
                 Assert.Fail("Server did not start within the allotted time");
+
+            // Each test gets a server database of its own, not one shared with the other tests
+            Assert.That(File.Exists(Path.Combine(serverDataFolder, DataFolderManager.SERVER_DATABASE_FILENAME)), Is.True,
+                $"The server did not keep its database in the test data folder, but in {applicationSettings.DataFolder}");
+
+            // The server does not close its database when it stops, as a process that stops exits,
+            // so the test closes it to be able to remove the data folder
+            serverConnection = (Duplicati.Server.Database.Connection?)ServerProgram.DuplicatiWebserver.Provider.GetService(typeof(Duplicati.Server.Database.Connection));
 
             var port = ServerProgram.DuplicatiWebserver.Port;
             var baseUri = new Uri($"http://127.0.0.1:{port}");
@@ -731,6 +754,11 @@ public class ServerApiIntegrationTests : BasicSetupHelper
             }
 
             Environment.SetEnvironmentVariable(DataFolderManager.DATAFOLDER_ENV_NAME, previousDataFolderEnv);
+            Environment.SetEnvironmentVariable(portableModeEnvName, previousPortableModeEnv);
+
+            // Closing the connection returns it to the pool, which keeps the file open until cleared
+            serverConnection?.Dispose();
+            Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
             SafeDeleteDirectory(serverDataFolder);
             ServerProgram.ServerStartedEvent.Reset();
         }

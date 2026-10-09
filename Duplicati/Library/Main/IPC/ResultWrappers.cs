@@ -468,6 +468,8 @@ public class SearchFilesResultsWrapper : BasicResultsWrapper, ISearchFilesResult
 
     public IPaginatedResults<ISearchFileVersion> FileVersions =>
         _dto.FileVersions == null ? null : new PaginatedResultsWrapper<ISearchFileVersion, SearchFileVersionDto>(_dto.FileVersions, v => new SearchFileVersionWrapper(v));
+
+    public Dictionary<string, Dictionary<string, string>> ParentMetadata => _dto.ParentMetadata;
 }
 
 /// <summary>

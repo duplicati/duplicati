@@ -311,6 +311,11 @@ namespace Duplicati.Library.Interface
         /// The file versions in the result
         /// </summary>
         IPaginatedResults<ISearchFileVersion> FileVersions { get; }
+        /// <summary>
+        /// The metadata of the folders above the file versions in the result, keyed by folder path.
+        /// Only set when extended data is requested, and only for folders that have metadata.
+        /// </summary>
+        Dictionary<string, Dictionary<string, string>> ParentMetadata { get; }
     }
 
     /// <summary>

@@ -512,9 +512,10 @@ namespace Duplicati.Library.Snapshots
         }
 
         /// <summary>
-        /// Gets a value indicating if the path points to a block device
+        /// Gets a value indicating if the path points to a special file: anything that is not a
+        /// regular file, a folder or a symlink, so block and character devices, FIFOs and sockets
         /// </summary>
-        /// <returns><c>true</c> if this instance is a block device; otherwise, <c>false</c>.</returns>
+        /// <returns><c>true</c> if the path is a special file; otherwise, <c>false</c>.</returns>
         /// <param name="localPath">The file or folder to examine</param>
         public override bool IsBlockDevice(string localPath)
         {

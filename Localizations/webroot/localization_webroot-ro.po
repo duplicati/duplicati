@@ -20,12 +20,12 @@ msgstr "- alegeți o opțiune -"
 msgid "...loading..."
 msgstr "...se încarcă..."
 
-#: scripts/services/EditUriBuiltins.js:1204 templates/backends/s3.html:66
+#: scripts/services/EditUriBuiltins.js:1211 templates/backends/s3.html:66
 #: templates/backends/s3.html:68
 msgid "AWS Access ID"
 msgstr "AWS Access ID"
 
-#: scripts/services/EditUriBuiltins.js:1205 templates/backends/s3.html:71
+#: scripts/services/EditUriBuiltins.js:1212 templates/backends/s3.html:71
 #: templates/backends/s3.html:73
 msgid "AWS Access Key"
 msgstr "AWS Access Key"
@@ -42,7 +42,7 @@ msgstr "Despre"
 msgid "About {{appname}}"
 msgstr "Despre {{appname}}"
 
-#: scripts/services/EditUriBuiltins.js:1153
+#: scripts/services/EditUriBuiltins.js:1160
 msgid "Access Key"
 msgstr "Cheie de acces"
 
@@ -54,7 +54,7 @@ msgstr "Acces interzis"
 msgid "Access to user interface"
 msgstr "Accesul la interfața cu utilizatorul"
 
-#: scripts/services/EditUriBuiltins.js:1152 templates/backends/azure.html:7
+#: scripts/services/EditUriBuiltins.js:1159 templates/backends/azure.html:7
 #: templates/backends/azure.html:8
 msgid "Account name"
 msgstr "Nume de cont"
@@ -87,8 +87,8 @@ msgstr "Adaugă calea"
 msgid "Added"
 msgstr "Adăugat"
 
-#: scripts/services/EditUriBuiltins.js:1215
-#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:1222
+#: scripts/services/EditUriBuiltins.js:1238
 msgid "Adjust bucket name?"
 msgstr "Modificați numele găleții?"
 
@@ -167,8 +167,8 @@ msgstr "Aplicații"
 msgid "As Command-line"
 msgstr "Ca linie de comandă"
 
-#: scripts/services/EditUriBuiltins.js:1110
-#: scripts/services/EditUriBuiltins.js:1120 templates/backends/gcs.html:8
+#: scripts/services/EditUriBuiltins.js:1117
+#: scripts/services/EditUriBuiltins.js:1127 templates/backends/gcs.html:8
 #: templates/backends/gcs.html:9 templates/backends/jottacloud.html:8
 #: templates/backends/jottacloud.html:9 templates/backends/msgroup.html:13
 #: templates/backends/msgroup.html:14 templates/backends/oauth.html:8
@@ -198,11 +198,11 @@ msgstr "Fraza de acces generată automat"
 msgid "B2 Application Key"
 msgstr "B2 cheie de aplicație"
 
-#: scripts/services/EditUriBuiltins.js:1250
+#: scripts/services/EditUriBuiltins.js:1257
 msgid "B2 Cloud Storage Account ID"
 msgstr "B2 ID-ul contului de stocare în cloud"
 
-#: scripts/services/EditUriBuiltins.js:1251 templates/backends/b2.html:17
+#: scripts/services/EditUriBuiltins.js:1258 templates/backends/b2.html:17
 msgid "B2 Cloud Storage Application Key"
 msgstr "B2 Cheia aplicației de stocare cloud"
 
@@ -219,7 +219,7 @@ msgstr "Destinație de rezervă"
 msgid "Backup location"
 msgstr "Locație de rezervă"
 
-#: templates/home.html:100
+#: templates/home.html:108
 msgid "Backup:"
 msgstr "Copie de rezervă:"
 
@@ -243,14 +243,14 @@ msgstr "Browser default"
 msgid "Bucket create location"
 msgstr "Locația unde va fi creată găleata"
 
-#: scripts/services/EditUriBuiltins.js:1163
-#: scripts/services/EditUriBuiltins.js:1203
-#: scripts/services/EditUriBuiltins.js:1249
-#: scripts/services/EditUriBuiltins.js:1263
-#: scripts/services/EditUriBuiltins.js:1310
-#: scripts/services/EditUriBuiltins.js:1316
-#: scripts/services/EditUriBuiltins.js:1372
-#: scripts/services/EditUriBuiltins.js:1384 templates/backends/b2.html:2
+#: scripts/services/EditUriBuiltins.js:1170
+#: scripts/services/EditUriBuiltins.js:1210
+#: scripts/services/EditUriBuiltins.js:1256
+#: scripts/services/EditUriBuiltins.js:1270
+#: scripts/services/EditUriBuiltins.js:1317
+#: scripts/services/EditUriBuiltins.js:1323
+#: scripts/services/EditUriBuiltins.js:1379
+#: scripts/services/EditUriBuiltins.js:1391 templates/backends/b2.html:2
 #: templates/backends/b2.html:3 templates/backends/cos.html:25
 #: templates/backends/e2.html:11 templates/backends/e2.html:12
 #: templates/backends/gcs.html:2 templates/backends/openstack.html:2
@@ -267,7 +267,7 @@ msgstr "Clasa de stocare a găleții"
 msgid "Building list of files to restore …"
 msgstr "Creez lista de fișiere de restaurat ..."
 
-#: scripts/controllers/RestoreController.js:373
+#: scripts/controllers/RestoreController.js:375
 msgid "Building partial temporary database …"
 msgstr "Creez o bază de date parțială temporară ..."
 
@@ -308,8 +308,8 @@ msgstr "Canar"
 #: scripts/controllers/StateController.js:119
 #: scripts/controllers/StateController.js:128
 #: scripts/services/DialogService.js:50
-#: scripts/services/EditUriBuiltins.js:1215
-#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:1222
+#: scripts/services/EditUriBuiltins.js:1238
 #: scripts/services/EditUriBuiltins.js:61 templates/delete.html:54
 #: templates/export.html:34 templates/settings.html:205
 msgid "Cancel"
@@ -436,7 +436,7 @@ msgstr "Conexiunea a fost pierdută"
 msgid "Connection worked!"
 msgstr "Conexiunea a funcționat!"
 
-#: scripts/services/EditUriBuiltins.js:1154 templates/backends/azure.html:2
+#: scripts/services/EditUriBuiltins.js:1161 templates/backends/azure.html:2
 #: templates/backends/azure.html:3
 msgid "Container name"
 msgstr "Numele containerului"
@@ -505,15 +505,15 @@ msgstr "Se creează un nou utilizator cu acces limitat ..."
 msgid "Creating target folders …"
 msgstr "Se creează directoarele destinație ..."
 
-#: scripts/controllers/RestoreController.js:368
+#: scripts/controllers/RestoreController.js:370
 msgid "Creating temporary backup …"
 msgstr "Se creează o copie de rezervă temporară ..."
 
-#: templates/home.html:105
+#: templates/home.html:113
 msgid "Current action:"
 msgstr "Acțiunea curentă:"
 
-#: templates/home.html:115
+#: templates/home.html:123
 msgid "Current file:"
 msgstr "Fișierul curent:"
 
@@ -812,14 +812,14 @@ msgstr "Introduceți calea de destinație"
 #: scripts/controllers/ImportController.js:39
 #: scripts/controllers/ImportController.js:43
 #: scripts/controllers/ImportController.js:49
-#: scripts/controllers/RestoreController.js:114
-#: scripts/controllers/RestoreController.js:144
-#: scripts/controllers/RestoreController.js:294
-#: scripts/controllers/RestoreController.js:332
-#: scripts/controllers/RestoreController.js:390
-#: scripts/controllers/RestoreController.js:423
-#: scripts/controllers/RestoreController.js:431
-#: scripts/controllers/RestoreController.js:90
+#: scripts/controllers/RestoreController.js:116
+#: scripts/controllers/RestoreController.js:146
+#: scripts/controllers/RestoreController.js:296
+#: scripts/controllers/RestoreController.js:334
+#: scripts/controllers/RestoreController.js:392
+#: scripts/controllers/RestoreController.js:425
+#: scripts/controllers/RestoreController.js:433
+#: scripts/controllers/RestoreController.js:92
 #: scripts/controllers/RestoreDirectController.js:112
 #: scripts/controllers/RestoreDirectController.js:78
 #: scripts/directives/backupEditUri.js:144
@@ -901,7 +901,7 @@ msgstr "Exportați configurația"
 msgid "FTP (Alternative)"
 msgstr "FTP (alternativă)"
 
-#: scripts/controllers/RestoreController.js:390
+#: scripts/controllers/RestoreController.js:392
 msgid "Failed to build temporary database: {{message}}"
 msgstr "Eroare la crearea bazei de date temporare: {{message}}"
 
@@ -915,10 +915,10 @@ msgstr "Eroare de conexiune:"
 #: scripts/controllers/CommandlineController.js:80
 #: scripts/controllers/ExportController.js:40
 #: scripts/controllers/ExportController.js:57
-#: scripts/controllers/RestoreController.js:294
-#: scripts/controllers/RestoreController.js:332
-#: scripts/controllers/RestoreController.js:431
-#: scripts/controllers/RestoreController.js:90
+#: scripts/controllers/RestoreController.js:296
+#: scripts/controllers/RestoreController.js:334
+#: scripts/controllers/RestoreController.js:433
+#: scripts/controllers/RestoreController.js:92
 #: scripts/controllers/RestoreDirectController.js:112
 #: scripts/controllers/RestoreDirectController.js:78
 #: scripts/services/LogService.js:29
@@ -929,8 +929,8 @@ msgstr "Nu s-a putut conecta: {{message}}"
 msgid "Failed to delete:"
 msgstr "Nu sa șters:"
 
-#: scripts/controllers/RestoreController.js:114
-#: scripts/controllers/RestoreController.js:144
+#: scripts/controllers/RestoreController.js:116
+#: scripts/controllers/RestoreController.js:146
 msgid "Failed to fetch path information: {{message}}"
 msgstr "Nu s-a putut obține informații despre cale: {{message}}"
 
@@ -938,7 +938,7 @@ msgstr "Nu s-a putut obține informații despre cale: {{message}}"
 msgid "Failed to read backup defaults:"
 msgstr "Nu au putut fi citite valorile implicite de rezervă:"
 
-#: scripts/controllers/RestoreController.js:423
+#: scripts/controllers/RestoreController.js:425
 msgid "Failed to restore files: {{message}}"
 msgstr "Nu sa reușit restaurarea fișierelor: {{message}}"
 
@@ -1101,7 +1101,7 @@ msgstr "informație"
 msgid "Invalid retention time"
 msgstr "Timp de retenție nevalid"
 
-#: scripts/services/EditUriBuiltins.js:1079
+#: scripts/services/EditUriBuiltins.js:1086
 msgid ""
 "It is possible to connect to some FTP without a password.\n"
 "Are you sure your FTP server supports password-less logins?"
@@ -1121,11 +1121,11 @@ msgstr "KByte / s"
 msgid "Language in user interface"
 msgstr "Limba în interfața cu utilizatorul"
 
-#: scripts/controllers/RestoreController.js:38
+#: scripts/controllers/RestoreController.js:40
 msgid "Last month"
 msgstr "Luna trecuta"
 
-#: scripts/controllers/RestoreController.js:60
+#: scripts/controllers/RestoreController.js:62
 msgid "Latest"
 msgstr "Cele mai recente"
 
@@ -1261,7 +1261,7 @@ msgstr "Pozele mele"
 msgid "Name"
 msgstr "Nume"
 
-#: templates/home.html:87
+#: templates/home.html:95
 msgid "Never"
 msgstr "Nu"
 
@@ -1280,7 +1280,7 @@ msgstr ""
 msgid "Next"
 msgstr "Următor →"
 
-#: templates/home.html:91
+#: templates/home.html:99
 msgid "Next scheduled run:"
 msgstr "Următorul programat:"
 
@@ -1309,8 +1309,8 @@ msgstr "Data viitoare"
 #: scripts/directives/backupEditUri.js:174
 #: scripts/directives/backupEditUri.js:88
 #: scripts/services/EditUriBackendConfig.js:74
-#: scripts/services/EditUriBuiltins.js:1215
-#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:1222
+#: scripts/services/EditUriBuiltins.js:1238
 #: scripts/services/EditUriBuiltins.js:61
 msgid "No"
 msgstr "Nu"
@@ -1335,11 +1335,11 @@ msgstr ""
 msgid "No encryption"
 msgstr "Nu există criptare"
 
-#: scripts/controllers/RestoreController.js:192
+#: scripts/controllers/RestoreController.js:194
 msgid "No items selected"
 msgstr "Nu au fost selectate elemente"
 
-#: scripts/controllers/RestoreController.js:192
+#: scripts/controllers/RestoreController.js:194
 msgid "No items to restore, please select one or more items"
 msgstr ""
 "Nu există elemente pentru restaurare, selectați unul sau mai multe elemente"
@@ -1428,7 +1428,7 @@ msgstr "Fraza de acces a fost modificată"
 msgid "Passphrases are not matching"
 msgstr "Frazele de acces nu se potrivesc"
 
-#: scripts/services/EditUriBuiltins.js:1295 templates/backends/file.html:33
+#: scripts/services/EditUriBuiltins.js:1302 templates/backends/file.html:33
 #: templates/backends/filejump.html:25 templates/backends/filen.html:11
 #: templates/backends/generic.html:22 templates/backends/idrive.html:11
 #: templates/backends/idrive.html:12 templates/backends/mega.html:11
@@ -1568,7 +1568,7 @@ msgstr "Relua"
 msgid "Run again every"
 msgstr "Rulați din nou fiecare"
 
-#: templates/home.html:52 templates/home.html:87
+#: templates/home.html:52 templates/home.html:95
 msgid "Run now"
 msgstr "Fugiți acum"
 
@@ -1703,7 +1703,7 @@ msgstr "Datele sursă"
 msgid "Source folders"
 msgstr "Sursă de directoare"
 
-#: templates/home.html:96
+#: templates/home.html:104
 msgid "Source:"
 msgstr "Sursă:"
 
@@ -1797,7 +1797,7 @@ msgstr "Fișiere temporare"
 msgid "Test connection"
 msgstr "Test de conexiune"
 
-#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:1238
 msgid "The bucket name should be all lower-case, convert automatically?"
 msgstr ""
 "Numele găleții ar trebui să fie toate literele mici, să se convertească "
@@ -1877,7 +1877,7 @@ msgstr ""
 "Utilizatorul are prea multe permisiuni. Doriți să creați un nou utilizator "
 "limitat, cu permisiuni numai pentru calea selectată?"
 
-#: scripts/controllers/RestoreController.js:308
+#: scripts/controllers/RestoreController.js:310
 msgid ""
 "This backup was created on another operating system. Restoring files without"
 " specifying a destination folder can cause files to be restored in "
@@ -1889,11 +1889,11 @@ msgstr ""
 "determina refacerea fișierelor în locuri neașteptate. Sigur doriți să "
 "continuați fără a alege un dosar de destinație?"
 
-#: scripts/controllers/RestoreController.js:37
+#: scripts/controllers/RestoreController.js:39
 msgid "This month"
 msgstr "Luna aceasta"
 
-#: scripts/controllers/RestoreController.js:36
+#: scripts/controllers/RestoreController.js:38
 msgid "This week"
 msgstr "Săptămâna aceasta"
 
@@ -1915,7 +1915,7 @@ msgstr ""
 "Pentru a exporta fără o expresie de acces, debifați caseta \"Criptare "
 "fișier\""
 
-#: scripts/controllers/RestoreController.js:34
+#: scripts/controllers/RestoreController.js:36
 msgid "Today"
 msgstr "Astăzi"
 
@@ -1991,9 +1991,9 @@ msgstr "Utilizatorul are prea multe permisiuni"
 msgid "User interface settings"
 msgstr "Setările interfeței utilizatorului"
 
-#: scripts/services/EditUriBuiltins.js:1074
-#: scripts/services/EditUriBuiltins.js:1162
-#: scripts/services/EditUriBuiltins.js:1294 templates/backends/file.html:29
+#: scripts/services/EditUriBuiltins.js:1081
+#: scripts/services/EditUriBuiltins.js:1169
+#: scripts/services/EditUriBuiltins.js:1301 templates/backends/file.html:29
 #: templates/backends/filejump.html:21 templates/backends/filen.html:7
 #: templates/backends/generic.html:18 templates/backends/idrive.html:7
 #: templates/backends/idrive.html:8 templates/backends/mega.html:7
@@ -2078,8 +2078,8 @@ msgstr "Ani"
 #: scripts/directives/backupEditUri.js:174
 #: scripts/directives/backupEditUri.js:88
 #: scripts/services/EditUriBackendConfig.js:74
-#: scripts/services/EditUriBuiltins.js:1215
-#: scripts/services/EditUriBuiltins.js:1231
+#: scripts/services/EditUriBuiltins.js:1222
+#: scripts/services/EditUriBuiltins.js:1238
 #: scripts/services/EditUriBuiltins.js:61
 msgid "Yes"
 msgstr "da"
@@ -2096,7 +2096,7 @@ msgstr "Da, sunt curajos!"
 msgid "Yes, please break my backup!"
 msgstr "Da, vă rog să întrerupeți backupul!"
 
-#: scripts/controllers/RestoreController.js:35
+#: scripts/controllers/RestoreController.js:37
 msgid "Yesterday"
 msgstr "Ieri"
 
@@ -2136,7 +2136,7 @@ msgstr ""
 "Ați ales să nu criptați copia de rezervă. Criptarea este recomandată pentru "
 "toate datele stocate pe un server de la distanță."
 
-#: scripts/controllers/RestoreController.js:302
+#: scripts/controllers/RestoreController.js:304
 msgid "You have chosen to restore to a new location, but not entered one"
 msgstr "Ați ales să restaurați o locație nouă, dar nu ați introdus una"
 
@@ -2192,11 +2192,11 @@ msgstr "Trebuie să completați numele de utilizator"
 msgid "You must fill in {{field}}"
 msgstr "Trebuie să completați {{field}}"
 
-#: scripts/services/EditUriBuiltins.js:1166
+#: scripts/services/EditUriBuiltins.js:1173
 msgid "You must select or fill in the AuthURI"
 msgstr "Trebuie să selectați sau să completați AuthURI"
 
-#: scripts/services/EditUriBuiltins.js:1208
+#: scripts/services/EditUriBuiltins.js:1215
 msgid "You must select or fill in the server"
 msgstr "Trebuie să selectați sau să completați serverul"
 
@@ -2252,7 +2252,7 @@ msgstr ""
 msgid "{{files}} files ({{size}}) to go {{speed_txt}}"
 msgstr "{{files}} fișiere ({{size}}) pentru a merge {{speed_txt}}"
 
-#: templates/home.html:101 templates/restorewizard.html:23
+#: templates/home.html:109 templates/restorewizard.html:23
 msgid "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Version"
 msgid_plural "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Versions"
 msgstr[0] "{{item.Backup.Metadata.TargetSizeString}} / {{$ count}} versiune"
@@ -2268,6 +2268,6 @@ msgstr "{{număr}} oră"
 msgid "{{number}} Minutes"
 msgstr "{{număr}} Minute"
 
-#: templates/home.html:81
+#: templates/home.html:82 templates/home.html:88
 msgid "{{time}} (took {{duration}})"
 msgstr "{{time}} (a luat {{duration}})"
