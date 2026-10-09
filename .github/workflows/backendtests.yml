@@ -5,8 +5,11 @@ permissions:
   issues: none
   pull-requests: none
 concurrency:
-  group: duplicati-ci-livetests
-  cancel-in-progress: false
+  # A newer run for the same pull request or branch replaces an older one. Runs for other
+  # pull requests are left alone; the jobs that use the shared test accounts still take turns,
+  # see their own concurrency.
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
   check_secrets:
     runs-on: ubuntu-latest
@@ -257,6 +260,9 @@ jobs:
   test_ftp:
     needs: check_secrets
     if: needs.check_secrets.outputs.testcontainers_secrets_available == 'true'
+    concurrency:
+      group: duplicati-ci-livetests-test_ftp-${{ matrix.os }}
+      cancel-in-progress: false
     name: FTP Tests
     runs-on: "${{ matrix.os }}"
     strategy:
@@ -297,6 +303,9 @@ jobs:
   test_pcloud:
     needs: check_secrets
     if: needs.check_secrets.outputs.pcloud_secrets_available == 'true'
+    concurrency:
+      group: duplicati-ci-livetests-test_pcloud-${{ matrix.os }}
+      cancel-in-progress: false
     name: pCloud Tests
     runs-on: "${{ matrix.os }}"
     strategy:
@@ -335,6 +344,9 @@ jobs:
   test_s3:
     needs: check_secrets
     if: needs.check_secrets.outputs.s3_secrets_available == 'true'
+    concurrency:
+      group: duplicati-ci-livetests-test_s3-${{ matrix.os }}
+      cancel-in-progress: false
     name: S3 Tests
     runs-on: "${{ matrix.os }}"
     strategy:
@@ -374,6 +386,9 @@ jobs:
   test_azure:
     needs: check_secrets
     if: needs.check_secrets.outputs.azure_secrets_available == 'true'
+    concurrency:
+      group: duplicati-ci-livetests-test_azure-${{ matrix.os }}
+      cancel-in-progress: false
     name: Azure Tests
     runs-on: "${{ matrix.os }}"
     strategy:
@@ -412,6 +427,9 @@ jobs:
   test_webdav:
     needs: check_secrets
     if: needs.check_secrets.outputs.testcontainers_secrets_available == 'true'
+    concurrency:
+      group: duplicati-ci-livetests-test_webdav-${{ matrix.os }}
+      cancel-in-progress: false
     name: Webdav Tests
     runs-on: "${{ matrix.os }}"
     strategy:
@@ -451,6 +469,9 @@ jobs:
   test_dropbox:
     needs: check_secrets
     if: needs.check_secrets.outputs.dropbox_secrets_available == 'true'
+    concurrency:
+      group: duplicati-ci-livetests-test_dropbox-${{ matrix.os }}
+      cancel-in-progress: false
     name: DropBox Tests
     runs-on: "${{ matrix.os }}"
     strategy:
@@ -488,6 +509,9 @@ jobs:
   test_ssh:
     needs: check_secrets
     if: needs.check_secrets.outputs.testcontainers_secrets_available == 'true'
+    concurrency:
+      group: duplicati-ci-livetests-test_ssh-${{ matrix.os }}
+      cancel-in-progress: false
     name: SSH Tests
     runs-on: "${{ matrix.os }}"
     strategy:
@@ -528,6 +552,9 @@ jobs:
   test_sftp:
     needs: check_secrets
     if: needs.check_secrets.outputs.testcontainers_secrets_available == 'true'
+    concurrency:
+      group: duplicati-ci-livetests-test_sftp-${{ matrix.os }}
+      cancel-in-progress: false
     name: SFTP Tests
     runs-on: "${{ matrix.os }}"
     strategy:
@@ -567,6 +594,9 @@ jobs:
   test_googledrive:
     needs: check_secrets
     if: needs.check_secrets.outputs.google_secrets_available == 'true'
+    concurrency:
+      group: duplicati-ci-livetests-test_googledrive-${{ matrix.os }}
+      cancel-in-progress: false
     name: Google Drive Tests
     runs-on: "${{ matrix.os }}"
     strategy:
@@ -603,6 +633,9 @@ jobs:
   test_cifs:
     needs: check_secrets
     if: needs.check_secrets.outputs.testcontainers_secrets_available == 'true'
+    concurrency:
+      group: duplicati-ci-livetests-test_cifs-${{ matrix.os }}
+      cancel-in-progress: false
     name: CIFS Tests
     runs-on: "${{ matrix.os }}"
     strategy:
@@ -634,6 +667,9 @@ jobs:
   test_b2:
     needs: check_secrets
     if: needs.check_secrets.outputs.b2_secrets_available == 'true'
+    concurrency:
+      group: duplicati-ci-livetests-test_b2-${{ matrix.os }}
+      cancel-in-progress: false
     name: Backblaze B2 Tests
     runs-on: "${{ matrix.os }}"
     strategy:
@@ -672,6 +708,9 @@ jobs:
   test_box:
     needs: check_secrets
     if: needs.check_secrets.outputs.box_secrets_available == 'true'
+    concurrency:
+      group: duplicati-ci-livetests-test_box-${{ matrix.os }}
+      cancel-in-progress: false
     name: Box.com Tests
     runs-on: "${{ matrix.os }}"
     strategy:
@@ -708,6 +747,9 @@ jobs:
   test_filen:
     needs: check_secrets
     if: needs.check_secrets.outputs.filen_secrets_available == 'true'
+    concurrency:
+      group: duplicati-ci-livetests-test_filen-${{ matrix.os }}
+      cancel-in-progress: false
     name: Filen.io Tests
     runs-on: "${{ matrix.os }}"
     strategy:
@@ -782,6 +824,9 @@ jobs:
   test_onedrive:
     needs: check_secrets
     if: needs.check_secrets.outputs.onedrive_secrets_available == 'true'
+    concurrency:
+      group: duplicati-ci-livetests-test_onedrive-${{ matrix.os }}
+      cancel-in-progress: false
     name: OneDrive Tests
     runs-on: "${{ matrix.os }}"
     strategy:
@@ -819,6 +864,9 @@ jobs:
   test_gcs:
     needs: check_secrets
     if: needs.check_secrets.outputs.gcs_secrets_available == 'true'
+    concurrency:
+      group: duplicati-ci-livetests-test_gcs-${{ matrix.os }}
+      cancel-in-progress: false
     name: GCS Tests
     runs-on: "${{ matrix.os }}"
     strategy:
@@ -857,6 +905,9 @@ jobs:
   test_cloudstack:
     needs: check_secrets
     if: needs.check_secrets.outputs.cloudstack_secrets_available == 'true'
+    concurrency:
+      group: duplicati-ci-livetests-test_cloudstack-${{ matrix.os }}
+      cancel-in-progress: false
     name: CloudStack Tests
     runs-on: "${{ matrix.os }}"
     strategy:
@@ -898,6 +949,9 @@ jobs:
   test_drime:
     needs: check_secrets
     if: needs.check_secrets.outputs.drime_secrets_available == 'true'
+    concurrency:
+      group: duplicati-ci-livetests-test_drime-${{ matrix.os }}
+      cancel-in-progress: false
     name: Drime Tests
     runs-on: "${{ matrix.os }}"
     strategy:
