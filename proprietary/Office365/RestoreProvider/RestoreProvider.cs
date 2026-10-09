@@ -351,7 +351,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         => Task.CompletedTask;
 
     /// <inheritdoc />
-    public Task<bool> WriteMetadata(string path, Dictionary<string, string?> metadata, bool restoreSymlinkMetadata, bool restorePermissions, CancellationToken cancel)
+    public Task<bool> WriteMetadata(string path, Dictionary<string, string?> metadata, bool restoreSymlinkMetadata, bool restorePermissions, bool hasRestoredEntriesBelow, CancellationToken cancel)
     {
         path = NormalizePath(path);
 

@@ -208,11 +208,12 @@ namespace Duplicati.Library.Main.Operation.Restore
     /// <param name="Hash">The file hash.</param>
     /// <param name="Length">The length of the file.</param>
     /// <param name="BlocksetID">The BlocksetID of the file.</param>
+    /// <param name="HasRestoredEntriesBelow">Whether this request is a symbolic link to a folder with other entries restored below it, such as the files of a source that is itself a link. Such a link is made only after everything else is restored.</param>
     /// <param name="IsPriorityFile">Whether this is a priority file that should be processed before other files.</param>
     /// <param name="IsAlternateDataStream">Whether this request is for an alternate data stream that must be restored after its host file/folder.</param>
     /// <param name="Version">The 0-based backup version index this file is being restored from (0 = newest). Defaults to 0.</param>
     /// <param name="BackupTimestamp">The timestamp of the backup version this file is being restored from, in UTC. Defaults to <see cref="DateTime.MinValue"/>.</param>
-    public class FileRequest(long ID, string OriginalPath, string TargetPath, string Hash, long Length, long BlocksetID, bool IsPriorityFile = false, bool IsAlternateDataStream = false, long Version = 0, DateTime BackupTimestamp = default)
+    public class FileRequest(long ID, string OriginalPath, string TargetPath, string Hash, long Length, long BlocksetID, bool HasRestoredEntriesBelow, bool IsPriorityFile, bool IsAlternateDataStream, long Version, DateTime BackupTimestamp)
     {
         public long ID { get; } = ID;
         public string OriginalPath { get; } = OriginalPath;
@@ -220,6 +221,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         public string Hash { get; } = Hash;
         public long Length { get; } = Length;
         public long BlocksetID { get; } = BlocksetID;
+        public bool HasRestoredEntriesBelow { get; } = HasRestoredEntriesBelow;
         public bool IsPriorityFile { get; } = IsPriorityFile;
         public bool IsAlternateDataStream { get; } = IsAlternateDataStream;
         /// <summary>
@@ -242,7 +244,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="backupTimestamp">The backup version timestamp (UTC) to set.</param>
         /// <returns>A copy of this request with the version and backup timestamp updated.</returns>
         public FileRequest WithVersion(long version, DateTime backupTimestamp)
-            => new FileRequest(ID, OriginalPath, TargetPath, Hash, Length, BlocksetID, IsPriorityFile, IsAlternateDataStream, version, backupTimestamp);
+            => new FileRequest(ID, OriginalPath, TargetPath, Hash, Length, BlocksetID, HasRestoredEntriesBelow, IsPriorityFile, IsAlternateDataStream, version, backupTimestamp);
     }
 
 }
