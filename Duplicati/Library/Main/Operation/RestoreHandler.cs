@@ -1704,6 +1704,7 @@ namespace Duplicati.Library.Main.Operation
                 else
                 {
                     await database.SetTargetPathsAsync("", "", result.TaskControl.ProgressToken).ConfigureAwait(false);
+                    await MapVirtualEntriesToOriginalPathsAsync(database, restoreDestination, result.TaskControl.ProgressToken).ConfigureAwait(false);
                 }
 
             // Create a temporary table BLOCKS that lists all blocks that needs to be recovered
@@ -1718,6 +1719,60 @@ namespace Duplicati.Library.Main.Operation
                     .CreateProgressTrackerAsync(false, result.TaskControl.ProgressToken)
                     .ConfigureAwait(false);
 
+        }
+
+        /// <summary>
+        /// For a restore to the original location, sets the target of the entries below the
+        /// virtual mount point of a prefix-based source provider (e.g. <c>\\duplicati\mssql\</c>)
+        /// to the local path they were read from, as recorded in their metadata.
+        /// The restore is stopped before anything is written if a file has no recorded local path,
+        /// or if an existing file at the local path is in use, as SQL Server and Hyper-V keep the
+        /// files of an attached database or a running machine open, and restoring only some of
+        /// the files would leave a mix of old and restored files.
+        /// </summary>
+        /// <param name="database">The restore database</param>
+        /// <param name="restoreDestination">The restore destination</param>
+        /// <param name="token">The cancellation token</param>
+        private static async Task MapVirtualEntriesToOriginalPathsAsync(LocalRestoreDatabase database, IRestoreDestinationProvider restoreDestination, CancellationToken token)
+        {
+            foreach (var module in Library.SourceProviders.SourceProviderModules.BuiltInPrefixSourceProviderModules)
+            {
+                if (!OperatingSystem.IsWindows())
+                {
+                    // The entries are only produced on Windows, so they are stored with Windows separators
+                    var storedMountedPath = module.MountedPath.Replace(Path.DirectorySeparatorChar, '\\');
+                    if (await database.CountEntriesBelowAsync(storedMountedPath, token).ConfigureAwait(false) > 0)
+                        throw new UserInformationException($"The {module.DisplayName} can only be restored to their original location on Windows, choose a folder to restore them to", "VirtualEntriesOriginalLocationRequiresWindows");
+                    continue;
+                }
+
+                var (mappedFiles, unmappedFiles) = await database
+                    .MapVirtualEntriesToOriginalPathsAsync(module.MountedPath, module.OriginalPathMetadataKey, token)
+                    .ConfigureAwait(false);
+
+                if (unmappedFiles.Count > 0)
+                    throw new UserInformationException($"The original location of {unmappedFiles.Count} file(s) from {module.DisplayName} is not recorded, such as \"{unmappedFiles[0]}\", choose a folder to restore them to", "VirtualEntryOriginalPathMissing");
+
+                var inUse = new List<string>();
+                foreach (var path in mappedFiles)
+                {
+                    if (!await restoreDestination.FileExists(path, token).ConfigureAwait(false))
+                        continue;
+
+                    try
+                    {
+                        await using var _ = await restoreDestination.OpenReadWrite(path, token).ConfigureAwait(false);
+                    }
+                    catch (IOException ex)
+                    {
+                        Logging.Log.WriteVerboseMessage(LOGTAG, "VirtualEntryTargetInUse", ex, "The restore target is in use: {0}", path);
+                        inUse.Add(path);
+                    }
+                }
+
+                if (inUse.Count > 0)
+                    throw new UserInformationException($"{inUse.Count} file(s) from {module.DisplayName} are in use at their original location, such as \"{inUse[0]}\". Detach or take the database offline, or turn off the virtual machine, and try again, or choose a folder to restore them to", "VirtualEntryTargetInUse");
+            }
         }
 
         /// <summary>

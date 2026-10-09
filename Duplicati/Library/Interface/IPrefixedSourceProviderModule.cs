@@ -47,6 +47,13 @@ public interface IPrefixedSourceProviderModule : ISourceProviderModule
     string SourcePrefix { get; }
 
     /// <summary>
+    /// The metadata key that holds the local path an entry below
+    /// <see cref="ISourceProvider.MountedPath"/> was read from. The virtual folders
+    /// of the provider do not have it, as they have no local counterpart.
+    /// </summary>
+    string OriginalPathMetadataKey { get; }
+
+    /// <summary>
     /// Translates a path written with <see cref="SourcePrefix"/> (e.g. <c>%MSSQL%\server\instance\database</c>)
     /// to the virtual path the provider stores the matching entry under, so a filter
     /// written the same way as the sources matches the stored entries.

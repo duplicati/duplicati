@@ -205,6 +205,9 @@ namespace Duplicati.Library.SourceProvider.Builtin.MSSQL
             => IsMSSQLSource(source);
 
         /// <inheritdoc />
+        public string OriginalPathMetadataKey => METADATA_PREFIX + VirtualSourcePath.ORIGINAL_PATH_KEY;
+
+        /// <inheritdoc />
         /// <remarks>
         /// The paths follow the source syntax: <c>%MSSQL%\&lt;server&gt;</c>,
         /// <c>%MSSQL%\&lt;server&gt;\&lt;instance&gt;\&lt;database&gt;</c>, and

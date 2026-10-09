@@ -915,6 +915,91 @@ namespace Duplicati.Library.Main.Database.Local
         }
 
         /// <summary>
+        /// Sets the target path of the entries below a virtual mount point (e.g. <c>\\duplicati\mssql\</c>)
+        /// to the local path recorded in their metadata, for a restore to the original location.
+        /// The virtual folders of the mount point have no local path, so they are removed from the restore.
+        /// </summary>
+        /// <param name="mountedPath">The virtual mount point, ending with a directory separator</param>
+        /// <param name="originalPathMetadataKey">The metadata key that holds the local path</param>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
+        /// <returns>The target paths of the mapped files, and the paths of the files that have no recorded local path</returns>
+        public async Task<(List<string> MappedFiles, List<string> UnmappedFiles)> MapVirtualEntriesToOriginalPathsAsync(string mountedPath, string originalPathMetadataKey, CancellationToken token)
+        {
+            const string belowMount = @"LOWER(SUBSTR(""Path"", 1, @MountLength)) = LOWER(@Mount)";
+
+            await using var cmd = m_connection.CreateCommand($@"
+                UPDATE ""{m_tempfiletable}""
+                SET ""TargetPath"" = (
+                    SELECT json_extract(""md"".""Content"", @JsonPath)
+                    FROM ""Metadataset"" ""md""
+                    WHERE ""md"".""ID"" = ""{m_tempfiletable}"".""MetadataID""
+                )
+                WHERE {belowMount}
+            ")
+                .SetTransaction(m_rtr)
+                .SetParameterValue("@JsonPath", $"$.\"{originalPathMetadataKey}\"")
+                .SetParameterValue("@Mount", mountedPath)
+                .SetParameterValue("@MountLength", mountedPath.Length);
+            await cmd.ExecuteNonQueryAsync(true, token).ConfigureAwait(false);
+
+            await cmd.SetCommandAndParameters($@"
+                DELETE FROM ""{m_tempfiletable}""
+                WHERE {belowMount}
+                AND ""TargetPath"" IS NULL
+                AND ""BlocksetID"" = @FolderBlocksetId
+            ")
+                .SetParameterValue("@Mount", mountedPath)
+                .SetParameterValue("@MountLength", mountedPath.Length)
+                .SetParameterValue("@FolderBlocksetId", FOLDER_BLOCKSET_ID)
+                .ExecuteNonQueryAsync(true, token)
+                .ConfigureAwait(false);
+
+            var mapped = new List<string>();
+            var unmapped = new List<string>();
+            cmd.SetCommandAndParameters($@"
+                SELECT ""Path"", ""TargetPath""
+                FROM ""{m_tempfiletable}""
+                WHERE {belowMount}
+                AND ""BlocksetID"" != @FolderBlocksetId
+            ")
+                .SetParameterValue("@Mount", mountedPath)
+                .SetParameterValue("@MountLength", mountedPath.Length)
+                .SetParameterValue("@FolderBlocksetId", FOLDER_BLOCKSET_ID);
+
+            await using var rd = await cmd.ExecuteReaderAsync(true, token).ConfigureAwait(false);
+            while (await rd.ReadAsync(token).ConfigureAwait(false))
+            {
+                var targetPath = rd.ConvertValueToString(1);
+                if (string.IsNullOrEmpty(targetPath))
+                    unmapped.Add(rd.ConvertValueToString(0) ?? "");
+                else
+                    mapped.Add(targetPath);
+            }
+
+            return (mapped, unmapped);
+        }
+
+        /// <summary>
+        /// Counts the entries below a path in the temporary file table
+        /// </summary>
+        /// <param name="path">The path, ending with a directory separator</param>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
+        /// <returns>The number of entries below the path</returns>
+        public async Task<long> CountEntriesBelowAsync(string path, CancellationToken token)
+        {
+            await using var cmd = m_connection.CreateCommand($@"
+                SELECT COUNT(*)
+                FROM ""{m_tempfiletable}""
+                WHERE LOWER(SUBSTR(""Path"", 1, @Length)) = LOWER(@Path)
+            ")
+                .SetTransaction(m_rtr)
+                .SetParameterValue("@Path", path)
+                .SetParameterValue("@Length", path.Length);
+
+            return await cmd.ExecuteScalarInt64Async(0, token).ConfigureAwait(false);
+        }
+
+        /// <summary>
         /// Retrieves the first path from the temporary file table.
         /// </summary>
         /// <param name="token">A cancellation token to monitor for cancellation requests.</param>

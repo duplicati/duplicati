@@ -175,6 +175,9 @@ namespace Duplicati.Library.SourceProvider.Builtin.HyperV
             => IsHyperVSource(source);
 
         /// <inheritdoc />
+        public string OriginalPathMetadataKey => METADATA_PREFIX + VirtualSourcePath.ORIGINAL_PATH_KEY;
+
+        /// <inheritdoc />
         /// <remarks>
         /// <c>%HYPERV%</c> is the root and <c>%HYPERV%\&lt;vm-guid&gt;</c> is the folder of a machine.
         /// A path below a machine names a local file, which is stored under a name
