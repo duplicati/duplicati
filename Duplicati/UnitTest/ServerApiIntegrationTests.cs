@@ -605,7 +605,7 @@ public class ServerApiIntegrationTests : BasicSetupHelper
     /// <summary>
     /// A sync job has its own database schema and result type, but is shown in the same
     /// places as a backup. The last run must be reported through the sync metadata keys,
-    /// and asking for the logs must not fail on the tables the sync database does not have.
+    /// and the result of the run must be readable from the job log.
     /// </summary>
     [Test]
     [Category("Integration")]
@@ -662,7 +662,13 @@ public class ServerApiIntegrationTests : BasicSetupHelper
             var logResponse = await httpClient.GetAsync($"/api/v1/backup/{backupId}/log?pagesize=25").ConfigureAwait(false);
             Assert.That(logResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), "The log of a sync job should be readable");
             var log = await logResponse.Content.ReadFromJsonAsync<List<Dictionary<string, JsonElement>>>(JsonOptions).ConfigureAwait(false);
-            Assert.That(log, Is.Not.Null.And.Empty, "A sync job has no general log entries");
+            Assert.That(log, Is.Not.Null.And.Count.EqualTo(1), "A sync run should write one result entry to the log");
+            Assert.That(log![0]["Type"].GetString(), Is.EqualTo("Result"));
+            using (var resultJson = JsonDocument.Parse(log[0]["Message"].GetString()!))
+            {
+                Assert.That(resultJson.RootElement.GetProperty("MainOperation").GetString(), Is.EqualTo("Sync"));
+                Assert.That(resultJson.RootElement.GetProperty("FilesUploaded").GetInt64(), Is.EqualTo(2));
+            }
 
             var remoteLogResponse = await httpClient.GetAsync($"/api/v1/backup/{backupId}/remotelog?pagesize=25").ConfigureAwait(false);
             Assert.That(remoteLogResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), "The remote log of a sync job should be readable");

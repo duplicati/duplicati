@@ -590,7 +590,17 @@ namespace Duplicati.GUI.TrayIcon
             Styles.Add(new FluentTheme());
 
             var icon = AvaloniaRunner.LoadIcon("normal.png");
-            this.trayIcon = new Avalonia.Controls.TrayIcon() { Icon = icon };
+            // Avalonia 12.1+ pushes the tooltip and menu to the native layer on attach.
+            // The macOS backend throws on a null tooltip, and binds the native menu
+            // to a private NativeMenu if none is set, which makes any later menu
+            // assignment fail with "The menu being updated does not match".
+            // Both must therefore be set before the icon is attached in SetIcons.
+            this.trayIcon = new Avalonia.Controls.TrayIcon()
+            {
+                Icon = icon,
+                ToolTipText = this.Name ?? AutoUpdateSettings.AppName,
+                Menu = new NativeMenu()
+            };
 
             // Handle being loaded with menu items
             if (menuItems != null)

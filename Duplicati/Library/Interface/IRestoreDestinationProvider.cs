@@ -128,9 +128,10 @@ public interface IRestoreDestinationProvider : IDisposable
     /// <param name="metadata">The metadata to restore</param>
     /// <param name="restoreSymlinkMetadata">Whether to restore symlink metadata</param>
     /// <param name="restorePermissions">Whether to restore permissions</param>
+    /// <param name="hasRestoredEntriesBelow">Whether the path is a symbolic link to a folder with other entries restored below it by this restore, as for a source that is itself a link. A folder holding those entries in the place of the link is then the outcome of the restore, not a conflict</param>
     /// <param name="cancel">The cancellation token</param>
     /// <returns><c>true</c> if the metadata was restored, <c>false</c> otherwise</returns>
-    Task<bool> WriteMetadata(string path, Dictionary<string, string?> metadata, bool restoreSymlinkMetadata, bool restorePermissions, CancellationToken cancel);
+    Task<bool> WriteMetadata(string path, Dictionary<string, string?> metadata, bool restoreSymlinkMetadata, bool restorePermissions, bool hasRestoredEntriesBelow, CancellationToken cancel);
 
     /// <summary>
     /// Deletes a folder at the given path
