@@ -61,7 +61,7 @@ public static class Downgrade
         var syncVersionOption = new Option<int>("--sync-version")
         {
             Description = "The version to downgrade sync databases to",
-            DefaultValueFactory = _ => 1
+            DefaultValueFactory = _ => 0
         };
         var noBackupsOption = new Option<bool>("--no-backups")
         {

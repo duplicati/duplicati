@@ -275,33 +275,35 @@ namespace Duplicati.UnitTest
 
             // Build the sync database the same way LocalSyncDatabase does: hand an
             // empty file to DatabaseUpgrader with the sync schema marker, which loads
-            // Schema.sql and records the current sync schema version (0).
+            // Schema.sql and records the current sync schema version.
             using (var db = await SQLiteLoader.LoadConnectionAsync(dbfile))
             {
                 DatabaseUpgrader.UpgradeDatabase(db, dbfile, typeof(DatabaseSchemaMarker));
             }
 
-            // The sync schema is currently at version 0 and there are no numbered
-            // upgrade scripts. The upgrade command falls back to target version 1
-            // (syncVersions.Any() ? Max : 1) and, finding no script for version 1,
-            // reports the missing script and returns success without modifying the DB.
+            Assert.AreEqual(SYNC_SCHEMA_VERSION, await ReadSyncVersionAsync(dbfile));
+            Assert.IsTrue(await SyncTableExistsAsync(dbfile, "LogData"));
+
+            // The database is already at the latest version, so upgrade is a no-op.
+            Assert.AreEqual(0, await Program.MainAsync(["upgrade", dbfile, "--no-backups"]));
+            Assert.AreEqual(SYNC_SCHEMA_VERSION, await ReadSyncVersionAsync(dbfile));
+
+            // The default --sync-version is 0, the version before the LogData table was
+            // added, so downgrade removes the table and records version 0.
+            Assert.AreEqual(0, await Program.MainAsync(["downgrade", dbfile, "--no-backups"]));
+            Assert.AreEqual(0, await ReadSyncVersionAsync(dbfile));
+            Assert.IsFalse(await SyncTableExistsAsync(dbfile, "LogData"));
+
+            // Upgrading again re-applies the upgrade script and restores the table.
             Assert.AreEqual(0, await Program.MainAsync(["upgrade", dbfile, "--no-backups"]));
 
-            // No sync downgrade scripts ship today, so downgrade reports the missing
-            // scripts and returns success without modifying the DB. The default
-            // --sync-version is 1 and the DB is at 0, so there is nothing to downgrade
-            // and the command is a no-op that still exits 0.
-            Assert.AreEqual(0, await Program.MainAsync(["downgrade", dbfile, "--sync-version=1", "--no-backups"]));
-
-            // Re-running upgrade should remain a no-op and still succeed.
-            Assert.AreEqual(0, await Program.MainAsync(["upgrade", dbfile, "--no-backups"]));
-
-            // The database must be untouched by the no-op upgrade/downgrade: the
-            // recorded version is still 0 and the sync tables are still present.
+            // The round trip must leave the database at the latest version with all
+            // sync tables present.
             Assert.AreEqual(SYNC_SCHEMA_VERSION, await ReadSyncVersionAsync(dbfile));
             Assert.IsTrue(await SyncTableExistsAsync(dbfile, "RemoteInventory"));
             Assert.IsTrue(await SyncTableExistsAsync(dbfile, "PendingOperation"));
             Assert.IsTrue(await SyncTableExistsAsync(dbfile, "RemoteOperation"));
+            Assert.IsTrue(await SyncTableExistsAsync(dbfile, "LogData"));
 
             // The list and execute commands should work against the sync database
             // just as they do for the server and local databases.
@@ -311,8 +313,7 @@ namespace Duplicati.UnitTest
             Assert.AreEqual(0, await Program.MainAsync(["execute", dbfile, "SELECT * FROM RemoteInventory", "--output-json"]));
 
             // The helper must classify a sync database as DatabaseType.Sync at the
-            // recorded version, proving the tool will route a sync database to the
-            // sync upgrade/downgrade scripts once any are added.
+            // recorded version, so the tool routes it to the sync upgrade/downgrade scripts.
             var (version, type) = await Helper.ExamineDatabaseAsync(dbfile);
             Assert.AreEqual(SYNC_SCHEMA_VERSION, version);
             Assert.AreEqual(DatabaseType.Sync, type);
@@ -589,10 +590,9 @@ INSERT INTO ""Version"" (""Version"") VALUES (12);
         /// The schema version that the sync <c>Schema.sql</c> records in the
         /// <c>Version</c> table on a fresh install. This mirrors the value written by
         /// the last line of <c>Duplicati/Library/Main/Database/Sync/Database schema/Schema.sql</c>
-        /// and must be kept in sync if the sync schema is bumped. Today the sync schema
-        /// ships at version 0 with no numbered upgrade scripts.
+        /// and must be kept in sync if the sync schema is bumped.
         /// </summary>
-        private const int SYNC_SCHEMA_VERSION = 0;
+        private const int SYNC_SCHEMA_VERSION = 1;
 
         /// <summary>
         /// Reads the recorded schema version from a sync database file.
