@@ -1027,6 +1027,8 @@ namespace Duplicati.Library.Main.Operation
                     Logging.Log.WriteInformationMessage(LOGTAG, "NoFilesNeededRestore", null, "Restore completed but all files were already present");
             }
 
+            await RegisterRestoredItemsAsync(database, m_result.BrokenRemoteFiles.Count > 0 || m_result.BrokenLocalFiles.Count > 0, cancellationToken).ConfigureAwait(false);
+
             // Harvest restored file hashes for --restore-all-files=unique before the temp
             // tables are dropped, so subsequent versions can skip files with the same content.
             await HarvestRestoredHashesAsync(database, cancellationToken).ConfigureAwait(false);
@@ -1351,6 +1353,8 @@ namespace Duplicati.Library.Main.Operation
                 Logging.Log.WriteInformationMessage(LOGTAG, "RestoreFailures", "Failed to restore {0} files, additionally the following files failed to download, which may be the cause:{1}{2}", fileErrors, Environment.NewLine, string.Join(Environment.NewLine, brokenFiles));
             else if (fileErrors > 0)
                 Logging.Log.WriteInformationMessage(LOGTAG, "RestoreFailures", "Failed to restore {0} files", fileErrors);
+
+            await RegisterRestoredItemsAsync(database, fileErrors > 0 || brokenFiles.Count > 0, cancellationToken).ConfigureAwait(false);
 
             // Harvest restored file hashes for --restore-all-files=unique before the temp
             // tables are dropped, so subsequent versions can skip files with the same content.
@@ -1719,6 +1723,61 @@ namespace Duplicati.Library.Main.Operation
                     .CreateProgressTrackerAsync(false, result.TaskControl.ProgressToken)
                     .ConfigureAwait(false);
 
+        }
+
+        /// <summary>
+        /// Registers the restored items of the prefix-based source providers that support it
+        /// (e.g. Hyper-V virtual machines) with their application, when
+        /// <c>--register-restored-items</c> is set. Nothing is registered when files failed to
+        /// restore, as an item with missing or broken files cannot be used.
+        /// </summary>
+        /// <param name="database">The restore database, with the restored file list</param>
+        /// <param name="hadFailures">True if any files failed to restore</param>
+        /// <param name="cancellationToken">The cancellation token</param>
+        private async Task RegisterRestoredItemsAsync(LocalRestoreDatabase database, bool hadFailures, CancellationToken cancellationToken)
+        {
+            if (!m_options.RegisterRestoredItems)
+                return;
+
+            foreach (var module in Library.SourceProviders.SourceProviderModules.BuiltInPrefixSourceProviderModules.OfType<IRestoredItemRegistrationModule>())
+            {
+                var restoredEntries = await database
+                    .GetRestoredVirtualEntriesAsync(module.MountedPath, module.OriginalPathMetadataKey, cancellationToken)
+                    .ConfigureAwait(false);
+                if (restoredEntries.Count == 0)
+                    continue;
+
+                if (m_options.RestoreAllFiles != RestoreAllFilesMode.False)
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "RegisterSkippedAllFiles", null, "The restored {0} are not registered when restoring all versions", module.DisplayName);
+                    continue;
+                }
+
+                if (m_options.Dryrun)
+                {
+                    Logging.Log.WriteDryrunMessage(LOGTAG, "WouldRegisterRestoredItems", "Would register the restored {0}", module.DisplayName);
+                    continue;
+                }
+
+                if (hadFailures)
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "RegisterSkippedFailures", null, "The restored {0} are not registered, because some files failed to restore", module.DisplayName);
+                    continue;
+                }
+
+                var versionPaths = await database
+                    .GetVersionVirtualPathsAsync(module.MountedPath, module.OriginalPathMetadataKey, cancellationToken)
+                    .ConfigureAwait(false);
+
+                try
+                {
+                    await module.RegisterRestoredItemsAsync(restoredEntries, versionPaths, m_options.RawOptions.AsReadOnly(), cancellationToken).ConfigureAwait(false);
+                }
+                catch (Exception ex) when (!ex.IsAbortException())
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "RegisterRestoredItemsFailed", ex, "The {0} were restored, but registering them failed: {1}", module.DisplayName, ex.Message);
+                }
+            }
         }
 
         /// <summary>

@@ -101,6 +101,11 @@ namespace Duplicati.Library.Main.Database.Local
         public DateTime RestoreTime { get { return m_restoreTime; } }
 
         /// <summary>
+        /// The ID of the fileset the restore file list was prepared from
+        /// </summary>
+        private long m_restoreFilesetId = -1;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="LocalRestoreDatabase"/> class.
         /// </summary>
         /// <param name="path">The path to the database file.</param>
@@ -440,6 +445,7 @@ namespace Duplicati.Library.Main.Database.Local
                         await cmd.ExecuteScalarInt64Async(0, token)
                             .ConfigureAwait(false)
                     );
+                    m_restoreFilesetId = filesetId;
 
                     var ix = await FilesetTimesAsync(token)
                             .Select((value, index) => new { value.Key, index })
@@ -977,6 +983,76 @@ namespace Duplicati.Library.Main.Database.Local
             }
 
             return (mapped, unmapped);
+        }
+
+        /// <summary>
+        /// Gets the entries in the temporary file table below a virtual mount point, with
+        /// the path they are restored to and the local path recorded in their metadata
+        /// </summary>
+        /// <param name="mountedPath">The virtual mount point, ending with a directory separator</param>
+        /// <param name="originalPathMetadataKey">The metadata key that holds the local path</param>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
+        /// <returns>The restored entries below the mount point</returns>
+        public async Task<List<Interface.RestoredVirtualEntry>> GetRestoredVirtualEntriesAsync(string mountedPath, string originalPathMetadataKey, CancellationToken token)
+        {
+            await using var cmd = m_connection.CreateCommand($@"
+                SELECT ""t"".""Path"", ""t"".""TargetPath"", json_extract(""md"".""Content"", @JsonPath), ""t"".""BlocksetID""
+                FROM ""{m_tempfiletable}"" ""t""
+                LEFT JOIN ""Metadataset"" ""md"" ON ""md"".""ID"" = ""t"".""MetadataID""
+                WHERE LOWER(SUBSTR(""t"".""Path"", 1, @MountLength)) = LOWER(@Mount)
+            ")
+                .SetTransaction(m_rtr)
+                .SetParameterValue("@JsonPath", $"$.\"{originalPathMetadataKey}\"")
+                .SetParameterValue("@Mount", mountedPath)
+                .SetParameterValue("@MountLength", mountedPath.Length);
+
+            var result = new List<Interface.RestoredVirtualEntry>();
+            await using var rd = await cmd.ExecuteReaderAsync(true, token).ConfigureAwait(false);
+            while (await rd.ReadAsync(token).ConfigureAwait(false))
+            {
+                var path = rd.ConvertValueToString(0) ?? "";
+                var targetPath = rd.ConvertValueToString(1);
+                if (string.IsNullOrEmpty(targetPath))
+                    continue;
+
+                var originalPath = rd.ConvertValueToString(2);
+                result.Add(new Interface.RestoredVirtualEntry(path, targetPath, string.IsNullOrEmpty(originalPath) ? null : originalPath, rd.ConvertValueToInt64(3) == FOLDER_BLOCKSET_ID));
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Gets the stored paths of the entries below a virtual mount point in the restored version,
+        /// leaving out the virtual folders, which have no local path in their metadata
+        /// </summary>
+        /// <param name="mountedPath">The virtual mount point, ending with a directory separator</param>
+        /// <param name="originalPathMetadataKey">The metadata key that holds the local path</param>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
+        /// <returns>The stored paths below the mount point</returns>
+        public async Task<List<string>> GetVersionVirtualPathsAsync(string mountedPath, string originalPathMetadataKey, CancellationToken token)
+        {
+            await using var cmd = m_connection.CreateCommand(@"
+                SELECT ""f"".""Path""
+                FROM ""File"" ""f""
+                JOIN ""FilesetEntry"" ""fe"" ON ""fe"".""FileID"" = ""f"".""ID""
+                JOIN ""Metadataset"" ""md"" ON ""md"".""ID"" = ""f"".""MetadataID""
+                WHERE ""fe"".""FilesetID"" = @FilesetId
+                AND LOWER(SUBSTR(""f"".""Path"", 1, @MountLength)) = LOWER(@Mount)
+                AND json_extract(""md"".""Content"", @JsonPath) IS NOT NULL
+            ")
+                .SetTransaction(m_rtr)
+                .SetParameterValue("@FilesetId", m_restoreFilesetId)
+                .SetParameterValue("@JsonPath", $"$.\"{originalPathMetadataKey}\"")
+                .SetParameterValue("@Mount", mountedPath)
+                .SetParameterValue("@MountLength", mountedPath.Length);
+
+            var result = new List<string>();
+            await using var rd = await cmd.ExecuteReaderAsync(true, token).ConfigureAwait(false);
+            while (await rd.ReadAsync(token).ConfigureAwait(false))
+                result.Add(rd.ConvertValueToString(0) ?? "");
+
+            return result;
         }
 
         /// <summary>

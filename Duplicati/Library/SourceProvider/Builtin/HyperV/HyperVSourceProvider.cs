@@ -23,6 +23,7 @@ using System.Runtime.CompilerServices;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Snapshots.Windows;
+using Duplicati.Library.Utility;
 
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Duplicati.UnitTest")]
 
@@ -47,7 +48,7 @@ namespace Duplicati.Library.SourceProvider.Builtin.HyperV
     /// of the raw GUID.
     /// </para>
     /// </summary>
-    public class HyperVSourceProvider : ISourceProviderModule, IPrefixedSourceProviderModule, ISnapshotAwareModule
+    public class HyperVSourceProvider : ISourceProviderModule, IPrefixedSourceProviderModule, ISnapshotAwareModule, IRestoredItemRegistrationModule
     {
         /// <summary>
         /// The log tag for this class
@@ -459,6 +460,165 @@ namespace Duplicati.Library.SourceProvider.Builtin.HyperV
                 return Task.FromResult<ISourceProviderEntry?>(null);
 
             return VirtualSourcePath.FindEntryAsync(new HyperVRootEntry(MountedPath, _guests.Value, _snapshotService), path, isFolder, cancellationToken);
+        }
+
+        /// <summary>
+        /// The text added to the name of a machine that is registered as a copy
+        /// </summary>
+        public const string RESTORED_NAME_SUFFIX = " (restored)";
+
+        /// <summary>
+        /// The file extensions of virtual hard disks
+        /// </summary>
+        private static readonly string[] VIRTUAL_DISK_EXTENSIONS = [".vhdx", ".avhdx", ".vhd", ".avhd"];
+
+        /// <inheritdoc />
+        /// <remarks>
+        /// A machine restored to its original location is registered in place with its own ID,
+        /// unless Hyper-V already has it. A machine restored to another folder is registered as
+        /// a copy with a new ID and <see cref="RESTORED_NAME_SUFFIX"/> added to its name, with
+        /// its disks and differencing disk chains pointing at the restored files.
+        /// </remarks>
+        public Task RegisterRestoredItemsAsync(IReadOnlyList<RestoredVirtualEntry> restoredEntries, IReadOnlyCollection<string> versionPaths, IReadOnlyDictionary<string, string?> options, CancellationToken cancellationToken)
+        {
+            if (!OperatingSystem.IsWindows())
+            {
+                Logging.Log.WriteWarningMessage(LOGTAG, "HyperVRegisterWindowsOnly", null, "Restored Hyper-V virtual machines can only be registered on Windows");
+                return Task.CompletedTask;
+            }
+
+            RegisterRestoredItemsWindows(restoredEntries, versionPaths, cancellationToken);
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Registers the restored machines (Windows-only implementation)
+        /// </summary>
+        /// <param name="restoredEntries">The entries restored from below the mount point</param>
+        /// <param name="versionPaths">The stored paths of all entries below the mount point in the restored version, except the virtual folders</param>
+        /// <param name="cancellationToken">The cancellation token</param>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        [System.Runtime.Versioning.SupportedOSPlatform("windows")]
+        private void RegisterRestoredItemsWindows(IReadOnlyList<RestoredVirtualEntry> restoredEntries, IReadOnlyCollection<string> versionPaths, CancellationToken cancellationToken)
+        {
+            var versionPathsByMachine = versionPaths
+                .GroupBy(GetMachineFolderName, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(x => x.Key, x => x.ToList(), StringComparer.OrdinalIgnoreCase);
+
+            var machines = restoredEntries
+                .Where(x => x.OriginalPath != null)
+                .GroupBy(x => GetMachineFolderName(x.Path), StringComparer.OrdinalIgnoreCase);
+
+            using var registration = new HyperVRestoreRegistration();
+            foreach (var machine in machines)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (!Guid.TryParse(machine.Key, out var vmId))
+                    continue;
+
+                // A machine is only registered when all of its files were restored
+                var restoredPaths = machine.Select(x => x.Path).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                if (versionPathsByMachine.TryGetValue(machine.Key, out var allPaths) && !allPaths.All(restoredPaths.Contains))
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "HyperVRegisterIncomplete", null, "Not all files of the virtual machine {0} were restored, so it is not registered with Hyper-V", vmId);
+                    continue;
+                }
+
+                try
+                {
+                    RegisterMachine(registration, vmId, machine.ToList());
+                }
+                catch (Exception ex) when (!ex.IsAbortException())
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "HyperVRegisterFailed", ex, "The files of the virtual machine {0} were restored, but it could not be registered with Hyper-V: {1}", vmId, ex.Message);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Registers a single restored machine
+        /// </summary>
+        /// <param name="registration">The registration helper</param>
+        /// <param name="vmId">The ID the machine was backed up with</param>
+        /// <param name="entries">The restored entries of the machine that have a local path</param>
+        [System.Runtime.Versioning.SupportedOSPlatform("windows")]
+        private static void RegisterMachine(HyperVRestoreRegistration registration, Guid vmId, List<RestoredVirtualEntry> entries)
+        {
+            var configuration = entries.FirstOrDefault(x => !x.IsFolder && IsConfigurationFile(x.OriginalPath!, vmId));
+            if (configuration == null)
+            {
+                Logging.Log.WriteWarningMessage(LOGTAG, "HyperVRegisterNoConfiguration", null, "The configuration file of the virtual machine {0} was not restored, so it is not registered with Hyper-V", vmId);
+                return;
+            }
+
+            // The checkpoint configurations are in a folder named Snapshots, which is
+            // flattened into the machine folder when restoring to another folder
+            var snapshotFolder = entries
+                .Where(x => Path.GetFileName(Path.GetDirectoryName(x.OriginalPath!.TrimEnd(Path.DirectorySeparatorChar))) is string parent
+                    && parent.Equals("Snapshots", StringComparison.OrdinalIgnoreCase))
+                .Select(x => Path.GetDirectoryName(x.TargetPath.TrimEnd(Path.DirectorySeparatorChar)))
+                .FirstOrDefault()
+                ?? Path.GetDirectoryName(configuration.TargetPath)!;
+
+            var originalLocation = entries.All(x => string.Equals(
+                x.TargetPath.TrimEnd(Path.DirectorySeparatorChar),
+                x.OriginalPath!.TrimEnd(Path.DirectorySeparatorChar),
+                StringComparison.OrdinalIgnoreCase));
+
+            if (originalLocation)
+            {
+                if (registration.IsRegistered(vmId))
+                {
+                    Logging.Log.WriteInformationMessage(LOGTAG, "HyperVAlreadyRegistered", "The virtual machine {0} is already registered with Hyper-V", vmId);
+                    return;
+                }
+
+                var (_, name) = registration.Import(configuration.TargetPath, snapshotFolder, false, new Dictionary<string, string>(), null);
+                Logging.Log.WriteInformationMessage(LOGTAG, "HyperVRegistered", "Registered the virtual machine \"{0}\" ({1}) with Hyper-V", name, vmId);
+                return;
+            }
+
+            var restoredFiles = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var entry in entries.Where(x => !x.IsFolder))
+                restoredFiles.TryAdd(entry.OriginalPath!, entry.TargetPath);
+
+            // A restored differencing disk still refers to the parent it was backed up with,
+            // which must be replaced with the restored parent
+            foreach (var disk in entries.Where(x => !x.IsFolder && VIRTUAL_DISK_EXTENSIONS.Contains(Path.GetExtension(x.TargetPath), StringComparer.OrdinalIgnoreCase)))
+            {
+                var parent = registration.GetParentDisk(disk.TargetPath);
+                if (parent == null)
+                    continue;
+
+                if (restoredFiles.TryGetValue(parent, out var restoredParent))
+                    registration.SetParentDisk(disk.TargetPath, restoredParent);
+                else
+                    Logging.Log.WriteWarningMessage(LOGTAG, "HyperVParentDiskNotRestored", null, "The differencing disk {0} refers to the parent disk {1}, which was not restored", disk.TargetPath, parent);
+            }
+
+            var (id, copyName) = registration.Import(configuration.TargetPath, snapshotFolder, true, restoredFiles, RESTORED_NAME_SUFFIX);
+            Logging.Log.WriteInformationMessage(LOGTAG, "HyperVRegisteredCopy", "Registered the restored virtual machine {0} with Hyper-V as \"{1}\" ({2})", vmId, copyName, id);
+        }
+
+        /// <summary>
+        /// Gets the name of the machine folder an entry is stored in, which is the machine ID
+        /// </summary>
+        /// <param name="path">The stored path of the entry</param>
+        /// <returns>The machine folder name</returns>
+        private string GetMachineFolderName(string path)
+            => path.Substring(Math.Min(MountedPath.Length, path.Length)).Split(Path.DirectorySeparatorChar, 2)[0];
+
+        /// <summary>
+        /// Checks whether a file is the configuration file of a machine
+        /// </summary>
+        /// <param name="path">The local path of the file</param>
+        /// <param name="vmId">The machine ID</param>
+        /// <returns>True if the file is the machine configuration</returns>
+        private static bool IsConfigurationFile(string path, Guid vmId)
+        {
+            var fileName = Path.GetFileName(path);
+            return fileName.Equals($"{vmId}.vmcx", StringComparison.OrdinalIgnoreCase)
+                || fileName.Equals($"{vmId}.xml", StringComparison.OrdinalIgnoreCase);
         }
 
         /// <inheritdoc />
