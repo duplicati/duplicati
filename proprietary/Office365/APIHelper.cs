@@ -343,6 +343,40 @@ internal class APIHelper : IDisposable
     }
 
     /// <summary>
+    /// Determines whether the exception indicates that the OneNote API rejected the
+    /// application token. Since March 31st 2025 the OneNote API only accepts delegated
+    /// tokens and answers application tokens with HTTP 401 and a message saying so.
+    /// </summary>
+    /// <param name="ex">The exception to inspect.</param>
+    /// <returns><c>true</c> if the exception indicates OneNote rejected an app-only token; otherwise <c>false</c>.</returns>
+    internal static bool IsOneNoteAppOnlyRejected(Exception ex)
+        => ex is HttpRequestException { StatusCode: HttpStatusCode.Unauthorized } httpEx
+            && httpEx.Message.Contains("app-only", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Determines whether the exception is a bad request from the To Do API.
+    /// The To Do endpoints answer requests made with an application token with a bare
+    /// HTTP 400 "Invalid request" for every user, so a bad request on a list call is
+    /// treated as "To Do is not available for this authentication".
+    /// </summary>
+    /// <param name="ex">The exception to inspect.</param>
+    /// <returns><c>true</c> if the exception is a bad request from the To Do API; otherwise <c>false</c>.</returns>
+    internal static bool IsTodoBadRequest(Exception ex)
+        => ex is HttpRequestException { StatusCode: HttpStatusCode.BadRequest } httpEx
+            && httpEx.Message.Contains("/todo/", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Determines whether the exception indicates that SharePoint has locked the site.
+    /// Graph answers with HTTP 423 Locked and "Access to this site has been blocked" for
+    /// sites in a no-access lock state, typically the OneDrive site of a departed user
+    /// that is kept for retention. Nothing in such a site can be read until it is unlocked.
+    /// </summary>
+    /// <param name="ex">The exception to inspect.</param>
+    /// <returns><c>true</c> if the exception indicates a locked site; otherwise <c>false</c>.</returns>
+    internal static bool IsSiteLocked(Exception ex)
+        => ex is HttpRequestException { StatusCode: HttpStatusCode.Locked };
+
+    /// <summary>
     /// Attempts to extract the error code and message from the Office API response.
     /// </summary>
     /// <param name="responseBody">The response body</param>
@@ -440,6 +474,7 @@ internal class APIHelper : IDisposable
     public async IAsyncEnumerable<T> GetAllGraphItemsAsync<T>(string initialUrl, Func<HttpResponseMessage, bool?>? shouldRetry, [EnumeratorCancellation] CancellationToken ct)
     {
         var next = initialUrl;
+        long? previousSkip = TryGetSkipValue(initialUrl);
         while (!string.IsNullOrWhiteSpace(next))
         {
             ct.ThrowIfCancellationRequested();
@@ -453,6 +488,127 @@ internal class APIHelper : IDisposable
 
             foreach (var item in page.Value)
                 yield return item;
+            next = page.NextLink;
+
+            // Outlook endpoints page with $skip, and the end-of-results link has been observed
+            // to carry a $skip that does not advance (e.g. $skip=0), which restarts the listing
+            // from the beginning. The $skip value is documented as non-contiguous but it only
+            // ever grows, so a value that does not increase cannot lead to unseen items.
+            if (!string.IsNullOrWhiteSpace(next))
+            {
+                var nextSkip = TryGetSkipValue(next);
+                if (nextSkip.HasValue && previousSkip.HasValue && nextSkip.Value <= previousSkip.Value)
+                {
+                    Log.WriteVerboseMessage(LOGTAG, "PagingRestartDetected", "Stopping enumeration because the next page offset {0} does not advance past {1}: {2}", nextSkip.Value, previousSkip.Value, next);
+                    yield break;
+                }
+
+                if (nextSkip.HasValue)
+                    previousSkip = nextSkip;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Extracts the <c>$skip</c> query value from a Graph paging URL, if present.
+    /// The parameter name may be percent-encoded in links returned by Graph.
+    /// </summary>
+    /// <param name="url">The URL to inspect</param>
+    /// <returns>The skip value, or null if the URL has no parseable <c>$skip</c></returns>
+    internal static long? TryGetSkipValue(string url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+            return null;
+
+        var queryStart = url.IndexOf('?');
+        if (queryStart < 0 || queryStart == url.Length - 1)
+            return null;
+
+        foreach (var part in url.Substring(queryStart + 1).Split('&'))
+        {
+            var eq = part.IndexOf('=');
+            if (eq <= 0)
+                continue;
+
+            var name = NetUri.UnescapeDataString(part.Substring(0, eq));
+            if (!string.Equals(name, "$skip", StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            var value = NetUri.UnescapeDataString(part.Substring(eq + 1));
+            return long.TryParse(value, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var skip)
+                ? skip
+                : null;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Gets a single page of a Graph delta query.
+    /// </summary>
+    /// <typeparam name="T">The type of items in the page</typeparam>
+    /// <param name="url">The URL to fetch the page from</param>
+    /// <param name="ct">The cancellation token</param>
+    /// <returns>The page of results</returns>
+    private async Task<GraphDeltaPage<T>> GetGraphDeltaPageAsync<T>(string url, CancellationToken ct)
+    {
+        async Task<HttpRequestMessage> requestFactory(CancellationToken ct)
+        {
+            var req = new HttpRequestMessage(HttpMethod.Get, new NetUri(url));
+            req.Headers.Authorization = await GetAuthenticationHeaderAsync(false, ct).ConfigureAwait(false);
+            req.Headers.Accept.Clear();
+            req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            req.Headers.Add("Prefer", $"odata.maxpagesize={GENERAL_PAGE_SIZE}");
+            return req;
+        }
+
+        using var resp = await SendWithRetryAsync(requestFactory, HttpCompletionOption.ResponseHeadersRead, null, _timeouts.ListTimeout, ct).ConfigureAwait(false);
+        await EnsureOfficeApiSuccessAsync(resp, ct).ConfigureAwait(false);
+
+        return await ParseResponseJson<GraphDeltaPage<T>>(resp, ct).ConfigureAwait(false)
+            ?? new GraphDeltaPage<T>();
+    }
+
+    /// <summary>
+    /// Walks a Graph delta endpoint from scratch and returns every item as an asynchronous enumerable.
+    /// The walk pages with <c>$skiptoken</c> links and ends when Graph returns an <c>@odata.deltaLink</c>,
+    /// which gives a consistent snapshot with a definite end, unlike <c>$skip</c> based paging.
+    /// The returned delta link is not kept; this is a full listing, not change tracking.
+    /// Items are de-duplicated by id, and a page consisting solely of already seen ids stops the walk.
+    /// </summary>
+    /// <typeparam name="T">The type of items in the page</typeparam>
+    /// <param name="initialUrl">The delta URL to start from</param>
+    /// <param name="idSelector">Selects the id used to de-duplicate items</param>
+    /// <param name="ct">The cancellation token</param>
+    /// <returns>An asynchronous enumerable of all items</returns>
+    public async IAsyncEnumerable<T> GetAllGraphDeltaItemsAsync<T>(string initialUrl, Func<T, string> idSelector, [EnumeratorCancellation] CancellationToken ct)
+    {
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var next = initialUrl;
+        while (!string.IsNullOrWhiteSpace(next))
+        {
+            ct.ThrowIfCancellationRequested();
+
+            var page = await GetGraphDeltaPageAsync<T>(next, ct).ConfigureAwait(false);
+
+            var unseen = 0;
+            foreach (var item in page.Value)
+            {
+                var id = idSelector(item);
+                if (string.IsNullOrEmpty(id) || seen.Add(id))
+                {
+                    unseen++;
+                    yield return item;
+                }
+            }
+
+            if (page.Value.Count > 0 && unseen == 0)
+            {
+                Log.WriteVerboseMessage(LOGTAG, "DeltaPagingRepeatDetected", "Stopping delta enumeration because a page contained only already seen items: {0}", next);
+                yield break;
+            }
+
+            // A deltaLink marks the end of the walk; it is intentionally not followed or stored
             next = page.NextLink;
         }
     }
@@ -819,8 +975,17 @@ internal class APIHelper : IDisposable
         CancellationToken ct
 )
     {
-        int maxRetries = 4;
+        // Budget for timeouts, transport errors and transient server errors
+        const int MAX_RETRIES = 4;
+        // Separate budget for throttling. Graph tells the client exactly how long to wait,
+        // so waiting is the right response; giving up after a few attempts during a
+        // throttling window drops a file, or a whole folder listing, from the backup.
+        const int MAX_THROTTLE_RETRIES = 12;
+        var maxThrottleWait = TimeSpan.FromMinutes(20);
+
         var attempt = 0;
+        var throttleAttempt = 0;
+        var throttleWaited = TimeSpan.Zero;
         var isReAuthAttempt = false;
         var client = await GetHttpClientAsync(ct).ConfigureAwait(false);
 
@@ -829,6 +994,7 @@ internal class APIHelper : IDisposable
             ct.ThrowIfCancellationRequested();
 
             HttpResponseMessage? resp = null;
+            Exception? transportError = null;
             try
             {
                 using var request = await requestFactory(ct).ConfigureAwait(false);
@@ -841,11 +1007,19 @@ internal class APIHelper : IDisposable
                     resp = await client.SendAsync(request, completionOption, ct).ConfigureAwait(false);
                 }
             }
-            catch (TimeoutException)
+            catch (TimeoutException ex)
             {
-                // Ignore and retry
+                transportError = ex;
+            }
+            catch (HttpRequestException ex) when (ex.StatusCode == null)
+            {
+                // No status code means the request never got an HTTP answer: a reset
+                // connection, a failed TLS handshake or a name lookup error. These are
+                // transient in practice and worth the same retries as a timeout.
+                transportError = ex;
             }
 
+            var throttled = false;
             if (resp != null)
             {
                 if (resp.IsSuccessStatusCode)
@@ -863,6 +1037,8 @@ internal class APIHelper : IDisposable
                 switch (resp.StatusCode)
                 {
                     case HttpStatusCode.TooManyRequests:
+                        throttled = true;
+                        break;
                     case HttpStatusCode.ServiceUnavailable:
                     case HttpStatusCode.BadGateway:
                     case HttpStatusCode.GatewayTimeout:
@@ -878,31 +1054,54 @@ internal class APIHelper : IDisposable
                 }
             }
 
-            attempt++;
-            if (attempt > maxRetries)
-            {
-                if (resp != null)
-                    return resp; // let EnsureOfficeApiSuccessAsync throw with details
-
-                throw new TimeoutException($"Request timed out after {maxRetries} attempts");
-            }
-
-            if (resp != null)
-                Log.WriteRetryMessage(LOGTAG, "Office365APIRetry", null, $"Request failed with status code {(int)resp.StatusCode} {resp.StatusCode}. Retrying attempt {attempt} of {maxRetries}.");
-            else
-                Log.WriteRetryMessage(LOGTAG, "Office365APITimeout", null, $"Request timed out. Retrying attempt {attempt} of {maxRetries}.");
-
             // Respect Retry-After if present, else exponential backoff.
             TimeSpan delay;
             if (resp?.Headers.RetryAfter?.Delta is TimeSpan ra)
             {
                 delay = ra;
             }
+            else if (resp?.Headers.RetryAfter?.Date is DateTimeOffset until)
+            {
+                delay = until - DateTimeOffset.UtcNow;
+                if (delay < TimeSpan.Zero)
+                    delay = TimeSpan.Zero;
+            }
             else
             {
-                var baseSeconds = Math.Min(60, Math.Pow(2, attempt)); // cap at 60s
+                var baseSeconds = Math.Min(60, Math.Pow(2, Math.Max(attempt, throttleAttempt) + 1)); // cap at 60s
                 var jitterMs = Random.Shared.Next(0, 500);
                 delay = TimeSpan.FromSeconds(baseSeconds) + TimeSpan.FromMilliseconds(jitterMs);
+            }
+
+            if (throttled)
+            {
+                throttleAttempt++;
+                if (throttleAttempt > MAX_THROTTLE_RETRIES || throttleWaited + delay > maxThrottleWait)
+                    return resp!; // let EnsureOfficeApiSuccessAsync throw with details
+
+                throttleWaited += delay;
+                Log.WriteRetryMessage(LOGTAG, "Office365APIThrottled", null, $"Request was throttled (HTTP 429). Waiting {delay.TotalSeconds:0}s before retrying attempt {throttleAttempt} of {MAX_THROTTLE_RETRIES}.");
+            }
+            else
+            {
+                attempt++;
+                if (attempt > MAX_RETRIES)
+                {
+                    if (resp != null)
+                        return resp; // let EnsureOfficeApiSuccessAsync throw with details
+
+                    if (transportError is HttpRequestException httpError)
+                        throw new HttpRequestException($"Request failed after {MAX_RETRIES} attempts: {httpError.Message}", httpError);
+
+                    throw new TimeoutException($"Request timed out after {MAX_RETRIES} attempts");
+                }
+
+                if (resp != null)
+                    Log.WriteRetryMessage(LOGTAG, "Office365APIRetry", null, $"Request failed with status code {(int)resp.StatusCode} {resp.StatusCode}. Retrying attempt {attempt} of {MAX_RETRIES}.");
+                else if (transportError is HttpRequestException)
+                    Log.WriteRetryMessage(LOGTAG, "Office365APITransportError", transportError, $"Request failed before a response was received. Retrying attempt {attempt} of {MAX_RETRIES}.");
+                else
+                    Log.WriteRetryMessage(LOGTAG, "Office365APITimeout", null, $"Request timed out. Retrying attempt {attempt} of {MAX_RETRIES}.");
             }
 
             resp?.Dispose();

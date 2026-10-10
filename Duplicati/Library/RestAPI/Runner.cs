@@ -466,13 +466,22 @@ namespace Duplicati.Server
 
         public static IRunnerData CreateRestoreTask(IBackup backup, string[]? filters,
                                                     DateTime time, string? restoreTarget, bool? overwrite, bool? restore_permissions,
-                                                    bool? skip_metadata, string? passphrase)
+                                                    bool? skip_metadata, string? passphrase,
+                                                    IReadOnlyDictionary<string, string?>? options)
         {
-            var dict = new Dictionary<string, string?>
-            {
-                ["time"] = Utility.SerializeDateTime(time.ToUniversalTime()),
-                ["allow-passphrase-change"] = bool.TrueString
-            };
+            var dict = new Dictionary<string, string?>();
+
+            // Caller-supplied options are applied first, so the explicit arguments below take precedence
+            if (options != null)
+                foreach (var kv in options)
+                {
+                    var name = kv.Key?.Trim().TrimStart('-');
+                    if (!string.IsNullOrWhiteSpace(name))
+                        dict[name] = kv.Value;
+                }
+
+            dict["time"] = Utility.SerializeDateTime(time.ToUniversalTime());
+            dict["allow-passphrase-change"] = bool.TrueString;
 
             // An unset value is not written, so the backup settings and the server's
             // default options apply; an explicit value overrides them

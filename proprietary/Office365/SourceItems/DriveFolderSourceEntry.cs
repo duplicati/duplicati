@@ -46,22 +46,28 @@ internal class DriveFolderSourceEntry(SourceProvider provider, string path, Grap
                 { "o365:DownloadUrl", item.DownloadUrl ?? "" }
             };
 
-        try
+        // Only folders carrying the "shared" facet have sharing links or permissions of their
+        // own; everything else inherits from its parent, so asking Graph would cost a request
+        // per folder and return nothing worth storing.
+        if (item.Shared.HasValue)
         {
-            var permissions = new List<GraphPermission>();
-            await foreach (var perm in provider.OneDriveApi.GetDriveItemPermissionsAsync(drive.Id, item.Id, cancellationToken))
+            try
             {
-                permissions.Add(perm);
-            }
+                var permissions = new List<GraphPermission>();
+                await foreach (var perm in provider.OneDriveApi.GetDriveItemPermissionsAsync(drive.Id, item.Id, cancellationToken))
+                {
+                    permissions.Add(perm);
+                }
 
-            if (permissions.Count > 0)
-            {
-                metadata["o365:Permissions"] = JsonSerializer.Serialize(permissions);
+                if (permissions.Count > 0)
+                {
+                    metadata["o365:Permissions"] = JsonSerializer.Serialize(permissions);
+                }
             }
-        }
-        catch (Exception ex)
-        {
-            Log.WriteWarningMessage(LOGTAG, "PermissionReadError", ex, $"Failed to read permissions for folder {item.Id}");
+            catch (Exception ex)
+            {
+                Log.WriteWarningMessage(LOGTAG, "PermissionReadError", ex, $"Failed to read permissions for folder {item.Id}");
+            }
         }
 
         return metadata

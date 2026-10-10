@@ -62,6 +62,9 @@ internal static class Strings
     public static string WebModulePathShort => LC.L("The path within the Microsoft 365 destination.");
     public static string WebModulePathLong => LC.L("The path within the Microsoft 365 destination to list.");
 
+    public static string OfficeExcludeSystemLibrariesShort => LC.L("Exclude SharePoint system libraries.");
+    public static string OfficeExcludeSystemLibrariesLong => LC.L("If set, document libraries that SharePoint marks as system libraries (such as the Web Part Gallery, Master Page Gallery, Style Library and Site Pages) are left out of site and group file backups. These hold SharePoint internals rather than user documents.");
+
     public static string OfficeIncludedRootTypesShort => LC.L("Included root types.");
     public static string OfficeIncludedRootTypesLong => LC.L("The root types to include in the backup (e.g. Users, Groups, Sites).");
 

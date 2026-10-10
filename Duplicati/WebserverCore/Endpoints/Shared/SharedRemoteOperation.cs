@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using Duplicati.Library.Utility;
@@ -141,7 +142,9 @@ public class SharedRemoteOperation
         // include metadata that only the user interface needs, such as the item classification
         opts["enumeration-mode"] = "true";
         var modules = ConfigureModules(opts);
-        var sourceProvider = await Library.DynamicLoader.SourceProviderLoader.GetSourceProvider(AppendAdditionalPath(url, additionalPath), "", opts, cancelToken);
+        // Mount the provider at the root, so all providers report rooted paths
+        // that the user interface can place under the source prefix
+        var sourceProvider = await Library.DynamicLoader.SourceProviderLoader.GetSourceProvider(AppendAdditionalPath(url, additionalPath), Util.DirectorySeparatorString, opts, cancelToken);
 
         return new SourceProviderTupleDisposeWrapper(sourceProvider, modules);
     }
