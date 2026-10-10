@@ -271,6 +271,66 @@ public class ServerApiIntegrationTests : BasicSetupHelper
         }).ConfigureAwait(false);
     }
 
+    // The trailing semicolon is the value from issue #7425; the second value has an interval
+    // (48 months) bigger than the timeframe it is in (2 years), which the issue ran into next.
+    [TestCase("2W:U,2M:60D,4M:16W,2Y:48M;")]
+    [TestCase("2W:U,2M:60D,4M:16W,2Y:48M")]
+    [Category("Integration")]
+    public async Task SavingABackupWithAnInvalidRetentionPolicyIsRejected_Async(string retentionPolicy)
+    {
+        const string validRetentionPolicy = "1W:1D,4W:1W,12M:1M";
+        Directory.CreateDirectory(this.TARGETFOLDER);
+
+        BackupAndScheduleInputDto CreateRequest(string name, string policy) => new()
+        {
+            Backup = new BackupAndScheduleInputDto.BackupInputDto
+            {
+                Name = name,
+                Description = "Retention policy validation test",
+                TargetURL = BuildFileBackendUrl(this.TARGETFOLDER),
+                Sources = new[] { this.DATAFOLDER },
+                Settings = new[]
+                {
+                    new BackupAndScheduleInputDto.SettingInputDto { Name = "passphrase", Value = "integration-passphrase" },
+                    new BackupAndScheduleInputDto.SettingInputDto { Name = "retention-policy", Value = policy }
+                },
+                Filters = Array.Empty<BackupAndScheduleInputDto.FilterInputDto>(),
+                Metadata = new Dictionary<string, string>()
+            }
+        };
+
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            var createInvalid = await httpClient.PostAsJsonAsync("/api/v1/backups", CreateRequest($"Invalid retention {Guid.NewGuid():N}", retentionPolicy), JsonOptions).ConfigureAwait(false);
+            var createInvalidBody = await createInvalid.Content.ReadAsStringAsync().ConfigureAwait(false);
+            Assert.That(createInvalid.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest),
+                $"Creating a backup with the retention policy '{retentionPolicy}' should be rejected; got {(int)createInvalid.StatusCode}: {createInvalidBody}");
+            Assert.That(createInvalidBody, Does.Contain("retention-policy"), "The error should name the option");
+
+            // The issue edits an existing backup, so the update must be rejected as well, and leave the stored value alone
+            var name = $"Valid retention {Guid.NewGuid():N}";
+            var createValid = await httpClient.PostAsJsonAsync("/api/v1/backups", CreateRequest(name, validRetentionPolicy), JsonOptions).ConfigureAwait(false);
+            var createValidBody = await createValid.Content.ReadAsStringAsync().ConfigureAwait(false);
+            Assert.That(createValid.IsSuccessStatusCode, Is.True,
+                $"Creating a backup with the retention policy '{validRetentionPolicy}' should succeed; got {(int)createValid.StatusCode}: {createValidBody}");
+            var created = JsonSerializer.Deserialize<CreateBackupDto>(createValidBody, JsonOptions)
+                          ?? throw new InvalidOperationException("Backup creation response was empty");
+
+            var update = await httpClient.PutAsJsonAsync($"/api/v1/backup/{created.ID}", CreateRequest(name, retentionPolicy), JsonOptions).ConfigureAwait(false);
+            var updateBody = await update.Content.ReadAsStringAsync().ConfigureAwait(false);
+            Assert.That(update.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest),
+                $"Changing the retention policy to '{retentionPolicy}' should be rejected; got {(int)update.StatusCode}: {updateBody}");
+            Assert.That(updateBody, Does.Contain("retention-policy"), "The error should name the option");
+
+            var getResponse = await httpClient.GetAsync($"/api/v1/backup/{created.ID}").ConfigureAwait(false);
+            getResponse.EnsureSuccessStatusCode();
+            var stored = await getResponse.Content.ReadFromJsonAsync<BackupGet.GetBackupResultDto>(JsonOptions).ConfigureAwait(false)
+                         ?? throw new InvalidOperationException("Backup get response was empty");
+            Assert.That(stored.Backup.Settings?.Single(x => x.Name == "retention-policy").Value, Is.EqualTo(validRetentionPolicy),
+                "A rejected update should not change the stored retention policy");
+        }).ConfigureAwait(false);
+    }
+
     [Test]
     [Category("Integration")]
     public async Task ServerRepairUpdateListsRootPaths_Async()
