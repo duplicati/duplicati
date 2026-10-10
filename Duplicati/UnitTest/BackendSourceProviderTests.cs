@@ -227,7 +227,7 @@ public class BackendSourceProviderTests
         var entry = await provider.GetEntryAsync("/mnt/stub/folder/", true, CancellationToken.None);
 
         Assert.That(entry, Is.Not.Null);
-        Assert.That(entry!.Path, Is.EqualTo(SystemIO.IO_OS.PathCombine("/mnt/stub/", "folder/")));
+        Assert.That(entry!.Path, Is.EqualTo(SystemIO.IO_OS.PathCombine("/mnt/stub/", "folder" + SEP)));
         Assert.That(backend.RequestedEntries, Is.EqualTo(new[] { "folder/" }));
     }
 
