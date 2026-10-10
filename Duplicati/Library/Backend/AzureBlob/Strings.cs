@@ -45,4 +45,7 @@ internal static class AzureBlobBackend
     public static string InternalRetriesDescriptionLong => LC.L(@"Use this option to specify the number of retries for Azure blob operations. Set to 0 to disable retries.");
     public static string ImmutabilityPolicyModeDescriptionShort => LC.L(@"The immutability policy mode");
     public static string ImmutabilityPolicyModeDescriptionLong => LC.L(@"Use this option to specify the immutability policy mode. The default is 'Unlocked'.");
+    public static string UploadBlockSizeDescriptionShort => LC.L(@"The size of each uploaded block");
+    public static string UploadBlockSizeDescriptionLong => LC.L(@"Files are uploaded in blocks of this size, and each block must be sent within the read-write timeout. Use a smaller value on slow connections, or a larger value to reduce the number of requests on fast connections.");
+    public static string InvalidUploadBlockSize(string optionName) => LC.L(@"The option --{0} must be larger than zero and no more than 4000MB.", optionName);
 }
