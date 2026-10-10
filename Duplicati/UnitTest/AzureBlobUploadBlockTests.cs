@@ -45,6 +45,11 @@ namespace Duplicati.UnitTest;
 public class AzureBlobUploadBlockTests
 {
     /// <summary>
+    /// The block size used for the uploads in these tests
+    /// </summary>
+    private const long UploadBlockSize = 4 * 1024 * 1024;
+
+    /// <summary>
     /// Answers every request as created, and keeps the query and the size of each body
     /// </summary>
     private sealed class RecordingHandler : HttpMessageHandler
@@ -68,7 +73,7 @@ public class AzureBlobUploadBlockTests
     {
         var handler = new RecordingHandler();
         var wrapper = new AzureBlobWrapper("account", null, "sv=2020-08-04&sig=test", "container", "", null,
-            new HashSet<AccessTier>(), TimeoutOptionsHelper.Parse(new Dictionary<string, string?>()), 0, handler);
+            new HashSet<AccessTier>(), TimeoutOptionsHelper.Parse(new Dictionary<string, string?>()), 0, UploadBlockSize, handler);
 
         using var source = new MemoryStream(new byte[size]);
         await wrapper.AddFileStream("duplicati-b0001.dblock.zip.aes", source, CancellationToken.None);
@@ -78,11 +83,11 @@ public class AzureBlobUploadBlockTests
     [Test]
     public async Task ALargeFileIsSentInBlocks_Async()
     {
-        var size = 2 * AzureBlobWrapper.UploadBlockSize + 1024;
+        var size = 2 * UploadBlockSize + 1024;
         var requests = await UploadAsync(size);
 
         var blocks = requests.Where(x => x.Query.Contains("comp=block&", StringComparison.Ordinal) || x.Query.EndsWith("comp=block", StringComparison.Ordinal)).ToList();
-        Assert.That(requests.Select(x => x.Length), Has.All.LessThanOrEqualTo(AzureBlobWrapper.UploadBlockSize), "A request carried more than one block");
+        Assert.That(requests.Select(x => x.Length), Has.All.LessThanOrEqualTo(UploadBlockSize), "A request carried more than one block");
         Assert.That(blocks.Sum(x => x.Length), Is.EqualTo(size));
         Assert.That(requests.Count(x => x.Query.Contains("comp=blocklist", StringComparison.Ordinal)), Is.EqualTo(1));
     }

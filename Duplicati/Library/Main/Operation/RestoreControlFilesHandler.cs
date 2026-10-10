@@ -22,6 +22,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation
@@ -88,7 +90,15 @@ namespace Duplicati.Library.Main.Operation
                             foreach (var cf in tmp.ControlFiles)
                                 if (FilterExpression.Matches(filter, cf.Key))
                                 {
+                                    // Control files are stored as plain filenames, so reject anything
+                                    // that would resolve outside the restore folder (e.g. "../escape.txt")
+                                    if (string.IsNullOrEmpty(cf.Key) || cf.Key != Path.GetFileName(cf.Key) || cf.Key == "." || cf.Key == "..")
+                                        throw new UserInformationException($"Control file name is not a plain filename: {cf.Key}", "ControlFilePathTraversal");
+
                                     var targetpath = Path.Combine(m_options.Restorepath, cf.Key);
+                                    if (!Util.IsPathInsideTarget(targetpath, m_options.Restorepath))
+                                        throw new UserInformationException($"Path traversal detected: {cf.Key} resolves outside {m_options.Restorepath}", "ControlFilePathTraversal");
+
                                     using (var ts = File.Create(targetpath))
                                         await Library.Utility.Utility.CopyStreamAsync(cf.Value, ts, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                                     res.Add(targetpath);

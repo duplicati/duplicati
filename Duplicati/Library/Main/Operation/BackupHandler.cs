@@ -728,7 +728,7 @@ namespace Duplicati.Library.Main.Operation
                             if (m_options.DisableFileScanner)
                             {
                                 var d = await m_database
-                                    .GetLastBackupFileCountAndSizeAsync(m_result.TaskControl.ProgressToken)
+                                    .GetLastBackupFileCountAndSizeAsync(lastfilesetid, m_result.TaskControl.ProgressToken)
                                     .ConfigureAwait(false);
 
                                 m_result.OperationProgressUpdater.UpdatefileCount(d.Item1, d.Item2, true);

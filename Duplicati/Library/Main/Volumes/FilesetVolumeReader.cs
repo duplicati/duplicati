@@ -374,8 +374,31 @@ namespace Duplicati.Library.Main.Volumes
 
                 public void Reset()
                 {
-                    m_files = m_compression.ListFiles(CONTROL_FILES_FOLDER);
+                    // Control files are written as "extra/<filename>", so any entry with a
+                    // nested or relative path component is malformed and must not be exposed,
+                    // as the name is later used to build a local filesystem path
+                    m_files = m_compression.ListFiles(CONTROL_FILES_FOLDER)
+                        .Where(x => IsValidControlFileName(x.Substring(CONTROL_FILES_FOLDER.Length)))
+                        .ToArray();
                     m_index = -1;
+                }
+
+                /// <summary>
+                /// Checks that a control file name is a plain filename without any path components
+                /// </summary>
+                /// <param name="name">The name, with the control file folder prefix removed</param>
+                /// <returns><c>true</c> if the name is safe to use as a filename; <c>false</c> otherwise</returns>
+                private static bool IsValidControlFileName(string name)
+                {
+                    if (string.IsNullOrWhiteSpace(name))
+                        return false;
+                    if (name == "." || name == "..")
+                        return false;
+                    if (name.IndexOf('/') >= 0 || name.IndexOf('\\') >= 0)
+                        return false;
+                    if (System.IO.Path.IsPathRooted(name))
+                        return false;
+                    return true;
                 }
             }
 
