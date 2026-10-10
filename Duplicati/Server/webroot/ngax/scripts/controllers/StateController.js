@@ -35,11 +35,13 @@ backupApp.controller('StateController', function($scope, $timeout, ServerStatus,
                     pg = 0;
                 } else {
                     var unaccountedbytes = ($scope.state.lastPgEvent.CurrentFilecomplete) ? 0 : $scope.state.lastPgEvent.CurrentFileoffset;
-                    var filesleft = $scope.state.lastPgEvent.TotalFileCount - $scope.state.lastPgEvent.ProcessedFileCount;
-                    var sizeleft = $scope.state.lastPgEvent.TotalFileSize - $scope.state.lastPgEvent.ProcessedFileSize - unaccountedbytes;
+                    // Without the file scanner, the totals are those of the previous backup,
+                    // so the files processed can pass them, and they can be 0
+                    var filesleft = Math.max(0, $scope.state.lastPgEvent.TotalFileCount - $scope.state.lastPgEvent.ProcessedFileCount);
+                    var sizeleft = Math.max(0, $scope.state.lastPgEvent.TotalFileSize - $scope.state.lastPgEvent.ProcessedFileSize - unaccountedbytes);
                     pg = ($scope.state.lastPgEvent.ProcessedFileSize + unaccountedbytes) / $scope.state.lastPgEvent.TotalFileSize;
 
-                    if ($scope.state.lastPgEvent.ProcessedFileCount == 0)
+                    if ($scope.state.lastPgEvent.ProcessedFileCount == 0 || !($scope.state.lastPgEvent.TotalFileSize > 0))
                         pg = 0;
                     else if (pg >= 0.90)
                         pg = 0.90;

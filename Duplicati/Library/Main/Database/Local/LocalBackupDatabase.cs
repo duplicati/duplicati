@@ -1339,19 +1339,16 @@ namespace Duplicati.Library.Main.Database.Local
         /// <summary>
         /// Gets the count and size of files in the last backup fileset.
         /// </summary>
+        /// <param name="lastFilesetId">The ID of the last backup fileset, or a negative value if there is none. The fileset of the
+        /// backup that is running is the newest one, and it is still empty, so the caller passes the one before it.</param>
         /// <param name="token">The cancellation token to cancel the operation.</param>
         /// <returns>A task that when awaited contains a tuple with the count of files and the total size of files in the last backup fileset.</returns>
-        internal async Task<Tuple<long, long>> GetLastBackupFileCountAndSizeAsync(CancellationToken token)
+        internal async Task<Tuple<long, long>> GetLastBackupFileCountAndSizeAsync(long lastFilesetId, CancellationToken token)
         {
-            await using var cmd = m_connection.CreateCommand(m_rtr);
-            var lastFilesetId = await cmd.ExecuteScalarInt64Async(@"
-                SELECT ""ID""
-                FROM ""Fileset""
-                ORDER BY ""Timestamp"" DESC
-                LIMIT 1
-            ", token)
-                .ConfigureAwait(false);
+            if (lastFilesetId < 0)
+                return new Tuple<long, long>(0, 0);
 
+            await using var cmd = m_connection.CreateCommand(m_rtr);
             var count = await cmd.SetCommandAndParameters(@"
                 SELECT COUNT(*)
                 FROM ""FileLookup""
@@ -1388,7 +1385,8 @@ namespace Duplicati.Library.Main.Database.Local
                 .SetParameterValue("@FilesetId", lastFilesetId)
                 .SetParameterValue("@FolderBlocksetId", FOLDER_BLOCKSET_ID)
                 .SetParameterValue("@SymlinkBlocksetId", SYMLINK_BLOCKSET_ID)
-                .ExecuteScalarInt64Async(-1, token)
+                // The sum is null when the fileset holds no files
+                .ExecuteScalarInt64Async(0, token)
                 .ConfigureAwait(false);
 
             return new Tuple<long, long>(count, size);
