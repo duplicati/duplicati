@@ -92,7 +92,7 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
     /// <exception cref="UserInformationException">Exception to be displayed to user</exception>
     public static async Task<SMBShareConnection> CreateAsync(SMBConnectionParameters connectionParameters, TimeoutOptionsHelper.Timeouts timeouts, CancellationToken cancellationToken)
     {
-        var client = new SMB2Client();
+        var client = new SMB2Client(SMB2Client.DefaultResponseTimeoutInMilliseconds, connectionParameters.EnableSMB311Support);
         var connected = await Utility.Utility.WithTimeout(timeouts.ShortTimeout, cancellationToken, _ =>
             client.Connect(connectionParameters.ServerName, connectionParameters.TransportType)
         ).ConfigureAwait(false);
