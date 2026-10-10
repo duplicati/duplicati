@@ -907,18 +907,43 @@ namespace Duplicati.Library.Main
         {
             get
             {
-                var retentionPolicyConfig = new List<RetentionPolicyValue>();
-
                 m_options.TryGetValue("retention-policy", out var v);
-                if (string.IsNullOrEmpty(v))
-                    return retentionPolicyConfig;
+                return ParseRetentionPolicy(v);
+            }
+        }
 
-                var periodIntervalStrings = v.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-
-                foreach (var periodIntervalString in periodIntervalStrings)
-                    retentionPolicyConfig.Add(RetentionPolicyValue.CreateFromString(periodIntervalString));
-
+        /// <summary>
+        /// Parses a retention policy value, such as "7D:1D,4W:1W", into its timeframe-interval-pairs
+        /// </summary>
+        /// <param name="value">The value of the retention-policy option</param>
+        /// <returns>The pairs, or an empty list when there is no value</returns>
+        public static List<RetentionPolicyValue> ParseRetentionPolicy(string? value)
+        {
+            var retentionPolicyConfig = new List<RetentionPolicyValue>();
+            if (string.IsNullOrEmpty(value))
                 return retentionPolicyConfig;
+
+            var periodIntervalStrings = value.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (var periodIntervalString in periodIntervalStrings)
+                retentionPolicyConfig.Add(RetentionPolicyValue.CreateFromString(periodIntervalString));
+
+            return retentionPolicyConfig;
+        }
+
+        /// <summary>
+        /// Checks that no interval of a retention policy is bigger than the timeframe it is in
+        /// </summary>
+        /// <param name="retentionPolicy">The parsed retention policy</param>
+        public static void ValidateRetentionPolicy(IEnumerable<RetentionPolicyValue> retentionPolicy)
+        {
+            foreach (var configEntry in retentionPolicy)
+            {
+                if (!configEntry.IsKeepAllVersions() && !configEntry.IsUnlimtedTimeframe() &&
+                    configEntry.Interval >= configEntry.Timeframe)
+                {
+                    throw new UserInformationException("An interval cannot be bigger than the timeframe it is in", "IntervalCannotBeBiggerThanTimeFrame");
+                }
             }
         }
 

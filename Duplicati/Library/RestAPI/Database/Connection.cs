@@ -692,6 +692,17 @@ namespace Duplicati.Server.Database
                             return "Retention value must be a valid timespan";
                         }
                     }
+                    else if (string.Equals(s.Name, "retention-policy", StringComparison.OrdinalIgnoreCase))
+                    {
+                        try
+                        {
+                            Library.Main.Options.ValidateRetentionPolicy(Library.Main.Options.ParseRetentionPolicy(s.Value));
+                        }
+                        catch (Exception ex)
+                        {
+                            return $"The value of retention-policy is not valid: {ex.Message}";
+                        }
+                    }
                     else if (string.Equals(s.Name, "dblock-size", StringComparison.OrdinalIgnoreCase))
                     {
                         try

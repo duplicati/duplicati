@@ -1132,7 +1132,19 @@ namespace Duplicati.Library.Main
                 selectedRetentionOptions.Add("keep-versions");
             }
 
-            if (m_options.RetentionPolicy.Any())
+            //Check validity of retention-policy option value
+            List<Options.RetentionPolicyValue> retentionPolicy;
+            try
+            {
+                retentionPolicy = m_options.RetentionPolicy;
+                Options.ValidateRetentionPolicy(retentionPolicy);
+            }
+            catch (Exception e) // simply reading the option value might also result in an exception due to incorrect formatting
+            {
+                throw new Interface.UserInformationException(string.Format("An error occoured while processing the value of --{0}: {1}", "retention-policy", e.Message), "RetentionPolicyParseError", e);
+            }
+
+            if (retentionPolicy.Any())
             {
                 selectedRetentionOptions.Add("retention-policy");
             }
@@ -1149,23 +1161,6 @@ namespace Duplicati.Library.Main
 
             if (m_options.VolumeSize < m_options.Blocksize * 2)
                 throw new UserInformationException("The volume size must be at least twice the block size", "VolumeSizeTooSmall");
-
-            //Check validity of retention-policy option value
-            try
-            {
-                foreach (var configEntry in m_options.RetentionPolicy)
-                {
-                    if (!configEntry.IsKeepAllVersions() && !configEntry.IsUnlimtedTimeframe() &&
-                        configEntry.Interval >= configEntry.Timeframe)
-                    {
-                        throw new Interface.UserInformationException("An interval cannot be bigger than the timeframe it is in", "IntervalCannotBeBiggerThanTimeFrame");
-                    }
-                }
-            }
-            catch (Exception e) // simply reading the option value might also result in an exception due to incorrect formatting
-            {
-                throw new Interface.UserInformationException(string.Format("An error occoured while processing the value of --{0}", "retention-policy"), "RetentionPolicyParseError", e);
-            }
 
             //Keep a list of all supplied options
             var ropts = new Dictionary<string, string>(m_options.RawOptions);
