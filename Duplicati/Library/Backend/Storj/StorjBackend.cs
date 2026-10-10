@@ -28,6 +28,8 @@ using uplink.NET.Interfaces;
 using uplink.NET.Models;
 using uplink.NET.Services;
 
+[assembly: InternalsVisibleTo("Duplicati.UnitTest")]
+
 namespace Duplicati.Library.Backend.Storj
 {
     public class Storj : IStreamingBackend, IRenameEnabledBackend
@@ -168,6 +170,15 @@ namespace Duplicati.Library.Backend.Storj
             return Task.CompletedTask;
         }
 
+        /// <summary>
+        /// Creates the options for an upload. uplink.NET sends options without an expiry time as the
+        /// latest possible time (9999-12-31), which a bucket with default retention settings (Object
+        /// Lock) refuses, while a time of zero is sent as no expiry.
+        /// </summary>
+        /// <returns>The upload options</returns>
+        internal static UploadOptions CreateUploadOptions()
+            => new UploadOptions { Expires = DateTime.UnixEpoch };
+
         private Task<Bucket> GetBucketAsync(CancellationToken cancelToken)
             => Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, _ => _bucketService.EnsureBucketAsync(_bucket));
 
@@ -256,7 +267,7 @@ namespace Duplicati.Library.Backend.Storj
             custom.Entries.Add(new CustomMetadataEntry { Key = StorjFile.STORJ_LAST_ACCESS, Value = DateTime.Now.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture) });
             custom.Entries.Add(new CustomMetadataEntry { Key = StorjFile.STORJ_LAST_MODIFICATION, Value = DateTime.Now.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture) });
             using var ts = stream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false);
-            var upload = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, _ => _objectService.UploadObjectAsync(bucket, GetBasePath() + remotename, new UploadOptions(), ts, custom, false)).ConfigureAwait(false);
+            var upload = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, _ => _objectService.UploadObjectAsync(bucket, GetBasePath() + remotename, CreateUploadOptions(), ts, custom, false)).ConfigureAwait(false);
             await upload.StartUploadAsync().ConfigureAwait(false);
             if (upload.Failed)
                 throw new Exception(upload.ErrorMessage);
@@ -281,7 +292,7 @@ namespace Duplicati.Library.Backend.Storj
             var bucket = await GetBucketAsync(cancelToken).ConfigureAwait(false);
             if (alsoWrite)
             {
-                var upload = await _objectService.UploadObjectAsync(bucket, testFileName, new UploadOptions(), GetRandomBytes(256), false).ConfigureAwait(false);
+                var upload = await _objectService.UploadObjectAsync(bucket, testFileName, CreateUploadOptions(), GetRandomBytes(256), false).ConfigureAwait(false);
                 await upload.StartUploadAsync().ConfigureAwait(false);
 
                 var download = await _objectService.DownloadObjectAsync(bucket, testFileName, new DownloadOptions(), false).ConfigureAwait(false);
