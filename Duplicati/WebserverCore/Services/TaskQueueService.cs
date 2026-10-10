@@ -39,21 +39,24 @@ public class TaskQueueService(IQueueRunnerService queueRunnerService) : ITaskQue
 
         if (task != null && task.TaskID == taskid)
         {
-            if (task.TaskFinished == null)
+            // The runner stamps TaskFinished before it clears the current task, so a task
+            // can be current and finished at the same time. A task that fails is stamped
+            // before its failure is cached, so until the result is cached the task is still
+            // reported as running, without TaskFinished, as a task without a result would
+            // otherwise be reported as completed.
+            var finished = task.TaskFinished == null ? null : queueRunnerService.GetCachedTaskResults(taskid);
+            if (finished == null)
                 return new Dto.GetTaskStateDto("Running", taskid, task.TaskStarted, null);
 
-            // The runner stamps TaskFinished before it clears the current task, so a task
-            // can be current and finished at the same time. Its result is cached by then;
-            // report it the way GetTaskQueue does, so a client that stops waiting at
-            // TaskFinished sees the outcome and not "Running" without one.
-            var finished = queueRunnerService.GetCachedTaskResults(taskid);
+            // Report the cached result the way GetTaskQueue does, so a client that stops
+            // waiting at TaskFinished sees the outcome and not "Running" without one
             return new GetTaskStateDto(
-                Status: finished?.Exception == null ? "Completed" : "Failed",
+                Status: finished.Exception == null ? "Completed" : "Failed",
                 ID: taskid,
                 TaskStarted: task.TaskStarted,
                 TaskFinished: task.TaskFinished,
-                ErrorMessage: finished?.Exception?.Message ?? finished?.ErrorMessage,
-                Exception: finished?.Exception?.ToString()
+                ErrorMessage: finished.Exception?.Message ?? finished.ErrorMessage,
+                Exception: finished.Exception?.ToString()
             );
         }
 
@@ -91,16 +94,17 @@ public class TaskQueueService(IQueueRunnerService queueRunnerService) : ITaskQue
 
             // The task at the front is the running one; the ones behind it have not started.
             // A finished task (the runner stamps TaskFinished before clearing it) is reported
-            // from its result, the way GetTaskInfo does
-            var status = x.TaskFinished != null
-                ? (res?.Exception == null ? "Completed" : "Failed")
+            // from its result once that is cached, the way GetTaskInfo does
+            var finished = x.TaskFinished != null && res != null;
+            var status = finished
+                ? (res!.Exception == null ? "Completed" : "Failed")
                 : x == cur ? "Running" : "Waiting";
 
             return new GetTaskStateDto(
                 Status: status,
                 ID: x.TaskID,
                 TaskStarted: x.TaskStarted,
-                TaskFinished: x.TaskFinished,
+                TaskFinished: finished ? x.TaskFinished : null,
                 ErrorMessage: res?.Exception?.Message ?? res?.ErrorMessage,
                 Exception: res?.Exception?.ToString()
             );

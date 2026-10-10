@@ -22,6 +22,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -39,8 +40,10 @@ using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.DynamicLoader;
 using Duplicati.Server;
+using Duplicati.Server.Serialization.Interface;
 using Duplicati.WebserverCore.Dto.V2;
 using Duplicati.WebserverCore.Endpoints.V1.Backup;
+using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Dto;
 using Duplicati.WebserverCore.Services;
 using NUnit.Framework;
@@ -443,6 +446,84 @@ public class ServerApiIntegrationTests : BasicSetupHelper
                 Directory.Move(moved, this.TARGETFOLDER);
             }
         }).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// The runner stamps a task as finished before the task's failure is stored. A client that
+    /// asked for the state of the task in between was told it had completed, and the restore
+    /// from a missing destination above was then reported as a success. The state is read when
+    /// the runner sends the progress update that follows the stamp.
+    /// </summary>
+    [Test]
+    [Category("Integration")]
+    public async Task FailedTaskIsNotReportedAsCompletedBeforeItsFailureIsStored_Async()
+    {
+        var backupPassphrase = "integration-passphrase";
+        File.WriteAllText(Path.Combine(this.DATAFOLDER, "sample.txt"), "Sample content");
+
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            var backupId = await CreateBackupAsync(httpClient, backupPassphrase,
+                extraSettings: [new BackupAndScheduleInputDto.SettingInputDto { Name = "number-of-retries", Value = "0" }]).ConfigureAwait(false);
+            await RunTaskAndWaitAsync(httpClient, $"/api/v1/backup/{backupId}/run").ConfigureAwait(false);
+
+            var provider = ServerProgram.DuplicatiWebserver.Provider;
+            var eventPollNotify = (EventPollNotify)provider.GetService(typeof(EventPollNotify))!;
+            var queueRunner = (IQueueRunnerService)provider.GetService(typeof(IQueueRunnerService))!;
+            var taskQueue = (ITaskQueueService)provider.GetService(typeof(ITaskQueueService))!;
+
+            // The state of each task that is current and stamped as finished, as a client
+            // asking at that moment would get it
+            var seen = new ConcurrentQueue<(long TaskID, string Status)>();
+            void OnProgressUpdate(object? sender, Func<IProgressEventData>? progress)
+            {
+                var current = queueRunner.GetCurrentTask();
+                if (current?.TaskFinished != null)
+                    seen.Enqueue((current.TaskID, taskQueue.GetTaskInfo(current.TaskID).Status));
+            }
+
+            var moved = this.TARGETFOLDER.TrimEnd(Path.DirectorySeparatorChar) + "-moved";
+            Directory.Move(this.TARGETFOLDER, moved);
+            eventPollNotify.ProgressUpdate += OnProgressUpdate;
+            try
+            {
+                var restoreResponse = await httpClient.PostAsJsonAsync(
+                    $"/api/v1/backup/{backupId}/restore",
+                    new RestoreInputDto(null, backupPassphrase, "now", this.RESTOREFOLDER, true, false, false, null, null),
+                    JsonOptions).ConfigureAwait(false);
+                restoreResponse.EnsureSuccessStatusCode();
+                var task = await restoreResponse.Content.ReadFromJsonAsync<TaskStartedDto>(JsonOptions).ConfigureAwait(false)
+                           ?? throw new InvalidOperationException("Restore start response was empty");
+
+                var state = await WaitForTaskToFinishAsync(httpClient, task.ID).ConfigureAwait(false);
+                await WaitForTaskResultAsync(task.ID).ConfigureAwait(false);
+
+                var states = seen.Where(x => x.TaskID == task.ID).Select(x => x.Status).ToList();
+                TestContext.Progress.WriteLine($"Restore task {task.ID}: polled {state.Status}, seen while finishing: {string.Join(", ", states)}");
+                Assert.That(states, Is.Not.Empty, "The restore was not seen while it was finishing");
+                Assert.That(states, Has.None.EqualTo("Completed").IgnoreCase, "The failed restore was reported as completed while it was finishing");
+            }
+            finally
+            {
+                eventPollNotify.ProgressUpdate -= OnProgressUpdate;
+                Directory.Move(moved, this.TARGETFOLDER);
+            }
+        }).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Waits until the task is no longer current, so its result has been stored.
+    /// </summary>
+    private static async Task WaitForTaskResultAsync(long taskId)
+    {
+        var queueRunner = (IQueueRunnerService)ServerProgram.DuplicatiWebserver.Provider.GetService(typeof(IQueueRunnerService))!;
+        var stopwatch = Stopwatch.StartNew();
+        while (queueRunner.GetCurrentTask()?.TaskID == taskId)
+        {
+            if (stopwatch.Elapsed > TimeSpan.FromMinutes(1))
+                throw new TimeoutException($"Task {taskId} is still current");
+            await Task.Delay(50).ConfigureAwait(false);
+        }
     }
 
     /// <summary>
