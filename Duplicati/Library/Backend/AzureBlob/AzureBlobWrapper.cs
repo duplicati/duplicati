@@ -29,6 +29,8 @@ using Duplicati.Library.Utility.Options;
 using Duplicati.Library.Utility;
 using Azure.Core.Pipeline;
 
+[assembly: InternalsVisibleTo("Duplicati.UnitTest")]
+
 namespace Duplicati.Library.Backend.AzureBlob
 {
     /// <summary>
@@ -36,6 +38,13 @@ namespace Duplicati.Library.Backend.AzureBlob
     /// </summary>
     public class AzureBlobWrapper
     {
+        /// <summary>
+        /// The size of each request that uploads a file. Each request must finish within the network
+        /// timeout of the client, 100 seconds by default, so a file is sent in blocks of this size
+        /// rather than in a single request.
+        /// </summary>
+        internal const long UploadBlockSize = 4 * 1024 * 1024;
+
         private readonly BlobContainerClient _container;
         private readonly TimeoutOptionsHelper.Timeouts _timeouts;
         private readonly IReadOnlySet<AccessTier> _archiveClasses;
@@ -75,6 +84,25 @@ namespace Duplicati.Library.Backend.AzureBlob
         /// <param name="timeouts">The timeout options.</param>
         /// <param name="maxRetries">The maximum number of retries for Azure operations.</param>
         public AzureBlobWrapper(string accountName, string? accessKey, string? sasToken, string containerName, string prefix, AccessTier? accessTier, IReadOnlySet<AccessTier> archiveClasses, TimeoutOptionsHelper.Timeouts timeouts, int maxRetries)
+            : this(accountName, accessKey, sasToken, containerName, prefix, accessTier, archiveClasses, timeouts, maxRetries, null)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the AzureBlobWrapper class that sends its requests through the
+        /// supplied handler, so the responses can be stubbed in tests.
+        /// </summary>
+        /// <param name="accountName">The Azure storage account name.</param>
+        /// <param name="accessKey">The access key for the storage account.</param>
+        /// <param name="sasToken">The Shared Access Signature (SAS) token for authentication.</param>
+        /// <param name="containerName">The name of the blob container.</param>
+        /// <param name="prefix">The blob name prefix from the URL path; empty or ending with '/'.</param>
+        /// <param name="accessTier">The access tier assigned to blobs on upload.</param>
+        /// <param name="archiveClasses">The storage classes that are considered archive classes.</param>
+        /// <param name="timeouts">The timeout options.</param>
+        /// <param name="maxRetries">The maximum number of retries for Azure operations.</param>
+        /// <param name="handler">The handler that sends the requests, or null to use the default.</param>
+        internal AzureBlobWrapper(string accountName, string? accessKey, string? sasToken, string containerName, string prefix, AccessTier? accessTier, IReadOnlySet<AccessTier> archiveClasses, TimeoutOptionsHelper.Timeouts timeouts, int maxRetries, HttpMessageHandler? handler)
         {
             BlobServiceClient blobServiceClient;
             var maxTicks = timeouts.ReadWriteTimeout.Ticks - TimeSpan.FromSeconds(1).Ticks;
@@ -88,6 +116,9 @@ namespace Duplicati.Library.Backend.AzureBlob
                 ? TimeSpan.FromSeconds(10)
                 : TimeSpan.FromTicks(maxTicks);
 
+            var httpClient = handler == null ? new HttpClient() : new HttpClient(handler);
+            httpClient.Timeout = Timeout.InfiniteTimeSpan;
+
             var blobServiceOptions = new BlobClientOptions()
             {
                 Retry =
@@ -97,7 +128,7 @@ namespace Duplicati.Library.Backend.AzureBlob
                     Delay = delay,
                     MaxDelay = maxDelay
                 },
-                Transport = new HttpClientTransport(new HttpClient { Timeout = Timeout.InfiniteTimeSpan })
+                Transport = new HttpClientTransport(httpClient)
             };
 
             if (sasToken != null)
@@ -159,7 +190,14 @@ namespace Duplicati.Library.Backend.AzureBlob
             var options = new BlobUploadOptions()
             {
                 Conditions = null, // Overwrite any existing blob
-                AccessTier = _accessTier
+                AccessTier = _accessTier,
+                TransferOptions = new Azure.Storage.StorageTransferOptions
+                {
+                    InitialTransferSize = UploadBlockSize,
+                    MaximumTransferSize = UploadBlockSize,
+                    // One block at a time, as the uploads of several files already share the bandwidth
+                    MaximumConcurrency = 1
+                }
             };
 
             await blobClient.UploadAsync(timeoutStream, options, cancelToken).ConfigureAwait(false);
