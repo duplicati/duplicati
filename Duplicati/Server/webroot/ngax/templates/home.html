@@ -115,8 +115,8 @@
                         <dt translate>Progress:</dt>
                         <dd>
                             <div class="progress-small-bg">
-                                <div class="progress-small" style="width: {{(1 - (state.lastPgEvent.CurrentFilesize - state.lastPgEvent.CurrentFileoffset) / state.lastPgEvent.CurrentFilesize) * 200}}px">
-                                    {{(1 - (state.lastPgEvent.CurrentFilesize - state.lastPgEvent.CurrentFileoffset) / state.lastPgEvent.CurrentFilesize) * 100 | number:2}}%
+                                <div class="progress-small" style="width: {{(state.lastPgEvent.CurrentFilesize > 0 ? 1 - (state.lastPgEvent.CurrentFilesize - state.lastPgEvent.CurrentFileoffset) / state.lastPgEvent.CurrentFilesize : 1) * 200}}px">
+                                    {{(state.lastPgEvent.CurrentFilesize > 0 ? 1 - (state.lastPgEvent.CurrentFilesize - state.lastPgEvent.CurrentFileoffset) / state.lastPgEvent.CurrentFilesize : 1) * 100 | number:2}}%
                                 </div>
                             </div>
                         </dd>
