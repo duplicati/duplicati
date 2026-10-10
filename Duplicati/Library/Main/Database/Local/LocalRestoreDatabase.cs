@@ -1144,17 +1144,30 @@ namespace Duplicati.Library.Main.Database.Local
                     .ConfigureAwait(false);
 
                 if (filecount != foundfiles)
-                {
-                    var oldlen = maxpath.Length;
-
-                    var lix = maxpath.LastIndexOf(dirsep, maxpath.Length - 2, StringComparison.Ordinal);
-                    maxpath = maxpath.Substring(0, lix + 1);
-                    if (string.IsNullOrWhiteSpace(maxpath) || maxpath.Length == oldlen)
-                        maxpath = "";
-                }
+                    maxpath = GetParentPrefix(maxpath, dirsep);
             }
 
             return maxpath == "" ? "" : Util.AppendDirSeparator(maxpath, dirsep);
+        }
+
+        /// <summary>
+        /// Gets the folder that contains a path, used when looking for the largest prefix
+        /// the restored paths share
+        /// </summary>
+        /// <param name="path">The path, with or without a trailing directory separator</param>
+        /// <param name="dirsep">The directory separator of the path</param>
+        /// <returns>The containing folder with a trailing directory separator, or an empty string if there is none</returns>
+        internal static string GetParentPrefix(string path, string dirsep)
+        {
+            // A single character, such as the "\" left over from a UNC path, has no parent
+            if (path.Length <= 1)
+                return "";
+
+            var lix = path.LastIndexOf(dirsep, path.Length - 2, StringComparison.Ordinal);
+            var parent = path.Substring(0, lix + 1);
+            return string.IsNullOrWhiteSpace(parent) || parent.Length == path.Length
+                ? ""
+                : parent;
         }
 
         /// <summary>
