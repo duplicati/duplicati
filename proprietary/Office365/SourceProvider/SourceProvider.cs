@@ -59,6 +59,20 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
     private readonly ConcurrentDictionary<string, bool> _enumerationCounter = new();
 
     /// <summary>
+    /// Keys of warnings that have already been emitted during this provider's lifetime,
+    /// used to report a condition that affects every user (such as an API rejecting the
+    /// application token) once instead of once per user.
+    /// </summary>
+    private readonly ConcurrentDictionary<string, bool> _emittedWarnings = new();
+
+    /// <summary>
+    /// Registers that a warning with the given key is about to be emitted.
+    /// </summary>
+    /// <param name="key">The warning key.</param>
+    /// <returns><c>true</c> the first time the key is seen; <c>false</c> on later calls.</returns>
+    internal bool ShouldWarnOnce(string key) => _emittedWarnings.TryAdd(key, true);
+
+    /// <summary>
     /// Cache of the resolved classification for a given user (by id). This is resolved once
     /// per user and reused between the include filter and item metadata, so that the
     /// shared-mailbox lookup is performed at most once per user. Seat counting does not use
@@ -160,6 +174,13 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
     internal bool EnumerationMode { get; }
 
     /// <summary>
+    /// Whether document libraries carrying the Graph <c>system</c> facet (Web Part Gallery,
+    /// Master Page Gallery, Style Library, Site Pages and similar) are left out of site and
+    /// group file enumeration.
+    /// </summary>
+    internal bool ExcludeSystemLibraries { get; }
+
+    /// <summary>
     /// Whether this provider is being used for a restore operation.
     /// </summary>
     internal bool UsedForRestoreOperation { get; set; } = false;
@@ -182,6 +203,7 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
         _includedGroupClassifications = OptionsHelper.ALL_GROUP_CLASSIFICATIONS;
         _includedSiteClassifications = OptionsHelper.ALL_SITE_CLASSIFICATIONS;
         EnumerationMode = false;
+        ExcludeSystemLibraries = false;
         _hasSetMetadataStorageOption = false;
     }
 
@@ -207,6 +229,7 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
         _includedGroupClassifications = parsedOptions.IncludedGroupClassifications;
         _includedSiteClassifications = parsedOptions.IncludedSiteClassifications;
         EnumerationMode = parsedOptions.EnumerationMode;
+        ExcludeSystemLibraries = parsedOptions.ExcludeSystemLibraries;
         _machineId = parsedOptions.MachineId;
         _apiHelper = APIHelper.Create(
             tenantId: parsedOptions.TenantId,
