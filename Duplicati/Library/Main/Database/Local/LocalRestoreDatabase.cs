@@ -1310,13 +1310,14 @@ namespace Duplicati.Library.Main.Database.Local
                     ", token)
                         .ConfigureAwait(false);
 
-                    // For UNC paths, we use \\server\folder -> <restore path> / <servername> / <source path>
+                    // For UNC paths, we use \\server\folder -> <restore path> / <servername> / <source path>,
+                    // removing both leading separators, as the restore path already ends with one
                     await cmd.ExecuteNonQueryAsync($@"
                         UPDATE ""{m_tempfiletable}""
                         SET ""TargetPath"" =
                         CASE
                             WHEN SUBSTR(""Path"", 1, 2) == '\\'
-                            THEN SUBSTR(""Path"", 2)
+                            THEN SUBSTR(""Path"", 3)
                             ELSE ""TargetPath""
                         END
                     ", token)
