@@ -273,4 +273,17 @@ public class MetadataContentInDatabaseTests : BasicSetupHelper
         Assert.That(enabled, Is.False);
         Assert.That(options, Does.Not.ContainKey("store-metadata-content-in-database"));
     }
+
+    [Test]
+    public void EnableMetadataStorageIfRequiredBySources_PrefixSources_RespectIsSupported()
+    {
+        // The Hyper-V and MSSQL providers store metadata, but only serve their sources
+        // on Windows; elsewhere the sources are skipped, so there is nothing to store
+        var options = new Dictionary<string, string?>();
+        var enabled = Library.Main.Operation.Common.SourceProviderFactory.EnableMetadataStorageIfRequiredBySources(
+            ["%HYPERV%", @"%MSSQL%\srv"], options);
+
+        Assert.That(enabled, Is.EqualTo(OperatingSystem.IsWindows()));
+        Assert.That(options.ContainsKey("store-metadata-content-in-database"), Is.EqualTo(OperatingSystem.IsWindows()));
+    }
 }

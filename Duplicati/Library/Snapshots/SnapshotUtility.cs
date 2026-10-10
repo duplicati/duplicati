@@ -38,24 +38,25 @@ namespace Duplicati.Library.Snapshots
         /// <summary>
         /// Loads a snapshot implementation for the current OS
         /// </summary>
-        /// <param name="paths">The list of paths to create snapshots of</param>
+        /// <param name="paths">The list of source paths to create snapshots of</param>
+        /// <param name="extraSnapshotPaths">Paths that are not sources, but must be readable through the snapshot (e.g. the files a source provider reads); they only decide which volumes are snapshotted</param>
         /// <param name="options">A set of commandline options</param>
         /// <param name="followSymlinks">Whether to follow symlinks</param>
         /// <returns>The ISnapshotService implementation</returns>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
-        public static ISnapshotService CreateSnapshot(IEnumerable<string> paths, Dictionary<string, string> options, bool followSymlinks)
+        public static ISnapshotService CreateSnapshot(IEnumerable<string> paths, IEnumerable<string> extraSnapshotPaths, Dictionary<string, string> options, bool followSymlinks)
         {
             if (OperatingSystem.IsLinux())
             {
-                return CreateLinuxSnapshot(paths, followSymlinks);
+                return CreateLinuxSnapshot(paths, extraSnapshotPaths, followSymlinks);
             }
             else if (OperatingSystem.IsMacOS())
             {
-                return CreateMacOSSnapshot(paths, followSymlinks);
+                return CreateMacOSSnapshot(paths, extraSnapshotPaths, followSymlinks);
             }
             else if (OperatingSystem.IsWindows())
             {
-                return CreateWindowsSnapshot(paths, options, followSymlinks);
+                return CreateWindowsSnapshot(paths, extraSnapshotPaths, options, followSymlinks);
             }
             else
             {
@@ -98,40 +99,43 @@ namespace Duplicati.Library.Snapshots
         /// Loads a snapshot implementation for Linux
         /// </summary>
         /// <param name="folders">The list of folders to create snapshots of</param>
+        /// <param name="extraSnapshotPaths">Paths that are not sources, but must be readable through the snapshot (e.g. the files a source provider reads); they only decide which volumes are snapshotted</param>
         /// <param name="followSymlinks">Whether to follow symlinks</param>
         /// <returns>The ISnapshotService implementation</returns>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         [SupportedOSPlatform("linux")]
-        private static ISnapshotService CreateLinuxSnapshot(IEnumerable<string> folders, bool followSymlinks)
+        private static ISnapshotService CreateLinuxSnapshot(IEnumerable<string> folders, IEnumerable<string> extraSnapshotPaths, bool followSymlinks)
         {
-            return new LinuxSnapshot(folders, followSymlinks);
+            return new LinuxSnapshot(folders, extraSnapshotPaths, followSymlinks);
         }
 
         /// <summary>
         /// Loads a snapshot implementation for macOS
         /// </summary>
         /// <param name="folders">The list of folders to create snapshots of</param>
+        /// <param name="extraSnapshotPaths">Paths that are not sources, but must be readable through the snapshot (e.g. the files a source provider reads); they only decide which volumes are snapshotted</param>
         /// <param name="followSymlinks">Whether to follow symlinks</param>
         /// <returns>The ISnapshotService implementation</returns>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         [SupportedOSPlatform("macOS")]
-        private static ISnapshotService CreateMacOSSnapshot(IEnumerable<string> folders, bool followSymlinks)
+        private static ISnapshotService CreateMacOSSnapshot(IEnumerable<string> folders, IEnumerable<string> extraSnapshotPaths, bool followSymlinks)
         {
-            return new MacOSSnapshot(folders, followSymlinks);
+            return new MacOSSnapshot(folders, extraSnapshotPaths, followSymlinks);
         }
 
         /// <summary>
         /// Loads a snapshot implementation for Windows
         /// </summary>
         /// <param name="folders">The list of folders to create snapshots of</param>
+        /// <param name="extraSnapshotPaths">Paths that are not sources, but must be readable through the snapshot (e.g. the files a source provider reads); they only decide which volumes are snapshotted</param>
         /// <param name="options">A set of commandline options</param>
         /// <param name="followSymlinks">Whether to follow symlinks</param>
         /// <returns>The ISnapshotService implementation</returns>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         [SupportedOSPlatform("windows")]
-        private static ISnapshotService CreateWindowsSnapshot(IEnumerable<string> folders, Dictionary<string, string> options, bool followSymlinks)
+        private static ISnapshotService CreateWindowsSnapshot(IEnumerable<string> folders, IEnumerable<string> extraSnapshotPaths, Dictionary<string, string> options, bool followSymlinks)
         {
-            return new WindowsSnapshot(folders, options, followSymlinks);
+            return new WindowsSnapshot(folders, extraSnapshotPaths, options, followSymlinks);
         }
 
         /// <summary>

@@ -101,6 +101,11 @@ namespace Duplicati.Library.Main.Database.Local
         public DateTime RestoreTime { get { return m_restoreTime; } }
 
         /// <summary>
+        /// The ID of the fileset the restore file list was prepared from
+        /// </summary>
+        private long m_restoreFilesetId = -1;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="LocalRestoreDatabase"/> class.
         /// </summary>
         /// <param name="path">The path to the database file.</param>
@@ -440,6 +445,7 @@ namespace Duplicati.Library.Main.Database.Local
                         await cmd.ExecuteScalarInt64Async(0, token)
                             .ConfigureAwait(false)
                     );
+                    m_restoreFilesetId = filesetId;
 
                     var ix = await FilesetTimesAsync(token)
                             .Select((value, index) => new { value.Key, index })
@@ -915,6 +921,161 @@ namespace Duplicati.Library.Main.Database.Local
         }
 
         /// <summary>
+        /// Sets the target path of the entries below a virtual mount point (e.g. <c>\\duplicati\mssql\</c>)
+        /// to the local path recorded in their metadata, for a restore to the original location.
+        /// The virtual folders of the mount point have no local path, so they are removed from the restore.
+        /// </summary>
+        /// <param name="mountedPath">The virtual mount point, ending with a directory separator</param>
+        /// <param name="originalPathMetadataKey">The metadata key that holds the local path</param>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
+        /// <returns>The target paths of the mapped files, and the paths of the files that have no recorded local path</returns>
+        public async Task<(List<string> MappedFiles, List<string> UnmappedFiles)> MapVirtualEntriesToOriginalPathsAsync(string mountedPath, string originalPathMetadataKey, CancellationToken token)
+        {
+            const string belowMount = @"LOWER(SUBSTR(""Path"", 1, @MountLength)) = LOWER(@Mount)";
+
+            await using var cmd = m_connection.CreateCommand($@"
+                UPDATE ""{m_tempfiletable}""
+                SET ""TargetPath"" = (
+                    SELECT json_extract(""md"".""Content"", @JsonPath)
+                    FROM ""Metadataset"" ""md""
+                    WHERE ""md"".""ID"" = ""{m_tempfiletable}"".""MetadataID""
+                )
+                WHERE {belowMount}
+            ")
+                .SetTransaction(m_rtr)
+                .SetParameterValue("@JsonPath", $"$.\"{originalPathMetadataKey}\"")
+                .SetParameterValue("@Mount", mountedPath)
+                .SetParameterValue("@MountLength", mountedPath.Length);
+            await cmd.ExecuteNonQueryAsync(true, token).ConfigureAwait(false);
+
+            await cmd.SetCommandAndParameters($@"
+                DELETE FROM ""{m_tempfiletable}""
+                WHERE {belowMount}
+                AND ""TargetPath"" IS NULL
+                AND ""BlocksetID"" = @FolderBlocksetId
+            ")
+                .SetParameterValue("@Mount", mountedPath)
+                .SetParameterValue("@MountLength", mountedPath.Length)
+                .SetParameterValue("@FolderBlocksetId", FOLDER_BLOCKSET_ID)
+                .ExecuteNonQueryAsync(true, token)
+                .ConfigureAwait(false);
+
+            var mapped = new List<string>();
+            var unmapped = new List<string>();
+            cmd.SetCommandAndParameters($@"
+                SELECT ""Path"", ""TargetPath""
+                FROM ""{m_tempfiletable}""
+                WHERE {belowMount}
+                AND ""BlocksetID"" != @FolderBlocksetId
+            ")
+                .SetParameterValue("@Mount", mountedPath)
+                .SetParameterValue("@MountLength", mountedPath.Length)
+                .SetParameterValue("@FolderBlocksetId", FOLDER_BLOCKSET_ID);
+
+            await using var rd = await cmd.ExecuteReaderAsync(true, token).ConfigureAwait(false);
+            while (await rd.ReadAsync(token).ConfigureAwait(false))
+            {
+                var targetPath = rd.ConvertValueToString(1);
+                if (string.IsNullOrEmpty(targetPath))
+                    unmapped.Add(rd.ConvertValueToString(0) ?? "");
+                else
+                    mapped.Add(targetPath);
+            }
+
+            return (mapped, unmapped);
+        }
+
+        /// <summary>
+        /// Gets the entries in the temporary file table below a virtual mount point, with
+        /// the path they are restored to and the local path recorded in their metadata
+        /// </summary>
+        /// <param name="mountedPath">The virtual mount point, ending with a directory separator</param>
+        /// <param name="originalPathMetadataKey">The metadata key that holds the local path</param>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
+        /// <returns>The restored entries below the mount point</returns>
+        public async Task<List<Interface.RestoredVirtualEntry>> GetRestoredVirtualEntriesAsync(string mountedPath, string originalPathMetadataKey, CancellationToken token)
+        {
+            await using var cmd = m_connection.CreateCommand($@"
+                SELECT ""t"".""Path"", ""t"".""TargetPath"", json_extract(""md"".""Content"", @JsonPath), ""t"".""BlocksetID""
+                FROM ""{m_tempfiletable}"" ""t""
+                LEFT JOIN ""Metadataset"" ""md"" ON ""md"".""ID"" = ""t"".""MetadataID""
+                WHERE LOWER(SUBSTR(""t"".""Path"", 1, @MountLength)) = LOWER(@Mount)
+            ")
+                .SetTransaction(m_rtr)
+                .SetParameterValue("@JsonPath", $"$.\"{originalPathMetadataKey}\"")
+                .SetParameterValue("@Mount", mountedPath)
+                .SetParameterValue("@MountLength", mountedPath.Length);
+
+            var result = new List<Interface.RestoredVirtualEntry>();
+            await using var rd = await cmd.ExecuteReaderAsync(true, token).ConfigureAwait(false);
+            while (await rd.ReadAsync(token).ConfigureAwait(false))
+            {
+                var path = rd.ConvertValueToString(0) ?? "";
+                var targetPath = rd.ConvertValueToString(1);
+                if (string.IsNullOrEmpty(targetPath))
+                    continue;
+
+                var originalPath = rd.ConvertValueToString(2);
+                result.Add(new Interface.RestoredVirtualEntry(path, targetPath, string.IsNullOrEmpty(originalPath) ? null : originalPath, rd.ConvertValueToInt64(3) == FOLDER_BLOCKSET_ID));
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Gets the stored paths of the entries below a virtual mount point in the restored version,
+        /// leaving out the virtual folders, which have no local path in their metadata
+        /// </summary>
+        /// <param name="mountedPath">The virtual mount point, ending with a directory separator</param>
+        /// <param name="originalPathMetadataKey">The metadata key that holds the local path</param>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
+        /// <returns>The stored paths below the mount point</returns>
+        public async Task<List<string>> GetVersionVirtualPathsAsync(string mountedPath, string originalPathMetadataKey, CancellationToken token)
+        {
+            await using var cmd = m_connection.CreateCommand(@"
+                SELECT ""f"".""Path""
+                FROM ""File"" ""f""
+                JOIN ""FilesetEntry"" ""fe"" ON ""fe"".""FileID"" = ""f"".""ID""
+                JOIN ""Metadataset"" ""md"" ON ""md"".""ID"" = ""f"".""MetadataID""
+                WHERE ""fe"".""FilesetID"" = @FilesetId
+                AND LOWER(SUBSTR(""f"".""Path"", 1, @MountLength)) = LOWER(@Mount)
+                AND json_extract(""md"".""Content"", @JsonPath) IS NOT NULL
+            ")
+                .SetTransaction(m_rtr)
+                .SetParameterValue("@FilesetId", m_restoreFilesetId)
+                .SetParameterValue("@JsonPath", $"$.\"{originalPathMetadataKey}\"")
+                .SetParameterValue("@Mount", mountedPath)
+                .SetParameterValue("@MountLength", mountedPath.Length);
+
+            var result = new List<string>();
+            await using var rd = await cmd.ExecuteReaderAsync(true, token).ConfigureAwait(false);
+            while (await rd.ReadAsync(token).ConfigureAwait(false))
+                result.Add(rd.ConvertValueToString(0) ?? "");
+
+            return result;
+        }
+
+        /// <summary>
+        /// Counts the entries below a path in the temporary file table
+        /// </summary>
+        /// <param name="path">The path, ending with a directory separator</param>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
+        /// <returns>The number of entries below the path</returns>
+        public async Task<long> CountEntriesBelowAsync(string path, CancellationToken token)
+        {
+            await using var cmd = m_connection.CreateCommand($@"
+                SELECT COUNT(*)
+                FROM ""{m_tempfiletable}""
+                WHERE LOWER(SUBSTR(""Path"", 1, @Length)) = LOWER(@Path)
+            ")
+                .SetTransaction(m_rtr)
+                .SetParameterValue("@Path", path)
+                .SetParameterValue("@Length", path.Length);
+
+            return await cmd.ExecuteScalarInt64Async(0, token).ConfigureAwait(false);
+        }
+
+        /// <summary>
         /// Retrieves the first path from the temporary file table.
         /// </summary>
         /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
@@ -983,17 +1144,30 @@ namespace Duplicati.Library.Main.Database.Local
                     .ConfigureAwait(false);
 
                 if (filecount != foundfiles)
-                {
-                    var oldlen = maxpath.Length;
-
-                    var lix = maxpath.LastIndexOf(dirsep, maxpath.Length - 2, StringComparison.Ordinal);
-                    maxpath = maxpath.Substring(0, lix + 1);
-                    if (string.IsNullOrWhiteSpace(maxpath) || maxpath.Length == oldlen)
-                        maxpath = "";
-                }
+                    maxpath = GetParentPrefix(maxpath, dirsep);
             }
 
             return maxpath == "" ? "" : Util.AppendDirSeparator(maxpath, dirsep);
+        }
+
+        /// <summary>
+        /// Gets the folder that contains a path, used when looking for the largest prefix
+        /// the restored paths share
+        /// </summary>
+        /// <param name="path">The path, with or without a trailing directory separator</param>
+        /// <param name="dirsep">The directory separator of the path</param>
+        /// <returns>The containing folder with a trailing directory separator, or an empty string if there is none</returns>
+        internal static string GetParentPrefix(string path, string dirsep)
+        {
+            // A single character, such as the "\" left over from a UNC path, has no parent
+            if (path.Length <= 1)
+                return "";
+
+            var lix = path.LastIndexOf(dirsep, path.Length - 2, StringComparison.Ordinal);
+            var parent = path.Substring(0, lix + 1);
+            return string.IsNullOrWhiteSpace(parent) || parent.Length == path.Length
+                ? ""
+                : parent;
         }
 
         /// <summary>
@@ -1136,13 +1310,14 @@ namespace Duplicati.Library.Main.Database.Local
                     ", token)
                         .ConfigureAwait(false);
 
-                    // For UNC paths, we use \\server\folder -> <restore path> / <servername> / <source path>
+                    // For UNC paths, we use \\server\folder -> <restore path> / <servername> / <source path>,
+                    // removing both leading separators, as the restore path already ends with one
                     await cmd.ExecuteNonQueryAsync($@"
                         UPDATE ""{m_tempfiletable}""
                         SET ""TargetPath"" =
                         CASE
                             WHEN SUBSTR(""Path"", 1, 2) == '\\'
-                            THEN SUBSTR(""Path"", 2)
+                            THEN SUBSTR(""Path"", 3)
                             ELSE ""TargetPath""
                         END
                     ", token)

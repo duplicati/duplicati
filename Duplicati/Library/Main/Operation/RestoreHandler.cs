@@ -1027,6 +1027,8 @@ namespace Duplicati.Library.Main.Operation
                     Logging.Log.WriteInformationMessage(LOGTAG, "NoFilesNeededRestore", null, "Restore completed but all files were already present");
             }
 
+            await RegisterRestoredItemsAsync(database, m_result.BrokenRemoteFiles.Count > 0 || m_result.BrokenLocalFiles.Count > 0, cancellationToken).ConfigureAwait(false);
+
             // Harvest restored file hashes for --restore-all-files=unique before the temp
             // tables are dropped, so subsequent versions can skip files with the same content.
             await HarvestRestoredHashesAsync(database, cancellationToken).ConfigureAwait(false);
@@ -1351,6 +1353,8 @@ namespace Duplicati.Library.Main.Operation
                 Logging.Log.WriteInformationMessage(LOGTAG, "RestoreFailures", "Failed to restore {0} files, additionally the following files failed to download, which may be the cause:{1}{2}", fileErrors, Environment.NewLine, string.Join(Environment.NewLine, brokenFiles));
             else if (fileErrors > 0)
                 Logging.Log.WriteInformationMessage(LOGTAG, "RestoreFailures", "Failed to restore {0} files", fileErrors);
+
+            await RegisterRestoredItemsAsync(database, fileErrors > 0 || brokenFiles.Count > 0, cancellationToken).ConfigureAwait(false);
 
             // Harvest restored file hashes for --restore-all-files=unique before the temp
             // tables are dropped, so subsequent versions can skip files with the same content.
@@ -1704,6 +1708,7 @@ namespace Duplicati.Library.Main.Operation
                 else
                 {
                     await database.SetTargetPathsAsync("", "", result.TaskControl.ProgressToken).ConfigureAwait(false);
+                    await MapVirtualEntriesToOriginalPathsAsync(database, restoreDestination, result.TaskControl.ProgressToken).ConfigureAwait(false);
                 }
 
             // Create a temporary table BLOCKS that lists all blocks that needs to be recovered
@@ -1718,6 +1723,115 @@ namespace Duplicati.Library.Main.Operation
                     .CreateProgressTrackerAsync(false, result.TaskControl.ProgressToken)
                     .ConfigureAwait(false);
 
+        }
+
+        /// <summary>
+        /// Registers the restored items of the prefix-based source providers that support it
+        /// (e.g. Hyper-V virtual machines) with their application, when
+        /// <c>--register-restored-items</c> is set. Nothing is registered when files failed to
+        /// restore, as an item with missing or broken files cannot be used.
+        /// </summary>
+        /// <param name="database">The restore database, with the restored file list</param>
+        /// <param name="hadFailures">True if any files failed to restore</param>
+        /// <param name="cancellationToken">The cancellation token</param>
+        private async Task RegisterRestoredItemsAsync(LocalRestoreDatabase database, bool hadFailures, CancellationToken cancellationToken)
+        {
+            if (!m_options.RegisterRestoredItems)
+                return;
+
+            foreach (var module in Library.SourceProviders.SourceProviderModules.BuiltInPrefixSourceProviderModules.OfType<IRestoredItemRegistrationModule>())
+            {
+                var restoredEntries = await database
+                    .GetRestoredVirtualEntriesAsync(module.MountedPath, module.OriginalPathMetadataKey, cancellationToken)
+                    .ConfigureAwait(false);
+                if (restoredEntries.Count == 0)
+                    continue;
+
+                if (m_options.RestoreAllFiles != RestoreAllFilesMode.False)
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "RegisterSkippedAllFiles", null, "The restored {0} are not registered when restoring all versions", module.DisplayName);
+                    continue;
+                }
+
+                if (m_options.Dryrun)
+                {
+                    Logging.Log.WriteDryrunMessage(LOGTAG, "WouldRegisterRestoredItems", "Would register the restored {0}", module.DisplayName);
+                    continue;
+                }
+
+                if (hadFailures)
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "RegisterSkippedFailures", null, "The restored {0} are not registered, because some files failed to restore", module.DisplayName);
+                    continue;
+                }
+
+                var versionPaths = await database
+                    .GetVersionVirtualPathsAsync(module.MountedPath, module.OriginalPathMetadataKey, cancellationToken)
+                    .ConfigureAwait(false);
+
+                try
+                {
+                    await module.RegisterRestoredItemsAsync(restoredEntries, versionPaths, m_options.RawOptions.AsReadOnly(), cancellationToken).ConfigureAwait(false);
+                }
+                catch (Exception ex) when (!ex.IsAbortException())
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "RegisterRestoredItemsFailed", ex, "The {0} were restored, but registering them failed: {1}", module.DisplayName, ex.Message);
+                }
+            }
+        }
+
+        /// <summary>
+        /// For a restore to the original location, sets the target of the entries below the
+        /// virtual mount point of a prefix-based source provider (e.g. <c>\\duplicati\mssql\</c>)
+        /// to the local path they were read from, as recorded in their metadata.
+        /// The restore is stopped before anything is written if a file has no recorded local path,
+        /// or if an existing file at the local path is in use, as SQL Server and Hyper-V keep the
+        /// files of an attached database or a running machine open, and restoring only some of
+        /// the files would leave a mix of old and restored files.
+        /// </summary>
+        /// <param name="database">The restore database</param>
+        /// <param name="restoreDestination">The restore destination</param>
+        /// <param name="token">The cancellation token</param>
+        private static async Task MapVirtualEntriesToOriginalPathsAsync(LocalRestoreDatabase database, IRestoreDestinationProvider restoreDestination, CancellationToken token)
+        {
+            foreach (var module in Library.SourceProviders.SourceProviderModules.BuiltInPrefixSourceProviderModules)
+            {
+                if (!OperatingSystem.IsWindows())
+                {
+                    // The entries are only produced on Windows, so they are stored with Windows separators
+                    var storedMountedPath = module.MountedPath.Replace(Path.DirectorySeparatorChar, '\\');
+                    if (await database.CountEntriesBelowAsync(storedMountedPath, token).ConfigureAwait(false) > 0)
+                        throw new UserInformationException($"The {module.DisplayName} can only be restored to their original location on Windows, choose a folder to restore them to", "VirtualEntriesOriginalLocationRequiresWindows");
+                    continue;
+                }
+
+                var (mappedFiles, unmappedFiles) = await database
+                    .MapVirtualEntriesToOriginalPathsAsync(module.MountedPath, module.OriginalPathMetadataKey, token)
+                    .ConfigureAwait(false);
+
+                if (unmappedFiles.Count > 0)
+                    throw new UserInformationException($"The original location of {unmappedFiles.Count} file(s) from {module.DisplayName} is not recorded, such as \"{unmappedFiles[0]}\", choose a folder to restore them to", "VirtualEntryOriginalPathMissing");
+
+                var inUse = new List<string>();
+                foreach (var path in mappedFiles)
+                {
+                    if (!await restoreDestination.FileExists(path, token).ConfigureAwait(false))
+                        continue;
+
+                    try
+                    {
+                        await using var _ = await restoreDestination.OpenReadWrite(path, token).ConfigureAwait(false);
+                    }
+                    catch (IOException ex)
+                    {
+                        Logging.Log.WriteVerboseMessage(LOGTAG, "VirtualEntryTargetInUse", ex, "The restore target is in use: {0}", path);
+                        inUse.Add(path);
+                    }
+                }
+
+                if (inUse.Count > 0)
+                    throw new UserInformationException($"{inUse.Count} file(s) from {module.DisplayName} are in use at their original location, such as \"{inUse[0]}\". Detach or take the database offline, or turn off the virtual machine, and try again, or choose a folder to restore them to", "VirtualEntryTargetInUse");
+            }
         }
 
         /// <summary>

@@ -79,7 +79,7 @@ namespace Duplicati.UnitTest
             var provider = new FakeSnapshotProvider { DoSnapshotSetException = expected };
 
             var actual = Assert.Throws<InvalidOperationException>(() =>
-                new WindowsSnapshot(Sources, new Dictionary<string, string>(), false, (_, _, _) => provider));
+                new WindowsSnapshot(Sources, Array.Empty<string>(), new Dictionary<string, string>(), false, (_, _, _) => provider));
 
             Assert.AreSame(expected, actual);
             Assert.AreEqual(1, provider.BackupCompleteCalls);
@@ -100,7 +100,7 @@ namespace Duplicati.UnitTest
                 return fake;
             }
 
-            using (new WindowsSnapshot(Sources, new Dictionary<string, string>(), false, Factory))
+            using (new WindowsSnapshot(Sources, Array.Empty<string>(), new Dictionary<string, string>(), false, Factory))
             {
                 Assert.AreEqual(2, providers.Count);
                 Assert.AreEqual(WindowsSnapshot.MS_SOFTWARE_PROVIDER_ID, providers[1].ProviderId);

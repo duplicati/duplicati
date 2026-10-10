@@ -157,6 +157,11 @@ namespace Duplicati.Library.Main.Operation.Backup
                     FilterEntry,
                     token)
                 );
+
+                // The change journal only covers the file source, so the other providers
+                // (e.g. remote sources, Hyper-V or MSSQL) are enumerated in full
+                foreach (var provider in GetNonFileProviders(sourceProvider))
+                    worklist = worklist.Concat(RecurseEntriesAsync(provider.EnumerateAsync(token), FilterEntry, token));
             }
             else
             {
@@ -386,6 +391,15 @@ namespace Duplicati.Library.Main.Operation.Backup
                 }
             }
         }
+
+        /// <summary>
+        /// Gets the providers that are not the local file source, which the change journal does not cover
+        /// </summary>
+        /// <param name="sourceProvider">The source provider, possibly a combination of providers</param>
+        /// <returns>The providers other than the local file source</returns>
+        internal static IEnumerable<ISourceProvider> GetNonFileProviders(ISourceProvider sourceProvider)
+            => (sourceProvider is Combiner c ? c.Providers : [sourceProvider])
+                .Where(x => x is not LocalFileSource);
 
         /// <summary>
         /// Performs recursive traversal of the sources

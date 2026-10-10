@@ -533,6 +533,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("file-read-buffer-size", CommandLineArgument.ArgumentType.Size, Strings.Options.FilereadbuffersizeShort, Strings.Options.FilereadbuffersizeLong, "0kb", null, null, Strings.Options.FilereadbuffersizeDeprecated),
             new CommandLineArgument("skip-metadata", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SkipmetadataShort, Strings.Options.SkipmetadataLong, "false"),
             new CommandLineArgument("restore-permissions", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestorepermissionsShort, Strings.Options.RestorepermissionsLong, "false"),
+            new CommandLineArgument("register-restored-items", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RegisterrestoreditemsShort, Strings.Options.RegisterrestoreditemsLong, "false"),
             new CommandLineArgument("skip-restore-verification", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SkiprestoreverificationShort, Strings.Options.SkiprestoreverificationLong, "false"),
             new CommandLineArgument("disable-filepath-cache", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefilepathcacheShort, Strings.Options.DisablefilepathcacheLong, "true", null, null, Strings.Options.DisablefilepathcacheDeprecated),
             new CommandLineArgument("changed-files", CommandLineArgument.ArgumentType.Path, Strings.Options.ChangedfilesShort, Strings.Options.ChangedfilesLong),
@@ -1390,6 +1391,11 @@ namespace Duplicati.Library.Main
         /// Gets a flag indicating if permissions should be restored
         /// </summary>
         public bool RestorePermissions => GetBool("restore-permissions");
+
+        /// <summary>
+        /// Gets a flag indicating if restored items (e.g. Hyper-V virtual machines) are registered with their application after the restore
+        /// </summary>
+        public bool RegisterRestoredItems => GetBool("register-restored-items");
 
 
         /// <summary>

@@ -283,6 +283,8 @@ namespace Duplicati.Library.Main.Strings
         public static string SkipmetadataShort { get { return LC.L(@"Do not store metadata"); } }
         public static string RestorepermissionsLong { get { return LC.L(@"By default permissions are not restored as they might prevent you from accessing your files. Use this option to restore the permissions as well."); } }
         public static string RestorepermissionsShort { get { return LC.L(@"Restore file permissions"); } }
+        public static string RegisterrestoreditemsLong { get { return LC.L(@"Use this option to register the restored items with the application they belong to, after their files are restored. A Hyper-V virtual machine restored to its original location is registered with its own ID, and one restored to another folder is registered as a copy with a new ID. An item is only registered when all of its files were restored."); } }
+        public static string RegisterrestoreditemsShort { get { return LC.L(@"Register restored items"); } }
         public static string SkiprestoreverificationLong { get { return LC.L(@"After restoring files, the file hash of all restored files are checked to verify that the restore was successful. Use this option to disable the check and avoid waiting for the verification."); } }
         public static string SkiprestoreverificationShort { get { return LC.L(@"Skip restored file check"); } }
         public static string NolocalblocksLong { get { return LC.L(@"Duplicati will attempt to use data from source files to minimize the amount of downloaded data. Use this option to skip this optimization and only use remote data."); } }
