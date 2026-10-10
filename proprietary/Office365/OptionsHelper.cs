@@ -22,6 +22,7 @@ internal static class OptionsHelper
     internal const string OFFICE_INCLUDED_USER_CLASSIFICATIONS_OPTION = "office365-included-user-classifications";
     internal const string OFFICE_INCLUDED_GROUP_CLASSIFICATIONS_OPTION = "office365-included-group-classifications";
     internal const string OFFICE_INCLUDED_SITE_CLASSIFICATIONS_OPTION = "office365-included-site-classifications";
+    internal const string OFFICE_EXCLUDE_SYSTEM_LIBRARIES_OPTION = "office365-exclude-system-libraries";
 
     /// <summary>
     /// Marks the provider as being used to enumerate items for display rather than to back them
@@ -34,8 +35,10 @@ internal static class OptionsHelper
 
     /// <summary>
     /// User types that are excluded by default.
-    /// To Do and OneNote are supported with application permissions,
-    /// but are opt-in as they are not commonly backed up.
+    /// To Do and OneNote are opt-in as they are not commonly backed up. Note that the
+    /// OneNote API stopped accepting application tokens on March 31st 2025, and the To Do
+    /// API rejects application tokens with a bad request; both are reported once per run
+    /// and skipped when the API refuses the token.
     /// </summary>
     private static readonly Office365UserType[] DEFAULT_EXCLUDED_USER_TYPES =
     [
@@ -124,7 +127,8 @@ internal static class OptionsHelper
         Office365UserClassification IncludedUserClassifications,
         Office365GroupClassification IncludedGroupClassifications,
         Office365SiteClassification IncludedSiteClassifications,
-        bool EnumerationMode
+        bool EnumerationMode,
+        bool ExcludeSystemLibraries
     );
 
     internal static ParsedOptions ParseAndValidateOptions(string url, Dictionary<string, string?> options)
@@ -156,6 +160,7 @@ internal static class OptionsHelper
         var includedSiteClassifications = Library.Utility.Utility.ParseFlagsOption(options, OFFICE_INCLUDED_SITE_CLASSIFICATIONS_OPTION, ALL_SITE_CLASSIFICATIONS);
 
         var enumerationMode = Library.Utility.Utility.ParseBoolOption(options, ENUMERATION_MODE_OPTION);
+        var excludeSystemLibraries = Library.Utility.Utility.ParseBoolOption(options, OFFICE_EXCLUDE_SYSTEM_LIBRARIES_OPTION);
 
         return new ParsedOptions(
             TenantId: _tenantId,
@@ -170,7 +175,8 @@ internal static class OptionsHelper
             IncludedUserClassifications: includedUserClassifications,
             IncludedGroupClassifications: includedGroupClassifications,
             IncludedSiteClassifications: includedSiteClassifications,
-            EnumerationMode: enumerationMode
+            EnumerationMode: enumerationMode,
+            ExcludeSystemLibraries: excludeSystemLibraries
         );
     }
 
@@ -188,6 +194,7 @@ internal static class OptionsHelper
         new CommandLineArgument(OFFICE_INCLUDED_GROUP_TYPES_OPTION, CommandLineArgument.ArgumentType.Flags, Strings.OfficeIncludedGroupTypesShort, Strings.OfficeIncludedGroupTypesLong, string.Join(",", DEFAULT_INCLUDED_GROUP_TYPES.Select(n => n.ToString()).ToArray()), null, Enum.GetNames<Office365GroupType>()),
         new CommandLineArgument(OFFICE_INCLUDED_USER_CLASSIFICATIONS_OPTION, CommandLineArgument.ArgumentType.Flags, Strings.OfficeIncludedUserClassificationsShort, Strings.OfficeIncludedUserClassificationsLong, string.Join(",", Enum.GetNames<Office365UserClassification>()), null, Enum.GetNames<Office365UserClassification>()),
         new CommandLineArgument(OFFICE_INCLUDED_GROUP_CLASSIFICATIONS_OPTION, CommandLineArgument.ArgumentType.Flags, Strings.OfficeIncludedGroupClassificationsShort, Strings.OfficeIncludedGroupClassificationsLong, string.Join(",", Enum.GetNames<Office365GroupClassification>()), null, Enum.GetNames<Office365GroupClassification>()),
-        new CommandLineArgument(OFFICE_INCLUDED_SITE_CLASSIFICATIONS_OPTION, CommandLineArgument.ArgumentType.Flags, Strings.OfficeIncludedSiteClassificationsShort, Strings.OfficeIncludedSiteClassificationsLong, string.Join(",", INDIVIDUAL_SITE_CLASSIFICATION_NAMES), null, Enum.GetNames<Office365SiteClassification>())
+        new CommandLineArgument(OFFICE_INCLUDED_SITE_CLASSIFICATIONS_OPTION, CommandLineArgument.ArgumentType.Flags, Strings.OfficeIncludedSiteClassificationsShort, Strings.OfficeIncludedSiteClassificationsLong, string.Join(",", INDIVIDUAL_SITE_CLASSIFICATION_NAMES), null, Enum.GetNames<Office365SiteClassification>()),
+        new CommandLineArgument(OFFICE_EXCLUDE_SYSTEM_LIBRARIES_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.OfficeExcludeSystemLibrariesShort, Strings.OfficeExcludeSystemLibrariesLong, "false")
     ];
 }

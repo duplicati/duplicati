@@ -129,7 +129,19 @@ internal class UserTypeSourceEntry(SourceProvider provider, string path, GraphUs
 
     private async IAsyncEnumerable<ISourceProviderEntry> MailboxEntries([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var rootFolder = await provider.UserEmailApi.GetMailRootFolderAsync(user.Id, cancellationToken).ConfigureAwait(false);
+        GraphMailFolder? rootFolder;
+        try
+        {
+            rootFolder = await provider.UserEmailApi.GetMailRootFolderAsync(user.Id, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (APIHelper.IsMailboxNotEnabled(ex))
+        {
+            LogMailboxNotEnabled("mailbox", ex);
+            rootFolder = null;
+        }
+
+        if (rootFolder == null)
+            yield break;
 
         // Don't introduce another level for the root folder, just enumerate its contents here
         var p = new UserMailboxFolderSourceEntry(provider, user, this.Path, rootFolder);
@@ -162,7 +174,14 @@ internal class UserTypeSourceEntry(SourceProvider provider, string path, GraphUs
 
     private async IAsyncEnumerable<ISourceProviderEntry> ContactsEntries([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        await foreach (var contact in provider.ContactsApi.ListAllContactsAsync(user.Id, cancellationToken).ConfigureAwait(false))
+        var mailboxNotEnabled = false;
+        var contacts = EnumerationHelper.EndOnError(
+            provider.ContactsApi.ListAllContactsAsync(user.Id, cancellationToken),
+            APIHelper.IsMailboxNotEnabled,
+            ex => { LogMailboxNotEnabled("contacts", ex); mailboxNotEnabled = true; },
+            cancellationToken);
+
+        await foreach (var contact in contacts.ConfigureAwait(false))
         {
             if (cancellationToken.IsCancellationRequested)
                 yield break;
@@ -222,6 +241,9 @@ internal class UserTypeSourceEntry(SourceProvider provider, string path, GraphUs
             }
         }
 
+        if (mailboxNotEnabled)
+            yield break;
+
         await foreach (var contactFolder in provider.ContactsApi.ListContactFoldersAsync(user.Id, null, cancellationToken).ConfigureAwait(false))
         {
             if (cancellationToken.IsCancellationRequested)
@@ -233,8 +255,13 @@ internal class UserTypeSourceEntry(SourceProvider provider, string path, GraphUs
 
     private async IAsyncEnumerable<ISourceProviderEntry> TasksEntries([EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        var taskLists = EnumerationHelper.EndOnError(
+            provider.TodoApi.ListUserTaskListsAsync(user.Id, cancellationToken),
+            APIHelper.IsTodoBadRequest,
+            ex => LogApiRejectedOnce("TodoRejected", "To Do lists cannot be listed with the application token, so To Do is skipped for all users", ex),
+            cancellationToken);
 
-        await foreach (var taskList in provider.TodoApi.ListUserTaskListsAsync(user.Id, cancellationToken).ConfigureAwait(false))
+        await foreach (var taskList in taskLists.ConfigureAwait(false))
         {
             if (cancellationToken.IsCancellationRequested)
                 yield break;
@@ -245,7 +272,13 @@ internal class UserTypeSourceEntry(SourceProvider provider, string path, GraphUs
 
     private async IAsyncEnumerable<ISourceProviderEntry> NotesEntries([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        await foreach (var note in provider.OnenoteApi.ListUserNotebooksAsync(user.Id, cancellationToken).ConfigureAwait(false))
+        var notebooks = EnumerationHelper.EndOnError(
+            provider.OnenoteApi.ListUserNotebooksAsync(user.Id, cancellationToken),
+            APIHelper.IsOneNoteAppOnlyRejected,
+            ex => LogApiRejectedOnce("OneNoteRejected", "OneNote notebooks cannot be listed with the application token (the OneNote API requires delegated permissions since March 31st 2025), so OneNote is skipped for all users", ex),
+            cancellationToken);
+
+        await foreach (var note in notebooks.ConfigureAwait(false))
         {
             if (cancellationToken.IsCancellationRequested)
                 yield break;
@@ -256,13 +289,44 @@ internal class UserTypeSourceEntry(SourceProvider provider, string path, GraphUs
 
     private async IAsyncEnumerable<ISourceProviderEntry> CalendarEntries([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        await foreach (var calendar in provider.CalendarApi.ListUserCalendarGroupsAsync(user.Id, cancellationToken).ConfigureAwait(false))
+        var calendarGroups = EnumerationHelper.EndOnError(
+            provider.CalendarApi.ListUserCalendarGroupsAsync(user.Id, cancellationToken),
+            APIHelper.IsMailboxNotEnabled,
+            ex => LogMailboxNotEnabled("calendar", ex),
+            cancellationToken);
+
+        await foreach (var calendar in calendarGroups.ConfigureAwait(false))
         {
             if (cancellationToken.IsCancellationRequested)
                 yield break;
 
             yield return new CalendarGroupSourceEntry(provider, this.Path, user, calendar);
         }
+    }
+
+    /// <summary>
+    /// Logs that a user has no accessible Exchange Online mailbox, so the given
+    /// mailbox-backed type is skipped for the user. This is expected for unlicensed
+    /// or on-premise users and is therefore not a warning.
+    /// </summary>
+    /// <param name="what">The type being skipped.</param>
+    /// <param name="ex">The exception reported by Graph.</param>
+    private void LogMailboxNotEnabled(string what, Exception ex)
+        => Log.WriteInformationMessage(LOGTAG, "MailboxNotEnabled", $"Skipping {what} for user '{user.Id}' because the user has no accessible mailbox: {ex.Message}");
+
+    /// <summary>
+    /// Logs that an API rejected the application token. The condition affects every
+    /// user, so it is reported as a warning once and as a verbose message afterwards.
+    /// </summary>
+    /// <param name="key">The warning key.</param>
+    /// <param name="message">The message describing what is skipped.</param>
+    /// <param name="ex">The exception reported by Graph.</param>
+    private void LogApiRejectedOnce(string key, string message, Exception ex)
+    {
+        if (provider.ShouldWarnOnce(key))
+            Log.WriteWarningMessage(LOGTAG, key, null, $"{message}. Error: {ex.Message}");
+        else
+            Log.WriteVerboseMessage(LOGTAG, key, $"Skipping user '{user.Id}': {message}");
     }
 
     private async IAsyncEnumerable<ISourceProviderEntry> PlannerEntries([EnumeratorCancellation] CancellationToken cancellationToken)

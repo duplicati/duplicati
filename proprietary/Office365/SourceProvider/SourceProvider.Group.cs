@@ -227,6 +227,11 @@ partial class SourceProvider
 
     internal sealed class DriveApiImpl(APIHelper provider)
     {
+        /// <summary>
+        /// Lists the document libraries of a group's site. Graph includes system libraries
+        /// such as the Web Part Gallery, marked with the <c>system</c> facet; callers decide
+        /// whether to walk those.
+        /// </summary>
         internal IAsyncEnumerable<GraphDrive> ListGroupDrivesAsync(string groupId, CancellationToken ct)
         {
             var baseUrl = provider.GraphBaseUrl.TrimEnd('/');

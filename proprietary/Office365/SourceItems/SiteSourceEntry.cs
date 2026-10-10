@@ -69,6 +69,37 @@ internal class SiteSourceEntry(SourceProvider provider, string parentPath, Graph
         if (!provider.LicenseApprovedForEntry(parentPath, Office365MetaType.Sites, site.Id, true, countsAsSeat))
             yield break;
 
+        // The drive listing is the first call into the site itself, so it is where a locked
+        // site shows up. Nothing in a locked site can be read, so the whole site is skipped,
+        // including the metadata entry, which would otherwise fail later when it is opened.
+        var siteLocked = false;
+        var drives = EnumerationHelper.EndOnError(
+            provider.SiteApi.ListSiteDrivesAsync(site.Id, cancellationToken),
+            APIHelper.IsSiteLocked,
+            ex =>
+            {
+                siteLocked = true;
+                Log.WriteInformationMessage(LOGTAG, "SiteLocked", $"Skipping site '{site.Id}' ({site.WebUrl}) because access to it is blocked: {ex.Message}");
+            },
+            cancellationToken);
+
+        await foreach (var drive in drives.ConfigureAwait(false))
+        {
+            if (cancellationToken.IsCancellationRequested)
+                yield break;
+
+            if (provider.ExcludeSystemLibraries && drive.System != null)
+            {
+                Log.WriteVerboseMessage(LOGTAG, "SystemLibrarySkipped", "Skipping system library '{0}' ({1}) in site '{2}'", drive.Name, drive.WebUrl, site.Id);
+                continue;
+            }
+
+            yield return new DriveSourceEntry(provider, this.Path, drive);
+        }
+
+        if (siteLocked)
+            yield break;
+
         yield return new StreamResourceEntryFunction(
             SystemIO.IO_OS.PathCombine(this.Path, "metadata.json"),
             createdUtc: DateTime.UnixEpoch,
@@ -76,14 +107,6 @@ internal class SiteSourceEntry(SourceProvider provider, string parentPath, Graph
             size: -1,
             streamFactory: (ct) => provider.SiteApi.GetSiteMetadataStreamAsync(site.Id, ct)
         );
-
-        await foreach (var drive in provider.SiteApi.ListSiteDrivesAsync(site.Id, cancellationToken).ConfigureAwait(false))
-        {
-            if (cancellationToken.IsCancellationRequested)
-                yield break;
-
-            yield return new DriveSourceEntry(provider, this.Path, drive);
-        }
 
         await foreach (var list in provider.SharePointListApi.ListListsAsync(site.Id, cancellationToken).ConfigureAwait(false))
         {

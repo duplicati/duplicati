@@ -23,6 +23,11 @@ partial class SourceProvider
             return provider.GetGraphItemAsStreamAsync(url, "application/json", ct);
         }
 
+        /// <summary>
+        /// Lists the document libraries of a site. Graph includes system libraries such as
+        /// the Web Part Gallery and Style Library, marked with the <c>system</c> facet;
+        /// callers decide whether to walk those.
+        /// </summary>
         internal IAsyncEnumerable<GraphDrive> ListSiteDrivesAsync(string siteId, CancellationToken ct)
         {
             var baseUrl = provider.GraphBaseUrl.TrimEnd('/');

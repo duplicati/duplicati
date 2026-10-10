@@ -141,6 +141,12 @@ internal class GroupTypeSourceEntry(SourceProvider provider, string path, GraphG
             if (cancellationToken.IsCancellationRequested)
                 yield break;
 
+            if (provider.ExcludeSystemLibraries && drive.System != null)
+            {
+                Log.WriteVerboseMessage(LOGTAG, "SystemLibrarySkipped", "Skipping system library '{0}' ({1}) in group '{2}'", drive.Name, drive.WebUrl, group.Id);
+                continue;
+            }
+
             yield return new DriveSourceEntry(provider, this.Path, drive);
         }
     }
@@ -205,7 +211,20 @@ internal class GroupTypeSourceEntry(SourceProvider provider, string path, GraphG
 
     private async IAsyncEnumerable<ISourceProviderEntry> NotesEntries([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        await foreach (var notebook in provider.GroupNotesApi.ListGroupOneNoteNotebooksAsync(group.Id, cancellationToken).ConfigureAwait(false))
+        var notebooks = EnumerationHelper.EndOnError(
+            provider.GroupNotesApi.ListGroupOneNoteNotebooksAsync(group.Id, cancellationToken),
+            APIHelper.IsOneNoteAppOnlyRejected,
+            ex =>
+            {
+                // The condition affects every group, so report it once
+                if (provider.ShouldWarnOnce("OneNoteRejected"))
+                    Log.WriteWarningMessage(LOGTAG, "OneNoteRejected", null, $"OneNote notebooks cannot be listed with the application token (the OneNote API requires delegated permissions since March 31st 2025), so OneNote is skipped for all groups. Error: {ex.Message}");
+                else
+                    Log.WriteVerboseMessage(LOGTAG, "OneNoteRejected", $"Skipping OneNote for group '{group.Id}' because the API rejected the application token");
+            },
+            cancellationToken);
+
+        await foreach (var notebook in notebooks.ConfigureAwait(false))
         {
             if (cancellationToken.IsCancellationRequested)
                 yield break;
