@@ -45,7 +45,8 @@ public class BackendSourceProviderTests
     private static readonly DateTime TIMESTAMP = new DateTime(2026, 1, 2, 3, 4, 5, DateTimeKind.Utc);
 
     /// <summary>
-    /// A backend that lists a single file
+    /// A backend that lists a single file and reports any folder as existing,
+    /// recording the paths it is asked for
     /// </summary>
     private sealed class StubBackend : IFolderEnabledBackend
     {
@@ -54,8 +55,19 @@ public class BackendSourceProviderTests
         public string Description => "A testing backend";
         public IList<ICommandLineArgument> SupportedCommands => [];
 
+        /// <summary>
+        /// The paths passed to <see cref="ListAsync(string, CancellationToken)"/>
+        /// </summary>
+        public List<string> ListedPaths { get; } = [];
+
+        /// <summary>
+        /// The paths passed to <see cref="GetEntryAsync"/>
+        /// </summary>
+        public List<string> RequestedEntries { get; } = [];
+
         public async IAsyncEnumerable<IFileEntry> ListAsync(string path, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
+            ListedPaths.Add(path);
             await Task.CompletedTask.ConfigureAwait(false);
             yield return new FileEntry("file.txt", 42, TIMESTAMP, TIMESTAMP, false, false) { Created = TIMESTAMP };
         }
@@ -64,7 +76,12 @@ public class BackendSourceProviderTests
             => ListAsync("", cancellationToken);
 
         public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(Array.Empty<string>());
-        public Task<IFileEntry> GetEntryAsync(string path, CancellationToken cancellationToken) => throw new NotImplementedException();
+
+        public Task<IFileEntry> GetEntryAsync(string path, CancellationToken cancellationToken)
+        {
+            RequestedEntries.Add(path);
+            return Task.FromResult<IFileEntry>(new FileEntry("folder", 0, TIMESTAMP, TIMESTAMP, true, false) { Created = TIMESTAMP });
+        }
         public Task PutAsync(string remotename, string filename, CancellationToken cancelToken) => throw new NotImplementedException();
         public Task GetAsync(string remotename, string filename, CancellationToken cancelToken) => throw new NotImplementedException();
         public Task DeleteAsync(string remotename, CancellationToken cancelToken) => throw new NotImplementedException();
@@ -132,6 +149,86 @@ public class BackendSourceProviderTests
             Assert.That(metadata["backend:Protocol"], Is.EqualTo("stub"));
             Assert.That(metadata.ContainsKey("backend:Host"), Is.False);
         }
+    }
+
+    /// <summary>
+    /// The root mount point used when listing for the user interface
+    /// </summary>
+    private static readonly string SEP = Util.DirectorySeparatorString;
+
+    [Test]
+    [Category("SourceProvider")]
+    public async Task ChildPathsAreRootedWhenMountedAtRootAsync()
+    {
+        // The user interface lists sources mounted at the root,
+        // and expects rooted paths like the other source providers return
+        var backend = new StubBackend();
+        using var provider = new BackendSourceProvider(backend, SEP, "stub://host/path");
+        var root = await provider.EnumerateAsync(CancellationToken.None).SingleAsync();
+        var child = await root.Enumerate(CancellationToken.None).SingleAsync();
+
+        Assert.That(child.Path, Is.EqualTo(SEP + "file.txt"));
+        Assert.That(backend.ListedPaths, Is.EqualTo(new[] { "" }));
+    }
+
+    [Test]
+    [Category("SourceProvider")]
+    public async Task ChildPathsIncludeMountPointWhenMountedAsync()
+    {
+        var backend = new StubBackend();
+        using var provider = new BackendSourceProvider(backend, "/mnt/stub/", "stub://host/path");
+        var root = await provider.EnumerateAsync(CancellationToken.None).SingleAsync();
+        var child = await root.Enumerate(CancellationToken.None).SingleAsync();
+
+        Assert.That(child.Path, Is.EqualTo(SystemIO.IO_OS.PathCombine("/mnt/stub/", "file.txt")));
+        Assert.That(backend.ListedPaths, Is.EqualTo(new[] { "" }));
+    }
+
+    [Test]
+    [Category("SourceProvider")]
+    public async Task GetEntryAcceptsRootedPathWhenMountedAtRootAsync()
+    {
+        // The user interface sends back the rooted path it was given; the backend must see a relative path
+        var backend = new StubBackend();
+        using var provider = new BackendSourceProvider(backend, SEP, "stub://host/path");
+        var entry = await provider.GetEntryAsync(SEP + "folder" + SEP, true, CancellationToken.None);
+
+        Assert.That(entry, Is.Not.Null);
+        Assert.That(entry!.IsFolder, Is.True);
+        Assert.That(entry.Path, Is.EqualTo(SEP + "folder" + SEP));
+        Assert.That(backend.RequestedEntries, Is.EqualTo(new[] { "folder/" }));
+
+        // Listing the entry must also use the relative path, and produce rooted children
+        var child = await entry.Enumerate(CancellationToken.None).SingleAsync();
+        Assert.That(backend.ListedPaths, Is.EqualTo(new[] { "folder/" }));
+        Assert.That(child.Path, Is.EqualTo(SEP + "folder" + SEP + "file.txt"));
+    }
+
+    [Test]
+    [Category("SourceProvider")]
+    public async Task GetEntryAcceptsRelativePathWhenMountedAtRootAsync()
+    {
+        // Older clients send the path as the backend reported it
+        var backend = new StubBackend();
+        using var provider = new BackendSourceProvider(backend, SEP, "stub://host/path");
+        var entry = await provider.GetEntryAsync("folder/", true, CancellationToken.None);
+
+        Assert.That(entry, Is.Not.Null);
+        Assert.That(entry!.Path, Is.EqualTo(SEP + "folder" + SEP));
+        Assert.That(backend.RequestedEntries, Is.EqualTo(new[] { "folder/" }));
+    }
+
+    [Test]
+    [Category("SourceProvider")]
+    public async Task GetEntryStripsMountPointWhenMountedAsync()
+    {
+        var backend = new StubBackend();
+        using var provider = new BackendSourceProvider(backend, "/mnt/stub/", "stub://host/path");
+        var entry = await provider.GetEntryAsync("/mnt/stub/folder/", true, CancellationToken.None);
+
+        Assert.That(entry, Is.Not.Null);
+        Assert.That(entry!.Path, Is.EqualTo(SystemIO.IO_OS.PathCombine("/mnt/stub/", "folder/")));
+        Assert.That(backend.RequestedEntries, Is.EqualTo(new[] { "folder/" }));
     }
 
     [Test]
