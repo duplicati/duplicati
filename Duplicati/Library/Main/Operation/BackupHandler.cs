@@ -148,6 +148,9 @@ namespace Duplicati.Library.Main.Operation
             {
                 //m_options.Dbpath,
                 options.Dbpath + "-journal",
+                // The database uses write-ahead logging, which keeps these next to it while it is open
+                options.Dbpath + "-wal",
+                options.Dbpath + "-shm",
             };
 
         /// <summary>
