@@ -34,11 +34,8 @@ public class NotificationService(Connection connection) : INotificationService
     /// <inheritdoc/>
     public void DeleteNotification(long id)
     {
-        var notification = connection.GetNotifications().FirstOrDefault(n => n.ID == id);
-        if (notification == null)
+        if (!connection.DismissNotification(id))
             throw new NotFoundException("Notification not found");
-
-        connection.DismissNotification(id);
     }
 
     /// <inheritdoc/>
@@ -48,7 +45,7 @@ public class NotificationService(Connection connection) : INotificationService
     /// <inheritdoc/>
     public NotificationDto GetNotification(long id)
     {
-        var notification = connection.GetNotifications().FirstOrDefault(n => n.ID == id);
+        var notification = connection.GetNotification(id);
         if (notification == null)
             throw new NotFoundException("Notification not found");
 

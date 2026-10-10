@@ -1121,18 +1121,27 @@ namespace Duplicati.Server.Database
                 return ReadFromDb<Notification>(null).Cast<INotification>().ToArray();
         }
 
+        /// <summary>
+        /// Reads one notification by its ID
+        /// </summary>
+        /// <param name="id">The notification ID</param>
+        /// <returns>The notification, or <c>null</c> if there is no notification with that ID</returns>
+        public INotification? GetNotification(long id)
+        {
+            lock (m_lock)
+                return ReadFromDb<Notification>(cmd => cmd.SetCommandAndParameters(cmd.CommandText + @" WHERE ""ID"" = @Id")
+                        .SetParameterValue("@Id", id))
+                    .FirstOrDefault();
+        }
+
         public bool DismissNotification(long id)
         {
             lock (m_lock)
             {
-                var notifications = GetNotifications();
-                var cur = notifications.FirstOrDefault(x => x.ID == id);
-                if (cur == null)
+                if (!DeleteFromDb(typeof(Notification).Name, id))
                     return false;
 
-                DeleteFromDb(typeof(Notification).Name, id);
-                this.ApplicationSettings.UnackedError = notifications.Any(x => x.ID != id && x.Type == Duplicati.Server.Serialization.NotificationType.Error);
-                this.ApplicationSettings.UnackedWarning = notifications.Any(x => x.ID != id && x.Type == Duplicati.Server.Serialization.NotificationType.Warning);
+                UpdateUnackedNotificationFlags();
             }
 
             m_notificationUpdateService?.IncrementLastNotificationUpdateId();
@@ -1140,6 +1149,67 @@ namespace Duplicati.Server.Database
             m_eventPollNotifyer?.SignalNotificationUpdate();
 
             return true;
+        }
+
+        /// <summary>
+        /// Dismisses all notifications for a backup in one transaction and signals one update
+        /// </summary>
+        /// <param name="backupId">The ID of the backup</param>
+        /// <returns><c>true</c> if any notification was dismissed</returns>
+        public bool DismissNotificationsForBackup(string backupId)
+        {
+            lock (m_lock)
+            {
+                int deleted;
+                using (var tr = m_connection.BeginTransaction())
+                using (var cmd = m_connection.CreateCommand(tr))
+                {
+                    deleted = cmd.SetCommandAndParameters(@"DELETE FROM ""Notification"" WHERE ""BackupID"" = @BackupId")
+                        .SetParameterValue("@BackupId", backupId)
+                        .ExecuteNonQuery();
+
+                    tr.Commit();
+                }
+
+                if (deleted == 0)
+                    return false;
+
+                UpdateUnackedNotificationFlags();
+            }
+
+            m_notificationUpdateService?.IncrementLastNotificationUpdateId();
+            m_eventPollNotifyer?.SignalNewEvent();
+            m_eventPollNotifyer?.SignalNotificationUpdate();
+
+            return true;
+        }
+
+        /// <summary>
+        /// Sets the unacknowledged error and warning flags from the remaining notifications
+        /// </summary>
+        private void UpdateUnackedNotificationFlags()
+        {
+            this.ApplicationSettings.UnackedError = HasNotificationOfType(Duplicati.Server.Serialization.NotificationType.Error);
+            this.ApplicationSettings.UnackedWarning = HasNotificationOfType(Duplicati.Server.Serialization.NotificationType.Warning);
+        }
+
+        private bool HasNotificationOfType(Duplicati.Server.Serialization.NotificationType type)
+        {
+            // The type is read back with a case-insensitive parse, so match it the same way
+            using (var cmd = m_connection.CreateCommand())
+                return ExecuteScalarInt64(
+                    cmd.SetCommandAndParameters(@"SELECT EXISTS (SELECT 1 FROM ""Notification"" WHERE ""Type"" = @Type COLLATE NOCASE)")
+                        .SetParameterValue("@Type", type.ToString()),
+                    0) == 1;
+        }
+
+        /// <summary>
+        /// Reads the notifications only if the caller enumerates them
+        /// </summary>
+        private IEnumerable<INotification> ReadNotificationsWhenEnumerated()
+        {
+            foreach (var n in GetNotifications())
+                yield return n;
         }
 
         /// <summary>
@@ -1177,7 +1247,7 @@ namespace Duplicati.Server.Database
             string? logid,
             string? messageid,
             string? logtag,
-            Func<INotification, INotification[], INotification> conflicthandler)
+            Func<INotification, IEnumerable<INotification>, INotification> conflicthandler)
         {
             lock (m_lock)
             {
@@ -1196,7 +1266,8 @@ namespace Duplicati.Server.Database
                     MessageLogTag = logtag
                 };
 
-                var conflictResult = conflicthandler(notification, GetNotifications());
+                // Most handlers only add the new notification, so read the existing ones only if the handler looks at them
+                var conflictResult = conflicthandler(notification, ReadNotificationsWhenEnumerated());
                 if (conflictResult == null)
                     return;
 
