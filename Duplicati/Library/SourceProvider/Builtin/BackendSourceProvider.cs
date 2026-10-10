@@ -133,12 +133,22 @@ public class BackendSourceProvider(IFolderEnabledBackend backend, string mounted
         => new[] { Interlocked.Exchange(ref preparedRoot, null) ?? CreateRoot() }.ToAsyncEnumerable();
 
     /// <inheritdoc/>
+    /// <remarks>
+    /// The path may be given as reported by <see cref="BackendSourceFileEntry.Path"/>,
+    /// that is, rooted or prefixed with the mount point. The backend is always
+    /// given the path relative to the mount point.
+    /// </remarks>
     public async Task<ISourceProviderEntry?> GetEntryAsync(string path, bool isFolder, CancellationToken cancellationToken)
     {
-        var entry = await backend.GetEntryAsync(BackendSourceFileEntry.NormalizePathTo(path, '/'), cancellationToken).ConfigureAwait(false);
+        var relativePath = path;
+        if (!string.IsNullOrEmpty(mountedPath) && relativePath.StartsWith(mountedPath, StringComparison.Ordinal))
+            relativePath = relativePath.Substring(mountedPath.Length);
+        relativePath = relativePath.TrimStart('/', '\\');
+
+        var entry = await backend.GetEntryAsync(BackendSourceFileEntry.NormalizePathTo(relativePath, '/'), cancellationToken).ConfigureAwait(false);
         return entry == null
             ? null
-            : new BackendSourceFileEntry(this, path, entry.IsFolder, false, entry.Created, entry.LastModification, entry.Size);
+            : new BackendSourceFileEntry(this, relativePath, entry.IsFolder, false, entry.Created, entry.LastModification, entry.Size);
     }
 
     /// <inheritdoc/>
