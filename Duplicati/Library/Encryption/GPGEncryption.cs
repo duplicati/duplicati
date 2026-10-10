@@ -22,6 +22,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Logging;
 
@@ -211,51 +213,70 @@ namespace Duplicati.Library.Encryption
             Console.Error.WriteLine("Running command: {0} {1}", m_programpath, args);
 #endif
 
-            System.Diagnostics.Process p;
+            System.Diagnostics.Process p = null;
+            Task<string> stderr;
 
             try
             {
                 p = System.Diagnostics.Process.Start(psi);
+
+                //Read the error output while GPG runs, or GPG stops when the pipe is full
+                stderr = p.StandardError.ReadToEndAsync();
+
                 p.StandardInput.WriteLine(m_key);
                 p.StandardInput.Flush();
 
                 System.Threading.Thread.Sleep(1000);
                 if (p.HasExited)
-                    throw new Exception(p.StandardError.ReadToEnd());
+                    throw new Exception(stderr.GetAwaiter().GetResult());
             }
             catch (Exception ex)
             {
+                if (p != null)
+                {
+                    try
+                    {
+                        if (!p.HasExited)
+                            p.Kill(true);
+                    }
+                    catch
+                    {
+                    }
+                    p.Dispose();
+                }
+
                 Logging.Log.WriteErrorMessage(LOGTAG, "GPGEncryptFailure", ex, "Error occurred while encrypting with GPG:" + ex.Message);
                 throw new Exception(Strings.GPGEncryption.GPGExecuteError(m_programpath, args, ex.Message), ex);
             }
 
-            System.Threading.Thread t;
+            Task copier;
             if (encrypt)
             {
                 //Prevent blocking of the output buffer
-                t = new System.Threading.Thread(new System.Threading.ParameterizedThreadStart(Runner));
-                t.Start(new Stream[] { p.StandardOutput.BaseStream, input });
+                copier = StartCopy(p.StandardOutput.BaseStream, input);
 
-                return new GPGStreamWrapper(p, t, p.StandardInput.BaseStream);
+                return new GPGStreamWrapper(p, copier, stderr, p.StandardInput.BaseStream);
             }
 
             //Prevent blocking of the input buffer
-            t = new System.Threading.Thread(new System.Threading.ParameterizedThreadStart(Runner));
-            t.Start(new Stream[] { input, p.StandardInput.BaseStream });
+            copier = StartCopy(input, p.StandardInput.BaseStream);
 
-            return new GPGStreamWrapper(p, t, p.StandardOutput.BaseStream);
+            return new GPGStreamWrapper(p, copier, stderr, p.StandardOutput.BaseStream);
         }
 
         /// <summary>
-        /// Copies the content of one stream into another, invoked as a thread
+        /// Copies the content of one stream into another on a thread of its own.
+        /// A failure is kept in the returned task, so the stream wrapper can report it
         /// </summary>
-        /// <param name="x">An array with two stream instances</param>
-        private void Runner(object x)
+        /// <param name="source">The stream to read from</param>
+        /// <param name="target">The stream to write to, closed when the copy is done</param>
+        private static Task StartCopy(Stream source, Stream target)
         {
-            //Unwrap arguments and read stream
-            var tmp = (Stream[])x;
-            Utility.Utility.CopyStream(tmp[0], tmp[1]);
-            tmp[1].Close();
+            return Task.Factory.StartNew(() =>
+            {
+                Utility.Utility.CopyStream(source, target);
+                target.Close();
+            }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
         }
 
         /// <summary>
