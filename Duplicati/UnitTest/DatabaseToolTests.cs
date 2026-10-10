@@ -1016,6 +1016,46 @@ INSERT INTO ""Version"" (""Version"") VALUES (12);
         }
 
         /// <summary>
+        /// Verifies that cleanup never deletes a database with the server schema.
+        /// The server database is not referenced by dbconfig.json or by its own
+        /// Backup table, so every server-schema file (the active one and the copies
+        /// the database upgrader leaves behind) is unreferenced by construction.
+        /// Orphaned local databases are still deleted.
+        /// </summary>
+        [Test]
+        [Category("DatabaseTool")]
+        public async Task TestCleanupKeepsServerSchemaDatabasesAsync()
+        {
+            using var tempFolder = new Library.Utility.TempFolder();
+            var tempDir = (string)tempFolder;
+
+            var serverDb = Path.Combine(tempDir, "Duplicati-server.sqlite");
+            var serverUpgradeCopy = Path.Combine(tempDir, "backup Duplicati-server 20261010120000.sqlite");
+            var localUpgradeCopy = Path.Combine(tempDir, "backup ORPHANXYZ 20261010120000.sqlite");
+
+            foreach (var path in new[] { serverDb, serverUpgradeCopy })
+            {
+                using var db = await SQLiteLoader.LoadConnectionAsync(path);
+                using var cmd = db.CreateCommand();
+                cmd.CommandText = ServerSchemaV6;
+                await cmd.ExecuteNonQueryAsync();
+            }
+
+            using (var db = await SQLiteLoader.LoadConnectionAsync(localUpgradeCopy))
+            using (var cmd = db.CreateCommand())
+            {
+                cmd.CommandText = LocalSchemaV12;
+                await cmd.ExecuteNonQueryAsync();
+            }
+
+            Assert.AreEqual(0, await Program.MainAsync(["cleanup", "--datafolder", tempDir, "--force"]));
+
+            Assert.That(File.Exists(serverDb), Is.True, "Active server DB should not be deleted");
+            Assert.That(File.Exists(serverUpgradeCopy), Is.True, "Server upgrade copy should not be deleted");
+            Assert.That(File.Exists(localUpgradeCopy), Is.False, "Orphaned local DB should be deleted");
+        }
+
+        /// <summary>
         /// Wipes encrypted fields from a server database and verifies that all
         /// <c>enc-v1:</c>-prefixed values are cleared, the <c>encrypted-fields</c>
         /// server setting is reset to <c>False</c>, and a backup file is produced.
