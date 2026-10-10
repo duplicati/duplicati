@@ -37,10 +37,19 @@ public class JottacloudAuthHelper : OAuthHelperHttpClient, IDisposable
         Username = null!; // Setting via initializer
     }
 
-    public static async Task<JottacloudAuthHelper> CreateAsync(string accessToken, string oauthUrl, CancellationToken cancellationToken = default)
+    public static Task<JottacloudAuthHelper> CreateAsync(string accessToken, string oauthUrl, CancellationToken cancellationToken = default)
+        => CreateAsync(accessToken, oauthUrl, null, cancellationToken);
+
+    /// <summary>
+    /// Creates the helper with the supplied <see cref="HttpClient"/>, or with a new one if none is given
+    /// </summary>
+    internal static async Task<JottacloudAuthHelper> CreateAsync(string accessToken, string oauthUrl, HttpClient? httpClient, CancellationToken cancellationToken)
     {
-        var httpClient = HttpClientHelper.CreateClient();
-        httpClient.Timeout = Timeout.InfiniteTimeSpan;
+        if (httpClient == null)
+        {
+            httpClient = HttpClientHelper.CreateClient();
+            httpClient.Timeout = Timeout.InfiniteTimeSpan;
+        }
         try
         {
             var inst = new JottacloudAuthHelper(httpClient, accessToken, oauthUrl);
