@@ -399,8 +399,13 @@ namespace Duplicati.Library.Common.IO
         /// <param name="permissions">The file access permissions to set</param>
         public static void SetUserGroupAndPermissions(string path, long uid, long gid, long permissions)
         {
-            Mono.Unix.UnixFileInfo.GetFileSystemEntry(path).SetOwner(uid, gid);
-            Mono.Unix.UnixFileInfo.GetFileSystemEntry(path).FileAccessPermissions = (Mono.Unix.FileAccessPermissions)permissions;
+            var fse = Mono.Unix.UnixFileInfo.GetFileSystemEntry(path);
+            fse.SetOwner(uid, gid);
+
+            // chmod follows a symbolic link, so setting the permissions of a link would set
+            // them on the file it points to. The permissions of a link itself are not used.
+            if (!fse.IsSymbolicLink)
+                fse.FileAccessPermissions = (Mono.Unix.FileAccessPermissions)permissions;
         }
 
         /// <summary>
