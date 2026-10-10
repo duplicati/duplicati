@@ -526,7 +526,7 @@ namespace Duplicati.Library.SourceProvider.Builtin.HyperV
 
                 try
                 {
-                    RegisterMachine(registration, vmId, machine.ToList());
+                    RegisterMachine(registration, vmId, machine.ToList(), cancellationToken);
                 }
                 catch (Exception ex) when (!ex.IsAbortException())
                 {
@@ -541,8 +541,9 @@ namespace Duplicati.Library.SourceProvider.Builtin.HyperV
         /// <param name="registration">The registration helper</param>
         /// <param name="vmId">The ID the machine was backed up with</param>
         /// <param name="entries">The restored entries of the machine that have a local path</param>
+        /// <param name="cancellationToken">The cancellation token</param>
         [System.Runtime.Versioning.SupportedOSPlatform("windows")]
-        private static void RegisterMachine(HyperVRestoreRegistration registration, Guid vmId, List<RestoredVirtualEntry> entries)
+        private static void RegisterMachine(HyperVRestoreRegistration registration, Guid vmId, List<RestoredVirtualEntry> entries, CancellationToken cancellationToken)
         {
             var configuration = entries.FirstOrDefault(x => !x.IsFolder && IsConfigurationFile(x.OriginalPath!, vmId));
             if (configuration == null)
@@ -567,14 +568,25 @@ namespace Duplicati.Library.SourceProvider.Builtin.HyperV
 
             if (originalLocation)
             {
-                if (registration.IsRegistered(vmId))
+                // Hyper-V registers a machine whose configuration is in its default store
+                // as soon as it finds the restored file, so give it a moment to do that
+                if (WaitForRegistration(registration, vmId, cancellationToken))
                 {
-                    Logging.Log.WriteInformationMessage(LOGTAG, "HyperVAlreadyRegistered", "The virtual machine {0} is already registered with Hyper-V", vmId);
+                    Logging.Log.WriteInformationMessage(LOGTAG, "HyperVAlreadyRegistered", "The virtual machine {0} is registered with Hyper-V", vmId);
                     return;
                 }
 
-                var (_, name) = registration.Import(configuration.TargetPath, snapshotFolder, false, new Dictionary<string, string>(), null);
-                Logging.Log.WriteInformationMessage(LOGTAG, "HyperVRegistered", "Registered the virtual machine \"{0}\" ({1}) with Hyper-V", name, vmId);
+                try
+                {
+                    var (_, name) = registration.Import(configuration.TargetPath, snapshotFolder, false, new Dictionary<string, string>(), null);
+                    Logging.Log.WriteInformationMessage(LOGTAG, "HyperVRegistered", "Registered the virtual machine \"{0}\" ({1}) with Hyper-V", name, vmId);
+                }
+                catch (Exception ex) when (!ex.IsAbortException() && registration.IsRegistered(vmId))
+                {
+                    // Hyper-V registered the machine itself while it was being imported
+                    Logging.Log.WriteInformationMessage(LOGTAG, "HyperVRegisteredByHyperV", "Hyper-V registered the virtual machine {0} from its restored configuration", vmId);
+                }
+
                 return;
             }
 
@@ -598,6 +610,35 @@ namespace Duplicati.Library.SourceProvider.Builtin.HyperV
 
             var (id, copyName) = registration.Import(configuration.TargetPath, snapshotFolder, true, restoredFiles, RESTORED_NAME_SUFFIX);
             Logging.Log.WriteInformationMessage(LOGTAG, "HyperVRegisteredCopy", "Registered the restored virtual machine {0} with Hyper-V as \"{1}\" ({2})", vmId, copyName, id);
+        }
+
+        /// <summary>
+        /// The time to wait for Hyper-V to register a machine restored to its default store
+        /// </summary>
+        private static readonly TimeSpan REGISTRATION_WAIT = TimeSpan.FromSeconds(10);
+
+        /// <summary>
+        /// Waits for Hyper-V to register a machine
+        /// </summary>
+        /// <param name="registration">The registration helper</param>
+        /// <param name="vmId">The machine ID</param>
+        /// <param name="cancellationToken">The cancellation token</param>
+        /// <returns>True if the machine is registered within <see cref="REGISTRATION_WAIT"/></returns>
+        [System.Runtime.Versioning.SupportedOSPlatform("windows")]
+        private static bool WaitForRegistration(HyperVRestoreRegistration registration, Guid vmId, CancellationToken cancellationToken)
+        {
+            var deadline = DateTime.UtcNow + REGISTRATION_WAIT;
+            while (true)
+            {
+                if (registration.IsRegistered(vmId))
+                    return true;
+
+                if (DateTime.UtcNow >= deadline)
+                    return false;
+
+                cancellationToken.WaitHandle.WaitOne(TimeSpan.FromMilliseconds(500));
+                cancellationToken.ThrowIfCancellationRequested();
+            }
         }
 
         /// <summary>
