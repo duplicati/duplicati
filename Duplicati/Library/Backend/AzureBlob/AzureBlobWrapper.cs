@@ -38,17 +38,16 @@ namespace Duplicati.Library.Backend.AzureBlob
     /// </summary>
     public class AzureBlobWrapper
     {
-        /// <summary>
-        /// The size of each request that uploads a file. Each request must finish within the network
-        /// timeout of the client, 100 seconds by default, so a file is sent in blocks of this size
-        /// rather than in a single request.
-        /// </summary>
-        internal const long UploadBlockSize = 4 * 1024 * 1024;
-
         private readonly BlobContainerClient _container;
         private readonly TimeoutOptionsHelper.Timeouts _timeouts;
         private readonly IReadOnlySet<AccessTier> _archiveClasses;
         private readonly AccessTier? _accessTier;
+
+        /// <summary>
+        /// The size of each request that uploads a file. Each request must finish within the
+        /// read-write timeout, so a file is sent in blocks of this size rather than in a single request.
+        /// </summary>
+        private readonly long _uploadBlockSize;
 
         /// <summary>
         /// The blob name prefix from the backend URL path, ending with a '/' when
@@ -83,8 +82,9 @@ namespace Duplicati.Library.Backend.AzureBlob
         /// <param name="archiveClasses">The storage classes that are considered archive classes.</param>
         /// <param name="timeouts">The timeout options.</param>
         /// <param name="maxRetries">The maximum number of retries for Azure operations.</param>
-        public AzureBlobWrapper(string accountName, string? accessKey, string? sasToken, string containerName, string prefix, AccessTier? accessTier, IReadOnlySet<AccessTier> archiveClasses, TimeoutOptionsHelper.Timeouts timeouts, int maxRetries)
-            : this(accountName, accessKey, sasToken, containerName, prefix, accessTier, archiveClasses, timeouts, maxRetries, null)
+        /// <param name="uploadBlockSize">The size of each block sent when uploading a file.</param>
+        public AzureBlobWrapper(string accountName, string? accessKey, string? sasToken, string containerName, string prefix, AccessTier? accessTier, IReadOnlySet<AccessTier> archiveClasses, TimeoutOptionsHelper.Timeouts timeouts, int maxRetries, long uploadBlockSize)
+            : this(accountName, accessKey, sasToken, containerName, prefix, accessTier, archiveClasses, timeouts, maxRetries, uploadBlockSize, null)
         {
         }
 
@@ -101,8 +101,9 @@ namespace Duplicati.Library.Backend.AzureBlob
         /// <param name="archiveClasses">The storage classes that are considered archive classes.</param>
         /// <param name="timeouts">The timeout options.</param>
         /// <param name="maxRetries">The maximum number of retries for Azure operations.</param>
+        /// <param name="uploadBlockSize">The size of each block sent when uploading a file.</param>
         /// <param name="handler">The handler that sends the requests, or null to use the default.</param>
-        internal AzureBlobWrapper(string accountName, string? accessKey, string? sasToken, string containerName, string prefix, AccessTier? accessTier, IReadOnlySet<AccessTier> archiveClasses, TimeoutOptionsHelper.Timeouts timeouts, int maxRetries, HttpMessageHandler? handler)
+        internal AzureBlobWrapper(string accountName, string? accessKey, string? sasToken, string containerName, string prefix, AccessTier? accessTier, IReadOnlySet<AccessTier> archiveClasses, TimeoutOptionsHelper.Timeouts timeouts, int maxRetries, long uploadBlockSize, HttpMessageHandler? handler)
         {
             BlobServiceClient blobServiceClient;
             var maxTicks = timeouts.ReadWriteTimeout.Ticks - TimeSpan.FromSeconds(1).Ticks;
@@ -147,6 +148,7 @@ namespace Duplicati.Library.Backend.AzureBlob
             _container = blobServiceClient.GetBlobContainerClient(containerName);
             _prefix = prefix ?? "";
             _timeouts = timeouts;
+            _uploadBlockSize = uploadBlockSize;
         }
 
         /// <summary>
@@ -193,8 +195,8 @@ namespace Duplicati.Library.Backend.AzureBlob
                 AccessTier = _accessTier,
                 TransferOptions = new Azure.Storage.StorageTransferOptions
                 {
-                    InitialTransferSize = UploadBlockSize,
-                    MaximumTransferSize = UploadBlockSize,
+                    InitialTransferSize = _uploadBlockSize,
+                    MaximumTransferSize = _uploadBlockSize,
                     // One block at a time, as the uploads of several files already share the bandwidth
                     MaximumConcurrency = 1
                 }

@@ -64,11 +64,25 @@ namespace Duplicati.Library.Backend.AzureBlob
         /// The option to specify the immutability policy mode
         /// </summary>
         private const string AZURE_BLOB_IMMUTABILITY_POLICY_MODE_OPTION = "azure-blob-immutability-policy-mode";
+        /// <summary>
+        /// The option to specify the size of each block sent when uploading a file
+        /// </summary>
+        private const string AZURE_UPLOAD_BLOCK_SIZE_OPTION = "azure-upload-block-size";
 
         /// <summary>
         /// The default number of internal retries
         /// </summary>
         public const int DEFAULT_INTERNAL_RETRIES = 3;
+
+        /// <summary>
+        /// The default size of each block sent when uploading a file
+        /// </summary>
+        private const string DEFAULT_UPLOAD_BLOCK_SIZE = "10mb";
+
+        /// <summary>
+        /// The largest block size Azure accepts for a single block
+        /// </summary>
+        private const long MAX_UPLOAD_BLOCK_SIZE = 4000L * 1024 * 1024;
 
         /// <summary>
         /// The default immutability policy mode
@@ -137,9 +151,13 @@ namespace Duplicati.Library.Backend.AzureBlob
                 : (AccessTier?)new AccessTier(accessTierValue);
             var internalRetries = Utility.Utility.ParseIntOption(options, AZURE_INTERNAL_RETRIES_OPTION, DEFAULT_INTERNAL_RETRIES);
 
+            var uploadBlockSize = Utility.Utility.ParseSizeOption(options, AZURE_UPLOAD_BLOCK_SIZE_OPTION, "mb", DEFAULT_UPLOAD_BLOCK_SIZE);
+            if (uploadBlockSize <= 0 || uploadBlockSize > MAX_UPLOAD_BLOCK_SIZE)
+                throw new UserInformationException(Strings.AzureBlobBackend.InvalidUploadBlockSize(AZURE_UPLOAD_BLOCK_SIZE_OPTION), "AzureInvalidUploadBlockSize");
+
             _immutabilityPolicyMode = Utility.Utility.ParseEnumOption(options, AZURE_BLOB_IMMUTABILITY_POLICY_MODE_OPTION, DEFAULT_IMMUTABILITY_MODE);
 
-            _azureBlob = new AzureBlobWrapper(auth.Username!, auth.Password, sasToken, containerName, prefix, accessTier, archiveClasses, timeouts, internalRetries);
+            _azureBlob = new AzureBlobWrapper(auth.Username!, auth.Password, sasToken, containerName, prefix, accessTier, archiveClasses, timeouts, internalRetries, uploadBlockSize);
         }
 
         /// <summary>
@@ -257,6 +275,11 @@ namespace Duplicati.Library.Backend.AzureBlob
                         DEFAULT_IMMUTABILITY_MODE.ToString(),
                         null,
                         Enum.GetNames(typeof(BlobImmutabilityPolicyMode))),
+                    new CommandLineArgument(AZURE_UPLOAD_BLOCK_SIZE_OPTION,
+                        CommandLineArgument.ArgumentType.Size,
+                        Strings.AzureBlobBackend.UploadBlockSizeDescriptionShort,
+                        Strings.AzureBlobBackend.UploadBlockSizeDescriptionLong,
+                        DEFAULT_UPLOAD_BLOCK_SIZE),
                     .. TimeoutOptionsHelper.GetOptions()
                 ];
             }
