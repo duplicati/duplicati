@@ -122,6 +122,40 @@ public class TaskQueueServiceTests
         Assert.That(state.ErrorMessage, Is.Null);
     }
 
+    /// <summary>
+    /// The runner stamps a task that fails as finished before its failure is cached. Until the
+    /// result is cached, the task is still running: without the result it would be reported as
+    /// completed, and a client that stops at TaskFinished would take a failure for a success.
+    /// </summary>
+    [Test]
+    public void GetTaskInfo_CurrentTaskFinishedWithoutCachedResult_ReportsRunning()
+    {
+        var runner = new MockQueueRunnerService();
+        runner.CurrentTask = new MockQueuedTask { TaskID = 7, BackupID = "1", TaskStarted = Started, TaskFinished = Finished };
+        var service = new TaskQueueService(runner);
+
+        var state = service.GetTaskInfo(7);
+
+        Assert.That(state.Status, Is.EqualTo("Running"));
+        Assert.That(state.TaskFinished, Is.Null);
+    }
+
+    /// <summary>
+    /// GetTaskQueue reports the same task the same way as GetTaskInfo.
+    /// </summary>
+    [Test]
+    public void GetTaskQueue_CurrentTaskFinishedWithoutCachedResult_ReportsRunning()
+    {
+        var runner = new MockQueueRunnerService();
+        runner.CurrentTask = new MockQueuedTask { TaskID = 7, BackupID = "1", TaskStarted = Started, TaskFinished = Finished };
+        var service = new TaskQueueService(runner);
+
+        var state = service.GetTaskQueue().Single();
+
+        Assert.That(state.Status, Is.EqualTo("Running"));
+        Assert.That(state.TaskFinished, Is.Null);
+    }
+
     [Test]
     public void GetTaskInfo_QueuedTask_ReportsWaiting()
     {
