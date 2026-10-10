@@ -28,6 +28,8 @@ using Duplicati.Library.Localization.Short;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
 
+[assembly: InternalsVisibleTo("Duplicati.UnitTest")]
+
 namespace Duplicati.Library.Backend;
 
 public class Jottacloud : IStreamingBackend, IRenameEnabledBackend
@@ -57,6 +59,7 @@ public class Jottacloud : IStreamingBackend, IRenameEnabledBackend
     private readonly TimeoutOptionsHelper.Timeouts m_timeouts;
 
     private JottacloudAuthHelper? m_oauth;
+    private readonly HttpClient? m_httpClient;
     private readonly AuthIdOptionsHelper.AuthIdOptions m_authIdOptions;
 
     private record Urls(string Url, string DeviceUrl, string UploadUrl);
@@ -162,6 +165,19 @@ public class Jottacloud : IStreamingBackend, IRenameEnabledBackend
         m_timeouts = TimeoutOptionsHelper.Parse(options);
     }
 
+    /// <summary>
+    /// Creates a backend that sends its requests through the supplied <see cref="HttpClient"/>,
+    /// so the Jottacloud responses can be stubbed in tests
+    /// </summary>
+    /// <param name="url">The backend url</param>
+    /// <param name="options">The options to use</param>
+    /// <param name="httpClient">The client to use</param>
+    internal Jottacloud(string url, Dictionary<string, string?> options, HttpClient httpClient)
+        : this(url, options)
+    {
+        m_httpClient = httpClient;
+    }
+
     /// <inheritdoc/>
     public string DisplayName => Strings.Jottacloud.DisplayName;
 
@@ -177,7 +193,7 @@ public class Jottacloud : IStreamingBackend, IRenameEnabledBackend
     {
         if (m_oauth == null || m_urls == null)
         {
-            m_oauth = await JottacloudAuthHelper.CreateAsync(m_authIdOptions.AuthId!, m_authIdOptions.OAuthUrl, cancelToken).ConfigureAwait(false);
+            m_oauth = await JottacloudAuthHelper.CreateAsync(m_authIdOptions.AuthId!, m_authIdOptions.OAuthUrl, m_httpClient, cancelToken).ConfigureAwait(false);
 
             var url_device = JFS_ROOT + "/" + m_oauth.Username + "/" + m_device;
             var url = url_device + "/" + m_mountPoint + "/" + m_path;
@@ -484,7 +500,7 @@ public class Jottacloud : IStreamingBackend, IRenameEnabledBackend
         var semaphore = new SemaphoreSlim(m_threads, m_threads);
         long nextWritePosition = 0;
 
-        while (chunks.Count > 0 || tasks.Any(t => !t.IsCompleted) || completedChunks.Any())
+        while (chunks.Count > 0 || tasks.Count > 0 || completedChunks.Any())
         {
             cancelToken.ThrowIfCancellationRequested();
 
