@@ -226,13 +226,16 @@ public static class Verify
             }
         }
 
-        // Get all sqlite files in the datafolder
+        // Get all Duplicati databases in the datafolder. A sqlite file that cannot be
+        // examined as a Duplicati database belongs to something else, so it is left out
+        // and cleanup never deletes it. Referenced databases are added above regardless
         var fileSystemPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         if (Directory.Exists(datafolder))
         {
             foreach (var file in Directory.EnumerateFiles(datafolder, "*.sqlite", SearchOption.AllDirectories))
             {
-                fileSystemPaths.Add(Path.GetFullPath(file));
+                if (await IsDuplicatiDatabaseAsync(file))
+                    fileSystemPaths.Add(Path.GetFullPath(file));
             }
         }
 
@@ -304,6 +307,25 @@ public static class Verify
         }
 
         return results.OrderBy(r => r.Status).ThenBy(r => r.Path).ToList();
+    }
+
+    /// <summary>
+    /// Checks whether a file is a Duplicati database, i.e. whether
+    /// <see cref="Helper.ExamineDatabaseAsync"/> can read its schema version.
+    /// </summary>
+    /// <param name="path">The file to check.</param>
+    /// <returns><c>true</c> if the file is a Duplicati database, <c>false</c> otherwise.</returns>
+    private static async Task<bool> IsDuplicatiDatabaseAsync(string path)
+    {
+        try
+        {
+            await Helper.ExamineDatabaseAsync(path).ConfigureAwait(false);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     /// <summary>
