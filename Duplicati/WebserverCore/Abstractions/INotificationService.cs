@@ -43,4 +43,9 @@ public interface INotificationService
     /// Deletes a notification by its ID.
     /// </summary>
     void DeleteNotification(long id);
+
+    /// <summary>
+    /// Deletes all notifications.
+    /// </summary>
+    void DeleteAllNotifications();
 }

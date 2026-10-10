@@ -39,5 +39,9 @@ public class Notification : IEndpointV1
         group.MapDelete("/notification/{id}", ([FromRoute] long id, [FromServices] INotificationService notificationService)
             => notificationService.DeleteNotification(id))
             .RequireAuthorization();
+
+        group.MapDelete("/notifications", ([FromServices] INotificationService notificationService)
+            => notificationService.DeleteAllNotifications())
+            .RequireAuthorization();
     }
 }
