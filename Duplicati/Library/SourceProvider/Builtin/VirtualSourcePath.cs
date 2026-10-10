@@ -73,7 +73,8 @@ public static class VirtualSourcePath
     /// <returns>The name</returns>
     public static string GetDataPathName(string localPath)
     {
-        var name = Path.GetFileName(localPath.TrimEnd(Path.DirectorySeparatorChar)).TrimEnd(':');
+        // Trim the volume separator before GetFileName, as Windows returns "" for "C:"
+        var name = Path.GetFileName(localPath.TrimEnd(Path.DirectorySeparatorChar).TrimEnd(':'));
         return string.IsNullOrEmpty(name) ? ROOT_NAME : name;
     }
 
