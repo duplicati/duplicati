@@ -181,9 +181,6 @@ internal sealed class GraphMessage
     [JsonPropertyName("hasAttachments")]
     public bool? HasAttachments { get; set; }
 
-    [JsonPropertyName("body")]
-    public GraphBody? Body { get; set; }
-
     [JsonPropertyName("sender")]
     public GraphRecipient? Sender { get; set; }
 
@@ -192,6 +189,13 @@ internal sealed class GraphMessage
 
     [JsonPropertyName("bccRecipients")]
     public List<GraphRecipient>? BccRecipients { get; set; }
+
+    /// <summary>
+    /// Present on delta responses for messages that were removed.
+    /// Names starting with '@' are never included in a $select.
+    /// </summary>
+    [JsonPropertyName("@removed")]
+    public JsonElement? Removed { get; set; }
 }
 
 internal sealed class GraphBody
@@ -600,6 +604,14 @@ internal sealed class GraphDriveItem
 
     [JsonPropertyName("fileSystemInfo")]
     public GraphDriveFileSystemInfo? FileSystemInfo { get; set; }
+
+    /// <summary>
+    /// Present when the item has been shared, that is, when it carries sharing links or
+    /// permissions of its own rather than only inheriting from its parent. Used to avoid
+    /// a permissions request for every item that merely inherits.
+    /// </summary>
+    [JsonPropertyName("shared")]
+    public JsonElement? Shared { get; set; }
 
     // Often useful when downloading
     [JsonPropertyName("@microsoft.graph.downloadUrl")]

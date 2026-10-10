@@ -36,11 +36,16 @@ partial class SourceProvider
 
         /// <summary>
         /// Lists all messages in a specific mail folder.
+        /// The listing uses the delta endpoint without a stored token, so every call is a
+        /// full walk of the folder. Unlike the plain messages listing, which pages with
+        /// <c>$skip</c> and has been observed to restart from the beginning at the end of
+        /// large folders, a delta walk pages with <c>$skiptoken</c> over a server-side
+        /// snapshot and ends with a <c>@odata.deltaLink</c>.
         /// </summary>
-        internal IAsyncEnumerable<GraphMessage> ListAllEmailsInFolderAsync(
+        internal async IAsyncEnumerable<GraphMessage> ListAllEmailsInFolderAsync(
             string userIdOrUpn,
             string folderId,
-            CancellationToken ct)
+            [EnumeratorCancellation] CancellationToken ct)
         {
             var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
             var user = Uri.EscapeDataString(userIdOrUpn);
@@ -48,12 +53,20 @@ partial class SourceProvider
             var select = GraphSelectBuilder.BuildSelect<GraphMessage>();
 
             var url =
-                $"{baseUrl}/v1.0/users/{user}/mailFolders/{folder}/messages" +
-                $"?$select={Uri.EscapeDataString(select)}" +
-                "&$orderby=receivedDateTime asc" +
-                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
+                $"{baseUrl}/v1.0/users/{user}/mailFolders/{folder}/messages/delta" +
+                $"?$select={Uri.EscapeDataString(select)}";
 
-            return provider.GetAllGraphItemsAsync<GraphMessage>(url, ct);
+            await foreach (var message in provider.GetAllGraphDeltaItemsAsync<GraphMessage>(url, m => m.Id, ct).ConfigureAwait(false))
+            {
+                // A walk without a token should not report removals, but skip them defensively
+                if (message.Removed.HasValue)
+                {
+                    Library.Logging.Log.WriteVerboseMessage(LOGTAG, "DeltaRemovedMessageSkipped", "Skipping removed message {0} reported by the delta walk of folder {1}", message.Id, folderId);
+                    continue;
+                }
+
+                yield return message;
+            }
         }
 
         internal async Task<GraphMailFolder> GetMailRootFolderAsync(string userIdOrUpn, CancellationToken ct)
@@ -737,6 +750,24 @@ partial class SourceProvider
             return provider.GetAllGraphItemsAsync<GraphPermission>(url, ct);
         }
 
+        /// <summary>
+        /// Fetches a single drive item. A single-item request reports the item's own
+        /// metadata, which for some SharePoint internals differs from what the
+        /// children listing reports.
+        /// </summary>
+        internal Task<GraphDriveItem> GetDriveItemAsync(string driveId, string itemId, CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var drive = Uri.EscapeDataString(driveId);
+            var item = Uri.EscapeDataString(itemId);
+            var select = GraphSelectBuilder.BuildSelect<GraphDriveItem>();
+
+            var url =
+                $"{baseUrl}/v1.0/drives/{drive}/items/{item}?$select={Uri.EscapeDataString(select)}";
+
+            return provider.GetGraphItemAsync<GraphDriveItem>(url, ct);
+        }
+
         internal Task<Stream> GetDriveItemMetadataStreamAsync(
             string driveId,
             string itemId,
@@ -922,7 +953,11 @@ partial class SourceProvider
             var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
             var chat = Uri.EscapeDataString(chatId);
 
-            var select = GraphSelectBuilder.BuildSelect<GraphChatMember>();
+            var select = GraphSelectBuilder.BuildSelect<GraphChatMember>(
+                // userId is defined on the derived aadUserConversationMember type; it is returned
+                // but cannot be selected on the conversationMember collection
+                exclude: [nameof(GraphChatMember.UserId)]
+            );
             var url =
                 $"{baseUrl}/v1.0/chats/{chat}/members" +
                 $"?$select={Uri.EscapeDataString(select)}" +
@@ -938,10 +973,11 @@ partial class SourceProvider
 
             var select = GraphSelectBuilder.BuildSelect<GraphChatMessage>();
 
+            // Chat messages reject $top values above 50
             var url =
                 $"{baseUrl}/v1.0/chats/{chat}/messages" +
                 $"?$select={Uri.EscapeDataString(select)}" +
-                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
+                $"&$top={APIHelper.CHATS_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphChatMessage>(url, ct);
         }

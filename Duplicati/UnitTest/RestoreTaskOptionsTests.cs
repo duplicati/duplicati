@@ -47,7 +47,7 @@ namespace Duplicati.UnitTest
         public void UnspecifiedRestoreOptionsAreNotWritten()
         {
             var task = Runner.CreateRestoreTask(MakeBackup(), [], DateTime.UtcNow, null,
-                overwrite: null, restore_permissions: null, skip_metadata: null, passphrase: null);
+                overwrite: null, restore_permissions: null, skip_metadata: null, passphrase: null, options: null);
 
             Assert.IsNotNull(task.ExtraOptions);
             Assert.IsFalse(task.ExtraOptions!.ContainsKey("overwrite"),
@@ -64,13 +64,34 @@ namespace Duplicati.UnitTest
         public void ExplicitRestoreOptionsOverride()
         {
             var task = Runner.CreateRestoreTask(MakeBackup(), [], DateTime.UtcNow, null,
-                overwrite: true, restore_permissions: false, skip_metadata: true, passphrase: "secret");
+                overwrite: true, restore_permissions: false, skip_metadata: true, passphrase: "secret", options: null);
 
             Assert.AreEqual(bool.TrueString, task.ExtraOptions!["overwrite"]);
             Assert.AreEqual(bool.FalseString, task.ExtraOptions["restore-permissions"],
                 "An explicit false is an override and must be written");
             Assert.AreEqual(bool.TrueString, task.ExtraOptions["skip-metadata"]);
             Assert.AreEqual("secret", task.ExtraOptions["passphrase"]);
+        }
+
+        [Test]
+        public void AdditionalRestoreOptionsAreApplied()
+        {
+            var task = Runner.CreateRestoreTask(MakeBackup(), [], DateTime.UtcNow, null,
+                overwrite: true, restore_permissions: null, skip_metadata: null, passphrase: null,
+                options: new System.Collections.Generic.Dictionary<string, string?>
+                {
+                    ["--restore-symlink-metadata"] = "true",
+                    ["dry-run"] = "",
+                    ["--overwrite"] = "false",
+                    ["--"] = "ignored"
+                });
+
+            Assert.AreEqual("true", task.ExtraOptions!["restore-symlink-metadata"],
+                "Leading dashes must be stripped from additional options");
+            Assert.AreEqual("", task.ExtraOptions["dry-run"]);
+            Assert.AreEqual(bool.TrueString, task.ExtraOptions["overwrite"],
+                "Explicit arguments must take precedence over additional options");
+            Assert.IsFalse(task.ExtraOptions.ContainsKey(""), "Empty option names must be ignored");
         }
     }
 }

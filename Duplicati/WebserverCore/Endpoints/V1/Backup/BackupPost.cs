@@ -146,7 +146,8 @@ public class BackupPost : IEndpointV1
             input.overwrite,
             input.permissions,
             input.skip_metadata,
-            string.IsNullOrWhiteSpace(input.passphrase) ? null : input.passphrase)));
+            string.IsNullOrWhiteSpace(input.passphrase) ? null : input.passphrase,
+            input.options)));
     }
 
     private static Dto.TaskStartedDto ExecuteCreateReport(IBackup backup, IQueueRunnerService queueRunnerService)
