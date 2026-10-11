@@ -29,13 +29,11 @@ namespace ReleaseBuilder;
 class Program
 {
     /// <summary>
-    /// The supported build packages
+    /// The build packages that are produced when no targets are requested
     /// </summary>
-    public static readonly IReadOnlyList<PackageTarget> SupportedPackageTargets = new[] {
+    public static readonly IReadOnlyList<PackageTarget> DefaultPackageTargets = new[] {
         "win-x64-gui.zip",
         "win-x64-gui.msi",
-        "win-x86-gui.zip",
-        "win-x86-gui.msi",
         "win-arm64-gui.zip",
         "win-arm64-gui.msi",
         "win-x64-agent.msi",
@@ -96,6 +94,25 @@ class Program
     .Select(x => PackageTarget.ParsePackageId(x))
     .Distinct()
     .ToList();
+
+    /// <summary>
+    /// The build packages that can be requested explicitly but are not built by default
+    /// </summary>
+    public static readonly IReadOnlyList<PackageTarget> OptionalPackageTargets = new[] {
+        "win-x86-gui.zip",
+        "win-x86-gui.msi",
+    }
+    .Select(x => PackageTarget.ParsePackageId(x))
+    .Distinct()
+    .ToList();
+
+    /// <summary>
+    /// All supported build packages, both default and optional
+    /// </summary>
+    public static readonly IReadOnlyList<PackageTarget> SupportedPackageTargets = DefaultPackageTargets
+        .Concat(OptionalPackageTargets)
+        .Distinct()
+        .ToList();
 
     /// <summary>
     /// The return code of the application; shared state

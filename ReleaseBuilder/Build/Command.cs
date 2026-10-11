@@ -206,7 +206,7 @@ public static partial class Command
             CustomParser = result =>
             {
                 if (!result.Tokens.Any())
-                    return Program.SupportedPackageTargets.ToArray();
+                    return Program.DefaultPackageTargets.ToArray();
 
                 var requested = result.Tokens.Select(x => PackageTarget.ParsePackageId(x.Value)).Distinct().ToArray();
                 var invalid = requested.Where(x => !Program.SupportedPackageTargets.Contains(x)).ToList();
@@ -511,7 +511,7 @@ public static partial class Command
         var buildTargets = input.Targets;
 
         if (!buildTargets.Any())
-            buildTargets = Program.SupportedPackageTargets.ToArray();
+            buildTargets = Program.DefaultPackageTargets.ToArray();
 
         if (!input.SolutionFile.Exists)
             throw new FileNotFoundException($"Solution file not found: {input.SolutionFile.FullName}");
