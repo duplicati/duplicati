@@ -36,20 +36,41 @@ public sealed class SMBTests : BaseSftpgoTest
     /// This test has no requirement of environment variables.
     /// </summary>
     [TestMethod]
-    public async Task TestSmb()
+    public Task TestSmb()
+        => RunSmbTest("", "");
+
+    /// <summary>
+    /// Test Smb against a Samba Server that only accepts SMB 3.1.1 and requires signing and
+    /// encryption, which the backend can only reach with the enable-smb311 option (#6819).
+    ///
+    /// This test has no requirement of environment variables.
+    /// </summary>
+    [TestMethod]
+    public Task TestSmb311Required()
+        => RunSmbTest(@"server min protocol = SMB3_11
+server signing = mandatory
+smb encrypt = required", "&enable-smb311=true");
+
+    /// <summary>
+    /// Starts a Samba Server with TestContainers and runs the BackendTester against it.
+    /// </summary>
+    /// <param name="extraGlobalConfig">Lines added to the [global] section of smb.conf</param>
+    /// <param name="extraUrlOptions">Options appended to the query string of the backend url</param>
+    private async Task RunSmbTest(string extraGlobalConfig, string extraUrlOptions)
     {
         var outputConsumer = new OutputConsumer();
         var randomPassword = GeneratePassword();
         var testFilePath = Path.Combine(Path.GetTempPath(), "samba-test");
         Directory.CreateDirectory(testFilePath);
         // Create smb.conf
-        var smbConfig = @"[global]
+        var smbConfig = $@"[global]
 workgroup = WORKGROUP
 server string = Samba Server
 log file = /var/log/samba/log.%m
 max log size = 50
 security = user
 passdb backend = tdbsam
+{extraGlobalConfig}
 
 [testshare1]
 path = /shares/testshare1
@@ -95,19 +116,25 @@ smbd --foreground --no-process-group --debug-stdout";
         await container.StartAsync();
         Console.WriteLine("Samba has started and its ready to accept connections");
 
-        var exitCode = CommandLine.BackendTester.Program.Main(
-            new[]
-            {
-                $"smb://localhost/testshare1/new/?transport=directtcp&auth-domain&auth-username=smbuser1&auth-password={randomPassword}",
-            }.Concat(Parameters.GlobalTestParameters).ToArray());
-
-        Console.WriteLine(await outputConsumer.GetStreamsOutput());
-        if (exitCode != 0)
+        // Both tests bind host port 445, so the container must stop even when a test fails.
+        try
         {
-            Assert.Fail("BackendTester is returning non-zero exit code, check logs for details");
-        }
+            var exitCode = CommandLine.BackendTester.Program.Main(
+                new[]
+                {
+                    $"smb://localhost/testshare1/new/?transport=directtcp&auth-domain&auth-username=smbuser1&auth-password={randomPassword}{extraUrlOptions}",
+                }.Concat(Parameters.GlobalTestParameters).ToArray());
 
-        await container.StopAsync();
+            Console.WriteLine(await outputConsumer.GetStreamsOutput());
+            if (exitCode != 0)
+            {
+                Assert.Fail("BackendTester is returning non-zero exit code, check logs for details");
+            }
+        }
+        finally
+        {
+            await container.StopAsync();
+        }
     }
 
     /// <summary>
