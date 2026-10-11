@@ -329,7 +329,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 try
                                 {
                                     if (await restoreDestination.CreateFolderIfNotExists(foldername, results.TaskControl.ProgressToken).ConfigureAwait(false))
-                                        Logging.Log.WriteWarningMessage(LOGTAG, "CreateMissingFolder", null, @$"Creating missing folder ""{foldername}"" for file ""{file.TargetPath}""");
+                                        Logging.Log.WriteVerboseMessage(LOGTAG, "CreateMissingFolder", @$"Creating missing folder ""{foldername}"" for file ""{file.TargetPath}""");
                                 }
                                 catch (Exception ex)
                                 {
@@ -405,7 +405,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                     try
                                     {
                                         if (await restoreDestination.CreateFolderIfNotExists(foldername, results.TaskControl.ProgressToken).ConfigureAwait(false))
-                                            Logging.Log.WriteWarningMessage(LOGTAG, "CreateMissingFolder", null, @$"Creating missing folder ""{foldername}"" for file ""{file.TargetPath}""");
+                                            Logging.Log.WriteVerboseMessage(LOGTAG, "CreateMissingFolder", @$"Creating missing folder ""{foldername}"" for file ""{file.TargetPath}""");
                                     }
                                     catch (Exception ex)
                                     {
