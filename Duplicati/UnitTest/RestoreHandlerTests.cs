@@ -159,8 +159,9 @@ namespace Duplicati.UnitTest
             {
                 var restoreResults = await c.RestoreAsync(new[] { filePath });
                 Assert.AreEqual(0, restoreResults.Errors.Count());
-                // TODO The expected warning is expected, as the 'dont-compress-restore-paths' option results in a warning about a folder not being created before restoring a file.
-                Assert.AreEqual(1, restoreResults.Warnings.Count());
+                // The 'dont-compress-restore-paths' option makes the folders above the file, which are not
+                // in the restore set; making them is expected, so it is not a warning (issue #5853).
+                Assert.AreEqual(0, restoreResults.Warnings.Count());
             }
 
             // We need to strip the root part of the path. Otherwise, Path.Combine will simply return the second argument
