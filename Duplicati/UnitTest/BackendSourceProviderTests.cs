@@ -58,14 +58,14 @@ public class BackendSourceProviderTests
         /// <summary>
         /// The paths passed to <see cref="ListAsync(string, CancellationToken)"/>
         /// </summary>
-        public List<string> ListedPaths { get; } = [];
+        public List<string?> ListedPaths { get; } = [];
 
         /// <summary>
         /// The paths passed to <see cref="GetEntryAsync"/>
         /// </summary>
         public List<string> RequestedEntries { get; } = [];
 
-        public async IAsyncEnumerable<IFileEntry> ListAsync(string path, [EnumeratorCancellation] CancellationToken cancellationToken)
+        public async IAsyncEnumerable<IFileEntry> ListAsync(string? path, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             ListedPaths.Add(path);
             await Task.CompletedTask.ConfigureAwait(false);
@@ -77,10 +77,10 @@ public class BackendSourceProviderTests
 
         public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(Array.Empty<string>());
 
-        public Task<IFileEntry> GetEntryAsync(string path, CancellationToken cancellationToken)
+        public Task<IFileEntry?> GetEntryAsync(string path, CancellationToken cancellationToken)
         {
             RequestedEntries.Add(path);
-            return Task.FromResult<IFileEntry>(new FileEntry("folder", 0, TIMESTAMP, TIMESTAMP, true, false) { Created = TIMESTAMP });
+            return Task.FromResult<IFileEntry?>(new FileEntry("folder", 0, TIMESTAMP, TIMESTAMP, true, false) { Created = TIMESTAMP });
         }
         public Task PutAsync(string remotename, string filename, CancellationToken cancelToken) => throw new NotImplementedException();
         public Task GetAsync(string remotename, string filename, CancellationToken cancelToken) => throw new NotImplementedException();
