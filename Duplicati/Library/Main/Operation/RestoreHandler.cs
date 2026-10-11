@@ -260,7 +260,7 @@ namespace Duplicati.Library.Main.Operation
                             .ConfigureAwait(false);
 
                     if (!m_options.SkipMetadata)
-                        await ApplyStoredMetadataAsync(m_options, new RestoreHandlerMetadataStorage(), restoreDestination, m_result.TaskControl.ProgressToken);
+                        await ApplyStoredMetadataAsync(m_options, new RestoreHandlerMetadataStorage(), restoreDestination, false, m_result.TaskControl.ProgressToken);
 
                     //If we have --version set, we need to adjust, as the db has only the required versions
                     //TODO: Bit of a hack to set options that way
@@ -675,7 +675,7 @@ namespace Duplicati.Library.Main.Operation
             await blockmarker.CommitAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        private static async Task ApplyStoredMetadataAsync(Options options, RestoreHandlerMetadataStorage metadatastorage, IRestoreDestinationProvider restoreDestination, CancellationToken cancellationToken)
+        private static async Task ApplyStoredMetadataAsync(Options options, RestoreHandlerMetadataStorage metadatastorage, IRestoreDestinationProvider restoreDestination, bool sourceUsesWindowsSeparators, CancellationToken cancellationToken)
         {
             foreach (var metainfo in metadatastorage.Records)
             {
@@ -710,7 +710,7 @@ namespace Duplicati.Library.Main.Operation
                             }
                         }
 
-                        await ApplyMetadataAsync(targetpath, metainfo.Value, options, restoreDestination, false, cancellationToken).ConfigureAwait(false);
+                        await ApplyMetadataAsync(targetpath, metainfo.Value, options, restoreDestination, false, sourceUsesWindowsSeparators, cancellationToken).ConfigureAwait(false);
                     }
                     catch (Exception ex)
                     {
@@ -1302,7 +1302,11 @@ namespace Duplicati.Library.Main.Operation
 
             // Apply metadata
             if (!m_options.SkipMetadata)
-                await ApplyStoredMetadataAsync(m_options, metadatastorage, restoreDestination, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+            {
+                // The same test that maps the backed up paths to this system's separators
+                var sourceUsesWindowsSeparators = Util.GuessDirSeparator(await database.GetFirstPathAsync(cancellationToken).ConfigureAwait(false)) == "\\";
+                await ApplyStoredMetadataAsync(m_options, metadatastorage, restoreDestination, sourceUsesWindowsSeparators, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+            }
 
             if (!await m_result.TaskControl.ProgressRendevouzAsync().ConfigureAwait(false))
                 return;
@@ -1384,9 +1388,10 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="options">The restore options.</param>
         /// <param name="restoreDestination">The restore destination provider.</param>
         /// <param name="hasRestoredEntriesBelow">Whether the path is a symbolic link to a folder with other entries restored below it.</param>
+        /// <param name="sourceUsesWindowsSeparators">Whether the backed up paths use Windows separators, that is, the backup was made on Windows.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns><c>true</c> if the metadata was written, <c>false</c> otherwise.</returns>
-        public static async Task<bool> ApplyMetadataAsync(string path, System.IO.Stream stream, Options options, IRestoreDestinationProvider restoreDestination, bool hasRestoredEntriesBelow, CancellationToken cancellationToken)
+        public static async Task<bool> ApplyMetadataAsync(string path, System.IO.Stream stream, Options options, IRestoreDestinationProvider restoreDestination, bool hasRestoredEntriesBelow, bool sourceUsesWindowsSeparators, CancellationToken cancellationToken)
         {
             using (var tr = new System.IO.StreamReader(stream))
             using (var jr = new Newtonsoft.Json.JsonTextReader(tr))
@@ -1396,8 +1401,41 @@ namespace Duplicati.Library.Main.Operation
                 if (metadata == null || options.Dryrun)
                     return false;
 
+                if (metadata.TryGetValue("CoreSymlinkTarget", out var symlinkTarget) && !string.IsNullOrEmpty(symlinkTarget))
+                    metadata["CoreSymlinkTarget"] = MapSymlinkTargetSeparators(symlinkTarget, sourceUsesWindowsSeparators, OperatingSystem.IsWindows());
+
                 return await restoreDestination.WriteMetadata(path, metadata, options.RestoreSymlinkMetadata, options.RestorePermissions, hasRestoredEntriesBelow, cancellationToken).ConfigureAwait(false);
             }
+        }
+
+        /// <summary>
+        /// Maps the target of a symbolic link to the separators of the system it is restored on.
+        /// A relative target from Windows separates its parts with backslashes, which other systems
+        /// take as part of a name, so the link would not resolve there. A relative target from another
+        /// system separates its parts with slashes, which Windows does not resolve in a link, and may
+        /// have a backslash in a name; it is mapped the same way as the restored paths are, so a
+        /// backslash becomes an underscore. An absolute target, such as one with a drive letter, from
+        /// the root of a drive, as a UNC path or from the root on another system, names a place on the
+        /// machine the backup was made on and is kept as it is.
+        /// </summary>
+        /// <param name="target">The stored target of the link.</param>
+        /// <param name="sourceUsesWindowsSeparators">Whether the backup was made on Windows.</param>
+        /// <param name="restoringOnWindows">Whether the restore runs on Windows.</param>
+        /// <returns>The target to create the link with.</returns>
+        internal static string MapSymlinkTargetSeparators(string target, bool sourceUsesWindowsSeparators, bool restoringOnWindows)
+        {
+            if (sourceUsesWindowsSeparators && !restoringOnWindows)
+            {
+                var isAbsolute = target.StartsWith('\\')
+                    || (target.Length >= 2 && target[1] == ':' && char.IsAsciiLetter(target[0]));
+
+                return isAbsolute ? target : target.Replace('\\', '/');
+            }
+
+            if (!sourceUsesWindowsSeparators && restoringOnWindows)
+                return target.StartsWith('/') ? target : target.Replace('\\', '_').Replace('/', '\\');
+
+            return target;
         }
 
         private static async Task ScanForExistingSourceBlocksFastAsync(LocalRestoreDatabase database, Options options, byte[] blockbuffer, System.Security.Cryptography.HashAlgorithm hasher, IRestoreDestinationProvider restoreDestination, RestoreResults result)
