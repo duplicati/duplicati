@@ -6,15 +6,14 @@
 
 在云存储服务上安全地存储加密备份！
 
-[![Open Collective 上的支持者](https://opencollective.com/duplicati/backers/badge.svg)](#backers) [![Open Collective 上的赞助商](https://opencollective.com/duplicati/sponsors/badge.svg)](#sponsors)
-[![许可](https://img.shields.io/github/license/duplicati/duplicati.svg)](https://github.com/duplicati/duplicati/blob/master/LICENSE)
+[![许可](<https://img.shields.io/badge/license-MIT%20(core)-blue.svg>)](https://github.com/duplicati/duplicati/blob/master/LICENSE)
 [![Gurubase](https://img.shields.io/badge/Gurubase-Ask%20Duplicati%20Guru-006BFF)](https://gurubase.io/g/duplicati)
 
 Duplicati 是一个免费、开源的备份客户端，可以安全地将加密、增量、压缩的备份存储在云存储服务和远程文件服务器上。它与以下服务兼容：
 
 &nbsp;&nbsp; _亚马逊 S3、[IDrive e2](https://www.idrive.com/e2/duplicati "使用 Duplicati 与 IDrive e2")、[Backblaze (B2)](https://www.backblaze.com/blog/duplicati-backups-cloud-storage/ "Duplicati 与 Backblaze B2 云存储")、Box、Dropbox、FTP、Google Cloud 和 Drive、MEGA、Microsoft Azure 和 OneDrive、Rackspace Cloud Files、OpenStack Storage (Swift)、Storj DCS、SSH (SFTP)、WebDAV、腾讯云对象存储 (COS)、阿里云对象存储(OSS)、[以及更多！](https://docs.duplicati.com/backup-destinations/destination-overview)_
 
-Duplicati 根据 MIT 许可证授权，并可用于 Windows、macOS 和 Linux。
+Duplicati 的核心部分根据 MIT 许可证授权，但 `proprietary/` 文件夹中的内容受 [Duplicati Inc 软件许可证](proprietary/LICENSE)约束。Duplicati 可用于 Windows、macOS 和 Linux。
 
 # 下载
 
@@ -67,28 +66,4 @@ https://explore.transifex.com/duplicati/duplicati/
 
 关于如何设置您的开发环境以及如何构建 duplicati 的说明可以在 [docs](https://docs.duplicati.com/installation-details/developer) 中找到。我们欣赏任何修复错误或以其他方式改进 duplicati 的拉取请求。
 
-如果您正在寻找一个问题来解决，请尝试查看其中一个标记为 [小改动](https://github.com/duplicati/duplicati/issues?q=is%3Aissue+is%3Aopen+label%3A%22minor+change%22) 的问题。如果您最熟悉的是 Web 开发，请查看标记为 [UI](https://github.com/duplicati/duplicati/issues?q=is%3Aissue+is%3Aopen+label%3A%22UI%22) 的问题。
-
-感谢我们所有的现有贡献者：
-<a href="https://github.com/duplicati/duplicati/graphs/contributors"><img src="https://opencollective.com/duplicati/contributors.svg?width=890" /></a>
-
-## 赞助者
-
-感谢所有的赞助者！🙏
-
-<a href="https://opencollective.com/duplicati#backers" target="_blank"><img src="https://opencollective.com/duplicati/backers.svg?width=890"></a>
-
-## 赞助商
-
-特别感谢我们的赞助商对这个开源项目的支持：
-
-<a href="https://opencollective.com/duplicati/sponsor/0/website" target="_blank"><img src="https://opencollective.com/duplicati/sponsor/0/avatar.svg"></a>
-<a href="https://opencollective.com/duplicati/sponsor/1/website" target="_blank"><img src="https://opencollective.com/duplicati/sponsor/1/avatar.svg"></a>
-<a href="https://opencollective.com/duplicati/sponsor/2/website" target="_blank"><img src="https://opencollective.com/duplicati/sponsor/2/avatar.svg"></a>
-<a href="https://opencollective.com/duplicati/sponsor/3/website" target="_blank"><img src="https://opencollective.com/duplicati/sponsor/3/avatar.svg"></a>
-<a href="https://opencollective.com/duplicati/sponsor/4/website" target="_blank"><img src="https://opencollective.com/duplicati/sponsor/4/avatar.svg"></a>
-<a href="https://opencollective.com/duplicati/sponsor/5/website" target="_blank"><img src="https://opencollective.com/duplicati/sponsor/5/avatar.svg"></a>
-<a href="https://opencollective.com/duplicati/sponsor/6/website" target="_blank"><img src="https://opencollective.com/duplicati/sponsor/6/avatar.svg"></a>
-<a href="https://opencollective.com/duplicati/sponsor/7/website" target="_blank"><img src="https://opencollective.com/duplicati/sponsor/7/avatar.svg"></a>
-<a href="https://opencollective.com/duplicati/sponsor/8/website" target="_blank"><img src="https://opencollective.com/duplicati/sponsor/8/avatar.svg"></a>
-<a href="https://opencollective.com/duplicati/sponsor/9/website" target="_blank"><img src="https://opencollective.com/duplicati/sponsor/9/avatar.svg"></a>
+如果您正在寻找一个问题来解决，请尝试查看其中一个标记为 [小改动](https://github.com/duplicati/duplicati/issues?q=is%3Aissue+is%3Aopen+label%3A%22minor+change%22) 的问题。如果您最熟悉的是 Web 开发，请查看 [ngclient 仓库的问题](https://github.com/duplicati/ngclient/issues)。当前的 Web UI 位于单独的 [duplicati/ngclient](https://github.com/duplicati/ngclient) 仓库中。
