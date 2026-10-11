@@ -144,6 +144,11 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             public string? name { get; set; }
             public DateTime? updated { get; set; }
             public long? size { get; set; }
+            /// <summary>
+            /// The base64 encoded big-endian CRC32C checksum of the object content.
+            /// When supplied on upload, the server validates the received data against it and rejects the upload on mismatch.
+            /// </summary>
+            public string? crc32c { get; set; }
         }
 
         private class CreateBucketRequest
@@ -380,13 +385,23 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
         /// <inheritdoc/>
         public async Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
-            var item = new BucketResourceItem { name = m_prefix + remotename };
+            // Precalculate the hash so the server can validate the uploaded content end-to-end.
+            // This is done up front to avoid hashing in the chunked upload where the stream could be throttled.
+            (var content, var hashes, var tmp) = await Utility.Utility.CalculateThrottledStreamHash(stream, [HashFactory.CRC32C], cancelToken).ConfigureAwait(false);
+            using var _ = tmp;
+            using var tmpContent = tmp == null ? null : content;
+
+            var crc32c = Convert.ToBase64String(Utility.Utility.HexStringAsByteArray(hashes[0]));
+            var item = new BucketResourceItem { name = m_prefix + remotename, crc32c = crc32c };
 
             var url = WebApi.GoogleCloudStorage.PutUrl(m_bucket);
-            var res = await GoogleCommon.ChunkedUploadWithResumeAsync<BucketResourceItem, BucketResourceItem>(m_oauth, item, url, stream, m_timeouts.ShortTimeout, m_timeouts.ReadWriteTimeout, cancelToken, HttpMethod.Post).ConfigureAwait(false);
+            var res = await GoogleCommon.ChunkedUploadWithResumeAsync<BucketResourceItem, BucketResourceItem>(m_oauth, item, url, content, m_timeouts.ShortTimeout, m_timeouts.ReadWriteTimeout, cancelToken, HttpMethod.Post).ConfigureAwait(false);
 
             if (res == null)
                 throw new Exception("Upload succeeded, but no data was returned");
+
+            if (!string.IsNullOrWhiteSpace(res.crc32c) && !string.Equals(res.crc32c, crc32c, StringComparison.Ordinal))
+                throw new Exception($"Upload succeeded, but the server reported a different CRC32C checksum. Expected: {crc32c}, actual: {res.crc32c}");
         }
 
         public async Task GetAsync(string remotename, Stream stream, CancellationToken cancelToken)

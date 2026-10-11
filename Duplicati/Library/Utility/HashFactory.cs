@@ -32,6 +32,11 @@ namespace Duplicati.Library.Utility
         public const string SHA256 = "SHA256";
         public const string SHA384 = "SHA384";
         public const string SHA512 = "SHA512";
+        /// <summary>
+        /// The CRC-32C checksum. Not a cryptographic hash, so it is not part of <see cref="GetSupportedHashes"/>,
+        /// but it is used for transport integrity checks by some backends.
+        /// </summary>
+        public const string CRC32C = "CRC32C";
 
         public static string[] GetSupportedHashes()
         {
@@ -67,6 +72,8 @@ namespace Duplicati.Library.Utility
                     return Crypto.SHA384.Create();
                 case "SHA512":
                     return Crypto.SHA512.Create();
+                case "CRC32C":
+                    return new Crc32C();
                 default:
                     throw new ArgumentException("Unknown algorithm: " + algorithm, nameof(algorithm));
             }
