@@ -1,3 +1,140 @@
+2026-10-11 - 2.4.0.104_canary_2026-10-11
+==========
+This release is a canary release intended to be used for testing.
+
+# Hyper-V and MSSQL as source providers
+
+Hyper-V virtual machines and MSSQL databases were previously added to a backup by replacing the `%HYPERV%` and `%MSSQL%` source paths with the real paths of the VM and database files. The backup then held those raw paths, and at restore time the user had to work out which files belong to which machine or database.
+
+The two modules are now source providers that present the same files under a virtual folder per machine or database, with the machine or database name stored as metadata. The restore view can then group the files and show the names instead of GUIDs, and the UI source picker lists the same tree.
+
+Building on this, a restore can now target the original location, where the destination is read from the metadata. A check before the restore starts reports files that are in use, such as a running virtual machine or an attached database. With the new `--register-restored-items` option, a restored Hyper-V machine is registered with Hyper-V after the restore. Both options are only available on Windows.
+
+# Advanced options when restoring
+
+A restore started from the UI can now be given advanced options that are not part of the backup configuration, so settings can be adjusted for a single restore without changing the backup.
+
+# Links and junctions are restored correctly
+
+Several problems with restoring symbolic links and directory junctions were fixed, thanks @JamBalaya56562:
+
+- A directory junction is now recorded as a junction and restored as one on Windows, instead of as a directory symbolic link. Backups made before this release have no kind recorded and restore as before.
+- Restoring a symbolic link no longer removes a folder with files in it, or a file without `--overwrite`, that has taken the place of the link since the backup. The link is skipped with a warning instead.
+- A link to a folder is now made only after the files below it are restored, which removes a race that caused "Could not find a part of the path" warnings and lost timestamps.
+- Folders that a partial restore has to make for the files it restores are no longer reported as warnings.
+- Restoring multiple paths with no common root on Windows no longer fails with "index out of bounds", and restoring from a UNC path to a local path works again.
+
+# Windows snapshot cleanup
+
+A snapshot that failed after its snapshot set was started left the set in progress. Every later snapshot then failed with `VSS_E_SNAPSHOT_SET_IN_PROGRESS` (0x80042316) until the process ended, and other VSS applications saw the same error. The snapshot manager is now disposed when setup fails, and a started set is aborted, thanks @stanleys12 and @JamBalaya56562.
+
+# Stopping a backup on a stuck source
+
+Continuing the work from the previous canary, "Stop now" now also returns when a source file open, size read or metadata read is stuck, such as on a network share that stopped answering, thanks @JamBalaya56562.
+
+# GnuPG on large volumes
+
+GPG only finishes a volume after reading all of it, which took more than the fixed five seconds on large volumes and busy disks, so the backup failed with "program won't flush output" and could crash the process afterwards. The encryption now waits for GPG to finish without a time limit and reports a failed copy to the caller, thanks @JamBalaya56562.
+
+# Storage provider fixes
+
+- Azure Blob Storage uploads are now sent in blocks instead of a single request, so a volume that took longer than the network timeout to send no longer fails. The block size defaults to 10 MiB and can be lowered with `--azure-upload-block-size` for slow connections, thanks @JamBalaya56562.
+- Google Cloud Storage uploads now include a CRC32 checksum, so a transfer error is less likely to leave a defective file in the bucket.
+- Resumable uploads to Google services no longer fail when the server answers with a 308 status.
+- Uploads to a Storj bucket with Object Lock no longer fail because of the default expiry time, thanks @JamBalaya56562.
+- Parallel downloads from Jottacloud no longer end with "Stream position mismatch after download", thanks @JamBalaya56562.
+- A new `--enable-smb311` option connects to SMB servers that require SMB 3.1.1. It is off by default as the library marks it experimental, thanks @JamBalaya56562.
+- HashiCorp Vault secrets that arrive as JSON elements are now read, which fixes "The following keys were not found", thanks @JamBalaya56562.
+
+# Microsoft 365 enumeration
+
+Enumerating mailboxes no longer requests the message body, which made listings large and slow. Emails are enumerated through the delta endpoint, which has stable pagination and avoids the repeated enumeration that caused long delays and duplicate-item warnings. Locked sites are skipped, OneNote and ToDo access is only warned about once, inherited permissions are no longer requested for items without explicit permissions, transient network errors are retried, and heavy throttling is handled with longer waits. A new `--office365-exclude-system-libraries` option excludes system libraries in sites and groups.
+
+# Remote access on NAS devices
+
+On Synology and QNAP, Duplicati authentication is tied to the system login, so the relayed requests used by the console were rejected because Duplicati itself is not a NAS user. A local forwarding key, generated at startup, now lets Duplicati authenticate its own requests.
+
+# Backups from remote sources
+
+Backups that read from a remote source such as SMB or S3 now return rooted paths in the listing, store metadata in the virtual root so the UI knows the data cannot be restored directly to the source, and work with USN change journals active.
+
+# Sync operation logs and database update
+
+Sync operations now write their results into the sync database, so the outcome of each run is shown in the job log, as it is for backups. The log entries are purged by the `--log-retention` option.
+
+This requires an update of the sync database schema to version 1, which adds the log table. The update is applied automatically on first use, and after it the sync database can no longer be opened by earlier versions of Duplicati. If you need to downgrade, the bundled database tool (`duplicati-database-tool`) can downgrade the sync database back to version 0. Downgrading removes the stored sync logs, but otherwise causes no data loss. Backup databases are not affected.
+
+## Detailed list of changes
+
+- Changed Hyper-V and MSSQL to be source providers with a virtual folder per machine or database, thanks @JamBalaya56562
+- Added support for restoring Hyper-V and MSSQL items to their original location
+- Added the `--register-restored-items` option to register a restored Hyper-V machine
+- Added support for advanced options when starting a restore
+- Added parent metadata to search results so intermediate paths can be shown with friendly names
+- Fixed the listing of remote sources returning relative paths
+- Added metadata to the virtual root of remote source backups
+- Added support for remote sources when USN is active
+- Fixed restoring a directory junction as a symbolic link, thanks @JamBalaya56562
+- Fixed restoring a symbolic link removing the data that had taken its place, thanks @JamBalaya56562
+- Fixed links to folders being made before the files below them were restored, thanks @JamBalaya56562
+- Fixed warnings for the folders a partial restore has to make, thanks @JamBalaya56562
+- Fixed restoring multiple paths with no common root failing with "index out of bounds" on Windows
+- Fixed restoring from a UNC path to a local path
+- Fixed a failed Windows snapshot leaving the snapshot set open, thanks @stanleys12
+- Fixed a Windows snapshot set that fails to set up not being aborted, thanks @JamBalaya56562
+- Fixed the snapshot manager dispose obscuring the actual failure message
+- Fixed an aborted backup waiting forever for a stuck source file open, thanks @JamBalaya56562
+- Fixed an aborted backup waiting forever for a stuck size or metadata read, thanks @JamBalaya56562
+- Fixed GnuPG encryption failing with "program won't flush output" on large volumes, thanks @JamBalaya56562
+- Fixed Azure Blob Storage uploads failing on volumes that take longer than the network timeout, thanks @JamBalaya56562
+- Added the `--azure-upload-block-size` option
+- Added CRC32 checksums to Google Cloud Storage uploads
+- Fixed resumable uploads to Google services failing on a 308 response
+- Fixed uploads to Storj buckets with Object Lock, thanks @JamBalaya56562
+- Fixed parallel downloads from Jottacloud failing with "Stream position mismatch after download", thanks @JamBalaya56562
+- Added the `--enable-smb311` option and updated SMBLibrary to 1.5.8.1, thanks @JamBalaya56562
+- Fixed HashiCorp Vault secrets not being read when the values are JSON elements, thanks @JamBalaya56562
+- Improved Microsoft 365 enumeration and reduced the warning noise
+- Added the `--office365-exclude-system-libraries` option
+- Fixed remote access on Synology and QNAP when connected to the console
+- Fixed an invalid retention policy being accepted when a backup is saved, thanks @JamBalaya56562
+- Fixed a backup including the `-wal` and `-shm` files of its own database, thanks @JamBalaya56562
+- Fixed the progress showing 0 files of -1 bytes with `--disable-file-scanner`, thanks @JamBalaya56562
+- Fixed the old UI showing a negative number of files to go and 0% for empty files, thanks @JamBalaya56562
+- Fixed a finished task being reported as completed before its result was stored, thanks @JamBalaya56562
+- Fixed a potential path traversal when restoring control files from an untrusted source, thanks @hataehoon
+- Fixed pause and resume events being handled out of order, which could leave the queue paused, thanks @JamBalaya56562
+- Fixed the tray icon keeping an old server state after a reconnect, thanks @JamBalaya56562
+- Fixed the preload settings debug output not being shown in the tray icon, and let 0 turn it off, thanks @JamBalaya56562
+- Fixed a startup crash in the tray icon after the Avalonia update
+- Updated Avalonia to 12.1.3, which fixes a duplicated tray icon on GNOME after lock and unlock, thanks @Arslan-TR
+- Changed special files (devices, FIFOs and sockets) to be logged as special files instead of block devices, thanks @JamBalaya56562
+- Changed report module errors to be logged as information instead of warnings
+- Added logs for sync operations and updated the sync database schema to version 1
+- Added a Plumber score check and badge to the workflows, thanks @Totara-thib
+- Fixed various tests and nullability warnings, thanks @JamBalaya56562
+
+## Updates to ngclient
+
+- Added support for Hyper-V and MSSQL metadata and the extended search metadata
+- Added support for Hyper-V restore
+- Added support for advanced options on restore
+- Added support for showing sync-type logs
+- Fixed remote mounts calling the wrong API endpoint
+- Fixed browsing a remote source for a saved destination
+- Fixed a leading `/` being added to Windows paths when creating a folder
+- Fixed the log buttons not showing correctly and the suppress buttons not capturing all log tags
+- Fixed encoded question marks in file destination paths, thanks @JamBalaya56562
+- Fixed invalid percentages for empty files, thanks @JamBalaya56562
+- Fixed the backup progress exceeding the estimated totals, thanks @JamBalaya56562
+- Fixed the application starting before translations were loaded, thanks @JamBalaya56562
+- Fixed notifications being removed when the deletion failed, thanks @JamBalaya56562
+- Fixed filtered notifications not being dismissed, thanks @JamBalaya56562
+- Fixed cancelled task waits and restore progress subscriptions not being cleaned up, thanks @JamBalaya56562
+- Increased the visual password strength requirement and the default export password length
+- Added a workaround for stacked dialogs in ShipUI
+- Updated Angular packages to 22.2.x
+
 2026-10-02 - 2.4.0.103_canary_2026-10-02
 ==========
 This release is a canary release intended to be used for testing.
