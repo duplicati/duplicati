@@ -79,6 +79,65 @@ namespace Duplicati.Library.Main.Operation.Common
         }
 
         /// <summary>
+        /// Translates the filter entries that are written with the prefix of a prefix-based
+        /// source provider (e.g. <c>-%MSSQL%\server\instance\database</c>) to the virtual
+        /// paths the provider stores its entries under, so a filter can use the same syntax
+        /// as the sources. Wildcard entries get the prefix replaced, literal entries are
+        /// translated by the provider, and regular expressions and filter groups are kept as-is.
+        /// </summary>
+        /// <param name="filter">The filter to translate</param>
+        /// <returns>The translated filter, or the same instance if nothing was translated</returns>
+        public static IFilter? TranslatePrefixedFilters(IFilter? filter)
+        {
+            if (filter == null || filter.Empty)
+                return filter;
+
+            var entries = FilterExpression.Serialize(filter);
+            var translated = entries.Select(TranslatePrefixedFilterEntry).ToArray();
+
+            return entries.SequenceEqual(translated, StringComparer.Ordinal)
+                ? filter
+                : FilterExpression.Deserialize(translated);
+        }
+
+        /// <summary>
+        /// Translates a single serialized filter entry, see <see cref="TranslatePrefixedFilters"/>
+        /// </summary>
+        /// <param name="entry">The serialized entry, starting with <c>+</c> or <c>-</c></param>
+        /// <returns>The translated entry</returns>
+        private static string TranslatePrefixedFilterEntry(string entry)
+        {
+            if (entry.Length < 2)
+                return entry;
+
+            var sign = entry.Substring(0, 1);
+            var literal = entry[1] == '@';
+            var expression = literal ? entry.Substring(2) : entry.Substring(1);
+
+            var module = SourceProviders.SourceProviderModules.BuiltInPrefixSourceProviderModules
+                .FirstOrDefault(x => x.MatchesSource(expression));
+            if (module == null)
+                return entry;
+
+            var isWildcard = !literal && (expression.Contains('*') || expression.Contains('?'));
+            if (isWildcard)
+            {
+                // The source syntax uses a backslash on every platform
+                var rest = expression.Substring(module.SourcePrefix.Length).Replace('\\', Path.DirectorySeparatorChar);
+                return sign + module.MountedPath.TrimEnd(Path.DirectorySeparatorChar) + rest;
+            }
+
+            var path = module.TranslateSourcePath(expression);
+            if (path == null)
+            {
+                Log.WriteWarningMessage(LOGTAG, "PrefixedFilterNotTranslated", null, "The filter \"{0}\" does not name an item of the source provider \"{1}\" and will not match anything", entry, module.Key);
+                return entry;
+            }
+
+            return sign + "@" + path;
+        }
+
+        /// <summary>
         /// Enables the "store-metadata-content-in-database" option if any of the sources
         /// is provided by a source provider that requires it, and the option is not already set
         /// </summary>
@@ -90,6 +149,20 @@ namespace Duplicati.Library.Main.Operation.Common
             if (sources == null || options.ContainsKey(StoreMetadataContentInDatabaseOption))
                 return false;
 
+            var sourcesList = sources as IReadOnlyList<string> ?? sources.ToList();
+
+            // Check if any prefix-based source providers that require metadata match the sources.
+            // A provider that is not supported on this platform will not serve the source,
+            // so it has no metadata to store either
+            if (SourceProviders.SourceProviderModules.BuiltInPrefixSourceProviderModules
+                .Where(x => x.NeedsStoredMetadata && x.IsSupported)
+                .Any(m => sourcesList.Any(m.MatchesSource)))
+            {
+                Log.WriteInformationMessage(LOGTAG, "AutoEnableMetadataStorage", "A prefix-based source provider requires metadata to be stored in the database, automatically enabling the option --{0}", StoreMetadataContentInDatabaseOption);
+                options[StoreMetadataContentInDatabaseOption] = "true";
+                return true;
+            }
+
             // Find the keys of the source providers that require metadata to be stored in the database
             var providersRequiringMetadata = SourceProviderLoader.Modules
                 .Where(x => x.NeedsStoredMetadata)
@@ -99,7 +172,7 @@ namespace Duplicati.Library.Main.Operation.Common
             if (providersRequiringMetadata.Count == 0)
                 return false;
 
-            foreach (var source in sources)
+            foreach (var source in sourcesList)
             {
                 var remoteSource = ParseRemoteSource(source);
                 if (remoteSource == null)
@@ -140,15 +213,16 @@ namespace Duplicati.Library.Main.Operation.Common
         /// <summary>
         /// Gets a snapshot service for the given sources
         /// </summary>
-        /// <param name="sources">The sources to get the snapshot for</param>
+        /// <param name="sources">The sources to get the snapshot for, which are the entries the snapshot enumerates</param>
+        /// <param name="extraSnapshotPaths">Paths that are not sources, but must be readable through the snapshot (e.g. the files a snapshot-aware provider reads)</param>
         /// <param name="options">The options to use</param>
         /// <returns>The snapshot service</returns>
-        public static ISnapshotService GetFileSnapshotService(IEnumerable<string> sources, Options options)
+        public static ISnapshotService GetFileSnapshotService(IEnumerable<string> sources, IEnumerable<string> extraSnapshotPaths, Options options)
         {
             try
             {
                 if (options.SnapShotStrategy != Options.OptimizationStrategy.Off)
-                    return SnapshotUtility.CreateSnapshot(sources, options.RawOptions, options.SymlinkPolicy == Options.SymlinkStrategy.Follow);
+                    return SnapshotUtility.CreateSnapshot(sources, extraSnapshotPaths, options.RawOptions, options.SymlinkPolicy == Options.SymlinkStrategy.Follow);
             }
             catch (Exception ex)
             {
@@ -204,6 +278,18 @@ namespace Duplicati.Library.Main.Operation.Common
         /// <returns>The source providers</returns>
         public static async Task<List<ISourceProvider>> GetSourceProvidersAsync(IEnumerable<string> sources, Options options, CancellationToken cancellationToken)
         {
+            // Split off the sources that are handled by prefix-based source providers
+            var prefixProviderMatches = SourceProviders.SourceProviderModules.BuiltInPrefixSourceProviderModules
+                .Select(m => (Module: m, Sources: sources.Where(m.MatchesSource).ToList()))
+                .Where(x => x.Sources.Count > 0)
+                .ToList();
+
+            if (prefixProviderMatches.Count > 0)
+            {
+                var matchedSources = prefixProviderMatches.SelectMany(x => x.Sources).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                sources = sources.Where(x => !matchedSources.Contains(x)).ToList();
+            }
+
             // Group the sources by their type, so we can combine all snapshot paths into a single snapshot
             var sourceTypes = sources.GroupBy(x => x.StartsWith("@") ? "@" : Duplicati.Library.Utility.Utility.GuessScheme(x) ?? "file", StringComparer.OrdinalIgnoreCase);
 
@@ -212,6 +298,13 @@ namespace Duplicati.Library.Main.Operation.Common
             var results = new List<ISourceProvider>();
             var uninitializedProviders = new List<ISourceProviderModule>();
             var snapshotAwareProviders = new List<ISnapshotAwareModule>();
+
+            // The snapshot shared by the file source and the snapshot-aware providers.
+            // It is owned by the LocalFileSource when there is one, and otherwise by the
+            // first snapshot-aware provider that initializes, so that it is released
+            // when the providers are; until then this method owns it
+            ISnapshotService? fileSnapshot = null;
+            var snapshotOwned = false;
             var fileSources = new List<string>();
 
             try
@@ -224,7 +317,7 @@ namespace Duplicati.Library.Main.Operation.Common
                     }
                     else if ("vss".Equals(entry.Key, StringComparison.OrdinalIgnoreCase) || "lvm".Equals(entry.Key, StringComparison.OrdinalIgnoreCase))
                     {
-                        results.Add(new LocalFileSource(SnapshotUtility.CreateSnapshot(entry, options.RawOptions, options.SymlinkPolicy == Options.SymlinkStrategy.Follow)));
+                        results.Add(new LocalFileSource(SnapshotUtility.CreateSnapshot(entry, [], options.RawOptions, options.SymlinkPolicy == Options.SymlinkStrategy.Follow)));
                     }
                     else if ("@".Equals(entry.Key, StringComparison.OrdinalIgnoreCase))
                     {
@@ -276,29 +369,51 @@ namespace Duplicati.Library.Main.Operation.Common
                         throw new UserInformationException($"The source type \"{entry.Key}\" is not supported", "SourceTypeNotSupported");
                 }
 
-                // Collect snapshot paths from file sources and snapshot-aware providers
-                var snapshotPaths = new List<string>(fileSources);
+                // Create the prefix-based source providers (e.g. Hyper-V, MSSQL)
+                foreach (var (module, matchedSources) in prefixProviderMatches)
+                {
+                    if (!module.IsSupported)
+                    {
+                        Log.WriteWarningMessage(LOGTAG, "PrefixProviderNotSupported", null, "The source provider \"{0}\" is not supported on this platform, skipping {1} source(s)", module.Key, matchedSources.Count);
+                        continue;
+                    }
+
+                    // Let the provider adjust the options (e.g. force snapshot-policy)
+                    // before the snapshot is created
+                    module.PrepareOptions(matchedSources, options.RawOptions);
+
+                    var provider = module.CreateForSources(matchedSources, options.RawOptions);
+                    uninitializedProviders.Add(provider);
+                    if (provider is ISnapshotAwareModule snapshotAware)
+                        snapshotAwareProviders.Add(snapshotAware);
+                }
+
+                // Collect the paths the snapshot-aware providers read. They are part of the
+                // snapshot, but are not sources, so the file source does not enumerate them
+                var providerSnapshotPaths = new List<string>();
                 foreach (var snapshotAware in snapshotAwareProviders)
                 {
                     var paths = await snapshotAware.GetSnapshotPathsAsync(cancellationToken).ConfigureAwait(false);
                     if (paths != null)
-                        snapshotPaths.AddRange(paths);
+                        providerSnapshotPaths.AddRange(paths);
                 }
 
                 // Create the snapshot service if we have any paths that need it
-                ISnapshotService? fileSnapshot = null;
-                if (snapshotPaths.Count > 0)
+                if (fileSources.Count > 0 || providerSnapshotPaths.Count > 0)
                 {
-                    fileSnapshot = GetFileSnapshotService(snapshotPaths, options);
+                    fileSnapshot = GetFileSnapshotService(fileSources, providerSnapshotPaths, options);
 
                     // Give the snapshot to snapshot-aware providers before initializing them
                     foreach (var snapshotAware in snapshotAwareProviders)
                         snapshotAware.SetSnapshotService(fileSnapshot);
                 }
 
-                // Create the file source with the snapshot
+                // Create the file source with the snapshot; the file source disposes the snapshot it is given
                 if (fileSources.Count > 0)
-                    results.Add(new LocalFileSource(fileSnapshot ?? GetFileSnapshotService(fileSources, options)));
+                {
+                    results.Add(new LocalFileSource(fileSnapshot ?? GetFileSnapshotService(fileSources, [], options)));
+                    snapshotOwned = fileSnapshot != null;
+                }
 
                 // Initialize the remote providers (now with snapshot available)
                 foreach (var provider in uninitializedProviders)
@@ -306,7 +421,18 @@ namespace Duplicati.Library.Main.Operation.Common
                     try
                     {
                         await provider.InitializeAsync(cancellationToken).ConfigureAwait(false);
-                        results.Add(provider);
+
+                        // Without a file source, the snapshot is released together with
+                        // the first provider that uses it
+                        if (!snapshotOwned && fileSnapshot != null && provider is ISnapshotAwareModule)
+                        {
+                            results.Add(new SnapshotOwningSourceProvider(provider, fileSnapshot));
+                            snapshotOwned = true;
+                        }
+                        else
+                        {
+                            results.Add(provider);
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -329,14 +455,71 @@ namespace Duplicati.Library.Main.Operation.Common
                     (provider as IDisposable)?.Dispose();
                 foreach (var provider in uninitializedProviders)
                     (provider as IDisposable)?.Dispose();
+                if (!snapshotOwned)
+                    fileSnapshot?.Dispose();
 
                 throw;
             }
+
+            // Every provider that would have used the snapshot failed to initialize
+            if (!snapshotOwned)
+                fileSnapshot?.Dispose();
 
             if (results.Count == 0)
                 throw new UserInformationException("No sources were available for the backup", "NoSourcesAvailable");
 
             return results;
+        }
+    }
+
+    /// <summary>
+    /// A source provider that releases the snapshot it shares with the other providers
+    /// when it is disposed. The snapshot is normally released by the <see cref="LocalFileSource"/>,
+    /// so this wrapper is only used when there is none.
+    /// </summary>
+    /// <param name="inner">The provider that uses the snapshot</param>
+    /// <param name="snapshotService">The snapshot to release with the provider</param>
+    internal sealed class SnapshotOwningSourceProvider(ISourceProvider inner, ISnapshotService snapshotService) : ISourceProvider
+    {
+        /// <summary>
+        /// The wrapped provider
+        /// </summary>
+        public ISourceProvider Inner => inner;
+
+        /// <summary>
+        /// The snapshot released with the provider
+        /// </summary>
+        public ISnapshotService SnapshotService => snapshotService;
+
+        /// <inheritdoc />
+        public string MountedPath => inner.MountedPath;
+
+        /// <inheritdoc />
+        public bool NeedsStoredMetadata => inner.NeedsStoredMetadata;
+
+        /// <inheritdoc />
+        public Task InitializeAsync(CancellationToken cancellationToken) => inner.InitializeAsync(cancellationToken);
+
+        /// <inheritdoc />
+        public Task TestAsync(CancellationToken cancellationToken) => inner.TestAsync(cancellationToken);
+
+        /// <inheritdoc />
+        public IAsyncEnumerable<ISourceProviderEntry> EnumerateAsync(CancellationToken cancellationToken) => inner.EnumerateAsync(cancellationToken);
+
+        /// <inheritdoc />
+        public Task<ISourceProviderEntry?> GetEntryAsync(string path, bool isFolder, CancellationToken cancellationToken) => inner.GetEntryAsync(path, isFolder, cancellationToken);
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            try
+            {
+                inner.Dispose();
+            }
+            finally
+            {
+                snapshotService.Dispose();
+            }
         }
     }
 }

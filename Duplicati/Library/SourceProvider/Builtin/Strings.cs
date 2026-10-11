@@ -26,4 +26,9 @@ namespace Duplicati.Library.SourceProvider.Strings
         public static string Description { get { return LC.L(@"This backend can read and write data to an file based backend. Allowed formats are ""file://hostname/folder"" and ""file://username:password@hostname/folder"". You may supply UNC paths (e.g.: ""file://\\server\folder"") or local paths (e.g.: (win) ""file://c:\folder"", (linux) ""file:///usr/pub/files""). Use the prefix ""vss://"" or ""lvm://"" to create snapshot based folders."); } }
         public static string DisplayName { get { return LC.L(@"Local folder or drive"); } }
     }
+    internal static class HyperVSourceProvider
+    {
+        public static string IgnoreConsistencyWarningShort { get { return LC.L(@"Ignore consistency warning"); } }
+        public static string IgnoreConsistencyWarningLong { get { return LC.L(@"This option will suppress the consistency warning that is normally issued when running on a client version of Windows. Enable this option if you are running on a client version of Windows and you are sure that crash-level consistency is acceptable for your use."); } }
+    }
 }

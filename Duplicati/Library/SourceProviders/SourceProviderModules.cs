@@ -69,5 +69,20 @@ public static class SourceProviderModules
     .Concat(ProprietarySourceProviderModules.Value)
     .WhereNotNull()
     .ToList();
+
+    /// <summary>
+    /// The list of built-in source-provider modules that are activated by a path prefix
+    /// (e.g. <c>%HYPERV%</c>) instead of a URL scheme
+    /// </summary>
+    public static IReadOnlyList<IPrefixedSourceProviderModule> BuiltInPrefixSourceProviderModules => SupportedPrefixSourceProviders;
+
+    /// <summary>
+    /// Calculate list once and cache it
+    /// </summary>
+    private static readonly IReadOnlyList<IPrefixedSourceProviderModule> SupportedPrefixSourceProviders =
+    [
+        new SourceProvider.Builtin.HyperV.HyperVSourceProvider(),
+        new SourceProvider.Builtin.MSSQL.MSSQLSourceProvider()
+    ];
 }
 

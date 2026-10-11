@@ -202,7 +202,7 @@ Multiple folders on different disks can be used to test multi-volume snapshots."
                     Console.WriteLine("If this fails, try to run as Administrator");
                 }
 
-                using (var snapshot = SnapshotUtility.CreateSnapshot(args, options, false))
+                using (var snapshot = SnapshotUtility.CreateSnapshot(args, [], options, false))
                 {
                     foreach (var (folder, filename, fs) in locks)
                     {

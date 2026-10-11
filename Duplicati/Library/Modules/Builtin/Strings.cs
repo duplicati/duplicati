@@ -41,18 +41,6 @@ namespace Duplicati.Library.Modules.Builtin.Strings
         public static string Description { get { return LC.L(@"This module exposes a number of common properties that can be used to change the way backends are configured"); } }
         public static string DisplayName { get { return LC.L(@"Configure backend options"); } }
     }
-    internal static class HyperVOptions
-    {
-        public static string Description { get { return LC.L(@"This module works internaly to parse source parameters to backup Hyper-V virtual machines"); } }
-        public static string DisplayName { get { return LC.L(@"Configure Hyper-V module"); } }
-        public static string IgnoreConsistencyWarningShort { get { return LC.L(@"Ignore consistency warning"); } }
-        public static string IgnoreConsistencyWarningLong { get { return LC.L(@"This option will suppress the consistency warning that is normally issued when running on a client version of Windows. Enable this option if you are running on a client version of Windows and you are sure that crash-level consistency is acceptable for your use."); } }
-    }
-    internal static class MSSQLOptions
-    {
-        public static string Description { get { return LC.L(@"This module works internaly to parse source parameters to backup Microsoft SQL Server databases"); } }
-        public static string DisplayName { get { return LC.L(@"Configure Microsoft SQL Server module"); } }
-    }
     internal static class RemoteSynchronization
     {
         public static string Description { get { return LC.L(@"This module runs remote synchronization after a successful backup to create a secondary copy (3-2-1)."); } }

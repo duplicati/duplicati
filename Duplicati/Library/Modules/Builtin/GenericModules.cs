@@ -35,8 +35,6 @@ public static class GenericModules
     public static IReadOnlyList<IGenericModule> BuiltInGenericModules => [
         new ConsolePasswordInput(),
         new CommonOptions(),
-        new HyperVOptions(),
-        new MSSQLOptions(),
         new RunScript(),
         new HttpReportStatus(),
         new SendHttpMessage(),
