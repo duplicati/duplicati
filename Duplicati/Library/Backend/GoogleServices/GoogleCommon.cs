@@ -55,7 +55,7 @@ namespace Duplicati.Library.Backend.GoogleServices
             using var resp = await Library.Utility.Utility.WithTimeout(
                 shortTimeout,
                 cancellationToken,
-                ct => oauth.GetResponseAsync(req, HttpCompletionOption.ResponseContentRead, ct)
+                ct => oauth.GetResponseUncheckedAsync(req, HttpCompletionOption.ResponseContentRead, ct)
             ).ConfigureAwait(false);
 
             var code = (int)resp.StatusCode;
@@ -77,7 +77,7 @@ namespace Duplicati.Library.Backend.GoogleServices
                 // but seems to occur when no data has reached the server:
                 // https://code.google.com/a/google.com/p/apps-api-issues/issues/detail?id=3884
 
-                if (!resp.Content.Headers.TryGetValues("Range", out var rangeValues))
+                if (!resp.Headers.TryGetValues("Range", out var rangeValues))
                     return (0, null);
 
                 return (long.Parse(rangeValues.First().Split('-')[1]) + 1, null);
