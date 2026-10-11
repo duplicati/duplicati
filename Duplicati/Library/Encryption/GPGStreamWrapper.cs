@@ -21,56 +21,114 @@
 
 using System;
 using System.IO;
+using System.Runtime.ExceptionServices;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Encryption
 {
     internal class GPGStreamWrapper : Utility.OverrideableStream
     {
         private System.Diagnostics.Process m_p;
-        private System.Threading.Thread m_t;
+        private Task m_copier;
+        private Task<string> m_stderr;
 
         /// <summary>
         /// Wraps a crypto stream, ensuring that it is correctly disposed
         /// </summary>
+        /// <param name="p">The GPG process</param>
+        /// <param name="copier">The task that copies the other end of the GPG process</param>
+        /// <param name="stderr">The task that reads the GPG error output</param>
         /// <param name="basestream">The stream to wrap</param>
-        public GPGStreamWrapper(System.Diagnostics.Process p, System.Threading.Thread t, Stream basestream)
+        public GPGStreamWrapper(System.Diagnostics.Process p, Task copier, Task<string> stderr, Stream basestream)
             : base(basestream)
         {
             if (p == null)
                 throw new NullReferenceException("p");
-            if (t == null)
-                throw new NullReferenceException("t");
-            
+            if (copier == null)
+                throw new NullReferenceException("copier");
+            if (stderr == null)
+                throw new NullReferenceException("stderr");
+
             m_p = p;
-            m_t = t;
+            m_copier = copier;
+            m_stderr = stderr;
         }
 
         protected override void Dispose(bool disposing)
         {
-            if (m_p != null)
+            try
             {
-                m_basestream.Close();
-
-                if (!m_t.Join(5000))
-                    throw new System.Security.Cryptography.CryptographicException(Strings.GPGStreamWrapper.GPGFlushError);
-
-                if (!m_p.WaitForExit(5000))
-                    throw new System.Security.Cryptography.CryptographicException(Strings.GPGStreamWrapper.GPGTerminateError);
-
-                if (!m_p.StandardError.EndOfStream)
+                if (m_p != null)
+                    Finish();
+            }
+            finally
+            {
+                if (m_p != null)
                 {
-                    string errmsg = m_p.StandardError.ReadToEnd();
-                    if (errmsg.Contains("decryption failed:"))
-                        throw new System.Security.Cryptography.CryptographicException(Strings.GPGStreamWrapper.DecryptionError(errmsg));
+                    KillProcess();
+                    m_p.Dispose();
+                    m_p = null;
+                    m_copier = null;
+                    m_stderr = null;
                 }
 
-                m_p.Dispose();
-                m_p = null;
+                base.Dispose(disposing);
+            }
+        }
 
-                m_t = null;
+        /// <summary>
+        /// Closes the wrapped stream and waits for GPG and the copy to finish
+        /// </summary>
+        private void Finish()
+        {
+            Exception failure = null;
+            try
+            {
+                m_basestream.Close();
+            }
+            catch (Exception ex)
+            {
+                failure = ex;
             }
 
-            base.Dispose(disposing);
+            // GPG only finishes after it has seen the end of the input, which can take a long time for a large volume,
+            // so there is no time limit here. The copy ends when GPG closes its end of the pipe, or when it fails.
+            try
+            {
+                m_copier.GetAwaiter().GetResult();
+            }
+            catch (Exception ex)
+            {
+                failure ??= ex;
+            }
+
+            // If the copy failed, GPG may be blocked writing output that nobody reads
+            if (failure != null)
+                KillProcess();
+
+            m_p.WaitForExit();
+
+            var errmsg = m_stderr.GetAwaiter().GetResult();
+            if (errmsg.Contains("decryption failed:"))
+                throw new System.Security.Cryptography.CryptographicException(Strings.GPGStreamWrapper.DecryptionError(errmsg));
+
+            if (failure != null)
+                ExceptionDispatchInfo.Capture(failure).Throw();
+        }
+
+        /// <summary>
+        /// Stops the GPG process if it is still running
+        /// </summary>
+        private void KillProcess()
+        {
+            try
+            {
+                if (!m_p.HasExited)
+                    m_p.Kill(true);
+            }
+            catch
+            {
+            }
         }
     }
 }
