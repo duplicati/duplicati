@@ -72,6 +72,11 @@ public class NativeVssBackup : ISnapshotProvider
     private bool _hasStartedSnapshotSet;
 
     /// <summary>
+    /// Flag keeping track of whether the snapshot set has been created
+    /// </summary>
+    private bool _hasCreatedSnapshotSet;
+
+    /// <summary>
     /// Flag keeping track of whether the backup has been completed
     /// </summary>
     private bool _isBackupComplete;
@@ -234,6 +239,7 @@ public class NativeVssBackup : ISnapshotProvider
     {
         VssInteropUtility.ThrowIfFailed(_components.DoSnapshotSet(out var async), nameof(DoSnapshotSet));
         VssInteropUtility.WaitAndCheck(async, (uint)_maxWaitTime.TotalMilliseconds, nameof(DoSnapshotSet));
+        _hasCreatedSnapshotSet = true;
         Log.WriteVerboseMessage(LogTag, "VssDoSnapshotSet", "Completed snapshot set");
     }
 
@@ -508,6 +514,21 @@ public class NativeVssBackup : ISnapshotProvider
         catch (Exception ex)
         {
             Log.WriteVerboseMessage(LogTag, "VssFreeMetadataFailed", ex, "Failed to free VSS writer metadata");
+        }
+
+        try
+        {
+            // A snapshot set that was started but not created stays in progress, and every
+            // other snapshot fails with VSS_E_SNAPSHOT_SET_IN_PROGRESS, until it is aborted
+            if (_hasStartedSnapshotSet && !_hasCreatedSnapshotSet)
+            {
+                VssInteropUtility.ThrowIfFailed(_components.AbortBackup(), nameof(IVssBackupComponents.AbortBackup));
+                _isBackupComplete = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.WriteVerboseMessage(LogTag, "VssAbortBackupFailed", ex, "Failed to abort the VSS backup");
         }
 
         try

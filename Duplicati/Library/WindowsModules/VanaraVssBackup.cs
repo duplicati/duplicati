@@ -25,6 +25,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Logging;
@@ -53,6 +54,7 @@ public class VanaraVssBackup : ISnapshotProvider
     private IVssBackupComponents _components;
     private bool _hasAllocatedMetadata;
     private bool _hasStartedSnapshotSet;
+    private bool _hasCreatedSnapshotSet;
     private bool _isBackupComplete;
 
     /// <summary>
@@ -147,6 +149,7 @@ public class VanaraVssBackup : ISnapshotProvider
     public void DoSnapshotSet()
     {
         _components.DoSnapshotSet().Wait((uint)_maxWaitTime.TotalMilliseconds).ThrowIfFailed();
+        _hasCreatedSnapshotSet = true;
         Log.WriteVerboseMessage(LogTag, "VssDoSnapshotSet", "Completed snapshot set");
     }
 
@@ -301,6 +304,18 @@ public class VanaraVssBackup : ISnapshotProvider
 
         try
         {
+            // A snapshot set that was started but not created stays in progress, and every
+            // other snapshot fails with VSS_E_SNAPSHOT_SET_IN_PROGRESS, until it is aborted
+            if (_hasStartedSnapshotSet && !_hasCreatedSnapshotSet)
+                _components.AbortBackup();
+        }
+        catch (Exception ex)
+        {
+            Log.WriteVerboseMessage(LogTag, "VssAbortBackupFailed", ex, "Failed to abort the VSS backup");
+        }
+
+        try
+        {
             if (_hasStartedSnapshotSet)
                 DeleteSnapshot(Guid.Empty, true); // Delete all snapshots if any were created
         }
@@ -319,5 +334,9 @@ public class VanaraVssBackup : ISnapshotProvider
             Log.WriteVerboseMessage(LogTag, "VssDisposeFailed", ex, "Failed to complete VSS backup");
         }
 
+        // Release the backup components now rather than when the finalizer runs, as VSS
+        // keeps the backup open for as long as the object is alive
+        if (_components is not null && Marshal.IsComObject(_components))
+            Marshal.FinalReleaseComObject(_components);
     }
 }
