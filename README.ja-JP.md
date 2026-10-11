@@ -4,15 +4,14 @@
 
 暗号化したバックアップを、クラウドストレージサービスで安全に保管しましょう！
 
-[![Open Collectiveでのサポーター](https://opencollective.com/duplicati/backers/badge.svg)](#backers) [![Open Collectiveでのスポンサー](https://opencollective.com/duplicati/sponsors/badge.svg)](#sponsors)
-[![ライセンス](https://img.shields.io/github/license/duplicati/duplicati.svg)](https://github.com/duplicati/duplicati/blob/master/LICENSE)
+[![ライセンス](<https://img.shields.io/badge/license-MIT%20(core)-blue.svg>)](https://github.com/duplicati/duplicati/blob/master/LICENSE)
 [![Gurubase](https://img.shields.io/badge/Gurubase-Ask%20Duplicati%20Guru-006BFF)](https://gurubase.io/g/duplicati)
 
 Duplicati は、フリー（自由）でオープンソースのバックアップ用クライアントです。圧縮し、暗号化した増分バックアップを、クラウドストレージサービスや遠隔のファイルサーバー上に安全に保存できます。Duplicati は、主に以下のサービスやソフトウェアで使うことができます。
 
 &nbsp;&nbsp; _Amazon S3、[IDrive e2](https://www.idrive.com/e2/duplicati "Using Duplicati with IDrive e2")、[Backblaze (B2)](https://www.backblaze.com/blog/duplicati-backups-cloud-storage/ "Duplicati with Backblaze B2 Cloud Storage")、Box、Dropbox、FTP、Google クラウド、Google ドライブ、MEGA、Microsoft Azure、Microsoft OneDrive、Rackspace Cloud Files、OpenStack Storage (Swift)、Storj DCS、SSH (SFTP)、WebDAV、Tencent クラウドオブジェクトストレージ（COS）、Aliyun OSS、[その他にも対応しています！](https://docs.duplicati.com/backup-destinations/destination-overview)_
 
-Duplicati は MIT ライセンスで公開されており、Windows、macOS、Linux で利用できます。
+Duplicati の中核部分は MIT ライセンスで公開されています。ただし、`proprietary/` フォルダーの内容は [Duplicati Inc Software ライセンス](proprietary/LICENSE)の対象です。Duplicati は Windows、macOS、Linux で利用できます。
 
 # ダウンロード
 
@@ -63,28 +62,4 @@ Duplicati の翻訳に興味がある場合は、[Transifex](https://explore.tra
 
 開発環境を設定して Duplicati をビルドする方法については、[ドキュメント](https://docs.duplicati.com/installation-details/developer)をご覧ください。不具合を修正したり、Duplicati を改善したりするプルリクエストについては、いつでも歓迎します。
 
-修正すべき問題を探している場合は、[minor change](https://github.com/duplicati/duplicati/issues?q=is%3Aissue+is%3Aopen+label%3A%22minor+change%22)の Issue を確認してみてください。ウェブ UI の開発に慣れている場合は、 [「UI」でタグ付けされた Issue](https://github.com/duplicati/duplicati/issues?q=is%3Aissue+is%3Aopen+label%3A%22UI%22)を見てみてください。
-
-貢献していただいた皆様に感謝いたします！
-<a href="https://github.com/duplicati/duplicati/graphs/contributors"><img src="https://opencollective.com/duplicati/contributors.svg?width=890" /></a>
-
-## 後援
-
-後援いただいている皆様に感謝いたします！🙏
-
-<a href="https://opencollective.com/duplicati#backers" target="_blank"><img src="https://opencollective.com/duplicati/backers.svg?width=890"></a>
-
-## スポンサー
-
-このオープンソースプロジェクトを支援してくださるスポンサーの皆様に、特別な感謝を捧げます。
-
-<a href="https://opencollective.com/duplicati/sponsor/0/website" target="_blank"><img src="https://opencollective.com/duplicati/sponsor/0/avatar.svg"></a>
-<a href="https://opencollective.com/duplicati/sponsor/1/website" target="_blank"><img src="https://opencollective.com/duplicati/sponsor/1/avatar.svg"></a>
-<a href="https://opencollective.com/duplicati/sponsor/2/website" target="_blank"><img src="https://opencollective.com/duplicati/sponsor/2/avatar.svg"></a>
-<a href="https://opencollective.com/duplicati/sponsor/3/website" target="_blank"><img src="https://opencollective.com/duplicati/sponsor/3/avatar.svg"></a>
-<a href="https://opencollective.com/duplicati/sponsor/4/website" target="_blank"><img src="https://opencollective.com/duplicati/sponsor/4/avatar.svg"></a>
-<a href="https://opencollective.com/duplicati/sponsor/5/website" target="_blank"><img src="https://opencollective.com/duplicati/sponsor/5/avatar.svg"></a>
-<a href="https://opencollective.com/duplicati/sponsor/6/website" target="_blank"><img src="https://opencollective.com/duplicati/sponsor/6/avatar.svg"></a>
-<a href="https://opencollective.com/duplicati/sponsor/7/website" target="_blank"><img src="https://opencollective.com/duplicati/sponsor/7/avatar.svg"></a>
-<a href="https://opencollective.com/duplicati/sponsor/8/website" target="_blank"><img src="https://opencollective.com/duplicati/sponsor/8/avatar.svg"></a>
-<a href="https://opencollective.com/duplicati/sponsor/9/website" target="_blank"><img src="https://opencollective.com/duplicati/sponsor/9/avatar.svg"></a>
+修正すべき問題を探している場合は、[minor change](https://github.com/duplicati/duplicati/issues?q=is%3Aissue+is%3Aopen+label%3A%22minor+change%22)の Issue を確認してみてください。ウェブ UI の開発に慣れている場合は、[ngclient リポジトリの Issue](https://github.com/duplicati/ngclient/issues)を見てみてください。現在のウェブ UI は別リポジトリ [duplicati/ngclient](https://github.com/duplicati/ngclient) で開発されています。
