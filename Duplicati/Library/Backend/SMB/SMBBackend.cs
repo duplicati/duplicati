@@ -94,6 +94,11 @@ public class SMBBackend : IStreamingBackend, IFolderEnabledBackend, IRenameEnabl
     private const string AUTH_DOMAIN_OPTION = "auth-domain";
 
     /// <summary>
+    /// Option to offer the SMB 3.1.1 dialect, which SMBLibrary leaves off by default
+    /// </summary>
+    private const string ENABLE_SMB311_OPTION = "enable-smb311";
+
+    /// <summary>
     /// Defines the default transport to be used in CIFS connection
     /// </summary>
     private const string DEFAULT_TRANSPORT = "directtcp";
@@ -170,7 +175,8 @@ public class SMBBackend : IStreamingBackend, IFolderEnabledBackend, IRenameEnabl
             auth.Username,
             auth.Password,
             readBufferSize,
-            writeBufferSize
+            writeBufferSize,
+            Utility.Utility.ParseBoolOption(options, ENABLE_SMB311_OPTION)
         );
     }
 
@@ -182,6 +188,7 @@ public class SMBBackend : IStreamingBackend, IFolderEnabledBackend, IRenameEnabl
             .. AuthOptionsHelper.GetOptions(),
             new CommandLineArgument(AUTH_DOMAIN_OPTION, CommandLineArgument.ArgumentType.String, Strings.SMBBackend.DescriptionAuthDomainShort, Strings.SMBBackend.DescriptionAuthDomainLong),
             new CommandLineArgument(TRANSPORT_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.Options.TransportShort, Strings.Options.TransportLong, DEFAULT_TRANSPORT, null, _transportMap.Keys.ToArray()),
+            new CommandLineArgument(ENABLE_SMB311_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Options.EnableSMB311Short, Strings.Options.EnableSMB311Long, "false"),
             new CommandLineArgument(READ_BUFFER_SIZE_OPTION, CommandLineArgument.ArgumentType.String, Strings.Options.DescriptionReadBufferSizeShort, Strings.Options.DescriptionReadBufferSizeLong),
             new CommandLineArgument(WRITE_BUFFER_SIZE_OPTION, CommandLineArgument.ArgumentType.String, Strings.Options.DescriptionWriteBufferSizeShort, Strings.Options.DescriptionWriteBufferSizeLong),
             .. TimeoutOptionsHelper.GetOptions()

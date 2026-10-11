@@ -35,6 +35,7 @@ namespace Duplicati.Library.Backend.SMB.Model;
 /// <param name="AuthPassword">The password for authentication</param>
 /// <param name="ReadBufferSize">Read buffer size for SMB operations (will be capped automatically by SMB negotiated values)</param>
 /// <param name="WriteBufferSize">Write buffer size for SMB operations (will be capped automatically by SMB negotiated values)</param>
+/// <param name="EnableSMB311Support">Offer the SMB 3.1.1 dialect when negotiating with the server</param>
 public sealed record SMBConnectionParameters(
     string ServerName,
     SMBTransportType TransportType,
@@ -44,4 +45,5 @@ public sealed record SMBConnectionParameters(
     string? AuthUser,
     string? AuthPassword,
     int? ReadBufferSize,
-    int? WriteBufferSize);
+    int? WriteBufferSize,
+    bool EnableSMB311Support);
