@@ -65,7 +65,21 @@ public record RemoteSyncDestinationConfig(
     RemoteSyncTriggerMode Mode = RemoteSyncTriggerMode.Inline,
     TimeSpan? Interval = null,
     int? Count = null
-);
+)
+{
+    /// <summary>
+    /// The destination url with any credentials removed, safe to include in log messages.
+    /// </summary>
+    public string DisplayDestination => Duplicati.Library.Utility.Utility.GetUrlWithoutCredentials(Config.Dst);
+
+    /// <summary>
+    /// Describes the destination without its options, which carry passphrases and backend credentials.
+    /// The generated record ToString would print every member, so it is replaced here to keep the
+    /// record safe to pass into a log message.
+    /// </summary>
+    public override string ToString()
+        => $"Dst: {DisplayDestination}, Mode: {Mode}, Interval: {Interval}, Count: {Count}";
+}
 
 /// <summary>
 /// Raw configuration for a remote synchronization destination, as deserialized from JSON.
@@ -96,6 +110,13 @@ public record RemoteSyncDestinationConfigRaw(
     public string? Mode { get; init; }
     public string? Interval { get; init; }
     public int? Count { get; init; }
+
+    /// <summary>
+    /// Describes the destination without the url credentials or the options, which carry passphrases
+    /// and backend credentials. The generated record ToString would print every member.
+    /// </summary>
+    public override string ToString()
+        => $"Url: {Duplicati.Library.Utility.Utility.GetUrlWithoutCredentials(Url ?? "")}, Mode: {Mode}, Interval: {Interval}, Count: {Count}";
 };
 
 /// <summary>
@@ -329,11 +350,15 @@ internal class RemoteSynchronizationHandler : IDisposable
             if (string.IsNullOrWhiteSpace(dest.Config.Dst))
                 continue;
 
+            // Only the credential-free url is ever written to the log; the config itself carries the
+            // raw url and the source options, which include the passphrase and backend credentials
+            var destinationName = dest.DisplayDestination;
+
             try
             {
                 if (!ShouldTriggerSync(i, dest))
                 {
-                    Logging.Log.WriteInformationMessage(LOGTAG, "RemoteSyncSkipped", "Remote synchronization to {0} skipped due to trigger mode conditions not met.", dest);
+                    Logging.Log.WriteInformationMessage(LOGTAG, "RemoteSyncSkipped", "Remote synchronization to {0} skipped due to trigger mode conditions not met.", destinationName);
                     continue;
                 }
 
@@ -346,7 +371,7 @@ internal class RemoteSynchronizationHandler : IDisposable
                 var date_start = DateTime.UtcNow;
                 var syncResult = new RemoteSynchronizationResults
                 {
-                    Destination = Duplicati.Library.Utility.Utility.GetUrlWithoutCredentials(config.Dst),
+                    Destination = destinationName,
                 };
                 var exitCode = RemoteSynchronizationRunner.RunAsync(config, CancellationToken.None, m_results.OperationProgressUpdater, m_results.BackendProgressUpdater, syncResult).ConfigureAwait(false).GetAwaiter().GetResult();
                 var date_end = DateTime.UtcNow;
@@ -359,13 +384,13 @@ internal class RemoteSynchronizationHandler : IDisposable
                 else
                 {
                     // Error is captured into the result's Errors collection via the active log scope
-                    Logging.Log.WriteErrorMessage(LOGTAG, "RemoteSyncFailed", null, "Remote synchronization to {0} failed with exit code {1}.", dest, exitCode);
+                    Logging.Log.WriteErrorMessage(LOGTAG, "RemoteSyncFailed", null, "Remote synchronization to {0} failed with exit code {1}.", destinationName, exitCode);
                 }
             }
             catch (Exception ex)
             {
                 // Error is captured into the result's Errors collection via the active log scope
-                Logging.Log.WriteErrorMessage(LOGTAG, "RemoteSyncFailed", ex, "Remote synchronization to {0} failed: {1}", dest, ex.Message);
+                Logging.Log.WriteErrorMessage(LOGTAG, "RemoteSyncFailed", ex, "Remote synchronization to {0} failed: {1}", destinationName, ex.Message);
             }
         }
 
