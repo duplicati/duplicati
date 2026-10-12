@@ -582,7 +582,7 @@ public class pCloudBackend : IStreamingBackend, IRenameEnabledBackend
     private HttpRequestMessage CreateRequest(string url, HttpMethod? method = null)
     {
         var request = new HttpRequestMessage(HttpMethod.Get, $"https://{_ServerUrl}/{url}");
-        request.Headers.Add(HttpRequestHeader.UserAgent.ToString(),
+        request.Headers.Add("User-Agent",
             "Duplicati pCloud Client v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
 
         if (method != null)
