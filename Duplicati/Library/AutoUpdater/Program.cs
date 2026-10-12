@@ -29,6 +29,8 @@ namespace Duplicati.Library.AutoUpdater
     {
         public static int Main(string[] _args)
         {
+            PreloadSettingsLoader.ConfigurePreloadSettings(ref _args, PackageHelper.NamedExecutable.AutoUpdater);
+
             var args = _args.ToList();
             Duplicati.Library.Utility.CommandLineParser.ExtractOptions(args);
 

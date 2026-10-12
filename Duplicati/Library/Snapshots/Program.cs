@@ -77,6 +77,8 @@ namespace Duplicati.Library.Snapshots
 
         public static int Main(string[] _args)
         {
+            PreloadSettingsLoader.ConfigurePreloadSettings(ref _args, PackageHelper.NamedExecutable.Snapshots);
+
             StreamLogDestination consoleDestination = null;
             StreamLogDestination fileDestination = null;
             try
