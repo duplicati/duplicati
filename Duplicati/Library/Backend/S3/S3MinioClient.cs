@@ -42,6 +42,10 @@ namespace Duplicati.Library.Backend
         private readonly string m_dnsHost;
         private readonly TimeoutOptionsHelper.Timeouts m_timeouts;
         private readonly string m_lockMode;
+        /// <summary>
+        /// Whether to use the v1 list API; null keeps the Minio default (v2)
+        /// </summary>
+        private readonly bool? m_useV1ListApi;
 
         public S3MinioClient(string awsID, string awsKey, string? locationConstraint,
             string servername, string? storageClass, bool useSSL, TimeoutOptionsHelper.Timeouts timeouts, Dictionary<string, string?> options, string lockMode, string? authenticationRegion)
@@ -49,6 +53,10 @@ namespace Duplicati.Library.Backend
             m_timeouts = timeouts;
             m_locationConstraint = locationConstraint;
             m_lockMode = lockMode;
+
+            var listApiVersion = options.GetValueOrDefault(S3AwsClient.S3_LIST_API_VERSION_OPTION) ?? options.GetValueOrDefault(S3AwsClient.S3_LEGACY_LIST_API_VERSION_OPTION);
+            if (!string.IsNullOrWhiteSpace(listApiVersion))
+                m_useV1ListApi = !string.Equals(listApiVersion, "v2", StringComparison.OrdinalIgnoreCase);
 
             var clientBuilder = new MinioClient()
                 .WithEndpoint(servername)
@@ -131,9 +139,13 @@ namespace Duplicati.Library.Backend
             if (!string.IsNullOrWhiteSpace(prefix))
                 prefix = Util.AppendDirSeparator(prefix, "/");
 
+            var args = new ListObjectsArgs().WithBucket(bucketName).WithPrefix(prefix).WithRecursive(recursive);
+            if (m_useV1ListApi.HasValue)
+                args = args.WithListObjectsV1(m_useV1ListApi.Value);
+
             // The requests run while the observable is read, and must stop when the listing does
             using var listing = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            var observable = m_client.ListObjectsAsync(new ListObjectsArgs().WithBucket(bucketName).WithPrefix(prefix).WithRecursive(recursive), listing.Token);
+            var observable = m_client.ListObjectsAsync(args, listing.Token);
 
             try
             {
