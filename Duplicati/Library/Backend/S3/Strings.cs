@@ -55,6 +55,7 @@ namespace Duplicati.Library.Backend.Strings
         public static string S3ArchiveClassesDescriptionLong { get { return LC.L(@"Use this option to specify what storage classes are considered archive storage classes. With this option it is possible to allow lifecycle policies to move data to cheaper storage classes and prevent Duplicati from accessing archived data. This option is only supported for the AWS client."); } }
         public static string DescriptionListApiVersionShort { get { return LC.L(@"Specify the S3 list API version to use"); } }
         public static string DescriptionListApiVersionLong { get { return LC.L(@"Use this option to specify the S3 list API version to use. This can be used to work around issues with some S3 providers."); } }
+        public static string ListApiVersionDeprecated(string legacyOption, string option) { return LC.L(@"The option {0} is deprecated, use {1} instead.", legacyOption, option); }
         public static string DescriptionRecursiveListShort { get { return LC.L(@"Use this option to list all files in the bucket"); } }
         public static string DescriptionRecursiveListLong { get { return LC.L(@"To reduce the number of objects listed, the default is to only list the first level of objects. Use this option to list all objects in the bucket."); } }
         public static string DescriptionLockModeShort { get { return LC.L(@"Specify the S3 object lock mode"); } }
