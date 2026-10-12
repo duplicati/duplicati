@@ -49,7 +49,7 @@ public class WindowsSnapshotFailureTests : BasicSetupHelper
     [SupportedOSPlatform("windows")]
     private static void Snapshot(string[] sources, string provider)
     {
-        using var snapshot = new WindowsSnapshot(sources, new Dictionary<string, string> { ["snapshot-provider"] = provider }, false);
+        using var snapshot = new WindowsSnapshot(sources, [], new Dictionary<string, string> { ["snapshot-provider"] = provider }, false);
     }
 
     [SupportedOSPlatform("windows")]
