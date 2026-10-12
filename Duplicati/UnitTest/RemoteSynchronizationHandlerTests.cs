@@ -29,6 +29,7 @@ using System.Linq;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.SQLiteHelper;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using StringAssert = NUnit.Framework.Legacy.StringAssert;
 using System.Threading.Tasks;
 using System.IO;
 
@@ -81,6 +82,39 @@ namespace Duplicati.UnitTest
             Assert.AreEqual(1, destinations.Count);
             // Convert the escaped backslashes to single backslashes for comparison on Windows
             Assert.AreEqual($"file://{dest1.Replace("\\\\", "\\")}", destinations[0].Config.Dst);
+        }
+
+        [Test]
+        [Category("RemoteSync")]
+        public void TestConfigure_DestinationToStringHidesCredentialsAndOptions()
+        {
+            const string password = "s3cret-destination-password";
+            const string passphrase = "s3cret-backup-passphrase";
+            var options = new Dictionary<string, string>
+            {
+                ["passphrase"] = passphrase,
+                ["remote-sync-json-config"] = @$"{{""destinations"": [
+                    {{""url"": ""ftp://user:{password}@example.com/backups?auth-password={password}"", ""dst-options"": [""auth-password={password}""]}}
+                ]}}"
+            };
+
+            var handler = new RemoteSynchronizationHandler($"file://{source}", new Options(options), new BackupResults());
+
+            var destinations = handler.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(handler) as List<RemoteSyncDestinationConfig>;
+            Assert.AreEqual(1, destinations.Count);
+
+            // The raw config still carries everything it needs to run
+            StringAssert.Contains(password, destinations[0].Config.Dst);
+            Assert.IsTrue(destinations[0].Config.SrcOptions.Any(x => x.Contains(passphrase)));
+
+            // ...but nothing that is rendered into a log message may contain it
+            foreach (var rendered in new[] { destinations[0].ToString(), destinations[0].Config.ToString(), destinations[0].DisplayDestination })
+            {
+                StringAssert.DoesNotContain(password, rendered);
+                StringAssert.DoesNotContain(passphrase, rendered);
+                StringAssert.DoesNotContain("auth-password", rendered);
+            }
+            Assert.AreEqual("ftp://example.com/backups", destinations[0].DisplayDestination);
         }
 
         [Test]

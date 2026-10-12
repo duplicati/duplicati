@@ -279,8 +279,11 @@ public static class RemoteSynchronizationRunner
         {
             var delete_rename = config.Retention ? "Rename" : "Delete";
             Console.WriteLine($"This will perform the following actions (in order):");
-            Console.WriteLine($"    - {delete_rename} {to_delete.Count()} files from {config.Dst}");
-            Console.WriteLine($"    - Copy {to_copy.Count()} files from {config.Src} to {config.Dst}");
+            // The raw urls can carry credentials in the userinfo or query, so only the stripped form is shown
+            var display_src = Library.Utility.Utility.GetUrlWithoutCredentials(config.Src);
+            var display_dst = Library.Utility.Utility.GetUrlWithoutCredentials(config.Dst);
+            Console.WriteLine($"    - {delete_rename} {to_delete.Count()} files from {display_dst}");
+            Console.WriteLine($"    - Copy {to_copy.Count()} files from {display_src} to {display_dst}");
             Console.WriteLine();
             Console.WriteLine("Do you want to continue? [y/N]");
 
