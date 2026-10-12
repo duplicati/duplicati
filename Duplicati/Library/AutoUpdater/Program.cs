@@ -46,6 +46,12 @@ namespace Duplicati.Library.AutoUpdater
             UpdaterManager.OnError += (ex) => Console.WriteLine("Error detected: {0}", ex);
 
             var cmd = args[0].ToLowerInvariant().Trim();
+            if ((cmd == "check" || cmd == "download") && UpdaterManager.DISABLE_UPDATE_CHECK)
+            {
+                Console.WriteLine("Update checks are disabled by the environment variable {0}", string.Format(UpdaterManager.SKIPUPDATE_ENVNAME_TEMPLATE, AutoUpdateSettings.AppName));
+                return 0;
+            }
+
             switch (cmd)
             {
                 case "help":

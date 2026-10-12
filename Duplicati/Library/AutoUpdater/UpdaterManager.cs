@@ -26,7 +26,6 @@ using System.Linq;
 using System.Collections.Generic;
 using System.IO;
 using Duplicati.Library.Utility;
-using System.Diagnostics;
 using System.Text.Json;
 using System.Net.Http;
 using System.Threading;
@@ -66,7 +65,7 @@ namespace Duplicati.Library.AutoUpdater
         /// <summary>
         /// Env variable that allows fully disabling all update checks
         /// </summary>
-        public static readonly bool DISABLE_UPDATE_CHECK = Debugger.IsAttached || Utility.Utility.ParseBool(Environment.GetEnvironmentVariable(string.Format(SKIPUPDATE_ENVNAME_TEMPLATE, APPNAME)), false);
+        public static readonly bool DISABLE_UPDATE_CHECK = Utility.Utility.ParseBool(Environment.GetEnvironmentVariable(string.Format(SKIPUPDATE_ENVNAME_TEMPLATE, APPNAME)), false);
         /// <summary>
         /// The operating system display name
         /// </summary>
@@ -187,9 +186,12 @@ namespace Duplicati.Library.AutoUpdater
         /// Checks for updates and returns the update information if available
         /// </summary>
         /// <param name="channel">The release channel to check for updates</param>
-        /// <returns>The update information if available, or null if no updates are available</returns>
+        /// <returns>The update information if available, or null if no updates are available or update checks are disabled</returns>
         public static UpdateInfo? CheckForUpdate(ReleaseType channel = ReleaseType.Unknown)
         {
+            if (DISABLE_UPDATE_CHECK)
+                return null;
+
             if (channel == ReleaseType.Unknown)
                 channel = AutoUpdateSettings.DefaultUpdateChannel;
 
