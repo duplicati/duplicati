@@ -153,8 +153,19 @@ internal class UserTypeSourceEntry(SourceProvider provider, string path, GraphUs
             yield return entry;
         }
 
+        // The root folder's messages share this path with the settings and rules below, so
+        // when the root folder is walked incrementally these must be marked as examined or
+        // the carry-forward would duplicate them
+        var settingsPath = SystemIO.IO_OS.PathCombine(this.Path, "settings.json");
+        var rules = new UserMailboxRulesSourceEntry(provider, user, this.Path);
+        if (provider.MailDeltaEnabled && provider.ChangeTracker.IsActive)
+        {
+            provider.ChangeTracker.MarkExamined(settingsPath);
+            provider.ChangeTracker.MarkExaminedSubtree(rules.Path);
+        }
+
         // Add Mailbox Settings
-        yield return new StreamResourceEntryFunction(SystemIO.IO_OS.PathCombine(this.Path, "settings.json"),
+        yield return new StreamResourceEntryFunction(settingsPath,
             createdUtc: DateTime.UnixEpoch,
             lastModificationUtc: DateTime.UnixEpoch,
             size: -1,
@@ -169,7 +180,7 @@ internal class UserTypeSourceEntry(SourceProvider provider, string path, GraphUs
             .ToDictionary(kv => kv.Key, kv => kv.Value)));
 
         // Add Mailbox Rules
-        yield return new UserMailboxRulesSourceEntry(provider, user, this.Path);
+        yield return rules;
     }
 
     private async IAsyncEnumerable<ISourceProviderEntry> ContactsEntries([EnumeratorCancellation] CancellationToken cancellationToken)

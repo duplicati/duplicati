@@ -678,8 +678,6 @@ internal sealed class GraphDeltaPage<T>
     public string? DeltaLink { get; set; }
 }
 
-internal sealed record GraphDeltaResult<T>(List<T> Items, string DeltaLink);
-
 internal sealed class GraphDrive
 {
     // baseItem

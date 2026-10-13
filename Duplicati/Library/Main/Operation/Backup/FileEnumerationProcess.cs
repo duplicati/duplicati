@@ -62,6 +62,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             Options.HardlinkStrategy hardlinkPolicy,
             bool disableBackupExclusionXattr,
             bool excludeemptyfolders,
+            Func<string, bool>? keepEmptyFolder,
             string[]? ignorenames,
             HashSet<string> blacklistPaths,
             IEnumerable<string>? changedfilelist,
@@ -179,7 +180,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             //.DistinctBy(x => x.Path, Library.Utility.Utility.IsFSCaseSensitive ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase);
 
             if (excludeemptyfolders)
-                source = ExcludeEmptyFoldersAsync(source, token);
+                source = ExcludeEmptyFoldersAsync(source, keepEmptyFolder, token);
 
             await foreach (var s in source.WithCancellation(token).ConfigureAwait(false))
                 yield return s;
@@ -275,6 +276,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             Options.HardlinkStrategy hardlinkPolicy,
             bool disableBackupExclusionXattr,
             bool excludeemptyfolders,
+            Func<string, bool>? keepEmptyFolder,
             string[]? ignorenames,
             HashSet<string> blacklistPaths,
             IEnumerable<string>? changedfilelist,
@@ -293,7 +295,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 if (token.IsCancellationRequested)
                     return;
 
-                var source = EnumerateAsync(sourceProvider, journalService, fileAttributeFilter, emitfilter, symlinkPolicy, hardlinkPolicy, disableBackupExclusionXattr, excludeemptyfolders, ignorenames, blacklistPaths, changedfilelist, token);
+                var source = EnumerateAsync(sourceProvider, journalService, fileAttributeFilter, emitfilter, symlinkPolicy, hardlinkPolicy, disableBackupExclusionXattr, excludeemptyfolders, keepEmptyFolder, ignorenames, blacklistPaths, changedfilelist, token);
 
                 await foreach (var s in source.WithCancellation(token).ConfigureAwait(false))
                 {
@@ -339,7 +341,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// </summary>
         /// <returns>The list without empty folders.</returns>
         /// <param name="source">The list with potential empty folders.</param>
-        private static async IAsyncEnumerable<ISourceProviderEntry> ExcludeEmptyFoldersAsync(IAsyncEnumerable<ISourceProviderEntry> source, [EnumeratorCancellation] CancellationToken cancellationToken)
+        private static async IAsyncEnumerable<ISourceProviderEntry> ExcludeEmptyFoldersAsync(IAsyncEnumerable<ISourceProviderEntry> source, Func<string, bool>? keepEmptyFolder, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             var pathstack = new Stack<DirectoryStackEntry>();
 
@@ -351,7 +353,9 @@ namespace Duplicati.Library.Main.Operation.Backup
                     while (pathstack.Count > 0 && !s.Path.StartsWith(pathstack.Peek().Item.Path, Library.Utility.Utility.ClientFilenameStringComparison))
                     {
                         var e = pathstack.Pop();
-                        if (e.AnyEntries || pathstack.Count == 0)
+                        // A folder enumerated incrementally lists only what changed, so it
+                        // cannot be told apart from an empty one and is kept
+                        if (e.AnyEntries || pathstack.Count == 0 || keepEmptyFolder?.Invoke(e.Item.Path) == true)
                         {
                             // Propagate the any-flag upwards
                             if (pathstack.Count > 0)
@@ -381,7 +385,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             while (pathstack.Count > 0)
             {
                 var e = pathstack.Pop();
-                if (e.AnyEntries || pathstack.Count == 0)
+                if (e.AnyEntries || pathstack.Count == 0 || keepEmptyFolder?.Invoke(e.Item.Path) == true)
                 {
                     // Propagate the any-flag upwards
                     if (pathstack.Count > 0)

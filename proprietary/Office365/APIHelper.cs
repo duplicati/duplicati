@@ -9,7 +9,6 @@ using Duplicati.Library.Logging;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
 using Jose;
-using NetUri = System.Uri;
 
 namespace Duplicati.Proprietary.Office365;
 
@@ -69,6 +68,12 @@ internal class APIHelper : IDisposable
     /// The cached Graph access token
     /// </summary>
     private string? _graphAccessToken;
+
+    /// <summary>
+    /// Whether the access token is fixed and must never be acquired from the token endpoint,
+    /// which is the case when the helper was created for tests
+    /// </summary>
+    private bool _fixedAccessToken;
     /// <summary>
     /// The authentication values
     /// </summary>
@@ -130,6 +135,28 @@ internal class APIHelper : IDisposable
     }
 
     /// <summary>
+    /// Creates an API helper that sends its requests through a given handler and uses a fixed access
+    /// token, so the Graph API can be replaced by a fake in tests.
+    /// </summary>
+    /// <param name="handler">The handler that answers the requests</param>
+    /// <param name="graphBaseUrl">The Graph base URL</param>
+    /// <param name="timeouts">The timeouts to use</param>
+    /// <param name="accessToken">The access token to send</param>
+    /// <returns>The API helper</returns>
+    internal static APIHelper CreateForTesting(HttpMessageHandler handler, string graphBaseUrl, TimeoutOptionsHelper.Timeouts timeouts, string accessToken)
+    {
+        // The handler is shared between the helpers of every provider instance a test creates, so it is not disposed with the client
+        var httpClient = new HttpClient(handler, disposeHandler: false);
+        httpClient.Timeout = Timeout.InfiniteTimeSpan;
+        var authOptions = AuthOptionsHelper.ParseWithAlias(new Dictionary<string, string?>(), "test", "test", "test-user", "test-pass");
+        return new APIHelper(httpClient, authOptions, "test-tenant", graphBaseUrl, timeouts, null, null, "https://graph.microsoft.com/.default")
+        {
+            _graphAccessToken = accessToken,
+            _fixedAccessToken = true
+        };
+    }
+
+    /// <summary>
     /// Creates a new instance of the <see cref="APIHelper"/> class.
     /// </summary>
     /// <param name="authOptions">The authentication options</param>
@@ -174,10 +201,10 @@ internal class APIHelper : IDisposable
     /// <returns>The access token</returns>
     public async Task<string> AcquireAccessTokenAsync(bool refresh, CancellationToken cancellationToken)
     {
-        if (!refresh && !string.IsNullOrWhiteSpace(_graphAccessToken))
+        if ((!refresh || _fixedAccessToken) && !string.IsNullOrWhiteSpace(_graphAccessToken))
             return _graphAccessToken;
 
-        var tokenEndpoint = new NetUri($"https://login.microsoftonline.com/{_tenantId}/oauth2/v2.0/token");
+        var tokenEndpoint = new Uri($"https://login.microsoftonline.com/{_tenantId}/oauth2/v2.0/token");
         var parameters = new Dictionary<string, string>
         {
             ["grant_type"] = "client_credentials",
@@ -438,7 +465,7 @@ internal class APIHelper : IDisposable
     {
         async Task<HttpRequestMessage> requestFactory(CancellationToken ct)
         {
-            var req = new HttpRequestMessage(HttpMethod.Get, new NetUri(url));
+            var req = new HttpRequestMessage(HttpMethod.Get, new Uri(url));
             req.Headers.Authorization = await GetAuthenticationHeaderAsync(false, ct).ConfigureAwait(false);
             req.Headers.Accept.Clear();
             req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -511,11 +538,25 @@ internal class APIHelper : IDisposable
 
     /// <summary>
     /// Extracts the <c>$skip</c> query value from a Graph paging URL, if present.
-    /// The parameter name may be percent-encoded in links returned by Graph.
     /// </summary>
     /// <param name="url">The URL to inspect</param>
     /// <returns>The skip value, or null if the URL has no parseable <c>$skip</c></returns>
     internal static long? TryGetSkipValue(string url)
+    {
+        var value = TryGetQueryValue(url, "$skip");
+        return value != null && long.TryParse(value, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var skip)
+            ? skip
+            : null;
+    }
+
+    /// <summary>
+    /// Extracts a query value from a Graph URL, if present.
+    /// The parameter name may be percent-encoded in links returned by Graph.
+    /// </summary>
+    /// <param name="url">The URL to inspect</param>
+    /// <param name="name">The name of the query parameter</param>
+    /// <returns>The decoded value, or null if the URL has no such parameter</returns>
+    internal static string? TryGetQueryValue(string url, string name)
     {
         if (string.IsNullOrWhiteSpace(url))
             return null;
@@ -530,14 +571,11 @@ internal class APIHelper : IDisposable
             if (eq <= 0)
                 continue;
 
-            var name = NetUri.UnescapeDataString(part.Substring(0, eq));
-            if (!string.Equals(name, "$skip", StringComparison.OrdinalIgnoreCase))
+            var partName = Uri.UnescapeDataString(part.Substring(0, eq));
+            if (!string.Equals(partName, name, StringComparison.OrdinalIgnoreCase))
                 continue;
 
-            var value = NetUri.UnescapeDataString(part.Substring(eq + 1));
-            return long.TryParse(value, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var skip)
-                ? skip
-                : null;
+            return Uri.UnescapeDataString(part.Substring(eq + 1));
         }
 
         return null;
@@ -554,7 +592,7 @@ internal class APIHelper : IDisposable
     {
         async Task<HttpRequestMessage> requestFactory(CancellationToken ct)
         {
-            var req = new HttpRequestMessage(HttpMethod.Get, new NetUri(url));
+            var req = new HttpRequestMessage(HttpMethod.Get, new Uri(url));
             req.Headers.Authorization = await GetAuthenticationHeaderAsync(false, ct).ConfigureAwait(false);
             req.Headers.Accept.Clear();
             req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -570,18 +608,22 @@ internal class APIHelper : IDisposable
     }
 
     /// <summary>
-    /// Walks a Graph delta endpoint from scratch and returns every item as an asynchronous enumerable.
+    /// Walks a Graph delta endpoint and returns every item as an asynchronous enumerable.
     /// The walk pages with <c>$skiptoken</c> links and ends when Graph returns an <c>@odata.deltaLink</c>,
     /// which gives a consistent snapshot with a definite end, unlike <c>$skip</c> based paging.
-    /// The returned delta link is not kept; this is a full listing, not change tracking.
-    /// Items are de-duplicated by id, and a page consisting solely of already seen ids stops the walk.
+    /// The delta link is handed to <paramref name="deltaLink"/> when the walk ends, so a caller
+    /// that tracks changes can store it and start the next walk from it.
     /// </summary>
     /// <typeparam name="T">The type of items in the page</typeparam>
-    /// <param name="initialUrl">The delta URL to start from</param>
+    /// <param name="initialUrl">The delta URL to start from, either a fresh delta request or a stored delta link</param>
     /// <param name="idSelector">Selects the id used to de-duplicate items</param>
+    /// <param name="deltaLink">Receives the delta link the walk ends with, or <c>null</c> to discard it</param>
+    /// <param name="deduplicate">If <c>true</c>, an item id seen on an earlier page is skipped, and a page consisting
+    /// solely of already seen ids stops the walk; if <c>false</c>, every reported item is returned so the caller can
+    /// let the last occurrence win</param>
     /// <param name="ct">The cancellation token</param>
     /// <returns>An asynchronous enumerable of all items</returns>
-    public async IAsyncEnumerable<T> GetAllGraphDeltaItemsAsync<T>(string initialUrl, Func<T, string> idSelector, [EnumeratorCancellation] CancellationToken ct)
+    public async IAsyncEnumerable<T> GetAllGraphDeltaItemsAsync<T>(string initialUrl, Func<T, string> idSelector, DeltaLinkHolder? deltaLink, bool deduplicate, [EnumeratorCancellation] CancellationToken ct)
     {
         var seen = new HashSet<string>(StringComparer.Ordinal);
         var next = initialUrl;
@@ -595,23 +637,37 @@ internal class APIHelper : IDisposable
             foreach (var item in page.Value)
             {
                 var id = idSelector(item);
-                if (string.IsNullOrEmpty(id) || seen.Add(id))
+                if (!deduplicate || string.IsNullOrEmpty(id) || seen.Add(id))
                 {
                     unseen++;
                     yield return item;
                 }
             }
 
-            if (page.Value.Count > 0 && unseen == 0)
+            if (!string.IsNullOrWhiteSpace(page.DeltaLink) && deltaLink != null)
+                deltaLink.DeltaLink = page.DeltaLink;
+
+            if (deduplicate && page.Value.Count > 0 && unseen == 0)
             {
                 Log.WriteVerboseMessage(LOGTAG, "DeltaPagingRepeatDetected", "Stopping delta enumeration because a page contained only already seen items: {0}", next);
                 yield break;
             }
 
-            // A deltaLink marks the end of the walk; it is intentionally not followed or stored
+            // A deltaLink marks the end of the walk; it is not followed
             next = page.NextLink;
         }
     }
+
+    /// <summary>
+    /// Whether an exception reports that a stored delta token can no longer be used, so the
+    /// walk must start over without a token. Graph answers HTTP 410 Gone for this, with error
+    /// codes such as <c>syncStateNotFound</c>, <c>resyncRequired</c> or
+    /// <c>resyncChangesApplyDifferences</c>.
+    /// </summary>
+    /// <param name="ex">The exception to inspect</param>
+    /// <returns><c>true</c> if the delta walk must be restarted without a token</returns>
+    internal static bool IsDeltaResyncRequired(Exception ex)
+        => ex is HttpRequestException { StatusCode: HttpStatusCode.Gone };
 
     /// <summary>
     /// Re-orders a site feed alphabetically by name.
@@ -692,7 +748,7 @@ internal class APIHelper : IDisposable
     {
         async Task<HttpRequestMessage> requestFactory(CancellationToken cancellationToken)
         {
-            var req = new HttpRequestMessage(HttpMethod.Get, new NetUri(url));
+            var req = new HttpRequestMessage(HttpMethod.Get, new Uri(url));
             req.Headers.Authorization = await GetAuthenticationHeaderAsync(false, cancellationToken);
             req.Headers.Accept.Clear();
             req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -718,7 +774,7 @@ internal class APIHelper : IDisposable
     {
         async Task<HttpRequestMessage> requestFactory(CancellationToken cancellationToken)
         {
-            var req = new HttpRequestMessage(HttpMethod.Post, new NetUri(url));
+            var req = new HttpRequestMessage(HttpMethod.Post, new Uri(url));
             req.Headers.Authorization = await GetAuthenticationHeaderAsync(false, cancellationToken);
             req.Headers.Accept.Clear();
             req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -752,7 +808,7 @@ internal class APIHelper : IDisposable
 
         async Task<HttpRequestMessage> requestFactory(CancellationToken cancellationToken)
         {
-            var req = new HttpRequestMessage(HttpMethod.Post, new NetUri(url));
+            var req = new HttpRequestMessage(HttpMethod.Post, new Uri(url));
             req.Headers.Authorization = await GetAuthenticationHeaderAsync(false, cancellationToken);
             req.Headers.Accept.Clear();
             req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -777,7 +833,7 @@ internal class APIHelper : IDisposable
     {
         async Task<HttpRequestMessage> requestFactory(CancellationToken cancellationToken)
         {
-            var req = new HttpRequestMessage(HttpMethod.Post, new NetUri(url));
+            var req = new HttpRequestMessage(HttpMethod.Post, new Uri(url));
             req.Headers.Authorization = await GetAuthenticationHeaderAsync(false, cancellationToken);
             req.Headers.Accept.Clear();
             req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -800,7 +856,7 @@ internal class APIHelper : IDisposable
     {
         async Task<HttpRequestMessage> requestFactory(CancellationToken cancellationToken)
         {
-            var req = new HttpRequestMessage(HttpMethod.Patch, new NetUri(url));
+            var req = new HttpRequestMessage(HttpMethod.Patch, new Uri(url));
             req.Headers.Authorization = await GetAuthenticationHeaderAsync(false, cancellationToken);
             req.Headers.Accept.Clear();
             req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -855,7 +911,7 @@ internal class APIHelper : IDisposable
     {
         async Task<HttpRequestMessage> requestFactory(CancellationToken rct)
         {
-            var req = new HttpRequestMessage(HttpMethod.Get, new NetUri(url));
+            var req = new HttpRequestMessage(HttpMethod.Get, new Uri(url));
             req.Headers.Authorization = await GetAuthenticationHeaderAsync(false, rct).ConfigureAwait(false);
 
             req.Headers.Accept.Clear();
@@ -899,7 +955,7 @@ internal class APIHelper : IDisposable
     {
         async Task<HttpRequestMessage> requestFactory(CancellationToken rct)
         {
-            var req = new HttpRequestMessage(HttpMethod.Get, new NetUri(url));
+            var req = new HttpRequestMessage(HttpMethod.Get, new Uri(url));
             req.Headers.Authorization = await GetAuthenticationHeaderAsync(false, rct).ConfigureAwait(false);
 
             req.Headers.Accept.Clear();
@@ -1134,7 +1190,7 @@ internal class APIHelper : IDisposable
 
             HttpRequestMessage requestFactory(CancellationToken rct)
             {
-                var req = new HttpRequestMessage(HttpMethod.Put, new NetUri(uploadUrl));
+                var req = new HttpRequestMessage(HttpMethod.Put, new Uri(uploadUrl));
                 var ms = new MemoryStream(buffer, 0, bytesRead);
                 var timeoutStream = ms.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false);
                 req.Content = new StreamContent(timeoutStream);

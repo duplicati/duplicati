@@ -140,6 +140,31 @@ namespace Duplicati.Library.Main.Operation
         }
 
         /// <summary>
+        /// Finds the source providers that track their own changes and hands them the
+        /// state stored with the previous fileset
+        /// </summary>
+        /// <param name="provider">The source provider, possibly a combination of providers</param>
+        /// <param name="filter">The filter in use</param>
+        /// <param name="sources">The source strings the backup was started with</param>
+        /// <param name="lastfilesetid">The previous fileset, or a negative value if there is none</param>
+        /// <param name="usesJournal">Whether the USN change journal is in use</param>
+        /// <returns>The coordinator, or <c>null</c> if no provider tracks changes</returns>
+        private async Task<Backup.ChangeTrackingCoordinator> GetChangeTrackingAsync(ISourceProvider provider, IFilter filter, string[] sources, long lastfilesetid, bool usesJournal)
+        {
+            var coordinator = Backup.ChangeTrackingCoordinator.Create(provider, filter, sources);
+            if (coordinator == null)
+                return null;
+
+            // Both mechanisms decide which paths are copied from the previous fileset,
+            // and they are not combined; refuse rather than guess
+            if (usesJournal)
+                throw new UserInformationException("The USN change journal cannot be combined with a source that tracks its own changes. Disable the USN journal with --usn-policy=off.", "UsnWithChangeTrackingSource");
+
+            await coordinator.LoadStateAsync(m_database, lastfilesetid, m_taskReader.ProgressToken).ConfigureAwait(false);
+            return coordinator;
+        }
+
+        /// <summary>
         /// Returns a list of paths that should be blacklisted
         /// </summary>
         /// <returns>The list of paths</returns>
@@ -339,7 +364,7 @@ namespace Duplicati.Library.Main.Operation
         /// <summary>
         /// Performs the bulk of work by starting all relevant processes
         /// </summary>
-        private static async Task RunMainOperationAsync(Backup.Channels channels, ISourceProvider source, UsnJournalService journalService, Backup.BackupDatabase database, IBackendManager backendManager, Backup.BackupStatsCollector stats, Options options, IFilter filter, BackupResults result, ITaskReader taskreader, long filesetid, long lastfilesetid)
+        private static async Task RunMainOperationAsync(Backup.Channels channels, ISourceProvider source, UsnJournalService journalService, Backup.ChangeTrackingCoordinator changeTracking, Backup.BackupDatabase database, IBackendManager backendManager, Backup.BackupStatsCollector stats, Options options, IFilter filter, BackupResults result, ITaskReader taskreader, long filesetid, long lastfilesetid)
         {
             using (new Logging.Timer(LOGTAG, "BackupMainOperation", "BackupMainOperation"))
             {
@@ -354,7 +379,9 @@ namespace Duplicati.Library.Main.Operation
                                 Backup.StreamBlockSplitter.RunAsync(channels, options, database, taskreader),
                                 Backup.FileEnumerationProcess.RunAsync(channels, source, journalService,
                                     options.FileAttributeFilter, filter, options.SymlinkPolicy,
-                                    options.HardlinkPolicy, options.DisableBackupExclusionXattr, options.ExcludeEmptyFolders, options.IgnoreFilenames,
+                                    options.HardlinkPolicy, options.DisableBackupExclusionXattr, options.ExcludeEmptyFolders,
+                                    changeTracking != null && changeTracking.HasLoadedState ? changeTracking.IsIncrementallyEnumeratedPath : null,
+                                    options.IgnoreFilenames,
                                     GetBlacklistedPaths(options), options.ChangedFilelist, taskreader,
                                     () => result.PartialBackup = true, CancellationToken.None),
                                 Backup.FilePreFilterProcess.RunAsync(channels, options, stats, database, taskreader),
@@ -438,6 +465,31 @@ namespace Duplicati.Library.Main.Operation
                                 .ConfigureAwait(false);
                         }
                     }
+                }
+                else if (changeTracking != null)
+                {
+                    // A provider that was handed state may have enumerated only the entries that
+                    // changed, so copy everything it did not examine from the previous fileset.
+                    // Without loaded state every provider walked everything, and the copy would
+                    // only cost a pass over the previous fileset
+                    if (changeTracking.HasLoadedState)
+                    {
+                        await database.AppendFilesFromPreviousSetWithPredicateAsync((path, fileSize) =>
+                        {
+                            if (changeTracking.WasPathEnumerated(path))
+                                return true;
+
+                            if (fileSize >= 0)
+                                stats.AddExaminedFileAsync(fileSize).FireAndForget();
+
+                            return false;
+                        }, taskreader.ProgressToken)
+                            .ConfigureAwait(false);
+                    }
+
+                    // Store the exported state; a canceled job keeps the state it started
+                    // from, so the next run continues from there instead of walking everything
+                    await changeTracking.StoreStateAsync(database, result.PartialBackup, taskreader.ProgressToken).ConfigureAwait(false);
                 }
 
                 if (result.PartialBackup)
@@ -726,6 +778,7 @@ namespace Duplicati.Library.Main.Operation
                                     .ConfigureAwait(false);
 
                             var journalService = GetJournalService(source, filter, lastfilesetid);
+                            var changeTracking = await GetChangeTrackingAsync(source, filter, sources, lastfilesetid, journalService != null).ConfigureAwait(false);
 
                             // Start parallel scan, or use the database
                             if (m_options.DisableFileScanner)
@@ -745,7 +798,7 @@ namespace Duplicati.Library.Main.Operation
                             if (await m_result.TaskControl.ProgressRendevouzAsync().ConfigureAwait(false))
                             {
                                 var stats = new Backup.BackupStatsCollector(m_result);
-                                await RunMainOperationAsync(channels, source, journalService, db, backendManager, stats, m_options, m_filter, m_result, m_result.TaskControl, filesetid, lastfilesetid).ConfigureAwait(false);
+                                await RunMainOperationAsync(channels, source, journalService, changeTracking, db, backendManager, stats, m_options, m_filter, m_result, m_result.TaskControl, filesetid, lastfilesetid).ConfigureAwait(false);
                             }
                         }
                         finally

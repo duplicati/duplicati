@@ -94,6 +94,10 @@ internal static class UploadRealFilelist
                 await db.PushTimestampChangesToPreviousVersionAsync(filesetid, taskreader.ProgressToken).ConfigureAwait(false);
             }
 
+            // The dropped fileset has the same content as the one before it, so the change
+            // tracking state the enumeration ended with describes that fileset too
+            await db.MoveSourceProviderStateToPreviousFilesetAsync(filesetid, taskreader.ProgressToken).ConfigureAwait(false);
+
             Logging.Log.WriteVerboseMessage(LOGTAG, "RemovingLeftoverTempFile", "removing temp files, as no data needs to be uploaded");
             await db.RemoveRemoteVolumeAsync(filesetvolume.RemoteFilename, taskreader.ProgressToken).ConfigureAwait(false);
         }

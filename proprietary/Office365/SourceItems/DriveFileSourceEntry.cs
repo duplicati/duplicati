@@ -52,7 +52,18 @@ internal class DriveFileSourceEntry(SourceProvider provider, string path, GraphD
         return true;
     }
 
-    public override async Task<Stream> OpenRead(CancellationToken cancellationToken)
+    public override Task<Stream> OpenRead(CancellationToken cancellationToken)
+        => provider.OpenWithFailureTrackingAsync(
+            provider.DriveDeltaEnabled ? ChangeTrackingKeys.Drive(drive.Id) : null,
+            OpenContentAsync,
+            cancellationToken);
+
+    /// <summary>
+    /// Opens the content of the item, storing items SharePoint refuses to serve as empty
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns>The content stream</returns>
+    private async Task<Stream> OpenContentAsync(CancellationToken cancellationToken)
     {
         HttpRequestException notFound;
         try

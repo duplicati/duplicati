@@ -8,12 +8,74 @@ using Duplicati.Library.Logging;
 
 namespace Duplicati.Proprietary.Office365.SourceItems;
 
-internal class DriveFolderSourceEntry(SourceProvider provider, string path, GraphDrive drive, GraphDriveItem item)
-    : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(path, item.Id)), item.CreatedDateTime.FromGraphDateTime(), item.LastModifiedDateTime.FromGraphDateTime())
+/// <summary>
+/// A folder in a drive. It either lists its children with a request to Graph, recording
+/// the folders it finds in the drive's folder map, or lists a prepared set of changed
+/// children from a delta walk.
+/// </summary>
+internal class DriveFolderSourceEntry : MetaEntryBase
 {
     private static readonly string LOGTAG = Log.LogTagFromType<DriveFolderSourceEntry>();
+
+    private readonly SourceProvider provider;
+    private readonly GraphDrive drive;
+    private readonly GraphDriveItem item;
+    private readonly DriveFolderMap? map;
+    private readonly DriveChangeSet? changes;
+
+    /// <summary>
+    /// Creates a folder entry that lists its children with a request to Graph
+    /// </summary>
+    /// <param name="provider">The provider</param>
+    /// <param name="path">The path of the parent</param>
+    /// <param name="drive">The drive</param>
+    /// <param name="item">The folder item</param>
+    /// <param name="map">The folder map to record child folders in, or <c>null</c> if changes are not tracked</param>
+    public DriveFolderSourceEntry(SourceProvider provider, string path, GraphDrive drive, GraphDriveItem item, DriveFolderMap? map)
+        : base(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(path, item.Id)), item.CreatedDateTime.FromGraphDateTime(), item.LastModifiedDateTime.FromGraphDateTime())
+    {
+        this.provider = provider;
+        this.drive = drive;
+        this.item = item;
+        this.map = map;
+        this.changes = null;
+    }
+
+    /// <summary>
+    /// Creates a folder entry that lists only the changed children a delta walk reported
+    /// </summary>
+    /// <param name="provider">The provider</param>
+    /// <param name="path">The path of the parent</param>
+    /// <param name="drive">The drive</param>
+    /// <param name="item">The folder item</param>
+    /// <param name="changes">The changes reported by the delta walk</param>
+    public DriveFolderSourceEntry(SourceProvider provider, string path, GraphDrive drive, GraphDriveItem item, DriveChangeSet changes)
+        : base(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(path, item.Id)), item.CreatedDateTime.FromGraphDateTime(), item.LastModifiedDateTime.FromGraphDateTime())
+    {
+        this.provider = provider;
+        this.drive = drive;
+        this.item = item;
+        this.map = changes.Map;
+        this.changes = changes;
+    }
+
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        if (changes != null)
+        {
+            foreach (var child in changes.GetChildren(item.Id))
+            {
+                if (cancellationToken.IsCancellationRequested)
+                    yield break;
+
+                var entry = changes.CreateEntry(provider, drive, child, this.Path);
+                if (entry != null)
+                    yield return entry;
+            }
+
+            yield break;
+        }
+
         await foreach (var child in provider.OneDriveApi.ListDriveFolderChildrenAsync(drive.Id, item.Id, cancellationToken).ConfigureAwait(false))
         {
             if (cancellationToken.IsCancellationRequested)
@@ -22,11 +84,14 @@ internal class DriveFolderSourceEntry(SourceProvider provider, string path, Grap
             if (child.Deleted != null)
                 continue;
             if (child.Folder != null)
-                yield return new DriveFolderSourceEntry(provider, this.Path, drive, child);
+            {
+                map?.SetParent(child.Id, item.Id);
+                yield return new DriveFolderSourceEntry(provider, this.Path, drive, child, map);
+            }
             else if (child.File != null)
                 yield return new DriveFileSourceEntry(provider, this.Path, drive, child);
             else
-                Log.WriteWarningMessage(LOGTAG, "UnknownDriveItemType", null, $"Unknown drive item type: {item.Id}");
+                Log.WriteWarningMessage(LOGTAG, "UnknownDriveItemType", null, $"Unknown drive item type: {child.Id}");
         }
     }
 

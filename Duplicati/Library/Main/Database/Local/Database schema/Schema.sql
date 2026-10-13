@@ -311,4 +311,20 @@ CREATE TABLE "RestoreTestHistory" (
 );
 CREATE UNIQUE INDEX "RestoreTestHistoryPath" ON "RestoreTestHistory" ("Path");
 
-INSERT INTO "Version" ("Version") VALUES (21);
+/*
+State that change-tracking source providers carry
+between backups, such as delta tokens, scoped by
+the provider instance and the fileset it was
+exported with
+*/
+CREATE TABLE "SourceProviderState" (
+    "ID" INTEGER PRIMARY KEY,
+    "FilesetID" INTEGER NOT NULL,
+    "Scope" TEXT NOT NULL,
+    "Key" TEXT NOT NULL,
+    "Value" TEXT NOT NULL,
+    "ConfigHash" TEXT NOT NULL
+);
+CREATE INDEX "SourceProviderStateFilesetID" ON "SourceProviderState" ("FilesetID");
+
+INSERT INTO "Version" ("Version") VALUES (22);
