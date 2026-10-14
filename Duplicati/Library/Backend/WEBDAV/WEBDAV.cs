@@ -331,7 +331,9 @@ namespace Duplicati.Library.Backend
 
             var trimmed = hrefValue.Trim();
 
-            if (!System.Uri.TryCreate(trimmed, System.UriKind.Absolute, out var hrefUri))
+            // On Linux and macOS a path such as "/dav/folder" parses as an absolute file uri, whose path
+            // escapes the percent signs again, so it is read relative to the server like on Windows
+            if (!System.Uri.TryCreate(trimmed, System.UriKind.Absolute, out var hrefUri) || hrefUri.IsFile)
             {
                 if (System.Uri.TryCreate(trimmed, System.UriKind.Relative, out var relativeUri))
                 {
