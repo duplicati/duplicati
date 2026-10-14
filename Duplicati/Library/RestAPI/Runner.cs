@@ -1481,14 +1481,14 @@ namespace Duplicati.Server
 
         /// <summary>
         /// Merges the remote control storage credentials into a Duplicati backend url.
-        /// The stored url never carries them, so every url that is handed to a backend,
-        /// the primary target as well as each additional target, passes through here.
-        /// Any other scheme is returned unchanged.
+        /// The stored url never carries them, so every url that is handed to a backend
+        /// passes through here: the primary target, each additional target, and the
+        /// urls the web endpoints test or list. Any other scheme is returned unchanged.
         /// </summary>
         /// <param name="databaseConnection">The database connection holding the application settings.</param>
         /// <param name="url">The url to patch.</param>
         /// <returns>The url with the storage credentials merged in.</returns>
-        private static string ApplyDuplicatiStorageCredentials(Connection databaseConnection, string url)
+        public static string ApplyDuplicatiStorageCredentials(Connection databaseConnection, string url)
         {
             var uri = new Library.Utility.RelaxedUri(url);
             if (!uri.Scheme.Equals(Library.Backend.Duplicati.DuplicatiBackend.PROTOCOL, StringComparison.OrdinalIgnoreCase))
