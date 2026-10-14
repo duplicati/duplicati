@@ -362,6 +362,47 @@ public sealed partial class SourceProvider : ISourceProviderModule, IChangeTrack
     }
 
     /// <summary>
+    /// Lists items and reports a failure to list them to the change tracker, so the token of
+    /// the drive the items belong to is not advanced and the items are listed again next time.
+    /// The backup skips a folder it cannot list and continues with the rest, so without this
+    /// the drive would store a token claiming the folder was walked.
+    /// </summary>
+    /// <typeparam name="T">The type of the items</typeparam>
+    /// <param name="stateKey">The change tracking key of the drive, or <c>null</c> if changes are not tracked</param>
+    /// <param name="source">The listing</param>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns>The items</returns>
+    internal async IAsyncEnumerable<T> ListWithFailureTrackingAsync<T>(string? stateKey, IAsyncEnumerable<T> source, [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        if (stateKey == null || !_changeTracker.IsActive)
+        {
+            await foreach (var item in source.WithCancellation(cancellationToken).ConfigureAwait(false))
+                yield return item;
+            yield break;
+        }
+
+        await using var enumerator = source.GetAsyncEnumerator(cancellationToken);
+        while (true)
+        {
+            bool hasNext;
+            try
+            {
+                hasNext = await enumerator.MoveNextAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                _changeTracker.MarkStateFailed(stateKey);
+                throw;
+            }
+
+            if (!hasNext)
+                yield break;
+
+            yield return enumerator.Current;
+        }
+    }
+
+    /// <summary>
     /// Whether an exception says the content no longer exists
     /// </summary>
     /// <param name="ex">The exception</param>

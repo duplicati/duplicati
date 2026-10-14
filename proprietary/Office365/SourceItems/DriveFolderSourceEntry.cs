@@ -76,7 +76,11 @@ internal class DriveFolderSourceEntry : MetaEntryBase
             yield break;
         }
 
-        await foreach (var child in provider.OneDriveApi.ListDriveFolderChildrenAsync(drive.Id, item.Id, cancellationToken).ConfigureAwait(false))
+        // The backup skips a folder it cannot list and continues, so the failure is reported
+        // to the change tracker: the drive's token must not claim the folder was walked
+        var stateKey = provider.DriveDeltaEnabled ? ChangeTrackingKeys.Drive(drive.Id) : null;
+        var children = provider.ListWithFailureTrackingAsync(stateKey, provider.OneDriveApi.ListDriveFolderChildrenAsync(drive.Id, item.Id, cancellationToken), cancellationToken);
+        await foreach (var child in children.ConfigureAwait(false))
         {
             if (cancellationToken.IsCancellationRequested)
                 yield break;

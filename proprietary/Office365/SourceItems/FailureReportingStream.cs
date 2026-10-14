@@ -18,6 +18,12 @@ internal sealed class FailureReportingStream(Stream inner, Action onFailure) : S
     private bool _reported;
 
     /// <summary>
+    /// Whether the inner stream was released, so the synchronous disposal that the base
+    /// class runs after the asynchronous one does not release it again
+    /// </summary>
+    private bool _disposed;
+
+    /// <summary>
     /// Reports a failure, unless it is a cancellation or was reported before
     /// </summary>
     /// <param name="ex">The exception</param>
@@ -109,15 +115,22 @@ internal sealed class FailureReportingStream(Stream inner, Action onFailure) : S
     /// <inheritdoc />
     protected override void Dispose(bool disposing)
     {
-        if (disposing)
+        if (disposing && !_disposed)
+        {
+            _disposed = true;
             inner.Dispose();
+        }
         base.Dispose(disposing);
     }
 
     /// <inheritdoc />
     public override async ValueTask DisposeAsync()
     {
-        await inner.DisposeAsync().ConfigureAwait(false);
+        if (!_disposed)
+        {
+            _disposed = true;
+            await inner.DisposeAsync().ConfigureAwait(false);
+        }
         await base.DisposeAsync().ConfigureAwait(false);
     }
 }

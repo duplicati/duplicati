@@ -160,6 +160,12 @@ namespace Duplicati.Library.Main.Operation
             if (usesJournal)
                 throw new UserInformationException("The USN change journal cannot be combined with a source that tracks its own changes. Disable the USN journal with --usn-policy=off.", "UsnWithChangeTrackingSource");
 
+            // A changed-files list restricts the enumeration and copies everything else from the
+            // previous fileset without asking the provider, so the state would be loaded but
+            // neither honored nor stored
+            if (m_options.ChangedFilelist is { Length: > 0 })
+                throw new UserInformationException("The --changed-files option cannot be combined with a source that tracks its own changes.", "ChangedFilesWithChangeTrackingSource");
+
             await coordinator.LoadStateAsync(m_database, lastfilesetid, m_taskReader.ProgressToken).ConfigureAwait(false);
             return coordinator;
         }
@@ -780,8 +786,14 @@ namespace Duplicati.Library.Main.Operation
                             var journalService = GetJournalService(source, filter, lastfilesetid);
                             var changeTracking = await GetChangeTrackingAsync(source, filter, sources, lastfilesetid, journalService != null).ConfigureAwait(false);
 
-                            // Start parallel scan, or use the database
-                            if (m_options.DisableFileScanner)
+                            // Start parallel scan, or use the database. A source that tracks its own
+                            // changes records what it examined while it is enumerated, so it must be
+                            // enumerated once, by the backup; a parallel count would race it for the
+                            // state that is stored with the fileset
+                            if (changeTracking != null && !m_options.DisableFileScanner)
+                                Log.WriteVerboseMessage(LOGTAG, "FileScannerDisabledForChangeTracking", "The parallel file count is not run because a source tracks its own changes; the count of the previous backup is shown instead");
+
+                            if (m_options.DisableFileScanner || changeTracking != null)
                             {
                                 var d = await m_database
                                     .GetLastBackupFileCountAndSizeAsync(lastfilesetid, m_result.TaskControl.ProgressToken)

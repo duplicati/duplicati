@@ -637,6 +637,39 @@ public class ChangeTrackingSourceProviderTests : BasicSetupHelper
 
     [Test]
     [Category("ChangeTracking")]
+    public void ChangedFilesIsRefusedWithATrackedProvider()
+    {
+        var options = Prepare();
+        Scenario.Current = new Scenario { Children = InitialTree, Export = { ["k"] = "v1" } };
+        options["changed-files"] = P("a.txt");
+
+        using var c = new Controller("file://" + TARGETFOLDER, options, null);
+        var ex = Assert.ThrowsAsync<UserInformationException>(() => c.BackupAsync([Source]));
+        Assert.That(ex!.HelpID, Is.EqualTo("ChangedFilesWithChangeTrackingSource"));
+        Assert.That(Scenario.Current.LoadCalls, Is.EqualTo(0), "A refused run hands the provider no state");
+    }
+
+    [Test]
+    [Category("ChangeTracking")]
+    public async Task FileCounterDoesNotEnumerateATrackedProviderAsync()
+    {
+        var options = Prepare();
+        options["disable-file-scanner"] = "false";
+
+        var enumerations = 0;
+        Scenario.Current = new Scenario { Children = InitialTree, Export = { ["k"] = "v1" }, OnEnumerate = () => Interlocked.Increment(ref enumerations) };
+        await RunBackupAsync(options);
+        Assert.That(enumerations, Is.EqualTo(1), "Only the backup enumerates a provider that tracks changes; a parallel file count would race it for the exported state");
+
+        enumerations = 0;
+        Scenario.Current = new Scenario { Children = InitialTree, Export = { ["k"] = "v2" }, OnEnumerate = () => Interlocked.Increment(ref enumerations) };
+        await RunBackupAsync(options);
+        Assert.That(enumerations, Is.EqualTo(1));
+        Assert.That(Scenario.Current.Loaded, Is.EqualTo(new Dictionary<string, string> { ["k"] = "v1" }));
+    }
+
+    [Test]
+    [Category("ChangeTracking")]
     public async Task ProviderWithoutStateStoresNoRowsAsync()
     {
         var options = Prepare();

@@ -104,9 +104,11 @@ internal class DriveSourceEntry(SourceProvider provider, string path, GraphDrive
         finally
         {
             // A walk that failed keeps the previous token and map, so the drive is carried
-            // forward unchanged and the changes are reported again next time
-            if (!completed && storedValue != null)
-                tracker.SetState(stateKey, storedValue);
+            // forward unchanged and the changes are reported again next time. A first walk
+            // that failed has nothing to keep, and its token is dropped so the next run walks
+            // the drive in full instead of continuing from a token taken before an incomplete listing
+            if (!completed)
+                tracker.MarkStateFailed(stateKey);
         }
     }
 
@@ -179,12 +181,13 @@ internal class DriveSourceEntry(SourceProvider provider, string path, GraphDrive
         var reported = items.Values.Where(x => x.Id != rootId).ToList();
 
         // Removed items first: a removed folder takes its whole subtree with it, and the delta
-        // does not list the children of a removed folder
+        // does not list the children of a removed folder. The map need not know the folder:
+        // ids are unique, so any previous path with the id as a segment is below it
         foreach (var item in reported.Where(x => x.Deleted != null))
         {
             tracker.MarkIdTouched(item.Id);
-            if (map.Remove(item.Id))
-                tracker.MarkIdSubtreeGone(item.Id);
+            tracker.MarkIdSubtreeGone(item.Id);
+            map.Remove(item.Id);
         }
 
         // Then folders: a folder whose parent differs from the stored one was moved, and its

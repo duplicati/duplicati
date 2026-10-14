@@ -685,4 +685,123 @@ public class Office365DeltaTests
         Assert.ThrowsAsync<HttpRequestException>(async () => await entries[0].OpenRead(CancellationToken.None));
         Assert.That(DriveFolderMap.Deserialize(provider.ExportChangeTrackingState()[DriveKey])!.Token, Is.EqualTo("tok1"), "A failed download holds the drive at the previous link");
     }
+
+    [Test]
+    [Category("Office365")]
+    public async Task DriveFailedFirstWalkStoresNoLinkAsync()
+    {
+        var handler = new FakeGraphHandler()
+            .Json("token=latest", Page("", deltaLink: DriveLink("tok1")))
+            .Json("/drives/d1/root?$select=id", "{\"id\":\"root\"}")
+            .Json("/drives/d1/root/children", Page(File("A", "root"), nextLink: $"{GRAPH}/root-next"))
+            .Sequence("/root-next", () => FakeGraphHandler.GraphError(HttpStatusCode.Forbidden, "accessDenied"));
+        var provider = CreateProvider(handler, new Dictionary<string, string>());
+
+        var entries = new List<ISourceProviderEntry>();
+        Assert.ThrowsAsync<HttpRequestException>(async () =>
+        {
+            await foreach (var e in new DriveSourceEntry(provider, SitePath, Drive).Enumerate(CancellationToken.None))
+                entries.Add(e);
+        });
+
+        Assert.That(entries.Count, Is.EqualTo(1), "The first page was listed before the failure");
+        Assert.That(provider.ExportChangeTrackingState().ContainsKey(DriveKey), Is.False, "A link taken before a walk that did not complete is not stored, so the next run walks the drive in full");
+    }
+
+    [Test]
+    [Category("Office365")]
+    public async Task DriveFailedFolderListingInFirstWalkStoresNoLinkAsync()
+    {
+        var handler = new FakeGraphHandler()
+            .Json("token=latest", Page("", deltaLink: DriveLink("tok1")))
+            .Json("/drives/d1/root?$select=id", "{\"id\":\"root\"}")
+            .Json("/drives/d1/root/children", Page(Folder("F1", "root") + "," + File("A", "root")))
+            .Sequence("/drives/d1/items/F1/children", () => FakeGraphHandler.GraphError(HttpStatusCode.Forbidden, "accessDenied"));
+        var provider = CreateProvider(handler, new Dictionary<string, string>());
+
+        var top = await CollectAsync(new DriveSourceEntry(provider, SitePath, Drive), false);
+        Assert.That(provider.ExportChangeTrackingState().ContainsKey(DriveKey), Is.True, "The drive's own listing completed");
+
+        var folder = top.Single(x => x.IsFolder);
+        Assert.ThrowsAsync<HttpRequestException>(async () => await CollectAsync(folder, false));
+        Assert.That(provider.ExportChangeTrackingState().ContainsKey(DriveKey), Is.False, "A folder that could not be listed holds the drive's link back, as the backup skips the folder and continues");
+    }
+
+    [Test]
+    [Category("Office365")]
+    public async Task DriveFailedMovedFolderListingKeepsThePreviousLinkAsync()
+    {
+        var handler = new FakeGraphHandler()
+            .Json("token=tok1", Page(Folder("F2", "root"), deltaLink: DriveLink("tok2")))
+            .Sequence("/drives/d1/items/F2/children", () => FakeGraphHandler.GraphError(HttpStatusCode.Forbidden, "accessDenied"));
+        var storedMap = StoredMap("tok1", ("F1", "root"), ("F2", "F1"));
+        var provider = CreateProvider(handler, new Dictionary<string, string> { [DriveKey] = storedMap });
+
+        var top = await CollectAsync(new DriveSourceEntry(provider, SitePath, Drive), false);
+        Assert.That(top.Select(x => x.Path), Is.EqualTo(new[] { D(DrivePath, "F2") }), "The moved folder is listed at its new path");
+        Assert.That(DriveFolderMap.Deserialize(provider.ExportChangeTrackingState()[DriveKey])!.Token, Is.EqualTo("tok2"));
+
+        Assert.ThrowsAsync<HttpRequestException>(async () => await CollectAsync(top[0], false));
+        Assert.That(provider.ExportChangeTrackingState()[DriveKey], Is.EqualTo(storedMap), "The previous link and map are kept so the move is reported again");
+    }
+
+    [Test]
+    [Category("Office365")]
+    public async Task DriveDeletedFolderUnknownToTheMapDropsItsSubtreeAsync()
+    {
+        var handler = new FakeGraphHandler()
+            .Json("token=tok1", Page(Deleted("F1"), deltaLink: DriveLink("tok2")));
+        var provider = CreateProvider(handler, new Dictionary<string, string>
+        {
+            [DriveKey] = StoredMap("tok1", ("G1", "root")),
+        });
+
+        var entries = await CollectAsync(new DriveSourceEntry(provider, SitePath, Drive), true);
+        Assert.That(entries, Is.Empty);
+
+        Assert.That(provider.WasPathEnumerated(D(DrivePath, "F1")), Is.True);
+        Assert.That(provider.WasPathEnumerated(F(DrivePath, "F1", "F2", "C")), Is.True, "Everything below a removed folder is dropped, whether or not the map knew the folder");
+        Assert.That(provider.WasPathEnumerated(F(DrivePath, "G1", "X")), Is.False);
+        Assert.That(DriveFolderMap.Deserialize(provider.ExportChangeTrackingState()[DriveKey])!.Token, Is.EqualTo("tok2"));
+    }
+
+    [Test]
+    [Category("Office365")]
+    public async Task MailPageOfRepeatedMessagesDoesNotEndTheWalkAsync()
+    {
+        var handler = new FakeGraphHandler()
+            .Json("deltatoken=tok1", Page(Message("m1") + "," + Message("m2"), nextLink: $"{GRAPH}/mail-next-1"))
+            .Json("/mail-next-1", Page(Message("m2") + "," + Message("m1"), nextLink: $"{GRAPH}/mail-next-2"))
+            .Json("/mail-next-2", Page(Message("m3"), deltaLink: MailLink("tok2")))
+            .Json("/users/u1/mailFolders/f1/childFolders", Page(""));
+        var provider = CreateProvider(handler, new Dictionary<string, string> { [MailKey] = MailState("tok1") });
+
+        var entries = await CollectAsync(new UserMailboxFolderSourceEntry(provider, User, FolderPath, MailFolder), false);
+
+        Assert.That(entries.Select(x => x.Path), Is.EqualTo(new[] { D(FolderPath, "m1"), D(FolderPath, "m2"), D(FolderPath, "m3") }), "Repeated messages are listed once and the pages after them are still read");
+        Assert.That(provider.ExportChangeTrackingState()[MailKey], Is.EqualTo(MailState("tok2")), "The walk reached its delta link");
+        Assert.That(handler.CountRequests("/mail-next-2"), Is.EqualTo(1));
+    }
+
+    [Test]
+    [Category("Office365")]
+    public async Task DeltaWalkWhoseNextLinkRepeatsStopsAsync()
+    {
+        var handler = new FakeGraphHandler()
+            .Json("/users/u1/mailFolders/f1/messages/delta", Page(Message("m1"), nextLink: $"{GRAPH}/mail-loop"))
+            .Json("/mail-loop", Page(Message("m2"), nextLink: $"{GRAPH}/mail-loop"));
+        var provider = CreateProvider(handler, null);
+
+        var messages = CaptureLog(out var scope);
+        using (scope)
+        {
+            var holder = new DeltaLinkHolder();
+            var items = await provider.UserEmailApi.ListMessagesDeltaAsync("u1", "f1", null, holder, CancellationToken.None).ToListAsync();
+            Assert.That(items.Select(x => x.Id), Is.EqualTo(new[] { "m1", "m2" }));
+            Assert.That(holder.DeltaLink, Is.Null, "A walk that loops never reaches a delta link");
+            Assert.That(messages.Any(x => x.Id == "DeltaPagingRepeatDetected"), Is.True, "The loop is logged");
+        }
+
+        Assert.That(handler.Requests.Count, Is.EqualTo(2), "The repeated link is not requested again");
+    }
 }

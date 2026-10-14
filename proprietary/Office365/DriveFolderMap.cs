@@ -117,42 +117,6 @@ internal sealed class DriveFolderMap
     }
 
     /// <summary>
-    /// Gets the ids of the folders below a folder, at any depth
-    /// </summary>
-    /// <param name="folderId">The folder id</param>
-    /// <returns>The descendant folder ids</returns>
-    public List<string> GetDescendants(string folderId)
-    {
-        lock (_lock)
-        {
-            var children = new Dictionary<string, List<string>>(StringComparer.Ordinal);
-            foreach (var kv in _parents)
-            {
-                if (!children.TryGetValue(kv.Value, out var list))
-                    children[kv.Value] = list = [];
-                list.Add(kv.Key);
-            }
-
-            var result = new List<string>();
-            var work = new Stack<string>();
-            work.Push(folderId);
-            while (work.Count > 0)
-            {
-                var current = work.Pop();
-                if (!children.TryGetValue(current, out var list))
-                    continue;
-                foreach (var child in list)
-                {
-                    result.Add(child);
-                    work.Push(child);
-                }
-            }
-
-            return result;
-        }
-    }
-
-    /// <summary>
     /// Removes the folders whose parent chain does not reach the root, which are the
     /// descendants of removed folders that the delta did not report individually
     /// </summary>

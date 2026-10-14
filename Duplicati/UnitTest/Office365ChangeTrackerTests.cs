@@ -26,8 +26,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
+using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
 using Duplicati.Proprietary.Office365;
+using Duplicati.Proprietary.Office365.SourceItems;
 using NUnit.Framework;
 
 namespace Duplicati.UnitTest;
@@ -137,7 +140,7 @@ public class Office365ChangeTrackerTests
     [Category("ChangeTracking")]
     public void ExportKeepsOnlyReExportedKeysAndHoldsBackFailedOnes()
     {
-        var tracker = ActiveTracker(new Dictionary<string, string> { ["a"] = "1", ["b"] = "2", ["d"] = "4" });
+        var tracker = ActiveTracker(new Dictionary<string, string> { ["a"] = "1", ["b"] = "2", ["d"] = "4", ["f"] = "6" });
         Assert.That(tracker.GetState("a"), Is.EqualTo("1"));
         Assert.That(tracker.GetState("missing"), Is.Null);
         Assert.That(tracker.GetLoadedKeysWithPrefix("a"), Is.EqualTo(new[] { "a" }));
@@ -147,9 +150,60 @@ public class Office365ChangeTrackerTests
         tracker.SetState("c", "3");
         tracker.SetState("d", "40");
         tracker.MarkStateFailed("e");
+        tracker.MarkStateFailed("f");
 
         var export = tracker.Export();
-        Assert.That(export, Is.EqualTo(new Dictionary<string, string> { ["a"] = "1", ["c"] = "3", ["d"] = "40" }), "A failed key keeps its previous value, a key that is not re-exported is dropped");
+        Assert.That(export, Is.EqualTo(new Dictionary<string, string> { ["a"] = "1", ["c"] = "3", ["d"] = "40", ["f"] = "6" }), "A failed key keeps its previous value whether or not it was set again, a key that is not re-exported is dropped");
+    }
+
+    [Test]
+    [Category("ChangeTracking")]
+    public void LoadedKeysWithPrefixAreFoundByExactPrefix()
+    {
+        var tracker = ActiveTracker(new Dictionary<string, string>
+        {
+            ["mail:u1:p1:a"] = "1",
+            ["mail:u1:p1:b"] = "2",
+            ["mail:u1:p10:c"] = "3",
+            ["mail:u1:p1"] = "4",
+            ["mail:u1:p0:d"] = "5",
+            ["drive:d1"] = "6",
+        });
+
+        Assert.That(tracker.GetLoadedKeysWithPrefix("mail:u1:p1:"), Is.EquivalentTo(new[] { "mail:u1:p1:a", "mail:u1:p1:b" }), "A longer parent id with the same leading characters does not match");
+        Assert.That(tracker.GetLoadedKeysWithPrefix("mail:u1:p10:"), Is.EquivalentTo(new[] { "mail:u1:p10:c" }));
+        Assert.That(tracker.GetLoadedKeysWithPrefix("mail:u1:p2:"), Is.Empty);
+        Assert.That(tracker.GetLoadedKeysWithPrefix("zzz"), Is.Empty, "A prefix past the last key matches nothing");
+        Assert.That(tracker.GetLoadedKeysWithPrefix("").Count(), Is.EqualTo(6));
+    }
+
+    private sealed class CountingStream : MemoryStream
+    {
+        public int Disposals;
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+                Disposals++;
+            base.Dispose(disposing);
+        }
+    }
+
+    [Test]
+    [Category("ChangeTracking")]
+    public async Task FailureReportingStreamDisposesItsInnerStreamOnceAsync()
+    {
+        var inner = new CountingStream();
+        await using (new FailureReportingStream(inner, () => { }))
+        {
+        }
+        Assert.That(inner.Disposals, Is.EqualTo(1), "Asynchronous disposal releases the inner stream once");
+
+        inner = new CountingStream();
+        using (new FailureReportingStream(inner, () => { }))
+        {
+        }
+        Assert.That(inner.Disposals, Is.EqualTo(1), "Synchronous disposal releases the inner stream once");
     }
 
     [Test]
@@ -209,6 +263,35 @@ public class Office365ChangeTrackerTests
         Assert.That(DriveFolderMap.Deserialize("{\"root\":\"r\",\"folders\":{}}"), Is.Null, "A map without a token is unusable");
     }
 
+    /// <summary>
+    /// The folders below a folder at any depth, read from the serialized map. The map only
+    /// exposes parent lookups, which is all the provider needs; the test reads the stored
+    /// form to check the whole tree.
+    /// </summary>
+    /// <param name="map">The map, small enough not to be compressed when serialized</param>
+    /// <param name="folderId">The folder id</param>
+    /// <returns>The descendant folder ids</returns>
+    private static List<string> Descendants(DriveFolderMap map, string folderId)
+    {
+        using var doc = JsonDocument.Parse(map.Serialize());
+        var parents = doc.RootElement.GetProperty("folders").EnumerateObject().ToDictionary(x => x.Name, x => x.Value.GetString()!, StringComparer.Ordinal);
+
+        var result = new List<string>();
+        var work = new Stack<string>();
+        work.Push(folderId);
+        while (work.Count > 0)
+        {
+            var current = work.Pop();
+            foreach (var child in parents.Where(x => x.Value == current).Select(x => x.Key))
+            {
+                result.Add(child);
+                work.Push(child);
+            }
+        }
+
+        return result;
+    }
+
     [Test]
     [Category("ChangeTracking")]
     public void FolderMapPrunesFoldersBelowRemovedOnes()
@@ -221,7 +304,7 @@ public class Office365ChangeTrackerTests
         map.SetParent("L1", "L2");
         map.SetParent("L2", "L1");
 
-        Assert.That(map.GetDescendants("F1"), Is.EquivalentTo(new[] { "F2", "F3" }));
+        Assert.That(Descendants(map, "F1"), Is.EquivalentTo(new[] { "F2", "F3" }));
 
         Assert.That(map.Remove("F1"), Is.True);
         Assert.That(map.PruneUnreachable(), Is.EqualTo(4), "The descendants of the removed folder and the cycle are dropped");

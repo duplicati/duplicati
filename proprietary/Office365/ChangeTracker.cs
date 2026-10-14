@@ -14,8 +14,8 @@ namespace Duplicati.Proprietary.Office365;
 /// Everything is examined by default: the provider lists most content in full on every run.
 /// A folder walked with a delta token is marked incremental, and below it only the paths
 /// explicitly marked, or whose id segments were reported by the delta, count as examined.
-/// The enumeration may run twice at the same time (the backup and the file counter), so the
-/// collections are safe for concurrent use.
+/// The marks are set by the enumeration while download failures are reported from the file
+/// processors that read the content, so the collections are safe for concurrent use.
 /// </remarks>
 internal sealed class ChangeTracker
 {
@@ -64,12 +64,17 @@ internal sealed class ChangeTracker
     private IReadOnlyDictionary<string, string> _loaded = new Dictionary<string, string>(StringComparer.Ordinal);
 
     /// <summary>
+    /// The loaded keys in ordinal order, so the keys with a common prefix form one range
+    /// </summary>
+    private string[] _loadedKeys = [];
+
+    /// <summary>
     /// The state to store with this backup
     /// </summary>
     private readonly ConcurrentDictionary<string, Func<string>> _exported = new(StringComparer.Ordinal);
 
     /// <summary>
-    /// Keys whose content had download failures in this run, so their token must not advance
+    /// Keys whose listing or content had failures in this run, so their token must not advance
     /// </summary>
     private readonly ConcurrentDictionary<string, byte> _failedKeys = new(StringComparer.Ordinal);
 
@@ -86,6 +91,7 @@ internal sealed class ChangeTracker
     public void Load(IReadOnlyDictionary<string, string> state)
     {
         _loaded = state;
+        _loadedKeys = state.Keys.OrderBy(x => x, StringComparer.Ordinal).ToArray();
         IsActive = true;
     }
 
@@ -100,14 +106,26 @@ internal sealed class ChangeTracker
             : null;
 
     /// <summary>
-    /// Gets the keys stored by the previous backup that start with a prefix
+    /// Gets the keys stored by the previous backup that start with a prefix. The keys are
+    /// sorted, so the matches are the range starting at the prefix's position.
     /// </summary>
     /// <param name="prefix">The key prefix</param>
     /// <returns>The matching keys</returns>
     public IEnumerable<string> GetLoadedKeysWithPrefix(string prefix)
-        => IsActive
-            ? _loaded.Keys.Where(k => k.StartsWith(prefix, StringComparison.Ordinal)).ToList()
-            : [];
+    {
+        if (!IsActive)
+            return [];
+
+        var index = Array.BinarySearch(_loadedKeys, prefix, StringComparer.Ordinal);
+        if (index < 0)
+            index = ~index;
+
+        var result = new List<string>();
+        for (var i = index; i < _loadedKeys.Length && _loadedKeys[i].StartsWith(prefix, StringComparison.Ordinal); i++)
+            result.Add(_loadedKeys[i]);
+
+        return result;
+    }
 
     /// <summary>
     /// Records a value to store with this backup
@@ -131,33 +149,32 @@ internal sealed class ChangeTracker
     }
 
     /// <summary>
-    /// Records that content below the key had a download failure, so the stored value
-    /// stays at what the previous backup recorded and the failed items are reported again
+    /// Records that a listing or download below the key failed, so the stored value stays at
+    /// what the previous backup recorded and the failed items are reported again. A key without
+    /// a previous value is not stored at all, so the next backup walks it in full.
     /// </summary>
     /// <param name="key">The state key</param>
     public void MarkStateFailed(string key)
     {
         if (IsActive && _failedKeys.TryAdd(key, 0))
-            Log.WriteVerboseMessage(LOGTAG, "ChangeTrackingKeyHeldBack", "A download below \"{0}\" failed, so its change tracking state is not advanced", key);
+            Log.WriteVerboseMessage(LOGTAG, "ChangeTrackingKeyHeldBack", "A listing or download below \"{0}\" failed, so its change tracking state is not advanced", key);
     }
 
     /// <summary>
-    /// Gets the state to store with this backup
+    /// Gets the state to store with this backup. A failed key keeps the value the previous
+    /// backup stored, whether or not a value was recorded for it in this run.
     /// </summary>
     /// <returns>The state rows</returns>
     public IReadOnlyDictionary<string, string> Export()
     {
         var result = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var kv in _exported)
-        {
-            if (_failedKeys.ContainsKey(kv.Key))
-            {
-                if (_loaded.TryGetValue(kv.Key, out var previous))
-                    result[kv.Key] = previous;
-            }
-            else
+            if (!_failedKeys.ContainsKey(kv.Key))
                 result[kv.Key] = kv.Value();
-        }
+
+        foreach (var key in _failedKeys.Keys)
+            if (_loaded.TryGetValue(key, out var previous))
+                result[key] = previous;
 
         return result;
     }

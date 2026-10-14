@@ -618,14 +618,15 @@ internal class APIHelper : IDisposable
     /// <param name="initialUrl">The delta URL to start from, either a fresh delta request or a stored delta link</param>
     /// <param name="idSelector">Selects the id used to de-duplicate items</param>
     /// <param name="deltaLink">Receives the delta link the walk ends with, or <c>null</c> to discard it</param>
-    /// <param name="deduplicate">If <c>true</c>, an item id seen on an earlier page is skipped, and a page consisting
-    /// solely of already seen ids stops the walk; if <c>false</c>, every reported item is returned so the caller can
-    /// let the last occurrence win</param>
+    /// <param name="deduplicate">If <c>true</c>, an item id seen on an earlier page is skipped; if <c>false</c>,
+    /// every reported item is returned so the caller can let the last occurrence win. A walk whose next link repeats
+    /// an earlier one is stopped either way, as it would never end.</param>
     /// <param name="ct">The cancellation token</param>
     /// <returns>An asynchronous enumerable of all items</returns>
     public async IAsyncEnumerable<T> GetAllGraphDeltaItemsAsync<T>(string initialUrl, Func<T, string> idSelector, DeltaLinkHolder? deltaLink, bool deduplicate, [EnumeratorCancellation] CancellationToken ct)
     {
         var seen = new HashSet<string>(StringComparer.Ordinal);
+        var visited = new HashSet<string>(StringComparer.Ordinal) { initialUrl };
         var next = initialUrl;
         while (!string.IsNullOrWhiteSpace(next))
         {
@@ -633,28 +634,25 @@ internal class APIHelper : IDisposable
 
             var page = await GetGraphDeltaPageAsync<T>(next, ct).ConfigureAwait(false);
 
-            var unseen = 0;
             foreach (var item in page.Value)
             {
                 var id = idSelector(item);
                 if (!deduplicate || string.IsNullOrEmpty(id) || seen.Add(id))
-                {
-                    unseen++;
                     yield return item;
-                }
             }
 
             if (!string.IsNullOrWhiteSpace(page.DeltaLink) && deltaLink != null)
                 deltaLink.DeltaLink = page.DeltaLink;
 
-            if (deduplicate && page.Value.Count > 0 && unseen == 0)
+            // A deltaLink marks the end of the walk; it is not followed. A page may repeat items
+            // reported on earlier pages, which is not the end, but a link that was already
+            // followed is, as the walk would otherwise never end
+            next = page.NextLink;
+            if (!string.IsNullOrWhiteSpace(next) && !visited.Add(next))
             {
-                Log.WriteVerboseMessage(LOGTAG, "DeltaPagingRepeatDetected", "Stopping delta enumeration because a page contained only already seen items: {0}", next);
+                Log.WriteVerboseMessage(LOGTAG, "DeltaPagingRepeatDetected", "Stopping delta enumeration because the next link was already followed: {0}", next);
                 yield break;
             }
-
-            // A deltaLink marks the end of the walk; it is not followed
-            next = page.NextLink;
         }
     }
 
