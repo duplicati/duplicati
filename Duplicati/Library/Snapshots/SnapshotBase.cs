@@ -94,18 +94,16 @@ namespace Duplicati.Library.Snapshots
         {
             if (source.IsFolder)
             {
-                // Removing the null characters is a workaround for a bug in .NET core:
-                // https://github.com/dotnet/runtime/issues/49803
                 foreach (var f in ListFiles(source.Path))
                 {
-                    var entry = GetFilesystemEntry(f.Trim('\0'), false);
+                    var entry = GetFilesystemEntry(f, false);
                     if (entry != null)
                         yield return entry;
                 }
 
                 foreach (var d in ListFolders(source.Path))
                 {
-                    var entry = GetFilesystemEntry(Util.AppendDirSeparator(d.Trim('\0')), true);
+                    var entry = GetFilesystemEntry(Util.AppendDirSeparator(d), true);
                     if (entry != null)
                         yield return entry;
                 }

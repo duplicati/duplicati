@@ -280,6 +280,31 @@ namespace Duplicati.Library.Common.IO
         }
 
         /// <summary>
+        /// Removes the artifacts the Windows WebDAV redirector leaves in a directory listing.
+        /// It reports entry names with a trailing null character, which makes .NET return
+        /// unusable paths and the "." and ".." entries (https://github.com/dotnet/runtime/issues/49803).
+        /// </summary>
+        /// <param name="paths">The paths returned by a directory enumeration</param>
+        /// <returns>The paths without trailing null characters, and without "." and ".."</returns>
+        public static IEnumerable<string> RemoveTrailingNullEntries(IEnumerable<string> paths)
+        {
+            foreach (var path in paths)
+            {
+                if (!path.EndsWith('\0'))
+                {
+                    yield return path;
+                    continue;
+                }
+
+                var trimmed = path.TrimEnd('\0');
+                if (relativePathComponents.Contains(Path.GetFileName(trimmed)))
+                    continue;
+
+                yield return trimmed;
+            }
+        }
+
+        /// <summary>
         /// Removes either of the extended device path prefixes
         /// (@"\\?\" or @"\\?\UNC\") if <paramref name="path"/> is prefixed
         /// with one of them.
@@ -473,13 +498,13 @@ namespace Duplicati.Library.Common.IO
             => new FileInfo(AddExtendedDevicePathPrefix(file)).LinkTarget;
 
         public IEnumerable<string> EnumerateFileSystemEntries(string path)
-            => Directory.EnumerateFileSystemEntries(AddExtendedDevicePathPrefix(path)).Select(RemoveExtendedDevicePathPrefix);
+            => RemoveTrailingNullEntries(Directory.EnumerateFileSystemEntries(AddExtendedDevicePathPrefix(path))).Select(RemoveExtendedDevicePathPrefix);
 
         public IEnumerable<string> EnumerateFiles(string path)
-            => Directory.EnumerateFiles(AddExtendedDevicePathPrefix(path)).Select(RemoveExtendedDevicePathPrefix);
+            => RemoveTrailingNullEntries(Directory.EnumerateFiles(AddExtendedDevicePathPrefix(path))).Select(RemoveExtendedDevicePathPrefix);
 
         public IEnumerable<string> EnumerateFiles(string path, string searchPattern, SearchOption searchOption)
-            => Directory.EnumerateFiles(AddExtendedDevicePathPrefix(path), searchPattern, searchOption).Select(RemoveExtendedDevicePathPrefix);
+            => RemoveTrailingNullEntries(Directory.EnumerateFiles(AddExtendedDevicePathPrefix(path), searchPattern, searchOption)).Select(RemoveExtendedDevicePathPrefix);
 
         public string PathGetFileName(string path)
             => RemoveExtendedDevicePathPrefix(Path.GetFileName(AddExtendedDevicePathPrefix(path)));
@@ -514,18 +539,18 @@ namespace Duplicati.Library.Common.IO
                 : RemoveExtendedDevicePathPrefix(Path.GetPathRoot(AddExtendedDevicePathPrefix(path)));
         public string[] GetDirectories(string path)
             => IsPrefixedWithExtendedDevicePathPrefix(path)
-                ? Directory.GetDirectories(path)
-                : Directory.GetDirectories(AddExtendedDevicePathPrefix(path)).Select(RemoveExtendedDevicePathPrefix).ToArray();
+                ? RemoveTrailingNullEntries(Directory.GetDirectories(path)).ToArray()
+                : RemoveTrailingNullEntries(Directory.GetDirectories(AddExtendedDevicePathPrefix(path))).Select(RemoveExtendedDevicePathPrefix).ToArray();
 
         public string[] GetFiles(string path)
             => IsPrefixedWithExtendedDevicePathPrefix(path)
-                ? Directory.GetFiles(path)
-                : Directory.GetFiles(AddExtendedDevicePathPrefix(path)).Select(RemoveExtendedDevicePathPrefix).ToArray();
+                ? RemoveTrailingNullEntries(Directory.GetFiles(path)).ToArray()
+                : RemoveTrailingNullEntries(Directory.GetFiles(AddExtendedDevicePathPrefix(path))).Select(RemoveExtendedDevicePathPrefix).ToArray();
 
         public string[] GetFiles(string path, string searchPattern)
             => IsPrefixedWithExtendedDevicePathPrefix(path)
-                ? Directory.GetFiles(path, searchPattern)
-                : Directory.GetFiles(AddExtendedDevicePathPrefix(path), searchPattern).Select(RemoveExtendedDevicePathPrefix).ToArray();
+                ? RemoveTrailingNullEntries(Directory.GetFiles(path, searchPattern)).ToArray()
+                : RemoveTrailingNullEntries(Directory.GetFiles(AddExtendedDevicePathPrefix(path), searchPattern)).Select(RemoveExtendedDevicePathPrefix).ToArray();
 
         public DateTime GetCreationTimeUtc(string path)
             => Directory.GetCreationTimeUtc(AddExtendedDevicePathPrefix(path));
@@ -535,8 +560,8 @@ namespace Duplicati.Library.Common.IO
 
         public IEnumerable<string> EnumerateDirectories(string path)
             => IsPrefixedWithExtendedDevicePathPrefix(path)
-                ? Directory.EnumerateDirectories(path)
-                : Directory.EnumerateDirectories(AddExtendedDevicePathPrefix(path)).Select(RemoveExtendedDevicePathPrefix);
+                ? RemoveTrailingNullEntries(Directory.EnumerateDirectories(path))
+                : RemoveTrailingNullEntries(Directory.EnumerateDirectories(AddExtendedDevicePathPrefix(path))).Select(RemoveExtendedDevicePathPrefix);
 
         public IEnumerable<IFileEntry> EnumerateFileEntries(string path)
         {

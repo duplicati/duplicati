@@ -26,6 +26,7 @@ using Duplicati.Library.Common.IO;
 using System.Collections.Generic;
 using System;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using CollectionAssert = NUnit.Framework.Legacy.CollectionAssert;
 
 namespace Duplicati.UnitTest
 {
@@ -207,6 +208,32 @@ namespace Duplicati.UnitTest
                 var expected = keyValuePair.Value;
                 Assert.AreEqual(expected, actual, $"Path: {path}");
             }
+        }
+
+        [Test]
+        public void TestRemoveTrailingNullEntriesInWindowsClient()
+        {
+            if (!OperatingSystem.IsWindows())
+            {
+                return;
+            }
+
+            // A directory listing as returned by .NET for a WebDAV mapped drive (dotnet/runtime#49803)
+            var webdavListing = new[]
+            {
+                "W:\\.\0",
+                "W:\\..\0",
+                "W:\\b.txt\0",
+                "W:\\sub\0",
+                "\\\\?\\W:\\sub\\a.txt\0",
+            };
+            CollectionAssert.AreEqual(
+                new[] { "W:\\b.txt", "W:\\sub", "\\\\?\\W:\\sub\\a.txt" },
+                SystemIOWindows.RemoveTrailingNullEntries(webdavListing));
+
+            // A regular listing is left untouched
+            var localListing = new[] { "C:\\temp\\file.txt", "C:\\temp\\folder" };
+            CollectionAssert.AreEqual(localListing, SystemIOWindows.RemoveTrailingNullEntries(localListing));
         }
 
         [Test]
