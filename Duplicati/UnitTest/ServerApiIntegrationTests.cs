@@ -820,6 +820,75 @@ public class ServerApiIntegrationTests : BasicSetupHelper
         }).ConfigureAwait(false);
     }
 
+    [Test]
+    [Category("Integration")]
+    public async Task DeleteAllNotificationsRemovesEveryNotificationInOneRequest_Async()
+    {
+        // Repeated warnings can leave thousands of notifications, and dismissing them one request
+        // at a time floods the browser (#4719)
+        const int count = 200;
+
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            // The server may have registered notifications of its own when it started
+            var existing = await httpClient.GetFromJsonAsync<List<NotificationDto>>("/api/v1/notifications", JsonOptions).ConfigureAwait(false);
+            RegisterNotifications(count);
+
+            var before = await httpClient.GetFromJsonAsync<List<NotificationDto>>("/api/v1/notifications", JsonOptions).ConfigureAwait(false);
+            Assert.That(before, Has.Count.EqualTo(existing!.Count + count));
+            var stateBefore = await GetServerStateAsync(httpClient).ConfigureAwait(false);
+            Assert.That(stateBefore.GetProperty("HasWarning").GetBoolean(), Is.True);
+
+            var response = await httpClient.DeleteAsync("/api/v1/notifications").ConfigureAwait(false);
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), "Deleting all notifications should succeed");
+
+            var after = await httpClient.GetFromJsonAsync<List<NotificationDto>>("/api/v1/notifications", JsonOptions).ConfigureAwait(false);
+            Assert.That(after, Is.Empty, "All notifications should be deleted");
+
+            var stateAfter = await GetServerStateAsync(httpClient).ConfigureAwait(false);
+            Assert.That(stateAfter.GetProperty("HasWarning").GetBoolean(), Is.False, "No unacknowledged warning should be left");
+            Assert.That(stateAfter.GetProperty("LastNotificationUpdateID").GetInt64() - stateBefore.GetProperty("LastNotificationUpdateID").GetInt64(),
+                Is.EqualTo(1), "Deleting all notifications should signal one notification update");
+        }).ConfigureAwait(false);
+    }
+
+    [Test]
+    [Category("Integration")]
+    public async Task DeleteNotificationRemovesOnlyThatNotification_Async()
+    {
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            RegisterNotifications(3);
+
+            var notifications = (await httpClient.GetFromJsonAsync<List<NotificationDto>>("/api/v1/notifications", JsonOptions).ConfigureAwait(false))!;
+            var removed = notifications.Single(x => x.Title == "Warning 1").ID;
+
+            var response = await httpClient.DeleteAsync($"/api/v1/notification/{removed}").ConfigureAwait(false);
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+
+            var after = await httpClient.GetFromJsonAsync<List<NotificationDto>>("/api/v1/notifications", JsonOptions).ConfigureAwait(false);
+            Assert.That(after!.Select(x => x.ID), Is.EquivalentTo(notifications.Where(x => x.ID != removed).Select(x => x.ID)));
+
+            var missing = await httpClient.DeleteAsync($"/api/v1/notification/{removed}").ConfigureAwait(false);
+            Assert.That(missing.StatusCode, Is.EqualTo(HttpStatusCode.NotFound), "Deleting a notification that is gone should report it as not found");
+        }).ConfigureAwait(false);
+    }
+
+    private static void RegisterNotifications(int count)
+    {
+        var connection = (Duplicati.Server.Database.Connection?)ServerProgram.DuplicatiWebserver.Provider.GetService(typeof(Duplicati.Server.Database.Connection))
+            ?? throw new InvalidOperationException("The server has no database connection");
+        for (var i = 0; i < count; i++)
+            connection.RegisterNotification(Duplicati.Server.Serialization.NotificationType.Warning, $"Warning {i}", $"Message {i}",
+                null, null, "backup:show-log", null, null, null, (self, all) => self);
+    }
+
+    private static async Task<JsonElement> GetServerStateAsync(HttpClient httpClient)
+    {
+        using var doc = JsonDocument.Parse(await httpClient.GetStringAsync("/api/v1/serverstate").ConfigureAwait(false));
+        return doc.RootElement.Clone();
+    }
+
     private async Task WithAuthenticatedServerAsync(Func<HttpClient, Task> testBody, string? ports = null, string listenInterface = "127.0.0.1")
     {
         var serverPassword = "integration-test-password";

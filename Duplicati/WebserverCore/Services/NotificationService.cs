@@ -42,6 +42,10 @@ public class NotificationService(Connection connection) : INotificationService
     }
 
     /// <inheritdoc/>
+    public void DeleteAllNotifications()
+        => connection.DismissAllNotifications();
+
+    /// <inheritdoc/>
     public NotificationDto GetNotification(long id)
     {
         var notification = connection.GetNotifications().FirstOrDefault(n => n.ID == id);

@@ -1142,6 +1142,31 @@ namespace Duplicati.Server.Database
             return true;
         }
 
+        /// <summary>
+        /// Dismisses all notifications in one transaction and signals one update
+        /// </summary>
+        public void DismissAllNotifications()
+        {
+            lock (m_lock)
+            {
+                using (var tr = m_connection.BeginTransaction())
+                using (var cmd = m_connection.CreateCommand(tr))
+                {
+                    cmd.SetCommandAndParameters(@"DELETE FROM ""Notification""")
+                        .ExecuteNonQuery();
+
+                    tr.Commit();
+                }
+
+                this.ApplicationSettings.UnackedError = false;
+                this.ApplicationSettings.UnackedWarning = false;
+            }
+
+            m_notificationUpdateService?.IncrementLastNotificationUpdateId();
+            m_eventPollNotifyer?.SignalNewEvent();
+            m_eventPollNotifyer?.SignalNotificationUpdate();
+        }
+
         public void RegisterNotification(
             Serialization.NotificationType type,
             string title,
