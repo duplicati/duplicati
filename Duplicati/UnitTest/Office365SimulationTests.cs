@@ -488,11 +488,14 @@ public class Office365SimulationTests : BasicSetupHelper
         public readonly List<string> Unhandled = [];
         public bool ThrottleNext;
         public string? FailNextContaining;
+        /// <summary>Called with the decoded url of every request before it is answered, so a test can act while the backup runs</summary>
+        public Action<string>? OnRequest;
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             var uri = request.RequestUri!;
             var decoded = Uri.UnescapeDataString(uri.AbsoluteUri);
+            OnRequest?.Invoke(decoded);
             HttpResponseMessage response;
             lock (_lock)
             {
@@ -970,6 +973,68 @@ public class Office365SimulationTests : BasicSetupHelper
         }
     }
 
+    [Test]
+    [Category("Office365")]
+    public async Task StoppedBackupStoresNoTokensAndTheNextRunWalksEverythingAsync()
+    {
+        var rng = new Random(7);
+        var tenant = Tenant.Create(rng);
+        var graph = new SimulatedGraph(tenant);
+        var options = Prepare();
+
+        using var handlerScope = SourceProvider.UseTestMessageHandler(graph);
+        var (paths, _) = Expected(tenant);
+        AssertSamePaths(await BackupAndListAsync(options, []), paths, "the first backup");
+        Assert.That(graph.Unhandled, Is.Empty);
+
+        // The stopped run uploads a changed file from the first library, so its fileset is kept,
+        // while the last site's libraries, one of them with a new file, are never reached
+        var firstDrive = tenant.Sites[0].Drives[0];
+        var changed = firstDrive.LiveItems.First(x => !x.IsFolder);
+        changed.Version = tenant.Next();
+        changed.Content = Encoding.UTF8.GetBytes("changed before the stop");
+        var lastSite = tenant.Sites[^1];
+        tenant.AddFile(lastSite.Drives[0], lastSite.Drives[0].RootId, rng);
+
+        using (var c = new Controller("file://" + TARGETFOLDER, options, null))
+        {
+            var stopped = false;
+            graph.OnRequest = url =>
+            {
+                if (!stopped && url.Contains($"/sites/{lastSite.Id}/drives", StringComparison.Ordinal))
+                {
+                    stopped = true;
+                    c.StopAsync().GetAwaiter().GetResult();
+                }
+            };
+
+            var r = await c.BackupAsync([Source]);
+            Assert.That(r.PartialBackup, Is.True, "The stop arrived while the backup was listing the last site");
+            Assert.That(stopped, Is.True, "The backup reached the last site");
+        }
+        graph.OnRequest = null;
+
+        // The stopped run has no state, so the next run lists everything and the fileset is complete again
+        var requestsBefore = graph.Requests.Count;
+        Dictionary<string, byte[]> contents;
+        (paths, contents) = Expected(tenant);
+        AssertSamePaths(await BackupAndListAsync(options, []), paths, "the run after a stopped backup");
+        Assert.That(graph.Unhandled, Is.Empty);
+
+        var requests = graph.Requests.Skip(requestsBefore).ToList();
+        Assert.That(requests.Where(x => x.Contains("$deltatoken=", StringComparison.Ordinal)), Is.Empty, "No mail folder is walked from a token after a stopped backup");
+        Assert.That(requests.Where(x => x.Contains("/root/delta?", StringComparison.Ordinal) && x.Contains("token=", StringComparison.Ordinal) && !x.Contains("token=latest", StringComparison.Ordinal)), Is.Empty, "No library is walked from a token after a stopped backup");
+        await AssertRestoredContentsAsync(options, contents, "the run after a stopped backup");
+
+        // The run after that continues incrementally from the complete fileset
+        requestsBefore = graph.Requests.Count;
+        var added = tenant.AddFile(firstDrive, firstDrive.RootId, rng);
+        (paths, contents) = Expected(tenant);
+        AssertSamePaths(await BackupAndListAsync(options, []), paths, "the second run after a stopped backup");
+        Assert.That(graph.Requests.Skip(requestsBefore).Any(x => x.Contains("$deltatoken=", StringComparison.Ordinal)), Is.True, "The mail folders are walked from the tokens of the complete run");
+        Assert.That(graph.Requests.Skip(requestsBefore).Any(x => x.Contains($"/drives/{firstDrive.Id}/root/delta?", StringComparison.Ordinal) && x.Contains("token=", StringComparison.Ordinal) && !x.Contains("token=latest", StringComparison.Ordinal)), Is.True, $"The library with {added.Id} is walked from its token");
+    }
+
     /// <summary>
     /// A wider search over seeds, for use when hunting a bug rather than on every test run
     /// </summary>
@@ -1010,8 +1075,7 @@ public class Office365SimulationTests : BasicSetupHelper
         var options = Prepare();
         options["disable-file-scanner"] = fileScanner ? "false" : "true";
 
-        SourceProvider.TestMessageHandler = graph;
-        try
+        using var handlerScope = SourceProvider.UseTestMessageHandler(graph);
         {
             var (paths, contents) = Expected(tenant);
             AssertSamePaths(await BackupAndListAsync(options, []), paths, "the first backup");
@@ -1049,10 +1113,6 @@ public class Office365SimulationTests : BasicSetupHelper
             }
 
             TestContext.Out.WriteLine(string.Join(Environment.NewLine, history));
-        }
-        finally
-        {
-            SourceProvider.TestMessageHandler = null;
         }
     }
 }

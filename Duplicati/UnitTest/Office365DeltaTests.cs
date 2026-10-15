@@ -274,6 +274,27 @@ public class Office365DeltaTests
 
     [Test]
     [Category("Office365")]
+    public async Task MailIncrementalWalkLetsTheLastReportOfAMessageWinAsync()
+    {
+        // A message that was changed and then removed since the stored token is reported twice, and so is
+        // one that was removed and then recreated with the same id; the later report is the newer state
+        var handler = new FakeGraphHandler()
+            .Json("deltatoken=tok1", Page(Message("m1") + "," + RemovedMessage("m2"), nextLink: $"{GRAPH}/mail-next-1"))
+            .Json("/mail-next-1", Page(RemovedMessage("m1") + "," + Message("m2") + "," + Message("m3"), deltaLink: MailLink("tok2")))
+            .Json("/users/u1/mailFolders/f1/childFolders", Page(""));
+        var provider = CreateProvider(handler, new Dictionary<string, string> { [MailKey] = MailState("tok1") });
+
+        var entries = await CollectAsync(new UserMailboxFolderSourceEntry(provider, User, FolderPath, MailFolder), false);
+
+        Assert.That(entries.Select(x => x.Path), Is.EqualTo(new[] { D(FolderPath, "m2"), D(FolderPath, "m3") }), "A message removed after it was changed is not listed, one changed after it was removed is, in the order first reported");
+        Assert.That(provider.WasPathEnumerated(F(FolderPath, "m1", "content.eml")), Is.True, "The removed message is dropped");
+        Assert.That(provider.WasPathEnumerated(F(FolderPath, "m4", "content.eml")), Is.False, "An unreported message is carried forward");
+        Assert.That(provider.ExportChangeTrackingState()[MailKey], Is.EqualTo(MailState("tok2")));
+        Assert.That(handler.CountRequests("/mail-next-1"), Is.EqualTo(1), "Every page is read once");
+    }
+
+    [Test]
+    [Category("Office365")]
     public async Task MailStaleTokenRestartsWithAFullWalkAsync()
     {
         var handler = new FakeGraphHandler()
@@ -326,9 +347,10 @@ public class Office365DeltaTests
                 entries.Add(e);
         });
 
-        Assert.That(entries.Count, Is.EqualTo(1), "The first page was listed before the failure");
+        Assert.That(entries, Is.Empty, "An incremental walk collects its reports before listing any, so a walk that fails lists nothing");
         Assert.That(provider.ExportChangeTrackingState()[MailKey], Is.EqualTo(MailState("tok1")), "The previous link is kept so the changes are reported again");
         Assert.That(provider.WasPathEnumerated(F(FolderPath, "m1", "content.eml")), Is.False, "Unlisted messages are carried forward");
+        Assert.That(provider.WasPathEnumerated(F(FolderPath, "m2", "content.eml")), Is.False, "The message the failed walk reported is carried forward and reported again next time");
     }
 
     [Test]
@@ -796,7 +818,7 @@ public class Office365DeltaTests
         using (scope)
         {
             var holder = new DeltaLinkHolder();
-            var items = await provider.UserEmailApi.ListMessagesDeltaAsync("u1", "f1", null, holder, CancellationToken.None).ToListAsync();
+            var items = await provider.UserEmailApi.ListMessagesDeltaAsync("u1", "f1", null, holder, true, CancellationToken.None).ToListAsync();
             Assert.That(items.Select(x => x.Id), Is.EqualTo(new[] { "m1", "m2" }));
             Assert.That(holder.DeltaLink, Is.Null, "A walk that loops never reaches a delta link");
             Assert.That(messages.Any(x => x.Id == "DeltaPagingRepeatDetected"), Is.True, "The loop is logged");

@@ -26,12 +26,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Duplicati.Library.DynamicLoader;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Logging;
 using Duplicati.Library.Main.Database.Local;
 using Duplicati.Library.Main.Operation.Common;
 using Duplicati.Library.SourceProvider;
 using Duplicati.Library.Utility;
+using Duplicati.Library.Utility.Options;
 
 namespace Duplicati.Library.Main.Operation.Backup;
 
@@ -151,8 +153,9 @@ internal sealed class ChangeTrackingCoordinator
     }
 
     /// <summary>
-    /// Computes the hash of the configuration that decides which paths are walked.
-    /// The credentials in the source urls are left out so a rotated secret does not force a full walk.
+    /// Computes the hash of the configuration that decides which paths are walked: the filter
+    /// and the sources. The credentials are left out of the source urls so a rotated secret does
+    /// not force a full walk, while any other change to a url does.
     /// </summary>
     /// <param name="filter">The filter in use</param>
     /// <param name="sources">The source strings the backup was started with</param>
@@ -161,12 +164,62 @@ internal sealed class ChangeTrackingCoordinator
     {
         var sanitizedSources = sources
             .Select(x => SourceProviderFactory.ParseRemoteSource(x) is { } remote
-                ? $"@{remote.Mountpoint}|{Library.Utility.Utility.GetUrlWithoutCredentials(remote.Url)}"
+                ? $"@{remote.Mountpoint}|{StripSecrets(remote.Url)}"
                 : x)
             .OrderBy(x => x, StringComparer.Ordinal);
 
         return Library.Utility.Utility.ByteArrayAsHexString(MD5HashHelper.GetHash(
             new[] { filter?.ToString() ?? string.Empty }.Concat(sanitizedSources)));
+    }
+
+    /// <summary>
+    /// Removes the credentials from a source url and keeps every other option. The user info is
+    /// dropped, as are the query values of the options the provider declares as passwords and
+    /// of the generic authentication options, and the remaining query values are sorted so that
+    /// their order does not matter. A url that cannot be parsed is reduced to its displayable
+    /// form, which carries no credentials either.
+    /// </summary>
+    /// <param name="url">The source url</param>
+    /// <returns>The url without credentials</returns>
+    internal static string StripSecrets(string url)
+    {
+        RelaxedUri uri;
+        try
+        {
+            uri = new RelaxedUri(url);
+        }
+        catch
+        {
+            // An invalid url is reported when the provider is loaded
+            return Library.Utility.Utility.GetUrlWithoutCredentials(url);
+        }
+
+        var secrets = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { AuthOptionsHelper.AuthPasswordOption, AuthIdOptionsHelper.AuthIdOption };
+        try
+        {
+            foreach (var command in SourceProviderLoader.GetSupportedCommands(url) ?? [])
+            {
+                if (command.Type != CommandLineArgument.ArgumentType.Password)
+                    continue;
+
+                secrets.Add(command.Name);
+                foreach (var alias in command.Aliases ?? [])
+                    secrets.Add(alias);
+            }
+        }
+        catch
+        {
+            // An unsupported url is reported when the provider is loaded
+        }
+
+        var query = uri.QueryParameters;
+        var kept = query.AllKeys
+            .Where(key => !string.IsNullOrEmpty(key) && !secrets.Contains(key))
+            .OrderBy(key => key, StringComparer.Ordinal)
+            .Select(key => $"{Uri.EscapeDataString(key!)}={Uri.EscapeDataString(query[key] ?? string.Empty)}")
+            .ToList();
+
+        return new RelaxedUri(uri.Scheme, uri.Host, uri.Path, kept.Count == 0 ? null : string.Join("&", kept), null, null, uri.Port, uri.PathIsEncoded).ToString();
     }
 
     /// <summary>
@@ -242,10 +295,13 @@ internal sealed class ChangeTrackingCoordinator
     /// Stores the state the providers export with the current fileset, so each fileset
     /// carries the tokens its enumeration ended with. If the fileset is later dropped
     /// because nothing needed uploading, the rows move to the previous fileset, whose
-    /// content is then the same. A partial backup stores the state it was handed instead:
-    /// the enumeration was cut short, so the exported state does not describe the
-    /// fileset, while the loaded state still does because every entry that was not
-    /// examined was copied from the previous fileset.
+    /// content is then the same. A partial backup stores nothing: the enumeration was cut
+    /// short, so the fileset lacks what the stop left out, including everything below the
+    /// entries a provider never reached, which it cannot tell apart from entries it listed
+    /// in full and so does not report as unexamined. Neither the exported state nor the
+    /// loaded one describes such a fileset, so the next backup is handed no state and walks
+    /// everything; a dropped partial fileset leaves the previous fileset's state in place.
+    /// A provider that exports nothing stores nothing either, and is walked in full next time.
     /// </summary>
     /// <param name="database">The database to write to</param>
     /// <param name="partial">Whether the backup was cut short</param>
@@ -253,16 +309,22 @@ internal sealed class ChangeTrackingCoordinator
     /// <returns>An awaitable task</returns>
     public async Task StoreStateAsync(BackupDatabase database, bool partial, CancellationToken cancellationToken)
     {
-        foreach (var tracked in _providers)
-        {
-            var scope = tracked.Provider.ChangeTrackingScope;
-            var rows = partial ? tracked.LoadedState : tracked.Provider.ExportChangeTrackingState();
-            if (rows.Count == 0 && !tracked.HasLoadedState)
-                continue;
+        if (partial)
+            Log.WriteInformationMessage(LOGTAG, "ChangeTrackingStateNotStored", "The backup was cut short, so no change tracking state is stored and the next backup lists everything");
+        else
+            foreach (var tracked in _providers)
+            {
+                var scope = tracked.Provider.ChangeTrackingScope;
+                var rows = tracked.Provider.ExportChangeTrackingState();
+                if (rows.Count == 0)
+                {
+                    Log.WriteVerboseMessage(LOGTAG, "NoChangeTrackingStateToStore", "No change tracking state was exported for \"{0}\", so none is stored and the next backup walks it in full", scope);
+                    continue;
+                }
 
-            Log.WriteVerboseMessage(LOGTAG, "StoringChangeTrackingState", "Storing {0} change tracking state rows for \"{1}\"{2}", rows.Count, scope, partial ? " from the previous backup, as this one was cut short" : "");
-            await database.CreateSourceProviderStateAsync(scope, _configHash, rows, cancellationToken).ConfigureAwait(false);
-        }
+                Log.WriteVerboseMessage(LOGTAG, "StoringChangeTrackingState", "Storing {0} change tracking state rows for \"{1}\"", rows.Count, scope);
+                await database.CreateSourceProviderStateAsync(scope, _configHash, rows, cancellationToken).ConfigureAwait(false);
+            }
 
         var removed = await database.PruneSourceProviderStateAsync(STATE_FILESETS_TO_KEEP, cancellationToken).ConfigureAwait(false);
         if (removed > 0)

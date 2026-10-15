@@ -34,11 +34,35 @@ public sealed partial class SourceProvider : ISourceProviderModule, IChangeTrack
     private readonly bool _hasSetMetadataStorageOption;
 
     /// <summary>
-    /// A handler that answers the Graph requests of every provider instance created while it is
+    /// A handler that answers the Graph requests of the provider instances created while it is
     /// set, so a test can run a backup through the loader and the controller against a fake
-    /// Graph API. Never set outside tests.
+    /// Graph API. It follows the asynchronous flow that set it, so tests running side by side
+    /// do not see each other's handler. Never set outside tests.
     /// </summary>
-    internal static HttpMessageHandler? TestMessageHandler { get; set; }
+    private static readonly AsyncLocal<HttpMessageHandler?> _testMessageHandler = new();
+
+    /// <summary>
+    /// Makes the provider instances created in the current asynchronous flow send their Graph
+    /// requests through a handler until the returned scope is disposed. For tests only.
+    /// </summary>
+    /// <param name="handler">The handler that answers the requests</param>
+    /// <returns>A scope that restores the previous handler when disposed</returns>
+    internal static IDisposable UseTestMessageHandler(HttpMessageHandler handler)
+    {
+        var previous = _testMessageHandler.Value;
+        _testMessageHandler.Value = handler;
+        return new TestMessageHandlerScope(previous);
+    }
+
+    /// <summary>
+    /// Restores the test message handler that was set before a scope began
+    /// </summary>
+    /// <param name="previous">The handler to restore</param>
+    private sealed class TestMessageHandlerScope(HttpMessageHandler? previous) : IDisposable
+    {
+        /// <inheritdoc />
+        public void Dispose() => _testMessageHandler.Value = previous;
+    }
 
     /// <summary>
     /// The machine id recorded in the backup description, honoring the global <c>machine-id</c> override.
@@ -287,7 +311,7 @@ public sealed partial class SourceProvider : ISourceProviderModule, IChangeTrack
         DriveDeltaEnabled = parsedOptions.DriveDelta;
         DriveDeltaMaxItems = parsedOptions.DriveDeltaMaxItems;
         _apiHelper = apiHelper
-            ?? (TestMessageHandler is { } testHandler ? APIHelper.CreateForTesting(testHandler, parsedOptions.GraphBaseUrl, _timeouts, "test-token") : null)
+            ?? (_testMessageHandler.Value is { } testHandler ? APIHelper.CreateForTesting(testHandler, parsedOptions.GraphBaseUrl, _timeouts, "test-token") : null)
             ?? APIHelper.Create(
             tenantId: parsedOptions.TenantId,
             authOptions: parsedOptions.AuthOptions,

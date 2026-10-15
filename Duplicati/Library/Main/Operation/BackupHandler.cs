@@ -493,8 +493,8 @@ namespace Duplicati.Library.Main.Operation
                             .ConfigureAwait(false);
                     }
 
-                    // Store the exported state; a canceled job keeps the state it started
-                    // from, so the next run continues from there instead of walking everything
+                    // Store the exported state; a canceled job stores nothing, as its fileset
+                    // lacks what the stop left out, so the next run walks everything
                     await changeTracking.StoreStateAsync(database, result.PartialBackup, taskreader.ProgressToken).ConfigureAwait(false);
                 }
 

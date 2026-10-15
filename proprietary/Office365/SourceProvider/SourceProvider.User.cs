@@ -47,6 +47,9 @@ partial class SourceProvider
         /// <param name="folderId">The mail folder id</param>
         /// <param name="storedToken">The delta token stored by the previous walk, or <c>null</c> for a full walk</param>
         /// <param name="deltaLink">Receives the delta link the walk ends with</param>
+        /// <param name="deduplicate">If <c>true</c>, a message reported on an earlier page is skipped, which
+        /// suits a full walk; if <c>false</c>, every report is returned so the caller can let the last one win,
+        /// which an incremental walk needs as a later report is the newer state</param>
         /// <param name="ct">The cancellation token</param>
         /// <returns>The messages reported by the walk</returns>
         internal IAsyncEnumerable<GraphMessage> ListMessagesDeltaAsync(
@@ -54,6 +57,7 @@ partial class SourceProvider
             string folderId,
             string? storedToken,
             DeltaLinkHolder deltaLink,
+            bool deduplicate,
             CancellationToken ct)
         {
             var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
@@ -67,7 +71,7 @@ partial class SourceProvider
                 ? $"?$select={Uri.EscapeDataString(GraphSelectBuilder.BuildSelect<GraphMessage>())}"
                 : $"?$deltatoken={Uri.EscapeDataString(storedToken)}";
 
-            return provider.GetAllGraphDeltaItemsAsync<GraphMessage>(url, m => m.Id, deltaLink, true, ct);
+            return provider.GetAllGraphDeltaItemsAsync<GraphMessage>(url, m => m.Id, deltaLink, deduplicate, ct);
         }
 
         internal async Task<GraphMailFolder> GetMailRootFolderAsync(string userIdOrUpn, CancellationToken ct)

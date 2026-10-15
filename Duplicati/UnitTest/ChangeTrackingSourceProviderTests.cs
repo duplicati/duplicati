@@ -69,6 +69,10 @@ public class ChangeTrackingSourceProviderTests : BasicSetupHelper
         public IReadOnlyDictionary<string, string>? Loaded;
         /// <summary>How many times state was handed to the provider</summary>
         public int LoadCalls;
+        /// <summary>How many times the provider was asked to export state</summary>
+        public int ExportCalls;
+        /// <summary>How many times the carry-forward predicate was asked</summary>
+        public int EnumeratedCalls;
     }
 
     private sealed class FakeEntry : ISourceProviderEntry
@@ -139,7 +143,21 @@ public class ChangeTrackingSourceProviderTests : BasicSetupHelper
         public string Key => "test-change-tracking";
         public string DisplayName => "Test change tracking provider";
         public string Description => "Test provider that enumerates only changes";
-        public IList<ICommandLineArgument> SupportedCommands => [];
+        /// <summary>
+        /// The option the test provider declares as a password, so the configuration hash can leave it out
+        /// </summary>
+        public const string SecretOption = "test-secret";
+
+        /// <summary>
+        /// An option of the test provider that is not a secret, so a change to it must change the configuration hash
+        /// </summary>
+        public const string PlainOption = "test-option";
+
+        public IList<ICommandLineArgument> SupportedCommands =>
+        [
+            new CommandLineArgument(SecretOption, CommandLineArgument.ArgumentType.Password, "The secret", "The secret of the test provider"),
+            new CommandLineArgument(PlainOption, CommandLineArgument.ArgumentType.String, "An option", "An option of the test provider"),
+        ];
         public string MountedPath => _mountPoint;
         public bool NeedsStoredMetadata => false;
 
@@ -165,9 +183,17 @@ public class ChangeTrackingSourceProviderTests : BasicSetupHelper
             Scenario.Current.LoadCalls++;
         }
 
-        public IReadOnlyDictionary<string, string> ExportChangeTrackingState() => Scenario.Current.Export;
+        public IReadOnlyDictionary<string, string> ExportChangeTrackingState()
+        {
+            Scenario.Current.ExportCalls++;
+            return Scenario.Current.Export;
+        }
 
-        public bool WasPathEnumerated(string path) => Scenario.Current.Enumerated(path);
+        public bool WasPathEnumerated(string path)
+        {
+            Scenario.Current.EnumeratedCalls++;
+            return Scenario.Current.Enumerated(path);
+        }
     }
 
     private string Mount => Util.AppendDirSeparator(Path.GetFullPath(Path.Combine(BASEFOLDER, "tracked")));
@@ -400,7 +426,7 @@ public class ChangeTrackingSourceProviderTests : BasicSetupHelper
 
     [Test]
     [Category("ChangeTracking")]
-    public async Task PartialBackupKeepsTheLoadedStateAsync()
+    public async Task PartialBackupStoresNoStateAsync()
     {
         var options = Prepare();
         await FirstRunAsync(options);
@@ -427,15 +453,18 @@ public class ChangeTrackingSourceProviderTests : BasicSetupHelper
             Assert.That(r.PartialBackup, Is.True, "Stopping during enumeration makes a partial backup");
         }
 
-        // Nothing was uploaded before the stop, so the new fileset is dropped again with its rows
+        // A stopped run cannot tell what it did not reach from what it listed in full, so it stores no
+        // state and does not ask the provider for any. Nothing was uploaded before the stop, so the new
+        // fileset is dropped again, and the previous fileset keeps the state that describes its content
+        Assert.That(Scenario.Current.ExportCalls, Is.EqualTo(0), "A partial backup does not export state");
         var filesets = await ReadFilesetIdsAsync(options["dbpath"]);
         var rows = await ReadStateRowsAsync(options["dbpath"]);
         Assert.That(filesets.Count, Is.EqualTo(1));
-        Assert.That(rows.Select(x => (x.FilesetId, x.Key, x.Value)), Is.EqualTo(new[] { (filesets[0], "k", "v1") }), "A partial backup does not advance the state");
+        Assert.That(rows.Select(x => (x.FilesetId, x.Key, x.Value)), Is.EqualTo(new[] { (filesets[0], "k", "v1") }), "The previous fileset keeps its state");
 
         Scenario.Current = new Scenario { Children = m => [File(m, "d.txt", "D")], Enumerated = _ => false, Export = { ["k"] = "v3" } };
         await RunBackupAsync(options);
-        Assert.That(Scenario.Current.Loaded, Is.EqualTo(new Dictionary<string, string> { ["k"] = "v1" }), "The run after a partial backup continues from the state before it");
+        Assert.That(Scenario.Current.Loaded, Is.EqualTo(new Dictionary<string, string> { ["k"] = "v1" }), "The run after a dropped partial backup continues from the kept fileset");
 
         var paths = await ListPathsAsync(options);
         Assert.That(paths, Is.SupersetOf(new[] { P("a.txt"), D("sub"), P(Path.Combine("sub", "b.txt")), P(Path.Combine("sub", "c.txt")), P("d.txt") }));
@@ -443,19 +472,21 @@ public class ChangeTrackingSourceProviderTests : BasicSetupHelper
 
     [Test]
     [Category("ChangeTracking")]
-    public async Task PartialBackupWithUploadsStoresTheLoadedStateAsync()
+    public async Task PartialBackupWithUploadsStoresNoStateAsync()
     {
         var options = Prepare();
         await FirstRunAsync(options);
 
-        // The stop is requested once a file was listed, so the file is uploaded and the fileset is kept
+        // The stop is requested while the files are listed. The provider claims to have examined
+        // everything, as one that lists most content in full does, so the paths it did not reach
+        // count as deleted and the fileset is kept whether or not a file was uploaded before the stop
         using (var c = new Controller("file://" + TARGETFOLDER, options, null))
         {
             var stopped = false;
             Scenario.Current = new Scenario
             {
                 Children = m => [File(m, "d.txt", "D"), File(m, "e.txt", "E")],
-                Enumerated = _ => false,
+                Enumerated = _ => true,
                 Export = { ["k"] = "v2" },
                 EnumerateDelay = TimeSpan.FromSeconds(2),
             };
@@ -476,14 +507,29 @@ public class ChangeTrackingSourceProviderTests : BasicSetupHelper
             Assert.That(r.PartialBackup, Is.True, "The stop arrived while the backup was still enumerating");
         }
 
+        // The partial fileset carries no state: the tokens it started from describe the previous
+        // fileset, not the entries the stop left out of this one, and the provider may not have
+        // reached everything its exported state would claim
+        Assert.That(Scenario.Current.ExportCalls, Is.EqualTo(0), "A partial backup does not export state");
         var filesets = await ReadFilesetIdsAsync(options["dbpath"]);
         var rows = await ReadStateRowsAsync(options["dbpath"]);
-        foreach (var fileset in filesets)
-            Assert.That(rows.Where(x => x.FilesetId == fileset).Select(x => (x.Key, x.Value)), Is.EqualTo(new[] { ("k", "v1") }), "Every fileset carries the state the partial backup started from");
+        Assert.That(filesets.Count, Is.EqualTo(2), "The partial fileset is kept, as it lacks the paths the stop left out");
+        Assert.That(rows.Select(x => (x.FilesetId, x.Key, x.Value)), Is.EqualTo(new[] { (filesets[0], "k", "v1") }), "Only the complete fileset carries state");
 
+        // The run after it is handed nothing, walks everything, and carries nothing forward
         Scenario.Current = new Scenario { Children = m => [File(m, "f.txt", "F")], Enumerated = _ => false, Export = { ["k"] = "v3" } };
         await RunBackupAsync(options);
-        Assert.That(Scenario.Current.Loaded, Is.EqualTo(new Dictionary<string, string> { ["k"] = "v1" }));
+        Assert.That(Scenario.Current.Loaded, Is.Empty, "The run after a partial backup starts over");
+        Assert.That(Scenario.Current.EnumeratedCalls, Is.EqualTo(0), "Without state nothing is copied from the partial fileset");
+
+        var paths = await ListPathsAsync(options);
+        Assert.That(paths, Does.Contain(P("f.txt")));
+        Assert.That(paths, Does.Not.Contain(P("a.txt")), "The provider listed everything it has, so what it did not list is gone");
+        Assert.That(paths, Does.Not.Contain(P("d.txt")));
+
+        rows = await ReadStateRowsAsync(options["dbpath"]);
+        filesets = await ReadFilesetIdsAsync(options["dbpath"]);
+        Assert.That(rows.Where(x => x.FilesetId == filesets[^1]).Select(x => (x.Key, x.Value)), Is.EqualTo(new[] { ("k", "v3") }), "The complete run stores its state again");
     }
 
     [Test]
@@ -507,6 +553,52 @@ public class ChangeTrackingSourceProviderTests : BasicSetupHelper
         Scenario.Current = new Scenario { Timestamp = new DateTime(2024, 4, 1, 0, 0, 0, DateTimeKind.Utc), Children = m => [File(m, "a.txt", "A4")], Export = { ["k"] = "v4" } };
         await RunBackupAsync(options);
         Assert.That(Scenario.Current.Loaded, Is.Empty, "Going back to the original filter discards the state again");
+    }
+
+    [Test]
+    [Category("ChangeTracking")]
+    public void ConfigHashLeavesOutCredentialsAndKeepsTheOtherOptions()
+    {
+        Prepare();
+        string Hash(params string[] sources) => Library.Main.Operation.Backup.ChangeTrackingCoordinator.ComputeConfigHash(null, sources);
+        var mount = "@" + Mount.TrimEnd(Path.DirectorySeparatorChar) + "|";
+
+        var reference = Hash(mount + "test-change-tracking://source?opt=1&test-secret=s1&auth-password=p1&authid=a1");
+        Assert.That(Hash(mount + "test-change-tracking://source?opt=1&test-secret=s2&auth-password=p2&authid=a2"), Is.EqualTo(reference), "Rotated secrets do not change the hash");
+        Assert.That(Hash(mount + "test-change-tracking://source?opt=1"), Is.EqualTo(reference), "Secrets are left out entirely");
+        Assert.That(Hash(mount + "test-change-tracking://user:pw@source?opt=1"), Is.EqualTo(reference), "The user info is left out");
+        Assert.That(Hash(mount + "test-change-tracking://source?test-secret=s1&opt=1"), Is.EqualTo(reference), "The order of the options does not matter");
+
+        Assert.That(Hash(mount + "test-change-tracking://source?opt=2"), Is.Not.EqualTo(reference), "A changed option changes the hash");
+        Assert.That(Hash(mount + "test-change-tracking://source?opt=1&other=x"), Is.Not.EqualTo(reference), "An added option changes the hash");
+        Assert.That(Hash(mount + "test-change-tracking://source"), Is.Not.EqualTo(reference), "A removed option changes the hash");
+        Assert.That(Hash(mount + "test-change-tracking://other?opt=1"), Is.Not.EqualTo(reference), "A changed host changes the hash");
+        Assert.That(Hash("@" + Path.Combine(Mount, "elsewhere").TrimEnd(Path.DirectorySeparatorChar) + "|test-change-tracking://source?opt=1"), Is.Not.EqualTo(reference), "A changed mount point changes the hash");
+        Assert.That(Hash(mount + "test-change-tracking://source?opt=1", Path.Combine(BASEFOLDER, "local")), Is.Not.EqualTo(reference), "An added source changes the hash");
+
+        Assert.That(Hash(mount + "test-change-tracking://source?opt=1", Path.Combine(BASEFOLDER, "local")), Is.EqualTo(Hash(Path.Combine(BASEFOLDER, "local"), mount + "test-change-tracking://source?opt=1")), "The order of the sources does not matter");
+        Assert.That(Library.Main.Operation.Backup.ChangeTrackingCoordinator.StripSecrets("test-change-tracking://user:pw@source?opt=1&test-secret=s&auth-password=p"), Does.Not.Contain("pw").And.Not.Contain("=s").And.Not.Contain("=p"), "The hashed form carries no secret");
+    }
+
+    [Test]
+    [Category("ChangeTracking")]
+    public async Task RotatedSecretKeepsTheStateButAChangedOptionDiscardsItAsync()
+    {
+        var options = Prepare();
+        var source = Source + "?test-option=1&test-secret=s1";
+        Scenario.Current = new Scenario { Children = InitialTree, Export = { ["k"] = "v1" } };
+        using (var c = new Controller("file://" + TARGETFOLDER, options, null))
+            TestUtils.AssertResults(await c.BackupAsync([source]));
+
+        Scenario.Current = new Scenario { Timestamp = new DateTime(2024, 2, 1, 0, 0, 0, DateTimeKind.Utc), Children = m => [File(m, "a.txt", "A2")], Export = { ["k"] = "v2" } };
+        using (var c = new Controller("file://" + TARGETFOLDER, options, null))
+            TestUtils.AssertResults(await c.BackupAsync([Source + "?test-option=1&test-secret=s2"]));
+        Assert.That(Scenario.Current.Loaded, Is.EqualTo(new Dictionary<string, string> { ["k"] = "v1" }), "A rotated secret keeps the state");
+
+        Scenario.Current = new Scenario { Timestamp = new DateTime(2024, 3, 1, 0, 0, 0, DateTimeKind.Utc), Children = m => [File(m, "a.txt", "A3")], Export = { ["k"] = "v3" } };
+        using (var c = new Controller("file://" + TARGETFOLDER, options, null))
+            TestUtils.AssertResults(await c.BackupAsync([Source + "?test-option=2&test-secret=s2"]));
+        Assert.That(Scenario.Current.Loaded, Is.Empty, "A changed option discards the state");
     }
 
     [Test]

@@ -51,8 +51,10 @@ public interface IChangeTrackingSourceProvider : ISourceProvider
     void LoadChangeTrackingState(IReadOnlyDictionary<string, string> state);
 
     /// <summary>
-    /// Called after enumeration. Returns the rows to store for the new fileset.
-    /// Keys that the provider does not re-export are dropped.
+    /// Called after a completed enumeration. Returns the rows to store for the new fileset.
+    /// Keys that the provider does not re-export are dropped. The call is not made when the
+    /// backup was cut short: a partial backup stores no state, and the next backup is handed
+    /// an empty set and walks everything.
     /// </summary>
     /// <returns>The state rows to store</returns>
     IReadOnlyDictionary<string, string> ExportChangeTrackingState();

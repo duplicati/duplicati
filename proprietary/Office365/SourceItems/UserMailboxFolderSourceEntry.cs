@@ -18,6 +18,46 @@ internal class UserMailboxFolderSourceEntry(SourceProvider provider, GraphUser u
     private string StateKey => ChangeTrackingKeys.MailFolder(user.Id, folder.ParentFolderId, folder.Id);
 
     /// <summary>
+    /// Reads the messages a delta walk of the folder reports. A full walk streams them, as a
+    /// message is reported once. An incremental walk may report a message more than once, for
+    /// instance as changed and then as removed, and the later report is the newer state, so its
+    /// messages are collected before any is returned and the last report of each wins, in the
+    /// order the messages were first reported.
+    /// </summary>
+    /// <param name="storedToken">The stored delta token, or <c>null</c> for a full walk</param>
+    /// <param name="deltaLink">Receives the delta link the walk ends with</param>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns>The messages</returns>
+    private IAsyncEnumerable<GraphMessage> ReadMessagesAsync(string? storedToken, DeltaLinkHolder deltaLink, CancellationToken cancellationToken)
+        => storedToken == null
+            ? provider.UserEmailApi.ListMessagesDeltaAsync(user.Id, folder.Id, null, deltaLink, true, cancellationToken)
+            : LastReportWinsAsync(provider.UserEmailApi.ListMessagesDeltaAsync(user.Id, folder.Id, storedToken, deltaLink, false, cancellationToken), cancellationToken);
+
+    /// <summary>
+    /// Collects the reported messages and returns the last report of each, in the order the
+    /// messages were first reported
+    /// </summary>
+    /// <param name="reports">The reports, possibly several per message</param>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns>The newest report of each message</returns>
+    private static async IAsyncEnumerable<GraphMessage> LastReportWinsAsync(IAsyncEnumerable<GraphMessage> reports, [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        var order = new List<string>();
+        var latest = new Dictionary<string, GraphMessage>(StringComparer.Ordinal);
+        await foreach (var report in reports.WithCancellation(cancellationToken).ConfigureAwait(false))
+        {
+            // A report without an id cannot be matched to another, so it stands on its own
+            var key = string.IsNullOrEmpty(report.Id) ? $"\0{order.Count}" : report.Id;
+            if (!latest.ContainsKey(key))
+                order.Add(key);
+            latest[key] = report;
+        }
+
+        foreach (var key in order)
+            yield return latest[key];
+    }
+
+    /// <summary>
     /// Lists the messages and child folders. When the provider tracks changes and a delta
     /// link is stored for the folder, only the messages created, changed or removed since
     /// the previous backup are listed, and the rest is carried forward by the backup.
@@ -44,7 +84,7 @@ internal class UserMailboxFolderSourceEntry(SourceProvider provider, GraphUser u
         try
         {
             var deltaLink = new DeltaLinkHolder();
-            var messages = provider.UserEmailApi.ListMessagesDeltaAsync(user.Id, folder.Id, stored, deltaLink, cancellationToken).GetAsyncEnumerator(cancellationToken);
+            var messages = ReadMessagesAsync(stored, deltaLink, cancellationToken).GetAsyncEnumerator(cancellationToken);
             try
             {
                 while (true)
@@ -62,7 +102,7 @@ internal class UserMailboxFolderSourceEntry(SourceProvider provider, GraphUser u
                         stored = null;
                         tracker.MarkExaminedSubtree(Path);
                         deltaLink = new DeltaLinkHolder();
-                        messages = provider.UserEmailApi.ListMessagesDeltaAsync(user.Id, folder.Id, null, deltaLink, cancellationToken).GetAsyncEnumerator(cancellationToken);
+                        messages = ReadMessagesAsync(null, deltaLink, cancellationToken).GetAsyncEnumerator(cancellationToken);
                         continue;
                     }
 
