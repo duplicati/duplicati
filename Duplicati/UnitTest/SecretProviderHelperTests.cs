@@ -533,4 +533,27 @@ public class SecretProviderHelperTests : BasicSetupHelper
         Assert.That(logCapture.Messages[0].Contains("Found 3 partial"));
     }
 
+    [Test]
+    [Category("SecretHelper")]
+    public void GetProviderSettingsReportsDefaultsForUnwrappedProvider()
+    {
+        var (cachingLevel, pattern) = SecretProviderHelper.GetProviderSettings(new MockedSecretProvider());
+
+        Assert.AreEqual(SecretProviderHelper.CachingLevel.None, cachingLevel);
+        Assert.AreEqual(SecretProviderHelper.DEFAULT_PATTERN, pattern);
+    }
+
+    [Test]
+    [Category("SecretHelper")]
+    public void GetProviderSettingsReportsWrappedProviderSettings()
+    {
+        var wrapped = SecretProviderHelper.WrapWithCache("mock://", new MockedSecretProvider(), SecretProviderHelper.CachingLevel.InMemory, BASEFOLDER, "salt", "%");
+
+        var (cachingLevel, pattern) = SecretProviderHelper.GetProviderSettings(wrapped);
+
+        Assert.AreEqual("mock", wrapped.Key);
+        Assert.AreEqual(SecretProviderHelper.CachingLevel.InMemory, cachingLevel);
+        Assert.AreEqual("%", pattern);
+    }
+
 }

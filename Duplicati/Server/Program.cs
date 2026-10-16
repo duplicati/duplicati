@@ -1199,6 +1199,7 @@ namespace Duplicati.Server
             }
 
             var defaultSecretProvider = SecretProviderHelper.GetDefaultSecretProviderAsync(commandlineOptions, CancellationToken.None).Await();
+            applicationSettings.DefaultSecretProvider = defaultSecretProvider;
 
             // If we are supposed to have an encryption key, but do not, try to get it from the (default) secret provider
             if (!hasValidEncryptionKey && defaultSecretProvider != null)
