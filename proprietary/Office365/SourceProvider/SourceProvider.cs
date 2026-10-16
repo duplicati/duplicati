@@ -363,8 +363,10 @@ public sealed partial class SourceProvider : ISourceProviderModule, IChangeTrack
     /// <summary>
     /// Opens a content stream and reports a failure to open or read it to the change tracker,
     /// so the token of the folder or drive the content belongs to is not advanced and the item
-    /// is reported again next time. Content that is gone is not a failure: the next delta walk
-    /// reports it as removed.
+    /// is reported again next time. This includes content that answers not found: an item the
+    /// listing just reported is more likely to be missing transiently than to be gone, and if it
+    /// is gone the walk from the held-back token reports it as removed next time, at the cost of
+    /// repeating one incremental walk.
     /// </summary>
     /// <param name="stateKey">The change tracking key of the folder or drive, or <c>null</c> if changes are not tracked</param>
     /// <param name="factory">Opens the stream</param>
@@ -380,7 +382,7 @@ public sealed partial class SourceProvider : ISourceProviderModule, IChangeTrack
         {
             stream = await factory(cancellationToken).ConfigureAwait(false);
         }
-        catch (Exception ex) when (ex is not OperationCanceledException && !IsContentGone(ex))
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             _changeTracker.MarkStateFailed(stateKey);
             throw;
@@ -429,15 +431,6 @@ public sealed partial class SourceProvider : ISourceProviderModule, IChangeTrack
             yield return enumerator.Current;
         }
     }
-
-    /// <summary>
-    /// Whether an exception says the content no longer exists
-    /// </summary>
-    /// <param name="ex">The exception</param>
-    /// <returns><c>true</c> if the content is gone</returns>
-    private static bool IsContentGone(Exception ex)
-        => ex is FileNotFoundException
-            || ex is HttpRequestException { StatusCode: System.Net.HttpStatusCode.NotFound };
 
     /// <inheritdoc />
     public void Dispose()
