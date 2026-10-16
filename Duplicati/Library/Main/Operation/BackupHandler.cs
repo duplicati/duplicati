@@ -386,7 +386,7 @@ namespace Duplicati.Library.Main.Operation
                                 Backup.FileEnumerationProcess.RunAsync(channels, source, journalService,
                                     options.FileAttributeFilter, filter, options.SymlinkPolicy,
                                     options.HardlinkPolicy, options.DisableBackupExclusionXattr, options.ExcludeEmptyFolders,
-                                    changeTracking != null && changeTracking.HasLoadedState ? changeTracking.IsIncrementallyEnumeratedPath : null,
+                                    changeTracking != null && changeTracking.HasLoadedState ? changeTracking.IsIncrementallyEnumeratedFolder : null,
                                     options.IgnoreFilenames,
                                     GetBlacklistedPaths(options), options.ChangedFilelist, taskreader,
                                     () => result.PartialBackup = true, CancellationToken.None),

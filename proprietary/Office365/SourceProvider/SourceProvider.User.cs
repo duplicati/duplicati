@@ -595,7 +595,9 @@ partial class SourceProvider
             DeltaLinkHolder deltaLink,
             CancellationToken ct)
         {
-            var url = BuildDriveDeltaUrl(driveId, string.IsNullOrWhiteSpace(storedToken) ? null : storedToken);
+            var url = string.IsNullOrWhiteSpace(storedToken)
+                ? BuildDriveDeltaStartUrl(driveId, null)
+                : BuildDriveDeltaContinueUrl(driveId, storedToken);
             return provider.GetAllGraphDeltaItemsAsync<GraphDriveItem>(url, x => x.Id, deltaLink, false, ct);
         }
 
@@ -610,7 +612,7 @@ partial class SourceProvider
         internal async Task<string> GetDriveDeltaLatestTokenAsync(string driveId, CancellationToken ct)
         {
             var holder = new DeltaLinkHolder();
-            await foreach (var _ in provider.GetAllGraphDeltaItemsAsync<GraphDriveItem>(BuildDriveDeltaUrl(driveId, "latest"), x => x.Id, holder, false, ct).ConfigureAwait(false))
+            await foreach (var _ in provider.GetAllGraphDeltaItemsAsync<GraphDriveItem>(BuildDriveDeltaStartUrl(driveId, "latest"), x => x.Id, holder, false, ct).ConfigureAwait(false))
             {
                 // A latest-token request reports no items
             }
@@ -620,12 +622,13 @@ partial class SourceProvider
         }
 
         /// <summary>
-        /// Builds the URL that starts a delta walk of a drive
+        /// Builds the URL that starts a new delta walk of a drive. The query options are given
+        /// on this first request only; Graph encodes them in the token it returns.
         /// </summary>
         /// <param name="driveId">The drive id</param>
-        /// <param name="token">The delta token to pass, or <c>null</c> for a full walk</param>
+        /// <param name="token">The special token to pass, such as <c>latest</c>, or <c>null</c> for a full walk</param>
         /// <returns>The URL</returns>
-        private string BuildDriveDeltaUrl(string driveId, string? token)
+        private string BuildDriveDeltaStartUrl(string driveId, string? token)
         {
             var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
             var drive = Uri.EscapeDataString(driveId);
@@ -640,6 +643,21 @@ partial class SourceProvider
                 url += $"&token={Uri.EscapeDataString(token)}";
 
             return url;
+        }
+
+        /// <summary>
+        /// Builds the URL that continues a delta walk of a drive from a stored token. The
+        /// token alone is sent, as a delta link would be: the query options of the first
+        /// request are encoded in the token and must not be repeated.
+        /// </summary>
+        /// <param name="driveId">The drive id</param>
+        /// <param name="token">The stored delta token</param>
+        /// <returns>The URL</returns>
+        private string BuildDriveDeltaContinueUrl(string driveId, string token)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var drive = Uri.EscapeDataString(driveId);
+            return $"{baseUrl}/v1.0/drives/{drive}/root/delta?token={Uri.EscapeDataString(token)}";
         }
 
         /// <summary>

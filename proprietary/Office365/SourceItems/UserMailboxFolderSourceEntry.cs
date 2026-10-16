@@ -100,6 +100,7 @@ internal class UserMailboxFolderSourceEntry(SourceProvider provider, GraphUser u
                         Log.WriteWarningMessage(LOGTAG, "MailDeltaResync", ex, "The stored delta token for mail folder {0} of user {1} is no longer valid, listing the folder in full", folder.Id, user.Id);
                         await messages.DisposeAsync().ConfigureAwait(false);
                         stored = null;
+                        tracker.MarkLoadedStateInvalid(StateKey);
                         tracker.MarkExaminedSubtree(Path);
                         deltaLink = new DeltaLinkHolder();
                         messages = ReadMessagesAsync(null, deltaLink, cancellationToken).GetAsyncEnumerator(cancellationToken);
@@ -167,21 +168,26 @@ internal class UserMailboxFolderSourceEntry(SourceProvider provider, GraphUser u
 
             if (useDelta)
             {
+                // The key is always stored, with an empty value when there is no token: the
+                // parent folder finds the folders it knew by their keys, so a folder that is
+                // deleted later is noticed and its content is not carried forward
                 var token = DeltaToken.FromMailDeltaLink(deltaLink.DeltaLink);
                 if (token == null)
                     Log.WriteWarningMessage(LOGTAG, "MailDeltaTokenMissing", null, "The delta walk of mail folder {0} of user {1} did not end with a delta link carrying a token, so the folder is listed in full next time: {2}", folder.Id, user.Id, deltaLink.DeltaLink);
-                else
-                    tracker.SetState(StateKey, token);
 
+                tracker.SetState(StateKey, token ?? string.Empty);
                 completed = true;
             }
         }
         finally
         {
-            // A walk that failed keeps the previous token, so the folder is carried
-            // forward unchanged and the changes are reported again next time
-            if (!completed && stored != null)
-                tracker.SetState(StateKey, stored);
+            // A walk that failed keeps the previous token, so the folder is carried forward
+            // unchanged and the changes are reported again next time; after repeated failures
+            // the tracker resets the state so the folder is listed in full. A walk without a
+            // token that failed records the folder with an empty value, so the parent still
+            // knows the folder and the next backup lists it in full
+            if (!completed && useDelta)
+                tracker.MarkStateFailed(StateKey);
         }
     }
 

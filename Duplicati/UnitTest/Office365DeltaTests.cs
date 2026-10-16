@@ -124,7 +124,7 @@ public class Office365DeltaTests
         configure?.Invoke(options);
 
         var timeouts = new TimeoutOptionsHelper.Timeouts(TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
-        var api = APIHelper.CreateForTesting(handler, GRAPH, timeouts, "test-token");
+        var api = Office365TestSupport.CreateApiHelper(handler, GRAPH, timeouts);
         var provider = new SourceProvider("office365://tenant", Mount, options, api);
         if (state != null)
             provider.LoadChangeTrackingState(state);
@@ -401,7 +401,80 @@ public class Office365DeltaTests
             await CollectAsync(new UserMailboxFolderSourceEntry(provider, User, FolderPath, MailFolder), false);
 
         Assert.That(messages.Any(x => x.Id == "MailDeltaTokenMissing" && x.Level == LogMessageType.Warning), Is.True);
-        Assert.That(provider.ExportChangeTrackingState(), Is.Empty);
+        Assert.That(provider.ExportChangeTrackingState(), Is.EqualTo(new Dictionary<string, string> { [MailKey] = "" }), "The folder is recorded without a token, so its parent still knows it and the next backup lists it in full");
+    }
+
+    [Test]
+    [Category("Office365")]
+    public async Task MailFailedFirstWalkRecordsTheFolderWithoutATokenAsync()
+    {
+        var handler = new FakeGraphHandler()
+            .Json("/users/u1/mailFolders/f1/messages/delta", Page(Message("m1"), nextLink: $"{GRAPH}/mail-next"))
+            .Sequence("/mail-next", () => FakeGraphHandler.GraphError(HttpStatusCode.Forbidden, "accessDenied"));
+        var provider = CreateProvider(handler, new Dictionary<string, string>());
+
+        Assert.ThrowsAsync<HttpRequestException>(async () => await CollectAsync(new UserMailboxFolderSourceEntry(provider, User, FolderPath, MailFolder), false));
+
+        Assert.That(provider.ExportChangeTrackingState(), Is.EqualTo(new Dictionary<string, string> { [MailKey] = "" }), "A failed walk without a previous token records the folder, so a later deletion of it is noticed");
+    }
+
+    [Test]
+    [Category("Office365")]
+    public async Task MailDeletedChildFolderWithoutATokenIsDroppedAsync()
+    {
+        var handler = new FakeGraphHandler()
+            .Json("deltatoken=tok1", Page("", deltaLink: MailLink("tok2")))
+            .Json("/users/u1/mailFolders/f1/childFolders", Page(""));
+        var provider = CreateProvider(handler, new Dictionary<string, string>
+        {
+            [MailKey] = MailState("tok1"),
+            ["mail:u1:f1:gone"] = "",
+        });
+
+        var entries = await CollectAsync(new UserMailboxFolderSourceEntry(provider, User, FolderPath, MailFolder), false);
+
+        Assert.That(entries, Is.Empty);
+        Assert.That(provider.WasPathEnumerated(F(FolderPath, "gone", "m6", "content.eml")), Is.True, "A child folder known without a token that is no longer listed is dropped with its contents");
+        Assert.That(provider.WasPathEnumerated(F(FolderPath, "m1", "content.eml")), Is.False, "The folder's own messages are still carried forward");
+        Assert.That(provider.ExportChangeTrackingState().ContainsKey("mail:u1:f1:gone"), Is.False, "The deleted folder's key is not carried along");
+    }
+
+    [Test]
+    [Category("Office365")]
+    public async Task MailStaleTokenIsNotRestoredByALaterDownloadFailureAsync()
+    {
+        var handler = new FakeGraphHandler()
+            .Sequence("deltatoken=tok1", () => FakeGraphHandler.GraphError(HttpStatusCode.Gone, "syncStateNotFound"))
+            .Json("/users/u1/mailFolders/f1/messages/delta", Page(Message("m1"), deltaLink: MailLink("tok2")))
+            .Json("/users/u1/mailFolders/f1/childFolders", Page(""))
+            .Sequence("/users/u1/messages/m1/$value", () => FakeGraphHandler.GraphError(HttpStatusCode.InternalServerError, "generalException"));
+        var provider = CreateProvider(handler, new Dictionary<string, string> { [MailKey] = MailState("tok1") });
+
+        var entries = await CollectAsync(new UserMailboxFolderSourceEntry(provider, User, FolderPath, MailFolder), false);
+        Assert.That(provider.ExportChangeTrackingState()[MailKey], Is.EqualTo(MailState("tok2")));
+
+        var content = (await CollectAsync(entries[0], false)).First(x => x.Path.EndsWith("content.eml", StringComparison.Ordinal));
+        Assert.ThrowsAsync<HttpRequestException>(async () => await content.OpenRead(CancellationToken.None));
+
+        Assert.That(provider.ExportChangeTrackingState()[MailKey], Is.EqualTo(""), "The token the service rejected is not stored again; the next backup lists the folder in full");
+    }
+
+    [Test]
+    [Category("Office365")]
+    public async Task MailRepeatedlyFailingWalkResetsTheFolderAsync()
+    {
+        var handler = new FakeGraphHandler()
+            .Sequence("deltatoken=tok1", () => FakeGraphHandler.GraphError(HttpStatusCode.Forbidden, "accessDenied"));
+        var provider = CreateProvider(handler, new Dictionary<string, string>
+        {
+            [MailKey] = MailState("tok1"),
+            ["failures:" + MailKey] = (ChangeTracker.MAX_CONSECUTIVE_FAILURES - 1).ToString(),
+        });
+
+        Assert.ThrowsAsync<HttpRequestException>(async () => await CollectAsync(new UserMailboxFolderSourceEntry(provider, User, FolderPath, MailFolder), false));
+
+        Assert.That(provider.WasPathEnumerated(F(FolderPath, "m1", "content.eml")), Is.False, "This run still carries the folder forward");
+        Assert.That(provider.ExportChangeTrackingState(), Is.EqualTo(new Dictionary<string, string> { [MailKey] = "" }), "After repeated failures the token is dropped, so the next backup lists the folder in full instead of carrying stale content forward forever");
     }
 
     [Test]
@@ -727,7 +800,7 @@ public class Office365DeltaTests
         });
 
         Assert.That(entries.Count, Is.EqualTo(1), "The first page was listed before the failure");
-        Assert.That(provider.ExportChangeTrackingState().ContainsKey(DriveKey), Is.False, "A link taken before a walk that did not complete is not stored, so the next run walks the drive in full");
+        Assert.That(provider.ExportChangeTrackingState()[DriveKey], Is.EqualTo(""), "A link taken before a walk that did not complete is not stored, so the next run walks the drive in full");
     }
 
     [Test]
@@ -746,7 +819,83 @@ public class Office365DeltaTests
 
         var folder = top.Single(x => x.IsFolder);
         Assert.ThrowsAsync<HttpRequestException>(async () => await CollectAsync(folder, false));
-        Assert.That(provider.ExportChangeTrackingState().ContainsKey(DriveKey), Is.False, "A folder that could not be listed holds the drive's link back, as the backup skips the folder and continues");
+        Assert.That(provider.ExportChangeTrackingState()[DriveKey], Is.EqualTo(""), "A folder that could not be listed holds the drive's link back, as the backup skips the folder and continues");
+    }
+
+    [Test]
+    [Category("Office365")]
+    public async Task DriveStoredTokenIsSentWithoutTheQueryOptionsAsync()
+    {
+        var handler = FullDriveHandler("tok1")
+            .Json("token=tok1", Page(File("B", "F1"), deltaLink: DriveLink("tok2")));
+        var provider = CreateProvider(handler, new Dictionary<string, string>());
+        await CollectAsync(new DriveSourceEntry(provider, SitePath, Drive), true);
+
+        var latest = handler.Requests.Single(x => x.Contains("token=latest", StringComparison.Ordinal));
+        Assert.That(latest, Does.Contain("$select=").And.Contain("$top="), "The request that establishes the token carries the query options, which Graph encodes in the token");
+
+        provider = CreateProvider(handler, new Dictionary<string, string> { [DriveKey] = StoredMap("tok1", ("F1", "root")) });
+        await CollectAsync(new DriveSourceEntry(provider, SitePath, Drive), true);
+
+        var continued = handler.Requests.Single(x => x.Contains("token=tok1", StringComparison.Ordinal));
+        Assert.That(continued, Does.EndWith("/drives/d1/root/delta?token=tok1"), "A stored token is sent alone, as a delta link would be, since Graph does not accept the query options again");
+    }
+
+    [Test]
+    [Category("Office365")]
+    public async Task DriveRepeatedlyFailingDeltaResetsTheDriveAsync()
+    {
+        var handler = new FakeGraphHandler()
+            .Sequence("token=tok1", () => FakeGraphHandler.GraphError(HttpStatusCode.Forbidden, "accessDenied"));
+        var provider = CreateProvider(handler, new Dictionary<string, string>
+        {
+            [DriveKey] = StoredMap("tok1", ("F1", "root")),
+            ["failures:" + DriveKey] = (ChangeTracker.MAX_CONSECUTIVE_FAILURES - 1).ToString(),
+        });
+
+        Assert.ThrowsAsync<HttpRequestException>(async () => await CollectAsync(new DriveSourceEntry(provider, SitePath, Drive), true));
+
+        Assert.That(provider.WasPathEnumerated(F(DrivePath, "F1", "B")), Is.False, "This run still carries the drive forward");
+        Assert.That(provider.ExportChangeTrackingState(), Is.EqualTo(new Dictionary<string, string> { [DriveKey] = "" }), "After repeated failures the state is dropped, so the next backup walks the drive in full instead of carrying stale content forward forever");
+    }
+
+    [Test]
+    [Category("Office365")]
+    public async Task DriveStaleTokenIsNotRestoredByALaterDownloadFailureAsync()
+    {
+        var handler = FullDriveHandler("tok3")
+            .Sequence("token=tok1", () => FakeGraphHandler.GraphError(HttpStatusCode.Gone, "resyncRequired"))
+            .Sequence("/drives/d1/items/A/content", () => FakeGraphHandler.GraphError(HttpStatusCode.InternalServerError, "generalException"));
+        var storedMap = StoredMap("tok1", ("F1", "root"));
+        var provider = CreateProvider(handler, new Dictionary<string, string> { [DriveKey] = storedMap });
+
+        var entries = await CollectAsync(new DriveSourceEntry(provider, SitePath, Drive), true);
+        Assert.That(DriveFolderMap.Deserialize(provider.ExportChangeTrackingState()[DriveKey])!.Token, Is.EqualTo("tok3"));
+
+        var file = entries.Single(x => x.Path == F(DrivePath, "A"));
+        Assert.ThrowsAsync<HttpRequestException>(async () => await file.OpenRead(CancellationToken.None));
+
+        Assert.That(provider.ExportChangeTrackingState()[DriveKey], Is.EqualTo(""), "The state the service rejected is not stored again; the next backup walks the drive in full");
+    }
+
+    [Test]
+    [Category("Office365")]
+    public async Task DriveFoldersListedInFullAreNotIncrementalAsync()
+    {
+        var handler = new FakeGraphHandler()
+            .Json("token=tok1", Page(Folder("F2", "root") + "," + Folder("F3", "F1"), deltaLink: DriveLink("tok2")))
+            .Json("/drives/d1/items/F2/children", Page(""));
+        var provider = CreateProvider(handler, new Dictionary<string, string>
+        {
+            [DriveKey] = StoredMap("tok1", ("F1", "root"), ("F2", "F1"), ("F3", "F1")),
+        });
+
+        var entries = await CollectAsync(new DriveSourceEntry(provider, SitePath, Drive), true);
+        Assert.That(entries.Select(x => x.Path), Is.EquivalentTo(new[] { D(DrivePath, "F2"), D(DrivePath, "F1", "F3") }));
+
+        Assert.That(provider.IsIncrementallyEnumeratedFolder(D(DrivePath)), Is.True, "The drive lists only its changes");
+        Assert.That(provider.IsIncrementallyEnumeratedFolder(D(DrivePath, "F1", "F3")), Is.True, "A changed folder lists only its changed children, so an empty listing does not make it empty");
+        Assert.That(provider.IsIncrementallyEnumeratedFolder(D(DrivePath, "F2")), Is.False, "A moved folder was listed in full, so an empty listing means it is empty");
     }
 
     [Test]

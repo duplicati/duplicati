@@ -153,7 +153,89 @@ public class Office365ChangeTrackerTests
         tracker.MarkStateFailed("f");
 
         var export = tracker.Export();
-        Assert.That(export, Is.EqualTo(new Dictionary<string, string> { ["a"] = "1", ["c"] = "3", ["d"] = "40", ["f"] = "6" }), "A failed key keeps its previous value whether or not it was set again, a key that is not re-exported is dropped");
+        Assert.That(export, Is.EqualTo(new Dictionary<string, string> { ["a"] = "1", ["failures:a"] = "1", ["c"] = "3", ["d"] = "40", ["e"] = "", ["f"] = "6", ["failures:f"] = "1" }), "A failed key keeps its previous value whether or not it was set again and counts the failure, a failed key without a previous value is stored empty, a key that is not re-exported is dropped");
+    }
+
+    [Test]
+    [Category("ChangeTracking")]
+    public void RepeatedFailuresResetTheKey()
+    {
+        var tracker = ActiveTracker(new Dictionary<string, string> { ["a"] = "1", ["failures:a"] = "1", ["b"] = "2", ["failures:b"] = "1" });
+        tracker.MarkStateFailed("a");
+        tracker.SetState("b", "20");
+
+        var export = tracker.Export();
+        Assert.That(export["a"], Is.EqualTo("1"), "The value is held back while the failures are below the limit");
+        Assert.That(export["failures:a"], Is.EqualTo("2"), "The consecutive failures are counted");
+        Assert.That(export["b"], Is.EqualTo("20"));
+        Assert.That(export.ContainsKey("failures:b"), Is.False, "A key that advanced starts over");
+
+        tracker = ActiveTracker(new Dictionary<string, string> { ["a"] = "1", ["failures:a"] = (ChangeTracker.MAX_CONSECUTIVE_FAILURES - 1).ToString() });
+        tracker.SetState("a", "10");
+        tracker.MarkStateFailed("a");
+
+        var messages = new List<Library.Logging.LogEntry>();
+        using (Library.Logging.Log.StartIsolatingScope(true))
+        using (Library.Logging.Log.StartScope(messages.Add))
+            export = tracker.Export();
+
+        Assert.That(export, Is.EqualTo(new Dictionary<string, string> { ["a"] = "" }), "After the limit the key is reset so the next backup lists it in full, and the counter is dropped");
+        Assert.That(messages.Any(x => x.Id == "ChangeTrackingStateReset" && x.Level == Library.Logging.LogMessageType.Warning), Is.True);
+    }
+
+    [Test]
+    [Category("ChangeTracking")]
+    public void InvalidatedStateIsNotRestoredByAFailure()
+    {
+        var tracker = ActiveTracker(new Dictionary<string, string> { ["a"] = "1", ["b"] = "2" });
+        tracker.MarkLoadedStateInvalid("a");
+        tracker.MarkLoadedStateInvalid("b");
+        tracker.SetState("a", "10");
+        tracker.SetState("b", "20");
+        tracker.MarkStateFailed("b");
+
+        Assert.That(tracker.Export(), Is.EqualTo(new Dictionary<string, string> { ["a"] = "10", ["b"] = "" }), "A key that advanced stores the new value; a failed key does not store the value this run found unusable");
+    }
+
+    [Test]
+    [Category("ChangeTracking")]
+    public void EmptyValueIsAKnownKeyWithoutState()
+    {
+        var tracker = ActiveTracker(new Dictionary<string, string> { ["mail:u1:p1:a"] = "", ["mail:u1:p1:b"] = "2" });
+        Assert.That(tracker.GetState("mail:u1:p1:a"), Is.Null, "An empty value is reported as no state");
+        Assert.That(tracker.GetState("mail:u1:p1:b"), Is.EqualTo("2"));
+        Assert.That(tracker.GetLoadedKeysWithPrefix("mail:u1:p1:"), Is.EquivalentTo(new[] { "mail:u1:p1:a", "mail:u1:p1:b" }), "The key is still known to the parent");
+
+        tracker.MarkStateFailed("mail:u1:p1:a");
+        Assert.That(tracker.Export(), Is.EqualTo(new Dictionary<string, string> { ["mail:u1:p1:a"] = "" }), "A failure on a key without state stores it empty again");
+    }
+
+    [Test]
+    [Category("ChangeTracking")]
+    public void IncrementalFoldersAreToldApartFromFullyListedOnes()
+    {
+        var tracker = ActiveTracker();
+        var drive = D(Mount, "sites", "s1", "d1");
+        var mailbox = D(Mount, "users", "u1", "mailbox");
+
+        Assert.That(tracker.IsIncrementallyEnumeratedFolder(drive), Is.False, "Nothing is incremental until marked");
+
+        tracker.MarkIncremental(drive);
+        tracker.MarkExaminedSubtree(D(drive, "Moved"));
+        tracker.MarkIncremental(mailbox);
+        tracker.MarkExaminedSubtree(D(mailbox, "Full"));
+        tracker.MarkIncremental(D(mailbox, "Full", "Inner"));
+        tracker.MarkExamined(D(mailbox, "Child"));
+
+        Assert.That(tracker.IsIncrementallyEnumeratedFolder(drive), Is.True, "The drive lists only its changes");
+        Assert.That(tracker.IsIncrementallyEnumeratedFolder(drive.TrimEnd(Path.DirectorySeparatorChar)), Is.True, "A path without the trailing separator is the same folder");
+        Assert.That(tracker.IsIncrementallyEnumeratedFolder(D(drive, "Changed")), Is.True, "A changed folder below the drive lists only its changed children");
+        Assert.That(tracker.IsIncrementallyEnumeratedFolder(D(drive, "Moved")), Is.False, "A moved folder is listed in full");
+        Assert.That(tracker.IsIncrementallyEnumeratedFolder(D(drive, "Moved", "Sub")), Is.False, "And so is everything below it");
+        Assert.That(tracker.IsIncrementallyEnumeratedFolder(D(mailbox, "Full")), Is.False, "A mail folder without a token is listed in full");
+        Assert.That(tracker.IsIncrementallyEnumeratedFolder(D(mailbox, "Full", "Inner")), Is.True, "A folder with a token below it is incremental again");
+        Assert.That(tracker.IsIncrementallyEnumeratedFolder(D(mailbox, "Child")), Is.True, "A child folder entry that was only listed is decided by its incremental parent");
+        Assert.That(tracker.IsIncrementallyEnumeratedFolder(D(Mount, "sites", "s2", "d2")), Is.False, "A drive without marks was listed in full");
     }
 
     [Test]

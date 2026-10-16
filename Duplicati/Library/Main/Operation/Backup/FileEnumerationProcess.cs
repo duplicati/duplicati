@@ -402,8 +402,16 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <param name="sourceProvider">The source provider, possibly a combination of providers</param>
         /// <returns>The providers other than the local file source</returns>
         internal static IEnumerable<ISourceProvider> GetNonFileProviders(ISourceProvider sourceProvider)
-            => (sourceProvider is Combiner c ? c.Providers : [sourceProvider])
-                .Where(x => x is not LocalFileSource);
+            => GetProviders(sourceProvider).Where(x => x is not LocalFileSource);
+
+        /// <summary>
+        /// Gets the individual providers a source provider consists of: the providers
+        /// of a combiner, or the provider itself
+        /// </summary>
+        /// <param name="sourceProvider">The source provider, possibly a combination of providers</param>
+        /// <returns>The individual providers</returns>
+        internal static IEnumerable<ISourceProvider> GetProviders(ISourceProvider sourceProvider)
+            => sourceProvider is Combiner c ? c.Providers : [sourceProvider];
 
         /// <summary>
         /// Performs recursive traversal of the sources

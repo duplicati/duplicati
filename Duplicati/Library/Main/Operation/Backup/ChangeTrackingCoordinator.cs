@@ -109,11 +109,6 @@ internal sealed class ChangeTrackingCoordinator
     public bool HasLoadedState => _providers.Any(x => x.HasLoadedState);
 
     /// <summary>
-    /// The scopes of the tracked providers
-    /// </summary>
-    public IEnumerable<string> Scopes => _providers.Select(x => x.Provider.ChangeTrackingScope);
-
-    /// <summary>
     /// Finds the providers that track changes in the source, if any
     /// </summary>
     /// <param name="source">The source provider, possibly a combination of providers</param>
@@ -122,7 +117,7 @@ internal sealed class ChangeTrackingCoordinator
     /// <returns>The coordinator, or <c>null</c> if no provider tracks changes</returns>
     public static ChangeTrackingCoordinator? Create(ISourceProvider source, IFilter? filter, IEnumerable<string> sources)
     {
-        var candidates = (source is Combiner c ? c.Providers : [source])
+        var candidates = FileEnumerationProcess.GetProviders(source)
             .OfType<IChangeTrackingSourceProvider>()
             .ToList();
 
@@ -277,16 +272,16 @@ internal sealed class ChangeTrackingCoordinator
     }
 
     /// <summary>
-    /// Whether a path belongs to a provider that was handed state, and so may have been
-    /// enumerated incrementally: a folder below it that lists nothing may simply be unchanged
+    /// Whether a folder was enumerated incrementally by a provider that was handed state,
+    /// so that it lists only what changed and a folder that lists nothing may simply be unchanged
     /// </summary>
-    /// <param name="path">The path to check</param>
-    /// <returns><c>true</c> if the path belongs to a provider that was handed state</returns>
-    public bool IsIncrementallyEnumeratedPath(string path)
+    /// <param name="folderPath">The folder path to check</param>
+    /// <returns><c>true</c> if the folder was enumerated incrementally</returns>
+    public bool IsIncrementallyEnumeratedFolder(string folderPath)
     {
         foreach (var tracked in _providers)
-            if (path.StartsWith(tracked.MountedPath, Library.Utility.Utility.ClientFilenameStringComparison))
-                return tracked.HasLoadedState;
+            if (folderPath.StartsWith(tracked.MountedPath, Library.Utility.Utility.ClientFilenameStringComparison))
+                return tracked.HasLoadedState && tracked.Provider.IsIncrementallyEnumeratedFolder(folderPath);
 
         return false;
     }

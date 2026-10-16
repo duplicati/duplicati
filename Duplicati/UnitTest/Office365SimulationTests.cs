@@ -982,7 +982,7 @@ public class Office365SimulationTests : BasicSetupHelper
         var graph = new SimulatedGraph(tenant);
         var options = Prepare();
 
-        using var handlerScope = SourceProvider.UseTestMessageHandler(graph);
+        using var handlerScope = Office365TestSupport.UseGraphHandler(graph);
         var (paths, _) = Expected(tenant);
         AssertSamePaths(await BackupAndListAsync(options, []), paths, "the first backup");
         Assert.That(graph.Unhandled, Is.Empty);
@@ -1075,7 +1075,7 @@ public class Office365SimulationTests : BasicSetupHelper
         var options = Prepare();
         options["disable-file-scanner"] = fileScanner ? "false" : "true";
 
-        using var handlerScope = SourceProvider.UseTestMessageHandler(graph);
+        using var handlerScope = Office365TestSupport.UseGraphHandler(graph);
         {
             var (paths, contents) = Expected(tenant);
             AssertSamePaths(await BackupAndListAsync(options, []), paths, "the first backup");

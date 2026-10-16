@@ -42,7 +42,10 @@ internal class DriveSourceEntry(SourceProvider provider, string path, GraphDrive
         var storedValue = tracker.GetState(stateKey);
         var storedMap = storedValue == null ? null : DriveFolderMap.Deserialize(storedValue);
         if (storedValue != null && storedMap == null)
+        {
             Log.WriteWarningMessage(LOGTAG, "DriveStateUnreadable", null, "The stored delta state for drive {0} cannot be read, listing the drive in full", drive.Id);
+            tracker.MarkLoadedStateInvalid(stateKey);
+        }
 
         var completed = false;
         try
@@ -104,9 +107,11 @@ internal class DriveSourceEntry(SourceProvider provider, string path, GraphDrive
         finally
         {
             // A walk that failed keeps the previous token and map, so the drive is carried
-            // forward unchanged and the changes are reported again next time. A first walk
-            // that failed has nothing to keep, and its token is dropped so the next run walks
-            // the drive in full instead of continuing from a token taken before an incomplete listing
+            // forward unchanged and the changes are reported again next time; after repeated
+            // failures the tracker resets the state so the drive is walked in full. A first
+            // walk that failed has nothing to keep, and its token is not stored so the next
+            // run walks the drive in full instead of continuing from a token taken before an
+            // incomplete listing
             if (!completed)
                 tracker.MarkStateFailed(stateKey);
         }
@@ -150,6 +155,7 @@ internal class DriveSourceEntry(SourceProvider provider, string path, GraphDrive
     private async Task<IncrementalPlan?> TryReadDeltaAsync(DriveFolderMap map, CancellationToken cancellationToken)
     {
         var tracker = provider.ChangeTracker;
+        var stateKey = ChangeTrackingKeys.Drive(drive.Id);
         var storedToken = map.Token ?? throw new UserInformationException($"The stored delta state for drive {drive.Id} has no token", "DriveStateWithoutToken");
         var deltaLink = new DeltaLinkHolder();
 
@@ -163,6 +169,7 @@ internal class DriveSourceEntry(SourceProvider provider, string path, GraphDrive
                 if (items.Count > provider.DriveDeltaMaxItems)
                 {
                     Log.WriteInformationMessage(LOGTAG, "DriveDeltaTooLarge", "Drive {0} reports more than {1} changes, listing the drive in full instead", drive.Id, provider.DriveDeltaMaxItems);
+                    tracker.MarkLoadedStateInvalid(stateKey);
                     return null;
                 }
             }
@@ -170,6 +177,7 @@ internal class DriveSourceEntry(SourceProvider provider, string path, GraphDrive
         catch (Exception ex) when (APIHelper.IsDeltaResyncRequired(ex))
         {
             Log.WriteWarningMessage(LOGTAG, "DriveDeltaResync", ex, "The stored delta token for drive {0} is no longer valid, listing the drive in full", drive.Id);
+            tracker.MarkLoadedStateInvalid(stateKey);
             return null;
         }
 
@@ -226,6 +234,7 @@ internal class DriveSourceEntry(SourceProvider provider, string path, GraphDrive
         // an item below a moved folder is listed by the walk of the moved folder, and the rest
         // are listed at their resolved path
         var folderPaths = new Dictionary<string, string>(StringComparer.Ordinal) { [rootId] = Path };
+        var crossesMoved = new Dictionary<string, bool>(StringComparer.Ordinal);
         var roots = new List<(GraphDriveItem Item, string ParentPath)>();
         foreach (var item in reported.Where(x => x.Deleted == null))
         {
@@ -233,7 +242,7 @@ internal class DriveSourceEntry(SourceProvider provider, string path, GraphDrive
             if (parentId == null)
                 continue;
 
-            if (await ChainCrossesMovedFolderAsync(parentId, map, changes.MovedFolders, cancellationToken).ConfigureAwait(false))
+            if (await ChainCrossesMovedFolderAsync(parentId, map, changes.MovedFolders, crossesMoved, cancellationToken).ConfigureAwait(false))
                 continue;
 
             if (items.TryGetValue(parentId, out var parent) && parent.Deleted == null && parent.Folder != null && parent.Id != rootId)
@@ -251,28 +260,45 @@ internal class DriveSourceEntry(SourceProvider provider, string path, GraphDrive
 
     /// <summary>
     /// Whether a folder or one of its ancestors was moved, in which case everything below
-    /// it is listed by the walk of the moved folder
+    /// it is listed by the walk of the moved folder. The answer for every folder on the
+    /// chain is cached, so a chain is walked once however many items share it.
     /// </summary>
     /// <param name="folderId">The folder id</param>
     /// <param name="map">The folder map</param>
     /// <param name="movedFolders">The ids of the moved folders</param>
+    /// <param name="cache">The answers found so far</param>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns><c>true</c> if the folder is at or below a moved folder</returns>
-    private async Task<bool> ChainCrossesMovedFolderAsync(string folderId, DriveFolderMap map, HashSet<string> movedFolders, CancellationToken cancellationToken)
+    private async Task<bool> ChainCrossesMovedFolderAsync(string folderId, DriveFolderMap map, HashSet<string> movedFolders, Dictionary<string, bool> cache, CancellationToken cancellationToken)
     {
         if (movedFolders.Count == 0)
             return false;
 
+        var chain = new List<string>();
         var current = folderId;
-        for (var depth = 0; depth < 1024 && current != map.RootId; depth++)
+        var result = false;
+        while (current != map.RootId && chain.Count < 1024)
         {
-            if (movedFolders.Contains(current))
-                return true;
+            if (cache.TryGetValue(current, out var known))
+            {
+                result = known;
+                break;
+            }
 
+            if (movedFolders.Contains(current))
+            {
+                result = true;
+                break;
+            }
+
+            chain.Add(current);
             current = await GetParentAsync(current, map, cancellationToken).ConfigureAwait(false);
         }
 
-        return false;
+        foreach (var id in chain)
+            cache[id] = result;
+
+        return result;
     }
 
     /// <summary>

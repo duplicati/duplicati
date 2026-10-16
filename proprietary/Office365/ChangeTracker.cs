@@ -25,6 +25,20 @@ internal sealed class ChangeTracker
     private static readonly string LOGTAG = Log.LogTagFromType<ChangeTracker>();
 
     /// <summary>
+    /// The number of consecutive backups a key may be held back at its previous value before
+    /// the value is reset and the next backup lists the key in full. A held-back token keeps
+    /// the carried-forward content in place and reports the same changes again, which is right
+    /// for a transient failure but would otherwise pin a folder to stale content forever if the
+    /// failure is permanent.
+    /// </summary>
+    internal const int MAX_CONSECUTIVE_FAILURES = 3;
+
+    /// <summary>
+    /// The prefix of the keys that count the consecutive failures of a state key
+    /// </summary>
+    private const string FAILURE_COUNT_PREFIX = "failures:";
+
+    /// <summary>
     /// What is known about a path
     /// </summary>
     [Flags]
@@ -79,6 +93,11 @@ internal sealed class ChangeTracker
     private readonly ConcurrentDictionary<string, byte> _failedKeys = new(StringComparer.Ordinal);
 
     /// <summary>
+    /// Keys whose loaded value this run found unusable, so a failure must not restore it
+    /// </summary>
+    private readonly ConcurrentDictionary<string, byte> _invalidatedKeys = new(StringComparer.Ordinal);
+
+    /// <summary>
     /// Whether the provider is used for a backup that stores state. Listing for the user
     /// interface and restores never load state, and then no tokens are requested or kept.
     /// </summary>
@@ -96,14 +115,19 @@ internal sealed class ChangeTracker
     }
 
     /// <summary>
-    /// Gets a value stored by the previous backup
+    /// Gets a value stored by the previous backup. An empty value means that the key was known
+    /// but had nothing usable to store, and is reported as no value.
     /// </summary>
     /// <param name="key">The state key</param>
     /// <returns>The stored value, or <c>null</c> if none is stored or the tracker is not active</returns>
     public string? GetState(string key)
-        => IsActive
-            ? _loaded.GetValueOrDefault(key)
-            : null;
+    {
+        if (!IsActive)
+            return null;
+
+        var value = _loaded.GetValueOrDefault(key);
+        return string.IsNullOrEmpty(value) ? null : value;
+    }
 
     /// <summary>
     /// Gets the keys stored by the previous backup that start with a prefix. The keys are
@@ -151,7 +175,8 @@ internal sealed class ChangeTracker
     /// <summary>
     /// Records that a listing or download below the key failed, so the stored value stays at
     /// what the previous backup recorded and the failed items are reported again. A key without
-    /// a previous value is not stored at all, so the next backup walks it in full.
+    /// a usable previous value is stored with an empty value, so the key stays known to the
+    /// provider and the next backup walks it in full.
     /// </summary>
     /// <param name="key">The state key</param>
     public void MarkStateFailed(string key)
@@ -161,8 +186,22 @@ internal sealed class ChangeTracker
     }
 
     /// <summary>
+    /// Records that the value loaded for the key cannot be used, because the service rejected
+    /// it or it could not be read, so a failure later in this run must not store it again
+    /// </summary>
+    /// <param name="key">The state key</param>
+    public void MarkLoadedStateInvalid(string key)
+    {
+        if (IsActive)
+            _invalidatedKeys.TryAdd(key, 0);
+    }
+
+    /// <summary>
     /// Gets the state to store with this backup. A failed key keeps the value the previous
-    /// backup stored, whether or not a value was recorded for it in this run.
+    /// backup stored, whether or not a value was recorded for it in this run, for up to
+    /// <see cref="MAX_CONSECUTIVE_FAILURES"/> consecutive backups; after that, or when there is
+    /// no usable previous value, the key is stored with an empty value so the next backup
+    /// walks it in full.
     /// </summary>
     /// <returns>The state rows</returns>
     public IReadOnlyDictionary<string, string> Export()
@@ -173,11 +212,38 @@ internal sealed class ChangeTracker
                 result[kv.Key] = kv.Value();
 
         foreach (var key in _failedKeys.Keys)
-            if (_loaded.TryGetValue(key, out var previous))
-                result[key] = previous;
+        {
+            if (_invalidatedKeys.ContainsKey(key) || !_loaded.TryGetValue(key, out var previous) || string.IsNullOrEmpty(previous))
+            {
+                result[key] = string.Empty;
+                continue;
+            }
+
+            var failures = GetFailureCount(key) + 1;
+            if (failures >= MAX_CONSECUTIVE_FAILURES)
+            {
+                Log.WriteWarningMessage(LOGTAG, "ChangeTrackingStateReset", null, "The change tracking state for \"{0}\" could not be advanced in {1} consecutive backups, so it is reset and the next backup lists it in full", key, failures);
+                result[key] = string.Empty;
+                continue;
+            }
+
+            result[key] = previous;
+            result[FAILURE_COUNT_PREFIX + key] = failures.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        }
 
         return result;
     }
+
+    /// <summary>
+    /// Gets the number of consecutive backups the key was held back in before this one
+    /// </summary>
+    /// <param name="key">The state key</param>
+    /// <returns>The failure count</returns>
+    private int GetFailureCount(string key)
+        => _loaded.TryGetValue(FAILURE_COUNT_PREFIX + key, out var count)
+            && int.TryParse(count, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var parsed)
+            ? parsed
+            : 0;
 
     /// <summary>
     /// Marks a folder as walked with a delta token: only the paths below it that are
@@ -262,6 +328,39 @@ internal sealed class ChangeTracker
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// Whether a folder was enumerated incrementally in this run, so that it lists only what
+    /// changed and an empty listing does not mean the folder is empty. The folder's own mark
+    /// decides, then the nearest marked ancestor: a folder below an incremental one is
+    /// incremental unless it was listed in full itself.
+    /// </summary>
+    /// <param name="folderPath">The folder path</param>
+    /// <returns><c>true</c> if the folder lists only its changes</returns>
+    public bool IsIncrementallyEnumeratedFolder(string folderPath)
+    {
+        if (_marks.IsEmpty)
+            return false;
+
+        var path = folderPath.Length > 0 && folderPath[^1] == SEPARATOR ? folderPath : folderPath + SEPARATOR;
+        var lookup = _marks.GetAlternateLookup<ReadOnlySpan<char>>();
+        for (var i = path.Length - 1; i >= 0; i--)
+        {
+            if (path[i] != SEPARATOR)
+                continue;
+
+            if (!lookup.TryGetValue(path.AsSpan(0, i + 1), out var mark))
+                continue;
+
+            if ((mark & Mark.ExaminedSubtree) != 0)
+                return false;
+
+            if ((mark & Mark.Incremental) != 0)
+                return true;
+        }
+
+        return false;
     }
 
     /// <summary>

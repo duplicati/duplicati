@@ -71,7 +71,7 @@ internal class APIHelper : IDisposable
 
     /// <summary>
     /// Whether the access token is fixed and must never be acquired from the token endpoint,
-    /// which is the case when the helper was created for tests
+    /// which is the case when the helper was given a fixed token, as tests do
     /// </summary>
     private bool _fixedAccessToken;
     /// <summary>
@@ -122,7 +122,8 @@ internal class APIHelper : IDisposable
     /// <param name="certificatePath">The path to the certificate file</param>
     /// <param name="certificatePassword">The password for the certificate file</param>
     /// <param name="scope">The scope for the API requests</param>
-    private APIHelper(HttpClient httpClient, AuthOptionsHelper.AuthOptions authOptions, string tenantId, string graphBaseUrl, TimeoutOptionsHelper.Timeouts timeouts, string? certificatePath, string? certificatePassword, string scope)
+    /// <param name="fixedAccessToken">An access token to send with every request instead of acquiring one from the token endpoint, or <c>null</c> to acquire tokens</param>
+    internal APIHelper(HttpClient httpClient, AuthOptionsHelper.AuthOptions authOptions, string tenantId, string graphBaseUrl, TimeoutOptionsHelper.Timeouts timeouts, string? certificatePath, string? certificatePassword, string scope, string? fixedAccessToken)
     {
         _httpClient = httpClient;
         _authOptions = authOptions;
@@ -132,28 +133,8 @@ internal class APIHelper : IDisposable
         _certificatePath = certificatePath;
         _certificatePassword = certificatePassword;
         _scope = scope;
-    }
-
-    /// <summary>
-    /// Creates an API helper that sends its requests through a given handler and uses a fixed access
-    /// token, so the Graph API can be replaced by a fake in tests.
-    /// </summary>
-    /// <param name="handler">The handler that answers the requests</param>
-    /// <param name="graphBaseUrl">The Graph base URL</param>
-    /// <param name="timeouts">The timeouts to use</param>
-    /// <param name="accessToken">The access token to send</param>
-    /// <returns>The API helper</returns>
-    internal static APIHelper CreateForTesting(HttpMessageHandler handler, string graphBaseUrl, TimeoutOptionsHelper.Timeouts timeouts, string accessToken)
-    {
-        // The handler is shared between the helpers of every provider instance a test creates, so it is not disposed with the client
-        var httpClient = new HttpClient(handler, disposeHandler: false);
-        httpClient.Timeout = Timeout.InfiniteTimeSpan;
-        var authOptions = AuthOptionsHelper.ParseWithAlias(new Dictionary<string, string?>(), "test", "test", "test-user", "test-pass");
-        return new APIHelper(httpClient, authOptions, "test-tenant", graphBaseUrl, timeouts, null, null, "https://graph.microsoft.com/.default")
-        {
-            _graphAccessToken = accessToken,
-            _fixedAccessToken = true
-        };
+        _graphAccessToken = fixedAccessToken;
+        _fixedAccessToken = fixedAccessToken != null;
     }
 
     /// <summary>
@@ -178,7 +159,7 @@ internal class APIHelper : IDisposable
         httpClient.Timeout = Timeout.InfiniteTimeSpan;
         httpClient.DefaultRequestHeaders.Add("User-Agent", $"Duplicati/{System.Reflection.Assembly.GetExecutingAssembly().GetName().Version}");
 
-        return new APIHelper(httpClient, authOptions, tenantId, graphBaseUrl, timeouts, certificatePath, certificatePassword, scope);
+        return new APIHelper(httpClient, authOptions, tenantId, graphBaseUrl, timeouts, certificatePath, certificatePassword, scope, null);
     }
 
     /// <summary>

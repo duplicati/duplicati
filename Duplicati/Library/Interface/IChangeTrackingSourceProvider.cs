@@ -69,4 +69,14 @@ public interface IChangeTrackingSourceProvider : ISourceProvider
     /// <param name="path">The path from the previous fileset</param>
     /// <returns><c>true</c> if the path was examined in this run</returns>
     bool WasPathEnumerated(string path);
+
+    /// <summary>
+    /// Whether a folder produced by this enumeration lists only the entries that changed,
+    /// so that a folder listing nothing cannot be told apart from an empty one and must not
+    /// be dropped as empty. It is called for folders the enumeration produced, after they
+    /// were enumerated.
+    /// </summary>
+    /// <param name="folderPath">The folder path</param>
+    /// <returns><c>true</c> if the folder was enumerated incrementally</returns>
+    bool IsIncrementallyEnumeratedFolder(string folderPath);
 }

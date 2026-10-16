@@ -79,6 +79,11 @@ internal class DriveFolderSourceEntry : MetaEntryBase
         // The backup skips a folder it cannot list and continues, so the failure is reported
         // to the change tracker: the drive's token must not claim the folder was walked
         var stateKey = provider.DriveDeltaEnabled ? ChangeTrackingKeys.Drive(drive.Id) : null;
+
+        // The folder is listed in full, so below an incrementally walked drive it is the one
+        // place where an empty listing means an empty folder
+        if (stateKey != null && provider.ChangeTracker.IsActive)
+            provider.ChangeTracker.MarkExaminedSubtree(this.Path);
         var children = provider.ListWithFailureTrackingAsync(stateKey, provider.OneDriveApi.ListDriveFolderChildrenAsync(drive.Id, item.Id, cancellationToken), cancellationToken);
         await foreach (var child in children.ConfigureAwait(false))
         {

@@ -34,34 +34,34 @@ public sealed partial class SourceProvider : ISourceProviderModule, IChangeTrack
     private readonly bool _hasSetMetadataStorageOption;
 
     /// <summary>
-    /// A handler that answers the Graph requests of the provider instances created while it is
-    /// set, so a test can run a backup through the loader and the controller against a fake
-    /// Graph API. It follows the asynchronous flow that set it, so tests running side by side
-    /// do not see each other's handler. Never set outside tests.
+    /// Builds the API helper of the provider instances created while it is set, in place of
+    /// the one built from the options, so a caller that creates providers through the loader
+    /// can supply its own Graph client. It follows the asynchronous flow that set it, so flows
+    /// running side by side do not see each other's factory.
     /// </summary>
-    private static readonly AsyncLocal<HttpMessageHandler?> _testMessageHandler = new();
+    private static readonly AsyncLocal<Func<OptionsHelper.ParsedOptions, TimeoutOptionsHelper.Timeouts, APIHelper>?> _apiHelperFactory = new();
 
     /// <summary>
-    /// Makes the provider instances created in the current asynchronous flow send their Graph
-    /// requests through a handler until the returned scope is disposed. For tests only.
+    /// Makes the provider instances created in the current asynchronous flow build their API
+    /// helper with a factory until the returned scope is disposed
     /// </summary>
-    /// <param name="handler">The handler that answers the requests</param>
-    /// <returns>A scope that restores the previous handler when disposed</returns>
-    internal static IDisposable UseTestMessageHandler(HttpMessageHandler handler)
+    /// <param name="factory">Builds the API helper from the parsed options and timeouts</param>
+    /// <returns>A scope that restores the previous factory when disposed</returns>
+    internal static IDisposable UseApiHelperFactory(Func<OptionsHelper.ParsedOptions, TimeoutOptionsHelper.Timeouts, APIHelper> factory)
     {
-        var previous = _testMessageHandler.Value;
-        _testMessageHandler.Value = handler;
-        return new TestMessageHandlerScope(previous);
+        var previous = _apiHelperFactory.Value;
+        _apiHelperFactory.Value = factory;
+        return new ApiHelperFactoryScope(previous);
     }
 
     /// <summary>
-    /// Restores the test message handler that was set before a scope began
+    /// Restores the API helper factory that was set before a scope began
     /// </summary>
-    /// <param name="previous">The handler to restore</param>
-    private sealed class TestMessageHandlerScope(HttpMessageHandler? previous) : IDisposable
+    /// <param name="previous">The factory to restore</param>
+    private sealed class ApiHelperFactoryScope(Func<OptionsHelper.ParsedOptions, TimeoutOptionsHelper.Timeouts, APIHelper>? previous) : IDisposable
     {
         /// <inheritdoc />
-        public void Dispose() => _testMessageHandler.Value = previous;
+        public void Dispose() => _apiHelperFactory.Value = previous;
     }
 
     /// <summary>
@@ -311,7 +311,7 @@ public sealed partial class SourceProvider : ISourceProviderModule, IChangeTrack
         DriveDeltaEnabled = parsedOptions.DriveDelta;
         DriveDeltaMaxItems = parsedOptions.DriveDeltaMaxItems;
         _apiHelper = apiHelper
-            ?? (_testMessageHandler.Value is { } testHandler ? APIHelper.CreateForTesting(testHandler, parsedOptions.GraphBaseUrl, _timeouts, "test-token") : null)
+            ?? _apiHelperFactory.Value?.Invoke(parsedOptions, _timeouts)
             ?? APIHelper.Create(
             tenantId: parsedOptions.TenantId,
             authOptions: parsedOptions.AuthOptions,
@@ -355,6 +355,10 @@ public sealed partial class SourceProvider : ISourceProviderModule, IChangeTrack
     /// <inheritdoc />
     public bool WasPathEnumerated(string path)
         => _changeTracker.WasPathEnumerated(path);
+
+    /// <inheritdoc />
+    public bool IsIncrementallyEnumeratedFolder(string folderPath)
+        => _changeTracker.IsIncrementallyEnumeratedFolder(folderPath);
 
     /// <summary>
     /// Opens a content stream and reports a failure to open or read it to the change tracker,

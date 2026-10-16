@@ -56,6 +56,8 @@ public class ChangeTrackingSourceProviderTests : BasicSetupHelper
         public Func<string, FakeEntry[]> Children = _ => [];
         /// <summary>The carry-forward predicate</summary>
         public Func<string, bool> Enumerated = _ => true;
+        /// <summary>Whether a folder listed only its changes, so an empty listing does not make it empty</summary>
+        public Func<string, bool> Incremental = _ => true;
         /// <summary>The state to export</summary>
         public Dictionary<string, string> Export = new();
         /// <summary>The modification time of every entry</summary>
@@ -194,6 +196,9 @@ public class ChangeTrackingSourceProviderTests : BasicSetupHelper
             Scenario.Current.EnumeratedCalls++;
             return Scenario.Current.Enumerated(path);
         }
+
+        public bool IsIncrementallyEnumeratedFolder(string folderPath)
+            => Scenario.Current.Incremental(folderPath);
     }
 
     private string Mount => Util.AppendDirSeparator(Path.GetFullPath(Path.Combine(BASEFOLDER, "tracked")));
@@ -422,6 +427,30 @@ public class ChangeTrackingSourceProviderTests : BasicSetupHelper
         var paths = await ListPathsAsync(options);
         Assert.That(paths, Is.SupersetOf(new[] { P("a.txt"), D("sub"), P(Path.Combine("sub", "b.txt")), P(Path.Combine("sub", "c.txt")) }));
         Assert.That(paths, Does.Contain(D("empty")), "An incrementally enumerated folder cannot be told apart from an empty one and is kept");
+    }
+
+    [Test]
+    [Category("ChangeTracking")]
+    public async Task FullyListedEmptyFolderIsStillExcludedAsync()
+    {
+        var options = Prepare();
+        options["exclude-empty-folders"] = "true";
+        await FirstRunAsync(options);
+
+        // Both folders list nothing, but only "sub" was walked incrementally; "empty" was
+        // listed in full, so it is really empty and is excluded like in a run without state
+        Scenario.Current = new Scenario
+        {
+            Children = m => [Folder(m, "sub"), Folder(m, "empty")],
+            Enumerated = p => p == D("sub") || p == D("empty"),
+            Incremental = p => p == D("sub"),
+            Export = { ["k"] = "v2" }
+        };
+        await RunBackupAsync(options);
+
+        var paths = await ListPathsAsync(options);
+        Assert.That(paths, Is.SupersetOf(new[] { P("a.txt"), D("sub"), P(Path.Combine("sub", "b.txt")), P(Path.Combine("sub", "c.txt")) }));
+        Assert.That(paths, Does.Not.Contain(D("empty")), "A folder the provider listed in full is excluded when it is empty");
     }
 
     [Test]
@@ -716,8 +745,7 @@ public class ChangeTrackingSourceProviderTests : BasicSetupHelper
         {
             var both = Library.Main.Operation.Backup.ChangeTrackingCoordinator.Create(new Library.SourceProvider.Combiner([mounted, unmounted]), null, [Source]);
             Assert.That(both, Is.Not.Null);
-            Assert.That(both!.Scopes, Is.EqualTo(new[] { Mount }), "Only the provider with a mount path takes part");
-            Assert.That(both.WasPathEnumerated(P("a.txt")), Is.False, "A path under the mounted provider is decided by that provider");
+            Assert.That(both!.WasPathEnumerated(P("a.txt")), Is.False, "A path under the mounted provider is decided by that provider");
             Assert.That(both.WasPathEnumerated(Path.Combine(BASEFOLDER, "elsewhere", "a.txt")), Is.True, "A path no tracked provider owns counts as examined");
 
             Assert.That(Library.Main.Operation.Backup.ChangeTrackingCoordinator.Create(unmounted, null, [Source]), Is.Null, "A provider without a mount path alone leaves nothing to coordinate");
