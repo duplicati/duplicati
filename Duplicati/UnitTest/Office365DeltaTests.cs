@@ -233,7 +233,7 @@ public class Office365DeltaTests
             .Json("/users/u1/mailFolders/f1/childFolders", Page(""));
         var provider = CreateProvider(handler, new Dictionary<string, string>());
 
-        var entry = new UserMailboxFolderSourceEntry(provider, User, MailboxPath.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar + "f1", MailFolder);
+        var entry = new UserMailboxFolderSourceEntry(provider, User, MailboxPath.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar + "f1", MailFolder, MailFolder.ParentFolderId);
         var entries = await CollectAsync(entry, false);
 
         Assert.That(entries.Select(x => x.Path), Is.EqualTo(new[] { D(FolderPath, "m1"), D(FolderPath, "m2"), D(FolderPath, "m3") }));
@@ -256,7 +256,7 @@ public class Office365DeltaTests
             ["mail:u1:f1:gone"] = MailState("gone"),
         });
 
-        var entry = new UserMailboxFolderSourceEntry(provider, User, FolderPath, MailFolder);
+        var entry = new UserMailboxFolderSourceEntry(provider, User, FolderPath, MailFolder, MailFolder.ParentFolderId);
         var entries = await CollectAsync(entry, false);
 
         Assert.That(entries.Select(x => x.Path), Is.EqualTo(new[] { D(FolderPath, "m2"), D(FolderPath, "child") }), "Only the changed message and the child folder are listed");
@@ -284,7 +284,7 @@ public class Office365DeltaTests
             .Json("/users/u1/mailFolders/f1/childFolders", Page(""));
         var provider = CreateProvider(handler, new Dictionary<string, string> { [MailKey] = MailState("tok1") });
 
-        var entries = await CollectAsync(new UserMailboxFolderSourceEntry(provider, User, FolderPath, MailFolder), false);
+        var entries = await CollectAsync(new UserMailboxFolderSourceEntry(provider, User, FolderPath, MailFolder, MailFolder.ParentFolderId), false);
 
         Assert.That(entries.Select(x => x.Path), Is.EqualTo(new[] { D(FolderPath, "m2"), D(FolderPath, "m3") }), "A message removed after it was changed is not listed, one changed after it was removed is, in the order first reported");
         Assert.That(provider.WasPathEnumerated(F(FolderPath, "m1", "content.eml")), Is.True, "The removed message is dropped");
@@ -306,7 +306,7 @@ public class Office365DeltaTests
         var messages = CaptureLog(out var scope);
         List<ISourceProviderEntry> entries;
         using (scope)
-            entries = await CollectAsync(new UserMailboxFolderSourceEntry(provider, User, FolderPath, MailFolder), false);
+            entries = await CollectAsync(new UserMailboxFolderSourceEntry(provider, User, FolderPath, MailFolder, MailFolder.ParentFolderId), false);
 
         Assert.That(entries.Select(x => x.Path), Is.EqualTo(new[] { D(FolderPath, "m1"), D(FolderPath, "m2") }));
         Assert.That(messages.Any(x => x.Id == "MailDeltaResync" && x.Level == LogMessageType.Warning), Is.True);
@@ -324,7 +324,7 @@ public class Office365DeltaTests
             .Json("/users/u1/mailFolders/f1/childFolders", Page(""));
         var provider = CreateProvider(handler, new Dictionary<string, string> { [MailKey] = MailState("tok1") });
 
-        var entries = await CollectAsync(new UserMailboxFolderSourceEntry(provider, User, FolderPath, MailFolder), false);
+        var entries = await CollectAsync(new UserMailboxFolderSourceEntry(provider, User, FolderPath, MailFolder, MailFolder.ParentFolderId), false);
 
         Assert.That(entries.Select(x => x.Path), Is.EqualTo(new[] { D(FolderPath, "m2"), D(FolderPath, "m4") }));
         Assert.That(handler.CountRequests("/mail-next"), Is.EqualTo(2), "The throttled page is requested again");
@@ -343,7 +343,7 @@ public class Office365DeltaTests
         var entries = new List<ISourceProviderEntry>();
         Assert.ThrowsAsync<HttpRequestException>(async () =>
         {
-            await foreach (var e in new UserMailboxFolderSourceEntry(provider, User, FolderPath, MailFolder).Enumerate(CancellationToken.None))
+            await foreach (var e in new UserMailboxFolderSourceEntry(provider, User, FolderPath, MailFolder, MailFolder.ParentFolderId).Enumerate(CancellationToken.None))
                 entries.Add(e);
         });
 
@@ -363,7 +363,7 @@ public class Office365DeltaTests
             .Sequence("/users/u1/messages/m2/$value", () => FakeGraphHandler.GraphError(HttpStatusCode.InternalServerError, "generalException"));
         var provider = CreateProvider(handler, new Dictionary<string, string> { [MailKey] = MailState("tok1") });
 
-        var entries = await CollectAsync(new UserMailboxFolderSourceEntry(provider, User, FolderPath, MailFolder), false);
+        var entries = await CollectAsync(new UserMailboxFolderSourceEntry(provider, User, FolderPath, MailFolder, MailFolder.ParentFolderId), false);
         Assert.That(provider.ExportChangeTrackingState()[MailKey], Is.EqualTo(MailState("tok2")), "Before any download fails the new link is exported");
 
         var content = (await CollectAsync(entries[0], false)).First(x => x.Path.EndsWith("content.eml", StringComparison.Ordinal));
@@ -381,7 +381,7 @@ public class Office365DeltaTests
             .Json("/users/u1/mailFolders/f1/childFolders", Page(""));
         var provider = CreateProvider(handler, new Dictionary<string, string> { [MailKey] = MailState("stale") }, o => o["office365-disable-mail-delta"] = "true");
 
-        var entries = await CollectAsync(new UserMailboxFolderSourceEntry(provider, User, FolderPath, MailFolder), false);
+        var entries = await CollectAsync(new UserMailboxFolderSourceEntry(provider, User, FolderPath, MailFolder, MailFolder.ParentFolderId), false);
         Assert.That(entries.Count, Is.EqualTo(1));
         Assert.That(provider.ExportChangeTrackingState(), Is.Empty);
         Assert.That(provider.WasPathEnumerated(F(FolderPath, "m9", "content.eml")), Is.True);
@@ -398,7 +398,7 @@ public class Office365DeltaTests
 
         var messages = CaptureLog(out var scope);
         using (scope)
-            await CollectAsync(new UserMailboxFolderSourceEntry(provider, User, FolderPath, MailFolder), false);
+            await CollectAsync(new UserMailboxFolderSourceEntry(provider, User, FolderPath, MailFolder, MailFolder.ParentFolderId), false);
 
         Assert.That(messages.Any(x => x.Id == "MailDeltaTokenMissing" && x.Level == LogMessageType.Warning), Is.True);
         Assert.That(provider.ExportChangeTrackingState(), Is.EqualTo(new Dictionary<string, string> { [MailKey] = "" }), "The folder is recorded without a token, so its parent still knows it and the next backup lists it in full");
@@ -413,7 +413,7 @@ public class Office365DeltaTests
             .Sequence("/mail-next", () => FakeGraphHandler.GraphError(HttpStatusCode.Forbidden, "accessDenied"));
         var provider = CreateProvider(handler, new Dictionary<string, string>());
 
-        Assert.ThrowsAsync<HttpRequestException>(async () => await CollectAsync(new UserMailboxFolderSourceEntry(provider, User, FolderPath, MailFolder), false));
+        Assert.ThrowsAsync<HttpRequestException>(async () => await CollectAsync(new UserMailboxFolderSourceEntry(provider, User, FolderPath, MailFolder, MailFolder.ParentFolderId), false));
 
         Assert.That(provider.ExportChangeTrackingState(), Is.EqualTo(new Dictionary<string, string> { [MailKey] = "" }), "A failed walk without a previous token records the folder, so a later deletion of it is noticed");
     }
@@ -431,7 +431,7 @@ public class Office365DeltaTests
             ["mail:u1:f1:gone"] = "",
         });
 
-        var entries = await CollectAsync(new UserMailboxFolderSourceEntry(provider, User, FolderPath, MailFolder), false);
+        var entries = await CollectAsync(new UserMailboxFolderSourceEntry(provider, User, FolderPath, MailFolder, MailFolder.ParentFolderId), false);
 
         Assert.That(entries, Is.Empty);
         Assert.That(provider.WasPathEnumerated(F(FolderPath, "gone", "m6", "content.eml")), Is.True, "A child folder known without a token that is no longer listed is dropped with its contents");
@@ -450,7 +450,7 @@ public class Office365DeltaTests
             .Sequence("/users/u1/messages/m1/$value", () => FakeGraphHandler.GraphError(HttpStatusCode.InternalServerError, "generalException"));
         var provider = CreateProvider(handler, new Dictionary<string, string> { [MailKey] = MailState("tok1") });
 
-        var entries = await CollectAsync(new UserMailboxFolderSourceEntry(provider, User, FolderPath, MailFolder), false);
+        var entries = await CollectAsync(new UserMailboxFolderSourceEntry(provider, User, FolderPath, MailFolder, MailFolder.ParentFolderId), false);
         Assert.That(provider.ExportChangeTrackingState()[MailKey], Is.EqualTo(MailState("tok2")));
 
         var content = (await CollectAsync(entries[0], false)).First(x => x.Path.EndsWith("content.eml", StringComparison.Ordinal));
@@ -471,7 +471,7 @@ public class Office365DeltaTests
             ["failures:" + MailKey] = (ChangeTracker.MAX_CONSECUTIVE_FAILURES - 1).ToString(),
         });
 
-        Assert.ThrowsAsync<HttpRequestException>(async () => await CollectAsync(new UserMailboxFolderSourceEntry(provider, User, FolderPath, MailFolder), false));
+        Assert.ThrowsAsync<HttpRequestException>(async () => await CollectAsync(new UserMailboxFolderSourceEntry(provider, User, FolderPath, MailFolder, MailFolder.ParentFolderId), false));
 
         Assert.That(provider.WasPathEnumerated(F(FolderPath, "m1", "content.eml")), Is.False, "This run still carries the folder forward");
         Assert.That(provider.ExportChangeTrackingState(), Is.EqualTo(new Dictionary<string, string> { [MailKey] = "" }), "After repeated failures the token is dropped, so the next backup lists the folder in full instead of carrying stale content forward forever");
@@ -486,7 +486,7 @@ public class Office365DeltaTests
             .Json("/users/u1/mailFolders/f1/childFolders", Page(""));
         var provider = CreateProvider(handler, new Dictionary<string, string>());
 
-        await CollectAsync(new UserMailboxFolderSourceEntry(provider, User, FolderPath, MailFolder), false);
+        await CollectAsync(new UserMailboxFolderSourceEntry(provider, User, FolderPath, MailFolder, MailFolder.ParentFolderId), false);
 
         var stored = provider.ExportChangeTrackingState()[MailKey];
         Assert.That(stored, Is.EqualTo("a+b="), "The stored value is the decoded token alone");
@@ -496,7 +496,7 @@ public class Office365DeltaTests
             .Json("deltatoken=a+b=", Page("", deltaLink: MailLink("tok2")))
             .Json("/users/u1/mailFolders/f1/childFolders", Page(""));
         var nextProvider = CreateProvider(next, new Dictionary<string, string> { [MailKey] = stored });
-        await CollectAsync(new UserMailboxFolderSourceEntry(nextProvider, User, FolderPath, MailFolder), false);
+        await CollectAsync(new UserMailboxFolderSourceEntry(nextProvider, User, FolderPath, MailFolder, MailFolder.ParentFolderId), false);
         Assert.That(next.Requests[0], Does.Contain("$deltatoken=a+b="), "The decoded request URL carries the original token");
     }
 
@@ -715,6 +715,31 @@ public class Office365DeltaTests
         Assert.That(entries.Count, Is.EqualTo(5));
         Assert.That(messages.Any(x => x.Id == "DriveDeltaTooLarge" && x.Level == LogMessageType.Information), Is.True);
         Assert.That(DriveFolderMap.Deserialize(provider.ExportChangeTrackingState()[DriveKey])!.Token, Is.EqualTo("tok3"));
+    }
+
+    [Test]
+    [Category("Office365")]
+    public async Task DriveFailedAncestorLookupFallsBackToAFullWalkAsync()
+    {
+        // The changed file sits in folder F9, which the stored map does not know and which
+        // Graph does not answer for, so its path cannot be resolved
+        var handler = FullDriveHandler("tok3")
+            .Json("token=tok1", Page(File("N", "F9"), deltaLink: DriveLink("tok2")));
+        var provider = CreateProvider(handler, new Dictionary<string, string>
+        {
+            [DriveKey] = StoredMap("tok1", ("F1", "root"), ("F2", "F1")),
+        });
+
+        var messages = CaptureLog(out var scope);
+        List<ISourceProviderEntry> entries;
+        using (scope)
+            entries = await CollectAsync(new DriveSourceEntry(provider, SitePath, Drive), true);
+
+        Assert.That(entries.Count, Is.EqualTo(5), "The drive is listed in full in the same run");
+        Assert.That(handler.CountRequests("/items/F9"), Is.EqualTo(1), "The folder was looked up once");
+        Assert.That(messages.Any(x => x.Id == "DriveDeltaArrangeFailed" && x.Level == LogMessageType.Warning), Is.True);
+        Assert.That(provider.WasPathEnumerated(F(DrivePath, "F1", "B")), Is.True, "After the full walk everything was examined");
+        Assert.That(DriveFolderMap.Deserialize(provider.ExportChangeTrackingState()[DriveKey])!.Token, Is.EqualTo("tok3"), "The token taken before the full walk is stored");
     }
 
     [Test]
@@ -947,7 +972,7 @@ public class Office365DeltaTests
             .Json("/users/u1/mailFolders/f1/childFolders", Page(""));
         var provider = CreateProvider(handler, new Dictionary<string, string> { [MailKey] = MailState("tok1") });
 
-        var entries = await CollectAsync(new UserMailboxFolderSourceEntry(provider, User, FolderPath, MailFolder), false);
+        var entries = await CollectAsync(new UserMailboxFolderSourceEntry(provider, User, FolderPath, MailFolder, MailFolder.ParentFolderId), false);
 
         Assert.That(entries.Select(x => x.Path), Is.EqualTo(new[] { D(FolderPath, "m1"), D(FolderPath, "m2"), D(FolderPath, "m3") }), "Repeated messages are listed once and the pages after them are still read");
         Assert.That(provider.ExportChangeTrackingState()[MailKey], Is.EqualTo(MailState("tok2")), "The walk reached its delta link");

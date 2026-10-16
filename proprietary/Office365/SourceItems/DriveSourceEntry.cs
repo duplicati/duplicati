@@ -184,6 +184,34 @@ internal class DriveSourceEntry(SourceProvider provider, string path, GraphDrive
         var newToken = DeltaToken.FromDriveDeltaLink(deltaLink.DeltaLink)
             ?? throw new UserInformationException($"The delta walk of drive {drive.Id} did not end with a delta link carrying a token: {deltaLink.DeltaLink}", "DriveDeltaTokenMissing");
 
+        // Arranging the changes may ask Graph for the folders the map does not know. A failure
+        // there, or an inconsistent map, leaves the drive without a usable plan, and listing it in
+        // full now is better than failing the drive and carrying it forward unchanged for several
+        // backups until the tracker resets the state
+        try
+        {
+            return await ArrangeChangesAsync(items, map, newToken, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            Log.WriteWarningMessage(LOGTAG, "DriveDeltaArrangeFailed", ex, "The changes reported by the delta of drive {0} could not be arranged for listing, listing the drive in full", drive.Id);
+            tracker.MarkLoadedStateInvalid(stateKey);
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Arranges the items a delta walk reported for listing: records what the carry-forward must
+    /// not copy, updates the folder map and resolves the path of every changed item
+    /// </summary>
+    /// <param name="items">The reported items by id</param>
+    /// <param name="map">The stored folder map, updated with the changes</param>
+    /// <param name="newToken">The token the walk ended with</param>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns>The plan</returns>
+    private async Task<IncrementalPlan> ArrangeChangesAsync(Dictionary<string, GraphDriveItem> items, DriveFolderMap map, string newToken, CancellationToken cancellationToken)
+    {
+        var tracker = provider.ChangeTracker;
         var rootId = map.RootId ?? throw new UserInformationException($"The stored folder map for drive {drive.Id} has no root", "DriveFolderMapWithoutRoot");
         var changes = new DriveChangeSet(map);
         var reported = items.Values.Where(x => x.Id != rootId).ToList();

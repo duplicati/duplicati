@@ -32,13 +32,8 @@ internal class DriveFolderSourceEntry : MetaEntryBase
     /// <param name="item">The folder item</param>
     /// <param name="map">The folder map to record child folders in, or <c>null</c> if changes are not tracked</param>
     public DriveFolderSourceEntry(SourceProvider provider, string path, GraphDrive drive, GraphDriveItem item, DriveFolderMap? map)
-        : base(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(path, item.Id)), item.CreatedDateTime.FromGraphDateTime(), item.LastModifiedDateTime.FromGraphDateTime())
+        : this(provider, path, drive, item, map, null)
     {
-        this.provider = provider;
-        this.drive = drive;
-        this.item = item;
-        this.map = map;
-        this.changes = null;
     }
 
     /// <summary>
@@ -50,12 +45,26 @@ internal class DriveFolderSourceEntry : MetaEntryBase
     /// <param name="item">The folder item</param>
     /// <param name="changes">The changes reported by the delta walk</param>
     public DriveFolderSourceEntry(SourceProvider provider, string path, GraphDrive drive, GraphDriveItem item, DriveChangeSet changes)
+        : this(provider, path, drive, item, changes.Map, changes)
+    {
+    }
+
+    /// <summary>
+    /// Creates a folder entry
+    /// </summary>
+    /// <param name="provider">The provider</param>
+    /// <param name="path">The path of the parent</param>
+    /// <param name="drive">The drive</param>
+    /// <param name="item">The folder item</param>
+    /// <param name="map">The folder map to record child folders in, or <c>null</c> if changes are not tracked</param>
+    /// <param name="changes">The changes to list instead of asking Graph, or <c>null</c> to list the children with a request</param>
+    private DriveFolderSourceEntry(SourceProvider provider, string path, GraphDrive drive, GraphDriveItem item, DriveFolderMap? map, DriveChangeSet? changes)
         : base(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(path, item.Id)), item.CreatedDateTime.FromGraphDateTime(), item.LastModifiedDateTime.FromGraphDateTime())
     {
         this.provider = provider;
         this.drive = drive;
         this.item = item;
-        this.map = changes.Map;
+        this.map = map;
         this.changes = changes;
     }
 
@@ -81,8 +90,11 @@ internal class DriveFolderSourceEntry : MetaEntryBase
         var stateKey = provider.DriveDeltaEnabled ? ChangeTrackingKeys.Drive(drive.Id) : null;
 
         // The folder is listed in full, so below an incrementally walked drive it is the one
-        // place where an empty listing means an empty folder
-        if (stateKey != null && provider.ChangeTracker.IsActive)
+        // place where an empty listing means an empty folder, and the paths below it must
+        // not be carried forward. Anywhere else an unmarked path already counts as examined,
+        // so the mark is only recorded where it changes an answer, which keeps the marks
+        // bounded by the changes instead of by the number of folders in the tenant
+        if (stateKey != null && provider.ChangeTracker.IsActive && provider.ChangeTracker.IsIncrementallyEnumeratedFolder(this.Path))
             provider.ChangeTracker.MarkExaminedSubtree(this.Path);
         var children = provider.ListWithFailureTrackingAsync(stateKey, provider.OneDriveApi.ListDriveFolderChildrenAsync(drive.Id, item.Id, cancellationToken), cancellationToken);
         await foreach (var child in children.ConfigureAwait(false))

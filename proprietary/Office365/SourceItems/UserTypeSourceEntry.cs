@@ -144,7 +144,7 @@ internal class UserTypeSourceEntry(SourceProvider provider, string path, GraphUs
             yield break;
 
         // Don't introduce another level for the root folder, just enumerate its contents here
-        var p = new UserMailboxFolderSourceEntry(provider, user, this.Path, rootFolder);
+        var p = new UserMailboxFolderSourceEntry(provider, user, this.Path, rootFolder, null);
         await foreach (var entry in p.Enumerate(cancellationToken).ConfigureAwait(false))
         {
             if (cancellationToken.IsCancellationRequested)

@@ -607,6 +607,41 @@ public class ChangeTrackingSourceProviderTests : BasicSetupHelper
 
         Assert.That(Hash(mount + "test-change-tracking://source?opt=1", Path.Combine(BASEFOLDER, "local")), Is.EqualTo(Hash(Path.Combine(BASEFOLDER, "local"), mount + "test-change-tracking://source?opt=1")), "The order of the sources does not matter");
         Assert.That(Library.Main.Operation.Backup.ChangeTrackingCoordinator.StripSecrets("test-change-tracking://user:pw@source?opt=1&test-secret=s&auth-password=p"), Does.Not.Contain("pw").And.Not.Contain("=s").And.Not.Contain("=p"), "The hashed form carries no secret");
+
+        // The hash stored for a scope covers the filter and the scope's own source only
+        string ScopeHash(params string[] sources) => Library.Main.Operation.Backup.ChangeTrackingCoordinator.ComputeConfigHash(null, Mount, sources);
+        Assert.That(ScopeHash(mount + "test-change-tracking://source?opt=1", Path.Combine(BASEFOLDER, "local")), Is.EqualTo(reference), "A source mounted elsewhere is left out of the scope's hash");
+        Assert.That(ScopeHash("@" + Mount + "|test-change-tracking://source?opt=1"), Is.EqualTo(reference), "The mount point is normalized, so a trailing separator does not change the hash");
+        Assert.That(ScopeHash(mount + "test-change-tracking://source?opt=2", Path.Combine(BASEFOLDER, "local")), Is.Not.EqualTo(reference), "A changed option of the scope's own source changes the hash");
+        Assert.That(ScopeHash(Path.Combine(BASEFOLDER, "local")), Is.EqualTo(Hash(Path.Combine(BASEFOLDER, "local"))), "Without a source at the mount point every source is hashed");
+    }
+
+    [Test]
+    [Category("ChangeTracking")]
+    public async Task AddingAnUnrelatedSourceKeepsTheStateAsync()
+    {
+        var options = Prepare();
+        await FirstRunAsync(options);
+
+        var local = Path.Combine(BASEFOLDER, "local");
+        Directory.CreateDirectory(local);
+        System.IO.File.WriteAllText(Path.Combine(local, "l.txt"), "L");
+
+        // Only a.txt changed; the provider yields it alone and claims nothing else was examined
+        Scenario.Current = new Scenario
+        {
+            Timestamp = new DateTime(2024, 2, 1, 0, 0, 0, DateTimeKind.Utc),
+            Children = m => [File(m, "a.txt", "A2")],
+            Enumerated = p => p == P("a.txt"),
+            Export = { ["k"] = "v2" }
+        };
+        using (var c = new Controller("file://" + TARGETFOLDER, options, null))
+            TestUtils.AssertResults(await c.BackupAsync([Source, local]));
+        Assert.That(Scenario.Current.Loaded, Is.EqualTo(new Dictionary<string, string> { ["k"] = "v1" }), "Adding a source mounted elsewhere keeps the state");
+
+        var paths = await ListPathsAsync(options);
+        Assert.That(paths, Does.Contain(Path.Combine(local, "l.txt")), "The added source is backed up");
+        Assert.That(paths, Does.Contain(P(Path.Combine("sub", "b.txt"))), "The unchanged entries are carried forward");
     }
 
     [Test]

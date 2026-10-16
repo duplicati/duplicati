@@ -63,7 +63,8 @@ internal sealed class ChangeTrackingCoordinator
     /// </summary>
     /// <param name="Provider">The provider</param>
     /// <param name="MountedPath">The path the provider is mounted at, used to find the owner of a path</param>
-    private sealed record TrackedProvider(IChangeTrackingSourceProvider Provider, string MountedPath)
+    /// <param name="ConfigHash">The hash of the configuration that decides which paths the provider walks</param>
+    private sealed record TrackedProvider(IChangeTrackingSourceProvider Provider, string MountedPath, string ConfigHash)
     {
         /// <summary>
         /// Whether state from the previous fileset was handed to the provider
@@ -82,25 +83,13 @@ internal sealed class ChangeTrackingCoordinator
     private readonly List<TrackedProvider> _providers;
 
     /// <summary>
-    /// The hash of the configuration that decides which paths are walked
-    /// </summary>
-    private readonly string _configHash;
-
-    /// <summary>
     /// Creates a new coordinator
     /// </summary>
     /// <param name="providers">The providers that track changes</param>
-    /// <param name="configHash">The hash of the current configuration</param>
-    private ChangeTrackingCoordinator(List<TrackedProvider> providers, string configHash)
+    private ChangeTrackingCoordinator(List<TrackedProvider> providers)
     {
         _providers = providers;
-        _configHash = configHash;
     }
-
-    /// <summary>
-    /// The hash of the configuration that decides which paths are walked
-    /// </summary>
-    public string ConfigHash => _configHash;
 
     /// <summary>
     /// Whether any provider was handed state from the previous fileset, which means
@@ -129,7 +118,7 @@ internal sealed class ChangeTrackingCoordinator
 
         var providers = candidates
             .Where(x => !string.IsNullOrWhiteSpace(x.MountedPath))
-            .Select(x => new TrackedProvider(x, x.MountedPath))
+            .Select(x => new TrackedProvider(x, x.MountedPath, ComputeConfigHash(filter, x.MountedPath, sources)))
             .OrderByDescending(x => x.MountedPath.Length)
             .ToList();
 
@@ -144,27 +133,80 @@ internal sealed class ChangeTrackingCoordinator
         if (duplicateScopes.Count > 0)
             throw new UserInformationException($"Multiple sources share the change tracking scope \"{duplicateScopes[0]}\"", "DuplicateChangeTrackingScope");
 
-        return new ChangeTrackingCoordinator(providers, ComputeConfigHash(filter, sources));
+        return new ChangeTrackingCoordinator(providers);
     }
 
     /// <summary>
-    /// Computes the hash of the configuration that decides which paths are walked: the filter
-    /// and the sources. The credentials are left out of the source urls so a rotated secret does
-    /// not force a full walk, while any other change to a url does.
+    /// Computes the hash of the configuration that decides which paths the provider mounted at
+    /// a path walks: the filter and the provider's own source. The other sources of the backup
+    /// are left out, so adding or removing an unrelated source does not force a full walk of
+    /// this provider. If no source is mounted at the path, which the factory does not produce,
+    /// every source is hashed so a change to any of them is noticed.
     /// </summary>
     /// <param name="filter">The filter in use</param>
+    /// <param name="mountedPath">The path the provider is mounted at</param>
     /// <param name="sources">The source strings the backup was started with</param>
+    /// <returns>The hash as a hex string</returns>
+    internal static string ComputeConfigHash(IFilter? filter, string mountedPath, IEnumerable<string> sources)
+    {
+        var own = SourcesMountedAt(mountedPath, sources);
+        if (own.Count > 0)
+            return ComputeConfigHash(filter, own);
+
+        Log.WriteVerboseMessage(LOGTAG, "ChangeTrackingSourceNotFound", "No source is mounted at \"{0}\", so its configuration hash covers every source", mountedPath);
+        return ComputeConfigHash(filter, sources);
+    }
+
+    /// <summary>
+    /// Finds the remote sources mounted at a path, comparing the mount points in the form the
+    /// providers are mounted at
+    /// </summary>
+    /// <param name="mountedPath">The path the provider is mounted at</param>
+    /// <param name="sources">The source strings the backup was started with</param>
+    /// <returns>The sources mounted at the path</returns>
+    internal static List<string> SourcesMountedAt(string mountedPath, IEnumerable<string> sources)
+        => sources
+            .Where(x => SourceProviderFactory.ParseRemoteSource(x) is { } remote
+                && string.Equals(TryNormalizeMountpoint(remote.Mountpoint), mountedPath, Library.Utility.Utility.ClientFilenameStringComparison))
+            .ToList();
+
+    /// <summary>
+    /// Computes the hash of the configuration that decides which paths are walked: the filter
+    /// and the given sources. The credentials are left out of the source urls so a rotated secret
+    /// does not force a full walk, while any other change to a url does, and the mount points are
+    /// normalized so the same mount point written differently is the same configuration.
+    /// </summary>
+    /// <param name="filter">The filter in use</param>
+    /// <param name="sources">The source strings to hash</param>
     /// <returns>The hash as a hex string</returns>
     internal static string ComputeConfigHash(IFilter? filter, IEnumerable<string> sources)
     {
         var sanitizedSources = sources
             .Select(x => SourceProviderFactory.ParseRemoteSource(x) is { } remote
-                ? $"@{remote.Mountpoint}|{StripSecrets(remote.Url)}"
+                ? $"@{TryNormalizeMountpoint(remote.Mountpoint) ?? remote.Mountpoint}|{StripSecrets(remote.Url)}"
                 : x)
             .OrderBy(x => x, StringComparer.Ordinal);
 
         return Library.Utility.Utility.ByteArrayAsHexString(MD5HashHelper.GetHash(
             new[] { filter?.ToString() ?? string.Empty }.Concat(sanitizedSources)));
+    }
+
+    /// <summary>
+    /// Normalizes a mount point the way the providers are mounted, or returns <c>null</c>
+    /// if the mount point is not a valid path, which is reported when the provider is loaded
+    /// </summary>
+    /// <param name="mountpoint">The mount point as given in the source</param>
+    /// <returns>The normalized mount point, or <c>null</c></returns>
+    private static string? TryNormalizeMountpoint(string mountpoint)
+    {
+        try
+        {
+            return SourceProviderFactory.NormalizeMountpoint(mountpoint);
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     /// <summary>
@@ -238,7 +280,7 @@ internal sealed class ChangeTrackingCoordinator
                 var stored = await database.GetSourceProviderStateAsync(lastFilesetId, scope, cancellationToken).ConfigureAwait(false);
                 if (stored == null)
                     Log.WriteVerboseMessage(LOGTAG, "NoChangeTrackingState", "No change tracking state is stored for \"{0}\", walking everything", scope);
-                else if (!string.Equals(stored.ConfigHash, _configHash, StringComparison.Ordinal))
+                else if (!string.Equals(stored.ConfigHash, tracked.ConfigHash, StringComparison.Ordinal))
                     Log.WriteInformationMessage(LOGTAG, "ChangeTrackingStateDiscarded", "Discarding the change tracking state stored for \"{0}\" because the sources or filters have changed since it was recorded, walking everything", scope);
                 else
                     rows = stored.Rows;
@@ -318,7 +360,7 @@ internal sealed class ChangeTrackingCoordinator
                 }
 
                 Log.WriteVerboseMessage(LOGTAG, "StoringChangeTrackingState", "Storing {0} change tracking state rows for \"{1}\"", rows.Count, scope);
-                await database.CreateSourceProviderStateAsync(scope, _configHash, rows, cancellationToken).ConfigureAwait(false);
+                await database.CreateSourceProviderStateAsync(scope, tracked.ConfigHash, rows, cancellationToken).ConfigureAwait(false);
             }
 
         var removed = await database.PruneSourceProviderStateAsync(STATE_FILESETS_TO_KEEP, cancellationToken).ConfigureAwait(false);

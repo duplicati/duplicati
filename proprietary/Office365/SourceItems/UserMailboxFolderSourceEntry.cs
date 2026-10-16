@@ -7,15 +7,27 @@ using Duplicati.Library.Logging;
 
 namespace Duplicati.Proprietary.Office365.SourceItems;
 
-internal class UserMailboxFolderSourceEntry(SourceProvider provider, GraphUser user, string path, GraphMailFolder folder)
+/// <summary>
+/// A mail folder, listing its messages and child folders
+/// </summary>
+/// <param name="provider">The provider</param>
+/// <param name="user">The user owning the mailbox</param>
+/// <param name="path">The folder path</param>
+/// <param name="folder">The folder</param>
+/// <param name="parentFolderId">The id of the parent folder as the parent knows itself, so the
+/// folder's state key matches the prefix the parent searches when it looks for folders that are
+/// no longer listed; <c>null</c> for the root folder, which has no parent doing that search</param>
+internal class UserMailboxFolderSourceEntry(SourceProvider provider, GraphUser user, string path, GraphMailFolder folder, string? parentFolderId)
     : MetaEntryBase(Util.AppendDirSeparator(path), null, null)
 {
     private static readonly string LOGTAG = Log.LogTagFromType<UserMailboxFolderSourceEntry>();
 
     /// <summary>
-    /// The key the folder's delta link is stored under
+    /// The key the folder's delta link is stored under. The parent id comes from the parent
+    /// entry, not from the folder's own parentFolderId, so the key the parent looks up and the
+    /// key the child stores are built from the same id
     /// </summary>
-    private string StateKey => ChangeTrackingKeys.MailFolder(user.Id, folder.ParentFolderId, folder.Id);
+    private string StateKey => ChangeTrackingKeys.MailFolder(user.Id, parentFolderId, folder.Id);
 
     /// <summary>
     /// Reads the messages a delta walk of the folder reports. A full walk streams them, as a
@@ -147,7 +159,7 @@ internal class UserMailboxFolderSourceEntry(SourceProvider provider, GraphUser u
                 if (stored != null)
                     tracker.MarkExamined(Util.AppendDirSeparator(childPath));
 
-                yield return new UserMailboxFolderSourceEntry(provider, user, childPath, childFolder);
+                yield return new UserMailboxFolderSourceEntry(provider, user, childPath, childFolder, folder.Id);
             }
 
             // A child folder the previous backup knew but that is no longer listed was deleted,
