@@ -31,6 +31,7 @@ using Duplicati.Library.Backend.Duplicati;
 using Duplicati.Library.Interface;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using static Duplicati.UnitTest.DuplicatiBackendTestServer;
 using StringAssert = NUnit.Framework.Legacy.StringAssert;
 
 #nullable enable
@@ -45,51 +46,6 @@ namespace Duplicati.UnitTest;
 [TestFixture]
 public class DuplicatiBackendErrorReportingTests
 {
-    /// <summary>
-    /// A message handler that answers requests from a table of paths
-    /// </summary>
-    private sealed class FakeServer : HttpMessageHandler
-    {
-        private readonly Dictionary<string, Queue<Func<HttpResponseMessage>>> _responses = new();
-        public List<string> Requests { get; } = [];
-
-        /// <summary>
-        /// Queues a response for a path; the last queued response is repeated
-        /// </summary>
-        public FakeServer On(string path, HttpStatusCode status, string body, string mediaType = "text/plain")
-        {
-            if (!_responses.TryGetValue(path, out var queue))
-                _responses[path] = queue = new Queue<Func<HttpResponseMessage>>();
-            queue.Enqueue(() => new HttpResponseMessage(status) { Content = new StringContent(body, Encoding.UTF8, mediaType) });
-            return this;
-        }
-
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-        {
-            var path = request.RequestUri!.AbsolutePath;
-            Requests.Add(path);
-            foreach (var (prefix, queue) in _responses)
-                if (path.StartsWith(prefix, StringComparison.Ordinal))
-                    return Task.FromResult((queue.Count > 1 ? queue.Dequeue() : queue.Peek())());
-
-            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotImplemented) { Content = new StringContent(string.Empty) });
-        }
-    }
-
-    private const string GatewayCredentials = "{\"mode\":\"gateway\",\"uploadsDisabled\":false,\"accountDisabled\":false}";
-    private const string QuotaExceededCredentials = "{\"mode\":\"gateway\",\"uploadsDisabled\":true,\"uploadsDisabledReason\":\"quota-exceeded\",\"accountDisabled\":false}";
-    private const string DisabledGatewayCredentials = "{\"mode\":\"gateway\",\"uploadsDisabled\":true,\"uploadsDisabledReason\":\"account-disabled\",\"accountDisabled\":true,\"accountDisabledReason\":\"no-quota\",\"accountDisabledMessage\":\"Account subscription does not have access to storage\"}";
-    private const string DisabledDirectCredentials = "{\"mode\":\"direct\",\"uploadsDisabled\":true,\"uploadsDisabledReason\":\"account-disabled\",\"accountDisabled\":true,\"accountDisabledReason\":\"provider-account-inactive\",\"accountDisabledMessage\":\"The iDrive storage account for this organization is disabled\"}";
-
-    private static DuplicatiBackend CreateBackend(FakeServer server)
-        => new("duplicati://storage.example.com", new Dictionary<string, string?>
-        {
-            [DuplicatiBackend.BACKUP_ID_OPTION] = "backup-1",
-            [DuplicatiBackend.AUTH_API_ID_OPTION] = "org-1",
-            [DuplicatiBackend.AUTH_API_KEY_OPTION] = "key-1",
-            ["machine-id"] = "machine-1",
-        }, server);
-
     private static HttpResponseMessage Respond(HttpStatusCode status, string body, string mediaType = "text/plain")
         => new(status) { Content = new StringContent(body, Encoding.UTF8, mediaType) };
 
