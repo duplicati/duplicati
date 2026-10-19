@@ -889,6 +889,48 @@ public class ServerApiIntegrationTests : BasicSetupHelper
         return doc.RootElement.Clone();
     }
 
+    /// <summary>
+    /// The refresh token cookie was set for the domain the request named in its Host header.
+    /// Behind a reverse proxy that does not pass the Host header on, that is the address of
+    /// the server, not the name the browser uses, so the browser rejected the cookie, every
+    /// refresh failed, and the login looped (issue #6042). A cookie without a domain is for
+    /// the host the browser asked, whatever the server sees.
+    /// </summary>
+    [Test]
+    [Category("Integration")]
+    public async Task TheRefreshCookieHasNoDomain_Async()
+    {
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            // Handle the cookies here, to see what the server sets
+            using var client = new HttpClient(new HttpClientHandler { UseCookies = false }) { BaseAddress = httpClient.BaseAddress };
+
+            static string RefreshCookie(HttpResponseMessage response)
+            {
+                var cookies = response.Headers.TryGetValues("Set-Cookie", out var values) ? values.ToList() : [];
+                var set = cookies
+                    .Where(c => c.StartsWith("RefreshToken_", StringComparison.Ordinal))
+                    .Where(c => !c.Contains("expires=Thu, 01 Jan 1970", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+                Assert.That(set, Has.Count.EqualTo(1), $"one refresh cookie should be set: {string.Join(" | ", cookies)}");
+                Assert.That(set[0], Does.Not.Contain("domain=").IgnoreCase, "the refresh cookie should have no domain");
+                return set[0].Split(';')[0];
+            }
+
+            var login = await client.PostAsJsonAsync("/api/v1/auth/login", new { password = "integration-test-password", rememberMe = true }, JsonOptions).ConfigureAwait(false);
+            login.EnsureSuccessStatusCode();
+            var cookie = RefreshCookie(login);
+            var tokens = await login.Content.ReadFromJsonAsync<AccessTokenOutputDto>(JsonOptions).ConfigureAwait(false);
+
+            // The cookie works for a refresh, which sets a new one the same way
+            using var refresh = new HttpRequestMessage(HttpMethod.Post, "/api/v1/auth/refresh") { Content = JsonContent.Create(new { nonce = tokens!.RefreshNonce }) };
+            refresh.Headers.Add("Cookie", cookie);
+            var refreshed = await client.SendAsync(refresh).ConfigureAwait(false);
+            refreshed.EnsureSuccessStatusCode();
+            RefreshCookie(refreshed);
+        }).ConfigureAwait(false);
+    }
+
     private async Task WithAuthenticatedServerAsync(Func<HttpClient, Task> testBody, string? ports = null, string listenInterface = "127.0.0.1")
     {
         var serverPassword = "integration-test-password";
