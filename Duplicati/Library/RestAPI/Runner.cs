@@ -882,7 +882,7 @@ namespace Duplicati.Server
 
                 // Map AdditionalTargetURLs to remote-sync-json-config option for backup operations
                 if (data.Operation == DuplicatiOperation.BackupOrSync)
-                    ApplyAdditionalTargetUrls(backup, options);
+                    ApplyAdditionalTargetUrls(databaseConnection, backup, options);
 
                 // Pack in the system or task config for easy restore
                 if (data.Operation == DuplicatiOperation.BackupOrSync)
@@ -1480,12 +1480,36 @@ namespace Duplicati.Server
         }
 
         /// <summary>
+        /// Merges the remote control storage credentials into a Duplicati backend url.
+        /// The stored url never carries them, so every url that is handed to a backend
+        /// passes through here: the primary target, each additional target, and the
+        /// urls the web endpoints test or list. Any other scheme is returned unchanged.
+        /// </summary>
+        /// <param name="databaseConnection">The database connection holding the application settings.</param>
+        /// <param name="url">The url to patch.</param>
+        /// <returns>The url with the storage credentials merged in.</returns>
+        public static string ApplyDuplicatiStorageCredentials(Connection databaseConnection, string url)
+        {
+            var uri = new Library.Utility.RelaxedUri(url);
+            if (!uri.Scheme.Equals(Library.Backend.Duplicati.DuplicatiBackend.PROTOCOL, StringComparison.OrdinalIgnoreCase))
+                return url;
+
+            return Library.Backend.Duplicati.DuplicatiBackend.MergeArgsIntoUrl(
+                url,
+                databaseConnection.ApplicationSettings.RemoteControlStorageApiId,
+                databaseConnection.ApplicationSettings.RemoteControlStorageApiKey,
+                databaseConnection.ApplicationSettings.RemoteControlStorageEndpointUrl
+            );
+        }
+
+        /// <summary>
         /// Maps the backup's AdditionalTargetURLs to the remote-sync-json-config option
         /// so the RemoteSynchronizationModule can pick them up.
         /// </summary>
+        /// <param name="databaseConnection">The database connection holding the application settings.</param>
         /// <param name="backup">The backup containing additional target URLs.</param>
         /// <param name="options">The options dictionary to update.</param>
-        private static void ApplyAdditionalTargetUrls(IBackup backup, Dictionary<string, string?> options)
+        internal static void ApplyAdditionalTargetUrls(Connection databaseConnection, IBackup backup, Dictionary<string, string?> options)
         {
             if (backup.AdditionalTargetURLs == null)
                 return;
@@ -1499,7 +1523,7 @@ namespace Duplicati.Server
             {
                 var dest = new Dictionary<string, object?>
                 {
-                    ["url"] = target.TargetUrl,
+                    ["url"] = ApplyDuplicatiStorageCredentials(databaseConnection, target.TargetUrl),
                     ["mode"] = target.Mode
                 };
 
@@ -1655,14 +1679,7 @@ namespace Duplicati.Server
                 );
             }
 
-            var uri = new Library.Utility.RelaxedUri(backup.TargetURL);
-            if (uri.Scheme.Equals(Library.Backend.Duplicati.DuplicatiBackend.PROTOCOL, StringComparison.OrdinalIgnoreCase))
-                url = Library.Backend.Duplicati.DuplicatiBackend.MergeArgsIntoUrl(
-                    url,
-                    databaseConnection.ApplicationSettings.RemoteControlStorageApiId,
-                    databaseConnection.ApplicationSettings.RemoteControlStorageApiKey,
-                    databaseConnection.ApplicationSettings.RemoteControlStorageEndpointUrl
-                );
+            url = ApplyDuplicatiStorageCredentials(databaseConnection, url);
 
             return options;
         }
