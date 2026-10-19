@@ -113,7 +113,10 @@ public class SuspendResumeStateTests : BasicSetupHelper
         return null!;
     }
 
-    private async Task WithServerAsync(Func<HttpClient, LiveControls, Task> body)
+    /// <param name="body">The test to run against the server</param>
+    /// <param name="resumeAtStart">Whether to start from the running state</param>
+    /// <param name="resumeAtEnd">Whether to leave the server running when it is stopped</param>
+    private async Task WithServerAsync(Func<HttpClient, LiveControls, Task> body, bool resumeAtStart = true, bool resumeAtEnd = true)
     {
         var dataFolder = Path.Combine(BASEFOLDER, "server-data");
         Directory.CreateDirectory(dataFolder);
@@ -160,13 +163,14 @@ public class SuspendResumeStateTests : BasicSetupHelper
 
             // Debug builds keep the server data next to the test assembly, shared with other tests,
             // so start from the running state and leave it running
-            (await client.PostAsync("/api/v1/serverstate/resume", null)).EnsureSuccessStatusCode();
+            if (resumeAtStart)
+                (await client.PostAsync("/api/v1/serverstate/resume", null)).EnsureSuccessStatusCode();
             started = true;
             await body(client, ServerProgram.LiveControl);
         }
         finally
         {
-            if (started)
+            if (started && resumeAtEnd)
                 ServerProgram.LiveControl.Resume();
             applicationSettings.SignalApplicationExit();
             if (serverTask != null)
@@ -243,4 +247,30 @@ public class SuspendResumeStateTests : BasicSetupHelper
             cts.Cancel();
             await following;
         });
+
+    /// <summary>
+    /// The pause for a suspend ends when the machine wakes up. When the server is restarted
+    /// before that, as when the machine is shut down while it sleeps, it was kept as a pause
+    /// with no end, and no scheduled backup ran until the user resumed (#6759).
+    /// </summary>
+    [Test]
+    public async Task RestartWhileSuspended_Async()
+    {
+        await WithServerAsync(async (client, liveControls) =>
+        {
+            Invoke(liveControls, "OnSuspend");
+            Assert.That(liveControls.State, Is.EqualTo(LiveControls.LiveControlState.Paused), "The server did not pause for the suspend");
+            await Task.CompletedTask;
+        }, resumeAtEnd: false);
+
+        await WithServerAsync(async (client, liveControls) =>
+        {
+            TestContext.Progress.WriteLine($"After the restart: {liveControls.State}, pause ends {liveControls.EstimatedPauseEnd:o}");
+            Assert.That(liveControls.State == LiveControls.LiveControlState.Paused && liveControls.EstimatedPauseEnd.Ticks == 0, Is.False,
+                "The server was restarted while suspended, and is now paused with no end");
+
+            using var doc = JsonDocument.Parse(await client.GetStringAsync("/api/v1/serverstate"));
+            Assert.That(doc.RootElement.GetProperty("ProgramState").GetString(), Is.EqualTo("Running"));
+        }, resumeAtStart: false);
+    }
 }
