@@ -177,15 +177,41 @@ public partial class Auth : IEndpointV1
         });
     }
 
+    /// <summary>
+    /// The path of the refresh token cookie
+    /// </summary>
+    private const string CookiePath = "/api/v1/auth/refresh";
+
+    /// <summary>
+    /// Sets the refresh token cookie. It has no domain, so it is for the host the browser asked
+    /// for. The host the server sees can be another one, behind a reverse proxy that does not
+    /// pass the Host header on, and the browser rejects a cookie for a domain it did not ask for.
+    /// </summary>
     private static void AddCookie(HttpContext context, string name, string value, DateTimeOffset expires)
-        => context.Response.Cookies.Append(name, value, new CookieOptions
+    {
+        // Earlier versions set the cookie for the domain, which the browser keeps as a separate
+        // cookie of the same name; it would be sent along with this one, holding a refresh token
+        // that has been replaced
+        DeleteDomainCookie(context, name);
+
+        context.Response.Cookies.Append(name, value, new CookieOptions
         {
             Expires = expires,
-            Path = "/api/v1/auth/refresh",
+            Path = CookiePath,
             Secure = context.Request.IsHttps,
             HttpOnly = true,
             SameSite = SameSiteMode.Strict,
-            IsEssential = true,
+            IsEssential = true
+        });
+    }
+
+    /// <summary>
+    /// Removes the refresh token cookie that earlier versions set for the domain of the request
+    /// </summary>
+    private static void DeleteDomainCookie(HttpContext context, string name)
+        => context.Response.Cookies.Delete(name, new CookieOptions
+        {
+            Path = CookiePath,
             Domain = context.Request.Host.Host
         });
 
@@ -211,12 +237,13 @@ public partial class Auth : IEndpointV1
         // Also remove the cookie, in case we failed to delete it.
         // The Path and Domain must match the values used when the cookie was
         // created (see AddCookie), otherwise the browser will not match and
-        // remove the stored cookie.
+        // remove the stored cookie. One set by an earlier version, for the
+        // domain, is removed as well.
         context.Response.Cookies.Delete(cookieName, new CookieOptions
         {
-            Path = "/api/v1/auth/refresh",
-            Domain = context.Request.Host.Host
+            Path = CookiePath
         });
+        DeleteDomainCookie(context, cookieName);
         return new { success = true };
     }
 
