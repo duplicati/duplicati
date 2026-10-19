@@ -1318,7 +1318,10 @@ namespace Duplicati.Server
                     {
                         queueRunnerService.Pause();
                         queueRunnerService.GetCurrentTask()?.PauseAsync(e.TransfersPaused).Await();
-                        appSettings.PausedUntil = e.WaitTimeExpiration;
+                        // A pause for a suspend ends when the system resumes, and has no expiration
+                        // of its own. Stored, it would be read at the next start as a pause with no
+                        // end, so a restart before the resume would leave the server paused.
+                        appSettings.PausedUntil = e.PausedForSuspend ? null : e.WaitTimeExpiration;
                         break;
                     }
                 case LiveControls.LiveControlState.Running:
