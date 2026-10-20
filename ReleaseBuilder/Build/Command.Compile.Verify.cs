@@ -265,6 +265,7 @@ public static partial class Command
             { "System.Security.Principal.Windows", new Version(10, 0, 0, 0) },
             { "System.Security.Cryptography.Algorithms", new Version(10, 0, 0, 0) },
             { "System.Security.Cryptography.Cng", new Version(10, 0, 0, 0) },
+            { "System.Security.Cryptography.Pkcs", new Version(10, 0, 0, 0) },
 
             // The assembly version also has a revision number, but the nuget version does not.
             { "SQLitePCLRaw.core", new Version(3, 0, 3, 3048) },
