@@ -1364,6 +1364,23 @@ namespace Duplicati.Server
                         UpdateMetadataLastRestoreTest(backup, r.RestoreTestResults);
                 }
 
+                // Only the latest run is reported, so the notifications of the earlier runs go,
+                // whether or not this run has a warning or error of its own
+                var notificationIds = databaseConnection.GetNotifications()
+                    .Where(n => n.BackupID == backup.ID)
+                    .Select(x => x.ID)
+                    .ToList();
+
+                foreach (var id in notificationIds)
+                    try
+                    {
+                        databaseConnection.DismissNotification(id);
+                    }
+                    catch (Exception ex)
+                    {
+                        databaseConnection.LogError(backup.ID, "Failed to dismiss notification", ex);
+                    }
+
                 if (r.FilesWithError > 0 || r.Warnings.Any() || r.Errors.Any())
                 {
                     string message;
@@ -1396,23 +1413,6 @@ namespace Duplicati.Server
                         null,
                         (n, a) => n
                     );
-                }
-                else
-                {
-                    var notificationIds = databaseConnection.GetNotifications()
-                        .Where(n => n.BackupID == backup.ID)
-                        .Select(x => x.ID)
-                        .ToList();
-
-                    foreach (var id in notificationIds)
-                        try
-                        {
-                            databaseConnection.DismissNotification(id);
-                        }
-                        catch (Exception ex)
-                        {
-                            databaseConnection.LogError(backup.ID, "Failed to dismiss notification", ex);
-                        }
                 }
             }
             else if (result.ParsedResult != ParsedResultType.Success)
