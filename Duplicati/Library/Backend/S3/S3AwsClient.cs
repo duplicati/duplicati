@@ -95,6 +95,16 @@ namespace Duplicati.Library.Backend
         public const string S3_ARCHIVE_CLASSES_OPTION = "s3-archive-classes";
 
         /// <summary>
+        /// The option to specify the list API version
+        /// </summary>
+        public const string S3_LIST_API_VERSION_OPTION = "s3-list-api-version";
+
+        /// <summary>
+        /// The deprecated name of <see cref="S3_LIST_API_VERSION_OPTION"/>, which was the only key read before it was fixed
+        /// </summary>
+        public const string S3_LEGACY_LIST_API_VERSION_OPTION = "list-api-version";
+
+        /// <summary>
         /// The default storage classes that are considered archive classes
         /// </summary>
         public static readonly IReadOnlySet<S3StorageClass> DEFAULT_ARCHIVE_CLASSES = new HashSet<S3StorageClass>([
@@ -118,7 +128,7 @@ namespace Duplicati.Library.Backend
             m_client = new AmazonS3Client(awsID, awsKey, cfg);
 
             m_timeouts = timeouts;
-            m_useV2ListApi = string.Equals(options.GetValueOrDefault("list-api-version", "v1"), "v2", StringComparison.OrdinalIgnoreCase);
+            m_useV2ListApi = string.Equals(options.GetValueOrDefault(S3_LIST_API_VERSION_OPTION) ?? options.GetValueOrDefault(S3_LEGACY_LIST_API_VERSION_OPTION) ?? "v1", "v2", StringComparison.OrdinalIgnoreCase);
             m_locationConstraint = locationConstraint;
             m_storageClass = storageClass;
             m_dnsHost = string.IsNullOrWhiteSpace(cfg.ServiceURL) ? null : new System.Uri(cfg.ServiceURL).Host;
