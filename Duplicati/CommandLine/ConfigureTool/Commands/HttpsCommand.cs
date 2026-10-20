@@ -228,6 +228,7 @@ public static class HttpsCommand
         public string Origin { get; set; } = "ConfigureTool";
         public CancellationToken ApplicationExit => _applicationExitEvent.Token;
         public ISecretProvider? SecretProvider { get; set; }
+        public ISecretProvider? DefaultSecretProvider { get; set; }
 
         public void SignalApplicationExit() => _applicationExitEvent.Cancel();
     }
