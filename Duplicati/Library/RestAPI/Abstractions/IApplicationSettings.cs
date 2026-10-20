@@ -62,6 +62,11 @@ public interface IApplicationSettings
     ISecretProvider? SecretProvider { get; set; }
 
     /// <summary>
+    /// The default secret provider used to store and retrieve the settings encryption key, if any
+    /// </summary>
+    ISecretProvider? DefaultSecretProvider { get; set; }
+
+    /// <summary>
     /// Flag to indicate if the settings encryption key was provided externally
     /// </summary>
     bool SettingsEncryptionKeyProvidedExternally { get; set; }

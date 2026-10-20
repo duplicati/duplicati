@@ -195,6 +195,50 @@ public sealed record SystemInfoDto
     public required IEnumerable<IDynamicModule> SecretProviderModules { get; init; }
 
     /// <summary>
+    /// Describes a secret provider in use by this process.
+    /// </summary>
+    public sealed class SecretProviderDto
+    {
+        /// <summary>
+        /// The module key, i.e. the URL scheme such as "hcv" or "keychain".
+        /// </summary>
+        public required string Key { get; init; }
+
+        /// <summary>
+        /// The human readable module name.
+        /// </summary>
+        public required string DisplayName { get; init; }
+
+        /// <summary>
+        /// Whether the provider can store secrets.
+        /// </summary>
+        public required bool IsSetSupported { get; init; }
+
+        /// <summary>
+        /// The caching level in effect: None, InMemory or Persistent.
+        /// Null for providers that do not resolve option secrets.
+        /// </summary>
+        public required string? CachingLevel { get; init; }
+
+        /// <summary>
+        /// The prefix used to recognise secret references, usually "$".
+        /// Null for providers that do not resolve option secrets.
+        /// </summary>
+        public required string? Pattern { get; init; }
+    }
+
+    /// <summary>
+    /// The secret provider that resolves secrets in options and URLs, or null when none is configured.
+    /// </summary>
+    public required SecretProviderDto? ActiveSecretProvider { get; init; }
+
+    /// <summary>
+    /// The default secret provider that stores and retrieves the settings encryption key,
+    /// or null when disabled or unavailable on this system.
+    /// </summary>
+    public required SecretProviderDto? DefaultSecretProvider { get; init; }
+
+    /// <summary>
     /// Gets or sets a value indicating whether alternate update URLs are being used.
     /// </summary>
     public required bool UsingAlternateUpdateURLs { get; init; }

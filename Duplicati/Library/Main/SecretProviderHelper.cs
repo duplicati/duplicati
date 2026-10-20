@@ -84,6 +84,17 @@ public static class SecretProviderHelper
     public static ISecretProvider WrapWithCache(string config, ISecretProvider provider, CachingLevel cachingLevel, string persistedFolder, string salt, string? pattern)
         => new SecretProviderCached(config, provider, cachingLevel, persistedFolder, salt, pattern);
 
+    /// <summary>
+    /// Returns the effective caching level and pattern for a provider.
+    /// Providers that are not wrapped with a cache report no caching and the default pattern.
+    /// </summary>
+    /// <param name="provider">The provider to inspect</param>
+    /// <returns>The caching level and pattern in effect</returns>
+    public static (CachingLevel CachingLevel, string Pattern) GetProviderSettings(ISecretProvider provider)
+        => provider is SecretProviderCached cached
+            ? (cached.CachingLevel, cached.Pattern)
+            : (CachingLevel.None, DEFAULT_PATTERN);
+
 
     /// <summary>
     /// Gets the default secret provider, if any
@@ -375,6 +386,11 @@ public static class SecretProviderHelper
         /// The pattern associated with the provider
         /// </summary>
         public string Pattern { get; }
+
+        /// <summary>
+        /// The caching level associated with the provider
+        /// </summary>
+        public CachingLevel CachingLevel => _cachingLevel;
 
         /// <summary>
         /// Creates a new instance of the secret provider cache
