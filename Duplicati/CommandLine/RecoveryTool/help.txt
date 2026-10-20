@@ -42,7 +42,7 @@ Usage:
 
 Downloads all files matching the Duplicati filenames from <remoteurl> to <localfolder>, and decrypts them in the process.
 The remote url must be one supported by Duplicati.
-Use `%CLI_EXE% help backends` to see backends and options.
+Use `%CLI_EXE% help` to see the supported backends (listed as "Targets"), and `%CLI_EXE% help <backend>` to see the options for a backend.
 
 
 
