@@ -63,9 +63,21 @@ namespace Duplicati.Library.AutoUpdater
         /// </summary>
         public static readonly string INSTALLATIONDIR;
         /// <summary>
-        /// Env variable that allows fully disabling all update checks
+        /// The default value for disabling update checks, when the environment variable is not set.
+        /// Debug builds do not check for updates unless explicitly enabled.
         /// </summary>
-        public static readonly bool DISABLE_UPDATE_CHECK = Utility.Utility.ParseBool(Environment.GetEnvironmentVariable(string.Format(SKIPUPDATE_ENVNAME_TEMPLATE, APPNAME)), false);
+        private const bool DISABLE_UPDATE_CHECK_DEFAULT =
+#if DEBUG
+            true;
+#else
+            false;
+#endif
+        /// <summary>
+        /// Flag that indicates if all update checks are disabled.
+        /// Defaults to disabled for debug builds and enabled for release builds,
+        /// and can be overridden with the environment variable <see cref="SKIPUPDATE_ENVNAME_TEMPLATE"/>.
+        /// </summary>
+        public static readonly bool DISABLE_UPDATE_CHECK = Utility.Utility.ParseBool(Environment.GetEnvironmentVariable(string.Format(SKIPUPDATE_ENVNAME_TEMPLATE, APPNAME)), DISABLE_UPDATE_CHECK_DEFAULT);
         /// <summary>
         /// The operating system display name
         /// </summary>
