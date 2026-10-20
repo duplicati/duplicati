@@ -42,6 +42,14 @@ public class APIHelper
         _isRestoreOperation = isRestoreOperation;
     }
 
+    /// <summary>
+    /// Whether the credentials are a service account using domain-wide delegation.
+    /// Domain-wide delegation grants exactly the scopes listed in the Admin console, so a
+    /// token request for a scope that is not listed fails even when a broader scope is
+    /// delegated. A user credential (refresh token) carries every consented scope instead.
+    /// </summary>
+    public bool IsServiceAccount => !string.IsNullOrEmpty(_serviceAccountJson);
+
     private BaseClientService.Initializer GetServiceInitializer(string? userId, IEnumerable<string> scopes)
     {
         var backoffInitializer = new BackOffInitializer();
