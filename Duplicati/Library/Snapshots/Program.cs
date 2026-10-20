@@ -64,6 +64,8 @@ namespace Duplicati.Library.Snapshots
 
         public static int Main(string[] _args)
         {
+            PreloadSettingsLoader.ConfigurePreloadSettings(ref _args, PackageHelper.NamedExecutable.Snapshots);
+
             try
             {
                 var args = new List<string>(_args);
