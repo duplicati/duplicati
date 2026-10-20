@@ -416,7 +416,7 @@ public static class PreloadSettingsLoader
     /// </summary>
     /// <param name="exe">The executable to map</param>
     /// <returns>The mapped name</returns>
-    private static string MapExecutableName(PackageHelper.NamedExecutable exe)
+    internal static string MapExecutableName(PackageHelper.NamedExecutable exe)
         => exe switch
         {
             PackageHelper.NamedExecutable.TrayIcon => "tray",
@@ -432,6 +432,9 @@ public static class PreloadSettingsLoader
             PackageHelper.NamedExecutable.ServerUtil => "serverutil",
             PackageHelper.NamedExecutable.Service => "service",
             PackageHelper.NamedExecutable.Agent => "agent",
+            PackageHelper.NamedExecutable.SecretTool => "secrettool",
+            PackageHelper.NamedExecutable.SourceTool => "sourcetool",
+            PackageHelper.NamedExecutable.DatabaseTool => "databasetool",
             PackageHelper.NamedExecutable.ConfigureTool => "configuretool",
             _ => AnyExecutableMarker,
         };
