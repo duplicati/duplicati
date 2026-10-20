@@ -39,7 +39,7 @@ public static class Program
     /// <returns>The return code</returns>
     public static Task<int> MainAsync(string[] args)
     {
-        Library.AutoUpdater.PreloadSettingsLoader.ConfigurePreloadSettings(ref args, Library.AutoUpdater.PackageHelper.NamedExecutable.ServerUtil);
+        Library.AutoUpdater.PreloadSettingsLoader.ConfigurePreloadSettings(ref args, Library.AutoUpdater.PackageHelper.NamedExecutable.DatabaseTool);
 
         var rootCmd = new RootCommand("Database CLI tool for Duplicati")
             {

@@ -38,7 +38,7 @@ public static class Program
     /// <returns>The return code</returns>
     public static Task<int> Main(string[] args)
     {
-        Library.AutoUpdater.PreloadSettingsLoader.ConfigurePreloadSettings(ref args, Library.AutoUpdater.PackageHelper.NamedExecutable.ServerUtil);
+        Library.AutoUpdater.PreloadSettingsLoader.ConfigurePreloadSettings(ref args, Library.AutoUpdater.PackageHelper.NamedExecutable.SourceTool);
 
         var rootCmd = new RootCommand("Source CLI tool for Duplicati")
             {
