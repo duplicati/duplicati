@@ -48,7 +48,7 @@ namespace Duplicati.Library.AutoUpdater
             var cmd = args[0].ToLowerInvariant().Trim();
             if ((cmd == "check" || cmd == "download") && UpdaterManager.DISABLE_UPDATE_CHECK)
             {
-                Console.WriteLine("Update checks are disabled by the environment variable {0}", string.Format(UpdaterManager.SKIPUPDATE_ENVNAME_TEMPLATE, AutoUpdateSettings.AppName));
+                Console.WriteLine("Update checks are disabled (default for debug builds, controlled by the environment variable {0})", string.Format(UpdaterManager.SKIPUPDATE_ENVNAME_TEMPLATE, AutoUpdateSettings.AppName));
                 return 0;
             }
 
