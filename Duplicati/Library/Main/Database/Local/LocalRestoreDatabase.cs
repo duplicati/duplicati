@@ -1039,7 +1039,7 @@ namespace Duplicati.Library.Main.Database.Local
                         CASE
                             WHEN SUBSTR(""Path"", 1, 2) == '\\'
                             THEN '\\' || SUBSTR(""Path"", 2)
-                            ELSE ""Path""
+                            ELSE ""Targetpath""
                         END
                     ", token)
                         .ConfigureAwait(false);
