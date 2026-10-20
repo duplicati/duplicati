@@ -572,6 +572,39 @@ public class ServerApiIntegrationTests : BasicSetupHelper
     }
 
     /// <summary>
+    /// A backup that warns on every run keeps one notification, for its latest run, rather than
+    /// one more for each run (#6420). Before, the notifications piled up into the thousands,
+    /// which made dismissing them all hang the browser (#4719).
+    /// </summary>
+    [Test]
+    [Category("Integration")]
+    public async Task BackupWarningReplacesTheNotificationOfTheEarlierRun_Async()
+    {
+        var backupPassphrase = "integration-passphrase";
+        File.WriteAllText(Path.Combine(this.DATAFOLDER, "sample.txt"), "Sample content");
+
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            // An option the backup does not know makes each run end with a warning
+            var backupId = await CreateBackupAsync(httpClient, backupPassphrase,
+                extraSettings: [new BackupAndScheduleInputDto.SettingInputDto { Name = "not-a-real-option", Value = "true" }]).ConfigureAwait(false);
+
+            var connection = (Duplicati.Server.Database.Connection)ServerProgram.DuplicatiWebserver.Provider.GetService(typeof(Duplicati.Server.Database.Connection))!;
+            var otherNotifications = connection.GetNotifications().Count(n => n.BackupID != backupId);
+
+            for (var i = 0; i < 3; i++)
+                await RunTaskAndWaitAsync(httpClient, $"/api/v1/backup/{backupId}/run").ConfigureAwait(false);
+
+            var notifications = connection.GetNotifications();
+            var forBackup = notifications.Where(n => n.BackupID == backupId).ToList();
+            Assert.That(forBackup.Select(n => n.Type), Is.EqualTo(new[] { Duplicati.Server.Serialization.NotificationType.Warning }),
+                $"Expected one warning notification for the backup, got: {string.Join(" | ", forBackup.Select(n => $"{n.Type} {n.Title}: {n.Message}"))}");
+            Assert.That(notifications.Count(n => n.BackupID != backupId), Is.EqualTo(otherNotifications),
+                "The notifications of others were changed");
+        }).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Waits until the task is no longer current, so its result has been stored.
     /// </summary>
     private static async Task WaitForTaskResultAsync(long taskId)
