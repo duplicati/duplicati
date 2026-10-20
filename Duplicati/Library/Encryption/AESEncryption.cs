@@ -49,6 +49,11 @@ namespace Duplicati.Library.Encryption
         /// The key used to define if the AES output should use a minimal header
         /// </summary>
         private const string KEY_AES_MINIMAL_HEADER = "aes-minimal-header";
+        /// <summary>
+        /// The AES stream format version used when none is given.
+        /// Until the next stable release, use version 2 by default
+        /// </summary>
+        private const int DEFAULT_AES_VERSION = 2;
 
         /// <summary>
         /// The key used to encrypt the data
@@ -140,9 +145,8 @@ namespace Duplicati.Library.Encryption
                     InsertPlaceholder = false
                 };
 
-            // Until the next stable release, use version 2 by default
             if (version == null)
-                version = 2;
+                version = DEFAULT_AES_VERSION;
 
             if (version.HasValue)
                 encOpts = encOpts with { FileVersion = (byte)version.Value };
@@ -229,7 +233,7 @@ namespace Duplicati.Library.Encryption
                 CommandLineArgument.ArgumentType.Enumeration,
                 Strings.AESEncryption.AesversionShort,
                 Strings.AESEncryption.AesversionLong,
-                SharpAESCrypt.EncryptionOptions.Default.FileVersion.ToString(),
+                DEFAULT_AES_VERSION.ToString(),
                 null,
                 ["2", "3"]
             ),

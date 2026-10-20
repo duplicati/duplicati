@@ -628,6 +628,39 @@ public class ServerApiIntegrationTests : BasicSetupHelper
     }
 
     /// <summary>
+    /// A backup that warns on every run keeps one notification, for its latest run, rather than
+    /// one more for each run (#6420). Before, the notifications piled up into the thousands,
+    /// which made dismissing them all hang the browser (#4719).
+    /// </summary>
+    [Test]
+    [Category("Integration")]
+    public async Task BackupWarningReplacesTheNotificationOfTheEarlierRun_Async()
+    {
+        var backupPassphrase = "integration-passphrase";
+        File.WriteAllText(Path.Combine(this.DATAFOLDER, "sample.txt"), "Sample content");
+
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            // An option the backup does not know makes each run end with a warning
+            var backupId = await CreateBackupAsync(httpClient, backupPassphrase,
+                extraSettings: [new BackupAndScheduleInputDto.SettingInputDto { Name = "not-a-real-option", Value = "true" }]).ConfigureAwait(false);
+
+            var connection = (Duplicati.Server.Database.Connection)ServerProgram.DuplicatiWebserver.Provider.GetService(typeof(Duplicati.Server.Database.Connection))!;
+            var otherNotifications = connection.GetNotifications().Count(n => n.BackupID != backupId);
+
+            for (var i = 0; i < 3; i++)
+                await RunTaskAndWaitAsync(httpClient, $"/api/v1/backup/{backupId}/run").ConfigureAwait(false);
+
+            var notifications = connection.GetNotifications();
+            var forBackup = notifications.Where(n => n.BackupID == backupId).ToList();
+            Assert.That(forBackup.Select(n => n.Type), Is.EqualTo(new[] { Duplicati.Server.Serialization.NotificationType.Warning }),
+                $"Expected one warning notification for the backup, got: {string.Join(" | ", forBackup.Select(n => $"{n.Type} {n.Title}: {n.Message}"))}");
+            Assert.That(notifications.Count(n => n.BackupID != backupId), Is.EqualTo(otherNotifications),
+                "The notifications of others were changed");
+        }).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Waits until the task is no longer current, so its result has been stored.
     /// </summary>
     private static async Task WaitForTaskResultAsync(long taskId)
@@ -943,6 +976,48 @@ public class ServerApiIntegrationTests : BasicSetupHelper
     {
         using var doc = JsonDocument.Parse(await httpClient.GetStringAsync("/api/v1/serverstate").ConfigureAwait(false));
         return doc.RootElement.Clone();
+    }
+
+    /// <summary>
+    /// The refresh token cookie was set for the domain the request named in its Host header.
+    /// Behind a reverse proxy that does not pass the Host header on, that is the address of
+    /// the server, not the name the browser uses, so the browser rejected the cookie, every
+    /// refresh failed, and the login looped (issue #6042). A cookie without a domain is for
+    /// the host the browser asked, whatever the server sees.
+    /// </summary>
+    [Test]
+    [Category("Integration")]
+    public async Task TheRefreshCookieHasNoDomain_Async()
+    {
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            // Handle the cookies here, to see what the server sets
+            using var client = new HttpClient(new HttpClientHandler { UseCookies = false }) { BaseAddress = httpClient.BaseAddress };
+
+            static string RefreshCookie(HttpResponseMessage response)
+            {
+                var cookies = response.Headers.TryGetValues("Set-Cookie", out var values) ? values.ToList() : [];
+                var set = cookies
+                    .Where(c => c.StartsWith("RefreshToken_", StringComparison.Ordinal))
+                    .Where(c => !c.Contains("expires=Thu, 01 Jan 1970", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+                Assert.That(set, Has.Count.EqualTo(1), $"one refresh cookie should be set: {string.Join(" | ", cookies)}");
+                Assert.That(set[0], Does.Not.Contain("domain=").IgnoreCase, "the refresh cookie should have no domain");
+                return set[0].Split(';')[0];
+            }
+
+            var login = await client.PostAsJsonAsync("/api/v1/auth/login", new { password = "integration-test-password", rememberMe = true }, JsonOptions).ConfigureAwait(false);
+            login.EnsureSuccessStatusCode();
+            var cookie = RefreshCookie(login);
+            var tokens = await login.Content.ReadFromJsonAsync<AccessTokenOutputDto>(JsonOptions).ConfigureAwait(false);
+
+            // The cookie works for a refresh, which sets a new one the same way
+            using var refresh = new HttpRequestMessage(HttpMethod.Post, "/api/v1/auth/refresh") { Content = JsonContent.Create(new { nonce = tokens!.RefreshNonce }) };
+            refresh.Headers.Add("Cookie", cookie);
+            var refreshed = await client.SendAsync(refresh).ConfigureAwait(false);
+            refreshed.EnsureSuccessStatusCode();
+            RefreshCookie(refreshed);
+        }).ConfigureAwait(false);
     }
 
     private Task WithAuthenticatedServerAsync(Func<HttpClient, Task> testBody, string? ports = null, string listenInterface = "127.0.0.1")

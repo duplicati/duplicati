@@ -87,15 +87,7 @@ public class SharedRemoteOperation
 
         var tmp = new[] { uri };
         await SecretProviderHelper.ApplySecretProviderAsync([], tmp, opts, Library.Utility.TempFolder.SystemTempPath, applicationSettings.SecretProvider, cancelToken);
-        url = tmp[0].ToString();
-
-        if (uri.Scheme.Equals(Library.Backend.Duplicati.DuplicatiBackend.PROTOCOL, StringComparison.OrdinalIgnoreCase))
-            url = Library.Backend.Duplicati.DuplicatiBackend.MergeArgsIntoUrl(
-                url,
-                connection.ApplicationSettings.RemoteControlStorageApiId,
-                connection.ApplicationSettings.RemoteControlStorageApiKey,
-                connection.ApplicationSettings.RemoteControlStorageEndpointUrl
-            );
+        url = Runner.ApplyDuplicatiStorageCredentials(connection, tmp[0].ToString());
 
         return (url, opts);
     }
