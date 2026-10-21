@@ -102,6 +102,7 @@ namespace Duplicati.Library.Backend
             { "Internxt US Central 1 (Texas)", "s3.us-central-1.internxt.com" },
             { "Internxt EU Central 1 (Amsterdam)", "s3.eu-central-1.internxt.com" },
             { "Cloudflare R2", ".r2.cloudflarestorage.com" },
+            { "Neon Object Storage", ".neon.tech" },
             { "Selectel S3 ru-1", "s3.ru-1.storage.selcloud.ru" },
             { "Selectel S3 ru-3", "s3.ru-3.storage.selcloud.ru" },
             { "Selectel S3 ru-7", "s3.ru-7.storage.selcloud.ru" },
