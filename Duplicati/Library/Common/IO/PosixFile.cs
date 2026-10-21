@@ -322,7 +322,7 @@ namespace Duplicati.Library.Common.IO
             foreach (var s in values)
             {
                 byte[] v;
-                var n = SUPPORTS_LLISTXATTR ? Mono.Unix.Native.Syscall.lgetxattr(path, s, out v) : Mono.Unix.Native.Syscall.getxattr(path, s, out v);
+                var n = use_llistxattr ? Mono.Unix.Native.Syscall.lgetxattr(path, s, out v) : Mono.Unix.Native.Syscall.getxattr(path, s, out v);
                 if (n > 0)
                     dict.Add(s, v);
             }
