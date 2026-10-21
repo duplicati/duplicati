@@ -26,6 +26,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Threading.Tasks;
 using Duplicati.Library.Utility;
@@ -424,14 +425,28 @@ namespace Duplicati.Library.Modules.Builtin
 
             Exception ex = null;
 
+            // Send to every target, and report the first failure once all have been tried
             foreach (var target in m_report_targets)
             {
-                if (m_cachedBodyResults.TryGetValue(target.Format, out var result))
-                    ex ??= SendMessage(client, target, subject, result).Await();
+                if (!m_cachedBodyResults.TryGetValue(target.Format, out var result))
+                    continue;
+
+                Exception targetEx;
+                try
+                {
+                    // The retry helper throws the last failure once the retries are used up
+                    targetEx = SendMessage(client, target, subject, result).Await();
+                }
+                catch (Exception e)
+                {
+                    targetEx = e;
+                }
+
+                ex ??= targetEx;
             }
 
             if (ex != null)
-                throw ex;
+                ExceptionDispatchInfo.Capture(ex).Throw();
         }
     }
 }
