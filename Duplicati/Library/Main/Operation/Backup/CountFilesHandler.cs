@@ -42,8 +42,10 @@ namespace Duplicati.Library.Main.Operation.Backup
             System.Threading.CancellationToken token
         )
         {
-            // Keep the log channel from the parent scope
-            using (Logging.Log.StartIsolatingScope(true))
+            // The backup goes through the same paths and logs the same messages, so the
+            // messages of this pass are kept out of the log. The scope must stay current
+            // for the enumeration started below, so it is not detached.
+            using (Logging.Log.StartIsolatingScope(false))
             {
                 Channels channels = new();
                 var enumeratorTask = FileEnumerationProcess.RunAsync(
