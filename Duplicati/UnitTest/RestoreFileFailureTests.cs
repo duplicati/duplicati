@@ -24,7 +24,11 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
+using Duplicati.Library.DynamicLoader;
+using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.SQLiteHelper;
@@ -152,6 +156,27 @@ namespace Duplicati.UnitTest
                 CollectionAssert.AreEqual(new[] { Path.Combine(RESTOREFOLDER, FailingFile) }, results.BrokenLocalFiles, "The files reported as not restored");
                 CollectionAssert.IsEmpty(countErrors, "The blocks of the failed file were still counted as needed at the end");
             });
+        }
+
+        /// <summary>
+        /// Makes the database place the blocks of the failing file in no volume, so the restore
+        /// skips the file.
+        /// </summary>
+        private async Task PlaceTheFailingFileInNoVolumeAsync()
+        {
+            using var con = await SQLiteLoader.LoadConnectionAsync(DBFILE);
+            using var cmd = con.CreateCommand();
+            var updated = await cmd
+                .SetCommandAndParameters(@"
+                    UPDATE ""Block"" SET ""VolumeID"" = -1
+                    WHERE ""ID"" IN (
+                        SELECT ""BlockID"" FROM ""BlocksetEntry"" WHERE ""BlocksetID"" = (
+                            SELECT ""BlocksetID"" FROM ""File"" WHERE ""Path"" = @Path
+                        )
+                    )")
+                .SetParameterValue("@Path", Path.Combine(DATAFOLDER, FailingFile))
+                .ExecuteNonQueryAsync();
+            Assert.AreEqual(20, updated, "The file's blocks were not found");
         }
 
         /// <summary>
@@ -308,23 +333,7 @@ namespace Duplicati.UnitTest
         public async Task AFileWithANegativeVolumeIdReleasesItsBlocks()
         {
             await BackupAsync();
-
-            // The database places the file's blocks in no volume, so the file is skipped
-            using (var con = await SQLiteLoader.LoadConnectionAsync(DBFILE))
-            using (var cmd = con.CreateCommand())
-            {
-                var updated = await cmd
-                    .SetCommandAndParameters(@"
-                        UPDATE ""Block"" SET ""VolumeID"" = -1
-                        WHERE ""ID"" IN (
-                            SELECT ""BlockID"" FROM ""BlocksetEntry"" WHERE ""BlocksetID"" = (
-                                SELECT ""BlocksetID"" FROM ""File"" WHERE ""Path"" = @Path
-                            )
-                        )")
-                    .SetParameterValue("@Path", Path.Combine(DATAFOLDER, FailingFile))
-                    .ExecuteNonQueryAsync();
-                Assert.AreEqual(20, updated, "The file's blocks were not found");
-            }
+            await PlaceTheFailingFileInNoVolumeAsync();
 
             var (_, countErrors) = await RestoreAsync(RestoreOptions());
 
@@ -357,6 +366,110 @@ namespace Duplicati.UnitTest
                 CollectionAssert.IsEmpty(countErrors, "The blocks of the file with an existing copy were still counted as needed at the end");
                 CollectionAssert.IsEmpty(results.Errors, "A restore that had nothing wrong reported errors");
             });
+        }
+
+        /// <summary>
+        /// A restore callback module that makes the named files priority files, which the other
+        /// files wait for. The loader creates a fresh instance for each operation, so the names
+        /// and the record of the call are static.
+        /// </summary>
+        public class PriorityFileModule : IRestoreCallbackModule
+        {
+            public const string KEY = "test-restore-priority-files";
+
+            public static List<string> Names { get; } = new();
+            public static int PrepareCalls;
+
+            public string Key => KEY;
+            public string DisplayName => "Test restore priority files";
+            public string Description => "Marks files as priority files for tests";
+            public bool LoadAsDefault => false;
+            public IList<ICommandLineArgument> SupportedCommands => new List<ICommandLineArgument>();
+
+            public void Configure(IDictionary<string, string> commandlineOptions) { }
+
+            public Task OnPreparePriorityFilesAsync(IList<string> priorityFiles, long version, DateTime backupTimestamp, CancellationToken cancellationToken)
+            {
+                foreach (var name in Names)
+                    priorityFiles.Add(name);
+                Interlocked.Increment(ref PrepareCalls);
+                return Task.CompletedTask;
+            }
+
+            public Task OnBulkRestoreStartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+            public Task OnFileRestoredAsync(long version, string path, DateTime backupTimestamp, CancellationToken cancellationToken) => Task.CompletedTask;
+        }
+
+        [OneTimeSetUp]
+        public void RegisterPriorityFileModule()
+        {
+            // The loader's module table is not publicly writable, as in RestoreCallbackModuleTests
+            var lazy = typeof(GenericLoader).GetField("_loader", BindingFlags.NonPublic | BindingFlags.Static)?.GetValue(null)
+                ?? throw new InvalidOperationException("Could not find GenericLoader._loader");
+            var loader = lazy.GetType().GetProperty("Value")!.GetValue(lazy)!;
+            var addModule = loader.GetType().GetMethod("AddModule", BindingFlags.Public | BindingFlags.Instance)
+                ?? throw new InvalidOperationException("Could not find AddModule on the loader");
+            addModule.Invoke(loader, [new PriorityFileModule()]);
+        }
+
+        /// <summary>
+        /// Restores with the named file as a priority file, and checks that the restore ends. How
+        /// it ends is not checked here: the file fails, and the other files wait for it.
+        /// </summary>
+        private async Task AssertTheRestoreEndsWithPriorityFileAsync(string name)
+        {
+            PriorityFileModule.Names.Clear();
+            PriorityFileModule.Names.Add(name);
+            PriorityFileModule.PrepareCalls = 0;
+
+            var options = RestoreOptions();
+            options["enable-module"] = PriorityFileModule.KEY;
+
+            using var c = new Controller("file://" + TARGETFOLDER, options, null);
+            var restoreTask = Task.Run(async () => await c.RestoreAsync(["*"]));
+            if (await Task.WhenAny(restoreTask, Task.Delay(TimeSpan.FromMinutes(2))) != restoreTask)
+            {
+                await c.AbortAsync();
+                Assert.Fail("The restore did not finish within two minutes: the other files are still waiting for the priority file");
+            }
+
+            try
+            {
+                await restoreTask;
+            }
+            catch (Exception)
+            {
+                // The failed priority file fails the restore, which is a separate matter
+            }
+
+            Assert.AreEqual(1, PriorityFileModule.PrepareCalls, "The module did not mark the priority file, so the test proves nothing");
+        }
+
+        // A priority file that is given up has to release the files waiting for it, or they wait
+        // until the restore is aborted.
+
+        [Test]
+        [Category("RestoreHandler")]
+        public async Task APriorityEmptyFileThatCannotBeCreatedDoesNotStallTheRestore()
+        {
+            File.WriteAllBytes(Path.Combine(DATAFOLDER, "empty"), []);
+            await BackupAsync();
+
+            // A folder where the empty file should go, so it cannot be created
+            Directory.CreateDirectory(Path.Combine(RESTOREFOLDER, "empty"));
+
+            await AssertTheRestoreEndsWithPriorityFileAsync("empty");
+        }
+
+        [Test]
+        [Category("RestoreHandler")]
+        public async Task APriorityFileWithANegativeVolumeIdDoesNotStallTheRestore()
+        {
+            await BackupAsync();
+            await PlaceTheFailingFileInNoVolumeAsync();
+
+            await AssertTheRestoreEndsWithPriorityFileAsync(FailingFile);
         }
     }
 }
