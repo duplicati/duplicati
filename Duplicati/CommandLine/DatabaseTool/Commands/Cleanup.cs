@@ -67,8 +67,14 @@ public static class Cleanup
 
             var datafolderPath = datafolder.FullName;
 
-            // Get orphaned databases using the same logic as verify
-            var orphanedDbs = await Verify.GetOrphanedDatabasesAsync(datafolderPath);
+            // Get orphaned databases using the same logic as verify.
+            // Databases with the server schema are never referenced by dbconfig.json
+            // or by the server database itself, so they always appear orphaned.
+            // This includes the active server database and the copies the database
+            // upgrader keeps before a schema upgrade, so they are never deleted.
+            var orphanedDbs = (await Verify.GetOrphanedDatabasesAsync(datafolderPath))
+                .Where(d => d.Type != DatabaseType.Server)
+                .ToList();
 
             if (orphanedDbs.Count == 0)
             {
