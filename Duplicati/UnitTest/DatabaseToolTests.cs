@@ -1011,6 +1011,7 @@ INSERT INTO ""Version"" (""Version"") VALUES (12);
                 Assert.That(File.Exists(foundDb), Is.True, "Found DB should still exist after cleanup");
                 Assert.That(File.Exists(orphanDb), Is.False, "Orphan DB should be deleted after cleanup");
                 Assert.That(File.Exists(missingDb), Is.False, "Missing DB should still not exist after cleanup");
+                Assert.That(File.Exists(serverDb), Is.True, "Server DB should still exist after cleanup");
             }
         }
 
