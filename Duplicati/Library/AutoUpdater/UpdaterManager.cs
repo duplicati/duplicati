@@ -238,7 +238,7 @@ namespace Duplicati.Library.AutoUpdater
 
                         using var request = new HttpRequestMessage(HttpMethod.Get, url);
 
-                        request.Headers.Add(System.Net.HttpRequestHeader.UserAgent.ToString(), string.Format("{0} v{1}{2}", APPNAME, SelfVersion.Version, string.IsNullOrWhiteSpace(DataFolderManager.InstallID) ? "" : " -" + DataFolderManager.InstallID));
+                        request.Headers.Add("User-Agent", string.Format("{0} v{1}{2}", APPNAME, SelfVersion.Version, string.IsNullOrWhiteSpace(DataFolderManager.InstallID) ? "" : " -" + DataFolderManager.InstallID));
                         request.Headers.Add("X-Install-ID", DataFolderManager.InstallID);
                         request.Headers.Add("X-Package-Type-ID", PackageTypeId);
 
@@ -382,7 +382,7 @@ namespace Duplicati.Library.AutoUpdater
 
                             using var request = new HttpRequestMessage(HttpMethod.Get, url);
 
-                            request.Headers.Add(System.Net.HttpRequestHeader.UserAgent.ToString(), string.Format("{0} v{1}", APPNAME, SelfVersion.Version));
+                            request.Headers.Add("User-Agent", string.Format("{0} v{1}", APPNAME, SelfVersion.Version));
                             request.Headers.Add("X-Install-ID", DataFolderManager.InstallID);
 
                             using var timeoutToken = new CancellationTokenSource();
