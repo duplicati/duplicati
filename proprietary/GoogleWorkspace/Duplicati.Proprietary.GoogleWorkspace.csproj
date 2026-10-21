@@ -15,6 +15,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Duplicati.UnitTest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Google.Apis.Gmail.v1" Version="1.68.0.3427" />
     <PackageReference Include="Google.Apis.Admin.Directory.directory_v1" Version="1.68.0.3428" />
     <PackageReference Include="Google.Apis.Calendar.v3" Version="1.68.0.3430" />
