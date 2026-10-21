@@ -322,7 +322,7 @@ namespace Duplicati.Library.Common.IO
             foreach (var s in values)
             {
                 byte[] v;
-                var n = SUPPORTS_LLISTXATTR ? Mono.Unix.Native.Syscall.lgetxattr(path, s, out v) : Mono.Unix.Native.Syscall.getxattr(path, s, out v);
+                var n = use_llistxattr ? Mono.Unix.Native.Syscall.lgetxattr(path, s, out v) : Mono.Unix.Native.Syscall.getxattr(path, s, out v);
                 if (n > 0)
                     dict.Add(s, v);
             }
@@ -399,8 +399,13 @@ namespace Duplicati.Library.Common.IO
         /// <param name="permissions">The file access permissions to set</param>
         public static void SetUserGroupAndPermissions(string path, long uid, long gid, long permissions)
         {
-            Mono.Unix.UnixFileInfo.GetFileSystemEntry(path).SetOwner(uid, gid);
-            Mono.Unix.UnixFileInfo.GetFileSystemEntry(path).FileAccessPermissions = (Mono.Unix.FileAccessPermissions)permissions;
+            var fse = Mono.Unix.UnixFileInfo.GetFileSystemEntry(path);
+            fse.SetOwner(uid, gid);
+
+            // chmod follows a symbolic link, so setting the permissions of a link would set
+            // them on the file it points to. The permissions of a link itself are not used.
+            if (!fse.IsSymbolicLink)
+                fse.FileAccessPermissions = (Mono.Unix.FileAccessPermissions)permissions;
         }
 
         /// <summary>

@@ -395,6 +395,8 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
             ConnectionModules = systeminfo.ConnectionModules,
             ServerModules = systeminfo.ServerModules,
             SecretProviderModules = systeminfo.SecretProviderModules,
+            ActiveSecretProvider = DescribeSecretProvider(applicationSettings.SecretProvider, true),
+            DefaultSecretProvider = DescribeSecretProvider(applicationSettings.DefaultSecretProvider, false),
             SourceProviderModules = systeminfo.SourceProviderModules,
             RestoreDestinationProviderModules = systeminfo.RestoreDestinationProviderModules,
             UsingAlternateUpdateURLs = systeminfo.UsingAlternateUpdateURLs,
@@ -418,6 +420,36 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
             PowerModeProviders = systeminfo.PowerModeProviders,
             LocalLicenseStatus = SystemInfoDto.LicenseStatusDto.Map(Proprietary.LicenseChecker.LicenseHelper.GetLocalLicenseData()),
             RemoteLicenseStatus = SystemInfoDto.LicenseStatusDto.Map(Proprietary.LicenseChecker.LicenseHelper.GetRemoteLicenseData())
+        };
+    }
+
+    /// <summary>
+    /// Describes a secret provider without exposing its configuration.
+    /// </summary>
+    /// <param name="provider">The provider in use, or null if none is configured.</param>
+    /// <param name="resolvesOptions">True if the provider resolves option secrets, so caching level and pattern apply.</param>
+    /// <returns>The description, or null if no provider is configured.</returns>
+    private static SystemInfoDto.SecretProviderDto? DescribeSecretProvider(Library.Interface.ISecretProvider? provider, bool resolvesOptions)
+    {
+        if (provider == null)
+            return null;
+
+        string? cachingLevel = null;
+        string? pattern = null;
+        if (resolvesOptions)
+        {
+            var settings = Library.Main.SecretProviderHelper.GetProviderSettings(provider);
+            cachingLevel = settings.CachingLevel.ToString();
+            pattern = settings.Pattern;
+        }
+
+        return new SystemInfoDto.SecretProviderDto
+        {
+            Key = provider.Key,
+            DisplayName = provider.DisplayName,
+            IsSetSupported = provider.IsSetSupported,
+            CachingLevel = cachingLevel,
+            Pattern = pattern
         };
     }
 }

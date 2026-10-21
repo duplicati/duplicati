@@ -50,14 +50,14 @@ namespace Duplicati.UnitTest
         /// last line of <c>Duplicati/Library/Main/Database/Local/Database schema/Schema.sql</c>
         /// and must be kept in sync if the schema is bumped.
         /// </summary>
-        private const int EXPECTED_LATEST_SCHEMA_VERSION = 21;
+        private const int EXPECTED_LATEST_SCHEMA_VERSION = 22;
 
         /// <summary>
         /// The most recent numbered upgrade script in the LocalDatabase schema
-        /// resources, e.g. <c>21. Add restore test history table.sql</c>. This is the
+        /// resources, e.g. <c>22. Add source provider state.sql</c>. This is the
         /// last upgrade the upgrader should be able to discover and apply.
         /// </summary>
-        private const int EXPECTED_HIGHEST_UPGRADE_SCRIPT = 21;
+        private const int EXPECTED_HIGHEST_UPGRADE_SCRIPT = 22;
 
         /// <summary>
         /// Calling <c>UpgradeDatabase</c> on a fresh (empty) database should load the
@@ -108,11 +108,11 @@ namespace Duplicati.UnitTest
                 // version: drop the column the most recent upgrade script introduces.
                 DatabaseUpgrader.UpgradeDatabase(db, dbfile, typeof(DatabaseSchemaMarker));
 
-                // The final upgrade script ("21. Add restore test history table.sql") creates
-                // the "RestoreTestHistory" table. Remove that table to simulate the
-                // pre-upgrade (version 20) state so the upgrader has an outstanding upgrade
+                // The final upgrade script ("22. Add source provider state.sql") creates
+                // the "SourceProviderState" table. Remove that table to simulate the
+                // pre-upgrade (version 21) state so the upgrader has an outstanding upgrade
                 // to apply.
-                cmd.CommandText = @"DROP TABLE ""RestoreTestHistory""";
+                cmd.CommandText = @"DROP TABLE ""SourceProviderState""";
                 await cmd.ExecuteNonQueryAsync();
 
                 // Pin the recorded version one below the latest so the upgrader has work to do.
@@ -133,8 +133,8 @@ namespace Duplicati.UnitTest
 
                 // The table added by the final upgrade script must now exist again,
                 // proving the upgrade script was actually executed and not just skipped.
-                Assert.IsTrue(await TableExistsAsync(db, "RestoreTestHistory"),
-                    "The RestoreTestHistory table (added by the final upgrade script) should exist after the upgrade.");
+                Assert.IsTrue(await TableExistsAsync(db, "SourceProviderState"),
+                    "The SourceProviderState table (added by the final upgrade script) should exist after the upgrade.");
             }
         }
 
@@ -201,7 +201,7 @@ namespace Duplicati.UnitTest
 
             // Drop the table the most recent upgrade script introduces, so that
             // re-applying that script is valid.
-            cmd.CommandText = @"DROP TABLE ""RestoreTestHistory""";
+            cmd.CommandText = @"DROP TABLE ""SourceProviderState""";
             await cmd.ExecuteNonQueryAsync();
 
             cmd.CommandText = @"UPDATE ""Version"" SET ""Version"" = @ver";

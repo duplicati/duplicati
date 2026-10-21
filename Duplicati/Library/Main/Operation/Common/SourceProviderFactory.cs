@@ -62,6 +62,16 @@ namespace Duplicati.Library.Main.Operation.Common
         public const string StoreMetadataContentInDatabaseOption = "store-metadata-content-in-database";
 
         /// <summary>
+        /// Normalizes a mount point to the form the source providers are mounted at: a full
+        /// path ending with the directory separator, so the same mount point written in
+        /// different ways is the same path
+        /// </summary>
+        /// <param name="mountpoint">The mount point as given in the source</param>
+        /// <returns>The normalized mount point</returns>
+        public static string NormalizeMountpoint(string mountpoint)
+            => Path.GetFullPath(Duplicati.Library.Common.IO.Util.AppendDirSeparator(mountpoint));
+
+        /// <summary>
         /// Splits a remote source on the form "@mountpoint|url" into its parts
         /// </summary>
         /// <param name="source">The source to split</param>
@@ -334,13 +344,13 @@ namespace Duplicati.Library.Main.Operation.Common
                                 if (!Path.IsPathRooted(mountpoint))
                                     throw new UserInformationException(string.Format("The mountpoint \"{0}\" is not a valid rooted mountpoint", mountpoint), "InvalidMountpoint");
 
-                                var normalizedMountpoint = Duplicati.Library.Common.IO.Util.AppendDirSeparator(mountpoint);
+                                var normalizedMountpoint = NormalizeMountpoint(mountpoint);
                                 var backendurl = remoteSource.Url;
 
                                 ISourceProviderModule provider;
                                 try
                                 {
-                                    provider = SourceProviderLoader.CreateSourceProvider(backendurl, Path.GetFullPath(normalizedMountpoint), options.RawOptions)
+                                    provider = SourceProviderLoader.CreateSourceProvider(backendurl, normalizedMountpoint, options.RawOptions)
                                         ?? throw new UserInformationException($"The source \"{sanitizedUrl}\" is not supported", "SourceNotSupported");
                                 }
                                 catch (Exception ex)

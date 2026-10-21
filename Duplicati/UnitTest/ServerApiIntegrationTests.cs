@@ -146,6 +146,42 @@ public class ServerApiIntegrationTests : BasicSetupHelper
 
     [Test]
     [Category("Integration")]
+    public async Task SystemInfoReportsActiveSecretProvider_Async()
+    {
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            var systemInfo = await httpClient.GetFromJsonAsync<JsonElement>("/api/v1/systeminfo", JsonOptions).ConfigureAwait(false);
+
+            var hasActiveSecretProvider = systemInfo.TryGetProperty("activeSecretProvider", out var provider) || systemInfo.TryGetProperty("ActiveSecretProvider", out provider);
+            Assert.That(hasActiveSecretProvider, Is.True, "System information should include the active secret provider field");
+            Assert.That(provider.ValueKind, Is.EqualTo(JsonValueKind.Object), "The active secret provider should be reported as an object");
+
+            Assert.That(GetStringProperty(provider, "key"), Is.EqualTo("env"), "The provider key should be the configured URL scheme");
+            Assert.That(GetStringProperty(provider, "displayName"), Is.Not.Null.And.Not.Empty, "The provider display name should be populated");
+            Assert.That(GetStringProperty(provider, "cachingLevel"), Is.EqualTo("InMemory"), "The caching level should reflect the server argument");
+            Assert.That(GetStringProperty(provider, "pattern"), Is.EqualTo("$"), "The pattern should be the default when not configured");
+
+            var hasIsSetSupported = provider.TryGetProperty("isSetSupported", out var isSetSupported) || provider.TryGetProperty("IsSetSupported", out isSetSupported);
+            Assert.That(hasIsSetSupported && isSetSupported.ValueKind == JsonValueKind.False, Is.True, "The environment provider does not support storing secrets");
+
+            var hasDefaultSecretProvider = systemInfo.TryGetProperty("defaultSecretProvider", out var defaultProvider) || systemInfo.TryGetProperty("DefaultSecretProvider", out defaultProvider);
+            Assert.That(hasDefaultSecretProvider, Is.True, "System information should include the default secret provider field");
+            Assert.That(defaultProvider.ValueKind, Is.EqualTo(JsonValueKind.Null), "No default secret provider should be reported when it is disabled");
+        }, null, "127.0.0.1", ["--secret-provider=env://", "--secret-provider-cache=InMemory", "--disable-default-secret-provider=true"]).ConfigureAwait(false);
+    }
+
+    private static string? GetStringProperty(JsonElement element, string camelCaseName)
+    {
+        var pascalCaseName = char.ToUpperInvariant(camelCaseName[0]) + camelCaseName[1..];
+        if (element.TryGetProperty(camelCaseName, out var value) || element.TryGetProperty(pascalCaseName, out value))
+            return value.GetString();
+
+        Assert.Fail($"Property {camelCaseName} was not found");
+        return null;
+    }
+
+    [Test]
+    [Category("Integration")]
     public async Task ServerMetadataEndpointsReturnData_Async()
     {
         var entryAssemblyLocation = Duplicati.Library.Utility.Utility.getEntryAssembly().Location;
@@ -177,6 +213,26 @@ public class ServerApiIntegrationTests : BasicSetupHelper
 
                 var hasOptionsProperty = systemInfo.TryGetProperty("options", out var optionsElement) || systemInfo.TryGetProperty("Options", out optionsElement);
                 Assert.That(hasOptionsProperty && optionsElement.ValueKind == JsonValueKind.Array, Is.True, "System information should include option metadata");
+
+                var hasActiveSecretProvider = systemInfo.TryGetProperty("activeSecretProvider", out var activeSecretProviderElement) || systemInfo.TryGetProperty("ActiveSecretProvider", out activeSecretProviderElement);
+                Assert.That(hasActiveSecretProvider, Is.True, "System information should include the active secret provider field");
+                Assert.That(activeSecretProviderElement.ValueKind, Is.EqualTo(JsonValueKind.Null), "No secret provider should be reported when the server runs without one");
+
+                // The default provider is the OS credential store, which is always present on Windows and macOS
+                // but depends on libsecret being available on Linux
+                var hasDefaultSecretProvider = systemInfo.TryGetProperty("defaultSecretProvider", out var defaultSecretProviderElement) || systemInfo.TryGetProperty("DefaultSecretProvider", out defaultSecretProviderElement);
+                Assert.That(hasDefaultSecretProvider, Is.True, "System information should include the default secret provider field");
+                if (OperatingSystem.IsWindows() || OperatingSystem.IsMacOS())
+                {
+                    Assert.That(defaultSecretProviderElement.ValueKind, Is.EqualTo(JsonValueKind.Object), "The default secret provider should be reported on Windows and macOS");
+                    Assert.That(GetStringProperty(defaultSecretProviderElement, "key"), Is.EqualTo(OperatingSystem.IsWindows() ? "wincred" : "keychain"), "The default provider should be the OS credential store");
+                    Assert.That(GetStringProperty(defaultSecretProviderElement, "cachingLevel"), Is.Null, "The default provider does not resolve option secrets, so it has no caching level");
+                    Assert.That(GetStringProperty(defaultSecretProviderElement, "pattern"), Is.Null, "The default provider does not resolve option secrets, so it has no pattern");
+                }
+                else
+                {
+                    Assert.That(defaultSecretProviderElement.ValueKind, Is.AnyOf(JsonValueKind.Object, JsonValueKind.Null), "The default secret provider should be an object or null");
+                }
 
                 var logPollResponse = await httpClient.GetAsync("/api/v1/logdata/poll?level=Warning&id=0&pagesize=25").ConfigureAwait(false);
                 logPollResponse.EnsureSuccessStatusCode();
@@ -572,6 +628,39 @@ public class ServerApiIntegrationTests : BasicSetupHelper
     }
 
     /// <summary>
+    /// A backup that warns on every run keeps one notification, for its latest run, rather than
+    /// one more for each run (#6420). Before, the notifications piled up into the thousands,
+    /// which made dismissing them all hang the browser (#4719).
+    /// </summary>
+    [Test]
+    [Category("Integration")]
+    public async Task BackupWarningReplacesTheNotificationOfTheEarlierRun_Async()
+    {
+        var backupPassphrase = "integration-passphrase";
+        File.WriteAllText(Path.Combine(this.DATAFOLDER, "sample.txt"), "Sample content");
+
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            // An option the backup does not know makes each run end with a warning
+            var backupId = await CreateBackupAsync(httpClient, backupPassphrase,
+                extraSettings: [new BackupAndScheduleInputDto.SettingInputDto { Name = "not-a-real-option", Value = "true" }]).ConfigureAwait(false);
+
+            var connection = (Duplicati.Server.Database.Connection)ServerProgram.DuplicatiWebserver.Provider.GetService(typeof(Duplicati.Server.Database.Connection))!;
+            var otherNotifications = connection.GetNotifications().Count(n => n.BackupID != backupId);
+
+            for (var i = 0; i < 3; i++)
+                await RunTaskAndWaitAsync(httpClient, $"/api/v1/backup/{backupId}/run").ConfigureAwait(false);
+
+            var notifications = connection.GetNotifications();
+            var forBackup = notifications.Where(n => n.BackupID == backupId).ToList();
+            Assert.That(forBackup.Select(n => n.Type), Is.EqualTo(new[] { Duplicati.Server.Serialization.NotificationType.Warning }),
+                $"Expected one warning notification for the backup, got: {string.Join(" | ", forBackup.Select(n => $"{n.Type} {n.Title}: {n.Message}"))}");
+            Assert.That(notifications.Count(n => n.BackupID != backupId), Is.EqualTo(otherNotifications),
+                "The notifications of others were changed");
+        }).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Waits until the task is no longer current, so its result has been stored.
     /// </summary>
     private static async Task WaitForTaskResultAsync(long taskId)
@@ -889,7 +978,52 @@ public class ServerApiIntegrationTests : BasicSetupHelper
         return doc.RootElement.Clone();
     }
 
-    private async Task WithAuthenticatedServerAsync(Func<HttpClient, Task> testBody, string? ports = null, string listenInterface = "127.0.0.1")
+    /// <summary>
+    /// The refresh token cookie was set for the domain the request named in its Host header.
+    /// Behind a reverse proxy that does not pass the Host header on, that is the address of
+    /// the server, not the name the browser uses, so the browser rejected the cookie, every
+    /// refresh failed, and the login looped (issue #6042). A cookie without a domain is for
+    /// the host the browser asked, whatever the server sees.
+    /// </summary>
+    [Test]
+    [Category("Integration")]
+    public async Task TheRefreshCookieHasNoDomain_Async()
+    {
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            // Handle the cookies here, to see what the server sets
+            using var client = new HttpClient(new HttpClientHandler { UseCookies = false }) { BaseAddress = httpClient.BaseAddress };
+
+            static string RefreshCookie(HttpResponseMessage response)
+            {
+                var cookies = response.Headers.TryGetValues("Set-Cookie", out var values) ? values.ToList() : [];
+                var set = cookies
+                    .Where(c => c.StartsWith("RefreshToken_", StringComparison.Ordinal))
+                    .Where(c => !c.Contains("expires=Thu, 01 Jan 1970", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+                Assert.That(set, Has.Count.EqualTo(1), $"one refresh cookie should be set: {string.Join(" | ", cookies)}");
+                Assert.That(set[0], Does.Not.Contain("domain=").IgnoreCase, "the refresh cookie should have no domain");
+                return set[0].Split(';')[0];
+            }
+
+            var login = await client.PostAsJsonAsync("/api/v1/auth/login", new { password = "integration-test-password", rememberMe = true }, JsonOptions).ConfigureAwait(false);
+            login.EnsureSuccessStatusCode();
+            var cookie = RefreshCookie(login);
+            var tokens = await login.Content.ReadFromJsonAsync<AccessTokenOutputDto>(JsonOptions).ConfigureAwait(false);
+
+            // The cookie works for a refresh, which sets a new one the same way
+            using var refresh = new HttpRequestMessage(HttpMethod.Post, "/api/v1/auth/refresh") { Content = JsonContent.Create(new { nonce = tokens!.RefreshNonce }) };
+            refresh.Headers.Add("Cookie", cookie);
+            var refreshed = await client.SendAsync(refresh).ConfigureAwait(false);
+            refreshed.EnsureSuccessStatusCode();
+            RefreshCookie(refreshed);
+        }).ConfigureAwait(false);
+    }
+
+    private Task WithAuthenticatedServerAsync(Func<HttpClient, Task> testBody, string? ports = null, string listenInterface = "127.0.0.1")
+        => WithAuthenticatedServerAsync(testBody, ports, listenInterface, []);
+
+    private async Task WithAuthenticatedServerAsync(Func<HttpClient, Task> testBody, string? ports, string listenInterface, string[] extraServerArgs)
     {
         var serverPassword = "integration-test-password";
         var serverDataFolder = Path.Combine(BASEFOLDER, $"server-data-{Guid.NewGuid():N}");
@@ -913,14 +1047,15 @@ public class ServerApiIntegrationTests : BasicSetupHelper
         try
         {
             applicationSettings = new ApplicationSettings();
-            var serverArgs = new[]
-            {
+            string[] serverArgs =
+            [
                 $"--{WebServerLoader.OPTION_PORT}={ports ?? GetFreeTcpPort().ToString()}",
                 $"--{WebServerLoader.OPTION_INTERFACE}={listenInterface}",
                 $"--{WebServerLoader.OPTION_WEBSERVICE_PASSWORD}={serverPassword}",
                 $"--{DataFolderManager.SERVER_DATAFOLDER_OPTION}={serverDataFolder}",
-                "--webservice-api-only=true"
-            };
+                "--webservice-api-only=true",
+                .. extraServerArgs
+            ];
 
             ServerProgram.ServerStartedEvent.Reset();
             serverTask = RunServerInBackgroundAsync(applicationSettings, serverArgs);

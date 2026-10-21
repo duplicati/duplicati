@@ -218,7 +218,8 @@ public class Jottacloud : IStreamingBackend, IRenameEnabledBackend
             using var response = await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken,
                 innerCancellationToken => client.GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, innerCancellationToken)).ConfigureAwait(false);
             await using var rs = await response.Content.ReadAsStreamAsync(cancelToken).ConfigureAwait(false);
-            doc.Load(rs);
+            await using var ts = rs.ObserveReadTimeout(m_timeouts.ReadWriteTimeout);
+            doc.Load(ts);
 
         }
         catch (HttpRequestException wex)
@@ -317,7 +318,8 @@ public class Jottacloud : IStreamingBackend, IRenameEnabledBackend
                 .ConfigureAwait(false);
 
             await using var rs = await response.Content.ReadAsStreamAsync(cancelToken).ConfigureAwait(false);
-            doc.Load(rs);
+            await using var ts = rs.ObserveReadTimeout(m_timeouts.ReadWriteTimeout);
+            doc.Load(ts);
         }
         catch (HttpRequestException wex)
         {
@@ -451,7 +453,6 @@ public class Jottacloud : IStreamingBackend, IRenameEnabledBackend
     {
         if (m_threads > 1)
         {
-            await using var timeoutStream = stream.ObserveWriteTimeout(m_timeouts.ReadWriteTimeout, false);
             await ParallelGetAsync(remotename, stream, cancelToken).ConfigureAwait(false);
             return;
         }
@@ -466,7 +467,7 @@ public class Jottacloud : IStreamingBackend, IRenameEnabledBackend
 
         await using var s = await response.Content.ReadAsStreamAsync(cancelToken).ConfigureAwait(false);
         await using var t = s.ObserveReadTimeout(m_timeouts.ReadWriteTimeout);
-        await Utility.Utility.CopyStreamAsync(s, stream, true, cancelToken).ConfigureAwait(false);
+        await Utility.Utility.CopyStreamAsync(t, stream, true, cancelToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -519,11 +520,8 @@ public class Jottacloud : IStreamingBackend, IRenameEnabledBackend
                         using var request = await CreateRequest(HttpMethod.Get, remotename, "mode=bin", false, cancelToken).ConfigureAwait(false);
                         request.Headers.Range = new RangeHeaderValue(chunk.start, chunk.end - 1);
 
-                        using var response = await client.GetResponseAsync(
-                            request,
-                            HttpCompletionOption.ResponseHeadersRead,
-                            cancelToken
-                        ).ConfigureAwait(false);
+                        using var response = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, innerCancellationToken =>
+                            client.GetResponseAsync(request, HttpCompletionOption.ResponseHeadersRead, innerCancellationToken)).ConfigureAwait(false);
 
                         // Verify Content-Range header
                         var contentRange = response.Content.Headers.ContentRange;
@@ -531,8 +529,9 @@ public class Jottacloud : IStreamingBackend, IRenameEnabledBackend
                             throw new InvalidOperationException($"Invalid Content-Range response for chunk {chunk.start}-{chunk.end - 1}");
 
                         await using var responseStream = await response.Content.ReadAsStreamAsync(cancelToken).ConfigureAwait(false);
+                        await using var timeoutStream = responseStream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout);
                         using var memoryStream = new MemoryStream();
-                        await responseStream.CopyToAsync(memoryStream, cancelToken).ConfigureAwait(false);
+                        await timeoutStream.CopyToAsync(memoryStream, cancelToken).ConfigureAwait(false);
 
                         var buffer = memoryStream.ToArray();
                         if (buffer.Length != chunk.end - chunk.start)

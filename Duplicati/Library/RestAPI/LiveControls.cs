@@ -50,6 +50,11 @@ namespace Duplicati.Server
             /// The time when processing will resume, or zero if paused indefinitely
             /// </summary>
             public required DateTime WaitTimeExpiration { get; init; }
+            /// <summary>
+            /// A value that indicates that the pause is for the system being suspended. It ends
+            /// when the system resumes rather than at <see cref="WaitTimeExpiration"/>.
+            /// </summary>
+            public bool PausedForSuspend { get; init; }
         }
 
         /// <summary>
@@ -264,15 +269,17 @@ namespace Duplicati.Server
         /// <summary>
         /// Creates a new event object
         /// </summary>
+        /// <param name="pausedForSuspend">If true, the pause is for the system being suspended</param>
         /// <returns>A new event object</returns>
-        private LiveControlEvent CreateEvent()
+        private LiveControlEvent CreateEvent(bool pausedForSuspend = false)
         {
             lock (m_lock)
                 return new LiveControlEvent()
                 {
                     State = m_state,
                     TransfersPaused = m_transfersPaused,
-                    WaitTimeExpiration = m_waitTimeExpiration
+                    WaitTimeExpiration = m_waitTimeExpiration,
+                    PausedForSuspend = pausedForSuspend
                 };
         }
 
@@ -299,7 +306,8 @@ namespace Duplicati.Server
         /// <summary>
         /// Internal helper to set the pause mode
         /// </summary>
-        private void SetPauseMode()
+        /// <param name="forSuspend">If true, the pause is for the system being suspended</param>
+        private void SetPauseMode(bool forSuspend = false)
         {
             LiveControlEvent ev = null;
             lock (m_lock)
@@ -308,7 +316,7 @@ namespace Duplicati.Server
                 {
                     m_state = LiveControlState.Paused;
                     if (StateChanged != null)
-                        ev = CreateEvent();
+                        ev = CreateEvent(forSuspend);
                 }
 
                 // The event is sent under the lock, so that events reach the handler in the order
@@ -422,7 +430,7 @@ namespace Duplicati.Server
                 //If we are running, register as being paused due to suspending
                 if (this.m_state == LiveControlState.Running)
                 {
-                    this.SetPauseMode();
+                    this.SetPauseMode(forSuspend: true);
                     m_pausedForSuspend = true;
                     m_suspendMinimumPause = new DateTime(0, DateTimeKind.Utc);
                 }

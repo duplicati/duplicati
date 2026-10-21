@@ -29,6 +29,8 @@ namespace Duplicati.Library.AutoUpdater
     {
         public static int Main(string[] _args)
         {
+            PreloadSettingsLoader.ConfigurePreloadSettings(ref _args, PackageHelper.NamedExecutable.AutoUpdater);
+
             var args = _args.ToList();
             Duplicati.Library.Utility.CommandLineParser.ExtractOptions(args);
 
@@ -46,6 +48,12 @@ namespace Duplicati.Library.AutoUpdater
             UpdaterManager.OnError += (ex) => Console.WriteLine("Error detected: {0}", ex);
 
             var cmd = args[0].ToLowerInvariant().Trim();
+            if ((cmd == "check" || cmd == "download") && UpdaterManager.DISABLE_UPDATE_CHECK)
+            {
+                Console.WriteLine("Update checks are disabled (default for debug builds, controlled by the environment variable {0})", string.Format(UpdaterManager.SKIPUPDATE_ENVNAME_TEMPLATE, AutoUpdateSettings.AppName));
+                return 0;
+            }
+
             switch (cmd)
             {
                 case "help":

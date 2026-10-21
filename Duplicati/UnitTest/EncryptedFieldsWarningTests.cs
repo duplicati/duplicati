@@ -64,6 +64,7 @@ public class EncryptedFieldsWarningTests
         public CancellationToken ApplicationExit => CancellationToken.None;
         public void SignalApplicationExit() { }
         public ISecretProvider? SecretProvider { get; set; }
+        public ISecretProvider? DefaultSecretProvider { get; set; }
         public bool SettingsEncryptionKeyProvidedExternally { get; set; }
     }
 

@@ -26,7 +26,7 @@ namespace Duplicati.Library.Backend.Strings
     internal static class SMBBackend
     {
 
-        public static string DescriptionAuthDomainLong => LC.L(@"The domain used to connect to the server. This may also be supplied as the environment variable ""AUTH_DOMAIN"".");
+        public static string DescriptionAuthDomainLong => LC.L(@"The domain used to connect to the server.");
         public static string DescriptionAuthDomainShort => LC.L(@"Supply the domain used to connect to the server");
         public static string Description => LC.L(@"This backend can read and write data to CIFS/SMB destinations. Allowed format is ""cifs://server/share"".");
         public static string DisplayName => LC.L(@"CIFS/SMB");
@@ -43,8 +43,8 @@ namespace Duplicati.Library.Backend.Strings
         public static string EnableSMB311Short => LC.L(@"Enable the SMB 3.1.1 protocol");
         public static string EnableSMB311Long => LC.L(@"Offer the SMB 3.1.1 protocol when connecting to the server. Use this when the server only accepts SMB 3.1.1, for example when it is configured with ""server min protocol = SMB3_11"". SMB 3.1.1 support in the SMB library is experimental, so it is off by default.");
         public static string DescriptionReadBufferSizeShort => LC.L(@"Read buffer size for SMB operations.");
-        public static string DescriptionReadBufferSizeLong => LC.L(@"Read buffer size for SMB operations (Will be capped automatically by SMB negotiated values, values bellow 10000 bytes will be ignored)");
+        public static string DescriptionReadBufferSizeLong => LC.L(@"Read buffer size for SMB operations (Will be capped automatically by SMB negotiated values, values below 10000 bytes will be ignored)");
         public static string DescriptionWriteBufferSizeShort => LC.L(@"Write buffer size for SMB operations.");
-        public static string DescriptionWriteBufferSizeLong => LC.L(@"Write buffer size for SMB operations (Will be capped automatically by SMB negotiated values, values bellow 10000 bytes will be ignored)");
+        public static string DescriptionWriteBufferSizeLong => LC.L(@"Write buffer size for SMB operations (Will be capped automatically by SMB negotiated values, values below 10000 bytes will be ignored)");
     }
 }

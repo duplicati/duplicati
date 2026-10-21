@@ -313,6 +313,8 @@ public class Program
     /// <returns>A process exit code: 0 on success, -1 on error.</returns>
     public static async Task<int> MainAsync(string[] args)
     {
+        Duplicati.Library.AutoUpdater.PreloadSettingsLoader.ConfigurePreloadSettings(ref args, Duplicati.Library.AutoUpdater.PackageHelper.NamedExecutable.AutoTuneTool);
+
         var backendOptionsOption = new Option<List<string>>("--backend-options")
         {
             Description = "Duplicati options to pass to the backend during backup. Each option is a key-value pair spearated by an equals sign, e.g. --backend-options key1=value1 key2=value2. Default is an empty list.",

@@ -1309,7 +1309,18 @@ namespace Duplicati.Library.Main.Operation
 
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_PostRestoreVerify);
 
-            if (m_options.PerformRestoredFileVerification)
+            // A dry run writes no files, so there is nothing to verify. The files are counted
+            // below while they are verified, so without that check count the files the restore
+            // writes, or would write, instead.
+            if (m_options.Dryrun || !m_options.PerformRestoredFileVerification)
+            {
+                await foreach (var file in database.GetFilesToRestoreAsync(true, cancellationToken).ConfigureAwait(false))
+                {
+                    m_result.RestoredFiles++;
+                    m_result.SizeOfRestoredFiles += file.Length;
+                }
+            }
+            else
             {
                 // After all blocks in the files are restored, verify the file hash
                 using (var filehasher = HashFactory.CreateHasher(m_options.FileHashAlgorithm))

@@ -46,4 +46,7 @@ public class ApplicationSettings : IApplicationSettings
 
     /// <inheritdoc />
     public ISecretProvider? SecretProvider { get; set; }
+
+    /// <inheritdoc />
+    public ISecretProvider? DefaultSecretProvider { get; set; }
 }

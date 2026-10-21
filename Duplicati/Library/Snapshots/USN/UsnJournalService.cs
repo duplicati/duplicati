@@ -362,8 +362,13 @@ namespace Duplicati.Library.Snapshots.USN
                     if (!await filter(file))
                         continue;
 
+                    // A file that is itself a source is not below one, so its folders are not
+                    // checked, as in a full scan. Checking them would go on up to the drive root,
+                    // which is hidden and a system folder, and exclude the file.
+                    var isSource = cache.TryGetValue(file.Path, out var include) && include;
+
                     var parentPath = Utility.Utility.GetParent(file.Path, true);
-                    if (!string.IsNullOrWhiteSpace(parentPath))
+                    if (!isSource && !string.IsNullOrWhiteSpace(parentPath))
                     {
                         var parent = snapshot.GetFilesystemEntry(parentPath, true);
                         if (parent == null)

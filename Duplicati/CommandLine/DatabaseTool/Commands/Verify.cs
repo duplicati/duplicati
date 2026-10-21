@@ -257,7 +257,14 @@ public static class Verify
             string status;
             string source;
 
-            if (fileExists && (inDbConfig || inServerDb))
+            // The server database is never referenced by dbconfig.json or by its own
+            // Backup table, but it is in use and must never be reported as orphaned
+            if (fileExists && path.Equals(Path.GetFullPath(serverDbPath), StringComparison.OrdinalIgnoreCase))
+            {
+                status = "Found";
+                source = "server database";
+            }
+            else if (fileExists && (inDbConfig || inServerDb))
             {
                 status = "Found";
                 var sources = new List<string>();

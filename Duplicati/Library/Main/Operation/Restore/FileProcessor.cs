@@ -279,6 +279,10 @@ namespace Duplicati.Library.Main.Operation.Restore
                         if (blocks.Length != missing_blocks.Count + verified_blocks.Count)
                         {
                             var error = $"Block count mismatch for {file.TargetPath} - expected: {blocks.Length}, actual: {missing_blocks.Count + verified_blocks.Count}";
+                            lock (results)
+                            {
+                                results.BrokenLocalFiles.Add(file.TargetPath);
+                            }
                             Logging.Log.WriteErrorMessage(LOGTAG, "BlockCountMismatch", null, error);
                             FaultPriorityBarrierIfPriorityFile(file, new InvalidOperationException(error));
                             await ReleaseUnusedBlocksAsync(db, file, [.. blocks], 0, 0, block_request, block_response, options, results.TaskControl.ProgressToken).ConfigureAwait(false);
@@ -401,9 +405,16 @@ namespace Duplicati.Library.Main.Operation.Restore
                                     using var fs = await restoreDestination.OpenWrite(file.TargetPath, results.TaskControl.ProgressToken).ConfigureAwait(false);
                                     fs.SetLength(0);
                                 }
-                                catch (Exception ex)
+                                // A stop or an abort is let through, as the file did not fail to
+                                // restore in any sense the user needs told.
+                                catch (Exception ex) when (!RestoreCancellation.IsShutdownRequested(results.TaskControl))
                                 {
+                                    lock (results)
+                                    {
+                                        results.BrokenLocalFiles.Add(file.TargetPath);
+                                    }
                                     Logging.Log.WriteErrorMessage(LOGTAG, "CreateEmptyFile", ex, "Error when creating empty file {0}", file.TargetPath);
+                                    FaultPriorityBarrierIfPriorityFile(file, ex);
                                     await ReleaseUnusedBlocksAsync(db, file, missing_blocks, 0, 0, block_request, block_response, options, results.TaskControl.ProgressToken).ConfigureAwait(false);
                                     continue;
                                 }
@@ -429,6 +440,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                             if (missing_blocks.Any(x => x.VolumeID < 0))
                             {
                                 Logging.Log.WriteWarningMessage(LOGTAG, "NegativeVolumeID", null, $"{file.TargetPath} has a negative volume ID, skipping");
+                                FaultPriorityBarrierIfPriorityFile(file, new InvalidOperationException($"{file.TargetPath} has a negative volume ID"));
                                 await ReleaseUnusedBlocksAsync(db, file, missing_blocks, 0, 0, block_request, block_response, options, results.TaskControl.ProgressToken).ConfigureAwait(false);
                                 continue;
                             }

@@ -13,7 +13,6 @@ using Google.Apis.Groupssettings.v1;
 using Google.Apis.HangoutsChat.v1;
 using Google.Apis.Services;
 using Google.Apis.Http;
-using Google.Apis.Util;
 
 namespace Duplicati.Proprietary.GoogleWorkspace;
 
@@ -41,6 +40,14 @@ public class APIHelper
         _adminEmail = options.AdminEmail;
         _isRestoreOperation = isRestoreOperation;
     }
+
+    /// <summary>
+    /// Whether the credentials are a service account using domain-wide delegation.
+    /// Domain-wide delegation grants exactly the scopes listed in the Admin console, so a
+    /// token request for a scope that is not listed fails even when a broader scope is
+    /// delegated. A user credential (refresh token) carries every consented scope instead.
+    /// </summary>
+    public bool IsServiceAccount => !string.IsNullOrEmpty(_serviceAccountJson);
 
     private BaseClientService.Initializer GetServiceInitializer(string? userId, IEnumerable<string> scopes)
     {
@@ -352,17 +359,12 @@ public class APIHelper
         }
     }
 
+    /// <summary>
+    /// Installs the retries of <see cref="GoogleRetryHandler"/> on every service client.
+    /// </summary>
     private class BackOffInitializer : IConfigurableHttpClientInitializer
     {
         public void Initialize(ConfigurableHttpClient httpClient)
-        {
-            var backoffHandler = new BackOffHandler(new BackOffHandler.Initializer(new ExponentialBackOff())
-            {
-                HandleUnsuccessfulResponseFunc = (r) => r.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable || r.StatusCode == (System.Net.HttpStatusCode)429
-            });
-
-            httpClient.MessageHandler.AddUnsuccessfulResponseHandler(backoffHandler);
-            httpClient.MessageHandler.AddExceptionHandler(backoffHandler);
-        }
+            => GoogleRetryHandler.Install(httpClient);
     }
 }
