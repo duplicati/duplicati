@@ -355,6 +355,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                         results.BrokenLocalFiles.Add(file.TargetPath);
                                     }
                                     Logging.Log.WriteErrorMessage(LOGTAG, "CreateEmptyFile", ex, "Error when creating empty file {0}", file.TargetPath);
+                                    FaultPriorityBarrierIfPriorityFile(file, ex);
                                     await ReleaseUnusedBlocksAsync(db, file, missing_blocks, 0, 0, block_request, block_response, options, results.TaskControl.ProgressToken).ConfigureAwait(false);
                                     continue;
                                 }
@@ -380,6 +381,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                             if (missing_blocks.Any(x => x.VolumeID < 0))
                             {
                                 Logging.Log.WriteWarningMessage(LOGTAG, "NegativeVolumeID", null, $"{file.TargetPath} has a negative volume ID, skipping");
+                                FaultPriorityBarrierIfPriorityFile(file, new InvalidOperationException($"{file.TargetPath} has a negative volume ID"));
                                 await ReleaseUnusedBlocksAsync(db, file, missing_blocks, 0, 0, block_request, block_response, options, results.TaskControl.ProgressToken).ConfigureAwait(false);
                                 continue;
                             }
