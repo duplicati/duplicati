@@ -59,7 +59,7 @@ namespace Duplicati.Library.Main.Operation
                 throw new UserInformationException("Lock duration must be at least 5 seconds", "LockDurationTooShort");
 
             if (!backendManager.SupportsObjectLocking)
-                throw new UserInformationException("Backend does not support object locking", "BackendDoesNotSupportLocking");
+                throw new ObjectLockNotSupportedException();
 
             var ownsDatabase = databaseOverride is null;
             if (ownsDatabase && !File.Exists(m_options.Dbpath))
@@ -109,6 +109,11 @@ namespace Duplicati.Library.Main.Operation
                             await database.UpdateRemoteVolumeLockExpirationAsync(volumeName, lockUntilUtc, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                         }
                         updatedCount++;
+                    }
+                    catch (ObjectLockNotSupportedException)
+                    {
+                        // The destination cannot apply locks at all, so there is no point in trying the remaining volumes
+                        throw;
                     }
                     catch (Exception ex)
                     {

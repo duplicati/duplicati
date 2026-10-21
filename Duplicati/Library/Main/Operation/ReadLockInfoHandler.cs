@@ -70,7 +70,7 @@ namespace Duplicati.Library.Main.Operation
         internal async Task RunAsync(IBackendManager backendManager, LocalLockDatabase? databaseOverride)
         {
             if (!backendManager.SupportsObjectLocking)
-                throw new UserInformationException("Backend does not support object locking", "BackendDoesNotSupportLocking");
+                throw new ObjectLockNotSupportedException();
 
             var ownsDatabase = databaseOverride is null;
             if (ownsDatabase && !File.Exists(m_options.Dbpath))
@@ -103,6 +103,11 @@ namespace Duplicati.Library.Main.Operation
 
                         Log.WriteVerboseMessage(LOGTAG, "UpdatedLockExpiration", "Updated lock expiration for {0} to {1}", name, remoteLockExpiration);
                     }
+                }
+                catch (ObjectLockNotSupportedException)
+                {
+                    // The destination cannot report locks at all, so there is no point in asking for the remaining volumes
+                    throw;
                 }
                 catch (Exception ex)
                 {

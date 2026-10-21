@@ -345,6 +345,7 @@ namespace Duplicati.Library.Backend
                 if ("NoSuchObjectLockConfiguration".Equals(s3Ex.ErrorCode, StringComparison.OrdinalIgnoreCase))
                     return null;
 
+                TranslateObjectLockException(s3Ex, bucketName);
                 TranslateException(s3Ex, keyName);
                 throw;
             }
@@ -376,9 +377,40 @@ namespace Duplicati.Library.Backend
             }
             catch (AmazonS3Exception s3Ex)
             {
+                TranslateObjectLockException(s3Ex, bucketName);
                 TranslateException(s3Ex, keyName);
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Checks if an S3 error reports that the bucket has no object lock configuration,
+        /// and throws <see cref="ObjectLockNotSupportedException"/> if so
+        /// </summary>
+        /// <param name="errorCode">The S3 error code</param>
+        /// <param name="message">The S3 error message</param>
+        /// <returns><c>true</c> if the error means object locking is not enabled for the bucket</returns>
+        internal static bool IsObjectLockNotEnabledError(string? errorCode, string? message)
+        {
+            if ("ObjectLockConfigurationNotFoundError".Equals(errorCode, StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            // AWS and most compatible servers report "Bucket is missing Object Lock Configuration" as InvalidRequest
+            if ("InvalidRequest".Equals(errorCode, StringComparison.OrdinalIgnoreCase) || "InvalidBucketState".Equals(errorCode, StringComparison.OrdinalIgnoreCase))
+                return (message ?? string.Empty).Replace(" ", string.Empty).Contains("ObjectLock", StringComparison.OrdinalIgnoreCase);
+
+            return false;
+        }
+
+        /// <summary>
+        /// Throws <see cref="ObjectLockNotSupportedException"/> if the exception reports that the bucket has no object lock configuration
+        /// </summary>
+        /// <param name="s3Ex">The exception to inspect</param>
+        /// <param name="bucketName">The bucket name, for the error message</param>
+        private static void TranslateObjectLockException(AmazonS3Exception s3Ex, string bucketName)
+        {
+            if (IsObjectLockNotEnabledError(s3Ex.ErrorCode, s3Ex.Message))
+                throw new ObjectLockNotSupportedException(string.Format("Object locking is not enabled for bucket {0}: {1}", bucketName, s3Ex.Message), s3Ex);
         }
 
         /// <summary>

@@ -830,7 +830,7 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     private void EnsureObjectLockEnabled()
     {
         if (_objectLockEnabled == false)
-            throw new UserInformationException(Strings.DuplicatiBackend.ErrorObjectLockNotEnabled, HELP_ID_OBJECT_LOCK_NOT_ENABLED);
+            throw new ObjectLockNotSupportedException(Strings.DuplicatiBackend.ErrorObjectLockNotEnabled, HELP_ID_OBJECT_LOCK_NOT_ENABLED);
     }
 
     /// <summary>
@@ -846,7 +846,7 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     private static async Task<LockInfoResponse?> ReadLockInfoAsync(HttpResponseMessage response, CancellationToken cancelToken)
     {
         if (response.StatusCode is HttpStatusCode.NotImplemented or HttpStatusCode.MethodNotAllowed)
-            throw new UserInformationException(Strings.DuplicatiBackend.ErrorObjectLockNotEnabled, HELP_ID_OBJECT_LOCK_NOT_ENABLED);
+            throw new ObjectLockNotSupportedException(Strings.DuplicatiBackend.ErrorObjectLockNotEnabled, HELP_ID_OBJECT_LOCK_NOT_ENABLED);
 
         await EnsureSuccessAsync(response, cancelToken, notFoundIsMissingFile: true).ConfigureAwait(false);
         return await response.Content.ReadFromJsonAsync<LockInfoResponse>(JSON_OPTIONS, cancellationToken: cancelToken).ConfigureAwait(false);

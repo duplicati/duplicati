@@ -276,6 +276,7 @@ namespace Duplicati.Library.Backend
                 if (e.Response?.Code == "NoSuchObjectLockConfiguration")
                     return null;
 
+                TranslateObjectLockException(e, bucketName);
                 ParseAndThrowNotFoundException(e, keyName, bucketName);
                 throw;
             }
@@ -301,11 +302,27 @@ namespace Duplicati.Library.Backend
                     ct
                 )).ConfigureAwait(false);
             }
+            catch (MissingObjectLockConfigurationException e)
+            {
+                throw new ObjectLockNotSupportedException($"Object locking is not enabled for bucket {bucketName}: {e.Message}", e);
+            }
             catch (MinioException e)
             {
+                TranslateObjectLockException(e, bucketName);
                 ParseAndThrowNotFoundException(e, keyName, bucketName);
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Throws <see cref="ObjectLockNotSupportedException"/> if the exception reports that the bucket has no object lock configuration
+        /// </summary>
+        /// <param name="e">The exception to inspect</param>
+        /// <param name="bucketName">The bucket name, for the error message</param>
+        private static void TranslateObjectLockException(MinioException e, string bucketName)
+        {
+            if (S3AwsClient.IsObjectLockNotEnabledError(e.Response?.Code, e.Response?.Message ?? e.Message))
+                throw new ObjectLockNotSupportedException($"Object locking is not enabled for bucket {bucketName}: {e.Message}", e);
         }
 
         private static ObjectRetentionMode ParseRetentionMode(string lockMode)
