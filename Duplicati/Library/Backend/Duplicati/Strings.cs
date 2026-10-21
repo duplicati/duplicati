@@ -45,6 +45,8 @@ internal static class DuplicatiBackend
     public static string ErrorAccountDisabledWithDetails(string details, string errorMessage) { return LC.L(@"The operation failed because the account is disabled ({0}), error message: {1}", details, errorMessage); }
     public static string ErrorQuotaExceeded(string errorMessage) { return LC.L(@"The upload failed because the storage quota is exceeded, error message: {0}", errorMessage); }
     public static string ErrorUploadsDisabled(string reason, string errorMessage) { return LC.L(@"The upload failed because uploads are disabled for the account ({0}), error message: {1}", reason, errorMessage); }
+    public static string ErrorObjectLockNotEnabled { get { return LC.L(@"Object locking is not enabled for this storage account"); } }
+    public static string ErrorSetObjectLockNoRetention { get { return LC.L(@"Failed to set object lock, the server accepted the request but reported no retention date"); } }
 }
 
 internal static class ListFoldersModule

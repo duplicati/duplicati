@@ -32,7 +32,7 @@ using System.Text.Json;
 
 namespace Duplicati.Library.Backend.Duplicati;
 
-public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend
+public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend, ILockingBackend
 {
     /// <summary>
     /// The authentication API key option name
@@ -82,6 +82,14 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     /// The help id used when an upload fails because uploads are disabled
     /// </summary>
     internal const string HELP_ID_UPLOADS_DISABLED = "DuplicatiStorageUploadsDisabled";
+    /// <summary>
+    /// The help id used when a lock operation fails because object locking is not enabled for the account
+    /// </summary>
+    internal const string HELP_ID_OBJECT_LOCK_NOT_ENABLED = "DuplicatiStorageObjectLockNotEnabled";
+    /// <summary>
+    /// The S3 option that selects the retention mode for object locks
+    /// </summary>
+    private const string S3_LOCK_MODE_OPTION = "s3-lock-mode";
     /// <summary>
     /// The maximum number of characters of a server error message to report
     /// </summary>
@@ -142,6 +150,15 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     /// The credential expiration time for direct mode
     /// </summary>
     private DateTime _credentialsExpiry = DateTime.MinValue;
+    /// <summary>
+    /// Whether the server reports object locking as enabled for the account;
+    /// <c>null</c> when the server did not say, which older servers do not
+    /// </summary>
+    private bool? _objectLockEnabled;
+    /// <summary>
+    /// The options the S3 backend was created with in direct mode, or <c>null</c> in gateway mode; used for testing
+    /// </summary>
+    internal IReadOnlyDictionary<string, string?>? DirectModeOptions { get; private set; }
     /// <summary>
     /// The lock used to protect the credentials
     /// </summary>
@@ -297,7 +314,7 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     /// </summary>
     /// <param name="cancelToken">The cancellation token</param>
     /// <returns>An awaitable task</returns>
-    private async Task EnsureCredentialsAsync(CancellationToken cancelToken)
+    internal async Task EnsureCredentialsAsync(CancellationToken cancelToken)
     {
         if (_mode == "gateway")
             return;
@@ -314,6 +331,7 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
                 return;
 
             var creds = await FetchCredentialsAsync(_authTimeout, cancelToken).ConfigureAwait(false);
+            _objectLockEnabled = creds?.ObjectLockEnabled;
             if (creds != null &&
                 creds.Mode == "direct" &&
                 !string.IsNullOrEmpty(creds.Endpoint) &&
@@ -341,17 +359,23 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
                     ["s3-ext-forcepathstyle"] = "true",
                 };
 
+                // The server owns the bucket, so it decides the retention mode for object locks
+                if (!string.IsNullOrWhiteSpace(creds.LockMode))
+                    s3Options[S3_LOCK_MODE_OPTION] = creds.LockMode;
+
                 // Plug in timeout options
                 _timeouts.ApplyTo(s3Options, overwrite: true);
 
                 _s3Backend?.Dispose();
                 _s3Backend = new S3(s3Url, s3Options);
+                DirectModeOptions = s3Options;
             }
             else
             {
                 _mode = "gateway";
                 _s3Backend?.Dispose();
                 _s3Backend = null;
+                DirectModeOptions = null;
             }
         }
         finally
@@ -533,10 +557,21 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     /// <param name="cancelToken">The cancellation token</param>
     /// <returns>An awaitable task</returns>
     private async Task RunAsync(bool isUpload, Func<Task> operation, CancellationToken cancelToken)
+        => await RunAsync(isUpload, async () => { await operation().ConfigureAwait(false); return true; }, cancelToken).ConfigureAwait(false);
+
+    /// <summary>
+    /// Runs an operation that produces a result, and explains a failure with the account state reported by the server.
+    /// </summary>
+    /// <typeparam name="T">The type of the result</typeparam>
+    /// <param name="isUpload">Whether the operation uploads data</param>
+    /// <param name="operation">The operation to run</param>
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <returns>The result of the operation</returns>
+    private async Task<T> RunAsync<T>(bool isUpload, Func<Task<T>> operation, CancellationToken cancelToken)
     {
         try
         {
-            await operation().ConfigureAwait(false);
+            return await operation().ConfigureAwait(false);
         }
         catch (Exception ex) when (CanExplain(ex, cancelToken))
         {
@@ -710,6 +745,112 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
         string Source,
         string Destination
     );
+
+    /// <summary>
+    /// A request to apply an object lock to a file
+    /// </summary>
+    /// <param name="LockUntil">The UTC time until which the file is locked</param>
+    private record SetLockRequest(
+        DateTime LockUntil
+    );
+
+    /// <summary>
+    /// The lock state of a file, as reported by the server
+    /// </summary>
+    private sealed record LockInfoResponse
+    {
+        /// <summary>
+        /// The time until which the file is locked, or <c>null</c> if it is not locked
+        /// </summary>
+        public DateTimeOffset? LockUntil { get; set; }
+    }
+
+    /// <inheritdoc />
+    public Task<DateTime?> GetObjectLockUntilAsync(string remotename, CancellationToken cancelToken)
+        => RunAsync(false, () => GetObjectLockUntilCoreAsync(remotename, cancelToken), cancelToken);
+
+    /// <summary>
+    /// Reads the object lock expiration of a file on the destination
+    /// </summary>
+    /// <param name="remotename">The name of the file</param>
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <returns>The UTC time the lock expires, or <c>null</c> if the file is not locked</returns>
+    private async Task<DateTime?> GetObjectLockUntilCoreAsync(string remotename, CancellationToken cancelToken)
+    {
+        await EnsureCredentialsAsync(cancelToken).ConfigureAwait(false);
+        EnsureObjectLockEnabled();
+        if (_s3Backend != null)
+            return await _s3Backend.GetObjectLockUntilAsync(remotename, cancelToken).ConfigureAwait(false);
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"/lock/{remotename}");
+        using var response = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken,
+            ct => _client.SendAsync(request, ct))
+            .ConfigureAwait(false);
+
+        var lockInfo = await ReadLockInfoAsync(response, cancelToken).ConfigureAwait(false);
+        return lockInfo?.LockUntil?.UtcDateTime;
+    }
+
+    /// <inheritdoc />
+    public Task SetObjectLockUntilAsync(string remotename, DateTime lockUntilUtc, CancellationToken cancelToken)
+        => RunAsync(false, () => SetObjectLockUntilCoreAsync(remotename, lockUntilUtc, cancelToken), cancelToken);
+
+    /// <summary>
+    /// Applies an object lock to a file on the destination
+    /// </summary>
+    /// <param name="remotename">The name of the file</param>
+    /// <param name="lockUntilUtc">The UTC time until which the file is locked</param>
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <returns>An awaitable task</returns>
+    private async Task SetObjectLockUntilCoreAsync(string remotename, DateTime lockUntilUtc, CancellationToken cancelToken)
+    {
+        await EnsureCredentialsAsync(cancelToken).ConfigureAwait(false);
+        EnsureObjectLockEnabled();
+        if (_s3Backend != null)
+        {
+            await _s3Backend.SetObjectLockUntilAsync(remotename, lockUntilUtc, cancelToken).ConfigureAwait(false);
+            return;
+        }
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"/lock/{remotename}");
+        request.Content = JsonContent.Create(new SetLockRequest(lockUntilUtc.ToUniversalTime()));
+
+        using var response = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken,
+            ct => _client.SendAsync(request, ct))
+            .ConfigureAwait(false);
+
+        var lockInfo = await ReadLockInfoAsync(response, cancelToken).ConfigureAwait(false);
+        if (lockInfo?.LockUntil == null)
+            throw new Exception(Strings.DuplicatiBackend.ErrorSetObjectLockNoRetention);
+    }
+
+    /// <summary>
+    /// Throws if the server has reported that object locking is not enabled for the account
+    /// </summary>
+    private void EnsureObjectLockEnabled()
+    {
+        if (_objectLockEnabled == false)
+            throw new UserInformationException(Strings.DuplicatiBackend.ErrorObjectLockNotEnabled, HELP_ID_OBJECT_LOCK_NOT_ENABLED);
+    }
+
+    /// <summary>
+    /// Reads the lock state from the response to a lock request
+    /// </summary>
+    /// <remarks>
+    /// A server without the lock endpoints answers that the route is unknown,
+    /// which is reported the same way as an account without object locking.
+    /// </remarks>
+    /// <param name="response">The response to read</param>
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <returns>The lock state, or <c>null</c> if the server returned no content</returns>
+    private static async Task<LockInfoResponse?> ReadLockInfoAsync(HttpResponseMessage response, CancellationToken cancelToken)
+    {
+        if (response.StatusCode is HttpStatusCode.NotImplemented or HttpStatusCode.MethodNotAllowed)
+            throw new UserInformationException(Strings.DuplicatiBackend.ErrorObjectLockNotEnabled, HELP_ID_OBJECT_LOCK_NOT_ENABLED);
+
+        await EnsureSuccessAsync(response, cancelToken, notFoundIsMissingFile: true).ConfigureAwait(false);
+        return await response.Content.ReadFromJsonAsync<LockInfoResponse>(JSON_OPTIONS, cancellationToken: cancelToken).ConfigureAwait(false);
+    }
 
     /// <inheritdoc />
     public Task CreateFolderAsync(CancellationToken cancelToken)
@@ -1009,6 +1150,14 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
         /// The time the credentials expire
         /// </summary>
         public long? RotateAfter { get; set; }
+        /// <summary>
+        /// Whether object locking is enabled for the account; <c>null</c> if the server does not say
+        /// </summary>
+        public bool? ObjectLockEnabled { get; set; }
+        /// <summary>
+        /// The retention mode to use for object locks in "direct" mode, either "governance" or "compliance"
+        /// </summary>
+        public string? LockMode { get; set; }
         /// <summary>
         /// Whether uploads are currently disabled, e.g. because the quota is exceeded
         /// </summary>
