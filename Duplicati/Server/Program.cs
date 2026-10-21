@@ -292,6 +292,11 @@ namespace Duplicati.Server
                     connection.LogError(null, "Error in updater", obj);
                 };
 
+                // Rewrite the sensitive fields before anything else can use the connection.
+                // Once the webserver is up, the scheduler re-reads every backup on each save,
+                // and the tray icon starts polling, both of which race the VACUUM at the end.
+                connection.ReWriteAllFieldsIfEncryptionChanged();
+
                 DuplicatiWebserver = StartWebServerAsync(commandlineOptions, connection, logHandler, applicationSettings).Await();
 
                 connection.SetServiceProvider(DuplicatiWebserver.Provider);
@@ -321,7 +326,6 @@ namespace Duplicati.Server
                     PingPongThread.Start();
                 }
 
-                connection.ReWriteAllFieldsIfEncryptionChanged();
                 connection.SetPreloadSettingsIfChanged(preloadDbSettings);
                 EmitWarningsForConfigurationIssues(connection, applicationSettings, commandlineOptions);
 
