@@ -38,6 +38,13 @@ using Duplicati.Library.Utility;
 namespace Duplicati.Library.Main.Operation.Common
 {
     /// <summary>
+    /// A remote source given on the form "@mountpoint|url", split into its parts
+    /// </summary>
+    /// <param name="Mountpoint">The mountpoint where the remote source is logically mounted</param>
+    /// <param name="Url">The url of the remote source</param>
+    public sealed record RemoteSource(string Mountpoint, string Url);
+
+    /// <summary>
     /// Factory for creating source providers from a list of source paths.
     /// This logic is shared between backup and sync operations to ensure
     /// consistent source enumeration behavior.
@@ -53,6 +60,33 @@ namespace Duplicati.Library.Main.Operation.Common
         /// The option that enables storing metadata content in the database
         /// </summary>
         public const string StoreMetadataContentInDatabaseOption = "store-metadata-content-in-database";
+
+        /// <summary>
+        /// Normalizes a mount point to the form the source providers are mounted at: a full
+        /// path ending with the directory separator, so the same mount point written in
+        /// different ways is the same path
+        /// </summary>
+        /// <param name="mountpoint">The mount point as given in the source</param>
+        /// <returns>The normalized mount point</returns>
+        public static string NormalizeMountpoint(string mountpoint)
+            => Path.GetFullPath(Duplicati.Library.Common.IO.Util.AppendDirSeparator(mountpoint));
+
+        /// <summary>
+        /// Splits a remote source on the form "@mountpoint|url" into its parts
+        /// </summary>
+        /// <param name="source">The source to split</param>
+        /// <returns>The remote source, or null if the source is not a remote source</returns>
+        public static RemoteSource? ParseRemoteSource(string? source)
+        {
+            if (string.IsNullOrWhiteSpace(source))
+                return null;
+
+            // Remote sources are given on the form "@mountpoint|url"
+            var match = Regex.Match(source, @"^@(?<mountpoint>[^|]+)\|(?<url>.+)$", RegexOptions.IgnoreCase);
+            return match.Success
+                ? new RemoteSource(match.Groups["mountpoint"].Value, match.Groups["url"].Value)
+                : null;
+        }
 
         /// <summary>
         /// Enables the "store-metadata-content-in-database" option if any of the sources
@@ -205,13 +239,13 @@ namespace Duplicati.Library.Main.Operation.Common
                                 if (!Path.IsPathRooted(mountpoint))
                                     throw new UserInformationException(string.Format("The mountpoint \"{0}\" is not a valid rooted mountpoint", mountpoint), "InvalidMountpoint");
 
-                                var normalizedMountpoint = Duplicati.Library.Common.IO.Util.AppendDirSeparator(mountpoint);
+                                var normalizedMountpoint = NormalizeMountpoint(mountpoint);
                                 var backendurl = m.Groups["url"].Value;
 
                                 ISourceProvider provider;
                                 try
                                 {
-                                    provider = await SourceProviderLoader.GetSourceProvider(backendurl, Path.GetFullPath(normalizedMountpoint), options.RawOptions, cancellationToken).ConfigureAwait(false);
+                                    provider = await SourceProviderLoader.GetSourceProvider(backendurl, normalizedMountpoint, options.RawOptions, cancellationToken).ConfigureAwait(false);
                                 }
                                 catch (Exception ex)
                                 {

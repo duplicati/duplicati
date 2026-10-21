@@ -1372,6 +1372,10 @@ namespace Duplicati.Library.Main.Database.Local
                     DELETE FROM ""ChangeJournalData""
                     WHERE ""FilesetID"" = @FilesetId
                 "))
+            await using (var sourceProviderStateCmd = m_connection.CreateCommand(m_rtr).SetCommandAndParameters(@"
+                    DELETE FROM ""SourceProviderState""
+                    WHERE ""FilesetID"" = @FilesetId
+                "))
             await using (var filesetEntryCmd = m_connection.CreateCommand(m_rtr).SetCommandAndParameters(@"
                     DELETE FROM ""FilesetEntry""
                     WHERE ""FilesetID"" = @FilesetId
@@ -1380,6 +1384,10 @@ namespace Duplicati.Library.Main.Database.Local
                 foreach (var filesetId in removedFilesetIds)
                 {
                     await changeJournalCmd.SetParameterValue("@FilesetId", filesetId)
+                        .ExecuteNonQueryAsync(true, token)
+                        .ConfigureAwait(false);
+
+                    await sourceProviderStateCmd.SetParameterValue("@FilesetId", filesetId)
                         .ExecuteNonQueryAsync(true, token)
                         .ConfigureAwait(false);
 

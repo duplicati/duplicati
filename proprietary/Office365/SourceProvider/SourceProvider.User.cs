@@ -35,38 +35,43 @@ partial class SourceProvider
         }
 
         /// <summary>
-        /// Lists all messages in a specific mail folder.
-        /// The listing uses the delta endpoint without a stored token, so every call is a
-        /// full walk of the folder. Unlike the plain messages listing, which pages with
-        /// <c>$skip</c> and has been observed to restart from the beginning at the end of
-        /// large folders, a delta walk pages with <c>$skiptoken</c> over a server-side
-        /// snapshot and ends with a <c>@odata.deltaLink</c>.
+        /// Walks the delta endpoint of a mail folder. Without a stored link every message in the
+        /// folder is reported; with one, only the messages created, changed or removed since the
+        /// link was issued, removed ones carrying the <c>@removed</c> annotation. The walk pages
+        /// with <c>$skiptoken</c> over a server-side snapshot and ends with a <c>@odata.deltaLink</c>,
+        /// handed to <paramref name="deltaLink"/>, unlike the plain messages listing, which pages
+        /// with <c>$skip</c> and has been observed to restart from the beginning at the end of
+        /// large folders.
         /// </summary>
-        internal async IAsyncEnumerable<GraphMessage> ListAllEmailsInFolderAsync(
+        /// <param name="userIdOrUpn">The user id or principal name</param>
+        /// <param name="folderId">The mail folder id</param>
+        /// <param name="storedToken">The delta token stored by the previous walk, or <c>null</c> for a full walk</param>
+        /// <param name="deltaLink">Receives the delta link the walk ends with</param>
+        /// <param name="deduplicate">If <c>true</c>, a message reported on an earlier page is skipped, which
+        /// suits a full walk; if <c>false</c>, every report is returned so the caller can let the last one win,
+        /// which an incremental walk needs as a later report is the newer state</param>
+        /// <param name="ct">The cancellation token</param>
+        /// <returns>The messages reported by the walk</returns>
+        internal IAsyncEnumerable<GraphMessage> ListMessagesDeltaAsync(
             string userIdOrUpn,
             string folderId,
-            [EnumeratorCancellation] CancellationToken ct)
+            string? storedToken,
+            DeltaLinkHolder deltaLink,
+            bool deduplicate,
+            CancellationToken ct)
         {
             var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
             var user = Uri.EscapeDataString(userIdOrUpn);
             var folder = Uri.EscapeDataString(folderId);
-            var select = GraphSelectBuilder.BuildSelect<GraphMessage>();
+            var url = $"{baseUrl}/v1.0/users/{user}/mailFolders/{folder}/messages/delta";
 
-            var url =
-                $"{baseUrl}/v1.0/users/{user}/mailFolders/{folder}/messages/delta" +
-                $"?$select={Uri.EscapeDataString(select)}";
+            // The select is only given on the first request; Graph encodes it in the token,
+            // and the link it returns carries the token alone
+            url += string.IsNullOrWhiteSpace(storedToken)
+                ? $"?$select={Uri.EscapeDataString(GraphSelectBuilder.BuildSelect<GraphMessage>())}"
+                : $"?$deltatoken={Uri.EscapeDataString(storedToken)}";
 
-            await foreach (var message in provider.GetAllGraphDeltaItemsAsync<GraphMessage>(url, m => m.Id, ct).ConfigureAwait(false))
-            {
-                // A walk without a token should not report removals, but skip them defensively
-                if (message.Removed.HasValue)
-                {
-                    Library.Logging.Log.WriteVerboseMessage(LOGTAG, "DeltaRemovedMessageSkipped", "Skipping removed message {0} reported by the delta walk of folder {1}", message.Id, folderId);
-                    continue;
-                }
-
-                yield return message;
-            }
+            return provider.GetAllGraphDeltaItemsAsync<GraphMessage>(url, m => m.Id, deltaLink, deduplicate, ct);
         }
 
         internal async Task<GraphMailFolder> GetMailRootFolderAsync(string userIdOrUpn, CancellationToken ct)
@@ -571,56 +576,107 @@ partial class SourceProvider
     internal class OneDriveApiImpl(APIHelper provider)
     {
 
-        internal async Task<GraphDeltaResult<GraphDriveItem>> ListDriveDeltaAsync(
+        /// <summary>
+        /// Walks the delta endpoint of a drive. Without a stored link every item in the drive is
+        /// reported, including the root item; with one, only the items created, changed, moved or
+        /// removed since the link was issued, removed ones carrying the <c>deleted</c> facet. The
+        /// response is flat, every item naming its parent in <c>parentReference</c>, and an item
+        /// may be reported on more than one page of the same walk, in which case the later
+        /// occurrence is the newer state, so the items are not de-duplicated here.
+        /// </summary>
+        /// <param name="driveId">The drive id</param>
+        /// <param name="storedToken">The delta token stored by the previous walk, or <c>null</c> for a full walk</param>
+        /// <param name="deltaLink">Receives the delta link the walk ends with</param>
+        /// <param name="ct">The cancellation token</param>
+        /// <returns>The items reported by the walk</returns>
+        internal IAsyncEnumerable<GraphDriveItem> ListDriveDeltaAsync(
             string driveId,
-            string? deltaLink,
+            string? storedToken,
+            DeltaLinkHolder deltaLink,
             CancellationToken ct)
+        {
+            var url = string.IsNullOrWhiteSpace(storedToken)
+                ? BuildDriveDeltaStartUrl(driveId, null)
+                : BuildDriveDeltaContinueUrl(driveId, storedToken);
+            return provider.GetAllGraphDeltaItemsAsync<GraphDriveItem>(url, x => x.Id, deltaLink, false, ct);
+        }
+
+        /// <summary>
+        /// Gets a delta token describing the current state of a drive without listing its items,
+        /// by asking for the delta with <c>token=latest</c>. A walk started from the token reports
+        /// what changes after this call.
+        /// </summary>
+        /// <param name="driveId">The drive id</param>
+        /// <param name="ct">The cancellation token</param>
+        /// <returns>The delta token</returns>
+        internal async Task<string> GetDriveDeltaLatestTokenAsync(string driveId, CancellationToken ct)
+        {
+            var holder = new DeltaLinkHolder();
+            await foreach (var _ in provider.GetAllGraphDeltaItemsAsync<GraphDriveItem>(BuildDriveDeltaStartUrl(driveId, "latest"), x => x.Id, holder, false, ct).ConfigureAwait(false))
+            {
+                // A latest-token request reports no items
+            }
+
+            return DeltaToken.FromDriveDeltaLink(holder.DeltaLink)
+                ?? throw new UserInformationException($"The drive delta for {driveId} did not return a delta link with a token: {holder.DeltaLink}", "DriveDeltaTokenMissing");
+        }
+
+        /// <summary>
+        /// Builds the URL that starts a new delta walk of a drive. The query options are given
+        /// on this first request only; Graph encodes them in the token it returns.
+        /// </summary>
+        /// <param name="driveId">The drive id</param>
+        /// <param name="token">The special token to pass, such as <c>latest</c>, or <c>null</c> for a full walk</param>
+        /// <returns>The URL</returns>
+        private string BuildDriveDeltaStartUrl(string driveId, string? token)
         {
             var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
             var drive = Uri.EscapeDataString(driveId);
-
             var select = GraphSelectBuilder.BuildSelect<GraphDriveItem>();
-            var nextUrl = string.IsNullOrWhiteSpace(deltaLink)
-                ? $"{baseUrl}/v1.0/drives/{drive}/root/delta" +
-                  $"?$select={Uri.EscapeDataString(select)}" +
-                  $"&$top={APIHelper.GENERAL_PAGE_SIZE}"
-            : deltaLink;
 
-            var items = new List<GraphDriveItem>();
-            string? finalDeltaLink = null;
+            var url =
+                $"{baseUrl}/v1.0/drives/{drive}/root/delta" +
+                $"?$select={Uri.EscapeDataString(select)}" +
+                $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
-            while (!string.IsNullOrWhiteSpace(nextUrl))
-            {
-                ct.ThrowIfCancellationRequested();
+            if (!string.IsNullOrWhiteSpace(token))
+                url += $"&token={Uri.EscapeDataString(token)}";
 
-                async Task<HttpRequestMessage> requestFactory(CancellationToken ct)
-                {
-                    var req = new HttpRequestMessage(HttpMethod.Get, new Uri(nextUrl));
-                    req.Headers.Authorization = await provider.GetAuthenticationHeaderAsync(false, ct);
-                    req.Headers.Accept.Clear();
-                    req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application / json"));
-                    return req;
-                }
+            return url;
+        }
 
-                using var resp = await provider.SendWithRetryShortAsync(requestFactory, ct).ConfigureAwait(false);
-                await APIHelper.EnsureOfficeApiSuccessAsync(resp, ct).ConfigureAwait(false);
+        /// <summary>
+        /// Builds the URL that continues a delta walk of a drive from a stored token. The
+        /// token alone is sent, as a delta link would be: the query options of the first
+        /// request are encoded in the token and must not be repeated.
+        /// </summary>
+        /// <param name="driveId">The drive id</param>
+        /// <param name="token">The stored delta token</param>
+        /// <returns>The URL</returns>
+        private string BuildDriveDeltaContinueUrl(string driveId, string token)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var drive = Uri.EscapeDataString(driveId);
+            return $"{baseUrl}/v1.0/drives/{drive}/root/delta?token={Uri.EscapeDataString(token)}";
+        }
 
-                var page = await APIHelper.ParseResponseJson<GraphDeltaPage<GraphDriveItem>>(resp, ct).ConfigureAwait(false)
-                           ?? new GraphDeltaPage<GraphDriveItem>();
+        /// <summary>
+        /// Gets the root item of a drive, whose id is the parent of the top-level items
+        /// </summary>
+        /// <param name="driveId">The drive id</param>
+        /// <param name="ct">The cancellation token</param>
+        /// <returns>The root item</returns>
+        internal async Task<GraphDriveItem> GetDriveRootAsync(string driveId, CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var drive = Uri.EscapeDataString(driveId);
+            var url = $"{baseUrl}/v1.0/drives/{drive}/root?$select=id";
 
-                if (page.Value.Count > 0)
-                    items.AddRange(page.Value);
+            var root = await provider.GetGraphItemAsync<GraphDriveItem>(url, ct).ConfigureAwait(false);
+            if (string.IsNullOrWhiteSpace(root.Id))
+                throw new UserInformationException("Failed to read the root item of the drive.", nameof(SourceProvider));
 
-                if (!string.IsNullOrWhiteSpace(page.DeltaLink))
-                    finalDeltaLink = page.DeltaLink;
-
-                nextUrl = page.NextLink;
-            }
-
-            if (string.IsNullOrWhiteSpace(finalDeltaLink))
-                throw new UserInformationException("Drive delta did not return an @odata.deltaLink.", nameof(SourceProvider));
-
-            return new GraphDeltaResult<GraphDriveItem>(items, finalDeltaLink);
+            return root;
         }
 
         internal IAsyncEnumerable<GraphDriveItem> ListDriveRootChildrenAsync(string driveId, CancellationToken ct)

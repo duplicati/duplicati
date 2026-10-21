@@ -449,6 +449,33 @@ namespace Duplicati.Library.Main.Operation.Backup
             );
         }
 
+        public Task CreateSourceProviderStateAsync(string scope, string configHash, IReadOnlyDictionary<string, string> rows, CancellationToken cancellationToken)
+        {
+            return RunOnMainAsync(async () =>
+                await m_database
+                    .CreateSourceProviderStateAsync(scope, configHash, rows, cancellationToken)
+                    .ConfigureAwait(false)
+            );
+        }
+
+        public Task MoveSourceProviderStateToPreviousFilesetAsync(long filesetid, CancellationToken cancellationToken)
+        {
+            return RunOnMainAsync(async () =>
+                await m_database
+                    .MoveSourceProviderStateToPreviousFilesetAsync(filesetid, cancellationToken)
+                    .ConfigureAwait(false)
+            );
+        }
+
+        public Task<long> PruneSourceProviderStateAsync(int filesetsToKeep, CancellationToken cancellationToken)
+        {
+            return RunOnMainAsync(async () =>
+                await m_database
+                    .PruneSourceProviderStateAsync(filesetsToKeep, cancellationToken)
+                    .ConfigureAwait(false)
+            );
+        }
+
         public Task<bool> IsBlocklistHashKnownAsync(string hash, CancellationToken cancellationToken)
         {
             return RunOnMainAsync(async () =>

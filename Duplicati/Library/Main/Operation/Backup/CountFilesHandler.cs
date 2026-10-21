@@ -51,7 +51,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 var enumeratorTask = FileEnumerationProcess.RunAsync(
                     channels, sources, journalService, options.FileAttributeFilter, filter,
                     options.SymlinkPolicy, options.HardlinkPolicy, options.DisableBackupExclusionXattr,
-                    options.ExcludeEmptyFolders, options.IgnoreFilenames,
+                    options.ExcludeEmptyFolders, null, options.IgnoreFilenames,
                     blacklistPaths, options.ChangedFilelist, taskreader, null, token);
 
                 var counterTask = AutomationExtensions.RunTask(new

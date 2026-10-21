@@ -46,6 +46,7 @@
     <ProjectReference Include="..\Tools\Duplicati.Tools.csproj" />
     <ProjectReference Include="..\..\Tools\RemoteSynchronization\RemoteSynchronization.csproj" />
     <ProjectReference Include="..\..\proprietary\DiskImage\Duplicati.Proprietary.DiskImage.csproj" />
+    <ProjectReference Include="..\..\proprietary\Office365\Duplicati.Proprietary.Office365.csproj" />
     <ProjectReference Include="..\..\proprietary\GoogleWorkspace\Duplicati.Proprietary.GoogleWorkspace.csproj" />
     <ProjectReference Include="..\WebserverCore\Duplicati.WebserverCore.csproj" />
     <ProjectReference Include="..\Library\Certificates\Duplicati.Library.Certificates.csproj" />
