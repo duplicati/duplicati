@@ -1913,6 +1913,7 @@ namespace Duplicati.Library.Utility
             ".srvstorage.uz",
             ".srvstorage.kz",
             ".relaix.net",
+            ".neon.tech",
         ], StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
