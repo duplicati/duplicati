@@ -289,6 +289,22 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("RestoreHandler")]
+        public async Task AnEmptyFileThatCannotBeCreatedIsReported()
+        {
+            File.WriteAllBytes(Path.Combine(DATAFOLDER, "empty"), []);
+            await BackupAsync();
+
+            // A folder where the empty file should go, so it cannot be created
+            Directory.CreateDirectory(Path.Combine(RESTOREFOLDER, "empty"));
+
+            var (results, _) = await RestoreAsync(RestoreOptions());
+
+            // Listed with the files that failed to restore, like a file that cannot be written
+            CollectionAssert.AreEqual(new[] { Path.Combine(RESTOREFOLDER, "empty") }, results.BrokenLocalFiles, "The files reported as not restored");
+        }
+
+        [Test]
+        [Category("RestoreHandler")]
         public async Task AFileWithANegativeVolumeIdReleasesItsBlocks()
         {
             await BackupAsync();

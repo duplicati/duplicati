@@ -26,7 +26,6 @@ using System.Linq;
 using System.Collections.Generic;
 using System.IO;
 using Duplicati.Library.Utility;
-using System.Diagnostics;
 using System.Text.Json;
 using System.Net.Http;
 using System.Threading;
@@ -64,9 +63,21 @@ namespace Duplicati.Library.AutoUpdater
         /// </summary>
         public static readonly string INSTALLATIONDIR;
         /// <summary>
-        /// Env variable that allows fully disabling all update checks
+        /// The default value for disabling update checks, when the environment variable is not set.
+        /// Debug builds do not check for updates unless explicitly enabled.
         /// </summary>
-        public static readonly bool DISABLE_UPDATE_CHECK = Debugger.IsAttached || Utility.Utility.ParseBool(Environment.GetEnvironmentVariable(string.Format(SKIPUPDATE_ENVNAME_TEMPLATE, APPNAME)), false);
+        private const bool DISABLE_UPDATE_CHECK_DEFAULT =
+#if DEBUG
+            true;
+#else
+            false;
+#endif
+        /// <summary>
+        /// Flag that indicates if all update checks are disabled.
+        /// Defaults to disabled for debug builds and enabled for release builds,
+        /// and can be overridden with the environment variable <see cref="SKIPUPDATE_ENVNAME_TEMPLATE"/>.
+        /// </summary>
+        public static readonly bool DISABLE_UPDATE_CHECK = Utility.Utility.ParseBool(Environment.GetEnvironmentVariable(string.Format(SKIPUPDATE_ENVNAME_TEMPLATE, APPNAME)), DISABLE_UPDATE_CHECK_DEFAULT);
         /// <summary>
         /// The operating system display name
         /// </summary>
@@ -187,9 +198,12 @@ namespace Duplicati.Library.AutoUpdater
         /// Checks for updates and returns the update information if available
         /// </summary>
         /// <param name="channel">The release channel to check for updates</param>
-        /// <returns>The update information if available, or null if no updates are available</returns>
+        /// <returns>The update information if available, or null if no updates are available or update checks are disabled</returns>
         public static UpdateInfo? CheckForUpdate(ReleaseType channel = ReleaseType.Unknown)
         {
+            if (DISABLE_UPDATE_CHECK)
+                return null;
+
             if (channel == ReleaseType.Unknown)
                 channel = AutoUpdateSettings.DefaultUpdateChannel;
 
@@ -226,7 +240,7 @@ namespace Duplicati.Library.AutoUpdater
 
                         var installId = DataFolderManager.GetInstallID();
 
-                        request.Headers.Add(System.Net.HttpRequestHeader.UserAgent.ToString(), string.Format("{0} v{1}{2}", APPNAME, SelfVersion.Version, string.IsNullOrWhiteSpace(installId) ? "" : " -" + installId));
+                        request.Headers.Add("User-Agent", string.Format("{0} v{1}{2}", APPNAME, SelfVersion.Version, string.IsNullOrWhiteSpace(installId) ? "" : " -" + installId));
                         request.Headers.Add("X-Install-ID", installId);
                         request.Headers.Add("X-Package-Type-ID", PackageTypeId);
 
@@ -389,7 +403,7 @@ namespace Duplicati.Library.AutoUpdater
 
                             using var request = new HttpRequestMessage(HttpMethod.Get, url);
 
-                            request.Headers.Add(System.Net.HttpRequestHeader.UserAgent.ToString(), string.Format("{0} v{1}", APPNAME, SelfVersion.Version));
+                            request.Headers.Add("User-Agent", string.Format("{0} v{1}", APPNAME, SelfVersion.Version));
                             request.Headers.Add("X-Install-ID", DataFolderManager.GetInstallID());
 
                             using var timeoutToken = new CancellationTokenSource();

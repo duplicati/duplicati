@@ -4,7 +4,6 @@ using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Google.Apis.Gmail.v1.Data;
 using Google.Apis.Gmail.v1;
-using Google.Apis.Requests;
 using System.Runtime.CompilerServices;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
@@ -28,28 +27,9 @@ internal class GmailLabelSourceEntry(string userId, string parentPath, Label lab
                 yield break;
 
             var response = await request.ExecuteAsync(cancellationToken);
-            if (response.Messages != null)
+            if (response.Messages != null && response.Messages.Count > 0)
             {
-                var batch = new BatchRequest(service);
-                var messages = new List<Message>();
-
-                foreach (var msg in response.Messages)
-                {
-                    var msgRequest = service.Users.Messages.Get(userId, msg.Id);
-                    msgRequest.Format = UsersResource.MessagesResource.GetRequest.FormatEnum.Metadata;
-                    batch.Queue<Message>(msgRequest, (message, error, index, httpResponse) =>
-                    {
-                        if (error == null)
-                        {
-                            lock (messages)
-                            {
-                                messages.Add(message);
-                            }
-                        }
-                    });
-                }
-
-                await batch.ExecuteAsync(cancellationToken);
+                var messages = await GmailMessageBatch.GetMetadataAsync(service, userId, response.Messages.Select(m => m.Id).ToList(), cancellationToken);
 
                 foreach (var message in messages)
                 {

@@ -331,7 +331,9 @@ namespace Duplicati.Library.Backend
 
             var trimmed = hrefValue.Trim();
 
-            if (!System.Uri.TryCreate(trimmed, System.UriKind.Absolute, out var hrefUri))
+            // On Linux and macOS a path such as "/dav/folder" parses as an absolute file uri, whose path
+            // escapes the percent signs again, so it is read relative to the server like on Windows
+            if (!System.Uri.TryCreate(trimmed, System.UriKind.Absolute, out var hrefUri) || hrefUri.IsFile)
             {
                 if (System.Uri.TryCreate(trimmed, System.UriKind.Relative, out var relativeUri))
                 {
@@ -687,7 +689,7 @@ namespace Duplicati.Library.Backend
         private HttpRequestMessage CreateRequest(string remotename, HttpMethod? method = null)
         {
             var request = new HttpRequestMessage(HttpMethod.Get, $"{m_url}{Utility.UrlEncoding.UrlEncode(remotename).Replace("+", "%20")}");
-            request.Headers.Add(HttpRequestHeader.UserAgent.ToString(), "Duplicati WEBDAV Client v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
+            request.Headers.Add("User-Agent", "Duplicati WEBDAV Client v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
 
             request.Headers.ConnectionClose = !m_useIntegratedAuthentication; // ConnectionClose is incompatible with integrated authentication
 

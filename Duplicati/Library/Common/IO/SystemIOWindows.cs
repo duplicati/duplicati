@@ -81,6 +81,42 @@ namespace Duplicati.Library.Common.IO
             /// The share mode for CreateFile to allow delete access
             /// </summary>
             public const uint FILE_SHARE_DELETE = 0x00000004;
+            /// <summary>
+            /// The control code that reads the reparse data of a file
+            /// </summary>
+            public const uint FSCTL_GET_REPARSE_POINT = 0x000900A8;
+            /// <summary>
+            /// The largest reparse data buffer that can be returned
+            /// </summary>
+            public const int MAXIMUM_REPARSE_DATA_BUFFER_SIZE = 16 * 1024;
+            /// <summary>
+            /// The reparse tag of a symlink made by WSL that is not a Windows symlink
+            /// </summary>
+            public const uint IO_REPARSE_TAG_LX_SYMLINK = 0xA000001D;
+
+            /// <summary>
+            /// Sends a control code to a device or file
+            /// </summary>
+            /// <param name="hDevice">The file handle</param>
+            /// <param name="dwIoControlCode">The control code</param>
+            /// <param name="lpInBuffer">The input buffer</param>
+            /// <param name="nInBufferSize">The size of the input buffer</param>
+            /// <param name="lpOutBuffer">The output buffer</param>
+            /// <param name="nOutBufferSize">The size of the output buffer</param>
+            /// <param name="lpBytesReturned">The number of bytes written to the output buffer</param>
+            /// <param name="lpOverlapped">Pointer to an overlapped structure</param>
+            /// <returns><c>true</c> if the call succeeds, <c>false</c> otherwise</returns>
+            [DllImport("kernel32.dll", SetLastError = true)]
+            [return: MarshalAs(UnmanagedType.Bool)]
+            public static extern bool DeviceIoControl(
+                SafeFileHandle hDevice,
+                uint dwIoControlCode,
+                IntPtr lpInBuffer,
+                uint nInBufferSize,
+                byte[] lpOutBuffer,
+                uint nOutBufferSize,
+                out uint lpBytesReturned,
+                IntPtr lpOverlapped);
 
             /// <summary>
             /// Creates a file handle
@@ -280,6 +316,31 @@ namespace Duplicati.Library.Common.IO
         }
 
         /// <summary>
+        /// Removes the artifacts the Windows WebDAV redirector leaves in a directory listing.
+        /// It reports entry names with a trailing null character, which makes .NET return
+        /// unusable paths and the "." and ".." entries (https://github.com/dotnet/runtime/issues/49803).
+        /// </summary>
+        /// <param name="paths">The paths returned by a directory enumeration</param>
+        /// <returns>The paths without trailing null characters, and without "." and ".."</returns>
+        public static IEnumerable<string> RemoveTrailingNullEntries(IEnumerable<string> paths)
+        {
+            foreach (var path in paths)
+            {
+                if (!path.EndsWith('\0'))
+                {
+                    yield return path;
+                    continue;
+                }
+
+                var trimmed = path.TrimEnd('\0');
+                if (relativePathComponents.Contains(Path.GetFileName(trimmed)))
+                    continue;
+
+                yield return trimmed;
+            }
+        }
+
+        /// <summary>
         /// Removes either of the extended device path prefixes
         /// (@"\\?\" or @"\\?\UNC\") if <paramref name="path"/> is prefixed
         /// with one of them.
@@ -470,16 +531,55 @@ namespace Duplicati.Library.Common.IO
         /// <param name="file">The file or folder to examine</param>
         /// <returns>The symlink target</returns>
         public string GetSymlinkTarget(string file)
-            => new FileInfo(AddExtendedDevicePathPrefix(file)).LinkTarget;
+        {
+            var path = AddExtendedDevicePathPrefix(file);
+            return new FileInfo(path).LinkTarget ?? GetWslSymlinkTarget(path);
+        }
+
+        /// <summary>
+        /// Returns the target of a symlink made by WSL, which .NET does not read, or null if
+        /// the entry is not one. WSL makes such a symlink when it cannot make a Windows
+        /// symlink, for example when the target is an absolute path or does not exist.
+        /// </summary>
+        /// <param name="path">The file to examine</param>
+        /// <returns>The symlink target</returns>
+        private static string GetWslSymlinkTarget(string path)
+        {
+            using var handle = Win32API.CreateFileW(
+                path,
+                0,
+                Win32API.FILE_SHARE_READ | Win32API.FILE_SHARE_WRITE | Win32API.FILE_SHARE_DELETE,
+                IntPtr.Zero,
+                Win32API.OPEN_EXISTING,
+                Win32API.FILE_FLAG_OPEN_REPARSE_POINT | Win32API.FILE_FLAG_BACKUP_SEMANTICS,
+                IntPtr.Zero);
+            if (handle.IsInvalid)
+                return null;
+
+            var buffer = new byte[Win32API.MAXIMUM_REPARSE_DATA_BUFFER_SIZE];
+            if (!Win32API.DeviceIoControl(handle, Win32API.FSCTL_GET_REPARSE_POINT, IntPtr.Zero, 0, buffer, (uint)buffer.Length, out var returned, IntPtr.Zero))
+                return null;
+
+            // The data is the reparse tag, the length of what follows the 8-byte header,
+            // a version of 4 bytes and then the target as UTF-8
+            if (returned < 12 || BitConverter.ToUInt32(buffer, 0) != Win32API.IO_REPARSE_TAG_LX_SYMLINK)
+                return null;
+
+            var length = BitConverter.ToUInt16(buffer, 4);
+            if (length < 4 || 8 + length > returned)
+                return null;
+
+            return System.Text.Encoding.UTF8.GetString(buffer, 12, length - 4);
+        }
 
         public IEnumerable<string> EnumerateFileSystemEntries(string path)
-            => Directory.EnumerateFileSystemEntries(AddExtendedDevicePathPrefix(path)).Select(RemoveExtendedDevicePathPrefix);
+            => RemoveTrailingNullEntries(Directory.EnumerateFileSystemEntries(AddExtendedDevicePathPrefix(path))).Select(RemoveExtendedDevicePathPrefix);
 
         public IEnumerable<string> EnumerateFiles(string path)
-            => Directory.EnumerateFiles(AddExtendedDevicePathPrefix(path)).Select(RemoveExtendedDevicePathPrefix);
+            => RemoveTrailingNullEntries(Directory.EnumerateFiles(AddExtendedDevicePathPrefix(path))).Select(RemoveExtendedDevicePathPrefix);
 
         public IEnumerable<string> EnumerateFiles(string path, string searchPattern, SearchOption searchOption)
-            => Directory.EnumerateFiles(AddExtendedDevicePathPrefix(path), searchPattern, searchOption).Select(RemoveExtendedDevicePathPrefix);
+            => RemoveTrailingNullEntries(Directory.EnumerateFiles(AddExtendedDevicePathPrefix(path), searchPattern, searchOption)).Select(RemoveExtendedDevicePathPrefix);
 
         public string PathGetFileName(string path)
             => RemoveExtendedDevicePathPrefix(Path.GetFileName(AddExtendedDevicePathPrefix(path)));
@@ -514,18 +614,18 @@ namespace Duplicati.Library.Common.IO
                 : RemoveExtendedDevicePathPrefix(Path.GetPathRoot(AddExtendedDevicePathPrefix(path)));
         public string[] GetDirectories(string path)
             => IsPrefixedWithExtendedDevicePathPrefix(path)
-                ? Directory.GetDirectories(path)
-                : Directory.GetDirectories(AddExtendedDevicePathPrefix(path)).Select(RemoveExtendedDevicePathPrefix).ToArray();
+                ? RemoveTrailingNullEntries(Directory.GetDirectories(path)).ToArray()
+                : RemoveTrailingNullEntries(Directory.GetDirectories(AddExtendedDevicePathPrefix(path))).Select(RemoveExtendedDevicePathPrefix).ToArray();
 
         public string[] GetFiles(string path)
             => IsPrefixedWithExtendedDevicePathPrefix(path)
-                ? Directory.GetFiles(path)
-                : Directory.GetFiles(AddExtendedDevicePathPrefix(path)).Select(RemoveExtendedDevicePathPrefix).ToArray();
+                ? RemoveTrailingNullEntries(Directory.GetFiles(path)).ToArray()
+                : RemoveTrailingNullEntries(Directory.GetFiles(AddExtendedDevicePathPrefix(path))).Select(RemoveExtendedDevicePathPrefix).ToArray();
 
         public string[] GetFiles(string path, string searchPattern)
             => IsPrefixedWithExtendedDevicePathPrefix(path)
-                ? Directory.GetFiles(path, searchPattern)
-                : Directory.GetFiles(AddExtendedDevicePathPrefix(path), searchPattern).Select(RemoveExtendedDevicePathPrefix).ToArray();
+                ? RemoveTrailingNullEntries(Directory.GetFiles(path, searchPattern)).ToArray()
+                : RemoveTrailingNullEntries(Directory.GetFiles(AddExtendedDevicePathPrefix(path), searchPattern)).Select(RemoveExtendedDevicePathPrefix).ToArray();
 
         public DateTime GetCreationTimeUtc(string path)
             => Directory.GetCreationTimeUtc(AddExtendedDevicePathPrefix(path));
@@ -535,8 +635,8 @@ namespace Duplicati.Library.Common.IO
 
         public IEnumerable<string> EnumerateDirectories(string path)
             => IsPrefixedWithExtendedDevicePathPrefix(path)
-                ? Directory.EnumerateDirectories(path)
-                : Directory.EnumerateDirectories(AddExtendedDevicePathPrefix(path)).Select(RemoveExtendedDevicePathPrefix);
+                ? RemoveTrailingNullEntries(Directory.EnumerateDirectories(path))
+                : RemoveTrailingNullEntries(Directory.EnumerateDirectories(AddExtendedDevicePathPrefix(path))).Select(RemoveExtendedDevicePathPrefix);
 
         public IEnumerable<IFileEntry> EnumerateFileEntries(string path)
         {

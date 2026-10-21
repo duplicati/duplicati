@@ -67,4 +67,9 @@ internal static class Strings
     public static string CalendarNotAvailableForUser(string calendarId, string userId) => LC.L($"The calendar {calendarId} in the calendar list of user {userId} cannot be read because its owner has no Google Calendar service, skipping it");
     public static string ServiceNotAvailableForUser(string service, string userId) => LC.L($"The service {service} is not available for user {userId}, skipping it");
     public static string LicenseWarning(GoogleRootType type, int approved) => LC.L($"Licensed Google Workspace feature seats exceeded for {type} ({approved}). Some items will not be backed up, and some folders may be empty.");
+    public static string GoogleApiRetry(string path, int statusCode, int attempt, TimeSpan delay) => LC.L($"The Google API request {path} failed with status {statusCode}, retrying after {delay.TotalSeconds:0.#} seconds (attempt {attempt})");
+    public static string GmailMessageGone(string messageId, string userId) => LC.L($"The message {messageId} of user {userId} was deleted after it was listed, skipping it");
+    public static string GmailMessageFetchFailed(string messageId, string userId, int statusCode, string error) => LC.L($"Failed to read the message {messageId} of user {userId} (status {statusCode}): {error}");
+    public static string GmailBatchRetry(int count, string userId, int statusCode, int attempt, TimeSpan delay) => LC.L($"{count} message(s) of user {userId} could not be read because of a rate limit (status {statusCode}), retrying after {delay.TotalSeconds:0.#} seconds (attempt {attempt})");
+    public static string GmailBatchRetriesExhausted(int count, string userId, int statusCode, string error) => LC.L($"Giving up reading {count} message(s) of user {userId} after repeated rate limit errors (status {statusCode}): {error}");
 }

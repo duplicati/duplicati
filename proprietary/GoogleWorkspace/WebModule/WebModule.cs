@@ -175,8 +175,13 @@ public class WebModule : IWebModule
         var probe = GoogleScopes.Required.Concat(GoogleScopes.KnownExtras).Select(s => s.Name);
         var granted = await client.ApiHelper.GetGrantedScopesAsync(probe, cancellationToken).ConfigureAwait(false);
 
-        // A scope is enabled when it is granted directly, or when a granted write scope
-        // covers it (e.g. gmail.modify includes gmail.readonly access)
+        // For a user credential, a scope is enabled when it is granted directly, or when a
+        // granted write scope covers it (e.g. gmail.modify includes gmail.readonly access),
+        // because the access token carries every consented scope. A service account with
+        // domain-wide delegation is granted exactly the scopes listed in the Admin console,
+        // and the backup requests the read-only scopes by name, so a write scope does not
+        // cover its read-only counterpart there; the probe above tested each scope exactly.
+        var applyCoveringScopes = !client.ApiHelper.IsServiceAccount;
         var result = GoogleScopes.Required
             .Select(s => new PermissionStatus
             {
@@ -184,7 +189,7 @@ public class WebModule : IWebModule
                 Description = s.Description,
                 RequiredForBackup = s.RequiredForBackup,
                 RequiredForRestore = s.RequiredForRestore,
-                Enabled = granted.Contains(s.Name) || (s.CoveredBy != null && granted.Contains(s.CoveredBy))
+                Enabled = granted.Contains(s.Name) || (applyCoveringScopes && s.CoveredBy != null && granted.Contains(s.CoveredBy))
             })
             .ToList();
 

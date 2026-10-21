@@ -35,6 +35,9 @@ namespace RemoteSynchronization
         /// <param name="args">The commandline arguments.</param>
         /// <returns>0 on success, -1 on abort, and the number of errors encountered otherwise.</returns>
         public static Task<int> MainAsync(string[] args)
-            => RemoteSynchronizationRunner.RunAsync(args);
+        {
+            Duplicati.Library.AutoUpdater.PreloadSettingsLoader.ConfigurePreloadSettings(ref args, Duplicati.Library.AutoUpdater.PackageHelper.NamedExecutable.SyncTool);
+            return RemoteSynchronizationRunner.RunAsync(args);
+        }
     }
 }
