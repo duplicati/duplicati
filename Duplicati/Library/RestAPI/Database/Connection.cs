@@ -145,9 +145,12 @@ namespace Duplicati.Server.Database
                 this.SetSettings(this.GetSettings(ANY_BACKUP_ID), ANY_BACKUP_ID);
                 this.ApplicationSettings.EncryptedFields = m_encryptSensitiveFields;
 
-                // Also vacuum the database to reclaim space and flush any unencrypted data
-                using var cmd = this.m_connection.CreateCommand("VACUUM");
-                cmd.ExecuteNonQuery();
+                // Also vacuum the database to reclaim space and flush any unencrypted data.
+                // SQLite refuses to VACUUM while any other statement is running on the
+                // connection, so this must hold the lock like every other access.
+                lock (m_lock)
+                    using (var cmd = this.m_connection.CreateCommand("VACUUM"))
+                        cmd.ExecuteNonQuery();
             }
         }
 
