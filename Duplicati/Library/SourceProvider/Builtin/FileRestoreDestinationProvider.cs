@@ -304,7 +304,10 @@ public class FileRestoreDestinationProvider(string mountedPath, bool allowRestor
                 SetTimestampWithRetry(() => SystemIO.IO_OS.FileSetCreationTimeUtc(targetpath, time));
         }
 
-        if (metadata.TryGetValue("CoreAttributes", out k) && Enum.TryParse<FileAttributes>(k, true, out var fa))
+        // Outside Windows the read-only attribute is set with chmod, which follows a symbolic link,
+        // so the attributes of a link would be set on the file it points to.
+        if (metadata.TryGetValue("CoreAttributes", out k) && Enum.TryParse<FileAttributes>(k, true, out var fa)
+            && (OperatingSystem.IsWindows() || !SystemIO.IO_OS.IsSymlink(targetpath)))
         {
             // Apply the stored attributes, which also restores the read-only attribute if it was set.
             SystemIO.IO_OS.SetFileAttributes(targetpath, fa);
