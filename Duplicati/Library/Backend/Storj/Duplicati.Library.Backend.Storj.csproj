@@ -12,7 +12,10 @@
   <ItemGroup>
     <!-- Force these versions to avoid a version with vulnerabilities -->
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.5" />
-    <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" Version="3.53.3" ExcludeAssets="All" />
+    <!-- Force the native library version: 3.54.0 is built against GLIBC 2.28, 3.53.4 needs 2.34 -->
+    <PackageReference Include="SQLite" Version="3.54.0" />
+    <!-- sqlite-net-pcl pulls in an old lib.e_sqlite3; 2.1.14 contains SQLite 3.54.0 built against GLIBC 2.28 -->
+    <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" Version="2.1.14" ExcludeAssets="All" />
 
     <PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
