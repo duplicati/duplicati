@@ -436,6 +436,8 @@ public static class PreloadSettingsLoader
             PackageHelper.NamedExecutable.SourceTool => "sourcetool",
             PackageHelper.NamedExecutable.DatabaseTool => "databasetool",
             PackageHelper.NamedExecutable.ConfigureTool => "configuretool",
+            PackageHelper.NamedExecutable.SyncTool => "synctool",
+            PackageHelper.NamedExecutable.AutoTuneTool => "autotunetool",
             _ => AnyExecutableMarker,
         };
 
