@@ -23,6 +23,15 @@ internal static class OptionsHelper
     internal const string OFFICE_INCLUDED_GROUP_CLASSIFICATIONS_OPTION = "office365-included-group-classifications";
     internal const string OFFICE_INCLUDED_SITE_CLASSIFICATIONS_OPTION = "office365-included-site-classifications";
     internal const string OFFICE_EXCLUDE_SYSTEM_LIBRARIES_OPTION = "office365-exclude-system-libraries";
+    internal const string OFFICE_DISABLE_MAIL_DELTA_OPTION = "office365-disable-mail-delta";
+    internal const string OFFICE_DISABLE_DRIVE_DELTA_OPTION = "office365-disable-drive-delta";
+    internal const string OFFICE_DRIVE_DELTA_MAX_ITEMS_OPTION = "office365-drive-delta-max-items";
+
+    /// <summary>
+    /// The default number of delta changes a document library may report before the backup
+    /// gives up on the incremental walk and lists the library in full.
+    /// </summary>
+    internal const int DEFAULT_DRIVE_DELTA_MAX_ITEMS = 100000;
 
     /// <summary>
     /// Marks the provider as being used to enumerate items for display rather than to back them
@@ -129,7 +138,10 @@ internal static class OptionsHelper
         Office365SiteClassification IncludedSiteClassifications,
         bool EnumerationMode,
         bool ExcludeSystemLibraries,
-        string MachineId
+        string MachineId,
+        bool MailDelta,
+        bool DriveDelta,
+        int DriveDeltaMaxItems
     );
 
     internal static ParsedOptions ParseAndValidateOptions(string url, Dictionary<string, string?> options)
@@ -163,6 +175,11 @@ internal static class OptionsHelper
 
         var enumerationMode = Library.Utility.Utility.ParseBoolOption(options, ENUMERATION_MODE_OPTION);
         var excludeSystemLibraries = Library.Utility.Utility.ParseBoolOption(options, OFFICE_EXCLUDE_SYSTEM_LIBRARIES_OPTION);
+        var mailDelta = !Library.Utility.Utility.ParseBoolOption(options, OFFICE_DISABLE_MAIL_DELTA_OPTION);
+        var driveDelta = !Library.Utility.Utility.ParseBoolOption(options, OFFICE_DISABLE_DRIVE_DELTA_OPTION);
+        var driveDeltaMaxItems = Library.Utility.Utility.ParseIntOption(options, OFFICE_DRIVE_DELTA_MAX_ITEMS_OPTION, DEFAULT_DRIVE_DELTA_MAX_ITEMS);
+        if (driveDeltaMaxItems <= 0)
+            throw new UserInformationException($"The option --{OFFICE_DRIVE_DELTA_MAX_ITEMS_OPTION} must be a positive number", "InvalidDriveDeltaMaxItems");
 
         // Honor the global "machine-id" option, falling back to the AutoUpdater machine id
         var machineId = options.GetValueOrDefault("machine-id");
@@ -184,7 +201,10 @@ internal static class OptionsHelper
             IncludedSiteClassifications: includedSiteClassifications,
             EnumerationMode: enumerationMode,
             ExcludeSystemLibraries: excludeSystemLibraries,
-            MachineId: machineId
+            MachineId: machineId,
+            MailDelta: mailDelta,
+            DriveDelta: driveDelta,
+            DriveDeltaMaxItems: driveDeltaMaxItems
         );
     }
 
@@ -203,6 +223,9 @@ internal static class OptionsHelper
         new CommandLineArgument(OFFICE_INCLUDED_USER_CLASSIFICATIONS_OPTION, CommandLineArgument.ArgumentType.Flags, Strings.OfficeIncludedUserClassificationsShort, Strings.OfficeIncludedUserClassificationsLong, string.Join(",", Enum.GetNames<Office365UserClassification>()), null, Enum.GetNames<Office365UserClassification>()),
         new CommandLineArgument(OFFICE_INCLUDED_GROUP_CLASSIFICATIONS_OPTION, CommandLineArgument.ArgumentType.Flags, Strings.OfficeIncludedGroupClassificationsShort, Strings.OfficeIncludedGroupClassificationsLong, string.Join(",", Enum.GetNames<Office365GroupClassification>()), null, Enum.GetNames<Office365GroupClassification>()),
         new CommandLineArgument(OFFICE_INCLUDED_SITE_CLASSIFICATIONS_OPTION, CommandLineArgument.ArgumentType.Flags, Strings.OfficeIncludedSiteClassificationsShort, Strings.OfficeIncludedSiteClassificationsLong, string.Join(",", INDIVIDUAL_SITE_CLASSIFICATION_NAMES), null, Enum.GetNames<Office365SiteClassification>()),
-        new CommandLineArgument(OFFICE_EXCLUDE_SYSTEM_LIBRARIES_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.OfficeExcludeSystemLibrariesShort, Strings.OfficeExcludeSystemLibrariesLong, "false")
+        new CommandLineArgument(OFFICE_EXCLUDE_SYSTEM_LIBRARIES_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.OfficeExcludeSystemLibrariesShort, Strings.OfficeExcludeSystemLibrariesLong, "false"),
+        new CommandLineArgument(OFFICE_DISABLE_MAIL_DELTA_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.OfficeDisableMailDeltaShort, Strings.OfficeDisableMailDeltaLong, "false"),
+        new CommandLineArgument(OFFICE_DISABLE_DRIVE_DELTA_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.OfficeDisableDriveDeltaShort, Strings.OfficeDisableDriveDeltaLong, "false"),
+        new CommandLineArgument(OFFICE_DRIVE_DELTA_MAX_ITEMS_OPTION, CommandLineArgument.ArgumentType.Integer, Strings.OfficeDriveDeltaMaxItemsShort, Strings.OfficeDriveDeltaMaxItemsLong, DEFAULT_DRIVE_DELTA_MAX_ITEMS.ToString())
     ];
 }

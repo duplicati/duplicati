@@ -11,7 +11,7 @@ namespace Duplicati.Proprietary.Office365;
 /// <summary>
 /// The source provider for Office365.
 /// </summary>
-public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
+public sealed partial class SourceProvider : ISourceProviderModule, IChangeTrackingSourceProvider, IDisposable
 {
     /// <summary>
     /// The log tag for this class.
@@ -34,6 +34,37 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
     private readonly bool _hasSetMetadataStorageOption;
 
     /// <summary>
+    /// Builds the API helper of the provider instances created while it is set, in place of
+    /// the one built from the options, so a caller that creates providers through the loader
+    /// can supply its own Graph client. It follows the asynchronous flow that set it, so flows
+    /// running side by side do not see each other's factory.
+    /// </summary>
+    private static readonly AsyncLocal<Func<OptionsHelper.ParsedOptions, TimeoutOptionsHelper.Timeouts, APIHelper>?> _apiHelperFactory = new();
+
+    /// <summary>
+    /// Makes the provider instances created in the current asynchronous flow build their API
+    /// helper with a factory until the returned scope is disposed
+    /// </summary>
+    /// <param name="factory">Builds the API helper from the parsed options and timeouts</param>
+    /// <returns>A scope that restores the previous factory when disposed</returns>
+    internal static IDisposable UseApiHelperFactory(Func<OptionsHelper.ParsedOptions, TimeoutOptionsHelper.Timeouts, APIHelper> factory)
+    {
+        var previous = _apiHelperFactory.Value;
+        _apiHelperFactory.Value = factory;
+        return new ApiHelperFactoryScope(previous);
+    }
+
+    /// <summary>
+    /// Restores the API helper factory that was set before a scope began
+    /// </summary>
+    /// <param name="previous">The factory to restore</param>
+    private sealed class ApiHelperFactoryScope(Func<OptionsHelper.ParsedOptions, TimeoutOptionsHelper.Timeouts, APIHelper>? previous) : IDisposable
+    {
+        /// <inheritdoc />
+        public void Dispose() => _apiHelperFactory.Value = previous;
+    }
+
+    /// <summary>
     /// The machine id recorded in the backup description, honoring the global <c>machine-id</c> override.
     /// </summary>
     private readonly string _machineId;
@@ -47,6 +78,34 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
     /// The timeout options for the backend
     /// </summary>
     private readonly TimeoutOptionsHelper.Timeouts _timeouts;
+
+    /// <summary>
+    /// What the provider learned during this enumeration about which paths it examined,
+    /// and the delta tokens it carries between backups.
+    /// </summary>
+    private readonly ChangeTracker _changeTracker = new();
+
+    /// <summary>
+    /// What the provider learned during this enumeration about which paths it examined,
+    /// and the delta tokens it carries between backups.
+    /// </summary>
+    internal ChangeTracker ChangeTracker => _changeTracker;
+
+    /// <summary>
+    /// Whether mail folders are walked with delta tokens when the provider is used for a backup.
+    /// </summary>
+    internal bool MailDeltaEnabled { get; }
+
+    /// <summary>
+    /// Whether document libraries are walked with delta tokens when the provider is used for a backup.
+    /// </summary>
+    internal bool DriveDeltaEnabled { get; }
+
+    /// <summary>
+    /// The number of delta changes a document library may report before the incremental walk
+    /// is abandoned and the library is listed in full.
+    /// </summary>
+    internal int DriveDeltaMaxItems { get; }
 
     /// <summary>
     /// Cache of already resolved source entries by their path.
@@ -205,6 +264,9 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
         EnumerationMode = false;
         ExcludeSystemLibraries = false;
         _hasSetMetadataStorageOption = false;
+        MailDeltaEnabled = false;
+        DriveDeltaEnabled = false;
+        DriveDeltaMaxItems = OptionsHelper.DEFAULT_DRIVE_DELTA_MAX_ITEMS;
     }
 
     /// <summary>
@@ -214,6 +276,20 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
     /// <param name="mountPoint">The mount point.</param>
     /// <param name="options">The source provider options.</param>
     public SourceProvider(string url, string mountPoint, Dictionary<string, string?> options)
+        : this(url, mountPoint, options, null)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SourceProvider"/> class, optionally with
+    /// an API helper that replaces the one built from the options, so tests can answer the
+    /// Graph requests themselves.
+    /// </summary>
+    /// <param name="url">The source provider URL.</param>
+    /// <param name="mountPoint">The mount point.</param>
+    /// <param name="options">The source provider options.</param>
+    /// <param name="apiHelper">The API helper to use, or <c>null</c> to build one from the options.</param>
+    internal SourceProvider(string url, string mountPoint, Dictionary<string, string?> options, APIHelper? apiHelper)
     {
         _hasSetMetadataStorageOption = Library.Utility.Utility.ParseBoolOption(options, "store-metadata-content-in-database");
 
@@ -231,7 +307,12 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
         EnumerationMode = parsedOptions.EnumerationMode;
         ExcludeSystemLibraries = parsedOptions.ExcludeSystemLibraries;
         _machineId = parsedOptions.MachineId;
-        _apiHelper = APIHelper.Create(
+        MailDeltaEnabled = parsedOptions.MailDelta;
+        DriveDeltaEnabled = parsedOptions.DriveDelta;
+        DriveDeltaMaxItems = parsedOptions.DriveDeltaMaxItems;
+        _apiHelper = apiHelper
+            ?? _apiHelperFactory.Value?.Invoke(parsedOptions, _timeouts)
+            ?? APIHelper.Create(
             tenantId: parsedOptions.TenantId,
             authOptions: parsedOptions.AuthOptions,
             graphBaseUrl: parsedOptions.GraphBaseUrl,
@@ -259,6 +340,97 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
 
     /// <inheritdoc />
     public bool NeedsStoredMetadata => true;
+
+    /// <inheritdoc />
+    public string ChangeTrackingScope => _mountPoint;
+
+    /// <inheritdoc />
+    public void LoadChangeTrackingState(IReadOnlyDictionary<string, string> state)
+        => _changeTracker.Load(state);
+
+    /// <inheritdoc />
+    public IReadOnlyDictionary<string, string> ExportChangeTrackingState()
+        => _changeTracker.Export();
+
+    /// <inheritdoc />
+    public bool WasPathEnumerated(string path)
+        => _changeTracker.WasPathEnumerated(path);
+
+    /// <inheritdoc />
+    public bool IsIncrementallyEnumeratedFolder(string folderPath)
+        => _changeTracker.IsIncrementallyEnumeratedFolder(folderPath);
+
+    /// <summary>
+    /// Opens a content stream and reports a failure to open or read it to the change tracker,
+    /// so the token of the folder or drive the content belongs to is not advanced and the item
+    /// is reported again next time. This includes content that answers not found: an item the
+    /// listing just reported is more likely to be missing transiently than to be gone, and if it
+    /// is gone the walk from the held-back token reports it as removed next time, at the cost of
+    /// repeating one incremental walk.
+    /// </summary>
+    /// <param name="stateKey">The change tracking key of the folder or drive, or <c>null</c> if changes are not tracked</param>
+    /// <param name="factory">Opens the stream</param>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns>The stream</returns>
+    internal async Task<Stream> OpenWithFailureTrackingAsync(string? stateKey, Func<CancellationToken, Task<Stream>> factory, CancellationToken cancellationToken)
+    {
+        if (stateKey == null || !_changeTracker.IsActive)
+            return await factory(cancellationToken).ConfigureAwait(false);
+
+        Stream stream;
+        try
+        {
+            stream = await factory(cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _changeTracker.MarkStateFailed(stateKey);
+            throw;
+        }
+
+        return new FailureReportingStream(stream, () => _changeTracker.MarkStateFailed(stateKey));
+    }
+
+    /// <summary>
+    /// Lists items and reports a failure to list them to the change tracker, so the token of
+    /// the drive the items belong to is not advanced and the items are listed again next time.
+    /// The backup skips a folder it cannot list and continues with the rest, so without this
+    /// the drive would store a token claiming the folder was walked.
+    /// </summary>
+    /// <typeparam name="T">The type of the items</typeparam>
+    /// <param name="stateKey">The change tracking key of the drive, or <c>null</c> if changes are not tracked</param>
+    /// <param name="source">The listing</param>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns>The items</returns>
+    internal async IAsyncEnumerable<T> ListWithFailureTrackingAsync<T>(string? stateKey, IAsyncEnumerable<T> source, [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        if (stateKey == null || !_changeTracker.IsActive)
+        {
+            await foreach (var item in source.WithCancellation(cancellationToken).ConfigureAwait(false))
+                yield return item;
+            yield break;
+        }
+
+        await using var enumerator = source.GetAsyncEnumerator(cancellationToken);
+        while (true)
+        {
+            bool hasNext;
+            try
+            {
+                hasNext = await enumerator.MoveNextAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                _changeTracker.MarkStateFailed(stateKey);
+                throw;
+            }
+
+            if (!hasNext)
+                yield break;
+
+            yield return enumerator.Current;
+        }
+    }
 
     /// <inheritdoc />
     public void Dispose()

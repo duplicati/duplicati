@@ -8,13 +8,96 @@ using Duplicati.Library.Logging;
 
 namespace Duplicati.Proprietary.Office365.SourceItems;
 
-internal class DriveFolderSourceEntry(SourceProvider provider, string path, GraphDrive drive, GraphDriveItem item)
-    : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(path, item.Id)), item.CreatedDateTime.FromGraphDateTime(), item.LastModifiedDateTime.FromGraphDateTime())
+/// <summary>
+/// A folder in a drive. It either lists its children with a request to Graph, recording
+/// the folders it finds in the drive's folder map, or lists a prepared set of changed
+/// children from a delta walk.
+/// </summary>
+internal class DriveFolderSourceEntry : MetaEntryBase
 {
     private static readonly string LOGTAG = Log.LogTagFromType<DriveFolderSourceEntry>();
+
+    private readonly SourceProvider provider;
+    private readonly GraphDrive drive;
+    private readonly GraphDriveItem item;
+    private readonly DriveFolderMap? map;
+    private readonly DriveChangeSet? changes;
+
+    /// <summary>
+    /// Creates a folder entry that lists its children with a request to Graph
+    /// </summary>
+    /// <param name="provider">The provider</param>
+    /// <param name="path">The path of the parent</param>
+    /// <param name="drive">The drive</param>
+    /// <param name="item">The folder item</param>
+    /// <param name="map">The folder map to record child folders in, or <c>null</c> if changes are not tracked</param>
+    public DriveFolderSourceEntry(SourceProvider provider, string path, GraphDrive drive, GraphDriveItem item, DriveFolderMap? map)
+        : this(provider, path, drive, item, map, null)
+    {
+    }
+
+    /// <summary>
+    /// Creates a folder entry that lists only the changed children a delta walk reported
+    /// </summary>
+    /// <param name="provider">The provider</param>
+    /// <param name="path">The path of the parent</param>
+    /// <param name="drive">The drive</param>
+    /// <param name="item">The folder item</param>
+    /// <param name="changes">The changes reported by the delta walk</param>
+    public DriveFolderSourceEntry(SourceProvider provider, string path, GraphDrive drive, GraphDriveItem item, DriveChangeSet changes)
+        : this(provider, path, drive, item, changes.Map, changes)
+    {
+    }
+
+    /// <summary>
+    /// Creates a folder entry
+    /// </summary>
+    /// <param name="provider">The provider</param>
+    /// <param name="path">The path of the parent</param>
+    /// <param name="drive">The drive</param>
+    /// <param name="item">The folder item</param>
+    /// <param name="map">The folder map to record child folders in, or <c>null</c> if changes are not tracked</param>
+    /// <param name="changes">The changes to list instead of asking Graph, or <c>null</c> to list the children with a request</param>
+    private DriveFolderSourceEntry(SourceProvider provider, string path, GraphDrive drive, GraphDriveItem item, DriveFolderMap? map, DriveChangeSet? changes)
+        : base(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(path, item.Id)), item.CreatedDateTime.FromGraphDateTime(), item.LastModifiedDateTime.FromGraphDateTime())
+    {
+        this.provider = provider;
+        this.drive = drive;
+        this.item = item;
+        this.map = map;
+        this.changes = changes;
+    }
+
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        await foreach (var child in provider.OneDriveApi.ListDriveFolderChildrenAsync(drive.Id, item.Id, cancellationToken).ConfigureAwait(false))
+        if (changes != null)
+        {
+            foreach (var child in changes.GetChildren(item.Id))
+            {
+                if (cancellationToken.IsCancellationRequested)
+                    yield break;
+
+                var entry = changes.CreateEntry(provider, drive, child, this.Path);
+                if (entry != null)
+                    yield return entry;
+            }
+
+            yield break;
+        }
+
+        // The backup skips a folder it cannot list and continues, so the failure is reported
+        // to the change tracker: the drive's token must not claim the folder was walked
+        var stateKey = provider.DriveDeltaEnabled ? ChangeTrackingKeys.Drive(drive.Id) : null;
+
+        // The folder is listed in full, so below an incrementally walked drive it is the one
+        // place where an empty listing means an empty folder, and the paths below it must
+        // not be carried forward. Anywhere else an unmarked path already counts as examined,
+        // so the mark is only recorded where it changes an answer, which keeps the marks
+        // bounded by the changes instead of by the number of folders in the tenant
+        if (stateKey != null && provider.ChangeTracker.IsActive && provider.ChangeTracker.IsIncrementallyEnumeratedFolder(this.Path))
+            provider.ChangeTracker.MarkExaminedSubtree(this.Path);
+        var children = provider.ListWithFailureTrackingAsync(stateKey, provider.OneDriveApi.ListDriveFolderChildrenAsync(drive.Id, item.Id, cancellationToken), cancellationToken);
+        await foreach (var child in children.ConfigureAwait(false))
         {
             if (cancellationToken.IsCancellationRequested)
                 yield break;
@@ -22,11 +105,14 @@ internal class DriveFolderSourceEntry(SourceProvider provider, string path, Grap
             if (child.Deleted != null)
                 continue;
             if (child.Folder != null)
-                yield return new DriveFolderSourceEntry(provider, this.Path, drive, child);
+            {
+                map?.SetParent(child.Id, item.Id);
+                yield return new DriveFolderSourceEntry(provider, this.Path, drive, child, map);
+            }
             else if (child.File != null)
                 yield return new DriveFileSourceEntry(provider, this.Path, drive, child);
             else
-                Log.WriteWarningMessage(LOGTAG, "UnknownDriveItemType", null, $"Unknown drive item type: {item.Id}");
+                Log.WriteWarningMessage(LOGTAG, "UnknownDriveItemType", null, $"Unknown drive item type: {child.Id}");
         }
     }
 

@@ -2020,6 +2020,177 @@ namespace Duplicati.Library.Main.Database.Local
         }
 
         /// <summary>
+        /// Retrieves the change-tracking state a source provider stored with a fileset.
+        /// </summary>
+        /// <param name="fileSetId">The fileset ID.</param>
+        /// <param name="scope">The provider scope.</param>
+        /// <param name="token">The cancellation token to cancel the operation.</param>
+        /// <returns>The stored state, or <c>null</c> if the fileset has no state for the scope.</returns>
+        public async Task<SourceProviderState?> GetSourceProviderStateAsync(long fileSetId, string scope, CancellationToken token)
+        {
+            await using var cmd = m_connection.CreateCommand(@"
+                SELECT
+                    ""Key"",
+                    ""Value"",
+                    ""ConfigHash""
+                FROM ""SourceProviderState""
+                WHERE
+                    ""FilesetID"" = @FilesetId
+                    AND ""Scope"" = @Scope
+            ")
+                .SetTransaction(m_rtr)
+                .SetParameterValue("@FilesetId", fileSetId)
+                .SetParameterValue("@Scope", scope);
+
+            string? configHash = null;
+            var rows = new Dictionary<string, string>(StringComparer.Ordinal);
+            await using var rd = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false);
+            while (await rd.ReadAsync(token).ConfigureAwait(false))
+            {
+                rows[rd.ConvertValueToString(0) ?? ""] = rd.ConvertValueToString(1) ?? "";
+                configHash ??= rd.ConvertValueToString(2) ?? "";
+            }
+
+            return configHash == null ? null : new SourceProviderState(configHash, rows);
+        }
+
+        /// <summary>
+        /// Stores the change-tracking state of a source provider with the current fileset.
+        /// </summary>
+        /// <param name="scope">The provider scope.</param>
+        /// <param name="configHash">The hash of the configuration the state is recorded under.</param>
+        /// <param name="rows">The state rows.</param>
+        /// <param name="token">The cancellation token to cancel the operation.</param>
+        /// <returns>A task that completes when the state is stored.</returns>
+        public async Task CreateSourceProviderStateAsync(string scope, string configHash, IReadOnlyDictionary<string, string> rows, CancellationToken token)
+        {
+            using (new Logging.Timer(LOGTAG, "CreateSourceProviderState", "Inserting source provider state"))
+                await InsertSourceProviderStateAsync(m_filesetId, scope, configHash, rows, token).ConfigureAwait(false);
+
+            await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Moves the change-tracking state stored with a fileset to the fileset before it. Used when
+        /// a fileset is dropped because nothing needed uploading: the two filesets then have the same
+        /// content, so the state the enumeration ended with describes the previous fileset as well.
+        /// </summary>
+        /// <param name="fileSetId">The fileset being dropped.</param>
+        /// <param name="token">The cancellation token to cancel the operation.</param>
+        /// <returns>A task that completes when the state is moved.</returns>
+        public async Task MoveSourceProviderStateToPreviousFilesetAsync(long fileSetId, CancellationToken token)
+        {
+            await using var cmd = m_connection.CreateCommand(m_rtr);
+            var previousFilesetId = await GetPreviousFilesetIDAsync(cmd, OperationTimestamp, fileSetId, token).ConfigureAwait(false);
+            if (previousFilesetId < 0)
+                return;
+
+            using (new Logging.Timer(LOGTAG, "MoveSourceProviderState", "Moving source provider state to the previous fileset"))
+            {
+                // The previous fileset's rows for the scopes that have new state are replaced
+                await cmd.SetCommandAndParameters(@"
+                    DELETE FROM ""SourceProviderState""
+                    WHERE
+                        ""FilesetID"" = @PreviousFilesetId
+                        AND ""Scope"" IN (
+                            SELECT DISTINCT ""Scope""
+                            FROM ""SourceProviderState""
+                            WHERE ""FilesetID"" = @FilesetId
+                        )
+                ")
+                    .SetParameterValue("@PreviousFilesetId", previousFilesetId)
+                    .SetParameterValue("@FilesetId", fileSetId)
+                    .ExecuteNonQueryAsync(writeLog: false, token)
+                    .ConfigureAwait(false);
+
+                await cmd.SetCommandAndParameters(@"
+                    UPDATE ""SourceProviderState""
+                    SET ""FilesetID"" = @PreviousFilesetId
+                    WHERE ""FilesetID"" = @FilesetId
+                ")
+                    .SetParameterValue("@PreviousFilesetId", previousFilesetId)
+                    .SetParameterValue("@FilesetId", fileSetId)
+                    .ExecuteNonQueryAsync(writeLog: false, token)
+                    .ConfigureAwait(false);
+            }
+
+            await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Removes the change-tracking state stored with all but the newest filesets. Only the
+        /// newest fileset's state is ever read, so older rows are dead weight that would otherwise
+        /// grow with every retained version.
+        /// </summary>
+        /// <param name="filesetsToKeep">The number of newest filesets whose state is kept.</param>
+        /// <param name="token">The cancellation token to cancel the operation.</param>
+        /// <returns>The number of rows removed.</returns>
+        public async Task<long> PruneSourceProviderStateAsync(int filesetsToKeep, CancellationToken token)
+        {
+            await using var cmd = m_connection.CreateCommand(m_rtr);
+            var removed = await cmd.SetCommandAndParameters(@"
+                DELETE FROM ""SourceProviderState""
+                WHERE ""FilesetID"" NOT IN (
+                    SELECT ""ID""
+                    FROM ""Fileset""
+                    ORDER BY ""Timestamp"" DESC
+                    LIMIT @Keep
+                )
+            ")
+                .SetParameterValue("@Keep", filesetsToKeep)
+                .ExecuteNonQueryAsync(true, token)
+                .ConfigureAwait(false);
+
+            await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
+            return removed;
+        }
+
+        /// <summary>
+        /// Inserts source provider state rows for a fileset.
+        /// </summary>
+        /// <param name="fileSetId">The fileset to insert for.</param>
+        /// <param name="scope">The provider scope.</param>
+        /// <param name="configHash">The hash of the configuration the state is recorded under.</param>
+        /// <param name="rows">The state rows.</param>
+        /// <param name="token">The cancellation token to cancel the operation.</param>
+        /// <returns>A task that completes when the rows are inserted.</returns>
+        private async Task InsertSourceProviderStateAsync(long fileSetId, string scope, string configHash, IReadOnlyDictionary<string, string> rows, CancellationToken token)
+        {
+            await using var cmd = m_connection.CreateCommand(m_rtr);
+            cmd.SetCommandAndParameters(@"
+                INSERT INTO ""SourceProviderState"" (
+                    ""FilesetID"",
+                    ""Scope"",
+                    ""Key"",
+                    ""Value"",
+                    ""ConfigHash""
+                )
+                VALUES (
+                    @FilesetId,
+                    @Scope,
+                    @Key,
+                    @Value,
+                    @ConfigHash
+                );
+            ");
+
+            foreach (var row in rows)
+            {
+                var c = await cmd
+                    .SetParameterValue("@FilesetId", fileSetId)
+                    .SetParameterValue("@Scope", scope)
+                    .SetParameterValue("@Key", row.Key)
+                    .SetParameterValue("@Value", row.Value)
+                    .SetParameterValue("@ConfigHash", configHash)
+                    .ExecuteNonQueryAsync(writeLog: false, token) // Not logging, as we log the whole operation
+                    .ConfigureAwait(false);
+
+                if (c != 1)
+                    throw new Exception("Unable to add source provider state entry");
+            }
+        }
+
+        /// <summary>
         /// Checks if a blocklist hash is known.
         /// </summary>
         /// <param name="hash">The hash to check.</param>

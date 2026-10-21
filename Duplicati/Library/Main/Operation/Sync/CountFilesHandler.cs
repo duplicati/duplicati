@@ -94,6 +94,7 @@ internal static class CountFilesHandler
                 hardlinkPolicy,
                 disableBackupExclusionXattr,
                 excludeEmptyFolders,
+                null,
                 ignoreNames,
                 blacklistPaths,
                 changedfilelist: null,

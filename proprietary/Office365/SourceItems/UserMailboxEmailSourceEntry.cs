@@ -7,7 +7,17 @@ using Duplicati.Library.Interface;
 
 namespace Duplicati.Proprietary.Office365.SourceItems;
 
-internal class UserMailboxEmailSourceEntry(SourceProvider provider, string path, GraphUser user, GraphMessage email)
+/// <summary>
+/// A message in a mail folder, with its content and metadata as children
+/// </summary>
+/// <param name="provider">The provider</param>
+/// <param name="path">The folder path</param>
+/// <param name="user">The user owning the mailbox</param>
+/// <param name="email">The message</param>
+/// <param name="stateKey">The change tracking key of the folder, so a failed download holds the
+/// folder's token back and the message is reported again next time, or <c>null</c> if changes
+/// are not tracked</param>
+internal class UserMailboxEmailSourceEntry(SourceProvider provider, string path, GraphUser user, GraphMessage email, string? stateKey)
     : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(path, email.Id)), email.CreatedDateTime.FromGraphDateTime(), email.LastModifiedDateTime.FromGraphDateTime())
 {
     private readonly Dictionary<string, string?> _minorMetadata = new Dictionary<string, string?> {
@@ -36,14 +46,14 @@ internal class UserMailboxEmailSourceEntry(SourceProvider provider, string path,
             createdUtc: email.CreatedDateTime.FromGraphDateTime(),
             lastModificationUtc: email.LastModifiedDateTime.FromGraphDateTime(),
             size: -1,
-            streamFactory: (ct) => provider.UserEmailApi.GetEmailContentStreamAsync(user.Id, email.Id, ct)
+            streamFactory: (ct) => provider.OpenWithFailureTrackingAsync(stateKey, c => provider.UserEmailApi.GetEmailContentStreamAsync(user.Id, email.Id, c), ct)
         );
 
         yield return new StreamResourceEntryFunction(SystemIO.IO_OS.PathCombine(this.Path, "metadata.json"),
             createdUtc: email.CreatedDateTime.FromGraphDateTime(),
             lastModificationUtc: email.LastModifiedDateTime.FromGraphDateTime(),
             size: -1,
-            streamFactory: (ct) => provider.UserEmailApi.GetEmailMetadataStreamAsync(user.Id, email.Id, ct)
+            streamFactory: (ct) => provider.OpenWithFailureTrackingAsync(stateKey, c => provider.UserEmailApi.GetEmailMetadataStreamAsync(user.Id, email.Id, c), ct)
         );
     }
 }
