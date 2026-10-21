@@ -89,15 +89,19 @@ public static class PointInTimeOptionsHelper
     }
 
     /// <summary>
-    /// Copies the raw option value into the options of a wrapped backend
+    /// Writes the resolved point in time into the options of a wrapped backend
     /// </summary>
-    /// <param name="source">The options of the wrapping backend</param>
+    /// <remarks>
+    /// The instant is written as an absolute UTC time, not the raw option value, so a
+    /// duration such as <c>7D</c> is not counted back again from a later clock when the
+    /// wrapped backend is created or re-created.
+    /// </remarks>
+    /// <param name="pointInTime">The resolved UTC instant, or <c>null</c> if no point in time is set</param>
     /// <param name="target">The options of the wrapped backend</param>
-    public static void ApplyTo(IReadOnlyDictionary<string, string?> source, Dictionary<string, string?> target)
+    public static void ApplyTo(DateTime? pointInTime, Dictionary<string, string?> target)
     {
-        var value = source.GetValueOrDefault(PointInTimeOption);
-        if (!string.IsNullOrWhiteSpace(value))
-            target[PointInTimeOption] = value;
+        if (pointInTime.HasValue)
+            target[PointInTimeOption] = Utility.SerializeDateTime(pointInTime.Value);
     }
 
     /// <summary>

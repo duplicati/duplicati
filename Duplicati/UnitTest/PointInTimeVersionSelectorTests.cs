@@ -25,6 +25,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Backend;
+using Duplicati.Library.Interface;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
 
@@ -155,5 +156,93 @@ public class PointInTimeVersionSelectorTests
         var selected = await SelectAsync();
 
         Assert.IsEmpty(selected);
+    }
+
+    private static async Task<List<(IFileEntry Entry, string VersionId)>> SelectEntriesAsync(string prefix, bool recursive, params ObjectVersion[] versions)
+        => await PointInTimeVersionSelector.SelectEntriesAt(versions.ToAsyncEnumerable(), prefix, recursive, At, cls => cls == "GLACIER", CancellationToken.None).ToListAsync();
+
+    [Test]
+    [Category("Backend")]
+    public async Task EntryNamesAreRelativeToThePrefix()
+    {
+        var selected = await SelectEntriesAsync("backup/", true,
+            Version("backup/a.zip", "v1", -1),
+            new ObjectVersion("backup/b.zip", "v2", At.AddHours(-2), false, 7, "GLACIER"),
+            Version("other/c.zip", "v3", -1));
+
+        Assert.AreEqual(new[] { "a.zip", "b.zip" }, selected.Select(x => x.Entry.Name).ToArray());
+        Assert.AreEqual(new[] { "v1", "v2" }, selected.Select(x => x.VersionId).ToArray());
+        Assert.IsFalse(selected[0].Entry.IsArchived);
+        Assert.IsTrue(selected[1].Entry.IsArchived);
+        Assert.AreEqual(7, selected[1].Entry.Size);
+        Assert.AreEqual(At.AddHours(-2), selected[1].Entry.LastModification);
+    }
+
+    [Test]
+    [Category("Backend")]
+    public async Task AKeyEqualToThePrefixIsTheObjectItself()
+    {
+        // A single key is resolved by listing with the key as the prefix; the match has an empty name
+        var selected = await SelectEntriesAsync("backup/a.zip", true,
+            Version("backup/a.zip", "v2", -1),
+            Version("backup/a.zip", "v1", -5),
+            Version("backup/a.zip.bak", "v3", -1));
+
+        Assert.AreEqual(new[] { "", ".bak" }, selected.Select(x => x.Entry.Name).ToArray());
+        Assert.AreEqual("v2", selected[0].VersionId);
+        Assert.IsFalse(selected[0].Entry.IsFolder);
+    }
+
+    [Test]
+    [Category("Backend")]
+    public async Task TheFolderMarkerOfThePrefixIsSkipped()
+    {
+        var selected = await SelectEntriesAsync("backup/", true,
+            Version("backup/", "m1", -1),
+            Version("backup/a.zip", "v1", -1));
+
+        Assert.AreEqual(new[] { "a.zip" }, selected.Select(x => x.Entry.Name).ToArray());
+    }
+
+    [Test]
+    [Category("Backend")]
+    public async Task NestedObjectsAreFoldedIntoTheirFolderWhenNotRecursive()
+    {
+        var selected = await SelectEntriesAsync("backup/", false,
+            Version("backup/a.zip", "v1", -1),
+            Version("backup/sub/", "m1", -1),
+            Version("backup/sub/b.zip", "v2", -1),
+            Version("backup/sub/deeper/c.zip", "v3", -1));
+
+        Assert.AreEqual(new[] { "a.zip", "sub/" }, selected.Select(x => x.Entry.Name).ToArray());
+        Assert.IsTrue(selected[1].Entry.IsFolder);
+        Assert.AreEqual(string.Empty, selected[1].VersionId);
+    }
+
+    [Test]
+    [Category("Backend")]
+    public async Task AFolderWithNoObjectAtTheTimeIsAbsent()
+    {
+        // Folders come from the objects that existed then, not from every key that ever existed
+        var selected = await SelectEntriesAsync("backup/", false,
+            Version("backup/later/a.zip", "v1", +1),
+            Version("backup/gone/b.zip", "d1", -1, deleteMarker: true),
+            Version("backup/gone/b.zip", "v2", -5),
+            Version("backup/kept/c.zip", "v3", -1));
+
+        Assert.AreEqual(new[] { "kept/" }, selected.Select(x => x.Entry.Name).ToArray());
+    }
+
+    [Test]
+    [Category("Backend")]
+    public async Task NestedObjectsAreReportedWhenRecursive()
+    {
+        var selected = await SelectEntriesAsync("backup/", true,
+            Version("backup/sub/", "m1", -1),
+            Version("backup/sub/b.zip", "v2", -1));
+
+        Assert.AreEqual(new[] { "sub/", "sub/b.zip" }, selected.Select(x => x.Entry.Name).ToArray());
+        Assert.IsTrue(selected[0].Entry.IsFolder);
+        Assert.IsFalse(selected[1].Entry.IsFolder);
     }
 }

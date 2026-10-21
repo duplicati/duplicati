@@ -541,48 +541,28 @@ namespace Duplicati.Library.Backend
         /// Unlike <see cref="ListBucketAsync"/>, the prefix is used as given, so a caller can
         /// resolve a single key by passing the key itself; the names returned are relative to the prefix.
         /// </remarks>
-        public async IAsyncEnumerable<(IFileEntry Entry, string VersionId)> ListBucketVersionsAtAsync(string bucketName, string prefix, bool recursive, DateTime atUtc, [EnumeratorCancellation] CancellationToken cancellationToken)
-        {
-            var delimiter = recursive ? "" : "/";
-
-            // Folders are reported once, as the version listing repeats the prefixes per page
-            var returnedFolders = new HashSet<string>();
-
-            await foreach (var version in PointInTimeVersionSelector.SelectCurrentAt(ListVersionsAsync(bucketName, prefix, delimiter, returnedFolders, cancellationToken), atUtc, cancellationToken).ConfigureAwait(false))
-            {
-                // Skip self-prefix, as the plain listing does
-                if (version.Key == prefix || !version.Key.StartsWith(prefix))
-                    continue;
-
-                var entry = new FileEntry(
-                    version.Key.Substring(prefix.Length),
-                    version.Size,
-                    version.LastModifiedUtc,
-                    version.LastModifiedUtc
-                )
-                {
-                    IsFolder = version.Key.EndsWith("/"),
-                    IsArchived = version.StorageClass != null && m_archiveClasses.Contains(new S3StorageClass(version.StorageClass))
-                };
-
-                yield return (entry, version.VersionId);
-            }
-
-            foreach (var folder in returnedFolders)
-                yield return (new FileEntry(folder.Substring(prefix.Length), -1, new DateTime(0), new DateTime(0)) { IsFolder = true }, string.Empty);
-        }
+        public IAsyncEnumerable<(IFileEntry Entry, string VersionId)> ListBucketVersionsAtAsync(string bucketName, string prefix, bool recursive, DateTime atUtc, CancellationToken cancellationToken)
+            => PointInTimeVersionSelector.SelectEntriesAt(
+                ListVersionsAsync(bucketName, prefix, cancellationToken),
+                prefix,
+                recursive,
+                atUtc,
+                storageClass => storageClass != null && m_archiveClasses.Contains(new S3StorageClass(storageClass)),
+                cancellationToken);
 
         /// <summary>
         /// Pages through the version listing of a prefix, in the order S3 returns it:
         /// by key, newest version first within a key
         /// </summary>
+        /// <remarks>
+        /// No delimiter is used, as a common prefix cannot tell whether any object under it
+        /// existed at a point in time; folders are derived from the selected versions instead.
+        /// </remarks>
         /// <param name="bucketName">The bucket name</param>
         /// <param name="prefix">The prefix to list</param>
-        /// <param name="delimiter">The delimiter, empty for a recursive listing</param>
-        /// <param name="folders">Receives the common prefixes seen while listing</param>
         /// <param name="cancellationToken">The cancellation token</param>
         /// <returns>The versions and delete markers under the prefix</returns>
-        private async IAsyncEnumerable<ObjectVersion> ListVersionsAsync(string bucketName, string prefix, string delimiter, HashSet<string> folders, [EnumeratorCancellation] CancellationToken cancellationToken)
+        private async IAsyncEnumerable<ObjectVersion> ListVersionsAsync(string bucketName, string prefix, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             string? keyMarker = null;
             string? versionIdMarker = null;
@@ -597,7 +577,6 @@ namespace Duplicati.Library.Backend
                     {
                         BucketName = bucketName,
                         Prefix = prefix,
-                        Delimiter = delimiter,
                         KeyMarker = keyMarker,
                         VersionIdMarker = versionIdMarker,
                         MaxKeys = ITEM_LIST_LIMIT
@@ -606,17 +585,13 @@ namespace Duplicati.Library.Backend
                 }
                 catch (AmazonS3Exception s3ex)
                 {
-                    TranslateException(s3ex, prefix ?? "");
+                    TranslateException(s3ex, prefix);
                     throw;
                 }
 
                 isTruncated = response.IsTruncated ?? false;
                 keyMarker = response.NextKeyMarker;
                 versionIdMarker = response.NextVersionIdMarker;
-
-                foreach (var folder in response.CommonPrefixes ?? [])
-                    if (folder != prefix && folder.StartsWith(prefix))
-                        folders.Add(folder);
 
                 foreach (var version in response.Versions ?? [])
                     yield return new ObjectVersion(

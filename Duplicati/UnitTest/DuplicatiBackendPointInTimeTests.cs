@@ -137,15 +137,20 @@ public class DuplicatiBackendPointInTimeTests
 
     [Test]
     [Category("Backend")]
-    public async Task DirectModeWithObjectLockForwardsTheOption()
+    public async Task DirectModeWithObjectLockForwardsTheResolvedInstant()
     {
+        // The instant is resolved once and forwarded as an absolute time, so the S3 backend
+        // created on each credential rotation reads the same state
         var server = new FakeServer().On("/credentials", HttpStatusCode.OK, DirectCredentialsWithObjectLock, "application/json");
+        var expected = DateTime.UtcNow.AddDays(-7);
         using var backend = CreateBackend(server, PointInTime("7D"));
 
         await backend.EnsureCredentialsAsync(CancellationToken.None);
 
         Assert.IsNotNull(backend.DirectModeOptions);
-        Assert.AreEqual("7D", backend.DirectModeOptions![PointInTimeOptionsHelper.PointInTimeOption]);
+        var forwarded = backend.DirectModeOptions![PointInTimeOptionsHelper.PointInTimeOption]!;
+        Assert.IsTrue(Duplicati.Library.Utility.Utility.TryDeserializeDateTime(forwarded, out var instant), $"Not an absolute time: {forwarded}");
+        Assert.Less((instant.ToUniversalTime() - expected).Duration(), TimeSpan.FromMinutes(1));
     }
 
     [TestCase(DirectCredentialsWithoutObjectLock, TestName = "DirectModeWithoutObjectLockIsRefused")]

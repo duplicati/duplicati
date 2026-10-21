@@ -84,17 +84,26 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Creates the exception that reports that reading at a point in time needs the AWS client
+        /// </summary>
         /// <remarks>
         /// The MinIO SDK does not report delete markers in a version listing, so it cannot tell
         /// whether an object existed at a point in time. The AWS client works against MinIO servers.
         /// </remarks>
-        public IAsyncEnumerable<(IFileEntry Entry, string VersionId)> ListBucketVersionsAtAsync(string bucketName, string prefix, bool recursive, DateTime atUtc, CancellationToken cancellationToken)
-            => throw new UserInformationException(Strings.S3Backend.PointInTimeRequiresAwsClientError(PointInTimeOptionsHelper.PointInTimeOption), "S3PointInTimeRequiresAwsClient");
+        /// <returns>The exception to throw</returns>
+        internal static UserInformationException CreatePointInTimeNotSupportedException()
+            => new(Strings.S3Backend.PointInTimeRequiresAwsClientError(PointInTimeOptionsHelper.PointInTimeOption), "S3PointInTimeRequiresAwsClient");
 
         /// <inheritdoc />
+        /// <remarks>Not supported; the S3 backend refuses the combination when it is created</remarks>
+        public IAsyncEnumerable<(IFileEntry Entry, string VersionId)> ListBucketVersionsAtAsync(string bucketName, string prefix, bool recursive, DateTime atUtc, CancellationToken cancellationToken)
+            => throw CreatePointInTimeNotSupportedException();
+
+        /// <inheritdoc />
+        /// <remarks>Not supported; the S3 backend refuses the combination when it is created</remarks>
         public Task GetFileStreamAsync(string bucketName, string keyName, string versionId, Stream target, CancellationToken cancelToken)
-            => throw new UserInformationException(Strings.S3Backend.PointInTimeRequiresAwsClientError(PointInTimeOptionsHelper.PointInTimeOption), "S3PointInTimeRequiresAwsClient");
+            => throw CreatePointInTimeNotSupportedException();
 
         public async IAsyncEnumerable<IFileEntry> ListBucketAsync(string bucketName, string prefix, bool recursive, [EnumeratorCancellation] CancellationToken cancellationToken)
         {

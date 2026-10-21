@@ -28,6 +28,8 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 
+[assembly: InternalsVisibleTo("Duplicati.UnitTest")]
+
 namespace Duplicati.Library.Backend
 {
     public class S3 : IBackend, IStreamingBackend, IRenameEnabledBackend, IFolderEnabledBackend, ILockingBackend
@@ -251,13 +253,31 @@ namespace Duplicati.Library.Backend
             m_s3Client = null!;
         }
 
+        /// <summary>
+        /// Creates a backend over a given client, for tests
+        /// </summary>
+        /// <param name="url">The backend url</param>
+        /// <param name="options">The backend options</param>
+        /// <param name="client">The client to use</param>
+        internal S3(string url, Dictionary<string, string?> options, IS3Client client)
+        {
+            var uri = new Utility.RelaxedUri(url);
+            uri.RequireHost();
+
+            m_bucket = uri.Host ?? "";
+            m_prefix = NormalizePrefix(uri.Path);
+            m_recurseLists = Utility.Utility.ParseBoolOption(options, S3_RECURSIVE_LIST);
+            m_pointInTime = PointInTimeOptionsHelper.Parse(options);
+            m_s3Client = client;
+        }
+
         public S3(string url, Dictionary<string, string?> options)
         {
             var uri = new Utility.RelaxedUri(url);
             uri.RequireHost();
 
             m_bucket = uri.Host ?? "";
-            m_prefix = uri.Path;
+            m_prefix = NormalizePrefix(uri.Path);
             var timeout = TimeoutOptionsHelper.Parse(options);
 
             var auth = AuthOptionsHelper.ParseWithAlias(options, uri.Username, uri.Password, AUTH_USERNAME_OPTION, AUTH_PASSWORD_OPTION);
@@ -285,10 +305,6 @@ namespace Duplicati.Library.Backend
                             hostname = s3hostmatch;
                 }
             }
-
-            m_prefix = m_prefix.Trim();
-            if (m_prefix.Length != 0)
-                m_prefix = Util.AppendDirSeparator(m_prefix, "/");
 
             m_recurseLists = Utility.Utility.ParseBoolOption(options, S3_RECURSIVE_LIST);
             m_pointInTime = PointInTimeOptionsHelper.Parse(options);
@@ -329,12 +345,27 @@ namespace Duplicati.Library.Backend
             }
             else if (string.Equals(s3ClientOptionValue, "minio", StringComparison.OrdinalIgnoreCase))
             {
+                // Refuse here rather than on the first read, so the mismatch is reported when the backend is created
+                if (m_pointInTime.HasValue)
+                    throw S3MinioClient.CreatePointInTimeNotSupportedException();
+
                 m_s3Client = new S3MinioClient(awsID, awsKey, locationConstraint, hostname, storageClass, useSSL, timeout, options, lockMode, authenticationRegion);
             }
             else
             {
                 throw new UserInformationException(Strings.S3Backend.UnknownS3ClientError(s3ClientOptionValue), "UnknownS3Client");
             }
+        }
+
+        /// <summary>
+        /// Trims the prefix and makes it end in a separator, unless it is empty
+        /// </summary>
+        /// <param name="prefix">The prefix from the url</param>
+        /// <returns>The normalized prefix</returns>
+        private static string NormalizePrefix(string prefix)
+        {
+            prefix = prefix.Trim();
+            return prefix.Length == 0 ? prefix : Util.AppendDirSeparator(prefix, "/");
         }
 
         public static bool IsValidHostname(string bucketname)

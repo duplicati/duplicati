@@ -122,15 +122,26 @@ public class PointInTimeOptionsHelperTests
 
     [Test]
     [Category("Backend")]
-    public void ApplyToCopiesTheRawValue()
+    public void ApplyToWritesTheAbsoluteInstant()
     {
+        // A duration must not be counted back again from a later clock by the wrapped backend
+        var instant = new DateTime(2026, 1, 15, 8, 30, 0, DateTimeKind.Utc);
         var target = new Dictionary<string, string?>();
 
-        PointInTimeOptionsHelper.ApplyTo(Options("7D"), target);
-        Assert.AreEqual("7D", target[PointInTimeOptionsHelper.PointInTimeOption]);
+        PointInTimeOptionsHelper.ApplyTo(instant, target);
 
+        Assert.AreEqual("20260115T083000Z", target[PointInTimeOptionsHelper.PointInTimeOption]);
+        Assert.AreEqual(instant, PointInTimeOptionsHelper.Parse(target));
+    }
+
+    [Test]
+    [Category("Backend")]
+    public void ApplyToWithoutAPointInTimeWritesNothing()
+    {
         var untouched = new Dictionary<string, string?>();
-        PointInTimeOptionsHelper.ApplyTo(Options(null), untouched);
+
+        PointInTimeOptionsHelper.ApplyTo(null, untouched);
+
         Assert.IsEmpty(untouched);
     }
 

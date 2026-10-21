@@ -141,10 +141,6 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     /// The UTC point in time to read the destination at, or <c>null</c> to read the current state
     /// </summary>
     private readonly DateTime? _pointInTime;
-    /// <summary>
-    /// The options the backend was created with, forwarded to the S3 backend in direct mode
-    /// </summary>
-    private readonly Dictionary<string, string?> _options;
 
     /// <summary>
     /// The HttpClient used for requests
@@ -196,7 +192,6 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
         _timeouts = null!;
         _backup_id = null!;
         _client = null!;
-        _options = null!;
     }
 
     /// <summary>
@@ -262,7 +257,6 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
 
         _timeouts = TimeoutOptionsHelper.Parse(options);
         _pointInTime = PointInTimeOptionsHelper.Parse(options);
-        _options = options;
     }
 
     /// <summary>
@@ -393,8 +387,9 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
                 if (!string.IsNullOrWhiteSpace(creds.LockMode))
                     s3Options[S3_LOCK_MODE_OPTION] = creds.LockMode;
 
-                // The S3 backend resolves the object versions for a point in time
-                PointInTimeOptionsHelper.ApplyTo(_options, s3Options);
+                // The S3 backend resolves the object versions for the point in time, which is
+                // forwarded as an absolute instant so it stays fixed across credential rotations
+                PointInTimeOptionsHelper.ApplyTo(_pointInTime, s3Options);
 
                 // Plug in timeout options
                 _timeouts.ApplyTo(s3Options, overwrite: true);

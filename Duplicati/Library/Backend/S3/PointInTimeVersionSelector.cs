@@ -20,8 +20,8 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System.Runtime.CompilerServices;
-
-[assembly: InternalsVisibleTo("Duplicati.UnitTest")]
+using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Backend
 {
@@ -81,6 +81,59 @@ namespace Duplicati.Library.Backend
                 decided = true;
                 if (!version.IsDeleteMarker)
                     yield return version;
+            }
+        }
+
+        /// <summary>
+        /// Turns a version listing into the entries under a prefix as they were at <paramref name="atUtc"/>
+        /// </summary>
+        /// <remarks>
+        /// The listing must cover every version under the prefix, without a delimiter, so that a folder
+        /// is reported only when an object under it existed at the point in time. Names are relative to
+        /// the prefix. An object whose key equals the prefix is the object itself when the prefix does not
+        /// end in a separator, and is otherwise the folder marker, which is skipped as the plain listing does.
+        /// In a non-recursive listing, objects below the first level are folded into their folder, which is
+        /// reported once with an unknown modification time and an empty version id.
+        /// </remarks>
+        /// <param name="versions">The version listing</param>
+        /// <param name="prefix">The prefix the listing was made for</param>
+        /// <param name="recursive">Whether to report nested objects, or fold them into folders</param>
+        /// <param name="atUtc">The UTC point in time</param>
+        /// <param name="isArchived">Tells whether a storage class is an archive class</param>
+        /// <param name="cancellationToken">The cancellation token</param>
+        /// <returns>The entries that existed at the point in time, each with the id of the version current then</returns>
+        public static async IAsyncEnumerable<(IFileEntry Entry, string VersionId)> SelectEntriesAt(IAsyncEnumerable<ObjectVersion> versions, string prefix, bool recursive, DateTime atUtc, Func<string?, bool> isArchived, [EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            var returnedFolders = new HashSet<string>();
+
+            await foreach (var version in SelectCurrentAt(versions, atUtc, cancellationToken).ConfigureAwait(false))
+            {
+                if (!version.Key.StartsWith(prefix))
+                    continue;
+
+                var name = version.Key.Substring(prefix.Length);
+                if (name.Length == 0 && version.Key.EndsWith("/"))
+                    continue;
+
+                if (!recursive)
+                {
+                    var separator = name.IndexOf('/');
+                    if (separator >= 0)
+                    {
+                        var folder = name.Substring(0, separator + 1);
+                        if (returnedFolders.Add(folder))
+                            yield return (new FileEntry(folder, -1, new DateTime(0), new DateTime(0)) { IsFolder = true }, string.Empty);
+                        continue;
+                    }
+                }
+
+                var entry = new FileEntry(name, version.Size, version.LastModifiedUtc, version.LastModifiedUtc)
+                {
+                    IsFolder = version.Key.EndsWith("/"),
+                    IsArchived = isArchived(version.StorageClass)
+                };
+
+                yield return (entry, version.VersionId);
             }
         }
     }
