@@ -9,4 +9,6 @@ The [issue is reported to `Mono.Posix`](https://github.com/mono/mono.posix/issue
 
 # Updated builds for Debian Buster
 
-The files `libMono.Unix.so` and `SQLite.Interop.dll` files are built on Debian Buster to link against `GLIBC_2.33` ensuring compatibility with older Linux distros.
+The `libMono.Unix.so` file is built on Debian Buster to link against `GLIBC_2.28` ensuring compatibility with older Linux distros.
+
+The native SQLite library (`libe_sqlite3.so`) is no longer replaced here; it comes from the `SQLite` NuGet package, which is pinned in `Duplicati.Library.SQLiteHelper.csproj` to a version built against `GLIBC_2.28`.
