@@ -152,6 +152,29 @@ public class NotificationQueryTests
 
     [Test]
     [Category("Notifications")]
+    public void BackupRunDismissesTheNotificationsOfTheEarlierRunsWithOneUpdate()
+    {
+        // A temporary backup, so the run does not need a stored backup to write metadata to
+        var backup = new Backup { ID = Guid.NewGuid().ToString(), Metadata = new Dictionary<string, string>() };
+        const string otherBackupId = "job-2";
+        for (var i = 0; i < 5; i++)
+            Register(i % 2 == 0 ? NotificationType.Warning : NotificationType.Error, backup.ID);
+        Register(NotificationType.Warning, otherBackupId);
+
+        var updateIdBefore = notificationUpdateService.LastNotificationUpdateId;
+        var signalsBefore = notificationsUpdatedCount;
+
+        Runner.UpdateMetadataBase(connection, eventPollNotify, notificationUpdateService, backup, new Duplicati.Library.Main.BackupResults());
+
+        Assert.That(connection.GetNotifications().Select(x => x.BackupID), Is.EqualTo(new[] { otherBackupId }));
+        Assert.AreEqual(1, notificationUpdateService.LastNotificationUpdateId - updateIdBefore, "One notification update for all dismissed notifications");
+        Assert.AreEqual(1, notificationsUpdatedCount - signalsBefore, "One notification signal for all dismissed notifications");
+        Assert.IsTrue(connection.ApplicationSettings.UnackedWarning, "A warning from another backup remains");
+        Assert.IsFalse(connection.ApplicationSettings.UnackedError, "No error remains");
+    }
+
+    [Test]
+    [Category("Notifications")]
     public void DismissingABackupWithoutNotificationsSignalsNothing()
     {
         Register(NotificationType.Error, "job-2");
