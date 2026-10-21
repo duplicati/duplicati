@@ -60,6 +60,7 @@ namespace Duplicati.Library.Backend.Strings
         public static string DescriptionRecursiveListLong { get { return LC.L(@"To reduce the number of objects listed, the default is to only list the first level of objects. Use this option to list all objects in the bucket."); } }
         public static string DescriptionLockModeShort { get { return LC.L(@"Specify the S3 object lock mode"); } }
         public static string DescriptionLockModeLong { get { return LC.L(@"Use this option to specify the S3 object lock mode. Governance mode allows users with special permissions to bypass the lock, while Compliance mode enforces strict immutability."); } }
+        public static string PointInTimeRequiresAwsClientError(string option) { return LC.L(@"Reading the destination at a point in time with --{0} requires the AWS client; set --s3-client=aws", option); }
         public static string S3AuthenticationRegionDescriptionShort { get { return LC.L(@"Specify the authentication region"); } }
         public static string S3AuthenticationRegionDescriptionLong { get { return LC.L(@"Use this option to specify the region used when signing requests. Authentication will use this value or fall back to the location constraint region if not supplied."); } }
         public static string UnknownS3ClientError(string client) { return LC.L(@"Unknown S3 client: {0}", client); }

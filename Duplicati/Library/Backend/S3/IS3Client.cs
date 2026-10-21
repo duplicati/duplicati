@@ -35,6 +35,28 @@ namespace Duplicati.Library.Backend
         IAsyncEnumerable<IFileEntry> ListBucketAsync(string bucketName, string prefix, bool recursive, CancellationToken cancellationToken);
 
         /// <summary>
+        /// Lists the objects as they were at a point in time, resolving each name to the version that was current then
+        /// </summary>
+        /// <param name="bucketName">The bucket name</param>
+        /// <param name="prefix">The prefix to filter the objects</param>
+        /// <param name="recursive">Whether to list recursively</param>
+        /// <param name="atUtc">The UTC point in time</param>
+        /// <param name="cancellationToken">The cancellation token</param>
+        /// <returns>The objects that existed at the point in time, each with the id of the version current then</returns>
+        IAsyncEnumerable<(IFileEntry Entry, string VersionId)> ListBucketVersionsAtAsync(string bucketName, string prefix, bool recursive, DateTime atUtc, CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Copies the contents of one version of an object into the target stream
+        /// </summary>
+        /// <param name="bucketName">The name of the bucket</param>
+        /// <param name="keyName">The name of the object</param>
+        /// <param name="versionId">The version of the object to read</param>
+        /// <param name="target">The stream to write the contents to</param>
+        /// <param name="cancelToken">The cancellation token</param>
+        /// <returns>A task representing the asynchronous operation</returns>
+        Task GetFileStreamAsync(string bucketName, string keyName, string versionId, Stream target, CancellationToken cancelToken);
+
+        /// <summary>
         /// Add a new bucket
         /// </summary>
         /// <param name="bucketName">The name of the bucket to create</param>

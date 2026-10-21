@@ -72,6 +72,10 @@ namespace Duplicati.UnitTest
                 => throw new NotImplementedException();
             public Task GetFileStreamAsync(string bucketName, string keyName, Stream target, CancellationToken cancelToken)
                 => throw new NotImplementedException();
+            public Task GetFileStreamAsync(string bucketName, string keyName, string versionId, Stream target, CancellationToken cancelToken)
+                => throw new NotImplementedException();
+            public IAsyncEnumerable<(IFileEntry Entry, string VersionId)> ListBucketVersionsAtAsync(string bucketName, string prefix, bool recursive, DateTime atUtc, CancellationToken cancellationToken)
+                => throw new NotImplementedException();
             public string? GetDnsHost()
                 => throw new NotImplementedException();
             public Task AddFileStreamAsync(string bucketName, string keyName, Stream source, CancellationToken cancelToken)

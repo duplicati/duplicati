@@ -84,6 +84,18 @@ namespace Duplicati.Library.Backend
             }
         }
 
+        /// <inheritdoc />
+        /// <remarks>
+        /// The MinIO SDK does not report delete markers in a version listing, so it cannot tell
+        /// whether an object existed at a point in time. The AWS client works against MinIO servers.
+        /// </remarks>
+        public IAsyncEnumerable<(IFileEntry Entry, string VersionId)> ListBucketVersionsAtAsync(string bucketName, string prefix, bool recursive, DateTime atUtc, CancellationToken cancellationToken)
+            => throw new UserInformationException(Strings.S3Backend.PointInTimeRequiresAwsClientError(PointInTimeOptionsHelper.PointInTimeOption), "S3PointInTimeRequiresAwsClient");
+
+        /// <inheritdoc />
+        public Task GetFileStreamAsync(string bucketName, string keyName, string versionId, Stream target, CancellationToken cancelToken)
+            => throw new UserInformationException(Strings.S3Backend.PointInTimeRequiresAwsClientError(PointInTimeOptionsHelper.PointInTimeOption), "S3PointInTimeRequiresAwsClient");
+
         public async IAsyncEnumerable<IFileEntry> ListBucketAsync(string bucketName, string prefix, bool recursive, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             await ThrowExceptionIfBucketDoesNotExist(bucketName, cancellationToken).ConfigureAwait(false);

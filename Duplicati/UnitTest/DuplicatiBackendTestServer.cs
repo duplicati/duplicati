@@ -42,8 +42,9 @@ internal static class DuplicatiBackendTestServer
     /// </summary>
     /// <param name="Method">The HTTP method</param>
     /// <param name="Path">The request path</param>
+    /// <param name="Query">The query string, including the leading question mark, or empty</param>
     /// <param name="Body">The request body, or <c>null</c> if the request had none</param>
-    public sealed record RecordedRequest(HttpMethod Method, string Path, string? Body);
+    public sealed record RecordedRequest(HttpMethod Method, string Path, string Query, string? Body);
 
     /// <summary>
     /// A message handler that answers requests from a table of paths
@@ -86,7 +87,7 @@ internal static class DuplicatiBackendTestServer
             var body = request.Content == null
                 ? null
                 : await request.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-            RecordedRequests.Add(new RecordedRequest(request.Method, path, body));
+            RecordedRequests.Add(new RecordedRequest(request.Method, path, request.RequestUri.Query, body));
 
             foreach (var (prefix, queue) in _responses)
                 if (path.StartsWith(prefix, StringComparison.Ordinal))
@@ -107,11 +108,26 @@ internal static class DuplicatiBackendTestServer
     /// <param name="server">The fake server</param>
     /// <returns>The backend</returns>
     public static DuplicatiBackend CreateBackend(FakeServer server)
-        => new("duplicati://storage.example.com", new Dictionary<string, string?>
+        => CreateBackend(server, new Dictionary<string, string?>());
+
+    /// <summary>
+    /// Creates a backend that talks to the fake server, with extra options on top of the credentials
+    /// </summary>
+    /// <param name="server">The fake server</param>
+    /// <param name="extraOptions">The options to add</param>
+    /// <returns>The backend</returns>
+    public static DuplicatiBackend CreateBackend(FakeServer server, Dictionary<string, string?> extraOptions)
+    {
+        var options = new Dictionary<string, string?>
         {
             [DuplicatiBackend.BACKUP_ID_OPTION] = "backup-1",
             [DuplicatiBackend.AUTH_API_ID_OPTION] = "org-1",
             [DuplicatiBackend.AUTH_API_KEY_OPTION] = "key-1",
             ["machine-id"] = "machine-1",
-        }, server);
+        };
+        foreach (var (key, value) in extraOptions)
+            options[key] = value;
+
+        return new DuplicatiBackend("duplicati://storage.example.com", options, server);
+    }
 }

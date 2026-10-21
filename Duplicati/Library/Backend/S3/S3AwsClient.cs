@@ -220,14 +220,30 @@ namespace Duplicati.Library.Backend
                     return x;
                 });
 
-        public virtual async Task GetFileStreamAsync(string bucketName, string keyName, Stream target, CancellationToken cancelToken)
+        public virtual Task GetFileStreamAsync(string bucketName, string keyName, Stream target, CancellationToken cancelToken)
+            => GetFileStreamCoreAsync(bucketName, keyName, null, target, cancelToken);
+
+        public Task GetFileStreamAsync(string bucketName, string keyName, string versionId, Stream target, CancellationToken cancelToken)
+            => GetFileStreamCoreAsync(bucketName, keyName, versionId, target, cancelToken);
+
+        /// <summary>
+        /// Copies the contents of an object into the target stream
+        /// </summary>
+        /// <param name="bucketName">The name of the bucket</param>
+        /// <param name="keyName">The name of the object</param>
+        /// <param name="versionId">The version to read, or <c>null</c> for the current version</param>
+        /// <param name="target">The stream to write the contents to</param>
+        /// <param name="cancelToken">The cancellation token</param>
+        /// <returns>A task representing the asynchronous operation</returns>
+        private async Task GetFileStreamCoreAsync(string bucketName, string keyName, string? versionId, Stream target, CancellationToken cancelToken)
         {
             try
             {
                 var objectGetRequest = new GetObjectRequest
                 {
                     BucketName = bucketName,
-                    Key = keyName
+                    Key = keyName,
+                    VersionId = versionId
                 };
 
                 using (var objectGetResponse = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => m_client.GetObjectAsync(objectGetRequest, ct)).ConfigureAwait(false))
@@ -520,6 +536,100 @@ namespace Duplicati.Library.Backend
             }
         }
 
+        /// <inheritdoc />
+        /// <remarks>
+        /// Unlike <see cref="ListBucketAsync"/>, the prefix is used as given, so a caller can
+        /// resolve a single key by passing the key itself; the names returned are relative to the prefix.
+        /// </remarks>
+        public async IAsyncEnumerable<(IFileEntry Entry, string VersionId)> ListBucketVersionsAtAsync(string bucketName, string prefix, bool recursive, DateTime atUtc, [EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            var delimiter = recursive ? "" : "/";
+
+            // Folders are reported once, as the version listing repeats the prefixes per page
+            var returnedFolders = new HashSet<string>();
+
+            await foreach (var version in PointInTimeVersionSelector.SelectCurrentAt(ListVersionsAsync(bucketName, prefix, delimiter, returnedFolders, cancellationToken), atUtc, cancellationToken).ConfigureAwait(false))
+            {
+                // Skip self-prefix, as the plain listing does
+                if (version.Key == prefix || !version.Key.StartsWith(prefix))
+                    continue;
+
+                var entry = new FileEntry(
+                    version.Key.Substring(prefix.Length),
+                    version.Size,
+                    version.LastModifiedUtc,
+                    version.LastModifiedUtc
+                )
+                {
+                    IsFolder = version.Key.EndsWith("/"),
+                    IsArchived = version.StorageClass != null && m_archiveClasses.Contains(new S3StorageClass(version.StorageClass))
+                };
+
+                yield return (entry, version.VersionId);
+            }
+
+            foreach (var folder in returnedFolders)
+                yield return (new FileEntry(folder.Substring(prefix.Length), -1, new DateTime(0), new DateTime(0)) { IsFolder = true }, string.Empty);
+        }
+
+        /// <summary>
+        /// Pages through the version listing of a prefix, in the order S3 returns it:
+        /// by key, newest version first within a key
+        /// </summary>
+        /// <param name="bucketName">The bucket name</param>
+        /// <param name="prefix">The prefix to list</param>
+        /// <param name="delimiter">The delimiter, empty for a recursive listing</param>
+        /// <param name="folders">Receives the common prefixes seen while listing</param>
+        /// <param name="cancellationToken">The cancellation token</param>
+        /// <returns>The versions and delete markers under the prefix</returns>
+        private async IAsyncEnumerable<ObjectVersion> ListVersionsAsync(string bucketName, string prefix, string delimiter, HashSet<string> folders, [EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            string? keyMarker = null;
+            string? versionIdMarker = null;
+            var isTruncated = true;
+
+            while (isTruncated)
+            {
+                ListVersionsResponse response;
+                try
+                {
+                    var request = new ListVersionsRequest
+                    {
+                        BucketName = bucketName,
+                        Prefix = prefix,
+                        Delimiter = delimiter,
+                        KeyMarker = keyMarker,
+                        VersionIdMarker = versionIdMarker,
+                        MaxKeys = ITEM_LIST_LIMIT
+                    };
+                    response = await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancellationToken, ct => m_client.ListVersionsAsync(request, ct)).ConfigureAwait(false);
+                }
+                catch (AmazonS3Exception s3ex)
+                {
+                    TranslateException(s3ex, prefix ?? "");
+                    throw;
+                }
+
+                isTruncated = response.IsTruncated ?? false;
+                keyMarker = response.NextKeyMarker;
+                versionIdMarker = response.NextVersionIdMarker;
+
+                foreach (var folder in response.CommonPrefixes ?? [])
+                    if (folder != prefix && folder.StartsWith(prefix))
+                        folders.Add(folder);
+
+                foreach (var version in response.Versions ?? [])
+                    yield return new ObjectVersion(
+                        version.Key,
+                        version.VersionId,
+                        (version.LastModified ?? default).ToUniversalTime(),
+                        version.IsDeleteMarker ?? false,
+                        version.Size ?? -1,
+                        version.StorageClass?.Value
+                    );
+            }
+        }
+
         public async Task RenameFileAsync(string bucketName, string source, string target, CancellationToken cancelToken)
         {
             var copyObjectRequest = new CopyObjectRequest
@@ -544,7 +654,8 @@ namespace Duplicati.Library.Backend
 
         private static void TranslateException(AmazonS3Exception s3Ex, string keyName)
         {
-            if ("NoSuchKey".Equals(s3Ex.ErrorCode, StringComparison.OrdinalIgnoreCase))
+            if ("NoSuchKey".Equals(s3Ex.ErrorCode, StringComparison.OrdinalIgnoreCase)
+                || "NoSuchVersion".Equals(s3Ex.ErrorCode, StringComparison.OrdinalIgnoreCase))
                 throw new FileMissingException(string.Format("File {0} not found", keyName), s3Ex);
 
             if ("NoSuchBucket".Equals(s3Ex.ErrorCode, StringComparison.OrdinalIgnoreCase))

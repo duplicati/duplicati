@@ -47,6 +47,7 @@ internal static class DuplicatiBackend
     public static string ErrorUploadsDisabled(string reason, string errorMessage) { return LC.L(@"The upload failed because uploads are disabled for the account ({0}), error message: {1}", reason, errorMessage); }
     public static string ErrorObjectLockNotEnabled { get { return LC.L(@"Object locking is not enabled for this storage account"); } }
     public static string ErrorSetObjectLockNoRetention { get { return LC.L(@"Failed to set object lock, the server accepted the request but reported no retention date"); } }
+    public static string ErrorPointInTimeNotAvailable { get { return LC.L(@"Reading the destination at a point in time is not available for this account."); } }
 }
 
 internal static class ListFoldersModule
