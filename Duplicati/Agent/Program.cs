@@ -63,7 +63,8 @@ public static class Program
     /// <param name="SettingsEncryptionKey">The encryption key for the database settings</param>
     /// <param name="WindowsEventLog">The Windows event log to write to</param>
     /// <param name="DisableDbEncryption">Disable database encryption</param>
-    /// <param name="DisableDefaultSecretProvider">Disable default secret provider</param>
+    /// <param name="DisableDefaultSecretProvider">Disable default secret provider (deprecated, use <paramref name="DisableSecretProvider"/>)</param>
+    /// <param name="DisableSecretProvider">The secret providers to disable</param>
     /// <param name="WebserviceResetJwtConfig">Reset the JWT configuration</param>
     /// <param name="WebserviceAllowedHostnames">The allowed hostnames for the webserver</param>
     /// <param name="WebserviceApiOnly">Only allow API access to the webserver</param>
@@ -88,6 +89,7 @@ public static class Program
         string WindowsEventLog,
         bool DisableDbEncryption,
         bool DisableDefaultSecretProvider,
+        SecretProviderHelper.DisableSecretProviderMode DisableSecretProvider,
         bool WebserviceResetJwtConfig,
         string WebserviceAllowedHostnames,
         bool WebserviceApiOnly,
@@ -130,7 +132,8 @@ public static class Program
             new Option<string?>("--settings-encryption-key", description: "The encryption key for the database settings", getDefaultValue: () => null),
             new Option<string>("--windows-eventlog", description: "The Windows event log to use as source.", getDefaultValue: () => ""),
             new Option<bool>("--disable-db-encryption", description: "Disable database encryption", getDefaultValue: () => false),
-            new Option<bool>("--disable-default-secret-provider", description: "Disable the default secret provider", getDefaultValue: () => false),
+            new Option<bool>($"--{SecretProviderHelper.DISABLE_DEFAULT_SECRET_PROVIDER_OPTION}", description: $"Disable the default secret provider. Deprecated, use --{SecretProviderHelper.DISABLE_SECRET_PROVIDER_OPTION}={Enum.GetName(SecretProviderHelper.DisableSecretProviderMode.Default)} instead", getDefaultValue: () => false),
+            new Option<SecretProviderHelper.DisableSecretProviderMode>($"--{SecretProviderHelper.DISABLE_SECRET_PROVIDER_OPTION}", description: "The secret providers to disable: none, all, default (the default secret provider) or regular (the configured secret provider)", getDefaultValue: () => SecretProviderHelper.DisableSecretProviderMode.None),
             new Option<bool>("--webservice-reset-jwt-config", description: "Reset the JWT configuration", getDefaultValue: () => true),
             new Option<string>("--webservice-allowed-hostnames", description: "The allowed hostnames for the webserver", getDefaultValue: () => "127.0.0.1"),
             new Option<bool>("--webservice-api-only", description: "Only allow API access to the webserver", getDefaultValue: () => true),
@@ -229,6 +232,7 @@ public static class Program
             WindowsEventLog: "",
             DisableDbEncryption: false,
             DisableDefaultSecretProvider: false,
+            DisableSecretProvider: SecretProviderHelper.DisableSecretProviderMode.None,
             WebserviceResetJwtConfig: false,
             WebserviceAllowedHostnames: "",
             WebserviceApiOnly: true,
@@ -276,6 +280,7 @@ public static class Program
             options["secret-provider"] = agentConfig.SecretProvider;
             options["secret-provider-cache"] = agentConfig.SecretProviderCache.ToString();
             options["secret-provider-pattern"] = agentConfig.SecretProviderPattern;
+            options[SecretProviderHelper.DISABLE_SECRET_PROVIDER_OPTION] = agentConfig.DisableSecretProvider.ToString();
 
             applicationSettings.SecretProvider = await SecretProviderHelper.ApplySecretProviderAsync([], [], options, TempFolder.SystemTempPath, null, CancellationToken.None);
 
@@ -578,7 +583,8 @@ public static class Program
             EncodeOption("--webservice-api-only", agentConfig.WebserviceApiOnly.ToString()),
             EncodeOption("--webservice-disable-signin-tokens", agentConfig.WebserviceDisableSigninTokens.ToString()),
             EncodeOption("--disable-db-encryption", agentConfig.DisableDbEncryption.ToString()),
-            EncodeOption("--disable-default-secret-provider", agentConfig.DisableDefaultSecretProvider.ToString()),
+            EncodeOption($"--{SecretProviderHelper.DISABLE_DEFAULT_SECRET_PROVIDER_OPTION}", agentConfig.DisableDefaultSecretProvider.ToString()),
+            EncodeOption($"--{SecretProviderHelper.DISABLE_SECRET_PROVIDER_OPTION}", agentConfig.DisableSecretProvider.ToString()),
             EncodeOption("--settings-encryption-key", settingsEncryptionKey),
             EncodeOption("--webservice-disable-api-extensions", string.Join(",", disabledExtensions)),
             EncodeOption($"--{DataFolderManager.ALLOW_INSECURE_DATAFOLDER_OPTION}", agentConfig.AllowInsecureDatafolder.ToString()),

@@ -277,6 +277,112 @@ public class SecretProviderHelperTests : BasicSetupHelper
 
     [Test]
     [Category("SecretHelper")]
+    public async Task DisableRegularSkipsReplacementAsync()
+    {
+        var secretProvider = new MockedSecretProvider();
+        secretProvider.Secrets["key1"] = "secret1";
+
+        var settings = new Dictionary<string, string>
+        {
+            {"key1", "$key1"},
+            {SecretProviderHelper.DISABLE_SECRET_PROVIDER_OPTION, "regular"}
+        };
+
+        var argsInternal = new[] {
+            new Library.Utility.RelaxedUri("test://host?pass=$key1")
+        };
+
+        var result = await SecretProviderHelper.ApplySecretProviderAsync([], argsInternal, settings, null, secretProvider, CancellationToken.None);
+
+        Assert.IsNull(result);
+        Assert.AreEqual("$key1", settings["key1"]);
+        Assert.AreEqual("test://host?pass=$key1", argsInternal[0].ToString());
+    }
+
+    [Test]
+    [Category("SecretHelper")]
+    public async Task DisableAllSkipsReplacementAsync()
+    {
+        var secretProvider = new MockedSecretProvider();
+        secretProvider.Secrets["key1"] = "secret1";
+
+        var settings = new Dictionary<string, string>
+        {
+            {"key1", "$key1"},
+            {SecretProviderHelper.DISABLE_SECRET_PROVIDER_OPTION, "All"}
+        };
+
+        var result = await SecretProviderHelper.ApplySecretProviderAsync([], [], settings, null, secretProvider, CancellationToken.None);
+
+        Assert.IsNull(result);
+        Assert.AreEqual("$key1", settings["key1"]);
+    }
+
+    [Test]
+    [Category("SecretHelper")]
+    public async Task DisableDefaultStillReplacesAsync()
+    {
+        var secretProvider = new MockedSecretProvider();
+        secretProvider.Secrets["key1"] = "secret1";
+
+        var settings = new Dictionary<string, string>
+        {
+            {"key1", "$key1"},
+            {SecretProviderHelper.DISABLE_SECRET_PROVIDER_OPTION, "Default"}
+        };
+
+        var result = await SecretProviderHelper.ApplySecretProviderAsync([], [], settings, null, secretProvider, CancellationToken.None);
+
+        Assert.AreSame(secretProvider, result);
+        Assert.AreEqual("secret1", settings["key1"]);
+    }
+
+    [Test]
+    [Category("SecretHelper")]
+    public async Task DisableDefaultReturnsNoDefaultProviderAsync()
+    {
+        foreach (var mode in new[] { "Default", "All" })
+        {
+            var settings = new Dictionary<string, string>
+            {
+                {SecretProviderHelper.DISABLE_SECRET_PROVIDER_OPTION, mode}
+            };
+
+            Assert.IsNull(await SecretProviderHelper.GetDefaultSecretProviderAsync(settings, CancellationToken.None), mode);
+        }
+    }
+
+    [Test]
+    [Category("SecretHelper")]
+    public void GetDisableModeMapsLegacyOption()
+    {
+        Assert.AreEqual(SecretProviderHelper.DisableSecretProviderMode.None,
+            SecretProviderHelper.GetDisableMode(new Dictionary<string, string>()));
+
+        Assert.AreEqual(SecretProviderHelper.DisableSecretProviderMode.Regular,
+            SecretProviderHelper.GetDisableMode(new Dictionary<string, string> { { SecretProviderHelper.DISABLE_SECRET_PROVIDER_OPTION, "regular" } }));
+
+        Assert.AreEqual(SecretProviderHelper.DisableSecretProviderMode.Default,
+            SecretProviderHelper.GetDisableMode(new Dictionary<string, string> { { SecretProviderHelper.DISABLE_DEFAULT_SECRET_PROVIDER_OPTION, "true" } }));
+
+        Assert.AreEqual(SecretProviderHelper.DisableSecretProviderMode.All,
+            SecretProviderHelper.GetDisableMode(new Dictionary<string, string> {
+                { SecretProviderHelper.DISABLE_DEFAULT_SECRET_PROVIDER_OPTION, "true" },
+                { SecretProviderHelper.DISABLE_SECRET_PROVIDER_OPTION, "regular" } }));
+
+        Assert.AreEqual(SecretProviderHelper.DisableSecretProviderMode.All,
+            SecretProviderHelper.GetDisableMode(new Dictionary<string, string> {
+                { SecretProviderHelper.DISABLE_DEFAULT_SECRET_PROVIDER_OPTION, "false" },
+                { SecretProviderHelper.DISABLE_SECRET_PROVIDER_OPTION, "all" } }));
+
+        Assert.AreEqual(SecretProviderHelper.DisableSecretProviderMode.Default,
+            SecretProviderHelper.GetDisableMode(new Dictionary<string, string> {
+                { SecretProviderHelper.DISABLE_DEFAULT_SECRET_PROVIDER_OPTION, "true" },
+                { SecretProviderHelper.DISABLE_SECRET_PROVIDER_OPTION, "default" } }));
+    }
+
+    [Test]
+    [Category("SecretHelper")]
     public async Task CachedProviderRetainsPatternAsync()
     {
         var secretProvider = new MockedSecretProvider();

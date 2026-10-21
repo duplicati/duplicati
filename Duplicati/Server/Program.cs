@@ -58,7 +58,7 @@ namespace Duplicati.Server
         /// <summary>The commandline argument name for disabling database encryption.</summary>
         private const string DISABLE_DB_ENCRYPTION_OPTION = "disable-db-encryption";
         /// <summary>The commandline argument name for disabling the default secret provider.</summary>
-        private const string DISABLE_DEFAULT_SECRET_PROVIDER_OPTION = "disable-default-secret-provider";
+        private const string DISABLE_DEFAULT_SECRET_PROVIDER_OPTION = SecretProviderHelper.DISABLE_DEFAULT_SECRET_PROVIDER_OPTION;
         /// <summary>The commandline argument name for requiring database encryption key.</summary>
         private const string REQUIRE_DB_ENCRYPTION_KEY_OPTION = "require-db-encryption-key";
         /// <summary>The commandline argument name for settings encryption key.</summary>
@@ -1552,7 +1552,7 @@ namespace Duplicati.Server
         /// <summary>
         /// The options related to the secret provider
         /// </summary>
-        private static IReadOnlyList<ICommandLineArgument> SECRET_PROVIDER_OPTIONS => new Options(new Dictionary<string, string>()).SupportedCommands.Where(x => x.Name.StartsWith("secret-provider")).ToList();
+        private static IReadOnlyList<ICommandLineArgument> SECRET_PROVIDER_OPTIONS => new Options(new Dictionary<string, string>()).SupportedCommands.Where(x => x.Name.StartsWith("secret-provider") || x.Name == SecretProviderHelper.DISABLE_SECRET_PROVIDER_OPTION).ToList();
 
         /// <summary>
         /// Gets additional commandline arguments support on Windows
@@ -1609,7 +1609,7 @@ namespace Duplicati.Server
             new CommandLineArgument(DataFolderManager.SERVER_DATAFOLDER_OPTION, CommandLineArgument.ArgumentType.Path, Strings.Program.ServerdatafolderShort, Strings.Program.ServerdatafolderLong(DataFolderManager.DATAFOLDER_ENV_NAME), DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ProbeOnly)),
             new CommandLineArgument(DataFolderManager.ALLOW_INSECURE_DATAFOLDER_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Program.AllowInsecureDatafolderShort, Strings.Program.AllowInsecureDatafolderLong, false.ToString()),
             new CommandLineArgument(DISABLE_DB_ENCRYPTION_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Program.DisabledbencryptionShort, Strings.Program.DisabledbencryptionLong),
-            new CommandLineArgument(DISABLE_DEFAULT_SECRET_PROVIDER_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Program.DisabledefaultsecretproviderShort, Strings.Program.DisabledefaultsecretproviderLong),
+            new CommandLineArgument(DISABLE_DEFAULT_SECRET_PROVIDER_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Program.DisabledefaultsecretproviderShort, Strings.Program.DisabledefaultsecretproviderLong, "false", null, null, Strings.Program.DisabledefaultsecretproviderDeprecated(SecretProviderHelper.DISABLE_SECRET_PROVIDER_OPTION, Enum.GetName(SecretProviderHelper.DisableSecretProviderMode.Default))),
             new CommandLineArgument(REQUIRE_DB_ENCRYPTION_KEY_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Program.RequiredbencryptionShort, Strings.Program.RequiredbencryptionLong),
             new CommandLineArgument(SETTINGS_ENCRYPTION_KEY_OPTION, CommandLineArgument.ArgumentType.Password, Strings.Program.SettingsencryptionkeyShort, Strings.Program.SettingsencryptionkeyLong(EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME)),
             new CommandLineArgument(REGISTER_REMOTE_CONTROL_OPTION, CommandLineArgument.ArgumentType.String, Strings.Program.RegisterRemoteControlShort, Strings.Program.RegisterRemoteControlLong),

@@ -52,6 +52,75 @@ public static class SecretProviderHelper
     public const string DEFAULT_PATTERN = "$";
 
     /// <summary>
+    /// The name of the option that disables secret providers
+    /// </summary>
+    public const string DISABLE_SECRET_PROVIDER_OPTION = "disable-secret-provider";
+
+    /// <summary>
+    /// The name of the legacy option that disables the default secret provider
+    /// </summary>
+    public const string DISABLE_DEFAULT_SECRET_PROVIDER_OPTION = "disable-default-secret-provider";
+
+    /// <summary>
+    /// The secret providers that can be disabled
+    /// </summary>
+    public enum DisableSecretProviderMode
+    {
+        /// <summary>
+        /// No secret providers are disabled
+        /// </summary>
+        None,
+        /// <summary>
+        /// Both the regular and the default secret provider are disabled
+        /// </summary>
+        All,
+        /// <summary>
+        /// The default secret provider is disabled
+        /// </summary>
+        Default,
+        /// <summary>
+        /// The regular secret provider is disabled
+        /// </summary>
+        Regular
+    }
+
+    /// <summary>
+    /// Reads the disable mode from the options.
+    /// The legacy boolean option for disabling the default provider is treated as <see cref="DisableSecretProviderMode.Default"/>.
+    /// </summary>
+    /// <param name="options">The options to read</param>
+    /// <returns>The disable mode</returns>
+    public static DisableSecretProviderMode GetDisableMode(IReadOnlyDictionary<string, string?> options)
+    {
+        var mode = Library.Utility.Utility.ParseEnumOption(options, DISABLE_SECRET_PROVIDER_OPTION, DisableSecretProviderMode.None);
+        if (!Library.Utility.Utility.ParseBoolOption(options, DISABLE_DEFAULT_SECRET_PROVIDER_OPTION))
+            return mode;
+
+        return mode switch
+        {
+            DisableSecretProviderMode.None => DisableSecretProviderMode.Default,
+            DisableSecretProviderMode.Regular => DisableSecretProviderMode.All,
+            _ => mode
+        };
+    }
+
+    /// <summary>
+    /// Checks if the regular secret provider is disabled
+    /// </summary>
+    /// <param name="mode">The disable mode</param>
+    /// <returns><c>true</c> if the regular secret provider is disabled</returns>
+    public static bool IsRegularDisabled(DisableSecretProviderMode mode)
+        => mode is DisableSecretProviderMode.All or DisableSecretProviderMode.Regular;
+
+    /// <summary>
+    /// Checks if the default secret provider is disabled
+    /// </summary>
+    /// <param name="mode">The disable mode</param>
+    /// <returns><c>true</c> if the default secret provider is disabled</returns>
+    public static bool IsDefaultDisabled(DisableSecretProviderMode mode)
+        => mode is DisableSecretProviderMode.All or DisableSecretProviderMode.Default;
+
+    /// <summary>
     /// The different levels of caching permitted for the secrets
     /// </summary>
     public enum CachingLevel
@@ -104,11 +173,12 @@ public static class SecretProviderHelper
     /// <returns>The default secret provider, or null if none is available</returns>
     public static async Task<ISecretProvider?> GetDefaultSecretProviderAsync(Dictionary<string, string?> options, CancellationToken cancellationToken)
     {
-        if (Library.Utility.Utility.ParseBoolOption(options, "disable-default-secret-provider"))
+        var mode = GetDisableMode(options);
+        if (IsDefaultDisabled(mode))
             return null;
 
         var providerConfig = options.GetValueOrDefault("secret-provider");
-        if (!string.IsNullOrWhiteSpace(providerConfig))
+        if (!IsRegularDisabled(mode) && !string.IsNullOrWhiteSpace(providerConfig))
         {
             var provider = await SecretProviderLoader.CreateInstanceAsync(providerConfig, true, cancellationToken).ConfigureAwait(false);
             if (provider?.IsSetSupported == true)
@@ -139,6 +209,9 @@ public static class SecretProviderHelper
     /// <returns>The secret provider</returns>
     public static async Task<ISecretProvider?> ApplySecretProviderAsync(System.Uri?[] realUriArguments, Library.Utility.Uri[] internalUriArguments, Dictionary<string, string?> options, string persistedFolder, ISecretProvider? fallbackProvider, CancellationToken cancellationToken)
     {
+        if (IsRegularDisabled(GetDisableMode(options)))
+            return null;
+
         var provider = options.GetValueOrDefault("secret-provider");
         if (string.IsNullOrWhiteSpace(provider) && fallbackProvider == null)
             return null;

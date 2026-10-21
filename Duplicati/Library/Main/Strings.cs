@@ -372,6 +372,8 @@ namespace Duplicati.Library.Main.Strings
         public static string SecretProviderPatternLong { get { return LC.L("Use this option to specify a pattern for secret provider options. The pattern is used to find values that are intended to be translated by the secret provider. Patterns are treated as a prefix, with support for braces."); } }
         public static string SecretProviderCacheShort { get { return LC.L("Cache rules for the secret provider"); } }
         public static string SecretProviderCacheLong { get { return LC.L("Use this option to set the allowed caching of credentials from the secret provider. Setting a cache level may reduce the security but allow the backups to continue despite provider outages."); } }
+        public static string DisableSecretProviderShort { get { return LC.L("Disable secret providers"); } }
+        public static string DisableSecretProviderLong { get { return LC.L("Use this option to disable secret providers. Setting \"regular\" ignores the configured secret provider, so no values are translated and the server-wide provider is not used for the operation. Setting \"default\" disables the default secret provider that is used to store the database encryption key. Setting \"all\" disables both."); } }
 
         public static string CPUIntensityShort { get { return LC.L("CPU intensity level"); } }
         public static string CPUIntensityLong { get { return LC.L("Set the CPU intensity level to limit CPU resource utilization. A higher number translates into a higher utilization budget. E.g. 10 would mean no restrictions. Must be an integer between 1-10."); } }
