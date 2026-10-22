@@ -559,12 +559,25 @@ namespace Duplicati.Library.Main.Operation
 
                         try
                         {
+                            var nameTime = VolumeBase.ParseFilename(n.Name).Time;
+
+                            // The file is gone, so its name is free on the destination. Reusing it
+                            // keeps the replacement where it was among the other dlist files; any
+                            // other free name may be past a newer one. If the upload fails, the
+                            // backend manager renames it, as it does for any failed upload.
+                            if (string.Equals(VolumeBase.GenerateFilename(RemoteVolumeType.Files, m_options, null, nameTime), n.Name, StringComparison.Ordinal))
+                            {
+                                var sameNameWriter = newEntry = new FilesetVolumeWriter(m_options, nameTime);
+                                await RunRepairDlistInPlaceAsync(backendManager, db, sameNameWriter, n, cancellationToken).ConfigureAwait(false);
+                                continue;
+                            }
+
                             var fileTime =
                                 await FilesetVolumeWriter.ProbeUnusedFilenameNameAsync(db, m_options, timestamp, cancellationToken)
                                     .ConfigureAwait(false);
                             var volumeWriter = newEntry = new FilesetVolumeWriter(m_options, fileTime);
 
-                            // The replacement file needs a name that is not taken, but the fileset
+                            // Otherwise the replacement file needs a name that is not taken, but the fileset
                             // itself keeps its original time: the fileset time is what orders the
                             // backup versions, so moving it can renumber them.
                             await RunRepairDlistAsync(backendManager, db, volumeWriter, n, timestamp, cancellationToken).ConfigureAwait(false);
@@ -690,6 +703,58 @@ namespace Duplicati.Library.Main.Operation
                 await db.Transaction.RollBackAsync(cancellationToken).ConfigureAwait(false);
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Repairs a single fileset by writing its dlist file again from the database content and
+        /// uploading it under the name of the file that is missing. The fileset and its remote volume
+        /// stay as they are, so neither the name nor the fileset time moves.
+        /// </summary>
+        /// <param name="backendManager">The backend manager to use for uploading.</param>
+        /// <param name="db">The database to use for the repair.</param>
+        /// <param name="volumeWriter">The volume writer to use for the repair, named as the missing file.</param>
+        /// <param name="originalVolume">The remote volume entry to repair.</param>
+        /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        private async Task RunRepairDlistInPlaceAsync(IBackendManager backendManager, LocalRepairDatabase db, FilesetVolumeWriter volumeWriter, RemoteVolumeEntry originalVolume, CancellationToken cancellationToken)
+        {
+            volumeWriter.VolumeID = originalVolume.ID;
+            (var filesetId, var filesetTime, var isFull) = await db
+                .GetFilesetFromRemotenameAsync(originalVolume.Name, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (!string.IsNullOrEmpty(m_options.ControlFiles))
+                foreach (var p in m_options.ControlFiles.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
+                    volumeWriter.AddControlFile(p, m_options.GetCompressionHintFromFilename(p));
+
+            volumeWriter.CreateFilesetFile(isFull, filesetTime);
+            await db
+                .WriteFilesetAsync(volumeWriter, filesetId, cancellationToken)
+                .ConfigureAwait(false);
+
+            volumeWriter.Close();
+
+            Logging.Log.WriteInformationMessage(LOGTAG, "ReuploadingFileset", "Re-uploading fileset {0} from {1} under its original filename: {2}", filesetId, filesetTime, volumeWriter.RemoteFilename);
+            await db
+                .UpdateRemoteVolumeAsync(originalVolume.Name, RemoteVolumeState.Uploading, -1, null, cancellationToken)
+                .ConfigureAwait(false);
+            await backendManager.FlushPendingMessagesAsync(db, cancellationToken).ConfigureAwait(false);
+
+            if (m_options.Dryrun)
+                Logging.Log.WriteDryrunMessage(LOGTAG, "WouldReUploadFileset", "would upload fileset {0}, with size {1}, previous size {2}", originalVolume.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(volumeWriter.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(originalVolume.Size));
+            else
+            {
+                await db.Transaction
+                    .CommitAsync("CommitPriorToFilesetUpload", true, cancellationToken)
+                    .ConfigureAwait(false);
+                await backendManager.PutAsync(volumeWriter, null, null, false, null, cancellationToken).ConfigureAwait(false);
+            }
+
+            await backendManager.WaitForEmptyAsync(db, cancellationToken).ConfigureAwait(false);
+            if (!m_options.Dryrun)
+                await db.Transaction
+                    .CommitAsync("CommitFilesetTransaction", true, cancellationToken)
+                    .ConfigureAwait(false);
         }
 
         /// <summary>
