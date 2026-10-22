@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
@@ -29,6 +30,7 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using CollectionAssert = NUnit.Framework.Legacy.CollectionAssert;
 
 #nullable enable
 
@@ -179,6 +181,139 @@ namespace Duplicati.UnitTest
             };
 
             Assert.ThrowsAsync<TestAfterConnectException>(() => backend.TestReadWritePermissionsAsync(CancellationToken.None));
+        }
+
+        /// <summary>
+        /// A backend that keeps the files of one destination in a store shared with other
+        /// instances, lists what is stored, and can pause right after a file is written
+        /// </summary>
+        private sealed class SharedDestinationBackend : IBackend
+        {
+            private readonly Dictionary<string, (string Content, DateTime LastModification)> _store;
+
+            public SharedDestinationBackend(Dictionary<string, (string Content, DateTime LastModification)> store)
+            {
+                _store = store;
+            }
+
+            /// <summary>
+            /// Called after a file is written, before the write returns
+            /// </summary>
+            public Func<Task> AfterPut { get; set; } = () => Task.CompletedTask;
+
+            public async IAsyncEnumerable<IFileEntry> ListAsync([System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+            {
+                await Task.CompletedTask.ConfigureAwait(false);
+                List<IFileEntry> entries;
+                lock (_store)
+                    entries = _store.Select(x => (IFileEntry)new FileEntry(x.Key, x.Value.Content.Length, default, x.Value.LastModification)).ToList();
+                foreach (var entry in entries)
+                    yield return entry;
+            }
+
+            public Task DeleteAsync(string remotename, CancellationToken cancellationToken)
+            {
+                lock (_store)
+                    if (!_store.Remove(remotename))
+                        throw new FileMissingException();
+                return Task.CompletedTask;
+            }
+
+            public async Task PutAsync(string remotename, string filename, CancellationToken cancellationToken)
+            {
+                lock (_store)
+                    _store[remotename] = (File.ReadAllText(filename), DateTime.UtcNow);
+                await AfterPut().ConfigureAwait(false);
+            }
+
+            public Task GetAsync(string remotename, string filename, CancellationToken cancellationToken)
+            {
+                string content;
+                lock (_store)
+                {
+                    if (!_store.TryGetValue(remotename, out var stored))
+                        throw new FileMissingException();
+                    content = stored.Content;
+                }
+
+                File.WriteAllText(filename, content);
+                return Task.CompletedTask;
+            }
+
+            public Task TestAsync(bool alsoWrite, CancellationToken cancellationToken)
+                => this.TestBackendAsync(alsoWrite, cancellationToken);
+
+            public Task CreateFolderAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+            public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(Array.Empty<string>());
+
+            public string DisplayName => "Shared Destination Backend";
+            public string ProtocolKey => "shareddestination";
+            public string Description => "A testing backend that shares its files with other instances";
+            public IList<ICommandLineArgument> SupportedCommands => new List<ICommandLineArgument>();
+
+            public void Dispose()
+            {
+            }
+        }
+
+        [Test]
+        [Category("Backend")]
+        public async Task TwoTestsOfTheSameDestinationAtOnceBothSucceed_Async()
+        {
+            // The second test runs completely while the first one has written its test
+            // file and not yet read it back, as when the UI starts a test while another
+            // is still running
+            var store = new Dictionary<string, (string Content, DateTime LastModification)>();
+            var firstWritten = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var continueFirst = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            using var first = new SharedDestinationBackend(store)
+            {
+                AfterPut = async () =>
+                {
+                    firstWritten.SetResult();
+                    await continueFirst.Task.ConfigureAwait(false);
+                }
+            };
+            using var second = new SharedDestinationBackend(store);
+
+            var firstTest = first.TestReadWritePermissionsAsync(CancellationToken.None);
+            await firstWritten.Task;
+
+            await second.TestReadWritePermissionsAsync(CancellationToken.None);
+
+            continueFirst.SetResult();
+            await firstTest;
+
+            Assert.AreEqual(0, store.Count, "Both tests should remove their own test file");
+        }
+
+        [Test]
+        [Category("Backend")]
+        public async Task LeftoverTestFilesAreRemovedButNotThoseOfRunningTests_Async()
+        {
+            var now = DateTime.UtcNow;
+            var oldName = BackendExtensions.TEST_FILE_PREFIX + "old" + BackendExtensions.TEST_FILE_EXTENSION;
+            var recentName = BackendExtensions.TEST_FILE_PREFIX + "recent" + BackendExtensions.TEST_FILE_EXTENSION;
+            var noTimeName = BackendExtensions.TEST_FILE_PREFIX + "notime" + BackendExtensions.TEST_FILE_EXTENSION;
+            var store = new Dictionary<string, (string Content, DateTime LastModification)>
+            {
+                // Left over from a version that used the same name for every test
+                [BackendExtensions.TEST_FILE_NAME] = ("x", now),
+                // Left over from a test that did not finish
+                [oldName] = ("x", now - BackendExtensions.LEFTOVER_TEST_FILE_AGE - TimeSpan.FromMinutes(1)),
+                // May belong to a test that is still running
+                [recentName] = ("x", now),
+                [noTimeName] = ("x", default),
+                // Not a test file
+                ["duplicati-20260101T000000Z.dlist.zip"] = ("x", now - TimeSpan.FromDays(10)),
+            };
+            using var backend = new SharedDestinationBackend(store);
+
+            await backend.TestReadWritePermissionsAsync(CancellationToken.None);
+
+            CollectionAssert.AreEquivalent(
+                new[] { recentName, noTimeName, "duplicati-20260101T000000Z.dlist.zip" },
+                store.Keys);
         }
     }
 }

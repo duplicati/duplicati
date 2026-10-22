@@ -42,9 +42,27 @@ public static class BackendExtensions
     private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(BackendExtensions));
 
     /// <summary>
-    /// The test file name used to test access permissions
+    /// The test file name that earlier versions used for every test; a file left over
+    /// with this name is removed by the next test
     /// </summary>
     public const string TEST_FILE_NAME = "duplicati-access-privileges-test.txt";
+
+    /// <summary>
+    /// The start of the test file names. Each test adds a unique part, so two tests of
+    /// the same destination that run at the same time do not use the same file.
+    /// </summary>
+    public const string TEST_FILE_PREFIX = "duplicati-access-privileges-test-";
+
+    /// <summary>
+    /// The extension of the test file names
+    /// </summary>
+    public const string TEST_FILE_EXTENSION = ".txt";
+
+    /// <summary>
+    /// How old a test file from another test must be before it is treated as left over.
+    /// A younger file can belong to a test that is still running.
+    /// </summary>
+    public static readonly TimeSpan LEFTOVER_TEST_FILE_AGE = TimeSpan.FromHours(1);
 
     /// <summary>
     /// The test file content used to test access permissions
@@ -71,30 +89,34 @@ public static class BackendExtensions
     /// <returns>An awaitable tasks</returns>
     public static async Task TestReadWritePermissionsAsync(this IBackend backend, CancellationToken cancellationToken)
     {
-        // Remove the file if it exists
+        var testFileName = $"{TEST_FILE_PREFIX}{Guid.NewGuid():N}{TEST_FILE_EXTENSION}";
+
+        // Remove test files left over from earlier tests
         var connected = false;
+        var leftoverName = TEST_FILE_NAME;
         try
         {
+            var now = DateTime.UtcNow;
             await foreach (var entry in backend
                                .ListAsync(cancellationToken)
                                .WithCancellation(cancellationToken)
                                .ConfigureAwait(false))
             {
-                if (entry.Name != TEST_FILE_NAME)
+                if (!IsLeftoverTestFile(entry, now))
                     continue;
 
                 connected = true;
+                leftoverName = entry.Name;
                 try
                 {
-                    await backend.DeleteAsync(TEST_FILE_NAME, cancellationToken).ConfigureAwait(false);
+                    await backend.DeleteAsync(entry.Name, cancellationToken).ConfigureAwait(false);
                 }
                 catch (FileMissingException)
                 {
                     // A listing can report a file that is already deleted, and this
                     // step only needs the file to be gone
-                    Logging.Log.WriteInformationMessage(LOGTAG, "TestFileAlreadyGone", LC.L($"The listed file {TEST_FILE_NAME} was already gone"));
+                    Logging.Log.WriteInformationMessage(LOGTAG, "TestFileAlreadyGone", LC.L($"The listed file {entry.Name} was already gone"));
                 }
-                break;
             }
         }
         catch (Exception e)
@@ -103,7 +125,7 @@ public static class BackendExtensions
             when (e is not FolderMissingException && e is not FileMissingException)
         {
             if (connected)
-                throw new TestAfterConnectException(Strings.BackendExtensions.ErrorDeleteFile(TEST_FILE_NAME, e.Message), "TestPreparationError", e);
+                throw new TestAfterConnectException(Strings.BackendExtensions.ErrorDeleteFile(leftoverName, e.Message), "TestPreparationError", e);
 
             throw new UserInformationException(Strings.BackendExtensions.ErrorListContent(e.Message), "TestPreparationError", e);
         }
@@ -114,13 +136,13 @@ public static class BackendExtensions
             if (backend is IStreamingBackend streamingBackend && streamingBackend.SupportsStreaming)
             {
                 using (var testStream = new MemoryStream(Encoding.UTF8.GetBytes(TEST_FILE_CONTENT)))
-                    await streamingBackend.PutAsync(TEST_FILE_NAME, testStream, cancellationToken).ConfigureAwait(false);
+                    await streamingBackend.PutAsync(testFileName, testStream, cancellationToken).ConfigureAwait(false);
             }
             else
             {
                 using var tempfile = new TempFile();
                 File.WriteAllText(tempfile, TEST_FILE_CONTENT);
-                await backend.PutAsync(TEST_FILE_NAME, tempfile, cancellationToken).ConfigureAwait(false);
+                await backend.PutAsync(testFileName, tempfile, cancellationToken).ConfigureAwait(false);
             }
         }
         catch (Exception e)
@@ -128,7 +150,7 @@ public static class BackendExtensions
             // even if the folder is missing, and we report that exception up the chain
             when (e is not FolderMissingException)
         {
-            throw new TestAfterConnectException(Strings.BackendExtensions.ErrorWriteFile(TEST_FILE_NAME, e.Message), "TestWriteError", e);
+            throw new TestAfterConnectException(Strings.BackendExtensions.ErrorWriteFile(testFileName, e.Message), "TestWriteError", e);
         }
 
         // Test read permissions
@@ -137,7 +159,7 @@ public static class BackendExtensions
             if (backend is IStreamingBackend streamingBackend && streamingBackend.SupportsStreaming)
             {
                 using var testStream = new MemoryStream();
-                await streamingBackend.GetAsync(TEST_FILE_NAME, testStream, cancellationToken).ConfigureAwait(false);
+                await streamingBackend.GetAsync(testFileName, testStream, cancellationToken).ConfigureAwait(false);
                 var readValue = Encoding.UTF8.GetString(testStream.ToArray());
                 if (readValue != TEST_FILE_CONTENT)
                     throw new Exception("Test file corrupted.");
@@ -145,7 +167,7 @@ public static class BackendExtensions
             else
             {
                 using var tempfile = new TempFile();
-                await backend.GetAsync(TEST_FILE_NAME, tempfile, cancellationToken).ConfigureAwait(false);
+                await backend.GetAsync(testFileName, tempfile, cancellationToken).ConfigureAwait(false);
                 var readValue = File.ReadAllText(tempfile);
                 if (readValue != TEST_FILE_CONTENT)
                     throw new Exception("Test file corrupted.");
@@ -153,27 +175,48 @@ public static class BackendExtensions
         }
         catch (Exception e)
         {
-            try { await backend.DeleteAsync(TEST_FILE_NAME, cancellationToken).ConfigureAwait(false); }
+            try { await backend.DeleteAsync(testFileName, cancellationToken).ConfigureAwait(false); }
             catch { } // Ignore delete errors here, report the read error instead
 
-            throw new TestAfterConnectException(Strings.BackendExtensions.ErrorReadFile(TEST_FILE_NAME, e.Message), "TestReadError", e);
+            throw new TestAfterConnectException(Strings.BackendExtensions.ErrorReadFile(testFileName, e.Message), "TestReadError", e);
         }
 
         // Cleanup
         try
         {
-            await backend.DeleteAsync(TEST_FILE_NAME, cancellationToken).ConfigureAwait(false);
+            await backend.DeleteAsync(testFileName, cancellationToken).ConfigureAwait(false);
         }
         catch (FileMissingException)
         {
             // A file that was just written is not always addressable right away, and
             // the file being gone is what the cleanup is for
-            Logging.Log.WriteInformationMessage(LOGTAG, "TestFileAlreadyGone", LC.L($"The file {TEST_FILE_NAME} was already gone when cleaning up"));
+            Logging.Log.WriteInformationMessage(LOGTAG, "TestFileAlreadyGone", LC.L($"The file {testFileName} was already gone when cleaning up"));
         }
         catch (Exception e)
         {
-            throw new TestAfterConnectException(Strings.BackendExtensions.ErrorDeleteFile(TEST_FILE_NAME, e.Message), "TestCleanupError", e);
+            throw new TestAfterConnectException(Strings.BackendExtensions.ErrorDeleteFile(testFileName, e.Message), "TestCleanupError", e);
         }
+    }
+
+    /// <summary>
+    /// Checks if a listed file is a test file left over from an earlier test
+    /// </summary>
+    /// <param name="entry">The listed file</param>
+    /// <param name="now">The current time in UTC</param>
+    /// <returns><c>true</c> if the file is a left over test file</returns>
+    private static bool IsLeftoverTestFile(IFileEntry entry, DateTime now)
+    {
+        if (entry.IsFolder)
+            return false;
+
+        if (entry.Name == TEST_FILE_NAME)
+            return true;
+
+        // A file without a known time may belong to a test that is still running
+        return entry.Name.StartsWith(TEST_FILE_PREFIX, StringComparison.Ordinal)
+            && entry.Name.EndsWith(TEST_FILE_EXTENSION, StringComparison.Ordinal)
+            && entry.LastModification != default
+            && now - entry.LastModification.ToUniversalTime() > LEFTOVER_TEST_FILE_AGE;
     }
 
     /// <summary>
