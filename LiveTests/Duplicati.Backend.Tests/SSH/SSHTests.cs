@@ -83,4 +83,91 @@ public sealed class SshTests : BaseSftpgoTest
 
         await container.StopAsync();
     }
+
+    /// <summary>
+    /// Starts an SFTPGo container with the test user, listening on port 3000 on the host
+    /// </summary>
+    private async Task<IContainer> StartSftpgoAsync(OutputConsumer outputConsumer)
+    {
+        var filePermissions = UnixFileModes.UserRead | UnixFileModes.UserWrite | UnixFileModes.UserExecute |
+                                        UnixFileModes.GroupRead | UnixFileModes.GroupWrite | UnixFileModes.GroupExecute |
+                                        UnixFileModes.OtherRead | UnixFileModes.OtherWrite | UnixFileModes.OtherExecute;
+
+        var temporaryKeysDir = CreateHttpsCertificates();
+        CreateUsersFile(temporaryKeysDir);
+
+        var container = new ContainerBuilder()
+            .WithImage("drakkan/sftpgo")
+            .WithEnvironment("SFTPGO_LOADDATA_FROM", "/var/lib/sftpgo/users.json")
+            .WithEnvironment("SFTPGO_LOADDATA_CLEAN", "0")
+            .WithEnvironment("SFTPGO_SFTPD__BINDINGS__0__PORT", "3333")
+            .WithPortBinding(3000, 3333)
+            .WithResourceMapping(temporaryKeysDir, "/var/lib/sftpgo/", filePermissions)
+            .WithOutputConsumer(outputConsumer)
+            .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(3333))
+            .Build();
+
+        await container.StartAsync();
+        temporaryKeysDir.Delete(true);
+        await Task.Delay(TimeSpan.FromSeconds(1));
+        return container;
+    }
+
+    /// <summary>
+    /// Creates the SSH backend for the container started by <see cref="StartSftpgoAsync"/>
+    /// </summary>
+    private static Library.Interface.IBackend CreateBackend(Dictionary<string, string>? options = null)
+        => Library.DynamicLoader.BackendLoader.GetBackend(
+            $"ssh://{TEST_USER_NAME}:{TEST_USER_PASSWORD}@127.0.0.1:3000",
+            new Dictionary<string, string>(options ?? []) { ["ssh-accept-any-fingerprints"] = "true" });
+
+    /// <summary>
+    /// Tests that a listing gives up after the list timeout when the server stops answering
+    /// </summary>
+    [TestMethod]
+    public async Task TestSSHListTimesOutWhenServerStopsAnswering()
+    {
+        var outputConsumer = new OutputConsumer();
+        var container = await StartSftpgoAsync(outputConsumer);
+        // Testcontainers 3.4 cannot pause a container, so the Docker client it uses does it
+        using var docker = TestcontainersSettings.OS.DockerEndpointAuthConfig.GetDockerClientConfiguration(Guid.NewGuid()).CreateClient();
+        var paused = false;
+        try
+        {
+            using var backend = CreateBackend(new Dictionary<string, string> { ["list-timeout"] = "5s" });
+
+            // Connect while the server answers, so only the listing is left to wait on
+            await backend.ListAsync(CancellationToken.None).ToListAsync();
+
+            await docker.Containers.PauseContainerAsync(container.Id);
+            paused = true;
+
+            var listing = backend.ListAsync(CancellationToken.None).ToListAsync().AsTask();
+            var finished = await Task.WhenAny(listing, Task.Delay(TimeSpan.FromSeconds(60)));
+            Assert.AreSame(listing, finished, "The listing did not return within 60 seconds with a list timeout of 5 seconds");
+
+            Exception? error = null;
+            try
+            {
+                await listing;
+            }
+            catch (Exception ex)
+            {
+                error = ex;
+            }
+
+            Assert.IsNotNull(error, "The listing of a server that does not answer did not fail");
+        }
+        catch
+        {
+            Console.WriteLine(await outputConsumer.GetStreamsOutput());
+            throw;
+        }
+        finally
+        {
+            if (paused)
+                await docker.Containers.UnpauseContainerAsync(container.Id);
+            await container.StopAsync();
+        }
+    }
 }
