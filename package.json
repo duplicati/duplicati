@@ -1,7 +1,7 @@
 {
   "devDependencies": {
     "@playwright/test": "^1.48.0",
-    "@types/node": "^24.10.0",
+    "@types/node": "^26.6.5",
     "autoprefixer": "^10.4.20",
     "less": "^4.2.0",
     "less-plugin-clean-css": "^1.6.0",
