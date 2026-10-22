@@ -16,7 +16,7 @@
     <PackageReference Include="Handlebars.Net" Version="2.4.3" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="MailKit" Version="4.17.0" />
-    <PackageReference Include="MimeKit" Version="4.17.0" />
+    <PackageReference Include="MimeKit" Version="4.18.2" />
   </ItemGroup>
 
   <ItemGroup>
