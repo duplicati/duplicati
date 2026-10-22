@@ -144,7 +144,16 @@ async function createBackup(page: Page) {
     .click();
 
   await page.locator("button").filter({ hasText: "Continue" }).click();
+
+  // Wait for the backup to be saved; the next step leaves the page, which would
+  // cut the request short
+  const saved = page.waitForResponse(
+    (response) =>
+      response.request().method() === "POST" &&
+      new URL(response.url()).pathname === "/api/v1/backups",
+  );
   await page.locator("button").filter({ hasText: "Submit" }).click();
+  expect((await saved).ok()).toBe(true);
 }
 
 async function deleteBackupIfExists(page: Page) {
