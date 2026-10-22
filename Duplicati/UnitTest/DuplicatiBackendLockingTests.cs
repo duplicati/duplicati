@@ -148,8 +148,8 @@ public class DuplicatiBackendLockingTests
             .On("/lock/", HttpStatusCode.OK, LockedUntilJson, "application/json");
         using var backend = CreateBackend(server);
 
-        var getEx = Assert.CatchAsync<UserInformationException>(async () => await backend.GetObjectLockUntilAsync("file.zip", CancellationToken.None));
-        var setEx = Assert.CatchAsync<UserInformationException>(async () => await backend.SetObjectLockUntilAsync("file.zip", LockedUntil, CancellationToken.None));
+        var getEx = Assert.CatchAsync<ObjectLockNotSupportedException>(async () => await backend.GetObjectLockUntilAsync("file.zip", CancellationToken.None));
+        var setEx = Assert.CatchAsync<ObjectLockNotSupportedException>(async () => await backend.SetObjectLockUntilAsync("file.zip", LockedUntil, CancellationToken.None));
 
         Assert.AreEqual(DuplicatiBackend.HELP_ID_OBJECT_LOCK_NOT_ENABLED, getEx!.HelpID);
         Assert.AreEqual(DuplicatiBackend.HELP_ID_OBJECT_LOCK_NOT_ENABLED, setEx!.HelpID);
@@ -164,8 +164,8 @@ public class DuplicatiBackendLockingTests
         var server = GatewayServer().On("/lock/", status, "Unknown route");
         using var backend = CreateBackend(server);
 
-        var getEx = Assert.CatchAsync<UserInformationException>(async () => await backend.GetObjectLockUntilAsync("file.zip", CancellationToken.None));
-        var setEx = Assert.CatchAsync<UserInformationException>(async () => await backend.SetObjectLockUntilAsync("file.zip", LockedUntil, CancellationToken.None));
+        var getEx = Assert.CatchAsync<ObjectLockNotSupportedException>(async () => await backend.GetObjectLockUntilAsync("file.zip", CancellationToken.None));
+        var setEx = Assert.CatchAsync<ObjectLockNotSupportedException>(async () => await backend.SetObjectLockUntilAsync("file.zip", LockedUntil, CancellationToken.None));
 
         Assert.AreEqual(DuplicatiBackend.HELP_ID_OBJECT_LOCK_NOT_ENABLED, getEx!.HelpID);
         Assert.AreEqual(DuplicatiBackend.HELP_ID_OBJECT_LOCK_NOT_ENABLED, setEx!.HelpID);

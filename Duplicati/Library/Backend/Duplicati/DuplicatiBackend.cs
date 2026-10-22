@@ -87,6 +87,11 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     /// </summary>
     internal const string HELP_ID_OBJECT_LOCK_NOT_ENABLED = "DuplicatiStorageObjectLockNotEnabled";
     /// <summary>
+    /// The help id used when a point in time is set but the account cannot serve one: it uses gateway
+    /// mode, which keeps no object versions, or its bucket has no object locking and versioning
+    /// </summary>
+    internal const string HELP_ID_POINT_IN_TIME_NOT_AVAILABLE = "DuplicatiStoragePointInTimeNotAvailable";
+    /// <summary>
     /// The S3 option that selects the retention mode for object locks
     /// </summary>
     private const string S3_LOCK_MODE_OPTION = "s3-lock-mode";
@@ -132,6 +137,10 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     /// The authentication timeout
     /// </summary>
     private readonly TimeSpan _authTimeout;
+    /// <summary>
+    /// The UTC point in time to read the destination at, or <c>null</c> to read the current state
+    /// </summary>
+    private readonly DateTime? _pointInTime;
 
     /// <summary>
     /// The HttpClient used for requests
@@ -247,6 +256,16 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
         _client.DefaultRequestHeaders.Add("X-Backup-Id", System.Uri.EscapeDataString(_backup_id));
 
         _timeouts = TimeoutOptionsHelper.Parse(options);
+        _pointInTime = PointInTimeOptionsHelper.Parse(options);
+    }
+
+    /// <summary>
+    /// Throws if the destination is read-only because a point in time is set
+    /// </summary>
+    private void EnsureWritable()
+    {
+        if (_pointInTime.HasValue)
+            throw PointInTimeOptionsHelper.CreateReadOnlyException();
     }
 
     /// <summary>
@@ -339,6 +358,11 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
                 !string.IsNullOrEmpty(creds.SecretKey) &&
                 !string.IsNullOrEmpty(creds.Bucket))
             {
+                // Older versions only exist on a bucket with object locking, which implies versioning,
+                // so without it there is no earlier state to read
+                if (_pointInTime.HasValue && creds.ObjectLockEnabled != true)
+                    throw new UserInformationException(Strings.DuplicatiBackend.ErrorPointInTimeNotAvailable, HELP_ID_POINT_IN_TIME_NOT_AVAILABLE);
+
                 _mode = "direct";
                 _credentialsExpiry = DateTime.UnixEpoch.AddSeconds(creds.RotateAfter ?? 0);
                 // In case the server doesn't provide a rotate-after value, we set a buffer
@@ -363,6 +387,10 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
                 if (!string.IsNullOrWhiteSpace(creds.LockMode))
                     s3Options[S3_LOCK_MODE_OPTION] = creds.LockMode;
 
+                // The S3 backend resolves the object versions for the point in time, which is
+                // forwarded as an absolute instant so it stays fixed across credential rotations
+                PointInTimeOptionsHelper.ApplyTo(_pointInTime, s3Options);
+
                 // Plug in timeout options
                 _timeouts.ApplyTo(s3Options, overwrite: true);
 
@@ -372,6 +400,11 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
             }
             else
             {
+                // The gateway keeps one immutable copy of each locked file and no versions,
+                // so there is no earlier state to read; refuse rather than serve the current state
+                if (_pointInTime.HasValue)
+                    throw new UserInformationException(Strings.DuplicatiBackend.ErrorPointInTimeNotAvailable, HELP_ID_POINT_IN_TIME_NOT_AVAILABLE);
+
                 _mode = "gateway";
                 _s3Backend?.Dispose();
                 _s3Backend = null;
@@ -804,6 +837,7 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     /// <returns>An awaitable task</returns>
     private async Task SetObjectLockUntilCoreAsync(string remotename, DateTime lockUntilUtc, CancellationToken cancelToken)
     {
+        EnsureWritable();
         await EnsureCredentialsAsync(cancelToken).ConfigureAwait(false);
         EnsureObjectLockEnabled();
         if (_s3Backend != null)
@@ -830,7 +864,7 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     private void EnsureObjectLockEnabled()
     {
         if (_objectLockEnabled == false)
-            throw new UserInformationException(Strings.DuplicatiBackend.ErrorObjectLockNotEnabled, HELP_ID_OBJECT_LOCK_NOT_ENABLED);
+            throw new ObjectLockNotSupportedException(Strings.DuplicatiBackend.ErrorObjectLockNotEnabled, HELP_ID_OBJECT_LOCK_NOT_ENABLED);
     }
 
     /// <summary>
@@ -846,7 +880,7 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     private static async Task<LockInfoResponse?> ReadLockInfoAsync(HttpResponseMessage response, CancellationToken cancelToken)
     {
         if (response.StatusCode is HttpStatusCode.NotImplemented or HttpStatusCode.MethodNotAllowed)
-            throw new UserInformationException(Strings.DuplicatiBackend.ErrorObjectLockNotEnabled, HELP_ID_OBJECT_LOCK_NOT_ENABLED);
+            throw new ObjectLockNotSupportedException(Strings.DuplicatiBackend.ErrorObjectLockNotEnabled, HELP_ID_OBJECT_LOCK_NOT_ENABLED);
 
         await EnsureSuccessAsync(response, cancelToken, notFoundIsMissingFile: true).ConfigureAwait(false);
         return await response.Content.ReadFromJsonAsync<LockInfoResponse>(JSON_OPTIONS, cancellationToken: cancelToken).ConfigureAwait(false);
@@ -863,6 +897,7 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     /// <returns>An awaitable task</returns>
     private async Task CreateFolderCoreAsync(CancellationToken cancelToken)
     {
+        EnsureWritable();
         await EnsureCredentialsAsync(cancelToken).ConfigureAwait(false);
         if (_s3Backend != null)
         {
@@ -890,6 +925,7 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     /// <returns>An awaitable task</returns>
     private async Task DeleteCoreAsync(string remotename, CancellationToken cancelToken)
     {
+        EnsureWritable();
         await EnsureCredentialsAsync(cancelToken).ConfigureAwait(false);
         if (_s3Backend != null)
         {
@@ -1034,6 +1070,7 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     /// <returns>An awaitable task</returns>
     private async Task PutCoreAsync(string remotename, Stream source, CancellationToken cancelToken)
     {
+        EnsureWritable();
         await EnsureCredentialsAsync(cancelToken).ConfigureAwait(false);
         if (_s3Backend != null)
         {
@@ -1078,6 +1115,7 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     /// <returns>An awaitable task</returns>
     private async Task RenameCoreAsync(string oldname, string newname, CancellationToken cancelToken)
     {
+        EnsureWritable();
         await EnsureCredentialsAsync(cancelToken).ConfigureAwait(false);
         if (_s3Backend != null)
         {
@@ -1102,6 +1140,7 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
             new CommandLineArgument(BACKUP_ID_OPTION, CommandLineArgument.ArgumentType.String, Strings.DuplicatiBackend.BackupIdOptionsShort, Strings.DuplicatiBackend.BackupIdOptionsLong),
             new CommandLineArgument(ENDPOINT_OPTION, CommandLineArgument.ArgumentType.String, Strings.DuplicatiBackend.EndpointOptionsShort, Strings.DuplicatiBackend.EndpointOptionsLong),
             new CommandLineArgument(AUTH_TIMEOUT_OPTION, CommandLineArgument.ArgumentType.Timespan, Strings.DuplicatiBackend.AuthTimeoutOptionsShort, Strings.DuplicatiBackend.AuthTimeoutOptionsLong, DEFAULT_AUTH_TIMEOUT),
+            .. PointInTimeOptionsHelper.GetOptions(),
             .. TimeoutOptionsHelper.GetOptions()
         ];
 

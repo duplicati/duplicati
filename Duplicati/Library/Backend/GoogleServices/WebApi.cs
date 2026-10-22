@@ -129,6 +129,16 @@ namespace Duplicati.Library.Backend.WebApi
             return Utility.RelaxedUri.UriBuilderWithEncodedPath(Url.API, path, null, false);
         }
 
+        public static string BucketRetentionUrl(string bucketId)
+        {
+            var queryParams = new NameValueCollection
+            {
+                { QueryParam.Fields, QueryValue.ObjectRetention }
+            };
+            var path = UrlPath.Create(Path.Bucket).Append(bucketId).ToString();
+            return Utility.RelaxedUri.UriBuilderWithEncodedPath(Url.API, path, queryParams, false);
+        }
+
         private static class Url
         {
             public const string API = "https://www.googleapis.com/storage/v1";
@@ -142,12 +152,14 @@ namespace Duplicati.Library.Backend.WebApi
             public const string PageToken = "pageToken";
             public const string UploadType = "uploadType";
             public const string Alt = "alt";
+            public const string Fields = "fields";
         }
 
         private static class QueryValue
         {
             public const string Resumable = "resumable";
             public const string Media = "media";
+            public const string ObjectRetention = "objectRetention";
         }
 
         private static class Path

@@ -470,6 +470,13 @@ partial class BackendManager
                         return;
                     }
 
+                    // Object locking being unavailable is a permanent condition, so retrying cannot help
+                    if (Library.Utility.ExceptionExtensions.FlattenException(ex).Any(x => x is ObjectLockNotSupportedException))
+                    {
+                        context.Statwriter.SendEvent(op.Operation, BackendEventType.Failed, op.RemoteFilename, op.Size);
+                        break;
+                    }
+
                     // Refresh DNS name if we fail to connect in order to prevent issues with incorrect DNS entries
                     var dnsFailure = Library.Utility.ExceptionExtensions.FlattenException(ex)
                     .Any(x =>

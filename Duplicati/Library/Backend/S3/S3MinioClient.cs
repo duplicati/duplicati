@@ -84,6 +84,27 @@ namespace Duplicati.Library.Backend
             }
         }
 
+        /// <summary>
+        /// Creates the exception that reports that reading at a point in time needs the AWS client
+        /// </summary>
+        /// <remarks>
+        /// The MinIO SDK does not report delete markers in a version listing, so it cannot tell
+        /// whether an object existed at a point in time. The AWS client works against MinIO servers.
+        /// </remarks>
+        /// <returns>The exception to throw</returns>
+        internal static UserInformationException CreatePointInTimeNotSupportedException()
+            => new(Strings.S3Backend.PointInTimeRequiresAwsClientError(PointInTimeOptionsHelper.PointInTimeOption), "S3PointInTimeRequiresAwsClient");
+
+        /// <inheritdoc />
+        /// <remarks>Not supported; the S3 backend refuses the combination when it is created</remarks>
+        public IAsyncEnumerable<(IFileEntry Entry, string VersionId)> ListBucketVersionsAtAsync(string bucketName, string prefix, bool recursive, DateTime atUtc, CancellationToken cancellationToken)
+            => throw CreatePointInTimeNotSupportedException();
+
+        /// <inheritdoc />
+        /// <remarks>Not supported; the S3 backend refuses the combination when it is created</remarks>
+        public Task GetFileStreamAsync(string bucketName, string keyName, string versionId, Stream target, CancellationToken cancelToken)
+            => throw CreatePointInTimeNotSupportedException();
+
         public async IAsyncEnumerable<IFileEntry> ListBucketAsync(string bucketName, string prefix, bool recursive, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             await ThrowExceptionIfBucketDoesNotExist(bucketName, cancellationToken).ConfigureAwait(false);
@@ -276,6 +297,7 @@ namespace Duplicati.Library.Backend
                 if (e.Response?.Code == "NoSuchObjectLockConfiguration")
                     return null;
 
+                TranslateObjectLockException(e, bucketName);
                 ParseAndThrowNotFoundException(e, keyName, bucketName);
                 throw;
             }
@@ -301,11 +323,27 @@ namespace Duplicati.Library.Backend
                     ct
                 )).ConfigureAwait(false);
             }
+            catch (MissingObjectLockConfigurationException e)
+            {
+                throw new ObjectLockNotSupportedException($"Object locking is not enabled for bucket {bucketName}: {e.Message}", e);
+            }
             catch (MinioException e)
             {
+                TranslateObjectLockException(e, bucketName);
                 ParseAndThrowNotFoundException(e, keyName, bucketName);
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Throws <see cref="ObjectLockNotSupportedException"/> if the exception reports that the bucket has no object lock configuration
+        /// </summary>
+        /// <param name="e">The exception to inspect</param>
+        /// <param name="bucketName">The bucket name, for the error message</param>
+        private static void TranslateObjectLockException(MinioException e, string bucketName)
+        {
+            if (S3AwsClient.IsObjectLockNotEnabledError(e.Response?.Code, e.Response?.Message ?? e.Message))
+                throw new ObjectLockNotSupportedException($"Object locking is not enabled for bucket {bucketName}: {e.Message}", e);
         }
 
         private static ObjectRetentionMode ParseRetentionMode(string lockMode)

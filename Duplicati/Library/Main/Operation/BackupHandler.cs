@@ -560,9 +560,17 @@ namespace Duplicati.Library.Main.Operation
 
             using var lockDb = await LocalLockDatabase.CreateAsync(m_database, m_taskReader.StopToken);
             m_result.LockResults ??= new SetLockResults();
-            await new SetLocksHandler(m_options, (SetLockResults)m_result.LockResults)
-                .RunAsync(backendManager, lockDb, versionTimestamps)
-                .ConfigureAwait(false);
+            try
+            {
+                await new SetLocksHandler(m_options, (SetLockResults)m_result.LockResults)
+                    .RunAsync(backendManager, lockDb, versionTimestamps)
+                    .ConfigureAwait(false);
+            }
+            catch (ObjectLockNotSupportedException ex)
+            {
+                // The backup itself has succeeded, so an unavailable lock feature is only a warning
+                Log.WriteWarningMessage(LOGTAG, "ObjectLockingUnavailable", ex, "Object locking is not available on the destination; no locks were applied: {0}", ex.Message);
+            }
         }
 
         private async Task PostBackupVerificationAsync(string currentFilelistVolume, string previousTemporaryFilelist, IBackendManager backendManager)

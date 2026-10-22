@@ -188,7 +188,7 @@ namespace Duplicati.CommandLine.BackendTool
                             throw new UserInformationException(string.Format("too many arguments: {0}", string.Join(",", args)), "BackendToolTooManyArguments");
 
                         if (backend is not ILockingBackend lockingBackend)
-                            throw new UserInformationException("Backend does not support object locking operations", "BackendToolObjectLockNotSupported");
+                            throw new ObjectLockNotSupportedException();
 
                         var lockUntilUtc = lockingBackend.GetObjectLockUntilAsync(Path.GetFileName(args[2]), CancellationToken.None).Await();
                         Console.WriteLine(lockUntilUtc.HasValue
@@ -205,7 +205,7 @@ namespace Duplicati.CommandLine.BackendTool
                             throw new UserInformationException(string.Format("too many arguments: {0}", string.Join(",", args)), "BackendToolTooManyArguments");
 
                         if (backend is not ILockingBackend lockingBackend)
-                            throw new UserInformationException("Backend does not support object locking operations", "BackendToolObjectLockNotSupported");
+                            throw new ObjectLockNotSupportedException();
 
                         TimeSpan lockDuration;
                         try

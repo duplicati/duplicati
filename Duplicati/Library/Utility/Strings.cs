@@ -78,6 +78,13 @@ namespace Duplicati.Library.Utility.Strings
         public static string DescriptionReadWriteTimeoutLong { get { return LC.L(@"The timeout in seconds for read and write operations. If no activity is detected in this interval, a timeout error is raised"); } }
         public static string DescriptionReadWriteTimeoutShort { get { return LC.L(@"Read/write operation timeout"); } }
     }
+    internal static class PointInTimeOptionsHelper
+    {
+        public static string DescriptionShort { get { return LC.L(@"Read the destination as it was at this time"); } }
+        public static string DescriptionLong { get { return LC.L(@"Reads the destination as it was at the given time, using the object versions kept by versioning and object locks. Use this to restore from a destination whose current files were damaged or deleted, as long as the older versions still exist. A duration such as 7D counts back from now; an absolute date and time is used as given. If a backup was running at the chosen time, pick an earlier time. While this option is set, the destination is read-only and any upload, delete or rename is refused."); } }
+        public static string InvalidValueError(string option, string value, string message) { return LC.L(@"The value ""{1}"" for --{0} is not a valid time: {2}", option, value, message); }
+        public static string DestinationReadOnlyError(string option) { return LC.L(@"The destination is read-only while --{0} is set", option); }
+    }
 
     internal static class SslOptionsHelper
     {

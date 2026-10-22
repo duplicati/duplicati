@@ -52,7 +52,7 @@ partial class BackendManager
         public override async Task<bool> ExecuteAsync(IBackend backend, CancellationToken cancelToken)
         {
             if (backend is not ILockingBackend lockingBackend)
-                throw new NotSupportedException("Backend does not support object locking operations");
+                throw new ObjectLockNotSupportedException();
 
             Context.Statwriter.SendEvent(BackendActionType.SetObjectLock, BackendEventType.Started, RemoteFilename, 0);
 

@@ -625,26 +625,57 @@ public class B2 : IStreamingBackend, ILockingBackend, IRenameEnabledBackend
         var fileId = await GetFileId(remotename, cancellationToken).ConfigureAwait(false);
         var config = await _b2AuthHelper.GetConfigAsync(cancellationToken).ConfigureAwait(false);
 
-        var res = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, async ct
-            => await _b2AuthHelper.PostAndGetJsonDataAsync<UpdateFileRetentionResponse>(
-                $"{config.APIUrl}/b2api/v2/b2_update_file_retention",
-                new UpdateFileRetentionRequest
-                {
-                    FileId = fileId,
-                    FileName = _prefix + remotename,
-                    FileRetention = new FileRetention
+        UpdateFileRetentionResponse res;
+        try
+        {
+            res = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, async ct
+                => await _b2AuthHelper.PostAndGetJsonDataAsync<UpdateFileRetentionResponse>(
+                    $"{config.APIUrl}/b2api/v2/b2_update_file_retention",
+                    new UpdateFileRetentionRequest
                     {
-                        Mode = _lockMode.ToString().ToLower(),
-                        RetainUntilTimestamp = (long)(lockUntilUtc.ToUniversalTime() - Utility.Utility.EPOCH).TotalMilliseconds
+                        FileId = fileId,
+                        FileName = _prefix + remotename,
+                        FileRetention = new FileRetention
+                        {
+                            Mode = _lockMode.ToString().ToLower(),
+                            RetainUntilTimestamp = (long)(lockUntilUtc.ToUniversalTime() - Utility.Utility.EPOCH).TotalMilliseconds
+                        },
+                        BypassGovernance = false
                     },
-                    BypassGovernance = false
-                },
-                ct
-            ).ConfigureAwait(false)
-        ).ConfigureAwait(false);
+                    ct
+                ).ConfigureAwait(false)
+            ).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // B2 reports a bucket without file lock as a plain bad_request,
+            // so check the bucket configuration before reporting the failure
+            if (await IsFileLockDisabledAsync(cancellationToken).ConfigureAwait(false))
+                throw new ObjectLockNotSupportedException($"File lock is not enabled for bucket {_bucketName}: {ex.Message}", ex);
+            throw;
+        }
 
         if (res.FileRetention?.RetainUntilTimestamp == null)
             throw new Exception("Failed to set object lock, call succeeded but no retention info returned");
+    }
+
+    /// <summary>
+    /// Checks if the bucket reports that file lock is disabled
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns><c>true</c> if the bucket reports file lock as disabled, <c>false</c> if it is enabled or the state cannot be determined</returns>
+    private async Task<bool> IsFileLockDisabledAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var bucket = await GetBucketAsync(cancellationToken).ConfigureAwait(false);
+            return bucket.FileLockConfiguration?.Value?.IsFileLockEnabled == false;
+        }
+        catch
+        {
+            // Unable to determine the state, report the original error
+            return false;
+        }
     }
 
     /// <summary>
