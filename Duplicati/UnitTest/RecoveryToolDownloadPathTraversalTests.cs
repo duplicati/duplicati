@@ -54,7 +54,7 @@ namespace Duplicati.UnitTest
             // ReSharper disable once UnusedMember.Global
             public TraversingListBackend(string url, Dictionary<string, string> options)
             {
-                var u = new Library.Utility.RelaxedUri(url).SetScheme("file").ToString();
+                var u = new Library.Utility.Uri(url).SetScheme("file").ToString();
                 m_backend = (IStreamingBackend)Library.DynamicLoader.BackendLoader.GetBackend(u, options);
             }
 
