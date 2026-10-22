@@ -47,6 +47,7 @@ namespace Duplicati.Library.Interface.Strings
     {
         public static string FolderAlreadyExistsError { get { return LC.L(@"The folder cannot be created because it already exists"); } }
         public static string FolderMissingError { get { return LC.L(@"The requested folder does not exist"); } }
+        public static string ObjectLockNotSupportedError { get { return LC.L(@"Object locking is not supported or not enabled on this destination"); } }
         public static string CancelExceptionError { get { return LC.L(@"Cancelled"); } }
         public static string SettingsKeyMismatchExceptionError { get { return LC.L(@"Encryption key used to encrypt target settings does not match current key."); } }
         public static string SettingsKeyMissingExceptionError { get { return LC.L(@"Encryption key is missing."); } }

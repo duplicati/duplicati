@@ -296,6 +296,36 @@ namespace Duplicati.Library.Backend.AzureBlob
             {
                 throw new FolderMissingException(e.Message, e);
             }
+            catch (RequestFailedException e)
+            {
+                // Azure has no dedicated error code for a container without version-level immutability,
+                // so ask the container whether the feature is enabled before reporting the failure
+                if (await IsImmutableStorageDisabledAsync(cancellationToken).ConfigureAwait(false))
+                    throw new ObjectLockNotSupportedException($"Version-level immutability is not enabled for container {_container.Name}: {e.Message}", e);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Checks if the container reports that version-level immutable storage is disabled
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token</param>
+        /// <returns><c>true</c> if the container reports the feature as disabled, <c>false</c> if it is enabled or the state cannot be determined</returns>
+        private async Task<bool> IsImmutableStorageDisabledAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                var properties = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, ct
+                    => _container.GetPropertiesAsync(cancellationToken: ct)
+                ).ConfigureAwait(false);
+
+                return properties.Value.HasImmutableStorageWithVersioning == false;
+            }
+            catch
+            {
+                // Unable to determine the state, report the original error
+                return false;
+            }
         }
     }
 }

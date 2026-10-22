@@ -23,8 +23,12 @@ using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
+using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
+
+[assembly: InternalsVisibleTo("Duplicati.UnitTest")]
 
 namespace Duplicati.Library.Backend
 {
@@ -230,6 +234,15 @@ namespace Duplicati.Library.Backend
         private readonly string m_prefix;
         private readonly bool m_recurseLists;
 
+        /// <summary>
+        /// The UTC point in time to read the destination at, or <c>null</c> to read the current state
+        /// </summary>
+        private readonly DateTime? m_pointInTime;
+        /// <summary>
+        /// The version id current at the point in time, by full key, filled while listing and resolving
+        /// </summary>
+        private readonly ConcurrentDictionary<string, string> m_versionIds = new();
+
         private const string DEFAULT_S3_HOST = "s3.amazonaws.com";
         private readonly IS3Client m_s3Client;
 
@@ -240,13 +253,31 @@ namespace Duplicati.Library.Backend
             m_s3Client = null!;
         }
 
+        /// <summary>
+        /// Creates a backend over a given client, for tests
+        /// </summary>
+        /// <param name="url">The backend url</param>
+        /// <param name="options">The backend options</param>
+        /// <param name="client">The client to use</param>
+        internal S3(string url, Dictionary<string, string?> options, IS3Client client)
+        {
+            var uri = new Utility.Uri(url);
+            uri.RequireHost();
+
+            m_bucket = uri.Host ?? "";
+            m_prefix = NormalizePrefix(uri.Path);
+            m_recurseLists = Utility.Utility.ParseBoolOption(options, S3_RECURSIVE_LIST);
+            m_pointInTime = PointInTimeOptionsHelper.Parse(options);
+            m_s3Client = client;
+        }
+
         public S3(string url, Dictionary<string, string?> options)
         {
             var uri = new Utility.Uri(url);
             uri.RequireHost();
 
             m_bucket = uri.Host ?? "";
-            m_prefix = uri.Path;
+            m_prefix = NormalizePrefix(uri.Path);
             var timeout = TimeoutOptionsHelper.Parse(options);
 
             var auth = AuthOptionsHelper.ParseWithAlias(options, uri, AUTH_USERNAME_OPTION, AUTH_PASSWORD_OPTION);
@@ -275,11 +306,8 @@ namespace Duplicati.Library.Backend
                 }
             }
 
-            m_prefix = m_prefix.Trim();
-            if (m_prefix.Length != 0)
-                m_prefix = Util.AppendDirSeparator(m_prefix, "/");
-
             m_recurseLists = Utility.Utility.ParseBoolOption(options, S3_RECURSIVE_LIST);
+            m_pointInTime = PointInTimeOptionsHelper.Parse(options);
 
             // Auto-disable DNS lookup for non-AWS configurations
             if (!options.ContainsKey("s3-ext-forcepathstyle") && !hostname.EndsWith(".amazonaws.com", StringComparison.OrdinalIgnoreCase))
@@ -317,12 +345,27 @@ namespace Duplicati.Library.Backend
             }
             else if (string.Equals(s3ClientOptionValue, "minio", StringComparison.OrdinalIgnoreCase))
             {
+                // Refuse here rather than on the first read, so the mismatch is reported when the backend is created
+                if (m_pointInTime.HasValue)
+                    throw S3MinioClient.CreatePointInTimeNotSupportedException();
+
                 m_s3Client = new S3MinioClient(awsID, awsKey, locationConstraint, hostname, storageClass, useSSL, timeout, options, lockMode, authenticationRegion);
             }
             else
             {
                 throw new UserInformationException(Strings.S3Backend.UnknownS3ClientError(s3ClientOptionValue), "UnknownS3Client");
             }
+        }
+
+        /// <summary>
+        /// Trims the prefix and makes it end in a separator, unless it is empty
+        /// </summary>
+        /// <param name="prefix">The prefix from the url</param>
+        /// <returns>The normalized prefix</returns>
+        private static string NormalizePrefix(string prefix)
+        {
+            prefix = prefix.Trim();
+            return prefix.Length == 0 ? prefix : Util.AppendDirSeparator(prefix, "/");
         }
 
         public static bool IsValidHostname(string bucketname)
@@ -343,11 +386,79 @@ namespace Duplicati.Library.Backend
 
         /// <inheritdoc/>
         public IAsyncEnumerable<IFileEntry> ListAsync(CancellationToken cancelToken)
-            => Connection.ListBucketAsync(m_bucket, m_prefix, m_recurseLists, cancelToken);
+            => m_pointInTime.HasValue
+                ? ListAtPointInTimeAsync(m_prefix, cancelToken)
+                : Connection.ListBucketAsync(m_bucket, m_prefix, m_recurseLists, cancelToken);
+
+        /// <summary>
+        /// Lists the objects under a prefix as they were at the point in time, remembering the version of each
+        /// </summary>
+        /// <param name="prefix">The full prefix to list, ending in a separator unless empty</param>
+        /// <param name="cancelToken">The cancellation token</param>
+        /// <returns>The objects that existed at the point in time</returns>
+        private async IAsyncEnumerable<IFileEntry> ListAtPointInTimeAsync(string prefix, [EnumeratorCancellation] CancellationToken cancelToken)
+        {
+            await foreach (var (entry, versionId) in Connection.ListBucketVersionsAtAsync(m_bucket, prefix, m_recurseLists, m_pointInTime!.Value, cancelToken).ConfigureAwait(false))
+            {
+                if (!entry.IsFolder)
+                    m_versionIds[prefix + entry.Name] = versionId;
+                yield return entry;
+            }
+        }
+
+        /// <summary>
+        /// Finds the version of a key that was current at the point in time
+        /// </summary>
+        /// <param name="key">The full key</param>
+        /// <param name="cancelToken">The cancellation token</param>
+        /// <returns>The entry and version id, or <c>null</c> if the key did not exist at the point in time</returns>
+        private async Task<(IFileEntry Entry, string VersionId)?> FindVersionAtPointInTimeAsync(string key, CancellationToken cancelToken)
+        {
+            // The key is the prefix, so the match has an empty relative name; the listing is recursive so no delimiter cuts it off
+            await foreach (var (entry, versionId) in Connection.ListBucketVersionsAtAsync(m_bucket, key, true, m_pointInTime!.Value, cancelToken).ConfigureAwait(false))
+            {
+                if (entry.Name.Length != 0 || entry.IsFolder)
+                    continue;
+
+                m_versionIds[key] = versionId;
+                return (new FileEntry(key, entry.Size, entry.LastModification, entry.LastModification) { IsArchived = entry.IsArchived }, versionId);
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Resolves the version of a key that was current at the point in time
+        /// </summary>
+        /// <param name="key">The full key</param>
+        /// <param name="cancelToken">The cancellation token</param>
+        /// <returns>The version id</returns>
+        /// <exception cref="FileMissingException">The key did not exist at the point in time</exception>
+        private async Task<string> ResolveVersionIdAsync(string key, CancellationToken cancelToken)
+        {
+            if (m_versionIds.TryGetValue(key, out var cached))
+                return cached;
+
+            var found = await FindVersionAtPointInTimeAsync(key, cancelToken).ConfigureAwait(false);
+            if (found == null)
+                throw new FileMissingException(string.Format("File {0} not found at {1:u}", key, m_pointInTime!.Value));
+
+            return found.Value.VersionId;
+        }
+
+        /// <summary>
+        /// Throws if the destination is read-only because a point in time is set
+        /// </summary>
+        private void EnsureWritable()
+        {
+            if (m_pointInTime.HasValue)
+                throw PointInTimeOptionsHelper.CreateReadOnlyException();
+        }
 
         /// <inheritdoc/>
         public async Task PutAsync(string remotename, string localname, CancellationToken cancelToken)
         {
+            EnsureWritable();
             using (FileStream fs = File.Open(localname, FileMode.Open, FileAccess.Read, FileShare.Read))
                 await PutAsync(remotename, fs, cancelToken);
         }
@@ -355,6 +466,7 @@ namespace Duplicati.Library.Backend
         /// <inheritdoc/>
         public async Task PutAsync(string remotename, Stream input, CancellationToken cancelToken)
         {
+            EnsureWritable();
             await Connection.AddFileStreamAsync(m_bucket, GetFullKey(remotename), input, cancelToken);
         }
 
@@ -370,6 +482,7 @@ namespace Duplicati.Library.Backend
         /// <returns></returns>
         public async Task PutWithHashAsync(string remotename, Stream input, string md5, string sha256, long length, CancellationToken cancelToken)
         {
+            EnsureWritable();
             if (Connection is S3AwsClient awsClient)
                 await awsClient.AddFileStreamAsync(m_bucket, GetFullKey(remotename), input, md5, sha256, length, cancelToken).ConfigureAwait(false);
             else
@@ -384,20 +497,41 @@ namespace Duplicati.Library.Backend
         }
 
         /// <inheritdoc/>
-        public Task GetAsync(string remotename, Stream output, CancellationToken cancelToken)
-            => Connection.GetFileStreamAsync(m_bucket, GetFullKey(remotename), output, cancelToken);
+        public async Task GetAsync(string remotename, Stream output, CancellationToken cancelToken)
+        {
+            var key = GetFullKey(remotename);
+            if (m_pointInTime.HasValue)
+            {
+                var versionId = await ResolveVersionIdAsync(key, cancelToken).ConfigureAwait(false);
+                await Connection.GetFileStreamAsync(m_bucket, key, versionId, output, cancelToken).ConfigureAwait(false);
+            }
+            else
+            {
+                await Connection.GetFileStreamAsync(m_bucket, key, output, cancelToken).ConfigureAwait(false);
+            }
+        }
 
         /// <inheritdoc/>
         public Task DeleteAsync(string remotename, CancellationToken cancelToken)
-            => Connection.DeleteObjectAsync(m_bucket, GetFullKey(remotename), cancelToken);
+        {
+            EnsureWritable();
+            return Connection.DeleteObjectAsync(m_bucket, GetFullKey(remotename), cancelToken);
+        }
 
         /// <inheritdoc/>
+        /// <remarks>
+        /// Reports the lock on the current version of the object, also when a point in time is set,
+        /// as the lock state is what protects the older versions.
+        /// </remarks>
         public Task<DateTime?> GetObjectLockUntilAsync(string remotename, CancellationToken cancelToken)
             => Connection.GetObjectLockUntilAsync(m_bucket, GetFullKey(remotename), cancelToken);
 
         /// <inheritdoc/>
         public Task SetObjectLockUntilAsync(string remotename, DateTime lockUntilUtc, CancellationToken cancelToken)
-            => Connection.SetObjectLockUntilAsync(m_bucket, GetFullKey(remotename), lockUntilUtc, cancelToken);
+        {
+            EnsureWritable();
+            return Connection.SetObjectLockUntilAsync(m_bucket, GetFullKey(remotename), lockUntilUtc, cancelToken);
+        }
 
         /// <inheritdoc/>
         public IList<ICommandLineArgument> SupportedCommands
@@ -429,6 +563,7 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument(S3AwsClient.S3_LEGACY_LIST_API_VERSION_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.S3Backend.DescriptionListApiVersionShort, Strings.S3Backend.DescriptionListApiVersionLong, "v1", null, ["v1", "v2"], Strings.S3Backend.ListApiVersionDeprecated(S3AwsClient.S3_LEGACY_LIST_API_VERSION_OPTION, S3AwsClient.S3_LIST_API_VERSION_OPTION)),
                     new CommandLineArgument(S3_RECURSIVE_LIST, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.DescriptionRecursiveListShort, Strings.S3Backend.DescriptionRecursiveListLong, "false"),
                     new CommandLineArgument(S3_LOCK_MODE_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.S3Backend.DescriptionLockModeShort, Strings.S3Backend.DescriptionLockModeLong, nameof(Amazon.S3.ObjectLockRetentionMode.Governance), null, typeof(Amazon.S3.ObjectLockRetentionMode).GetFields(System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public).Select(x => x.Name).ToArray()),
+                    .. PointInTimeOptionsHelper.GetOptions(),
                     new CommandLineArgument(S3_AUTHENTICATION_REGION_OPTION, CommandLineArgument.ArgumentType.String, Strings.S3Backend.S3AuthenticationRegionDescriptionShort, Strings.S3Backend.S3AuthenticationRegionDescriptionLong),
                     .. TimeoutOptionsHelper.GetOptions(),
                     .. exts
@@ -445,6 +580,7 @@ namespace Duplicati.Library.Backend
         /// <inheritdoc/>
         public Task CreateFolderAsync(CancellationToken cancelToken)
         {
+            EnsureWritable();
             //S3 does not complain if the bucket already exists
             return Connection.AddBucketAsync(m_bucket, cancelToken);
         }
@@ -455,7 +591,10 @@ namespace Duplicati.Library.Backend
 
         /// <inheritdoc/>
         public Task RenameAsync(string source, string target, CancellationToken cancelToken)
-            => Connection.RenameFileAsync(m_bucket, GetFullKey(source), GetFullKey(target), cancelToken);
+        {
+            EnsureWritable();
+            return Connection.RenameFileAsync(m_bucket, GetFullKey(source), GetFullKey(target), cancelToken);
+        }
 
         #endregion
 
@@ -493,16 +632,21 @@ namespace Duplicati.Library.Backend
             if (!string.IsNullOrWhiteSpace(filterPath))
                 filterPath = Util.AppendDirSeparator(filterPath, "/");
 
-            return m_s3Client.ListBucketAsync(m_bucket, filterPath, m_recurseLists, cancellationToken);
+            return m_pointInTime.HasValue
+                ? ListAtPointInTimeAsync(filterPath, cancellationToken)
+                : m_s3Client.ListBucketAsync(m_bucket, filterPath, m_recurseLists, cancellationToken);
         }
 
         /// <inheritdoc/>
-        public Task<IFileEntry?> GetEntryAsync(string path, CancellationToken cancellationToken)
+        public async Task<IFileEntry?> GetEntryAsync(string path, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(path))
-                return Task.FromResult<IFileEntry?>(new FileEntry(string.Empty) { IsFolder = true });
+                return new FileEntry(string.Empty) { IsFolder = true };
 
-            return m_s3Client.GetFileEntryAsync(m_bucket, GetFullKey(path), cancellationToken);
+            if (m_pointInTime.HasValue)
+                return (await FindVersionAtPointInTimeAsync(GetFullKey(path), cancellationToken).ConfigureAwait(false))?.Entry;
+
+            return await m_s3Client.GetFileEntryAsync(m_bucket, GetFullKey(path), cancellationToken).ConfigureAwait(false);
         }
     }
 }

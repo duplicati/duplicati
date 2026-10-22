@@ -163,6 +163,16 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             public Retention? retention { get; set; }
         }
 
+        private class BucketMetadata
+        {
+            public BucketObjectRetention? objectRetention { get; set; }
+        }
+
+        private class BucketObjectRetention
+        {
+            public string? mode { get; set; }
+        }
+
         private class Retention
         {
             public string? mode { get; set; }
@@ -303,7 +313,38 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             {
                 if (hrex.StatusCode == HttpStatusCode.NotFound)
                     throw new FileMissingException();
+
+                // Google reports a bucket without object retention as a plain bad request,
+                // so check the bucket configuration before reporting the failure
+                if (hrex.StatusCode == HttpStatusCode.BadRequest && await IsObjectRetentionDisabledAsync(cancellationToken).ConfigureAwait(false))
+                    throw new ObjectLockNotSupportedException($"Object retention is not enabled for bucket {m_bucket}: {hrex.Message}", hrex);
+
                 throw;
+            }
+        }
+
+        /// <summary>
+        /// Checks if the bucket reports that object retention is disabled
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token</param>
+        /// <returns><c>true</c> if the bucket reports object retention as disabled, <c>false</c> if it is enabled or the state cannot be determined</returns>
+        private async Task<bool> IsObjectRetentionDisabledAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                var url = WebApi.GoogleCloudStorage.BucketRetentionUrl(m_bucket);
+                using var req = await m_oauth.CreateRequestAsync(url, HttpMethod.Get, cancellationToken).ConfigureAwait(false);
+                req.Headers.Add("Accept", "application/json");
+
+                using var resp = await m_oauth.GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                var metadata = await resp.Content.ReadFromJsonAsync<BucketMetadata>(cancellationToken).ConfigureAwait(false);
+
+                return !string.Equals(metadata?.objectRetention?.mode, "Enabled", StringComparison.OrdinalIgnoreCase);
+            }
+            catch
+            {
+                // Unable to determine the state, report the original error
+                return false;
             }
         }
 

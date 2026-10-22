@@ -289,7 +289,7 @@ public class SecretProviderHelperTests : BasicSetupHelper
         };
 
         var argsInternal = new[] {
-            new Library.Utility.RelaxedUri("test://host?pass=$key1")
+            new Library.Utility.Uri("test://host?pass=$key1")
         };
 
         var result = await SecretProviderHelper.ApplySecretProviderAsync([], argsInternal, settings, null, secretProvider, CancellationToken.None);

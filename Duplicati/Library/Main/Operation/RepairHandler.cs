@@ -61,7 +61,7 @@ namespace Duplicati.Library.Main.Operation
                 await RunRepairCommonAsync().ConfigureAwait(false);
 
                 // Optionally refresh lock information from the backend
-                if (m_options.RepairRefreshLockInfo && backendManager.SupportsObjectLocking)
+                if (m_options.RepairRefreshLockInfo)
                     await RunRefreshLockInfoAsync(backendManager).ConfigureAwait(false);
 
                 m_result.EndTime = DateTime.UtcNow;
@@ -1430,11 +1430,25 @@ namespace Duplicati.Library.Main.Operation
         /// <returns>A task that completes when the operation is finished.</returns>
         private async Task RunRefreshLockInfoAsync(IBackendManager backendManager)
         {
+            if (!backendManager.SupportsObjectLocking)
+            {
+                Logging.Log.WriteWarningMessage(LOGTAG, "RefreshLockInfoUnsupported", null, "Backend does not support object locking; lock information was not refreshed");
+                return;
+            }
+
             Logging.Log.WriteInformationMessage(LOGTAG, "RefreshingLockInfo", "Refreshing lock information from backend");
 
             var result = new ReadLockInfoResults(m_result);
             var handler = new ReadLockInfoHandler(m_options, result);
-            await handler.RunAsync(backendManager).ConfigureAwait(false);
+            try
+            {
+                await handler.RunAsync(backendManager).ConfigureAwait(false);
+            }
+            catch (ObjectLockNotSupportedException ex)
+            {
+                // The repair itself has succeeded, so an unavailable lock feature is only a warning
+                Logging.Log.WriteWarningMessage(LOGTAG, "RefreshLockInfoUnsupported", ex, "Object locking is not available on the destination; lock information was not refreshed: {0}", ex.Message);
+            }
         }
     }
 }

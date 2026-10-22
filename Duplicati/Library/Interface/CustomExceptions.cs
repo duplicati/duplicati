@@ -99,6 +99,42 @@ namespace Duplicati.Library.Interface
     }
 
     /// <summary>
+    /// An exception indicating that the destination cannot apply object locks,
+    /// either because the backend has no locking support or because the
+    /// feature is not enabled for the bucket, container or account.
+    /// This is a permanent condition, so operations failing with this
+    /// exception are not retried.
+    /// </summary>
+    [Serializable]
+    public class ObjectLockNotSupportedException : UserInformationException
+    {
+        /// <summary>
+        /// The default help ID used when no backend specific ID is supplied
+        /// </summary>
+        public const string DEFAULT_HELP_ID = "ObjectLockNotSupported";
+
+        public ObjectLockNotSupportedException()
+            : base(Strings.Common.ObjectLockNotSupportedError, DEFAULT_HELP_ID)
+        { }
+
+        public ObjectLockNotSupportedException(string message)
+            : base(message, DEFAULT_HELP_ID)
+        { }
+
+        public ObjectLockNotSupportedException(string message, Exception innerException)
+            : base(message, DEFAULT_HELP_ID, innerException)
+        { }
+
+        public ObjectLockNotSupportedException(string message, string helpId)
+            : base(message, helpId)
+        { }
+
+        public ObjectLockNotSupportedException(string message, string helpId, Exception innerException)
+            : base(message, helpId, innerException)
+        { }
+    }
+
+    /// <summary>
     /// An exception indicating that the requested folder already existed
     /// </summary>
     [Serializable]

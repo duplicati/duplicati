@@ -47,4 +47,40 @@ internal class BucketEntity : AccountIDEntity
     /// </summary>
     [JsonProperty("bucketType")]
     public string? BucketType { get; set; }
+
+    /// <summary>
+    /// Gets or sets the file lock (object lock) configuration of the bucket.
+    /// </summary>
+    [JsonProperty("fileLockConfiguration", NullValueHandling = NullValueHandling.Ignore)]
+    public FileLockConfigurationEntity? FileLockConfiguration { get; set; }
+}
+
+/// <summary>
+/// The file lock configuration wrapper returned by b2_list_buckets
+/// </summary>
+internal class FileLockConfigurationEntity
+{
+    /// <summary>
+    /// Gets or sets a value indicating whether the caller is authorized to read the configuration.
+    /// </summary>
+    [JsonProperty("isClientAuthorizedToRead")]
+    public bool? IsClientAuthorizedToRead { get; set; }
+
+    /// <summary>
+    /// Gets or sets the configuration value, which is <c>null</c> if the caller is not authorized to read it.
+    /// </summary>
+    [JsonProperty("value", NullValueHandling = NullValueHandling.Ignore)]
+    public FileLockConfigurationValueEntity? Value { get; set; }
+}
+
+/// <summary>
+/// The file lock configuration of a bucket
+/// </summary>
+internal class FileLockConfigurationValueEntity
+{
+    /// <summary>
+    /// Gets or sets a value indicating whether file lock is enabled for the bucket.
+    /// </summary>
+    [JsonProperty("isFileLockEnabled")]
+    public bool? IsFileLockEnabled { get; set; }
 }
