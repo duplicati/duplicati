@@ -1,0 +1,44 @@
+name: ngax styles
+permissions:
+  contents: read
+  issues: none
+  pull-requests: none
+
+on:
+  pull_request:
+    paths:
+      - "Duplicati/Server/webroot/ngax/less/**"
+      - "Duplicati/Server/webroot/ngax/styles/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/ngax-styles.yml"
+  workflow_dispatch:
+
+jobs:
+  check_css:
+    name: Check that the committed CSS matches the .less files
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 26
+      - name: Install NPM dependencies
+        run: npm ci
+      # Only lessc + postcss; build:style also runs the stylelint auto-fix, which edits the .less files
+      - name: Build CSS
+        run: npm run build:style:css
+      - name: Compare with the committed CSS
+        run: |
+          if git diff --quiet -- Duplicati/Server/webroot/ngax/styles; then
+            echo "The built CSS matches the committed files."
+            exit 0
+          fi
+          echo "::error::The CSS built from the .less files differs from the committed files in Duplicati/Server/webroot/ngax/styles. Run 'npm run build:style:css' and commit the result."
+          # The CSS is minified, so compare one rule per line
+          for f in $(git diff --name-only -- Duplicati/Server/webroot/ngax/styles); do
+            echo "--- $f (committed) / +++ $f (built)"
+            diff -u <(git show "HEAD:$f" | tr '}' '\n') <(tr '}' '\n' < "$f") || true
+          done
+          exit 1
