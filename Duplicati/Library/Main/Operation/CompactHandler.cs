@@ -73,16 +73,8 @@ namespace Duplicati.Library.Main.Operation
                         .CommitAsync("CommitCompact")
                         .ConfigureAwait(false);
 
-                    if (changed)
-                    {
-                        await db.WriteResultsAndCommitAsync(m_result, m_result.TaskControl.ProgressToken)
-                            .ConfigureAwait(false);
-                        if (m_options.AutoVacuum)
-                        {
-                            m_result.VacuumResults = new VacuumResults(m_result);
-                            await new VacuumHandler(m_options, (VacuumResults)m_result.VacuumResults).RunAsync().ConfigureAwait(false);
-                        }
-                    }
+                    // The results are written to the job log, and auto-vacuum is run, by the Controller
+                    // once the operation completes, as for every other operation.
                 }
             }
         }
