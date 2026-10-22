@@ -74,6 +74,9 @@ namespace Duplicati.Library.Backend
         /// <summary> Creates the context; replaced by tests that have no server. </summary>
         internal Func<ClientContext>? ContextFactory { get; init; }
 
+        /// <summary> Receives each chunk stream an upload sends; for tests whose context never reads it. </summary>
+        internal Action<Stream>? ChunkStreamCreated { get; init; }
+
         /// <summary> The chunk size for uploading files. </summary>
         private readonly int m_fileChunkSize = 4 << 20; // Default: 4MB
 
@@ -448,6 +451,81 @@ namespace Duplicati.Library.Backend
         }
 
         /// <summary>
+        /// Runs the pending query, which sends the given chunk, until nothing has happened for
+        /// the timeout: the chunk is not being read, and no answer has come. A slow but steady
+        /// upload is not cut off. A query that times out keeps running on the context, so the
+        /// context is not handed out again.
+        /// </summary>
+        private async Task ExecuteQueryWithIdleTimeoutAsync(ClientContext ctx, ActivityStream chunk, TimeSpan idleTimeout, CancellationToken cancelToken)
+        {
+            var query = ctx.ExecuteQueryAsync();
+            if (idleTimeout <= TimeSpan.Zero || idleTimeout == Timeout.InfiniteTimeSpan)
+            {
+                await query.ConfigureAwait(false);
+                return;
+            }
+
+            while (true)
+            {
+                var remaining = idleTimeout - chunk.IdleTime;
+                if (remaining <= TimeSpan.Zero)
+                {
+                    if (ReferenceEquals(m_spContext, ctx))
+                        m_spContext = null;
+                    throw new TimeoutException();
+                }
+
+                if (await Task.WhenAny(query, Task.Delay(remaining, cancelToken)).ConfigureAwait(false) == query)
+                {
+                    await query.ConfigureAwait(false);
+                    return;
+                }
+                cancelToken.ThrowIfCancellationRequested();
+            }
+        }
+
+        /// <summary>
+        /// A stream that records when it was last read from
+        /// </summary>
+        private sealed class ActivityStream : Stream
+        {
+            private readonly Stream m_inner;
+            private long m_lastActivity = Environment.TickCount64;
+
+            public ActivityStream(Stream inner) => m_inner = inner;
+
+            /// <summary> The time since the stream was created or last read from. </summary>
+            public TimeSpan IdleTime => TimeSpan.FromMilliseconds(Environment.TickCount64 - Interlocked.Read(ref m_lastActivity));
+
+            private int Touch(int read)
+            {
+                Interlocked.Exchange(ref m_lastActivity, Environment.TickCount64);
+                return read;
+            }
+
+            public override int Read(byte[] buffer, int offset, int count) => Touch(m_inner.Read(buffer, offset, count));
+            public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) => Touch(await m_inner.ReadAsync(buffer, offset, count, cancellationToken).ConfigureAwait(false));
+            public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default) => Touch(await m_inner.ReadAsync(buffer, cancellationToken).ConfigureAwait(false));
+
+            public override bool CanRead => m_inner.CanRead;
+            public override bool CanSeek => m_inner.CanSeek;
+            public override bool CanWrite => false;
+            public override long Length => m_inner.Length;
+            public override long Position { get => m_inner.Position; set => m_inner.Position = value; }
+            public override void Flush() { }
+            public override long Seek(long offset, SeekOrigin origin) => m_inner.Seek(offset, origin);
+            public override void SetLength(long value) => throw new NotSupportedException();
+            public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+
+            protected override void Dispose(bool disposing)
+            {
+                if (disposing)
+                    m_inner.Dispose();
+                base.Dispose(disposing);
+            }
+        }
+
+        /// <summary>
         /// Helper method to inject the custom webrequest provider that sets the UserAgent
         /// </summary>
         /// <returns>The new context.</returns>
@@ -640,7 +718,7 @@ namespace Duplicati.Library.Backend
         /// Upload in chunks to bypass filesize limit.
         /// https://msdn.microsoft.com/en-us/library/office/dn904536.aspx
         /// </summary>
-        private async Task<SP.File> UploadFileSlicePerSlice(ClientContext ctx, Folder folder, Stream sourceFileStream, string fileName, CancellationToken cancelToken)
+        internal async Task<SP.File> UploadFileSlicePerSlice(ClientContext ctx, Folder folder, Stream sourceFileStream, string fileName, CancellationToken cancelToken)
         {
             // Each sliced upload requires a unique ID.
             var uploadId = Guid.NewGuid();
@@ -667,8 +745,9 @@ namespace Duplicati.Library.Backend
                     bufCnt += lastreadsize;
 
                 using (var contentChunk = new MemoryStream(buf, 0, bufCnt, false))
-                using (var timeoutStream = contentChunk.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap))
+                using (var timeoutStream = new ActivityStream(contentChunk.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap)))
                 {
+                    ChunkStreamCreated?.Invoke(timeoutStream);
                     ClientResult<long>? bytesUploaded = null;
                     if (uploadFile == null)
                     {
@@ -702,7 +781,7 @@ namespace Duplicati.Library.Backend
                     if (bytesUploaded == null)
                         ctx.Load(uploadFile, f => f.Length);
 
-                    await ctx.ExecuteQueryAsync().ConfigureAwait(false);
+                    await ExecuteQueryWithIdleTimeoutAsync(ctx, timeoutStream, m_timeouts.ReadWriteTimeout, cancelToken).ConfigureAwait(false);
                     // Check consistency and update fileoffset for the next slice.
                     if (bytesUploaded != null)
                     {
