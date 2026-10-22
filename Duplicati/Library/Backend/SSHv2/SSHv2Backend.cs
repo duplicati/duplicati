@@ -589,7 +589,8 @@ namespace Duplicati.Library.Backend
             var con = await CreateConnection(cancelToken).ConfigureAwait(false);
             await SetWorkingDirectory(con, cancelToken).ConfigureAwait(false);
 
-            await foreach (var ls in await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken, ct => con.ListDirectoryAsync(path, ct)).ConfigureAwait(false))
+            // The listing runs while it is read, so it is read inside the timeout
+            foreach (var ls in await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken, ct => con.ListDirectoryAsync(path, ct).ToListAsync(ct).AsTask()).ConfigureAwait(false))
             {
                 if (ls.Name.ToString() == "." || ls.Name.ToString() == "..") continue;
                 yield return new FileEntry(ls.Name, ls.Length,
@@ -673,7 +674,8 @@ namespace Duplicati.Library.Backend
             if (string.IsNullOrWhiteSpace(filterPath))
                 filterPath = ".";
 
-            await foreach (var x in await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancellationToken, ct => con.ListDirectoryAsync(filterPath, ct)).ConfigureAwait(false))
+            // The listing runs while it is read, so it is read inside the timeout
+            foreach (var x in await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancellationToken, ct => con.ListDirectoryAsync(filterPath, ct).ToListAsync(ct).AsTask()).ConfigureAwait(false))
                 yield return new FileEntry(
                     x.Name,
                     x.Attributes.Size,
