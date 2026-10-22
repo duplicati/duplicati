@@ -527,6 +527,28 @@ namespace Duplicati.Library.Modules.Builtin
         }
 
         /// <summary>
+        /// Gets the values the Handlebars report templates refer to by name
+        /// </summary>
+        /// <returns>The template values.</returns>
+        private Dictionary<string, string> GetTemplateValues()
+        {
+            string ConfiguredOrDefault(string key)
+                => m_options.TryGetValue(key, out var configured) && !string.IsNullOrWhiteSpace(configured)
+                    ? configured
+                    : GetDefaultValue(key);
+
+            return new Dictionary<string, string>
+            {
+                ["OperationName"] = GetDefaultValue(OPERATIONNAME),
+                ["ParsedResult"] = GetDefaultValue(PARSEDRESULT),
+                ["BackupName"] = ConfiguredOrDefault(BACKUP_NAME),
+                ["MachineName"] = ConfiguredOrDefault(MACHINE_NAME),
+                ["MachineId"] = ConfiguredOrDefault(MACHINE_ID),
+                ["OperatingSystem"] = ConfiguredOrDefault(OPERATING_SYSTEM)
+            };
+        }
+
+        /// <summary>
         /// Helper method to perform template expansion
         /// </summary>
         /// <returns>The expanded template.</returns>
@@ -593,7 +615,7 @@ namespace Duplicati.Library.Modules.Builtin
                 else
                 {
                     if (input.IndexOf("%RESULT%", StringComparison.OrdinalIgnoreCase) >= 0)
-                        input = Regex.Replace(input, "\\%RESULT\\%", resultFormatSerializer.Serialize(result, exception, LogLines, null), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                        input = Regex.Replace(input, "\\%RESULT\\%", resultFormatSerializer.Serialize(result, exception, LogLines, resultFormatSerializer.Format == ResultExportFormat.Template ? GetTemplateValues() : null), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
                 }
 
                 foreach (KeyValuePair<string, string> kv in m_options)
