@@ -308,8 +308,32 @@ namespace Duplicati.Server
             return databaseConnection.PrepareBackupForExport(prepped);
         }
 
+        /// <summary>
+        /// The operations a sync job supports. A sync job copies the files to the destination
+        /// without keeping versions, and its local database is not a backup database, so the
+        /// other operations would run backup queries against it and fail.
+        /// </summary>
+        private static readonly HashSet<DuplicatiOperation> SyncJobOperations =
+        [
+            DuplicatiOperation.BackupOrSync,
+            DuplicatiOperation.Delete,
+        ];
+
+        /// <summary>
+        /// Refuses an operation that the job cannot perform, before it is queued or run.
+        /// </summary>
+        /// <param name="operation">The operation to perform.</param>
+        /// <param name="backup">The job to perform it on.</param>
+        /// <exception cref="UserInformationException">The job is a sync job and the operation needs a backup.</exception>
+        private static void EnsureOperationIsSupported(DuplicatiOperation operation, IBackup backup)
+        {
+            if (backup.OperationType == OperationType.Sync && !SyncJobOperations.Contains(operation))
+                throw new UserInformationException($"The operation {operation} is not available for a sync job, as a sync job copies the files to the destination without keeping versions", "SyncJobNotSupported");
+        }
+
         public static IRunnerData CreateTask(DuplicatiOperation operation, IBackup backup, IDictionary<string, string?>? extraOptions = null, string[]? filterStrings = null, string[]? extraArguments = null, int pageSize = 0, int pageOffset = 0, bool returnExtended = false, bool caseSensitiveSearch = false, bool includeMetadata = false)
         {
+            EnsureOperationIsSupported(operation, backup);
             return new RunnerData()
             {
                 Operation = operation,

@@ -909,6 +909,71 @@ public class ServerApiIntegrationTests : BasicSetupHelper
         }).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// A sync job copies the files to the destination without keeping versions, and its
+    /// local database is not a backup database (forum topic 22782). Listing its versions
+    /// or restoring from it is refused with a message saying so, instead of running backup
+    /// queries against the sync database, and the sync job still runs afterwards.
+    /// </summary>
+    [Test]
+    [Category("Integration")]
+    public async Task SyncJobRefusesVersionListingAndRestore_Async()
+    {
+        File.WriteAllText(Path.Combine(this.DATAFOLDER, "sample.txt"), "Sync sample");
+        Directory.CreateDirectory(this.TARGETFOLDER);
+
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            var request = new BackupAndScheduleInputDto
+            {
+                Backup = new BackupAndScheduleInputDto.BackupInputDto
+                {
+                    Name = $"API integration sync {Guid.NewGuid():N}",
+                    Description = "Integration test sync",
+                    OperationType = Duplicati.Server.Serialization.OperationType.Sync,
+                    TargetURL = BuildFileBackendUrl(this.TARGETFOLDER),
+                    Sources = new[] { this.DATAFOLDER },
+                    Settings = new[]
+                    {
+                        new BackupAndScheduleInputDto.SettingInputDto { Name = "--no-encryption", Value = "true" },
+                        new BackupAndScheduleInputDto.SettingInputDto { Name = "snapshot-policy", Value = "Off" }
+                    },
+                    Filters = Array.Empty<BackupAndScheduleInputDto.FilterInputDto>(),
+                    Metadata = new Dictionary<string, string>()
+                }
+            };
+
+            var createResponse = await httpClient.PostAsJsonAsync("/api/v1/backups", request, JsonOptions).ConfigureAwait(false);
+            createResponse.EnsureSuccessStatusCode();
+            var backupId = (await createResponse.Content.ReadFromJsonAsync<CreateBackupDto>(JsonOptions).ConfigureAwait(false))?.ID
+                ?? throw new InvalidOperationException("Sync job creation did not return an ID");
+
+            await RunTaskAndWaitAsync(httpClient, $"/api/v1/backup/{backupId}/run").ConfigureAwait(false);
+
+            // The restore page starts by listing the versions
+            var listFilesetsResponse = await httpClient.PostAsJsonAsync("/api/v2/backup/list-filesets", new ListFilesetsRequestDto { BackupId = backupId }, JsonOptions).ConfigureAwait(false);
+            var listFilesetsBody = await listFilesetsResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
+            Assert.That(listFilesetsResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), listFilesetsBody);
+            using (var listFilesets = JsonDocument.Parse(listFilesetsBody))
+            {
+                Assert.That(listFilesets.RootElement.TryGetProperty("Success", out var success) && !success.GetBoolean(), Is.True, listFilesetsBody);
+                Assert.That(GetStringProperty(listFilesets.RootElement, "statusCode"), Is.EqualTo("SyncJobNotSupported"), listFilesetsBody);
+            }
+
+            var restoreResponse = await httpClient.PostAsJsonAsync(
+                $"/api/v1/backup/{backupId}/restore",
+                new RestoreInputDto(null, null, "now", this.RESTOREFOLDER, true, false, false, null, null),
+                JsonOptions).ConfigureAwait(false);
+            var restoreBody = await restoreResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
+            Assert.That(restoreResponse.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest), restoreBody);
+            using (var restore = JsonDocument.Parse(restoreBody))
+                Assert.That(GetStringProperty(restore.RootElement, "helpId"), Is.EqualTo("SyncJobNotSupported"), restoreBody);
+
+            // The refused requests did not damage the sync database
+            await RunTaskAndWaitAsync(httpClient, $"/api/v1/backup/{backupId}/run").ConfigureAwait(false);
+        }).ConfigureAwait(false);
+    }
+
     [Test]
     [Category("Integration")]
     public async Task DeleteAllNotificationsRemovesEveryNotificationInOneRequest_Async()
