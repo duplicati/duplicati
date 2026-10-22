@@ -270,13 +270,13 @@ namespace Duplicati.Server.Database
         public bool UnackedError
         {
             get => Utility.ParseBool(settings[CONST.UNACKED_ERROR], false);
-            set => SetAndSaveSetting(CONST.UNACKED_ERROR, value.ToString());
+            set => SetAndSaveSettingIfChanged(CONST.UNACKED_ERROR, value);
         }
 
         public bool UnackedWarning
         {
             get => Utility.ParseBool(settings[CONST.UNACKED_WARNING], false);
-            set => SetAndSaveSetting(CONST.UNACKED_WARNING, value.ToString());
+            set => SetAndSaveSettingIfChanged(CONST.UNACKED_WARNING, value);
         }
 
         public bool ServerPortChanged
@@ -1015,6 +1015,24 @@ namespace Duplicati.Server.Database
             lock (databaseConnection.m_lock)
                 settings[key] = value;
             SaveSettings();
+        }
+
+        /// <summary>
+        /// Saves a boolean setting only when its value changes.
+        /// Saving rewrites all settings and signals a settings update,
+        /// which is wasted work for flags that are set on every notification.
+        /// </summary>
+        /// <param name="key">The setting key</param>
+        /// <param name="value">The new value</param>
+        private void SetAndSaveSettingIfChanged(string key, bool value)
+        {
+            lock (databaseConnection.m_lock)
+            {
+                if (Utility.ParseBool(settings[key], false) == value)
+                    return;
+
+                SetAndSaveSetting(key, value.ToString());
+            }
         }
 
     }
