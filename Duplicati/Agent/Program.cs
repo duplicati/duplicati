@@ -525,21 +525,26 @@ public static class Program
     /// <param name="applicationSettings">The application settings for the server</param>
     /// <param name="args">The commandline arguments passed to the server</param>
     /// <param name="cancellationToken">The cancellation token to use for the process</param>
+    /// <param name="runServer">The method that runs the server; defaults to <see cref="Server.Program.Main(IApplicationSettings, string[])"/></param>
     /// <returns>An awaitable task</returns>
-    private static async Task RunServerAsync(IApplicationSettings applicationSettings, string[] args, CancellationToken cancellationToken)
+    internal static async Task RunServerAsync(IApplicationSettings applicationSettings, string[] args, CancellationToken cancellationToken, Func<IApplicationSettings, string[], int>? runServer = null)
     {
+        runServer ??= Server.Program.Main;
+
         cancellationToken.Register(() =>
         {
             applicationSettings.SignalApplicationExit();
         });
 
         var lastRestart = DateTime.Now;
-        while (!cancellationToken.IsCancellationRequested)
+        // Once the server has signalled the exit event, it cannot be reset,
+        // so a restarted server would exit right away; stop instead
+        while (!cancellationToken.IsCancellationRequested && !applicationSettings.ApplicationExit.IsCancellationRequested)
         {
             try
             {
                 lastRestart = DateTime.Now;
-                Server.Program.Main(applicationSettings, args);
+                runServer(applicationSettings, args);
             }
             catch (Exception ex)
             {
