@@ -80,7 +80,23 @@ namespace Duplicati.CommandLine.RecoveryTool
                             continue;
                         }
 
+                        // The remote name comes from the backend listing, so reject anything
+                        // that is not a plain filename before using it to build a local path
+                        if (file.Name != Path.GetFileName(file.Name) || file.Name.IndexOf('/') >= 0 || file.Name.IndexOf('\\') >= 0 || Path.IsPathRooted(file.Name))
+                        {
+                            Console.WriteLine(" - WARNING: Remote filename is not a plain filename, skipping");
+                            errors++;
+                            continue;
+                        }
+
                         var local = Path.Combine(targetfolder, file.Name);
+                        if (!Library.Common.IO.Util.IsPathInsideTarget(local, targetfolder))
+                        {
+                            Console.WriteLine(" - WARNING: Path traversal detected: {0} resolves outside {1}, skipping", local, targetfolder);
+                            errors++;
+                            continue;
+                        }
+
                         if (p.EncryptionModule != null)
                         {
                             if (string.IsNullOrWhiteSpace(passphrase))
@@ -126,6 +142,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                         }
 
                         Console.WriteLine(" done!");
+                        downloaded++;
 
                     }
                     catch (Exception ex)
