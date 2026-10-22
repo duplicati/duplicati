@@ -134,6 +134,30 @@ namespace Duplicati.UnitTest
             systemIO.DirectoryCreate(this.RESTOREFOLDER);
         }
 
+        /// <summary>
+        /// Deletes a folder and everything in it. On Windows, the links to folders below it are
+        /// removed first, one at a time: a recursive delete that meets a junction tries to
+        /// unmount it, which is refused, and although the junction is removed anyway, the
+        /// delete then fails and leaves the rest of the folder in place.
+        /// </summary>
+        /// <param name="path">The folder to delete</param>
+        private static void DeleteFolderTree(string path)
+        {
+            if (OperatingSystem.IsWindows())
+            {
+                var folders = new Stack<string>();
+                folders.Push(path);
+                while (folders.Count > 0)
+                    foreach (var folder in systemIO.EnumerateDirectories(folders.Pop()).ToList())
+                        if (systemIO.GetFileAttributes(folder).HasFlag(FileAttributes.ReparsePoint))
+                            systemIO.DirectoryDelete(folder, false);
+                        else
+                            folders.Push(folder);
+            }
+
+            systemIO.DirectoryDelete(path, true);
+        }
+
         [TearDown]
         public void BasicHelperTearDown()
         {
@@ -145,15 +169,15 @@ namespace Duplicati.UnitTest
             }
             if (systemIO.DirectoryExists(this.DATAFOLDER))
             {
-                systemIO.DirectoryDelete(this.DATAFOLDER, true);
+                DeleteFolderTree(this.DATAFOLDER);
             }
             if (systemIO.DirectoryExists(this.TARGETFOLDER))
             {
-                systemIO.DirectoryDelete(this.TARGETFOLDER, true);
+                DeleteFolderTree(this.TARGETFOLDER);
             }
             if (systemIO.DirectoryExists(this.RESTOREFOLDER))
             {
-                systemIO.DirectoryDelete(this.RESTOREFOLDER, true);
+                DeleteFolderTree(this.RESTOREFOLDER);
             }
             if (systemIO.FileExists(this.DBFILE))
             {
