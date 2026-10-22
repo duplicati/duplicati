@@ -749,7 +749,7 @@ namespace Duplicati.Library.Main.Operation
                 await using (m_database = database)
                 using (var db = new Backup.BackupDatabase(m_database, m_options))
                 // Setup runners and instances here
-                using (var filesetvolume = new FilesetVolumeWriter(m_options, m_database.OperationTimestamp))
+                using (var filesetvolume = new FilesetVolumeWriter(m_options, m_database.OperationTimestamp) { IsRemoteNameTaken = FilesetVolumeWriter.NameTakenIn(db) })
                 {
                     long filesetid;
                     // A stop before the files are processed leaves the fileset without any of them
