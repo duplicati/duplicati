@@ -257,9 +257,8 @@ namespace Duplicati.Library.Modules.Builtin
                 client.Connect(resource);
                 try
                 {
-                    foreach (var recipient in m_to.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries))
+                    SendToRecipients(m_to, jid =>
                     {
-                        Artalk.Xmpp.Jid jid = new Artalk.Xmpp.Jid(recipient);
                         client.SendMessage(jid, new Dictionary<string, string>() { { "en", body } });
                         // hack to work around a failure to send the second time
                         // (the xmpp server reports a read failure)
@@ -268,11 +267,7 @@ namespace Duplicati.Library.Modules.Builtin
                             client.Ping(jid);
                         }
                         catch { }
-                    }
-                }
-                catch (Exception e)
-                {
-                    Logging.Log.WriteWarningMessage(LOGTAG, "XMPPSendError", e, "Failed to send to XMPP messages: {0}", e.Message);
+                    });
                 }
                 finally
                 {
@@ -280,6 +275,26 @@ namespace Duplicati.Library.Modules.Builtin
                 }
             }
 
+        }
+
+        /// <summary>
+        /// Sends to each recipient in the comma separated list, so a failure for one does not stop the others
+        /// </summary>
+        /// <param name="recipients">The recipients option value</param>
+        /// <param name="send">Sends the message to one recipient</param>
+        internal static void SendToRecipients(string recipients, Action<Artalk.Xmpp.Jid> send)
+        {
+            foreach (var recipient in recipients.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                try
+                {
+                    send(new Artalk.Xmpp.Jid(recipient));
+                }
+                catch (Exception e)
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "XMPPSendError", e, "Failed to send XMPP message to {0}: {1}", recipient, e.Message);
+                }
+            }
         }
     }
 }
