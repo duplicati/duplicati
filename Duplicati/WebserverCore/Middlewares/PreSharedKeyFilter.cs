@@ -19,12 +19,33 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+using System.Security.Cryptography;
+using System.Text;
+
 namespace Duplicati.WebserverCore.Middlewares;
 
 public class PreSharedKeyFilter : IEndpointFilter
 {
     public const string HeaderName = "X-Duplicati-PreSharedKey";
     public static string? PreSharedKey = null;
+
+    /// <summary>
+    /// Checks if the request carries the pre-shared key, using a constant-time comparison
+    /// </summary>
+    /// <param name="request">The request to check</param>
+    /// <param name="preSharedKey">The expected pre-shared key</param>
+    /// <returns><c>true</c> if the request carries the key; <c>false</c> otherwise</returns>
+    private static bool HasValidPreSharedKey(HttpRequest request, string preSharedKey)
+    {
+        if (!request.Headers.TryGetValue(HeaderName, out var values) || values.Count != 1)
+            return false;
+
+        var value = values[0];
+        if (string.IsNullOrEmpty(value))
+            return false;
+
+        return CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(value), Encoding.UTF8.GetBytes(preSharedKey));
+    }
 
     public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
     {
@@ -36,7 +57,7 @@ public class PreSharedKeyFilter : IEndpointFilter
             return null;
         }
 
-        if (!context.HttpContext.Request.Headers.TryGetValue(HeaderName, out var headerValue) || headerValue != PreSharedKey)
+        if (!HasValidPreSharedKey(context.HttpContext.Request, PreSharedKey))
         {
             context.HttpContext.Response.StatusCode = 403;
             context.HttpContext.Response.Headers.Append("Content-Type", "text/plain");
