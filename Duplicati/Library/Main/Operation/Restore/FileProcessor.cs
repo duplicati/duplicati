@@ -1143,7 +1143,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
             try
             {
-                return await RestoreHandler.ApplyMetadataAsync(file.TargetPath, ms, options, restoreDestination, file.HasRestoredEntriesBelow, cancellationToken);
+                return await RestoreHandler.ApplyMetadataAsync(file.TargetPath, ms, options, restoreDestination, file.HasRestoredEntriesBelow, Util.GuessDirSeparator(file.OriginalPath) == "\\", cancellationToken);
             }
             catch (Exception ex)
             {
