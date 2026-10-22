@@ -22,3 +22,9 @@ ReleaseBuilder/build-temp/
 ReleaseBuilder/Resources/Windows/TrayIcon/binfiles.wxs
 ReleaseBuilder/Resources/Windows/Agent/binfiles.wxs
 Tools/MacOSPhotosNative/build/
+/test-results/
+/playwright-report/
+/playwright_source/
+/playwright_destination/
+/playwright_restore/
+/playwright_temp/
