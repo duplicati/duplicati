@@ -56,6 +56,11 @@ namespace Duplicati.Library.ResultSerialization
         public const string DefaultTemplateName = "default";
 
         /// <summary>
+        /// Prefix of the embedded template resource names
+        /// </summary>
+        private const string TemplateResourcePrefix = "Duplicati.Library.ResultSerialization.Templates.";
+
+        /// <summary>
         /// Creates a new instance with the default embedded template
         /// </summary>
         public TemplateFormatSerializer()
@@ -276,13 +281,13 @@ namespace Duplicati.Library.ResultSerialization
         private static string LoadEmbeddedTemplate(string templateName)
         {
             var assembly = typeof(TemplateFormatSerializer).Assembly;
-            var resourceName = $"Duplicati.Library.Modules.Builtin.Templates.{templateName}.hbs";
+            var resourceName = $"{TemplateResourcePrefix}{templateName}.hbs";
 
             using var stream = assembly.GetManifestResourceStream(resourceName);
             if (stream == null)
             {
                 // Fall back to the default template if the requested one does not exist
-                var defaultResource = $"Duplicati.Library.Modules.Builtin.Templates.{DefaultTemplateName}.hbs";
+                var defaultResource = $"{TemplateResourcePrefix}{DefaultTemplateName}.hbs";
                 using var defaultStream = assembly.GetManifestResourceStream(defaultResource);
                 if (defaultStream == null)
                     return GetFallbackTemplate();
@@ -332,7 +337,7 @@ Exception: {{Exception}}
         public static IEnumerable<string> GetAvailableTemplates()
         {
             var assembly = typeof(TemplateFormatSerializer).Assembly;
-            var prefix = "Duplicati.Library.Modules.Builtin.Templates.";
+            var prefix = TemplateResourcePrefix;
             var suffix = ".hbs";
 
             return assembly.GetManifestResourceNames()
