@@ -28,6 +28,8 @@ using OtpNet;
 using System.Runtime.CompilerServices;
 using Duplicati.StreamUtil;
 
+[assembly: InternalsVisibleTo("Duplicati.UnitTest")]
+
 namespace Duplicati.Library.Backend.Mega
 {
     // ReSharper disable once UnusedMember.Global
@@ -42,7 +44,12 @@ namespace Duplicati.Library.Backend.Mega
         private readonly string m_prefix;
         private readonly TimeoutOptionsHelper.Timeouts m_timeouts;
 
-        private MegaApiClient? m_client;
+        private IMegaApiClient? m_client;
+
+        /// <summary>
+        /// Creates a logged in client; replaced by tests that have no server
+        /// </summary>
+        internal Func<CancellationToken, Task<IMegaApiClient>>? ClientFactory { get; init; }
 
         public MegaBackend()
         {
@@ -53,8 +60,10 @@ namespace Duplicati.Library.Backend.Mega
             m_timeouts = null!;
         }
 
-        private async Task<MegaApiClient> GetClient(CancellationToken cancelToken)
+        private async Task<IMegaApiClient> GetClient(CancellationToken cancelToken)
         {
+            if (m_client == null && ClientFactory != null)
+                m_client = await ClientFactory(cancelToken).ConfigureAwait(false);
             if (m_client == null)
                 m_client = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, async ct =>
                 {
@@ -70,6 +79,48 @@ namespace Duplicati.Library.Backend.Mega
                 }).ConfigureAwait(false);
 
             return m_client;
+        }
+
+        /// <summary>
+        /// Runs a synchronous call on the client with a timeout. A call that times out keeps running
+        /// on the client, so the client is dropped and the next operation logs in with a new one.
+        /// </summary>
+        private async Task<T> WithClientTimeout<T>(IMegaApiClient client, TimeSpan timeout, CancellationToken cancelToken, Func<IMegaApiClient, T> func)
+        {
+            try
+            {
+                return await Utility.Utility.WithTimeout(timeout, cancelToken, _ => func(client)).ConfigureAwait(false);
+            }
+            catch (TimeoutException)
+            {
+                DropClient(client);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Runs an asynchronous call on the client with a timeout, and drops the client if it times out
+        /// </summary>
+        private async Task WithClientTimeoutAsync(IMegaApiClient client, TimeSpan timeout, CancellationToken cancelToken, Func<IMegaApiClient, Task> func)
+        {
+            try
+            {
+                await Utility.Utility.WithTimeout(timeout, cancelToken, _ => func(client)).ConfigureAwait(false);
+            }
+            catch (TimeoutException)
+            {
+                DropClient(client);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Stops using a client whose call timed out, unless it was already replaced
+        /// </summary>
+        private void DropClient(IMegaApiClient client)
+        {
+            if (ReferenceEquals(m_client, client))
+                m_client = null;
         }
 
         public MegaBackend(string url, Dictionary<string, string?> options)
@@ -94,7 +145,7 @@ namespace Duplicati.Library.Backend.Mega
         {
             var client = await GetClient(cancelToken).ConfigureAwait(false);
             var parts = m_prefix.Split(new string[] { "/" }, StringSplitOptions.RemoveEmptyEntries);
-            var nodes = await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken, _ => client.GetNodes()).ConfigureAwait(false);
+            var nodes = await WithClientTimeout(client, m_timeouts.ListTimeout, cancelToken, c => c.GetNodes()).ConfigureAwait(false);
             INode parent = nodes.First(x => x.Type == NodeType.Root);
 
             foreach (var n in parts)
@@ -154,7 +205,7 @@ namespace Duplicati.Library.Backend.Mega
 
                 var currentFolder = await GetCurrentFolderAsync(cancelToken).ConfigureAwait(false);
                 if (list == null)
-                    list = await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken, _ => client.GetNodes()).ConfigureAwait(false);
+                    list = await WithClientTimeout(client, m_timeouts.ListTimeout, cancelToken, c => c.GetNodes()).ConfigureAwait(false);
                 return m_filecache =
                     list.Where(x => x.Type == NodeType.File && x.ParentId == currentFolder.Id)
                         .GroupBy(x => x.Name, x => x, (k, g) => new KeyValuePair<string, List<INode>>(k, g.ToList()))
@@ -192,7 +243,7 @@ namespace Duplicati.Library.Backend.Mega
         {
             var client = await GetClient(cancelToken).ConfigureAwait(false);
             var node = await GetFileNodeAsync(remotename, cancelToken).ConfigureAwait(false);
-            using (var s = await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken, _ => client.Download(node)).ConfigureAwait(false))
+            using (var s = await WithClientTimeout(client, m_timeouts.ListTimeout, cancelToken, c => c.Download(node)).ConfigureAwait(false))
             using (var t = s.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Call))
                 await Utility.Utility.CopyStreamAsync(t, stream, cancelToken).ConfigureAwait(false);
         }
@@ -240,7 +291,7 @@ namespace Duplicati.Library.Backend.Mega
 
                 var client = await GetClient(cancelToken).ConfigureAwait(false);
                 foreach (var n in filecache[remotename])
-                    await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken, _ => client.DeleteAsync(n, false)).ConfigureAwait(false);
+                    await WithClientTimeoutAsync(client, m_timeouts.ListTimeout, cancelToken, c => c.DeleteAsync(n, false)).ConfigureAwait(false);
 
                 filecache.Remove(remotename);
             }
@@ -287,7 +338,7 @@ namespace Duplicati.Library.Backend.Mega
         {
             var client = await GetClient(cancellationToken).ConfigureAwait(false);
             var node = await GetFileNodeAsync(oldname, cancellationToken).ConfigureAwait(false);
-            await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancellationToken, _ => client.RenameAsync(node, newname)).ConfigureAwait(false);
+            await WithClientTimeoutAsync(client, m_timeouts.ShortTimeout, cancellationToken, c => c.RenameAsync(node, newname)).ConfigureAwait(false);
 
             // Update cache
             if (m_filecache != null)
